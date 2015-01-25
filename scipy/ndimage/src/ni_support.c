@@ -111,7 +111,7 @@ int NI_AllocateLineBuffer(PyArrayObject* array, int axis, npy_intp size1,
     if (*lines > max_lines)
         *lines = max_lines;
     /* allocate data for the buffer: */
-    *buffer = (double*)malloc(*lines * line_size);
+    *buffer = malloc(*lines * line_size);
     if (!*buffer) {
         PyErr_NoMemory();
         return 0;
@@ -196,7 +196,7 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
 
 /* Extend a line in memory to implement boundary conditions: */
 int NI_ExtendLine(double *line, npy_intp length, npy_intp size1,
-                  npy_intp size2, NI_ExtendMode mode, double constant_value)
+                  npy_intp size2, NI_ExtendMode mode, double constant_value, char * errmsg)
 {
     npy_intp ii, jj, length1, nextend, rextend;
     double *l1, *l2, *l3, val;
@@ -312,7 +312,7 @@ int NI_ExtendLine(double *line, npy_intp length, npy_intp size1,
             *l1++ = constant_value;
         break;
     default:
-        PyErr_SetString(PyExc_RuntimeError, "mode not supported");
+        PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "mode not supported");
         return 0;
     }
     return 1;
@@ -333,7 +333,8 @@ break
 
 /* Copy a line from an array to a buffer: */
 int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
-                         npy_intp *number_of_lines, int *more)
+                         npy_intp *number_of_lines, int *more,
+                         char * errmsg)
 {
     double *pb = buffer->buffer_data;
     char *pa;
@@ -362,8 +363,8 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float32);
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float64);
         default:
-            PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
-                         buffer->array_type);
+            PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "array type %d not supported",
+                          buffer->array_type);
             return 0;
         }
         /* goto next line in the array: */
@@ -372,7 +373,8 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
         if (buffer->size1 + buffer->size2 > 0)
             if (!NI_ExtendLine(pb - buffer->size1, length, buffer->size1,
                                                  buffer->size2, buffer->extend_mode,
-                                                 buffer->extend_value))
+                                                 buffer->extend_value,
+                                                 errmsg))
                 return 0;
         /* The number of the array lines copied: */
         ++(buffer->next_line);
@@ -397,7 +399,7 @@ case t ## _type:                                                  \
 break
 
 /* Copy a line from a buffer to an array: */
-int NI_LineBufferToArray(NI_LineBuffer *buffer)
+int NI_LineBufferToArray(NI_LineBuffer *buffer, char * errmsg)
 {
     double *pb = buffer->buffer_data;
     char *pa;
@@ -425,7 +427,7 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer)
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float32);
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float64);
         default:
-            PyErr_SetString(PyExc_RuntimeError, "array type not supported");
+            PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "array type not supported");
             return 0;
         }
         /* move to the next line in the array: */
@@ -513,15 +515,14 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     for(ii = 0; ii < rank; ii++)
         offsets_size *= (ashape[ii] < fshape[ii] ? ashape[ii] : fshape[ii]);
     /* allocate offsets data: */
-    *offsets = (npy_intp*)malloc(offsets_size * footprint_size *
-                                                        sizeof(npy_intp));
+    *offsets = malloc(offsets_size * footprint_size * sizeof(npy_intp));
     if (!*offsets) {
         PyErr_NoMemory();
         goto exit;
     }
     if (coordinate_offsets) {
-        *coordinate_offsets = (npy_intp*)malloc(offsets_size * rank *
-                                        footprint_size * sizeof(npy_intp));
+        *coordinate_offsets = malloc(offsets_size * rank
+                                     * footprint_size * sizeof(npy_intp));
         if (!*coordinate_offsets) {
             PyErr_NoMemory();
             goto exit;
@@ -692,10 +693,10 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
 
  exit:
     if (PyErr_Occurred()) {
-        if (*offsets)
-            free(*offsets);
-        if (coordinate_offsets && *coordinate_offsets)
+        free(*offsets);
+        if (coordinate_offsets) {
             free(*coordinate_offsets);
+        }
         return 0;
     } else {
         return 1;
@@ -704,10 +705,8 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
 
 NI_CoordinateList* NI_InitCoordinateList(int size, int rank)
 {
-    NI_CoordinateList *list = \
-        (NI_CoordinateList*)malloc(sizeof(NI_CoordinateList));
+    NI_CoordinateList *list = malloc(sizeof(NI_CoordinateList));
     if (!list) {
-        PyErr_NoMemory();
         return NULL;
     }
     list->block_size = size;
@@ -736,27 +735,20 @@ int NI_CoordinateListStealBlocks(NI_CoordinateList *list1,
 NI_CoordinateBlock* NI_CoordinateListAddBlock(NI_CoordinateList *list)
 {
     NI_CoordinateBlock* block = NULL;
-    block = (NI_CoordinateBlock*)malloc(sizeof(NI_CoordinateBlock));
+    block = malloc(sizeof(NI_CoordinateBlock));
     if (!block) {
-        PyErr_NoMemory();
-        goto exit;
+        return NULL;
     }
-    block->coordinates = (npy_intp*)malloc(list->block_size * list->rank *
-                                                           sizeof(npy_intp));
+    block->coordinates = malloc(list->block_size * list->rank
+                                * sizeof(npy_intp));
     if (!block->coordinates) {
-        PyErr_NoMemory();
-        goto exit;
+        free(block);
+        return NULL;
     }
     block->next = list->blocks;
     list->blocks = block;
     block->size = 0;
 
-exit:
-    if (PyErr_Occurred()) {
-        if (block)
-            free(block);
-        return NULL;
-    }
     return block;
 }
 
@@ -765,8 +757,7 @@ NI_CoordinateBlock* NI_CoordinateListDeleteBlock(NI_CoordinateList *list)
     NI_CoordinateBlock* block = list->blocks;
     if (block) {
         list->blocks = block->next;
-        if (block->coordinates)
-            free(block->coordinates);
+        free(block->coordinates);
         free(block);
     }
     return list->blocks;
@@ -779,8 +770,7 @@ void NI_FreeCoordinateList(NI_CoordinateList *list)
         while (block) {
             NI_CoordinateBlock *tmp = block;
             block = block->next;
-            if (tmp->coordinates)
-                free(tmp->coordinates);
+            free(tmp->coordinates);
             free(tmp);
         }
         list->blocks = NULL;

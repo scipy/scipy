@@ -49,7 +49,7 @@ import sys
 from numpy import (sqrt, log, asarray, newaxis, all, dot, exp, eye,
                    float_)
 from scipy import linalg
-from scipy.lib.six import callable, get_method_function, \
+from scipy._lib.six import callable, get_method_function, \
      get_function_code
 
 __all__ = ['Rbf']
@@ -226,6 +226,6 @@ class Rbf(object):
         if not all([x.shape == y.shape for x in args for y in args]):
             raise ValueError("Array lengths must be equal")
         shp = args[0].shape
-        self.xa = asarray([a.flatten() for a in args], dtype=float_)
-        r = self._call_norm(self.xa, self.xi)
+        xa = asarray([a.flatten() for a in args], dtype=float_)
+        r = self._call_norm(xa, self.xi)
         return dot(self._function(r), self.nodes).reshape(shp)

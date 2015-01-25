@@ -27,17 +27,16 @@ points are equally spaced with spacing :math:`\Delta x` , then the B-spline
 approximation to a 1-dimensional function is the finite-basis expansion.
 
 .. math::
-   :nowrap:
 
-    \[ y\left(x\right)\approx\sum_{j}c_{j}\beta^{o}\left(\frac{x}{\Delta x}-j\right).\]
+
+    y\left(x\right)\approx\sum_{j}c_{j}\beta^{o}\left(\frac{x}{\Delta x}-j\right).
 
 In two dimensions with knot-spacing :math:`\Delta x` and :math:`\Delta y` , the
 function representation is
 
 .. math::
-   :nowrap:
 
-    \[ z\left(x,y\right)\approx\sum_{j}\sum_{k}c_{jk}\beta^{o}\left(\frac{x}{\Delta x}-j\right)\beta^{o}\left(\frac{y}{\Delta y}-k\right).\]
+    z\left(x,y\right)\approx\sum_{j}\sum_{k}c_{jk}\beta^{o}\left(\frac{x}{\Delta x}-j\right)\beta^{o}\left(\frac{y}{\Delta y}-k\right).
 
 In these expressions, :math:`\beta^{o}\left(\cdot\right)` is the space-limited
 B-spline basis function of order, :math:`o` . The requirement of equally-spaced
@@ -55,23 +54,20 @@ ease from the spline coefficients. For example, the second-derivative
 of a spline is
 
 .. math::
-   :nowrap:
 
-    \[ y{}^{\prime\prime}\left(x\right)=\frac{1}{\Delta x^{2}}\sum_{j}c_{j}\beta^{o\prime\prime}\left(\frac{x}{\Delta x}-j\right).\]
+    y{}^{\prime\prime}\left(x\right)=\frac{1}{\Delta x^{2}}\sum_{j}c_{j}\beta^{o\prime\prime}\left(\frac{x}{\Delta x}-j\right).
 
 Using the property of B-splines that
 
 .. math::
-   :nowrap:
 
-    \[ \frac{d^{2}\beta^{o}\left(w\right)}{dw^{2}}=\beta^{o-2}\left(w+1\right)-2\beta^{o-2}\left(w\right)+\beta^{o-2}\left(w-1\right)\]
+    \frac{d^{2}\beta^{o}\left(w\right)}{dw^{2}}=\beta^{o-2}\left(w+1\right)-2\beta^{o-2}\left(w\right)+\beta^{o-2}\left(w-1\right)
 
 it can be seen that
 
 .. math::
-   :nowrap:
 
-    \[ y^{\prime\prime}\left(x\right)=\frac{1}{\Delta x^{2}}\sum_{j}c_{j}\left[\beta^{o-2}\left(\frac{x}{\Delta x}-j+1\right)-2\beta^{o-2}\left(\frac{x}{\Delta x}-j\right)+\beta^{o-2}\left(\frac{x}{\Delta x}-j-1\right)\right].\]
+    y^{\prime\prime}\left(x\right)=\frac{1}{\Delta x^{2}}\sum_{j}c_{j}\left[\beta^{o-2}\left(\frac{x}{\Delta x}-j+1\right)-2\beta^{o-2}\left(\frac{x}{\Delta x}-j\right)+\beta^{o-2}\left(\frac{x}{\Delta x}-j-1\right)\right].
 
 If :math:`o=3` , then at the sample points,
 
@@ -80,65 +76,60 @@ If :math:`o=3` , then at the sample points,
 
     \begin{eqnarray*} \Delta x^{2}\left.y^{\prime}\left(x\right)\right|_{x=n\Delta x} & = & \sum_{j}c_{j}\delta_{n-j+1}-2c_{j}\delta_{n-j}+c_{j}\delta_{n-j-1},\\  & = & c_{n+1}-2c_{n}+c_{n-1}.\end{eqnarray*}
 
-Thus, the second-derivative signal can be easily calculated from the
-spline fit. if desired, smoothing splines can be found to make the
-second-derivative less sensitive to random-errors.
+Thus, the second-derivative signal can be easily calculated from the spline
+fit. if desired, smoothing splines can be found to make the second-derivative
+less sensitive to random-errors.
 
-The savvy reader will have already noticed that the data samples are
-related to the knot coefficients via a convolution operator, so that
-simple convolution with the sampled B-spline function recovers the
-original data from the spline coefficients. The output of convolutions
-can change depending on how boundaries are handled (this becomes
-increasingly more important as the number of dimensions in the data-
-set increases). The algorithms relating to B-splines in the signal-
-processing sub package assume mirror-symmetric boundary conditions.
-Thus, spline coefficients are computed based on that assumption, and
-data-samples can be recovered exactly from the spline coefficients by
-assuming them to be mirror-symmetric also.
+The savvy reader will have already noticed that the data samples are related
+to the knot coefficients via a convolution operator, so that simple
+convolution with the sampled B-spline function recovers the original data from
+the spline coefficients. The output of convolutions can change depending on
+how boundaries are handled (this becomes increasingly more important as the
+number of dimensions in the data- set increases). The algorithms relating to
+B-splines in the signal- processing sub package assume mirror-symmetric
+boundary conditions. Thus, spline coefficients are computed based on that
+assumption, and data-samples can be recovered exactly from the spline
+coefficients by assuming them to be mirror-symmetric also.
 
-Currently the package provides functions for determining second- and
-third-order cubic spline coefficients from equally spaced samples in
-one- and two-dimensions (:func:`signal.qspline1d`,
-:func:`signal.qspline2d`, :func:`signal.cspline1d`,
-:func:`signal.cspline2d`). The package also supplies a function (
-:obj:`signal.bspline` ) for evaluating the bspline basis function,
-:math:`\beta^{o}\left(x\right)` for arbitrary order and :math:`x.` For
-large :math:`o` , the B-spline basis function can be approximated well
-by a zero-mean Gaussian function with standard-deviation equal to
-:math:`\sigma_{o}=\left(o+1\right)/12` :
+Currently the package provides functions for determining second- and third-
+order cubic spline coefficients from equally spaced samples in one- and two-
+dimensions (:func:`qspline1d`, :func:`qspline2d`, :func:`cspline1d`,
+:func:`cspline2d`). The package also supplies a function ( :func:`bspline` )
+for evaluating the bspline basis function, :math:`\beta^{o}\left(x\right)` for
+arbitrary order and :math:`x.` For large :math:`o` , the B-spline basis
+function can be approximated well by a zero-mean Gaussian function with
+standard-deviation equal to :math:`\sigma_{o}=\left(o+1\right)/12` :
 
 .. math::
-   :nowrap:
 
-    \[ \beta^{o}\left(x\right)\approx\frac{1}{\sqrt{2\pi\sigma_{o}^{2}}}\exp\left(-\frac{x^{2}}{2\sigma_{o}}\right).\]
+    \beta^{o}\left(x\right)\approx\frac{1}{\sqrt{2\pi\sigma_{o}^{2}}}\exp\left(-\frac{x^{2}}{2\sigma_{o}}\right).
 
-A function to compute this Gaussian for arbitrary :math:`x` and
-:math:`o` is also available ( :obj:`signal.gauss_spline` ). The
-following code and Figure uses spline-filtering to compute an
-edge-image (the second-derivative of a smoothed spline) of Lena's face
-which is an array returned by the command :func:`lena`. The command
-:obj:`signal.sepfir2d` was used to apply a separable two-dimensional
-FIR filter with mirror- symmetric boundary conditions to the spline
-coefficients. This function is ideally suited for reconstructing
-samples from spline coefficients and is faster than
-:obj:`signal.convolve2d` which convolves arbitrary two-dimensional
-filters and allows for choosing mirror-symmetric boundary conditions.
+A function to compute this Gaussian for arbitrary :math:`x` and :math:`o` is
+also available ( :func:`gauss_spline` ). The following code and Figure uses
+spline-filtering to compute an edge-image (the second-derivative of a smoothed
+spline) of Lena's face which is an array returned by the command :func:`misc.lena`.
+The command :func:`sepfir2d` was used to apply a separable two-dimensional FIR
+filter with mirror- symmetric boundary conditions to the spline coefficients.
+This function is ideally suited for reconstructing samples from spline
+coefficients and is faster than :func:`convolve2d` which convolves arbitrary
+two-dimensional filters and allows for choosing mirror-symmetric boundary
+conditions.
 
 .. plot::
 
-   >>> from numpy import *
+   >>> import numpy as np
    >>> from scipy import signal, misc
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.lena().astype(float32)
-   >>> derfilt = array([1.0,-2,1.0],float32)
-   >>> ck = signal.cspline2d(image,8.0)
-   >>> deriv = signal.sepfir2d(ck, derfilt, [1]) + \
-   >>>         signal.sepfir2d(ck, [1], derfilt)
+   >>> image = misc.lena().astype(np.float32)
+   >>> derfilt = np.array([1.0, -2, 1.0], dtype=np.float32)
+   >>> ck = signal.cspline2d(image, 8.0)
+   >>> deriv = (signal.sepfir2d(ck, derfilt, [1]) +
+   ...          signal.sepfir2d(ck, [1], derfilt))
 
    Alternatively we could have done::
 
-       laplacian = array([[0,1,0],[1,-4,1],[0,1,0]],float32)
+       laplacian = np.array([[0,1,0], [1,-4,1], [0,1,0]], dtype=np.float32)
        deriv2 = signal.convolve2d(ck,laplacian,mode='same',boundary='symm')
 
    >>> plt.figure()
@@ -192,9 +183,8 @@ integer :math:`n.` Full convolution of two one-dimensional signals can be
 expressed as
 
 .. math::
-   :nowrap:
 
-    \[ y\left[n\right]=\sum_{k=-\infty}^{\infty}x\left[k\right]h\left[n-k\right].\]
+    y\left[n\right]=\sum_{k=-\infty}^{\infty}x\left[k\right]h\left[n-k\right].
 
 This equation can only be implemented directly if we limit the
 sequences to finite support sequences that can be stored in a
@@ -205,9 +195,8 @@ that value for which :math:`x\left[n\right]=0` for all :math:`n>M+1` ,
 then the discrete convolution expression is
 
 .. math::
-   :nowrap:
 
-    \[ y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\right]h\left[n-k\right].\]
+    y\left[n\right]=\sum_{k=\max\left(n-M,0\right)}^{\min\left(n,K\right)}x\left[k\right]h\left[n-k\right].
 
 For convenience assume :math:`K\geq M.` Then, more explicitly the output of
 this operation is
@@ -222,33 +211,52 @@ Thus, the full discrete convolution of two finite sequences of lengths
 :math:`K+M+1=\left(K+1\right)+\left(M+1\right)-1.`
 
 One dimensional convolution is implemented in SciPy with the function
-``signal.convolve`` . This function takes as inputs the signals
-:math:`x,` :math:`h` , and an optional flag and returns the signal
-:math:`y.` The optional flag allows for specification of which part of
-the output signal to return. The default value of 'full' returns the
-entire signal. If the flag has a value of 'same' then only the middle
-:math:`K` values are returned starting at :math:`y\left[\left\lfloor
-\frac{M-1}{2}\right\rfloor \right]` so that the output has the same
-length as the largest input. If the flag has a value of 'valid' then
-only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1`
-output values are returned where :math:`z` depends on all of the
-values of the smallest input from :math:`h\left[0\right]` to
-:math:`h\left[M\right].` In other words only the values
-:math:`y\left[M\right]` to :math:`y\left[K\right]` inclusive are
-returned.
+:func:`convolve`. This function takes as inputs the signals :math:`x,`
+:math:`h` , and an optional flag and returns the signal :math:`y.` The
+optional flag allows for specification of which part of the output signal to
+return. The default value of 'full' returns the entire signal. If the flag has
+a value of 'same' then only the middle :math:`K` values are returned starting
+at :math:`y\left[\left\lfloor \frac{M-1}{2}\right\rfloor \right]` so that the
+output has the same length as the largest input. If the flag has a value of
+'valid' then only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1`
+output values are returned where :math:`z` depends on all of the values of the
+smallest input from :math:`h\left[0\right]` to :math:`h\left[M\right].` In
+other words only the values :math:`y\left[M\right]` to :math:`y\left[K\right]`
+inclusive are returned.
 
-This same function ``signal.convolve`` can actually take :math:`N`
--dimensional arrays as inputs and will return the :math:`N`
--dimensional convolution of the two arrays. The same input flags are
+The code below shows a simple example for convolution of 2 sequences
+
+>>> x = np.array([1.0, 2.0, 3.0])
+>>> h = np.array([0.0, 1.0, 0.0, 0.0, 0.0])
+>>> signal.convolve(x, h)
+[ 0.  1.  2.  3.  0.  0.  0.]
+>>> signal.convolve(x, h, 'same')
+[ 2.  3.  0.]
+
+
+This same function :func:`convolve` can actually take :math:`N` -dimensional
+arrays as inputs and will return the :math:`N` -dimensional convolution of the
+two arrays as is shown in the code example below. The same input flags are
 available for that case as well.
+
+
+>>> x = np.array([[1., 1., 0., 0.],[1., 1., 0., 0.],[0., 0., 0., 0.],[0., 0., 0., 0.]])
+>>> h = np.array([[1., 0., 0., 0.],[0., 0., 0., 0.],[0., 0., 1., 0.],[0., 0., 0., 0.]])
+>>> signal.convolve(x, h)
+[[ 1.  1.  0.  0.  0.  0.  0.]
+ [ 1.  1.  0.  0.  0.  0.  0.]
+ [ 0.  0.  1.  1.  0.  0.  0.]
+ [ 0.  0.  1.  1.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.]]
 
 Correlation is very similar to convolution except for the minus sign
 becomes a plus sign. Thus
 
 .. math::
-   :nowrap:
 
-    \[ w\left[n\right]=\sum_{k=-\infty}^{\infty}y\left[k\right]x\left[n+k\right]\]
+    w\left[n\right]=\sum_{k=-\infty}^{\infty}y\left[k\right]x\left[n+k\right]
 
 is the (cross) correlation of the signals :math:`y` and :math:`x.` For
 finite-length signals with :math:`y\left[n\right]=0` outside of the range
@@ -256,9 +264,8 @@ finite-length signals with :math:`y\left[n\right]=0` outside of the range
 :math:`\left[0,M\right],` the summation can simplify to
 
 .. math::
-   :nowrap:
 
-    \[ w\left[n\right]=\sum_{k=\max\left(0,-n\right)}^{\min\left(K,M-n\right)}y\left[k\right]x\left[n+k\right].\]
+    w\left[n\right]=\sum_{k=\max\left(0,-n\right)}^{\min\left(K,M-n\right)}y\left[k\right]x\left[n+k\right].
 
 Assuming again that :math:`K\geq M` this is
 
@@ -268,111 +275,324 @@ Assuming again that :math:`K\geq M` this is
     \begin{eqnarray*} w\left[-K\right] & = & y\left[K\right]x\left[0\right]\\ w\left[-K+1\right] & = & y\left[K-1\right]x\left[0\right]+y\left[K\right]x\left[1\right]\\ \vdots & \vdots & \vdots\\ w\left[M-K\right] & = & y\left[K-M\right]x\left[0\right]+y\left[K-M+1\right]x\left[1\right]+\cdots+y\left[K\right]x\left[M\right]\\ w\left[M-K+1\right] & = & y\left[K-M-1\right]x\left[0\right]+\cdots+y\left[K-1\right]x\left[M\right]\\ \vdots & \vdots & \vdots\\ w\left[-1\right] & = & y\left[1\right]x\left[0\right]+y\left[2\right]x\left[1\right]+\cdots+y\left[M+1\right]x\left[M\right]\\ w\left[0\right] & = & y\left[0\right]x\left[0\right]+y\left[1\right]x\left[1\right]+\cdots+y\left[M\right]x\left[M\right]\\ w\left[1\right] & = & y\left[0\right]x\left[1\right]+y\left[1\right]x\left[2\right]+\cdots+y\left[M-1\right]x\left[M\right]\\ w\left[2\right] & = & y\left[0\right]x\left[2\right]+y\left[1\right]x\left[3\right]+\cdots+y\left[M-2\right]x\left[M\right]\\ \vdots & \vdots & \vdots\\ w\left[M-1\right] & = & y\left[0\right]x\left[M-1\right]+y\left[1\right]x\left[M\right]\\ w\left[M\right] & = & y\left[0\right]x\left[M\right].\end{eqnarray*}
 
 
+The SciPy function :func:`correlate` implements this operation. Equivalent
+flags are available for this operation to return the full :math:`K+M+1` length
+sequence ('full') or a sequence with the same size as the largest sequence
+starting at :math:`w\left[-K+\left\lfloor \frac{M-1}{2}\right\rfloor \right]`
+('same') or a sequence where the values depend on all the values of the
+smallest sequence ('valid'). This final option returns the :math:`K-M+1`
+values :math:`w\left[M-K\right]` to :math:`w\left[0\right]` inclusive.
 
-The SciPy function ``signal.correlate`` implements this
-operation. Equivalent flags are available for this operation to return
-the full :math:`K+M+1` length sequence ('full') or a sequence with the
-same size as the largest sequence starting at
-:math:`w\left[-K+\left\lfloor \frac{M-1}{2}\right\rfloor \right]`
-('same') or a sequence where the values depend on all the values of
-the smallest sequence ('valid'). This final option returns the
-:math:`K-M+1` values :math:`w\left[M-K\right]` to
-:math:`w\left[0\right]` inclusive.
 
-The function :obj:`signal.correlate` can also take arbitrary :math:`N`
+
+The function :func:`correlate` can also take arbitrary :math:`N`
 -dimensional arrays as input and return the :math:`N` -dimensional
 convolution of the two arrays on output.
 
-When :math:`N=2,` :obj:`signal.correlate` and/or
-:obj:`signal.convolve` can be used to construct arbitrary image
-filters to perform actions such as blurring, enhancing, and
-edge-detection for an image.
+When :math:`N=2,` :func:`correlate` and/or :func:`convolve` can be used
+to construct arbitrary image filters to perform actions such as blurring,
+enhancing, and edge-detection for an image.
 
-Convolution is mainly used for filtering when one of the signals is
-much smaller than the other ( :math:`K\gg M` ), otherwise linear
-filtering is more easily accomplished in the frequency domain (see
-Fourier Transforms).
+
+
+.. plot::
+
+   >>> import numpy as np
+   >>> from scipy import signal, misc
+   >>> import matplotlib.pyplot as plt
+
+   >>> image = misc.lena()
+   >>> w = np.zeros((50, 50))
+   >>> w[0][0] = 1.0
+   >>> w[49][25] = 1.0
+   >>> image_new = signal.fftconvolve(image, w)
+
+   >>> plt.figure()
+   >>> plt.imshow(image)
+   >>> plt.gray()
+   >>> plt.title('Original image')
+   >>> plt.show()
+
+   >>> plt.figure()
+   >>> plt.imshow(image_new)
+   >>> plt.gray()
+   >>> plt.title('Filtered image')
+   >>> plt.show()
+
+
+Using :func:`convolve` in the above example would take quite long to run.
+Calculating the convolution in the time domain as above is mainly used for
+filtering when one of the signals is much smaller than the other ( :math:`K\gg
+M` ), otherwise linear filtering is more efficiently calculated in the
+frequency domain provided by the function :func:`fftconvolve`.
+
+If the filter function :math:`w[n,m]` can be factored according to
+
+.. math::
+
+  h[n, m] = h_1[n] h_2[m],
+
+convolution can be calculated by means of the function :func:`sepfir2d`. As an
+example we consider a Gaussian filter :func:`gaussian`
+
+.. math::
+
+  h[n, m] \propto e^{-x^2-y^2} = e^{-x^2} e^{-y^2}
+
+which is often used for blurring.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> from scipy import signal, misc
+   >>> import matplotlib.pyplot as plt
+
+   >>> image = misc.lena()
+   >>> w = signal.gaussian(50, 5.0)
+   >>> image_new = signal.sepfir2d(image, w, w)
+
+   >>> plt.figure()
+   >>> plt.imshow(image)
+   >>> plt.gray()
+   >>> plt.title('Original image')
+   >>> plt.show()
+
+   >>> plt.figure()
+   >>> plt.imshow(image_new)
+   >>> plt.gray()
+   >>> plt.title('Filtered image')
+   >>> plt.show()
+
 
 
 Difference-equation filtering
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A general class of linear one-dimensional filters (that includes
-convolution filters) are filters described by the difference equation
+A general class of linear one-dimensional filters (that includes convolution
+filters) are filters described by the difference equation
 
 .. math::
-   :nowrap:
 
-    \[ \sum_{k=0}^{N}a_{k}y\left[n-k\right]=\sum_{k=0}^{M}b_{k}x\left[n-k\right]\]
+    \sum_{k=0}^{N}a_{k}y\left[n-k\right]=\sum_{k=0}^{M}b_{k}x\left[n-k\right]
 
 where :math:`x\left[n\right]` is the input sequence and
-:math:`y\left[n\right]` is the output sequence. If we assume initial
-rest so that :math:`y\left[n\right]=0` for :math:`n<0` , then this
-kind of filter can be implemented using convolution.  However, the
-convolution filter sequence :math:`h\left[n\right]` could be infinite
-if :math:`a_{k}\neq0` for :math:`k\geq1.` In addition, this general
-class of linear filter allows initial conditions to be placed on
-:math:`y\left[n\right]` for :math:`n<0` resulting in a filter that
-cannot be expressed using convolution.
+:math:`y\left[n\right]` is the output sequence. If we assume initial rest so
+that :math:`y\left[n\right]=0` for :math:`n<0` , then this kind of filter can
+be implemented using convolution.  However, the convolution filter sequence
+:math:`h\left[n\right]` could be infinite if :math:`a_{k}\neq0` for
+:math:`k\geq1.` In addition, this general class of linear filter allows
+initial conditions to be placed on :math:`y\left[n\right]` for :math:`n<0`
+resulting in a filter that cannot be expressed using convolution.
 
 The difference equation filter can be thought of as finding
 :math:`y\left[n\right]` recursively in terms of it's previous values
 
 .. math::
-   :nowrap:
+    
+    a_{0}y\left[n\right]=-a_{1}y\left[n-1\right]-\cdots-a_{N}y\left[n-N\right]+\cdots+b_{0}x\left[n\right]+\cdots+b_{M}x\left[n-M\right].
 
-    \[ a_{0}y\left[n\right]=-a_{1}y\left[n-1\right]-\cdots-a_{N}y\left[n-N\right]+\cdots+b_{0}x\left[n\right]+\cdots+b_{M}x\left[n-M\right].\]
-
-Often :math:`a_{0}=1` is chosen for normalization. The implementation
-in SciPy of this general difference equation filter is a little more
-complicated then would be implied by the previous equation. It is
-implemented so that only one signal needs to be delayed. The actual
-implementation equations are (assuming :math:`a_{0}=1` ).
+Often :math:`a_{0}=1` is chosen for normalization. The implementation in SciPy
+of this general difference equation filter is a little more complicated then
+would be implied by the previous equation. It is implemented so that only one
+signal needs to be delayed. The actual implementation equations are (assuming
+:math:`a_{0}=1` ).
 
 .. math::
    :nowrap:
 
     \begin{eqnarray*} y\left[n\right] & = & b_{0}x\left[n\right]+z_{0}\left[n-1\right]\\ z_{0}\left[n\right] & = & b_{1}x\left[n\right]+z_{1}\left[n-1\right]-a_{1}y\left[n\right]\\ z_{1}\left[n\right] & = & b_{2}x\left[n\right]+z_{2}\left[n-1\right]-a_{2}y\left[n\right]\\ \vdots & \vdots & \vdots\\ z_{K-2}\left[n\right] & = & b_{K-1}x\left[n\right]+z_{K-1}\left[n-1\right]-a_{K-1}y\left[n\right]\\ z_{K-1}\left[n\right] & = & b_{K}x\left[n\right]-a_{K}y\left[n\right],\end{eqnarray*}
 
-where :math:`K=\max\left(N,M\right).` Note that :math:`b_{K}=0` if
-:math:`K>M` and :math:`a_{K}=0` if :math:`K>N.` In this way, the
-output at time :math:`n` depends only on the input at time :math:`n`
-and the value of :math:`z_{0}` at the previous time. This can always
-be calculated as long as the :math:`K` values
-:math:`z_{0}\left[n-1\right]\ldots z_{K-1}\left[n-1\right]` are
+where :math:`K=\max\left(N,M\right).` Note that :math:`b_{K}=0` if :math:`K>M`
+and :math:`a_{K}=0` if :math:`K>N.` In this way, the output at time :math:`n`
+depends only on the input at time :math:`n` and the value of :math:`z_{0}` at
+the previous time. This can always be calculated as long as the :math:`K`
+values :math:`z_{0}\left[n-1\right]\ldots z_{K-1}\left[n-1\right]` are
 computed and stored at each time step.
 
-The difference-equation filter is called using the command
-:obj:`signal.lfilter` in SciPy. This command takes as inputs the
-vector :math:`b,` the vector, :math:`a,` a signal :math:`x` and
-returns the vector :math:`y` (the same length as :math:`x` ) computed
-using the equation given above. If :math:`x` is :math:`N`
--dimensional, then the filter is computed along the axis provided. If,
-desired, initial conditions providing the values of
-:math:`z_{0}\left[-1\right]` to :math:`z_{K-1}\left[-1\right]` can be
-provided or else it will be assumed that they are all zero. If initial
-conditions are provided, then the final conditions on the intermediate
-variables are also returned. These could be used, for example, to
-restart the calculation in the same state.
+The difference-equation filter is called using the command :func:`lfilter` in
+SciPy. This command takes as inputs the vector :math:`b,` the vector,
+:math:`a,` a signal :math:`x` and returns the vector :math:`y` (the same
+length as :math:`x` ) computed using the equation given above. If :math:`x` is
+:math:`N` -dimensional, then the filter is computed along the axis provided.
+If, desired, initial conditions providing the values of
+:math:`z_{0}\left[-1\right]` to :math:`z_{K-1}\left[-1\right]` can be provided
+or else it will be assumed that they are all zero. If initial conditions are
+provided, then the final conditions on the intermediate variables are also
+returned. These could be used, for example, to restart the calculation in the
+same state.
 
-Sometimes it is more convenient to express the initial conditions in
-terms of the signals :math:`x\left[n\right]` and
-:math:`y\left[n\right].` In other words, perhaps you have the values
-of :math:`x\left[-M\right]` to :math:`x\left[-1\right]` and the values
-of :math:`y\left[-N\right]` to :math:`y\left[-1\right]` and would like
-to determine what values of :math:`z_{m}\left[-1\right]` should be
-delivered as initial conditions to the difference-equation filter. It
-is not difficult to show that for :math:`0\leq m<K,`
+Sometimes it is more convenient to express the initial conditions in terms of
+the signals :math:`x\left[n\right]` and :math:`y\left[n\right].` In other
+words, perhaps you have the values of :math:`x\left[-M\right]` to
+:math:`x\left[-1\right]` and the values of :math:`y\left[-N\right]` to
+:math:`y\left[-1\right]` and would like to determine what values of
+:math:`z_{m}\left[-1\right]` should be delivered as initial conditions to the
+difference-equation filter. It is not difficult to show that for :math:`0\leq
+m<K,`
 
 .. math::
-   :nowrap:
 
-    \[ z_{m}\left[n\right]=\sum_{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1}y\left[n-p\right]\right).\]
+    z_{m}\left[n\right]=\sum_{p=0}^{K-m-1}\left(b_{m+p+1}x\left[n-p\right]-a_{m+p+1}y\left[n-p\right]\right).
 
-Using this formula we can find the intial condition vector
+Using this formula we can find the initial condition vector
 :math:`z_{0}\left[-1\right]` to :math:`z_{K-1}\left[-1\right]` given initial
-conditions on :math:`y` (and :math:`x` ). The command :obj:`signal.lfiltic`
-performs this function.
+conditions on :math:`y` (and :math:`x` ). The command :func:`lfiltic` performs
+this function.
+
+As an example consider the following system:
+
+.. math::
+
+  y[n] = \frac{1}{2} x[n] + \frac{1}{4} x[n-1] + \frac{1}{3} y[n-1]
+
+The code calculates the signal :math:`y[n]` for a given signal :math:`x[n]`;
+first for initial condiditions :math:`y[-1] = 0` (default case), then for
+:math:`y[-1] = 2` by means of :func:`lfiltic`.
+
+>>> import numpy as np
+>>> from scipy import signal
+
+>>> x = np.array([1., 0., 0., 0.])
+>>> b = np.array([1.0/2, 1.0/4])
+>>> a = np.array([1.0, -1.0/3])
+>>> signal.lfilter(b, a, x)
+[ 0.5         0.41666667  0.13888889  0.0462963 ]
+>>> zi = signal.lfiltic(b, a, y=[2.])
+>>> signal.lfilter(b, a, x, zi=zi)
+[ 1.16666667,  0.63888889,  0.21296296,  0.07098765]
+
+Note that the output signal :math:`y[n]` has the same length as the length as
+the input signal :math:`x[n]`.
+
+
+Analysis of Linear Systems
+""""""""""""""""""""""""""
+
+Linear system described a linear difference equation can be fully described by
+the coefficient vectors a and b as was done above; an alternative
+representation is to provide a factor :math:`k`, :math:`N_z` zeros :math:`z_k`
+and :math:`N_p` poles :math:`p_k`, respectively, to describe the system by
+means of its transfer function :math:`H(z)` according to
+
+.. math::
+
+   H(z) = k \frac{ (z-z_1)(z-z_2)...(z-z_{N_z})}{ (z-p_1)(z-p_2)...(z-p_{N_p})}
+
+This alternative representation can be obtain wit hthe scipy function
+:func:`tf2zpk`; the inverse is provided by :func:`zpk2tf`.
+
+For the example from above we have
+
+>>> b = np.array([1.0/2, 1.0/4])
+>>> a = np.array([1.0, -1.0/3])
+>>> signal.tf2zpk(b, a)
+[-0.5] [ 0.33333333] 0.5
+
+i.e. the system has a zero at :math:`z=-1/2` and a pole at :math:`z=1/3`. 
+
+The scipy function :func:`freqz` allows calculation of the frequency response
+of a system described by the coeffcients :math:`a_k` and :math:`b_k`. See the
+help of the :func:`freqz` function of a comprehensive example.
+
+
+Filter Design
+^^^^^^^^^^^^^
+
+Time-discrete filters can be classified into finite response (FIR) filters and
+infinite response (IIR) filters. FIR filters provide a linear phase response,
+whereas IIR filters do not exhibit this behaviour. Scipy provides functions
+for designing both types of filters.
+
+FIR Filter
+""""""""""
+
+The function :func:`firwin` designs filters according to the window method.
+Depending on the provided arguments, the function returns different filter
+types (e.g. low-pass, band-pass...).
+
+The example below designs a low-pass and a band-stop filter, respectively.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> b1 = signal.firwin(40, 0.5)
+   >>> b2 = signal.firwin(41, [0.3, 0.8])
+   >>> w1, h1 = signal.freqz(b1)
+   >>> w2, h2 = signal.freqz(b2)
+
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.plot(w1, 20*np.log10(np.abs(h1)), 'b')
+   >>> plt.plot(w2, 20*np.log10(np.abs(h2)), 'r')
+   >>> plt.ylabel('Amplitude Response (dB)')
+   >>> plt.xlabel('Frequency (rad/sample)')
+   >>> plt.grid()
+   >>> plt.show()
+
+Note that :func:`firwin` uses per default a normalized frequency defined such
+that the value :math:`1` corresponds to the Nyquist frequency, whereas the
+function :func:`freqz` is defined such that the value :math:`\pi` corresponds
+to the Nyquist frequency.
+
+
+The function :func:`firwin2` allows design of almost arbitrary frequency
+responses by specifying an array of corner frequencies and corresponding
+gains, respectively.
+
+The example below designs a filter with such an arbitrary amplitude response.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> b = signal.firwin2(150, [0.0, 0.3, 0.6, 1.0], [1.0, 2.0, 0.5, 0.0])
+   >>> w, h = signal.freqz(b)
+
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.plot(w, np.abs(h))
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.ylabel('Amplitude Response')
+   >>> plt.xlabel('Frequency (rad/sample)')
+   >>> plt.grid()
+   >>> plt.show()
+
+Note the linear scaling of the y-axis and the different definition of the
+Nyquist frequency in :func:`firwin2` and :func:`freqz` (as explained above).
+
+
+IIR Filter
+""""""""""
+
+Scipy provides two functions to directly design IIR :func:`iirdesign` and
+:func:`iirfilter` where the filter type (e.g. elliptic) is passed as an
+argument and several more filter design functions for specific filter types;
+e.g. :func:`ellip`.
+
+The example below designs an elliptic low-pass filter with defined passband
+and stopband ripple, respectively. Note the much lower filter order (order 4)
+compared with the FIR filters from the examples above in order to reach the same 
+stop-band attenuation of :math:`\approx 60` dB.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> b, a = signal.iirfilter(4, Wn=0.2, rp=5, rs=60, btype='lowpass', ftype='ellip')
+   >>> w, h = signal.freqz(b, a)
+
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.plot(w, 20*np.log10(np.abs(h)))
+   >>> plt.title('Digital filter frequency response')
+   >>> plt.ylabel('Amplitude Response [dB]')
+   >>> plt.xlabel('Frequency (rad/sample)')
+   >>> plt.grid()
+   >>> plt.show()
 
 
 Other filters
@@ -384,59 +604,53 @@ The signal processing package provides many more filters as well.
 Median Filter
 """""""""""""
 
-A median filter is commonly applied when noise is markedly non-Gaussian
-or when it is desired to preserve edges. The median filter
-works by sorting all of the array pixel values in a rectangular region
-surrounding the point of interest. The sample median of this list of
-neighborhood pixel values is used as the value for the output array.
-The sample median is the middle array value in a sorted list of
-neighborhood values. If there are an even number of elements in the
-neighborhood, then the average of the middle two values is used as the
-median. A general purpose median filter that works on N-dimensional
-arrays is :obj:`signal.medfilt` . A specialized version that works
-only for two-dimensional arrays is available as
-:obj:`signal.medfilt2d` .
+A median filter is commonly applied when noise is markedly non-Gaussian or
+when it is desired to preserve edges. The median filter works by sorting all
+of the array pixel values in a rectangular region surrounding the point of
+interest. The sample median of this list of neighborhood pixel values is used
+as the value for the output array. The sample median is the middle array value
+in a sorted list of neighborhood values. If there are an even number of
+elements in the neighborhood, then the average of the middle two values is
+used as the median. A general purpose median filter that works on
+N-dimensional arrays is :func:`medfilt` . A specialized version that works
+only for two-dimensional arrays is available as :func:`medfilt2d` .
 
 
 Order Filter
 """"""""""""
 
-A median filter is a specific example of a more general class of
-filters called order filters. To compute the output at a particular
-pixel, all order filters use the array values in a region surrounding
-that pixel. These array values are sorted and then one of them is
-selected as the output value. For the median filter, the sample median
-of the list of array values is used as the output. A general order
-filter allows the user to select which of the sorted values will be
-used as the output. So, for example one could choose to pick the
-maximum in the list or the minimum. The order filter takes an
-additional argument besides the input array and the region mask that
-specifies which of the elements in the sorted list of neighbor array
-values should be used as the output. The command to perform an order
-filter is :obj:`signal.order_filter` .
+A median filter is a specific example of a more general class of filters
+called order filters. To compute the output at a particular pixel, all order
+filters use the array values in a region surrounding that pixel. These array
+values are sorted and then one of them is selected as the output value. For
+the median filter, the sample median of the list of array values is used as
+the output. A general order filter allows the user to select which of the
+sorted values will be used as the output. So, for example one could choose to
+pick the maximum in the list or the minimum. The order filter takes an
+additional argument besides the input array and the region mask that specifies
+which of the elements in the sorted list of neighbor array values should be
+used as the output. The command to perform an order filter is
+:func:`order_filter`.
 
 
 Wiener filter
 """""""""""""
 
-The Wiener filter is a simple deblurring filter for denoising images.
-This is not the Wiener filter commonly described in image
-reconstruction problems but instead it is a simple, local-mean filter.
-Let :math:`x` be the input signal, then the output is
-
-
+The Wiener filter is a simple deblurring filter for denoising images. This is
+not the Wiener filter commonly described in image reconstruction problems but
+instead it is a simple, local-mean filter. Let :math:`x` be the input signal,
+then the output is
 
 .. math::
-   :nowrap:
 
-    \[ y=\left\{ \begin{array}{cc} \frac{\sigma^{2}}{\sigma_{x}^{2}}m_{x}+\left(1-\frac{\sigma^{2}}{\sigma_{x}^{2}}\right)x & \sigma_{x}^{2}\geq\sigma^{2},\\ m_{x} & \sigma_{x}^{2}<\sigma^{2},\end{array}\right.\]
+    y=\left\{ \begin{array}{cc} \frac{\sigma^{2}}{\sigma_{x}^{2}}m_{x}+\left(1-\frac{\sigma^{2}}{\sigma_{x}^{2}}\right)x & \sigma_{x}^{2}\geq\sigma^{2},\\ m_{x} & \sigma_{x}^{2}<\sigma^{2},\end{array}\right.
 
 where :math:`m_{x}` is the local estimate of the mean and
-:math:`\sigma_{x}^{2}` is the local estimate of the variance. The
-window for these estimates is an optional input parameter (default is
-:math:`3\times3` ). The parameter :math:`\sigma^{2}` is a threshold
-noise parameter. If :math:`\sigma` is not given then it is estimated
-as the average of the local variances.
+:math:`\sigma_{x}^{2}` is the local estimate of the variance. The window for
+these estimates is an optional input parameter (default is :math:`3\times3` ).
+The parameter :math:`\sigma^{2}` is a threshold noise parameter. If
+:math:`\sigma` is not given then it is estimated as the average of the local
+variances.
 
 
 Hilbert filter
@@ -449,53 +663,164 @@ edges) :math:`y=\exp\left(j\omega n\right).` In the frequency domain,
 the hilbert transform performs
 
 .. math::
-   :nowrap:
 
-    \[ Y=X\cdot H\]
+    Y=X\cdot H
 
 where :math:`H` is 2 for positive frequencies, :math:`0` for negative
 frequencies and :math:`1` for zero-frequencies.
 
 
-Least-Squares Spectral Analysis
--------------------------------
+Analog Filter Design
+^^^^^^^^^^^^^^^^^^^^
 
-Least-squares spectral analysis (LSSA) is a method of estimating a frequency
-spectrum, based on a least squares fit of sinusoids to data samples, similar to
-Fourier analysis. Fourier analysis, the most used spectral method in science,
-generally boosts long-periodic noise in long gapped records; LSSA mitigates
-such problems.
+The functions :func:`iirdesign`, :func:`iirfilter`, and the filter design
+functions for specific filter types (e.g. :func:`ellip`) all have a flag
+`analog` which allows design of analog filters as well.
+
+The example below designs an analog (IIR) filter, obtains via :func:`tf2zpk`
+the poles and zeros and plots them in the complex s-plane. The zeros at
+:math:`\omega \approx 150` and :math:`\omega \approx 300` can be clearly seen
+in the amplitude response.
+
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> b, a = signal.iirdesign(wp=100, ws=200, gpass=2.0, gstop=40., analog=True)
+   >>> w, h = signal.freqs(b, a)
+
+   >>> plt.title('Analog filter frequency response')
+   >>> plt.plot(w, 20*np.log10(np.abs(h)))
+   >>> plt.ylabel('Amplitude Response [dB]')
+   >>> plt.xlabel('Frequency')
+   >>> plt.grid()
+   >>> plt.show()
+
+
+   >>> z, p, k = signal.tf2zpk(b, a)
+
+   >>> plt.plot(np.real(z), np.imag(z), 'xb')
+   >>> plt.plot(np.real(p), np.imag(p), 'or')
+   >>> plt.legend(['Zeros', 'Poles'], loc=2)
+
+   >>> plt.title('Pole / Zero Plot')
+   >>> plt.ylabel('Real')
+   >>> plt.xlabel('Imaginary')
+   >>> plt.grid()
+   >>> plt.show()
+
+
+
+Spectral Analysis
+------------------
+
+Periodogram Measurements
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The scipy function :func:`periodogram` provides a method to estimate the
+spectral density using the periodogram method.
+
+The example below calculates the periodogram of a sine signal in white
+Gaussian noise.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> fs = 10e3
+   >>> N = 1e5
+   >>> amp = 2*np.sqrt(2)
+   >>> freq = 1270.0
+   >>> noise_power = 0.001 * fs / 2
+   >>> time = np.arange(N) / fs
+   >>> x = amp*np.sin(2*np.pi*freq*time)
+   >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+
+   >>> f, Pper_spec = signal.periodogram(x, fs, 'flattop', scaling='spectrum')
+
+   >>> plt.semilogy(f, Pper_spec)
+   >>> plt.xlabel('frequency [Hz]')
+   >>> plt.ylabel('PSD')
+   >>> plt.grid()
+   >>> plt.show()
+
+
+
+Spectral Analysis using Welch's Method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An improved method, especially with respect to noise immunity, is Welch's
+method which is implemented by the scipy function :func:`welch`.
+
+The example below estimates the spectrum using Welch's method and uses the
+same parameters as the example above. Note the much smoother noise floor of
+the spectogram.
+
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> fs = 10e3
+   >>> N = 1e5
+   >>> amp = 2*np.sqrt(2)
+   >>> freq = 1270.0
+   >>> noise_power = 0.001 * fs / 2
+   >>> time = np.arange(N) / fs
+   >>> x = amp*np.sin(2*np.pi*freq*time)
+   >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+
+   >>> f, Pwelch_spec = signal.welch(x, fs, scaling='spectrum')
+
+   >>> plt.semilogy(f, Pwelch_spec)
+   >>> plt.xlabel('frequency [Hz]')
+   >>> plt.ylabel('PSD')
+   >>> plt.grid()
+   >>> plt.show()
 
 
 Lomb-Scargle Periodograms (:func:`lombscargle`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Least-squares spectral analysis (LSSA) is a method of estimating a frequency
+spectrum, based on a least squares fit of sinusoids to data samples, similar
+to Fourier analysis. Fourier analysis, the most used spectral method in
+science, generally boosts long-periodic noise in long gapped records; LSSA
+mitigates such problems.
+
+
 The Lomb-Scargle method performs spectral analysis on unevenly sampled data and
 is known to be a powerful way to find, and test the significance of, weak
 periodic signals.
 
-For a time series comprising :math:`N_{t}` measurements
-:math:`X_{j}\equiv X(t_{j})` sampled at times :math:`t_{j}` where
-:math:`(j = 1, \ldots, N_{t})`, assumed to have been scaled and shifted
-such that its mean is zero and its variance is unity, the normalized
-Lomb-Scargle periodogram at frequency :math:`f` is
+For a time series comprising :math:`N_{t}` measurements :math:`X_{j}\equiv
+X(t_{j})` sampled at times :math:`t_{j}` where :math:`(j = 1, \ldots, N_{t})`,
+assumed to have been scaled and shifted such that its mean is zero and its
+variance is unity, the normalized Lomb-Scargle periodogram at frequency
+:math:`f` is
 
 .. math::
 
     P_{n}(f) \frac{1}{2}\left\{\frac{\left[\sum_{j}^{N_{t}}X_{j}\cos\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\cos^{2}\omega(t_{j}-\tau)}+\frac{\left[\sum_{j}^{N_{t}}X_{j}\sin\omega(t_{j}-\tau)\right]^{2}}{\sum_{j}^{N_{t}}\sin^{2}\omega(t_{j}-\tau)}\right\}.
 
-Here, :math:`\omega \equiv 2\pi f` is the angular frequency.
-The frequency dependent time offset :math:`\tau` is given by
+Here, :math:`\omega \equiv 2\pi f` is the angular frequency. The frequency
+dependent time offset :math:`\tau` is given by
 
 .. math::
 
     \tan 2\omega\tau = \frac{\sum_{j}^{N_{t}}\sin 2\omega t_{j}}{\sum_{j}^{N_{t}}\cos 2\omega t_{j}}.
 
-The :func:`~scipy.signal.lombscargle` function
-calculates the periodogram using a slightly
-modified algorithm due to Townsend [3]_ which allows the
-periodogram to be calculated using only a single pass through
-the input arrays for each frequency.
+The :func:`lombscargle` function calculates the periodogram using a slightly
+modified algorithm due to Townsend [3]_ which allows the periodogram to be
+calculated using only a single pass through the input arrays for each
+frequency.
 
 The equation is refactored as:
 
@@ -525,15 +850,41 @@ while the sums are
     SS &= \sum_{j}^{N_{t}} \sin^{2}\omega t_{j}\\
     CS &= \sum_{j}^{N_{t}} \cos\omega t_{j}\sin\omega t_{j}.
 
-This requires :math:`N_{f}(2N_{t}+3)` trigonometric function
-evaluations giving a factor of :math:`\sim 2` speed increase over the
-straightforward implementation.
+This requires :math:`N_{f}(2N_{t}+3)` trigonometric function evaluations
+giving a factor of :math:`\sim 2` speed increase over the straightforward
+implementation.
 
 
-.. XXX: TODO
-..
-.. Detrend
-.. """""""
+Detrend
+-------
+
+Scipy provides the function :func:`detrend` to remove a constant or linear
+trend in a data series in order to see effect of higher order.
+
+The example below removes the constant and linear trend of a 2-nd order
+polynomial time series and plots the remaining signal components.
+
+.. plot::
+
+   >>> import numpy as np
+   >>> import scipy.signal as signal
+   >>> import matplotlib.pyplot as plt
+
+   >>> t = np.linspace(-10, 10, 20)
+   >>> y = 1 + t + 0.01*t**2
+   >>> yconst = signal.detrend(y, type='constant')
+   >>> ylin = signal.detrend(y, type='linear')
+
+   >>> plt.plot(t, y, '-rx')
+   >>> plt.plot(t, yconst, '-bo')
+   >>> plt.plot(t, ylin, '-k+')
+   >>> plt.grid()
+   >>> plt.legend(['signal', 'const. detrend', 'linear detrend'])
+   >>> plt.show()
+
+
+
+
 ..
 .. Filter design
 .. -------------

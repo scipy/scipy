@@ -42,18 +42,15 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
-import sys
-import warnings
 
 from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, csc_matrix, csr_matrix, \
-    isspmatrix, isspmatrix_csr
+from scipy.sparse import eye, isspmatrix, isspmatrix_csr
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
-from scipy.linalg.lapack import get_lapack_funcs
+from scipy._lib._util import _aligned_zeros
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -80,9 +77,9 @@ DNAUPD_ERRORS = {
     -8: "Error return from LAPACK eigenvalue calculation;",
     -9: "Starting vector is zero.",
     -10: "IPARAM(7) must be 1,2,3,4.",
-    -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatable.",
+    -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatible.",
     -12: "IPARAM(1) must be equal to 0 or 1.",
-    -13: "NEV and WHICH = 'BE' are incompatable.",
+    -13: "NEV and WHICH = 'BE' are incompatible.",
     -9999: "Could not build an Arnoldi factorization. "
            "IPARAM(5) returns the size of the current Arnoldi "
            "factorization. The user is advised to check that "
@@ -117,9 +114,9 @@ DSAUPD_ERRORS = {
         "Informational error from LAPACK routine dsteqr .",
     -9: "Starting vector is zero.",
     -10: "IPARAM(7) must be 1,2,3,4,5.",
-    -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatable.",
+    -11: "IPARAM(7) = 1 and BMAT = 'G' are incompatible.",
     -12: "IPARAM(1) must be equal to 0 or 1.",
-    -13: "NEV and WHICH = 'BE' are incompatable. ",
+    -13: "NEV and WHICH = 'BE' are incompatible. ",
     -9999: "Could not build an Arnoldi factorization. "
            "IPARAM(5) returns the size of the current Arnoldi "
            "factorization. The user is advised to check that "
@@ -319,6 +316,7 @@ class _ArpackParams(object):
             self.resid = np.array(v0, copy=True)
             info = 1
         else:
+            # ARPACK will use a random initial vector.
             self.resid = np.zeros(n, tp)
             info = 0
 
@@ -500,7 +498,7 @@ class _SymmetricArpackParams(_ArpackParams):
             raise ValueError("which must be one of %s"
                              % ' '.join(_SEUPD_WHICH))
         if k >= n:
-            raise ValueError("k must be less than rank(A), k=%d" % k)
+            raise ValueError("k must be less than ndim(A), k=%d" % k)
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -508,8 +506,9 @@ class _SymmetricArpackParams(_ArpackParams):
         if self.ncv > n or self.ncv <= k:
             raise ValueError("ncv must be k<ncv<=n, ncv=%s" % self.ncv)
 
-        self.workd = np.zeros(3 * n, self.tp)
-        self.workl = np.zeros(self.ncv * (self.ncv + 8), self.tp)
+        # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
+        self.workd = _aligned_zeros(3 * n, self.tp)
+        self.workl = _aligned_zeros(self.ncv * (self.ncv + 8), self.tp)
 
         ltr = _type_conv[self.tp]
         if ltr not in ["s", "d"]:
@@ -682,7 +681,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             raise ValueError("Parameter which must be one of %s"
                              % ' '.join(_NEUPD_WHICH))
         if k >= n - 1:
-            raise ValueError("k must be less than rank(A)-1, k=%d" % k)
+            raise ValueError("k must be less than ndim(A)-1, k=%d" % k)
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -690,8 +689,9 @@ class _UnsymmetricArpackParams(_ArpackParams):
         if self.ncv > n or self.ncv <= k + 1:
             raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
 
-        self.workd = np.zeros(3 * n, self.tp)
-        self.workl = np.zeros(3 * self.ncv * (self.ncv + 2), self.tp)
+        # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
+        self.workd = _aligned_zeros(3 * n, self.tp)
+        self.workl = _aligned_zeros(3 * self.ncv * (self.ncv + 2), self.tp)
 
         ltr = _type_conv[self.tp]
         self._arpack_solver = _arpack.__dict__[ltr + 'naupd']
@@ -703,7 +703,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.ipntr = np.zeros(14, "int")
 
         if self.tp in 'FD':
-            self.rwork = np.zeros(self.ncv, self.tp.lower())
+            # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
+            self.rwork = _aligned_zeros(self.ncv, self.tp.lower())
         else:
             self.rwork = None
 
@@ -896,12 +897,13 @@ class SpLuInv(LinearOperator):
     """
     def __init__(self, M):
         self.M_lu = splu(M)
-        LinearOperator.__init__(self, M.shape, self._matvec, dtype=M.dtype)
+        LinearOperator.__init__(self, M.shape, None, dtype=M.dtype)
         self.isreal = not np.issubdtype(self.dtype, np.complexfloating)
 
-    def _matvec(self, x):
+    def matvec(self, x):
         # careful here: splu.solve will throw away imaginary
         # part of x if M is real
+        x = np.asarray(x)
         if self.isreal and np.issubdtype(x.dtype, np.complexfloating):
             return (self.M_lu.solve(np.real(x).astype(self.dtype))
                     + 1j * self.M_lu.solve(np.imag(x).astype(self.dtype)))
@@ -917,9 +919,9 @@ class LuInv(LinearOperator):
     """
     def __init__(self, M):
         self.M_lu = lu_factor(M)
-        LinearOperator.__init__(self, M.shape, self._matvec, dtype=M.dtype)
+        LinearOperator.__init__(self, M.shape, None, dtype=M.dtype)
 
-    def _matvec(self, x):
+    def matvec(self, x):
         return lu_solve(self.M_lu, x)
 
 
@@ -942,9 +944,9 @@ class IterInv(LinearOperator):
         else:
             x = np.zeros(M.shape[1])
             dtype = (M * x).dtype
-        LinearOperator.__init__(self, M.shape, self._matvec, dtype=dtype)
+        LinearOperator.__init__(self, M.shape, None, dtype=dtype)
 
-    def _matvec(self, x):
+    def matvec(self, x):
         b, info = self.ifunc(self.M, x, tol=self.tol)
         if info != 0:
             raise ValueError("Error in inverting M: function "
@@ -970,26 +972,26 @@ class IterOpInv(LinearOperator):
         self.ifunc = ifunc
         self.tol = tol
 
+        def mult_func(x):
+            return A.matvec(x) - sigma * M.matvec(x)
+
+        def mult_func_M_None(x):
+            return A.matvec(x) - sigma * x
+
         x = np.zeros(A.shape[1])
         if M is None:
-            dtype = self.mult_func_M_None(x).dtype
+            dtype = mult_func_M_None(x).dtype
             self.OP = LinearOperator(self.A.shape,
-                                     self.mult_func_M_None,
+                                     mult_func_M_None,
                                      dtype=dtype)
         else:
-            dtype = self.mult_func(x).dtype
+            dtype = mult_func(x).dtype
             self.OP = LinearOperator(self.A.shape,
-                                     self.mult_func,
+                                     mult_func,
                                      dtype=dtype)
-        LinearOperator.__init__(self, A.shape, self._matvec, dtype=dtype)
+        LinearOperator.__init__(self, A.shape, None, dtype=dtype)
 
-    def mult_func(self, x):
-        return self.A.matvec(x) - self.sigma * self.M.matvec(x)
-
-    def mult_func_M_None(self, x):
-        return self.A.matvec(x) - self.sigma * x
-
-    def _matvec(self, x):
+    def matvec(self, x):
         b, info = self.ifunc(self.OP, x, tol=self.tol)
         if info != 0:
             raise ValueError("Error in inverting [A-sigma*M]: function "
@@ -1017,7 +1019,7 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
         #M is the identity matrix
         if isdense(A):
             if (np.issubdtype(A.dtype, np.complexfloating)
-                or np.imag(sigma) == 0):
+                    or np.imag(sigma) == 0):
                 A = np.copy(A)
             else:
                 A = A + 0j
@@ -1033,7 +1035,7 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
                               M, sigma, tol=tol).matvec
     else:
         if ((not isdense(A) and not isspmatrix(A)) or
-            (not isdense(M) and not isspmatrix(M))):
+                (not isdense(M) and not isspmatrix(M))):
             return IterOpInv(_aslinearoperator_with_dtype(A),
                               _aslinearoperator_with_dtype(M),
                               sigma, tol=tol).matvec
@@ -1071,7 +1073,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     M : ndarray, sparse matrix or LinearOperator, optional
         An array, sparse matrix, or LinearOperator representing
         the operation M*x for the generalized eigenvalue problem
-          ``A * x = w * M * x``.
+
+            A * x = w * M * x.
+
         M must represent a real, symmetric matrix if A is real, and must
         represent a complex, hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
@@ -1111,9 +1115,11 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     v0 : ndarray, optional
         Starting vector for iteration.
+        Default: random
     ncv : int, optional
         The number of Lanczos vectors generated
         `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
+        Default: ``min(n, 2*k + 1)``
     which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI'], optional
         Which `k` eigenvectors and eigenvalues to find:
 
@@ -1135,6 +1141,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         desired, consider using shift-invert mode for better performance.
     maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed
+        Default: ``n*10``
     tol : float, optional
         Relative accuracy for eigenvalues (stopping criterion)
         The default value of 0 implies machine precision.
@@ -1185,8 +1192,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     Find 6 eigenvectors of the identity matrix:
 
+    >>> import scipy.sparse as sparse
     >>> id = np.eye(13)
-    >>> vals, vecs = sp.sparse.linalg.eigs(id, k=6)
+    >>> vals, vecs = sparse.linalg.eigs(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
     >>> vecs.shape
@@ -1206,7 +1214,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0 or k >= n:
-        raise ValueError("k=%d must be between 1 and rank(A)-1=%d"
+        raise ValueError("k=%d must be between 1 and ndim(A)-1=%d"
                          % (k, n - 1))
 
     if sigma is None:
@@ -1295,7 +1303,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     A : An N x N matrix, array, sparse matrix, or LinearOperator representing
         the operation A * x, where A is a real symmetric matrix
         For buckling mode (see below) A must additionally be positive-definite
-    k : integer
+    k : int
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
         eigenvectors of a matrix.
@@ -1305,14 +1313,16 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     w : array
         Array of k eigenvalues
     v : array
-       An array of k eigenvectors
-       The v[i] is the eigenvector corresponding to the eigenvector w[i]
+        An array representing the `k` eigenvectors.  The column ``v[:, i]`` is
+        the eigenvector corresponding to the eigenvalue ``w[i]``.
 
     Other Parameters
     ----------------
     M : An N x N matrix, array, sparse matrix, or linear operator representing
         the operation M * x for the generalized eigenvalue problem
-          ``A * x = w * M * x``.
+
+            A * x = w * M * x.
+
         M must represent a real, symmetric matrix if A is real, and must
         represent a complex, hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
@@ -1349,11 +1359,13 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             if mode == 'buckling', ``w'[i] = w[i] / (w[i] - sigma)``.
 
         (see further discussion in 'mode' below)
-    v0 : ndarray
+    v0 : ndarray, optional
         Starting vector for iteration.
-    ncv : int
+        Default: random
+    ncv : int, optional
         The number of Lanczos vectors generated ncv must be greater than k and
         smaller than n; it is recommended that ``ncv > 2*k``.
+        Default: ``min(n, 2*k + 1)``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
         If A is a complex hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
@@ -1373,8 +1385,9 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (see discussion in 'sigma', above).  ARPACK is generally better
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
-    maxiter : int
+    maxiter : int, optional
         Maximum number of Arnoldi update iterations allowed
+        Default: ``n*10``
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
@@ -1442,8 +1455,9 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Examples
     --------
+    >>> import scipy.sparse as sparse
     >>> id = np.eye(13)
-    >>> vals, vecs = sp.sparse.linalg.eigsh(id, k=6)
+    >>> vals, vecs = sparse.linalg.eigsh(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
     >>> vecs.shape
@@ -1484,7 +1498,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0 or k >= n:
-        raise ValueError("k must be between 1 and rank(A)-1")
+        raise ValueError("k must be between 1 and the order of the "
+                         "square input matrix.")
 
     if sigma is None:
         A = _aslinearoperator_with_dtype(A)
@@ -1570,20 +1585,53 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     return params.extract(return_eigenvectors)
 
 
+def _augmented_orthonormal_cols(x, k):
+    # extract the shape of the x array
+    n, m = x.shape
+    # create the expanded array and copy x into it
+    y = np.empty((n, m+k), dtype=x.dtype)
+    y[:, :m] = x
+    # do some modified gram schmidt to add k random orthonormal vectors
+    for i in range(k):
+        # sample a random initial vector
+        v = np.random.randn(n)
+        if np.iscomplexobj(x):
+            v = v + 1j*np.random.randn(n)
+        # subtract projections onto the existing unit length vectors
+        for j in range(m+i):
+            u = y[:, j]
+            v -= (np.dot(v, u.conj()) / np.dot(u, u.conj())) * u
+        # normalize v
+        v /= np.sqrt(np.dot(v, v.conj()))
+        # add v into the output array
+        y[:, m+i] = v
+    # return the expanded array
+    return y
+
+
+def _augmented_orthonormal_rows(x, k):
+    return _augmented_orthonormal_cols(x.T, k).T
+
+
+def _herm(x):
+    return x.T.conj()
+
+
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True):
     """Compute the largest k singular values/vectors for a sparse matrix.
 
     Parameters
     ----------
-    A : sparse matrix
+    A : {sparse matrix, LinearOperator}
         Array to compute the SVD on, of shape (M, N)
     k : int, optional
         Number of singular values and vectors to compute.
-    ncv : integer, optional
+    ncv : int, optional
         The number of Lanczos vectors generated
         ncv must be greater than k+1 and smaller than n;
         it is recommended that ncv > 2*k
+        Default: ``min(n, 2*k + 1)``
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
     which : str, ['LM' | 'SM'], optional
@@ -1597,9 +1645,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Starting vector for iteration, of length min(A.shape). Should be an
         (approximate) right singular vector if N > M and a right singular vector
         otherwise.
+        Default: random
 
         .. versionadded:: 0.12.0
-    maxiter: integer, optional
+    maxiter: int, optional
         Maximum number of iterations.
 
         .. versionadded:: 0.12.0
@@ -1607,6 +1656,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Return singular vectors (True) in addition to singular values
 
         .. versionadded:: 0.12.0
+
     Returns
     -------
     u : ndarray, shape=(M, k)
@@ -1621,48 +1671,98 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     This is a naive implementation using ARPACK as an eigensolver
     on A.H * A or A * A.H, depending on which one is more efficient.
     """
-    if not (isinstance(A, np.ndarray) or isspmatrix(A)):
+    if not (isinstance(A, LinearOperator) or isspmatrix(A)):
         A = np.asarray(A)
 
     n, m = A.shape
 
-    if np.issubdtype(A.dtype, np.complexfloating):
-        herm = lambda x: x.T.conjugate()
-        eigensolver = eigs
-    else:
-        herm = lambda x: x.T
-        eigensolver = eigsh
+    if isinstance(A, LinearOperator):
+        if n > m:
+            X_dot = A.matvec
+            X_matmat = A.matmat
+            XH_dot = A.rmatvec
+        else:
+            X_dot = A.rmatvec
+            XH_dot = A.matvec
 
-    if n > m:
-        X = A
-        XH = herm(A)
+            dtype = getattr(A, 'dtype', None)
+            if dtype is None:
+                dtype = A.dot(np.zeros([m,1])).dtype
+
+            # A^H * V; works around lack of LinearOperator.adjoint.
+            # XXX This can be slow!
+            def X_matmat(V):
+                out = np.empty((V.shape[1], m), dtype=dtype)
+                for i, col in enumerate(V.T):
+                    out[i, :] = A.rmatvec(col.reshape(-1, 1)).T
+                return out.T
+
     else:
-        XH = A
-        X = herm(A)
+        if n > m:
+            X_dot = X_matmat = A.dot
+            XH_dot = _herm(A).dot
+        else:
+            XH_dot = A.dot
+            X_dot = X_matmat = _herm(A).dot
 
     def matvec_XH_X(x):
-        return XH.dot(X.dot(x))
+        return XH_dot(X_dot(x))
 
-    XH_X = LinearOperator(matvec=matvec_XH_X, dtype=X.dtype,
-                          shape=(X.shape[1], X.shape[1]))
+    XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
+                          shape=(min(A.shape), min(A.shape)))
 
-    if return_singular_vectors:
-        eigvals, eigvec = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                                      ncv=ncv, which=which, v0=v0)
-        s = np.sqrt(eigvals)
+    # Get a low rank approximation of the implicitly defined gramian matrix.
+    # This is not a stable way to approach the problem.
+    eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+                                  ncv=ncv, which=which, v0=v0)
+
+    # In 'LM' mode try to be clever about small eigenvalues.
+    # Otherwise in 'SM' mode do not try to be clever.
+    if which == 'LM':
+
+        # Gramian matrices have real non-negative eigenvalues.
+        eigvals = np.maximum(eigvals.real, 0)
+
+        # Use the sophisticated detection of small eigenvalues from pinvh.
+        t = eigvec.dtype.char.lower()
+        factor = {'f': 1E3, 'd': 1E6}
+        cond = factor[t] * np.finfo(t).eps
+        cutoff = cond * np.max(eigvals)
+
+        # Get a mask indicating which eigenpairs are not degenerately tiny,
+        # and create the re-ordered array of thresholded singular values.
+        above_cutoff = (eigvals > cutoff)
+        nlarge = above_cutoff.sum()
+        nsmall = k - nlarge
+        slarge = np.sqrt(eigvals[above_cutoff])
+        s = np.zeros_like(eigvals)
+        s[:nlarge] = slarge
+        if not return_singular_vectors:
+            return s
+
+        if n > m:
+            vlarge = eigvec[:, above_cutoff]
+            ularge = X_matmat(vlarge) / slarge
+            vhlarge = _herm(vlarge)
+        else:
+            ularge = eigvec[:, above_cutoff]
+            vhlarge = _herm(X_matmat(ularge) / slarge)
+
+        u = _augmented_orthonormal_cols(ularge, nsmall)
+        vh = _augmented_orthonormal_rows(vhlarge, nsmall)
+
     else:
-        eigvals = eigensolver(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                              ncv=ncv, which=which, v0=v0,
-                              return_eigenvectors=False)
-        s = np.sqrt(eigvals)
-        return s
 
-    if n > m:
-        v = eigvec
-        u = X.dot(v) / s
-        vh = herm(v)
-    else:
-        u = eigvec
-        vh = herm(X.dot(u) / s)
+        s = np.sqrt(eigvals)
+        if not return_singular_vectors:
+            return s
+
+        if n > m:
+            v = eigvec
+            u = X_matmat(v) / s
+            vh = _herm(v)
+        else:
+            u = eigvec
+            vh = _herm(X_matmat(u) / s)
 
     return u, s, vh

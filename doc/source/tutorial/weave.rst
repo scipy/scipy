@@ -331,7 +331,7 @@ suppress the first time the code executes::
 Nothing bad is happening, its just a bit annoying. * Anyone know how to turn
 this off?*
 
-This example also demonstrates using 'raw strings'. The ``r`` preceeding the
+This example also demonstrates using 'raw strings'. The ``r`` preceding the
 code string in the last example denotes that this is a 'raw string'. In raw
 strings, the backslash character is not interpreted as an escape character,
 and so it isn't necessary to use a double backslash to indicate that the '\n'
@@ -438,7 +438,7 @@ This Python version works for arbitrary Python data types. The C version
 below is specialized to handle integer values. There is a little type
 checking done in Python to assure that we're working with the correct data
 types before heading into C. The variables ``seq`` and ``t`` don't need to be
-declared beacuse ``weave`` handles converting and declaring them in the C
+declared because ``weave`` handles converting and declaring them in the C
 code. All other temporary variables such as ``min, max``, etc. must be
 declared -- it is C after all. Here's the new mixed Python/C function::
 
@@ -660,7 +660,7 @@ And the following is a inline C version of the same function::
 
 
 This example uses blitz++ arrays instead of the standard representation of
-NumPy arrays so that indexing is simplier to write. This is accomplished by
+NumPy arrays so that indexing is simpler to write. This is accomplished by
 passing in the blitz++ "type factories" to override the standard Python to
 C++ type conversions. Blitz++ arrays allow you to write clean, fast code, but
 they also are sloooow to compile (20 seconds or more for this snippet). This
@@ -885,11 +885,11 @@ Microsoft VC++ installed.
 When ``inline`` is first run, you'll notice that pause and some trash printed
 to the screen. The "trash" is actually part of the compiler's output that
 distutils does not supress. The name of the extension file,
-``sc_bighonkingnumber.cpp``, is generated from the md5 check sum of the C/C++
-code fragment. On Unix or windows machines with only gcc installed, the trash
-will not appear. On the second call, the code fragment is not compiled since
-it already exists, and only the answer is returned. Now kill the interpreter
-and restart, and run the same code with a different string.
+``sc_bighonkingnumber.cpp``, is generated from the SHA-256 check sum of the
+C/C++ code fragment. On Unix or windows machines with only gcc installed, the
+trash will not appear. On the second call, the code fragment is not compiled
+since it already exists, and only the answer is returned. Now kill the
+interpreter and restart, and run the same code with a different string.
 
 ::
 
@@ -924,7 +924,7 @@ example from above::
         21
 
 
-Everytime, the ``code`` is changed, ``inline`` does a recompile. However,
+Every time the ``code`` is changed, ``inline`` does a recompile. However,
 changing any of the other options in inline does not force a recompile. The
 ``force`` option was added so that one could force a recompile when tinkering
 with other variables. In practice, it is just as easy to change the ``code``
@@ -1141,7 +1141,7 @@ confirm or correct this? Another thing I'd like to know is whether there is a
 way to write to the local namespace of another stack frame from C/C++. If so,
 it would be possible to have some clean up code in compiled functions that
 wrote final values of variables in C++ back to the correct Python stack
-frame. I think this goes a long way toward making ``inline`` truely live up
+frame. I think this goes a long way toward making ``inline`` truly live up
 to its name. I don't think we'll get to the point of creating variables in
 Python for variables created in C -- although I suppose with a C/C++ parser
 you could do that also.
@@ -1151,8 +1151,8 @@ A quick look at the code
 ------------------------
 
 ``weave`` generates a C++ file holding an extension function for each
-``inline`` code snippet. These file names are generated using from the md5
-signature of the code snippet and saved to a location specified by the
+``inline`` code snippet. These file names are generated using from the
+SHA-256 signature of the code snippet and saved to a location specified by the
 PYTHONCOMPILED environment variable (discussed later). The cpp files are
 generally about 200-400 lines long and include quite a few functions to
 support type conversions, etc. However, the actual compiled function is
@@ -1642,12 +1642,12 @@ The Catalog
 
 ``catalog.py`` has a class called ``catalog`` that helps keep track of
 previously compiled functions. This prevents ``inline()`` and related
-functions from having to compile functions everytime they are called.
+functions from having to compile functions every time they are called.
 Instead, catalog will check an in memory cache to see if the function has
 already been loaded into python. If it hasn't, then it starts searching
 through persisent catalogs on disk to see if it finds an entry for the given
 function. By saving information about compiled functions to disk, it isn't
-necessary to re-compile functions everytime you stop and restart the
+necessary to re-compile functions every time you stop and restart the
 interpreter. Functions are compiled once and stored for future use.
 
 When ``inline(cpp_code)`` is called the following things happen:
@@ -1702,7 +1702,7 @@ dictionary. Look at the examples/md5_speed.py file for the test run.
 Catalog search paths and the PYTHONCOMPILED variable
 ----------------------------------------------------
 
-The default location for catalog files on Unix is is ~/.pythonXX_compiled
+The default location for catalog files on Unix is ~/.pythonXX_compiled
 where XX is version of Python being used. If this directory doesn't exist, it
 is created the first time a catalog is used. The directory must be writable.
 If, for any reason it isn't, then the catalog attempts to create a directory
@@ -1808,10 +1808,11 @@ quotes around it and then use ``weave.blitz``::
 
 
 The first time ``weave.blitz`` is run for a given expression and set of
-arguements, C++ code that accomplishes the exact same task as the Python
+arguments, C++ code that accomplishes the exact same task as the Python
 expression is generated and compiled to an extension module. This can take up
 to a couple of minutes depending on the complexity of the function.
-Subsequent calls to the function are very fast. Futher, the generated module
+Subsequent calls to the function are very fast.
+Furthermore, the generated module
 is saved between program executions so that the compilation is only done once
 for a given expression and associated set of array types. If the given
 expression is executed with a new set of array types, the code most be
@@ -2401,10 +2402,10 @@ built before.
 
 .. note::
   If we were willing to always pay the penalty of building the C++
-  code for a module, we could store the md5 checksum of the C++ code
+  code for a module, we could store the SHA-256 checksum of the C++ code
   along with some information about the compiler, platform, etc. Then,
   ``ext_module.compile()`` could try importing the module before it
-  actually compiles it, check the md5 checksum and other meta-data in
+  actually compiles it, check the SHA-256 checksum and other meta-data in
   the imported module with the meta-data of the code it just produced
   and only compile the code if the module didn't exist or the
   meta-data didn't match. This would reduce the above code to::

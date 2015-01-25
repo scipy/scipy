@@ -174,7 +174,7 @@ class TestIrfft(TestCase):
             x = random([size]).astype(double)
             x1 = zeros(size/2+1,dtype=cdouble)
             x1[0] = x[0]
-            for i in range(1,size/2):
+            for i in range(1,size//2):
                 x1[i] = x[2*i-1] + 1j * x[2*i]
             if not size % 2:
                 x1[-1] = x[-1]
@@ -230,4 +230,4 @@ class TestFftn(TestCase):
 
 
 if __name__ == "__main__":
-    run_module_suite()
+    Tester().bench()

@@ -1,16 +1,16 @@
 from __future__ import absolute_import, print_function
 
+import random
+import parser
+
 import numpy as np
 from numpy.testing import TestCase, assert_array_equal, run_module_suite
 
 from scipy.weave import size_check
 from scipy.weave.ast_tools import harvest_variables
 
-empty = np.array(())
-
 
 class TestMakeSameLength(TestCase):
-
     def generic_check(self,x,y,desired):
         actual = size_check.make_same_length(x,y)
         desired = desired
@@ -18,7 +18,7 @@ class TestMakeSameLength(TestCase):
 
     def test_scalar(self):
         x,y = (),()
-        desired = empty,empty
+        desired = np.array(()), np.array(())
         self.generic_check(x,y,desired)
 
     def test_x_scalar(self):
@@ -135,7 +135,6 @@ class TestDummyArrayIndexing(TestCase):
     def generic_check(self,ary,expr,desired):
         a = size_check.dummy_array(ary)
         actual = eval(expr).shape
-        #print desired, actual
         assert_array_equal(actual,desired, expr)
 
     def generic_wrap(self,a,expr):
@@ -162,7 +161,6 @@ class TestDummyArrayIndexing(TestCase):
 
     def generic_1d_index(self,expr):
         a = np.arange(10)
-        #print expr ,eval(expr)
         desired = np.array(())
         self.generic_check(a,expr,desired)
 
@@ -265,9 +263,7 @@ class TestDummyArrayIndexing(TestCase):
         self.generic_1d('a[:-3:-7]')
 
     def test_1d_random(self):
-        """ through a bunch of different indexes at it for good measure.
-        """
-        import random
+        # throw a bunch of different indexes at it for good measure.
         choices = map(lambda x: repr(x),range(50)) + range(50) + ['']*50
         for i in range(100):
             try:
@@ -290,9 +286,7 @@ class TestDummyArrayIndexing(TestCase):
         self.generic_2d('a[:,:]')
 
     def test_2d_random(self):
-        """ through a bunch of different indexes at it for good measure.
-        """
-        import random
+        # throw a bunch of different indexes at it for good measure.
         choices = map(lambda x: repr(x),range(50)) + range(50) + ['']*50
         for i in range(100):
             try:
@@ -312,9 +306,7 @@ class TestDummyArrayIndexing(TestCase):
                 pass
 
     def test_3d_random(self):
-        """ through a bunch of different indexes at it for good measure.
-        """
-        import random
+        # throw a bunch of different indexes at it for good measure.
         choices = map(lambda x: repr(x),range(50)) + range(50) + ['']*50
         for i in range(100):
             try:
@@ -358,21 +350,20 @@ class TestReduction(TestCase):
     def test_error0(self):
         a = np.ones((5,))
         try:
-            actual = size_check.reduction(a,-2)
+            size_check.reduction(a,-2)
         except ValueError:
             pass
 
     def test_error1(self):
         a = np.ones((5,))
         try:
-            actual = size_check.reduction(a,1)
+            size_check.reduction(a,1)
         except ValueError:
             pass
 
 
 class TestExpressions(TestCase):
     def generic_check(self,expr,desired,**kw):
-        import parser
         ast_list = parser.expr(expr).tolist()
         args = harvest_variables(ast_list)
         loc = locals().update(kw)
@@ -383,14 +374,11 @@ class TestExpressions(TestCase):
             actual = eval(expr,locals()).shape
         except:
             actual = 'failed'
+
         if actual is 'failed' and desired is 'failed':
             return
-        try:
-            assert_array_equal(actual,desired, expr)
-        except:
-            print('EXPR:',expr)
-            print('ACTUAL:',actual)
-            print('DESIRED:',desired)
+
+        assert_array_equal(actual,desired, expr)
 
     def generic_wrap(self,expr,**kw):
         try:

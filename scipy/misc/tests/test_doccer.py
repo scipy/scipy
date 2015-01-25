@@ -2,9 +2,13 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_equal
+import sys
+from numpy.testing import assert_equal, dec
 
 from scipy.misc import doccer
+
+# python -OO strips docstrings
+DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 docstring = \
 """Docstring
@@ -62,6 +66,7 @@ def test_docformat():
    with some indent"""
 
 
+@dec.skipif(DOCSTRINGS_STRIPPED)
 def test_decorator():
     # with unindentation of parameters
     decorator = doccer.filldoc(doc_dict, True)
@@ -90,10 +95,10 @@ def test_decorator():
         """
 
 
+@dec.skipif(DOCSTRINGS_STRIPPED)
 def test_inherit_docstring_from():
 
     class Foo(object):
-
         def func(self):
             '''Do something useful.'''
             return
@@ -102,7 +107,6 @@ def test_inherit_docstring_from():
             '''Something else.'''
 
     class Bar(Foo):
-
         @doccer.inherit_docstring_from(Foo)
         def func(self):
             '''%(super)sABC'''

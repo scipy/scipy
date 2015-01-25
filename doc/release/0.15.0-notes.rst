@@ -1,0 +1,125 @@
+==========================
+SciPy 0.15.0 Release Notes
+==========================
+
+.. note:: Scipy 0.15.0 is not released yet!
+
+.. contents::
+
+SciPy 0.15.0 is the culmination of X months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a number of deprecations and
+API changes in this release, which are documented below.  All users
+are encouraged to upgrade to this release, as there are a large number
+of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.15.x branch, and on adding
+new features on the master branch.
+
+This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
+
+
+New features
+============
+
+``scipy.optimize`` improvements
+-------------------------------
+
+Linear Programming Interface
+````````````````````````````
+
+``scipy.optimize.linprog`` now provides a generic
+linear programming similar to the way `scipy.optimize.minimize`
+provides a generic interface to nonlinear programming optimizers.
+Currently the only method supported is *simplex* which provides
+a two-phase, dense-matrix-based simplex algorithm. Callbacks
+functions are supported,allowing the user to monitor the progress
+of the algorithm.
+
+differential_evolution, a global optimization function
+``````````````````````````````````````````````````````
+
+The `differential_evolution` function is available from the ``scipy.optimize``
+module.  Differential Evolution is an algorithm used for finding the global
+minimum of multivariate functions. It is stochastic in nature (does not use
+gradient methods), and can search large areas of candidate space, but often
+requires larger numbers of function evaluations than conventional gradient
+based techniques.
+
+``scipy.signal`` improvements
+-----------------------------
+The function ``max_len_seq`` was added, which computes a Maximum
+Length Sequence (MLS) signal.
+
+``scipy.integrate`` improvements
+--------------------------------
+The interface between the scipy.integrate module and the QUADPACK library was 
+redesigned. It is now possible to use scipy.integrate to integrate 
+multivariate ctypes functions, thus avoiding callbacks to Python and providing 
+better performance, especially for complex integrand functions.
+
+``scipy.sparse`` improvements
+-----------------------------
+``scipy.sparse.linalg.svds`` now takes a ``LinearOperator`` as its main input.
+
+``scipy.stats`` improvements
+----------------------------
+Added a Dirichlet distribution as multivariate distribution.
+
+The new function `scipy.stats.median_test` computes Mood's median test.
+
+`scipy.stats.describe` returns a namedtuple rather than a tuple, allowing
+users to access results by index or by name.
+
+
+Deprecated features
+===================
+
+The ``scipy.weave`` module is deprecated.  It was the only module never ported
+to Python 3.x, and is not recommended to be used for new code - use Cython
+instead.  In order to support existing code, ``scipy.weave`` has been packaged
+separately: `https://github.com/scipy/weave`_.  It is a pure Python package, so
+can easily be installed with ``pip install weave``.
+
+``scipy.special.bessel_diff_formula`` is deprecated.  It is a private function,
+and therefore will be removed from the public API in a following release.
+
+
+Backwards incompatible changes
+==============================
+
+scipy.ndimage
+-------------
+
+The functions ``scipy.ndimage.minimum_positions``,
+``scipy.ndimage.maximum_positions`` and ``scipy.ndimage.extrema`` return
+positions as ints instead of floats.
+
+
+Other changes
+=============
+
+scipy.integrate
+---------------
+
+The OPTPACK and QUADPACK code has been changed to use the LAPACK matrix
+solvers rather than the bundled LINPACK code. This means that there is no
+longer any need for the bundled LINPACK routines, so they have been removed.
+
+Authors
+=======
+
+* Rob Falck
+* Andrew Nelson
+* Eric Larson
+
+Issues closed
+-------------
+
+
+Pull requests
+-------------
+
+- `#3342 <https://github.com/scipy/scipy/pull/3342>`__: ENH: linprog function for linear programming
+- `#3351 <https://github.com/scipy/scipy/pull/3351>`__: ENH: Add MLS method
+- `#3446 <https://github.com/scipy/scipy/pull/3446>`__: ENH: scipy.optimize - adding differential_evolution
+

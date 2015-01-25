@@ -1,5 +1,0 @@
-HookFile: bscript
-
-Library:
-    Extension: __umfpack
-        Sources: umfpack.i

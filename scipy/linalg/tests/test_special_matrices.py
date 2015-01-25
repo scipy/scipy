@@ -2,17 +2,18 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange, add, array, eye, copy
-from numpy.testing import TestCase, run_module_suite, assert_raises, \
-    assert_equal, assert_array_equal, assert_array_almost_equal, \
-    assert_allclose
+from numpy import arange, add, array, eye, copy, sqrt
+from numpy.testing import (TestCase, run_module_suite, assert_raises,
+    assert_equal, assert_array_equal, assert_array_almost_equal,
+    assert_allclose)
 
-from scipy.lib.six.moves import xrange
+from scipy._lib.six import xrange
 
-from scipy.misc import comb
-from scipy.linalg import toeplitz, hankel, circulant, hadamard, leslie, \
-                            companion, tri, triu, tril, kron, block_diag, \
-                            hilbert, invhilbert, pascal
+from scipy.special import comb
+from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie,
+                          companion, tri, triu, tril, kron, block_diag,
+                          hilbert, invhilbert, pascal, invpascal, dft)
+from scipy.fftpack import fft
 from numpy.linalg import cond
 
 
@@ -486,6 +487,61 @@ class TestPascal(TestCase):
     def test_big(self):
         p = pascal(50)
         assert_equal(p[-1, -1], comb(98, 49, exact=True))
+
+    def test_threshold(self):
+        # Regression test.  An early version of `pascal` returned an
+        # array of type np.uint64 for n=35, but that data type is too small
+        # to hold p[-1, -1].  The second assert_equal below would fail
+        # because p[-1, -1] overflowed.
+        p = pascal(34)
+        assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 34")
+        p = pascal(35)
+        assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 35")
+
+
+def test_invpascal():
+
+    def check_invpascal(n, kind, exact):
+        ip = invpascal(n, kind=kind, exact=exact)
+        p = pascal(n, kind=kind, exact=exact)
+        # Matrix-multiply ip and p, and check that we get the identity matrix.
+        # We can't use the simple expression e = ip.dot(p), because when
+        # n < 35 and exact is True, p.dtype is np.uint64 and ip.dtype is
+        # np.int64. The product of those dtypes is np.float64, which loses
+        # precision when n is greater than 18.  Instead we'll cast both to
+        # object arrays, and then multiply.
+        e = ip.astype(object).dot(p.astype(object))
+        assert_array_equal(e, eye(n), err_msg="n=%d  kind=%r exact=%r" %
+                                              (n, kind, exact))
+
+    kinds = ['symmetric', 'lower', 'upper']
+
+    ns = [1, 2, 5, 18]
+    for n in ns:
+        for kind in kinds:
+            for exact in [True, False]:
+                yield check_invpascal, n, kind, exact
+
+    ns = [19, 34, 35, 50]
+    for n in ns:
+        for kind in kinds:
+            yield check_invpascal, n, kind, True
+
+
+def test_dft():
+    m = dft(2)
+    expected = array([[1.0, 1.0], [1.0, -1.0]])
+    yield (assert_array_almost_equal, m, expected)
+    m = dft(2, scale='n')
+    yield (assert_array_almost_equal, m, expected/2.0)
+    m = dft(2, scale='sqrtn')
+    yield (assert_array_almost_equal, m, expected/sqrt(2.0))
+
+    x = array([0, 1, 2, 3, 4, 5, 0, 1])
+    m = dft(8)
+    mx = m.dot(x)
+    fx = fft(x)
+    yield (assert_array_almost_equal, mx, fx)
 
 
 if __name__ == "__main__":

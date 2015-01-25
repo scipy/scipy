@@ -2,11 +2,9 @@
 SciPy 0.13.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.13.0 is not released yet!
-
 .. contents::
 
-SciPy 0.13.0 is the culmination of 5 months of hard work. It contains
+SciPy 0.13.0 is the culmination of 7 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -16,6 +14,11 @@ will now shift to bug-fix releases on the 0.13.x branch, and on adding
 new features on the master branch.
 
 This release requires Python 2.6, 2.7 or 3.1-3.3 and NumPy 1.5.1 or greater.
+Highlights of this release are:
+
+  - support for fancy indexing and boolean comparisons with sparse matrices
+  - interpolative decompositions and matrix functions in the linalg module
+  - two new trust-region solvers for unconstrained minimization
 
 
 New features
@@ -112,7 +115,7 @@ The new function ``onenormest`` provides a lower bound of the 1-norm of a
 linear operator and has been implemented according to Higham and Tisseur
 (2000).  This function is not only useful for sparse matrices, but can also be
 used to estimate the norm of products or powers of dense matrices without
-explictly building the intermediate matrix.
+explicitly building the intermediate matrix.
 
 The multiplicative action of the matrix exponential of a linear operator
 (``expm_multiply``) has been implemented following the description in Al-Mohy
@@ -242,7 +245,7 @@ rather than giving the result::
             [ 0.,  1.,  2.]])
 
 Users relying on the previous behavior will need to revisit their code.
-The previous behavior is obtained by ``x[numpy.ix_([0,1,2],[0,1,2])] = ...`.
+The previous behavior is obtained by ``x[numpy.ix_([0,1,2],[0,1,2])] = ...``.
 
 
 Deprecated ``radon`` function removed
@@ -275,8 +278,12 @@ an error instead of silently reshaping the array as 2D.
 (``sys.path``); now ``loadmat`` only looks in the current directory for a
 relative path filename.
 
+
 Other changes
 =============
+
+Security fix: ``scipy.weave`` previously used temporary directories in an
+insecure manner under certain circumstances.
 
 Cython is now required to build *unreleased* versions of scipy.
 The C files generated from Cython sources are not included in the git repo
@@ -284,6 +291,9 @@ anymore.  They are however still shipped in source releases.
 
 The code base received a fairly large PEP8 cleanup.  A ``tox pep8`` 
 command has been added; new code should pass this test command.
+
+Scipy cannot be compiled with gfortran 4.1 anymore (at least on RH5), likely
+due to that compiler version not supporting entry constructs well.
 
 
 Authors
@@ -310,6 +320,7 @@ one patch to this release, names in alphabetical order):
 * Alexander J. Dunlap +
 * endolith
 * André Gaul +
+* Christoph Gohlke
 * Ralf Gommers
 * Alex Griffing +
 * Blake Griffith +
@@ -351,11 +362,12 @@ one patch to this release, names in alphabetical order):
 * Pauli Virtanen
 * Stefan van der Walt
 * Warren Weckesser
+* Pedro Werneck +
 * Nils Werner +
 * Michael Wimmer +
 * Nathan Woods +
 * Tony S. Yu +
 
-A total of 63 people contributed to this release.
+A total of 65 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 

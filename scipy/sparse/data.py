@@ -12,7 +12,7 @@ __all__ = []
 
 import numpy as np
 
-from .base import spmatrix
+from .base import spmatrix, _ufuncs_with_fixed_point_at_zero
 from .sputils import isscalarlike
 
 
@@ -46,7 +46,7 @@ class _data_matrix(spmatrix):
             self.data *= other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __itruediv__(self, other):  # self /= other
         if isscalarlike(other):
@@ -54,7 +54,7 @@ class _data_matrix(spmatrix):
             self.data *= recip
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def astype(self, t):
         return self._with_data(self.data.astype(t))
@@ -74,9 +74,7 @@ class _data_matrix(spmatrix):
 
 
 # Add the numpy unary ufuncs for which func(0) = 0 to _data_matrix.
-for npfunc in [np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh,
-               np.arcsinh, np.arctanh, np.rint, np.sign, np.expm1, np.log1p,
-               np.deg2rad, np.rad2deg, np.floor, np.ceil, np.trunc, np.sqrt]:
+for npfunc in _ufuncs_with_fixed_point_at_zero:
     name = npfunc.__name__
 
     def _create_method(op):
@@ -100,7 +98,52 @@ class _minmax_mixin(object):
     These are not implemented for dia_matrix, hence the separate class.
     """
 
-    def max(self):
+    def _min_or_max_axis(self, axis, min_or_max):
+        N = self.shape[axis]
+        if N == 0:
+            raise ValueError("zero-size array to reduction operation")
+        M = self.shape[1 - axis]
+
+        mat = self.tocsc() if axis == 0 else self.tocsr()
+        mat.sum_duplicates()
+
+        major_index, value = mat._minor_reduce(min_or_max)
+        not_full = np.diff(mat.indptr)[major_index] < N
+        value[not_full] = min_or_max(value[not_full], 0)
+
+        mask = value != 0
+        major_index = np.compress(mask, major_index)
+        value = np.compress(mask, value)
+
+        from . import coo_matrix
+        if axis == 0:
+            return coo_matrix((value, (np.zeros(len(value)), major_index)),
+                              dtype=self.dtype, shape=(1, M))
+        else:
+            return coo_matrix((value, (major_index, np.zeros(len(value)))),
+                              dtype=self.dtype, shape=(M, 1))
+
+    def _min_or_max(self, axis, min_or_max):
+        if axis is None:
+            if 0 in self.shape:
+                raise ValueError("zero-size array to reduction operation")
+
+            zero = self.dtype.type(0)
+            if self.nnz == 0:
+                return zero
+            m = min_or_max.reduce(self.data.ravel())
+            if self.nnz != np.product(self.shape):
+                m = min_or_max(zero, m)
+            return m
+
+        if axis < 0:
+            axis += 2
+        if (axis == 0) or (axis == 1):
+            return self._min_or_max_axis(axis, min_or_max)
+        else:
+            raise ValueError("invalid axis, use 0 for rows, or 1 for columns")
+
+    def max(self, axis=None):
         """Maximum of the elements of this matrix.
 
         This takes all elements into account, not just the non-zero ones.
@@ -110,15 +153,9 @@ class _minmax_mixin(object):
         amax : self.dtype
             Maximum element.
         """
-        zero = self.dtype.type(0)
-        if self.nnz == 0:
-            return zero
-        mx = np.max(self.data)
-        if self.nnz != np.product(self.shape):
-            mx = max(zero, mx)
-        return mx
+        return self._min_or_max(axis, np.maximum)
 
-    def min(self):
+    def min(self, axis=None):
         """Minimum of the elements of this matrix.
 
         This takes all elements into account, not just the non-zero ones.
@@ -128,10 +165,4 @@ class _minmax_mixin(object):
         amin : self.dtype
             Minimum element.
         """
-        zero = self.dtype.type(0)
-        if self.nnz == 0:
-            return zero
-        mn = np.min(self.data)
-        if self.nnz != np.product(self.shape):
-            mn = min(zero, mn)
-        return mn
+        return self._min_or_max(axis, np.minimum)

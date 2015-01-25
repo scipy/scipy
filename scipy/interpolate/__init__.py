@@ -10,7 +10,7 @@ Sub-package for objects used in interpolation.
 As listed below, this sub-package contains spline functions and classes,
 one-dimensional and multi-dimensional (univariate and multivariate)
 interpolation classes, Lagrange and Taylor polynomial interpolators, and
-wrappers for `FITPACK <http://www.cisl.ucar.edu/softlib/FITPACK.html>`_
+wrappers for `FITPACK <http://www.netlib.org/dierckx/>`__
 and DFITPACK functions.
 
 Univariate interpolation
@@ -28,6 +28,9 @@ Univariate interpolation
    krogh_interpolate
    piecewise_polynomial_interpolate
    pchip_interpolate
+   Akima1DInterpolator
+   PPoly
+   BPoly
 
 
 Multivariate interpolation
@@ -48,10 +51,13 @@ Unstructured data:
 For data on a grid:
 
 .. autosummary::
+   :toctree: generated/
 
+   interpn
+   RegularGridInterpolator
    RectBivariateSpline
 
-.. seealso:: `scipy.ndimage.map_coordinates`
+.. seealso:: `scipy.ndimage.interpolation.map_coordinates`
 
 
 1-D Splines
@@ -63,21 +69,6 @@ For data on a grid:
    UnivariateSpline
    InterpolatedUnivariateSpline
    LSQUnivariateSpline
-
-The above univariate spline classes have the following methods:
-
-.. autosummary::
-
-   UnivariateSpline.__call__
-   UnivariateSpline.derivatives
-   UnivariateSpline.integral
-   UnivariateSpline.roots
-   UnivariateSpline.derivative
-   UnivariateSpline.antiderivative
-   UnivariateSpline.get_coeffs
-   UnivariateSpline.get_knots
-   UnivariateSpline.get_residual
-   UnivariateSpline.set_smoothing_factor
 
 
 Functional interface to FITPACK functions:
@@ -93,8 +84,6 @@ Functional interface to FITPACK functions:
    spalde
    splder
    splantider
-   bisplrep
-   bisplev
 
 
 2-D Splines
@@ -138,8 +127,8 @@ Additional tools
 
 .. seealso::
 
-   `scipy.ndimage.map_coordinates`,
-   `scipy.ndimage.spline_filter`,
+   `scipy.ndimage.interpolation.map_coordinates`,
+   `scipy.ndimage.interpolation.spline_filter`,
    `scipy.signal.resample`,
    `scipy.signal.bspline`,
    `scipy.signal.gauss_spline`,
@@ -162,6 +151,8 @@ from .fitpack2 import *
 from .rbf import Rbf
 
 from .polyint import *
+
+from ._monotone import *
 
 from .ndgriddata import *
 

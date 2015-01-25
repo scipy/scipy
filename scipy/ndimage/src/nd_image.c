@@ -132,22 +132,14 @@ static PyObject *Py_Correlate1D(PyObject *obj, PyObject *args)
     PyArrayObject *input = NULL, *output = NULL, *weights = NULL;
     int axis, mode;
     double cval;
-#if PY_VERSION_HEX < 0x02050000
-    long origin;
-#define FMT "l"
-#else
     npy_intp origin;
-#define FMT "n"
-#endif
 
-    if (!PyArg_ParseTuple(args, "O&O&iO&id" FMT,
+    if (!PyArg_ParseTuple(args, "O&O&iO&idn" ,
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToInputArray, &weights, &axis,
                           NI_ObjectToOutputArray, &output, &mode, &cval,
                           &origin))
         goto exit;
-
-#undef FMT
 
     if (!NI_Correlate1D(input, weights, axis, output,
                                             (NI_ExtendMode)mode, cval, origin))
@@ -179,8 +171,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(weights);
     Py_XDECREF(output);
-    if (origin)
-        free(origin);
+    free(origin);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -188,16 +179,10 @@ static PyObject *Py_UniformFilter1D(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL;
     int axis, mode;
-#if PY_VERSION_HEX < 0x02050000
-    long filter_size, origin;
-#define FMT "l"
-#else
     npy_intp filter_size, origin;
-#define FMT "n"
-#endif
     double cval;
 
-    if (!PyArg_ParseTuple(args, "O&" FMT "iO&id" FMT,
+    if (!PyArg_ParseTuple(args, "O&niO&idn",
                           NI_ObjectToInputArray, &input,
                           &filter_size, &axis,
                           NI_ObjectToOutputArray, &output,
@@ -216,22 +201,15 @@ static PyObject *Py_MinOrMaxFilter1D(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL;
     int axis, mode, minimum;
-#if PY_VERSION_HEX < 0x02050000
-    long filter_size, origin;
-#define FMT "l"
-#else
     npy_intp filter_size, origin;
-#define FMT "n"
-#endif
     double cval;
 
-    if (!PyArg_ParseTuple(args, "O&" FMT "iO&id" FMT "i",
+    if (!PyArg_ParseTuple(args, "O&niO&idni",
                           NI_ObjectToInputArray, &input,
                           &filter_size, &axis,
                           NI_ObjectToOutputArray, &output,
                           &mode, &cval, &origin, &minimum))
         goto exit;
-#undef FMT
     if (!NI_MinOrMaxFilter1D(input, filter_size, axis, output,
                                                             (NI_ExtendMode)mode, cval, origin, minimum))
         goto exit;
@@ -266,8 +244,7 @@ exit:
     Py_XDECREF(footprint);
     Py_XDECREF(structure);
     Py_XDECREF(output);
-    if (origin)
-        free(origin);
+    free(origin);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -292,8 +269,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(footprint);
     Py_XDECREF(output);
-    if (origin)
-        free(origin);
+    free(origin);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -338,23 +314,16 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
     void *func = Py_Filter1DFunc, *data = NULL;
     NI_PythonCallbackData cbdata;
     int axis, mode;
-#if PY_VERSION_HEX < 0x02050000
-    long origin, filter_size;
-#define FMT "l"
-#else
     npy_intp origin, filter_size;
-#define FMT "n"
-#endif
     double cval;
 
-    if (!PyArg_ParseTuple(args, "O&O" FMT "iO&id" FMT "OO",
+    if (!PyArg_ParseTuple(args, "O&OniO&idnOO",
                           NI_ObjectToInputArray, &input,
                           &fnc, &filter_size, &axis,
                           NI_ObjectToOutputArray, &output,
                           &mode, &cval, &origin,
                           &extra_arguments, &extra_keywords))
         goto exit;
-#undef FMT
 
     if (!PyTuple_Check(extra_arguments)) {
         PyErr_SetString(PyExc_RuntimeError, "extra_arguments must be a tuple");
@@ -463,8 +432,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(output);
     Py_XDECREF(footprint);
-    if (origin)
-        free(origin);
+    free(origin);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -472,22 +440,15 @@ static PyObject *Py_FourierFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *parameters = NULL;
     int axis, filter_type;
-#if PY_VERSION_HEX < 0x02050000
-    long n;
-#define FMT "l"
-#else
     npy_intp n;
-#define FMT "n"
-#endif
 
-    if (!PyArg_ParseTuple(args, "O&O&" FMT "iO&i",
+    if (!PyArg_ParseTuple(args, "O&O&niO&i",
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToInputArray, &parameters,
                           &n, &axis,
                           NI_ObjectToOutputArray, &output,
                           &filter_type))
         goto exit;
-#undef FMT
 
     if (!NI_FourierFilter(input, parameters, n, axis, output, filter_type))
         goto exit;
@@ -503,21 +464,14 @@ static PyObject *Py_FourierShift(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *shifts = NULL;
     int axis;
-#if PY_VERSION_HEX < 0x02050000
-    long n;
-#define FMT "l"
-#else
     npy_intp n;
-#define FMT "n"
-#endif
 
-    if (!PyArg_ParseTuple(args, "O&O&" FMT "iO&",
+    if (!PyArg_ParseTuple(args, "O&O&niO&",
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToInputArray, &shifts,
                           &n, &axis,
                                         NI_ObjectToOutputArray, &output))
         goto exit;
-#undef FMT
 
     if (!NI_FourierShift(input, shifts, n, axis, output))
         goto exit;
@@ -560,11 +514,7 @@ static int Py_Map(npy_intp *ocoor, double* icoor, int orank, int irank,
     if (!coors)
         goto exit;
     for(ii = 0; ii < orank; ii++) {
-#if PY_VERSION_HEX < 0x02060000
-        PyTuple_SetItem(coors, ii, PyLong_FromLong(ocoor[ii]));
-#else
         PyTuple_SetItem(coors, ii, PyLong_FromSsize_t(ocoor[ii]));
-#endif
         if (PyErr_Occurred())
             goto exit;
     }
@@ -685,19 +635,12 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     PyObject *result = NULL, *tuple = NULL, *start = NULL, *end = NULL;
     PyObject *slc = NULL;
     int jj;
-#if PY_VERSION_HEX < 0x02050000
-    long max_label;
-#define FMT "l"
-#else
     npy_intp max_label;
-#define FMT "n"
-#endif
     npy_intp ii, *regions = NULL;
 
-    if (!PyArg_ParseTuple(args, "O&" FMT,
+    if (!PyArg_ParseTuple(args, "O&n",
                           NI_ObjectToInputArray, &input, &max_label))
         goto exit;
-#undef FMT
 
     if (max_label < 0)
         max_label = 0;
@@ -732,13 +675,8 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
                 goto exit;
             }
             for(jj = 0; jj < input->nd; jj++) {
-#if PY_VERSION_HEX < 0x02060000
-                start = PyLong_FromLong(regions[idx + jj]);
-                end = PyLong_FromLong(regions[idx + jj + input->nd]);
-#else
                 start = PyLong_FromSsize_t(regions[idx + jj]);
                 end = PyLong_FromSsize_t(regions[idx + jj + input->nd]);
-#endif
                 if (!start || !end) {
                     PyErr_NoMemory();
                     goto exit;
@@ -771,8 +709,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     Py_XDECREF(start);
     Py_XDECREF(end);
     Py_XDECREF(slc);
-    if (regions)
-        free(regions);
+    free(regions);
     if (PyErr_Occurred()) {
         Py_XDECREF(result);
         return NULL;
@@ -907,8 +844,7 @@ exit:
     Py_XDECREF(strct);
     Py_XDECREF(mask);
     Py_XDECREF(output);
-    if (origins)
-        free(origins);
+    free(origins);
     if (PyErr_Occurred()) {
         Py_XDECREF(cobj);
         return NULL;
@@ -950,7 +886,7 @@ exit:
     Py_XDECREF(array);
     Py_XDECREF(strct);
     Py_XDECREF(mask);
-    if (origins) free(origins);
+    free(origins);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 

@@ -11,22 +11,20 @@ from scipy.sparse import extract
 
 class TestExtract(TestCase):
     def setUp(self):
-        cases = []
-
-        cases.append(csr_matrix([[1,2]]))
-        cases.append(csr_matrix([[1,0]]))
-        cases.append(csr_matrix([[0,0]]))
-        cases.append(csr_matrix([[1],[2]]))
-        cases.append(csr_matrix([[1],[0]]))
-        cases.append(csr_matrix([[0],[0]]))
-        cases.append(csr_matrix([[1,2],[3,4]]))
-        cases.append(csr_matrix([[0,1],[0,0]]))
-        cases.append(csr_matrix([[0,0],[1,0]]))
-        cases.append(csr_matrix([[0,0],[0,0]]))
-        cases.append(csr_matrix([[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]]))
-        cases.append(csr_matrix([[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]]).T)
-
-        self.cases = cases
+        self.cases = [
+            csr_matrix([[1,2]]),
+            csr_matrix([[1,0]]),
+            csr_matrix([[0,0]]),
+            csr_matrix([[1],[2]]),
+            csr_matrix([[1],[0]]),
+            csr_matrix([[0],[0]]),
+            csr_matrix([[1,2],[3,4]]),
+            csr_matrix([[0,1],[0,0]]),
+            csr_matrix([[0,0],[1,0]]),
+            csr_matrix([[0,0],[0,0]]),
+            csr_matrix([[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]]),
+            csr_matrix([[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]]).T,
+        ]
 
     def find(self):
         for A in self.cases:

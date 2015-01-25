@@ -1,32 +1,113 @@
-*.pyc
-*.swp
-*.pyd
-*.so
-*.o
-*.a
-*.lo
-*.la
+# Editor temporary/working/backup files #
+#########################################
+.#*
+[#]*#
 *~
+*$
 *.bak
-*.swp
-.\#*
+.idea/*
+*.kdev4
+*.org
+.project
+.pydevproject
+*.rej
+.settings/
+.*.sw[nop]
+.sw[nop]
+*.tmp
+*.vim
+tags
+
+# Compiled source #
+###################
+*.a
+*.com
+*.class
+*.dll
+*.exe
+*.l[ao]
+*.o
+*.py[ocd]
+*.so
+_configtest.c
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.bz2
+*.bzip2
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.tbz2
+*.tgz
+*.zip
+
+# Python files #
+################
+# setup.py working directory
+build
+# sphinx build directory
+doc/_build
+# cython files
+cythonize.dat
+# setup.py dist directory
+dist
+# Egg metadata
+*.egg-info
+# tox testing tool
+.tox
+# The shelf plugin uses this dir
+./.shelf
+MANIFEST
+# distutils configuration
+site.cfg
+# other temporary files
+.coverage
 .deps
 .libs
-.tox
-cythonize.dat
-_configtest.c
-build.log
-/build
-/dist
-/scipy.egg-info
-/site.cfg
-/scipy/__config__.py
-/scipy/version.py
 
-/doc/frontpage/build
-/doc/source/generated
+# Paver generated files #
+#########################
+/release
 
-scipy/cluster/_vq_rewrite.c
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
+# Patches #
+###########
+*.patch
+*.diff
+
+# OS generated files #
+######################
+.directory
+.fseventsd
+.DS_Store*
+.gdb_history
+.VolumeIcon.icns
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Documentation generated files #
+#################################
+doc/frontpage/build
+doc/source/generated
+
+# Things specific to this project #
+###################################
+scipy/__config__.py
+scipy/cluster/_vq.c
+scipy/cluster/_hierarchy.c
 scipy/fftpack/_fftpackmodule.c
 scipy/fftpack/convolvemodule.c
 scipy/fftpack/src/dct.c
@@ -34,6 +115,7 @@ scipy/fftpack/src/dst.c
 scipy/integrate/_dopmodule.c
 scipy/integrate/lsodamodule.c
 scipy/integrate/vodemodule.c
+scipy/interpolate/_ppoly.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
 scipy/interpolate/src/dfitpackmodule.c
@@ -46,19 +128,20 @@ scipy/lib/blas/fblas-f2pywrappers.f
 scipy/lib/blas/fblas.pyf
 scipy/lib/blas/fblasmodule.c
 scipy/lib/blas/fblaswrap.f
-scipy/lib/lapack/clapackmodule.c
-scipy/lib/lapack/flapackmodule.c
 scipy/lib/lapack/clapack.pyf
+scipy/lib/lapack/clapackmodule.c
 scipy/lib/lapack/flapack.pyf
+scipy/lib/lapack/flapackmodule.c
 scipy/linalg/_cblasmodule.c
 scipy/linalg/_clapackmodule.c
-scipy/linalg/_interpolativemodule.c
-scipy/linalg/cblas.pyf
-scipy/linalg/clapack.pyf
 scipy/linalg/_fblas-f2pywrappers.f
 scipy/linalg/_fblasmodule.c
 scipy/linalg/_flapack-f2pywrappers.f
 scipy/linalg/_flapackmodule.c
+scipy/linalg/_interpolativemodule.c
+scipy/linalg/_solve_toeplitz.c
+scipy/linalg/cblas.pyf
+scipy/linalg/clapack.pyf
 scipy/linalg/fblas.pyf
 scipy/linalg/flapack.pyf
 scipy/linalg/src/id_dist/src/*_subr_*.f
@@ -69,12 +152,16 @@ scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/signal/_spectral.c
+scipy/signal/_max_len_seq.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c
+scipy/sparse/_csparsetools.c
+scipy/sparse/_csparsetools.pyx
 scipy/sparse/csgraph/_min_spanning_tree.c
 scipy/sparse/csgraph/_shortest_path.c
 scipy/sparse/csgraph/_tools.c
 scipy/sparse/csgraph/_traversal.c
+scipy/sparse/csgraph/_reordering.c
 scipy/sparse/linalg/dsolve/umfpack/_umfpack.py
 scipy/sparse/linalg/dsolve/umfpack/_umfpack_wrap.c
 scipy/sparse/linalg/eigen/arpack/_arpack-f2pywrappers.f
@@ -87,11 +174,18 @@ scipy/sparse/linalg/isolve/iterative/CGSREVCOM.f
 scipy/sparse/linalg/isolve/iterative/GMRESREVCOM.f
 scipy/sparse/linalg/isolve/iterative/QMRREVCOM.f
 scipy/sparse/linalg/isolve/iterative/STOPTEST2.f
-scipy/sparse/linalg/isolve/iterative/getbreak.f
 scipy/sparse/linalg/isolve/iterative/_iterative.pyf
 scipy/sparse/linalg/isolve/iterative/_iterativemodule.c
+scipy/sparse/linalg/isolve/iterative/getbreak.f
+scipy/sparse/sparsetools/bsr_impl.h
+scipy/sparse/sparsetools/csc_impl.h
+scipy/sparse/sparsetools/csr_impl.h
+scipy/sparse/sparsetools/other_impl.h
+scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.c
 scipy/spatial/qhull.c
+scipy/special/_ellip_harm_2.c
+scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
 scipy/special/_ufuncs.c
 scipy/special/_ufuncs.h
@@ -99,7 +193,8 @@ scipy/special/_ufuncs_cxx.cxx
 scipy/special/_ufuncs_cxx.h
 scipy/special/specfunmodule.c
 scipy/stats/_rank.c
+scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c
 scipy/stats/statlibmodule.c
 scipy/stats/vonmises_cython.c
-scipy/stats/mvn-f2pywrappers.f
+scipy/version.py

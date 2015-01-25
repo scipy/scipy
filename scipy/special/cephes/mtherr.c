@@ -61,21 +61,6 @@
 
 int merror = 0;
 
-/* Notice: the order of appearance of the following
- * messages is bound to the error codes defined
- * in mconf.h.
- */
-static char *ermsg[8] = {
-    "unknown",			/* error code 0 */
-    "domain",			/* error code 1 */
-    "singularity",		/* et seq.      */
-    "overflow",
-    "underflow",
-    "total loss of precision",
-    "partial loss of precision",
-    "too many iterations"
-};
-
 static sf_error_t conv_to_sf[8] = {
     SF_ERROR_OTHER,
     SF_ERROR_DOMAIN,

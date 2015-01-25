@@ -1,20 +1,13 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
-import os
-import sys
-import re
-from distutils.dep_util import newer_group, newer
-from glob import glob
 from os.path import join
-
-from scipy._build_utils import needs_g77_abi_wrapper
 
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
-
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils import get_g77_abi_wrappers
 
     config = Configuration('isolve',parent_package,top_path)
 
@@ -35,22 +28,17 @@ def configuration(parent_package='',top_path=None):
 #               'SORREVCOM.f.src'
                ]
 
-    if needs_g77_abi_wrapper(lapack_opt):
-        methods += [join('FWRAPPERS', 'wrap_veclib_f.f'),
-                    join('FWRAPPERS', 'wrap_veclib_c.c')]
-    else:
-        methods += [join('FWRAPPERS', 'wrap_dummy.f')]
-
     Util = ['STOPTEST2.f.src','getbreak.f.src']
     sources = Util + methods + ['_iterative.pyf.src']
+    sources = [join('iterative', x) for x in sources]
+    sources += get_g77_abi_wrappers(lapack_opt)
+
     config.add_extension('_iterative',
-                         sources=[join('iterative', x) for x in sources],
-                         extra_info=lapack_opt,
-                         depends=[join('iterative', 'FWRAPPERS', x) for x in
-                         ['wrap_veclib_f.f', 'wrap_veclib_c.c', 'wrap_dummy.f']]
-                         )
+                         sources=sources,
+                         extra_info=lapack_opt)
 
     config.add_data_dir('tests')
+    config.add_data_dir('benchmarks')
 
     return config
 

@@ -5,13 +5,15 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from scipy.lib.six.moves import xrange
+from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
 
-def _boolrelextrema(data, comparator,
-                  axis=0, order=1, mode='clip'):
+__all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'find_peaks_cwt']
+
+
+def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     """
     Calculate the relative extrema of `data`.
 
@@ -38,8 +40,8 @@ def _boolrelextrema(data, comparator,
     Returns
     -------
     extrema : ndarray
-        Indices of the extrema, as boolean array of same shape as data.
-        True for an extrema, False else.
+        Boolean array of the same shape as `data` that is True at an extrema,
+        False otherwise.
 
     See also
     --------
@@ -48,7 +50,7 @@ def _boolrelextrema(data, comparator,
     Examples
     --------
     >>> testdata = np.array([1,2,3,2,1])
-    >>> argrelextrema(testdata, np.greater, axis=0)
+    >>> _boolrelextrema(testdata, np.greater, axis=0)
     array([False, False,  True, False, False], dtype=bool)
 
     """
@@ -74,8 +76,6 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
     """
     Calculate the relative minima of `data`.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     data : ndarray
@@ -93,16 +93,32 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
 
     Returns
     -------
-    extrema : ndarray
-        Indices of the minima, as an array of integers.
+    extrema : tuple of ndarrays
+        Indices of the minima in arrays of integers.  ``extrema[k]`` is
+        the array of indices of axis `k` of `data`.  Note that the
+        return value is a tuple even when `data` is one-dimensional.
 
-    See also
+    See Also
     --------
     argrelextrema, argrelmax
 
     Notes
     -----
     This function uses `argrelextrema` with np.less as comparator.
+
+    .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
+    >>> argrelmin(x)
+    (array([1, 5]),)
+    >>> y = np.array([[1, 2, 1, 2],
+    ...               [2, 2, 0, 0],
+    ...               [5, 3, 4, 4]])
+    ...
+    >>> argrelmin(y, axis=1)
+    (array([0, 2]), array([2, 1]))
 
     """
     return argrelextrema(data, np.less, axis, order, mode)
@@ -111,8 +127,6 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
 def argrelmax(data, axis=0, order=1, mode='clip'):
     """
     Calculate the relative maxima of `data`.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -131,10 +145,12 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
 
     Returns
     -------
-    extrema : ndarray
-        Indices of the maxima, as an array of integers.
+    extrema : tuple of ndarrays
+        Indices of the maxima in arrays of integers.  ``extrema[k]`` is
+        the array of indices of axis `k` of `data`.  Note that the
+        return value is a tuple even when `data` is one-dimensional.
 
-    See also
+    See Also
     --------
     argrelextrema, argrelmin
 
@@ -142,6 +158,19 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
     -----
     This function uses `argrelextrema` with np.greater as comparator.
 
+    .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
+    >>> argrelmax(x)
+    (array([3, 6]),)
+    >>> y = np.array([[1, 2, 1, 2],
+    ...               [2, 2, 0, 0],
+    ...               [5, 3, 4, 4]])
+    ...
+    >>> argrelmax(y, axis=1)
+    (array([0]), array([1]))
     """
     return argrelextrema(data, np.greater, axis, order, mode)
 
@@ -149,8 +178,6 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
 def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     """
     Calculate the relative extrema of `data`.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -171,21 +198,36 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
 
     Returns
     -------
-    extrema : ndarray
-        Indices of the extrema, as an array of integers (same format as
-        np.argmin, np.argmax).
+    extrema : tuple of ndarrays
+        Indices of the maxima in arrays of integers.  ``extrema[k]`` is
+        the array of indices of axis `k` of `data`.  Note that the
+        return value is a tuple even when `data` is one-dimensional.
 
-    See also
+    See Also
     --------
     argrelmin, argrelmax
+
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
+    >>> argrelextrema(x, np.greater)
+    (array([3, 6]),)
+    >>> y = np.array([[1, 2, 1, 2],
+    ...               [2, 2, 0, 0],
+    ...               [5, 3, 4, 4]])
+    ...
+    >>> argrelextrema(y, np.less, axis=1)
+    (array([0, 2]), array([2, 1]))
 
     """
     results = _boolrelextrema(data, comparator,
                               axis, order, mode)
-    if ~results.any():
-        return (np.array([]),) * 2
-    else:
-        return np.where(results)
+    return np.where(results)
 
 
 def _identify_ridge_lines(matr, max_distances, gap_thresh):
@@ -212,10 +254,10 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     Returns
     -------
     ridge_lines : tuple
-        Tuple of 2 1-D sequences. `ridge_lines`[ii][0] are the rows of the ii-th
-        ridge-line, `ridge_lines`[ii][1] are the columns. Empty if none found.
-        Each ridge-line will be sorted by row (increasing), but the order
-        of the ridge lines is not specified.
+        Tuple of 2 1-D sequences. `ridge_lines`[ii][0] are the rows of the
+        ii-th ridge-line, `ridge_lines`[ii][1] are the columns. Empty if none
+        found.  Each ridge-line will be sorted by row (increasing), but the
+        order of the ridge lines is not specified.
 
     References
     ----------
@@ -226,25 +268,26 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     Examples
     --------
     >>> data = np.random.rand(5,5)
-    >>> ridge_lines = identify_ridge_lines(data, 1, 1)
+    >>> ridge_lines = _identify_ridge_lines(data, 1, 1)
 
     Notes
     -----
-    This function is intended to be used in conjuction with `cwt`
+    This function is intended to be used in conjunction with `cwt`
     as part of `find_peaks_cwt`.
 
     """
     if(len(max_distances) < matr.shape[0]):
-        raise ValueError('Max_distances must have at least as many rows as matr')
+        raise ValueError('Max_distances must have at least as many rows '
+                         'as matr')
 
     all_max_cols = _boolrelextrema(matr, np.greater, axis=1, order=1)
-    #Highest row for which there are any relative maxima
+    # Highest row for which there are any relative maxima
     has_relmax = np.where(all_max_cols.any(axis=1))[0]
     if(len(has_relmax) == 0):
         return []
     start_row = has_relmax[-1]
-    #Each ridge line is a 3-tuple:
-    #rows, cols,Gap number
+    # Each ridge line is a 3-tuple:
+    # rows, cols,Gap number
     ridge_lines = [[[start_row],
                    [col],
                    0] for col in np.where(all_max_cols[start_row])[0]]
@@ -254,23 +297,21 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     for row in rows:
         this_max_cols = cols[all_max_cols[row]]
 
-        #Increment gap number of each line,
-        #set it to zero later if appropriate
+        # Increment gap number of each line,
+        # set it to zero later if appropriate
         for line in ridge_lines:
             line[2] += 1
 
-        #XXX These should always be all_max_cols[row]
-        #But the order might be different. Might be an efficiency gain
-        #to make sure the order is the same and avoid this iteration
+        # XXX These should always be all_max_cols[row]
+        # But the order might be different. Might be an efficiency gain
+        # to make sure the order is the same and avoid this iteration
         prev_ridge_cols = np.array([line[1][-1] for line in ridge_lines])
-        #Look through every relative maximum found at current row
-        #Attempt to connect them with existing ridge lines.
+        # Look through every relative maximum found at current row
+        # Attempt to connect them with existing ridge lines.
         for ind, col in enumerate(this_max_cols):
-            """
-            If there is a previous ridge line within
-            the max_distance to connect to, do so.
-            Otherwise start a new one.
-            """
+            # If there is a previous ridge line within
+            # the max_distance to connect to, do so.
+            # Otherwise start a new one.
             line = None
             if(len(prev_ridge_cols) > 0):
                 diffs = np.abs(col - prev_ridge_cols)
@@ -278,7 +319,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
                 if diffs[closest] <= max_distances[row]:
                     line = ridge_lines[closest]
             if(line is not None):
-                #Found a point close enough, extend current ridge line
+                # Found a point close enough, extend current ridge line
                 line[1].append(col)
                 line[0].append(row)
                 line[2] = 0
@@ -288,10 +329,10 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
                             0]
                 ridge_lines.append(new_line)
 
-        #Remove the ridge lines with gap_number too high
-        #XXX Modifying a list while iterating over it.
-        #Should be safe, since we iterate backwards, but
-        #still tacky.
+        # Remove the ridge lines with gap_number too high
+        # XXX Modifying a list while iterating over it.
+        # Should be safe, since we iterate backwards, but
+        # still tacky.
         for ind in xrange(len(ridge_lines) - 1, -1, -1):
             line = ridge_lines[ind]
             if line[2] > gap_thresh:
@@ -310,7 +351,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
 
 def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
-                       min_snr=1, noise_perc=10):
+                        min_snr=1, noise_perc=10):
     """
     Filter ridge lines according to prescribed criteria. Intended
     to be used for finding relative maxima.
@@ -349,15 +390,18 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
         min_length = np.ceil(cwt.shape[0] / 4)
     if window_size is None:
         window_size = np.ceil(num_points / 20)
-    hf_window = window_size / 2
 
-    #Filter based on SNR
+    window_size = int(window_size)
+    hf_window, odd = divmod(window_size, 2)
+
+    # Filter based on SNR
     row_one = cwt[0, :]
     noises = np.zeros_like(row_one)
     for ind, val in enumerate(row_one):
-        window = np.arange(max([ind - hf_window, 0]), min([ind + hf_window, num_points]))
-        window = window.astype(int)
-        noises[ind] = scoreatpercentile(row_one[window], per=noise_perc)
+        window_start = max(ind - hf_window, 0)
+        window_end = min(ind + hf_window + odd, num_points)
+        noises[ind] = scoreatpercentile(row_one[window_start:window_end],
+                                        per=noise_perc)
 
     def filt_func(line):
         if len(line[0]) < min_length:
@@ -370,8 +414,8 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     return list(filter(filt_func, ridge_lines))
 
 
-def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=None,
-                   min_length=None, min_snr=1, noise_perc=10):
+def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
+                   gap_thresh=None, min_length=None, min_snr=1, noise_perc=10):
     """
     Attempt to find the peaks in a 1-D array.
 
@@ -379,8 +423,6 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
     `wavelet(width)` for each width in `widths`. Relative maxima which
     appear at enough length scales, and with sufficiently high SNR, are
     accepted.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -415,6 +457,12 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
         examined below which to consider noise. Calculated using
         `stats.scoreatpercentile`.  Default is 10.
 
+    Returns
+    -------
+    peaks_indices : list
+        Indices of the locations in the `vector` where peaks were found.
+        The list is sorted.
+
     See Also
     --------
     cwt
@@ -432,6 +480,8 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None, gap_thresh=
      2. Identify "ridge lines" in the cwt matrix. These are relative maxima
         at each row, connected across adjacent rows. See identify_ridge_lines
      3. Filter the ridge_lines using filter_ridge_lines.
+
+    .. versionadded:: 0.11.0
 
     References
     ----------

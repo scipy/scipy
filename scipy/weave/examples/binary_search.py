@@ -1,6 +1,6 @@
 # Offers example of inline C for binary search algorithm.
 # Borrowed from Kalle Svensson in the Python Cookbook.
-# The results are nearly in the "not worth it" catagory.
+# The results are nearly in the "not worth it" category.
 #
 # C:\home\ej\wrk\scipy\compiler\examples>python binary_search.py
 # Binary search for 3000 items in 100000 length list of integers:

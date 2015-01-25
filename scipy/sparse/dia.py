@@ -10,8 +10,8 @@ import numpy as np
 
 from .base import isspmatrix, _formats
 from .data import _data_matrix
-from .sputils import isshape, upcast, upcast_char, getdtype
-from .sparsetools import dia_matvec
+from .sputils import isshape, upcast_char, getdtype, get_index_dtype
+from ._sparsetools import dia_matvec
 
 
 class dia_matrix(_data_matrix):
@@ -56,20 +56,20 @@ class dia_matrix(_data_matrix):
     Examples
     --------
 
-    >>> from scipy.sparse import *
-    >>> from scipy import *
-    >>> dia_matrix( (3,4), dtype=int8).todense()
-    matrix([[0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0]], dtype=int8)
+    >>> import numpy as np
+    >>> from scipy.sparse import dia_matrix
+    >>> dia_matrix((3, 4), dtype=np.int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
 
-    >>> data = array([[1,2,3,4]]).repeat(3,axis=0)
-    >>> offsets = array([0,-1,2])
-    >>> dia_matrix( (data,offsets), shape=(4,4)).todense()
-    matrix([[1, 0, 3, 0],
-            [1, 2, 0, 4],
-            [0, 2, 3, 0],
-            [0, 0, 3, 4]])
+    >>> data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
+    >>> offsets = np.array([0, -1, 2])
+    >>> dia_matrix((data, offsets), shape=(4, 4)).toarray()
+    array([[1, 0, 3, 0],
+           [1, 2, 0, 4],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
 
     """
 
@@ -96,7 +96,8 @@ class dia_matrix(_data_matrix):
                 # create empty matrix
                 self.shape = arg1   # spmatrix checks for errors here
                 self.data = np.zeros((0,0), getdtype(dtype, default=float))
-                self.offsets = np.zeros((0), dtype=np.intc)
+                idx_dtype = get_index_dtype(maxval=max(self.shape))
+                self.offsets = np.zeros((0), dtype=idx_dtype)
             else:
                 try:
                     # Try interpreting it as (data, offsets)
@@ -107,7 +108,9 @@ class dia_matrix(_data_matrix):
                     if shape is None:
                         raise ValueError('expected a shape argument')
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
-                    self.offsets = np.atleast_1d(np.array(arg1[1], dtype=np.intc, copy=copy))
+                    self.offsets = np.atleast_1d(np.array(arg1[1],
+                                                          dtype=get_index_dtype(maxval=max(shape)),
+                                                          copy=copy))
                     self.shape = shape
         else:
             #must be dense, convert to COO first, then to DIA
@@ -180,6 +183,38 @@ class dia_matrix(_data_matrix):
 
     def _mul_multimatrix(self, other):
         return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
+
+    def _setdiag(self, values, k=0):
+        M, N = self.shape
+
+        if values.ndim == 0:
+            # broadcast
+            values_n = np.inf
+        else:
+            values_n = len(values)
+
+        if k < 0:
+            n = min(M + k, N, values_n)
+            min_index = 0
+            max_index = n
+        else:
+            n = min(M, N - k, values_n)
+            min_index = k
+            max_index = k + n
+
+        if values.ndim != 0:
+            # allow also longer sequences
+            values = values[:n]
+
+        if k in self.offsets:
+            self.data[self.offsets == k, min_index:max_index] = values
+        else:
+            self.offsets = np.append(self.offsets, self.offsets.dtype.type(k))
+            m = max(max_index, self.data.shape[1])
+            data = np.zeros((self.data.shape[0]+1, m), dtype=self.data.dtype)
+            data[:-1,:self.data.shape[1]] = self.data
+            data[-1, min_index:max_index] = values
+            self.data = data
 
     def todia(self,copy=False):
         if copy:

@@ -1,4 +1,8 @@
 .. image:: https://travis-ci.org/scipy/scipy.png?branch=master
+   :target: https://travis-ci.org/scipy/scipy/
+
+.. image:: https://coveralls.io/repos/scipy/scipy/badge.png?branch=master
+   :target: https://coveralls.io/r/scipy/scipy?branch=master 
 
 =====
 SciPy
@@ -89,4 +93,3 @@ License information
 See the file ``LICENSE.txt`` for information on the history of this
 software, terms & conditions for usage, and a DISCLAIMER OF ALL
 WARRANTIES.
-

@@ -10,7 +10,7 @@ from .windows import get_window
 from ._spectral import lombscargle
 import warnings
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle']
 
@@ -33,11 +33,11 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
         directly as the window. Defaults to None; equivalent to 'boxcar'.
     nfft : int, optional
         Length of the FFT used. If None the length of `x` will be used.
-    detrend : str or function, optional
+    detrend : str or function or False, optional
         Specifies how to detrend `x` prior to computing the spectrum. If
         `detrend` is a string, it is passed as the ``type`` argument to
-        `detrend`. If it is a function, it should return a detrended array.
-        Defaults to 'constant'.
+        `detrend`.  If it is a function, it should return a detrended array.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
     return_onesided : bool, optional
         If True, return a one-sided spectrum for real data. If False return
         a two-sided spectrum. Note that for complex data, a two-sided
@@ -88,6 +88,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
 
     >>> f, Pxx_den = signal.periodogram(x, fs)
     >>> plt.semilogy(f, Pxx_den)
+    >>> plt.ylim([1e-7, 1e2])
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('PSD [V**2/Hz]')
     >>> plt.show()
@@ -103,6 +104,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     >>> f, Pxx_spec = signal.periodogram(x, fs, 'flattop', scaling='spectrum')
     >>> plt.figure()
     >>> plt.semilogy(f, np.sqrt(Pxx_spec))
+    >>> plt.ylim([1e-4, 1e1])
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('Linear spectrum [V RMS]')
     >>> plt.show()
@@ -167,11 +169,11 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired.  If None,
         the FFT length is `nperseg`. Defaults to None.
-    detrend : str or function, optional
+    detrend : str or function or False, optional
         Specifies how to detrend each segment. If `detrend` is a string,
-        it is passed as the ``type`` argument to `detrend`. If it is a
+        it is passed as the ``type`` argument to `detrend`.  If it is a
         function, it takes a segment and returns a detrended segment.
-        Defaults to 'constant'.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
     return_onesided : bool, optional
         If True, return a one-sided spectrum for real data. If False return
         a two-sided spectrum. Note that for complex data, a two-sided
@@ -237,8 +239,9 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 
     Compute and plot the power spectral density.
 
-    >>> f, Pxx_den = signal.welch(x, fs, 1024)
+    >>> f, Pxx_den = signal.welch(x, fs, nperseg=1024)
     >>> plt.semilogy(f, Pxx_den)
+    >>> plt.ylim([0.5e-3, 1])
     >>> plt.xlabel('frequency [Hz]')
     >>> plt.ylabel('PSD [V**2/Hz]')
     >>> plt.show()
@@ -288,6 +291,11 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
             raise ValueError('window is longer than x.')
         nperseg = win.shape[0]
 
+    # numpy 1.5.1 doesn't have result_type.
+    outdtype = (np.array([x[0]]) * np.array([1], 'f')).dtype.char.lower()
+    if win.dtype != outdtype:
+        win = win.astype(outdtype)
+ 
     if scaling == 'density':
         scale = 1.0 / (fs * (win*win).sum())
     elif scaling == 'spectrum':
@@ -305,7 +313,9 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     elif nfft < nperseg:
         raise ValueError('nfft must be greater than or equal to nperseg.')
 
-    if not hasattr(detrend, '__call__'):
+    if not detrend:
+        detrend_func = lambda seg: seg
+    elif not hasattr(detrend, '__call__'):
         detrend_func = lambda seg: signaltools.detrend(seg, type=detrend)
     elif axis != -1:
         # Wrap this function so that it receives a shape that it could
@@ -324,7 +334,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         outshape = list(x.shape)
         if nfft % 2 == 0:  # even
             outshape[-1] = nfft // 2 + 1
-            Pxx = np.empty(outshape, x.dtype)
+            Pxx = np.empty(outshape, outdtype)
             for k, ind in enumerate(indices):
                 x_dt = detrend_func(x[..., ind:ind+nperseg])
                 xft = fftpack.rfft(x_dt*win, nfft)
@@ -343,7 +353,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
                                     / (k+1.0)
         else:  # odd
             outshape[-1] = (nfft+1) // 2
-            Pxx = np.empty(outshape, x.dtype)
+            Pxx = np.empty(outshape, outdtype)
             for k, ind in enumerate(indices):
                 x_dt = detrend_func(x[..., ind:ind+nperseg])
                 xft = fftpack.rfft(x_dt*win, nfft)

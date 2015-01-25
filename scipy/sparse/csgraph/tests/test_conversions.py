@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, dec
+from numpy.testing import assert_array_almost_equal
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import csgraph_from_dense, csgraph_to_dense
 
@@ -36,7 +36,6 @@ def test_csgraph_from_dense():
         assert_array_almost_equal(G, G_csr.toarray())
 
 
-@dec.skipif(np.version.short_version < '1.6', "Can't test arrays with infs.")
 def test_csgraph_to_dense():
     np.random.seed(1234)
     G = np.random.random((10, 10))

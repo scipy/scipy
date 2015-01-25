@@ -52,6 +52,9 @@ typedef enum {
     NI_EXTEND_DEFAULT = NI_EXTEND_MIRROR
 } NI_ExtendMode;
 
+/* maximum size of error message buffer */
+#define NI_MAX_ERR_MSG 400
+
 
 /******************************************************************/
 /* Misc */
@@ -215,13 +218,13 @@ int NI_InitLineBuffer(PyArrayObject*, int, npy_intp, npy_intp, npy_intp,
                                             double*, NI_ExtendMode, double, NI_LineBuffer*);
 
 /* Extend a line in memory to implement boundary conditions: */
-int NI_ExtendLine(double*, npy_intp, npy_intp, npy_intp, NI_ExtendMode, double);
+int NI_ExtendLine(double*, npy_intp, npy_intp, npy_intp, NI_ExtendMode, double, char*);
 
 /* Copy a line from an array to a buffer: */
-int NI_ArrayToLineBuffer(NI_LineBuffer*, npy_intp*, int*);
+int NI_ArrayToLineBuffer(NI_LineBuffer*, npy_intp*, int*, char*);
 
 /* Copy a line from a buffer to an array: */
-int NI_LineBufferToArray(NI_LineBuffer*);
+int NI_LineBufferToArray(NI_LineBuffer*, char*);
 
 /******************************************************************/
 /* Multi-dimensional filter support functions */

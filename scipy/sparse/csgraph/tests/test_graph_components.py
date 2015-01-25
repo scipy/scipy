@@ -3,17 +3,14 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from numpy.testing import assert_, assert_equal
-from numpy.testing.utils import WarningManager
+from numpy.testing import assert_, assert_equal, run_module_suite
 from scipy.sparse import csr_matrix, csgraph
 
 
 def test_cs_graph_components():
     D = np.eye(4, dtype=np.bool)
 
-    warn_ctx = WarningManager()
-    warn_ctx.__enter__()
-    try:
+    with warnings.catch_warnings():
         warnings.filterwarnings("ignore",
                     message="`cs_graph_components` is deprecated")
 
@@ -32,5 +29,7 @@ def test_cs_graph_components():
         n_comp, flag = csgraph.cs_graph_components(csr_matrix(D))
         assert_(n_comp == 2)
         assert_equal(flag, [0, 0, -2, 1])
-    finally:
-        warn_ctx.__exit__()
+
+
+if __name__ == "__main__":
+    run_module_suite()

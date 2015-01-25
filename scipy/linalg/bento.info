@@ -3,25 +3,26 @@ HookFile: bscript
 Library:
     Extension: _fblas
         Sources:
-            fblas.pyf.src,
-            src/fblaswrap_dummy.f
+            fblas.pyf.src
     Extension: _cblas
         Sources:
             cblas.pyf.src
     Extension: _flapack
         Sources:
-            flapack.pyf.src,
-            src/flapackwrap_dummy.f
+            flapack.pyf.src
     Extension: _clapack
         Sources:
             clapack.pyf.src
     Extension: _flinalg
         Sources:
             src/det.f, src/lu.f
-    Extension: calc_lwork
-        Sources:
-            src/calc_lwork.f
     Extension: _interpolative
         Sources:
              interpolative.pyf,
              src/id_dist/src/*.f
+    Extension: _calc_lwork
+        Sources:
+             src/calc_lwork.f
+    Extension: _solve_toeplitz
+        Sources:
+             _solve_toeplitz.c

@@ -238,19 +238,19 @@ class KDTree(object):
     class node(object):
         if sys.version_info[0] >= 3:
             def __lt__(self, other):
-                id(self) < id(other)
+                return id(self) < id(other)
 
             def __gt__(self, other):
-                id(self) > id(other)
+                return id(self) > id(other)
 
             def __le__(self, other):
-                id(self) <= id(other)
+                return id(self) <= id(other)
 
             def __ge__(self, other):
-                id(self) >= id(other)
+                return id(self) >= id(other)
 
             def __eq__(self, other):
-                id(self) == id(other)
+                return id(self) == id(other)
 
     class leafnode(node):
         def __init__(self, idx):
@@ -418,15 +418,16 @@ class KDTree(object):
 
         Returns
         -------
-        d : array of floats
+        d : float or array of floats
             The distances to the nearest neighbors.
             If x has shape tuple+(self.m,), then d has shape tuple if
-            k is one, or tuple+(k,) if k is larger than one.  Missing
-            neighbors are indicated with infinite distances.  If k is None,
+            k is one, or tuple+(k,) if k is larger than one. Missing
+            neighbors (e.g. when k > n or distance_upper_bound is
+            given) are indicated with infinite distances.  If k is None,
             then d is an object array of shape tuple, containing lists
             of distances. In either case the hits are sorted by distance
             (nearest first).
-        i : array of integers
+        i : integer or array of integers
             The locations of the neighbors in self.data. i is the same
             shape as d.
 
@@ -469,6 +470,8 @@ class KDTree(object):
         >>> pts = np.array([[0, 0], [2.1, 2.9]])
         >>> tree.query(pts)
         (array([ 2.        ,  0.14142136]), array([ 0, 13]))
+        >>> tree.query(pts[0])
+        (2.0, 0)
 
         """
         x = np.asarray(x)

@@ -55,7 +55,7 @@ the result tuple when the full_output argument is non-zero.
   multipack_python_function = fun; \
   multipack_extra_arguments = arg; }
 
-#define INIT_JAC_FUNC(fun,Dfun,arg,col_deriv,errobj) { \
+#define INIT_JAC_FUNC(fun,Dfun,arg,col_deriv,errobj,jac_type) { \
   store_multipack_globals[0] = multipack_python_function; \
   store_multipack_globals[1] = multipack_extra_arguments; \
   store_multipack_globals[2] = multipack_python_jacobian; \
@@ -73,7 +73,8 @@ the result tuple when the full_output argument is non-zero.
   multipack_python_function = fun; \
   multipack_extra_arguments = arg; \
   multipack_python_jacobian = Dfun; \
-  multipack_jac_transpose = !(col_deriv);}
+  multipack_jac_transpose = !(col_deriv); \
+  multipack_jac_type = jac_type;}
 
 #define RESTORE_JAC_FUNC() multipack_python_function = store_multipack_globals[0]; \
   multipack_extra_arguments = store_multipack_globals[1]; \
@@ -96,42 +97,15 @@ the result tuple when the full_output argument is non-zero.
     diag = (double *)ap_diag -> data; \
     mode = 2; } }
 
-#define MATRIXC2F(jac,data,n,m) {double *p1=(double *)(jac), *p2, *p3=(double *)(data);\
-int i,j;\
-for (j=0;j<(m);p3++,j++) \
-  for (p2=p3,i=0;i<(n);p2+=(m),i++,p1++) \
-    *p1 = *p2; }
-
 static PyObject *multipack_python_function=NULL;
 static PyObject *multipack_python_jacobian=NULL;
 static PyObject *multipack_extra_arguments=NULL;    /* a tuple */
 static int multipack_jac_transpose=1;
+static int multipack_jac_type;
 
-static PyArrayObject * my_make_numpy_array(PyObject *y0, int type, int mindim, int maxdim)
-     /* This is just like PyArray_ContiguousFromObject except it handles
-      * single numeric datatypes as 1-element, rank-1 arrays instead of as
-      * scalars.
-      */
-{
-  PyArrayObject *new_array;
-  PyObject *tmpobj;
 
-  Py_INCREF(y0);
-
-  if (PyInt_Check(y0) || PyFloat_Check(y0)) {
-    tmpobj = PyList_New(1);
-    PyList_SET_ITEM(tmpobj, 0, y0);   /* reference now belongs to tmpobj */
-  }
-  else
-    tmpobj = y0;
-  
-  new_array = (PyArrayObject *)PyArray_ContiguousFromObject(tmpobj, type, mindim, maxdim);
-  
-  Py_DECREF(tmpobj);
-  return new_array;
-}
-
-static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyObject *args, int dim, PyObject *error_obj)
+static PyObject *call_python_function(PyObject *func, npy_intp n, double *x,
+                                      PyObject *args, PyObject *error_obj)
 {
   /*
     This is a generic function to call a python function that takes a 1-D
@@ -154,7 +128,9 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
 
   /* Build sequence argument from inputs */
   sequence = (PyArrayObject *)PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *)x);
-  if (sequence == NULL) PYERR2(error_obj,"Internal failure to make an array of doubles out of first\n                 argument to function call.");
+  if (sequence == NULL) {
+    goto fail;
+  }
 
   /* Build argument list */
   if ((arg1 = PyTuple_New(1)) == NULL) {
@@ -163,11 +139,12 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   }
   PyTuple_SET_ITEM(arg1, 0, (PyObject *)sequence); 
                 /* arg1 now owns sequence reference */
-  if ((arglist = PySequence_Concat( arg1, args)) == NULL)
-    PYERR2(error_obj,"Internal error constructing argument list.");
+  if ((arglist = PySequence_Concat(arg1, args)) == NULL) {
+    goto fail;
+  }
 
   Py_DECREF(arg1);    /* arglist has a reference to sequence, now. */
-  arg1=NULL;
+  arg1 = NULL;
 
   /* Call function object --- variable passed to routine.  Extra
           arguments are in another passed variable.
@@ -176,8 +153,11 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
     goto fail;
   }
 
-  if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL) 
-    PYERR2(error_obj,"Result from function call is not a proper array of floats.");
+  result_array = (PyArrayObject *)PyArray_ContiguousFromObject(
+                                      result, NPY_DOUBLE, 0, 0);
+  if (result_array == NULL) {
+    goto fail;
+  }
 
   Py_DECREF(result);
   Py_DECREF(arglist);
@@ -189,16 +169,3 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   Py_XDECREF(arg1);
   return NULL;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

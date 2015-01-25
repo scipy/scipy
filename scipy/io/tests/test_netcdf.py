@@ -5,18 +5,17 @@ import os
 from os.path import join as pjoin, dirname
 import shutil
 import tempfile
-import time
-import sys
+import warnings
 from io import BytesIO
 from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import dec, assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, assert_raises, assert_equal
 
 from scipy.io.netcdf import netcdf_file
 
-from nose.tools import assert_true, assert_false, assert_equal, assert_raises
+from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
@@ -37,13 +36,13 @@ def make_simple(*args, **kwargs):
     f.close()
 
 
-def gen_for_simple(ncfileobj):
-    ''' Generator for example fileobj tests '''
-    yield assert_equal, ncfileobj.history, b'Created for a test'
+def check_simple(ncfileobj):
+    '''Example fileobj tests '''
+    assert_equal(ncfileobj.history, b'Created for a test')
     time = ncfileobj.variables['time']
-    yield assert_equal, time.units, b'days since 2008-01-01'
-    yield assert_equal, time.shape, (N_EG_ELS,)
-    yield assert_equal, time[-1], N_EG_ELS-1
+    assert_equal(time.units, b'days since 2008-01-01')
+    assert_equal(time.shape, (N_EG_ELS,))
+    assert_equal(time[-1], N_EG_ELS-1)
 
 
 def test_read_write_files():
@@ -54,31 +53,62 @@ def test_read_write_files():
         os.chdir(tmpdir)
         with make_simple('simple.nc', 'w') as f:
             pass
+        # read the file we just created in 'a' mode
+        with netcdf_file('simple.nc', 'a') as f:
+            check_simple(f)
+            # add something
+            f._attributes['appendRan'] = 1
+
         # To read the NetCDF file we just created::
         with netcdf_file('simple.nc') as f:
             # Using mmap is the default
-            yield assert_true, f.use_mmap
-            for testargs in gen_for_simple(f):
-                yield testargs
+            assert_(f.use_mmap)
+            check_simple(f)
+            assert_equal(f._attributes['appendRan'], 1)
+
+        # Read it in append (and check mmap is off)
+        with netcdf_file('simple.nc', 'a') as f:
+            assert_(not f.use_mmap)
+            check_simple(f)
+            assert_equal(f._attributes['appendRan'], 1)
 
         # Now without mmap
         with netcdf_file('simple.nc', mmap=False) as f:
             # Using mmap is the default
-            yield assert_false, f.use_mmap
-            for testargs in gen_for_simple(f):
-                yield testargs
+            assert_(not f.use_mmap)
+            check_simple(f)
 
         # To read the NetCDF file we just created, as file object, no
         # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
         # raised an error in pupynere 1.0.12 and scipy rev 5893, because
         # calculated vsize was rounding up in units of 4 - see
         # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
-        fobj = open('simple.nc', 'rb')
-        with netcdf_file(fobj) as f:
-            # by default, don't use mmap for file-like
-            yield assert_false, f.use_mmap
-            for testargs in gen_for_simple(f):
-                yield testargs
+        with open('simple.nc', 'rb') as fobj:
+            with netcdf_file(fobj) as f:
+                # by default, don't use mmap for file-like
+                assert_(not f.use_mmap)
+                check_simple(f)
+
+        # Read file from fileobj, with mmap
+        with open('simple.nc', 'rb') as fobj:
+            with netcdf_file(fobj, mmap=True) as f:
+                assert_(f.use_mmap)
+                check_simple(f)
+
+        # Again read it in append mode (adding another att)
+        with open('simple.nc', 'r+b') as fobj:
+            with netcdf_file(fobj, 'a') as f:
+                assert_(not f.use_mmap)
+                check_simple(f)
+                f.createDimension('app_dim', 1)
+                var = f.createVariable('app_var', 'i', ('app_dim',))
+                var[:] = 42
+
+        # And... check that app_var made it in...
+        with netcdf_file('simple.nc') as f:
+            check_simple(f)
+            assert_equal(f.variables['app_var'][:], 42)
+
     except:
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
@@ -94,12 +124,11 @@ def test_read_write_sio():
 
     eg_sio2 = BytesIO(str_val)
     with netcdf_file(eg_sio2) as f2:
-        for testargs in gen_for_simple(f2):
-            yield testargs
+        check_simple(f2)
 
     # Test that error is raised if attempting mmap for sio
     eg_sio3 = BytesIO(str_val)
-    yield assert_raises, ValueError, netcdf_file, eg_sio3, 'r', True
+    assert_raises(ValueError, netcdf_file, eg_sio3, 'r', True)
     # Test 64-bit offset write / read
     eg_sio_64 = BytesIO()
     with make_simple(eg_sio_64, 'w', version=2) as f_64:
@@ -107,15 +136,13 @@ def test_read_write_sio():
 
     eg_sio_64 = BytesIO(str_val)
     with netcdf_file(eg_sio_64) as f_64:
-        for testargs in gen_for_simple(f_64):
-            yield testargs
-        yield assert_equal, f_64.version_byte, 2
+        check_simple(f_64)
+        assert_equal(f_64.version_byte, 2)
     # also when version 2 explicitly specified
     eg_sio_64 = BytesIO(str_val)
     with netcdf_file(eg_sio_64, version=2) as f_64:
-        for testargs in gen_for_simple(f_64):
-            yield testargs
-        yield assert_equal, f_64.version_byte, 2
+        check_simple(f_64)
+        assert_equal(f_64.version_byte, 2)
 
 
 def test_read_example_data():
@@ -130,12 +157,16 @@ def test_read_example_data():
 def test_itemset_no_segfault_on_readonly():
     # Regression test for ticket #1202.
     # Open the test file in read-only mode.
-    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
-    with netcdf_file(filename, 'r') as f:
-        time_var = f.variables['time']
 
-    # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
-    assert_raises(RuntimeError, time_var.assignValue, 42)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+        with netcdf_file(filename, 'r') as f:
+            time_var = f.variables['time']
+
+        # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
+        assert_raises(RuntimeError, time_var.assignValue, 42)
 
 
 def test_write_invalid_dtype():
@@ -148,8 +179,7 @@ def test_write_invalid_dtype():
     with netcdf_file(BytesIO(), 'w') as f:
         f.createDimension('time', N_EG_ELS)
         for dt in dtypes:
-            yield assert_raises, ValueError, \
-                f.createVariable, 'time', dt, ('time',)
+            assert_raises(ValueError, f.createVariable, 'time', dt, ('time',))
 
 
 def test_flush_rewind():
@@ -198,3 +228,70 @@ def test_ticket_1720():
         assert_equal(float_var.units, b'metres')
         assert_equal(float_var.shape, (10,))
         assert_allclose(float_var[:], items)
+
+
+def test_mmaps_segfault():
+    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with netcdf_file(filename, mmap=True) as f:
+            x = f.variables['lat'][:]
+            # should not raise warnings
+            del x
+
+    def doit():
+        with netcdf_file(filename, mmap=True) as f:
+            return f.variables['lat'][:]
+
+    # should not crash
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        x = doit()
+        x.sum()
+
+
+def test_zero_dimensional_var():
+    io = BytesIO()
+    with make_simple(io, 'w') as f:
+        v = f.createVariable('zerodim', 'i2', [])
+        # This is checking that .isrec returns a boolean - don't simplify it
+        # to 'assert not ...'
+        assert v.isrec is False, v.isrec
+        f.flush()
+
+
+def test_byte_gatts():
+    # Check that global "string" atts work like they did before py3k
+    # unicode and general bytes confusion
+    with in_tempdir():
+        filename = 'g_byte_atts.nc'
+        f = netcdf_file(filename, 'w')
+        f._attributes['holy'] = b'grail'
+        f._attributes['witch'] = 'floats'
+        f.close()
+        f = netcdf_file(filename, 'r')
+        assert_equal(f._attributes['holy'], b'grail')
+        assert_equal(f._attributes['witch'], b'floats')
+        f.close()
+
+
+def test_open_append():
+    # open 'w' put one attr
+    with in_tempdir():
+        filename = 'append_dat.nc'
+        f = netcdf_file(filename, 'w')
+        f._attributes['Kilroy'] = 'was here'
+        f.close()
+
+        # open again in 'a', read the att and and a new one
+        f = netcdf_file(filename, 'a')
+        assert_equal(f._attributes['Kilroy'], b'was here')
+        f._attributes['naughty'] = b'Zoot'
+        f.close()
+
+        # open yet again in 'r' and check both atts
+        f = netcdf_file(filename, 'r')
+        assert_equal(f._attributes['Kilroy'], b'was here')
+        assert_equal(f._attributes['naughty'], b'Zoot')
+        f.close()

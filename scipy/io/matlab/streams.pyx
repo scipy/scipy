@@ -106,9 +106,8 @@ cdef class ZlibInputStream(GenericStream):
     ----------
     stream : file-like
         Stream to read compressed data from.
-    max_length : int, optional
+    max_length : int
         Maximum number of bytes to read from the stream.
-        -1 if the length is unlimited.
 
     Notes
     -----
@@ -127,7 +126,7 @@ cdef class ZlibInputStream(GenericStream):
     cdef size_t _total_position
     cdef size_t _read_bytes
 
-    def __init__(self, fobj, ssize_t max_length=-1):
+    def __init__(self, fobj, ssize_t max_length):
         self.fobj = fobj
 
         self._max_length = max_length
@@ -145,9 +144,7 @@ cdef class ZlibInputStream(GenericStream):
         if self._buffer_position < self._buffer_size:
             return
 
-        read_size = BLOCK_SIZE
-        if self._max_length >= 0:
-            read_size = min(read_size, self._max_length - self._read_bytes)
+        read_size = min(BLOCK_SIZE, self._max_length - self._read_bytes)
 
         block = self.fobj.read(read_size)
         self._read_bytes += len(block)
@@ -162,7 +159,8 @@ cdef class ZlibInputStream(GenericStream):
     cdef int read_into(self, void *buf, size_t n) except -1:
         """Read n bytes from stream into pre-allocated buffer `buf`
         """
-        cdef char *dstp, *srcp
+        cdef char *dstp
+        cdef char *srcp
         cdef size_t read_size, count, size
 
         dstp = <char*>buf
@@ -199,7 +197,13 @@ cdef class ZlibInputStream(GenericStream):
         cdef void *p
         return self.read_string(n_bytes, &p)
 
-    cpdef long int tell(self):
+    cpdef int all_data_read(self):
+        return (self._max_length == self._read_bytes) and \
+               (self._buffer_size == self._buffer_position)
+
+    cpdef long int tell(self) except -1:
+        if self._total_position == -1:
+            raise IOError("Invalid file position.")
         return self._total_position
 
     cpdef int seek(self, long int offset, int whence=0) except -1:
@@ -302,8 +306,11 @@ cdef class FileStream(GenericStream):
             raise IOError('Failed seek')
         return ret
 
-    cpdef long int tell(self):
-        return ftell(self.file)
+    cpdef long int tell(self) except -1:
+        cdef long int position = ftell(self.file)
+        if position == -1:
+            raise IOError("Invalid file position.")
+        return position
 
     cdef int read_into(self, void *buf, size_t n) except -1:
         """ Read n bytes from stream into pre-allocated buffer `buf`

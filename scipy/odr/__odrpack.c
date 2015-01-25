@@ -1253,46 +1253,6 @@ fail:
   return NULL;
 }
 
-static void check_args(int n, int m, int np, int nq,
-                       PyArrayObject * beta,
-                       PyArrayObject * y, int ldy,
-                       PyArrayObject * x, int ldx,
-                       PyArrayObject * we, int ldwe, int ld2we,
-                       PyArrayObject * wd, int ldwd, int ld2wd,
-                       PyArrayObject * ifixb, PyArrayObject * ifixx,
-                       int ldifx, int job, int ndigit, double taufac,
-                       double sstol, double partol, int maxit,
-                       PyArrayObject * stpb, PyArrayObject * stpd,
-                       int ldstpd, PyArrayObject * sclb,
-                       PyArrayObject * scld, int ldscld,
-                       PyArrayObject * work, int lwork,
-                       PyArrayObject * iwork, int liwork, int info)
-{
-  PyObject *printdict;
-
-  printdict =
-    Py_BuildValue
-    ("{s:i,s:i,s:i,s:i,s:O,s:O,s:i,s:O,s:i,s:O,s:i,s:i,s:O,s:i,s:i,s:O,s:O,s:i,s:i,s:i,s:d,s:d,s:d,s:i,s:O,s:O,s:i,s:O,s:O,s:i,s:O,s:i,s:O,s:i,s:i}",
-     "n", n, "m", m, "np", np, "nq", nq, "beta", (PyObject *) beta, "y",
-     (PyObject *) y, "ldy", ldy, "x", (PyObject *) x, "ldx", ldx, "we",
-     (PyObject *) we, "ldwe", ldwe, "ld2we", ld2we, "wd", (PyObject *) wd,
-     "ldwd", ldwd, "ld2wd", ld2wd, "ifixb", (PyObject *) ifixb, "ifixx",
-     (PyObject *) ifixx, "ldifx", ldifx, "job", job, "ndigit", ndigit,
-     "taufac", taufac, "sstol", sstol, "partol", partol, "maxit", maxit,
-     "stpb", (PyObject *) stpb, "stpd", (PyObject *) stpd, "ldstpd", ldstpd,
-     "sclb", (PyObject *) sclb, "scld", (PyObject *) scld, "ldscld", ldscld,
-     "work", (PyObject *) work, "lwork", lwork, "iwork", (PyObject *) iwork,
-     "liwork", liwork, "info", info);
-  if (printdict == NULL)
-    {
-      PyErr_Print();
-      return;
-    }
-
-  PyObject_Print(printdict, stdout, Py_PRINT_RAW);
-  printf("\n");
-  Py_XDECREF(printdict);
-}
 
 PyObject *set_exceptions(PyObject * self, PyObject * args, PyObject * kwds)
 {

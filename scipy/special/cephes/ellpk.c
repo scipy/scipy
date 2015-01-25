@@ -207,9 +207,16 @@ double ellpk(x)
 double x;
 {
 
-    if ((x < 0.0) || (x > 1.0)) {
+    if (x < 0.0) {
 	mtherr("ellpk", DOMAIN);
 	return (NPY_NAN);
+    }
+
+    if (x > 1.0) {
+        if (npy_isinf(x)) {
+            return 0.0;
+        }
+        return ellpk(1/x)/sqrt(x);
     }
 
     if (x > MACHEP) {

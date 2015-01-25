@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <functional>
 
+#include "util.h"
 #include "dense.h"
 
 /*
@@ -455,13 +456,13 @@ void csr_toell(const I n_row,
 	                 I Bj[],
 	                 T Bx[])
 {
-    const I ell_nnz = row_length * n_row;
+    const npy_intp ell_nnz = (npy_intp)row_length * n_row;
     std::fill(Bj, Bj + ell_nnz, 0);
     std::fill(Bx, Bx + ell_nnz, 0);
 
     for(I i = 0; i < n_row; i++){
-        I * Bj_row = Bj + row_length * i;
-        T * Bx_row = Bx + row_length * i;
+        I * Bj_row = Bj + (npy_intp)row_length * i;
+        T * Bx_row = Bx + (npy_intp)row_length * i;
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             *Bj_row = Aj[jj];            
             *Bx_row = Ax[jj];            
@@ -534,16 +535,29 @@ void csr_matmat_pass1(const I n_row,
 
     I nnz = 0;
     for(I i = 0; i < n_row; i++){
+        npy_intp row_nnz = 0;
+
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             I j = Aj[jj];
             for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
                 I k = Bj[kk];
                 if(mask[k] != i){
                     mask[k] = i;                        
-                    nnz++;
+                    row_nnz++;
                 }
             }
-        }         
+        }
+
+        npy_intp next_nnz = nnz + row_nnz;
+
+        if (row_nnz > NPY_MAX_INTP - nnz || next_nnz != (I)next_nnz) {
+            /*
+             * Index overflowed. Note that row_nnz <= n_col and cannot overflow
+             */
+            throw std::overflow_error("nnz of the result is too large");
+        }
+
+        nnz = next_nnz;
         Cp[i+1] = nnz;
     }
 }
@@ -916,7 +930,7 @@ void csr_eldiv_csr(const I n_row, const I n_col,
                    const I Bp[], const I Bj[], const T Bx[],
                          I Cp[],       I Cj[],       T Cx[])
 {
-    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,safe_divides<T>());
 }
 
 
@@ -938,6 +952,23 @@ void csr_minus_csr(const I n_row, const I n_col,
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
 
+template <class I, class T>
+void csr_maximum_csr(const I n_row, const I n_col, 
+                     const I Ap[], const I Aj[], const T Ax[],
+                     const I Bp[], const I Bj[], const T Bx[],
+                           I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
+}
+
+template <class I, class T>
+void csr_minimum_csr(const I n_row, const I n_col, 
+                     const I Ap[], const I Aj[], const T Ax[],
+                     const I Bp[], const I Bj[], const T Bx[],
+                           I Cp[],       I Cj[],       T Cx[])
+{
+    csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
+}
 
 
 /*
@@ -1096,11 +1127,11 @@ void csr_matvecs(const I n_row,
 	                   T Yx[])
 {
     for(I i = 0; i < n_row; i++){
-        T * y = Yx + n_vecs * i;
+        T * y = Yx + (npy_intp)n_vecs * i;
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             const I j = Aj[jj];
             const T a = Ax[jj];
-            const T * x = Xx + n_vecs * j;
+            const T * x = Xx + (npy_intp)n_vecs * j;
             axpy(n_vecs, a, x, y);
         }
     }
@@ -1208,7 +1239,7 @@ I csr_count_diagonals(const I n_row,
  *   T  Bx[N]         - sample values
  *
  * Note:
- *   Output array Yx must be preallocated
+ *   Output array Bx must be preallocated
  *
  *   Complexity: varies 
  *
@@ -1290,6 +1321,108 @@ void csr_sample_values(const I n_row,
         }
 
     }
+}
+
+/*
+ * Determine the data offset at specific locations
+ *
+ * Input Arguments:
+ *   I  n_row         - number of rows in A
+ *   I  n_col         - number of columns in A
+ *   I  Ap[n_row+1]   - row pointer
+ *   I  Aj[nnz(A)]    - column indices
+ *   I  n_samples     - number of samples
+ *   I  Bi[N]         - sample rows
+ *   I  Bj[N]         - sample columns
+ *
+ * Output Arguments:
+ *   I  Bp[N]         - offsets into Aj; -1 if non-existent
+ *
+ * Return value:
+ *   1 if any sought entries are duplicated, in which case the
+ *   function has exited early; 0 otherwise.
+ *
+ * Note:
+ *   Output array Bp must be preallocated
+ *
+ *   Complexity: varies. See csr_sample_values
+ *
+ */
+template <class I>
+int csr_sample_offsets(const I n_row,
+                        const I n_col,
+                        const I Ap[],
+                        const I Aj[],
+                        const I n_samples,
+                        const I Bi[],
+                        const I Bj[],
+                              I Bp[])
+{
+    const I nnz = Ap[n_row];
+    const I threshold = nnz / 10; // constant is arbitrary
+
+    if (n_samples > threshold && csr_has_canonical_format(n_row, Ap, Aj))
+    {
+        for(I n = 0; n < n_samples; n++)
+        {
+            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+
+            const I row_start = Ap[i];
+            const I row_end   = Ap[i+1];
+
+            if (row_start < row_end)
+            {
+                const I offset = std::lower_bound(Aj + row_start, Aj + row_end, j) - Aj;
+
+                if (offset < row_end && Aj[offset] == j)
+                    Bp[n] = offset;
+                else
+                    Bp[n] = -1;
+            }
+            else
+            {
+                Bp[n] = -1;
+            }
+        }
+    }
+    else
+    {
+        for(I n = 0; n < n_samples; n++)
+        {
+            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+
+            const I row_start = Ap[i];
+            const I row_end   = Ap[i+1];
+
+            I offset = -1;
+
+            for(I jj = row_start; jj < row_end; jj++)
+            {
+                if (Aj[jj] == j) {
+                	offset = jj;
+                	for (jj++; jj < row_end; jj++) {
+                		if (Aj[jj] == j) {
+                			offset = -2;
+                			return 1;
+                		}
+					}
+                }
+            }
+            Bp[n] = offset;
+        }
+    }
+    return 0;
+}
+
+/*
+ * A test function checking the error handling
+ */
+template <class T>
+int test_throw_error() {
+    throw std::bad_alloc();
+    return 1;
 }
 
 #endif

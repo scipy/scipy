@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import
 
 from scipy.optimize import minpack2
 import numpy as np
-from scipy.lib.six.moves import xrange
+from scipy._lib.six import xrange
 
 __all__ = ['line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
@@ -214,12 +214,20 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     Returns
     -------
-    alpha0 : float
+    alpha : float
         Alpha for which ``x_new = x0 + alpha * pk``.
     fc : int
         Number of function evaluations made.
     gc : int
         Number of gradient evaluations made.
+    new_fval : float
+        New function value ``f(x_new)=f(x0+alpha*pk)``.
+    old_fval : float
+        Old function value ``f(x0)``.
+    new_slope : float
+        The local slope along the search direction at the
+        new value ``<myfprime(x_new), pk>``.
+    
 
     Notes
     -----
@@ -255,7 +263,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
             return np.dot(gval[0], pk)
 
     if gfk is None:
-        gfk = fprime(xk)
+        gfk = fprime(xk, *args)
     derphi0 = np.dot(gfk, pk)
 
     alpha_star, phi_star, old_fval, derphi_star = \
@@ -404,27 +412,27 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
     """
     # f(x) = A *(x-a)^3 + B*(x-a)^2 + C*(x-a) + D
 
-    C = fpa
-    db = b - a
-    dc = c - a
-    if (db == 0) or (dc == 0) or (b == c):
+    with np.errstate(divide='raise', over='raise', invalid='raise'):
+        try:
+            C = fpa
+            db = b - a
+            dc = c - a
+            denom = (db * dc) ** 2 * (db - dc)
+            d1 = np.empty((2, 2))
+            d1[0, 0] = dc ** 2
+            d1[0, 1] = -db ** 2
+            d1[1, 0] = -dc ** 3
+            d1[1, 1] = db ** 3
+            [A, B] = np.dot(d1, np.asarray([fb - fa - C * db,
+                                            fc - fa - C * dc]).flatten())
+            A /= denom
+            B /= denom
+            radical = B * B - 3 * A * C
+            xmin = a + (-B + np.sqrt(radical)) / (3 * A)
+        except ArithmeticError:
+            return None
+    if not np.isfinite(xmin):
         return None
-    denom = (db * dc) ** 2 * (db - dc)
-    d1 = np.empty((2, 2))
-    d1[0, 0] = dc ** 2
-    d1[0, 1] = -db ** 2
-    d1[1, 0] = -dc ** 3
-    d1[1, 1] = db ** 3
-    [A, B] = np.dot(d1, np.asarray([fb - fa - C * db,
-                                    fc - fa - C * dc]).flatten())
-    A /= denom
-    B /= denom
-    radical = B * B - 3 * A * C
-    if radical < 0:
-        return None
-    if A == 0:
-        return None
-    xmin = a + (-B + np.sqrt(radical)) / (3 * A)
     return xmin
 
 
@@ -435,15 +443,17 @@ def _quadmin(a, fa, fpa, b, fb):
 
     """
     # f(x) = B*(x-a)^2 + C*(x-a) + D
-    D = fa
-    C = fpa
-    db = b - a * 1.0
-    if db == 0:
+    with np.errstate(divide='raise', over='raise', invalid='raise'):
+        try:
+            D = fa
+            C = fpa
+            db = b - a * 1.0
+            B = (fb - D - C * db) / (db * db)
+            xmin = a - C / (2.0 * B)
+        except ArithmeticError:
+            return None
+    if not np.isfinite(xmin):
         return None
-    B = (fb - D - C * db) / (db * db)
-    if B <= 0:
-        return None
-    xmin = a - C / (2.0 * B)
     return xmin
 
 
@@ -648,3 +658,160 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
 
     # Failed to find a suitable step length
     return None, phi_a1
+
+
+#------------------------------------------------------------------------------
+# Non-monotone line search for DF-SANE
+#------------------------------------------------------------------------------
+
+def _nonmonotone_line_search_cruz(f, x_k, d, prev_fs, eta,
+                                  gamma=1e-4, tau_min=0.1, tau_max=0.5):
+    """
+    Nonmonotone backtracking line search as described in [1]_
+
+    Parameters
+    ----------
+    f : callable
+        Function returning a tuple ``(f, F)`` where ``f`` is the value
+        of a merit function and ``F`` the residual.
+    x_k : ndarray
+        Initial position
+    d : ndarray
+        Search direction
+    prev_fs : float
+        List of previous merit function values. Should have ``len(prev_fs) <= M``
+        where ``M`` is the nonmonotonicity window parameter.
+    eta : float
+        Allowed merit function increase, see [1]_
+    gamma, tau_min, tau_max : float, optional
+        Search parameters, see [1]_
+
+    Returns
+    -------
+    alpha : float
+        Step length
+    xp : ndarray
+        Next position
+    fp : float
+        Merit function value at next position
+    Fp : ndarray
+        Residual at next position
+
+    References
+    ----------
+    [1] "Spectral residual method without gradient information for solving
+        large-scale nonlinear systems of equations." W. La Cruz,
+        J.M. Martinez, M. Raydan. Math. Comp. **75**, 1429 (2006).
+
+    """
+    f_k = prev_fs[-1]
+    f_bar = max(prev_fs)
+
+    alpha_p = 1
+    alpha_m = 1
+    alpha = 1
+
+    while True:
+        xp = x_k + alpha_p * d
+        fp, Fp = f(xp)
+
+        if fp <= f_bar + eta - gamma * alpha_p**2 * f_k:
+            alpha = alpha_p
+            break
+
+        alpha_tp = alpha_p**2 * f_k / (fp + (2*alpha_p - 1)*f_k)
+
+        xp = x_k - alpha_m * d
+        fp, Fp = f(xp)
+
+        if fp <= f_bar + eta - gamma * alpha_m**2 * f_k:
+            alpha = -alpha_m
+            break
+
+        alpha_tm = alpha_m**2 * f_k / (fp + (2*alpha_m - 1)*f_k)
+
+        alpha_p = np.clip(alpha_tp, tau_min * alpha_p, tau_max * alpha_p)
+        alpha_m = np.clip(alpha_tm, tau_min * alpha_m, tau_max * alpha_m)
+
+    return alpha, xp, fp, Fp
+
+
+def _nonmonotone_line_search_cheng(f, x_k, d, f_k, C, Q, eta,
+                                   gamma=1e-4, tau_min=0.1, tau_max=0.5,
+                                   nu=0.85):
+    """
+    Nonmonotone line search from [1]
+
+    Parameters
+    ----------
+    f : callable
+        Function returning a tuple ``(f, F)`` where ``f`` is the value
+        of a merit function and ``F`` the residual.
+    x_k : ndarray
+        Initial position
+    d : ndarray
+        Search direction
+    f_k : float
+        Initial merit function value
+    C, Q : float
+        Control parameters. On the first iteration, give values
+        Q=1.0, C=f_k
+    eta : float
+        Allowed merit function increase, see [1]_
+    nu, gamma, tau_min, tau_max : float, optional
+        Search parameters, see [1]_
+
+    Returns
+    -------
+    alpha : float
+        Step length
+    xp : ndarray
+        Next position
+    fp : float
+        Merit function value at next position
+    Fp : ndarray
+        Residual at next position
+    C : float
+        New value for the control parameter C
+    Q : float
+        New value for the control parameter Q
+
+    References
+    ----------
+    .. [1] W. Cheng & D.-H. Li, ''A derivative-free nonmonotone line
+           search and its application to the spectral residual
+           method'', IMA J. Numer. Anal. 29, 814 (2009).
+
+    """
+    alpha_p = 1
+    alpha_m = 1
+    alpha = 1
+
+    while True:
+        xp = x_k + alpha_p * d
+        fp, Fp = f(xp)
+
+        if fp <= C + eta - gamma * alpha_p**2 * f_k:
+            alpha = alpha_p
+            break
+
+        alpha_tp = alpha_p**2 * f_k / (fp + (2*alpha_p - 1)*f_k)
+
+        xp = x_k - alpha_m * d
+        fp, Fp = f(xp)
+
+        if fp <= C + eta - gamma * alpha_m**2 * f_k:
+            alpha = -alpha_m
+            break
+
+        alpha_tm = alpha_m**2 * f_k / (fp + (2*alpha_m - 1)*f_k)
+
+        alpha_p = np.clip(alpha_tp, tau_min * alpha_p, tau_max * alpha_p)
+        alpha_m = np.clip(alpha_tm, tau_min * alpha_m, tau_max * alpha_m)
+
+    # Update C and Q
+    Q_next = nu * Q + 1
+    C = (nu * Q * (C + eta) + fp) / Q_next
+    Q = Q_next
+
+    return alpha, xp, fp, Fp, C, Q

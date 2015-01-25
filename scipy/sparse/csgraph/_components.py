@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from scipy.sparse.sparsetools import cs_graph_components as _cs_graph_components
+from scipy.sparse._sparsetools import cs_graph_components as _cs_graph_components
 
 from scipy.sparse.csr import csr_matrix
 from scipy.sparse.base import isspmatrix

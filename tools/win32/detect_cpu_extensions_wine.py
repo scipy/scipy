@@ -26,7 +26,7 @@ NUMPY_PY25 = os.environ['HOME'] + '/.wine/drive_c/Python25/Lib/site-packages/num
 NUMPY_PY26 = os.environ['HOME'] + '/.wine/drive_c/Python26/Lib/site-packages/numpy/'
 NUMPY_PY27 = os.environ['HOME'] + '/.wine/drive_c/Python27/Lib/site-packages/numpy/'
 NUMPY_PY31 = os.environ['HOME'] + '/.wine/drive_c/Python31/Lib/site-packages/numpy/'
-SSE3_LIBS = os.environ['HOME'] +  '/.wine/drive_c/local/lib/yop/sse3'
+SSE3_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/sse3'
 SSE2_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/sse2'
 NOSSE_LIBS = os.environ['HOME'] + '/.wine/drive_c/local/lib/yop/nosse'
 
@@ -49,7 +49,7 @@ def main():
 
 
 def single_file_checkext(fname, striproot=True):
-    if striproot == True:
+    if striproot:
         sys.stdout.write('%s: ' % fname.replace(basepath, ''))
     else:
         sys.stdout.write('%s: ' % fname)
@@ -137,7 +137,7 @@ EXTS_simd = dict(
     sse4_1='mpsadbw phminposuw pmulld pmuldq     dpps dppd     blendps blendpd blendvps blendvpd pblendvb pblendw     pminsb pmaxsb pminuw pmaxuw pminud pmaxud pminsd pmaxsd     roundps roundss roundpd roundsd     insertps pinsrb pinsrd/pinsrq extractps pextrb pextrw pextrd/pextrq     pmovsxbw pmovzxbw pmovsxbd pmovzxbd pmovsxbq pmovzxbq pmovsxwd pmovzxwd pmovsxwq pmovzxwq pmovsxdq pmovzxdq     ptest     pcmpeqq     packusdw     movntdqa',
     sse4a='extrq insertq movntsd movntss',
     sse4_2='crc32     pcmpestri     pcmpestrm     pcmpistri     pcmpistrm     pcmpgtq',
-    fma='vfmaddpd vfmaddps vfmaddsd vfmaddss vfmaddsubpd vfmaddsubps vfmsubaddpd vfmsubaddps vfmsubpd vfmsubps vfmsubsd vfmsubss vfnmaddpd fndmaddps vfnmaddsd vfnmadss vfnmsubpd vfnmsubpd vfnmsubps vfnmsubsd vfnmsubss',
+    fma='vfmaddpd vfmaddps vfmaddsd vfmaddss vfmaddsubpd vfmaddsubps vfmsubaddpd vfmsubaddps vfmsubpd vfmsubps vfmsubsd vfmsubss vfnmaddpd vfnmaddps vfnmaddsd vfnmadss vfnmsubpd vfnmsubps vfnmsubsd vfnmsubss',
 )
 
 INSTRS = dict()

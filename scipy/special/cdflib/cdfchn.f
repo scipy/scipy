@@ -112,6 +112,16 @@ C     ..
 C     .. External Subroutines ..
       EXTERNAL cumchn,dinvr,dstinv
 C     ..
+      IF (x.GT.inf) THEN
+          x = inf
+      END IF
+      IF (df.GT.inf) THEN
+          df = inf
+      END IF
+      IF (pnonc.GT.tent4) THEN
+          pnonc = tent4
+      END IF
+
       IF (.NOT. ((which.LT.1).OR. (which.GT.4))) GO TO 30
       IF (.NOT. (which.LT.1)) GO TO 10
       bound = 1.0D0
@@ -133,21 +143,21 @@ C     ..
 
    60 CONTINUE
    70 IF (which.EQ.2) GO TO 90
-      IF (.NOT. (x.LT.0.0D0)) GO TO 80
+      IF (x.GE.0.0D0) GO TO 80
       bound = 0.0D0
       status = -4
       RETURN
 
    80 CONTINUE
    90 IF (which.EQ.3) GO TO 110
-      IF (.NOT. (df.LE.0.0D0)) GO TO 100
+      IF (df.GT.0.0D0) GO TO 100
       bound = 0.0D0
       status = -5
       RETURN
 
   100 CONTINUE
   110 IF (which.EQ.4) GO TO 130
-      IF (.NOT. (pnonc.LT.0.0D0)) GO TO 120
+      IF (pnonc.GE.0.0D0) GO TO 120
       bound = 0.0D0
       status = -6
       RETURN

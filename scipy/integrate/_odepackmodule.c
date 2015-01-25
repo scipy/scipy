@@ -32,7 +32,7 @@ PyObject *PyInit__odepack(void)
 
     s = PyUString_FromString(" 1.9 ");
     PyDict_SetItemString(d, "__version__", s);
-    odepack_error = PyErr_NewException ("odpack.error", NULL, NULL);
+    odepack_error = PyErr_NewException ("odepack.error", NULL, NULL);
     Py_DECREF(s);
     PyDict_SetItemString(d, "error", odepack_error);
     if (PyErr_Occurred()) {

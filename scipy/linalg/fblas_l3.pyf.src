@@ -6,10 +6,10 @@
 ! Modified: Fabian Pedregosa, 2011; Evgeni Burovski, 2013
 !
 ! Implemented:
-!   gemm, symm, hemm, syrk, herk, syr2k, her2k
+!   gemm, symm, hemm, syrk, herk, syr2k, her2k, trmm
 !
 ! Not Implemented:
-!   trmm, trsm
+!   trsm
 !
 
 
@@ -154,4 +154,42 @@ subroutine <prefix6><sy,\0,\0,\0,he,he>r2k(n,k,alpha,a,b,beta,c,trans,lower,lda,
         check(trans ? lda==ldb: ka==kb) :: k = (trans ? lda : ka)
 
 end subroutine <prefix><sy,\0,\0,\0,he,he>r2k
+
+
+subroutine <prefix>trmm(m, n, k, alpha, a, b, lda, ldb, side, lower, trans_a, diag)
+
+  !  performs one of the matrix-matrix operations
+  !
+  !     B := alpha*op( A )*B,   or   B := alpha*B*op( A )
+  !
+  !  where  alpha  is a scalar,  B  is an m by n matrix,  A  is a unit, or
+  !  non-unit,  upper or lower triangular matrix  and  op( A )  is one  of
+  !
+  !     op( A ) = A   or   op( A ) = A**T   or   op( A ) = A**H.
+  !
+  ! c = trmm(alpha, a, b, side=0, lower=0, trans_a=0, diag=0)
+
+  callstatement (*f2py_func)((side?"R":"L"), (lower?"L":"U"), &
+        (trans_a?(trans_a==2?"C":"T"):"N"), (diag?"U":"N"), &m, &n, &alpha, a, &lda, b, &ldb)
+  callprotoargument char*, char*, char*, char*, int*, int*, <ctype>*,<ctype>*,int*,<ctype>*, int*
+
+  integer optional, intent(in), check(side==0 || side==1) :: side = 0
+  integer optional, intent(in), check(lower==0 || lower==1) :: lower = 0
+  integer optional, intent(in), check(trans_a>=0 && trans_a <=2) :: trans_a = 0
+  integer optional, intent(in), check(diag==0 || diag==1) :: diag = 0
+
+  <ftype> intent(in) :: alpha
+
+  <ftype> dimension(lda, k), intent(in) :: a
+  <ftype> dimension(ldb, n), intent(in, out, copy) :: b
+
+  integer depend(a), intent(hide) :: lda = shape(a, 0)
+  integer depend(a), intent(hide) :: k = shape(a, 1)
+
+  integer depend(b), intent(hide) :: ldb = shape(b, 0)
+  integer depend(b), intent(hide) :: n = shape(b, 1)
+
+  integer depend(side, a, b, n, k), intent(hide) :: m = (side ? n : k)
+
+end subroutine <prefix>trmm
 

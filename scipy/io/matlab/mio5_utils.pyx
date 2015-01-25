@@ -107,6 +107,7 @@ native_code = sys_is_le and '<' or '>'
 swapped_code = sys_is_le and '>' or '<'
 
 cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
+cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool)
 
 
 cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
@@ -122,10 +123,11 @@ cdef class VarHeader5:
     cdef readonly object dims
     cdef cnp.int32_t dims_ptr[_MAT_MAXDIMS]
     cdef int n_dims
+    cdef int check_stream_limit
     cdef int is_complex
     cdef readonly int is_logical
     cdef public int is_global
-    cdef size_t nzmax
+    cdef readonly size_t nzmax
 
     def set_dims(self, dims):
         """ Allow setting of dimensions from python
@@ -402,13 +404,38 @@ cdef class VarReader5:
                 self.cstream.seek(8 - mod8, 1)
         return 0
 
-    cpdef cnp.ndarray read_numeric(self, int copy=True):
+    cpdef cnp.ndarray read_numeric(self, int copy=True, size_t nnz=-1):
         ''' Read numeric data element into ndarray
 
         Reads element, then casts to ndarray.
 
-        The type of the array is given by the ``mdtype`` returned via
-        ``read_element``.
+        The type of the array is usually given by the ``mdtype`` returned via
+        ``read_element``.  Sparse logical arrays are an exception, where the
+        type of the array may be ``np.bool`` even if the ``mdtype`` claims the
+        data is of float64 type.
+
+        Parameters
+        ----------
+        copy : bool, optional
+            Whether to copy the array before returning.  If False, return array
+            backed by bytes read from file.
+        nnz : int, optional
+            Number of non-zero values when reading numeric data from sparse
+            matrices.  -1 if not reading sparse matrices, or to disable check
+            for bytes data instead of declared data type (see Notes).
+
+        Returns
+        -------
+        arr : array
+            Numeric array
+
+        Notes
+        -----
+        MATLAB apparently likes to store sparse logical matrix data as bytes
+        instead of miDOUBLE (float64) data type, even though the data element
+        still declares its type as miDOUBLE.  We can guess this has happened by
+        looking for the length of the data compared to the expected number of
+        elements, using the `nnz` input parameter.
         '''
         cdef cnp.uint32_t mdtype, byte_count
         cdef void *data_ptr
@@ -417,7 +444,11 @@ cdef class VarReader5:
         cdef object data = self.read_element(
             &mdtype, &byte_count, <void **>&data_ptr, copy)
         cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
-        el_count = byte_count // dt.itemsize
+        if dt.itemsize != 1 and nnz != -1 and byte_count == nnz:
+            el_count = <cnp.npy_intp> nnz
+            dt = BOOL_DTYPE
+        else:
+            el_count = byte_count // dt.itemsize
         cdef int flags = 0
         if copy:
             flags = cnp.NPY_WRITEABLE
@@ -511,10 +542,17 @@ cdef class VarReader5:
             byte_count[0] = u4s[1]
         return 0
 
-    cpdef VarHeader5 read_header(self):
+    cpdef VarHeader5 read_header(self, int check_stream_limit):
         ''' Return matrix header for current stream position
 
         Returns matrix headers at top level and sub levels
+
+        Parameters
+        ----------
+        check_stream_limit : if True, then if the returned header
+        is passed to array_from_header, it will be verified that
+        the length of the uncompressed data is not overlong (which
+        can indicate .mat file corruption)
         '''
         cdef:
             cdef cnp.uint32_t u4s[2]
@@ -537,6 +575,7 @@ cdef class VarReader5:
         header = VarHeader5()
         mc = flags_class & 0xFF
         header.mclass = mc
+        header.check_stream_limit = check_stream_limit
         header.is_logical = flags_class >> 9 & 1
         header.is_global = flags_class >> 10 & 1
         header.is_complex = flags_class >> 11 & 1
@@ -610,7 +649,7 @@ cdef class VarReader5:
                 return np.array([])
             else:
                 return np.array([[]])
-        header = self.read_header()
+        header = self.read_header(False)
         return self.array_from_header(header, process)
 
     cpdef array_from_header(self, VarHeader5 header, int process=1):
@@ -631,6 +670,7 @@ cdef class VarReader5:
         cdef:
             object arr
             cnp.dtype mat_dtype
+        cdef size_t remaining
         cdef int mc = header.mclass
         if (mc == mxDOUBLE_CLASS
             or mc == mxSINGLE_CLASS
@@ -652,7 +692,7 @@ cdef class VarReader5:
         elif mc == mxSPARSE_CLASS:
             arr = self.read_sparse(header)
             # no current processing makes sense for sparse
-            return arr
+            process = False
         elif mc == mxCHAR_CLASS:
             arr = self.read_char(header)
             if process and self.chars_as_strings:
@@ -669,12 +709,17 @@ cdef class VarReader5:
             arr = self.read_mi_matrix()
             arr = mio5p.MatlabFunction(arr)
             # to make them more re-writeable - don't squeeze
-            return arr
+            process = 0
         elif mc == mxOPAQUE_CLASS:
             arr = self.read_opaque(header)
             arr = mio5p.MatlabOpaque(arr)
             # to make them more re-writeable - don't squeeze
-            return arr
+            process = 0
+        if header.check_stream_limit:
+            if not self.cstream.all_data_read():
+                raise ValueError('Did not fully consume compressed contents' +
+                                 ' of an miCOMPRESSED element. This can' +
+                                 ' indicate that the .mat file is corrupted.')
         if process and self.squeeze_me:
             return squeeze_element(arr)
         return arr
@@ -719,11 +764,16 @@ cdef class VarReader5:
         cdef size_t M, N, nnz
         rowind = self.read_numeric()
         indptr = self.read_numeric()
+        M, N = header.dims
+        indptr = indptr[:N+1]
+        nnz = indptr[-1]
         if header.is_complex:
             # avoid array copy to save memory
             data   = self.read_numeric(False)
             data_j = self.read_numeric(False)
             data = data + (data_j * 1j)
+        elif header.is_logical:
+            data = self.read_numeric(True, nnz)
         else:
             data = self.read_numeric()
         ''' From the matlab (TM) API documentation, last found here:
@@ -738,14 +788,9 @@ cdef class VarReader5:
         stored in column order, this gives the column corresponding
         to each rowind
         '''
-        M,N = header.dims
-        indptr = indptr[:N+1]
-        nnz = indptr[-1]
-        rowind = rowind[:nnz]
-        data   = data[:nnz]
         return scipy.sparse.csc_matrix(
-            (data,rowind,indptr),
-            shape=(M,N))
+            (data[:nnz], rowind[:nnz], indptr),
+            shape=(M, N))
 
     cpdef cnp.ndarray read_char(self, VarHeader5 header):
         ''' Read char matrices from stream as arrays

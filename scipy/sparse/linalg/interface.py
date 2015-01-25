@@ -54,17 +54,17 @@ class LinearOperator(object):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import LinearOperator
-    >>> from scipy import *
     >>> def mv(v):
-    ...     return array([ 2*v[0], 3*v[1]])
+    ...     return np.array([2*v[0], 3*v[1]])
     ...
-    >>> A = LinearOperator( (2,2), matvec=mv )
+    >>> A = LinearOperator((2,2), matvec=mv)
     >>> A
     <2x2 LinearOperator with unspecified dtype>
-    >>> A.matvec( ones(2) )
+    >>> A.matvec(np.ones(2))
     array([ 2.,  3.])
-    >>> A * ones(2)
+    >>> A * np.ones(2)
     array([ 2.,  3.])
 
     """
@@ -388,7 +388,7 @@ def aslinearoperator(A):
      - LinearOperator
      - An object with .shape and .matvec attributes
 
-    See the LinearOperator documentation for additonal information.
+    See the LinearOperator documentation for additional information.
 
     Examples
     --------

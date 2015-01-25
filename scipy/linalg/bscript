@@ -1,6 +1,8 @@
 import sys
+import os
 
 from bento.commands import hooks
+from scipy._build_utils import get_g77_abi_wrappers
 
 @hooks.pre_build
 def pre_build(context):
@@ -9,13 +11,19 @@ def pre_build(context):
 
     def fblas_builder(extension):
         source = extension.sources[:]
+
+        # XXX: detect this properly
         if sys.platform == "darwin":
-            source.pop(source.index("src/fblaswrap_dummy.f"))
-            source.append("src/fblaswrap_veclib_c.c")
+            info = {'extra_link_args': 'Accelerate'}
+        else:
+            info = {}
+	source += [os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
+                   for f in get_g77_abi_wrappers(info)]
+
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,
-                               use="BLAS CLIB")
+                               use="LAPACK CLIB")
     context.register_builder("_fblas", fblas_builder)
 
     def cblas_builder(extension):
@@ -27,11 +35,18 @@ def pre_build(context):
 
     def flapack_builder(extension):
         source = extension.sources[:]
+
+        # XXX: detect this properly
         if sys.platform == "darwin":
-            source.pop(source.index("src/flapackwrap_dummy.f"))
-            source.append("src/flapackwrap_veclib_c.c")
+            info = {'extra_link_args': 'Accelerate'}
+        else:
+            info = {}
+	source += [os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
+                   for f in get_g77_abi_wrappers(info)]
+
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
+                               source=source,
                                use="LAPACK CLIB")
     context.register_builder("_flapack", flapack_builder)
 
@@ -45,9 +60,11 @@ def pre_build(context):
     context.tweak_extension("_flinalg",
                             features="c fc pyext bento cshlib f2py f2py_fortran",
                             use="LAPACK CLIB")
-    context.tweak_extension("calc_lwork",
-                            features="c fc pyext bento cshlib f2py f2py_fortran",
-                            use="LAPACK CLIB")
+
     context.tweak_extension("_interpolative",
                             features="c fc pyext bento cshlib f2py",
+                            use="LAPACK CLIB")
+
+    context.tweak_extension("_calc_lwork",
+                            features="c fc pyext bento cshlib f2py f2py_fortran",
                             use="LAPACK CLIB")

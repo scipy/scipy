@@ -168,7 +168,7 @@ def block(x, y, new_x):
         Return array, of same length as `x_new`.
 
     """
-    # find index of values in x that preceed values in x
+    # find index of values in x that precede values in x
     # This code is a little strange -- we really want a routine that
     # returns the index of values where x[j] < x[index]
     TINY = 1e-10

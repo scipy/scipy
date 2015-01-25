@@ -1,4 +1,5 @@
       subroutine fpknot(x,m,t,n,fpint,nrdata,nrint,nest,istart)
+      implicit none
 c  subroutine fpknot locates an additional knot for a spline of degree
 c  k and adjusts the corresponding parameters,i.e.
 c    t     : the position of the knots.

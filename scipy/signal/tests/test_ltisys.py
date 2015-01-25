@@ -3,27 +3,83 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, run_module_suite
-
-from scipy.signal.ltisys import ss2tf, lsim2, impulse2, step2, lti, bode, \
-    freqresp, impulse, step
+from numpy.testing import (assert_almost_equal, assert_equal,
+                           assert_allclose, assert_raises,
+                           run_module_suite)
+from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
+                                 bode, freqresp, impulse, step,
+                                 abcd_normalize)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
 
 class TestSS2TF:
+
     def tst_matrix_shapes(self, p, q, r):
         ss2tf(np.zeros((p, p)),
               np.zeros((p, q)),
               np.zeros((r, p)),
               np.zeros((r, q)), 0)
 
-    def test_basic(self):
-        for p, q, r in [
-            (3, 3, 3),
-            (1, 3, 3),
-            (1, 1, 1)]:
+    def test_shapes(self):
+        # Each tuple holds:
+        #   number of states, number of inputs, number of outputs
+        for p, q, r in [(3, 3, 3), (1, 3, 3), (1, 1, 1)]:
             yield self.tst_matrix_shapes, p, q, r
+
+    def test_basic(self):
+        # Test a round trip through tf2ss and sst2f.
+        b = np.array([1.0, 3.0, 5.0])
+        a = np.array([1.0, 2.0, 3.0])
+
+        A, B, C, D = tf2ss(b, a)
+        assert_allclose(A, [[-2, -3], [1, 0]], rtol=1e-13)
+        assert_allclose(B, [[1], [0]], rtol=1e-13)
+        assert_allclose(C, [[1, 2]], rtol=1e-13)
+        # N.b. the shape of D returned by tf2ss is (1,), not (1, 1). Sigh.
+        assert_allclose(D, [1], rtol=1e-14)
+
+        bb, aa = ss2tf(A, B, C, D)
+        assert_allclose(bb[0], b, rtol=1e-13)
+        assert_allclose(aa, a, rtol=1e-13)
+
+    def test_multioutput(self):
+        # Regression test for gh-2669.
+
+        # 4 states
+        A = np.array([[-1.0, 0.0, 1.0, 0.0],
+                      [-1.0, 0.0, 2.0, 0.0],
+                      [-4.0, 0.0, 3.0, 0.0],
+                      [-8.0, 8.0, 0.0, 4.0]])
+
+        # 1 input
+        B = np.array([[0.3],
+                      [0.0],
+                      [7.0],
+                      [0.0]])
+
+        # 3 outputs
+        C = np.array([[0.0, 1.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 1.0],
+                      [8.0, 8.0, 0.0, 0.0]])
+
+        D = np.array([[0.0],
+                      [0.0],
+                      [1.0]])
+
+        # Get the transfer functions for all the outputs in one call.
+        b_all, a = ss2tf(A, B, C, D)
+
+        # Get the transfer functions for each output separately.
+        b0, a0 = ss2tf(A, B, C[0], D[0])
+        b1, a1 = ss2tf(A, B, C[1], D[1])
+        b2, a2 = ss2tf(A, B, C[2], D[2])
+
+        # Check that we got the same results.
+        assert_allclose(a0, a, rtol=1e-13)
+        assert_allclose(a1, a, rtol=1e-13)
+        assert_allclose(a2, a, rtol=1e-13)
+        assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
 class Test_lsim2(object):
@@ -268,14 +324,146 @@ class TestStep(_TestStepFuncs):
         step(([], [-1], 1+0j))
 
 
-
-
 def test_lti_instantiation():
     # Test that lti can be instantiated with sequences, scalars.  See PR-225.
     s = lti([1], [-1])
     s = lti(np.array([]), np.array([-1]), 1)
     s = lti([], [-1], 1)
     s = lti([1], [-1], 1, 3)
+
+
+class Test_abcd_normalize(object):
+    def setup(self):
+        self.A = np.array([[1.0, 2.0], [3.0, 4.0]])
+        self.B = np.array([[-1.0], [5.0]])
+        self.C = np.array([[4.0, 5.0]])
+        self.D = np.array([[2.5]])
+
+    def test_no_matrix_fails(self):
+        assert_raises(ValueError, abcd_normalize)
+
+    def test_A_nosquare_fails(self):
+        assert_raises(ValueError, abcd_normalize, [1, -1],
+                      self.B, self.C, self.D)
+
+    def test_AB_mismatch_fails(self):
+        assert_raises(ValueError, abcd_normalize, self.A, [-1, 5],
+                      self.C, self.D)
+
+    def test_AC_mismatch_fails(self):
+        assert_raises(ValueError, abcd_normalize, self.A, self.B,
+                      [[4.0], [5.0]], self.D)
+
+    def test_CD_mismatch_fails(self):
+        assert_raises(ValueError, abcd_normalize, self.A, self.B,
+                      self.C, [2.5, 0])
+
+    def test_BD_mismatch_fails(self):
+        assert_raises(ValueError, abcd_normalize, self.A, [-1, 5],
+                      self.C, self.D)
+
+    def test_normalized_matrices_unchanged(self):
+        A, B, C, D = abcd_normalize(self.A, self.B, self.C, self.D)
+        assert_equal(A, self.A)
+        assert_equal(B, self.B)
+        assert_equal(C, self.C)
+        assert_equal(D, self.D)
+
+    def test_shapes(self):
+        A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0)
+        assert_equal(A.shape[0], A.shape[1])
+        assert_equal(A.shape[0], B.shape[0])
+        assert_equal(A.shape[0], C.shape[1])
+        assert_equal(C.shape[0], D.shape[0])
+        assert_equal(B.shape[1], D.shape[1])
+
+    def test_zero_dimension_is_not_none1(self):
+        B_ = np.zeros((2, 0))
+        D_ = np.zeros((0, 0))
+        A, B, C, D = abcd_normalize(A=self.A, B=B_, D=D_)
+        assert_equal(A, self.A)
+        assert_equal(B, B_)
+        assert_equal(D, D_)
+        assert_equal(C.shape[0], D_.shape[0])
+        assert_equal(C.shape[1], self.A.shape[0])
+
+    def test_zero_dimension_is_not_none2(self):
+        B_ = np.zeros((2, 0))
+        C_ = np.zeros((0, 2))
+        A, B, C, D = abcd_normalize(A=self.A, B=B_, C=C_)
+        assert_equal(A, self.A)
+        assert_equal(B, B_)
+        assert_equal(C, C_)
+        assert_equal(D.shape[0], C_.shape[0])
+        assert_equal(D.shape[1], B_.shape[1])
+
+    def test_missing_A(self):
+        A, B, C, D = abcd_normalize(B=self.B, C=self.C, D=self.D)
+        assert_equal(A.shape[0], A.shape[1])
+        assert_equal(A.shape[0], B.shape[0])
+        assert_equal(A.shape, (self.B.shape[0], self.B.shape[0]))
+
+    def test_missing_B(self):
+        A, B, C, D = abcd_normalize(A=self.A, C=self.C, D=self.D)
+        assert_equal(B.shape[0], A.shape[0])
+        assert_equal(B.shape[1], D.shape[1])
+        assert_equal(B.shape, (self.A.shape[0], self.D.shape[1]))
+
+    def test_missing_C(self):
+        A, B, C, D = abcd_normalize(A=self.A, B=self.B, D=self.D)
+        assert_equal(C.shape[0], D.shape[0])
+        assert_equal(C.shape[1], A.shape[0])
+        assert_equal(C.shape, (self.D.shape[0], self.A.shape[0]))
+
+    def test_missing_D(self):
+        A, B, C, D = abcd_normalize(A=self.A, B=self.B, C=self.C)
+        assert_equal(D.shape[0], C.shape[0])
+        assert_equal(D.shape[1], B.shape[1])
+        assert_equal(D.shape, (self.C.shape[0], self.B.shape[1]))
+
+    def test_missing_AB(self):
+        A, B, C, D = abcd_normalize(C=self.C, D=self.D)
+        assert_equal(A.shape[0], A.shape[1])
+        assert_equal(A.shape[0], B.shape[0])
+        assert_equal(B.shape[1], D.shape[1])
+        assert_equal(A.shape, (self.C.shape[1], self.C.shape[1]))
+        assert_equal(B.shape, (self.C.shape[1], self.D.shape[1]))
+
+    def test_missing_AC(self):
+        A, B, C, D = abcd_normalize(B=self.B, D=self.D)
+        assert_equal(A.shape[0], A.shape[1])
+        assert_equal(A.shape[0], B.shape[0])
+        assert_equal(C.shape[0], D.shape[0])
+        assert_equal(C.shape[1], A.shape[0])
+        assert_equal(A.shape, (self.B.shape[0], self.B.shape[0]))
+        assert_equal(C.shape, (self.D.shape[0], self.B.shape[0]))
+
+    def test_missing_AD(self):
+        A, B, C, D = abcd_normalize(B=self.B, C=self.C)
+        assert_equal(A.shape[0], A.shape[1])
+        assert_equal(A.shape[0], B.shape[0])
+        assert_equal(D.shape[0], C.shape[0])
+        assert_equal(D.shape[1], B.shape[1])
+        assert_equal(A.shape, (self.B.shape[0], self.B.shape[0]))
+        assert_equal(D.shape, (self.C.shape[0], self.B.shape[1]))
+
+    def test_missing_BC(self):
+        A, B, C, D = abcd_normalize(A=self.A, D=self.D)
+        assert_equal(B.shape[0], A.shape[0])
+        assert_equal(B.shape[1], D.shape[1])
+        assert_equal(C.shape[0], D.shape[0])
+        assert_equal(C.shape[1], A.shape[0])
+        assert_equal(B.shape, (self.A.shape[0], self.D.shape[1]))
+        assert_equal(C.shape, (self.D.shape[0], self.A.shape[0]))
+
+    def test_missing_ABC_fails(self):
+        assert_raises(ValueError, abcd_normalize, D=self.D)
+
+    def test_missing_BD_fails(self):
+        assert_raises(ValueError, abcd_normalize, A=self.A, C=self.C)
+
+    def test_missing_CD_fails(self):
+        assert_raises(ValueError, abcd_normalize, A=self.A, B=self.B)
 
 
 class Test_bode(object):
@@ -350,6 +538,12 @@ class Test_bode(object):
         # The test passes if bode doesn't raise an exception.
         system = lti([1], [1, 0, 100])
         w, mag, phase = bode(system, n=2)
+
+    def test_08(self):
+        """Test that bode() return continuous phase, issues/2331."""
+        system = lti([], [-10, -30, -40, -60, -70], 1)
+        w, mag, phase = system.bode(w=np.logspace(-3, 40, 100))
+        assert_almost_equal(min(phase), -450, decimal=15)
 
     def test_from_state_space(self):
         # Ensure that bode works with a system that was created from the

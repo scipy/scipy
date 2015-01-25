@@ -251,7 +251,7 @@ class dummy_array(object):
                     end += dim_len
                 # the following is list like behavior,
                 # which isn't adhered to by arrays.
-                # FIX THIS ANOMOLY IN NUMERIC!
+                # FIX THIS ANOMALY IN NUMERIC!
                 if beg < 0:
                     beg = 0
                 if beg > dim_len:
@@ -338,5 +338,5 @@ def reduction(ary,axis=0):
 
 
 def take(ary,axis=0):
-    raise NotImplemented
+    raise NotImplementedError
 # and all the rest

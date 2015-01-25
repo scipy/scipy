@@ -2,9 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
-from numpy import asarray, empty, where, squeeze, prod
-from scipy.sparse import isspmatrix_csc, isspmatrix_csr, isspmatrix, \
-        SparseEfficiencyWarning, csc_matrix
+import numpy as np
+from numpy import asarray, empty, ravel, nonzero
+from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
+                          SparseEfficiencyWarning, csc_matrix)
 
 from . import _superlu
 
@@ -12,15 +13,16 @@ noScikit = False
 try:
     import scikits.umfpack as umfpack
 except ImportError:
-    from . import umfpack
     noScikit = True
 
-isUmfpack = hasattr(umfpack, 'UMFPACK_OK')
+useUmfpack = not noScikit
 
-useUmfpack = True
+__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
+           'MatrixRankWarning']
 
 
-__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized']
+class MatrixRankWarning(UserWarning):
+    pass
 
 
 def use_solver(**kwargs):
@@ -42,8 +44,7 @@ def use_solver(**kwargs):
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
 
-    if isUmfpack:
-        umfpack.configure(**kwargs)
+    #TODO: pass other options to scikit
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
@@ -55,7 +56,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         The square matrix A will be converted into CSC or CSR form
     b : ndarray or sparse matrix
         The matrix or vector representing the right hand side of the equation.
-        If a vector, b.size must
+        If a vector, b.size must be (n,) or (n, 1)
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -66,7 +67,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         - ``COLAMD``: approximate minimum degree column ordering
     use_umfpack : bool (optional)
         if True (default) then use umfpack for the solution.  This is
-        only referenced if b is a vector.
+        only referenced if b is a vector and ``scikit-umfpack`` is installed.
 
     Returns
     -------
@@ -85,24 +86,14 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
-        warn('spsolve requires A be CSC or CSR matrix format', SparseEfficiencyWarning)
+        warn('spsolve requires A be CSC or CSR matrix format',
+                SparseEfficiencyWarning)
 
-    # b.size gives a different answer for dense vs sparse:
-    # use prod(b.shape)
-    b_is_vector = (max(b.shape) == prod(b.shape))
-
-    if b_is_vector:
-        if isspmatrix(b):
-            b = b.toarray()
-        b = b.squeeze()
-
-    else:
-        if isspmatrix(b) and not (isspmatrix_csc(b) or isspmatrix_csr(b)):
-            b = csc_matrix(b)
-            warn('solve requires b be CSC or CSR matrix format',
-                 SparseEfficiencyWarning)
-        if b.ndim != 2:
-            raise ValueError("b must be either a vector or a matrix")
+    # b is a vector only if b have shape (n,) or (n, 1)
+    b_is_sparse = isspmatrix(b)
+    if not b_is_sparse:
+        b = asarray(b)
+    b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
 
     A.sort_indices()
     A = A.asfptype()  # upcast to a floating point format
@@ -118,45 +109,71 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     use_umfpack = use_umfpack and useUmfpack
 
-    if b_is_vector and isUmfpack and use_umfpack:
+    if b_is_vector and use_umfpack:
+        if b_is_sparse:
+            b_vec = b.toarray()
+        else:
+            b_vec = b
+        b_vec = asarray(b_vec, dtype=A.dtype).ravel()
+
         if noScikit:
-            warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                    ' install scikits.umfpack instead', DeprecationWarning)
+            raise RuntimeError('Scikits.umfpack not installed.')
+
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        b = asarray(b, dtype=A.dtype).reshape(-1)
-
         family = {'d': 'di', 'D': 'zi'}
         umf = umfpack.UmfpackContext(family[A.dtype.char])
-        x = umf.linsolve(umfpack.UMFPACK_A, A, b,
+        x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
                          autoTranspose=True)
-
-    elif b_is_vector:
-        if isspmatrix_csc(A):
-            flag = 1  # CSC format
-        elif isspmatrix_csr(A):
-            flag = 0  # CSR format
-        else:
-            A = csc_matrix(A)
-            flag = 1
-
-        b = asarray(b, dtype=A.dtype)
-        options = dict(ColPerm=permc_spec)
-        x = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr, b, flag,
-                          options=options)[0]
     else:
-        # Cover the case where b is also a matrix
-        Afactsolve = factorized(A)
-        tempj = empty(M, dtype=int)
-        x = A.__class__(b.shape)
-        for j in range(b.shape[1]):
-            xj = Afactsolve(squeeze(b[:, j].toarray()))
-            w = where(xj != 0.0)[0]
-            tempj.fill(j)
-            x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
-                                shape=b.shape, dtype=A.dtype)
+        if b_is_vector and b_is_sparse:
+            b = b.toarray()
+            b_is_sparse = False
+
+        if not b_is_sparse:
+            if isspmatrix_csc(A):
+                flag = 1  # CSC format
+            else:
+                flag = 0  # CSR format
+
+            options = dict(ColPerm=permc_spec)
+            x, info = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr,
+                                    b, flag, options=options)
+            if info != 0:
+                warn("Matrix is exactly singular", MatrixRankWarning)
+                x.fill(np.nan)
+            if b_is_vector:
+                x = x.ravel()
+        else:
+            # b is sparse
+            Afactsolve = factorized(A)
+
+            if not isspmatrix_csc(b):
+                warn('spsolve is more efficient when sparse b '
+                     'is in the CSC matrix format', SparseEfficiencyWarning)
+                b = csc_matrix(b)
+
+            # Create a sparse output matrix by repeatedly applying
+            # the sparse factorization to solve columns of b.
+            data_segs = []
+            row_segs = []
+            col_segs = []
+            for j in range(b.shape[1]):
+                bj = b[:, j].A.ravel()
+                xj = Afactsolve(bj)
+                w = np.flatnonzero(xj)
+                segment_length = w.shape[0]
+                row_segs.append(w)
+                col_segs.append(np.ones(segment_length, dtype=int)*j)
+                data_segs.append(np.asarray(xj[w], dtype=A.dtype))
+            sparse_data = np.concatenate(data_segs)
+            sparse_row = np.concatenate(row_segs)
+            sparse_col = np.concatenate(col_segs)
+            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
+                           shape=b.shape, dtype=A.dtype)
+
     return x
 
 
@@ -180,25 +197,25 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     diag_pivot_thresh : float, optional
         Threshold used for a diagonal entry to be an acceptable pivot.
-        See SuperLU user's guide for details [SLU]_
+        See SuperLU user's guide for details [1]_
     drop_tol : float, optional
         (deprecated) No effect.
     relax : int, optional
         Expert option for customizing the degree of relaxing supernodes.
-        See SuperLU user's guide for details [SLU]_
+        See SuperLU user's guide for details [1]_
     panel_size : int, optional
         Expert option for customizing the panel size.
-        See SuperLU user's guide for details [SLU]_
+        See SuperLU user's guide for details [1]_
     options : dict, optional
         Dictionary containing additional expert options to SuperLU.
-        See SuperLU user guide [SLU]_ (section 2.4 on the 'Options' argument)
+        See SuperLU user guide [1]_ (section 2.4 on the 'Options' argument)
         for more details. For example, you can specify
         ``options=dict(Equil=False, IterRefine='SINGLE'))``
         to turn equilibration off and perform a single iterative refinement.
 
     Returns
     -------
-    invA : scipy.sparse.linalg.dsolve._superlu.SciPyLUType
+    invA : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
     See also
@@ -211,7 +228,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     References
     ----------
-    .. [SLU] SuperLU http://crd.lbl.gov/~xiaoye/SuperLU/
+    .. [1] SuperLU http://crd.lbl.gov/~xiaoye/SuperLU/
 
     """
 
@@ -265,7 +282,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Returns
     -------
-    invA_approx : scipy.sparse.linalg.dsolve._superlu.SciPyLUType
+    invA_approx : scipy.sparse.linalg.SuperLU
         Object, which has a ``solve`` method.
 
     See also
@@ -329,10 +346,9 @@ def factorized(A):
     array([ 1., -2., -2.])
 
     """
-    if isUmfpack and useUmfpack:
+    if useUmfpack:
         if noScikit:
-            warn('scipy.sparse.linalg.dsolve.umfpack will be removed,'
-                    ' install scikits.umfpack instead', DeprecationWarning)
+            raise RuntimeError('Scikits.umfpack not installed.')
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)

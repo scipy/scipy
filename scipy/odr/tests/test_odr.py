@@ -3,8 +3,8 @@ from __future__ import division, print_function, absolute_import
 # Scipy imports.
 import numpy as np
 from numpy import pi
-from numpy.testing import assert_array_almost_equal, TestCase, \
-     run_module_suite, assert_equal
+from numpy.testing import (assert_array_almost_equal, TestCase,
+                           run_module_suite, assert_equal)
 from scipy.odr import Data, Model, ODR, RealData, odr_stop
 
 
@@ -42,6 +42,7 @@ class TestODR(TestCase):
         explicit_odr = ODR(explicit_dat, explicit_mod, beta0=[1500.0, -50.0, -0.1],
                        ifixx=[0,0,1,1,1,1,1,1,1,1,1,0])
         explicit_odr.set_job(deriv=2)
+        explicit_odr.set_iprint(init=0, iter=0, final=0)
 
         out = explicit_odr.run()
         assert_array_almost_equal(
@@ -323,4 +324,3 @@ class TestODR(TestCase):
 
 if __name__ == "__main__":
     run_module_suite()
-#### EOF #######################################################################

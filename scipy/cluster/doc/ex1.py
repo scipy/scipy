@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy import *
+import numpy as np
 from scipy.cluster import vq
 
 
@@ -22,17 +22,17 @@ def cluster_data(data,cluster_cnt,iter=20,thresh=1e-5):
     code_ids, distortion = vq.vq(wh_data,code_book)
     clusters = []
     for i in range(len(code_book)):
-        cluster = compress(code_ids == i,data,0)
+        cluster = np.compress(code_ids == i,data,0)
         clusters.append(cluster)
     return clusters
 
 if __name__ == "__main__":
 
-    data = array(((400, 79, 5.4),
-             (180, 76, 4.5),
-             (28, 25, 30.),
-             (270, 81, 5.0),
-             (185, 78, 4.6)))
+    data = np.array(((400, 79, 5.4),
+                     (180, 76, 4.5),
+                     (28, 25, 30.),
+                     (270, 81, 5.0),
+                     (185, 78, 4.6)))
 
     clusters = cluster_data(data,2)
     for i in range(len(clusters)):

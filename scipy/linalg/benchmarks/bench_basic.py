@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
-from numpy.testing import measure, rand, assert_, TestCase
+from numpy.testing import measure, rand, assert_, TestCase, Tester
 import numpy.linalg as nl
 import scipy.linalg as sl
 
@@ -130,4 +130,4 @@ class TestDet(TestCase):
 
 
 if __name__ == "__main__":
-    run_module_suite()
+    Tester().bench()

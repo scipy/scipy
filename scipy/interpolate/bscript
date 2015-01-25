@@ -2,7 +2,13 @@ from bento.commands import hooks
 
 @hooks.pre_build
 def pre_build(context):
-    context.tweak_extension("_fitpack", use="fitpack FBLAS CLIB", features="c fc cshlib pyext bento f2py")
-    context.tweak_extension("interpnd", use="FBLAS CLIB", features="c fc cshlib pyext bento f2py")
-    context.tweak_extension("dfitpack", use="fitpack FBLAS CLIB", features="c fc cshlib pyext bento f2py")
-    context.tweak_extension("_interpolate", use="FBLAS CLIB", features="cxx cxxshlib fc pyext bento")
+    context.tweak_extension("_fitpack", use="fitpack FBLAS CLIB",
+                            features="c fc cshlib pyext bento f2py")
+    context.tweak_extension("interpnd", use="FBLAS CLIB",
+                            features="c fc cshlib pyext bento f2py")
+    context.tweak_extension("dfitpack", use="fitpack FBLAS CLIB",
+                            features="c fc cshlib pyext bento f2py")
+    context.tweak_extension("_interpolate", use="FBLAS CLIB",
+                            features="cxx cxxshlib fc pyext bento")
+    context.tweak_extension("_ppoly", use="LAPACK CLIB",
+                            features="cxx cxxshlib fc pyext bento")

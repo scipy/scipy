@@ -1,6 +1,6 @@
 """
 This module implements the Sequential Least SQuares Programming optimization
-algorithm (SLSQP), orginally developed by Dieter Kraft.
+algorithm (SLSQP), originally developed by Dieter Kraft.
 See http://www.netlib.org/toms/733
 
 Functions
@@ -20,7 +20,7 @@ __all__ = ['approx_jacobian','fmin_slsqp']
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isfinite, atleast_1d
-from .optimize import wrap_function, Result, _check_unknown_options
+from .optimize import wrap_function, OptimizeResult, _check_unknown_options
 
 __docformat__ = "restructuredtext en"
 
@@ -61,13 +61,15 @@ def approx_jacobian(x,func,epsilon,*args):
         dx[i] = epsilon
         jac[i] = (func(*((x0+dx,)+args)) - f0)/epsilon
         dx[i] = 0.0
+
     return jac.transpose()
 
 
-def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
-                bounds=[], fprime=None, fprime_eqcons=None,
-                fprime_ieqcons=None, args=(), iter = 100, acc = 1.0E-6,
-                iprint = 1, disp = None, full_output = 0, epsilon = _epsilon):
+def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
+               bounds=(), fprime=None, fprime_eqcons=None,
+               fprime_ieqcons=None, args=(), iter=100, acc=1.0E-6,
+               iprint=1, disp=None, full_output=0, epsilon=_epsilon,
+               callback=None):
     """
     Minimize a function using Sequential Least SQuares Programming
 
@@ -99,6 +101,7 @@ def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
     bounds : list
         A list of tuples specifying the lower and upper bound
         for each independent variable [(xl0, xu0),(xl1, xu1),...]
+        Infinite values will be interpreted as large floating values.
     fprime : callable `f(x,*args)`
         A function that evaluates the partial derivatives of func.
     fprime_eqcons : callable `f(x,*args)`
@@ -131,6 +134,9 @@ def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
         information.
     epsilon : float
         The step size for finite-difference derivative estimates.
+    callback : callable, optional
+        Called after each iteration, as ``callback(x)``, where ``x`` is the
+        current parameter vector.
 
     Returns
     -------
@@ -177,7 +183,8 @@ def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
             'ftol': acc,
             'iprint': iprint,
             'disp': iprint != 0,
-            'eps': epsilon}
+            'eps': epsilon,
+            'callback': callback}
 
     # Build the constraints as a tuple of dictionaries
     cons = ()
@@ -206,7 +213,7 @@ def fmin_slsqp(func, x0, eqcons=[], f_eqcons=None, ieqcons=[], f_ieqcons=None,
 def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     constraints=(),
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
-                    eps=_epsilon,
+                    eps=_epsilon, callback=None,
                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using Sequential
@@ -262,9 +269,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check jacobian
         cjac = con.get('jac')
         if cjac is None:
-            # approximate jacobian function
-            def cjac(x, *args):
-                return approx_jacobian(x, con['fun'], epsilon, *args)
+            # approximate jacobian function.  The factory function is needed
+            # to keep a reference to `fun`, see gh-4240.
+            def cjac_factory(fun):
+                def cjac(x, *args):
+                    return approx_jacobian(x, fun, epsilon, *args)
+                return cjac
+            cjac = cjac_factory(con['fun'])
 
         # update constraints' dictionary
         cons[ctype] += ({'fun': con['fun'],
@@ -317,7 +328,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Decompose bounds into xl and xu
     if bounds is None or len(bounds) == 0:
-        xl, xu = array([-finfo(float).max]*n), array([finfo(float).max]*n)
+        xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
     else:
         bnds = array(bounds, float)
         if bnds.shape[0] != n:
@@ -332,8 +343,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         # filter -inf, inf and NaN values
         infbnd = ~isfinite(bnds)
-        xl[infbnd[:, 0]] = -finfo(float).max
-        xu[infbnd[:, 1]] = finfo(float).max
+        xl[infbnd[:, 0]] = -1.0E12
+        xu[infbnd[:, 1]] = 1.0E12
 
     # Initialize the iteration counter and the mode value
     mode = array(0,int)
@@ -395,6 +406,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # Call SLSQP
         slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw)
 
+        # call callback if major iteration has incremented
+        if callback is not None and majiter > majiter_prev:
+            callback(x)
+
         # Print the status of the current iterate if iprint > 2 and the
         # major iteration has incremented
         if iprint >= 2 and majiter > majiter_prev:
@@ -415,9 +430,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", feval[0])
         print("            Gradient evaluations:", geval[0])
 
-    return Result(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
-                  njev=geval[0], status=int(mode),
-                  message=exit_modes[int(mode)], success=(mode == 0))
+    return OptimizeResult(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
+                          njev=geval[0], status=int(mode),
+                          message=exit_modes[int(mode)], success=(mode == 0))
+
 
 if __name__ == '__main__':
 

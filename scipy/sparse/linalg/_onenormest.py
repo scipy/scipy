@@ -4,8 +4,6 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-import scipy.linalg
-import scipy.sparse.linalg
 from scipy.sparse.linalg import aslinearoperator
 
 
@@ -15,8 +13,6 @@ __all__ = ['onenormest']
 def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     """
     Compute a lower bound of the 1-norm of a sparse matrix.
-
-    .. versionadded:: 0.13.0
 
     Parameters
     ----------
@@ -57,6 +53,8 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     about 4t matrix-vector products and almost invariably
     produces a norm estimate (which is, in fact, a lower
     bound on the norm) correct to within a factor 3."
+
+    .. versionadded:: 0.13.0
 
     References
     ----------
@@ -203,7 +201,7 @@ def _algorithm_2_2(A, AT, t):
     It uses the 'ind' array in a way that is similar to
     its usage in algorithm 2.4.  This algorithm 2.2 may be easier to test,
     so it gives a chance of uncovering bugs related to indexing
-    which could have propagated less noticably to algorithm 2.4.
+    which could have propagated less noticeably to algorithm 2.4.
 
     """
     A_linear_operator = aslinearoperator(A)
@@ -348,6 +346,7 @@ def _onenormest_core(A, AT, t, itmax):
     est_old = 0
     S = np.zeros((n, t), dtype=float)
     k = 1
+    ind = None
     while True:
         Y = np.asarray(A_linear_operator.matmat(X))
         nmults += 1

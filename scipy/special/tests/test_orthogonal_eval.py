@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_allclose
 import scipy.special.orthogonal as orth
 
 from scipy.special._testutils import FuncData
@@ -13,6 +13,12 @@ def test_eval_chebyt():
     v1 = np.cos(n*np.arccos(x))
     v2 = orth.eval_chebyt(n, x)
     assert_(np.allclose(v1, v2, rtol=1e-15))
+
+
+def test_eval_genlaguerre_restriction():
+    # check it returns nan for alpha <= -1
+    assert_(np.isnan(orth.eval_genlaguerre(0, -1, 0)))
+    assert_(np.isnan(orth.eval_genlaguerre(0.1, -1, 0)))
 
 
 def test_warnings():
@@ -235,3 +241,8 @@ class TestRecurrence(object):
     def test_laguerre(self):
         self.check_poly(orth.eval_laguerre,
                    param_ranges=[], x_range=[0, 100])
+
+    def test_hermite(self):
+        v = orth.eval_hermite(70, 1.0)
+        a = -1.457076485701412e60
+        assert_allclose(v,a)

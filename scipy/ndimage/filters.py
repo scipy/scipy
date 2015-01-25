@@ -35,6 +35,7 @@ import numpy
 from . import _ni_support
 from . import _nd_image
 from scipy.misc import doccer
+from scipy._lib._version import NumpyVersion
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -92,15 +93,15 @@ _extra_keywords_doc = \
     dict of extra keyword arguments to pass to passed function"""
 
 docdict = {
-    'input':_input_doc,
-    'axis':_axis_doc,
-    'output':_output_doc,
-    'size_foot':_size_foot_doc,
-    'mode':_mode_doc,
-    'cval':_cval_doc,
-    'origin':_origin_doc,
-    'extra_arguments':_extra_arguments_doc,
-    'extra_keywords':_extra_keywords_doc,
+    'input': _input_doc,
+    'axis': _axis_doc,
+    'output': _output_doc,
+    'size_foot': _size_foot_doc,
+    'mode': _mode_doc,
+    'cval': _cval_doc,
+    'origin': _origin_doc,
+    'extra_arguments': _extra_arguments_doc,
+    'extra_keywords': _extra_keywords_doc,
     }
 
 docfiller = doccer.filldoc(docdict)
@@ -135,8 +136,8 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     if not weights.flags.contiguous:
         weights = weights.copy()
     axis = _ni_support._check_axis(axis, input.ndim)
-    if ((len(weights) // 2 + origin < 0) or
-        (len(weights) // 2 + origin > len(weights))):
+    if (len(weights) // 2 + origin < 0) or (len(weights) // 2 +
+                                            origin > len(weights)):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate1d(input, weights, axis, output, mode, cval,
@@ -178,7 +179,7 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
 
 @docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
-                      mode="reflect", cval=0.0):
+                      mode="reflect", cval=0.0, truncate=4.0):
     """One-dimensional Gaussian filter.
 
     Parameters
@@ -195,6 +196,9 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     %(output)s
     %(mode)s
     %(cval)s
+    truncate : float
+        Truncate the filter at this many standard deviations.
+        Default is 4.0.
 
     Returns
     -------
@@ -204,9 +208,8 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     if order not in range(4):
         raise ValueError('Order outside 0..3 not implemented')
     sd = float(sigma)
-    # make the length of the filter equal to 4 times the standard
-    # deviations:
-    lw = int(4.0 * sd + 0.5)
+    # make the radius of the filter equal to truncate standard deviations
+    lw = int(truncate * sd + 0.5)
     weights = [0.0] * (2 * lw + 1)
     weights[lw] = 1.0
     sum = 1.0
@@ -247,7 +250,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 @docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
-                  mode="reflect", cval=0.0):
+                  mode="reflect", cval=0.0, truncate=4.0):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -268,6 +271,9 @@ def gaussian_filter(input, sigma, order=0, output=None,
     %(output)s
     %(mode)s
     %(cval)s
+    truncate : float
+        Truncate the filter at this many standard deviations.
+        Default is 4.0.
 
     Returns
     -------
@@ -296,7 +302,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     if len(axes) > 0:
         for axis, sigma, order in axes:
             gaussian_filter1d(input, sigma, axis, order, output,
-                              mode, cval)
+                              mode, cval, truncate)
             input = output
     else:
         output[...] = input[...]
@@ -405,7 +411,7 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
 
 @docfiller
 def gaussian_laplace(input, sigma, output=None, mode="reflect",
-                     cval=0.0):
+                     cval=0.0, **kwargs):
     """Multidimensional Laplace filter using gaussian second derivatives.
 
     Parameters
@@ -418,15 +424,19 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     %(output)s
     %(mode)s
     %(cval)s
+    Extra keyword arguments will be passed to gaussian_filter().
     """
     input = numpy.asarray(input)
 
-    def derivative2(input, axis, output, mode, cval, sigma):
+    def derivative2(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
         order[axis] = 2
-        return gaussian_filter(input, sigma, order, output, mode, cval)
+        return gaussian_filter(input, sigma, order, output, mode, cval,
+                               **kwargs)
+
     return generic_laplace(input, derivative2, output, mode, cval,
-                           extra_arguments=(sigma,))
+                           extra_arguments=(sigma,),
+                           extra_keywords=kwargs)
 
 
 @docfiller
@@ -469,7 +479,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
             numpy.multiply(tmp, tmp, tmp)
             output += tmp
         # This allows the sqrt to work with a different default casting
-        if numpy.version.short_version > '1.6.1':
+        if NumpyVersion(numpy.__version__) > '1.6.1':
             numpy.sqrt(output, output, casting='unsafe')
         else:
             numpy.sqrt(output, output)
@@ -480,7 +490,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
 
 @docfiller
 def gaussian_gradient_magnitude(input, sigma, output=None,
-                mode="reflect", cval=0.0):
+                mode="reflect", cval=0.0, **kwargs):
     """Multidimensional gradient magnitude using Gaussian derivatives.
 
     Parameters
@@ -493,15 +503,19 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     %(output)s
     %(mode)s
     %(cval)s
+    Extra keyword arguments will be passed to gaussian_filter().
     """
     input = numpy.asarray(input)
 
-    def derivative(input, axis, output, mode, cval, sigma):
+    def derivative(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
         order[axis] = 1
-        return gaussian_filter(input, sigma, order, output, mode, cval)
+        return gaussian_filter(input, sigma, order, output, mode,
+                               cval, **kwargs)
+
     return generic_gradient_magnitude(input, derivative, output, mode,
-                            cval, extra_arguments=(sigma,))
+                                      cval, extra_arguments=(sigma,),
+                                      extra_keywords=kwargs)
 
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
@@ -776,6 +790,17 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Notes
+    -----
+    This function implements the MINLIST algorithm [1]_, as described by
+    Richard Harter [2]_, and has a guaranteed O(n) performance, `n` being
+    the `input` length, regardless of filter size.
+
+    References
+    ----------
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -810,6 +835,24 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    maximum1d : ndarray, None
+        Maximum-filtered array with same shape as input.
+        None if `output` is not None
+
+    Notes
+    -----
+    This function implements the MAXLIST algorithm [1]_, as described by
+    Richard Harter [2]_, and has a guaranteed O(n) performance, `n` being
+    the `input` length, regardless of filter size.
+
+    References
+    ----------
+    .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
+    .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
+
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -836,7 +879,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)
-            if numpy.alltrue(numpy.ravel(footprint),axis=0):
+            if numpy.alltrue(numpy.ravel(footprint), axis=0):
                 size = footprint.shape
                 footprint = None
                 separable = True
@@ -967,10 +1010,10 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         raise RuntimeError('rank not within filter footprint size')
     if rank == 0:
         return minimum_filter(input, None, footprint, output, mode, cval,
-                              origin)
+                              origins)
     elif rank == filter_size - 1:
         return maximum_filter(input, None, footprint, output, mode, cval,
-                              origin)
+                              origins)
     else:
         output, return_value = _ni_support._get_output(output, input)
         mode = _ni_support._extend_mode_to_code(mode)
@@ -1083,8 +1126,8 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     if filter_size < 1:
         raise RuntimeError('invalid filter size')
     axis = _ni_support._check_axis(axis, input.ndim)
-    if ((filter_size // 2 + origin < 0) or
-        (filter_size // 2 + origin >= filter_size)):
+    if (filter_size // 2 + origin < 0) or (filter_size // 2 + origin >=
+                                           filter_size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.generic_filter1d(input, function, filter_size, axis, output,

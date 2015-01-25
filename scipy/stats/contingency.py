@@ -6,7 +6,6 @@ from __future__ import division, print_function, absolute_import
 
 from functools import reduce
 import numpy as np
-from scipy import special
 from .stats import power_divergence
 
 
@@ -247,9 +246,9 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     if np.any(expected == 0):
         # Include one of the positions where expected is zero in
         # the exception message.
-        zeropos = list(np.where(expected == 0)[0])
+        zeropos = list(zip(*np.where(expected == 0)))[0]
         raise ValueError("The internally computed table of expected "
-                         "frequencies has a zero element at %s." % zeropos)
+                         "frequencies has a zero element at %s." % (zeropos,))
 
     # The degrees of freedom
     dof = expected.size - sum(expected.shape) + expected.ndim - 1

@@ -95,6 +95,12 @@ zsnode_bmod (
 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
+#if SCIPY_FIX
+	if (nsupr < nsupc) {
+	    /* Invalid input to LAPACK: fail more gracefully */
+	    ABORT("superlu failure (singular matrix?)");
+	}
+#endif
 	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );
 	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 

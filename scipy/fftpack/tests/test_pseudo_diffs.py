@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Created by Pearu Peterson, September 2002
-""" Test functions for fftpack.pseudo_diffs module
-"""
+
 from __future__ import division, print_function, absolute_import
 
 __usage__ = """
@@ -13,10 +12,11 @@ Run tests if fftpack is not installed:
   python tests/test_pseudo_diffs.py [<level>]
 """
 
-from numpy.testing import *
-from scipy.fftpack import diff, fft, ifft, tilbert, itilbert, hilbert, \
-                          ihilbert, shift, fftfreq, cs_diff, sc_diff, \
-                          ss_diff, cc_diff
+from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+                           assert_array_almost_equal, rand, run_module_suite)
+from scipy.fftpack import (diff, fft, ifft, tilbert, itilbert, hilbert,
+                           ihilbert, shift, fftfreq, cs_diff, sc_diff,
+                           ss_diff, cc_diff)
 
 import numpy as np
 from numpy import arange, sin, cos, pi, exp, tanh, sum, sign
@@ -138,7 +138,6 @@ class TestDiff(TestCase):
             assert_array_almost_equal(diff(df),ddf)
             assert_array_almost_equal(diff(f,2),ddf)
             assert_array_almost_equal(diff(ddf,-1),df)
-            #print max(abs(d1-df))
 
     def test_expr_large(self):
         for n in [2048,4096]:
@@ -326,16 +325,14 @@ class TestShift(TestCase):
 
 
 class TestOverwrite(object):
-    """
-    Check input overwrite behavior
-    """
+    """Check input overwrite behavior """
 
     real_dtypes = [np.float32, np.float64]
     dtypes = real_dtypes + [np.complex64, np.complex128]
 
     def _check(self, x, routine, *args, **kwargs):
         x2 = x.copy()
-        y = routine(x2, *args, **kwargs)
+        routine(x2, *args, **kwargs)
         sig = routine.__name__
         if args:
             sig += repr(args)

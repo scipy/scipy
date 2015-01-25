@@ -12,10 +12,11 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import sys
 from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
 from numpy.compat import asbytes, asstr
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
@@ -77,21 +78,20 @@ def mmread(source):
 
 def mmwrite(target, a, comment='', field=None, precision=None):
     """
-    Writes the sparse or dense matrix A to a Matrix Market formatted file.
+    Writes the sparse or dense array `a` to a Matrix Market formatted file.
 
     Parameters
     ----------
     target : file
         Matrix Market filename (extension .mtx) or open file object
     a : array like
-        Sparse or full matrix
+        Sparse or dense 2D array
     comment : str, optional
         comments to be prepended to the Matrix Market file
-    field : str, optional
+    field : None or str, optional
         Either 'real', 'complex', 'pattern', or 'integer'.
-    precision : int, optional
+    precision : None or int, optional
         Number of digits to display for real or complex values.
-
     """
     MMFile().write(target, a, comment, field, precision)
 
@@ -199,17 +199,16 @@ class MMFile (object):
             # read and validate header line
             line = source.readline()
             mmid, matrix, format, field, symmetry = \
-              [asstr(part.strip().lower()) for part in line.split()]
-            if not mmid.startswith('%%matrixmarket'):
+              [asstr(part.strip()) for part in line.split()]
+            if not mmid.startswith('%%MatrixMarket'):
                 raise ValueError('source is not in Matrix Market format')
-            if not matrix == 'matrix':
+            if not matrix.lower() == 'matrix':
                 raise ValueError("Problem reading file header: " + line)
 
-            # ??? Is this necessary?  I don't see 'dense' or 'sparse' in the spec
             # http://math.nist.gov/MatrixMarket/formats.html
-            if format == 'dense':
+            if format.lower() == 'array':
                 format = self.FORMAT_ARRAY
-            elif format == 'sparse':
+            elif format.lower() == 'coordinate':
                 format = self.FORMAT_COORDINATE
 
             # skip comments
@@ -227,7 +226,7 @@ class MMFile (object):
                     raise ValueError("Header line not of length 3: " + line)
                 rows, cols, entries = map(int, line)
 
-            return (rows, cols, entries, format, field, symmetry)
+            return (rows, cols, entries, format, field.lower(), symmetry.lower())
 
         finally:
             if close_it:
@@ -451,9 +450,12 @@ class MMFile (object):
                 return coo_matrix((rows, cols), dtype=dtype)
 
             try:
-                # fromfile works for normal files
-                flat_data = fromfile(stream, sep=' ')
-            except:
+                if not _is_fromfile_compatible(stream):
+                    flat_data = fromstring(stream.read(), sep=' ')
+                else:
+                    # fromfile works for normal files
+                    flat_data = fromfile(stream, sep=' ')
+            except Exception:
                 # fallback - fromfile fails for some file-like objects
                 flat_data = fromstring(stream.read(), sep=' ')
 
@@ -509,7 +511,7 @@ class MMFile (object):
             rep = self.FORMAT_ARRAY
             a = asarray(a)
             if len(a.shape) != 2:
-                raise ValueError('expected matrix')
+                raise ValueError('Expected 2 dimensional array')
             rows,cols = a.shape
             entries = rows*cols
 
@@ -631,6 +633,34 @@ class MMFile (object):
             IJV[:,:2] += 1  # change base 0 -> base 1
 
             savetxt(stream, IJV, fmt=fmt)
+
+
+def _is_fromfile_compatible(stream):
+    """
+    Check whether stream is compatible with numpy.fromfile.
+
+    Passing a gzipped file to fromfile/fromstring doesn't work
+    with Python3
+
+    """
+    if sys.version_info[0] < 3:
+        return True
+
+    bad_cls = []
+    try:
+        import gzip
+        bad_cls.append(gzip.GzipFile)
+    except ImportError:
+        pass
+    try:
+        import bz2
+        bad_cls.append(bz2.BZ2File)
+    except ImportError:
+        pass
+
+    bad_cls = tuple(bad_cls)
+    return not isinstance(stream, bad_cls)
+
 
 #-------------------------------------------------------------------------------
 if __name__ == '__main__':

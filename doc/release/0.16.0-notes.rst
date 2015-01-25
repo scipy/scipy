@@ -1,0 +1,97 @@
+==========================
+SciPy 0.16.0 Release Notes
+==========================
+
+.. note:: Scipy 0.16.0 is not released yet!
+
+.. contents::
+
+SciPy 0.16.0 is the culmination of X months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a number of deprecations and
+API changes in this release, which are documented below.  All users
+are encouraged to upgrade to this release, as there are a large number
+of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.15.x branch, and on adding
+new features on the master branch.
+
+This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
+
+
+New features
+============
+
+`scipy.linalg` improvements
+---------------------------
+
+The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
+
+`scipy.signal` improvements
+---------------------------
+
+Support for second order sections (SOS) as a format for IIR filters
+was added.  The new functions are:
+
+* `scipy.signal.sosfilt`
+* `scipy.signal.sosfilt_zi`,
+* `scipy.signal.sos2tf`
+* `scipy.signal.sos2zpk`
+* `scipy.signal.tf2sos`
+* `scipy.signal.zpk2sos`.
+
+Additionally, the filter design functions `iirdesign`, `iirfilter`, `butter`,
+`cheby1`, `cheby2`, `ellip`, and `bessel` can return the filter in the SOS
+format.
+
+The option to use Gustafsson's method for choosing the initial conditions
+of the forward and backward passes was added to `scipy.signal.filtfilt`.
+
+`scipy.stats` improvements
+--------------------------
+
+The Wishart distribution and its inverse have been added, as
+`scipy.stats.wishart` and `scipy.stats.invwishart`.
+
+`scipy.optimize` improvements
+-----------------------------
+
+A new derivative-free method DF-SANE has been added to the nonlinear equation
+system solving function `scipy.optimize.root`.
+
+
+Deprecated features
+===================
+
+``scipy.stats.pdf_fromgamma`` is deprecated.  This function was undocumented,
+untested and rarely used.  Statsmodels provides equivalent functionality
+with ``statsmodels.distributions.ExpandedNormal``.
+
+
+Backwards incompatible changes
+==============================
+
+The deprecated global optimizer ``scipy.optimize.anneal`` was removed.
+
+The following deprecated modules have been removed: ``scipy.lib.blas``,
+``scipy.lib.lapack``, ``scipy.linalg.cblas``, ``scipy.linalg.fblas``,
+``scipy.linalg.clapack``, ``scipy.linalg.flapack``.  They had been deprecated
+since Scipy 0.12.0, the functionality should be accessed as `scipy.linalg.blas`
+and `scipy.linalg.lapack`.
+
+The deprecated function ``scipy.special.all_mat`` has been removed.
+
+
+Other changes
+=============
+
+
+Authors
+=======
+
+Issues closed
+-------------
+
+
+Pull requests
+-------------
+

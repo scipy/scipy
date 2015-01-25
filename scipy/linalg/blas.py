@@ -16,105 +16,129 @@ Finding functions
 =================
 
 .. autosummary::
+   :toctree: generated/
 
    get_blas_funcs
    find_best_blas_type
 
-All functions
-=============
+BLAS Level 1 functions
+======================
 
 .. autosummary::
    :toctree: generated/
 
-   caxpy
-   ccopy
-   cdotc
-   cdotu
-   cgemm
-   cgemv
-   cgerc
-   cgeru
-   chemm
-   chemv
-   cherk
-   cher2k
-   crotg
-   cscal
-   csrot
-   csscal
-   csymm
-   csyrk
-   csyr2k
-   cswap
-   ctrmv
-   dasum
-   daxpy
-   dcopy
-   ddot
-   dgemm
-   dgemv
-   dger
-   dnrm2
-   drot
-   drotg
-   drotm
-   drotmg
-   dscal
-   dswap
-   dsymm
-   dsymv
-   dsyrk
-   dsyr2k
-   dtrmv
-   dzasum
-   dznrm2
-   icamax
-   idamax
-   isamax
-   izamax
-   sasum
-   saxpy
-   scasum
-   scnrm2
-   scopy
-   sdot
-   sgemm
-   sgemv
-   sger
-   snrm2
-   srot
-   srotg
-   srotm
-   srotmg
-   sscal
-   sswap
-   ssymm
-   ssymv
-   ssyrk
-   ssyr2k
-   strmv
-   zaxpy
-   zcopy
-   zdotc
-   zdotu
-   zdrot
-   zdscal
-   zgemm
-   zgemv
-   zgerc
-   zgeru
-   zhemm
-   zhemv
-   zherk
-   zher2k
-   zrotg
-   zscal
-   zsymm
-   zsyrk
-   zsyr2k
-   zswap
-   ztrmv
+    caxpy
+    ccopy
+    cdotc
+    cdotu
+    crotg
+    cscal
+    csrot
+    csscal
+    cswap
+    dasum
+    daxpy
+    dcopy
+    ddot
+    dnrm2
+    drot
+    drotg
+    drotm
+    drotmg
+    dscal
+    dswap
+    dzasum
+    dznrm2
+    icamax
+    idamax
+    isamax
+    izamax
+    sasum
+    saxpy
+    scasum
+    scnrm2
+    scopy
+    sdot
+    snrm2
+    srot
+    srotg
+    srotm
+    srotmg
+    sscal
+    sswap
+    zaxpy
+    zcopy
+    zdotc
+    zdotu
+    zdrot
+    zdscal
+    zrotg
+    zscal
+    zswap
 
+BLAS Level 2 functions
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+    cgemv
+    cgerc
+    cgeru
+    chemv
+    ctrmv
+    csyr
+    cher
+    cher2
+    dgemv
+    dger
+    dsymv
+    dtrmv
+    dsyr
+    dsyr2
+    sgemv
+    sger
+    ssymv
+    strmv
+    ssyr
+    ssyr2
+    zgemv
+    zgerc
+    zgeru
+    zhemv
+    ztrmv
+    zsyr
+    zher
+    zher2
+
+BLAS Level 3 functions
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+    cgemm
+    chemm
+    cherk
+    cher2k
+    csymm
+    csyrk
+    csyr2k
+    dgemm
+    dsymm
+    dsyrk
+    dsyr2k
+    sgemm
+    ssymm
+    ssyrk
+    ssyr2k
+    zgemm
+    zhemm
+    zherk
+    zher2k
+    zsymm
+    zsyrk
+    zsyr2k
 
 """
 #
@@ -139,11 +163,6 @@ empty_module = None
 from scipy.linalg._fblas import *
 del empty_module
 
-# Backward compatibility
-from scipy.lib._util import DeprecatedImport as _DeprecatedImport
-cblas = _DeprecatedImport("scipy.linalg.blas.cblas", "scipy.linalg.blas")
-fblas = _DeprecatedImport("scipy.linalg.blas.fblas", "scipy.linalg.blas")
-
 # 'd' will be default for 'i',..
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z', 'G':'z'}
 
@@ -162,8 +181,8 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     Parameters
     ----------
-    arrays : sequency of ndarrays, optional
-        Arrays can be given to determine optiomal prefix of BLAS
+    arrays : sequence of ndarrays, optional
+        Arrays can be given to determine optimal prefix of BLAS
         routines. If not given, double-precision routines will be
         used, otherwise the most generic type in arrays will be used.
     dtype : str or dtype, optional
@@ -253,10 +272,10 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     Parameters
     ----------
     names : str or sequence of str
-        Name(s) of BLAS functions withouth type prefix.
+        Name(s) of BLAS functions without type prefix.
 
-    arrays : sequency of ndarrays, optional
-        Arrays can be given to determine optiomal prefix of BLAS
+    arrays : sequence of ndarrays, optional
+        Arrays can be given to determine optimal prefix of BLAS
         routines. If not given, double-precision routines will be
         used, otherwise the most generic type in arrays will be used.
 
@@ -272,7 +291,7 @@ def get_blas_funcs(names, arrays=(), dtype=None):
 
     Notes
     -----
-    This routines automatically chooses between Fortran/C
+    This routine automatically chooses between Fortran/C
     interfaces. Fortran code is used whenever possible for arrays with
     column major order. In all other cases, C code is preferred.
 

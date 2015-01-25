@@ -298,12 +298,12 @@ end function ddot
 
 
 ! <prefix2c=c,z> <ftype2c=complex,double complex> <ctype2c=complex_float,complex_double>
-subroutine <prefix2c>dotu(xy,n,x,offx,incx,y,offy,incy)
+function <prefix2c>dotu(n,x,offx,incx,y,offy,incy) result(xy)
 
-  <ftype2c> intent(out) :: xy
+  <ftype2c> :: <prefix2c>dotu, xy
   fortranname w<prefix2c>dotu
 
-  callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
+  callstatement (*f2py_func)(&<prefix2c>dotu,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument <ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*
 
   <ftype2c> dimension(*),intent(in) :: x
@@ -322,15 +322,15 @@ subroutine <prefix2c>dotu(xy,n,x,offx,incx,y,offy,incy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-end subroutine <prefix2c>dotu
+end function <prefix2c>dotu
 
 
-subroutine <prefix2c>dotc(xy,n,x,offx,incx,y,offy,incy)
+function <prefix2c>dotc(n,x,offx,incx,y,offy,incy) result(xy)
 
-  <ftype2c> intent (out) :: xy
+  <ftype2c> :: <prefix2c>dotc, xy
   fortranname w<prefix2c>dotc
 
-  callstatement (*f2py_func)(&xy,&n,x+offx,&incx,y+offy,&incy)
+  callstatement (*f2py_func)(&<prefix2c>dotc,&n,x+offx,&incx,y+offy,&incy)
   callprotoargument <ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*
 
   <ftype2c> dimension(*),intent(in) :: x
@@ -348,7 +348,7 @@ subroutine <prefix2c>dotc(xy,n,x,offx,incx,y,offy,incy)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-end subroutine <prefix2c>dotc
+end function <prefix2c>dotc
 
 ! <prefix3=s,sc> <ctype3=float,complex_float> <ctypereal3=float,float>
 ! <ftype3=real,complex> <ftypereal3=real,real>

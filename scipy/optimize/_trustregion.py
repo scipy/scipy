@@ -6,7 +6,7 @@ import math
 import numpy as np
 import scipy.linalg
 from .optimize import (_check_unknown_options, wrap_function, _status_message,
-                       Result)
+                       OptimizeResult)
 
 __all__ = []
 
@@ -237,9 +237,10 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         print("         Gradient evaluations: %d" % njac[0])
         print("         Hessian evaluations: %d" % nhess[0])
 
-    result = Result(x=x, success=(warnflag == 0), status=warnflag, fun=m.fun,
-                    jac=m.jac, nfev=nfun[0], njev=njac[0], nhev=nhess[0],
-                    nit=k, message=status_messages[warnflag])
+    result = OptimizeResult(x=x, success=(warnflag == 0), status=warnflag,
+                            fun=m.fun, jac=m.jac, nfev=nfun[0], njev=njac[0],
+                            nhev=nhess[0], nit=k,
+                            message=status_messages[warnflag])
 
     if hess is not None:
         result['hess'] = m.hess

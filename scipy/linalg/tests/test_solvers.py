@@ -30,20 +30,63 @@ class TestSolveLyapunov(TestCase):
                    [1, 5, 2, 0, 7], [5, 3, 3, 1, 5]]),
          np.array([[2, 4, 1, 0, 1], [4, 1, 0, 2, 0], [1, 0, 3, 0, 3],
                    [0, 2, 0, 1, 0], [1, 0, 3, 0, 4]])),
+        # Companion matrix example. a complex; q real; a.shape[0] = 11
+        (np.array([[0.100+0.j, 0.091+0.j, 0.082+0.j, 0.073+0.j, 0.064+0.j,
+                    0.055+0.j, 0.046+0.j, 0.037+0.j, 0.028+0.j, 0.019+0.j,
+                    0.010+0.j],
+                   [1.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 1.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 0.000+0.j, 1.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 0.000+0.j, 0.000+0.j, 1.000+0.j, 0.000+0.j,
+                    0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 1.000+0.j,
+                    0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    1.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j, 1.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j, 0.000+0.j, 1.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j, 0.000+0.j, 0.000+0.j, 1.000+0.j, 0.000+0.j,
+                    0.000+0.j],
+                   [0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j,
+                    0.000+0.j, 0.000+0.j, 0.000+0.j, 0.000+0.j, 1.000+0.j,
+                    0.000+0.j]]),
+         np.eye(11)),
+        # https://github.com/scipy/scipy/issues/4176
+        (np.matrix([[0, 1], [-1/2, -1]]),
+         (np.matrix([0, 3]).T * np.matrix([0, 3]).T.T)),
+        # https://github.com/scipy/scipy/issues/4176
+        (np.matrix([[0, 1], [-1/2, -1]]),
+         (np.array(np.matrix([0, 3]).T * np.matrix([0, 3]).T.T))),
         ]
 
     def check_continuous_case(self, a, q):
         x = solve_lyapunov(a, q)
         assert_array_almost_equal(np.dot(a, x) + np.dot(x, a.conj().transpose()), q)
 
-    def check_discrete_case(self, a, q):
-        x = solve_discrete_lyapunov(a, q)
+    def check_discrete_case(self, a, q, method=None):
+        x = solve_discrete_lyapunov(a, q, method=method)
         assert_array_almost_equal(np.dot(np.dot(a, x),a.conj().transpose()) - x, -1.0*q)
 
     def test_cases(self):
         for case in self.cases:
             self.check_continuous_case(case[0], case[1])
             self.check_discrete_case(case[0], case[1])
+            self.check_discrete_case(case[0], case[1], method='direct')
+            self.check_discrete_case(case[0], case[1], method='bilinear')
 
 
 class TestSolveContinuousARE(TestCase):

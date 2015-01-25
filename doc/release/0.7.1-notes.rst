@@ -76,7 +76,7 @@ Windows binaries for python 2.6
 ===============================
 
 python 2.6 binaries for windows are now included. The binary for python 2.5
-requires numpy 1.2.0 or above, and and the one for python 2.6 requires numpy
+requires numpy 1.2.0 or above, and the one for python 2.6 requires numpy
 1.3.0 or above.
 
 Universal build for scipy

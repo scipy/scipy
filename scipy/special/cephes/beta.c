@@ -52,7 +52,7 @@
 #include "mconf.h"
 
 #ifdef UNK
-#define MAXGAM 34.84425627277176174
+#define MAXGAM 171.624376956302725
 #endif
 #ifdef DEC
 #define MAXGAM 34.84425627277176174
@@ -131,16 +131,18 @@ double a, b;
     }
 
     y = Gamma(y);
+    a = Gamma(a);
+    b = Gamma(b);
     if (y == 0.0)
 	goto over;
 
-    if (a > b) {
-	y = Gamma(a) / y;
-	y *= Gamma(b);
+    if (fabs(fabs(a) - fabs(y)) > fabs(fabs(b) - fabs(y))) {
+        y = b / y;
+        y *= a;
     }
     else {
-	y = Gamma(b) / y;
-	y *= Gamma(a);
+        y = a / y;
+        y *= b;
     }
 
     return (y);
@@ -203,19 +205,21 @@ double a, b;
     }
 
     y = Gamma(y);
+    a = Gamma(a);
+    b = Gamma(b);
     if (y == 0.0) {
       over:
 	mtherr("lbeta", OVERFLOW);
 	return (sign * NPY_INFINITY);
     }
 
-    if (a > b) {
-	y = Gamma(a) / y;
-	y *= Gamma(b);
+    if (fabs(fabs(a) - fabs(y)) > fabs(fabs(b) - fabs(y))) {
+        y = b / y;
+        y *= a;
     }
     else {
-	y = Gamma(b) / y;
-	y *= Gamma(a);
+        y = a / y;
+        y *= b;
     }
 
     if (y < 0) {
@@ -233,9 +237,7 @@ double a, b;
  */
 static double lbeta_asymp(double a, double b, int *sgn)
 {
-    double r, sum;
-
-    r = lgam(b);
+    double r = lgam(b);
     *sgn = sgngam;
     r -= b * log(a);
 

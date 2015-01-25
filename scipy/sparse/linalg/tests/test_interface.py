@@ -28,8 +28,8 @@ class TestLinearOperator(TestCase):
             return [{
                         'shape': A.shape,
                         'matvec': lambda x: np.dot(A, x).reshape(A.shape[0]),
-                        'rmatvec':
-                            lambda x: np.dot(A.T.conj(), x).reshape(A.shape[1])
+                        'rmatvec': lambda x: np.dot(A.T.conj(),
+                                                    x).reshape(A.shape[1])
                     },
                     {
                         'shape': A.shape,
@@ -129,6 +129,7 @@ class TestLinearOperator(TestCase):
             assert_equal((C**2).matmat([[1],[1]]), [[17],[37]])
 
             assert_(isinstance(C**2, interface._PowerLinearOperator))
+
 
 class TestAsLinearOperator(TestCase):
     def setUp(self):

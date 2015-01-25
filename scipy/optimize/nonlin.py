@@ -1,5 +1,4 @@
 r"""
-.. module:: scipy.optimize.nonlin
 
 =================
 Nonlinear solvers
@@ -115,8 +114,8 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import numpy as np
-from scipy.lib.six import callable, exec_
-from scipy.lib.six.moves import xrange
+from scipy._lib.six import callable, exec_
+from scipy._lib.six import xrange
 from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
@@ -445,7 +444,11 @@ class TerminationCondition(object):
         self.f_tol = f_tol
         self.f_rtol = f_rtol
 
-        self.norm = maxnorm
+        if norm is None:
+            self.norm = maxnorm
+        else:
+            self.norm = norm
+
         self.iter = iter
 
         self.f0_norm = None
@@ -668,8 +671,13 @@ class GenericBroyden(Jacobian):
         self.last_x = x0
 
         if hasattr(self, 'alpha') and self.alpha is None:
-            # autoscale the initial Jacobian parameter
-            self.alpha = 0.5*max(norm(x0), 1) / norm(f0)
+            # Autoscale the initial Jacobian parameter
+            # unless we have already guessed the solution.
+            normf0 = norm(f0)
+            if normf0:
+                self.alpha = 0.5*max(norm(x0), 1) / normf0
+            else:
+                self.alpha = 1.0
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         raise NotImplementedError
@@ -817,7 +825,7 @@ class LowRankMatrix(object):
         Reduce the rank of the matrix by retaining some SVD components.
 
         This corresponds to the \"Broyden Rank Reduction Inverse\"
-        algorithm described in [vR]_.
+        algorithm described in [1]_.
 
         Note that the SVD decomposition can be done by solving only a
         problem whose size is the effective rank of this matrix, which
@@ -833,7 +841,7 @@ class LowRankMatrix(object):
 
         References
         ----------
-        .. [vR] B.A. van der Rotten, PhD thesis,
+        .. [1] B.A. van der Rotten, PhD thesis,
            \"A limited memory Broyden method to solve high-dimensional
            systems of nonlinear equations\". Mathematisch Instituut,
            Universiteit Leiden, The Netherlands (2003).
@@ -891,7 +899,7 @@ _doc_parts['broyden_params'] = """
             - ``restart``: drop all matrix columns. Has no extra parameters.
             - ``simple``: drop oldest matrix column. Has no extra parameters.
             - ``svd``: keep only the most significant SVD components.
-              Takes an extra parameter, ``to_retain`, which determines the
+              Takes an extra parameter, ``to_retain``, which determines the
               number of SVD components to retain when rank reduction is done.
               Default is ``max_rank - 2``.
 
@@ -926,7 +934,7 @@ class BroydenFirst(GenericBroyden):
 
     References
     ----------
-    .. [vR] B.A. van der Rotten, PhD thesis,
+    .. [1] B.A. van der Rotten, PhD thesis,
        \"A limited memory Broyden method to solve high-dimensional
        systems of nonlinear equations\". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
@@ -1016,7 +1024,7 @@ class BroydenSecond(BroydenFirst):
 
     References
     ----------
-    .. [vR] B.A. van der Rotten, PhD thesis,
+    .. [1] B.A. van der Rotten, PhD thesis,
        \"A limited memory Broyden method to solve high-dimensional
        systems of nonlinear equations\". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
@@ -1365,8 +1373,7 @@ class KrylovJacobian(Jacobian):
     This function implements a Newton-Krylov solver. The basic idea is
     to compute the inverse of the Jacobian with an iterative Krylov
     method. These methods require only evaluating the Jacobian-vector
-    products, which are conveniently approximated by numerical
-    differentiation:
+    products, which are conveniently approximated by a finite difference:
 
     .. math:: J v \approx (f(x + \omega*v/|v|) - f(x)) / \omega
 
@@ -1379,13 +1386,13 @@ class KrylovJacobian(Jacobian):
     information obtained in the previous Newton steps to invert
     Jacobians in subsequent steps.
 
-    For a review on Newton-Krylov methods, see for example [KK]_,
-    and for the LGMRES sparse inverse method, see [BJM]_.
+    For a review on Newton-Krylov methods, see for example [1]_,
+    and for the LGMRES sparse inverse method, see [2]_.
 
     References
     ----------
-    .. [KK] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2003).
-    .. [BJM] A.H. Baker and E.R. Jessup and T. Manteuffel,
+    .. [1] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2003).
+    .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
              SIAM J. Matrix Anal. Appl. 26, 962 (2005).
 
     """

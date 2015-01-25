@@ -7,12 +7,12 @@ from numpy import array
 
 def imread(fname, flatten=False, mode=None):
     """
-    Load an image from file.
+    Read an image from a file as an array.
 
     Parameters
     ----------
     fname : str
-        Image file name, e.g. ``test.jpg``.
+        Image file name, e.g. ``test.jpg``, or a file object.
     flatten : bool, optional
         If true, convert the output to grey-scale. Default is False.
     mode : str, optional
@@ -40,11 +40,10 @@ def imread(fname, flatten=False, mode=None):
                           " http://pypi.python.org/pypi/PIL/ for installation"
                           " instructions.")
 
-    with open(fname, "rb") as fp:
-        im = Image.open(fp)
-        if mode:
-            im = im.convert(mode)
-        if flatten:
-            im = im.convert('F')
-        result = array(im)
-        return result
+    im = Image.open(fname)
+    if mode:
+        im = im.convert(mode)
+    if flatten:
+        im = im.convert('F')
+    result = array(im)
+    return result

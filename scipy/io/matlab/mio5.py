@@ -86,7 +86,7 @@ from numpy.compat import asbytes, asstr
 
 import scipy.sparse
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 from .byteordercodes import native_code, swapped_code
 
@@ -99,8 +99,8 @@ from .mio5_utils import VarReader5
 
 # Constants and helper objects
 from .mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
-                          NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8, miUTF8,
-                          miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
+                          NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
+                          miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
                           mxDOUBLE_CLASS, mclass_info)
 
@@ -136,6 +136,7 @@ class MatFile5Reader(MatFileReader):
                  chars_as_strings=True,
                  matlab_compatible=False,
                  struct_as_record=True,
+                 verify_compressed_data_integrity=True,
                  uint16_codec=None
                  ):
         '''Initializer for matlab 5 file format reader
@@ -154,7 +155,8 @@ class MatFile5Reader(MatFileReader):
             squeeze_me,
             chars_as_strings,
             matlab_compatible,
-            struct_as_record
+            struct_as_record,
+            verify_compressed_data_integrity
             )
         # Set uint16 codec
         if not uint16_codec:
@@ -220,12 +222,14 @@ class MatFile5Reader(MatFileReader):
             # Make new stream from compressed data
             stream = ZlibInputStream(self.mat_stream, byte_count)
             self._matrix_reader.set_stream(stream)
+            check_stream_limit = self.verify_compressed_data_integrity
             mdtype, byte_count = self._matrix_reader.read_full_tag()
         else:
+            check_stream_limit = False
             self._matrix_reader.set_stream(self.mat_stream)
         if not mdtype == miMATRIX:
             raise TypeError('Expecting miMATRIX type here, got %d' % mdtype)
-        header = self._matrix_reader.read_header()
+        header = self._matrix_reader.read_header(check_stream_limit)
         return header, next_pos
 
     def read_var_array(self, header, process=True):
@@ -396,6 +400,10 @@ def varmats_from_mat(file_obj):
     return named_mats
 
 
+class EmptyStructMarker(object):
+    """ Class to indicate presence of empty matlab struct on output """
+
+
 def to_writeable(source):
     ''' Convert input object ``source`` to something we can write
 
@@ -405,54 +413,11 @@ def to_writeable(source):
 
     Returns
     -------
-    arr : ndarray
-
-    Examples
-    --------
-    >>> to_writeable(np.array([1])) # pass through ndarrays
-    array([1])
-    >>> expected = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
-    >>> np.all(to_writeable({'a':1,'b':2}) == expected)
-    True
-    >>> np.all(to_writeable({'a':1,'b':2, '_c':3}) == expected)
-    True
-    >>> np.all(to_writeable({'a':1,'b':2, 100:3}) == expected)
-    True
-    >>> np.all(to_writeable({'a':1,'b':2, '99':3}) == expected)
-    True
-    >>> class klass(object): pass
-    >>> c = klass
-    >>> c.a = 1
-    >>> c.b = 2
-    >>> np.all(to_writeable({'a':1,'b':2}) == expected)
-    True
-    >>> to_writeable([])
-    array([], dtype=float64)
-    >>> to_writeable(())
-    array([], dtype=float64)
-    >>> to_writeable(None)
-
-    >>> to_writeable('a string').dtype.type == np.str_
-    True
-    >>> to_writeable(1)
-    array(1)
-    >>> to_writeable([1])
-    array([1])
-    >>> to_writeable([1])
-    array([1])
-    >>> to_writeable(object()) # not convertable
-
-    dict keys with legal characters are convertible
-
-    >>> to_writeable({'a':1})['a']
-    array([1], dtype=object)
-
-    but not with illegal characters
-
-    >>> to_writeable({'1':1}) is None
-    True
-    >>> to_writeable({'_a':1}) is None
-    True
+    arr : None or ndarray or EmptyStructMarker
+        If `source` cannot be converted to something we can write to a matfile,
+        return None.  If `source` is equivalent to an empty dictionary, return
+        ``EmptyStructMarker``.  Otherwise return `source` converted to an
+        ndarray with contents for writing to matfile.
     '''
     if isinstance(source, np.ndarray):
         return source
@@ -471,13 +436,13 @@ def to_writeable(source):
         values = []
         for field, value in source.items():
             if (isinstance(field, string_types) and
-                not field[0] in '_0123456789'):
-                dtype.append((field,object))
+                    field[0] not in '_0123456789'):
+                dtype.append((field, object))
                 values.append(value)
         if dtype:
-            return np.array([tuple(values)],dtype)
+            return np.array([tuple(values)], dtype)
         else:
-            return None
+            return EmptyStructMarker
     # Next try and convert to an array
     narr = np.asanyarray(source)
     if narr.dtype.type in (np.object, np.object_) and \
@@ -645,6 +610,8 @@ class VarWriter5(object):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
             raise MatWriteError('Cannot write matlab functions')
+        elif narr is EmptyStructMarker:  # empty struct array
+            self.write_empty_struct()
         elif narr.dtype.fields:  # struct array
             self.write_struct(narr)
         elif narr.dtype.hasobject:  # cell array
@@ -739,7 +706,8 @@ class VarWriter5(object):
                           mxSPARSE_CLASS,
                           is_complex=is_complex,
                           is_logical=is_logical,
-                          nzmax=nz)
+                          # matlab won't load file with 0 nzmax
+                          nzmax=1 if nz == 0 else nz)
         self.write_element(A.indices.astype('i4'))
         self.write_element(A.indptr.astype('i4'))
         self.write_element(A.data.real)
@@ -754,6 +722,13 @@ class VarWriter5(object):
         for el in A:
             self.write(el)
 
+    def write_empty_struct(self):
+        self.write_header((1, 1), mxSTRUCT_CLASS)
+        # max field name length set to 1 in an example matlab struct
+        self.write_element(np.array(1, dtype=np.int32))
+        # Field names element is empty
+        self.write_element(np.array([], dtype=np.int8))
+
     def write_struct(self, arr):
         self.write_header(matdims(arr, self.oned_as),
                           mxSTRUCT_CLASS)
@@ -765,9 +740,8 @@ class VarWriter5(object):
         length = max([len(fieldname) for fieldname in fieldnames])+1
         max_length = (self.long_field_names and 64) or 32
         if length > max_length:
-            raise ValueError(
-                "Field names are restricted to %d characters"
-                 % (max_length-1))
+            raise ValueError("Field names are restricted to %d characters" %
+                             (max_length-1))
         self.write_element(np.array([length], dtype='i4'))
         self.write_element(
             np.array(fieldnames, dtype='S%d' % (length)),

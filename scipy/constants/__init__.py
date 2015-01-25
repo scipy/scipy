@@ -295,7 +295,9 @@ _constant_names = [(_k.lower(), _k, _v)
 _constant_names = "\n".join(["``%s``%s  %s %s" % (_x[1], " "*(66-len(_x[1])),
                                                   _x[2][0], _x[2][1])
                              for _x in sorted(_constant_names)])
-__doc__ = __doc__ % dict(constant_names=_constant_names)
+if __doc__ is not None:
+    __doc__ = __doc__ % dict(constant_names=_constant_names)
+
 del _constant_names
 
 __all__ = [s for s in dir() if not s.startswith('_')]

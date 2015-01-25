@@ -1,8 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, assert_almost_equal, assert_equal, assert_, \
-        assert_raises, run_module_suite
+from numpy.testing import (TestCase, assert_almost_equal, assert_equal,
+                           assert_, assert_raises, run_module_suite,
+                           assert_allclose)
 
 import scipy.signal.waveforms as waveforms
 
@@ -77,7 +78,7 @@ class TestChirp(TestCase):
 
     def test_quadratic_at_zero2(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic',
-                                                                vertex_zero=False)
+                            vertex_zero=False)
         assert_almost_equal(w, 1.0)
 
     def test_quadratic_freq_01(self):
@@ -145,30 +146,26 @@ class TestChirp(TestCase):
 
     def test_hyperbolic_freq_01(self):
         method = 'hyperbolic'
-        f0 = 10.0
-        f1 = 1.0
         t1 = 1.0
         t = np.linspace(0, t1, 10000)
-        phase = waveforms._chirp_phase(t, f0, t1, f1, method)
-        tf, f = compute_frequency(t, phase)
-        abserr = np.max(np.abs(f - chirp_hyperbolic(tf, f0, f1, t1)))
-        assert_(abserr < 1e-6)
+        #           f0     f1
+        cases = [[10.0, 1.0],
+                 [1.0, 10.0],
+                 [-10.0, -1.0],
+                 [-1.0, -10.0]]
+        for f0, f1 in cases:
+            phase = waveforms._chirp_phase(t, f0, t1, f1, method)
+            tf, f = compute_frequency(t, phase)
+            expected = chirp_hyperbolic(tf, f0, f1, t1)
+            assert_allclose(f, expected)
 
-    def test_hyperbolic_freq_02(self):
+    def test_hyperbolic_zero_freq(self):
+        # f0=0 or f1=0 must raise a ValueError.
         method = 'hyperbolic'
-        f0 = 10.0
-        f1 = 100.0
         t1 = 1.0
-        t = np.linspace(0, t1, 10)
-        assert_raises(ValueError, waveforms.chirp, t, f0, t1, f1, method)
-
-    def test_hyperbolic_freq_03(self):
-        method = 'hyperbolic'
-        f0 = -10.0
-        f1 = 0.0
-        t1 = 1.0
-        t = np.linspace(0, t1, 10)
-        assert_raises(ValueError, waveforms.chirp, t, f0, t1, f1, method)
+        t = np.linspace(0, t1, 5)
+        assert_raises(ValueError, waveforms.chirp, t, 0, t1, 1, method)
+        assert_raises(ValueError, waveforms.chirp, t, 1, t1, 0, method)
 
     def test_unknown_method(self):
         method = "foo"

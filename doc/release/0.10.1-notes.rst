@@ -9,7 +9,7 @@ SciPy 0.10.1 is a bug-fix release with no new features compared to 0.10.0.
 Main changes
 ------------
 
-The most important changes are::
+The most important changes are:
 
 1. The single precision routines of ``eigs`` and ``eigsh`` in
    ``scipy.sparse.linalg`` have been disabled (they internally use double

@@ -369,21 +369,21 @@ linear least squares.
 
 .. plot::
 
-   >>> from numpy import *
+   >>> import numpy as np
    >>> from scipy import linalg
    >>> import matplotlib.pyplot as plt
 
-   >>> c1,c2= 5.0,2.0
-   >>> i = r_[1:11]
+   >>> c1, c2 = 5.0, 2.0
+   >>> i = np.r_[1:11]
    >>> xi = 0.1*i
-   >>> yi = c1*exp(-xi)+c2*xi
-   >>> zi = yi + 0.05*max(yi)*random.randn(len(yi))
+   >>> yi = c1*np.exp(-xi) + c2*xi
+   >>> zi = yi + 0.05 * np.max(yi) * np.random.randn(len(yi))
 
-   >>> A = c_[exp(-xi)[:,newaxis],xi[:,newaxis]]
-   >>> c,resid,rank,sigma = linalg.lstsq(A,zi)
+   >>> A = np.c_[np.exp(-xi)[:, np.newaxis], xi[:, np.newaxis]]
+   >>> c, resid, rank, sigma = linalg.lstsq(A, zi)
 
-   >>> xi2 = r_[0.1:1.0:100j]
-   >>> yi2 = c[0]*exp(-xi2) + c[1]*xi2
+   >>> xi2 = np.r_[0.1:1.0:100j]
+   >>> yi2 = c[0]*np.exp(-xi2) + c[1]*xi2
 
    >>> plt.plot(xi,zi,'x',xi2,yi2)
    >>> plt.axis([0,1.1,3.0,5.5])
@@ -475,7 +475,7 @@ returns :math:`\lambda` and :math:`\mathbf{v}.` However, it can also
 return :math:`\mathbf{v}_{L}` and just :math:`\lambda` by itself (
 :obj:`linalg.eigvals` returns just :math:`\lambda` as well).
 
-In addtion, :obj:`linalg.eig` can also solve the more general eigenvalue problem
+In addition, :obj:`linalg.eig` can also solve the more general eigenvalue problem
 
 .. math::
    :nowrap:
@@ -549,14 +549,14 @@ eigenvalues can then be found.
 Singular value decomposition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Singular Value Decompostion (SVD) can be thought of as an extension of
+Singular Value Decomposition (SVD) can be thought of as an extension of
 the eigenvalue problem to matrices that are not square. Let
 :math:`\mathbf{A}` be an :math:`M\times N` matrix with :math:`M` and
 :math:`N` arbitrary. The matrices :math:`\mathbf{A}^{H}\mathbf{A}` and
 :math:`\mathbf{A}\mathbf{A}^{H}` are square hermitian matrices [#]_ of
 size :math:`N\times N` and :math:`M\times M` respectively. It is known
 that the eigenvalues of square hermitian matrices are real and
-non-negative. In addtion, there are at most
+non-negative. In addition, there are at most
 :math:`\min\left(M,N\right)` identical non-zero eigenvalues of
 :math:`\mathbf{A}^{H}\mathbf{A}` and :math:`\mathbf{A}\mathbf{A}^{H}.`
 Define these positive eigenvalues as :math:`\sigma_{i}^{2}.` The
@@ -616,7 +616,8 @@ singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use
 LU decomposition
 ^^^^^^^^^^^^^^^^
 
-The LU decompostion finds a representation for the :math:`M\times N` matrix :math:`\mathbf{A}` as
+The LU decomposition finds a representation for the :math:`M\times N`
+matrix :math:`\mathbf{A}` as
 
 .. math::
    :nowrap:
@@ -674,7 +675,7 @@ then decompositions of :math:`\mathbf{A}` can be found so that
 
 where :math:`\mathbf{L}` is lower-triangular and :math:`\mathbf{U}` is
 upper triangular. Notice that :math:`\mathbf{L}=\mathbf{U}^{H}.` The
-command :obj:`linagl.cholesky` computes the cholesky
+command :obj:`linalg.cholesky` computes the cholesky
 factorization. For using cholesky factorization to solve systems of
 equations there are also :obj:`linalg.cho_factor` and
 :obj:`linalg.cho_solve` routines that work similarly to their LU

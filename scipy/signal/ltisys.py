@@ -9,18 +9,20 @@ from __future__ import division, print_function, absolute_import
 #
 # Feb 2010: Warren Weckesser
 #   Rewrote lsim2 and added impulse2.
+# Aug 2013: Juan Luis Cano
+#   Rewrote abcd_normalize.
 #
 
 from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 import numpy
-from numpy import product, zeros, array, dot, transpose, ones, \
-    nan_to_num, zeros_like, linspace
+from numpy import (product, zeros, array, dot, transpose, ones,
+                   nan_to_num, zeros_like, linspace)
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
-from scipy.lib.six.moves import xrange
-from numpy import r_, eye, real, atleast_1d, atleast_2d, poly, \
-     squeeze, diag, asarray
+from scipy._lib.six import xrange
+from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
+                   squeeze, diag, asarray)
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
@@ -39,7 +41,8 @@ def tf2ss(num, den):
     Returns
     -------
     A, B, C, D : ndarray
-        State space representation of the system.
+        State space representation of the system, in controller canonical
+        form.
 
     """
     # Controller canonical state-space representation.
@@ -59,8 +62,8 @@ def tf2ss(num, den):
         msg = "Improper transfer function. `num` is longer than `den`."
         raise ValueError(msg)
     if M == 0 or K == 0:  # Null system
-        return array([], float), array([], float), array([], float), \
-               array([], float)
+        return (array([], float), array([], float), array([], float),
+                array([], float))
 
     # pad numerator to have same number of columns has denominator
     num = r_['-1', zeros((num.shape[0], K - M), num.dtype), num]
@@ -80,52 +83,82 @@ def tf2ss(num, den):
     return A, B, C, D
 
 
-def _none_to_empty(arg):
+def _none_to_empty_2d(arg):
     if arg is None:
-        return []
+        return zeros((0, 0))
     else:
         return arg
 
 
+def _atleast_2d_or_none(arg):
+    if arg is not None:
+        return atleast_2d(arg)
+
+
+def _shape_or_none(M):
+    if M is not None:
+        return M.shape
+    else:
+        return (None,) * 2
+
+
+def _choice_not_none(*args):
+    for arg in args:
+        if arg is not None:
+            return arg
+
+
+def _restore(M, shape):
+    if M.shape == (0, 0):
+        return zeros(shape)
+    else:
+        if M.shape != shape:
+            raise ValueError("The input arrays have incompatible shapes.")
+        return M
+
+
 def abcd_normalize(A=None, B=None, C=None, D=None):
-    """Check state-space matrices and ensure they are rank-2.
+    """Check state-space matrices and ensure they are two-dimensional.
+
+    If enough information on the system is provided, that is, enough
+    properly-shaped arrays are passed to the function, the missing ones
+    are built from this information, ensuring the correct number of
+    rows and columns. Otherwise a ValueError is raised.
+
+    Parameters
+    ----------
+    A, B, C, D : array_like, optional
+        State-space matrices. All of them are None (missing) by default.
+
+    Returns
+    -------
+    A, B, C, D : array
+        Properly shaped state-space matrices.
+
+    Raises
+    ------
+    ValueError
+        If not enough information on the system was provided.
 
     """
-    A, B, C, D = map(_none_to_empty, (A, B, C, D))
-    A, B, C, D = map(atleast_2d, (A, B, C, D))
+    A, B, C, D = map(_atleast_2d_or_none, (A, B, C, D))
 
-    if ((len(A.shape) > 2) or (len(B.shape) > 2) or
-        (len(C.shape) > 2) or (len(D.shape) > 2)):
-        raise ValueError("A, B, C, D arrays can be no larger than rank-2.")
+    MA, NA = _shape_or_none(A)
+    MB, NB = _shape_or_none(B)
+    MC, NC = _shape_or_none(C)
+    MD, ND = _shape_or_none(D)
 
-    MA, NA = A.shape
-    MB, NB = B.shape
-    MC, NC = C.shape
-    MD, ND = D.shape
+    p = _choice_not_none(MA, MB, NC)
+    q = _choice_not_none(NB, ND)
+    r = _choice_not_none(MC, MD)
+    if p is None or q is None or r is None:
+        raise ValueError("Not enough information on the system.")
 
-    if (MC == 0) and (NC == 0) and (MD != 0) and (NA != 0):
-        MC, NC = MD, NA
-        C = zeros((MC, NC))
-    if (MB == 0) and (NB == 0) and (MA != 0) and (ND != 0):
-        MB, NB = MA, ND
-        B = zeros((MB, NB))
-    if (MD == 0) and (ND == 0) and (MC != 0) and (NB != 0):
-        MD, ND = MC, NB
-        D = zeros((MD, ND))
-    if (MA == 0) and (NA == 0) and (MB != 0) and (NC != 0):
-        MA, NA = MB, NC
-        A = zeros((MA, NA))
-
-    if MA != NA:
-        raise ValueError("A must be square.")
-    if MA != MB:
-        raise ValueError("A and B must have the same number of rows.")
-    if NA != NC:
-        raise ValueError("A and C must have the same number of columns.")
-    if MD != MC:
-        raise ValueError("C and D must have the same number of rows.")
-    if ND != NB:
-        raise ValueError("B and D must have the same number of columns.")
+    A, B, C, D = map(_none_to_empty_2d, (A, B, C, D))
+    A = _restore(A, (p, p))
+    B = _restore(B, (p, q))
+    C = _restore(C, (r, p))
+    D = _restore(D, (r, q))
 
     return A, B, C, D
 
@@ -142,15 +175,18 @@ def ss2tf(A, B, C, D, input=0):
 
     Returns
     -------
-    num, den : 1D ndarray
-        Numerator and denominator polynomials (as sequences)
-        respectively.
+    num : 2-D ndarray
+        Numerator(s) of the resulting transfer function(s).  `num` has one row
+        for each of the system's outputs. Each row is a sequence representation
+        of the numerator polynomial.
+    den : 1-D ndarray
+        Denominator of the resulting transfer function(s).  `den` is a sequence
+        representation of the denominator polynomial.
 
     """
     # transfer function is C (sI - A)**(-1) B + D
     A, B, C, D = map(asarray, (A, B, C, D))
-    # Check consistency and
-    #     make them all rank-2 arrays
+    # Check consistency and make them all rank-2 arrays
     A, B, C, D = abcd_normalize(A, B, C, D)
 
     nout, nin = D.shape
@@ -158,11 +194,8 @@ def ss2tf(A, B, C, D, input=0):
         raise ValueError("System does not have the input specified.")
 
     # make MOSI from possibly MOMI system.
-    if B.shape[-1] != 0:
-        B = B[:, input]
-    B.shape = (B.shape[0], 1)
-    if D.shape[-1] != 0:
-        D = D[:, input]
+    B = B[:, input:input + 1]
+    D = D[:, input:input + 1]
 
     try:
         den = poly(A)
@@ -198,7 +231,8 @@ def zpk2ss(z, p, k):
     Returns
     -------
     A, B, C, D : ndarray
-        State-space matrices.
+        State space representation of the system, in controller canonical
+        form.
 
     """
     return tf2ss(*zpk2tf(z, p, k))
@@ -394,20 +428,35 @@ class lti(object):
                                                           self.C, self.D)
 
     def impulse(self, X0=None, T=None, N=None):
+        """
+        Return the impulse response of a continuous-time system.
+        See `scipy.signal.impulse` for details.
+        """
         return impulse(self, X0=X0, T=T, N=N)
 
     def step(self, X0=None, T=None, N=None):
+        """
+        Return the step response of a continuous-time system.
+        See `scipy.signal.step` for details.
+        """
         return step(self, X0=X0, T=T, N=N)
 
     def output(self, U, T, X0=None):
+        """
+        Return the response of a continuous-time system to input `U`.
+        See `scipy.signal.lsim` for details.
+        """
         return lsim(self, U, T, X0=X0)
 
     def bode(self, w=None, n=100):
         """
-        Calculate Bode magnitude and phase data.
+        Calculate Bode magnitude and phase data of a continuous-time system.
 
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See scipy.signal.bode for details.
+        [dB] and phase [deg]. See `scipy.signal.bode` for details.
+
+        Notes
+        -----
 
         .. versionadded:: 0.11.0
 
@@ -429,11 +478,12 @@ class lti(object):
         return bode(self, w=w, n=n)
 
     def freqresp(self, w=None, n=10000):
-        """Calculate the frequency response of a continuous-time system.
+        """
+        Calculate the frequency response of a continuous-time system.
 
         Returns a 2-tuple containing arrays of frequencies [rad/s] and
         complex magnitude.
-        See scipy.signal.freqresp for details.
+        See `scipy.signal.freqresp` for details.
 
         """
         return freqresp(self, w=w, n=n)
@@ -935,8 +985,6 @@ def bode(system, w=None, n=100):
     """
     Calculate Bode magnitude and phase data of a continuous-time system.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     system : an instance of the LTI class or a tuple describing the system.
@@ -965,6 +1013,11 @@ def bode(system, w=None, n=100):
     phase : 1D ndarray
         Phase array [deg]
 
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
+
     Examples
     --------
     >>> from scipy import signal
@@ -983,7 +1036,7 @@ def bode(system, w=None, n=100):
     w, y = freqresp(system, w=w, n=n)
 
     mag = 20.0 * numpy.log10(abs(y))
-    phase = numpy.arctan2(y.imag, y.real) * 180.0 / numpy.pi
+    phase = numpy.unwrap(numpy.arctan2(y.imag, y.real)) * 180.0 / numpy.pi
 
     return w, mag, phase
 

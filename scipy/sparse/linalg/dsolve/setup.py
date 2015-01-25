@@ -10,9 +10,11 @@ import glob
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
+    from scipy._build_utils import get_sgemv_fix
 
     config = Configuration('dsolve',parent_package,top_path)
     config.add_data_dir('tests')
+    config.add_data_dir('benchmarks')
 
     lapack_opt = get_info('lapack_opt',notfound_action=2)
     if sys.platform == 'win32':
@@ -36,16 +38,17 @@ def configuration(parent_package='',top_path=None):
                        )
 
     # Extension
+    ext_sources = ['_superlumodule.c',
+                   '_superlu_utils.c',
+                   '_superluobject.c']
+    ext_sources += get_sgemv_fix(lapack_opt)
+
     config.add_extension('_superlu',
-                         sources=['_superlumodule.c',
-                                    '_superlu_utils.c',
-                                    '_superluobject.c'],
+                         sources=ext_sources,
                          libraries=['superlu_src'],
                          depends=(sources + headers),
                          extra_info=lapack_opt,
                          )
-
-    config.add_subpackage('umfpack')
 
     return config
 

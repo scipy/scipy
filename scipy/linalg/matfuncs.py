@@ -6,37 +6,138 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'fractional_matrix_power']
+           'expm_frechet', 'expm_cond', 'fractional_matrix_power']
 
-from numpy import asarray, Inf, dot, eye, diag, exp, \
-     product, logical_not, ravel, transpose, conjugate, \
-     cast, log, ogrid, imag, real, absolute, amax, sign, \
-     isfinite, sqrt, single
-from numpy import matrix as mat
+from numpy import (Inf, dot, diag, exp, product, logical_not, cast, ravel,
+        transpose, conjugate, absolute, amax, sign, isfinite, sqrt, single)
 import numpy as np
-
+import warnings
 
 # Local imports
 from .misc import norm
 from .basic import solve, inv
-from .lapack import ztrsyl
-from .special_matrices import triu, all_mat
+from .special_matrices import triu
 from .decomp import eig
-from .decomp_svd import orth, svd
+from .decomp_svd import svd
 from .decomp_schur import schur, rsf2csf
-from ._expm_frechet import expm_frechet
+from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
-import warnings
 
 eps = np.finfo(float).eps
 feps = np.finfo(single).eps
 
+_array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
+
+
+###############################################################################
+# Utility functions.
+
+
+def _asarray_square(A):
+    """
+    Wraps asarray with the extra requirement that the input be a square matrix.
+
+    The motivation is that the matfuncs module has real functions that have
+    been lifted to square matrix functions.
+
+    Parameters
+    ----------
+    A : array_like
+        A square matrix.
+
+    Returns
+    -------
+    out : ndarray
+        An ndarray copy or view or other representation of A.
+
+    """
+    A = np.asarray(A)
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected square array_like input')
+    return A
+
+
+def _maybe_real(A, B, tol=None):
+    """
+    Return either B or the real part of B, depending on properties of A and B.
+
+    The motivation is that B has been computed as a complicated function of A,
+    and B may be perturbed by negligible imaginary components.
+    If A is real and B is complex with small imaginary components,
+    then return a real copy of B.  The assumption in that case would be that
+    the imaginary components of B are numerical artifacts.
+
+    Parameters
+    ----------
+    A : ndarray
+        Input array whose type is to be checked as real vs. complex.
+    B : ndarray
+        Array to be returned, possibly without its imaginary part.
+    tol : float
+        Absolute tolerance.
+
+    Returns
+    -------
+    out : real or complex array
+        Either the input array B or only the real part of the input array B.
+
+    """
+    # Note that booleans and integers compare as real.
+    if np.isrealobj(A) and np.iscomplexobj(B):
+        if tol is None:
+            tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[B.dtype.char]]
+        if np.allclose(B.imag, 0.0, atol=tol):
+            B = B.real
+    return B
+
+
+###############################################################################
+# Matrix functions.
+
 
 def fractional_matrix_power(A, t):
+    """
+    Compute the fractional power of a matrix.
+
+    Proceeds according to the discussion in section (6) of [1]_.
+
+    Parameters
+    ----------
+    A : (N, N) array_like
+        Matrix whose fractional power to evaluate.
+    t : float
+        Fractional power.
+
+    Returns
+    -------
+    X : (N, N) array_like
+        The fractional power of the matrix.
+
+    References
+    ----------
+    .. [1] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
+    Examples
+    --------
+    >>> from scipy.linalg import fractional_matrix_power
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> b = fractional_matrix_power(a, 0.5)
+    >>> b
+    array([[ 0.75592895,  1.13389342],
+           [ 0.37796447,  1.88982237]])
+    >>> np.dot(b, b)      # Verify square root
+    array([[ 1.,  3.],
+           [ 1.,  4.]])
+
+    """
     # This fixes some issue with imports;
     # this function calls onenormest which is in scipy.sparse.
+    A = _asarray_square(A)
     import scipy.linalg._matfuncs_inv_ssq
-    return scipy.linalg._matfuncs_inv_ssq.fractional_matrix_power(A, t)
+    return scipy.linalg._matfuncs_inv_ssq._fractional_matrix_power(A, t)
 
 
 def logm(A, disp=True):
@@ -63,10 +164,40 @@ def logm(A, disp=True):
 
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
+    References
+    ----------
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2012)
+           "Improved Inverse Scaling and Squaring Algorithms
+           for the Matrix Logarithm."
+           SIAM Journal on Scientific Computing, 34 (4). C152-C169.
+           ISSN 1095-7197
+
+    .. [2] Nicholas J. Higham (2008)
+           "Functions of Matrices: Theory and Computation"
+           ISBN 978-0-898716-46-7
+
+    .. [3] Nicholas J. Higham and Lijing lin (2011)
+           "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
+           SIAM Journal on Matrix Analysis and Applications,
+           32 (3). pp. 1056-1078. ISSN 0895-4798
+
+    Examples
+    --------
+    >>> from scipy.linalg import logm, expm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> b = logm(a)
+    >>> b
+    array([[-1.02571087,  2.05142174],
+           [ 0.68380725,  1.02571087]])
+    >>> expm(b)         # Verify expm(logm(a)) returns a
+    array([[ 1.,  3.],
+           [ 1.,  4.]])
+
     """
+    A = _asarray_square(A)
+    # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
-    A = mat(asarray(A))
-    F = scipy.linalg._matfuncs_inv_ssq.logm(A)
+    F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     errtol = 1000*eps
     #TODO use a better error approximation
     errest = norm(expm(F)-A,1) / norm(A,1)
@@ -84,23 +215,47 @@ def expm(A, q=None):
 
     Parameters
     ----------
-    A : (N, N) array_like
-        Matrix to be exponentiated
+    A : (N, N) array_like or sparse matrix
+        Matrix to be exponentiated.
 
     Returns
     -------
     expm : (N, N) ndarray
-        Matrix exponential of `A`
+        Matrix exponential of `A`.
 
     References
     ----------
-    N. J. Higham,
-    "The Scaling and Squaring Method for the Matrix Exponential Revisited",
-    SIAM. J. Matrix Anal. & Appl. 26, 1179 (2005).
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2009)
+           "A New Scaling and Squaring Algorithm for the Matrix Exponential."
+           SIAM Journal on Matrix Analysis and Applications.
+           31 (3). pp. 970-989. ISSN 1095-7162
+
+    Examples
+    --------
+    >>> from scipy.linalg import expm, sinm, cosm
+
+    Matrix version of the formula exp(0) = 1:
+
+    >>> expm(np.zeros((2,2)))
+    array([[ 1.,  0.],
+           [ 0.,  1.]])
+
+    Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
+    applied to a matrix:
+
+    >>> a = np.array([[1.0, 2.0], [-1.0, 3.0]])
+    >>> expm(1j*a)
+    array([[ 0.42645930+1.89217551j, -2.13721484-0.97811252j],
+           [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
+    >>> cosm(a) + 1j*sinm(a)
+    array([[ 0.42645930+1.89217551j, -2.13721484-0.97811252j],
+           [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
 
     """
-    if q:
-        warnings.warn("argument q=... in scipy.linalg.expm is deprecated.")
+    if q is not None:
+        msg = "argument q=... in scipy.linalg.expm is deprecated." 
+        warnings.warn(msg, DeprecationWarning)
+    # Input checking and conversion is provided by sparse.linalg.expm().
     import scipy.sparse.linalg
     return scipy.sparse.linalg.expm(A)
 
@@ -122,14 +277,14 @@ def expm2(A):
         Matrix exponential of `A`
 
     """
-    A = asarray(A)
+    A = _asarray_square(A)
     t = A.dtype.char
     if t not in ['f','F','d','D']:
         A = A.astype('d')
         t = 'd'
-    s,vr = eig(A)
+    s, vr = eig(A)
     vri = inv(vr)
-    r = dot(dot(vr,diag(exp(s))),vri)
+    r = dot(dot(vr, diag(exp(s))), vri)
     if t in ['f', 'd']:
         return r.real.astype(t)
     else:
@@ -155,42 +310,19 @@ def expm3(A, q=20):
         Matrix exponential of `A`
 
     """
-    A = asarray(A)
+    A = _asarray_square(A)
+    n = A.shape[0]
     t = A.dtype.char
     if t not in ['f','F','d','D']:
         A = A.astype('d')
         t = 'd'
-    A = mat(A)
-    eA = eye(*A.shape,**{'dtype':t})
-    trm = mat(eA, copy=True)
+    eA = np.identity(n, dtype=t)
+    trm = np.identity(n, dtype=t)
     castfunc = cast[t]
-    for k in range(1,q):
-        trm *= A / castfunc(k)
+    for k in range(1, q):
+        trm[:] = trm.dot(A) / castfunc(k)
         eA += trm
     return eA
-
-_array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
-
-
-def toreal(arr, tol=None):
-    """Return as real array if imaginary part is small.
-
-    Parameters
-    ----------
-    arr : array
-    tol : float
-        Absolute tolerance
-
-    Returns
-    -------
-    arr : double or complex array
-    """
-    if tol is None:
-        tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[arr.dtype.char]]
-    if (arr.dtype.char in ['F', 'D','G']) and \
-       np.allclose(arr.imag, 0.0, atol=tol):
-        arr = arr.real
-    return arr
 
 
 def cosm(A):
@@ -209,12 +341,27 @@ def cosm(A):
     cosm : (N, N) ndarray
         Matrix cosine of A
 
+    Examples
+    --------
+    >>> from scipy.linalg import expm, sinm, cosm
+
+    Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
+    applied to a matrix:
+
+    >>> a = np.array([[1.0, 2.0], [-1.0, 3.0]])
+    >>> expm(1j*a)
+    array([[ 0.42645930+1.89217551j, -2.13721484-0.97811252j],
+           [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
+    >>> cosm(a) + 1j*sinm(a)
+    array([[ 0.42645930+1.89217551j, -2.13721484-0.97811252j],
+           [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
+
     """
-    A = asarray(A)
-    if A.dtype.char not in ['F','D','G']:
-        return expm(1j*A).real
-    else:
+    A = _asarray_square(A)
+    if np.iscomplexobj(A):
         return 0.5*(expm(1j*A) + expm(-1j*A))
+    else:
+        return expm(1j*A).real
 
 
 def sinm(A):
@@ -233,12 +380,27 @@ def sinm(A):
     sinm : (N, N) ndarray
         Matrix cosine of `A`
 
+    Examples
+    --------
+    >>> from scipy.linalg import expm, sinm, cosm
+
+    Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
+    applied to a matrix:
+
+    >>> a = np.array([[1.0, 2.0], [-1.0, 3.0]])
+    >>> expm(1j*a)
+    array([[ 0.42645930+1.89217551j, -2.13721484-0.97811252j],
+           [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
+    >>> cosm(a) + 1j*sinm(a)
+    array([[ 0.42645930+1.89217551j, -2.13721484-0.97811252j],
+           [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
+
     """
-    A = asarray(A)
-    if A.dtype.char not in ['F','D','G']:
-        return expm(1j*A).imag
-    else:
+    A = _asarray_square(A)
+    if np.iscomplexobj(A):
         return -0.5j*(expm(1j*A) - expm(-1j*A))
+    else:
+        return expm(1j*A).imag
 
 
 def tanm(A):
@@ -257,12 +419,26 @@ def tanm(A):
     tanm : (N, N) ndarray
         Matrix tangent of `A`
 
+    Examples
+    --------
+    >>> from scipy.linalg import tanm, sinm, cosm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> t = tanm(a)
+    >>> t
+    array([[ -2.00876993,  -8.41880636],
+           [ -2.80626879, -10.42757629]])
+
+    Verify tanm(a) = sinm(a).dot(inv(cosm(a)))
+
+    >>> s = sinm(a)
+    >>> c = cosm(a)
+    >>> s.dot(np.linalg.inv(c))
+    array([[ -2.00876993,  -8.41880636],
+           [ -2.80626879, -10.42757629]])
+
     """
-    A = asarray(A)
-    if A.dtype.char not in ['F','D','G']:
-        return toreal(solve(cosm(A), sinm(A)))
-    else:
-        return solve(cosm(A), sinm(A))
+    A = _asarray_square(A)
+    return _maybe_real(A, solve(cosm(A), sinm(A)))
 
 
 def coshm(A):
@@ -281,12 +457,26 @@ def coshm(A):
     coshm : (N, N) ndarray
         Hyperbolic matrix cosine of `A`
 
+    Examples
+    --------
+    >>> from scipy.linalg import tanhm, sinhm, coshm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> c = coshm(a)
+    >>> c
+    array([[ 11.24592233,  38.76236492],
+           [ 12.92078831,  50.00828725]])
+
+    Verify tanhm(a) = sinhm(a).dot(inv(coshm(a)))
+
+    >>> t = tanhm(a)
+    >>> s = sinhm(a)
+    >>> t - s.dot(np.linalg.inv(c))
+    array([[  2.72004641e-15,   4.55191440e-15],
+           [  0.00000000e+00,  -5.55111512e-16]])
+
     """
-    A = asarray(A)
-    if A.dtype.char not in ['F','D','G']:
-        return toreal(0.5*(expm(A) + expm(-A)))
-    else:
-        return 0.5*(expm(A) + expm(-A))
+    A = _asarray_square(A)
+    return _maybe_real(A, 0.5 * (expm(A) + expm(-A)))
 
 
 def sinhm(A):
@@ -305,12 +495,26 @@ def sinhm(A):
     sinhm : (N, N) ndarray
         Hyperbolic matrix sine of `A`
 
+    Examples
+    --------
+    >>> from scipy.linalg import tanhm, sinhm, coshm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> s = sinhm(a)
+    >>> s
+    array([[ 10.57300653,  39.28826594],
+           [ 13.09608865,  49.86127247]])
+
+    Verify tanhm(a) = sinhm(a).dot(inv(coshm(a)))
+
+    >>> t = tanhm(a)
+    >>> c = coshm(a)
+    >>> t - s.dot(np.linalg.inv(c))
+    array([[  2.72004641e-15,   4.55191440e-15],
+           [  0.00000000e+00,  -5.55111512e-16]])
+
     """
-    A = asarray(A)
-    if A.dtype.char not in ['F','D']:
-        return toreal(0.5*(expm(A) - expm(-A)))
-    else:
-        return 0.5*(expm(A) - expm(-A))
+    A = _asarray_square(A)
+    return _maybe_real(A, 0.5 * (expm(A) - expm(-A)))
 
 
 def tanhm(A):
@@ -329,12 +533,26 @@ def tanhm(A):
     tanhm : (N, N) ndarray
         Hyperbolic matrix tangent of `A`
 
+    Examples
+    --------
+    >>> from scipy.linalg import tanhm, sinhm, coshm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> t = tanhm(a)
+    >>> t
+    array([[ 0.3428582 ,  0.51987926],
+           [ 0.17329309,  0.86273746]])
+
+    Verify tanhm(a) = sinhm(a).dot(inv(coshm(a)))
+
+    >>> s = sinhm(a)
+    >>> c = coshm(a)
+    >>> t - s.dot(np.linalg.inv(c))
+    array([[  2.72004641e-15,   4.55191440e-15],
+           [  0.00000000e+00,  -5.55111512e-16]])
+
     """
-    A = asarray(A)
-    if A.dtype.char not in ['F','D']:
-        return toreal(solve(coshm(A), sinhm(A)))
-    else:
-        return solve(coshm(A), sinhm(A))
+    A = _asarray_square(A)
+    return _maybe_real(A, solve(coshm(A), sinhm(A)))
 
 
 def funm(A, func, disp=True):
@@ -365,15 +583,19 @@ def funm(A, func, disp=True):
 
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
+    Examples
+    --------
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> funm(a, lambda x: x*x)
+    array([[  4.,  15.],
+           [  5.,  19.]])
+    >>> a.dot(a)
+    array([[  4.,  15.],
+           [  5.,  19.]])
+
     """
+    A = _asarray_square(A)
     # Perform Shur decomposition (lapack ?gees)
-    A = asarray(A)
-    if len(A.shape) != 2:
-        raise ValueError("Non-matrix input to matrix function.")
-    if A.dtype.char in ['F', 'D', 'G']:
-        cmplx_type = 1
-    else:
-        cmplx_type = 0
     T, Z = schur(A)
     T, Z = rsf2csf(T,Z)
     n,n = T.shape
@@ -397,9 +619,8 @@ def funm(A, func, disp=True):
             F[i-1,j-1] = s
             minden = min(minden,abs(den))
 
-    F = dot(dot(Z, F),transpose(conjugate(Z)))
-    if not cmplx_type:
-        F = toreal(F)
+    F = dot(dot(Z, F), transpose(conjugate(Z)))
+    F = _maybe_real(A, F)
 
     tol = {0:feps, 1:eps}[_array_precision[F.dtype.char]]
     if minden == 0.0:
@@ -415,7 +636,7 @@ def funm(A, func, disp=True):
         return F, err
 
 
-def signm(a, disp=True):
+def signm(A, disp=True):
     """
     Matrix sign function.
 
@@ -448,14 +669,16 @@ def signm(a, disp=True):
     array([-1.+0.j,  1.+0.j,  1.+0.j])
 
     """
+    A = _asarray_square(A)
+
     def rounded_sign(x):
-        rx = real(x)
+        rx = np.real(x)
         if rx.dtype.char == 'f':
             c = 1e3*feps*amax(x)
         else:
             c = 1e3*eps*amax(x)
         return sign((absolute(rx) > c) * rx)
-    result,errest = funm(a, rounded_sign, disp=0)
+    result, errest = funm(A, rounded_sign, disp=0)
     errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.dtype.char]]
     if errest < errtol:
         return result
@@ -466,17 +689,16 @@ def signm(a, disp=True):
     # 8:237-250,1981" for how to improve the following (currently a
     # rather naive) iteration process:
 
-    a = asarray(a)
     # a = result # sometimes iteration converges faster but where??
 
     # Shifting to avoid zero eigenvalues. How to ensure that shifting does
     # not change the spectrum too much?
-    vals = svd(a,compute_uv=0)
+    vals = svd(A, compute_uv=0)
     max_sv = np.amax(vals)
     # min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
     # c = 0.5/min_nonzero_sv
     c = 0.5/max_sv
-    S0 = a + c*np.identity(a.shape[0])
+    S0 = A + c*np.identity(A.shape[0])
     prev_errest = errest
     for i in range(100):
         iS0 = inv(S0)

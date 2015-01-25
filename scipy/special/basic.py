@@ -4,84 +4,112 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
-from scipy.lib.six.moves import xrange
-from numpy import pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt, \
-        where, mgrid, cos, sin, exp, place, seterr, issubdtype, extract, \
-        less, vectorize, inexact, nan, zeros, sometrue, atleast_1d
-from ._ufuncs import ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta, \
-        hankel1, hankel2, yv, kv, gammaln, ndtri, errprint
-from . import _ufuncs
-import types
+from scipy._lib.six import xrange
+from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
+                   where, mgrid, sin, place, issubdtype, extract,
+                   less, inexact, nan, zeros, atleast_1d, sinc)
+from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
+                      hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch,
+                      binom)
 from . import specfun
 from . import orthogonal
-import warnings
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
-           'bi_zeros', 'digamma', 'diric', 'ellipk', 'erf_zeros', 'erfcinv',
-           'erfinv', 'errprint', 'euler', 'fresnel_zeros',
+           'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk', 'erf_zeros',
+           'erfcinv', 'erfinv', 'errprint', 'euler', 'factorial',
+           'factorialk', 'factorial2', 'fresnel_zeros',
            'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
            'jnjnp_zeros', 'jnp_zeros', 'jnyn_zeros', 'jv', 'jvp', 'kei_zeros',
            'keip_zeros', 'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv',
            'kvp', 'lmbda', 'lpmn', 'lpn', 'lqmn', 'lqn', 'mathieu_a',
            'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef', 'ndtri',
-           'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
+           'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq', 'perm',
            'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
-           'sinc', 'sph_harm', 'sph_in', 'sph_inkn',
+           'sinc', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
            'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
            'SpecialFunctionWarning']
 
 
 class SpecialFunctionWarning(Warning):
+    """Warning that can be issued with ``errprint(True)``"""
     pass
 warnings.simplefilter("always", category=SpecialFunctionWarning)
 
 
-def sinc(x):
-    """Returns sin(pi*x)/(pi*x) at all points of array x.
-    """
-    x = asarray(x)
-    w = pi * x
-    # w might contain 0, and so temporarily turn off warnings
-    # while calculating sin(w)/w.
-    old_settings = seterr(all='ignore')
-    s = sin(w) / w
-    seterr(**old_settings)
-    return where(x == 0, 1.0, s)
+def diric(x, n):
+    """Return the periodic sinc function, also called the Dirichlet function.
 
+    The Dirichlet function is defined as::
 
-def diric(x,n):
-    """Returns the periodic sinc function, also called the Dirichlet function:
-
-    diric(x) = sin(x *n / 2) / (n sin(x / 2))
+        diric(x) = sin(x * n/2) / (n * sin(x / 2)),
 
     where n is a positive integer.
+
+    Parameters
+    ----------
+    x : array_like
+        Input data
+    n : int
+        Integer defining the periodicity.
+
+    Returns
+    -------
+    diric : ndarray
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-8*np.pi, 8*np.pi, num=201)
+    >>> plt.figure(figsize=(8,8));
+    >>> for idx, n in enumerate([2,3,4,9]):
+    ...     plt.subplot(2, 2, idx+1)
+    ...     plt.plot(x, special.diric(x, n))
+    ...     plt.title('diric, n={}'.format(n))
+    >>> plt.show()
+
     """
-    x,n = asarray(x), asarray(n)
+    x, n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
     x = asarray(x + (n-n))
     if issubdtype(x.dtype, inexact):
         ytype = x.dtype
     else:
         ytype = float
-    y = zeros(x.shape,ytype)
+    y = zeros(x.shape, ytype)
+
+    # empirical minval for 32, 64 or 128 bit float computations
+    # where sin(x/2) < minval, result is fixed at +1 or -1
+    if np.finfo(ytype).eps < 1e-18:
+        minval = 1e-11
+    elif np.finfo(ytype).eps < 1e-15:
+        minval = 1e-7
+    else:
+        minval = 1e-3
 
     mask1 = (n <= 0) | (n != floor(n))
-    place(y,mask1,nan)
+    place(y, mask1, nan)
 
-    z = asarray(x / 2.0 / pi)
-    mask2 = (1-mask1) & (z == floor(z))
-    zsub = extract(mask2,z)
-    nsub = extract(mask2,n)
-    place(y,mask2,pow(-1,zsub*(nsub-1)))
+    x = x / 2
+    denom = sin(x)
+    mask2 = (1-mask1) & (abs(denom) < minval)
+    xsub = extract(mask2, x)
+    nsub = extract(mask2, n)
+    zsub = xsub / pi
+    place(y, mask2, pow(-1, np.round(zsub)*(nsub-1)))
 
     mask = (1-mask1) & (1-mask2)
-    xsub = extract(mask,x)
-    nsub = extract(mask,n)
-    place(y,mask,sin(nsub*xsub/2.0)/(nsub*sin(xsub/2.0)))
+    xsub = extract(mask, x)
+    nsub = extract(mask, n)
+    dsub = extract(mask, denom)
+    place(y, mask, sin(nsub*xsub)/(nsub*dsub))
     return y
 
 
@@ -92,7 +120,7 @@ def jnjnp_zeros(nt):
     Returns
     -------
     zo[l-1] : ndarray
-        Value of the lth zero of of Jn(x) and Jn'(x). Of length `nt`.
+        Value of the lth zero of Jn(x) and Jn'(x). Of length `nt`.
     n[l-1] : ndarray
         Order of the Jn(x) or Jn'(x) associated with lth zero. Of length `nt`.
     m[l-1] : ndarray
@@ -185,7 +213,7 @@ def y1p_zeros(nt,complex=0):
     return specfun.cyzo(nt,kf,kc)
 
 
-def bessel_diff_formula(v, z, n, L, phase):
+def _bessel_diff_formula(v, z, n, L, phase):
     # from AMS55.
     # L(v,z) = J(v,z), Y(v,z), H1(v,z), H2(v,z), phase = -1
     # L(v,z) = I(v,z) or exp(v*pi*i)K(v,z), phase = 1
@@ -198,6 +226,10 @@ def bessel_diff_formula(v, z, n, L, phase):
     return s / (2.**n)
 
 
+bessel_diff_formula = np.deprecate(_bessel_diff_formula,
+    message="bessel_diff_formula is a private function, do not use it!")
+
+
 def jvp(v,z,n=1):
     """Return the nth derivative of Jv(z) with respect to z.
     """
@@ -206,7 +238,7 @@ def jvp(v,z,n=1):
     if n == 0:
         return jv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, jv, -1)
+        return _bessel_diff_formula(v, z, n, jv, -1)
 #        return (jvp(v-1,z,n-1) - jvp(v+1,z,n-1))/2.0
 
 
@@ -218,7 +250,7 @@ def yvp(v,z,n=1):
     if n == 0:
         return yv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, yv, -1)
+        return _bessel_diff_formula(v, z, n, yv, -1)
 #        return (yvp(v-1,z,n-1) - yvp(v+1,z,n-1))/2.0
 
 
@@ -230,7 +262,7 @@ def kvp(v,z,n=1):
     if n == 0:
         return kv(v,z)
     else:
-        return (-1)**n * bessel_diff_formula(v, z, n, kv, 1)
+        return (-1)**n * _bessel_diff_formula(v, z, n, kv, 1)
 
 
 def ivp(v,z,n=1):
@@ -241,7 +273,7 @@ def ivp(v,z,n=1):
     if n == 0:
         return iv(v,z)
     else:
-        return bessel_diff_formula(v, z, n, iv, 1)
+        return _bessel_diff_formula(v, z, n, iv, 1)
 
 
 def h1vp(v,z,n=1):
@@ -252,7 +284,7 @@ def h1vp(v,z,n=1):
     if n == 0:
         return hankel1(v,z)
     else:
-        return bessel_diff_formula(v, z, n, hankel1, -1)
+        return _bessel_diff_formula(v, z, n, hankel1, -1)
 #        return (h1vp(v-1,z,n-1) - h1vp(v+1,z,n-1))/2.0
 
 
@@ -264,7 +296,7 @@ def h2vp(v,z,n=1):
     if n == 0:
         return hankel2(v,z)
     else:
-        return bessel_diff_formula(v, z, n, hankel2, -1)
+        return _bessel_diff_formula(v, z, n, hankel2, -1)
 #        return (h2vp(v-1,z,n-1) - h2vp(v+1,z,n-1))/2.0
 
 
@@ -372,12 +404,16 @@ def sph_inkn(n,z):
         raise ValueError("arguments must be scalars.")
     if (n != floor(n)) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if iscomplex(z) or less(z,0):
-        nm,In,Inp,kn,knp = specfun.csphik(n,z)
+    if (n < 1):
+        n1 = 1
     else:
-        nm,In,Inp = specfun.sphi(n,z)
-        nm,kn,knp = specfun.sphk(n,z)
-    return In,Inp,kn,knp
+        n1 = n
+    if iscomplex(z) or less(z,0):
+        nm,In,Inp,kn,knp = specfun.csphik(n1,z)
+    else:
+        nm,In,Inp = specfun.sphi(n1,z)
+        nm,kn,knp = specfun.sphk(n1,z)
+    return In[:(n+1)],Inp[:(n+1)],kn[:(n+1)],knp[:(n+1)]
 
 
 def riccati_jn(n,x):
@@ -412,56 +448,18 @@ def riccati_yn(n,x):
     return jn[:(n+1)],jnp[:(n+1)]
 
 
-def _sph_harmonic(m,n,theta,phi):
-    """Compute spherical harmonics.
-
-    This is a ufunc and may take scalar or array arguments like any
-    other ufunc.  The inputs will be broadcasted against each other.
-
-    Parameters
-    ----------
-    m : int
-       |m| <= n; the order of the harmonic.
-    n : int
-       where `n` >= 0; the degree of the harmonic.  This is often called
-       ``l`` (lower case L) in descriptions of spherical harmonics.
-    theta : float
-       [0, 2*pi]; the azimuthal (longitudinal) coordinate.
-    phi : float
-       [0, pi]; the polar (colatitudinal) coordinate.
-
-    Returns
-    -------
-    y_mn : complex float
-       The harmonic $Y^m_n$ sampled at `theta` and `phi`
-
-    Notes
-    -----
-    There are different conventions for the meaning of input arguments
-    `theta` and `phi`.  We take `theta` to be the azimuthal angle and
-    `phi` to be the polar angle.  It is common to see the opposite
-    convention - that is `theta` as the polar angle and `phi` as the
-    azimuthal angle.
-    """
-    x = cos(phi)
-    m,n = int(m), int(n)
-    Pmn,Pmn_deriv = lpmn(m,n,x)
-    # Legendre call generates all orders up to m and degrees up to n
-    val = Pmn[-1, -1]
-    val *= sqrt((2*n+1)/4.0/pi)
-    val *= exp(0.5*(gammaln(n-m+1)-gammaln(n+m+1)))
-    val *= exp(1j*m*theta)
-    return val
-
-sph_harm = vectorize(_sph_harmonic,'D')
-
-
 def erfinv(y):
+    """
+    Inverse function for erf
+    """
     return ndtri((y+1)/2.0)/sqrt(2)
 
 
 def erfcinv(y):
-    return ndtri((2-y)/2.0)/sqrt(2)
+    """
+    Inverse function for erfc
+    """
+    return -ndtri(0.5*y)/sqrt(2)
 
 
 def erf_zeros(nt):
@@ -517,7 +515,7 @@ def hyp0f1(v, z):
     .. math:: _0F_1(v,z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
 
     It's also the limit as q -> infinity of ``1F1(q;v;z/q)``, and satisfies
-    the differential equation :math:``f''(z) + vf'(z) = f(z)`.
+    the differential equation :math:`f''(z) + vf'(z) = f(z)`.
     """
     v = atleast_1d(v)
     z = atleast_1d(z)
@@ -533,7 +531,18 @@ def hyp0f1(v, z):
     return num / den
 
 
-def assoc_laguerre(x,n,k=0.0):
+def assoc_laguerre(x, n, k=0.0):
+    """Returns the n-th order generalized (associated) Laguerre polynomial.
+
+    The polynomial :math:`L^(alpha)_n(x)` is orthogonal over ``[0, inf)``,
+    with weighting function ``exp(-x) * x**alpha`` with ``alpha > -1``.
+
+    Notes
+    -----
+    `assoc_laguerre` is a simple wrapper around `eval_genlaguerre`, with
+    reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
+
+    """
     return orthogonal.eval_genlaguerre(n, k, x)
 
 digamma = psi
@@ -627,10 +636,93 @@ def mathieu_odd_coef(m,q):
 
 
 def lpmn(m,n,z):
-    """Associated Legendre functions of the first kind, Pmn(z) and its
-    derivative, ``Pmn'(z)`` of order m and degree n.  Returns two
-    arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for
-    all orders from ``0..m`` and degrees from ``0..n``.
+    """Associated Legendre function of the first kind, Pmn(z)
+
+    Computes the associated Legendre function of the first kind
+    of order m and degree n,::
+
+        Pmn(z) = P_n^m(z)
+
+    and its derivative, ``Pmn'(z)``.  Returns two arrays of size
+    ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for all
+    orders from ``0..m`` and degrees from ``0..n``.
+
+    This function takes a real argument ``z``. For complex arguments ``z``
+    use clpmn instead.
+
+    Parameters
+    ----------
+    m : int
+       ``|m| <= n``; the order of the Legendre function.
+    n : int
+       where ``n >= 0``; the degree of the Legendre function.  Often
+       called ``l`` (lower case L) in descriptions of the associated
+       Legendre function
+    z : float
+        Input value.
+
+    Returns
+    -------
+    Pmn_z : (m+1, n+1) array
+       Values for all orders 0..m and degrees 0..n
+    Pmn_d_z : (m+1, n+1) array
+       Derivatives for all orders 0..m and degrees 0..n
+
+    See Also
+    --------
+    clpmn: associated Legendre functions of the first kind for complex z
+
+    Notes
+    -----
+    In the interval (-1, 1), Ferrer's function of the first kind is
+    returned. The phase convention used for the intervals (1, inf)
+    and (-inf, -1) is such that the result is always real.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/14.3
+
+    """
+    if not isscalar(m) or (abs(m) > n):
+        raise ValueError("m must be <= n.")
+    if not isscalar(n) or (n < 0):
+        raise ValueError("n must be a non-negative integer.")
+    if not isscalar(z):
+        raise ValueError("z must be scalar.")
+    if iscomplex(z):
+        raise ValueError("Argument must be real. Use clpmn instead.")
+    if (m < 0):
+        mp = -m
+        mf,nf = mgrid[0:mp+1,0:n+1]
+        sv = errprint(0)
+        if abs(z) < 1:
+            # Ferrer function; DLMF 14.9.3
+            fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        else:
+            # Match to clpmn; DLMF 14.9.13
+            fixarr = where(mf > nf,0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+        sv = errprint(sv)
+    else:
+        mp = m
+    p,pd = specfun.lpmn(mp,n,z)
+    if (m < 0):
+        p = p * fixarr
+        pd = pd * fixarr
+    return p,pd
+
+
+def clpmn(m, n, z, type=3):
+    """Associated Legendre function of the first kind, Pmn(z)
+
+    Computes the (associated) Legendre function of the first kind
+    of order m and degree n,::
+
+        Pmn(z) = P_n^m(z)
+
+    and its derivative, ``Pmn'(z)``.  Returns two arrays of size
+    ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for all
+    orders from ``0..m`` and degrees from ``0..n``.
 
     Parameters
     ----------
@@ -642,13 +734,39 @@ def lpmn(m,n,z):
        Legendre function
     z : float or complex
         Input value.
+    type : int
+       takes values 2 or 3
+       2: cut on the real axis ``|x| > 1``
+       3: cut on the real axis ``-1 < x < 1`` (default)
 
     Returns
     -------
     Pmn_z : (m+1, n+1) array
-       Values for all orders 0..m and degrees 0..n
+       Values for all orders ``0..m`` and degrees ``0..n``
     Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders 0..m and degrees 0..n
+       Derivatives for all orders ``0..m`` and degrees ``0..n``
+
+    See Also
+    --------
+    lpmn: associated Legendre functions of the first kind for real z
+
+    Notes
+    -----
+    By default, i.e. for ``type=3``, phase conventions are chosen according
+    to [1]_ such that the function is analytic. The cut lies on the interval
+    (-1, 1). Approaching the cut from above or below in general yields a phase
+    factor with respect to Ferrer's function of the first kind
+    (cf. `lpmn`).
+
+    For ``type=2`` a cut at ``|x| > 1`` is chosen. Approaching the real values
+    on the interval (-1, 1) in the complex plane yields Ferrer's function
+    of the first kind.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/14.21
+
     """
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -656,18 +774,20 @@ def lpmn(m,n,z):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
+    if not(type == 2 or type == 3):
+        raise ValueError("type must be either 2 or 3.")
     if (m < 0):
         mp = -m
         mf,nf = mgrid[0:mp+1,0:n+1]
         sv = errprint(0)
-        fixarr = where(mf > nf,0.0,(-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        if type == 2:
+            fixarr = where(mf > nf,0.0, (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+        else:
+            fixarr = where(mf > nf,0.0,gamma(nf-mf+1) / gamma(nf+mf+1))
         sv = errprint(sv)
     else:
         mp = m
-    if iscomplex(z):
-        p,pd = specfun.clpmn(mp,n,real(z),imag(z))
-    else:
-        p,pd = specfun.lpmn(mp,n,z)
+    p,pd = specfun.clpmn(mp,n,real(z),imag(z),type)
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr
@@ -990,7 +1110,7 @@ def obl_cv_seq(m,n,c):
 
 def ellipk(m):
     """
-    Computes the complete elliptic integral of the first kind.
+    Complete elliptic integral of the first kind
 
     This function is defined as
 
@@ -1009,6 +1129,14 @@ def ellipk(m):
     Notes
     -----
     For more precision around point m = 1, use `ellipkm1`.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind around m = 1
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+
 
     """
     return ellipkm1(1 - asarray(m))
@@ -1030,3 +1158,268 @@ def agm(a,b):
     """
     s = a + b + 0.0
     return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)
+
+
+def comb(N, k, exact=False, repetition=False):
+    """
+    The number of combinations of N things taken k at a time.
+
+    This is often expressed as "N choose k".
+
+    Parameters
+    ----------
+    N : int, ndarray
+        Number of things.
+    k : int, ndarray
+        Number of elements taken.
+    exact : bool, optional
+        If `exact` is False, then floating point precision is used, otherwise
+        exact long integer is computed.
+    repetition : bool, optional
+        If `repetition` is True, then the number of combinations with
+        repetition is computed.
+
+    Returns
+    -------
+    val : int, ndarray
+        The total number of combinations.
+
+    Notes
+    -----
+    - Array arguments accepted only for exact=False case.
+    - If k > N, N < 0, or k < 0, then a 0 is returned.
+
+    Examples
+    --------
+    >>> k = np.array([3, 4])
+    >>> n = np.array([10, 10])
+    >>> sc.comb(n, k, exact=False)
+    array([ 120.,  210.])
+    >>> sc.comb(10, 3, exact=True)
+    120L
+    >>> sc.comb(10, 3, exact=True, repetition=True)
+    220L
+
+    """
+    if repetition:
+        return comb(N + k - 1, k, exact)
+    if exact:
+        N = int(N)
+        k = int(k)
+        if (k > N) or (N < 0) or (k < 0):
+            return 0
+        val = 1
+        for j in xrange(min(k, N-k)):
+            val = (val*(N-j))//(j+1)
+        return val
+    else:
+        k,N = asarray(k), asarray(N)
+        cond = (k <= N) & (N >= 0) & (k >= 0)
+        vals = binom(N, k)
+        if isinstance(vals, np.ndarray):
+            vals[~cond] = 0
+        elif not cond:
+            vals = np.float64(0)
+        return vals
+
+
+def perm(N, k, exact=False):
+    """
+    Permutations of N things taken k at a time, i.e., k-permutations of N.
+
+    It's also known as "partial permutations".
+
+    Parameters
+    ----------
+    N : int, ndarray
+        Number of things.
+    k : int, ndarray
+        Number of elements taken.
+    exact : bool, optional
+        If `exact` is False, then floating point precision is used, otherwise
+        exact long integer is computed.
+
+    Returns
+    -------
+    val : int, ndarray
+        The number of k-permutations of N.
+
+    Notes
+    -----
+    - Array arguments accepted only for exact=False case.
+    - If k > N, N < 0, or k < 0, then a 0 is returned.
+
+    Examples
+    --------
+    >>> k = np.array([3, 4])
+    >>> n = np.array([10, 10])
+    >>> perm(n, k)
+    array([  720.,  5040.])
+    >>> perm(10, 3, exact=True)
+    720
+
+    """
+    if exact:
+        if (k > N) or (N < 0) or (k < 0):
+            return 0
+        val = 1
+        for i in xrange(N - k + 1, N + 1):
+            val *= i
+        return val
+    else:
+        k, N = asarray(k), asarray(N)
+        cond = (k <= N) & (N >= 0) & (k >= 0)
+        vals = poch(N - k + 1, k)
+        if isinstance(vals, np.ndarray):
+            vals[~cond] = 0
+        elif not cond:
+            vals = np.float64(0)
+        return vals
+
+
+def factorial(n,exact=False):
+    """
+    The factorial function, n! = special.gamma(n+1).
+
+    If exact is 0, then floating point precision is used, otherwise
+    exact long integer is computed.
+
+    - Array argument accepted only for exact=False case.
+    - If n<0, the return value is 0.
+
+    Parameters
+    ----------
+    n : int or array_like of ints
+        Calculate ``n!``.  Arrays are only supported with `exact` set
+        to False.  If ``n < 0``, the return value is 0.
+    exact : bool, optional
+        The result can be approximated rapidly using the gamma-formula
+        above.  If `exact` is set to True, calculate the
+        answer exactly using integer arithmetic. Default is False.
+
+    Returns
+    -------
+    nf : float or int
+        Factorial of `n`, as an integer or a float depending on `exact`.
+
+    Examples
+    --------
+    >>> arr = np.array([3,4,5])
+    >>> sc.factorial(arr, exact=False)
+    array([   6.,   24.,  120.])
+    >>> sc.factorial(5, exact=True)
+    120L
+
+    """
+    if exact:
+        if n < 0:
+            return 0
+        val = 1
+        for k in xrange(1,n+1):
+            val *= k
+        return val
+    else:
+        n = asarray(n)
+        vals = gamma(n+1)
+        return where(n >= 0,vals,0)
+
+
+def factorial2(n, exact=False):
+    """
+    Double factorial.
+
+    This is the factorial with every second value skipped, i.e.,
+    ``7!! = 7 * 5 * 3 * 1``.  It can be approximated numerically as::
+
+      n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
+          = 2**(n/2) * (n/2)!                           n even
+
+    Parameters
+    ----------
+    n : int or array_like
+        Calculate ``n!!``.  Arrays are only supported with `exact` set
+        to False.  If ``n < 0``, the return value is 0.
+    exact : bool, optional
+        The result can be approximated rapidly using the gamma-formula
+        above (default).  If `exact` is set to True, calculate the
+        answer exactly using integer arithmetic.
+
+    Returns
+    -------
+    nff : float or int
+        Double factorial of `n`, as an int or a float depending on
+        `exact`.
+
+    Examples
+    --------
+    >>> factorial2(7, exact=False)
+    array(105.00000000000001)
+    >>> factorial2(7, exact=True)
+    105L
+
+    """
+    if exact:
+        if n < -1:
+            return 0
+        if n <= 0:
+            return 1
+        val = 1
+        for k in xrange(n,0,-2):
+            val *= k
+        return val
+    else:
+        n = asarray(n)
+        vals = zeros(n.shape,'d')
+        cond1 = (n % 2) & (n >= -1)
+        cond2 = (1-(n % 2)) & (n >= -1)
+        oddn = extract(cond1,n)
+        evenn = extract(cond2,n)
+        nd2o = oddn / 2.0
+        nd2e = evenn / 2.0
+        place(vals,cond1,gamma(nd2o+1)/sqrt(pi)*pow(2.0,nd2o+0.5))
+        place(vals,cond2,gamma(nd2e+1) * pow(2.0,nd2e))
+        return vals
+
+
+def factorialk(n,k,exact=True):
+    """
+    n(!!...!)  = multifactorial of order k
+    k times
+
+    Parameters
+    ----------
+    n : int
+        Calculate multifactorial. If `n` < 0, the return value is 0.
+    exact : bool, optional
+        If exact is set to True, calculate the answer exactly using
+        integer arithmetic.
+
+    Returns
+    -------
+    val : int
+        Multi factorial of `n`.
+
+    Raises
+    ------
+    NotImplementedError
+        Raises when exact is False
+
+    Examples
+    --------
+    >>> sc.factorialk(5, 1, exact=True)
+    120L
+    >>> sc.factorialk(5, 3, exact=True)
+    10L
+
+    """
+    if exact:
+        if n < 1-k:
+            return 0
+        if n <= 0:
+            return 1
+        val = 1
+        for j in xrange(n,0,-k):
+            val = val*j
+        return val
+    else:
+        raise NotImplementedError

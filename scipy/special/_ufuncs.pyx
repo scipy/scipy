@@ -70,7 +70,11 @@ cdef void loop_d_dddd__As_ffff_f(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double, double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0])
@@ -86,7 +90,8 @@ cdef void loop_f_f__As_f_f(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef float ov0
     for i in range(n):
         ov0 = (<float(*)(float) nogil>func)(<float>(<float*>ip0)[0])
@@ -99,7 +104,11 @@ cdef void loop_d_ddi_d_As_ddl_dd(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -122,7 +131,13 @@ cdef void loop_i_ddddd_dd_As_ddddd_dd(char **args, np.npy_intp *dims, np.npy_int
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *ip4 = args[4], *op0 = args[5], *op1 = args[6]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *op0 = args[5]
+    cdef char *op1 = args[6]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -142,7 +157,9 @@ cdef void loop_D_dD__As_dD_D(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double complex>(<double complex*>ip1)[0])
@@ -152,11 +169,57 @@ cdef void loop_D_dD__As_dD_D(char **args, np.npy_intp *dims, np.npy_intp *steps,
         op0 += steps[2]
     sf_error.check_fpe(func_name)
 
+cdef void loop_D_iidd__As_llff_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef double complex ov0
+    for i in range(n):
+        if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
+            ov0 = (<double complex(*)(int, int, double, double) nogil>func)(<int>(<long*>ip0)[0], <int>(<long*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0])
+        else:
+            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
+            ov0 = <double complex>NPY_NAN
+        (<float complex *>op0)[0] = <float complex>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        ip3 += steps[3]
+        op0 += steps[4]
+    sf_error.check_fpe(func_name)
+
+cdef void loop_D_dddd__As_dddd_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef double complex ov0
+    for i in range(n):
+        ov0 = (<double complex(*)(double, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
+        (<double complex *>op0)[0] = <double complex>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        ip3 += steps[3]
+        op0 += steps[4]
+    sf_error.check_fpe(func_name)
+
 cdef void loop_i_d_dd_As_d_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -172,7 +235,9 @@ cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<double complex*>ip0)[0], <double complex>(<double complex*>ip1)[0])
@@ -186,7 +251,8 @@ cdef void loop_D_D__As_D_D(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex) nogil>func)(<double complex>(<double complex*>ip0)[0])
@@ -199,7 +265,12 @@ cdef void loop_d_dddi_d_As_fffl_ff(char **args, np.npy_intp *dims, np.npy_intp *
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4], *op1 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef char *op1 = args[5]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -223,7 +294,9 @@ cdef void loop_i_D_DD_As_F_FF(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double complex ov0
     cdef double complex ov1
     for i in range(n):
@@ -239,7 +312,11 @@ cdef void loop_i_d_DDDD_As_f_FFFF(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double complex ov0
     cdef double complex ov1
     cdef double complex ov2
@@ -261,7 +338,11 @@ cdef void loop_i_D_DDDD_As_F_FFFF(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double complex ov0
     cdef double complex ov1
     cdef double complex ov2
@@ -283,7 +364,12 @@ cdef void loop_d_dddi_d_As_dddl_dd(char **args, np.npy_intp *dims, np.npy_intp *
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4], *op1 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef char *op1 = args[5]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -307,7 +393,10 @@ cdef void loop_d_ldd__As_ldd_d(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0])
@@ -322,7 +411,10 @@ cdef void loop_d_ddd__As_fff_f(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0])
@@ -337,7 +429,9 @@ cdef void loop_d_dd__As_ff_f(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0])
@@ -351,7 +445,12 @@ cdef void loop_i_dd_dddd_As_ff_ffff(char **args, np.npy_intp *dims, np.npy_intp 
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2], *op1 = args[3], *op2 = args[4], *op3 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef char *op1 = args[3]
+    cdef char *op2 = args[4]
+    cdef char *op3 = args[5]
     cdef double ov0
     cdef double ov1
     cdef double ov2
@@ -374,7 +473,10 @@ cdef void loop_i_dd_dd_As_dd_dd(char **args, np.npy_intp *dims, np.npy_intp *ste
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2], *op1 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef char *op1 = args[3]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -391,7 +493,11 @@ cdef void loop_i_ddd_dd_As_fff_ff(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -409,7 +515,10 @@ cdef void loop_D_ddD__As_ddD_D(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double complex>(<double complex*>ip2)[0])
@@ -420,27 +529,55 @@ cdef void loop_D_ddD__As_ddD_D(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_dddD__As_dddD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_Dld__As_Flf_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double complex ov0
     for i in range(n):
-        ov0 = (<double complex(*)(double, double, double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double complex>(<double complex*>ip3)[0])
-        (<double complex *>op0)[0] = <double complex>ov0
+        ov0 = (<double complex(*)(double complex, long, double) nogil>func)(<double complex>(<float complex*>ip0)[0], <long>(<long*>ip1)[0], <double>(<float*>ip2)[0])
+        (<float complex *>op0)[0] = <float complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         ip2 += steps[2]
-        ip3 += steps[3]
-        op0 += steps[4]
+        op0 += steps[3]
+    sf_error.check_fpe(func_name)
+
+cdef void loop_i_ddd_dd_As_ddd_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
+    cdef double ov0
+    cdef double ov1
+    for i in range(n):
+        (<int(*)(double, double, double, double *, double *) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], &ov0, &ov1)
+        (<double *>op0)[0] = <double>ov0
+        (<double *>op1)[0] = <double>ov1
+        ip0 += steps[0]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        op0 += steps[3]
+        op1 += steps[4]
     sf_error.check_fpe(func_name)
 
 cdef void loop_i_d_dddd_As_d_dddd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double ov0
     cdef double ov1
     cdef double ov2
@@ -458,11 +595,35 @@ cdef void loop_i_d_dddd_As_d_dddd(char **args, np.npy_intp *dims, np.npy_intp *s
         op3 += steps[4]
     sf_error.check_fpe(func_name)
 
+cdef void loop_i_d_dd_As_f_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef double ov0
+    cdef double ov1
+    for i in range(n):
+        (<int(*)(double, double *, double *) nogil>func)(<double>(<float*>ip0)[0], &ov0, &ov1)
+        (<float *>op0)[0] = <float>ov0
+        (<float *>op1)[0] = <float>ov1
+        ip0 += steps[0]
+        op0 += steps[1]
+        op1 += steps[2]
+    sf_error.check_fpe(func_name)
+
 cdef void loop_i_ddddd_dd_As_fffff_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *ip4 = args[4], *op0 = args[5], *op1 = args[6]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *op0 = args[5]
+    cdef char *op1 = args[6]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -482,7 +643,8 @@ cdef void loop_D_D__As_F_F(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex) nogil>func)(<double complex>(<float complex*>ip0)[0])
@@ -495,7 +657,11 @@ cdef void loop_i_d_DDDD_As_d_DDDD(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double complex ov0
     cdef double complex ov1
     cdef double complex ov2
@@ -513,29 +679,54 @@ cdef void loop_i_d_DDDD_As_d_DDDD(char **args, np.npy_intp *dims, np.npy_intp *s
         op3 += steps[4]
     sf_error.check_fpe(func_name)
 
-cdef void loop_i_ddd_dd_As_ddd_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_dddD__As_dddD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
-    cdef double ov0
-    cdef double ov1
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef double complex ov0
     for i in range(n):
-        (<int(*)(double, double, double, double *, double *) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], &ov0, &ov1)
-        (<double *>op0)[0] = <double>ov0
-        (<double *>op1)[0] = <double>ov1
+        ov0 = (<double complex(*)(double, double, double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double complex>(<double complex*>ip3)[0])
+        (<double complex *>op0)[0] = <double complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         ip2 += steps[2]
-        op0 += steps[3]
-        op1 += steps[4]
+        ip3 += steps[3]
+        op0 += steps[4]
+    sf_error.check_fpe(func_name)
+
+cdef void loop_D_dddd__As_ffff_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef double complex ov0
+    for i in range(n):
+        ov0 = (<double complex(*)(double, double, double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0])
+        (<float complex *>op0)[0] = <float complex>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        ip3 += steps[3]
+        op0 += steps[4]
     sf_error.check_fpe(func_name)
 
 cdef void loop_D_Dld__As_Dld_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double complex, long, double) nogil>func)(<double complex>(<double complex*>ip0)[0], <long>(<long*>ip1)[0], <double>(<double*>ip2)[0])
@@ -550,7 +741,11 @@ cdef void loop_d_ddi_d_As_ffl_ff(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3], *op1 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -573,7 +768,10 @@ cdef void loop_i_dd_dd_As_ff_ff(char **args, np.npy_intp *dims, np.npy_intp *ste
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2], *op1 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef char *op1 = args[3]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -590,7 +788,11 @@ cdef void loop_D_dddD__As_fffF_F(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double, double, double complex) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double complex>(<float complex*>ip3)[0])
@@ -606,7 +808,9 @@ cdef void loop_d_id__As_lf_f(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         if <int>(<long*>ip0)[0] == (<long*>ip0)[0]:
@@ -624,7 +828,11 @@ cdef void loop_d_dddd__As_dddd_d(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
@@ -636,25 +844,38 @@ cdef void loop_d_dddd__As_dddd_d(char **args, np.npy_intp *dims, np.npy_intp *st
         op0 += steps[4]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_DD__As_FF_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_iidd__As_lldd_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double complex ov0
     for i in range(n):
-        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<float complex*>ip0)[0], <double complex>(<float complex*>ip1)[0])
-        (<float complex *>op0)[0] = <float complex>ov0
+        if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
+            ov0 = (<double complex(*)(int, int, double, double) nogil>func)(<int>(<long*>ip0)[0], <int>(<long*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
+        else:
+            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
+            ov0 = <double complex>NPY_NAN
+        (<double complex *>op0)[0] = <double complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
-        op0 += steps[2]
+        ip2 += steps[2]
+        ip3 += steps[3]
+        op0 += steps[4]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_iid__As_lld_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
@@ -669,11 +890,29 @@ cdef void loop_d_iid__As_lld_d(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
+cdef void loop_D_DD__As_FF_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef double complex ov0
+    for i in range(n):
+        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<float complex*>ip0)[0], <double complex>(<float complex*>ip1)[0])
+        (<float complex *>op0)[0] = <float complex>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        op0 += steps[2]
+    sf_error.check_fpe(func_name)
+
 cdef void loop_i_d_DD_As_d_DD(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double complex ov0
     cdef double complex ov1
     for i in range(n):
@@ -689,7 +928,8 @@ cdef void loop_d_d__As_f_f(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double) nogil>func)(<double>(<float*>ip0)[0])
@@ -702,7 +942,8 @@ cdef void loop_d_d__As_d_d(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double) nogil>func)(<double>(<double*>ip0)[0])
@@ -715,7 +956,12 @@ cdef void loop_d_dddd_d_As_ffff_ff(char **args, np.npy_intp *dims, np.npy_intp *
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4], *op1 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef char *op1 = args[5]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -734,7 +980,10 @@ cdef void loop_d_iid__As_llf_f(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
@@ -749,11 +998,41 @@ cdef void loop_d_iid__As_llf_f(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
+cdef void loop_d_ddddddd__As_ddddddd_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *ip5 = args[5]
+    cdef char *ip6 = args[6]
+    cdef char *op0 = args[7]
+    cdef double ov0
+    for i in range(n):
+        ov0 = (<double(*)(double, double, double, double, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0], <double>(<double*>ip4)[0], <double>(<double*>ip5)[0], <double>(<double*>ip6)[0])
+        (<double *>op0)[0] = <double>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        ip3 += steps[3]
+        ip4 += steps[4]
+        ip5 += steps[5]
+        ip6 += steps[6]
+        op0 += steps[7]
+    sf_error.check_fpe(func_name)
+
 cdef void loop_d_lddd__As_lddd_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
@@ -769,7 +1048,10 @@ cdef void loop_D_ddD__As_ffF_F(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double, double complex) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double complex>(<float complex*>ip2)[0])
@@ -784,7 +1066,11 @@ cdef void loop_i_d_dddd_As_f_ffff(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double ov0
     cdef double ov1
     cdef double ov2
@@ -806,7 +1092,11 @@ cdef void loop_d_lddd__As_lfff_f(char **args, np.npy_intp *dims, np.npy_intp *st
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0])
@@ -818,11 +1108,42 @@ cdef void loop_d_lddd__As_lfff_f(char **args, np.npy_intp *dims, np.npy_intp *st
         op0 += steps[4]
     sf_error.check_fpe(func_name)
 
+cdef void loop_d_ddddddd__As_fffffff_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *ip5 = args[5]
+    cdef char *ip6 = args[6]
+    cdef char *op0 = args[7]
+    cdef double ov0
+    for i in range(n):
+        ov0 = (<double(*)(double, double, double, double, double, double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0], <double>(<float*>ip4)[0], <double>(<float*>ip5)[0], <double>(<float*>ip6)[0])
+        (<float *>op0)[0] = <float>ov0
+        ip0 += steps[0]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        ip3 += steps[3]
+        ip4 += steps[4]
+        ip5 += steps[5]
+        ip6 += steps[6]
+        op0 += steps[7]
+    sf_error.check_fpe(func_name)
+
 cdef void loop_d_dddd_d_As_dddd_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *ip3 = args[3], *op0 = args[4], *op1 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef char *op1 = args[5]
     cdef double ov0
     cdef double ov1
     for i in range(n):
@@ -841,7 +1162,9 @@ cdef void loop_i_D_DD_As_D_DD(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double complex ov0
     cdef double complex ov1
     for i in range(n):
@@ -853,26 +1176,46 @@ cdef void loop_i_D_DD_As_D_DD(char **args, np.npy_intp *dims, np.npy_intp *steps
         op1 += steps[2]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_Dld__As_Flf_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_d_ddiiddd__As_ddllddd_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
-    cdef double complex ov0
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *ip5 = args[5]
+    cdef char *ip6 = args[6]
+    cdef char *op0 = args[7]
+    cdef double ov0
     for i in range(n):
-        ov0 = (<double complex(*)(double complex, long, double) nogil>func)(<double complex>(<float complex*>ip0)[0], <long>(<long*>ip1)[0], <double>(<float*>ip2)[0])
-        (<float complex *>op0)[0] = <float complex>ov0
+        if <int>(<long*>ip2)[0] == (<long*>ip2)[0] and <int>(<long*>ip3)[0] == (<long*>ip3)[0]:
+            ov0 = (<double(*)(double, double, int, int, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <int>(<long*>ip2)[0], <int>(<long*>ip3)[0], <double>(<double*>ip4)[0], <double>(<double*>ip5)[0], <double>(<double*>ip6)[0])
+        else:
+            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
+            ov0 = <double>NPY_NAN
+        (<double *>op0)[0] = <double>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         ip2 += steps[2]
-        op0 += steps[3]
+        ip3 += steps[3]
+        ip4 += steps[4]
+        ip5 += steps[5]
+        ip6 += steps[6]
+        op0 += steps[7]
     sf_error.check_fpe(func_name)
 
 cdef void loop_i_dd_dddd_As_dd_dddd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2], *op1 = args[3], *op2 = args[4], *op3 = args[5]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
+    cdef char *op1 = args[3]
+    cdef char *op2 = args[4]
+    cdef char *op3 = args[5]
     cdef double ov0
     cdef double ov1
     cdef double ov2
@@ -895,7 +1238,9 @@ cdef void loop_D_dD__As_fF_F(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double complex ov0
     for i in range(n):
         ov0 = (<double complex(*)(double, double complex) nogil>func)(<double>(<float*>ip0)[0], <double complex>(<float complex*>ip1)[0])
@@ -905,27 +1250,43 @@ cdef void loop_D_dD__As_fF_F(char **args, np.npy_intp *dims, np.npy_intp *steps,
         op0 += steps[2]
     sf_error.check_fpe(func_name)
 
-cdef void loop_i_d_dd_As_f_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_d_ddiiddd__As_ffllfff_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *ip5 = args[5]
+    cdef char *ip6 = args[6]
+    cdef char *op0 = args[7]
     cdef double ov0
-    cdef double ov1
     for i in range(n):
-        (<int(*)(double, double *, double *) nogil>func)(<double>(<float*>ip0)[0], &ov0, &ov1)
+        if <int>(<long*>ip2)[0] == (<long*>ip2)[0] and <int>(<long*>ip3)[0] == (<long*>ip3)[0]:
+            ov0 = (<double(*)(double, double, int, int, double, double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <int>(<long*>ip2)[0], <int>(<long*>ip3)[0], <double>(<float*>ip4)[0], <double>(<float*>ip5)[0], <double>(<float*>ip6)[0])
+        else:
+            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
+            ov0 = <double>NPY_NAN
         (<float *>op0)[0] = <float>ov0
-        (<float *>op1)[0] = <float>ov1
         ip0 += steps[0]
-        op0 += steps[1]
-        op1 += steps[2]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        ip3 += steps[3]
+        ip4 += steps[4]
+        ip5 += steps[5]
+        ip6 += steps[6]
+        op0 += steps[7]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_ld__As_lf_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0])
@@ -939,7 +1300,9 @@ cdef void loop_d_id__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         if <int>(<long*>ip0)[0] == (<long*>ip0)[0]:
@@ -957,7 +1320,9 @@ cdef void loop_d_dd__As_dd_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0])
@@ -971,7 +1336,9 @@ cdef void loop_i_d_DD_As_f_FF(char **args, np.npy_intp *dims, np.npy_intp *steps
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double complex ov0
     cdef double complex ov1
     for i in range(n):
@@ -987,7 +1354,10 @@ cdef void loop_d_ddd__As_ddd_d(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0])
@@ -1002,7 +1372,11 @@ cdef void loop_i_D_DDDD_As_D_DDDD(char **args, np.npy_intp *dims, np.npy_intp *s
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1], *op1 = args[2], *op2 = args[3], *op3 = args[4]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
+    cdef char *op2 = args[3]
+    cdef char *op3 = args[4]
     cdef double complex ov0
     cdef double complex ov1
     cdef double complex ov2
@@ -1024,7 +1398,8 @@ cdef void loop_g_g__As_g_g(char **args, np.npy_intp *dims, np.npy_intp *steps, v
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *op0 = args[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
     cdef long double ov0
     for i in range(n):
         ov0 = (<long double(*)(long double) nogil>func)(<long double>(<long double*>ip0)[0])
@@ -1037,7 +1412,10 @@ cdef void loop_d_ldd__As_lff_f(char **args, np.npy_intp *dims, np.npy_intp *step
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *ip2 = args[2], *op0 = args[3]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *op0 = args[3]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0])
@@ -1052,7 +1430,9 @@ cdef void loop_d_ld__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0], *ip1 = args[1], *op0 = args[2]
+    cdef char *ip0 = args[0]
+    cdef char *ip1 = args[1]
+    cdef char *op0 = args[2]
     cdef double ov0
     for i in range(n):
         ov0 = (<double(*)(long, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<double*>ip1)[0])
@@ -1062,6 +1442,12 @@ cdef void loop_d_ld__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps,
         op0 += steps[2]
     sf_error.check_fpe(func_name)
 
+from _ellip_harm cimport ellip_harmonic as _func_ellip_harmonic
+ctypedef double _proto_ellip_harmonic_t(double, double, int, int, double, double, double) nogil
+cdef _proto_ellip_harmonic_t *_proto_ellip_harmonic_t_var = &_func_ellip_harmonic
+from _legacy cimport ellip_harmonic_unsafe as _func_ellip_harmonic_unsafe
+ctypedef double _proto_ellip_harmonic_unsafe_t(double, double, double, double, double, double, double) nogil
+cdef _proto_ellip_harmonic_unsafe_t *_proto_ellip_harmonic_unsafe_t_var = &_func_ellip_harmonic_unsafe
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
@@ -1119,6 +1505,12 @@ cdef extern from "_ufuncs_defs.h":
 from orthogonal_eval cimport binom as _func_binom
 ctypedef double _proto_binom_t(double, double) nogil
 cdef _proto_binom_t *_proto_binom_t_var = &_func_binom
+from _boxcox cimport boxcox as _func_boxcox
+ctypedef double _proto_boxcox_t(double, double) nogil
+cdef _proto_boxcox_t *_proto_boxcox_t_var = &_func_boxcox
+from _boxcox cimport boxcox1p as _func_boxcox1p
+ctypedef double _proto_boxcox1p_t(double, double) nogil
+cdef _proto_boxcox1p_t *_proto_boxcox1p_t_var = &_func_boxcox1p
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_btdtr "btdtr"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1161,6 +1553,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_ellik "ellik"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_ellpk "ellpk"(double) nogil
+from _convex_analysis cimport entr as _func_entr
+ctypedef double _proto_entr_t(double) nogil
+cdef _proto_entr_t *_proto_entr_t_var = &_func_entr
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_erf "erf"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1361,6 +1756,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesh_wrap2 "cbesh_wrap2"(double, double complex) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesh_wrap2_e "cbesh_wrap2_e"(double, double complex) nogil
+from _convex_analysis cimport huber as _func_huber
+ctypedef double _proto_huber_t(double, double) nogil
+cdef _proto_huber_t *_proto_huber_t_var = &_func_huber
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_hyp1f1_wrap "hyp1f1_wrap"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1388,6 +1786,12 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_i1 "i1"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_i1e "i1e"(double) nogil
+from _boxcox cimport inv_boxcox as _func_inv_boxcox
+ctypedef double _proto_inv_boxcox_t(double, double) nogil
+cdef _proto_inv_boxcox_t *_proto_inv_boxcox_t_var = &_func_inv_boxcox
+from _boxcox cimport inv_boxcox1p as _func_inv_boxcox1p
+ctypedef double _proto_inv_boxcox1p_t(double, double) nogil
+cdef _proto_inv_boxcox1p_t *_proto_inv_boxcox1p_t_var = &_func_inv_boxcox1p
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_it2i0k0_wrap "it2i0k0_wrap"(double, double *, double *) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1442,6 +1846,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_ker_wrap "ker_wrap"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_kerp_wrap "kerp_wrap"(double) nogil
+from _convex_analysis cimport kl_div as _func_kl_div
+ctypedef double _proto_kl_div_t(double, double) nogil
+cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(int, double) nogil
 from _legacy cimport kn_unsafe as _func_kn_unsafe
@@ -1576,6 +1983,8 @@ cdef _proto_pdtri_unsafe_t *_proto_pdtri_unsafe_t_var = &_func_pdtri_unsafe
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cdfpoi2_wrap "cdfpoi2_wrap"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_poch "poch"(double, double) nogil
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_prolate_aswfa_nocv_wrap "prolate_aswfa_nocv_wrap"(double, double, double, double, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_prolate_aswfa_wrap "prolate_aswfa_wrap"(double, double, double, double, double, double *, double *) nogil
@@ -1589,12 +1998,18 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_prolate_radial2_nocv_wrap "prolate_radial2_nocv_wrap"(double, double, double, double, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_prolate_radial2_wrap "prolate_radial2_wrap"(double, double, double, double, double, double *, double *) nogil
+from _convex_analysis cimport pseudo_huber as _func_pseudo_huber
+ctypedef double _proto_pseudo_huber_t(double, double) nogil
+cdef _proto_pseudo_huber_t *_proto_pseudo_huber_t_var = &_func_pseudo_huber
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_psi "psi"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cpsi_wrap "cpsi_wrap"(double complex) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_radian "radian"(double, double, double) nogil
+from _convex_analysis cimport rel_entr as _func_rel_entr
+ctypedef double _proto_rel_entr_t(double, double) nogil
+cdef _proto_rel_entr_t *_proto_rel_entr_t_var = &_func_rel_entr
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_rgamma "rgamma"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1619,6 +2034,12 @@ ctypedef double _proto_smirnovi_unsafe_t(double, double) nogil
 cdef _proto_smirnovi_unsafe_t *_proto_smirnovi_unsafe_t_var = &_func_smirnovi_unsafe
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_spence "spence"(double) nogil
+from sph_harm cimport sph_harmonic as _func_sph_harmonic
+ctypedef double complex _proto_sph_harmonic_t(int, int, double, double) nogil
+cdef _proto_sph_harmonic_t *_proto_sph_harmonic_t_var = &_func_sph_harmonic
+from _legacy cimport sph_harmonic_unsafe as _func_sph_harmonic_unsafe
+ctypedef double complex _proto_sph_harmonic_unsafe_t(double, double, double, double) nogil
+cdef _proto_sph_harmonic_unsafe_t *_proto_sph_harmonic_unsafe_t_var = &_func_sph_harmonic_unsafe
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cdft1_wrap "cdft1_wrap"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1661,6 +2082,62 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_zeta "zeta"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_zetac "zetac"(double) nogil
+cdef np.PyUFuncGenericFunction ufunc__ellip_harm_loops[4]
+cdef void *ufunc__ellip_harm_ptr[8]
+cdef void *ufunc__ellip_harm_data[4]
+cdef char ufunc__ellip_harm_types[32]
+cdef char *ufunc__ellip_harm_doc = (
+    "Internal function, use `ellip_harm` instead.")
+ufunc__ellip_harm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddiiddd__As_ffllfff_f
+ufunc__ellip_harm_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddddddd__As_fffffff_f
+ufunc__ellip_harm_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddiiddd__As_ddllddd_d
+ufunc__ellip_harm_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddddddd__As_ddddddd_d
+ufunc__ellip_harm_types[0] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[1] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[2] = <char>NPY_LONG
+ufunc__ellip_harm_types[3] = <char>NPY_LONG
+ufunc__ellip_harm_types[4] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[5] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[6] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[7] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[8] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[9] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[10] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[11] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[12] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[13] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[14] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[15] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[16] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[17] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[18] = <char>NPY_LONG
+ufunc__ellip_harm_types[19] = <char>NPY_LONG
+ufunc__ellip_harm_types[20] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[21] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[22] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[23] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[24] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[25] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[26] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[27] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[28] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[29] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[30] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[31] = <char>NPY_DOUBLE
+ufunc__ellip_harm_ptr[2*0] = <void*>_func_ellip_harmonic
+ufunc__ellip_harm_ptr[2*0+1] = <void*>(<char*>"_ellip_harm")
+ufunc__ellip_harm_ptr[2*1] = <void*>_func_ellip_harmonic_unsafe
+ufunc__ellip_harm_ptr[2*1+1] = <void*>(<char*>"_ellip_harm")
+ufunc__ellip_harm_ptr[2*2] = <void*>_func_ellip_harmonic
+ufunc__ellip_harm_ptr[2*2+1] = <void*>(<char*>"_ellip_harm")
+ufunc__ellip_harm_ptr[2*3] = <void*>_func_ellip_harmonic_unsafe
+ufunc__ellip_harm_ptr[2*3+1] = <void*>(<char*>"_ellip_harm")
+ufunc__ellip_harm_data[0] = &ufunc__ellip_harm_ptr[2*0]
+ufunc__ellip_harm_data[1] = &ufunc__ellip_harm_ptr[2*1]
+ufunc__ellip_harm_data[2] = &ufunc__ellip_harm_ptr[2*2]
+ufunc__ellip_harm_data[3] = &ufunc__ellip_harm_ptr[2*3]
+_ellip_harm = np.PyUFunc_FromFuncAndData(ufunc__ellip_harm_loops, ufunc__ellip_harm_data, ufunc__ellip_harm_types, 4, 7, 1, 0, "_ellip_harm", ufunc__ellip_harm_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc__lambertw_loops[2]
 cdef void *ufunc__lambertw_ptr[4]
 cdef void *ufunc__lambertw_data[2]
@@ -1690,7 +2167,15 @@ cdef void *ufunc__struve_asymp_large_z_ptr[4]
 cdef void *ufunc__struve_asymp_large_z_data[2]
 cdef char ufunc__struve_asymp_large_z_types[10]
 cdef char *ufunc__struve_asymp_large_z_doc = (
-    "Function for testing struve & modstruve")
+    "_struve_asymp_large_z(v, z, is_h)\n"
+    "\n"
+    "Internal function for testing struve & modstruve\n"
+    "\n"
+    "Evaluates using asymptotic expansion\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "v, err")
 ufunc__struve_asymp_large_z_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
 ufunc__struve_asymp_large_z_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
 ufunc__struve_asymp_large_z_types[0] = <char>NPY_FLOAT
@@ -1716,7 +2201,15 @@ cdef void *ufunc__struve_bessel_series_ptr[4]
 cdef void *ufunc__struve_bessel_series_data[2]
 cdef char ufunc__struve_bessel_series_types[10]
 cdef char *ufunc__struve_bessel_series_doc = (
-    "Function for testing struve & modstruve")
+    "_struve_bessel_series(v, z, is_h)\n"
+    "\n"
+    "Internal function for testing struve & modstruve\n"
+    "\n"
+    "Evaluates using Bessel function series\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "v, err")
 ufunc__struve_bessel_series_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
 ufunc__struve_bessel_series_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
 ufunc__struve_bessel_series_types[0] = <char>NPY_FLOAT
@@ -1742,7 +2235,15 @@ cdef void *ufunc__struve_power_series_ptr[4]
 cdef void *ufunc__struve_power_series_data[2]
 cdef char ufunc__struve_power_series_types[10]
 cdef char *ufunc__struve_power_series_doc = (
-    "Function for testing struve & modstruve")
+    "_struve_power_series(v, z, is_h)\n"
+    "\n"
+    "Internal function for testing struve & modstruve\n"
+    "\n"
+    "Evaluates using power series\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "v, err")
 ufunc__struve_power_series_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
 ufunc__struve_power_series_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
 ufunc__struve_power_series_types[0] = <char>NPY_FLOAT
@@ -1768,10 +2269,23 @@ cdef void *ufunc_airy_ptr[8]
 cdef void *ufunc_airy_data[4]
 cdef char ufunc_airy_types[20]
 cdef char *ufunc_airy_doc = (
-    "(Ai,Aip,Bi,Bip)=airy(z) calculates the Airy functions and their derivatives\n"
-    "evaluated at real or complex number z.  The Airy functions Ai and Bi\n"
-    "are two independent solutions of y''(x)=xy.  Aip and Bip are the first derivatives\n"
-    "evaluated at x of Ai and Bi respectively.")
+    "airy(z)\n"
+    "\n"
+    "Airy functions and their derivatives.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "z : float or complex\n"
+    "    Argument.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "Ai, Aip, Bi, Bip\n"
+    "    Airy functions Ai and Bi, and their derivatives Aip and Bip\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "The Airy functions Ai and Bi are two independent solutions of y''(x) = x y.")
 ufunc_airy_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_f_ffff
 ufunc_airy_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_d_dddd
 ufunc_airy_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DDDD_As_F_FFFF
@@ -1815,10 +2329,26 @@ cdef void *ufunc_airye_ptr[8]
 cdef void *ufunc_airye_data[4]
 cdef char ufunc_airye_types[20]
 cdef char *ufunc_airye_doc = (
-    "(Aie,Aipe,Bie,Bipe)=airye(z) calculates the exponentially scaled Airy functions and\n"
-    "their derivatives evaluated at real or complex number z.\n"
-    "airye(z)[0:1] = airy(z)[0:1] * exp(2.0/3.0*z*sqrt(z))\n"
-    "airye(z)[2:3] = airy(z)[2:3] * exp(-abs((2.0/3.0*z*sqrt(z)).real))")
+    "airye(z)\n"
+    "\n"
+    "Exponentially scaled Airy functions and their derivatives.\n"
+    "\n"
+    "Scaling::\n"
+    "\n"
+    "    eAi  = Ai  * exp(2.0/3.0*z*sqrt(z))\n"
+    "    eAip = Aip * exp(2.0/3.0*z*sqrt(z))\n"
+    "    eBi  = Bi  * exp(-abs((2.0/3.0*z*sqrt(z)).real))\n"
+    "    eBip = Bip * exp(-abs((2.0/3.0*z*sqrt(z)).real))\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "z : float or complex\n"
+    "    Argument.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "eAi, eAip, eBi, eBip\n"
+    "    Airy functions Ai and Bi, and their derivatives Aip and Bip")
 ufunc_airye_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_f_ffff
 ufunc_airye_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_d_dddd
 ufunc_airye_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DDDD_As_F_FFFF
@@ -1862,8 +2392,27 @@ cdef void *ufunc_bdtr_ptr[8]
 cdef void *ufunc_bdtr_data[4]
 cdef char ufunc_bdtr_types[16]
 cdef char *ufunc_bdtr_doc = (
-    "y=bdtr(k,n,p) returns the sum of the terms 0 through k of the\n"
-    "Binomial probability density:  sum(nCj p**j (1-p)**(n-j),j=0..k)")
+    "bdtr(k, n, p)\n"
+    "\n"
+    "Binomial distribution cumulative distribution function.\n"
+    "\n"
+    "Sum of the terms 0 through k of the Binomial probability density.\n"
+    "\n"
+    "::\n"
+    "\n"
+    "    y = sum(nCj p**j (1-p)**(n-j),j=0..k)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "k, n : int\n"
+    "    Terms to include\n"
+    "p : float\n"
+    "    Probability\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y : float\n"
+    "    Sum of terms")
 ufunc_bdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
 ufunc_bdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
 ufunc_bdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -1903,8 +2452,27 @@ cdef void *ufunc_bdtrc_ptr[8]
 cdef void *ufunc_bdtrc_data[4]
 cdef char ufunc_bdtrc_types[16]
 cdef char *ufunc_bdtrc_doc = (
-    "y=bdtrc(k,n,p) returns the sum of the terms k+1 through n of the\n"
-    "Binomial probability density: sum(nCj p**j (1-p)**(n-j), j=k+1..n)")
+    "bdtrc(k, n, p)\n"
+    "\n"
+    "Binomial distribution survival function.\n"
+    "\n"
+    "Sum of the terms k+1 through n of the Binomial probability density\n"
+    "\n"
+    "::\n"
+    "\n"
+    "    y = sum(nCj p**j (1-p)**(n-j), j=k+1..n)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "k, n : int\n"
+    "    Terms to include\n"
+    "p : float\n"
+    "    Probability\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y : float\n"
+    "    Sum of terms")
 ufunc_bdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
 ufunc_bdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
 ufunc_bdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -1944,9 +2512,12 @@ cdef void *ufunc_bdtri_ptr[8]
 cdef void *ufunc_bdtri_data[4]
 cdef char ufunc_bdtri_types[16]
 cdef char *ufunc_bdtri_doc = (
-    "p=bdtri(k,n,y) finds the probability p such that the sum of the\n"
-    "terms 0 through k of the Binomial probability density is equal to the\n"
-    "given cumulative probability y.")
+    "bdtri(k, n, y)\n"
+    "\n"
+    "Inverse function to bdtr vs. p\n"
+    "\n"
+    "Finds probability `p` such that for the cumulative binomial\n"
+    "probability ``bdtr(k, n, p) == y``.")
 ufunc_bdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
 ufunc_bdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
 ufunc_bdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -1986,7 +2557,9 @@ cdef void *ufunc_bdtrik_ptr[4]
 cdef void *ufunc_bdtrik_data[2]
 cdef char ufunc_bdtrik_types[8]
 cdef char *ufunc_bdtrik_doc = (
-    "")
+    "bdtrik(y, n, p)\n"
+    "\n"
+    "Inverse function to bdtr vs k")
 ufunc_bdtrik_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_bdtrik_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_bdtrik_types[0] = <char>NPY_FLOAT
@@ -2010,7 +2583,9 @@ cdef void *ufunc_bdtrin_ptr[4]
 cdef void *ufunc_bdtrin_data[2]
 cdef char ufunc_bdtrin_types[8]
 cdef char *ufunc_bdtrin_doc = (
-    "")
+    "bdtrin(k, y, p)\n"
+    "\n"
+    "Inverse function to bdtr vs n")
 ufunc_bdtrin_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_bdtrin_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_bdtrin_types[0] = <char>NPY_FLOAT
@@ -2034,7 +2609,9 @@ cdef void *ufunc_bei_ptr[4]
 cdef void *ufunc_bei_data[2]
 cdef char ufunc_bei_types[4]
 cdef char *ufunc_bei_doc = (
-    "y=bei(x) returns the Kelvin function bei x")
+    "bei(x)\n"
+    "\n"
+    "Kelvin function bei")
 ufunc_bei_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_bei_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_bei_types[0] = <char>NPY_FLOAT
@@ -2054,7 +2631,9 @@ cdef void *ufunc_beip_ptr[4]
 cdef void *ufunc_beip_data[2]
 cdef char ufunc_beip_types[4]
 cdef char *ufunc_beip_doc = (
-    "y=beip(x) returns the derivative of the Kelvin function bei x")
+    "beip(x)\n"
+    "\n"
+    "Derivative of the Kelvin function bei")
 ufunc_beip_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_beip_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_beip_types[0] = <char>NPY_FLOAT
@@ -2074,7 +2653,9 @@ cdef void *ufunc_ber_ptr[4]
 cdef void *ufunc_ber_data[2]
 cdef char ufunc_ber_types[4]
 cdef char *ufunc_ber_doc = (
-    "y=ber(x) returns the Kelvin function ber x")
+    "ber(x)\n"
+    "\n"
+    "Kelvin function ber.")
 ufunc_ber_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ber_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ber_types[0] = <char>NPY_FLOAT
@@ -2094,7 +2675,9 @@ cdef void *ufunc_berp_ptr[4]
 cdef void *ufunc_berp_data[2]
 cdef char ufunc_berp_types[4]
 cdef char *ufunc_berp_doc = (
-    "y=berp(x) returns the derivative of the Kelvin function ber x")
+    "berp(x)\n"
+    "\n"
+    "Derivative of the Kelvin function ber")
 ufunc_berp_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_berp_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_berp_types[0] = <char>NPY_FLOAT
@@ -2114,8 +2697,16 @@ cdef void *ufunc_besselpoly_ptr[4]
 cdef void *ufunc_besselpoly_data[2]
 cdef char ufunc_besselpoly_types[8]
 cdef char *ufunc_besselpoly_doc = (
-    "y=besselpoly(a,lam,nu) returns the value of the integral:\n"
-    "integral(x**lam * jv(nu,2*a*x),x=0..1).")
+    "besselpoly(a, lmb, nu)\n"
+    "\n"
+    "Weighed integral of a Bessel function.\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "   \\int_0^1 x^\\lambda J_v(\\nu, 2 a x) \\, dx\n"
+    "\n"
+    "where :math:`J_v` is a Bessel function and :math:`\\lambda=lmb`,\n"
+    ":math:`\\nu=nu`.")
 ufunc_besselpoly_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_besselpoly_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_besselpoly_types[0] = <char>NPY_FLOAT
@@ -2139,7 +2730,13 @@ cdef void *ufunc_beta_ptr[4]
 cdef void *ufunc_beta_data[2]
 cdef char ufunc_beta_types[6]
 cdef char *ufunc_beta_doc = (
-    "y=beta(a,b) returns gamma(a) * gamma(b) / gamma(a+b)")
+    "beta(a, b)\n"
+    "\n"
+    "Beta function.\n"
+    "\n"
+    "::\n"
+    "\n"
+    "    beta(a,b) =  gamma(a) * gamma(b) / gamma(a+b)")
 ufunc_beta_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_beta_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_beta_types[0] = <char>NPY_FLOAT
@@ -2162,6 +2759,8 @@ cdef void *ufunc_betainc_data[2]
 cdef char ufunc_betainc_types[8]
 cdef char *ufunc_betainc_doc = (
     "betainc(a, b, x)\n"
+    "\n"
+    "Incomplete beta integral.\n"
     "\n"
     "Compute the incomplete beta integral of the arguments, evaluated\n"
     "from zero to x::\n"
@@ -2197,7 +2796,9 @@ cdef void *ufunc_betaincinv_ptr[4]
 cdef void *ufunc_betaincinv_data[2]
 cdef char ufunc_betaincinv_types[8]
 cdef char *ufunc_betaincinv_doc = (
-    "betaincinv(a,b,y)\n"
+    "betaincinv(a, b, y)\n"
+    "\n"
+    "Inverse function to beta integral.\n"
     "\n"
     "Compute x such that betainc(a,b,x) = y.")
 ufunc_betaincinv_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -2223,8 +2824,11 @@ cdef void *ufunc_betaln_ptr[4]
 cdef void *ufunc_betaln_data[2]
 cdef char ufunc_betaln_types[6]
 cdef char *ufunc_betaln_doc = (
-    "y=betaln(a,b) returns the natural logarithm of the absolute value of\n"
-    "beta: ln(abs(beta(x))).")
+    "betaln(a, b)\n"
+    "\n"
+    "Natural logarithm of absolute value of beta function.\n"
+    "\n"
+    "Computes ``ln(abs(beta(x)))``.")
 ufunc_betaln_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_betaln_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_betaln_types[0] = <char>NPY_FLOAT
@@ -2265,14 +2869,134 @@ ufunc_binom_data[0] = &ufunc_binom_ptr[2*0]
 ufunc_binom_data[1] = &ufunc_binom_ptr[2*1]
 binom = np.PyUFunc_FromFuncAndData(ufunc_binom_loops, ufunc_binom_data, ufunc_binom_types, 2, 2, 1, 0, "binom", ufunc_binom_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_boxcox_loops[2]
+cdef void *ufunc_boxcox_ptr[4]
+cdef void *ufunc_boxcox_data[2]
+cdef char ufunc_boxcox_types[6]
+cdef char *ufunc_boxcox_doc = (
+    "boxcox(x, lmbda)\n"
+    "\n"
+    "Compute the Box-Cox transformation.\n"
+    "\n"
+    "The Box-Cox transformation is::\n"
+    "\n"
+    "    y = (x**lmbda - 1) / lmbda  if lmbda != 0\n"
+    "        log(x)                  if lmbda == 0\n"
+    "\n"
+    "Returns `nan` if ``x < 0``.\n"
+    "Returns `-inf` if ``x == 0`` and ``lmbda < 0``.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Data to be transformed.\n"
+    "lmbda : array_like\n"
+    "    Power parameter of the Box-Cox transform.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y : array\n"
+    "    Transformed data.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.14.0\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> boxcox([1, 4, 10], 2.5)\n"
+    "array([   0.        ,   12.4       ,  126.09110641])\n"
+    ">>> boxcox(2, [0, 1, 2])\n"
+    "array([ 0.69314718,  1.        ,  1.5       ])")
+ufunc_boxcox_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_boxcox_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_boxcox_types[0] = <char>NPY_FLOAT
+ufunc_boxcox_types[1] = <char>NPY_FLOAT
+ufunc_boxcox_types[2] = <char>NPY_FLOAT
+ufunc_boxcox_types[3] = <char>NPY_DOUBLE
+ufunc_boxcox_types[4] = <char>NPY_DOUBLE
+ufunc_boxcox_types[5] = <char>NPY_DOUBLE
+ufunc_boxcox_ptr[2*0] = <void*>_func_boxcox
+ufunc_boxcox_ptr[2*0+1] = <void*>(<char*>"boxcox")
+ufunc_boxcox_ptr[2*1] = <void*>_func_boxcox
+ufunc_boxcox_ptr[2*1+1] = <void*>(<char*>"boxcox")
+ufunc_boxcox_data[0] = &ufunc_boxcox_ptr[2*0]
+ufunc_boxcox_data[1] = &ufunc_boxcox_ptr[2*1]
+boxcox = np.PyUFunc_FromFuncAndData(ufunc_boxcox_loops, ufunc_boxcox_data, ufunc_boxcox_types, 2, 2, 1, 0, "boxcox", ufunc_boxcox_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_boxcox1p_loops[2]
+cdef void *ufunc_boxcox1p_ptr[4]
+cdef void *ufunc_boxcox1p_data[2]
+cdef char ufunc_boxcox1p_types[6]
+cdef char *ufunc_boxcox1p_doc = (
+    "boxcox1p(x, lmbda)\n"
+    "\n"
+    "Compute the Box-Cox transformation of 1 + `x`.\n"
+    "\n"
+    "The Box-Cox transformation computed by `boxcox1p` is::\n"
+    "\n"
+    "    y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0\n"
+    "        log(1+x)                    if lmbda == 0\n"
+    "\n"
+    "Returns `nan` if ``x < -1``.\n"
+    "Returns `-inf` if ``x == -1`` and ``lmbda < 0``.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Data to be transformed.\n"
+    "lmbda : array_like\n"
+    "    Power parameter of the Box-Cox transform.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y : array\n"
+    "    Transformed data.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.14.0\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> boxcox1p(1e-4, [0, 0.5, 1])\n"
+    "array([  9.99950003e-05,   9.99975001e-05,   1.00000000e-04])\n"
+    ">>> boxcox1p([0.01, 0.1], 0.25)\n"
+    "array([ 0.00996272,  0.09645476])")
+ufunc_boxcox1p_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_boxcox1p_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_boxcox1p_types[0] = <char>NPY_FLOAT
+ufunc_boxcox1p_types[1] = <char>NPY_FLOAT
+ufunc_boxcox1p_types[2] = <char>NPY_FLOAT
+ufunc_boxcox1p_types[3] = <char>NPY_DOUBLE
+ufunc_boxcox1p_types[4] = <char>NPY_DOUBLE
+ufunc_boxcox1p_types[5] = <char>NPY_DOUBLE
+ufunc_boxcox1p_ptr[2*0] = <void*>_func_boxcox1p
+ufunc_boxcox1p_ptr[2*0+1] = <void*>(<char*>"boxcox1p")
+ufunc_boxcox1p_ptr[2*1] = <void*>_func_boxcox1p
+ufunc_boxcox1p_ptr[2*1+1] = <void*>(<char*>"boxcox1p")
+ufunc_boxcox1p_data[0] = &ufunc_boxcox1p_ptr[2*0]
+ufunc_boxcox1p_data[1] = &ufunc_boxcox1p_ptr[2*1]
+boxcox1p = np.PyUFunc_FromFuncAndData(ufunc_boxcox1p_loops, ufunc_boxcox1p_data, ufunc_boxcox1p_types, 2, 2, 1, 0, "boxcox1p", ufunc_boxcox1p_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_btdtr_loops[2]
 cdef void *ufunc_btdtr_ptr[4]
 cdef void *ufunc_btdtr_data[2]
 cdef char ufunc_btdtr_types[8]
 cdef char *ufunc_btdtr_doc = (
-    "y=btdtr(a,b,x) returns the area from zero to x under the beta\n"
-    "density function: gamma(a+b)/(gamma(a)*gamma(b)))*integral(t**(a-1)\n"
-    "(1-t)**(b-1), t=0..x).  SEE ALSO betainc")
+    "btdtr(a,b,x)\n"
+    "\n"
+    "Cumulative beta distribution.\n"
+    "\n"
+    "Returns the area from zero to x under the beta density function::\n"
+    "\n"
+    "    gamma(a+b)/(gamma(a)*gamma(b)))*integral(t**(a-1) (1-t)**(b-1), t=0..x)\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "betainc")
 ufunc_btdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_btdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_btdtr_types[0] = <char>NPY_FLOAT
@@ -2296,9 +3020,16 @@ cdef void *ufunc_btdtri_ptr[4]
 cdef void *ufunc_btdtri_data[2]
 cdef char ufunc_btdtri_types[8]
 cdef char *ufunc_btdtri_doc = (
-    "x=btdtri(a,b,p) returns the pth quantile of the beta distribution.  It is\n"
-    "effectively the inverse of btdtr returning the value of x for which\n"
-    "btdtr(a,b,x) = p.   SEE ALSO betaincinv")
+    "btdtri(a,b,p)\n"
+    "\n"
+    "p-th quantile of the beta distribution.\n"
+    "\n"
+    "This is effectively the inverse of btdtr returning the value of x for which\n"
+    "``btdtr(a,b,x) = p``\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "betaincinv")
 ufunc_btdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_btdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_btdtri_types[0] = <char>NPY_FLOAT
@@ -2322,7 +3053,9 @@ cdef void *ufunc_btdtria_ptr[4]
 cdef void *ufunc_btdtria_data[2]
 cdef char ufunc_btdtria_types[8]
 cdef char *ufunc_btdtria_doc = (
-    "")
+    "btdtria(p, b, x)\n"
+    "\n"
+    "Inverse of btdtr vs a")
 ufunc_btdtria_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_btdtria_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_btdtria_types[0] = <char>NPY_FLOAT
@@ -2346,7 +3079,9 @@ cdef void *ufunc_btdtrib_ptr[4]
 cdef void *ufunc_btdtrib_data[2]
 cdef char ufunc_btdtrib_types[8]
 cdef char *ufunc_btdtrib_doc = (
-    "")
+    "btdtria(a, p, x)\n"
+    "\n"
+    "Inverse of btdtr vs b")
 ufunc_btdtrib_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_btdtrib_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_btdtrib_types[0] = <char>NPY_FLOAT
@@ -2370,7 +3105,9 @@ cdef void *ufunc_cbrt_ptr[4]
 cdef void *ufunc_cbrt_data[2]
 cdef char ufunc_cbrt_types[4]
 cdef char *ufunc_cbrt_doc = (
-    "y=cbrt(x) returns the real cube root of x.")
+    "cbrt(x)\n"
+    "\n"
+    "Cube root of x")
 ufunc_cbrt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_cbrt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_cbrt_types[0] = <char>NPY_FLOAT
@@ -2390,9 +3127,14 @@ cdef void *ufunc_chdtr_ptr[4]
 cdef void *ufunc_chdtr_data[2]
 cdef char ufunc_chdtr_types[6]
 cdef char *ufunc_chdtr_doc = (
-    "p=chdtr(v,x) Returns the area under the left hand tail (from 0 to x) of the Chi\n"
-    "square probability density function with v degrees of freedom:\n"
-    "1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)")
+    "chdtr(v, x)\n"
+    "\n"
+    "Chi square cumulative distribution function\n"
+    "\n"
+    "Returns the area under the left hand tail (from 0 to x) of the Chi\n"
+    "square probability density function with v degrees of freedom::\n"
+    "\n"
+    "    1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)")
 ufunc_chdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_chdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_chdtr_types[0] = <char>NPY_FLOAT
@@ -2414,10 +3156,15 @@ cdef void *ufunc_chdtrc_ptr[4]
 cdef void *ufunc_chdtrc_data[2]
 cdef char ufunc_chdtrc_types[6]
 cdef char *ufunc_chdtrc_doc = (
-    "p=chdtrc(v,x) returns the area under the right hand tail (from x to\n"
+    "chdtrc(v,x)\n"
+    "\n"
+    "Chi square survival function\n"
+    "\n"
+    "Returns the area under the right hand tail (from x to\n"
     "infinity) of the Chi square probability density function with v\n"
-    "degrees of freedom:\n"
-    "1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)")
+    "degrees of freedom::\n"
+    "\n"
+    "    1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)")
 ufunc_chdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_chdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_chdtrc_types[0] = <char>NPY_FLOAT
@@ -2439,8 +3186,11 @@ cdef void *ufunc_chdtri_ptr[4]
 cdef void *ufunc_chdtri_data[2]
 cdef char ufunc_chdtri_types[6]
 cdef char *ufunc_chdtri_doc = (
-    "x=chdtri(v,p) returns the argument x such that chdtrc(v,x) is equal\n"
-    "to p.")
+    "chdtri(v,p)\n"
+    "\n"
+    "Inverse to chdtrc\n"
+    "\n"
+    "Returns the argument x such that ``chdtrc(v,x) == p``.")
 ufunc_chdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_chdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_chdtri_types[0] = <char>NPY_FLOAT
@@ -2462,7 +3212,11 @@ cdef void *ufunc_chdtriv_ptr[4]
 cdef void *ufunc_chdtriv_data[2]
 cdef char ufunc_chdtriv_types[6]
 cdef char *ufunc_chdtriv_doc = (
-    "")
+    "chdtri(p, x)\n"
+    "\n"
+    "Inverse to chdtr vs v\n"
+    "\n"
+    "Returns the argument v such that ``chdtr(v, x) == p``.")
 ufunc_chdtriv_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_chdtriv_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_chdtriv_types[0] = <char>NPY_FLOAT
@@ -2484,7 +3238,9 @@ cdef void *ufunc_chndtr_ptr[4]
 cdef void *ufunc_chndtr_data[2]
 cdef char ufunc_chndtr_types[8]
 cdef char *ufunc_chndtr_doc = (
-    "")
+    "chndtr(x, df, nc)\n"
+    "\n"
+    "Non-central chi square cumulative distribution function")
 ufunc_chndtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_chndtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_chndtr_types[0] = <char>NPY_FLOAT
@@ -2508,7 +3264,9 @@ cdef void *ufunc_chndtridf_ptr[4]
 cdef void *ufunc_chndtridf_data[2]
 cdef char ufunc_chndtridf_types[8]
 cdef char *ufunc_chndtridf_doc = (
-    "")
+    "chndtridf(x, p, nc)\n"
+    "\n"
+    "Inverse to chndtr vs df")
 ufunc_chndtridf_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_chndtridf_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_chndtridf_types[0] = <char>NPY_FLOAT
@@ -2532,7 +3290,9 @@ cdef void *ufunc_chndtrinc_ptr[4]
 cdef void *ufunc_chndtrinc_data[2]
 cdef char ufunc_chndtrinc_types[8]
 cdef char *ufunc_chndtrinc_doc = (
-    "")
+    "chndtrinc(x, df, p)\n"
+    "\n"
+    "Inverse to chndtr vs nc")
 ufunc_chndtrinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_chndtrinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_chndtrinc_types[0] = <char>NPY_FLOAT
@@ -2556,7 +3316,9 @@ cdef void *ufunc_chndtrix_ptr[4]
 cdef void *ufunc_chndtrix_data[2]
 cdef char ufunc_chndtrix_types[8]
 cdef char *ufunc_chndtrix_doc = (
-    "")
+    "chndtrix(p, df, nc)\n"
+    "\n"
+    "Inverse to chndtr vs x")
 ufunc_chndtrix_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_chndtrix_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_chndtrix_types[0] = <char>NPY_FLOAT
@@ -2580,7 +3342,9 @@ cdef void *ufunc_cosdg_ptr[4]
 cdef void *ufunc_cosdg_data[2]
 cdef char ufunc_cosdg_types[4]
 cdef char *ufunc_cosdg_doc = (
-    "y=cosdg(x) calculates the cosine of the angle x given in degrees.")
+    "cosdg(x)\n"
+    "\n"
+    "Cosine of the angle x given in degrees.")
 ufunc_cosdg_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_cosdg_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_cosdg_types[0] = <char>NPY_FLOAT
@@ -2600,7 +3364,9 @@ cdef void *ufunc_cosm1_ptr[4]
 cdef void *ufunc_cosm1_data[2]
 cdef char ufunc_cosm1_types[4]
 cdef char *ufunc_cosm1_doc = (
-    "y=calculates cos(x) - 1 for use when x is near zero.")
+    "cosm1(x)\n"
+    "\n"
+    "cos(x) - 1 for use when x is near zero.")
 ufunc_cosm1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_cosm1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_cosm1_types[0] = <char>NPY_FLOAT
@@ -2620,7 +3386,9 @@ cdef void *ufunc_cotdg_ptr[4]
 cdef void *ufunc_cotdg_data[2]
 cdef char ufunc_cotdg_types[4]
 cdef char *ufunc_cotdg_doc = (
-    "y=cotdg(x) calculates the cotangent of the angle x given in degrees.")
+    "cotdg(x)\n"
+    "\n"
+    "Cotangent of the angle x given in degrees.")
 ufunc_cotdg_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_cotdg_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_cotdg_types[0] = <char>NPY_FLOAT
@@ -2640,8 +3408,13 @@ cdef void *ufunc_dawsn_ptr[8]
 cdef void *ufunc_dawsn_data[4]
 cdef char ufunc_dawsn_types[8]
 cdef char *ufunc_dawsn_doc = (
-    "y=dawsn(x) returns dawson's integral: exp(-x**2) *\n"
-    "integral(exp(t**2),t=0..x).\n"
+    "dawsn(x)\n"
+    "\n"
+    "Dawson's integral.\n"
+    "\n"
+    "Computes::\n"
+    "\n"
+    "    exp(-x**2) * integral(exp(t**2),t=0..x).\n"
     "\n"
     "References\n"
     "----------\n"
@@ -2678,8 +3451,30 @@ cdef void *ufunc_ellipe_ptr[4]
 cdef void *ufunc_ellipe_data[2]
 cdef char ufunc_ellipe_types[4]
 cdef char *ufunc_ellipe_doc = (
-    "y=ellipe(m) returns the complete integral of the second kind:\n"
-    "integral(sqrt(1-m*sin(t)**2),t=0..pi/2)")
+    "ellipe(m)\n"
+    "\n"
+    "Complete elliptic integral of the second kind\n"
+    "\n"
+    "This function is defined as\n"
+    "\n"
+    ".. math:: E(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{1/2} dt\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "m : array_like\n"
+    "    Defines the parameter of the elliptic integral.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "E : ndarray\n"
+    "    Value of the elliptic integral.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ellipkm1 : Complete elliptic integral of the first kind, near  m = 1\n"
+    "ellipk : Complete elliptic integral of the first kind\n"
+    "ellipkinc : Incomplete elliptic integral of the first kind\n"
+    "ellipeinc : Incomplete elliptic integral of the second kind")
 ufunc_ellipe_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ellipe_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ellipe_types[0] = <char>NPY_FLOAT
@@ -2699,8 +3494,33 @@ cdef void *ufunc_ellipeinc_ptr[4]
 cdef void *ufunc_ellipeinc_data[2]
 cdef char ufunc_ellipeinc_types[6]
 cdef char *ufunc_ellipeinc_doc = (
-    "y=ellipeinc(phi,m) returns the incomplete elliptic integral of the\n"
-    "second kind: integral(sqrt(1-m*sin(t)**2),t=0..phi)")
+    "ellipeinc(phi, m)\n"
+    "\n"
+    "Incomplete elliptic integral of the second kind\n"
+    "\n"
+    "This function is defined as\n"
+    "\n"
+    ".. math:: E(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{1/2} dt\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "phi : array_like\n"
+    "    amplitude of the elliptic integral.\n"
+    "\n"
+    "m : array_like\n"
+    "    parameter of the elliptic integral.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "E : ndarray\n"
+    "    Value of the elliptic integral.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ellipkm1 : Complete elliptic integral of the first kind, near m = 1\n"
+    "ellipk : Complete elliptic integral of the first kind\n"
+    "ellipkinc : Incomplete elliptic integral of the first kind\n"
+    "ellipe : Complete elliptic integral of the second kind")
 ufunc_ellipeinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ellipeinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_ellipeinc_types[0] = <char>NPY_FLOAT
@@ -2722,10 +3542,27 @@ cdef void *ufunc_ellipj_ptr[4]
 cdef void *ufunc_ellipj_data[2]
 cdef char ufunc_ellipj_types[12]
 cdef char *ufunc_ellipj_doc = (
-    "(sn,cn,dn,ph)=ellipj(u,m) calculates the Jacobian elliptic functions of\n"
-    "parameter m between 0 and 1, and real u.  The returned functions are\n"
-    "often written sn(u|m), cn(u|m), and dn(u|m).  The value of ph is such\n"
-    "that if u = ellik(ph,m), then sn(u|m) = sin(ph) and cn(u|m) = cos(ph).")
+    "ellipj(u, m)\n"
+    "\n"
+    "Jacobian elliptic functions\n"
+    "\n"
+    "Calculates the Jacobian elliptic functions of parameter m between\n"
+    "0 and 1, and real u.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "m, u\n"
+    "    Parameters\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "sn, cn, dn, ph\n"
+    "    The returned functions::\n"
+    "\n"
+    "        sn(u|m), cn(u|m), dn(u|m)\n"
+    "\n"
+    "    The value ``ph`` is such that if ``u = ellik(ph, m)``,\n"
+    "    then ``sn(u|m) = sin(ph)`` and ``cn(u|m) = cos(ph)``.")
 ufunc_ellipj_loops[0] = <np.PyUFuncGenericFunction>loop_i_dd_dddd_As_ff_ffff
 ufunc_ellipj_loops[1] = <np.PyUFuncGenericFunction>loop_i_dd_dddd_As_dd_dddd
 ufunc_ellipj_types[0] = <char>NPY_FLOAT
@@ -2753,8 +3590,37 @@ cdef void *ufunc_ellipkinc_ptr[4]
 cdef void *ufunc_ellipkinc_data[2]
 cdef char ufunc_ellipkinc_types[6]
 cdef char *ufunc_ellipkinc_doc = (
-    "y=ellipkinc(phi,m) returns the incomplete elliptic integral of the first\n"
-    "kind: integral(1/sqrt(1-m*sin(t)**2),t=0..phi)")
+    "ellipkinc(phi, m)\n"
+    "\n"
+    "Incomplete elliptic integral of the first kind\n"
+    "\n"
+    "This function is defined as\n"
+    "\n"
+    ".. math:: K(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{-1/2} dt\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "phi : array_like\n"
+    "    amplitude of the elliptic integral\n"
+    "\n"
+    "m : array_like\n"
+    "    parameter of the elliptic integral\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "K : ndarray\n"
+    "    Value of the elliptic integral\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is also called ``F(phi, m)``.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ellipkm1 : Complete elliptic integral of the first kind, near  m = 1\n"
+    "ellipk : Complete elliptic integral of the first kind\n"
+    "ellipe : Complete elliptic integral of the second kind\n"
+    "ellipeinc : Incomplete elliptic integral of the second kind")
 ufunc_ellipkinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ellipkinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_ellipkinc_types[0] = <char>NPY_FLOAT
@@ -2778,11 +3644,11 @@ cdef char ufunc_ellipkm1_types[4]
 cdef char *ufunc_ellipkm1_doc = (
     "ellipkm1(p)\n"
     "\n"
-    "The complete elliptic integral of the first kind around m=1.\n"
+    "Complete elliptic integral of the first kind around m = 1\n"
     "\n"
     "This function is defined as\n"
     "\n"
-    ".. math:: K(p) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt\n"
+    ".. math:: K(p) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt\n"
     "\n"
     "where `m = 1 - p`.\n"
     "\n"
@@ -2793,12 +3659,15 @@ cdef char *ufunc_ellipkm1_doc = (
     "\n"
     "Returns\n"
     "-------\n"
-    "K : array_like\n"
+    "K : ndarray\n"
     "    Value of the elliptic integral.\n"
     "\n"
     "See Also\n"
     "--------\n"
-    "ellipk")
+    "ellipk : Complete elliptic integral of the first kind\n"
+    "ellipkinc : Incomplete elliptic integral of the first kind\n"
+    "ellipe : Complete elliptic integral of the second kind\n"
+    "ellipeinc : Incomplete elliptic integral of the second kind")
 ufunc_ellipkm1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ellipkm1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ellipkm1_types[0] = <char>NPY_FLOAT
@@ -2812,6 +3681,50 @@ ufunc_ellipkm1_ptr[2*1+1] = <void*>(<char*>"ellipkm1")
 ufunc_ellipkm1_data[0] = &ufunc_ellipkm1_ptr[2*0]
 ufunc_ellipkm1_data[1] = &ufunc_ellipkm1_ptr[2*1]
 ellipkm1 = np.PyUFunc_FromFuncAndData(ufunc_ellipkm1_loops, ufunc_ellipkm1_data, ufunc_ellipkm1_types, 2, 1, 1, 0, "ellipkm1", ufunc_ellipkm1_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_entr_loops[2]
+cdef void *ufunc_entr_ptr[4]
+cdef void *ufunc_entr_data[2]
+cdef char ufunc_entr_types[4]
+cdef char *ufunc_entr_doc = (
+    "entr(x)\n"
+    "\n"
+    "Elementwise function for computing entropy.\n"
+    "\n"
+    ".. math:: \\text{entr}(x) = \\begin{cases} - x \\log(x) & x > 0  \\\\ 0 & x = 0 \\\\ -\\infty & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : ndarray\n"
+    "    Input array.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    The value of the elementwise entropy function at the given points x.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "kl_div, rel_entr\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is concave.\n"
+    "\n"
+    ".. versionadded:: 0.14.0")
+ufunc_entr_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_entr_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_entr_types[0] = <char>NPY_FLOAT
+ufunc_entr_types[1] = <char>NPY_FLOAT
+ufunc_entr_types[2] = <char>NPY_DOUBLE
+ufunc_entr_types[3] = <char>NPY_DOUBLE
+ufunc_entr_ptr[2*0] = <void*>_func_entr
+ufunc_entr_ptr[2*0+1] = <void*>(<char*>"entr")
+ufunc_entr_ptr[2*1] = <void*>_func_entr
+ufunc_entr_ptr[2*1+1] = <void*>(<char*>"entr")
+ufunc_entr_data[0] = &ufunc_entr_ptr[2*0]
+ufunc_entr_data[1] = &ufunc_entr_ptr[2*1]
+entr = np.PyUFunc_FromFuncAndData(ufunc_entr_loops, ufunc_entr_data, ufunc_entr_types, 2, 1, 1, 0, "entr", ufunc_entr_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_erf_loops[4]
 cdef void *ufunc_erf_ptr[8]
@@ -2883,7 +3796,9 @@ cdef void *ufunc_erfc_ptr[8]
 cdef void *ufunc_erfc_data[4]
 cdef char ufunc_erfc_types[8]
 cdef char *ufunc_erfc_doc = (
-    "y=erfc(x) returns 1 - erf(x).\n"
+    "erfc(x)\n"
+    "\n"
+    "Complementary error function, 1 - erf(x).\n"
     "\n"
     "References\n"
     "----------\n"
@@ -2920,7 +3835,12 @@ cdef void *ufunc_erfcx_ptr[8]
 cdef void *ufunc_erfcx_data[4]
 cdef char ufunc_erfcx_types[8]
 cdef char *ufunc_erfcx_doc = (
-    "Scaled complementary error function, exp(x^2) erfc(x)\n"
+    "erfcx(x)\n"
+    "\n"
+    "Scaled complementary error function, exp(x^2) erfc(x).\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
     "\n"
     ".. versionadded:: 0.12.0\n"
     "\n"
@@ -2959,7 +3879,12 @@ cdef void *ufunc_erfi_ptr[8]
 cdef void *ufunc_erfi_data[4]
 cdef char ufunc_erfi_types[8]
 cdef char *ufunc_erfi_doc = (
-    "Imaginary error function, -i erf(i z)\n"
+    "erfi(z)\n"
+    "\n"
+    "Imaginary error function, -i erf(i z).\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
     "\n"
     ".. versionadded:: 0.12.0\n"
     "\n"
@@ -3761,8 +4686,13 @@ cdef void *ufunc_exp1_ptr[8]
 cdef void *ufunc_exp1_data[4]
 cdef char ufunc_exp1_types[8]
 cdef char *ufunc_exp1_doc = (
-    "y=exp1(z) returns the exponential integral (n=1) of complex argument\n"
-    "z: integral(exp(-z*t)/t,t=1..inf).")
+    "exp1(z)\n"
+    "\n"
+    "Exponential integral E_1 of complex argument z\n"
+    "\n"
+    "::\n"
+    "\n"
+    "    integral(exp(-z*t)/t,t=1..inf).")
 ufunc_exp1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_exp1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_exp1_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
@@ -3794,7 +4724,9 @@ cdef void *ufunc_exp10_ptr[4]
 cdef void *ufunc_exp10_data[2]
 cdef char ufunc_exp10_types[4]
 cdef char *ufunc_exp10_doc = (
-    "y=exp10(x) returns 10 raised to the x power.")
+    "exp10(x)\n"
+    "\n"
+    "10**x")
 ufunc_exp10_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_exp10_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_exp10_types[0] = <char>NPY_FLOAT
@@ -3814,7 +4746,9 @@ cdef void *ufunc_exp2_ptr[4]
 cdef void *ufunc_exp2_data[2]
 cdef char ufunc_exp2_types[4]
 cdef char *ufunc_exp2_doc = (
-    "y=exp2(x) returns 2 raised to the x power.")
+    "exp2(x)\n"
+    "\n"
+    "2**x")
 ufunc_exp2_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_exp2_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_exp2_types[0] = <char>NPY_FLOAT
@@ -3834,9 +4768,15 @@ cdef void *ufunc_expi_ptr[8]
 cdef void *ufunc_expi_data[4]
 cdef char ufunc_expi_types[8]
 cdef char *ufunc_expi_doc = (
-    "y=expi(x) returns an exponential integral of argument x defined as\n"
-    "integral(exp(t)/t,t=-inf..x).  See expn for a different exponential\n"
-    "integral.")
+    "expi(x)\n"
+    "\n"
+    "Exponential integral Ei\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    integral(exp(t)/t,t=-inf..x)\n"
+    "\n"
+    "See `expn` for a different exponential integral.")
 ufunc_expi_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_expi_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_expi_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
@@ -3868,10 +4808,12 @@ cdef void *ufunc_expit_ptr[6]
 cdef void *ufunc_expit_data[3]
 cdef char ufunc_expit_types[6]
 cdef char *ufunc_expit_doc = (
+    "expit(x)\n"
+    "\n"
     "Expit ufunc for ndarrays.\n"
     "\n"
-    "The expit function is defined as expit(x) = 1/(1+exp(-x)).\n"
-    "Note that expit is the inverse logit function.\n"
+    "The expit function, also known as the logistic function, is defined as\n"
+    "expit(x) = 1/(1+exp(-x)). It is the inverse of the logit function.\n"
     "\n"
     "Parameters\n"
     "----------\n"
@@ -3886,9 +4828,11 @@ cdef char *ufunc_expit_doc = (
     "\n"
     "Notes\n"
     "-----\n"
-    "As a ufunc logit takes a number of optional\n"
-    "keywork arguments. For more information\n"
-    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_")
+    "As a ufunc expit takes a number of optional\n"
+    "keyword arguments. For more information\n"
+    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
+    "\n"
+    ".. versionadded:: 0.10.0")
 ufunc_expit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
 ufunc_expit_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_expit_loops[2] = <np.PyUFuncGenericFunction>loop_g_g__As_g_g
@@ -3914,7 +4858,9 @@ cdef void *ufunc_expm1_ptr[4]
 cdef void *ufunc_expm1_data[2]
 cdef char ufunc_expm1_types[4]
 cdef char *ufunc_expm1_doc = (
-    "y=expm1(x) calculates exp(x) - 1 for use when x is near zero.")
+    "expm1(x)\n"
+    "\n"
+    "exp(x) - 1 for use when x is near zero.")
 ufunc_expm1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_expm1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_expm1_types[0] = <char>NPY_FLOAT
@@ -3934,8 +4880,13 @@ cdef void *ufunc_expn_ptr[8]
 cdef void *ufunc_expn_data[4]
 cdef char ufunc_expn_types[12]
 cdef char *ufunc_expn_doc = (
-    "y=expn(n,x) returns the exponential integral for integer n and\n"
-    "non-negative x and n: integral(exp(-x*t) / t**n, t=1..inf).")
+    "expn(n, x)\n"
+    "\n"
+    "Exponential integral E_n\n"
+    "\n"
+    "Returns the exponential integral for integer n and non-negative x and n::\n"
+    "\n"
+    "    integral(exp(-x*t) / t**n, t=1..inf).")
 ufunc_expn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_expn_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_expn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -3971,10 +4922,14 @@ cdef void *ufunc_fdtr_ptr[4]
 cdef void *ufunc_fdtr_data[2]
 cdef char ufunc_fdtr_types[8]
 cdef char *ufunc_fdtr_doc = (
-    "y=fdtr(dfn,dfd,x) returns the area from zero to x under the F density\n"
-    "function (also known as Snedcor's density or the variance ratio\n"
-    "density).  This is the density of X = (unum/dfn)/(uden/dfd), where unum and\n"
-    "uden are random variables having Chi square distributions with dfn and\n"
+    "fdtr(dfn, dfd, x)\n"
+    "\n"
+    "F cumulative distribution function\n"
+    "\n"
+    "Returns the area from zero to x under the F density function (also\n"
+    "known as Snedcor's density or the variance ratio density).  This\n"
+    "is the density of X = (unum/dfn)/(uden/dfd), where unum and uden\n"
+    "are random variables having Chi square distributions with dfn and\n"
     "dfd degrees of freedom, respectively.")
 ufunc_fdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_fdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
@@ -3999,7 +4954,11 @@ cdef void *ufunc_fdtrc_ptr[4]
 cdef void *ufunc_fdtrc_data[2]
 cdef char ufunc_fdtrc_types[8]
 cdef char *ufunc_fdtrc_doc = (
-    "y=fdtrc(dfn,dfd,x) returns the complemented F distribution function.")
+    "fdtrc(dfn, dfd, x)\n"
+    "\n"
+    "F survival function\n"
+    "\n"
+    "Returns the complemented F distribution function.")
 ufunc_fdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_fdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_fdtrc_types[0] = <char>NPY_FLOAT
@@ -4023,8 +4982,11 @@ cdef void *ufunc_fdtri_ptr[4]
 cdef void *ufunc_fdtri_data[2]
 cdef char ufunc_fdtri_types[8]
 cdef char *ufunc_fdtri_doc = (
-    "x=fdtri(dfn,dfd,p) finds the F density argument x such that\n"
-    "fdtr(dfn,dfd,x)=p.")
+    "fdtri(dfn, dfd, p)\n"
+    "\n"
+    "Inverse to fdtr vs x\n"
+    "\n"
+    "Finds the F density argument x such that ``fdtr(dfn, dfd, x) == p``.")
 ufunc_fdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_fdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_fdtri_types[0] = <char>NPY_FLOAT
@@ -4048,8 +5010,11 @@ cdef void *ufunc_fdtridfd_ptr[4]
 cdef void *ufunc_fdtridfd_data[2]
 cdef char ufunc_fdtridfd_types[8]
 cdef char *ufunc_fdtridfd_doc = (
-    "x=fdtridfd(dfn,p,x) finds the F density argument dfd such that\n"
-    "fdtr(dfn,dfd,x)=p.")
+    "fdtridfd(dfn, p, x)\n"
+    "\n"
+    "Inverse to fdtr vs dfd\n"
+    "\n"
+    "Finds the F density argument dfd such that ``fdtr(dfn,dfd,x) == p``.")
 ufunc_fdtridfd_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_fdtridfd_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_fdtridfd_types[0] = <char>NPY_FLOAT
@@ -4073,9 +5038,24 @@ cdef void *ufunc_fresnel_ptr[8]
 cdef void *ufunc_fresnel_data[4]
 cdef char ufunc_fresnel_types[12]
 cdef char *ufunc_fresnel_doc = (
-    "(ssa,cca)=fresnel(z) returns the Fresnel sin and cos integrals: integral(sin(pi/2\n"
-    "* t**2),t=0..z) and integral(cos(pi/2 * t**2),t=0..z) for real or\n"
-    "complex z.")
+    "fresnel(z)\n"
+    "\n"
+    "Fresnel sin and cos integrals\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    ssa = integral(sin(pi/2 * t**2),t=0..z)\n"
+    "    csa = integral(cos(pi/2 * t**2),t=0..z)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "z : float or complex array_like\n"
+    "    Argument\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "ssa, csa\n"
+    "    Fresnel sin and cos integral values")
 ufunc_fresnel_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_fresnel_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
 ufunc_fresnel_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_F_FF
@@ -4111,9 +5091,13 @@ cdef void *ufunc_gamma_ptr[8]
 cdef void *ufunc_gamma_data[4]
 cdef char ufunc_gamma_types[8]
 cdef char *ufunc_gamma_doc = (
-    "y=gamma(z) returns the gamma function of the argument.  The gamma\n"
-    "function is often referred to as the generalized factorial since\n"
-    "z*gamma(z) = gamma(z+1) and gamma(n+1) = n! for natural number n.")
+    "gamma(z)\n"
+    "\n"
+    "Gamma function\n"
+    "\n"
+    "The gamma function is often referred to as the generalized\n"
+    "factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =\n"
+    "n!`` for natural number *n*.")
 ufunc_gamma_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_gamma_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_gamma_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
@@ -4145,9 +5129,15 @@ cdef void *ufunc_gammainc_ptr[4]
 cdef void *ufunc_gammainc_data[2]
 cdef char ufunc_gammainc_types[6]
 cdef char *ufunc_gammainc_doc = (
-    "y=gammainc(a,x) returns the incomplete gamma integral defined as\n"
-    "1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x).  a must be\n"
-    "positive and x must be >= 0.")
+    "gammainc(a, x)\n"
+    "\n"
+    "Incomplete gamma function\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)\n"
+    "\n"
+    "`a` must be positive and `x` must be >= 0.")
 ufunc_gammainc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_gammainc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_gammainc_types[0] = <char>NPY_FLOAT
@@ -4169,9 +5159,15 @@ cdef void *ufunc_gammaincc_ptr[4]
 cdef void *ufunc_gammaincc_data[2]
 cdef char ufunc_gammaincc_types[6]
 cdef char *ufunc_gammaincc_doc = (
-    "y=gammaincc(a,x) returns the complemented incomplete gamma integral\n"
-    "defined as 1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 -\n"
-    "gammainc(a,x).  a must be positive and x must be >= 0.")
+    "gammaincc(a,x)\n"
+    "\n"
+    "Complemented incomplete gamma integral\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a,x)\n"
+    "\n"
+    "`a` must be positive and `x` must be >= 0.")
 ufunc_gammaincc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_gammaincc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_gammaincc_types[0] = <char>NPY_FLOAT
@@ -4193,7 +5189,11 @@ cdef void *ufunc_gammainccinv_ptr[4]
 cdef void *ufunc_gammainccinv_data[2]
 cdef char ufunc_gammainccinv_types[6]
 cdef char *ufunc_gammainccinv_doc = (
-    "x=gammainccinv(a,y) returns x such that gammaincc(a,x) = y.")
+    "gammainccinv(a,y)\n"
+    "\n"
+    "Inverse to gammaincc\n"
+    "\n"
+    "Returns `x` such that ``gammaincc(a,x) == y``.")
 ufunc_gammainccinv_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_gammainccinv_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_gammainccinv_types[0] = <char>NPY_FLOAT
@@ -4215,7 +5215,11 @@ cdef void *ufunc_gammaincinv_ptr[4]
 cdef void *ufunc_gammaincinv_data[2]
 cdef char ufunc_gammaincinv_types[6]
 cdef char *ufunc_gammaincinv_doc = (
-    "gammaincinv(a, y) returns x such that gammainc(a, x) = y.")
+    "gammaincinv(a, y)\n"
+    "\n"
+    "Inverse to gammainc\n"
+    "\n"
+    "Returns `x` such that ``gammainc(a, x) = y``.")
 ufunc_gammaincinv_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_gammaincinv_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_gammaincinv_types[0] = <char>NPY_FLOAT
@@ -4237,8 +5241,13 @@ cdef void *ufunc_gammaln_ptr[8]
 cdef void *ufunc_gammaln_data[4]
 cdef char ufunc_gammaln_types[8]
 cdef char *ufunc_gammaln_doc = (
-    "y=gammaln(z) returns the base e logarithm of the absolute value of the\n"
-    "gamma function of z: ln(abs(gamma(z)))\n"
+    "gammaln(z)\n"
+    "\n"
+    "Logarithm of absolute value of gamma function\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    ln(abs(gamma(z)))\n"
     "\n"
     "See Also\n"
     "--------\n"
@@ -4274,7 +5283,9 @@ cdef void *ufunc_gammasgn_ptr[4]
 cdef void *ufunc_gammasgn_data[2]
 cdef char ufunc_gammasgn_types[4]
 cdef char *ufunc_gammasgn_doc = (
-    "y=gammasgn(x) returns the sign of the gamma function.\n"
+    "gammasgn(x)\n"
+    "\n"
+    "Sign of the gamma function.\n"
     "\n"
     "See Also\n"
     "--------\n"
@@ -4298,9 +5309,17 @@ cdef void *ufunc_gdtr_ptr[4]
 cdef void *ufunc_gdtr_data[2]
 cdef char ufunc_gdtr_types[8]
 cdef char *ufunc_gdtr_doc = (
-    "y=gdtr(a,b,x) returns the integral from zero to x of the gamma\n"
-    "probability density function: a**b / gamma(b) * integral(t**(b-1) exp(-at),t=0..x).\n"
-    "The arguments a and b are used differently here than in other definitions.")
+    "gdtr(a,b,x)\n"
+    "\n"
+    "Gamma distribution cumulative density function.\n"
+    "\n"
+    "Returns the integral from zero to x of the gamma probability\n"
+    "density function::\n"
+    "\n"
+    "    a**b / gamma(b) * integral(t**(b-1) exp(-at),t=0..x).\n"
+    "\n"
+    "The arguments a and b are used differently here than in other\n"
+    "definitions.")
 ufunc_gdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_gdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_gdtr_types[0] = <char>NPY_FLOAT
@@ -4324,8 +5343,16 @@ cdef void *ufunc_gdtrc_ptr[4]
 cdef void *ufunc_gdtrc_data[2]
 cdef char ufunc_gdtrc_types[8]
 cdef char *ufunc_gdtrc_doc = (
-    "y=gdtrc(a,b,x) returns the integral from x to infinity of the gamma\n"
-    "probability density function.  SEE gdtr, gdtri")
+    "gdtrc(a,b,x)\n"
+    "\n"
+    "Gamma distribution survival function.\n"
+    "\n"
+    "Integral from x to infinity of the gamma probability density\n"
+    "function.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "gdtr, gdtri")
 ufunc_gdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_gdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_gdtrc_types[0] = <char>NPY_FLOAT
@@ -4351,10 +5378,10 @@ cdef char ufunc_gdtria_types[8]
 cdef char *ufunc_gdtria_doc = (
     "gdtria(p, b, x, out=None)\n"
     "\n"
-    "Inverse with respect to `a` of `gdtr(a, b, x)`.\n"
+    "Inverse of gdtr vs a.\n"
     "\n"
-    "`a = gdtria(p, b, x)` returns the inverse with respect to the parameter `a`\n"
-    "of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma\n"
+    "Returns the inverse with respect to the parameter `a` of ``p =\n"
+    "gdtr(a, b, x)``, the cumulative distribution function of the gamma\n"
     "distribution.\n"
     "\n"
     "Parameters\n"
@@ -4420,10 +5447,10 @@ cdef char ufunc_gdtrib_types[8]
 cdef char *ufunc_gdtrib_doc = (
     "gdtrib(a, p, x, out=None)\n"
     "\n"
-    "Inverse with respect to `b` of `gdtr(a, b, x)`.\n"
+    "Inverse of gdtr vs b.\n"
     "\n"
-    "`b = gdtrib(a, p, x)` returns the inverse with respect to the parameter `b`\n"
-    "of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma\n"
+    "Returns the inverse with respect to the parameter `b` of ``p =\n"
+    "gdtr(a, b, x)``, the cumulative distribution function of the gamma\n"
     "distribution.\n"
     "\n"
     "Parameters\n"
@@ -4489,11 +5516,12 @@ cdef char ufunc_gdtrix_types[8]
 cdef char *ufunc_gdtrix_doc = (
     "gdtrix(a, b, p, out=None)\n"
     "\n"
-    "Inverse with respect to `x` of `gdtr(a, b, x)`.\n"
+    "Inverse of gdtr vs x.\n"
     "\n"
-    "`x = gdtrix(a, b, p)` returns the inverse with respect to the parameter `x`\n"
-    "of `p = gdtr(a, b, x)`, the cumulative distribution function of the gamma\n"
-    "distribution. This is also known as the p'th quantile of the distribution.\n"
+    "Returns the inverse with respect to the parameter `x` of ``p =\n"
+    "gdtr(a, b, x)``, the cumulative distribution function of the gamma\n"
+    "distribution. This is also known as the p'th quantile of the\n"
+    "distribution.\n"
     "\n"
     "Parameters\n"
     "----------\n"
@@ -4556,7 +5584,16 @@ cdef void *ufunc_hankel1_ptr[4]
 cdef void *ufunc_hankel1_data[2]
 cdef char ufunc_hankel1_types[6]
 cdef char *ufunc_hankel1_doc = (
-    "y=hankel1(v,z) returns the Hankel function of the first kind for real order v and complex argument z.")
+    "hankel1(v, z)\n"
+    "\n"
+    "Hankel function of the first kind\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "v : float\n"
+    "    Order\n"
+    "z : float or complex\n"
+    "    Argument")
 ufunc_hankel1_loops[0] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_hankel1_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_hankel1_types[0] = <char>NPY_FLOAT
@@ -4578,9 +5615,20 @@ cdef void *ufunc_hankel1e_ptr[4]
 cdef void *ufunc_hankel1e_data[2]
 cdef char ufunc_hankel1e_types[6]
 cdef char *ufunc_hankel1e_doc = (
-    "y=hankel1e(v,z) returns the exponentially scaled Hankel function of the first\n"
-    "kind for real order v and complex argument z:\n"
-    "hankel1e(v,z) = hankel1(v,z) * exp(-1j * z)")
+    "hankel1e(v, z)\n"
+    "\n"
+    "Exponentially scaled Hankel function of the first kind\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    hankel1e(v,z) = hankel1(v,z) * exp(-1j * z)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "v : float\n"
+    "    Order\n"
+    "z : complex\n"
+    "    Argument")
 ufunc_hankel1e_loops[0] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_hankel1e_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_hankel1e_types[0] = <char>NPY_FLOAT
@@ -4602,7 +5650,16 @@ cdef void *ufunc_hankel2_ptr[4]
 cdef void *ufunc_hankel2_data[2]
 cdef char ufunc_hankel2_types[6]
 cdef char *ufunc_hankel2_doc = (
-    "y=hankel2(v,z) returns the Hankel function of the second kind for real order v and complex argument z.")
+    "hankel2(v, z)\n"
+    "\n"
+    "Hankel function of the second kind\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "v : float\n"
+    "    Order\n"
+    "z : complex\n"
+    "    Argument")
 ufunc_hankel2_loops[0] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_hankel2_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_hankel2_types[0] = <char>NPY_FLOAT
@@ -4624,9 +5681,20 @@ cdef void *ufunc_hankel2e_ptr[4]
 cdef void *ufunc_hankel2e_data[2]
 cdef char ufunc_hankel2e_types[6]
 cdef char *ufunc_hankel2e_doc = (
-    "y=hankel2e(v,z) returns the exponentially scaled Hankel function of the second\n"
-    "kind for real order v and complex argument z:\n"
-    "hankel1e(v,z) = hankel1(v,z) * exp(1j * z)")
+    "hankel2e(v, z)\n"
+    "\n"
+    "Exponentially scaled Hankel function of the second kind\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    hankel1e(v,z) = hankel1(v,z) * exp(1j * z)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "v : float\n"
+    "    Order\n"
+    "z : complex\n"
+    "    Argument")
 ufunc_hankel2e_loops[0] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_hankel2e_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_hankel2e_types[0] = <char>NPY_FLOAT
@@ -4643,13 +5711,58 @@ ufunc_hankel2e_data[0] = &ufunc_hankel2e_ptr[2*0]
 ufunc_hankel2e_data[1] = &ufunc_hankel2e_ptr[2*1]
 hankel2e = np.PyUFunc_FromFuncAndData(ufunc_hankel2e_loops, ufunc_hankel2e_data, ufunc_hankel2e_types, 2, 2, 1, 0, "hankel2e", ufunc_hankel2e_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_huber_loops[2]
+cdef void *ufunc_huber_ptr[4]
+cdef void *ufunc_huber_data[2]
+cdef char ufunc_huber_types[6]
+cdef char *ufunc_huber_doc = (
+    "huber(delta, r)\n"
+    "\n"
+    "Huber loss function.\n"
+    "\n"
+    ".. math:: \\text{huber}(\\delta, r) = \\begin{cases} \\infty & \\delta < 0  \\\\ \\frac{1}{2}r^2 & 0 \\le \\delta, | r | \\le \\delta \\\\ \\delta ( |r| - \\frac{1}{2}\\delta ) & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "delta : ndarray\n"
+    "    Input array, indicating the quadratic vs. linear loss changepoint.\n"
+    "r : ndarray\n"
+    "    Input array, possibly representing residuals.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    The computed Huber loss function values.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is convex in r.\n"
+    "\n"
+    ".. versionadded:: 0.15.0")
+ufunc_huber_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_huber_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_huber_types[0] = <char>NPY_FLOAT
+ufunc_huber_types[1] = <char>NPY_FLOAT
+ufunc_huber_types[2] = <char>NPY_FLOAT
+ufunc_huber_types[3] = <char>NPY_DOUBLE
+ufunc_huber_types[4] = <char>NPY_DOUBLE
+ufunc_huber_types[5] = <char>NPY_DOUBLE
+ufunc_huber_ptr[2*0] = <void*>_func_huber
+ufunc_huber_ptr[2*0+1] = <void*>(<char*>"huber")
+ufunc_huber_ptr[2*1] = <void*>_func_huber
+ufunc_huber_ptr[2*1+1] = <void*>(<char*>"huber")
+ufunc_huber_data[0] = &ufunc_huber_ptr[2*0]
+ufunc_huber_data[1] = &ufunc_huber_ptr[2*1]
+huber = np.PyUFunc_FromFuncAndData(ufunc_huber_loops, ufunc_huber_data, ufunc_huber_types, 2, 2, 1, 0, "huber", ufunc_huber_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_hyp1f1_loops[4]
 cdef void *ufunc_hyp1f1_ptr[8]
 cdef void *ufunc_hyp1f1_data[4]
 cdef char ufunc_hyp1f1_types[16]
 cdef char *ufunc_hyp1f1_doc = (
-    "y=hyp1f1(a,b,x) returns the confluent hypergeometeric function\n"
-    "( 1F1(a,b;x) ) evaluated at the values a, b, and x.")
+    "hyp1f1(a, b, x)\n"
+    "\n"
+    "Confluent hypergeometric function 1F1(a, b; x)")
 ufunc_hyp1f1_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_hyp1f1_loops[1] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
 ufunc_hyp1f1_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
@@ -4689,7 +5802,16 @@ cdef void *ufunc_hyp1f2_ptr[4]
 cdef void *ufunc_hyp1f2_data[2]
 cdef char ufunc_hyp1f2_types[12]
 cdef char *ufunc_hyp1f2_doc = (
-    "(y,err)=hyp1f2(a,b,c,x) returns (y,err) with the hypergeometric function 1F2 in y and an error estimate in err.")
+    "hyp1f2(a, b, c, x)\n"
+    "\n"
+    "Hypergeometric function 1F2 and error estimate\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "err\n"
+    "    Error estimate")
 ufunc_hyp1f2_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_hyp1f2_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_hyp1f2_types[0] = <char>NPY_FLOAT
@@ -4717,8 +5839,19 @@ cdef void *ufunc_hyp2f0_ptr[8]
 cdef void *ufunc_hyp2f0_data[4]
 cdef char ufunc_hyp2f0_types[24]
 cdef char *ufunc_hyp2f0_doc = (
-    "(y,err)=hyp2f0(a,b,x,type) returns (y,err) with the hypergeometric function 2F0 in y and an error estimate in err.  The input type determines a convergence factor and\n"
-    "can be either 1 or 2.")
+    "hyp2f0(a, b, x, type)\n"
+    "\n"
+    "Hypergeometric function 2F0 in y and an error estimate\n"
+    "\n"
+    "The parameter `type` determines a convergence factor and can be\n"
+    "either 1 or 2.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "err\n"
+    "    Error estimate")
 ufunc_hyp2f0_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddi_d_As_fffl_ff
 ufunc_hyp2f0_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_hyp2f0_loops[2] = <np.PyUFuncGenericFunction>loop_d_dddi_d_As_dddl_dd
@@ -4766,8 +5899,9 @@ cdef void *ufunc_hyp2f1_ptr[8]
 cdef void *ufunc_hyp2f1_data[4]
 cdef char ufunc_hyp2f1_types[20]
 cdef char *ufunc_hyp2f1_doc = (
-    "y=hyp2f1(a,b,c,z) returns the Gauss hypergeometric function\n"
-    "( 2F1(a,b;c;z) ).")
+    "hyp2f1(a, b, c, z)\n"
+    "\n"
+    "Gauss hypergeometric function 2F1(a, b; c; z).")
 ufunc_hyp2f1_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_hyp2f1_loops[1] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
 ufunc_hyp2f1_loops[2] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
@@ -4811,7 +5945,16 @@ cdef void *ufunc_hyp3f0_ptr[4]
 cdef void *ufunc_hyp3f0_data[2]
 cdef char ufunc_hyp3f0_types[12]
 cdef char *ufunc_hyp3f0_doc = (
-    "(y,err)=hyp3f0(a,b,c,x) returns (y,err) with the hypergeometric function 3F0 in y and an error estimate in err.")
+    "hyp3f0(a, b, c, x)\n"
+    "\n"
+    "Hypergeometric function 3F0 in y and an error estimate\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "err\n"
+    "    Error estimate")
 ufunc_hyp3f0_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_hyp3f0_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_hyp3f0_types[0] = <char>NPY_FLOAT
@@ -4839,8 +5982,9 @@ cdef void *ufunc_hyperu_ptr[4]
 cdef void *ufunc_hyperu_data[2]
 cdef char ufunc_hyperu_types[8]
 cdef char *ufunc_hyperu_doc = (
-    "y=hyperu(a,b,x) returns the confluent hypergeometric function of the\n"
-    "second kind U(a,b,x).")
+    "hyperu(a, b, x)\n"
+    "\n"
+    "Confluent hypergeometric function U(a, b, x) of the second kind")
 ufunc_hyperu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_hyperu_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_hyperu_types[0] = <char>NPY_FLOAT
@@ -4864,7 +6008,9 @@ cdef void *ufunc_i0_ptr[4]
 cdef void *ufunc_i0_data[2]
 cdef char ufunc_i0_types[4]
 cdef char *ufunc_i0_doc = (
-    "y=i0(x) returns the modified Bessel function of order 0 at x.")
+    "i0(x)\n"
+    "\n"
+    "Modified Bessel function of order 0")
 ufunc_i0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_i0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_i0_types[0] = <char>NPY_FLOAT
@@ -4884,8 +6030,13 @@ cdef void *ufunc_i0e_ptr[4]
 cdef void *ufunc_i0e_data[2]
 cdef char ufunc_i0e_types[4]
 cdef char *ufunc_i0e_doc = (
-    "y=i0e(x) returns the exponentially scaled modified Bessel function\n"
-    "of order 0 at x.  i0e(x) = exp(-abs(x)) * i0(x).")
+    "i0e(x)\n"
+    "\n"
+    "Exponentially scaled modified Bessel function of order 0.\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    i0e(x) = exp(-abs(x)) * i0(x).")
 ufunc_i0e_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_i0e_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_i0e_types[0] = <char>NPY_FLOAT
@@ -4905,7 +6056,9 @@ cdef void *ufunc_i1_ptr[4]
 cdef void *ufunc_i1_data[2]
 cdef char ufunc_i1_types[4]
 cdef char *ufunc_i1_doc = (
-    "y=i1(x) returns the modified Bessel function of order 1 at x.")
+    "i1(x)\n"
+    "\n"
+    "Modified Bessel function of order 1")
 ufunc_i1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_i1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_i1_types[0] = <char>NPY_FLOAT
@@ -4925,8 +6078,13 @@ cdef void *ufunc_i1e_ptr[4]
 cdef void *ufunc_i1e_data[2]
 cdef char ufunc_i1e_types[4]
 cdef char *ufunc_i1e_doc = (
-    "y=i1e(x) returns the exponentially scaled modified Bessel function\n"
-    "of order 0 at x.  i1e(x) = exp(-abs(x)) * i1(x).")
+    "i1e(x)\n"
+    "\n"
+    "Exponentially scaled modified Bessel function of order 0.\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    i1e(x) = exp(-abs(x)) * i1(x)")
 ufunc_i1e_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_i1e_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_i1e_types[0] = <char>NPY_FLOAT
@@ -4941,13 +6099,125 @@ ufunc_i1e_data[0] = &ufunc_i1e_ptr[2*0]
 ufunc_i1e_data[1] = &ufunc_i1e_ptr[2*1]
 i1e = np.PyUFunc_FromFuncAndData(ufunc_i1e_loops, ufunc_i1e_data, ufunc_i1e_types, 2, 1, 1, 0, "i1e", ufunc_i1e_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_inv_boxcox_loops[2]
+cdef void *ufunc_inv_boxcox_ptr[4]
+cdef void *ufunc_inv_boxcox_data[2]
+cdef char ufunc_inv_boxcox_types[6]
+cdef char *ufunc_inv_boxcox_doc = (
+    "inv_boxcox(y, lmbda)\n"
+    "\n"
+    "Compute the inverse of the Box-Cox transformation.\n"
+    "\n"
+    "Find ``x`` such that::\n"
+    "\n"
+    "    y = (x**lmbda - 1) / lmbda  if lmbda != 0\n"
+    "        log(x)                  if lmbda == 0\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "y : array_like\n"
+    "    Data to be transformed.\n"
+    "lmbda : array_like\n"
+    "    Power parameter of the Box-Cox transform.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "x : array\n"
+    "    Transformed data.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.16.0\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> y = boxcox([1, 4, 10], 2.5)\n"
+    ">>> inv_boxcox(y, 2.5)\n"
+    "array([1., 4., 10.])")
+ufunc_inv_boxcox_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_inv_boxcox_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_inv_boxcox_types[0] = <char>NPY_FLOAT
+ufunc_inv_boxcox_types[1] = <char>NPY_FLOAT
+ufunc_inv_boxcox_types[2] = <char>NPY_FLOAT
+ufunc_inv_boxcox_types[3] = <char>NPY_DOUBLE
+ufunc_inv_boxcox_types[4] = <char>NPY_DOUBLE
+ufunc_inv_boxcox_types[5] = <char>NPY_DOUBLE
+ufunc_inv_boxcox_ptr[2*0] = <void*>_func_inv_boxcox
+ufunc_inv_boxcox_ptr[2*0+1] = <void*>(<char*>"inv_boxcox")
+ufunc_inv_boxcox_ptr[2*1] = <void*>_func_inv_boxcox
+ufunc_inv_boxcox_ptr[2*1+1] = <void*>(<char*>"inv_boxcox")
+ufunc_inv_boxcox_data[0] = &ufunc_inv_boxcox_ptr[2*0]
+ufunc_inv_boxcox_data[1] = &ufunc_inv_boxcox_ptr[2*1]
+inv_boxcox = np.PyUFunc_FromFuncAndData(ufunc_inv_boxcox_loops, ufunc_inv_boxcox_data, ufunc_inv_boxcox_types, 2, 2, 1, 0, "inv_boxcox", ufunc_inv_boxcox_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_inv_boxcox1p_loops[2]
+cdef void *ufunc_inv_boxcox1p_ptr[4]
+cdef void *ufunc_inv_boxcox1p_data[2]
+cdef char ufunc_inv_boxcox1p_types[6]
+cdef char *ufunc_inv_boxcox1p_doc = (
+    "inv_boxcox1p(y, lmbda)\n"
+    "\n"
+    "Compute the inverse of the Box-Cox transformation.\n"
+    "\n"
+    "Find ``x`` such that::\n"
+    "\n"
+    "    y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0\n"
+    "        log(1+x)                    if lmbda == 0\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "y : array_like\n"
+    "    Data to be transformed.\n"
+    "lmbda : array_like\n"
+    "    Power parameter of the Box-Cox transform.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "x : array\n"
+    "    Transformed data.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.16.0\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> y = boxcox1p([1, 4, 10], 2.5)\n"
+    ">>> inv_boxcox1p(y, 2.5)\n"
+    "array([1., 4., 10.])")
+ufunc_inv_boxcox1p_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_inv_boxcox1p_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_inv_boxcox1p_types[0] = <char>NPY_FLOAT
+ufunc_inv_boxcox1p_types[1] = <char>NPY_FLOAT
+ufunc_inv_boxcox1p_types[2] = <char>NPY_FLOAT
+ufunc_inv_boxcox1p_types[3] = <char>NPY_DOUBLE
+ufunc_inv_boxcox1p_types[4] = <char>NPY_DOUBLE
+ufunc_inv_boxcox1p_types[5] = <char>NPY_DOUBLE
+ufunc_inv_boxcox1p_ptr[2*0] = <void*>_func_inv_boxcox1p
+ufunc_inv_boxcox1p_ptr[2*0+1] = <void*>(<char*>"inv_boxcox1p")
+ufunc_inv_boxcox1p_ptr[2*1] = <void*>_func_inv_boxcox1p
+ufunc_inv_boxcox1p_ptr[2*1+1] = <void*>(<char*>"inv_boxcox1p")
+ufunc_inv_boxcox1p_data[0] = &ufunc_inv_boxcox1p_ptr[2*0]
+ufunc_inv_boxcox1p_data[1] = &ufunc_inv_boxcox1p_ptr[2*1]
+inv_boxcox1p = np.PyUFunc_FromFuncAndData(ufunc_inv_boxcox1p_loops, ufunc_inv_boxcox1p_data, ufunc_inv_boxcox1p_types, 2, 2, 1, 0, "inv_boxcox1p", ufunc_inv_boxcox1p_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_it2i0k0_loops[2]
 cdef void *ufunc_it2i0k0_ptr[4]
 cdef void *ufunc_it2i0k0_data[2]
 cdef char ufunc_it2i0k0_types[6]
 cdef char *ufunc_it2i0k0_doc = (
-    "(ii0,ik0)=it2i0k0(x) returns the integrals int((i0(t)-1)/t,t=0..x) and\n"
-    "int(k0(t)/t,t=x..infinitity).")
+    "it2i0k0(x)\n"
+    "\n"
+    "Integrals related to modified Bessel functions of order 0\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "ii0\n"
+    "    ``integral((i0(t)-1)/t, t=0..x)``\n"
+    "ik0\n"
+    "    ``int(k0(t)/t,t=x..inf)``")
 ufunc_it2i0k0_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_it2i0k0_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
 ufunc_it2i0k0_types[0] = <char>NPY_FLOAT
@@ -4969,8 +6239,16 @@ cdef void *ufunc_it2j0y0_ptr[4]
 cdef void *ufunc_it2j0y0_data[2]
 cdef char ufunc_it2j0y0_types[6]
 cdef char *ufunc_it2j0y0_doc = (
-    "(ij0,iy0)=it2j0y0(x) returns the integrals int((1-j0(t))/t,t=0..x) and\n"
-    "int(y0(t)/t,t=x..infinitity).")
+    "it2j0y0(x)\n"
+    "\n"
+    "Integrals related to Bessel functions of order 0\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "ij0\n"
+    "    ``integral((1-j0(t))/t, t=0..x)``\n"
+    "iy0\n"
+    "    ``integral(y0(t)/t, t=x..inf)``")
 ufunc_it2j0y0_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_it2j0y0_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
 ufunc_it2j0y0_types[0] = <char>NPY_FLOAT
@@ -4992,8 +6270,14 @@ cdef void *ufunc_it2struve0_ptr[4]
 cdef void *ufunc_it2struve0_data[2]
 cdef char ufunc_it2struve0_types[4]
 cdef char *ufunc_it2struve0_doc = (
-    "y=it2struve0(x) returns the integral of the Struve function of order 0\n"
-    "divided by t from x to infinity:  integral(H0(t)/t, t=x..inf).")
+    "it2struve0(x)\n"
+    "\n"
+    "Integral related to Struve function of order 0\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "i\n"
+    "    ``integral(H0(t)/t, t=x..inf)``")
 ufunc_it2struve0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_it2struve0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_it2struve0_types[0] = <char>NPY_FLOAT
@@ -5013,8 +6297,18 @@ cdef void *ufunc_itairy_ptr[4]
 cdef void *ufunc_itairy_data[2]
 cdef char ufunc_itairy_types[10]
 cdef char *ufunc_itairy_doc = (
-    "(Apt,Bpt,Ant,Bnt)=itairy(x) calculates the integral of Airy functions from 0 to x\n"
-    "for positive (Apt, Bpt) and negative (Ant, Bnt) arguments.")
+    "itairy(x)\n"
+    "\n"
+    "Integrals of Airy functios\n"
+    "\n"
+    "Calculates the integral of Airy functions from 0 to x\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "Apt, Bpt\n"
+    "    Integrals for positive arguments\n"
+    "Ant, Bnt\n"
+    "    Integrals for negative arguments")
 ufunc_itairy_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_f_ffff
 ufunc_itairy_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_d_dddd
 ufunc_itairy_types[0] = <char>NPY_FLOAT
@@ -5040,8 +6334,16 @@ cdef void *ufunc_iti0k0_ptr[4]
 cdef void *ufunc_iti0k0_data[2]
 cdef char ufunc_iti0k0_types[6]
 cdef char *ufunc_iti0k0_doc = (
-    "(ii0,ik0)=iti0k0(x) returns simple integrals from 0 to x of the zeroth order\n"
-    "modified Bessel functions i0 and k0.")
+    "iti0k0(x)\n"
+    "\n"
+    "Integrals of modified Bessel functions of order 0\n"
+    "\n"
+    "Returns simple integrals from 0 to x of the zeroth order modified\n"
+    "Bessel functions i0 and k0.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "ii0, ik0")
 ufunc_iti0k0_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_iti0k0_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
 ufunc_iti0k0_types[0] = <char>NPY_FLOAT
@@ -5063,8 +6365,16 @@ cdef void *ufunc_itj0y0_ptr[4]
 cdef void *ufunc_itj0y0_data[2]
 cdef char ufunc_itj0y0_types[6]
 cdef char *ufunc_itj0y0_doc = (
-    "(ij0,iy0)=itj0y0(x) returns simple integrals from 0 to x of the zeroth order\n"
-    "Bessel functions j0 and y0.")
+    "itj0y0(x)\n"
+    "\n"
+    "Integrals of Bessel functions of order 0\n"
+    "\n"
+    "Returns simple integrals from 0 to x of the zeroth order Bessel\n"
+    "functions j0 and y0.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "ij0, iy0")
 ufunc_itj0y0_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_itj0y0_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
 ufunc_itj0y0_types[0] = <char>NPY_FLOAT
@@ -5086,8 +6396,14 @@ cdef void *ufunc_itmodstruve0_ptr[4]
 cdef void *ufunc_itmodstruve0_data[2]
 cdef char ufunc_itmodstruve0_types[4]
 cdef char *ufunc_itmodstruve0_doc = (
-    "y=itmodstruve0(x) returns the integral of the modified Struve function\n"
-    "of order 0 from 0 to x:  integral(L0(t), t=0..x).")
+    "itmodstruve0(x)\n"
+    "\n"
+    "Integral of the modified Struve function of order 0\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "i\n"
+    "    ``integral(L0(t), t=0..x)``")
 ufunc_itmodstruve0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_itmodstruve0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_itmodstruve0_types[0] = <char>NPY_FLOAT
@@ -5107,8 +6423,14 @@ cdef void *ufunc_itstruve0_ptr[4]
 cdef void *ufunc_itstruve0_data[2]
 cdef char ufunc_itstruve0_types[4]
 cdef char *ufunc_itstruve0_doc = (
-    "y=itstruve0(x) returns the integral of the Struve function of order 0\n"
-    "from 0 to x:  integral(H0(t), t=0..x).")
+    "itstruve0(x)\n"
+    "\n"
+    "Integral of the Struve function of order 0\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "i\n"
+    "    ``integral(H0(t), t=0..x)``")
 ufunc_itstruve0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_itstruve0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_itstruve0_types[0] = <char>NPY_FLOAT
@@ -5128,8 +6450,16 @@ cdef void *ufunc_iv_ptr[8]
 cdef void *ufunc_iv_data[4]
 cdef char ufunc_iv_types[12]
 cdef char *ufunc_iv_doc = (
-    "y=iv(v,z) returns the modified Bessel function of real order v of\n"
-    "z.  If z is of real type and negative, v must be integer valued.")
+    "iv(v,z)\n"
+    "\n"
+    "Modified Bessel function of the first kind  of real order\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "v\n"
+    "    Order. If z is of real type and negative, v must be integer valued.\n"
+    "z\n"
+    "    Argument.")
 ufunc_iv_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_iv_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_iv_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -5165,8 +6495,13 @@ cdef void *ufunc_ive_ptr[8]
 cdef void *ufunc_ive_data[4]
 cdef char ufunc_ive_types[12]
 cdef char *ufunc_ive_doc = (
-    "y=ive(v,z) returns the exponentially scaled modified Bessel function of\n"
-    "real order v and complex z: ive(v,z) = iv(v,z) * exp(-abs(z.real))")
+    "ive(v,z)\n"
+    "\n"
+    "Exponentially scaled modified Bessel function of the first kind\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    ive(v,z) = iv(v,z) * exp(-abs(z.real))")
 ufunc_ive_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ive_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_ive_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -5202,7 +6537,9 @@ cdef void *ufunc_j0_ptr[4]
 cdef void *ufunc_j0_data[2]
 cdef char ufunc_j0_types[4]
 cdef char *ufunc_j0_doc = (
-    "y=j0(x) returns the Bessel function of order 0 at x.")
+    "j0(x)\n"
+    "\n"
+    "Bessel function the first kind of order 0")
 ufunc_j0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_j0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_j0_types[0] = <char>NPY_FLOAT
@@ -5222,7 +6559,9 @@ cdef void *ufunc_j1_ptr[4]
 cdef void *ufunc_j1_data[2]
 cdef char ufunc_j1_types[4]
 cdef char *ufunc_j1_doc = (
-    "y=j1(x) returns the Bessel function of order 1 at x.")
+    "j1(x)\n"
+    "\n"
+    "Bessel function of the first kind of order 1")
 ufunc_j1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_j1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_j1_types[0] = <char>NPY_FLOAT
@@ -5242,7 +6581,9 @@ cdef void *ufunc_jv_ptr[8]
 cdef void *ufunc_jv_data[4]
 cdef char ufunc_jv_types[12]
 cdef char *ufunc_jv_doc = (
-    "y=jv(v,z) returns the Bessel function of real order v at complex z.")
+    "jv(v, z)\n"
+    "\n"
+    "Bessel function of the first kind of real order v")
 ufunc_jv_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_jv_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_jv_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -5278,8 +6619,13 @@ cdef void *ufunc_jve_ptr[8]
 cdef void *ufunc_jve_data[4]
 cdef char ufunc_jve_types[12]
 cdef char *ufunc_jve_doc = (
-    "y=jve(v,z) returns the exponentially scaled Bessel function of real order\n"
-    "v at complex z: jve(v,z) = jv(v,z) * exp(-abs(z.imag))")
+    "jve(v, z)\n"
+    "\n"
+    "Exponentially scaled Bessel function of order v\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    jve(v,z) = jv(v,z) * exp(-abs(z.imag))")
 ufunc_jve_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_jve_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_jve_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -5315,8 +6661,12 @@ cdef void *ufunc_k0_ptr[4]
 cdef void *ufunc_k0_data[2]
 cdef char ufunc_k0_types[4]
 cdef char *ufunc_k0_doc = (
-    "y=k0(x) returns the modified Bessel function of the second kind (sometimes called the third kind) of\n"
-    "order 0 at x.")
+    "k0(x)\n"
+    "\n"
+    "Modified Bessel function K of order 0\n"
+    "\n"
+    "Modified Bessel function of the second kind (sometimes called the\n"
+    "third kind) of order 0.")
 ufunc_k0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_k0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_k0_types[0] = <char>NPY_FLOAT
@@ -5336,8 +6686,13 @@ cdef void *ufunc_k0e_ptr[4]
 cdef void *ufunc_k0e_data[2]
 cdef char ufunc_k0e_types[4]
 cdef char *ufunc_k0e_doc = (
-    "y=k0e(x) returns the exponentially scaled modified Bessel function\n"
-    "of the second kind (sometimes called the third kind) of order 0 at x.  k0e(x) = exp(x) * k0(x).")
+    "k0e(x)\n"
+    "\n"
+    "Exponentially scaled modified Bessel function K of order 0\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    k0e(x) = exp(x) * k0(x).")
 ufunc_k0e_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_k0e_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_k0e_types[0] = <char>NPY_FLOAT
@@ -5357,8 +6712,9 @@ cdef void *ufunc_k1_ptr[4]
 cdef void *ufunc_k1_data[2]
 cdef char ufunc_k1_types[4]
 cdef char *ufunc_k1_doc = (
-    "y=i1(x) returns the modified Bessel function of the second kind (sometimes called the third kind) of\n"
-    "order 1 at x.")
+    "i1(x)\n"
+    "\n"
+    "Modified Bessel function of the first kind of order 1")
 ufunc_k1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_k1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_k1_types[0] = <char>NPY_FLOAT
@@ -5378,8 +6734,13 @@ cdef void *ufunc_k1e_ptr[4]
 cdef void *ufunc_k1e_data[2]
 cdef char ufunc_k1e_types[4]
 cdef char *ufunc_k1e_doc = (
-    "y=k1e(x) returns the exponentially scaled modified Bessel function\n"
-    "of the second kind (sometimes called the third kind) of order 1 at x.  k1e(x) = exp(x) * k1(x)")
+    "k1e(x)\n"
+    "\n"
+    "Exponentially scaled modified Bessel function K of order 1\n"
+    "\n"
+    "Defined as::\n"
+    "\n"
+    "    k1e(x) = exp(x) * k1(x)")
 ufunc_k1e_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_k1e_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_k1e_types[0] = <char>NPY_FLOAT
@@ -5399,7 +6760,9 @@ cdef void *ufunc_kei_ptr[4]
 cdef void *ufunc_kei_data[2]
 cdef char ufunc_kei_types[4]
 cdef char *ufunc_kei_doc = (
-    "y=kei(x) returns the Kelvin function ker x")
+    "kei(x)\n"
+    "\n"
+    "Kelvin function ker")
 ufunc_kei_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_kei_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_kei_types[0] = <char>NPY_FLOAT
@@ -5419,7 +6782,9 @@ cdef void *ufunc_keip_ptr[4]
 cdef void *ufunc_keip_data[2]
 cdef char ufunc_keip_types[4]
 cdef char *ufunc_keip_doc = (
-    "y=keip(x) returns the derivative of the Kelvin function kei x")
+    "keip(x)\n"
+    "\n"
+    "Derivative of the Kelvin function kei")
 ufunc_keip_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_keip_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_keip_types[0] = <char>NPY_FLOAT
@@ -5439,11 +6804,18 @@ cdef void *ufunc_kelvin_ptr[4]
 cdef void *ufunc_kelvin_data[2]
 cdef char ufunc_kelvin_types[10]
 cdef char *ufunc_kelvin_doc = (
-    "(Be, Ke, Bep, Kep)=kelvin(x) returns the tuple (Be, Ke, Bep, Kep) which contains\n"
-    "complex numbers representing the real and imaginary Kelvin functions\n"
-    "and their derivatives evaluated at x.  For example,\n"
-    "kelvin(x)[0].real = ber x and kelvin(x)[0].imag = bei x with similar\n"
-    "relationships for ker and kei.")
+    "kelvin(x)\n"
+    "\n"
+    "Kelvin functions as complex numbers\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "Be, Ke, Bep, Kep\n"
+    "    The tuple (Be, Ke, Bep, Kep) contains complex numbers\n"
+    "    representing the real and imaginary Kelvin functions and their\n"
+    "    derivatives evaluated at x.  For example, kelvin(x)[0].real =\n"
+    "    ber x and kelvin(x)[0].imag = bei x with similar relationships\n"
+    "    for ker and kei.")
 ufunc_kelvin_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_DDDD_As_f_FFFF
 ufunc_kelvin_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_DDDD_As_d_DDDD
 ufunc_kelvin_types[0] = <char>NPY_FLOAT
@@ -5469,7 +6841,9 @@ cdef void *ufunc_ker_ptr[4]
 cdef void *ufunc_ker_data[2]
 cdef char ufunc_ker_types[4]
 cdef char *ufunc_ker_doc = (
-    "y=ker(x) returns the Kelvin function ker x")
+    "ker(x)\n"
+    "\n"
+    "Kelvin function ker")
 ufunc_ker_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ker_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ker_types[0] = <char>NPY_FLOAT
@@ -5489,7 +6863,9 @@ cdef void *ufunc_kerp_ptr[4]
 cdef void *ufunc_kerp_data[2]
 cdef char ufunc_kerp_types[4]
 cdef char *ufunc_kerp_doc = (
-    "y=kerp(x) returns the derivative of the Kelvin function ker x")
+    "kerp(x)\n"
+    "\n"
+    "Derivative of the Kelvin function ker")
 ufunc_kerp_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_kerp_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_kerp_types[0] = <char>NPY_FLOAT
@@ -5504,13 +6880,64 @@ ufunc_kerp_data[0] = &ufunc_kerp_ptr[2*0]
 ufunc_kerp_data[1] = &ufunc_kerp_ptr[2*1]
 kerp = np.PyUFunc_FromFuncAndData(ufunc_kerp_loops, ufunc_kerp_data, ufunc_kerp_types, 2, 1, 1, 0, "kerp", ufunc_kerp_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_kl_div_loops[2]
+cdef void *ufunc_kl_div_ptr[4]
+cdef void *ufunc_kl_div_data[2]
+cdef char ufunc_kl_div_types[6]
+cdef char *ufunc_kl_div_doc = (
+    "kl_div(x, y)\n"
+    "\n"
+    "Elementwise function for computing Kullback-Leibler divergence.\n"
+    "\n"
+    ".. math:: \\text{kl\\_div}(x, y) = \\begin{cases} x \\log(x / y) - x + y & x > 0, y > 0 \\\\ y & x = 0, y \\ge 0 \\\\ \\infty & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : ndarray\n"
+    "    First input array.\n"
+    "y : ndarray\n"
+    "    Second input array.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    Output array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "entr, rel_entr\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is non-negative and is jointly convex in x and y.\n"
+    "\n"
+    ".. versionadded:: 0.14.0")
+ufunc_kl_div_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_kl_div_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_kl_div_types[0] = <char>NPY_FLOAT
+ufunc_kl_div_types[1] = <char>NPY_FLOAT
+ufunc_kl_div_types[2] = <char>NPY_FLOAT
+ufunc_kl_div_types[3] = <char>NPY_DOUBLE
+ufunc_kl_div_types[4] = <char>NPY_DOUBLE
+ufunc_kl_div_types[5] = <char>NPY_DOUBLE
+ufunc_kl_div_ptr[2*0] = <void*>_func_kl_div
+ufunc_kl_div_ptr[2*0+1] = <void*>(<char*>"kl_div")
+ufunc_kl_div_ptr[2*1] = <void*>_func_kl_div
+ufunc_kl_div_ptr[2*1+1] = <void*>(<char*>"kl_div")
+ufunc_kl_div_data[0] = &ufunc_kl_div_ptr[2*0]
+ufunc_kl_div_data[1] = &ufunc_kl_div_ptr[2*1]
+kl_div = np.PyUFunc_FromFuncAndData(ufunc_kl_div_loops, ufunc_kl_div_data, ufunc_kl_div_types, 2, 2, 1, 0, "kl_div", ufunc_kl_div_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_kn_loops[4]
 cdef void *ufunc_kn_ptr[8]
 cdef void *ufunc_kn_data[4]
 cdef char ufunc_kn_types[12]
 cdef char *ufunc_kn_doc = (
-    "y=kn(n,x) returns the modified Bessel function of the second kind (sometimes called the third kind) for\n"
-    "integer order n at x.")
+    "kn(n, x)\n"
+    "\n"
+    "Modified Bessel function of the second kind of integer order n\n"
+    "\n"
+    "These are also sometimes called functions of the third kind.")
 ufunc_kn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_kn_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_kn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -5546,7 +6973,11 @@ cdef void *ufunc_kolmogi_ptr[4]
 cdef void *ufunc_kolmogi_data[2]
 cdef char ufunc_kolmogi_types[4]
 cdef char *ufunc_kolmogi_doc = (
-    "y=kolmogi(p) returns y such that kolmogorov(y) = p")
+    "kolmogi(p)\n"
+    "\n"
+    "Inverse function to kolmogorov\n"
+    "\n"
+    "Returns y such that ``kolmogorov(y) == p``.")
 ufunc_kolmogi_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_kolmogi_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_kolmogi_types[0] = <char>NPY_FLOAT
@@ -5566,11 +6997,15 @@ cdef void *ufunc_kolmogorov_ptr[4]
 cdef void *ufunc_kolmogorov_data[2]
 cdef char ufunc_kolmogorov_types[4]
 cdef char *ufunc_kolmogorov_doc = (
-    "p=kolmogorov(y) returns the complementary cumulative distribution\n"
-    "function of Kolmogorov's limiting distribution (Kn* for large n)\n"
-    "of a two-sided test for equality between an empirical and a theoretical\n"
-    "distribution. It is equal to the (limit as n->infinity of the) probability\n"
-    "that sqrt(n) * max absolute deviation > y.")
+    "kolmogorov(y)\n"
+    "\n"
+    "Complementary cumulative distribution function of Kolmogorov distribution\n"
+    "\n"
+    "Returns the complementary cumulative distribution function of\n"
+    "Kolmogorov's limiting distribution (Kn* for large n) of a\n"
+    "two-sided test for equality between an empirical and a theoretical\n"
+    "distribution. It is equal to the (limit as n->infinity of the)\n"
+    "probability that sqrt(n) * max absolute deviation > y.")
 ufunc_kolmogorov_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_kolmogorov_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_kolmogorov_types[0] = <char>NPY_FLOAT
@@ -5590,8 +7025,12 @@ cdef void *ufunc_kv_ptr[8]
 cdef void *ufunc_kv_data[4]
 cdef char ufunc_kv_types[12]
 cdef char *ufunc_kv_doc = (
-    "y=kv(v,z) returns the modified Bessel function of the second kind (sometimes called the third kind) for\n"
-    "real order v at complex z.")
+    "kv(v,z)\n"
+    "\n"
+    "Modified Bessel function of the second kind of real order v\n"
+    "\n"
+    "Returns the modified Bessel function of the second kind (sometimes\n"
+    "called the third kind) for real order v at complex z.")
 ufunc_kv_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_kv_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_kv_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -5627,8 +7066,15 @@ cdef void *ufunc_kve_ptr[8]
 cdef void *ufunc_kve_data[4]
 cdef char ufunc_kve_types[12]
 cdef char *ufunc_kve_doc = (
-    "y=kve(v,z) returns the exponentially scaled, modified Bessel function\n"
-    "of the second kind (sometimes called the third kind) for real order v at complex z: kve(v,z) = kv(v,z) * exp(z)")
+    "kve(v,z)\n"
+    "\n"
+    "Exponentially scaled modified Bessel function of the second kind.\n"
+    "\n"
+    "Returns the exponentially scaled, modified Bessel function of the\n"
+    "second kind (sometimes called the third kind) for real order v at\n"
+    "complex z::\n"
+    "\n"
+    "    kve(v,z) = kv(v,z) * exp(z)")
 ufunc_kve_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_kve_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_kve_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -5664,7 +7110,9 @@ cdef void *ufunc_log1p_ptr[4]
 cdef void *ufunc_log1p_data[2]
 cdef char ufunc_log1p_types[4]
 cdef char *ufunc_log1p_doc = (
-    "y=log1p(x) calculates log(1+x) for use when x is near zero.")
+    "log1p(x)\n"
+    "\n"
+    "Calculates log(1+x) for use when x is near zero")
 ufunc_log1p_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_log1p_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_log1p_types[0] = <char>NPY_FLOAT
@@ -5684,9 +7132,14 @@ cdef void *ufunc_log_ndtr_ptr[4]
 cdef void *ufunc_log_ndtr_data[2]
 cdef char ufunc_log_ndtr_types[4]
 cdef char *ufunc_log_ndtr_doc = (
-    "y=log_ndtr(x) returns the log of the area under the standard Gaussian probability\n"
-    "density function, integrated from minus infinity to x:\n"
-    "1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)")
+    "log_ndtr(x)\n"
+    "\n"
+    "Logarithm of Gaussian cumulative distribution function\n"
+    "\n"
+    "Returns the log of the area under the standard Gaussian probability\n"
+    "density function, integrated from minus infinity to x::\n"
+    "\n"
+    "    log(1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x))")
 ufunc_log_ndtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_log_ndtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_log_ndtr_types[0] = <char>NPY_FLOAT
@@ -5706,6 +7159,8 @@ cdef void *ufunc_logit_ptr[6]
 cdef void *ufunc_logit_data[3]
 cdef char ufunc_logit_types[6]
 cdef char *ufunc_logit_doc = (
+    "logit(x)\n"
+    "\n"
     "Logit ufunc for ndarrays.\n"
     "\n"
     "The logit function is defined as logit(p) = log(p/(1-p)).\n"
@@ -5726,8 +7181,10 @@ cdef char *ufunc_logit_doc = (
     "Notes\n"
     "-----\n"
     "As a ufunc logit takes a number of optional\n"
-    "keywork arguments. For more information\n"
-    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_")
+    "keyword arguments. For more information\n"
+    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
+    "\n"
+    ".. versionadded:: 0.10.0")
 ufunc_logit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
 ufunc_logit_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_logit_loops[2] = <np.PyUFuncGenericFunction>loop_g_g__As_g_g
@@ -5753,8 +7210,18 @@ cdef void *ufunc_lpmv_ptr[4]
 cdef void *ufunc_lpmv_data[2]
 cdef char ufunc_lpmv_types[8]
 cdef char *ufunc_lpmv_doc = (
-    "y=lpmv(m,v,x) returns the associated legendre function of integer order\n"
-    "m and real degree v (s.t. v>-m-1 or v<m): ``|x| <= 1``.")
+    "lpmv(m, v, x)\n"
+    "\n"
+    "Associated legendre function of integer order.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "m : int\n"
+    "    Order\n"
+    "v : real\n"
+    "    Degree. Must be ``v>-m-1`` or ``v<m``\n"
+    "x : complex\n"
+    "    Argument. Must be ``|x| <= 1``.")
 ufunc_lpmv_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_lpmv_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_lpmv_types[0] = <char>NPY_FLOAT
@@ -5778,8 +7245,12 @@ cdef void *ufunc_mathieu_a_ptr[4]
 cdef void *ufunc_mathieu_a_data[2]
 cdef char ufunc_mathieu_a_types[6]
 cdef char *ufunc_mathieu_a_doc = (
-    "lmbda=mathieu_a(m,q) returns the characteristic value for the even solution,\n"
-    "ce_m(z,q), of Mathieu's equation")
+    "mathieu_a(m,q)\n"
+    "\n"
+    "Characteristic value of even Mathieu functions\n"
+    "\n"
+    "Returns the characteristic value for the even solution,\n"
+    "``ce_m(z,q)``, of Mathieu's equation.")
 ufunc_mathieu_a_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_mathieu_a_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_mathieu_a_types[0] = <char>NPY_FLOAT
@@ -5801,8 +7272,12 @@ cdef void *ufunc_mathieu_b_ptr[4]
 cdef void *ufunc_mathieu_b_data[2]
 cdef char ufunc_mathieu_b_types[6]
 cdef char *ufunc_mathieu_b_doc = (
-    "lmbda=mathieu_b(m,q) returns the characteristic value for the odd solution,\n"
-    "se_m(z,q), of Mathieu's equation")
+    "mathieu_b(m,q)\n"
+    "\n"
+    "Characteristic value of odd Mathieu functions\n"
+    "\n"
+    "Returns the characteristic value for the odd solution,\n"
+    "``se_m(z,q)``, of Mathieu's equation.")
 ufunc_mathieu_b_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_mathieu_b_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_mathieu_b_types[0] = <char>NPY_FLOAT
@@ -5824,9 +7299,29 @@ cdef void *ufunc_mathieu_cem_ptr[4]
 cdef void *ufunc_mathieu_cem_data[2]
 cdef char ufunc_mathieu_cem_types[10]
 cdef char *ufunc_mathieu_cem_doc = (
-    "(y,yp)=mathieu_cem(m,q,x) returns the even Mathieu function, ce_m(x,q),\n"
-    "of order m and parameter q evaluated at x (given in degrees).\n"
-    "Also returns the derivative with respect to x of ce_m(x,q)")
+    "mathieu_cem(m,q,x)\n"
+    "\n"
+    "Even Mathieu function and its derivative\n"
+    "\n"
+    "Returns the even Mathieu function, ``ce_m(x,q)``, of order m and\n"
+    "parameter q evaluated at x (given in degrees).  Also returns the\n"
+    "derivative with respect to x of ce_m(x,q)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "m\n"
+    "    Order of the function\n"
+    "q\n"
+    "    Parameter of the function\n"
+    "x\n"
+    "    Argument of the function, *given in degrees, not radians*\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "yp\n"
+    "    Value of the derivative vs x")
 ufunc_mathieu_cem_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_fff_ff
 ufunc_mathieu_cem_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_ddd_dd
 ufunc_mathieu_cem_types[0] = <char>NPY_FLOAT
@@ -5852,9 +7347,20 @@ cdef void *ufunc_mathieu_modcem1_ptr[4]
 cdef void *ufunc_mathieu_modcem1_data[2]
 cdef char ufunc_mathieu_modcem1_types[10]
 cdef char *ufunc_mathieu_modcem1_doc = (
-    "(y,yp)=mathieu_modcem1(m,q,x) evaluates the even modified Mathieu function\n"
-    "of the first kind, Mc1m(x,q), and its derivative at x for order m and\n"
-    "parameter q.")
+    "mathieu_modcem1(m, q, x)\n"
+    "\n"
+    "Even modified Mathieu function of the first kind and its derivative\n"
+    "\n"
+    "Evaluates the even modified Mathieu function of the first kind,\n"
+    "``Mc1m(x,q)``, and its derivative at `x` for order m and parameter\n"
+    "`q`.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "yp\n"
+    "    Value of the derivative vs x")
 ufunc_mathieu_modcem1_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_fff_ff
 ufunc_mathieu_modcem1_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_ddd_dd
 ufunc_mathieu_modcem1_types[0] = <char>NPY_FLOAT
@@ -5880,9 +7386,20 @@ cdef void *ufunc_mathieu_modcem2_ptr[4]
 cdef void *ufunc_mathieu_modcem2_data[2]
 cdef char ufunc_mathieu_modcem2_types[10]
 cdef char *ufunc_mathieu_modcem2_doc = (
-    "(y,yp)=mathieu_modcem2(m,q,x) evaluates the even modified Mathieu function\n"
-    "of the second kind, Mc2m(x,q), and its derivative at x (given in degrees)\n"
-    "for order m and parameter q.")
+    "mathieu_modcem2(m, q, x)\n"
+    "\n"
+    "Even modified Mathieu function of the second kind and its derivative\n"
+    "\n"
+    "Evaluates the even modified Mathieu function of the second kind,\n"
+    "Mc2m(x,q), and its derivative at x (given in degrees) for order m\n"
+    "and parameter q.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "yp\n"
+    "    Value of the derivative vs x")
 ufunc_mathieu_modcem2_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_fff_ff
 ufunc_mathieu_modcem2_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_ddd_dd
 ufunc_mathieu_modcem2_types[0] = <char>NPY_FLOAT
@@ -5908,9 +7425,20 @@ cdef void *ufunc_mathieu_modsem1_ptr[4]
 cdef void *ufunc_mathieu_modsem1_data[2]
 cdef char ufunc_mathieu_modsem1_types[10]
 cdef char *ufunc_mathieu_modsem1_doc = (
-    "(y,yp)=mathieu_modsem1(m,q,x) evaluates the odd modified Mathieu function\n"
-    "of the first kind, Ms1m(x,q), and its derivative at x (given in degrees)\n"
-    "for order m and parameter q.")
+    "mathieu_modsem1(m,q,x)\n"
+    "\n"
+    "Odd modified Mathieu function of the first kind and its derivative\n"
+    "\n"
+    "Evaluates the odd modified Mathieu function of the first kind,\n"
+    "Ms1m(x,q), and its derivative at x (given in degrees) for order m\n"
+    "and parameter q.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "yp\n"
+    "    Value of the derivative vs x")
 ufunc_mathieu_modsem1_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_fff_ff
 ufunc_mathieu_modsem1_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_ddd_dd
 ufunc_mathieu_modsem1_types[0] = <char>NPY_FLOAT
@@ -5936,9 +7464,20 @@ cdef void *ufunc_mathieu_modsem2_ptr[4]
 cdef void *ufunc_mathieu_modsem2_data[2]
 cdef char ufunc_mathieu_modsem2_types[10]
 cdef char *ufunc_mathieu_modsem2_doc = (
-    "(y,yp)=mathieu_modsem2(m,q,x) evaluates the odd modified Mathieu function\n"
-    "of the second kind, Ms2m(x,q), and its derivative at x (given in degrees)\n"
-    "for order m and parameter q.")
+    "mathieu_modsem2(m, q, x)\n"
+    "\n"
+    "Odd modified Mathieu function of the second kind and its derivative\n"
+    "\n"
+    "Evaluates the odd modified Mathieu function of the second kind,\n"
+    "Ms2m(x,q), and its derivative at x (given in degrees) for order m\n"
+    "and parameter q.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "yp\n"
+    "    Value of the derivative vs x")
 ufunc_mathieu_modsem2_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_fff_ff
 ufunc_mathieu_modsem2_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_ddd_dd
 ufunc_mathieu_modsem2_types[0] = <char>NPY_FLOAT
@@ -5964,9 +7503,29 @@ cdef void *ufunc_mathieu_sem_ptr[4]
 cdef void *ufunc_mathieu_sem_data[2]
 cdef char ufunc_mathieu_sem_types[10]
 cdef char *ufunc_mathieu_sem_doc = (
-    "(y,yp)=mathieu_sem(m,q,x) returns the odd Mathieu function, se_m(x,q),\n"
-    "of order m and parameter q evaluated at x (given in degrees).\n"
-    "Also returns the derivative with respect to x of se_m(x,q).")
+    "mathieu_sem(m, q, x)\n"
+    "\n"
+    "Odd Mathieu function and its derivative\n"
+    "\n"
+    "Returns the odd Mathieu function, se_m(x,q), of order m and\n"
+    "parameter q evaluated at x (given in degrees).  Also returns the\n"
+    "derivative with respect to x of se_m(x,q).\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "m\n"
+    "    Order of the function\n"
+    "q\n"
+    "    Parameter of the function\n"
+    "x\n"
+    "    Argument of the function, *given in degrees, not radians*.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y\n"
+    "    Value of the function\n"
+    "yp\n"
+    "    Value of the derivative vs x")
 ufunc_mathieu_sem_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_fff_ff
 ufunc_mathieu_sem_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddd_dd_As_ddd_dd
 ufunc_mathieu_sem_types[0] = <char>NPY_FLOAT
@@ -5992,8 +7551,16 @@ cdef void *ufunc_modfresnelm_ptr[4]
 cdef void *ufunc_modfresnelm_data[2]
 cdef char ufunc_modfresnelm_types[6]
 cdef char *ufunc_modfresnelm_doc = (
-    "(fm,km)=modfresnelp(x) returns the modified Fresnel integrals ``F_-(x)`` and ``K_-(x)``\n"
-    "as ``fp=integral(exp(-1j*t*t),t=x..inf)`` and ``kp=1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``")
+    "modfresnelm(x)\n"
+    "\n"
+    "Modified Fresnel negative integrals\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "fm\n"
+    "    Integral ``F_-(x)``: ``integral(exp(-1j*t*t),t=x..inf)``\n"
+    "km\n"
+    "    Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``")
 ufunc_modfresnelm_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_DD_As_f_FF
 ufunc_modfresnelm_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_DD_As_d_DD
 ufunc_modfresnelm_types[0] = <char>NPY_FLOAT
@@ -6015,8 +7582,16 @@ cdef void *ufunc_modfresnelp_ptr[4]
 cdef void *ufunc_modfresnelp_data[2]
 cdef char ufunc_modfresnelp_types[6]
 cdef char *ufunc_modfresnelp_doc = (
-    "(fp,kp)=modfresnelp(x) returns the modified Fresnel integrals F_+(x) and K_+(x)\n"
-    "as fp=integral(exp(1j*t*t),t=x..inf) and kp=1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp")
+    "modfresnelp(x)\n"
+    "\n"
+    "Modified Fresnel positive integrals\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "fp\n"
+    "    Integral ``F_+(x)``: ``integral(exp(1j*t*t),t=x..inf)``\n"
+    "kp\n"
+    "    Integral ``K_+(x)``: ``1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp``")
 ufunc_modfresnelp_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_DD_As_f_FF
 ufunc_modfresnelp_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_DD_As_d_DD
 ufunc_modfresnelp_types[0] = <char>NPY_FLOAT
@@ -6038,9 +7613,12 @@ cdef void *ufunc_modstruve_ptr[4]
 cdef void *ufunc_modstruve_data[2]
 cdef char ufunc_modstruve_types[6]
 cdef char *ufunc_modstruve_doc = (
-    "y=modstruve(v,x) returns the modified Struve function Lv(x) of order\n"
-    "v at x, x must be positive unless v is an integer and it is recommended\n"
-    "that ``|v| <= 20``.")
+    "modstruve(v, x)\n"
+    "\n"
+    "Modified Struve function\n"
+    "\n"
+    "Returns the modified Struve function Lv(x) of order v at x, x must\n"
+    "be positive unless v is an integer.")
 ufunc_modstruve_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_modstruve_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_modstruve_types[0] = <char>NPY_FLOAT
@@ -6062,10 +7640,17 @@ cdef void *ufunc_nbdtr_ptr[8]
 cdef void *ufunc_nbdtr_data[4]
 cdef char ufunc_nbdtr_types[16]
 cdef char *ufunc_nbdtr_doc = (
-    "y=nbdtr(k,n,p) returns the sum of the terms 0 through k of the\n"
-    "negative binomial distribution: sum((n+j-1)Cj p**n (1-p)**j,j=0..k).\n"
-    "In a sequence of Bernoulli trials this is the probability that k or\n"
-    "fewer failures precede the nth success.")
+    "nbdtr(k, n, p)\n"
+    "\n"
+    "Negative binomial cumulative distribution function\n"
+    "\n"
+    "Returns the sum of the terms 0 through k of the negative binomial\n"
+    "distribution::\n"
+    "\n"
+    "    sum((n+j-1)Cj p**n (1-p)**j,j=0..k).\n"
+    "\n"
+    "In a sequence of Bernoulli trials this is the probability that k\n"
+    "or fewer failures precede the nth success.")
 ufunc_nbdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
 ufunc_nbdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
 ufunc_nbdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -6105,8 +7690,12 @@ cdef void *ufunc_nbdtrc_ptr[8]
 cdef void *ufunc_nbdtrc_data[4]
 cdef char ufunc_nbdtrc_types[16]
 cdef char *ufunc_nbdtrc_doc = (
-    "y=nbdtrc(k,n,p) returns the sum of the terms k+1 to infinity of the\n"
-    "negative binomial distribution.")
+    "nbdtrc(k,n,p)\n"
+    "\n"
+    "Negative binomial survival function\n"
+    "\n"
+    "Returns the sum of the terms k+1 to infinity of the negative\n"
+    "binomial distribution.")
 ufunc_nbdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
 ufunc_nbdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
 ufunc_nbdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -6146,7 +7735,11 @@ cdef void *ufunc_nbdtri_ptr[8]
 cdef void *ufunc_nbdtri_data[4]
 cdef char ufunc_nbdtri_types[16]
 cdef char *ufunc_nbdtri_doc = (
-    "p=nbdtri(k,n,y) finds the argument p such that nbdtr(k,n,p)=y.")
+    "nbdtri(k, n, y)\n"
+    "\n"
+    "Inverse of nbdtr vs p\n"
+    "\n"
+    "Finds the argument p such that ``nbdtr(k,n,p) = y``.")
 ufunc_nbdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
 ufunc_nbdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
 ufunc_nbdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -6186,7 +7779,11 @@ cdef void *ufunc_nbdtrik_ptr[4]
 cdef void *ufunc_nbdtrik_data[2]
 cdef char ufunc_nbdtrik_types[8]
 cdef char *ufunc_nbdtrik_doc = (
-    "k=nbdtrik(y,n,p) finds the argument k such that nbdtr(k,n,p)=y.")
+    "nbdtrik(y,n,p)\n"
+    "\n"
+    "Inverse of nbdtr vs k\n"
+    "\n"
+    "Finds the argument k such that ``nbdtr(k,n,p) = y``.")
 ufunc_nbdtrik_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nbdtrik_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nbdtrik_types[0] = <char>NPY_FLOAT
@@ -6210,7 +7807,11 @@ cdef void *ufunc_nbdtrin_ptr[4]
 cdef void *ufunc_nbdtrin_data[2]
 cdef char ufunc_nbdtrin_types[8]
 cdef char *ufunc_nbdtrin_doc = (
-    "n=nbdtrin(k,y,p) finds the argument n such that nbdtr(k,n,p)=y.")
+    "nbdtrin(k,y,p)\n"
+    "\n"
+    "Inverse of nbdtr vs n\n"
+    "\n"
+    "Finds the argument n such that ``nbdtr(k,n,p) = y``.")
 ufunc_nbdtrin_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nbdtrin_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nbdtrin_types[0] = <char>NPY_FLOAT
@@ -6234,7 +7835,54 @@ cdef void *ufunc_ncfdtr_ptr[4]
 cdef void *ufunc_ncfdtr_data[2]
 cdef char ufunc_ncfdtr_types[10]
 cdef char *ufunc_ncfdtr_doc = (
-    "")
+    "ncfdtr(dfn, dfd, nc, f)\n"
+    "\n"
+    "Cumulative distribution function of the non-central F distribution.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "dfn : array_like\n"
+    "    Degrees of freedom of the numerator sum of squares.  Range (0, inf).\n"
+    "dfd : array_like\n"
+    "    Degrees of freedom of the denominator sum of squares.  Range (0, inf).\n"
+    "nc : array_like\n"
+    "    Noncentrality parameter.  Should be in range (0, 1e4).\n"
+    "f : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "cdf : float or ndarray\n"
+    "    The calculated CDF.  If all inputs are scalar, the return will be a\n"
+    "    float.  Otherwise it will be an array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "ncdfdtri : Inverse CDF (iCDF) of the non-central F distribution.\n"
+    "ncdfdtridfd : Calculate dfd, given CDF and iCDF values.\n"
+    "ncdfdtridfn : Calculate dfn, given CDF and iCDF values.\n"
+    "ncdfdtrinc : Calculate noncentrality parameter, given CDF, iCDF, dfn, dfd.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> from scipy import special\n"
+    ">>> from scipy import stats\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    "\n"
+    "Plot the CDF of the non-central F distribution, for nc=0.  Compare with the\n"
+    "F-distribution from scipy.stats:\n"
+    "\n"
+    ">>> x = np.linspace(-1, 8, num=500)\n"
+    ">>> dfn = 3\n"
+    ">>> dfd = 2\n"
+    ">>> ncf_stats = stats.f.cdf(x, dfn, dfd)\n"
+    ">>> ncf_special = special.ncfdtr(dfn, dfd, 0, x)\n"
+    "\n"
+    ">>> fig = plt.figure()\n"
+    ">>> ax = fig.add_subplot(111)\n"
+    ">>> ax.plot(x, ncf_stats, 'b-', lw=3)\n"
+    ">>> ax.plot(x, ncf_special, 'r-')\n"
+    ">>> plt.show()")
 ufunc_ncfdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtr_types[0] = <char>NPY_FLOAT
@@ -6260,7 +7908,11 @@ cdef void *ufunc_ncfdtri_ptr[4]
 cdef void *ufunc_ncfdtri_data[2]
 cdef char ufunc_ncfdtri_types[10]
 cdef char *ufunc_ncfdtri_doc = (
-    "")
+    "ncfdtri(p, dfn, dfd, nc)\n"
+    "\n"
+    "Inverse cumulative distribution function of the non-central F distribution.\n"
+    "\n"
+    "See `ncfdtr` for more details.")
 ufunc_ncfdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtri_types[0] = <char>NPY_FLOAT
@@ -6286,7 +7938,11 @@ cdef void *ufunc_ncfdtridfd_ptr[4]
 cdef void *ufunc_ncfdtridfd_data[2]
 cdef char ufunc_ncfdtridfd_types[10]
 cdef char *ufunc_ncfdtridfd_doc = (
-    "")
+    "ncfdtridfd(p, f, dfn, nc)\n"
+    "\n"
+    "Calculate degrees of freedom (denominator) for the noncentral F-distribution.\n"
+    "\n"
+    "See `ncfdtr` for more details.")
 ufunc_ncfdtridfd_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtridfd_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtridfd_types[0] = <char>NPY_FLOAT
@@ -6312,7 +7968,11 @@ cdef void *ufunc_ncfdtridfn_ptr[4]
 cdef void *ufunc_ncfdtridfn_data[2]
 cdef char ufunc_ncfdtridfn_types[10]
 cdef char *ufunc_ncfdtridfn_doc = (
-    "")
+    "ncfdtridfn(p, f, dfd, nc)\n"
+    "\n"
+    "Calculate degrees of freedom (numerator) for the noncentral F-distribution.\n"
+    "\n"
+    "See `ncfdtr` for more details.")
 ufunc_ncfdtridfn_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtridfn_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtridfn_types[0] = <char>NPY_FLOAT
@@ -6338,7 +7998,11 @@ cdef void *ufunc_ncfdtrinc_ptr[4]
 cdef void *ufunc_ncfdtrinc_data[2]
 cdef char ufunc_ncfdtrinc_types[10]
 cdef char *ufunc_ncfdtrinc_doc = (
-    "")
+    "ncfdtrinc(p, f, dfn, dfd)\n"
+    "\n"
+    "Calculate non-centrality parameter for non-central F distribution.\n"
+    "\n"
+    "See `ncfdtr` for more details.")
 ufunc_ncfdtrinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_ncfdtrinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
 ufunc_ncfdtrinc_types[0] = <char>NPY_FLOAT
@@ -6364,7 +8028,50 @@ cdef void *ufunc_nctdtr_ptr[4]
 cdef void *ufunc_nctdtr_data[2]
 cdef char ufunc_nctdtr_types[8]
 cdef char *ufunc_nctdtr_doc = (
-    "")
+    "nctdtr(df, nc, t)\n"
+    "\n"
+    "Cumulative distribution function of the non-central t distribution.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "df : array_like\n"
+    "    Degrees of freedom of the distribution.  Should be in range (0, inf).\n"
+    "nc : array_like\n"
+    "    Noncentrality parameter.  Should be in range (-1e6, 1e6).\n"
+    "t : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "cdf : float or ndarray\n"
+    "    The calculated CDF.  If all inputs are scalar, the return will be a\n"
+    "    float.  Otherwise it will be an array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.\n"
+    "nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.\n"
+    "nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> from scipy import special\n"
+    ">>> from scipy import stats\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    "\n"
+    "Plot the CDF of the non-central t distribution, for nc=0.  Compare with the\n"
+    "t-distribution from scipy.stats:\n"
+    "\n"
+    ">>> x = np.linspace(-5, 5, num=500)\n"
+    ">>> df = 3\n"
+    ">>> nct_stats = stats.t.cdf(x, df)\n"
+    ">>> nct_special = special.nctdtr(df, 0, x)\n"
+    "\n"
+    ">>> fig = plt.figure()\n"
+    ">>> ax = fig.add_subplot(111)\n"
+    ">>> ax.plot(x, nct_stats, 'b-', lw=3)\n"
+    ">>> ax.plot(x, nct_special, 'r-')\n"
+    ">>> plt.show()")
 ufunc_nctdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nctdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nctdtr_types[0] = <char>NPY_FLOAT
@@ -6388,7 +8095,20 @@ cdef void *ufunc_nctdtridf_ptr[4]
 cdef void *ufunc_nctdtridf_data[2]
 cdef char ufunc_nctdtridf_types[8]
 cdef char *ufunc_nctdtridf_doc = (
-    "")
+    "nctdtridf(p, nc, t)\n"
+    "\n"
+    "Calculate degrees of freedom for non-central t distribution.\n"
+    "\n"
+    "See `nctdtr` for more details.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].\n"
+    "nc : array_like\n"
+    "    Noncentrality parameter.  Should be in range (-1e6, 1e6).\n"
+    "t : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.")
 ufunc_nctdtridf_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nctdtridf_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nctdtridf_types[0] = <char>NPY_FLOAT
@@ -6412,7 +8132,20 @@ cdef void *ufunc_nctdtrinc_ptr[4]
 cdef void *ufunc_nctdtrinc_data[2]
 cdef char ufunc_nctdtrinc_types[8]
 cdef char *ufunc_nctdtrinc_doc = (
-    "")
+    "nctdtrinc(df, p, t)\n"
+    "\n"
+    "Calculate non-centrality parameter for non-central t distribution.\n"
+    "\n"
+    "See `nctdtr` for more details.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "df : array_like\n"
+    "    Degrees of freedom of the distribution.  Should be in range (0, inf).\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].\n"
+    "t : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.")
 ufunc_nctdtrinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nctdtrinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nctdtrinc_types[0] = <char>NPY_FLOAT
@@ -6436,7 +8169,20 @@ cdef void *ufunc_nctdtrit_ptr[4]
 cdef void *ufunc_nctdtrit_data[2]
 cdef char ufunc_nctdtrit_types[8]
 cdef char *ufunc_nctdtrit_doc = (
-    "")
+    "nctdtrit(df, nc, p)\n"
+    "\n"
+    "Inverse cumulative distribution function of the non-central t distribution.\n"
+    "\n"
+    "See `nctdtr` for more details.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "df : array_like\n"
+    "    Degrees of freedom of the distribution.  Should be in range (0, inf).\n"
+    "nc : array_like\n"
+    "    Noncentrality parameter.  Should be in range (-1e6, 1e6).\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].")
 ufunc_nctdtrit_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nctdtrit_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nctdtrit_types[0] = <char>NPY_FLOAT
@@ -6460,9 +8206,14 @@ cdef void *ufunc_ndtr_ptr[4]
 cdef void *ufunc_ndtr_data[2]
 cdef char ufunc_ndtr_types[4]
 cdef char *ufunc_ndtr_doc = (
-    "y=ndtr(x) returns the area under the standard Gaussian probability\n"
-    "density function, integrated from minus infinity to x:\n"
-    "1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)")
+    "ndtr(x)\n"
+    "\n"
+    "Gaussian cumulative distribution function\n"
+    "\n"
+    "Returns the area under the standard Gaussian probability\n"
+    "density function, integrated from minus infinity to x::\n"
+    "\n"
+    "    1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)")
 ufunc_ndtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ndtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ndtr_types[0] = <char>NPY_FLOAT
@@ -6482,9 +8233,13 @@ cdef void *ufunc_ndtri_ptr[4]
 cdef void *ufunc_ndtri_data[2]
 cdef char ufunc_ndtri_types[4]
 cdef char *ufunc_ndtri_doc = (
-    "x=ndtri(y) returns the argument x for which the area udnder the\n"
-    "Gaussian probability density function (integrated from minus infinity\n"
-    "to x) is equal to y.")
+    "ndtri(y)\n"
+    "\n"
+    "Inverse of ndtr vs x\n"
+    "\n"
+    "Returns the argument x for which the area under the Gaussian\n"
+    "probability density function (integrated from minus infinity to x)\n"
+    "is equal to y.")
 ufunc_ndtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ndtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ndtri_types[0] = <char>NPY_FLOAT
@@ -6504,7 +8259,27 @@ cdef void *ufunc_nrdtrimn_ptr[4]
 cdef void *ufunc_nrdtrimn_data[2]
 cdef char ufunc_nrdtrimn_types[8]
 cdef char *ufunc_nrdtrimn_doc = (
-    "")
+    "nrdtrimn(p, x, std)\n"
+    "\n"
+    "Calculate mean of normal distribution given other params.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].\n"
+    "x : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.\n"
+    "std : array_like\n"
+    "    Standard deviation.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "mn : float or ndarray\n"
+    "    The mean of the normal distribution.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "nrdtrimn, ndtr")
 ufunc_nrdtrimn_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nrdtrimn_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nrdtrimn_types[0] = <char>NPY_FLOAT
@@ -6528,7 +8303,27 @@ cdef void *ufunc_nrdtrisd_ptr[4]
 cdef void *ufunc_nrdtrisd_data[2]
 cdef char ufunc_nrdtrisd_types[8]
 cdef char *ufunc_nrdtrisd_doc = (
-    "")
+    "nrdtrisd(p, x, mn)\n"
+    "\n"
+    "Calculate standard deviation of normal distribution given other params.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    CDF values, in range (0, 1].\n"
+    "x : array_like\n"
+    "    Quantiles, i.e. the upper limit of integration.\n"
+    "mn : float or ndarray\n"
+    "    The mean of the normal distribution.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "std : array_like\n"
+    "    Standard deviation.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "nrdtristd, ndtr")
 ufunc_nrdtrisd_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_nrdtrisd_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nrdtrisd_types[0] = <char>NPY_FLOAT
@@ -6552,9 +8347,20 @@ cdef void *ufunc_obl_ang1_ptr[4]
 cdef void *ufunc_obl_ang1_data[2]
 cdef char ufunc_obl_ang1_types[12]
 cdef char *ufunc_obl_ang1_doc = (
-    "(s,sp)=obl_ang1(m,n,c,x) computes the oblate sheroidal angular function\n"
-    "of the first kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.")
+    "obl_ang1(m, n, c, x)\n"
+    "\n"
+    "Oblate spheroidal angular function of the first kind and its derivative\n"
+    "\n"
+    "Computes the oblate spheroidal angular function of the first kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_obl_ang1_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_obl_ang1_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_obl_ang1_types[0] = <char>NPY_FLOAT
@@ -6582,10 +8388,21 @@ cdef void *ufunc_obl_ang1_cv_ptr[4]
 cdef void *ufunc_obl_ang1_cv_data[2]
 cdef char ufunc_obl_ang1_cv_types[14]
 cdef char *ufunc_obl_ang1_cv_doc = (
-    "(s,sp)=obl_ang1_cv(m,n,c,cv,x) computes the oblate sheroidal angular function\n"
-    "of the first kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\n"
-    "characteristic value.")
+    "obl_ang1_cv(m, n, c, cv, x)\n"
+    "\n"
+    "Oblate spheroidal angular function obl_ang1 for precomputed characteristic value\n"
+    "\n"
+    "Computes the oblate spheroidal angular function of the first kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
+    "pre-computed characteristic value.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_obl_ang1_cv_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_fffff_ff
 ufunc_obl_ang1_cv_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_ddddd_dd
 ufunc_obl_ang1_cv_types[0] = <char>NPY_FLOAT
@@ -6615,8 +8432,12 @@ cdef void *ufunc_obl_cv_ptr[4]
 cdef void *ufunc_obl_cv_data[2]
 cdef char ufunc_obl_cv_types[8]
 cdef char *ufunc_obl_cv_doc = (
-    "cv=obl_cv(m,n,c) computes the characteristic value of oblate spheroidal\n"
-    "wave functions of order m,n (n>=m) and spheroidal parameter c.")
+    "obl_cv(m, n, c)\n"
+    "\n"
+    "Characteristic value of oblate spheroidal function\n"
+    "\n"
+    "Computes the characteristic value of oblate spheroidal wave\n"
+    "functions of order m,n (n>=m) and spheroidal parameter c.")
 ufunc_obl_cv_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_obl_cv_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_obl_cv_types[0] = <char>NPY_FLOAT
@@ -6640,9 +8461,20 @@ cdef void *ufunc_obl_rad1_ptr[4]
 cdef void *ufunc_obl_rad1_data[2]
 cdef char ufunc_obl_rad1_types[12]
 cdef char *ufunc_obl_rad1_doc = (
-    "(s,sp)=obl_rad1(m,n,c,x) computes the oblate sheroidal radial function\n"
-    "of the first kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.")
+    "obl_rad1(m,n,c,x)\n"
+    "\n"
+    "Oblate spheroidal radial function of the first kind and its derivative\n"
+    "\n"
+    "Computes the oblate spheroidal radial function of the first kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_obl_rad1_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_obl_rad1_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_obl_rad1_types[0] = <char>NPY_FLOAT
@@ -6670,10 +8502,21 @@ cdef void *ufunc_obl_rad1_cv_ptr[4]
 cdef void *ufunc_obl_rad1_cv_data[2]
 cdef char ufunc_obl_rad1_cv_types[14]
 cdef char *ufunc_obl_rad1_cv_doc = (
-    "(s,sp)=obl_rad1_cv(m,n,c,cv,x) computes the oblate sheroidal radial function\n"
-    "of the first kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\n"
-    "characteristic value.")
+    "obl_rad1_cv(m,n,c,cv,x)\n"
+    "\n"
+    "Oblate spheroidal radial function obl_rad1 for precomputed characteristic value\n"
+    "\n"
+    "Computes the oblate spheroidal radial function of the first kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
+    "pre-computed characteristic value.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_obl_rad1_cv_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_fffff_ff
 ufunc_obl_rad1_cv_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_ddddd_dd
 ufunc_obl_rad1_cv_types[0] = <char>NPY_FLOAT
@@ -6703,9 +8546,20 @@ cdef void *ufunc_obl_rad2_ptr[4]
 cdef void *ufunc_obl_rad2_data[2]
 cdef char ufunc_obl_rad2_types[12]
 cdef char *ufunc_obl_rad2_doc = (
-    "(s,sp)=obl_rad2(m,n,c,x) computes the oblate sheroidal radial function\n"
-    "of the second kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.")
+    "obl_rad2(m,n,c,x)\n"
+    "\n"
+    "Oblate spheroidal radial function of the second kind and its derivative.\n"
+    "\n"
+    "Computes the oblate spheroidal radial function of the second kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_obl_rad2_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_obl_rad2_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_obl_rad2_types[0] = <char>NPY_FLOAT
@@ -6733,10 +8587,21 @@ cdef void *ufunc_obl_rad2_cv_ptr[4]
 cdef void *ufunc_obl_rad2_cv_data[2]
 cdef char ufunc_obl_rad2_cv_types[14]
 cdef char *ufunc_obl_rad2_cv_doc = (
-    "(s,sp)=obl_rad2_cv(m,n,c,cv,x) computes the oblate sheroidal radial function\n"
-    "of the second kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\n"
-    "characteristic value.")
+    "obl_rad2_cv(m,n,c,cv,x)\n"
+    "\n"
+    "Oblate spheroidal radial function obl_rad2 for precomputed characteristic value\n"
+    "\n"
+    "Computes the oblate spheroidal radial function of the second kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
+    "pre-computed characteristic value.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_obl_rad2_cv_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_fffff_ff
 ufunc_obl_rad2_cv_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_ddddd_dd
 ufunc_obl_rad2_cv_types[0] = <char>NPY_FLOAT
@@ -6766,8 +8631,19 @@ cdef void *ufunc_pbdv_ptr[4]
 cdef void *ufunc_pbdv_data[2]
 cdef char ufunc_pbdv_types[8]
 cdef char *ufunc_pbdv_doc = (
-    "(d,dp)=pbdv(v,x) returns (d,dp) with the parabolic cylinder function Dv(x) in\n"
-    "d and the derivative, Dv'(x) in dp.")
+    "pbdv(v, x)\n"
+    "\n"
+    "Parabolic cylinder function D\n"
+    "\n"
+    "Returns (d,dp) the parabolic cylinder function Dv(x) in d and the\n"
+    "derivative, Dv'(x) in dp.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "d\n"
+    "    Value of the function\n"
+    "dp\n"
+    "    Value of the derivative vs x")
 ufunc_pbdv_loops[0] = <np.PyUFuncGenericFunction>loop_i_dd_dd_As_ff_ff
 ufunc_pbdv_loops[1] = <np.PyUFuncGenericFunction>loop_i_dd_dd_As_dd_dd
 ufunc_pbdv_types[0] = <char>NPY_FLOAT
@@ -6791,8 +8667,19 @@ cdef void *ufunc_pbvv_ptr[4]
 cdef void *ufunc_pbvv_data[2]
 cdef char ufunc_pbvv_types[8]
 cdef char *ufunc_pbvv_doc = (
-    "(v,vp)=pbvv(v,x) returns (v,vp) with the parabolic cylinder function Vv(x) in\n"
-    "v and the derivative, Vv'(x) in vp.")
+    "pbvv(v,x)\n"
+    "\n"
+    "Parabolic cylinder function V\n"
+    "\n"
+    "Returns the parabolic cylinder function Vv(x) in v and the\n"
+    "derivative, Vv'(x) in vp.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "v\n"
+    "    Value of the function\n"
+    "vp\n"
+    "    Value of the derivative vs x")
 ufunc_pbvv_loops[0] = <np.PyUFuncGenericFunction>loop_i_dd_dd_As_ff_ff
 ufunc_pbvv_loops[1] = <np.PyUFuncGenericFunction>loop_i_dd_dd_As_dd_dd
 ufunc_pbvv_types[0] = <char>NPY_FLOAT
@@ -6816,9 +8703,23 @@ cdef void *ufunc_pbwa_ptr[4]
 cdef void *ufunc_pbwa_data[2]
 cdef char ufunc_pbwa_types[8]
 cdef char *ufunc_pbwa_doc = (
-    "(w,wp)=pbwa(a,x) returns (w,wp) with the parabolic cylinder function W(a,x) in\n"
-    "w and the derivative, W'(a,x) in wp.  May not be accurate for large (>5)\n"
-    "arguments in a and/or x.")
+    "pbwa(a,x)\n"
+    "\n"
+    "Parabolic cylinder function W\n"
+    "\n"
+    "Returns the parabolic cylinder function W(a,x) in w and the\n"
+    "derivative, W'(a,x) in wp.\n"
+    "\n"
+    ".. warning::\n"
+    "\n"
+    "   May not be accurate for large (>5) arguments in a and/or x.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w\n"
+    "    Value of the function\n"
+    "wp\n"
+    "    Value of the derivative vs x")
 ufunc_pbwa_loops[0] = <np.PyUFuncGenericFunction>loop_i_dd_dd_As_ff_ff
 ufunc_pbwa_loops[1] = <np.PyUFuncGenericFunction>loop_i_dd_dd_As_dd_dd
 ufunc_pbwa_types[0] = <char>NPY_FLOAT
@@ -6842,9 +8743,13 @@ cdef void *ufunc_pdtr_ptr[8]
 cdef void *ufunc_pdtr_data[4]
 cdef char ufunc_pdtr_types[12]
 cdef char *ufunc_pdtr_doc = (
-    "y=pdtr(k,m) returns the sum of the first k terms of the Poisson\n"
-    "distribution: sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).\n"
-    "Arguments must both be positive and k an integer.")
+    "pdtr(k, m)\n"
+    "\n"
+    "Poisson cumulative distribution function\n"
+    "\n"
+    "Returns the sum of the first k terms of the Poisson distribution:\n"
+    "sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).  Arguments\n"
+    "must both be positive and k an integer.")
 ufunc_pdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_pdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_pdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -6880,9 +8785,13 @@ cdef void *ufunc_pdtrc_ptr[8]
 cdef void *ufunc_pdtrc_data[4]
 cdef char ufunc_pdtrc_types[12]
 cdef char *ufunc_pdtrc_doc = (
-    "y=pdtrc(k,m) returns the sum of the terms from k+1 to infinity of the\n"
-    "Poisson distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc( k+1, m).\n"
-    "Arguments must both be positive and k an integer.")
+    "pdtrc(k, m)\n"
+    "\n"
+    "Poisson survival function\n"
+    "\n"
+    "Returns the sum of the terms from k+1 to infinity of the Poisson\n"
+    "distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(\n"
+    "k+1, m).  Arguments must both be positive and k an integer.")
 ufunc_pdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_pdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_pdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -6918,10 +8827,14 @@ cdef void *ufunc_pdtri_ptr[8]
 cdef void *ufunc_pdtri_data[4]
 cdef char ufunc_pdtri_types[12]
 cdef char *ufunc_pdtri_doc = (
-    "m=pdtri(k,y) returns the Poisson variable m such that the sum\n"
-    "from 0 to k of the Poisson density is equal to the given probability\n"
-    "y:  calculated by gammaincinv( k+1, y).  k must be a nonnegative integer and\n"
-    "y between 0 and 1.")
+    "pdtri(k,y)\n"
+    "\n"
+    "Inverse to pdtr vs m\n"
+    "\n"
+    "Returns the Poisson variable m such that the sum from 0 to k of\n"
+    "the Poisson density is equal to the given probability y:\n"
+    "calculated by gammaincinv(k+1, y).  k must be a nonnegative\n"
+    "integer and y between 0 and 1.")
 ufunc_pdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_pdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_pdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -6957,7 +8870,11 @@ cdef void *ufunc_pdtrik_ptr[4]
 cdef void *ufunc_pdtrik_data[2]
 cdef char ufunc_pdtrik_types[6]
 cdef char *ufunc_pdtrik_doc = (
-    "k=pdtrik(p,m) returns the quantile k such that pdtr(k,m)=p")
+    "pdtrik(p,m)\n"
+    "\n"
+    "Inverse to pdtr vs k\n"
+    "\n"
+    "Returns the quantile k such that ``pdtr(k, m) = p``")
 ufunc_pdtrik_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_pdtrik_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_pdtrik_types[0] = <char>NPY_FLOAT
@@ -6974,14 +8891,57 @@ ufunc_pdtrik_data[0] = &ufunc_pdtrik_ptr[2*0]
 ufunc_pdtrik_data[1] = &ufunc_pdtrik_ptr[2*1]
 pdtrik = np.PyUFunc_FromFuncAndData(ufunc_pdtrik_loops, ufunc_pdtrik_data, ufunc_pdtrik_types, 2, 2, 1, 0, "pdtrik", ufunc_pdtrik_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_poch_loops[2]
+cdef void *ufunc_poch_ptr[4]
+cdef void *ufunc_poch_data[2]
+cdef char ufunc_poch_types[6]
+cdef char *ufunc_poch_doc = (
+    "poch(z, m)\n"
+    "\n"
+    "Rising factorial (z)_m\n"
+    "\n"
+    "The Pochhammer symbol (rising factorial), is defined as::\n"
+    "\n"
+    "    (z)_m = gamma(z + m) / gamma(z)\n"
+    "\n"
+    "For positive integer `m` it reads::\n"
+    "\n"
+    "    (z)_m = z * (z + 1) * ... * (z + m - 1)")
+ufunc_poch_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_poch_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_poch_types[0] = <char>NPY_FLOAT
+ufunc_poch_types[1] = <char>NPY_FLOAT
+ufunc_poch_types[2] = <char>NPY_FLOAT
+ufunc_poch_types[3] = <char>NPY_DOUBLE
+ufunc_poch_types[4] = <char>NPY_DOUBLE
+ufunc_poch_types[5] = <char>NPY_DOUBLE
+ufunc_poch_ptr[2*0] = <void*>_func_poch
+ufunc_poch_ptr[2*0+1] = <void*>(<char*>"poch")
+ufunc_poch_ptr[2*1] = <void*>_func_poch
+ufunc_poch_ptr[2*1+1] = <void*>(<char*>"poch")
+ufunc_poch_data[0] = &ufunc_poch_ptr[2*0]
+ufunc_poch_data[1] = &ufunc_poch_ptr[2*1]
+poch = np.PyUFunc_FromFuncAndData(ufunc_poch_loops, ufunc_poch_data, ufunc_poch_types, 2, 2, 1, 0, "poch", ufunc_poch_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_pro_ang1_loops[2]
 cdef void *ufunc_pro_ang1_ptr[4]
 cdef void *ufunc_pro_ang1_data[2]
 cdef char ufunc_pro_ang1_types[12]
 cdef char *ufunc_pro_ang1_doc = (
-    "(s,sp)=pro_ang1(m,n,c,x) computes the prolate sheroidal angular function\n"
-    "of the first kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.")
+    "pro_ang1(m,n,c,x)\n"
+    "\n"
+    "Prolate spheroidal angular function of the first kind and its derivative\n"
+    "\n"
+    "Computes the prolate spheroidal angular function of the first kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_pro_ang1_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_pro_ang1_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_pro_ang1_types[0] = <char>NPY_FLOAT
@@ -7009,10 +8969,21 @@ cdef void *ufunc_pro_ang1_cv_ptr[4]
 cdef void *ufunc_pro_ang1_cv_data[2]
 cdef char ufunc_pro_ang1_cv_types[14]
 cdef char *ufunc_pro_ang1_cv_doc = (
-    "(s,sp)=pro_ang1_cv(m,n,c,cv,x) computes the prolate sheroidal angular function\n"
-    "of the first kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\n"
-    "characteristic value.")
+    "pro_ang1_cv(m,n,c,cv,x)\n"
+    "\n"
+    "Prolate spheroidal angular function pro_ang1 for precomputed characteristic value\n"
+    "\n"
+    "Computes the prolate spheroidal angular function of the first kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
+    "pre-computed characteristic value.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_pro_ang1_cv_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_fffff_ff
 ufunc_pro_ang1_cv_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_ddddd_dd
 ufunc_pro_ang1_cv_types[0] = <char>NPY_FLOAT
@@ -7042,8 +9013,12 @@ cdef void *ufunc_pro_cv_ptr[4]
 cdef void *ufunc_pro_cv_data[2]
 cdef char ufunc_pro_cv_types[8]
 cdef char *ufunc_pro_cv_doc = (
-    "cv=pro_cv(m,n,c) computes the characteristic value of prolate spheroidal\n"
-    "wave functions of order m,n (n>=m) and spheroidal parameter c.")
+    "pro_cv(m,n,c)\n"
+    "\n"
+    "Characteristic value of prolate spheroidal function\n"
+    "\n"
+    "Computes the characteristic value of prolate spheroidal wave\n"
+    "functions of order m,n (n>=m) and spheroidal parameter c.")
 ufunc_pro_cv_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_pro_cv_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_pro_cv_types[0] = <char>NPY_FLOAT
@@ -7067,9 +9042,20 @@ cdef void *ufunc_pro_rad1_ptr[4]
 cdef void *ufunc_pro_rad1_data[2]
 cdef char ufunc_pro_rad1_types[12]
 cdef char *ufunc_pro_rad1_doc = (
-    "(s,sp)=pro_rad1(m,n,c,x) computes the prolate sheroidal radial function\n"
-    "of the first kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``.")
+    "pro_rad1(m,n,c,x)\n"
+    "\n"
+    "Prolate spheroidal radial function of the first kind and its derivative\n"
+    "\n"
+    "Computes the prolate spheroidal radial function of the first kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_pro_rad1_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_pro_rad1_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_pro_rad1_types[0] = <char>NPY_FLOAT
@@ -7097,10 +9083,21 @@ cdef void *ufunc_pro_rad1_cv_ptr[4]
 cdef void *ufunc_pro_rad1_cv_data[2]
 cdef char ufunc_pro_rad1_cv_types[14]
 cdef char *ufunc_pro_rad1_cv_doc = (
-    "(s,sp)=pro_rad1_cv(m,n,c,cv,x) computes the prolate sheroidal radial function\n"
-    "of the first kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\n"
-    "characteristic value.")
+    "pro_rad1_cv(m,n,c,cv,x)\n"
+    "\n"
+    "Prolate spheroidal radial function pro_rad1 for precomputed characteristic value\n"
+    "\n"
+    "Computes the prolate spheroidal radial function of the first kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
+    "pre-computed characteristic value.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_pro_rad1_cv_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_fffff_ff
 ufunc_pro_rad1_cv_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_ddddd_dd
 ufunc_pro_rad1_cv_types[0] = <char>NPY_FLOAT
@@ -7130,9 +9127,20 @@ cdef void *ufunc_pro_rad2_ptr[4]
 cdef void *ufunc_pro_rad2_data[2]
 cdef char ufunc_pro_rad2_types[12]
 cdef char *ufunc_pro_rad2_doc = (
-    "(s,sp)=pro_rad2(m,n,c,x) computes the prolate sheroidal radial function\n"
-    "of the second kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and |x|<1.0.")
+    "pro_rad2(m,n,c,x)\n"
+    "\n"
+    "Prolate spheroidal radial function of the secon kind and its derivative\n"
+    "\n"
+    "Computes the prolate spheroidal radial function of the second kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_pro_rad2_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
 ufunc_pro_rad2_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_pro_rad2_types[0] = <char>NPY_FLOAT
@@ -7160,10 +9168,21 @@ cdef void *ufunc_pro_rad2_cv_ptr[4]
 cdef void *ufunc_pro_rad2_cv_data[2]
 cdef char ufunc_pro_rad2_cv_types[14]
 cdef char *ufunc_pro_rad2_cv_doc = (
-    "(s,sp)=pro_rad2_cv(m,n,c,cv,x) computes the prolate sheroidal radial function\n"
-    "of the second kind and its derivative (with respect to x) for mode parameters\n"
-    "m>=0 and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires pre-computed\n"
-    "characteristic value.")
+    "pro_rad2_cv(m,n,c,cv,x)\n"
+    "\n"
+    "Prolate spheroidal radial function pro_rad2 for precomputed characteristic value\n"
+    "\n"
+    "Computes the prolate spheroidal radial function of the second kind\n"
+    "and its derivative (with respect to x) for mode parameters m>=0\n"
+    "and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires\n"
+    "pre-computed characteristic value.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "s\n"
+    "    Value of the function\n"
+    "sp\n"
+    "    Value of the derivative vs x")
 ufunc_pro_rad2_cv_loops[0] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_fffff_ff
 ufunc_pro_rad2_cv_loops[1] = <np.PyUFuncGenericFunction>loop_i_ddddd_dd_As_ddddd_dd
 ufunc_pro_rad2_cv_types[0] = <char>NPY_FLOAT
@@ -7188,13 +9207,61 @@ ufunc_pro_rad2_cv_data[0] = &ufunc_pro_rad2_cv_ptr[2*0]
 ufunc_pro_rad2_cv_data[1] = &ufunc_pro_rad2_cv_ptr[2*1]
 pro_rad2_cv = np.PyUFunc_FromFuncAndData(ufunc_pro_rad2_cv_loops, ufunc_pro_rad2_cv_data, ufunc_pro_rad2_cv_types, 2, 5, 2, 0, "pro_rad2_cv", ufunc_pro_rad2_cv_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_pseudo_huber_loops[2]
+cdef void *ufunc_pseudo_huber_ptr[4]
+cdef void *ufunc_pseudo_huber_data[2]
+cdef char ufunc_pseudo_huber_types[6]
+cdef char *ufunc_pseudo_huber_doc = (
+    "pseudo_huber(delta, r)\n"
+    "\n"
+    "Pseudo-Huber loss function.\n"
+    "\n"
+    ".. math:: \\text{pseudo\\_huber}(\\delta, r) = \\delta^2 \\left( \\sqrt{ 1 + \\left( \\frac{r}{\\delta} \\right)^2 } - 1 \\right)\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "delta : ndarray\n"
+    "    Input array, indicating the soft quadratic vs. linear loss changepoint.\n"
+    "r : ndarray\n"
+    "    Input array, possibly representing residuals.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    The computed Pseudo-Huber loss function values.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is convex in r.\n"
+    "\n"
+    ".. versionadded:: 0.15.0")
+ufunc_pseudo_huber_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_pseudo_huber_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_pseudo_huber_types[0] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[1] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[2] = <char>NPY_FLOAT
+ufunc_pseudo_huber_types[3] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_types[4] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_types[5] = <char>NPY_DOUBLE
+ufunc_pseudo_huber_ptr[2*0] = <void*>_func_pseudo_huber
+ufunc_pseudo_huber_ptr[2*0+1] = <void*>(<char*>"pseudo_huber")
+ufunc_pseudo_huber_ptr[2*1] = <void*>_func_pseudo_huber
+ufunc_pseudo_huber_ptr[2*1+1] = <void*>(<char*>"pseudo_huber")
+ufunc_pseudo_huber_data[0] = &ufunc_pseudo_huber_ptr[2*0]
+ufunc_pseudo_huber_data[1] = &ufunc_pseudo_huber_ptr[2*1]
+pseudo_huber = np.PyUFunc_FromFuncAndData(ufunc_pseudo_huber_loops, ufunc_pseudo_huber_data, ufunc_pseudo_huber_types, 2, 2, 1, 0, "pseudo_huber", ufunc_pseudo_huber_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_psi_loops[4]
 cdef void *ufunc_psi_ptr[8]
 cdef void *ufunc_psi_data[4]
 cdef char ufunc_psi_types[8]
 cdef char *ufunc_psi_doc = (
-    "y=psi(z) is the derivative of the logarithm of the gamma function\n"
-    "evaluated at z (also called the digamma function).")
+    "psi(z)\n"
+    "\n"
+    "Digamma function\n"
+    "\n"
+    "The derivative of the logarithm of the gamma function evaluated at\n"
+    "z (also called the digamma function).")
 ufunc_psi_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_psi_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_psi_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
@@ -7226,8 +9293,12 @@ cdef void *ufunc_radian_ptr[4]
 cdef void *ufunc_radian_data[2]
 cdef char ufunc_radian_types[8]
 cdef char *ufunc_radian_doc = (
-    "y=radian(d,m,s) returns the angle given in (d)egrees, (m)inutes, and\n"
-    "(s)econds in radians.")
+    "radian(d, m, s)\n"
+    "\n"
+    "Convert from degrees to radians\n"
+    "\n"
+    "Returns the angle given in (d)egrees, (m)inutes, and (s)econds in\n"
+    "radians.")
 ufunc_radian_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_radian_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_radian_types[0] = <char>NPY_FLOAT
@@ -7246,12 +9317,64 @@ ufunc_radian_data[0] = &ufunc_radian_ptr[2*0]
 ufunc_radian_data[1] = &ufunc_radian_ptr[2*1]
 radian = np.PyUFunc_FromFuncAndData(ufunc_radian_loops, ufunc_radian_data, ufunc_radian_types, 2, 3, 1, 0, "radian", ufunc_radian_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_rel_entr_loops[2]
+cdef void *ufunc_rel_entr_ptr[4]
+cdef void *ufunc_rel_entr_data[2]
+cdef char ufunc_rel_entr_types[6]
+cdef char *ufunc_rel_entr_doc = (
+    "rel_entr(x, y)\n"
+    "\n"
+    "Elementwise function for computing relative entropy.\n"
+    "\n"
+    ".. math:: \\text{rel\\_entr}(x, y) = \\begin{cases} x \\log(x / y) & x > 0, y > 0 \\\\ 0 & x = 0, y \\ge 0 \\\\ \\infty & \\text{otherwise} \\end{cases}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : ndarray\n"
+    "    First input array.\n"
+    "y : ndarray\n"
+    "    Second input array.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    Output array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "entr, kl_div\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is jointly convex in x and y.\n"
+    "\n"
+    ".. versionadded:: 0.14.0")
+ufunc_rel_entr_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_rel_entr_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_rel_entr_types[0] = <char>NPY_FLOAT
+ufunc_rel_entr_types[1] = <char>NPY_FLOAT
+ufunc_rel_entr_types[2] = <char>NPY_FLOAT
+ufunc_rel_entr_types[3] = <char>NPY_DOUBLE
+ufunc_rel_entr_types[4] = <char>NPY_DOUBLE
+ufunc_rel_entr_types[5] = <char>NPY_DOUBLE
+ufunc_rel_entr_ptr[2*0] = <void*>_func_rel_entr
+ufunc_rel_entr_ptr[2*0+1] = <void*>(<char*>"rel_entr")
+ufunc_rel_entr_ptr[2*1] = <void*>_func_rel_entr
+ufunc_rel_entr_ptr[2*1+1] = <void*>(<char*>"rel_entr")
+ufunc_rel_entr_data[0] = &ufunc_rel_entr_ptr[2*0]
+ufunc_rel_entr_data[1] = &ufunc_rel_entr_ptr[2*1]
+rel_entr = np.PyUFunc_FromFuncAndData(ufunc_rel_entr_loops, ufunc_rel_entr_data, ufunc_rel_entr_types, 2, 2, 1, 0, "rel_entr", ufunc_rel_entr_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_rgamma_loops[4]
 cdef void *ufunc_rgamma_ptr[8]
 cdef void *ufunc_rgamma_data[4]
 cdef char ufunc_rgamma_types[8]
 cdef char *ufunc_rgamma_doc = (
-    "y=rgamma(z) returns one divided by the gamma function of x.")
+    "rgamma(z)\n"
+    "\n"
+    "Gamma function inverted\n"
+    "\n"
+    "Returns ``1/gamma(x)``")
 ufunc_rgamma_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_rgamma_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_rgamma_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
@@ -7283,9 +9406,13 @@ cdef void *ufunc_round_ptr[4]
 cdef void *ufunc_round_data[2]
 cdef char ufunc_round_types[4]
 cdef char *ufunc_round_doc = (
-    "y=Returns the nearest integer to x as a double precision\n"
-    "floating point result.  If x ends in 0.5 exactly, the\n"
-    "nearest even integer is chosen.")
+    "round(x)\n"
+    "\n"
+    "Round to nearest integer\n"
+    "\n"
+    "Returns the nearest integer to x as a double precision floating\n"
+    "point result.  If x ends in 0.5 exactly, the nearest even integer\n"
+    "is chosen.")
 ufunc_round_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_round_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_round_types[0] = <char>NPY_FLOAT
@@ -7305,9 +9432,17 @@ cdef void *ufunc_shichi_ptr[4]
 cdef void *ufunc_shichi_data[2]
 cdef char ufunc_shichi_types[6]
 cdef char *ufunc_shichi_doc = (
-    "(shi,chi)=shichi(x) returns the hyperbolic sine and cosine integrals:\n"
-    "integral(sinh(t)/t,t=0..x) and eul + ln x +\n"
-    "integral((cosh(t)-1)/t,t=0..x) where eul is Euler's Constant.")
+    "shichi(x)\n"
+    "\n"
+    "Hyperbolic sine and cosine integrals\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "shi\n"
+    "    ``integral(sinh(t)/t, t=0..x)``\n"
+    "chi\n"
+    "    ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``\n"
+    "    where ``eul`` is Euler's constant.")
 ufunc_shichi_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_shichi_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
 ufunc_shichi_types[0] = <char>NPY_FLOAT
@@ -7329,9 +9464,17 @@ cdef void *ufunc_sici_ptr[4]
 cdef void *ufunc_sici_data[2]
 cdef char ufunc_sici_types[6]
 cdef char *ufunc_sici_doc = (
-    "(si,ci)=sici(x) returns in si the integral of the sinc function from 0 to x:\n"
-    "integral(sin(t)/t,t=0..x).  It returns in ci the cosine integral: eul + ln x +\n"
-    "integral((cos(t) - 1)/t,t=0..x).")
+    "sici(x)\n"
+    "\n"
+    "Sine and cosine integrals\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "si\n"
+    "    ``integral(sin(t)/t, t=0..x)``\n"
+    "ci\n"
+    "    ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``\n"
+    "    where ``eul`` is Euler's constant.")
 ufunc_sici_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_sici_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
 ufunc_sici_types[0] = <char>NPY_FLOAT
@@ -7353,7 +9496,9 @@ cdef void *ufunc_sindg_ptr[4]
 cdef void *ufunc_sindg_data[2]
 cdef char ufunc_sindg_types[4]
 cdef char *ufunc_sindg_doc = (
-    "y=sindg(x) calculates the sine of the angle x given in degrees.")
+    "sindg(x)\n"
+    "\n"
+    "Sine of angle given in degrees")
 ufunc_sindg_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_sindg_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_sindg_types[0] = <char>NPY_FLOAT
@@ -7373,11 +9518,16 @@ cdef void *ufunc_smirnov_ptr[8]
 cdef void *ufunc_smirnov_data[4]
 cdef char ufunc_smirnov_types[12]
 cdef char *ufunc_smirnov_doc = (
-    "y=smirnov(n,e) returns the exact Kolmogorov-Smirnov complementary\n"
-    "cumulative distribution function (Dn+ or Dn-) for a one-sided test of\n"
-    "equality between an empirical and a theoretical distribution. It is equal\n"
-    "to the probability that the maximum difference between a theoretical\n"
-    "distribution and an empirical one based on n samples is greater than e.")
+    "smirnov(n, e)\n"
+    "\n"
+    "Kolmogorov-Smirnov complementary cumulative distribution function\n"
+    "\n"
+    "Returns the exact Kolmogorov-Smirnov complementary cumulative\n"
+    "distribution function (Dn+ or Dn-) for a one-sided test of\n"
+    "equality between an empirical and a theoretical distribution. It\n"
+    "is equal to the probability that the maximum difference between a\n"
+    "theoretical distribution and an empirical one based on n samples\n"
+    "is greater than e.")
 ufunc_smirnov_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_smirnov_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_smirnov_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -7413,7 +9563,11 @@ cdef void *ufunc_smirnovi_ptr[8]
 cdef void *ufunc_smirnovi_data[4]
 cdef char ufunc_smirnovi_types[12]
 cdef char *ufunc_smirnovi_doc = (
-    "e=smirnovi(n,y) returns e such that smirnov(n,e) = y.")
+    "smirnovi(n, y)\n"
+    "\n"
+    "Inverse to smirnov\n"
+    "\n"
+    "Returns ``e`` such that ``smirnov(n, e) = y``.")
 ufunc_smirnovi_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_smirnovi_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_smirnovi_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -7449,8 +9603,13 @@ cdef void *ufunc_spence_ptr[4]
 cdef void *ufunc_spence_data[2]
 cdef char ufunc_spence_types[4]
 cdef char *ufunc_spence_doc = (
-    "y=spence(x) returns the dilogarithm integral: -integral(log t /\n"
-    "(t-1),t=1..x)")
+    "spence(x)\n"
+    "\n"
+    "Dilogarithm integral\n"
+    "\n"
+    "Returns the dilogarithm integral::\n"
+    "\n"
+    "    -integral(log t / (t-1),t=1..x)")
 ufunc_spence_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_spence_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_spence_types[0] = <char>NPY_FLOAT
@@ -7465,15 +9624,97 @@ ufunc_spence_data[0] = &ufunc_spence_ptr[2*0]
 ufunc_spence_data[1] = &ufunc_spence_ptr[2*1]
 spence = np.PyUFunc_FromFuncAndData(ufunc_spence_loops, ufunc_spence_data, ufunc_spence_types, 2, 1, 1, 0, "spence", ufunc_spence_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_sph_harm_loops[4]
+cdef void *ufunc_sph_harm_ptr[8]
+cdef void *ufunc_sph_harm_data[4]
+cdef char ufunc_sph_harm_types[20]
+cdef char *ufunc_sph_harm_doc = (
+    "sph_harm(m, n, theta, phi)\n"
+    "\n"
+    "Compute spherical harmonics.\n"
+    "\n"
+    ".. math:: Y^m_n(\\theta,\\phi) = \\sqrt{\\frac{2n+1}{4\\pi}\\frac{(n-m)!}{(n+m)!}} e^{i m \\theta} P^m_n(\\cos(\\phi))\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "m : int\n"
+    "   ``|m| <= n``; the order of the harmonic.\n"
+    "n : int\n"
+    "   where `n` >= 0; the degree of the harmonic.  This is often called\n"
+    "   ``l`` (lower case L) in descriptions of spherical harmonics.\n"
+    "theta : float\n"
+    "   [0, 2*pi]; the azimuthal (longitudinal) coordinate.\n"
+    "phi : float\n"
+    "   [0, pi]; the polar (colatitudinal) coordinate.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "y_mn : complex float\n"
+    "   The harmonic :math:`Y^m_n` sampled at `theta` and `phi`\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "There are different conventions for the meaning of input arguments\n"
+    "`theta` and `phi`.  We take `theta` to be the azimuthal angle and\n"
+    "`phi` to be the polar angle.  It is common to see the opposite\n"
+    "convention - that is `theta` as the polar angle and `phi` as the\n"
+    "azimuthal angle.\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Digital Library of Mathematical Functions, 14.30. http://dlmf.nist.gov/14.30")
+ufunc_sph_harm_loops[0] = <np.PyUFuncGenericFunction>loop_D_iidd__As_llff_F
+ufunc_sph_harm_loops[1] = <np.PyUFuncGenericFunction>loop_D_iidd__As_lldd_D
+ufunc_sph_harm_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddd__As_ffff_F
+ufunc_sph_harm_loops[3] = <np.PyUFuncGenericFunction>loop_D_dddd__As_dddd_D
+ufunc_sph_harm_types[0] = <char>NPY_LONG
+ufunc_sph_harm_types[1] = <char>NPY_LONG
+ufunc_sph_harm_types[2] = <char>NPY_FLOAT
+ufunc_sph_harm_types[3] = <char>NPY_FLOAT
+ufunc_sph_harm_types[4] = <char>NPY_CFLOAT
+ufunc_sph_harm_types[5] = <char>NPY_LONG
+ufunc_sph_harm_types[6] = <char>NPY_LONG
+ufunc_sph_harm_types[7] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[8] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[9] = <char>NPY_CDOUBLE
+ufunc_sph_harm_types[10] = <char>NPY_FLOAT
+ufunc_sph_harm_types[11] = <char>NPY_FLOAT
+ufunc_sph_harm_types[12] = <char>NPY_FLOAT
+ufunc_sph_harm_types[13] = <char>NPY_FLOAT
+ufunc_sph_harm_types[14] = <char>NPY_CFLOAT
+ufunc_sph_harm_types[15] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[16] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[17] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[18] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[19] = <char>NPY_CDOUBLE
+ufunc_sph_harm_ptr[2*0] = <void*>_func_sph_harmonic
+ufunc_sph_harm_ptr[2*0+1] = <void*>(<char*>"sph_harm")
+ufunc_sph_harm_ptr[2*1] = <void*>_func_sph_harmonic
+ufunc_sph_harm_ptr[2*1+1] = <void*>(<char*>"sph_harm")
+ufunc_sph_harm_ptr[2*2] = <void*>_func_sph_harmonic_unsafe
+ufunc_sph_harm_ptr[2*2+1] = <void*>(<char*>"sph_harm")
+ufunc_sph_harm_ptr[2*3] = <void*>_func_sph_harmonic_unsafe
+ufunc_sph_harm_ptr[2*3+1] = <void*>(<char*>"sph_harm")
+ufunc_sph_harm_data[0] = &ufunc_sph_harm_ptr[2*0]
+ufunc_sph_harm_data[1] = &ufunc_sph_harm_ptr[2*1]
+ufunc_sph_harm_data[2] = &ufunc_sph_harm_ptr[2*2]
+ufunc_sph_harm_data[3] = &ufunc_sph_harm_ptr[2*3]
+sph_harm = np.PyUFunc_FromFuncAndData(ufunc_sph_harm_loops, ufunc_sph_harm_data, ufunc_sph_harm_types, 4, 4, 1, 0, "sph_harm", ufunc_sph_harm_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_stdtr_loops[2]
 cdef void *ufunc_stdtr_ptr[4]
 cdef void *ufunc_stdtr_data[2]
 cdef char ufunc_stdtr_types[6]
 cdef char *ufunc_stdtr_doc = (
-    "p=stdtr(df,t) returns the integral from minus infinity to t of the Student t\n"
-    "distribution with df > 0 degrees of freedom:\n"
-    "gamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) * integral((1+x**2/df)**(-df/2-1/2),\n"
-    "x=-inf..t)")
+    "stdtr(df,t)\n"
+    "\n"
+    "Student t distribution cumulative density function\n"
+    "\n"
+    "Returns the integral from minus infinity to t of the Student t\n"
+    "distribution with df > 0 degrees of freedom::\n"
+    "\n"
+    "   gamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) *\n"
+    "   integral((1+x**2/df)**(-df/2-1/2), x=-inf..t)")
 ufunc_stdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_stdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_stdtr_types[0] = <char>NPY_FLOAT
@@ -7495,7 +9736,11 @@ cdef void *ufunc_stdtridf_ptr[4]
 cdef void *ufunc_stdtridf_data[2]
 cdef char ufunc_stdtridf_types[6]
 cdef char *ufunc_stdtridf_doc = (
-    "t=stdtridf(p,t) returns the argument df such that stdtr(df,t) is equal to p.")
+    "stdtridf(p,t)\n"
+    "\n"
+    "Inverse of stdtr vs df\n"
+    "\n"
+    "Returns the argument df such that stdtr(df,t) is equal to p.")
 ufunc_stdtridf_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_stdtridf_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_stdtridf_types[0] = <char>NPY_FLOAT
@@ -7517,7 +9762,11 @@ cdef void *ufunc_stdtrit_ptr[4]
 cdef void *ufunc_stdtrit_data[2]
 cdef char ufunc_stdtrit_types[6]
 cdef char *ufunc_stdtrit_doc = (
-    "t=stdtrit(df,p) returns the argument t such that stdtr(df,t) is equal to p.")
+    "stdtrit(df,p)\n"
+    "\n"
+    "Inverse of stdtr vs t\n"
+    "\n"
+    "Returns the argument t such that stdtr(df,t) is equal to p.")
 ufunc_stdtrit_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_stdtrit_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_stdtrit_types[0] = <char>NPY_FLOAT
@@ -7539,8 +9788,12 @@ cdef void *ufunc_struve_ptr[4]
 cdef void *ufunc_struve_data[2]
 cdef char ufunc_struve_types[6]
 cdef char *ufunc_struve_doc = (
-    "y=struve(v,x) returns the Struve function Hv(x) of order v at x, x\n"
-    "must be positive unless v is an integer.")
+    "struve(v,x)\n"
+    "\n"
+    "Struve function\n"
+    "\n"
+    "Computes the struve function Hv(x) of order v at x, x must be\n"
+    "positive unless v is an integer.")
 ufunc_struve_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_struve_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_struve_types[0] = <char>NPY_FLOAT
@@ -7562,7 +9815,9 @@ cdef void *ufunc_tandg_ptr[4]
 cdef void *ufunc_tandg_data[2]
 cdef char ufunc_tandg_types[4]
 cdef char *ufunc_tandg_doc = (
-    "y=tandg(x) calculates the tangent of the angle x given in degrees.")
+    "tandg(x)\n"
+    "\n"
+    "Tangent of angle x given in degrees.")
 ufunc_tandg_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_tandg_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_tandg_types[0] = <char>NPY_FLOAT
@@ -7582,7 +9837,9 @@ cdef void *ufunc_tklmbda_ptr[4]
 cdef void *ufunc_tklmbda_data[2]
 cdef char ufunc_tklmbda_types[6]
 cdef char *ufunc_tklmbda_doc = (
-    "")
+    "tklmbda(x, lmbda)\n"
+    "\n"
+    "Tukey-Lambda cumulative distribution function")
 ufunc_tklmbda_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_tklmbda_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_tklmbda_types[0] = <char>NPY_FLOAT
@@ -7604,8 +9861,13 @@ cdef void *ufunc_wofz_ptr[4]
 cdef void *ufunc_wofz_data[2]
 cdef char ufunc_wofz_types[4]
 cdef char *ufunc_wofz_doc = (
-    "y=wofz(z) returns the value of the fadeeva function for complex argument\n"
-    "z: exp(-z**2)*erfc(-i*z)\n"
+    "wofz(z)\n"
+    "\n"
+    "Faddeeva function\n"
+    "\n"
+    "Returns the value of the Faddeeva function for complex argument::\n"
+    "\n"
+    "    exp(-z**2)*erfc(-i*z)\n"
     "\n"
     "References\n"
     "----------\n"
@@ -7644,7 +9906,12 @@ cdef char *ufunc_xlog1py_doc = (
     "Returns\n"
     "-------\n"
     "z : array_like\n"
-    "    Computed x*log1p(y)")
+    "    Computed x*log1p(y)\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.13.0")
 ufunc_xlog1py_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_xlog1py_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_xlog1py_types[0] = <char>NPY_FLOAT
@@ -7680,7 +9947,12 @@ cdef char *ufunc_xlogy_doc = (
     "Returns\n"
     "-------\n"
     "z : array_like\n"
-    "    Computed x*log(y)")
+    "    Computed x*log(y)\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "\n"
+    ".. versionadded:: 0.13.0")
 ufunc_xlogy_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_xlogy_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_xlogy_loops[2] = <np.PyUFuncGenericFunction>loop_D_DD__As_FF_F
@@ -7716,7 +9988,11 @@ cdef void *ufunc_y0_ptr[4]
 cdef void *ufunc_y0_data[2]
 cdef char ufunc_y0_types[4]
 cdef char *ufunc_y0_doc = (
-    "y=y0(x) returns the Bessel function of the second kind of order 0 at x.")
+    "y0(x)\n"
+    "\n"
+    "Bessel function of the second kind of order 0\n"
+    "\n"
+    "Returns the Bessel function of the second kind of order 0 at x.")
 ufunc_y0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_y0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_y0_types[0] = <char>NPY_FLOAT
@@ -7736,7 +10012,11 @@ cdef void *ufunc_y1_ptr[4]
 cdef void *ufunc_y1_data[2]
 cdef char ufunc_y1_types[4]
 cdef char *ufunc_y1_doc = (
-    "y=y1(x) returns the Bessel function of the second kind of order 1 at x.")
+    "y1(x)\n"
+    "\n"
+    "Bessel function of the second kind of order 1\n"
+    "\n"
+    "Returns the Bessel function of the second kind of order 1 at x.")
 ufunc_y1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_y1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_y1_types[0] = <char>NPY_FLOAT
@@ -7756,8 +10036,12 @@ cdef void *ufunc_yn_ptr[8]
 cdef void *ufunc_yn_data[4]
 cdef char ufunc_yn_types[12]
 cdef char *ufunc_yn_doc = (
-    "y=yn(n,x) returns the Bessel function of the second kind of integer\n"
-    "order n at x.")
+    "yn(n,x)\n"
+    "\n"
+    "Bessel function of the second kind of integer order\n"
+    "\n"
+    "Returns the Bessel function of the second kind of integer order n\n"
+    "at x.")
 ufunc_yn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
 ufunc_yn_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_yn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -7793,8 +10077,12 @@ cdef void *ufunc_yv_ptr[8]
 cdef void *ufunc_yv_data[4]
 cdef char ufunc_yv_types[12]
 cdef char *ufunc_yv_doc = (
-    "y=yv(v,z) returns the Bessel function of the second kind of real\n"
-    "order v at complex z.")
+    "yv(v,z)\n"
+    "\n"
+    "Bessel function of the second kind of real order\n"
+    "\n"
+    "Returns the Bessel function of the second kind of real order v at\n"
+    "complex z.")
 ufunc_yv_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_yv_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_yv_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -7830,8 +10118,14 @@ cdef void *ufunc_yve_ptr[8]
 cdef void *ufunc_yve_data[4]
 cdef char ufunc_yve_types[12]
 cdef char *ufunc_yve_doc = (
-    "y=yve(v,z) returns the exponentially scaled Bessel function of the second\n"
-    "kind of real order v at complex z: yve(v,z) = yv(v,z) * exp(-abs(z.imag))")
+    "yve(v,z)\n"
+    "\n"
+    "Exponentially scaled Bessel function of the second kind of real order\n"
+    "\n"
+    "Returns the exponentially scaled Bessel function of the second\n"
+    "kind of real order v at complex z::\n"
+    "\n"
+    "    yve(v,z) = yv(v,z) * exp(-abs(z.imag))")
 ufunc_yve_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_yve_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_yve_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -7867,8 +10161,22 @@ cdef void *ufunc_zeta_ptr[4]
 cdef void *ufunc_zeta_data[2]
 cdef char ufunc_zeta_types[6]
 cdef char *ufunc_zeta_doc = (
-    "y=zeta(x,q) returns the Riemann zeta function of two arguments:\n"
-    "sum((k+q)**(-x),k=0..inf)")
+    "zeta(x, q)\n"
+    "\n"
+    "Hurwitz zeta function\n"
+    "\n"
+    "The Riemann zeta function of two arguments (also known as the\n"
+    "Hurwitz zeta funtion).\n"
+    "\n"
+    "This function is defined as\n"
+    "\n"
+    ".. math:: \\zeta(x, q) = \\sum_{k=0}^{\\infty} 1 / (k+q)^x,\n"
+    "\n"
+    "where ``x > 1`` and ``q > 0``.\n"
+    "\n"
+    "See also\n"
+    "--------\n"
+    "zetac")
 ufunc_zeta_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_zeta_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_zeta_types[0] = <char>NPY_FLOAT
@@ -7890,7 +10198,19 @@ cdef void *ufunc_zetac_ptr[4]
 cdef void *ufunc_zetac_data[2]
 cdef char ufunc_zetac_types[4]
 cdef char *ufunc_zetac_doc = (
-    "y=zetac(x) returns 1.0 - the Riemann zeta function: sum(k**(-x), k=2..inf)")
+    "zetac(x)\n"
+    "\n"
+    "Riemann zeta function minus 1.\n"
+    "\n"
+    "This function is defined as\n"
+    "\n"
+    ".. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,\n"
+    "\n"
+    "where ``x > 1``.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "zeta")
 ufunc_zetac_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_zetac_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_zetac_types[0] = <char>NPY_FLOAT

@@ -190,9 +190,10 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     npy_intp kk, hh, size;
     Float64 *iparameters = (void *)PyArray_DATA(parameter_array);
     int ll;
+    NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the parameters: */
-    parameters = (double*)malloc(input->nd * sizeof(double));
+    parameters = malloc(input->nd * sizeof(double));
     if (!parameters) {
         PyErr_NoMemory();
         goto exit;
@@ -215,7 +216,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         }
     }
     /* allocate memory for tables: */
-    params = (double**) malloc(input->nd * sizeof(double*));
+    params = malloc(input->nd * sizeof(double*));
     if (!params) {
         PyErr_NoMemory();
         goto exit;
@@ -224,13 +225,16 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         params[kk] = NULL;
     for(kk = 0; kk < input->nd; kk++) {
         if (input->dimensions[kk] > 1) {
-            params[kk] = (double*)malloc(input->dimensions[kk] * sizeof(double));
+            params[kk] = malloc(input->dimensions[kk] * sizeof(double));
             if (!params[kk]) {
                 PyErr_NoMemory();
                 goto exit;
             }
         }
     }
+
+    NPY_BEGIN_THREADS;
+
     switch (filter_type) {
         case _NI_GAUSSIAN:
             /* calculate the tables of exponentials: */
@@ -360,25 +364,27 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         default:
             break;
         }
-        if (input->descr->type_num == tComplex64 ||
-                input->descr->type_num == tComplex128) {
+        if (NI_NormalizeType(input->descr->type_num) == tComplex64 ||
+                NI_NormalizeType(input->descr->type_num) == tComplex128) {
             double tmp_r = 0.0, tmp_i = 0.0;
-            switch (input->descr->type_num) {
+            switch (NI_NormalizeType(input->descr->type_num)) {
                 CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex64);
                 CASE_FOURIER_FILTER_RC(pi, tmp, tmp_r, tmp_i, Complex128);
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
-            switch (output->descr->type_num) {
+            switch (NI_NormalizeType(output->descr->type_num)) {
                 CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex64);
                 CASE_FOURIER_OUT_CC(po, tmp_r, tmp_i, Complex128);
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
         } else {
-            switch (input->descr->type_num) {
+            switch (NI_NormalizeType(input->descr->type_num)) {
                 CASE_FOURIER_FILTER_RR(pi, tmp, Bool)
                 CASE_FOURIER_FILTER_RR(pi, tmp, UInt8)
                 CASE_FOURIER_FILTER_RR(pi, tmp, UInt16)
@@ -393,15 +399,17 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 CASE_FOURIER_FILTER_RR(pi, tmp, Float32)
                 CASE_FOURIER_FILTER_RR(pi, tmp, Float64)
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
-            switch (output->descr->type_num) {
+            switch (NI_NormalizeType(output->descr->type_num)) {
                 CASE_FOURIER_OUT_RR(po, tmp, Float32);
                 CASE_FOURIER_OUT_RR(po, tmp, Float64);
                 CASE_FOURIER_OUT_RC(po, tmp, Complex64);
                 CASE_FOURIER_OUT_RC(po, tmp, Complex128);
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 goto exit;
             }
@@ -410,10 +418,11 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     }
 
  exit:
-    if (parameters) free(parameters);
+    NPY_END_THREADS;
+    free(parameters);
     if (params) {
         for(kk = 0; kk < input->nd; kk++)
-            if (params[kk]) free(params[kk]);
+            free(params[kk]);
         free(params);
     }
     return PyErr_Occurred() ? 0 : 1;
@@ -441,9 +450,10 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     npy_intp kk, hh, size;
     Float64 *ishifts = (void *)PyArray_DATA(shift_array);
     int ll;
+    NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the shifts: */
-    shifts = (double*)malloc(input->nd * sizeof(double));
+    shifts = malloc(input->nd * sizeof(double));
     if (!shifts) {
         PyErr_NoMemory();
         goto exit;
@@ -457,7 +467,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
         shifts[kk] = -2.0 * M_PI * *ishifts++ / (double)shape;
     }
     /* allocate memory for tables: */
-    params = (double**) malloc(input->nd * sizeof(double*));
+    params = malloc(input->nd * sizeof(double*));
     if (!params) {
         PyErr_NoMemory();
         goto exit;
@@ -466,13 +476,16 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
         params[kk] = NULL;
     for(kk = 0; kk < input->nd; kk++) {
         if (input->dimensions[kk] > 1) {
-            params[kk] = (double*)malloc(input->dimensions[kk] * sizeof(double));
+            params[kk] = malloc(input->dimensions[kk] * sizeof(double));
             if (!params[kk]) {
                 PyErr_NoMemory();
                 goto exit;
             }
         }
     }
+
+    NPY_BEGIN_THREADS;
+
     for (hh = 0; hh < input->nd; hh++) {
         if (params[hh]) {
             if (hh == axis && n >= 0) {
@@ -508,7 +521,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
                 tmp += params[kk][ii.coordinates[kk]];
         sint = sin(tmp);
         cost = cos(tmp);
-        switch (input->descr->type_num) {
+        switch (NI_NormalizeType(input->descr->type_num)) {
             CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, Bool)
             CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, UInt8)
             CASE_FOURIER_SHIFT_R(pi, tmp, r, i, cost, sint, UInt16)
@@ -525,13 +538,15 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
             CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex64)
             CASE_FOURIER_SHIFT_C(pi, r, i, cost, sint, Complex128)
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
-        switch (output->descr->type_num) {
+        switch (NI_NormalizeType(output->descr->type_num)) {
             CASE_FOURIER_OUT_CC(po, r, i, Complex64);
             CASE_FOURIER_OUT_CC(po, r, i, Complex128);
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
@@ -539,10 +554,11 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     }
 
  exit:
-    if (shifts) free(shifts);
+    NPY_END_THREADS;
+    free(shifts);
     if (params) {
         for(kk = 0; kk < input->nd; kk++)
-            if (params[kk]) free(params[kk]);
+            free(params[kk]);
         free(params);
     }
     return PyErr_Occurred() ? 0 : 1;

@@ -7,20 +7,21 @@
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
-            'inv', 'det', 'lstsq', 'pinv', 'pinv2', 'pinvh']
+           'solve_toeplitz', 'inv', 'det', 'lstsq', 'pinv', 'pinv2', 'pinvh']
 
 import numpy as np
 
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs
 from .misc import LinAlgError, _datacopied
-from scipy.linalg import calc_lwork
+from .decomp import _asarray_validated
 from . import decomp, decomp_svd
+from ._solve_toeplitz import levinson
 
 
 # Linear equations
-def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False,
-          debug=False, check_finite=True):
+def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
+          overwrite_b=False, debug=False, check_finite=True):
     """
     Solve the equation ``a x = b`` for ``x``.
 
@@ -70,10 +71,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False, overwrite_b=False
     array([ True,  True,  True], dtype=bool)
 
     """
-    if check_finite:
-        a1, b1 = map(np.asarray_chkfinite,(a,b))
-    else:
-        a1, b1 = map(np.asarray, (a,b))
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -150,11 +149,8 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     .. versionadded:: 0.9.0
 
     """
-
-    if check_finite:
-        a1, b1 = map(np.asarray_chkfinite,(a,b))
-    else:
-        a1, b1 = map(np.asarray, (a,b))
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
@@ -215,30 +211,36 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         shape of `b`.
 
     """
-    (l, u) = l_and_u
-    if check_finite:
-        a1, b1 = map(np.asarray_chkfinite, (ab, b))
-    else:
-        a1, b1 = map(np.asarray, (ab,b))
+    a1 = _asarray_validated(ab, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
+    (l, u) = l_and_u
     if l + u + 1 != a1.shape[0]:
         raise ValueError("invalid values for the number of lower and upper diagonals:"
                 " l+u+1 (%d) does not equal ab.shape[0] (%d)" % (l+u+1, ab.shape[0]))
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
-
-    gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
-    a2 = np.zeros((2*l+u+1, a1.shape[1]), dtype=gbsv.dtype)
-    a2[l:,:] = a1
-    lu, piv, x, info = gbsv(l, u, a2, b1, overwrite_ab=True,
-                                                overwrite_b=overwrite_b)
+    if l == u == 1:
+        overwrite_ab = overwrite_ab or _datacopied(b1, b)
+        gtsv, = get_lapack_funcs(('gtsv',), (a1, b1))
+        du = a1[0,1:]
+        d = a1[1,:]
+        dl = a1[2,:-1]
+        du2, d, du, x, info = gtsv(dl, d, du, b, overwrite_ab, overwrite_ab,
+                                   overwrite_ab, overwrite_b)
+    else:
+        gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
+        a2 = np.zeros((2*l+u+1, a1.shape[1]), dtype=gbsv.dtype)
+        a2[l:,:] = a1
+        lu, piv, x, info = gbsv(l, u, a2, b1, overwrite_ab=True,
+                                                    overwrite_b=overwrite_b)
     if info == 0:
         return x
     if info > 0:
         raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
+    raise ValueError('illegal value in %d-th argument of internal gbsv/gtsv' % -info)
 
 
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
@@ -290,23 +292,108 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         of `b`.
 
     """
-
-    if check_finite:
-        ab, b = map(np.asarray_chkfinite, (ab, b))
-    else:
-        ab, b = map(np.asarray, (ab,b))
+    a1 = _asarray_validated(ab, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     # Validate shapes.
-    if ab.shape[-1] != b.shape[0]:
+    if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
 
-    pbsv, = get_lapack_funcs(('pbsv',), (ab, b))
-    c, x, info = pbsv(ab, b, lower=lower, overwrite_ab=overwrite_ab,
-                                            overwrite_b=overwrite_b)
+    overwrite_b = overwrite_b or _datacopied(b1, b)
+    overwrite_ab = overwrite_ab or _datacopied(a1, ab)
+    
+    if a1.shape[0] == 2:
+        ptsv, = get_lapack_funcs(('ptsv',), (a1, b1))
+        if lower:
+            d = a1[0,:].real
+            e = a1[1,:-1]
+        else:
+            d = a1[1,:].real
+            e = a1[0,1:].conj()
+        d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
+    else:
+        pbsv, = get_lapack_funcs(('pbsv',), (a1, b1))
+        c, x, info = pbsv(a1, b1, lower=lower, overwrite_ab=overwrite_ab,
+                                                overwrite_b=overwrite_b)
     if info > 0:
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal pbsv'
                                                                     % -info)
+    return x
+
+
+def solve_toeplitz(c_or_cr, b, check_finite=True):
+    """Solve a Toeplitz system using Levinson Recursion
+
+    The Toeplitz matrix has constant diagonals, with c as its first column
+    and r as its first row.  If r is not given, ``r == conjugate(c)`` is
+    assumed.
+
+    Parameters
+    ----------
+    c_or_cr : array_like or tuple of (array_like, array_like)
+        The vector ``c``, or a tuple of arrays (``c``, ``r``). Whatever the
+        actual shape of ``c``, it will be converted to a 1-D array. If not
+        supplied, ``r = conjugate(c)`` is assumed; in this case, if c[0] is
+        real, the Toeplitz matrix is Hermitian. r[0] is ignored; the first row
+        of the Toeplitz matrix is ``[c[0], r[1:]]``.  Whatever the actual shape
+        of ``r``, it will be converted to a 1-D array.
+    b : (M,) or (M, K) array_like
+        Right-hand side in ``T x = b``.
+    check_finite : boolean, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (result entirely NaNs) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    x : (M,) or (M, K) ndarray
+        The solution to the system ``T x = b``.  Shape of return matches shape
+        of `b`.
+
+    Notes
+    -----
+    The solution is computed using Levinson-Durbin recursion, which is faster
+    than generic least-squares methods, but can be less numerically stable.
+    """
+    # If numerical stability of this algorithim is a problem, a future
+    # developer might consider implementing other O(N^2) Toeplitz solvers,
+    # such as GKO (http://www.jstor.org/stable/2153371) or Bareiss.
+    if isinstance(c_or_cr, tuple):
+        c, r = c_or_cr
+        c = _asarray_validated(c, check_finite=check_finite).ravel()
+        r = _asarray_validated(r, check_finite=check_finite).ravel()
+    else:
+        c = _asarray_validated(c_or_cr, check_finite=check_finite).ravel()
+        r = c.conjugate()
+
+    # Form a 1D array of values to be used in the matrix, containing a reversed
+    # copy of r[1:], followed by c.
+    vals = np.concatenate((r[-1:0:-1], c))
+    if b is None:
+        raise ValueError('illegal value, `b` is a required argument')
+    if vals.shape[0] != (2*b.shape[0] - 1):
+        raise ValueError('incompatible dimensions')
+
+    b = _asarray_validated(b)
+    if np.iscomplexobj(vals) or np.iscomplexobj(b):
+        vals = np.asarray(vals, dtype=np.complex128, order='c')
+        b = np.asarray(b, dtype=np.complex128)
+
+    else:
+        vals = np.asarray(vals, dtype=np.double, order='c')
+        b = np.asarray(b, dtype=np.double)
+
+    if b.ndim == 1:
+        x, _ = levinson(vals, np.ascontiguousarray(b))
+    else:
+        b_shape = b.shape
+        b = b.reshape(b.shape[0], -1)
+        x = np.column_stack(
+            (levinson(vals, np.ascontiguousarray(b[:,i]))[0])
+            for i in range(b.shape[1]))
+        x = x.reshape(*b_shape)
+
     return x
 
 
@@ -349,11 +436,7 @@ def inv(a, overwrite_a=False, check_finite=True):
            [ 0.,  1.]])
 
     """
-
-    if check_finite:
-        a1 = np.asarray_chkfinite(a)
-    else:
-        a1 = np.asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -366,11 +449,14 @@ def inv(a, overwrite_a=False, check_finite=True):
 ##         if info>0: raise LinAlgError, "singular matrix"
 ##         if info<0: raise ValueError,\
 ##            'illegal value in %d-th argument of internal inv.getrf|getri'%(-info)
-    getrf, getri = get_lapack_funcs(('getrf','getri'), (a1,))
+    getrf, getri, getri_lwork = get_lapack_funcs(('getrf','getri', 'getri_lwork'), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info == 0:
-        lwork = calc_lwork.getri(getri.typecode, a1.shape[0])
-        lwork = lwork[1]
+        lwork, info = getri_lwork(a1.shape[0])
+        if info != 0:
+            raise ValueError('internal getri work space query failed: %d' % (info,))
+        lwork = int(lwork.real)
+
         # XXX: the following line fixes curious SEGFAULT when
         # benchmarking 500x500 matrix inverse. This seems to
         # be a bug in LAPACK ?getri routine because if lwork is
@@ -434,10 +520,7 @@ def det(a, overwrite_a=False, check_finite=True):
     3.0
 
     """
-    if check_finite:
-        a1 = np.asarray_chkfinite(a)
-    else:
-        a1 = np.asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
@@ -502,11 +585,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     optimize.nnls : linear least squares with non-negativity constraint
 
     """
-
-    if check_finite:
-        a1,b1 = map(np.asarray_chkfinite, (a,b))
-    else:
-        a1,b1 = map(np.asarray, (a,b))
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
@@ -596,15 +676,12 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     True
 
     """
-    if check_finite:
-        a = np.asarray_chkfinite(a)
-    else:
-        a = np.asarray(a)
+    a = _asarray_validated(a, check_finite=check_finite)
     b = np.identity(a.shape[0], dtype=a.dtype)
     if rcond is not None:
         cond = rcond
 
-    x, resids, rank, s = lstsq(a, b, cond=cond)
+    x, resids, rank, s = lstsq(a, b, cond=cond, check_finite=False)
 
     if return_rank:
         return x, rank
@@ -658,11 +735,8 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     True
 
     """
-    if check_finite:
-        a = np.asarray_chkfinite(a)
-    else:
-        a = np.asarray(a)
-    u, s, vh = decomp_svd.svd(a, full_matrices=False)
+    a = _asarray_validated(a, check_finite=check_finite)
+    u, s, vh = decomp_svd.svd(a, full_matrices=False, check_finite=False)
 
     if rcond is not None:
         cond = rcond
@@ -726,21 +800,18 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
 
     Examples
     --------
-    >>> from numpy import *
-    >>> a = random.randn(9, 6)
+    >>> import numpy as np
+    >>> a = np.random.randn(9, 6)
     >>> a = np.dot(a, a.T)
     >>> B = pinvh(a)
-    >>> allclose(a, dot(a, dot(B, a)))
+    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
     True
-    >>> allclose(B, dot(B, dot(a, B)))
+    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
     True
 
     """
-    if check_finite:
-        a = np.asarray_chkfinite(a)
-    else:
-        a = np.asarray(a)
-    s, u = decomp.eigh(a, lower=lower)
+    a = _asarray_validated(a, check_finite=check_finite)
+    s, u = decomp.eigh(a, lower=lower, check_finite=False)
 
     if rcond is not None:
         cond = rcond

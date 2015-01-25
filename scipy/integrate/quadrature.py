@@ -11,11 +11,23 @@ import numpy as np
 import math
 import warnings
 
-from scipy.lib.six.moves import xrange
+from scipy._lib.six import xrange
 
 
 class AccuracyWarning(Warning):
     pass
+
+
+def _cached_p_roots(n):
+    """
+    Cache p_roots results for speeding up multiple calls of the fixed_quad function.
+    """
+    if n in _cached_p_roots.cache:
+        return _cached_p_roots.cache[n]
+
+    _cached_p_roots.cache[n] = p_roots(n)
+    return _cached_p_roots.cache[n]
+_cached_p_roots.cache = dict()
 
 
 def fixed_quad(func,a,b,args=(),n=5):
@@ -57,7 +69,7 @@ def fixed_quad(func,a,b,args=(),n=5):
     odeint : ODE integrator
 
     """
-    [x,w] = p_roots(n)
+    [x,w] = _cached_p_roots(n)
     x = real(x)
     ainf, binf = map(isinf,(a,b))
     if ainf or binf:
@@ -115,7 +127,7 @@ def vectorize1(func, args=(), vec_func=False):
 
 
 def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
-               vec_func=True):
+               vec_func=True, miniter=1):
     """
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
 
@@ -136,10 +148,12 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
         Iteration stops when error between last two iterates is less than
         `tol` OR the relative change is less than `rtol`.
     maxiter : int, optional
-        Maximum number of iterations.
+        Maximum order of Gaussian quadrature.
     vec_func : bool, optional
         True or False if func handles arrays as arguments (is
         a "vector" function). Default is True.
+    miniter : int, optional
+        Minimum order of Gaussian quadrature.
 
     Returns
     -------
@@ -162,10 +176,13 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     odeint: ODE integrator
 
     """
+    if not isinstance(args, tuple):
+        args = (args,)
     vfunc = vectorize1(func, args, vec_func=vec_func)
     val = np.inf
     err = np.inf
-    for n in xrange(1, maxiter+1):
+    maxiter = max(miniter+1, maxiter)
+    for n in xrange(miniter, maxiter+1):
         newval = fixed_quad(vfunc, a, b, (), n)[0]
         err = abs(newval-val)
         val = newval
@@ -243,7 +260,22 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     if x is None:
         d = dx
     else:
-        d = diff(x, axis=axis)
+        x = asarray(x)
+        if x.ndim == 1:
+            d = diff(x)
+            # reshape to correct shape
+            shape = [1] * y.ndim
+            shape[axis] = -1
+            d = d.reshape(shape)
+        elif len(x.shape) != len(y.shape):
+            raise ValueError("If given, shape of x must be 1-d or the "
+                    "same as y.")
+        else:
+            d = diff(x, axis=axis)
+
+        if d.shape[axis] != y.shape[axis] - 1:
+            raise ValueError("If given, length of x along axis must be the "
+                             "same as y.")
 
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
@@ -350,7 +382,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     last_dx = dx
     first_dx = dx
     returnshape = 0
-    if not x is None:
+    if x is not None:
         x = asarray(x)
         if len(x.shape) == 1:
             shapex = ones(nd)
@@ -369,13 +401,13 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         result = 0.0
         slice1 = (slice(None),)*nd
         slice2 = (slice(None),)*nd
-        if not even in ['avg', 'last', 'first']:
+        if even not in ['avg', 'last', 'first']:
             raise ValueError("Parameter 'even' must be 'avg', 'last', or 'first'.")
         # Compute using Simpson's rule on first intervals
         if even in ['avg', 'first']:
             slice1 = tupleset(slice1, axis, -1)
             slice2 = tupleset(slice2, axis, -2)
-            if not x is None:
+            if x is not None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5*last_dx*(y[slice1]+y[slice2])
             result = _basic_simps(y,0,N-3,x,dx,axis)
@@ -383,7 +415,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         if even in ['avg', 'last']:
             slice1 = tupleset(slice1, axis, 0)
             slice2 = tupleset(slice2, axis, 1)
-            if not x is None:
+            if x is not None:
                 first_dx = x[tuple(slice2)] - x[tuple(slice1)]
             val += 0.5*first_dx*(y[slice2]+y[slice1])
             result += _basic_simps(y,1,N-2,x,dx,axis)
@@ -406,7 +438,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ----------
     y : array_like
         A vector of ``2**k + 1`` equally-spaced samples of a function.
-    dx : array_like, optional
+    dx : float, optional
         The sample spacing. Default is 1.
     axis : int, optional
         The axis along which to integrate. Default is -1 (last axis).
@@ -452,21 +484,21 @@ def romb(y, dx=1.0, axis=-1, show=False):
     slice0 = tupleset(all, axis, 0)
     slicem1 = tupleset(all, axis, -1)
     h = Ninterv*asarray(dx)*1.0
-    R[(1,1)] = (y[slice0] + y[slicem1])/2.0*h
+    R[(0,0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = all
     start = stop = step = Ninterv
-    for i in range(2,k+1):
+    for i in range(1,k+1):
         start >>= 1
         slice_R = tupleset(slice_R, axis, slice(start,stop,step))
         step >>= 1
-        R[(i,1)] = 0.5*(R[(i-1,1)] + h*add.reduce(y[slice_R],axis))
-        for j in range(2,i+1):
+        R[(i,0)] = 0.5*(R[(i-1,0)] + h*add.reduce(y[slice_R],axis))
+        for j in range(1,i+1):
             R[(i,j)] = R[(i,j-1)] + \
-                       (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*(j-1)))-1)
+                       (R[(i,j-1)]-R[(i-1,j-1)]) / ((1 << (2*j))-1)
         h = h / 2.0
 
     if show:
-        if not isscalar(R[(1,1)]):
+        if not isscalar(R[(0,0)]):
             print("*** Printing table only supported for integrals" +
                   " of a single data set.")
         else:
@@ -482,8 +514,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
             print("\n       Richardson Extrapolation Table for Romberg Integration       ")
             print("====================================================================")
-            for i in range(1,k+1):
-                for j in range(1,i+1):
+            for i in range(0,k+1):
+                for j in range(0,i+1):
                     print(formstr % R[(i,j)], end=' ')
                 print()
             print("====================================================================\n")
@@ -793,12 +825,11 @@ def newton_cotes(rn, equal=0):
     yi = rn / float(N)
     ti = 2.0*yi - 1
     nvec = np.arange(0,N+1)
-    C = np.mat(ti**nvec[:,np.newaxis])
-    Cinv = C.I
+    C = ti**nvec[:,np.newaxis]
+    Cinv = np.linalg.inv(C)
     # improve precision of result
-    Cinv = 2*Cinv - Cinv*C*Cinv
-    Cinv = 2*Cinv - Cinv*C*Cinv
-    Cinv = Cinv.A
+    for i in range(2):
+        Cinv = 2*Cinv - Cinv.dot(C).dot(Cinv)
     vec = 2.0 / (nvec[::2]+1)
     ai = np.dot(Cinv[:,::2],vec) * N/2
 

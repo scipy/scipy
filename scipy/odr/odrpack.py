@@ -109,10 +109,10 @@ def _report_error(info):
     if info >= 5:
         # questionable results or fatal error
 
-        I = (info/10000 % 10,
-             info/1000 % 10,
-             info/100 % 10,
-             info/10 % 10,
+        I = (info//10000 % 10,
+             info//1000 % 10,
+             info//100 % 10,
+             info//10 % 10,
              info % 10)
         problems = []
 
@@ -282,7 +282,7 @@ class RealData(Data):
     sx, sy : array_like, optional
         Standard deviations of `x`.
         `sx` are standard deviations of `x` and are converted to weights by
-         dividing 1.0 by their squares.
+        dividing 1.0 by their squares.
     sy : array_like, optional
         Standard deviations of `y`.
         `sy` are standard deviations of `y` and are converted to weights by
@@ -921,10 +921,10 @@ class ODR(object):
         if self.job is None:
             job_l = [0, 0, 0, 0, 0]
         else:
-            job_l = [self.job / 10000 % 10,
-                     self.job / 1000 % 10,
-                     self.job / 100 % 10,
-                     self.job / 10 % 10,
+            job_l = [self.job // 10000 % 10,
+                     self.job // 1000 % 10,
+                     self.job // 100 % 10,
+                     self.job // 10 % 10,
                      self.job % 10]
 
         if fit_type in (0, 1, 2):
@@ -970,9 +970,9 @@ class ODR(object):
         if self.iprint is None:
             self.iprint = 0
 
-        ip = [self.iprint / 1000 % 10,
-              self.iprint / 100 % 10,
-              self.iprint / 10 % 10,
+        ip = [self.iprint // 1000 % 10,
+              self.iprint // 100 % 10,
+              self.iprint // 10 % 10,
               self.iprint % 10]
 
         # make a list to convert iprint digits to/from argument inputs
@@ -1032,7 +1032,7 @@ class ODR(object):
                  'ndigit', 'taufac', 'sstol', 'partol', 'maxit', 'stpb',
                  'stpd', 'sclb', 'scld', 'work', 'iwork']
 
-        if self.delta0 is not None and self.job % 1000 / 10 == 1:
+        if self.delta0 is not None and self.job % 1000 // 10 == 1:
             # delta0 provided and fit is not a restart
             self._gen_work()
 

@@ -22,9 +22,9 @@ Using any of these subpackages requires an explicit import.  For example,
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
- lib                          --- Python wrappers to external libraries
- lib.lapack                   --- Wrappers to LAPACK library
  linalg                       --- Linear algebra routines
+ linalg.blas                  --- Wrappers to BLAS library
+ linalg.lapack                --- Wrappers to LAPACK library
  misc                         --- Various utilities that don't have
                                   another home.
  ndimage                      --- n-dimensional image package
@@ -36,20 +36,11 @@ Using any of these subpackages requires an explicit import.  For example,
  sparse.linalg.dsolve         --- Linear Solvers
  sparse.linalg.dsolve.umfpack --- :Interface to the UMFPACK library:
                                   Conjugate Gradient Method (LOBPCG)
+ sparse.linalg.eigen          --- Sparse Eigenvalue Solvers
  sparse.linalg.eigen.lobpcg   --- Locally Optimal Block Preconditioned
-                                  Conjugate Gradient Method (LOBPCG) [*]
- special                      --- Airy Functions [*]
- lib.blas                     --- Wrappers to BLAS library [*]
- sparse.linalg.eigen          --- Sparse Eigenvalue Solvers [*]
- stats                        --- Statistical Functions [*]
- lib                          --- Python wrappers to external libraries
-                                  [*]
- lib.lapack                   --- Wrappers to LAPACK library [*]
- integrate                    --- Integration routines [*]
- ndimage                      --- n-dimensional image package [*]
- linalg                       --- Linear algebra routines [*]
+                                  Conjugate Gradient Method (LOBPCG)
  spatial                      --- Spatial data structures and algorithms
- special                      --- Airy Functions
+ special                      --- Special functions
  stats                        --- Statistical Functions
 
 Utility tools
@@ -74,22 +65,14 @@ from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
 import numpy as _num
-from numpy import oldnumeric
+linalg = None
 from numpy import *
 from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
 
-# Emit a warning if numpy is too old
-majver, minver = [float(i) for i in _num.version.version.split('.')[:2]]
-if majver < 1 or (majver == 1 and minver < 5):
-    import warnings
-    warnings.warn("Numpy 1.5.0 or above is recommended for this version of "
-                  "scipy (detected version %s)" % _num.version.version,
-                  UserWarning)
 
-__all__ += ['oldnumeric']+_num.__all__
-
+__all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
 
 del _num
@@ -118,7 +101,16 @@ else:
         being in scipy source directory; please exit the scipy source
         tree first, and relaunch your python intepreter."""
         raise ImportError(msg)
+
     from scipy.version import version as __version__
+    from scipy._lib._version import NumpyVersion as _NumpyVersion
+    if _NumpyVersion(__numpy_version__) < '1.6.2':
+        import warnings
+        warnings.warn("Numpy 1.6.2 or above is recommended for this version of "
+                      "scipy (detected version %s)" % __numpy_version__,
+                      UserWarning)
+
+    del _NumpyVersion
 
     from numpy.testing import Tester
     test = Tester().test

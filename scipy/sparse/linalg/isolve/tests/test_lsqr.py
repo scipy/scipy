@@ -1,8 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_
-from scipy.lib.six.moves import xrange
+from numpy.testing import assert_, assert_equal, assert_array_almost_equal
+from scipy._lib.six import xrange
 
 import scipy.sparse
 import scipy.sparse.linalg
@@ -34,6 +34,46 @@ def test_basic():
     xo = X[0]
     assert_(norm(svx - xo) < 1e-5)
 
+
+def test_gh_2466():
+    row = np.array([0, 0])
+    col = np.array([0, 1])
+    val = np.array([1, -1])
+    A = scipy.sparse.coo_matrix((val, (row, col)), shape=(1, 2))
+    b = np.asarray([4])
+    lsqr(A, b)
+
+
+def test_well_conditioned_problems():
+    # Test that sparse the lsqr solver returns the right solution
+    # on various problems with different random seeds.
+    # This is a non-regression test for a potential ZeroDivisionError
+    # raised when computing the `test2` & `test3` convergence conditions.
+    n = 10
+    A_sparse = scipy.sparse.eye(n, n)
+    A_dense = A_sparse.toarray()
+
+    with np.errstate(invalid='raise'):
+        for seed in range(30):
+            rng = np.random.RandomState(seed + 10)
+            beta = rng.rand(n)
+            beta[beta == 0] = 0.00001  # ensure that all the betas are not null
+            b = A_sparse * beta[:, np.newaxis]
+            output = lsqr(A_sparse, b, show=show)
+
+            # Check that the termination condition corresponds to an approximate
+            # solution to Ax = b
+            assert_equal(output[1], 1)
+            solution = output[0]
+
+            # Check that we recover the ground truth solution
+            assert_array_almost_equal(solution, beta)
+
+            # Sanity check: compare to the dense array solver
+            reference_solution = np.linalg.solve(A_dense, b).ravel()
+            assert_array_almost_equal(solution, reference_solution)
+
+
 if __name__ == "__main__":
     svx = np.linalg.solve(G, b)
 
@@ -64,12 +104,3 @@ if __name__ == "__main__":
     print("")
     print(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
     print("")
-
-
-def test_gh_2466():
-    row = np.array([0, 0])
-    col = np.array([0, 1])
-    val = np.array([1, -1])
-    A = scipy.sparse.coo_matrix((val, (row, col)), shape=(1, 2))
-    b = np.asarray([4])
-    lsqr(A, b)

@@ -1,10 +1,19 @@
+HookFile: bscript
+
 Recurse:
     linalg,
-    sparsetools,
     csgraph
 
 Library:
     Packages:
         linalg,
-        sparsetools,
         csgraph
+    Extension: _csparsetools
+        Sources: _csparsetools.c
+    Extension: _sparsetools
+        Sources:
+            sparsetools/sparsetools.cxx,
+            sparsetools/bsr.cxx,
+            sparsetools/csc.cxx,
+            sparsetools/csr.cxx,
+            sparsetools/other.cxx

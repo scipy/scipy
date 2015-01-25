@@ -14,16 +14,11 @@ import numpy as np
 # Local imports
 from .misc import norm
 from .lapack import ztrsyl, dtrsyl
-from .special_matrices import all_mat
 from .decomp_schur import schur, rsf2csf
 
 
 class SqrtmError(np.linalg.LinAlgError):
     pass
-
-
-def _has_complex_dtype_char(A):
-    return A.dtype.char in ('F', 'D', 'G')
 
 
 def _sqrtm_triu(T, blocksize=64):
@@ -53,7 +48,7 @@ def _sqrtm_triu(T, blocksize=64):
 
     """
     T_diag = np.diag(T)
-    keep_it_real = (not _has_complex_dtype_char(T)) and (np.min(T_diag) >= 0)
+    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
     if not keep_it_real:
         T_diag = T_diag.astype(complex)
     R = np.diag(np.sqrt(T_diag))
@@ -146,13 +141,24 @@ def sqrtm(A, disp=True, blocksize=64):
            "Blocked Schur Algorithms for Computing the Matrix Square Root,
            Lecture Notes in Computer Science, 7782. pp. 171-182.
 
+    Examples
+    --------
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> r = sqrtm(a)
+    >>> r
+    array([[ 0.75592895,  1.13389342],
+           [ 0.37796447,  1.88982237]])
+    >>> r.dot(r)
+    array([[ 1.,  3.],
+           [ 1.,  4.]])
+
     """
     A = np.asarray(A)
     if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:
         raise ValueError("The blocksize should be at least 1.")
-    keep_it_real = not _has_complex_dtype_char(A)
+    keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
         if not np.array_equal(T, np.triu(T)):
@@ -162,11 +168,11 @@ def sqrtm(A, disp=True, blocksize=64):
     failflag = False
     try:
         R = _sqrtm_triu(T, blocksize=blocksize)
-        R, Z = all_mat(R,Z)
-        X = (Z * R * Z.H)
+        ZH = np.conjugate(Z).T
+        X = Z.dot(R).dot(ZH)
     except SqrtmError as e:
         failflag = True
-        X = np.matrix(np.empty_like(A))
+        X = np.empty_like(A)
         X.fill(np.nan)
 
     if disp:
@@ -175,12 +181,12 @@ def sqrtm(A, disp=True, blocksize=64):
             print("Matrix is singular and may not have a square root.")
         elif failflag:
             print("Failed to find a square root.")
-        return X.A
+        return X
     else:
         try:
-            arg2 = norm(X*X - A,'fro')**2 / norm(A,'fro')
+            arg2 = norm(X.dot(X) - A,'fro')**2 / norm(A,'fro')
         except ValueError:
             # NaNs in matrix
             arg2 = np.inf
 
-        return X.A, arg2
+        return X, arg2

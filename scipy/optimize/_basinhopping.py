@@ -12,10 +12,10 @@ __all__ = ['basinhopping']
 
 
 class Storage(object):
+    """
+    Class used to store the lowest energy structure
+    """
     def __init__(self, x, f):
-        """
-        Class used to store the lowest energy structure
-        """
         self._add(x, f)
 
     def _add(self, x, f):
@@ -34,6 +34,27 @@ class Storage(object):
 
 
 class BasinHoppingRunner(object):
+    """This class implements the core of the basinhopping algorithm.
+
+    x0 : ndarray
+        The starting coordinates.
+    minimizer : callable
+        The local minimizer, with signature ``result = minimizer(x)``.
+        The return value is an `optimize.OptimizeResult` object.
+    step_taking : callable
+        This function displaces the coordinates randomly.  Signature should
+        be ``x_new = step_taking(x)``.  Note that `x` may be modified in-place.
+    accept_tests : list of callables
+        To each test is passed the kwargs `f_new`, `x_new`, `f_old` and
+        `x_old`.  These tests will be used to judge whether or not to accept
+        the step.  The acceptable return values are True, False, or ``"force
+        accept"``.  If the latter, then this will override any other tests in
+        order to accept the step.  This can be used, for example, to forcefully
+        escape from a local minimum that ``basinhopping`` is trapped in.
+    disp : bool, optional
+        Display status messages.
+
+    """
     def __init__(self, x0, minimizer, step_taking, accept_tests, disp=False):
         self.x = np.copy(x0)
         self.minimizer = minimizer
@@ -43,18 +64,24 @@ class BasinHoppingRunner(object):
 
         self.nstep = 0
 
-        #do initial minimization
+        # initialize return object
+        self.res = scipy.optimize.OptimizeResult()
+        self.res.minimization_failures = 0
+
+        # do initial minimization
         minres = minimizer(self.x)
+        if not minres.success:
+            self.res.minimization_failures += 1
+            if self.disp:
+                print("warning: basinhopping: local minimization failure")
         self.x = np.copy(minres.x)
         self.energy = minres.fun
         if self.disp:
             print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
-        #initialize storage class
+        # initialize storage class
         self.storage = Storage(self.x, self.energy)
 
-        #initialize return object
-        self.res = scipy.optimize.Result()
         if hasattr(minres, "nfev"):
             self.res.nfev = minres.nfev
         if hasattr(minres, "njev"):
@@ -63,18 +90,24 @@ class BasinHoppingRunner(object):
             self.res.nhev = minres.nhev
 
     def _monte_carlo_step(self):
-        #Take a random step.  Make a copy of x because the step_taking
-        #algorithm might change x in place
+        """Do one monte carlo iteration
+
+        Randomly displace the coordinates, minimize, and decide whether
+        or not to accept the new coordinates.
+        """
+        # Take a random step.  Make a copy of x because the step_taking
+        # algorithm might change x in place
         x_after_step = np.copy(self.x)
         x_after_step = self.step_taking(x_after_step)
 
-        #do a local minimization
+        # do a local minimization
         minres = self.minimizer(x_after_step)
         x_after_quench = minres.x
         energy_after_quench = minres.fun
-        if hasattr(minres, "success"):
-            if not minres.success and self.disp:
-                print("warning: basinhoppping: local minimization failure")
+        if not minres.success:
+            self.res.minimization_failures += 1
+            if self.disp:
+                print("warning: basinhopping: local minimization failure")
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
         if hasattr(minres, "njev"):
@@ -82,11 +115,11 @@ class BasinHoppingRunner(object):
         if hasattr(minres, "nhev"):
             self.res.nhev += minres.nhev
 
-        #accept the move based on self.accept_tests. If any test is false, than
-        #reject the step.  If any test returns the special value, the
-        #string 'force accept', accept the step regardless.
-        #This can be used to forcefully escape from a local minima if normal
-        #basin hopping steps are not sufficient.
+        # accept the move based on self.accept_tests. If any test is false,
+        # than reject the step.  If any test returns the special value, the
+        # string 'force accept', accept the step regardless.  This can be used
+        # to forcefully escape from a local minimum if normal basin hopping
+        # steps are not sufficient.
         accept = True
         for test in self.accept_tests:
             testres = test(f_new=energy_after_quench, x_new=x_after_quench,
@@ -105,8 +138,8 @@ class BasinHoppingRunner(object):
                 raise ValueError("accept test must return bool or string "
                                  "'force accept'. Type is", type(testres))
 
-        #Report the result of the acceptance test to the take step class.  This
-        #is for adaptive step taking
+        # Report the result of the acceptance test to the take step class.
+        # This is for adaptive step taking
         if hasattr(self.step_taking, "report"):
             self.step_taking.report(accept, f_new=energy_after_quench,
                                     x_new=x_after_quench, f_old=self.energy,
@@ -115,6 +148,8 @@ class BasinHoppingRunner(object):
         return x_after_quench, energy_after_quench, accept
 
     def one_cycle(self):
+        """Do one cycle of the basinhopping algorithm
+        """
         self.nstep += 1
         new_global_min = False
 
@@ -125,14 +160,14 @@ class BasinHoppingRunner(object):
             self.x = np.copy(xtrial)
             new_global_min = self.storage.update(self.x, self.energy)
 
-        #print some information
+        # print some information
         if self.disp:
             self.print_report(energy_trial, accept)
             if new_global_min:
                 print("found new global minimum on step %d with function"
                       " value %g" % (self.nstep, self.energy))
 
-        #save some variables as BasinHoppingRunner attributes
+        # save some variables as BasinHoppingRunner attributes
         self.xtrial = xtrial
         self.energy_trial = energy_trial
         self.accept = accept
@@ -140,6 +175,7 @@ class BasinHoppingRunner(object):
         return new_global_min
 
     def print_report(self, energy_trial, accept):
+        """print a status update"""
         xlowest, energy_lowest = self.storage.get_lowest()
         print("basinhopping step %d: f %g trial_f %g accepted %d "
               " lowest_f %g" % (self.nstep, self.energy, energy_trial,
@@ -269,8 +305,6 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     """
     Find the global minimum of a function using the basin-hopping algorithm
 
-    .. versionadded:: 0.12.0
-
     Parameters
     ----------
     func : callable ``f(x, *args)``
@@ -291,6 +325,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     minimizer_kwargs : dict, optional
         Extra keyword arguments to be passed to the minimizer
         ``scipy.optimize.minimize()`` Some important options could be:
+
             method : str
                 The minimization method (e.g. ``"L-BFGS-B"``)
             args : tuple
@@ -314,9 +349,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         used, for example, to forcefully escape from a local minimum that
         ``basinhopping`` is trapped in.
     callback : callable, ``callback(x, f, accept)``, optional
-        A callback function which will be called for all minimum found.  ``x``
-        and ``f`` are the coordinates and function value of the trial minima,
-        and ``accept`` is whether or not that minima was accepted.  This can be
+        A callback function which will be called for all minima found.  ``x``
+        and ``f`` are the coordinates and function value of the trial minimum,
+        and ``accept`` is whether or not that minimum was accepted.  This can be
         used, for example, to save the lowest N minima found.  Also,
         ``callback`` can be used to specify a user defined stop criterion by
         optionally returning True to stop the ``basinhopping`` routine.
@@ -331,11 +366,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     Returns
     -------
-    res : Result
-        The optimization result represented as a ``Result`` object.  Important
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.  Important
         attributes are: ``x`` the solution array, ``fun`` the value of the
         function at the solution, and ``message`` which describes the cause of
-        the termination. See `Result` for a description of other attributes.
+        the termination. See `OptimizeResult` for a description of other attributes.
 
     See Also
     --------
@@ -399,7 +434,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         exp( -(func(xnew) - func(xold)) / T )
 
     So, for best results, ``T`` should to be comparable to the typical
-    difference in function value between between local minima
+    difference in function values between local minima.
+
+    .. versionadded:: 0.12.0
 
     References
     ----------
@@ -487,26 +524,26 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     value of every minimum found
 
     >>> def print_fun(x, f, accepted):
-    ...         print("at minima %.4f accepted %d" % (f, int(accepted)))
+    ...         print("at minimum %.4f accepted %d" % (f, int(accepted)))
 
     We'll run it for only 10 basinhopping steps this time.
 
     >>> np.random.seed(1)
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=10, callback=print_fun)
-    at minima 0.4159 accepted 1
-    at minima -0.9073 accepted 1
-    at minima -0.1021 accepted 1
-    at minima -0.1021 accepted 1
-    at minima 0.9102 accepted 1
-    at minima 0.9102 accepted 1
-    at minima 2.2945 accepted 0
-    at minima -0.1021 accepted 1
-    at minima -1.0109 accepted 1
-    at minima -1.0109 accepted 1
+    at minimum 0.4159 accepted 1
+    at minimum -0.9073 accepted 1
+    at minimum -0.1021 accepted 1
+    at minimum -0.1021 accepted 1
+    at minimum 0.9102 accepted 1
+    at minimum 0.9102 accepted 1
+    at minimum 2.2945 accepted 0
+    at minimum -0.1021 accepted 1
+    at minimum -1.0109 accepted 1
+    at minimum -1.0109 accepted 1
 
 
-    The minima at -1.0109 is actually the global minimum, found already on the
+    The minimum at -1.0109 is actually the global minimum, found already on the
     8th iteration.
 
     Now let's implement bounds on the problem using a custom ``accept_test``:
@@ -528,13 +565,13 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     """
     x0 = np.array(x0)
 
-    #set up minimizer
+    # set up minimizer
     if minimizer_kwargs is None:
         minimizer_kwargs = dict()
     wrapped_minimizer = MinimizerWrapper(scipy.optimize.minimize, func,
                                          **minimizer_kwargs)
 
-    #set up step taking algorithm
+    # set up step taking algorithm
     if take_step is not None:
         if not isinstance(take_step, collections.Callable):
             raise TypeError("take_step must be callable")
@@ -546,19 +583,19 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         else:
             take_step_wrapped = take_step
     else:
-        #use default
+        # use default
         displace = RandomDisplacement(stepsize=stepsize)
         take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
                                              verbose=disp)
 
-    #set up accept tests
+    # set up accept tests
     if accept_test is not None:
         if not isinstance(accept_test, collections.Callable):
             raise TypeError("accept_test must be callable")
         accept_tests = [accept_test]
     else:
         accept_tests = []
-    ##use default
+    # use default
     metropolis = Metropolis(T)
     accept_tests.append(metropolis)
 
@@ -568,7 +605,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     bh = BasinHoppingRunner(x0, wrapped_minimizer, take_step_wrapped,
                             accept_tests, disp=disp)
 
-    #start main iteration loop
+    # start main iteration loop
     count = 0
     message = ["requested number of basinhopping iterations completed"
                " successfully"]
@@ -576,7 +613,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         new_global_min = bh.one_cycle()
 
         if isinstance(callback, collections.Callable):
-            #should we pass acopy of x?
+            # should we pass a copy of x?
             val = callback(bh.xtrial, bh.energy_trial, bh.accept)
             if val is not None:
                 if val:
@@ -591,7 +628,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
             message = ["success condition satisfied"]
             break
 
-    #prepare return object
+    # prepare return object
     lowest = bh.storage.get_lowest()
     res = bh.res
     res.x = np.copy(lowest[0])

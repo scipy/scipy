@@ -2,16 +2,16 @@
 from __future__ import division, print_function, absolute_import
 
 import time
+import warnings
 
 import numpy
-from numpy import ones, array, asarray, empty
+from numpy import ones, array, asarray, empty, random, zeros
 
-from numpy.testing import *
+from numpy.testing import Tester, TestCase
 
 from scipy import sparse
-from scipy.lib.six.moves import xrange
-from scipy.sparse import csr_matrix, coo_matrix, dia_matrix, lil_matrix, \
-        dok_matrix
+from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
+                          dok_matrix, rand, SparseEfficiencyWarning)
 
 
 def random_sparse(m,n,nnz_per_row):
@@ -76,10 +76,10 @@ class BenchmarkSparse(TestCase):
         fmt = space+'   %3s  | %17s |  %7.1f  '
 
         for format in ['csr']:
-            vars = dict([(var,mat.asformat(format)) for (var,name,mat) in matrices])
+            vars = dict([(var, mat.asformat(format)) for (var, _, mat) in matrices])
             for X,Y in [('A','A'),('A','B'),('B','A'),('B','B')]:
                 x,y = vars[X],vars[Y]
-                for op in ['__add__','__sub__','multiply','__div__','__mul__']:
+                for op in ['__add__','__sub__','multiply','__mul__']:
                     fn = getattr(x,op)
                     fn(y)  # warmup
 
@@ -230,13 +230,13 @@ class BenchmarkSparse(TestCase):
         for name,A in matrices:
             A = A.tocoo()
 
-            for format in ['lil','dok']:
+            for format, cls in [('lil', lil_matrix), ('dok', dok_matrix)]:
 
                 start = time.clock()
 
                 iter = 0
                 while time.clock() < start + 0.5:
-                    T = eval(format + '_matrix')(A.shape)
+                    T = cls(A.shape)
                     for i,j,v in zip(A.row,A.col,A.data):
                         T[i,j] = v
                     iter += 1
@@ -288,33 +288,111 @@ class BenchmarkSparse(TestCase):
                     output += '| %5.1fms ' % (1000*t)
             print(output)
 
+    def _getset_bench(self, kernel, formats):
+        print('==========================================================')
+        print('      N | s.patt. |' + ''.join(' %7s |' % fmt for fmt in formats))
+        print('----------------------------------------------------------')
 
-# class TestLarge(TestCase):
-#    def bench_large(self):
-#        # Create a 100x100 matrix with 100 non-zero elements
-#        # and play around with it
-#        #TODO move this out of Common since it doesn't use spmatrix
-#        random.seed(0)
-#        A = dok_matrix((100,100))
-#        for k in xrange(100):
-#            i = random.randrange(100)
-#            j = random.randrange(100)
-#            A[i,j] = 1.
-#        csr = A.tocsr()
-#        csc = A.tocsc()
-#        csc2 = csr.tocsc()
-#        coo = A.tocoo()
-#        csr2 = coo.tocsr()
-#        assert_array_equal(A.transpose().todense(), csr.transpose().todense())
-#        assert_array_equal(csc.todense(), csr.todense())
-#        assert_array_equal(csr.todense(), csr2.todense())
-#        assert_array_equal(csr2.todense().transpose(), coo.transpose().todense())
-#        assert_array_equal(csr2.todense(), csc2.todense())
-#        csr_plus_csc = csr + csc
-#        csc_plus_csr = csc + csr
-#        assert_array_equal(csr_plus_csc.todense(), (2*A).todense())
-#        assert_array_equal(csr_plus_csc.todense(), csc_plus_csr.todense())
+        A = rand(1000, 1000, density=1e-5)
+
+        for N in [1, 10, 100, 1000, 10000]:
+            for spat in [False, True]:
+                # indices to assign to
+                i, j = [], []
+                while len(i) < N:
+                    n = N - len(i)
+                    ip = numpy.random.randint(0, A.shape[0], size=n)
+                    jp = numpy.random.randint(0, A.shape[1], size=n)
+                    i = numpy.r_[i, ip]
+                    j = numpy.r_[j, jp]
+                v = numpy.random.rand(n)
+
+                if N == 1:
+                    i = int(i)
+                    j = int(j)
+                    v = float(v)
+
+                times = []
+
+                for fmt in formats:
+                    if fmt == 'dok' and N > 500:
+                        times.append(None)
+                        continue
+
+                    base = A.asformat(fmt)
+
+                    m = base.copy()
+                    if spat:
+                        kernel(m, i, j, v)
+
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+
+                        iter = 0
+                        total_time = 0
+                        while total_time < 0.2 and iter < 5000:
+                            if not spat:
+                                m = base.copy()
+                            a = time.clock()
+                            kernel(m, i, j, v)
+                            total_time += time.clock() - a
+                            iter += 1
+
+                    times.append(total_time/float(iter))
+
+                output = " %6d | %7s " % (N, "same" if spat else "change")
+                for t in times:
+                    if t is None:
+                        output += '|    n/a    '
+                    else:
+                        output += '| %5.2fms ' % (1e3*t)
+                print(output)
+
+    def bench_setitem(self):
+        def kernel(A, i, j, v):
+            A[i, j] = v
+        print()
+        print('           Sparse Matrix fancy __setitem__')
+        self._getset_bench(kernel, ['csr', 'csc', 'lil', 'dok'])
+
+    def bench_getitem(self):
+        def kernel(A, i, j, v=None):
+            A[i, j]
+        print()
+        print('           Sparse Matrix fancy __getitem__')
+        self._getset_bench(kernel, ['csr', 'csc', 'lil'])
+
+    def bench_large(self):
+        H1, W1 = 1, 100000
+        H2, W2 = W1, 1000
+        C1 = 10
+        C2 = 1000000
+
+        print()
+
+        random.seed(0)
+
+        print('                  Sparse Matrix Large Matrix Multiplication')
+        start = time.time()
+        matrix1 = lil_matrix(zeros((H1, W1)))
+        matrix2 = lil_matrix(zeros((H2, W2)))
+        for i in xrange(C1):
+            matrix1[random.randint(H1), random.randint(W1)] = random.rand()
+        for i in xrange(C2):
+            matrix2[random.randint(H2), random.randint(W2)] = random.rand()
+        matrix1 = matrix1.tocsr()
+        matrix2 = matrix2.tocsr()
+        end = time.time()
+
+        start = time.time()
+        for i in range(100):
+            matrix3 = matrix1 * matrix2
+        end = time.time()
+        print('==============================================================================')
+        print('Matrix 1 shape | Matrix 2 shape | Matrix 1 count | Matrix 2 count | time (sec)')
+        print('------------------------------------------------------------------------------')
+        print('%14s | %14s | %14d | %14d | %10.3f' % (matrix1.shape, matrix2.shape, C1, C2, end-start))
 
 
 if __name__ == "__main__":
-    run_module_suite()
+    test = Tester().bench()

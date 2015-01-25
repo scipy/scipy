@@ -1,5 +1,5 @@
-Compressed Sparse Graph Routines `scipy.sparse.csgraph`
-=======================================================
+Compressed Sparse Graph Routines (`scipy.sparse.csgraph`)
+=========================================================
 
 .. sectionauthor:: Jake Vanderplas <vanderplas@astro.washington.edu>
 

@@ -5,9 +5,9 @@ NOTE FOR VENDORS: it is in general safe to use a system version of ARPACK
 instead. Note, however, that earlier versions of ARPACK and ARPACK-NG had
 certain bugs, so using those over the bundled version is not recommended.
 
-The bundled version has the following patches applied:
+The bundled version has the following patch applied:
 
-(i) Replacing calls to certain Fortran functions with wrapper
+Replace calls to certain Fortran functions with wrapper
 functions, to avoid various ABI mismatches on OSX. These changes are
 made with the following command:
 
@@ -28,6 +28,3 @@ s@\bSLAMCH\b@wslamch@g;
 s@\bslamch\b@wslamch@g;
 s@\bslanst\b@wslanst@g;' \
 SRC/*.f UTIL/*.f LAPACK/*.f
-
-(ii) Using a UTIL/second_cputime.f which calls the Fortran intrinsic
-CPU_TIME function instead of ETIME.

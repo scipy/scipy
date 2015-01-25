@@ -11,11 +11,11 @@ import time
 from distutils.version import LooseVersion
 
 import numpy as np
-from numpy.testing import dec
+from numpy.testing import dec, run_module_suite
 from numpy import pi
 
 import scipy.special as sc
-from scipy.lib.six import reraise, with_metaclass
+from scipy._lib.six import reraise, with_metaclass
 from scipy.special._testutils import FuncData, assert_func_equal
 
 try:
@@ -920,9 +920,10 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_ci(self):
         def ci(x):
             return sc.sici(x)[1]
+        # oscillating function: limit range
         assert_mpmath_equal(ci,
                             mpmath.ci,
-                            [Arg()])
+                            [Arg(-1e8, 1e8)])
 
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
@@ -978,13 +979,27 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
     def test_ellipe(self):
         assert_mpmath_equal(sc.ellipe,
                             mpmath.ellipe,
-                            [Arg()])
+                            [Arg(b=1.0)])
 
-    @knownfailure_overridable("insufficient accuracy from Cephes at phi < 0, or for extremely large m")
+    def test_ellipeinc(self):
+        assert_mpmath_equal(sc.ellipeinc,
+                            mpmath.ellipe,
+                            [Arg(-1e3, 1e3), Arg(b=1.0)])
+
+    def test_ellipeinc_largephi(self):
+        assert_mpmath_equal(sc.ellipeinc,
+                            mpmath.ellipe,
+                            [Arg(), Arg()])
+
     def test_ellipf(self):
         assert_mpmath_equal(sc.ellipkinc,
                             mpmath.ellipf,
-                            [Arg(), Arg(b=1.0)])
+                            [Arg(-1e3, 1e3), Arg()])
+
+    def test_ellipf_largephi(self):
+        assert_mpmath_equal(sc.ellipkinc,
+                            mpmath.ellipf,
+                            [Arg(), Arg()])
 
     def test_ellipk(self):
         assert_mpmath_equal(sc.ellipk,
@@ -994,6 +1009,22 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             lambda m: mpmath.ellipk(1 - m),
                             [Arg(a=0.0)],
                             dps=400)
+
+    def test_ellipkinc(self):
+        def ellipkinc(phi, m):
+            return mpmath.ellippi(0, phi, m)
+        assert_mpmath_equal(sc.ellipkinc,
+                            ellipkinc,
+                            [Arg(-1e3, 1e3), Arg(b=1.0)],
+                            ignore_inf_sign=True)
+
+    def test_ellipkinc_largephi(self):
+        def ellipkinc(phi, m):
+            return mpmath.ellippi(0, phi, m)
+        assert_mpmath_equal(sc.ellipkinc,
+                            ellipkinc,
+                            [Arg(), Arg(b=1.0)],
+                            ignore_inf_sign=True)
 
     def test_ellipfun_sn(self):
         # Oscillating function --- limit range of first argument; the
@@ -1331,48 +1362,103 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             lambda n, x: _exception_to_nan(mpmath.legendre)(n, x, **HYPERKW),
                             [IntArg(), FixedArg(np.logspace(-30, -4, 20))])
 
-    @knownfailure_overridable("wrong function at |z| > 1 (Trac #1877)")
     def test_legenp(self):
         def lpnm(n, m, z):
-            if m > n:
-                return 0.0
-            return sc.lpmn(m, n, z)[0][-1,-1]
+            try:
+                v = sc.lpmn(m, n, z)[0][-1,-1]
+            except ValueError:
+                return np.nan
+            if abs(v) > 1e306:
+                # harmonize overflow to inf
+                v = np.inf * np.sign(v.real)
+            return v
 
         def lpnm_2(n, m, z):
-            if m > n:
-                return 0.0
-            return sc.lpmv(m, n, z)
+            v = sc.lpmv(m, n, z)
+            if abs(v) > 1e306:
+                # harmonize overflow to inf
+                v = np.inf * np.sign(v.real)
+            return v
 
         def legenp(n, m, z):
+            if (z == 1 or z == -1) and int(n) == n:
+                # Special case (mpmath may give inf, we take the limit by
+                # continuity)
+                if m == 0:
+                    if n < 0:
+                        n = -n - 1
+                    return mpmath.power(mpmath.sign(z), n)
+                else:
+                    return 0
+
             if abs(z) < 1e-15:
                 # mpmath has bad performance here
                 return np.nan
-            return _exception_to_nan(mpmath.legenp)(n, m, z, **HYPERKW)
+
+            typ = 2 if abs(z) < 1 else 3
+            v = _exception_to_nan(mpmath.legenp)(n, m, z, type=typ)
+
+            if abs(v) > 1e306:
+                # harmonize overflow to inf
+                v = mpmath.inf * mpmath.sign(v.real)
+
+            return v
 
         assert_mpmath_equal(lpnm,
                             legenp,
-                            [IntArg(0, 100), IntArg(0, 100), Arg()])
+                            [IntArg(-100, 100), IntArg(-100, 100), Arg()])
 
         assert_mpmath_equal(lpnm_2,
                             legenp,
-                            [IntArg(0, 100), IntArg(0, 100), Arg(-1, 1)])
+                            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)])
 
-    @knownfailure_overridable("wrong function at |z| > 1 (Trac #1877)")
-    def test_legenp_complex(self):
-        def lpnm(n, m, z):
-            if m > n:
-                return 0.0
-            return sc.lpmn(m, n, z)[0][-1,-1]
+    def test_legenp_complex_2(self):
+        def clpnm(n, m, z):
+            try:
+                return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
+            except ValueError:
+                return np.nan
 
         def legenp(n, m, z):
             if abs(z) < 1e-15:
                 # mpmath has bad performance here
                 return np.nan
-            return _exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), **HYPERKW)
+            return _exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=2)
 
-        assert_mpmath_equal(lpnm,
+        # mpmath is quite slow here
+        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
+        y = np.array([-1e3, -0.5, 0.5, 1.3])
+        z = (x[:,None] + 1j*y[None,:]).ravel()
+
+        assert_mpmath_equal(clpnm,
                             legenp,
-                            [IntArg(0, 100), IntArg(0, 100), ComplexArg()])
+                            [FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg(z)],
+                            rtol=1e-6,
+                            n=500)
+
+    def test_legenp_complex_3(self):
+        def clpnm(n, m, z):
+            try:
+                return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
+            except ValueError:
+                return np.nan
+
+        def legenp(n, m, z):
+            if abs(z) < 1e-15:
+                # mpmath has bad performance here
+                return np.nan
+            return _exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=3)
+
+        # mpmath is quite slow here
+        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
+        y = np.array([-1e3, -0.5, 0.5, 1.3])
+        z = (x[:,None] + 1j*y[None,:]).ravel()
+
+        assert_mpmath_equal(clpnm,
+                            legenp,
+                            [FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg([-2, -1, 0, 1, 2, 10]), FixedArg(z)],
+                            rtol=1e-6,
+                            n=500)
 
     @knownfailure_overridable("apparently picks wrong function at |z| > 1")
     def test_legenq(self):
@@ -1435,17 +1521,32 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _time_limited()(_exception_to_nan(mpmath.polygamma)),
                             [IntArg(0, 1000), Arg()])
 
-    @knownfailure_overridable("all large negative arguments hit a pole --- the function itself is however numerically badly defined in this region, but maybe should return 0 instead?")
     def test_rgamma(self):
+        def rgamma(x):
+            if x < -8000:
+                return np.inf
+            else:
+                v = mpmath.rgamma(x)
+            return v
         assert_mpmath_equal(sc.rgamma,
-                            mpmath.rgamma,
-                            [Arg()])
+                            rgamma,
+                            [Arg()],
+                            ignore_inf_sign=True)
 
-    @knownfailure_overridable("invalid inf at very large negative arguments, accuracy issues at negative arguments eps-close to poles (some loss of precision in cancellation)")
     def test_rf(self):
+        def mppoch(a, m):
+            # deal with cases where the result in double precision
+            # hits exactly a non-positive integer, but the
+            # corresponding extended-precision mpf floats don't
+            if float(a + m) == int(a + m) and float(a + m) <= 0:
+                a = mpmath.mpf(a)
+                m = int(a + m) - a
+            return mpmath.rf(a, m)
+
         assert_mpmath_equal(sc.poch,
-                            mpmath.rf,
-                            [Arg(), Arg()], dps=100)
+                            mppoch,
+                            [Arg(), Arg()],
+                            dps=400)
 
     def test_shi(self):
         def shi(x):
@@ -1500,3 +1601,42 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_boxcox(self):
+
+        def mp_boxcox(x, lmbda):
+            x = mpmath.mp.mpf(x)
+            lmbda = mpmath.mp.mpf(lmbda)
+            if lmbda == 0:
+                return mpmath.mp.log(x)
+            else:
+                return mpmath.mp.powm1(x, lmbda) / lmbda
+
+        assert_mpmath_equal(sc.boxcox,
+                            _exception_to_nan(mp_boxcox),
+                            [Arg(a=0, inclusive_a=False), Arg()],
+                            n=200,
+                            dps=60,
+                            rtol=1e-13)
+
+    def test_boxcox1p(self):
+
+        def mp_boxcox1p(x, lmbda):
+            x = mpmath.mp.mpf(x)
+            lmbda = mpmath.mp.mpf(lmbda)
+            one = mpmath.mp.mpf(1)
+            if lmbda == 0:
+                return mpmath.mp.log(one + x)
+            else:
+                return mpmath.mp.powm1(one + x, lmbda) / lmbda
+
+        assert_mpmath_equal(sc.boxcox1p,
+                            _exception_to_nan(mp_boxcox1p),
+                            [Arg(a=-1, inclusive_a=False), Arg()],
+                            n=200,
+                            dps=60,
+                            rtol=1e-13)
+
+
+if __name__ == "__main__":
+    run_module_suite()

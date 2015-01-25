@@ -27,9 +27,9 @@ from scipy.sparse import csc_matrix
 from scipy.io.harwell_boeing._fortran_format_parser import \
         FortranFormatParser, IntFormat, ExpFormat
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
-__all__ = ["MalformedHeader", "read_hb", "write", "HBInfo", "HBFile",
+__all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
            "HBMatrixType"]
 
 
@@ -175,7 +175,7 @@ class HBInfo(object):
             raise ValueError("mxtype expected to be 3 characters long")
 
         mxtype = HBMatrixType.from_fortran(mxtype_s)
-        if not mxtype.value_type in ["real", "integer"]:
+        if mxtype.value_type not in ["real", "integer"]:
             raise ValueError("Only real or integer matrices supported for "
                              "now (detected %s)" % mxtype)
         if not mxtype.structure == "unsymmetric":
@@ -244,18 +244,18 @@ class HBInfo(object):
 
         values_format = parser.parse(values_format_str)
         if isinstance(values_format, ExpFormat):
-            if not mxtype.value_type in ["real", "complex"]:
+            if mxtype.value_type not in ["real", "complex"]:
                 raise ValueError("Inconsistency between matrix type %s and "
                                  "value type %s" % (mxtype, values_format))
             values_dtype = np.float64
         elif isinstance(values_format, IntFormat):
-            if not mxtype.value_type in ["integer"]:
+            if mxtype.value_type not in ["integer"]:
                 raise ValueError("Inconsistency between matrix type %s and "
                                  "value type %s" % (mxtype, values_format))
             # XXX: fortran int -> dtype association ?
             values_dtype = np.int
         else:
-            raise ValueError("Unsupported format for values %s" % ct[2])
+            raise ValueError("Unsupported format for values %r" % (values_format,))
 
         self.pointer_format = pointer_format
         self.indices_format = indices_format
@@ -402,11 +402,11 @@ class HBMatrixType(object):
         self.structure = structure
         self.storage = storage
 
-        if not value_type in self._q2f_type:
+        if value_type not in self._q2f_type:
             raise ValueError("Unrecognized type %s" % value_type)
-        if not structure in self._q2f_structure:
+        if structure not in self._q2f_structure:
             raise ValueError("Unrecognized structure %s" % structure)
-        if not storage in self._q2f_storage:
+        if storage not in self._q2f_storage:
             raise ValueError("Unrecognized storage %s" % storage)
 
     @property

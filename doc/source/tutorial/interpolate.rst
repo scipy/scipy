@@ -31,7 +31,7 @@ for data in 1, 2, and higher dimensions:
 1-D interpolation (:class:`interp1d`)
 =====================================
 
-The interp1d class in scipy.interpolate is a convenient method to
+The `interp1d` class in `scipy.interpolate` is a convenient method to
 create a function based on fixed data points which can be evaluated
 anywhere within the domain defined by the given data using linear
 interpolation. An instance of this class is created by passing the 1-d
@@ -46,14 +46,14 @@ its use, for linear and cubic spline interpolation:
 
    >>> from scipy.interpolate import interp1d
 
-   >>> x = np.linspace(0, 10, 10)
-   >>> y = np.cos(-x**2/8.0)
+   >>> x = np.linspace(0, 10, num=11, endpoint=True)
+   >>> y = np.cos(-x**2/9.0)
    >>> f = interp1d(x, y)
    >>> f2 = interp1d(x, y, kind='cubic')
 
-   >>> xnew = np.linspace(0, 10, 40)
+   >>> xnew = np.linspace(0, 10, num=41, endpoint=True)
    >>> import matplotlib.pyplot as plt
-   >>> plt.plot(x,y,'o',xnew,f(xnew),'-', xnew, f2(xnew),'--')
+   >>> plt.plot(x, y, 'o', xnew, f(xnew), '-', xnew, f2(xnew), '--')
    >>> plt.legend(['data', 'linear', 'cubic'], loc='best')
    >>> plt.show()
 
@@ -171,44 +171,44 @@ example that follows.
 
    Cubic-spline
 
-   >>> x = np.arange(0,2*np.pi+np.pi/4,2*np.pi/8)
+   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/8)
    >>> y = np.sin(x)
-   >>> tck = interpolate.splrep(x,y,s=0)
+   >>> tck = interpolate.splrep(x, y, s=0)
    >>> xnew = np.arange(0,2*np.pi,np.pi/50)
-   >>> ynew = interpolate.splev(xnew,tck,der=0)
+   >>> ynew = interpolate.splev(xnew, tck, der=0)
 
    >>> plt.figure()
-   >>> plt.plot(x,y,'x',xnew,ynew,xnew,np.sin(xnew),x,y,'b')
-   >>> plt.legend(['Linear','Cubic Spline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.plot(x, y, 'x', xnew, ynew, xnew, np.sin(xnew), x, y, 'b')
+   >>> plt.legend(['Linear', 'Cubic Spline', 'True'])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Cubic-spline interpolation')
    >>> plt.show()
 
    Derivative of spline
 
-   >>> yder = interpolate.splev(xnew,tck,der=1)
+   >>> yder = interpolate.splev(xnew, tck, der=1)
    >>> plt.figure()
    >>> plt.plot(xnew,yder,xnew,np.cos(xnew),'--')
    >>> plt.legend(['Cubic Spline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Derivative estimation from spline')
    >>> plt.show()
 
    Integral of spline
 
-   >>> def integ(x,tck,constant=-1):
+   >>> def integ(x, tck, constant=-1):
    >>>     x = np.atleast_1d(x)
    >>>     out = np.zeros(x.shape, dtype=x.dtype)
    >>>     for n in xrange(len(out)):
-   >>>         out[n] = interpolate.splint(0,x[n],tck)
+   >>>         out[n] = interpolate.splint(0, x[n], tck)
    >>>     out += constant
    >>>     return out
    >>>
-   >>> yint = integ(xnew,tck)
+   >>> yint = integ(xnew, tck)
    >>> plt.figure()
-   >>> plt.plot(xnew,yint,xnew,-np.cos(xnew),'--')
+   >>> plt.plot(xnew, yint, xnew, -np.cos(xnew), '--')
    >>> plt.legend(['Cubic Spline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Integral estimation from spline')
    >>> plt.show()
 
@@ -219,31 +219,31 @@ example that follows.
 
    Parametric spline
 
-   >>> t = np.arange(0,1.1,.1)
+   >>> t = np.arange(0, 1.1, .1)
    >>> x = np.sin(2*np.pi*t)
    >>> y = np.cos(2*np.pi*t)
-   >>> tck,u = interpolate.splprep([x,y],s=0)
-   >>> unew = np.arange(0,1.01,0.01)
-   >>> out = interpolate.splev(unew,tck)
+   >>> tck,u = interpolate.splprep([x,y], s=0)
+   >>> unew = np.arange(0, 1.01, 0.01)
+   >>> out = interpolate.splev(unew, tck)
    >>> plt.figure()
-   >>> plt.plot(x,y,'x',out[0],out[1],np.sin(2*np.pi*unew),np.cos(2*np.pi*unew),x,y,'b')
-   >>> plt.legend(['Linear','Cubic Spline', 'True'])
-   >>> plt.axis([-1.05,1.05,-1.05,1.05])
+   >>> plt.plot(x, y, 'x', out[0], out[1], np.sin(2*np.pi*unew), np.cos(2*np.pi*unew), x, y, 'b')
+   >>> plt.legend(['Linear', 'Cubic Spline', 'True'])
+   >>> plt.axis([-1.05, 1.05, -1.05, 1.05])
    >>> plt.title('Spline of parametrically-defined curve')
    >>> plt.show()
 
 Spline interpolation in 1-d: Object-oriented (:class:`UnivariateSpline`)
------------------------------------------------------------------------------
+------------------------------------------------------------------------
 
 The spline-fitting capabilities described above are also available via
 an objected-oriented interface.  The one dimensional splines are
 objects of the `UnivariateSpline` class, and are created with the
 :math:`x` and :math:`y` components of the curve provided as arguments
-to the constructor.  The class defines __call__, allowing the object
+to the constructor.  The class defines :meth:`__call__ <UnivariateSpline.__call__>`, allowing the object
 to be called with the x-axis values at which the spline should be
 evaluated, returning the interpolated y-values.  This is shown in
 the example below for the subclass `InterpolatedUnivariateSpline`.
-The methods :meth:`integral <UnivariateSpline.integral>`,
+The :meth:`integral <UnivariateSpline.integral>`,
 :meth:`derivatives <UnivariateSpline.derivatives>`, and
 :meth:`roots <UnivariateSpline.roots>` methods are also available
 on `UnivariateSpline` objects, allowing definite integrals,
@@ -260,9 +260,9 @@ It is a subclass of `UnivariateSpline` that always passes  through all
 points (equivalent to forcing the smoothing parameter to 0).  This
 class is demonstrated in the example below.
 
-The `LSQUnivarateSpline` is the other subclass of `UnivarateSpline`.
+The `LSQUnivariateSpline` class is the other subclass of `UnivariateSpline`.
 It allows the user to specify the number and location of internal
-knots as explicitly with the parameter `t`.  This allows creation
+knots explicitly with the parameter `t`.  This allows creation
 of customized splines with non-linear spacing, to interpolate in
 some domains and smooth in others, or change the character of the
 spline.
@@ -276,29 +276,29 @@ spline.
 
    InterpolatedUnivariateSpline
 
-   >>> x = np.arange(0,2*np.pi+np.pi/4,2*np.pi/8)
+   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/8)
    >>> y = np.sin(x)
-   >>> s = interpolate.InterpolatedUnivariateSpline(x,y)
-   >>> xnew = np.arange(0,2*np.pi,np.pi/50)
+   >>> s = interpolate.InterpolatedUnivariateSpline(x, y)
+   >>> xnew = np.arange(0, 2*np.pi, np.pi/50)
    >>> ynew = s(xnew)
 
    >>> plt.figure()
-   >>> plt.plot(x,y,'x',xnew,ynew,xnew,np.sin(xnew),x,y,'b')
-   >>> plt.legend(['Linear','InterpolatedUnivariateSpline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.plot(x, y, 'x', xnew, ynew, xnew, np.sin(xnew), x, y, 'b')
+   >>> plt.legend(['Linear', 'InterpolatedUnivariateSpline', 'True'])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('InterpolatedUnivariateSpline')
    >>> plt.show()
 
    LSQUnivarateSpline with non-uniform knots
 
-   >>> t = [np.pi/2-.1,np.pi/2+.1,3*np.pi/2-.1,3*np.pi/2+.1]
-   >>> s = interpolate.LSQUnivariateSpline(x,y,t,k=2)
+   >>> t = [np.pi/2-.1, np.pi/2+.1, 3*np.pi/2-.1, 3*np.pi/2+.1]
+   >>> s = interpolate.LSQUnivariateSpline(x, y, t, k=2)
    >>> ynew = s(xnew)
 
    >>> plt.figure()
-   >>> plt.plot(x,y,'x',xnew,ynew,xnew,np.sin(xnew),x,y,'b')
-   >>> plt.legend(['Linear','LSQUnivariateSpline', 'True'])
-   >>> plt.axis([-0.05,6.33,-1.05,1.05])
+   >>> plt.plot(x, y, 'x', xnew, ynew, xnew, np.sin(xnew), x, y, 'b')
+   >>> plt.legend(['Linear', 'LSQUnivariateSpline', 'True'])
+   >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Spline with Specified Interior Knots')
    >>> plt.show()
 
@@ -338,8 +338,8 @@ processing toolbox contains more appropriate algorithms for finding
 the spline representation of an image. The two dimensional
 interpolation commands are intended for use when interpolating a two
 dimensional function as shown in the example that follows. This
-example uses the :obj:`mgrid <numpy.mgrid>` command in SciPy which is
-useful for defining a "mesh-grid "in many dimensions. (See also the
+example uses the :obj:`mgrid <numpy.mgrid>` command in NumPy which is
+useful for defining a "mesh-grid" in many dimensions. (See also the
 :obj:`ogrid <numpy.ogrid>` command if the full-mesh is not
 needed). The number of output arguments and the number of dimensions
 of each argument is determined by the number of indexing objects
@@ -353,23 +353,23 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 
    Define function over sparse 20x20 grid
 
-   >>> x,y = np.mgrid[-1:1:20j,-1:1:20j]
-   >>> z = (x+y)*np.exp(-6.0*(x*x+y*y))
+   >>> x, y = np.mgrid[-1:1:20j, -1:1:20j]
+   >>> z = (x+y) * np.exp(-6.0*(x*x+y*y))
 
    >>> plt.figure()
-   >>> plt.pcolor(x,y,z)
+   >>> plt.pcolor(x, y, z)
    >>> plt.colorbar()
    >>> plt.title("Sparsely sampled function.")
    >>> plt.show()
 
    Interpolate function over new 70x70 grid
 
-   >>> xnew,ynew = np.mgrid[-1:1:70j,-1:1:70j]
-   >>> tck = interpolate.bisplrep(x,y,z,s=0)
-   >>> znew = interpolate.bisplev(xnew[:,0],ynew[0,:],tck)
+   >>> xnew, ynew = np.mgrid[-1:1:70j, -1:1:70j]
+   >>> tck = interpolate.bisplrep(x, y, z, s=0)
+   >>> znew = interpolate.bisplev(xnew[:,0], ynew[0,:], tck)
 
    >>> plt.figure()
-   >>> plt.pcolor(xnew,ynew,znew)
+   >>> plt.pcolor(xnew, ynew, znew)
    >>> plt.colorbar()
    >>> plt.title("Interpolated function.")
    >>> plt.show()
@@ -398,7 +398,7 @@ outside of the observed data range.
 1-d Example
 -----------
 
-This example compares the usage of the Rbf and UnivariateSpline classes
+This example compares the usage of the `Rbf` and `UnivariateSpline` classes
 from the scipy.interpolate module.
 
 .. plot::

@@ -7,14 +7,14 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller
 from .mio4 import MatFile4Reader, MatFile4Writer
 from .mio5 import MatFile5Reader, MatFile5Writer
 
-__all__ = ['find_mat_file', 'mat_reader_factory', 'loadmat', 'savemat',
-           'whosmat']
+__all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
+
 
 def _open_file(file_like, appendmat):
     ''' Open `file_like` and return as file-like object '''
@@ -24,8 +24,11 @@ def _open_file(file_like, appendmat):
         except IOError as e:
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
-                return open(file_like, 'rb')
-            raise IOError(e)
+                try:
+                    return open(file_like, 'rb')
+                except IOError:
+                    pass  # Rethrow the original exception.
+            raise
     # not a string - maybe file-like object
     try:
         file_like.read(0)
@@ -99,6 +102,12 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
        False replicates the behavior of scipy version 0.7.x (returning
        numpy object arrays).  The default setting is True, because it
        allows easier round-trip load and save of MATLAB files.
+    verify_compressed_data_integrity : bool, optional
+        Whether the length of compressed sequences in the MATLAB file
+        should be checked, to ensure that they are not longer than we expect.
+        It is advisable to enable this (the default) because overlong
+        compressed sequences in MATLAB files generally indicate that the
+        files have experienced some sort of corruption.
     variable_names : None or sequence
         If None (the default) - read all variables in file. Otherwise
         `variable_names` should be a sequence of strings, giving names of the
@@ -182,13 +191,10 @@ def savemat(file_name, mdict,
             file_name = file_name + ".mat"
         file_stream = open(file_name, 'wb')
     else:
-        try:
-            file_name.write(b'')
-        except AttributeError:
+        if not hasattr(file_name, 'write'):
             raise IOError('Writer needs file name or writeable '
                            'file-like object')
         file_stream = file_name
-
     if format == '4':
         if long_field_names:
             raise ValueError("Long field names are not available for version 4 files")
@@ -210,8 +216,6 @@ def savemat(file_name, mdict,
 def whosmat(file_name, appendmat=True, **kwargs):
     """
     List variables inside a MATLAB file
-
-    .. versionadded:: 0.12.0
 
     Parameters
     ----------
@@ -236,6 +240,8 @@ def whosmat(file_name, appendmat=True, **kwargs):
     You will need an HDF5 python library to read matlab 7.3 format mat
     files.  Because scipy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
+
+    .. versionadded:: 0.12.0
 
     """
     ML = mat_reader_factory(file_name, **kwargs)

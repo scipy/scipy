@@ -60,14 +60,15 @@ We can list all methods and properties of the distribution with
 ``dir(norm)``.  As it turns out, some of the methods are private
 methods although they are not named as such (their name does not start
 with a leading underscore), for example ``veccdf``, are only available
-for internal calculation.
+for internal calculation (those methods will give warnings when one tries to
+use them, and will be removed at some point).
 
 To obtain the `real` main methods, we list the methods of the frozen
 distribution. (We explain the meaning of a `frozen` distribution
 below).
 
     >>> rv = norm()
-    >>> dir(rv) #reformatted
+    >>> dir(rv)  # reformatted
         ['__class__', '__delattr__', '__dict__', '__doc__', '__getattribute__',
         '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__',
         '__repr__', '__setattr__', '__str__', '__weakref__', 'args', 'cdf', 'dist',
@@ -173,13 +174,13 @@ By applying the scaling rule above, it can be seen that by
 taking ``scale  = 1./lambda`` we get the proper scale.
 
     >>> from scipy.stats import expon
-    >>> expon.mean(scale = 3.)
+    >>> expon.mean(scale=3.)
     3.0
 
 The uniform distribution is also interesting:
 
     >>> from scipy.stats import uniform
-    >>> uniform.cdf([0,1,2,3,4,5], loc = 1, scale = 4)
+    >>> uniform.cdf([0, 1, 2, 3, 4, 5], loc = 1, scale = 4)
     array([ 0.  ,  0.  ,  0.25,  0.5 ,  0.75,  1.  ])
 
 
@@ -192,7 +193,7 @@ to set the ``loc`` parameter. Let's see:
     4.983550784784704
 
 Thus, to explain the output of the example of the last section:
-``norm.rvs(5)` generates a normally distributed random variate with
+``norm.rvs(5)`` generates a normally distributed random variate with
 mean ``loc=5``.
 
 I prefer to set the ``loc`` and ``scale`` parameter explicitly, by
@@ -210,9 +211,9 @@ additional shape parameters. For instance, the gamma distribution, with density
 
 .. math::
 
-    \gamma(x,n) = \frac{\lambda (\lambda x)^{n-1}}{\Gamma(n)} e^{-\lambda x}\;,
+    \gamma(x, a) = \frac{\lambda (\lambda x)^{a-1}}{\Gamma(a)} e^{-\lambda x}\;,
  
-requires the shape parameter :math:`n`. Observe that setting
+requires the shape parameter :math:`a`. Observe that setting
 :math:`\lambda` can be obtained by setting the ``scale`` keyword to
 :math:`1/\lambda`.
 
@@ -337,9 +338,9 @@ cdf values, we get the initial integers back, for example
 If we use values that are not at the kinks of the cdf step function, we get
 the next higher integer back:
 
-    >>> hypergeom.ppf(prb+1e-8, M, n, N)
+    >>> hypergeom.ppf(prb + 1e-8, M, n, N)
     array([ 1.,  3.,  5.,  7.])
-    >>> hypergeom.ppf(prb-1e-8, M, n, N)
+    >>> hypergeom.ppf(prb - 1e-8, M, n, N)
     array([ 0.,  2.,  4.,  6.])
 
 
@@ -390,9 +391,6 @@ Remaining Issues
 The distributions in ``scipy.stats`` have recently been corrected and improved
 and gained a considerable test suite, however a few issues remain:
 
-* skew and kurtosis, 3rd and 4th moments and entropy are not thoroughly
-  tested and some coarse testing indicates that there are still some
-  incorrect results left.
 * the distributions have been tested over some range of parameters,
   however in some corner ranges, a few incorrect results may remain.
 * the maximum likelihood estimation in `fit` does not work with
@@ -417,8 +415,8 @@ Making continuous distributions is fairly simple.
 
     >>> from scipy import stats
     >>> class deterministic_gen(stats.rv_continuous):
-    ...     def _cdf(self, x ):
-    ...         return np.where(x<0, 0., 1.)
+    ...     def _cdf(self, x):
+    ...         return np.where(x < 0, 0., 1.)
     ...     def _stats(self):
     ...         return 0., 0., 0., 0.
 
@@ -448,7 +446,7 @@ information about the distribution. Thus, as a cautionary example:
 But this is not correct: the integral over this pdf should be 1. Let's make the
 integration interval smaller: 
 
-    >>> quad(deterministic.pdf, -1e-3, 1e-3) # warning removed
+    >>> quad(deterministic.pdf, -1e-3, 1e-3)  # warning removed
     (1.000076872229173, 0.0010625571718182458)
 
 This looks better. However, the problem originated from the fact that

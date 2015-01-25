@@ -3,29 +3,25 @@
 
 import numpy as np
 
-from numpy.testing import (assert_almost_equal,
-                           assert_array_equal)
-
-from nose.tools import (assert_true, assert_false, assert_raises,
-                        assert_equal, assert_not_equal)
+from numpy.testing import assert_raises, assert_equal
 
 from scipy.io.matlab.miobase import matdims
 
 
 def test_matdims():
     # Test matdims dimension finder
-    assert_equal(matdims(np.array(1)), (1, 1)) # numpy scalar
-    assert_equal(matdims(np.array([1])), (1, 1)) # 1d array, 1 element
-    assert_equal(matdims(np.array([1,2])), (2, 1)) # 1d array, 2 elements
-    assert_equal(matdims(np.array([[2],[3]])), (2, 1)) # 2d array, column vector
-    assert_equal(matdims(np.array([[2,3]])), (1, 2)) # 2d array, row vector
+    assert_equal(matdims(np.array(1)), (1, 1))  # numpy scalar
+    assert_equal(matdims(np.array([1])), (1, 1))  # 1d array, 1 element
+    assert_equal(matdims(np.array([1,2])), (2, 1))  # 1d array, 2 elements
+    assert_equal(matdims(np.array([[2],[3]])), (2, 1))  # 2d array, column vector
+    assert_equal(matdims(np.array([[2,3]])), (1, 2))  # 2d array, row vector
     # 3d array, rowish vector
     assert_equal(matdims(np.array([[[2,3]]])), (1, 1, 2))
-    assert_equal(matdims(np.array([])), (0, 0)) # empty 1d array
-    assert_equal(matdims(np.array([[]])), (0, 0)) # empty 2d
-    assert_equal(matdims(np.array([[[]]])), (0, 0, 0)) # empty 3d
+    assert_equal(matdims(np.array([])), (0, 0))  # empty 1d array
+    assert_equal(matdims(np.array([[]])), (0, 0))  # empty 2d
+    assert_equal(matdims(np.array([[[]]])), (0, 0, 0))  # empty 3d
     # Optional argument flips 1-D shape behavior.
-    assert_equal(matdims(np.array([1,2]), 'row'), (1, 2)) # 1d array, 2 elements
+    assert_equal(matdims(np.array([1,2]), 'row'), (1, 2))  # 1d array, 2 elements
     # The argument has to make sense though
     assert_raises(ValueError, matdims, np.array([1,2]), 'bizarre')
     # Check empty sparse matrices get their own shape

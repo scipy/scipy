@@ -77,7 +77,7 @@ static double sin_pi(double x)
          */
         return 0;
     }
-    return sin(M_PI * x);
+    return sin(NPY_PI * x);
 }
 
 static double cos_pi(double x)
@@ -89,7 +89,7 @@ static double cos_pi(double x)
          */
         return 0;
     }
-    return cos(M_PI * x);
+    return cos(NPY_PI * x);
 }
 
 static npy_cdouble

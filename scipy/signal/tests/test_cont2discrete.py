@@ -231,7 +231,7 @@ class TestC2D(TestCase):
     def test_discrete_approx(self):
         """
         Test that the solution to the discrete approximation of a continuous
-        system actually approximates the solution to the continuous sytem.
+        system actually approximates the solution to the continuous system.
         This is an indirect test of the correctness of the implementation
         of cont2discrete.
         """

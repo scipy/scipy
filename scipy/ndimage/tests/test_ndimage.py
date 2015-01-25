@@ -32,12 +32,14 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import math
+import sys
 
 import numpy
 from numpy import fft
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
-        run_module_suite, assert_array_almost_equal, assert_almost_equal)
+        run_module_suite, assert_array_almost_equal, assert_almost_equal, dec)
 import scipy.ndimage as ndimage
+from nose import SkipTest
 
 
 eps = 1e-12
@@ -1034,6 +1036,20 @@ class TestNdimage:
                                   footprint=footprint, origin=[-1, 0])
             assert_array_almost_equal(expected, output)
 
+    def test_rank15(self):
+        "rank filter 15"
+        expected = [[2, 3, 1, 4, 1],
+                [5, 3, 7, 1, 1],
+                [5, 5, 3, 3, 3]]
+        footprint = [[1, 0, 1], [0, 1, 0]]
+        for type in self.types:
+            array = numpy.array([[3, 2, 5, 1, 4],
+                                    [5, 8, 3, 7, 1],
+                                    [5, 6, 9, 3, 5]], type)
+            output = ndimage.rank_filter(array, 0,
+                                  footprint=footprint, origin=[-1, 0])
+            assert_array_almost_equal(expected, output)
+
     def test_generic_filter1d01(self):
         weights = numpy.array([1.1, 2.2, 3.3])
 
@@ -1397,6 +1413,24 @@ class TestNdimage:
                                                         order=order)
             assert_array_almost_equal(out, [1])
 
+    def test_geometric_transform01_with_output_parameter(self):
+        data = numpy.array([1])
+
+        def mapping(x):
+            return x
+        for order in range(0, 6):
+            out = numpy.empty_like(data)
+            ndimage.geometric_transform(data, mapping,
+                                        data.shape,
+                                        output=out)
+            assert_array_almost_equal(out, [1])
+
+            out = numpy.empty_like(data).astype(data.dtype.newbyteorder())
+            ndimage.geometric_transform(data, mapping,
+                                        data.shape,
+                                        output=out)
+            assert_array_almost_equal(out, [1])
+
     def test_geometric_transform02(self):
         data = numpy.ones([4])
 
@@ -1659,6 +1693,25 @@ class TestNdimage:
                                        [0, 4, 1, 3],
                                        [0, 7, 6, 8]])
 
+    def test_map_coordinates01_with_output_parameter(self):
+        data = numpy.array([[4, 1, 3, 2],
+                            [7, 6, 8, 5],
+                            [3, 5, 3, 6]])
+        idx = numpy.indices(data.shape)
+        idx -= 1
+        expected = numpy.array([[0, 0, 0, 0],
+                                [0, 4, 1, 3],
+                                [0, 7, 6, 8]])
+        for order in range(0, 6):
+            out = numpy.empty_like(expected)
+            ndimage.map_coordinates(data, idx, order=order, output=out)
+            assert_array_almost_equal(out, expected)
+
+            out = numpy.empty_like(expected).astype(
+                expected.dtype.newbyteorder())
+            ndimage.map_coordinates(data, idx, order=order, output=out)
+            assert_array_almost_equal(out, expected)
+
     def test_map_coordinates02(self):
         data = numpy.array([[4, 1, 3, 2],
                                [7, 6, 8, 5],
@@ -1691,11 +1744,39 @@ class TestNdimage:
         assert_array_almost_equal(out, [[0, 0], [0, 4], [0, 7]])
         assert_array_almost_equal(out, ndimage.shift(data[:,::2], (1, 1)))
 
+    # do not run on 32 bit or windows (no sparse memory)
+    @dec.skipif('win32' in sys.platform or numpy.intp(0).itemsize < 8)
+    def test_map_coordinates_large_data(self):
+        # check crash on large data
+        try:
+            n = 30000
+            a = numpy.empty(n**2, dtype=numpy.float32).reshape(n, n)
+            # fill the part we might read
+            a[n - 3:,n - 3:] = 0
+            ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)
+        except MemoryError:
+            raise SkipTest("Not enough memory available")
+
     def test_affine_transform01(self):
         data = numpy.array([1])
         for order in range(0, 6):
             out = ndimage.affine_transform(data, [[1]],
                                                      order=order)
+            assert_array_almost_equal(out, [1])
+
+    def test_affine_transform01_with_output_parameter(self):
+        data = numpy.array([1])
+        for order in range(0, 6):
+            out = numpy.empty_like(data)
+            ndimage.affine_transform(data, [[1]],
+                                     order=order,
+                                     output=out)
+            assert_array_almost_equal(out, [1])
+
+            out = numpy.empty_like(data).astype(data.dtype.newbyteorder())
+            ndimage.affine_transform(data, [[1]],
+                                     order=order,
+                                     output=out)
             assert_array_almost_equal(out, [1])
 
     def test_affine_transform02(self):

@@ -19,7 +19,7 @@ The module contains:
    functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
    Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
-2. Global (brute-force) optimization routines  (e.g., :func:`anneal`, :func:`basinhopping`)
+2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`, :func:`differential_evolution`)
 
 3. Least-squares minimization (:func:`leastsq`) and curve fitting
    (:func:`curve_fit`) algorithms
@@ -219,7 +219,7 @@ the function using Newton-CG method is shown in the following example:
 
     >>> res = minimize(rosen, x0, method='Newton-CG',
     ...                jac=rosen_der, hess=rosen_hess,
-    ...                options={'avextol': 1e-8, 'disp': True})
+    ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 19
@@ -256,7 +256,7 @@ elements:
 Code which makes use of this Hessian product to minimize the
 Rosenbrock function using :func:`minimize` follows:
 
-    >>> def rosen_hess_p(x,p):
+    >>> def rosen_hess_p(x, p):
     ...     x = np.asarray(x)
     ...     Hp = np.zeros_like(x)
     ...     Hp[0] = (1200*x[0]**2 - 400*x[1] + 2)*p[0] - 400*x[0]*p[1]
@@ -266,8 +266,8 @@ Rosenbrock function using :func:`minimize` follows:
     ...     return Hp
 
     >>> res = minimize(rosen, x0, method='Newton-CG',
-    ...                jac=rosen_der, hess=rosen_hess_p,
-    ...                options={'avextol': 1e-8, 'disp': True})
+    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 20
@@ -328,7 +328,7 @@ The objective function and its derivative are defined as follows.
 
 Note that since :func:`minimize` only minimizes functions, the ``sign``
 parameter is introduced to multiply the objective function (and its
-derivative by -1) in order to perform a maximization.
+derivative) by -1 in order to perform a maximization.
 
 Then constraints are defined as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
@@ -427,21 +427,21 @@ This is shown in the following example:
 
 .. plot::
 
-   >>> from numpy import *
-   >>> x = arange(0,6e-2,6e-2/30)
-   >>> A,k,theta = 10, 1.0/3e-2, pi/6
-   >>> y_true = A*sin(2*pi*k*x+theta)
+   >>> from numpy import arange, sin, pi, random, array
+   >>> x = arange(0, 6e-2, 6e-2 / 30)
+   >>> A, k, theta = 10, 1.0 / 3e-2, pi / 6
+   >>> y_true = A * sin(2 * pi * k * x + theta)
    >>> y_meas = y_true + 2*random.randn(len(x))
 
    >>> def residuals(p, y, x):
-   ...     A,k,theta = p
-   ...     err = y-A*sin(2*pi*k*x+theta)
+   ...     A, k, theta = p
+   ...     err = y - A * sin(2 * pi * k * x + theta)
    ...     return err
 
    >>> def peval(x, p):
-   ...     return p[0]*sin(2*pi*p[1]*x+p[2])
+   ...     return p[0] * sin(2 * pi * p[1] * x + p[2])
 
-   >>> p0 = [8, 1/2.3e-2, pi/3]
+   >>> p0 = [8, 1 / 2.3e-2, pi / 3]
    >>> print(array(p0))
    [  8.      43.4783   1.0472]
 
@@ -454,7 +454,7 @@ This is shown in the following example:
    [ 10.      33.3333   0.5236]
 
    >>> import matplotlib.pyplot as plt
-   >>> plt.plot(x,peval(x,plsq[0]),x,y_meas,'o',x,y_true)
+   >>> plt.plot(x, peval(x, plsq[0]),x,y_meas,'o',x,y_true)
    >>> plt.title('Least-squares fit to noisy data')
    >>> plt.legend(['Fit', 'Noisy', 'True'])
    >>> plt.show()
@@ -518,6 +518,91 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
     >>> res = minimize_scalar(j1, bs=(4, 7), method='bounded')
     >>> print(res.x)
     5.33144184241
+
+
+Custom minimizers
+-----------------
+
+Sometimes, it may be useful to use a custom method as a (multivariate
+or univariate) minimizer, for example when using some library wrappers
+of :func:`minimize` (e.g. :func:`basinhopping`).
+
+We can achieve that by, instead of passing a method name, we pass
+a callable (either a function or an object implementing a `__call__`
+method) as the `method` parameter.
+
+Let us consider an (admittedly rather virtual) need to use a trivial
+custom multivariate minimization method that will just search the
+neighborhood in each dimension independently with a fixed step size::
+
+    >>> def custmin(fun, x0, args=(), maxfev=None, stepsize=0.1,
+    ...         maxiter=100, callback=None, **options):
+    ...     bestx = x0
+    ...     besty = fun(x0)
+    ...     funcalls = 1
+    ...     niter = 0
+    ...     improved = True
+    ...     stop = False
+    ...     
+    ...     while improved and not stop and niter < maxiter:
+    ...         improved = False
+    ...         niter += 1
+    ...         for dim in range(np.size(x0)):
+    ...             for s in [bestx[dim] - stepsize, bestx[dim] + stepsize]:
+    ...                 testx = np.copy(bestx)
+    ...                 testx[dim] = s
+    ...                 testy = fun(testx, *args)
+    ...                 funcalls += 1
+    ...                 if testy < besty:
+    ...                     besty = testy
+    ...                     bestx = testx
+    ...                     improved = True
+    ...             if callback is not None:
+    ...                 callback(bestx)
+    ...             if maxfev is not None and funcalls >= maxfev:
+    ...                 stop = True
+    ...                 break
+    ...     
+    ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
+    ...                           nfev=funcalls, success=(niter > 1))
+    >>> x0 = [1.35, 0.9, 0.8, 1.1, 1.2]
+    >>> res = minimize(rosen, x0, method=custmin, options=dict(stepsize=0.05))
+    >>> res.x
+    [ 1.  1.  1.  1.  1.]
+
+This will work just as well in case of univariate optimization::
+
+    >>> def custmin(fun, bracket, args=(), maxfev=None, stepsize=0.1,
+    ...         maxiter=100, callback=None, **options):
+    ...     bestx = (bracket[1] + bracket[0]) / 2.0
+    ...     besty = fun(bestx)
+    ...     funcalls = 1
+    ...     niter = 0
+    ...     improved = True
+    ...     stop = False
+    ...     
+    ...     while improved and not stop and niter < maxiter:
+    ...         improved = False
+    ...         niter += 1
+    ...         for testx in [bestx - stepsize, bestx + stepsize]:
+    ...             testy = fun(testx, *args)
+    ...             funcalls += 1
+    ...             if testy < besty:
+    ...                 besty = testy
+    ...                 bestx = testx
+    ...                 improved = True
+    ...         if callback is not None:
+    ...             callback(bestx)
+    ...         if maxfev is not None and funcalls >= maxfev:
+    ...             stop = True
+    ...             break
+    ...     
+    ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
+    ...                           nfev=funcalls, success=(niter > 1))
+    >>> res = minimize_scalar(f, bracket=(-3.5, 0), method=custmin,
+    ...                       options=dict(stepsize = 0.05))
+    >>> res.x
+    -2.0
 
 
 Root finding

@@ -18,7 +18,7 @@ Questions:
        the KeyError should be thrown.  Unfortunately, this is not 
        possible with simple C++.  It may be possible with template
        expressions, but we aren't using those. So, for now, we will
-       have to deal with KeyErrors not occuring on the RHS of equations.
+       have to deal with KeyErrors not occurring on the RHS of equations.
        A secondary option here is to have a second argument have a 
        special function for RHS access to values.  This is likely 
        what we will do in auto generated code. 
@@ -71,7 +71,7 @@ correctly.  When called from a function, the first call to a
 inline() causes the ref count goes up an extra count.  However,
 subsequent calls don't cause any further refcount increases.  Checks
 put in py::object creation and destruction look like the C++ code is
-not loosing a ref count.  I'm thinking that some of the stack frame
+not losing a ref count.  I'm thinking that some of the stack frame
 limbo played in inline() might be to blame???  Anyway, this needs
 further investigation.  I'm not sure if the issue is leading to leaks
 or not.

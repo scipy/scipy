@@ -8,11 +8,10 @@ import warnings
 
 import numpy as np
 
-from numpy.testing import TestCase, assert_equal, assert_array_equal, \
-     assert_, assert_allclose, assert_raises
+from numpy.testing import (TestCase, assert_equal, assert_array_equal,
+     assert_, assert_allclose, assert_raises, run_module_suite)
 
-from numpy import zeros, ones, arange, array, abs, max, ones, eye, iscomplexobj
-from numpy.linalg import cond
+from numpy import zeros, arange, array, abs, max, ones, eye, iscomplexobj
 from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
@@ -137,6 +136,9 @@ class IterativeParams(object):
                                skip=sym_solvers+[cgs, qmr, bicg]))
         self.cases.append(Case("nonsymposdef", A.astype('F'),
                                skip=sym_solvers+[cgs, qmr, bicg]))
+
+
+params = None
 
 
 def setup_module():
@@ -354,6 +356,6 @@ class TestGMRES(TestCase):
         assert_allclose(r_x, x)
         assert_(r_info == info)
 
+
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

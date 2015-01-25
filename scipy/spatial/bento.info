@@ -4,7 +4,7 @@ Library:
     Extension: ckdtree
         Sources: ckdtree.c
     Extension: _distance_wrap
-        Sources: src/distance_wrap.c, src/distance.c
+        Sources: src/distance_wrap.c
     Extension: qhull
         Sources:
             qhull.c,

@@ -28,6 +28,8 @@ from libc.math cimport sqrt, exp, floor, fabs, log, sin, M_PI as pi
 from numpy cimport npy_cdouble
 from _complexstuff cimport nan, inf, number_t
 
+cimport sf_error
+
 cdef extern from "cephes.h":
     double Gamma(double x) nogil
     double lgam(double x) nogil
@@ -430,6 +432,11 @@ cdef inline number_t eval_genlaguerre(double n, double alpha, number_t x) nogil:
     cdef double a, b, d
     cdef number_t g
 
+    if alpha <= -1:
+        sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
+                       "polynomial defined only for alpha > -1")
+        return nan
+
     d = binom(n+alpha, n)
     a = -n
     b = alpha + 1
@@ -441,6 +448,11 @@ cdef inline double eval_genlaguerre_l(long n, double alpha, double x) nogil:
     cdef long kk
     cdef double p, d
     cdef double k
+
+    if alpha <= -1:
+        sf_error.error("eval_genlaguerre", sf_error.DOMAIN,
+                       "polynomial defined only for alpha > -1")
+        return nan
 
     if n < 0:
         return 0.0
@@ -468,26 +480,33 @@ cdef inline double eval_laguerre_l(long n, double x) nogil:
     return eval_genlaguerre_l(n, 0., x)
 
 #-----------------------------------------------------------------------------
+# Hermite (statistician's)
+#-----------------------------------------------------------------------------
+
+cdef inline double eval_hermitenorm(long n, double x) nogil:
+    cdef long k
+    cdef double y1, y2, y3
+
+    if n < 0:
+        return 0.0
+    elif n == 0:
+        return 1.0
+    elif n == 1:
+        return x
+    else:
+        y3 = 0.0
+        y2 = 1.0
+        for k in range(n, 1, -1):
+            y1 = x*y2 - k*y3
+            y3 = y2
+            y2 = y1
+        return x*y2 - y3
+
+#-----------------------------------------------------------------------------
 # Hermite (physicist's)
 #-----------------------------------------------------------------------------
 
 @cython.cdivision(True)
 cdef inline double eval_hermite(long n, double x) nogil:
-    cdef long m
+    return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)
 
-    if n % 2 == 0:
-        m = n/2
-        return ((-1)**m * 2**(2*m) * Gamma(1+m)
-                 * eval_genlaguerre_l(m, -0.5, x**2))
-    else:
-        m = (n-1)/2
-        return ((-1)**m * 2**(2*m+1) * Gamma(1+m)
-                  * x * eval_genlaguerre_l(m, 0.5, x**2))
-
-#-----------------------------------------------------------------------------
-# Hermite (statistician's)
-#-----------------------------------------------------------------------------
-
-@cython.cdivision(True)
-cdef inline double eval_hermitenorm(long n, double x) nogil:
-    return eval_hermite(n, x/sqrt(2)) * 2**(-n/2.0)

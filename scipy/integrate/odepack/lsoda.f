@@ -946,9 +946,9 @@ c  bnorm    computes the norm of a band matrix consistent with the
 c           weighted max-norm on vectors.
 c  srcma    is a user-callable routine to save and restore
 c           the contents of the internal common blocks.
-c  dgefa and dgesl   are routines from linpack for solving full
+c  dgetrf and dgetrs   are routines from lapack for solving full
 c           systems of linear algebraic equations.
-c  dgbfa and dgbsl   are routines from linpack for solving banded
+c  dgbtrf and dgbtrs   are routines from lapack for solving banded
 c           linear systems.
 c  daxpy, dscal, idamax, and ddot   are basic linear algebra modules
 c           (blas) used by the above linpack routines.
@@ -1210,6 +1210,8 @@ c initial call to f.  (lf0 points to yh(*,2).) -------------------------
       lf0 = lyh + nyh
       call srcma(rsav, isav, 1)
       call f (neq, t, y, rwork(lf0))
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma(rsav, isav, 2)
       nfe = 1
 c load the initial value vector in yh. ---------------------------------
@@ -1353,6 +1355,8 @@ c-----------------------------------------------------------------------
       call stoda (neq, y, rwork(lyh), nyh, rwork(lyh), rwork(lewt),
      1   rwork(lsavf), rwork(lacor), rwork(lwm), iwork(liwm),
      2   f, jac, prja, solsy)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       kgo = 1 - kflag
       go to (300, 530, 540), kgo
 c-----------------------------------------------------------------------

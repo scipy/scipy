@@ -125,7 +125,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
 
 def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
     """
-    Compute pivoted LU decompostion of a matrix.
+    Compute pivoted LU decomposition of a matrix.
 
     The decomposition is::
 

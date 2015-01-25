@@ -206,6 +206,9 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
     npy_intp kk, ll, lines, len;
     double *buffer = NULL, weight, pole[2];
     NI_LineBuffer iline_buffer, oline_buffer;
+    char errmsg[NI_MAX_ERR_MSG];
+    NPY_BEGIN_THREADS_DEF;
+    errmsg[0] = 0;
 
     len = input->nd > 0 ? input->dimensions[axis] : 1;
     if (len < 1)
@@ -252,10 +255,12 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
                                                  NI_EXTEND_DEFAULT, 0.0, &oline_buffer))
         goto exit;
 
+    NPY_BEGIN_THREADS;
+
     /* iterate over all the array lines: */
     do {
         /* copy lines from array to buffer: */
-        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more))
+        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more, errmsg))
             goto exit;
         /* iterate over the lines in the buffer: */
         for(kk = 0; kk < lines; kk++) {
@@ -298,12 +303,16 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
             }
         }
         /* copy lines from buffer to array: */
-        if (!NI_LineBufferToArray(&oline_buffer))
+        if (!NI_LineBufferToArray(&oline_buffer, errmsg))
             goto exit;
     } while(more);
 
  exit:
-    if (buffer) free(buffer);
+    NPY_END_THREADS;
+    if (errmsg[0] != 0) {
+        PyErr_SetString(PyExc_RuntimeError, errmsg);
+    }
+    free(buffer);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -362,6 +371,9 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     Float64 *matrix = matrix_ar ? (Float64*)PyArray_DATA(matrix_ar) : NULL;
     Float64 *shift = shift_ar ? (Float64*)PyArray_DATA(shift_ar) : NULL;
     int irank = 0, orank, qq;
+    NPY_BEGIN_THREADS_DEF;
+
+    NPY_BEGIN_THREADS;
 
     for(kk = 0; kk < input->nd; kk++) {
         idimensions[kk] = input->dimensions[kk];
@@ -382,32 +394,36 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     }
 
     /* offsets used at the borders: */
-    edge_offsets = (npy_intp**)malloc(irank * sizeof(npy_intp*));
-    data_offsets = (npy_intp**)malloc(irank * sizeof(npy_intp*));
-    if (!edge_offsets || !data_offsets) {
+    edge_offsets = malloc(irank * sizeof(npy_intp*));
+    data_offsets = malloc(irank * sizeof(npy_intp*));
+    if (NI_UNLIKELY(!edge_offsets || !data_offsets)) {
+        NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
     }
     for(jj = 0; jj < irank; jj++)
         data_offsets[jj] = NULL;
     for(jj = 0; jj < irank; jj++) {
-        data_offsets[jj] = (npy_intp*)malloc((order + 1) * sizeof(npy_intp));
-        if (!data_offsets[jj]) {
+        data_offsets[jj] = malloc((order + 1) * sizeof(npy_intp));
+        if (NI_UNLIKELY(!data_offsets[jj])) {
+            NPY_END_THREADS;
             PyErr_NoMemory();
             goto exit;
         }
     }
     /* will hold the spline coefficients: */
-    splvals = (double**)malloc(irank * sizeof(double*));
-    if (!splvals) {
+    splvals = malloc(irank * sizeof(double*));
+    if (NI_UNLIKELY(!splvals)) {
+        NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
     }
     for(jj = 0; jj < irank; jj++)
         splvals[jj] = NULL;
     for(jj = 0; jj < irank; jj++) {
-        splvals[jj] = (double*)malloc((order + 1) * sizeof(double));
-        if (!splvals[jj]) {
+        splvals[jj] = malloc((order + 1) * sizeof(double));
+        if (NI_UNLIKELY(!splvals[jj])) {
+            NPY_END_THREADS;
             PyErr_NoMemory();
             goto exit;
         }
@@ -426,10 +442,11 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     po = (void *)PyArray_DATA(output);
 
     /* make a table of all possible coordinates within the spline filter: */
-    fcoordinates = (npy_intp*)malloc(irank * filter_size * sizeof(npy_intp));
+    fcoordinates = malloc(irank * filter_size * sizeof(npy_intp));
     /* make a table of all offsets within the spline filter: */
-    foffsets = (npy_intp*)malloc(filter_size * sizeof(npy_intp));
-    if (!fcoordinates || !foffsets) {
+    foffsets = malloc(filter_size * sizeof(npy_intp));
+    if (NI_UNLIKELY(!fcoordinates || !foffsets)) {
+        NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
     }
@@ -457,8 +474,10 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         size *= output->dimensions[qq];
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
-        int constant = 0, edge = 0, offset = 0;
+        int constant = 0, edge = 0;
+        npy_intp offset = 0;
         if (map) {
+            NPY_END_THREADS;
             /* call mappint functions: */
             if (!map(io.coordinates, icoor, orank, irank, map_data)) {
                 if (!PyErr_Occurred())
@@ -466,6 +485,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                                                     "unknown error in mapping function");
                 goto exit;
             }
+            NPY_BEGIN_THREADS;
         } else if (matrix) {
             /* do an affine transformation: */
             Float64 *p = matrix;
@@ -493,6 +513,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, Float32);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, Float64);
             default:
+                NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError,
                                                 "coordinate array data type not supported");
                 goto exit;
@@ -504,11 +525,11 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             double cc = map_coordinate(icoor[hh], idimensions[hh], mode);
             if (cc > -1.0) {
                 /* find the filter location along this axis: */
-                int start;
+                npy_intp start;
                 if (order & 1) {
-                    start = (int)floor(cc) - order / 2;
+                    start = (npy_intp)floor(cc) - order / 2;
                 } else {
-                    start = (int)floor(cc + 0.5) - order / 2;
+                    start = (npy_intp)floor(cc + 0.5) - order / 2;
                 }
                 /* get the offset to the start of the filter: */
                 offset += istrides[hh] * start;
@@ -517,12 +538,12 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     edge = 1;
                     edge_offsets[hh] = data_offsets[hh];
                     for(ll = 0; ll <= order; ll++) {
-                        int idx = start + ll;
-                        int len = idimensions[hh];
+                        npy_intp idx = start + ll;
+                        npy_intp len = idimensions[hh];
                         if (len <= 1) {
                             idx = 0;
                         } else {
-                            int s2 = 2 * len - 2;
+                            npy_intp s2 = 2 * len - 2;
                             if (idx < 0) {
                                 idx = s2 * (int)(-idx / s2) + idx;
                                 idx = idx <= 1 - len ? idx + s2 : -idx;
@@ -553,7 +574,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
                 double coeff = 0.0;
-                int idx = 0;
+                npy_intp idx = 0;
 
                 if (NI_UNLIKELY(edge)) {
                     for(ll = 0; ll < irank; ll++) {
@@ -581,6 +602,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     CASE_INTERP_COEFF(coeff, pi, idx, Float32);
                     CASE_INTERP_COEFF(coeff, pi, idx, Float64);
                 default:
+                    NPY_END_THREADS;
                     PyErr_SetString(PyExc_RuntimeError,
                                                     "data type not supported");
                     goto exit;
@@ -615,6 +637,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             CASE_INTERP_OUT(po, t, Float32);
             CASE_INTERP_OUT(po, t, Float64);
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
@@ -626,8 +649,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     }
 
  exit:
-    if (edge_offsets)
-        free(edge_offsets);
+    NPY_END_THREADS;
+    free(edge_offsets);
     if (data_offsets) {
         for(jj = 0; jj < irank; jj++)
             free(data_offsets[jj]);
@@ -638,10 +661,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             free(splvals[jj]);
         free(splvals);
     }
-    if (foffsets)
-        free(foffsets);
-    if (fcoordinates)
-        free(fcoordinates);
+    free(foffsets);
+    free(fcoordinates);
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -660,6 +681,9 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     Float64 *zooms = zoom_ar ? (Float64*)PyArray_DATA(zoom_ar) : NULL;
     Float64 *shifts = shift_ar ? (Float64*)PyArray_DATA(shift_ar) : NULL;
     int rank = 0, qq;
+    NPY_BEGIN_THREADS_DEF;
+
+    NPY_BEGIN_THREADS;
 
     for(kk = 0; kk < input->nd; kk++) {
         idimensions[kk] = input->dimensions[kk];
@@ -670,16 +694,19 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
     /* if the mode is 'constant' we need some temps later: */
     if (mode == NI_EXTEND_CONSTANT) {
+        zeros = malloc(rank * sizeof(npy_intp*));
         zeros = (npy_intp**)malloc(rank * sizeof(npy_intp*));
-        if (!zeros) {
+        if (NI_UNLIKELY(!zeros)) {
+            NPY_END_THREADS;
             PyErr_NoMemory();
             goto exit;
         }
         for(jj = 0; jj < rank; jj++)
             zeros[jj] = NULL;
         for(jj = 0; jj < rank; jj++) {
-            zeros[jj] = (npy_intp*)malloc(odimensions[jj] * sizeof(npy_intp));
-            if(!zeros[jj]) {
+            zeros[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
+            if (NI_UNLIKELY(!zeros[jj])) {
+                NPY_END_THREADS;
                 PyErr_NoMemory();
                 goto exit;
             }
@@ -687,12 +714,13 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     }
 
     /* store offsets, along each axis: */
-    offsets = (npy_intp**)malloc(rank * sizeof(npy_intp*));
+    offsets = malloc(rank * sizeof(npy_intp*));
     /* store spline coefficients, along each axis: */
-    splvals = (double***)malloc(rank * sizeof(double**));
+    splvals = malloc(rank * sizeof(double**));
     /* store offsets at all edges: */
-    edge_offsets = (npy_intp***)malloc(rank * sizeof(npy_intp**));
-    if (!offsets || !splvals || !edge_offsets) {
+    edge_offsets = malloc(rank * sizeof(npy_intp**));
+    if (NI_UNLIKELY(!offsets || !splvals || !edge_offsets)) {
+        NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
     }
@@ -702,10 +730,11 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         edge_offsets[jj] = NULL;
     }
     for(jj = 0; jj < rank; jj++) {
-        offsets[jj] = (npy_intp*)malloc(odimensions[jj] * sizeof(npy_intp));
-        splvals[jj] = (double**)malloc(odimensions[jj] * sizeof(double*));
-        edge_offsets[jj] = (npy_intp**)malloc(odimensions[jj] * sizeof(npy_intp*));
-        if (!offsets[jj] || !splvals[jj] || !edge_offsets[jj]) {
+        offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp));
+        splvals[jj] = malloc(odimensions[jj] * sizeof(double*));
+        edge_offsets[jj] = malloc(odimensions[jj] * sizeof(npy_intp*));
+        if (NI_UNLIKELY(!offsets[jj] || !splvals[jj] || !edge_offsets[jj])) {
+            NPY_END_THREADS;
             PyErr_NoMemory();
             goto exit;
         }
@@ -730,33 +759,34 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                 cc *= zoom;
             cc = map_coordinate(cc, idimensions[jj], mode);
             if (cc > -1.0) {
-                int start;
+                npy_intp start;
                 if (zeros && zeros[jj])
                     zeros[jj][kk] = 0;
                 if (order & 1) {
-                    start = (int)floor(cc) - order / 2;
+                    start = (npy_intp)floor(cc) - order / 2;
                 } else {
-                    start = (int)floor(cc + 0.5) - order / 2;
+                    start = (npy_intp)floor(cc + 0.5) - order / 2;
                 }
                 offsets[jj][kk] = istrides[jj] * start;
                 if (start < 0 || start + order >= idimensions[jj]) {
-                    edge_offsets[jj][kk] = (npy_intp*)malloc((order + 1) * sizeof(npy_intp));
-                    if (!edge_offsets[jj][kk]) {
+                    edge_offsets[jj][kk] = malloc((order + 1) * sizeof(npy_intp));
+                    if (NI_UNLIKELY(!edge_offsets[jj][kk])) {
+                        NPY_END_THREADS;
                         PyErr_NoMemory();
                         goto exit;
                     }
                     for(hh = 0; hh <= order; hh++) {
-                        int idx = start + hh;
-                         int len = idimensions[jj];
+                        npy_intp idx = start + hh;
+                        npy_intp len = idimensions[jj];
                         if (len <= 1) {
                             idx = 0;
                         } else {
-                            int s2 = 2 * len - 2;
+                            npy_intp s2 = 2 * len - 2;
                             if (idx < 0) {
-                                idx = s2 * (int)(-idx / s2) + idx;
+                                idx = s2 * (npy_intp)(-idx / s2) + idx;
                                 idx = idx <= 1 - len ? idx + s2 : -idx;
                             } else if (idx >= len) {
-                                idx -= s2 * (int)(idx / s2);
+                                idx -= s2 * (npy_intp)(idx / s2);
                                 if (idx >= len)
                                     idx = s2 - idx;
                             }
@@ -765,8 +795,9 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     }
                 }
                 if (order > 0) {
-                    splvals[jj][kk] = (double*)malloc((order + 1) * sizeof(double));
-                    if (!splvals[jj][kk]) {
+                    splvals[jj][kk] = malloc((order + 1) * sizeof(double));
+                    if (NI_UNLIKELY(!splvals[jj][kk])) {
+                        NPY_END_THREADS;
                         PyErr_NoMemory();
                         goto exit;
                     }
@@ -789,9 +820,10 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     po = (void *)PyArray_DATA(output);
 
     /* store all coordinates and offsets with filter: */
-    fcoordinates = (npy_intp*)malloc(rank * filter_size * sizeof(npy_intp));
-    foffsets = (npy_intp*)malloc(filter_size * sizeof(npy_intp));
-    if (!fcoordinates || !foffsets) {
+    fcoordinates = malloc(rank * filter_size * sizeof(npy_intp));
+    foffsets = malloc(filter_size * sizeof(npy_intp));
+    if (NI_UNLIKELY(!fcoordinates || !foffsets)) {
+        NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
     }
@@ -819,7 +851,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         size *= output->dimensions[qq];
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
-        int edge = 0, oo = 0, zero = 0;
+        npy_intp edge = 0, oo = 0, zero = 0;
 
         for(hh = 0; hh < rank; hh++) {
             if (zeros && zeros[hh][io.coordinates[hh]]) {
@@ -837,7 +869,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             const int type_num = NI_NormalizeType(input->descr->type_num);
             t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
-                int idx = 0;
+                npy_intp idx = 0;
                 double coeff = 0.0;
 
                 if (NI_UNLIKELY(edge)) {
@@ -868,6 +900,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                     CASE_INTERP_COEFF(coeff, pi, idx, Float32);
                     CASE_INTERP_COEFF(coeff, pi, idx, Float64);
                 default:
+                    NPY_END_THREADS;
                     PyErr_SetString(PyExc_RuntimeError,
                                                     "data type not supported");
                     goto exit;
@@ -902,6 +935,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             CASE_INTERP_OUT(po, t, Float32);
             CASE_INTERP_OUT(po, t, Float64);
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
@@ -909,24 +943,22 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     }
 
  exit:
+    NPY_END_THREADS;
     if (zeros) {
         for(jj = 0; jj < rank; jj++)
-            if (zeros[jj])
-                free(zeros[jj]);
+            free(zeros[jj]);
         free(zeros);
     }
     if (offsets) {
         for(jj = 0; jj < rank; jj++)
-            if (offsets[jj])
-                free(offsets[jj]);
+            free(offsets[jj]);
         free(offsets);
     }
     if (splvals) {
         for(jj = 0; jj < rank; jj++) {
             if (splvals[jj]) {
                 for(hh = 0; hh < odimensions[jj]; hh++)
-                    if (splvals[jj][hh])
-                        free(splvals[jj][hh]);
+                    free(splvals[jj][hh]);
                 free(splvals[jj]);
             }
         }
@@ -936,16 +968,13 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
         for(jj = 0; jj < rank; jj++) {
             if (edge_offsets[jj]) {
                 for(hh = 0; hh < odimensions[jj]; hh++)
-                    if (edge_offsets[jj][hh])
-                        free(edge_offsets[jj][hh]);
+                    free(edge_offsets[jj][hh]);
                 free(edge_offsets[jj]);
             }
         }
         free(edge_offsets);
     }
-    if (foffsets)
-        free(foffsets);
-    if (fcoordinates)
-        free(fcoordinates);
+    free(foffsets);
+    free(fcoordinates);
     return PyErr_Occurred() ? 0 : 1;
 }

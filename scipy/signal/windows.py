@@ -1,9 +1,12 @@
 """The suite of window functions."""
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from scipy import special, linalg
 from scipy.fftpack import fft
+from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
@@ -27,7 +30,7 @@ def boxcar(M, sym=True):
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1
+        The window, with the maximum value normalized to 1.
 
     Examples
     --------
@@ -74,7 +77,7 @@ def triang(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -138,7 +141,7 @@ def parzen(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -201,7 +204,7 @@ def bohman(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -247,10 +250,10 @@ def blackman(M, sym=True):
     r"""
     Return a Blackman window.
 
-    The Blackman window is a taper formed by using the the first three
-    terms of a summation of cosines. It was designed to have close to the
-    minimal leakage possible.  It is close to optimal, only slightly worse
-    than a Kaiser window.
+    The Blackman window is a taper formed by using the first three terms of
+    a summation of cosines. It was designed to have close to the minimal
+    leakage possible.  It is close to optimal, only slightly worse than a
+    Kaiser window.
 
     Parameters
     ----------
@@ -266,7 +269,7 @@ def blackman(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -347,7 +350,7 @@ def nuttall(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -408,7 +411,7 @@ def blackmanharris(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -469,7 +472,7 @@ def flattop(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -536,9 +539,9 @@ def bartlett(M, sym=True):
     Returns
     -------
     w : ndarray
-        The triangular window, with the maximum value normalized to 1
-        (though the value 1 does not appear if the number of samples is even
-        and sym is True), with the first and last samples equal to zero.
+        The triangular window, with the first and last samples equal to zero
+        and the maximum value normalized to 1 (though the value 1 does not
+        appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -554,7 +557,7 @@ def bartlett(M, sym=True):
     window produces linear interpolation.  It is also known as an
     apodization (which means"removing the foot", i.e. smoothing
     discontinuities at the beginning and end of the sampled signal) or
-    tapering function. The fourier transform of the Bartlett is the product
+    tapering function. The Fourier transform of the Bartlett is the product
     of two sinc functions.
     Note the excellent discussion in Kanasewich.
 
@@ -642,7 +645,7 @@ def hann(M, sym=True):
     .. math::  w(n) = 0.5 - 0.5 \cos\left(\frac{2\pi{n}}{M-1}\right)
                \qquad 0 \leq n \leq M-1
 
-    The window was named for Julius van Hann, an Austrian meterologist. It is
+    The window was named for Julius van Hann, an Austrian meteorologist. It is
     also known as the Cosine Bell. It is sometimes erroneously referred to as
     the "Hanning" window, from the use of "hann" as a verb in the original
     paper and confusion with the very similar Hamming window.
@@ -723,7 +726,7 @@ def barthann(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Examples
     --------
@@ -785,7 +788,7 @@ def hamming(M, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -876,7 +879,7 @@ def kaiser(M, beta, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -992,7 +995,7 @@ def gaussian(M, std, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -1062,7 +1065,7 @@ def general_gaussian(M, p, sig, sym=True):
     -------
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
-        does not appear if the number of samples is even and sym is True).
+        does not appear if `M` is even and `sym` is True).
 
     Notes
     -----
@@ -1116,7 +1119,7 @@ def general_gaussian(M, p, sig, sym=True):
 # `chebwin` contributed by Kumar Appaiah.
 
 def chebwin(M, at, sym=True):
-    """Return a Dolph-Chebyshev window.
+    r"""Return a Dolph-Chebyshev window.
 
     Parameters
     ----------
@@ -1134,6 +1137,46 @@ def chebwin(M, at, sym=True):
     -------
     w : ndarray
         The window, with the maximum value always normalized to 1
+
+    Notes
+    -----
+    This window optimizes for the narrowest main lobe width for a given order
+    `M` and sidelobe equiripple attenuation `at`, using Chebyshev
+    polynomials.  It was originally developed by Dolph to optimize the
+    directionality of radio antenna arrays.
+
+    Unlike most windows, the Dolph-Chebyshev is defined in terms of its
+    frequency response:
+
+    .. math:: W(k) = \frac
+              {\cos\{M \cos^{-1}[\beta \cos(\frac{\pi k}{M})]\}}
+              {\cosh[M \cosh^{-1}(\beta)]}
+
+    where
+
+    .. math:: \beta = \cosh \left [\frac{1}{M}
+              \cosh^{-1}(10^\frac{A}{20}) \right ]
+
+    and 0 <= abs(k) <= M-1. A is the attenuation in decibels (`at`).
+
+    The time domain window is then generated using the IFFT, so
+    power-of-two `M` are the fastest to generate, and prime number `M` are
+    the slowest.
+
+    The equiripple condition in the frequency domain creates impulses in the
+    time domain, which appear at the ends of the window.
+
+    References
+    ----------
+    .. [1] C. Dolph, "A current distribution for broadside arrays which
+           optimizes the relationship between beam width and side-lobe level",
+           Proceedings of the IEEE, Vol. 34, Issue 6
+    .. [2] Peter Lynch, "The Dolph-Chebyshev Window: A Simple Optimal Filter",
+           American Meteorological Society (April 1997)
+           http://mathsci.ucd.ie/~plynch/Publications/Dolph.pdf
+    .. [3] F. J. Harris, "On the use of windows for harmonic analysis with the
+           discrete Fourier transforms", Proceedings of the IEEE, Vol. 66,
+           No. 1, January 1978
 
     Examples
     --------
@@ -1160,6 +1203,13 @@ def chebwin(M, at, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    if np.abs(at) < 45:
+        warnings.warn("This window is not suitable for spectral analysis "
+                      "for attenuation values lower than about 45dB because "
+                      "the equivalent noise bandwidth of a Chebyshev window "
+                      "does not grow monotonically with increasing sidelobe "
+                      "attenuation when the attenuation is smaller than "
+                      "about 45 dB.")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -1187,14 +1237,14 @@ def chebwin(M, at, sym=True):
     if M % 2:
         w = np.real(fft(p))
         n = (M + 1) // 2
-        w = w[:n] / w[0]
+        w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
         p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
         w = np.real(fft(p))
         n = M // 2 + 1
-        w = w / w[1]
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
+    w = w / max(w)
     if not sym and not odd:
         w = w[:-1]
     return w
@@ -1248,9 +1298,6 @@ def slepian(M, width, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if (M * width > 27.38):
-        raise ValueError("Cannot reliably obtain slepian sequences for"
-              " M*width > 27.38.")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -1259,26 +1306,25 @@ def slepian(M, width, sym=True):
     if not sym and not odd:
         M = M + 1
 
-    twoF = width / 2.0
-    alpha = (M - 1) / 2.0
-    m = np.arange(0, M) - alpha
-    n = m[:, np.newaxis]
-    k = m[np.newaxis, :]
-    AF = twoF * special.sinc(twoF * (n - k))
-    [lam, vec] = linalg.eig(AF)
-    ind = np.argmax(abs(lam), axis=-1)
-    w = np.abs(vec[:, ind])
-    w = w / max(w)
+    # our width is the full bandwidth
+    width = width / 2
+    # to match the old version 
+    width = width / 2
+    m = np.arange(M, dtype='d')
+    H = np.zeros((2, M))
+    H[0, 1:] = m[1:] * (M - m[1:]) / 2
+    H[1, :] = ((M - 1 - 2 * m) / 2)**2 * np.cos(2 * np.pi * width)
+
+    _, win = linalg.eig_banded(H, select='i', select_range=(M-1, M-1))
+    win = win.ravel() / win.max()
 
     if not sym and not odd:
-        w = w[:-1]
-    return w
+        win = win[:-1]
+    return win
 
 
 def cosine(M, sym=True):
     """Return a window with a simple cosine shape.
-
-    .. versionadded:: 0.13.0
 
     Parameters
     ----------
@@ -1286,13 +1332,45 @@ def cosine(M, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     sym : bool, optional
-        When True, generates a symmetric window, for use in filter design.
+        When True (default), generates a symmetric window, for use in filter
+        design.
         When False, generates a periodic window, for use in spectral analysis.
 
     Returns
     -------
     w : ndarray
-        The window, with the maximum value normalized to 1.
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = signal.cosine(51)
+    >>> plt.plot(window)
+    >>> plt.title("Cosine window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the cosine window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    >>> plt.show()
 
     """
     if M < 1:
@@ -1375,16 +1453,19 @@ def get_window(window, Nx, fftbins=True):
             winstr = window[0]
             if len(window) > 1:
                 args = window[1:]
-        elif isinstance(window, str):
+        elif isinstance(window, string_types):
             if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
-                        'general gaussian', 'general_gaussian',
-                        'general gauss', 'general_gauss', 'ggs',
-                        'slepian', 'optimal', 'slep', 'dss',
-                        'chebwin', 'cheb']:
+                          'general gaussian', 'general_gaussian',
+                          'general gauss', 'general_gauss', 'ggs',
+                          'slepian', 'optimal', 'slep', 'dss',
+                          'chebwin', 'cheb']:
                 raise ValueError("The '" + window + "' window needs one or "
-                                    "more parameters  -- pass a tuple.")
+                                 "more parameters  -- pass a tuple.")
             else:
                 winstr = window
+        else:
+            raise ValueError("%s as window type is not supported." %
+                             str(type(window)))
 
         if winstr in ['blackman', 'black', 'blk']:
             winfunc = blackman

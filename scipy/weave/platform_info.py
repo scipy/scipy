@@ -96,14 +96,14 @@ def compiler_exe_path(exe_name):
 
 
 def check_sum(file):
-    import scipy.weave.md5_load as md5
+    from hashlib import sha256
     try:
         f = open(file,'r')
         bytes = f.read(-1)
     except IOError:
         bytes = ''
-    chk_sum = md5.md5(bytes)
-    return chk_sum.hexdigest()
+    chk_sum = sha256(bytes)
+    return chk_sum.hexdigest()[:32]  # truncation needed, see gh-3216
 
 
 def get_compiler_dir(compiler_name):

@@ -19,6 +19,12 @@ C
         DNAN = 0.0D0/DNAN
         END
 
+        FUNCTION DINF()
+        DOUBLE PRECISION DINF
+        DINF = 1.0D300
+        DINF = DINF*DINF
+        END
+
         SUBROUTINE CPDSA(N,Z,CDN)
 C
 C       ===========================================================
@@ -46,7 +52,7 @@ C
               ELSE
                  CALL GAIH(VA0,GA0)
                  PD=DSQRT(PI)/(2.0D0**(-.5D0*N)*GA0)
-                 CDN=CMPLX(PD,0.0D0)
+                 CDN = DCMPLX(PD, 0.0D0)
               ENDIF
            ELSE
               XN=-N
@@ -54,7 +60,7 @@ C
               CB0=2.0D0**(-0.5D0*N-1.0D0)*CA0/G1
               VT=-.5D0*N
               CALL GAIH(VT,G0)
-              CDN=CMPLX(G0,0.0D0)
+              CDN = DCMPLX(G0, 0.0D0)
               CR=(1.0D0,0.0D0)
               DO 10 M=1,250
                  VM=.5D0*(M-N)
@@ -168,7 +174,7 @@ C
            QM(0,0)=Q0
            QM(0,1)=X*Q0-1.0D0
            QM(1,0)=-1.0D0/XQ
-           QM(1,1)=-XQ*(Q0+X/(1.0D0-X*X))
+           QM(1,1)=-LS*XQ*(Q0+X/(1.0D0-X*X))
            DO 15 I=0,1
            DO 15 J=2,N
               QM(I,J)=((2.0D0*J-1.0D0)*X*QM(I,J-1)
@@ -227,25 +233,26 @@ C
 
 C       **********************************
 
-        SUBROUTINE CLPMN(MM,M,N,X,Y,CPM,CPD)
+        SUBROUTINE CLPMN(MM,M,N,X,Y,NTYPE,CPM,CPD)
 C
 C       =========================================================
 C       Purpose: Compute the associated Legendre functions Pmn(z)
 C                and their derivatives Pmn'(z) for a complex
 C                argument
-C       Input :  x  --- Real part of z
-C                y  --- Imaginary part of z
-C                m  --- Order of Pmn(z),  m = 0,1,2,...,n
-C                n  --- Degree of Pmn(z), n = 0,1,2,...,N
-C                mm --- Physical dimension of CPM and CPD
+C       Input :  x     --- Real part of z
+C                y     --- Imaginary part of z
+C                m     --- Order of Pmn(z),  m = 0,1,2,...,n
+C                n     --- Degree of Pmn(z), n = 0,1,2,...,N
+C                mm    --- Physical dimension of CPM and CPD
+C                ntype --- type of cut, either 2 or 3
 C       Output:  CPM(m,n) --- Pmn(z)
 C                CPD(m,n) --- Pmn'(z)
 C       =========================================================
 C
-        IMPLICIT DOUBLE PRECISION (X,Y)
+        IMPLICIT DOUBLE PRECISION (D,X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CPM(0:MM,0:N),CPD(0:MM,0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         DO 10 I=0,N
         DO 10 J=0,M
            CPM(J,I)=(0.0D0,0.0D0)
@@ -259,33 +266,49 @@ C
            DO 20 J=1,N
            DO 20 I=1,M
               IF (I.EQ.1) THEN
-                 CPD(I,J)=(1.0D+300,0.0D0)
+                 CPD(I,J)=DINF()
               ELSE IF (I.EQ.2) THEN
                  CPD(I,J)=-0.25D0*(J+2)*(J+1)*J*(J-1)*X**(J+1)
               ENDIF
 20         CONTINUE
            RETURN
         ENDIF
-        LS=1
-        IF (CDABS(Z).GT.1.0D0) LS=-1
-        ZQ=CDSQRT(LS*(1.0D0-Z*Z))
-        ZS=LS*(1.0D0-Z*Z)
+        if (NTYPE.EQ.2) THEN
+C       sqrt(1 - z^2) with branch cut on |x|>1
+           ZS=(1.0D0-Z*Z)
+           ZQ=-CDSQRT(ZS)
+           LS=-1
+        ELSE
+C       sqrt(z^2 - 1) with branch cut between [-1, 1]
+           ZS=(Z*Z-1.0D0)
+           ZQ=CDSQRT(ZS)
+           IF (X.LT.0D0) THEN
+              ZQ=-ZQ
+           END IF
+           LS=1
+        END IF
         DO 25 I=1,M
-25         CPM(I,I)=-LS*(2.0D0*I-1.0D0)*ZQ*CPM(I-1,I-1)
+C       DLMF 14.7.15
+25         CPM(I,I)=(2.0D0*I-1.0D0)*ZQ*CPM(I-1,I-1)
         DO 30 I=0,MIN(M,N-1)
+C       DLMF 14.10.7
 30         CPM(I,I+1)=(2.0D0*I+1.0D0)*Z*CPM(I,I)
         DO 35 I=0,M
         DO 35 J=I+2,N
+C       DLMF 14.10.3
            CPM(I,J)=((2.0D0*J-1.0D0)*Z*CPM(I,J-1)-(I+J-
      &              1.0D0)*CPM(I,J-2))/(J-I)
 35      CONTINUE
         CPD(0,0)=(0.0D0,0.0D0)
         DO 40 J=1,N
-40         CPD(0,J)=LS*J*(CPM(0,J-1)-Z*CPM(0,J))/ZS
+C       DLMF 14.10.5
+40         CPD(0,J)=LS*J*(Z*CPM(0,J)-CPM(0,J-1))/ZS
         DO 45 I=1,M
         DO 45 J=I,N
-           CPD(I,J)=LS*I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
-     &              /ZQ*CPM(I-1,J)
+C       derivative of DLMF 14.7.11 & DLMF 14.10.6 for type 3
+C       derivative of DLMF 14.7.8 & DLMF 14.10.1 for type 2
+           CPD(I,J)=LS*(-I*Z*CPM(I,J)/ZS+(J+I)*(J-I+1.0D0)
+     &                  /ZQ*CPM(I-1,J))
 45      CONTINUE
         RETURN
         END
@@ -1802,7 +1825,7 @@ C       ==========================================================
 35            W2=EI2
 40         ERI=EI1+C0*EI2
         ENDIF
-        CER=CMPLX(ERR,ERI)
+        CER = DCMPLX(ERR, ERI)
         CDER=2.0D0/DSQRT(PI)*CDEXP(-Z*Z)
         RETURN
         END
@@ -2220,7 +2243,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CQN(0:N),CQD(0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         IF (Z.EQ.1.0D0) THEN
            DO 10 K=0,N
               CQN(K)=(1.0D+300,0.0D0)
@@ -3071,7 +3094,8 @@ C
      &          .152746185967848D-01, .126781664768159D-01,
      &          .100475571822880D-01, .738993116334531D-02,
      &          .471272992695363D-02, .202681196887362D-02/
-        ID=7
+        ID=9
+C       DLMF 13.4.4, integration up to C=12/X
         A1=A-1.0D0
         B1=B-A-1.0D0
         C=12.0D0/X
@@ -3092,11 +3116,13 @@ C
               HU1=HU1+S*G
               D=D+2.0D0*G
 15         CONTINUE
-           IF (DABS(1.0D0-HU0/HU1).LT.1.0D-7) GO TO 25
+           IF (DABS(1.0D0-HU0/HU1).LT.1.0D-9) GO TO 25
            HU0=HU1
 20      CONTINUE
 25      CALL GAMMA2(A,GA)
         HU1=HU1/GA
+C       DLMF 13.4.4 with substitution t=C/(1-u)
+C       integration u from 0 to 1, i.e. t from C=12/X to infinity
         DO 40 M=2,10,2
            HU2=0.0D0
            G=0.5D0/M
@@ -3115,7 +3141,7 @@ C
               HU2=HU2+S*G
               D=D+2.0D0*G
 35         CONTINUE
-           IF (DABS(1.0D0-HU0/HU2).LT.1.0D-7) GO TO 45
+           IF (DABS(1.0D0-HU0/HU2).LT.1.0D-9) GO TO 45
            HU0=HU2
 40      CONTINUE
 45      CALL GAMMA2(A,GA)
@@ -4840,7 +4866,7 @@ C
            PV=PI*DSQRT(2.0D0*NR-0.25D0)
            PX=0.5*PU-0.5*DLOG(PV)/PU
            PY=0.5*PU+0.5*DLOG(PV)/PU
-           Z=CMPLX(PX,PY)
+           Z = DCMPLX(PX, PY)
            IT=0
 15         IT=IT+1
            CALL CERF(Z,ZF,ZD)
@@ -4959,20 +4985,20 @@ C
         IF (B.NE.INT(B)) THEN
            CALL CHGUS(A,B,X,HU,ID1)
            MD=1
-           IF (ID1.GE.6) RETURN
+           IF (ID1.GE.9) RETURN
            HU1=HU
         ENDIF
         IF (IL1.OR.IL2.OR.IL3) THEN
            CALL CHGUL(A,B,X,HU,ID)
            MD=2
-           IF (ID.GE.6) RETURN
+           IF (ID.GE.9) RETURN
            IF (ID1.GT.ID) THEN
               MD=1
               ID=ID1
               HU=HU1
            ENDIF
         ENDIF
-        IF (A.GE.0.0) THEN
+        IF (A.GE.1.0) THEN
            IF (BN.AND.(BL1.OR.BL2.OR.BL3)) THEN
               CALL CHGUBI(A,B,X,HU,ID)
               MD=3
@@ -5227,7 +5253,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX *16 (C,Z)
         DIMENSION CPN(0:N),CPD(0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         CPN(0)=(1.0D0,0.0D0)
         CPN(1)=Z
         CPD(0)=(0.0D0,0.0D0)
@@ -5641,10 +5667,11 @@ C       Input  : a  --- Parameter
 C                b  --- Parameter ( b <> 0,-1,-2,... )
 C                x  --- Argument
 C       Output:  HG --- M(a,b,x)
-C       Routine called: GAMMA2 for computing Г(x)
+C       Routine called: CGAMA for computing complex ln[Г(x)]
 C       ===================================================
 C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Z)
+        IMPLICIT COMPLEX*16 (C)
         PI=3.141592653589793D0
         A0=A
         A1=A
@@ -5696,10 +5723,16 @@ C
                  IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) GO TO 25
 15            CONTINUE
            ELSE
-              CALL GAMMA2(A,TA)
-              CALL GAMMA2(B,TB)
+              Y=0.0D0
+              CALL CGAMA(A,Y,0,TAR,TAI)
+              CTA = DCMPLX(TAR, TAI)
+              Y=0.0D0
+              CALL CGAMA(B,Y,0,TBR,TBI)
+              CTB = DCMPLX(TBR, TBI)
               XG=B-A
-              CALL GAMMA2(XG,TBA)
+              Y=0.0D0
+              CALL CGAMA(XG,Y,0,TBAR,TBAI)
+              CTBA = DCMPLX(TBAR, TBAI)
               SUM1=1.0D0
               SUM2=1.0D0
               R1=1.0D0
@@ -5709,8 +5742,8 @@ C
                  R2=-R2*(B-A+I-1.0D0)*(A-I)/(X*I)
                  SUM1=SUM1+R1
 20               SUM2=SUM2+R2
-              HG1=TB/TBA*X**(-A)*DCOS(PI*A)*SUM1
-              HG2=TB/TA*DEXP(X)*X**(A-B)*SUM2
+              HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
+              HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
               HG=HG1+HG2
            ENDIF
 25         IF (N.EQ.0) Y0=HG
@@ -5985,7 +6018,7 @@ C       Input :  a --- Parameter
 C                b --- Parameter
 C                z --- Complex argument
 C       Output:  CHG --- M(a,b,z)
-C       Routine called: GAMMA2 for computing gamma function
+C       Routine called: CGAMA for computing complex ln[Г(x)]
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A,B,D-H,O-Y)
@@ -6041,10 +6074,16 @@ C
                     CHW=CHG
 15               CONTINUE
               ELSE
-                 CALL GAMMA2(A,G1)
-                 CALL GAMMA2(B,G2)
+                 Y=0.0D0
+                 CALL CGAMA(A,Y,0,G1R,G1I)
+                 CG1 = DCMPLX(G1R, G1I)
+                 Y=0.0D0
+                 CALL CGAMA(B,Y,0,G2R,G2I)
+                 CG2 = DCMPLX(G2R,G2I)
                  BA=B-A
-                 CALL GAMMA2(BA,G3)
+                 Y=0.0D0
+                 CALL CGAMA(BA,Y,0,G3R,G3I)
+                 CG3 = DCMPLX(G3R, G3I)
                  CS1=(1.0D0,0.0D0)
                  CS2=(1.0D0,0.0D0)
                  CR1=(1.0D0,0.0D0)
@@ -6067,8 +6106,8 @@ C
                  IF (PHI.GT.-1.5*PI.AND.PHI.LE.-0.5*PI) NS=-1
                  CFAC=CDEXP(NS*CI*PI*A)
                  IF (Y.EQ.0.0D0) CFAC=DCOS(PI*A)
-                 CHG1=G2/G3*Z**(-A)*CFAC*CS1
-                 CHG2=G2/G1*CDEXP(Z)*Z**(A-B)*CS2
+                 CHG1=CDEXP(CG2-CG3)*Z**(-A)*CFAC*CS1
+                 CHG2=CDEXP(CG2-CG1+Z)*Z**(A-B)*CS2
                  CHG=CHG1+CHG2
               ENDIF
 25            IF (N.EQ.0) CY0=CHG
@@ -6952,7 +6991,8 @@ C       **********************************
 C
 C       =====================================================
 C       Purpose: Compute the associated Legendre functions
-C                Pmn(x) and their derivatives Pmn'(x)
+C                Pmn(x) and their derivatives Pmn'(x) for
+C                real argument
 C       Input :  x  --- Argument of Pmn(x)
 C                m  --- Order of Pmn(x),  m = 0,1,2,...,n
 C                n  --- Degree of Pmn(x), n = 0,1,2,...,N
@@ -6961,7 +7001,7 @@ C       Output:  PM(m,n) --- Pmn(x)
 C                PD(m,n) --- Pmn'(x)
 C       =====================================================
 C
-        IMPLICIT DOUBLE PRECISION (P,X)
+        IMPLICIT DOUBLE PRECISION (D,P,X)
         DIMENSION PM(0:MM,0:N),PD(0:MM,0:N)
         INTRINSIC MIN
         DO 10 I=0,N
@@ -6977,7 +7017,7 @@ C
            DO 20 J=1,N
            DO 20 I=1,M
               IF (I.EQ.1) THEN
-                 PD(I,J)=1.0D+300
+                 PD(I,J)=DINF()
               ELSE IF (I.EQ.2) THEN
                  PD(I,J)=-0.25D0*(J+2)*(J+1)*J*(J-1)*X**(J+1)
               ENDIF
@@ -6987,6 +7027,8 @@ C
         LS=1
         IF (DABS(X).GT.1.0D0) LS=-1
         XQ=DSQRT(LS*(1.0D0-X*X))
+C       Ensure connection to the complex-valued function for |x| > 1
+        IF (X.LT.-1D0) XQ=-XQ
         XS=LS*(1.0D0-X*X)
         DO 30 I=1,M
 30         PM(I,I)=-LS*(2.0D0*I-1.0D0)*XQ*PM(I-1,I-1)
@@ -7733,7 +7775,7 @@ C
            IF (KF.EQ.2) PSQ=2.0D0*NR**(0.5)
            PX=PSQ-DLOG(PI*PSQ)/(PI*PI*PSQ**3.0)
            PY=DLOG(PI*PSQ)/(PI*PSQ)
-           Z=CMPLX(PX,PY)
+           Z = DCMPLX(PX, PY)
            IF (KF.EQ.2) THEN
               IF (NR.EQ.2) Z=(2.8334,0.2443)
               IF (NR.EQ.3) Z=(3.4674,0.2185)
@@ -7896,7 +7938,7 @@ C
 C       =======================================================
 C       Purpose: Compute the associated Legendre function
 C                Pmv(x) with an integer order and an arbitrary
-C                degree v, using down-recursion for large degrees
+C                degree v, using recursion for large degrees
 C       Input :  x   --- Argument of Pm(x)  ( -1 ≤ x ≤ 1 )
 C                m   --- Order of Pmv(x)
 C                v   --- Degree of Pmv(x)
@@ -7906,8 +7948,8 @@ C       =======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         IF (X.EQ.-1.0D0.AND.V.NE.INT(V)) THEN
-           IF (M.EQ.0) PMV=-1.0D+300
-           IF (M.NE.0) PMV=1.0D+300
+           IF (M.EQ.0) PMV=-DINF()
+           IF (M.NE.0) PMV=DINF()
            RETURN
         ENDIF
         VX=V
@@ -7916,11 +7958,15 @@ C
            VX=-VX-1
         ENDIF
         NEG_M=0
-        IF (M.LT.0.AND.(VX+M+1).GT.0D0) THEN
-C          XXX: does not handle the cases where AMS 8.2.5
-C               does not help
-           NEG_M=1
-           MX=-M
+        IF (M.LT.0) THEN
+           IF ((VX+M+1).GT.0D0.OR.VX.NE.INT(VX)) THEN
+              NEG_M=1
+              MX=-M
+           ELSE
+C             We don't handle cases where DLMF 14.9.3 doesn't help
+              PMV=DNAN()
+              RETURN
+           END IF
         ENDIF
         NV=INT(VX)
         V0=VX-NV
@@ -7938,7 +7984,7 @@ C          Up-recursion on degree, AMS 8.5.3
            CALL LPMV0(VX, MX, X, PMV)
         ENDIF
         IF (NEG_M.NE.0.AND.ABS(PMV).LT.1.0D+300) THEN
-C          AMS 8.2.5, for integer order
+C          DLMF 14.9.3
            CALL GAMMA2(VX-MX+1, G1)
            CALL GAMMA2(VX+MX+1, G2)
            PMV = PMV*G1/G2 * (-1)**MX
@@ -8093,6 +8139,9 @@ C       Output:  HU --- U(a,b,x)
 C                ID --- Estimated number of significant digits
 C       Routine called: GAMMA2 for computing gamma function
 C       ======================================================
+C
+C       DLMF 13.2.42 with prefactors rewritten according to
+C       DLMF 5.5.3, M(a, b, x) with DLMF 13.2.2
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         ID=-100
@@ -9309,6 +9358,8 @@ C
         NM=0
         IF (IL1) NM=ABS(A)
         IF (IL2) NM=ABS(AA)
+C       IL1: DLMF 13.2.7 with k=-s-a
+C       IL2: DLMF 13.2.8
         IF (IL1.OR.IL2) THEN
            HU=1.0D0
            R=1.0D0
@@ -9319,6 +9370,7 @@ C
            HU=X**(-A)*HU
            ID=10
         ELSE
+C       DLMF 13.7.3
            HU=1.0D0
            R=1.0D0
            DO 15 K=1,25
@@ -9932,7 +9984,7 @@ C       ===========================================================
         ENDIF
         IF (KF.EQ.1) X=-0.503
         IF (KF.EQ.2) X=0.577
-        ZERO=CMPLX(X,Y)
+        ZERO = DCMPLX(X, Y)
         Z=ZERO
         W=0.0D0
         DO 35 NR=1,NT
@@ -10186,7 +10238,7 @@ C
            CDI(1)=0.3333333333333333D0
            RETURN
         ENDIF
-        CI=CMPLX(0.0D0,1.0D0)
+        CI = DCMPLX(0.0D0, 1.0D0)
         CSINH=CDSIN(CI*Z)/CI
         CCOSH=CDCOS(CI*Z)
         CSI0=CSINH/Z
@@ -12120,7 +12172,7 @@ C
         IMPLICIT DOUBLE PRECISION (X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CQM(0:MM,0:N),CQD(0:MM,0:N)
-        Z=CMPLX(X,Y)
+        Z = DCMPLX(X, Y)
         IF (DABS(X).EQ.1.0D0.AND.Y.EQ.0.0D0) THEN
            DO 10 I=0,M
            DO 10 J=0,N

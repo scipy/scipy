@@ -276,6 +276,11 @@ class TestConstructUtils(TestCase):
                            [3, 4],
                            [5, 6]])
         assert_equal(construct.vstack([A,B]).todense(), expected)
+        assert_equal(construct.vstack([A,B], dtype=np.float32).dtype, np.float32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()]).todense(),
+                     expected)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()], dtype=np.float32).dtype,
+                     np.float32)
 
     def test_hstack(self):
 
@@ -285,6 +290,11 @@ class TestConstructUtils(TestCase):
         expected = matrix([[1, 2, 5],
                            [3, 4, 6]])
         assert_equal(construct.hstack([A,B]).todense(), expected)
+        assert_equal(construct.hstack([A,B], dtype=np.float32).dtype, np.float32)
+        assert_equal(construct.hstack([A.tocsc(),B.tocsc()]).todense(),
+                     expected)
+        assert_equal(construct.hstack([A.tocsc(),B.tocsc()], dtype=np.float32).dtype,
+                     np.float32)
 
     def test_bmat(self):
 
@@ -359,6 +369,10 @@ class TestConstructUtils(TestCase):
         assert_array_equal(x1.data, x2.data)
         assert_array_equal(x1.row, x2.row)
         assert_array_equal(x1.col, x2.col)
+
+        for density in [0.0, 0.1, 0.5, 1.0]:
+            x = sprand(5, 10, density=density)
+            assert_equal(x.nnz, int(density * np.prod(x.shape)))
 
         for fmt in ['coo', 'csc', 'csr', 'lil']:
             x = sprand(5, 10, format=fmt)

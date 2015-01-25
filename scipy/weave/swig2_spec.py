@@ -177,7 +177,7 @@ class swig2_converter(common_base_converter):
           If `pycobj` is 0 then code is generated to deal with string
           representations of the SWIG wrapped pointer.  If it is 1,
           then code is generated to deal with a PyCObject.  If it is 2
-          then code is generated to deal with with PySwigObject.
+          then code is generated to deal with a PySwigObject.
 
         - runtime_version : `int`
 

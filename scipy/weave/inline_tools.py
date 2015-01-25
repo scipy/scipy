@@ -11,8 +11,13 @@ from . import common_info
 from numpy.core.multiarray import _get_ndarray_c_version
 ndarray_api_version = '/* NDARRAY API VERSION %x */' % (_get_ndarray_c_version(),)
 
+
 # not an easy way for the user_path_list to come in here.
 # the PYTHONCOMPILED environment variable offers the most hope.
+# If the user sets ``os.environ['PYTHONCOMPILED']``, that path will
+# be used to compile the extension in.  Note that .cpp and .so files
+# will remain in that directory.  See the docstring of ``catalog.catalog``
+# for more details.
 
 function_catalog = catalog.catalog()
 
@@ -197,13 +202,13 @@ def inline(code,arg_names=[],local_dict=None, global_dict=None,
         On Unix, it'll probably use the same compiler that was used when
         compiling Python. Cygwin's behavior should be similar.
     verbose : {0,1,2}, optional
-        Speficies how much much information is printed during the compile
+        Specifies how much information is printed during the compile
         phase of inlining code.  0 is silent (except on windows with msvc
         where it still prints some garbage). 1 informs you when compiling
         starts, finishes, and how long it took.  2 prints out the command
         lines for the compilation process and can be useful if your having
         problems getting code to work.  Its handy for finding the name of
-        the .cpp file if you need to examine it.  verbose has no affect if
+        the .cpp file if you need to examine it.  verbose has no effect if
         the compilation isn't necessary.
     support_code : str, optional
         A string of valid C++ code declaring extra code that might be
@@ -228,7 +233,7 @@ def inline(code,arg_names=[],local_dict=None, global_dict=None,
         variables.  Setting this to 1 will cause all floating point values
         to be cast as float instead of double if all the Numeric arrays
         are of type float.  If even one of the arrays has type double or
-        double complex, all variables maintain there standard
+        double complex, all variables maintain their standard
         types.
     newarr_converter : int, optional
         Unused.
@@ -239,58 +244,58 @@ def inline(code,arg_names=[],local_dict=None, global_dict=None,
     :class:`distutils.extension.Extension` class for convenience:
 
     sources : [string]
-        list of source filenames, relative to the distribution root
+        List of source filenames, relative to the distribution root
         (where the setup script lives), in Unix form (slash-separated)
-        for portability.    Source files may be C, C++, SWIG (.i),
+        for portability.  Source files may be C, C++, SWIG (.i),
         platform-specific resource files, or whatever else is recognized
         by the "build_ext" command as source for a Python extension.
 
         .. note:: The `module_path` file is always appended to the front of
            this list
     include_dirs : [string]
-        list of directories to search for C/C++ header files (in Unix
-        form for portability)
+        List of directories to search for C/C++ header files (in Unix
+        form for portability).
     define_macros : [(name : string, value : string|None)]
-        list of macros to define; each macro is defined using a 2-tuple,
+        List of macros to define; each macro is defined using a 2-tuple,
         where 'value' is either the string to define it to or None to
         define it without a particular value (equivalent of "#define
-        FOO" in source or -DFOO on Unix C compiler command line)
+        FOO" in source or -DFOO on Unix C compiler command line).
     undef_macros : [string]
-        list of macros to undefine explicitly
+        List of macros to undefine explicitly.
     library_dirs : [string]
-        list of directories to search for C/C++ libraries at link time
+        List of directories to search for C/C++ libraries at link time.
     libraries : [string]
-        list of library names (not filenames or paths) to link against
+        List of library names (not filenames or paths) to link against.
     runtime_library_dirs : [string]
-        list of directories to search for C/C++ libraries at run time
-        (for shared extensions, this is when the extension is loaded)
+        List of directories to search for C/C++ libraries at run time
+        (for shared extensions, this is when the extension is loaded).
     extra_objects : [string]
-        list of extra files to link with (eg. object files not implied
-        by 'sources', static library that must be explicitly specified,
+        List of extra files to link with (e.g. object files not implied
+        by 'sources', static libraries that must be explicitly specified,
         binary resource files, etc.)
     extra_compile_args : [string]
-        any extra platform- and compiler-specific information to use
-        when compiling the source files in 'sources'.    For platforms and
+        Any extra platform- and compiler-specific information to use
+        when compiling the source files in 'sources'.  For platforms and
         compilers where "command line" makes sense, this is typically a
         list of command-line arguments, but for other platforms it could
         be anything.
     extra_link_args : [string]
-        any extra platform- and compiler-specific information to use
+        Any extra platform- and compiler-specific information to use
         when linking object files together to create the extension (or
-        to create a new static Python interpreter).    Similar
+        to create a new static Python interpreter).  Similar
         interpretation as for 'extra_compile_args'.
     export_symbols : [string]
-        list of symbols to be exported from a shared extension.    Not
+        List of symbols to be exported from a shared extension.  Not
         used on all platforms, and not generally necessary for Python
         extensions, which typically export exactly one symbol: "init" +
         extension_name.
     swig_opts : [string]
-        any extra options to pass to SWIG if a source file has the .i
+        Any extra options to pass to SWIG if a source file has the .i
         extension.
     depends : [string]
-        list of files that the extension depends on
+        List of files that the extension depends on.
     language : string
-        extension language (i.e. "c", "c++", "objc"). Will be detected
+        Extension language (i.e. "c", "c++", "objc").  Will be detected
         from the source extensions if not provided.
 
     See Also

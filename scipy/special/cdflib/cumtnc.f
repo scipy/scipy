@@ -69,7 +69,7 @@ C     .. External Subroutines ..
       EXTERNAL bratio,cumnor,cumt
 C     ..
 C     .. Intrinsic Functions ..
-      INTRINSIC abs,exp,int,log,max,min
+      INTRINSIC abs,exp,aint,log,max,min
 C     ..
 
 C     Case pnonc essentially zero
@@ -111,7 +111,7 @@ C     Case pnonc essentially zero
 
 C     ******************** Case i = lambda
 
-      cent = int(lambda)
+      cent = aint(lambda)
 
       IF (cent.LT.one) cent = one
 

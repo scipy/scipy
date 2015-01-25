@@ -2,14 +2,13 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import numpy as np
-from scipy.misc import comb
-from scipy.lib.six.moves import xrange
-from scipy.lib.six import string_types
+from scipy._lib.six import xrange
+from scipy._lib.six import string_types
 
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
-           'hilbert', 'invhilbert', 'pascal']
+           'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
+           'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft']
 
 
 #-----------------------------------------------------------------------------
@@ -430,10 +429,6 @@ def leslie(f, s):
     return a
 
 
-def all_mat(*args):
-    return list(map(np.matrix, args))
-
-
 def kron(a, b):
     """
     Kronecker product.
@@ -531,7 +526,7 @@ def block_diag(*arrs):
     bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
     if bad_args:
         raise ValueError("arguments in the following positions have dimension "
-                            "greater than 2: %s" % bad_args)
+                         "greater than 2: %s" % bad_args)
 
     shapes = np.array([a.shape for a in arrs])
     out = np.zeros(np.sum(shapes, axis=0), dtype=arrs[0].dtype)
@@ -702,6 +697,7 @@ def invhilbert(n, exact=False):
     42475099528537378560L
 
     """
+    from scipy.special import comb
     if exact:
         if n > 14:
             dtype = object
@@ -729,8 +725,6 @@ def pascal(n, kind='symmetric', exact=True):
     The Pascal matrix is a matrix containing the binomial coefficients as
     its elements.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     n : int
@@ -741,9 +735,9 @@ def pascal(n, kind='symmetric', exact=True):
         Default is 'symmetric'.
     exact : bool, optional
         If `exact` is True, the result is either an array of type
-        numpy.uint64 (if n <= 35) or an object array of Python long integers.
+        numpy.uint64 (if n < 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
-        `scipy.misc.comb` with `exact=False`.  The result will be a floating
+        `scipy.special.comb` with `exact=False`.  The result will be a floating
         point array, and the values in the array will not be the exact
         coefficients, but this version is much faster than `exact=True`.
 
@@ -752,10 +746,16 @@ def pascal(n, kind='symmetric', exact=True):
     p : (n, n) ndarray
         The Pascal matrix.
 
+    See Also
+    --------
+    invpascal
+
     Notes
     -----
     See http://en.wikipedia.org/wiki/Pascal_matrix for more information
     about Pascal matrices.
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -772,17 +772,18 @@ def pascal(n, kind='symmetric', exact=True):
            [1, 3, 3, 1]], dtype=uint64)
     >>> pascal(50)[-1, -1]
     25477612258980856902730428600L
-    >>> from scipy.misc import comb
+    >>> from scipy.special import comb
     >>> comb(98, 49, exact=True)
     25477612258980856902730428600L
 
     """
 
+    from scipy.special import comb
     if kind not in ['symmetric', 'lower', 'upper']:
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
 
     if exact:
-        if n > 35:
+        if n >= 35:
             L_n = np.empty((n, n), dtype=object)
             L_n.fill(0)
         else:
@@ -801,3 +802,178 @@ def pascal(n, kind='symmetric', exact=True):
         p = np.dot(L_n, L_n.T)
 
     return p
+
+
+def invpascal(n, kind='symmetric', exact=True):
+    """
+    Returns the inverse of the n x n Pascal matrix.
+
+    The Pascal matrix is a matrix containing the binomial coefficients as
+    its elements.
+
+    Parameters
+    ----------
+    n : int
+        The size of the matrix to create; that is, the result is an n x n
+        matrix.
+    kind : str, optional
+        Must be one of 'symmetric', 'lower', or 'upper'.
+        Default is 'symmetric'.
+    exact : bool, optional
+        If `exact` is True, the result is either an array of type
+        `numpy.int64` (if `n` <= 35) or an object array of Python integers.
+        If `exact` is False, the coefficients in the matrix are computed using
+        `scipy.special.comb` with `exact=False`.  The result will be a floating
+        point array, and for large `n`, the values in the array will not be the
+        exact coefficients.
+
+    Returns
+    -------
+    invp : (n, n) ndarray
+        The inverse of the Pascal matrix.
+
+    See Also
+    --------
+    pascal
+
+    Notes
+    -----
+
+    .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] "Pascal matrix",  http://en.wikipedia.org/wiki/Pascal_matrix
+    .. [2] Cohen, A. M., "The inverse of a Pascal matrix", Mathematical
+           Gazette, 59(408), pp. 111-112, 1975.
+
+    Examples
+    --------
+    >>> from scipy.linalg import invpascal, pascal
+    >>> invp = invpascal(5)
+    >>> invp
+    array([[  5, -10,  10,  -5,   1],
+           [-10,  30, -35,  19,  -4],
+           [ 10, -35,  46, -27,   6],
+           [ -5,  19, -27,  17,  -4],
+           [  1,  -4,   6,  -4,   1]])
+
+    >>> p = pascal(5)
+    >>> p.dot(invp)
+    array([[ 1.,  0.,  0.,  0.,  0.],
+           [ 0.,  1.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  0.,  0.,  1.,  0.],
+           [ 0.,  0.,  0.,  0.,  1.]])
+
+    An example of the use of `kind` and `exact`:
+
+    >>> invpascal(5, kind='lower', exact=False)
+    array([[ 1., -0.,  0., -0.,  0.],
+           [-1.,  1., -0.,  0., -0.],
+           [ 1., -2.,  1., -0.,  0.],
+           [-1.,  3., -3.,  1., -0.],
+           [ 1., -4.,  6., -4.,  1.]])
+
+    """
+    from scipy.special import comb
+
+    if kind not in ['symmetric', 'lower', 'upper']:
+        raise ValueError("'kind' must be 'symmetric', 'lower' or 'upper'.")
+
+    if kind == 'symmetric':
+        if exact:
+            if n > 34:
+                dt = object
+            else:
+                dt = np.int64
+        else:
+            dt = np.float64
+        invp = np.empty((n, n), dtype=dt)
+        for i in range(n):
+            for j in range(0, i + 1):
+                v = 0
+                for k in range(n - i):
+                    v += comb(i + k, k, exact=exact) * comb(i + k, i + k - j,
+                                                            exact=exact)
+                invp[i, j] = (-1)**(i - j) * v
+                if i != j:
+                    invp[j, i] = invp[i, j]
+    else:
+        # For the 'lower' and 'upper' cases, we computer the inverse by
+        # changing the sign of every other diagonal of the pascal matrix.
+        invp = pascal(n, kind=kind, exact=exact)
+        if invp.dtype == np.uint64:
+            # This cast from np.uint64 to int64 OK, because if `kind` is not
+            # "symmetric", the values in invp are all much less than 2**63.
+            invp = invp.view(np.int64)
+
+        # The toeplitz matrix has alternating bands of 1 and -1.
+        invp *= toeplitz((-1)**np.arange(n)).astype(invp.dtype)
+
+    return invp
+
+
+def dft(n, scale=None):
+    """
+    Discrete Fourier transform matrix.
+
+    Create the matrix that computes the discrete Fourier transform of a
+    sequence [1]_.  The n-th primitive root of unity used to generate the
+    matrix is exp(-2*pi*i/n), where i = sqrt(-1).
+
+    Parameters
+    ----------
+    n : int
+        Size the matrix to create.
+    scale : str, optional
+        Must be None, 'sqrtn', or 'n'.
+        If `scale` is 'sqrtn', the matrix is divided by `sqrt(n)`.
+        If `scale` is 'n', the matrix is divided by `n`.
+        If `scale` is None (the default), the matrix is not normalized, and the
+        return value is simply the Vandermonde matrix of the roots of unity.
+
+    Returns
+    -------
+    m : (n, n) ndarray
+        The DFT matrix.
+
+    Notes
+    -----
+    When `scale` is None, multiplying a vector by the matrix returned by
+    `dft` is mathematically equivalent to (but much less efficient than)
+    the calculation performed by `scipy.fftpack.fft`.
+
+    .. versionadded:: 0.14.0
+
+    References
+    ----------
+    .. [1] "DFT matrix", http://en.wikipedia.org/wiki/DFT_matrix
+
+    Examples
+    --------
+    >>> np.set_printoptions(precision=5, suppress=True)
+    >>> x = np.array([1, 2, 3, 0, 3, 2, 1, 0])
+    >>> m = dft(8)
+    >>> m.dot(x)   # Comute the DFT of x
+    array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
+            -0.+4.j,  -2.+2.j])
+
+    Verify that ``m.dot(x)`` is the same as ``fft(x)``.
+
+    >>> from scipy.fftpack import fft
+    >>> fft(x)     # Same result as m.dot(x)
+    array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
+             0.+4.j,  -2.+2.j])
+    """
+    if scale not in [None, 'sqrtn', 'n']:
+        raise ValueError("scale must be None, 'sqrtn', or 'n'; "
+                         "%r is not valid." % (scale,))
+
+    omegas = np.exp(-2j * np.pi * np.arange(n) / n).reshape(-1, 1)
+    m = omegas ** np.arange(n)
+    if scale == 'sqrtn':
+        m /= math.sqrt(n)
+    elif scale == 'n':
+        m /= n
+    return m

@@ -81,7 +81,9 @@ from __future__ import division, print_function, absolute_import
 
 # Ufuncs without C++
 UFUNCS = """
+sph_harm -- sph_harmonic: iidd->D, sph_harmonic_unsafe: dddd->D -- sph_harm.pxd, _legacy.pxd
 _lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
+_ellip_harm -- ellip_harmonic: ddiiddd->d, ellip_harmonic_unsafe: ddddddd->d --_ellip_harm.pxd, _legacy.pxd
 logit -- logitf: f->f, logit: d->d, logitl: g->g           -- _logit.h
 expit -- expitf: f->f, expit: d->d, expitl: g->g           -- _logit.h
 bdtrc -- bdtrc: iid->d, bdtrc_unsafe: ddd->d               -- cephes.h, _legacy.pxd
@@ -289,6 +291,16 @@ erfcx -- faddeeva_erfcx: d->d, faddeeva_erfcx_complex: D->D -- _faddeeva.h++
 erfi -- faddeeva_erfi: d->d, faddeeva_erfi_complex: D->D   -- _faddeeva.h++
 xlogy -- xlogy[double]: dd->d, xlogy[double_complex]: DD->D -- _xlogy.pxd
 xlog1py -- xlog1py: dd->d                                  -- _xlogy.pxd
+poch -- poch: dd->d                                        -- c_misc/misc.h
+boxcox -- boxcox: dd->d                                    -- _boxcox.pxd
+boxcox1p -- boxcox1p: dd->d                                -- _boxcox.pxd
+inv_boxcox -- inv_boxcox: dd->d                            -- _boxcox.pxd
+inv_boxcox1p -- inv_boxcox1p: dd->d                        -- _boxcox.pxd
+entr -- entr: d->d                                         -- _convex_analysis.pxd
+kl_div -- kl_div: dd->d                                    -- _convex_analysis.pxd
+rel_entr -- rel_entr: dd->d                                -- _convex_analysis.pxd
+huber -- huber: dd->d                                      -- _convex_analysis.pxd
+pseudo_huber -- pseudo_huber: dd->d                        -- _convex_analysis.pxd
 """
 
 #---------------------------------------------------------------------------------
@@ -504,12 +516,10 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     body += "    cdef void *func = (<void**>data)[0]\n"
     body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
 
-    pointers = []
     for j in range(len(ufunc_inputs)):
-        pointers.append("*ip%d = args[%d]" % (j, j))
+        body += "    cdef char *ip%d = args[%d]\n" % (j, j)
     for j in range(len(ufunc_outputs)):
-        pointers.append("*op%d = args[%d]" % (j, j + len(ufunc_inputs)))
-    body += "    cdef char %s\n" % ", ".join(pointers)
+        body += "    cdef char *op%d = args[%d]\n" % (j, j + len(ufunc_inputs))
 
     ftypes = []
     fvars = []
@@ -786,7 +796,7 @@ class Ufunc(object):
         toplevel += "cdef char ufunc_%s_types[%d]\n" % (self.name, len(types))
         toplevel += 'cdef char *ufunc_%s_doc = (\n    "%s")\n' % (
             self.name,
-            self.doc.replace('"', '\\"').replace('\n', '\\n\"\n    "')
+            self.doc.replace("\\", "\\\\").replace('"', '\\"').replace('\n', '\\n\"\n    "')
             )
 
         for j, function in enumerate(loops):

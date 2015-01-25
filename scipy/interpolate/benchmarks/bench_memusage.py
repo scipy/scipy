@@ -12,6 +12,7 @@ from numpy.testing import dec
 from scipy.stats import spearmanr
 
 import numpy as np
+from numpy.testing import Tester
 
 
 @dec.skipif(not sys.platform.startswith('linux'), "Memory benchmark works only on Linux")
@@ -129,5 +130,6 @@ def set_mem_rlimit(max_mem):
 
     resource.setrlimit(resource.RLIMIT_AS, (max_mem, cur_limit[1]))
 
+
 if __name__ == "__main__":
-    bench_run()
+    Tester().bench()

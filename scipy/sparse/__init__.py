@@ -46,6 +46,13 @@ Building sparse matrices:
    vstack - Stack sparse matrices vertically (row wise)
    rand - Random values in a given shape
 
+Sparse matrix tools:
+
+.. autosummary::
+   :toctree: generated/
+
+   find
+
 Identifying sparse matrices:
 
 .. autosummary::
@@ -93,8 +100,8 @@ There are seven available sparse matrix types:
     6. coo_matrix: COOrdinate format (aka IJV, triplet format)
     7. dia_matrix: DIAgonal format
 
-To construct a matrix efficiently, use either lil_matrix (recommended) or
-dok_matrix. The lil_matrix class supports basic slicing and fancy
+To construct a matrix efficiently, use either dok_matrix or lil_matrix.
+The lil_matrix class supports basic slicing and fancy
 indexing with a similar syntax to NumPy arrays.  As illustrated below,
 the COO format may also be used to efficiently construct matrices.
 
@@ -120,13 +127,12 @@ array([ 1, -3, -1], dtype=int64)
 
 .. warning:: As of NumPy 1.7, `np.dot` is not aware of sparse matrices,
   therefore using it will result on unexpected results or errors.
-  The corresponding dense matrix should be obtained first instead:
+  The corresponding dense array should be obtained first instead:
 
-  >>> np.dot(A.todense(), v)
-  matrix([[ 1, -3, -1]], dtype=int64)
+  >>> np.dot(A.toarray(), v)
+  array([ 1, -3, -1], dtype=int64)
 
   but then all the performance advantages would be lost.
-  Notice that it returned a matrix, because `todense` returns a matrix.
 
 The CSR format is specially suitable for fast matrix vector products.
 
@@ -153,7 +159,7 @@ Now convert it to CSR format and solve A x = b for x:
 Convert it to a dense matrix and solve, and check that the result
 is the same:
 
->>> x_ = solve(A.todense(), b)
+>>> x_ = solve(A.toarray(), b)
 
 Now we can compute norm of the error with:
 

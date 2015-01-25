@@ -8,7 +8,7 @@ Statistical functions (:mod:`scipy.stats`)
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
 
-Each included distribution is an instance of the class rv_continous:
+Each included distribution is an instance of the class rv_continuous:
 For each given name the following methods are available:
 
 .. autosummary::
@@ -77,7 +77,7 @@ Continuous distributions
    exponweib         -- Exponentiated Weibull
    exponpow          -- Exponential Power
    f                 -- F (Snecdor F)
-   fatiguelife       -- Fatigue Life (Birnbaum-Sanders)
+   fatiguelife       -- Fatigue Life (Birnbaum-Saunders)
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
@@ -142,6 +142,17 @@ Continuous distributions
    weibull_max       -- Maximum Weibull (see Frechet)
    wrapcauchy        -- Wrapped Cauchy
 
+Multivariate distributions
+==========================
+
+.. autosummary::
+   :toctree: generated/
+
+   multivariate_normal   -- Multivariate normal distribution
+   dirichlet             -- Dirichlet
+   wishart               -- Wishart
+   invwishart            -- Inverse Wishart
+
 Discrete distributions
 ======================
 
@@ -171,7 +182,6 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
-   cmedian           -- Computed median
    describe          -- Descriptive statistics
    gmean             -- Geometric mean
    hmean             -- Harmonic mean
@@ -224,6 +234,7 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
+   sigmaclip
    threshold
    trimboth
    trim1
@@ -237,12 +248,14 @@ which work for masked arrays.
    pointbiserialr
    kendalltau
    linregress
+   theilslopes
 
 .. autosummary::
    :toctree: generated/
 
    ttest_1samp
    ttest_ind
+   ttest_ind_from_stats
    ttest_rel
    kstest
    chisquare
@@ -255,6 +268,7 @@ which work for masked arrays.
    wilcoxon
    kruskal
    friedmanchisquare
+   combine_pvalues
 
 .. autosummary::
    :toctree: generated/
@@ -264,10 +278,20 @@ which work for masked arrays.
    levene
    shapiro
    anderson
+   anderson_ksamp
    binom_test
    fligner
+   median_test
    mood
-   oneway
+
+.. autosummary::
+   :toctree: generated/
+
+   boxcox
+   boxcox_normmax
+   boxcox_llf
+
+   entropy
 
 Contingency table functions
 ===========================
@@ -280,14 +304,6 @@ Contingency table functions
    contingency.margins
    fisher_exact
 
-General linear model
-====================
-
-.. autosummary::
-   :toctree: generated/
-
-   glm
-
 Plot-tests
 ==========
 
@@ -297,6 +313,7 @@ Plot-tests
    ppcc_max
    ppcc_plot
    probplot
+   boxcox_normplot
 
 
 Masked statistics functions
@@ -329,6 +346,7 @@ from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
 from .contingency import chi2_contingency
+from ._multivariate import *
 
 #remove vonmises_cython from __all__, I don't know why it is included
 __all__ = [s for s in dir() if not (s.startswith('_') or s.endswith('cython'))]

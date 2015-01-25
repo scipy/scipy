@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 import time
 
 import numpy as np
-from numpy.testing import (Tester, TestCase, assert_allclose, run_module_suite)
+from numpy.testing import Tester, TestCase
 
 import scipy.linalg
 from scipy.sparse.linalg import expm_multiply

@@ -19,6 +19,9 @@ cimport setlist
 
 from numpy.compat import asbytes
 
+cdef extern from "numpy/npy_math.h":
+    double nan "NPY_NAN"
+
 __all__ = ['Delaunay', 'ConvexHull', 'Voronoi', 'tsearch']
 
 #------------------------------------------------------------------------------
@@ -39,6 +42,11 @@ cdef extern from "setjmp.h" nogil:
         pass
     int setjmp(jmp_buf STATE) nogil
     void longjmp(jmp_buf STATE, int VALUE) nogil
+
+# Define the clockwise constant
+cdef extern from "qhull/src/user.h":
+    cdef enum:
+        qh_ORIENTclock
 
 cdef extern from "qhull/src/qset.h":
     ctypedef union setelemT:
@@ -205,6 +213,19 @@ _qhull_lock = threading.Lock()
 cdef _Qhull _active_qhull = None
 cdef int _qhull_count = 0
 
+# Qhull objects pending cleanup
+#
+# Python's garbage collector can trigger a call to a destructor while
+# the qhull lock is held.  Destructors, for instance that of
+# Voronoi/etc, can call _Qhull methods that require the lock, which
+# causes a deadlock also in a single-threaded code.
+#
+# We ensure that _Qhull.close is safe to call from a destructor, by
+# postponing the cleanup if the lock happens to be held. The other
+# methods are not safe to call.
+#
+cdef list _qhull_pending_cleanup = []
+
 class QhullError(RuntimeError):
     pass
 
@@ -313,16 +334,32 @@ cdef class _Qhull:
 
     @cython.final
     def close(self):
-        _qhull_lock.acquire()
-        try:
-            if _active_qhull is self or self._saved_qh != NULL:
+        if _qhull_lock.acquire(False):
+            try:
+                self._cleanup_pending()
                 self._uninit()
-        finally:
-            _qhull_lock.release()
+            finally:
+                _qhull_lock.release()
+        else:
+            # Failed to acquire the lock. 
+            _qhull_pending_cleanup.append(self)
 
     @cython.final
-    def __del__(self):
-        self.close()
+    cdef int _cleanup_pending(self) except -1:
+        """
+        Process any pending cleanups (_qhull_lock MUST be held when calling this)
+        """
+        cdef _Qhull qh
+        cdef int k
+
+        for k in range(len(_qhull_pending_cleanup)):
+            try:
+                qh = _qhull_pending_cleanup.pop()
+            except IndexError:
+                break
+            qh._uninit()
+
+        return 0
 
     @cython.final
     cdef int _activate(self) except -1:
@@ -367,6 +404,10 @@ cdef class _Qhull:
         """
         global _active_qhull, _qhull_count
         cdef int curlong, totlong
+
+        if not (_active_qhull is self or self._saved_qh != NULL):
+            # already freed
+            return 0
 
         self._activate()
 
@@ -528,6 +569,8 @@ cdef class _Qhull:
         cdef double dist
         cdef int facet_ndim
         cdef int numpoints
+        cdef unsigned int lower_bound
+        cdef unsigned int swapped_index
 
         facet_ndim = self.ndim
         numpoints = self.numpoints
@@ -535,11 +578,13 @@ cdef class _Qhull:
         if self._is_delaunay:
             facet_ndim += 1
 
-        id_map = np.empty((qh_qh.facet_id,), dtype=np.intc)
-        id_map.fill(-1)
+        id_map = np.empty(qh_qh.facet_id, dtype=np.intc)
 
         # Compute facet indices
         with nogil:
+            for i in range(qh_qh.facet_id):
+                id_map[i] = -1
+
             facet = qh_qh.facet_list
             j = 0
             while facet and facet.next:
@@ -574,21 +619,40 @@ cdef class _Qhull:
                     facet = facet.next
                     continue
 
-                # Save vertex info
-                for i in xrange(facet_ndim):
+                # Use a lower bound so that the tight loop in high dimensions
+                # is not affected by the conditional below
+                lower_bound = 0
+                if (self._is_delaunay and
+                    facet.toporient == qh_ORIENTclock and facet_ndim == 3):
+                    # Swap the first and second indices to maintain a
+                    # counter-clockwise orientation.
+                    for i in xrange(2):
+                        # Save the vertex info
+                        swapped_index = 1 ^ i
+                        vertex = <vertexT*>facet.vertices.e[i].p
+                        ipoint = qh_pointid(vertex.point)
+                        facets[j, swapped_index] = ipoint
+
+                        # Save the neighbor info
+                        neighbor = <facetT*>facet.neighbors.e[i].p
+                        neighbors[j, swapped_index] = id_map[neighbor.id]
+
+                    lower_bound = 2
+
+                for i in xrange(lower_bound, facet_ndim):
+                    # Save the vertex info
                     vertex = <vertexT*>facet.vertices.e[i].p
                     ipoint = qh_pointid(vertex.point)
                     facets[j, i] = ipoint
 
-                # Save neighbor info
-                for i in xrange(facet_ndim):
+                    # Save the neighbor info
                     neighbor = <facetT*>facet.neighbors.e[i].p
-                    neighbors[j,i] = id_map[neighbor.id]
+                    neighbors[j, i] = id_map[neighbor.id]
 
                 # Save simplex equation info
                 for i in xrange(facet_ndim):
-                    equations[j,i] = facet.normal[i]
-                equations[j,facet_ndim] = facet.offset
+                    equations[j, i] = facet.normal[i]
+                equations[j, facet_ndim] = facet.offset
 
                 # Save coplanar info
                 if facet.coplanarset:
@@ -601,15 +665,15 @@ cdef class _Qhull:
                                 tmp = coplanar
                                 coplanar = None
                                 try:
-                                    tmp.resize(2*ncoplanar+1, 3)
+                                    tmp.resize(2 * ncoplanar + 1, 3)
                                 except ValueError:
                                     # Work around Cython issue on Python 2.4
                                     tmp = np.resize(tmp, (2*ncoplanar+1, 3))
                                 coplanar = tmp
 
-                        coplanar[ncoplanar,0] = qh_pointid(point)
-                        coplanar[ncoplanar,1] = id_map[facet.id]
-                        coplanar[ncoplanar,2] = qh_pointid(vertex.point)
+                        coplanar[ncoplanar, 0] = qh_pointid(point)
+                        coplanar[ncoplanar, 1] = id_map[facet.id]
+                        coplanar[ncoplanar, 2] = qh_pointid(vertex.point)
                         ncoplanar += 1
 
                 j += 1
@@ -691,8 +755,9 @@ cdef class _Qhull:
         # -- Grab Voronoi regions
         regions = []
 
-        point_region = np.empty((self.numpoints,), np.intp)
-        point_region.fill(-1)
+        point_region = np.empty(self.numpoints, np.intp)
+        for i in range(self.numpoints):
+            point_region[i] = -1
 
         vertex = qh_qh.vertex_list
         while vertex and vertex.next:
@@ -730,9 +795,7 @@ cdef class _Qhull:
             if facet.visitid > 0:
                 # finite Voronoi vertex
 
-                center = facet.center
-                if center == NULL:
-                    center = qh_facetcenter(facet.vertices)
+                center = qh_facetcenter(facet.vertices)
 
                 nvoronoi_vertices = max(facet.visitid, nvoronoi_vertices)
                 if nvoronoi_vertices >= voronoi_vertices.shape[0]:
@@ -747,8 +810,7 @@ cdef class _Qhull:
                 for k in range(self.ndim):
                     voronoi_vertices[facet.visitid-1, k] = center[k]
 
-                if center != facet.center:
-                    qh_memfree(center, qh_qh.center_size)
+                qh_memfree(center, qh_qh.center_size)
 
                 if facet.coplanarset:
                     for k in range(qh_setsize(facet.coplanarset)):
@@ -792,8 +854,11 @@ cdef class _Qhull:
         See qhull/io.c:qh_printextremes_2d
 
         """
-        cdef facetT *facet, *startfacet, *nextfacet
-        cdef vertexT *vertexA, *vertexB
+        cdef facetT *facet
+        cdef facetT *startfacet
+        cdef facetT *nextfacet
+        cdef vertexT *vertexA
+        cdef vertexT *vertexB
         cdef int[:] extremes
         cdef int nextremes
 
@@ -934,10 +999,11 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef int i, j, n, nrhs, lda, ldb, info
     cdef int ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
-    cdef double centroid[NPY_MAXDIMS], c[NPY_MAXDIMS+1]
+    cdef double centroid[NPY_MAXDIMS]
+    cdef double c[NPY_MAXDIMS+1]
     cdef double *transform
     cdef double anorm, rcond
-    cdef double nan, rcond_limit
+    cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
     cdef int iwork[NPY_MAXDIMS]
@@ -946,7 +1012,6 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef double y1, y2, y3
     cdef double det
 
-    nan = np.nan
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
 
@@ -1519,16 +1584,18 @@ class Delaunay(_QhullUser):
         Coordinates of input points.
     simplices : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of the points forming the simplices in the triangulation.
+        For 2-D, the points are oriented counterclockwise.
     neighbors : ndarray of ints, shape (nsimplex, ndim+1)
         Indices of neighbor simplices for each simplex.
         The kth neighbor is opposite to the kth vertex.
         For simplices at the boundary, -1 denotes no neighbor.
     equations : ndarray of double, shape (nsimplex, ndim+2)
         [normal, offset] forming the hyperplane equation of the facet
-        on the paraboloid (see [Qhull]_ documentation for more).
+        on the paraboloid
+        (see `Qhull documentation <http://www.qhull.org/>`__ for more).
     paraboloid_scale, paraboloid_shift : float
         Scale and shift for the extra paraboloid dimension
-        (see [Qhull]_ documentation for more).
+        (see `Qhull documentation <http://www.qhull.org/>`__ for more).
     transform : ndarray of double, shape (nsimplex, ndim+1, ndim)
         Affine transform from ``x`` to the barycentric coordinates ``c``.
         This is defined by::
@@ -1578,10 +1645,13 @@ class Delaunay(_QhullUser):
     QhullError
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
+    ValueError
+        Raised if an incompatible array is given as input.
 
     Notes
     -----
-    The tesselation is computed using the Qhull library [Qhull]_.
+    The tesselation is computed using the Qhull library 
+    `Qhull library <http://www.qhull.org/>`__.
 
     .. note::
 
@@ -1589,6 +1659,9 @@ class Delaunay(_QhullUser):
        guarantee that each input point appears as a vertex in the
        Delaunay triangulation. Omitted points are listed in the
        `coplanar` attribute.
+
+    Do not call the ``add_points`` method from a ``__del__``
+    destructor.
 
     Examples
     --------
@@ -1644,14 +1717,12 @@ class Delaunay(_QhullUser):
     The coordinates for the first point are all positive, meaning it
     is indeed inside the triangle.
 
-    References
-    ----------
-    .. [Qhull] http://www.qhull.org/
-
     """
 
     def __init__(self, points, furthest_site=False, incremental=False,
                  qhull_options=None):
+        if np.ma.isMaskedArray(points):
+            raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
@@ -1912,7 +1983,7 @@ class Delaunay(_QhullUser):
             eps = 100 * np.finfo(np.double).eps
         else:
             eps = tol
-        eps_broad = np.sqrt(eps)
+        eps_broad = sqrt(eps)
         out = np.zeros((xi.shape[0],), dtype=np.intc)
         out_ = out
         _get_delaunay_info(&info, self, 1, 0, 0)
@@ -2093,7 +2164,7 @@ class ConvexHull(_QhullUser):
         -1 denotes no neighbor.
     equations : ndarray of double, shape (nfacet, ndim+1)
         [normal, offset] forming the hyperplane equation of the facet
-        (see [Qhull]_ documentation for more).
+        (see `Qhull documentation <http://www.qhull.org/>`__  for more).
     coplanar : ndarray of int, shape (ncoplanar, 3)
         Indices of coplanar points and the corresponding indices of
         the nearest facets and nearest vertex indices.  Coplanar
@@ -2107,10 +2178,16 @@ class ConvexHull(_QhullUser):
     QhullError
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
+    ValueError
+        Raised if an incompatible array is given as input.
 
     Notes
     -----
-    The convex hull is computed using the Qhull libary [Qhull]_.
+    The convex hull is computed using the 
+    `Qhull library <http://www.qhull.org/>`__.
+
+    Do not call the ``add_points`` method from a ``__del__``
+    destructor.
 
     Examples
     --------
@@ -2142,6 +2219,8 @@ class ConvexHull(_QhullUser):
     """
 
     def __init__(self, points, incremental=False, qhull_options=None):
+        if np.ma.isMaskedArray(points):
+            raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:
@@ -2210,11 +2289,11 @@ class Voronoi(_QhullUser):
         Coordinates of input points.
     vertices : ndarray of double, shape (nvertices, ndim)
         Coordinates of the Voronoi vertices.
-    ridge_points : ndarray of ints, shape (nridges, 2)
+    ridge_points : ndarray of ints, shape ``(nridges, 2)``
         Indices of the points between which each Voronoi ridge lies.
-    ridge_vertices : list of list of ints, shape (nridges, *)
+    ridge_vertices : list of list of ints, shape ``(nridges, *)``
         Indices of the Voronoi vertices forming each Voronoi ridge.
-    regions : list of list of ints, shape (nregions, *)
+    regions : list of list of ints, shape ``(nregions, *)``
         Indices of the Voronoi vertices forming each Voronoi region.
         -1 indicates vertex outside the Voronoi diagram.
     point_region : list of ints, shape (npoints)
@@ -2227,10 +2306,16 @@ class Voronoi(_QhullUser):
     QhullError
         Raised when Qhull encounters an error condition, such as
         geometrical degeneracy when options to resolve are not enabled.
+    ValueError
+        Raised if an incompatible array is given as input.
 
     Notes
     -----
-    The Voronoi diagram is computed using the Qhull libary [Qhull]_.
+    The Voronoi diagram is computed using the 
+    `Qhull library <http://www.qhull.org/>`__.
+
+    Do not call the ``add_points`` method from a ``__del__``
+    destructor.
 
     Examples
     --------
@@ -2280,13 +2365,11 @@ class Voronoi(_QhullUser):
            [4, 1],
            [4, 7]], dtype=int32)
 
-    References
-    ----------
-    .. [Qhull] http://www.qhull.org/
-
     """
     def __init__(self, points, furthest_site=False, incremental=False,
                  qhull_options=None):
+        if np.ma.isMaskedArray(points):
+            raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
 
         if qhull_options is None:

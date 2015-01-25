@@ -4,14 +4,12 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.linalg
 
-__all__ = ['expm_frechet']
+__all__ = ['expm_frechet', 'expm_cond']
 
 
-def expm_frechet(A, E, method="SPS", compute_expm=True, check_finite=True):
+def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     """
     Frechet derivative of the matrix exponential of A in the direction E.
-
-    .. versionadded:: 0.13.0
 
     Parameters
     ----------
@@ -22,7 +20,7 @@ def expm_frechet(A, E, method="SPS", compute_expm=True, check_finite=True):
     method : str, optional
         Choice of algorithm.  Should be one of
 
-        - `SPS`
+        - `SPS` (default)
         - `blockEnlarge`
 
     compute_expm : bool, optional
@@ -57,6 +55,8 @@ def expm_frechet(A, E, method="SPS", compute_expm=True, check_finite=True):
     It is a sophisticated implementation which should take
     only about 3/8 as much time as the naive implementation.
     The asymptotics are the same.
+
+    .. versionadded:: 0.13.0
 
     References
     ----------
@@ -100,6 +100,8 @@ def expm_frechet(A, E, method="SPS", compute_expm=True, check_finite=True):
         raise ValueError('expected E to be a square matrix')
     if A.shape != E.shape:
         raise ValueError('expected A and E to be the same shape')
+    if method is None:
+        method = 'SPS'
     if method == 'SPS':
         expm_A, expm_frechet_AE = expm_frechet_algo_64(A, E)
     elif method == 'blockEnlarge':
@@ -274,3 +276,128 @@ def expm_frechet_algo_64(A, E):
         L = np.dot(R, L) + np.dot(L, R)
         R = np.dot(R, R)
     return R, L
+
+
+def vec(M):
+    """
+    Stack columns of M to construct a single vector.
+
+    This is somewhat standard notation in linear algebra.
+
+    Parameters
+    ----------
+    M : 2d array-like
+        Input matrix
+    
+    Returns
+    -------
+    v : 1d ndarray
+        Output vector
+
+    """
+    return M.T.ravel()
+
+
+def expm_frechet_kronform(A, method=None, check_finite=True):
+    """
+    Construct the Kronecker form of the Frechet derivative of expm.
+
+    Parameters
+    ----------
+    A : array-like with shape (N, N)
+        Matrix to be expm'd.
+    method : str, optional
+        Extra keyword to be passed to expm_frechet.
+    check_finite : boolean, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    K : 2d ndarray with shape (N*N, N*N)
+        Kronecker form of the Frechet derivative of the matrix exponential.
+
+    Notes
+    -----
+    This function is used to help compute the condition number
+    of the matrix exponential.
+
+    See also
+    --------
+    expm : Compute a matrix exponential.
+    expm_frechet : Compute the Frechet derivative of the matrix exponential.
+    expm_cond : Compute the relative condition number of the matrix exponential
+                in the Frobenius norm.
+
+    """
+    if check_finite:
+        A = np.asarray_chkfinite(A)
+    else:
+        A = np.asarray(A)
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected a square matrix')
+
+    n = A.shape[0]
+    ident = np.identity(n)
+    cols = []
+    for i in range(n):
+        for j in range(n):
+            E = np.outer(ident[i], ident[j])
+            F = expm_frechet(A, E,
+                    method=method, compute_expm=False, check_finite=False)
+            cols.append(vec(F))
+    return np.vstack(cols).T
+
+
+def expm_cond(A, check_finite=True):
+    """
+    Relative condition number of the matrix exponential in the Frobenius norm.
+
+    Parameters
+    ----------
+    A : 2d array-like
+        Square input matrix with shape (N, N).
+    check_finite : boolean, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    kappa : float
+        The relative condition number of the matrix exponential
+        in the Frobenius norm
+
+    Notes
+    -----
+    A faster estimate for the condition number in the 1-norm
+    has been published but is not yet implemented in scipy.
+
+    .. versionadded:: 0.14.0
+
+    See also
+    --------
+    expm : Compute the exponential of a matrix.
+    expm_frechet : Compute the Frechet derivative of the matrix exponential.
+
+    """
+    if check_finite:
+        A = np.asarray_chkfinite(A)
+    else:
+        A = np.asarray(A)
+    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError('expected a square matrix')
+
+    X = scipy.linalg.expm(A)
+    K = expm_frechet_kronform(A, check_finite=False)
+
+    # The following norm choices are deliberate.
+    # The norms of A and X are Frobenius norms,
+    # and the norm of K is the induced 2-norm.
+    A_norm = scipy.linalg.norm(A, 'fro')
+    X_norm = scipy.linalg.norm(X, 'fro')
+    K_norm = scipy.linalg.norm(K, 2)
+
+    kappa = (K_norm * A_norm) / X_norm
+    return kappa

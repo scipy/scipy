@@ -12,9 +12,8 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import tempfile
 
-from numpy import amin, amax, ravel, asarray, cast, arange, \
-     ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros, uint8, \
-     issubdtype, array
+from numpy import (amin, amax, ravel, asarray, cast, arange, ones, newaxis,
+                   transpose, iscomplexobj, uint8, issubdtype, array)
 
 try:
     from PIL import Image, ImageFilter
@@ -26,8 +25,8 @@ except ImportError:
 if not hasattr(Image, 'frombytes'):
     Image.frombytes = Image.fromstring
 
-__all__ = ['fromimage','toimage','imsave','imread','bytescale',
-           'imrotate','imresize','imshow','imfilter']
+__all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
+           'imrotate', 'imresize', 'imshow', 'imfilter']
 
 
 # Returns a byte-scaled image
@@ -100,21 +99,21 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     return cast[uint8](bytedata) + cast[uint8](low)
 
 
-def imread(name,flatten=0):
+def imread(name, flatten=0):
     """
-    Read an image file from a filename.
+    Read an image from a file as an array.
 
     Parameters
     ----------
-    name : str
-        The file name to be read.
+    name : str or file object
+        The file name or file object to be read.
     flatten : bool, optional
         If True, flattens the color layers into a single gray-scale layer.
 
     Returns
     -------
     imread : ndarray
-        The array obtained by reading image from file `name`.
+        The array obtained by reading image from file `imfile`.
 
     Notes
     -----
@@ -124,22 +123,26 @@ def imread(name,flatten=0):
     """
 
     im = Image.open(name)
-    return fromimage(im,flatten=flatten)
+    return fromimage(im, flatten=flatten)
 
 
-def imsave(name, arr):
+def imsave(name, arr, format=None):
     """
     Save an array as an image.
 
     Parameters
     ----------
-    name : str
-        Output filename.
+    name : str or file object
+        Output file name or file object.
     arr : ndarray, MxN or MxNx3 or MxNx4
         Array containing image values.  If the shape is ``MxN``, the array
         represents a grey-level image.  Shape ``MxNx3`` stores the red, green
         and blue bands along the last dimension.  An alpha layer may be
         included, specified as the last colour band of an ``MxNx4`` array.
+    format : str
+        Image format. If omitted, the format to use is determined from the
+        file name extension. If a file object was used instead of a file name,
+        this parameter should always be used.
 
     Examples
     --------
@@ -160,7 +163,10 @@ def imsave(name, arr):
 
     """
     im = toimage(arr)
-    im.save(name)
+    if format is None:
+        im.save(name)
+    else:
+        im.save(name, format)
     return
 
 
@@ -223,38 +229,40 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
         raise ValueError("Cannot convert a complex-valued array.")
     shape = list(data.shape)
     valid = len(shape) == 2 or ((len(shape) == 3) and
-                              ((3 in shape) or (4 in shape)))
+                                ((3 in shape) or (4 in shape)))
     if not valid:
-        raise ValueError("'arr' does not have a suitable array shape for any mode.")
+        raise ValueError("'arr' does not have a suitable array shape for "
+                         "any mode.")
     if len(shape) == 2:
-        shape = (shape[1],shape[0])  # columns show up first
+        shape = (shape[1], shape[0])  # columns show up first
         if mode == 'F':
             data32 = data.astype(numpy.float32)
-            image = Image.frombytes(mode,shape,data32.tostring())
+            image = Image.frombytes(mode, shape, data32.tostring())
             return image
         if mode in [None, 'L', 'P']:
-            bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
-            image = Image.frombytes('L',shape,bytedata.tostring())
+            bytedata = bytescale(data, high=high, low=low,
+                                 cmin=cmin, cmax=cmax)
+            image = Image.frombytes('L', shape, bytedata.tostring())
             if pal is not None:
-                image.putpalette(asarray(pal,dtype=uint8).tostring())
+                image.putpalette(asarray(pal, dtype=uint8).tostring())
                 # Becomes a mode='P' automagically.
             elif mode == 'P':  # default gray-scale
-                pal = arange(0,256,1,dtype=uint8)[:,newaxis] * \
-                      ones((3,),dtype=uint8)[newaxis,:]
-                image.putpalette(asarray(pal,dtype=uint8).tostring())
+                pal = (arange(0, 256, 1, dtype=uint8)[:, newaxis] *
+                       ones((3,), dtype=uint8)[newaxis, :])
+                image.putpalette(asarray(pal, dtype=uint8).tostring())
             return image
         if mode == '1':  # high input gives threshold for 1
             bytedata = (data > high)
-            image = Image.frombytes('1',shape,bytedata.tostring())
+            image = Image.frombytes('1', shape, bytedata.tostring())
             return image
         if cmin is None:
             cmin = amin(ravel(data))
         if cmax is None:
             cmax = amax(ravel(data))
-        data = (data*1.0 - cmin)*(high-low)/(cmax-cmin) + low
+        data = (data*1.0 - cmin)*(high - low)/(cmax - cmin) + low
         if mode == 'I':
             data32 = data.astype(numpy.uint32)
-            image = Image.frombytes(mode,shape,data32.tostring())
+            image = Image.frombytes(mode, shape, data32.tostring())
         else:
             raise ValueError(_errstr)
         return image
@@ -274,26 +282,26 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
         ca = channel_axis
 
     numch = shape[ca]
-    if numch not in [3,4]:
+    if numch not in [3, 4]:
         raise ValueError("Channel axis dimension is not valid.")
 
-    bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
+    bytedata = bytescale(data, high=high, low=low, cmin=cmin, cmax=cmax)
     if ca == 2:
         strdata = bytedata.tostring()
-        shape = (shape[1],shape[0])
+        shape = (shape[1], shape[0])
     elif ca == 1:
-        strdata = transpose(bytedata,(0,2,1)).tostring()
-        shape = (shape[2],shape[0])
+        strdata = transpose(bytedata, (0, 2, 1)).tostring()
+        shape = (shape[2], shape[0])
     elif ca == 0:
-        strdata = transpose(bytedata,(1,2,0)).tostring()
-        shape = (shape[2],shape[1])
+        strdata = transpose(bytedata, (1, 2, 0)).tostring()
+        shape = (shape[2], shape[1])
     if mode is None:
         if numch == 3:
             mode = 'RGB'
         else:
             mode = 'RGBA'
 
-    if mode not in ['RGB','RGBA','YCbCr','CMYK']:
+    if mode not in ['RGB', 'RGBA', 'YCbCr', 'CMYK']:
         raise ValueError(_errstr)
 
     if mode in ['RGB', 'YCbCr']:
@@ -308,7 +316,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     return image
 
 
-def imrotate(arr,angle,interp='bilinear'):
+def imrotate(arr, angle, interp='bilinear'):
     """
     Rotate an image counter-clockwise by angle degrees.
 
@@ -333,9 +341,9 @@ def imrotate(arr,angle,interp='bilinear'):
 
     """
     arr = asarray(arr)
-    func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
+    func = {'nearest': 0, 'bilinear': 2, 'bicubic': 3, 'cubic': 3}
     im = toimage(arr)
-    im = im.rotate(angle,resample=func[interp])
+    im = im.rotate(angle, resample=func[interp])
     return fromimage(im)
 
 
@@ -364,7 +372,7 @@ def imshow(arr):
 
     """
     im = toimage(arr)
-    fnum,fname = tempfile.mkstemp('.png')
+    fnum, fname = tempfile.mkstemp('.png')
     try:
         im.save(fname)
     except:
@@ -373,8 +381,8 @@ def imshow(arr):
     import os
     os.close(fnum)
 
-    cmd = os.environ.get('SCIPY_PIL_IMAGE_VIEWER','see')
-    status = os.system("%s %s" % (cmd,fname))
+    cmd = os.environ.get('SCIPY_PIL_IMAGE_VIEWER', 'see')
+    status = os.system("%s %s" % (cmd, fname))
 
     os.unlink(fname)
     if status != 0:
@@ -410,18 +418,19 @@ def imresize(arr, size, interp='bilinear', mode=None):
     """
     im = toimage(arr, mode=mode)
     ts = type(size)
-    if issubdtype(ts,int):
-        size = size / 100.0
-    elif issubdtype(type(size),float):
-        size = (array(im.size)*size).astype(int)
+    if issubdtype(ts, int):
+        percent = size / 100.0
+        size = tuple((array(im.size)*percent).astype(int))
+    elif issubdtype(type(size), float):
+        size = tuple((array(im.size)*size).astype(int))
     else:
-        size = (size[1],size[0])
-    func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
+        size = (size[1], size[0])
+    func = {'nearest': 0, 'bilinear': 2, 'bicubic': 3, 'cubic': 3}
     imnew = im.resize(size, resample=func[interp])
     return fromimage(imnew)
 
 
-def imfilter(arr,ftype):
+def imfilter(arr, ftype):
     """
     Simple filtering of an image.
 
@@ -446,16 +455,16 @@ def imfilter(arr,ftype):
         to apply is unsupported.
 
     """
-    _tdict = {'blur':ImageFilter.BLUR,
-              'contour':ImageFilter.CONTOUR,
-              'detail':ImageFilter.DETAIL,
-              'edge_enhance':ImageFilter.EDGE_ENHANCE,
-              'edge_enhance_more':ImageFilter.EDGE_ENHANCE_MORE,
-              'emboss':ImageFilter.EMBOSS,
-              'find_edges':ImageFilter.FIND_EDGES,
-              'smooth':ImageFilter.SMOOTH,
-              'smooth_more':ImageFilter.SMOOTH_MORE,
-              'sharpen':ImageFilter.SHARPEN
+    _tdict = {'blur': ImageFilter.BLUR,
+              'contour': ImageFilter.CONTOUR,
+              'detail': ImageFilter.DETAIL,
+              'edge_enhance': ImageFilter.EDGE_ENHANCE,
+              'edge_enhance_more': ImageFilter.EDGE_ENHANCE_MORE,
+              'emboss': ImageFilter.EMBOSS,
+              'find_edges': ImageFilter.FIND_EDGES,
+              'smooth': ImageFilter.SMOOTH,
+              'smooth_more': ImageFilter.SMOOTH_MORE,
+              'sharpen': ImageFilter.SHARPEN
               }
 
     im = toimage(arr)

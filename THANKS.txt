@@ -83,7 +83,7 @@ Jeff Armstrong for discrete state-space and linear time-invariant functionality
 Mark Wiebe for fixing type casting after changes in Numpy.
 Andrey Smirnov for improvements to FIR filter design.
 Anthony Scopatz for help with code review and merging.
-Lars Buitinck for improvements to io.arff and scipy.sparse.
+Lars Buitinck for improvements to scipy.sparse and various other modules.
 Scott Sinclair for documentation improvements and some bug fixes.
 Gael Varoquaux for cleanups in scipy.sparse.
 Skipper Seabold for a fix to special.gammainc.
@@ -98,7 +98,7 @@ Christoph Gohlke for many bug fixes and help with Windows specific issues.
 Jacob Silterra for cwt-based peak finding in scipy.signal.
 Denis Laxalde for the unified interface to minimizers in scipy.optimize.
 David Fong for the sparse LSMR solver.
-Andreas Hilboll for wrapping FITPACK's spgrid.f and sphere.f
+Andreas Hilboll for adding several new interpolation methods.
 Andrew Schein for improving the numerical precision of norm.logcdf().
 Robert Gantner for improving expm() implementation.
 Sebastian Werk for Halley's method in newton().
@@ -122,6 +122,23 @@ Nils Werner for signal windowing and wavfile-writing improvements.
 Kenneth L. Ho for the wrapper around the Interpolative Decomposition code.
 Juan Luis Cano for refactorings in lti, sparse docs improvements and some
     trivial fixes.
+Pawel Chojnacki for simple documentation fixes.
+Gert-Ludwig Ingold for contributions to special functions.
+Joris Vankerschaver for multivariate Gaussian functionality.
+Rob Falck for the SLSQP interface and linprog.
+Jörg Dietrich for the k-sample Anderson Darling test.
+Blake Griffith for improvements to scipy.sparse.
+Andrew Nelson for scipy.optimize.differential_evolution.
+Brian Newsom for work on ctypes multivariate integration.
+Nathan Woods for advising on multivariate integration and building unit tests.
+Brianna Laugher for bug fixes.
+Johannes Kulick for the Dirichlet distribution.
+Bastian Venthur for bug fixes.
+Alex Rothberg for stats.combine_pvalues.
+Brandon Liu for stats.combine_pvalues.
+Clark Fitzgerald for namedtuple outputs in scipy.stats.
+Florian Wilhelm for usage of RandomState in scipy.stats distributions.
+Robert T. McGibbon for Levinson-Durbin Toeplitz solver.
 
 
 Institutions

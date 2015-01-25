@@ -3,15 +3,12 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from scipy.constants import constants, codata, find, value
-from numpy.testing import assert_equal, assert_, run_module_suite, \
-                          assert_almost_equal
-from numpy.testing.utils import WarningManager
+from numpy.testing import (assert_equal, assert_, run_module_suite,
+                           assert_almost_equal)
 
 
 def test_find():
-    warn_ctx = WarningManager()
-    warn_ctx.__enter__()
-    try:
+    with warnings.catch_warnings():
         warnings.simplefilter('ignore', DeprecationWarning)
 
         keys = find('weak mixing', disp=False)
@@ -31,8 +28,6 @@ def test_find():
                                     'natural unit of mom.um in MeV/c',
                                     'natural unit of length',
                                     'natural unit of time']))
-    finally:
-        warn_ctx.__exit__()
 
 
 def test_basic_table_parse():
@@ -61,7 +56,7 @@ def test_2002_vs_2006():
 
 
 def test_exact_values():
-    """Check that updating stored values with exact ones worked."""
+    # Check that updating stored values with exact ones worked.
     for key in codata.exact_values:
         assert_((codata.exact_values[key][0] - value(key)) / value(key) == 0)
 

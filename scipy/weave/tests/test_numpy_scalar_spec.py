@@ -2,21 +2,17 @@ from __future__ import absolute_import, print_function
 
 import os
 import sys
-
-# Note: test_dir is global to this file.
-#       It is made by setup_test_location()
-
-#globals
-global test_dir
-test_dir = ''
+import tempfile
 
 import numpy
-from numpy.testing import TestCase, dec, assert_
+from numpy.testing import TestCase, assert_, run_module_suite
 
-from scipy.weave import inline_tools,ext_tools
+from scipy.weave import inline_tools, ext_tools
 from scipy.weave.build_tools import msvc_exists, gcc_exists
 from scipy.weave.catalog import unique_file
 from scipy.weave.numpy_scalar_spec import numpy_complex_scalar_converter
+
+from weave_test_utils import dec
 
 
 def unique_mod(d,file_name):
@@ -24,12 +20,6 @@ def unique_mod(d,file_name):
     m = os.path.splitext(f)[0]
     return m
 
-
-def remove_whitespace(in_str):
-    out = in_str.replace(" ","")
-    out = out.replace("\t","")
-    out = out.replace("\n","")
-    return out
 
 #----------------------------------------------------------------------------
 # Scalar conversion test classes
@@ -108,15 +98,7 @@ class NumpyComplexScalarConverter(TestCase):
         result = inline_tools.inline("return_val=1.0/a;",['a'])
         assert_(result == .5-.5j)
 
-# class TestMsvcNumpyComplexScalarConverter(
-#                   TestNumpyComplexScalarConverter):
-#     compiler = 'msvc'
-# class TestUnixNumpyComplexScalarConverter(
-#                   TestNumpyComplexScalarConverter):
-#     compiler = ''
-# class TestGccNumpyComplexScalarConverter(
-#                   TestNumpyComplexScalarConverter):
-#     compiler = 'gcc'
+
 for _n in dir():
     if _n[-9:] == 'Converter':
         if msvc_exists():
@@ -128,13 +110,10 @@ for _n in dir():
 
 
 def setup_test_location():
-    import tempfile
-    #test_dir = os.path.join(tempfile.gettempdir(),'test_files')
-    test_dir = tempfile.mktemp()
-    if not os.path.exists(test_dir):
-        os.mkdir(test_dir)
+    test_dir = tempfile.mkdtemp()
     sys.path.insert(0,test_dir)
     return test_dir
+
 
 test_dir = setup_test_location()
 
@@ -147,21 +126,20 @@ def teardown_test_location():
     return test_dir
 
 
-def remove_file(name):
-    test_dir = os.path.abspath(name)
-
 if not msvc_exists():
     for _n in dir():
-        if _n[:8] == 'TestMsvc': exec('del '+_n)
+        if _n[:8] == 'TestMsvc':
+            exec('del '+_n)
 else:
     for _n in dir():
-        if _n[:8] == 'TestUnix': exec('del '+_n)
+        if _n[:8] == 'TestUnix':
+            exec('del '+_n)
 
 if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
     for _n in dir():
-        if _n[:7] == 'TestGcc': exec('del '+_n)
+        if _n[:7] == 'TestGcc':
+            exec('del '+_n)
 
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

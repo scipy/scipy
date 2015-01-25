@@ -31,12 +31,12 @@ This could be computed using :obj:`quad`:
     >>> result = integrate.quad(lambda x: special.jv(2.5,x), 0, 4.5)
     >>> print result
     (1.1178179380783249, 7.8663172481899801e-09)
-    
+
     >>> I = sqrt(2/pi)*(18.0/27*sqrt(2)*cos(4.5)-4.0/27*sqrt(2)*sin(4.5)+
         sqrt(2*pi)*special.fresnel(3/sqrt(pi))[0])
     >>> print I
     1.117817938088701
-    
+
     >>> print abs(result[0]-I)
     1.03761443881e-11
 
@@ -96,14 +96,14 @@ is desired (and the fact that this integral can be computed as
 :obj:`vec_expint` based on the routine :obj:`quad`:
 
     >>> from scipy.integrate import quad
-    >>> def integrand(t,n,x):
+    >>> def integrand(t, n, x):
     ...     return exp(-x*t) / t**n
-    
-    >>> def expint(n,x): 
+
+    >>> def expint(n, x):
     ...     return quad(integrand, 1, Inf, args=(n, x))[0]
-    
+
     >>> vec_expint = vectorize(expint)
-    
+
     >>> vec_expint(3,arange(1.0,4.0,0.5))
     array([ 0.1097,  0.0567,  0.0301,  0.0163,  0.0089,  0.0049])
     >>> special.expn(3,arange(1.0,4.0,0.5))
@@ -119,17 +119,17 @@ integrand from the use of :obj:`quad` ). The integral in this case is
 
 >>> result = quad(lambda x: expint(3, x), 0, inf)
 >>> print result
-(0.33333333324560266, 2.8548934485373678e-09)  
-    
+(0.33333333324560266, 2.8548934485373678e-09)
+
 >>> I3 = 1.0/3.0
 >>> print I3
-0.333333333333   
-    
+0.333333333333
+
 >>> print I3 - result[0]
-8.77306560731e-11     
-    
+8.77306560731e-11
+
 This last example shows that multiple integration can be handled using
-repeated calls to :func:`quad`. 
+repeated calls to :func:`quad`.
 
 
 General multiple integration (:func:`dblquad`, :func:`tplquad`, :func:`nquad`)
@@ -145,12 +145,12 @@ An example of using double integration to compute several values of
 
     >>> from scipy.integrate import quad, dblquad
     >>> def I(n):
-    ...     return dblquad(lambda t, x: exp(-x*t)/t**n, 0, Inf, lambda x: 1, lambda x: Inf) 
-    
+    ...     return dblquad(lambda t, x: exp(-x*t)/t**n, 0, Inf, lambda x: 1, lambda x: Inf)
+
     >>> print I(4)
     (0.25000000000435768, 1.0518245707751597e-09)
     >>> print I(3)
-    (0.33333333325010883, 2.8604069919261191e-09) 
+    (0.33333333325010883, 2.8604069919261191e-09)
     >>> print I(2)
     (0.49999999999857514, 1.8855523253868967e-09)
 
@@ -207,7 +207,7 @@ example from above
 can be evaluated by means of
 
 >>> from scipy import integrate
->>> def f(x,y):
+>>> def f(x, y):
 >>>     return x*y
 >>> def bounds_y():
 >>>     return [0, 0.5]
@@ -271,12 +271,12 @@ of order 2 or less.
 ...    return x**3
 >>> x = np.array([1,3,4])
 >>> y1 = f1(x)
->>> I1 = integrate.simps(y1,x)
+>>> I1 = integrate.simps(y1, x)
 >>> print(I1)
 21.0
 
 
-This corresponds exactly to 
+This corresponds exactly to
 
 .. math::
 
@@ -285,7 +285,7 @@ This corresponds exactly to
 whereas integrating the second function
 
 >>> y2 = f2(x)
->>> I2 = integrate.simps(y2,x)
+>>> I2 = integrate.simps(y2, x)
 >>> print(I2)
 61.5
 
@@ -297,6 +297,67 @@ does not correspond to
 
 because the order of the polynomial in f2 is larger than two.
 
+Faster integration using Ctypes
+-------------------------------
+
+A user desiring reduced integration times may pass a C function pointer through
+`ctypes` to `quad`, `dblquad`, `tplquad` or `nquad` and it will be integrated
+and return a result in Python.  The performance increase here arises from two
+factors.  The primary improvement is faster function evaluation, which is
+provided by compilation.  This can also be achieved using a library like Cython
+or F2Py that compiles Python.  Additionally we have a speedup provided by the
+removal of function calls between C and Python in :obj:`quad` - this cannot be
+achieved through Cython or F2Py.  This method will provide a speed increase of
+~2x for trivial functions such as sine but can produce a much more noticeable
+increase (10x+) for more complex functions.  This feature then, is geared
+towards a user with numerically intensive integrations willing to write a
+little C to reduce computation time significantly.
+
+`ctypes` integration can be done in a few simple steps:
+
+1.) Write an integrand function in C with the function signature 
+``double f(int n, double args[n])``, where ``args`` is an array containing the
+arguments of the function f.  
+
+.. code-block:: c
+
+   //testlib.c
+   double f(int n, double args[n]){
+       return args[0] - args[1] * args[2]; //corresponds to x0 - x1 * x2
+   }
+
+2.) Now compile this file to a shared/dynamic library (a quick search will help
+with this as it is OS-dependent). The user must link any math libraries,
+etc. used.  On linux this looks like::
+
+    $ gcc -shared -o testlib.so -fPIC testlib.c
+
+The output library will be referred to as ``testlib.so``, but it may have a 
+different file extension. A library has now been created that can be loaded
+into Python with `ctypes`.
+
+3.) Load shared library into Python using `ctypes` and set ``restypes`` and
+``argtypes`` - this allows Scipy to interpret the function correctly:
+
+>>> import ctypes
+>>> from scipy import integrate
+>>> lib = ctypes.CDLL('/**/testlib.so') # Use absolute path to testlib
+>>> func = lib.f # Assign specific function to name func (for simplicity)
+>>> func.restype = ctypes.c_double
+>>> func.argtypes = (ctypes.c_int, ctypes.c_double)
+
+Note that the ``argtypes`` will always be ``(ctypes.c_int, ctypes.c_double)``
+regardless of the number of parameters, and ``restype`` will always be
+``ctypes.c_double``.
+
+4.) Now integrate the library function as normally, here using `nquad`:
+
+>>> integrate.nquad(func, [[0,10],[-10,0],[-1,1]])
+(1000.0, 1.1102230246251565e-11)
+
+And the Python tuple is returned as expected in a reduced amount of time.  All 
+optional parameters can be used with this method including specifying
+singularities, infinite bounds, etc.
 
 Ordinary differential equations (:func:`odeint`)
 ------------------------------------------------
@@ -376,27 +437,27 @@ usage of the *Dfun* option which allows the user to specify a gradient
 
     >>> from scipy.integrate import odeint
     >>> from scipy.special import gamma, airy
-    >>> y1_0 = 1.0/3**(2.0/3.0)/gamma(2.0/3.0)
-    >>> y0_0 = -1.0/3**(1.0/3.0)/gamma(1.0/3.0)
+    >>> y1_0 = 1.0 / 3**(2.0/3.0) / gamma(2.0/3.0)
+    >>> y0_0 = -1.0 / 3**(1.0/3.0) / gamma(1.0/3.0)
     >>> y0 = [y0_0, y1_0]
     >>> def func(y, t):
     ...     return [t*y[1],y[0]]
-    
-    >>> def gradient(y,t):
-    ...     return [[0,t],[1,0]]
-    
-    >>> x = arange(0,4.0, 0.01)
+
+    >>> def gradient(y, t):
+    ...     return [[0,t], [1,0]]
+
+    >>> x = arange(0, 4.0, 0.01)
     >>> t = x
     >>> ychk = airy(x)[0]
     >>> y = odeint(func, y0, t)
     >>> y2 = odeint(func, y0, t, Dfun=gradient)
-    
+
     >>> print ychk[:36:6]
     [ 0.355028  0.339511  0.324068  0.308763  0.293658  0.278806]
-    
+
     >>> print y[:36:6,1]
     [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
-    
+
     >>> print y2[:36:6,1]
     [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
 

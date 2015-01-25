@@ -2,19 +2,17 @@ from __future__ import absolute_import, print_function
 
 import os
 import sys
+import tempfile
+import string
+import time
 
-# Note: test_dir is global to this file.
-#       It is made by setup_location()
+from numpy.testing import TestCase, assert_, run_module_suite
 
-# globals
-global test_dir
-test_dir = ''
-
-from numpy.testing import TestCase, dec, assert_
-
-from scipy.weave import inline_tools,ext_tools,c_spec
+from scipy.weave import inline_tools, ext_tools, c_spec
 from scipy.weave.build_tools import msvc_exists, gcc_exists
 from scipy.weave.catalog import unique_file
+
+from weave_test_utils import debug_print, dec
 
 
 def unique_mod(d,file_name):
@@ -23,35 +21,7 @@ def unique_mod(d,file_name):
     return m
 
 
-def remove_whitespace(in_str):
-    out = in_str.replace(" ","")
-    out = out.replace("\t","")
-    out = out.replace("\n","")
-    return out
-
-#----------------------------------------------------------------------------
-# Scalar conversion test classes
-#   int, float, complex
-#----------------------------------------------------------------------------
-# compilers = []
-# for c in ('gcc','msvc'):
-#     mod_name = 'empty' + c
-#     mod_name = unique_mod(test_dir,mod_name)
-#     mod = ext_tools.ext_module(mod_name)
-#     # a = 1
-#     # code = "a=2;"
-#     # test = ext_tools.ext_function('test',code,['a'])
-#     # mod.add_function(test)
-#     try:
-#         mod.compile(location = test_dir, compiler = c)
-#     except CompileError:
-#         print "Probably don't have Compiler: %s"%c
-#     else:
-#         compilers.append(c)
-
-
 class IntConverter(TestCase):
-
     compiler = ''
 
     @dec.slow
@@ -119,7 +89,6 @@ class IntConverter(TestCase):
 
 
 class FloatConverter(TestCase):
-
     compiler = ''
 
     @dec.slow
@@ -262,8 +231,7 @@ class FileConverter(TestCase):
 
     @dec.slow
     def test_py_to_file(self):
-        import tempfile
-        file_name = tempfile.mktemp()
+        file_name = os.path.join(test_dir, "testfile")
         file = open(file_name,'w')
         code = """
                fprintf(file,"hello bob");
@@ -275,8 +243,7 @@ class FileConverter(TestCase):
 
     @dec.slow
     def test_file_to_py(self):
-        import tempfile
-        file_name = tempfile.mktemp()
+        file_name = os.path.join(test_dir, "testfile")
         # not sure I like Py::String as default -- might move to std::sting
         # or just plain char*
         code = """
@@ -310,7 +277,6 @@ class CallableConverter(TestCase):
 
     @dec.slow
     def test_call_function(self):
-        import string
         func = string.find
         search_str = "hello world hello"
         sub_str = "world"
@@ -519,17 +485,16 @@ class ListConverter(TestCase):
         mod.add_function(no_checking)
         mod.compile(location=test_dir, compiler=self.compiler)
         exec('from ' + mod_name + ' import with_cxx, no_checking')
-        import time
         t1 = time.time()
         sum1 = with_cxx(a)
         t2 = time.time()
-        print('speed test for list access')
-        print('compiler:', self.compiler)
-        print('scxx:', t2 - t1)
+        debug_print('speed test for list access')
+        debug_print('compiler:', self.compiler)
+        debug_print('scxx:', t2 - t1)
         t1 = time.time()
         sum2 = no_checking(a)
         t2 = time.time()
-        print('C, no checking:', t2 - t1)
+        debug_print('C, no checking:', t2 - t1)
         sum3 = 0
         t1 = time.time()
         for i in a:
@@ -538,7 +503,7 @@ class ListConverter(TestCase):
             else:
                 sum3 -= i
         t2 = time.time()
-        print('python:', t2 - t1)
+        debug_print('python:', t2 - t1)
         assert_(sum1 == sum2 and sum1 == sum3)
 
 
@@ -604,8 +569,7 @@ class TupleConverter(TestCase):
 
 
 class DictConverter(TestCase):
-    """ Base Class for dictionary conversion tests.
-    """
+    """Base Class for dictionary conversion tests."""
 
     # Default string specifying the compiler to use.  While this is set
     # in all sub-classes, this base test class is found by the test
@@ -669,11 +633,6 @@ class DictConverter(TestCase):
         assert_(c['hello'] == 5)
 
 
-# for compiler in compilers:
-    # for name,klass in globals().iteritems():
-    #     if name[:4]=="Test" and name[-9:] == "Converter":
-    #         exec("class %s%s(%s):\n    compiler = '%s'"%(name,compiler,name,compiler))
-# for converter in
 for _n in dir():
     if _n[-9:] == 'Converter':
         if msvc_exists():
@@ -683,122 +642,25 @@ for _n in dir():
         if gcc_exists():
             exec("class Test%sGcc(%s):\n    compiler = 'gcc'" % (_n,_n))
 
-# class TestMsvcIntConverter(TestIntConverter):
-#     compiler = 'msvc'
-# class TestUnixIntConverter(TestIntConverter):
-#     compiler = ''
-# class TestGccIntConverter(TestIntConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcFloatConverter(TestFloatConverter):
-#     compiler = 'msvc'
-#
-# class TestMsvcFloatConverter(TestFloatConverter):
-#     compiler = 'msvc'
-# class TestUnixFloatConverter(TestFloatConverter):
-#     compiler = ''
-# class TestGccFloatConverter(TestFloatConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcComplexConverter(TestComplexConverter):
-#     compiler = 'msvc'
-# class TestUnixComplexConverter(TestComplexConverter):
-#     compiler = ''
-# class TestGccComplexConverter(TestComplexConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcFileConverter(TestFileConverter):
-#     compiler = 'msvc'
-# class TestUnixFileConverter(TestFileConverter):
-#     compiler = ''
-# class TestGccFileConverter(TestFileConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcCallableConverter(TestCallableConverter):
-#     compiler = 'msvc'
-# class TestUnixCallableConverter(TestCallableConverter):
-#     compiler = ''
-# class TestGccCallableConverter(TestCallableConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcSequenceConverter(TestSequenceConverter):
-#     compiler = 'msvc'
-# class TestUnixSequenceConverter(TestSequenceConverter):
-#     compiler = ''
-# class TestGccSequenceConverter(TestSequenceConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcStringConverter(TestStringConverter):
-#     compiler = 'msvc'
-# class TestUnixStringConverter(TestStringConverter):
-#     compiler = ''
-# class TestGccStringConverter(TestStringConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcListConverter(TestListConverter):
-#     compiler = 'msvc'
-# class TestUnixListConverter(TestListConverter):
-#     compiler = ''
-# class TestGccListConverter(TestListConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcTupleConverter(TestTupleConverter):
-#     compiler = 'msvc'
-# class TestUnixTupleConverter(TestTupleConverter):
-#     compiler = ''
-# class TestGccTupleConverter(TestTupleConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcDictConverter(TestDictConverter):
-#     compiler = 'msvc'
-# class TestUnixDictConverter(TestDictConverter):
-#     compiler = ''
-# class TestGccDictConverter(TestDictConverter):
-#     compiler = 'gcc'
-#
-# class TestMsvcInstanceConverter(TestInstanceConverter):
-#     compiler = 'msvc'
-# class TestUnixInstanceConverter(TestInstanceConverter):
-#     compiler = ''
-# class TestGccInstanceConverter(TestInstanceConverter):
-#     compiler = 'gcc'
-
 
 def setup_location():
-    import tempfile
-    # test_dir = os.path.join(tempfile.gettempdir(),'test_files')
-    test_dir = tempfile.mktemp()
-    if not os.path.exists(test_dir):
-        os.mkdir(test_dir)
+    test_dir = tempfile.mkdtemp()
     sys.path.insert(0,test_dir)
     return test_dir
 
-test_dir = setup_location()
+
+test_dir = None
 
 
-def teardown_location():
-    import tempfile
-    test_dir = os.path.join(tempfile.gettempdir(),'test_files')
-    if sys.path[0] == test_dir:
-        sys.path = sys.path[1:]
-    return test_dir
+def setUpModule():
+    global test_dir
+    test_dir = setup_location()
 
 
-def remove_file(name):
-    test_dir = os.path.abspath(name)
-
-# if not msvc_exists():
-#     for _n in dir():
-#         if _n[:8]=='TestMsvc': exec 'del '+_n
-# else:
-#     for _n in dir():
-#         if _n[:8]=='TestUnix': exec 'del '+_n
-#
-# if not (gcc_exists() and msvc_exists() and sys.platform == 'win32'):
-#     for _n in dir():
-#         if _n[:7]=='TestGcc': exec 'del '+_n
-#
+def tearDownModule():
+    import shutil
+    if test_dir is not None:
+        shutil.rmtree(test_dir)
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

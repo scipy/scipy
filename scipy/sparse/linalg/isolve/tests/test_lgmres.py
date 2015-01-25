@@ -4,7 +4,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, assert_
+from numpy.testing import TestCase, assert_, run_module_suite
 
 from numpy import zeros, array, allclose
 from scipy.linalg import norm
@@ -13,6 +13,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import splu
 from scipy.sparse.linalg.isolve import lgmres
+
 
 Am = csr_matrix(array([[-2,1,0,0,0,9],
                        [1,-2,1,0,5,0],
@@ -77,6 +78,6 @@ class TestLGMRES(TestCase):
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
 
+
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

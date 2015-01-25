@@ -12,3 +12,5 @@ Library:
         Sources: src/_interpolate.cpp
     Extension: interpnd
         Sources: interpnd.c
+    Extension: _ppoly
+        Sources: _ppoly.c

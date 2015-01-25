@@ -13,7 +13,7 @@ __all__ = ['lombscargle']
 cdef extern from "math.h":
     double cos(double)
     double sin(double)
-    double atan(double)
+    double atan2(double, double)
 
 @cython.boundscheck(False)
 def lombscargle(np.ndarray[np.float64_t, ndim=1] x,
@@ -104,7 +104,8 @@ def lombscargle(np.ndarray[np.float64_t, ndim=1] x,
      
     Calculate Lomb-Scargle periodogram:
 
-    >>> pgram = sp.signal.lombscargle(x, y, f)
+    >>> import scipy.signal as signal
+    >>> pgram = signal.lombscargle(x, y, f)
 
     Now make a plot of the input data:
 
@@ -154,7 +155,7 @@ def lombscargle(np.ndarray[np.float64_t, ndim=1] x,
             ss += s * s
             cs += c * s
 
-        tau = atan(2 * cs / (cc - ss)) / (2 * freqs[i])
+        tau = atan2(2 * cs, cc - ss) / (2 * freqs[i])
         c_tau = cos(freqs[i] * tau)
         s_tau = sin(freqs[i] * tau)
         c_tau2 = c_tau * c_tau

@@ -34,24 +34,23 @@ from __future__ import absolute_import, print_function
 
 import os
 import sys
+import stat
 import pickle
 import socket
 import tempfile
+import warnings
 
 try:
+    # importing dbhash is necessary because this regularly fails on Python 2.x
+    # installs (due to known bsddb issues).  While importing shelve doesn't
+    # fail, it won't work correctly if dbhash import fails.  So in that case we
+    # want to use _dumb_shelve
     import dbhash
     import shelve
     dumb = 0
 except ImportError:
     from . import _dumb_shelve as shelve
     dumb = 1
-
-# For testing...
-# import scipy.io.dumb_shelve as shelve
-# dumb = 1
-
-# import shelve
-# dumb = 0
 
 
 def getmodule(object):
@@ -85,13 +84,15 @@ def getmodule(object):
 def expr_to_filename(expr):
     """ Convert an arbitrary expr string to a valid file name.
 
-        The name is based on the md5 check sum for the string and
+        The name is based on the SHA-256 check sum for the string and
         Something that was a little more human readable would be
         nice, but the computer doesn't seem to care.
     """
-    import scipy.weave.md5_load as md5
+    from hashlib import sha256
     base = 'sc_'
-    return base + md5.new(expr).hexdigest()
+    # 32 chars is enough for unique filenames; too long names don't work for
+    # MSVC (see gh-3216).  Don't use md5, gives a FIPS warning.
+    return base + sha256(expr).hexdigest()[:32]
 
 
 def unique_file(d,expr):
@@ -137,7 +138,7 @@ def is_writable(dir):
 
     # Do NOT use a hardcoded name here due to the danger from race conditions
     # on NFS when multiple processes are accessing the same base directory in
-    # parallel.  We use both hostname and pocess id for the prefix in an
+    # parallel.  We use both hostname and process id for the prefix in an
     # attempt to ensure that there can really be no name collisions (tempfile
     # appends 6 random chars to this prefix).
     prefix = 'dummy_%s_%s_' % (socket.gethostname(),os.getpid())
@@ -156,6 +157,92 @@ def whoami():
     return os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
 
 
+def _create_dirs(path):
+    """ create provided path, ignore errors """
+    try:
+        os.makedirs(path, mode=0o700)
+    except OSError:
+        pass
+
+
+def default_dir_posix(tmp_dir=None):
+    """
+    Create or find default catalog store for posix systems
+
+    purpose of 'tmp_dir' is to enable way how to test this function easily
+    """
+    path_candidates = []
+    python_name = "python%d%d_compiled" % tuple(sys.version_info[:2])
+
+    if tmp_dir:
+        home_dir = tmp_dir
+    else:
+        home_dir = os.path.expanduser('~')
+    tmp_dir = tmp_dir or tempfile.gettempdir()
+
+    xdg_cache = (os.environ.get("XDG_CACHE_HOME", None) or
+                 os.path.join(home_dir, '.cache'))
+    xdg_temp_dir = os.path.join(xdg_cache, 'scipy', python_name)
+    path_candidates.append(xdg_temp_dir)
+
+    home_temp_dir_name = '.' + python_name
+    home_temp_dir = os.path.join(home_dir, home_temp_dir_name)
+    path_candidates.append(home_temp_dir)
+
+    temp_dir_name = repr(os.getuid()) + '_' + python_name
+    temp_dir_path = os.path.join(tmp_dir, temp_dir_name)
+    path_candidates.append(temp_dir_path)
+
+    for path in path_candidates:
+        _create_dirs(path)
+        if check_dir(path):
+            return path
+
+    # since we got here, both dirs are not useful
+    tmp_dir_path = find_valid_temp_dir(temp_dir_name, tmp_dir)
+    if not tmp_dir_path:
+        tmp_dir_path = create_temp_dir(temp_dir_name, tmp_dir=tmp_dir)
+    return tmp_dir_path
+
+
+def default_dir_win(tmp_dir=None):
+    """
+    Create or find default catalog store for Windows systems
+
+    purpose of 'tmp_dir' is to enable way how to test this function easily
+    """
+    def create_win_temp_dir(prefix, inner_dir=None, tmp_dir=None):
+        """
+        create temp dir starting with 'prefix' in 'tmp_dir' or
+        'tempfile.gettempdir'; if 'inner_dir' is specified, it should be
+        created inside
+        """
+        tmp_dir_path = find_valid_temp_dir(prefix, tmp_dir)
+        if tmp_dir_path:
+            if inner_dir:
+                tmp_dir_path = os.path.join(tmp_dir_path, inner_dir)
+                if not os.path.isdir(tmp_dir_path):
+                    os.mkdir(tmp_dir_path, 0o700)
+        else:
+            tmp_dir_path = create_temp_dir(prefix, inner_dir, tmp_dir)
+        return tmp_dir_path
+
+    python_name = "python%d%d_compiled" % tuple(sys.version_info[:2])
+    tmp_dir = tmp_dir or tempfile.gettempdir()
+
+    temp_dir_name = "%s" % whoami()
+    temp_root_dir = os.path.join(tmp_dir, temp_dir_name)
+    temp_dir_path = os.path.join(temp_root_dir, python_name)
+    _create_dirs(temp_dir_path)
+    if check_dir(temp_dir_path) and check_dir(temp_root_dir):
+        return temp_dir_path
+    else:
+        if check_dir(temp_root_dir):
+            return create_win_temp_dir(python_name, tmp_dir=temp_root_dir)
+        else:
+            return create_win_temp_dir(temp_dir_name, python_name, tmp_dir)
+
+
 def default_dir():
     """ Return a default location to store compiled files and catalogs.
 
@@ -170,45 +257,18 @@ def default_dir():
         in the user's home, /tmp/<uid>_pythonXX_compiled is used.  If it
         doesn't exist, it is created.  The directory is marked rwx------
         to try and keep people from being able to sneak a bad module
-        in on you.
-
+        in on you. If the directory already exists in /tmp/ and is not
+        secure, new one is created.
     """
-
     # Use a cached value for fast return if possible
-    if hasattr(default_dir,"cached_path") and \
-       os.path.exists(default_dir.cached_path) and \
-       os.access(default_dir.cached_path, os.W_OK):
+    if hasattr(default_dir, "cached_path") and \
+       check_dir(default_dir.cached_path):
         return default_dir.cached_path
 
-    python_name = "python%d%d_compiled" % tuple(sys.version_info[:2])
-    path_candidates = []
-    if sys.platform != 'win32':
-        try:
-            path_candidates.append(os.path.join(os.environ['HOME'],
-                                                '.' + python_name))
-        except KeyError:
-            pass
-
-        temp_dir = repr(os.getuid()) + '_' + python_name
-        path_candidates.append(os.path.join(tempfile.gettempdir(), temp_dir))
+    if sys.platform == 'win32':
+        path = default_dir_win()
     else:
-        path_candidates.append(os.path.join(tempfile.gettempdir(),
-                                           "%s" % whoami(), python_name))
-
-    writable = False
-    for path in path_candidates:
-        if not os.path.exists(path):
-            try:
-                os.makedirs(path, mode=0o700)
-            except OSError:
-                continue
-        if is_writable(path):
-            writable = True
-            break
-
-    if not writable:
-        print('warning: default directory is not write accessible.')
-        print('default:', path)
+        path = default_dir_posix()
 
     # Cache the default dir path so that this function returns quickly after
     # being called once (nothing in it should change after the first call)
@@ -217,15 +277,130 @@ def default_dir():
     return path
 
 
-def intermediate_dir():
-    """ Location in temp dir for storing .cpp and .o  files during
-        builds.
+def check_dir(im_dir):
     """
-    python_name = "python%d%d_intermediate" % tuple(sys.version_info[:2])
-    path = os.path.join(tempfile.gettempdir(),"%s" % whoami(),python_name)
-    if not os.path.exists(path):
-        os.makedirs(path, mode=0o700)
-    return path
+    Check if dir is safe; if it is, return True.
+    These checks make sense only on posix:
+     * directory has correct owner
+     * directory has correct permissions (0700)
+     * directory is not a symlink
+    """
+    def check_is_dir():
+        return os.path.isdir(im_dir)
+
+    def check_permissions():
+        """ If on posix, permissions should be 0700. """
+        writable = is_writable(im_dir)
+        if sys.platform != 'win32':
+            try:
+                im_dir_stat = os.stat(im_dir)
+            except OSError:
+                return False
+            writable &= stat.S_IMODE(im_dir_stat.st_mode) == 0o0700
+        return writable
+
+    def check_ownership():
+        """ Intermediate dir owner should be same as owner of process. """
+        if sys.platform != 'win32':
+            try:
+                im_dir_stat = os.stat(im_dir)
+            except OSError:
+                return False
+            proc_uid = os.getuid()
+            return proc_uid == im_dir_stat.st_uid
+        return True
+
+    def check_is_symlink():
+        """ Check if intermediate dir is symlink. """
+        try:
+            return not os.path.islink(im_dir)
+        except OSError:
+            return False
+
+    checks = [check_is_dir, check_permissions,
+              check_ownership, check_is_symlink]
+
+    for check in checks:
+        if not check():
+            return False
+
+    return True
+
+
+def create_temp_dir(prefix, inner_dir=None, tmp_dir=None):
+    """
+    Create intermediate dirs <tmp>/<prefix+random suffix>/<inner_dir>/
+
+    argument 'tmp_dir' is used in unit tests
+    """
+    if not tmp_dir:
+        tmp_dir_path = tempfile.mkdtemp(prefix=prefix)
+    else:
+        tmp_dir_path = tempfile.mkdtemp(prefix=prefix, dir=tmp_dir)
+    if inner_dir:
+        tmp_dir_path = os.path.join(tmp_dir_path, inner_dir)
+        os.mkdir(tmp_dir_path, 0o700)
+    return tmp_dir_path
+
+
+def intermediate_dir_prefix():
+    """ Prefix of root intermediate dir (<tmp>/<root_im_dir>). """
+    return "%s-%s-" % ("scipy", whoami())
+
+
+def find_temp_dir(prefix, tmp_dir=None):
+    """ Find temp dirs in 'tmp_dir' starting with 'prefix'"""
+    matches = []
+    tmp_dir = tmp_dir or tempfile.gettempdir()
+    for tmp_file in os.listdir(tmp_dir):
+        if tmp_file.startswith(prefix):
+            matches.append(os.path.join(tmp_dir, tmp_file))
+    return matches
+
+
+def find_valid_temp_dir(prefix, tmp_dir=None):
+    """
+    Try to look for existing temp dirs.
+    If there is one suitable found, return it, otherwise return None.
+    """
+    matches = find_temp_dir(prefix, tmp_dir)
+    for match in matches:
+        if check_dir(match):
+            # as soon as we find correct dir, we can stop searching
+            return match
+
+
+def py_intermediate_dir():
+    """
+    Name of intermediate dir for current python interpreter:
+    <temp dir>/<name>/pythonXY_intermediate/
+    """
+    name = "python%d%d_intermediate" % tuple(sys.version_info[:2])
+    return name
+
+
+def create_intermediate_dir(tmp_dir=None):
+    py_im_dir = py_intermediate_dir()
+    return create_temp_dir(intermediate_dir_prefix(), py_im_dir, tmp_dir)
+
+
+def intermediate_dir(tmp_dir=None):
+    """
+    Temporary directory for storing .cpp and .o files during builds.
+
+    First, try to find the dir and if it exists, verify it is safe.
+    Otherwise, create it.
+    """
+    im_dir = find_valid_temp_dir(intermediate_dir_prefix(), tmp_dir)
+    py_im_dir = py_intermediate_dir()
+    if im_dir is None:
+        py_im_dir = py_intermediate_dir()
+        im_dir = create_intermediate_dir(tmp_dir)
+    else:
+        im_dir = os.path.join(im_dir, py_im_dir)
+        if not os.path.isdir(im_dir):
+            os.mkdir(im_dir, 0o700)
+    return im_dir
 
 
 def default_temp_dir():
@@ -233,8 +408,8 @@ def default_temp_dir():
     if not os.path.exists(path):
         os.makedirs(path, mode=0o700)
     if not is_writable(path):
-        print('warning: default directory is not write accessible.')
-        print('default:', path)
+        warnings.warn('Default directory is not write accessible.\n'
+                      'default: %s' % path)
     return path
 
 
@@ -568,14 +743,13 @@ class catalog(object):
         try:
             writable_cat = get_catalog(catalog_path,'w')
         except:
-            print('warning: unable to repair catalog entry\n %s\n in\n %s' %
-                  (code,catalog_path))
+            warnings.warn('Unable to repair catalog entry\n %s\n in\n %s' %
+                          (code, catalog_path))
             # shelve doesn't guarantee flushing, so it's safest to explicitly
             # close the catalog
             writable_cat.close()
             return
         if code in writable_cat:
-            print('repairing catalog by removing key')
             del writable_cat[code]
 
         # it is possible that the path key doesn't exist (if the function
@@ -679,7 +853,7 @@ class catalog(object):
         if cat is None:
             cat_dir = default_dir()
             cat_file = catalog_path(cat_dir)
-            print('problems with default catalog -- removing')
+            warnings.warn('problems with default catalog -- removing')
             import glob
             files = glob.glob(cat_file+'*')
             for f in files:

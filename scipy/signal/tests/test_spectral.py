@@ -5,8 +5,9 @@ import numpy as np
 from numpy.testing import assert_raises, assert_approx_equal, \
                           assert_, run_module_suite, TestCase,\
                           assert_allclose, assert_array_equal,\
-                          assert_array_almost_equal_nulp
+                          assert_array_almost_equal_nulp, dec
 from scipy import signal, fftpack
+from scipy._lib._version import NumpyVersion
 from scipy.signal import periodogram, welch, lombscargle
 
 
@@ -49,6 +50,37 @@ class TestPeriodogram(TestCase):
         g, q = periodogram(x, scaling='density')
         assert_allclose(f, np.linspace(0, 0.5, 9))
         assert_allclose(p, q/16.0)
+
+    def test_integer_even(self):
+        x = np.zeros(16, dtype=np.int)
+        x[0] = 1
+        f, p = periodogram(x)
+        assert_allclose(f, np.linspace(0, 0.5, 9))
+        q = np.ones(9)
+        q[0] = 0
+        q[-1] /= 2.0
+        q /= 8
+        assert_allclose(p, q)
+
+    def test_integer_odd(self):
+        x = np.zeros(15, dtype=np.int)
+        x[0] = 1
+        f, p = periodogram(x)
+        assert_allclose(f, np.arange(8.0)/15.0)
+        q = np.ones(8)
+        q[0] = 0
+        q[-1] /= 2.0
+        q *= 2.0/15.0
+        assert_allclose(p, q, atol=1e-15)
+
+    def test_integer_twosided(self):
+        x = np.zeros(16, dtype=np.int)
+        x[0] = 1
+        f, p = periodogram(x, return_onesided=False)
+        assert_allclose(f, fftpack.fftfreq(16, 1.0))
+        q = np.ones(16)/16.0
+        q[0] = 0
+        assert_allclose(p, q)
 
     def test_complex(self):
         x = np.zeros(16, np.complex128)
@@ -132,6 +164,52 @@ class TestPeriodogram(TestCase):
         q /= 8
         assert_allclose(p, q)
 
+    def test_real_onesided_even_32(self):
+        x = np.zeros(16, 'f')
+        x[0] = 1
+        f, p = periodogram(x)
+        assert_allclose(f, np.linspace(0, 0.5, 9))
+        q = np.ones(9, 'f')
+        q[0] = 0
+        q[-1] /= 2.0
+        q /= 8
+        assert_allclose(p, q)
+        assert_(p.dtype == q.dtype)
+
+    def test_real_onesided_odd_32(self):
+        x = np.zeros(15, 'f')
+        x[0] = 1
+        f, p = periodogram(x)
+        assert_allclose(f, np.arange(8.0)/15.0)
+        q = np.ones(8, 'f')
+        q[0] = 0
+        q[-1] /= 2.0
+        q *= 2.0/15.0
+        assert_allclose(p, q, atol=1e-7)
+        assert_(p.dtype == q.dtype)
+
+    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
+    def test_real_twosided_32(self):
+        x = np.zeros(16, 'f')
+        x[0] = 1
+        f, p = periodogram(x, return_onesided=False)
+        assert_allclose(f, fftpack.fftfreq(16, 1.0))
+        q = np.ones(16, 'f')/16.0
+        q[0] = 0
+        assert_allclose(p, q)
+        assert_(p.dtype == q.dtype)
+
+    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
+    def test_complex_32(self):
+        x = np.zeros(16, 'F')
+        x[0] = 1.0 + 2.0j
+        f, p = periodogram(x)
+        assert_allclose(f, fftpack.fftfreq(16, 1.0))
+        q = 5.0*np.ones(16, 'f')/16.0
+        q[0] = 0
+        assert_allclose(p, q)
+        assert_(p.dtype == q.dtype)
+
 
 class TestWelch(TestCase):
     def test_real_onesided_even(self):
@@ -170,6 +248,33 @@ class TestWelch(TestCase):
         assert_allclose(p, np.array([0.015625, 0.028645833333333332,
             0.041666666666666664, 0.041666666666666664, 0.020833333333333332]))
 
+    def test_integer_onesided_even(self):
+        x = np.zeros(16, dtype=np.int)
+        x[0] = 1
+        x[8] = 1
+        f, p = welch(x, nperseg=8)
+        assert_allclose(f, np.linspace(0, 0.5, 5))
+        assert_allclose(p, np.array([0.08333333, 0.15277778, 0.22222222,
+            0.22222222, 0.11111111]))
+
+    def test_integer_onesided_odd(self):
+        x = np.zeros(16, dtype=np.int)
+        x[0] = 1
+        x[8] = 1
+        f, p = welch(x, nperseg=9)
+        assert_allclose(f, np.arange(5.0)/9.0)
+        assert_allclose(p, np.array([0.15958226, 0.24193954, 0.24145223,
+            0.24100919, 0.12188675]))
+
+    def test_integer_twosided(self):
+        x = np.zeros(16, dtype=np.int)
+        x[0] = 1
+        x[8] = 1
+        f, p = welch(x, nperseg=8, return_onesided=False)
+        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        assert_allclose(p, np.array([0.08333333, 0.07638889, 0.11111111,
+            0.11111111, 0.11111111, 0.11111111, 0.11111111, 0.07638889]))
+
     def test_complex(self):
         x = np.zeros(16, np.complex128)
         x[0] = 1.0 + 2.0j
@@ -184,25 +289,32 @@ class TestWelch(TestCase):
                 scaling='foo', nperseg=4)
 
     def test_detrend_linear(self):
-        x = np.arange(10, dtype=np.float64)+0.04
+        x = np.arange(10, dtype=np.float64) + 0.04
         f, p = welch(x, nperseg=10, detrend='linear')
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
+    def test_no_detrending(self):
+        x = np.arange(10, dtype=np.float64) + 0.04
+        f1, p1 = welch(x, nperseg=10, detrend=False)
+        f2, p2 = welch(x, nperseg=10, detrend=lambda x: x)
+        assert_allclose(f1, f2, atol=1e-15)
+        assert_allclose(p1, p2, atol=1e-15)
+
     def test_detrend_external(self):
-        x = np.arange(10, dtype=np.float64)+0.04
+        x = np.arange(10, dtype=np.float64) + 0.04
         f, p = welch(x, nperseg=10,
                 detrend=lambda seg: signal.detrend(seg, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_detrend_external_nd_m1(self):
-        x = np.arange(40, dtype=np.float64)+0.04
+        x = np.arange(40, dtype=np.float64) + 0.04
         x = x.reshape((2,2,10))
         f, p = welch(x, nperseg=10,
                 detrend=lambda seg: signal.detrend(seg, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_detrend_external_nd_0(self):
-        x = np.arange(20, dtype=np.float64)+0.04
+        x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
         x = np.rollaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
@@ -210,7 +322,7 @@ class TestWelch(TestCase):
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
     def test_nd_axis_m1(self):
-        x = np.arange(20, dtype=np.float64)+0.04
+        x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
         f, p = welch(x, nperseg=10)
         assert_array_equal(p.shape, (2, 1, 6))
@@ -219,7 +331,7 @@ class TestWelch(TestCase):
         assert_allclose(p0[np.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13)
 
     def test_nd_axis_0(self):
-        x = np.arange(20, dtype=np.float64)+0.04
+        x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((10,2,1))
         f, p = welch(x, nperseg=10, axis=0)
         assert_array_equal(p.shape, (6,2,1))
@@ -276,6 +388,52 @@ class TestWelch(TestCase):
 
     def test_nfft_too_short(self):
         assert_raises(ValueError, welch, np.ones(12), nfft=3, nperseg=4)
+
+    def test_real_onesided_even_32(self):
+        x = np.zeros(16, 'f')
+        x[0] = 1
+        x[8] = 1
+        f, p = welch(x, nperseg=8)
+        assert_allclose(f, np.linspace(0, 0.5, 5))
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+            0.11111111], 'f') 
+        assert_allclose(p, q)
+        assert_(p.dtype == q.dtype)
+
+    def test_real_onesided_odd_32(self):
+        x = np.zeros(16, 'f')
+        x[0] = 1
+        x[8] = 1
+        f, p = welch(x, nperseg=9)
+        assert_allclose(f, np.arange(5.0)/9.0)
+        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
+            0.12188675], 'f')
+        assert_allclose(p, q, atol=1e-7)
+        assert_(p.dtype == q.dtype)
+
+    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
+    def test_real_twosided_32(self):
+        x = np.zeros(16, 'f')
+        x[0] = 1
+        x[8] = 1
+        f, p = welch(x, nperseg=8, return_onesided=False)
+        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        q = np.array([0.08333333, 0.07638889, 0.11111111,
+            0.11111111, 0.11111111, 0.11111111, 0.11111111, 0.07638889], 'f')
+        assert_allclose(p, q)
+        assert_(p.dtype == q.dtype)
+
+    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
+    def test_complex_32(self):
+        x = np.zeros(16, 'F')
+        x[0] = 1.0 + 2.0j
+        x[8] = 1.0 + 2.0j
+        f, p = welch(x, nperseg=8)
+        assert_allclose(f, fftpack.fftfreq(8, 1.0))
+        q = np.array([0.41666667, 0.38194444, 0.55555556,
+            0.55555556, 0.55555556, 0.55555556, 0.55555556, 0.38194444], 'f')
+        assert_allclose(p, q)
+        assert_(p.dtype == q.dtype, 'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
 
 
 class TestLombscargle:
@@ -356,6 +514,14 @@ class TestLombscargle:
         x = np.zeros(1)
         f = np.zeros(1)
         assert_raises(ZeroDivisionError, lombscargle, t, x, f)
+
+    def test_lombscargle_atan_vs_atan2(self):
+        # https://github.com/scipy/scipy/issues/3787
+        # This raised a ZeroDivisionError.
+        t = np.linspace(0, 10, 1000, endpoint=False)
+        x = np.sin(4*t)
+        f = np.linspace(0, 50, 500, endpoint=False) + 0.1
+        q = lombscargle(t, x, f*2*np.pi)
 
 
 if __name__ == "__main__":

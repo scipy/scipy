@@ -17,7 +17,7 @@ def test_kde_1d():
     # get kde for original sample
     gkde = stats.gaussian_kde(xn)
 
-    # evaluate the density funtion for the kde for some points
+    # evaluate the density function for the kde for some points
     xs = np.linspace(-7,7,501)
     kdepdf = gkde.evaluate(xs)
     normpdf = stats.norm.pdf(xs, loc=xnmean, scale=xnstd)
@@ -178,6 +178,24 @@ def test_kde_integer_input():
     kde = stats.gaussian_kde(x1)
     y_expected = [0.13480721, 0.18222869, 0.19514935, 0.18222869, 0.13480721]
     assert_array_almost_equal(kde(x1), y_expected, decimal=6)
+
+
+def test_pdf_logpdf():
+    np.random.seed(1)
+    n_basesample = 50
+    xn = np.random.randn(n_basesample)
+
+    # Default
+    gkde = stats.gaussian_kde(xn)
+
+    xs = np.linspace(-15, 12, 25)
+    pdf = gkde.evaluate(xs)
+    pdf2 = gkde.pdf(xs)
+    assert_almost_equal(pdf, pdf2, decimal=12)
+
+    logpdf = np.log(pdf)
+    logpdf2 = gkde.logpdf(xs)
+    assert_almost_equal(logpdf, logpdf2, decimal=12)
 
 
 if __name__ == "__main__":

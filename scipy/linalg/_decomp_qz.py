@@ -8,7 +8,7 @@ from numpy import asarray_chkfinite
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 __all__ = ['qz']
 
@@ -54,7 +54,7 @@ def _select_function(sort, typ):
 def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
        overwrite_b=False, check_finite=True):
     """
-    QZ decompostion for generalized eigenvalues of a pair of matrices.
+    QZ decomposition for generalized eigenvalues of a pair of matrices.
 
     The QZ, or generalized Schur, decomposition for a pair of N x N
     nonsymmetric matrices (A,B) is::
@@ -75,8 +75,6 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     conjugate pair of generalized eigenvalues.  If (``output='complex'``) or
     A and B are complex matrices, Z' denotes the conjugate-transpose of Z.
     Q and Z are unitary matrices.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -131,6 +129,8 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     -----
     Q is transposed versus the equivalent function in Matlab.
 
+    .. versionadded:: 0.11.0
+
     Examples
     --------
     >>> from scipy import linalg
@@ -162,7 +162,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("The 'sort' input of qz() has to be None (will "
                  " change when this functionality is made more robust).")
 
-    if not output in ['real','complex','r','c']:
+    if output not in ['real','complex','r','c']:
         raise ValueError("argument must be 'real', or 'complex'")
 
     if check_finite:
@@ -174,9 +174,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     a_m, a_n = a1.shape
     b_m, b_n = b1.shape
-    try:
-        assert a_m == a_n == b_m == b_n
-    except AssertionError:
+    if not (a_m == a_n == b_m == b_n):
         raise ValueError("Array dimensions must be square and agree")
 
     typa = a1.dtype.char

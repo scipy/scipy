@@ -147,8 +147,7 @@ double x;
     int sign;
 
     if (x > 34.84425627277176174) {
-	mtherr(name, UNDERFLOW);
-	return 0.0;
+        return exp(-lgam(x));
     }
     if (x < -34.034) {
 	w = -x;

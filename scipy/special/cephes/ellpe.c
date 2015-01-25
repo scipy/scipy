@@ -186,11 +186,14 @@ double ellpe(x)
 double x;
 {
     x = 1.0 - x;
-    if ((x <= 0.0) || (x > 1.0)) {
+    if (x <= 0.0) {
 	if (x == 0.0)
 	    return (1.0);
 	mtherr("ellpe", DOMAIN);
 	return (NPY_NAN);
+    }
+    if (x > 1.0) {
+        return ellpe(1.0 - 1/x) * sqrt(x);
     }
     return (polevl(x, P, 10) - log(x) * (x * polevl(x, Q, 9)));
 }

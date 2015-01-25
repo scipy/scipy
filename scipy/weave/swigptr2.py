@@ -1455,7 +1455,7 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
   return result;
 }
 
-/* Convert a packed value value */
+/* Convert a packed value */
 SWIGRUNTIME int
 SWIG_Python_ConvertPacked(PyObject *obj, void *ptr, size_t sz, swig_type_info *ty, int flags) {
   swig_type_info *tc;
@@ -2794,7 +2794,7 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
   return result;
 }
 
-/* Convert a packed value value */
+/* Convert a packed value */
 SWIGRUNTIME int
 SWIG_Python_ConvertPacked(PyObject *obj, void *ptr, size_t sz, swig_type_info *ty, int flags) {
   swig_cast_info *tc;
@@ -5032,7 +5032,7 @@ SWIG_Python_ConvertFunctionPtr(PyObject *obj, void **ptr, swig_type_info *ty) {
   }
 }
 
-/* Convert a packed value value */
+/* Convert a packed value */
 
 SWIGRUNTIME int
 SWIG_Python_ConvertPacked(PyObject *obj, void *ptr, size_t sz, swig_type_info *ty) {

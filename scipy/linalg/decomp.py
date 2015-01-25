@@ -18,16 +18,69 @@ __all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
            'hessenberg']
 
 import numpy
+import numpy as np
 from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
         isfinite, inexact, nonzero, iscomplexobj, cast, flatnonzero, conj
 # Local imports
-from scipy.linalg import calc_lwork
-from .misc import LinAlgError, _datacopied
+from scipy._lib.six import xrange
+from .misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs
 from .blas import get_blas_funcs
 
 
 _I = cast['F'](1j)
+
+
+def _asarray_validated(a, check_finite=True,
+                       sparse_ok=False, objects_ok=False, mask_ok=False):
+    """
+    Helper function for scipy argument validation.
+
+    Many scipy linear algebra functions do support arbitrary array-like
+    input arguments.  Examples of commonly unsupported inputs include
+    matrices containing inf/nan, sparse matrix representations, and
+    matrices with complicated elements.
+
+    Parameters
+    ----------
+    a : array_like
+        The array-like input.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+    sparse_ok : bool, optional
+        True if scipy sparse matrices are allowed.
+    objects_ok : bool, optional
+        True if arrays with dype('O') are allowed.
+    mask_ok : bool, optional
+        True if masked arrays are allowed.
+
+    Returns
+    -------
+    ret : ndarray
+        The converted validated array.
+        
+    """
+    if not sparse_ok:
+        import scipy.sparse
+        if scipy.sparse.issparse(a):
+            msg = ('Sparse matrices are not supported by this function. '
+                   'Perhaps one of the scipy.linalg.sparse functions '
+                   'would work instead.')
+            raise ValueError(msg)
+    if not mask_ok:
+        if np.ma.isMaskedArray(a):
+            raise ValueError('masked arrays are not supported')
+    if check_finite:
+        a = np.asarray_chkfinite(a)
+    else:
+        a = np.asarray(a)
+    if not objects_ok:
+        if a.dtype is np.dtype('O'):
+            raise ValueError('object arrays are not supported')
+    return a
 
 
 def _make_complex_eigvecs(w, vin, dtype):
@@ -71,6 +124,14 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
             vl = _make_complex_eigvecs(w, vl, t)
         if right:
             vr = _make_complex_eigvecs(w, vr, t)
+
+    # the eigenvectors returned by the lapack function are NOT normalized
+    for i in xrange(vr.shape[0]):
+        if right:
+            vr[:, i] /= norm(vr[:, i])
+        if left:
+            vl[:, i] /= norm(vl[:, i])
+
     if not (left or right):
         return w
     if left:
@@ -119,7 +180,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         The eigenvalues, each repeated according to its multiplicity.
     vl : (M, M) double or complex ndarray
         The normalized left eigenvector corresponding to the eigenvalue
-        ``w[i]`` is the column v[:,i]. Only returned if ``left=True``.
+        ``w[i]`` is the column vl[:,i]. Only returned if ``left=True``.
     vr : (M, M) double or complex ndarray
         The normalized right eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column ``vr[:,i]``.  Only returned if ``right=True``.
@@ -134,34 +195,34 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
 
     """
-    if check_finite:
-        a1 = asarray_chkfinite(a)
-    else:
-        a1 = asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
-        if check_finite:
-            b1 = asarray_chkfinite(b)
-        else:
-            b1 = asarray(b)
+        b1 = _asarray_validated(b, check_finite=check_finite)
         overwrite_b = overwrite_b or _datacopied(b1, b)
         if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
             raise ValueError('expected square matrix')
         if b1.shape != a1.shape:
             raise ValueError('a and b must have the same shape')
         return _geneig(a1, b1, left, right, overwrite_a, overwrite_b)
-    geev, = get_lapack_funcs(('geev',), (a1,))
+
+    geev, geev_lwork = get_lapack_funcs(('geev', 'geev_lwork'), (a1,))
     compute_vl, compute_vr = left, right
 
-    lwork = calc_lwork.geev(geev.typecode, a1.shape[0],
-                                compute_vl, compute_vr)[1]
+    lwork, info = geev_lwork(a1.shape[0],
+                             compute_vl=compute_vl,
+                             compute_vr=compute_vr)
+    if info != 0:
+        raise LinAlgError("internal *geev work array calculation failed: %d" % (info,))
+    lwork = int(lwork.real)
+
     if geev.typecode in 'cz':
         w, vl, vr, info = geev(a1, lwork=lwork,
-                                    compute_vl=compute_vl,
-                                    compute_vr=compute_vr,
-                                    overwrite_a=overwrite_a)
+                               compute_vl=compute_vl,
+                               compute_vr=compute_vr,
+                               overwrite_a=overwrite_a)
     else:
         wr, wi, vl, vr, info = geev(a1, lwork=lwork,
                                     compute_vl=compute_vl,
@@ -279,10 +340,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
 
     """
-    if check_finite:
-        a1 = asarray_chkfinite(a)
-    else:
-        a1 = asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
@@ -291,10 +349,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     else:
         cplx = False
     if b is not None:
-        if check_finite:
-            b1 = asarray_chkfinite(b)
-        else:
-            b1 = asarray(b)
+        b1 = _asarray_validated(b, check_finite=check_finite)
         overwrite_b = overwrite_b or _datacopied(b1, b)
         if len(b1.shape) != 2 or b1.shape[0] != b1.shape[1]:
             raise ValueError('expected square matrix')
@@ -485,10 +540,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     """
     if eigvals_only or overwrite_a_band:
-        if check_finite:
-            a1 = asarray_chkfinite(a_band)
-        else:
-            a1 = asarray(a_band)
+        a1 = _asarray_validated(a_band, check_finite=check_finite)
         overwrite_a_band = overwrite_a_band or (_datacopied(a1, a_band))
     else:
         a1 = array(a_band)
@@ -803,20 +855,22 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         Only returned if ``calc_q=True``.
 
     """
-    if check_finite:
-        a1 = asarray_chkfinite(a)
-    else:
-        a1 = asarray(a)
+    a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
-    gehrd,gebal = get_lapack_funcs(('gehrd','gebal'), (a1,))
-    ba, lo, hi, pivscale, info = gebal(a1, permute=1, overwrite_a=overwrite_a)
+    gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd','gebal', 'gehrd_lwork'), (a1,))
+    ba, lo, hi, pivscale, info = gebal(a1, permute=0, overwrite_a=overwrite_a)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gebal '
                                                     '(hessenberg)' % -info)
     n = len(a1)
-    lwork = calc_lwork.gehrd(gehrd.typecode, n, lo, hi)
+
+    lwork, info = gehrd_lwork(ba.shape[0], lo=lo, hi=hi)
+    if info != 0:
+        raise ValueError('failed to compute internal gehrd work array size' % info)
+    lwork = int(lwork.real)
+
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gehrd '

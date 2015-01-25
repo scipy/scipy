@@ -5,31 +5,40 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-from scipy.lib.six.moves import xrange
+import numpy
+import numpy as np
+from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
+                   zeros, eye, poly1d, r_, sum, fromstring, isfinite,
+                   squeeze, amax, reshape)
 
-from numpy import exp, log, asarray, arange, newaxis, hstack, product, array, \
-                  where, zeros, extract, place, pi, sqrt, eye, poly1d, dot, \
-                  r_, rollaxis, sum, fromstring
+from scipy._lib._version import NumpyVersion
 
-__all__ = ['logsumexp', 'factorial','factorial2','factorialk','comb',
-           'central_diff_weights', 'derivative', 'pade', 'lena', 'ascent', 'face']
-
-# XXX: the factorial functions could move to scipy.special, and the others
-# to numpy perhaps?
+__all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
+           'ascent', 'face']
 
 
-def logsumexp(a, axis=None, b=None):
+_NUMPY_170 = (NumpyVersion(numpy.__version__) >= NumpyVersion('1.7.0'))
+
+
+def logsumexp(a, axis=None, b=None, keepdims=False):
     """Compute the log of the sum of exponentials of input elements.
 
     Parameters
     ----------
     a : array_like
         Input array.
-    axis : int, optional
-        Axis over which the sum is taken. By default `axis` is None,
-        and all elements are summed.
+    axis : None or int or tuple of ints, optional
+        Axis or axes over which the sum is taken. By default `axis` is None,
+        and all elements are summed. Tuple of ints is not accepted if NumPy
+        version is lower than 1.7.0.
 
         .. versionadded:: 0.11.0
+    keepdims: bool, optional
+        If this is set to True, the axes which are reduced are left in the
+        result as dimensions with size one. With this option, the result
+        will broadcast correctly against the original array.
+
+        .. versionadded:: 0.15.0
     b : array-like, optional
         Scaling factor for exp(`a`) must be of the same shape as `a` or
         broadcastable to `a`.
@@ -72,229 +81,73 @@ def logsumexp(a, axis=None, b=None):
     9.9170178533034647
     """
     a = asarray(a)
-    if axis is None:
-        a = a.ravel()
-    else:
-        a = rollaxis(a, axis)
-    a_max = a.max(axis=0)
-    if b is not None:
-        b = asarray(b)
+
+    # keepdims is available in numpy.sum and numpy.amax since NumPy 1.7.0
+    #
+    # Because SciPy supports versions earlier than 1.7.0, we have to handle
+    # those old versions differently
+
+    if not _NUMPY_170:
+        # When support for Numpy < 1.7.0 is dropped, this implementation can be
+        # removed. This implementation is a bit hacky. Similarly to old NumPy's
+        # sum and amax functions, 'axis' must be an integer or None, tuples and
+        # lists are not supported. Although 'keepdims' is not supported by these
+        # old NumPy's functions, this function supports it.
+
+        # Solve the shape of the reduced array
         if axis is None:
-            b = b.ravel()
+            sh_keepdims = (1,) * a.ndim
         else:
-            b = rollaxis(b, axis)
-        out = log(sum(b * exp(a - a_max), axis=0))
+            sh_keepdims = list(a.shape)
+            sh_keepdims[axis] = 1
+
+        a_max = amax(a, axis=axis)
+
+        if a_max.ndim > 0:
+            a_max[~isfinite(a_max)] = 0
+        elif not isfinite(a_max):
+            a_max = 0
+
+        if b is not None:
+            b = asarray(b)
+            tmp = b * exp(a - reshape(a_max, sh_keepdims))
+        else:
+            tmp = exp(a - reshape(a_max, sh_keepdims))
+
+        # suppress warnings about log of zero
+        with np.errstate(divide='ignore'):
+            out = log(sum(tmp, axis=axis))
+
+        out += a_max
+
+        if keepdims:
+            # Put back the reduced axes with size one
+            out = reshape(out, sh_keepdims)
     else:
-        out = log(sum(exp(a - a_max), axis=0))
-    out += a_max
+        # This is a more elegant implementation, requiring NumPy >= 1.7.0
+        a_max = amax(a, axis=axis, keepdims=True)
+
+        if a_max.ndim > 0:
+            a_max[~isfinite(a_max)] = 0
+        elif not isfinite(a_max):
+            a_max = 0
+
+        if b is not None:
+            b = asarray(b)
+            tmp = b * exp(a - a_max)
+        else:
+            tmp = exp(a - a_max)
+
+        # suppress warnings about log of zero
+        with np.errstate(divide='ignore'):
+            out = log(sum(tmp, axis=axis, keepdims=keepdims))
+
+        if not keepdims:
+            a_max = squeeze(a_max, axis=axis)
+
+        out += a_max
+
     return out
-
-
-def factorial(n,exact=0):
-    """
-    The factorial function, n! = special.gamma(n+1).
-
-    If exact is 0, then floating point precision is used, otherwise
-    exact long integer is computed.
-
-    - Array argument accepted only for exact=0 case.
-    - If n<0, the return value is 0.
-
-    Parameters
-    ----------
-    n : int or array_like of ints
-        Calculate ``n!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
-    exact : bool, optional
-        The result can be approximated rapidly using the gamma-formula
-        above.  If `exact` is set to True, calculate the
-        answer exactly using integer arithmetic. Default is False.
-
-    Returns
-    -------
-    nf : float or int
-        Factorial of `n`, as an integer or a float depending on `exact`.
-
-    Examples
-    --------
-    >>> arr = np.array([3,4,5])
-    >>> sc.factorial(arr, exact=False)
-    array([   6.,   24.,  120.])
-    >>> sc.factorial(5, exact=True)
-    120L
-
-    """
-    if exact:
-        if n < 0:
-            return 0
-        val = 1
-        for k in xrange(1,n+1):
-            val *= k
-        return val
-    else:
-        from scipy import special
-        n = asarray(n)
-        sv = special.errprint(0)
-        vals = special.gamma(n+1)
-        sv = special.errprint(sv)
-        return where(n >= 0,vals,0)
-
-
-def factorial2(n, exact=False):
-    """
-    Double factorial.
-
-    This is the factorial with every second value skipped, i.e.,
-    ``7!! = 7 * 5 * 3 * 1``.  It can be approximated numerically as::
-
-      n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
-          = 2**(n/2) * (n/2)!                           n even
-
-    Parameters
-    ----------
-    n : int or array_like
-        Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
-    exact : bool, optional
-        The result can be approximated rapidly using the gamma-formula
-        above (default).  If `exact` is set to True, calculate the
-        answer exactly using integer arithmetic.
-
-    Returns
-    -------
-    nff : float or int
-        Double factorial of `n`, as an int or a float depending on
-        `exact`.
-
-    Examples
-    --------
-    >>> factorial2(7, exact=False)
-    array(105.00000000000001)
-    >>> factorial2(7, exact=True)
-    105L
-
-    """
-    if exact:
-        if n < -1:
-            return 0
-        if n <= 0:
-            return 1
-        val = 1
-        for k in xrange(n,0,-2):
-            val *= k
-        return val
-    else:
-        from scipy import special
-        n = asarray(n)
-        vals = zeros(n.shape,'d')
-        cond1 = (n % 2) & (n >= -1)
-        cond2 = (1-(n % 2)) & (n >= -1)
-        oddn = extract(cond1,n)
-        evenn = extract(cond2,n)
-        nd2o = oddn / 2.0
-        nd2e = evenn / 2.0
-        place(vals,cond1,special.gamma(nd2o+1)/sqrt(pi)*pow(2.0,nd2o+0.5))
-        place(vals,cond2,special.gamma(nd2e+1) * pow(2.0,nd2e))
-        return vals
-
-
-def factorialk(n,k,exact=1):
-    """
-    n(!!...!)  = multifactorial of order k
-    k times
-
-    Parameters
-    ----------
-    n : int, array_like
-        Calculate multifactorial. Arrays are only supported with exact
-        set to False. If `n` < 0, the return value is 0.
-    exact : bool, optional
-        If exact is set to True, calculate the answer exactly using
-        integer arithmetic.
-
-    Returns
-    -------
-    val : int
-        Multi factorial of `n`.
-
-    Raises
-    ------
-    NotImplementedError
-        Raises when exact is False
-
-    Examples
-    --------
-    >>> sc.factorialk(5, 1, exact=True)
-    120L
-    >>> sc.factorialk(5, 3, exact=True)
-    10L
-
-    """
-    if exact:
-        if n < 1-k:
-            return 0
-        if n <= 0:
-            return 1
-        val = 1
-        for j in xrange(n,0,-k):
-            val = val*j
-        return val
-    else:
-        raise NotImplementedError
-
-
-def comb(N,k,exact=0):
-    """
-    The number of combinations of N things taken k at a time.
-
-    This is often expressed as "N choose k".
-
-    Parameters
-    ----------
-    N : int, ndarray
-        Number of things.
-    k : int, ndarray
-        Number of elements taken.
-    exact : int, optional
-        If `exact` is 0, then floating point precision is used, otherwise
-        exact long integer is computed.
-
-    Returns
-    -------
-    val : int, ndarray
-        The total number of combinations.
-
-    Notes
-    -----
-    - Array arguments accepted only for exact=0 case.
-    - If k > N, N < 0, or k < 0, then a 0 is returned.
-
-    Examples
-    --------
-    >>> k = np.array([3, 4])
-    >>> n = np.array([10, 10])
-    >>> sc.comb(n, k, exact=False)
-    array([ 120.,  210.])
-    >>> sc.comb(10, 3, exact=True)
-    120L
-
-    """
-    if exact:
-        if (k > N) or (N < 0) or (k < 0):
-            return 0
-        val = 1
-        for j in xrange(min(k, N-k)):
-            val = (val*(N-j))//(j+1)
-        return val
-    else:
-        from scipy import special
-        k,N = asarray(k), asarray(N)
-        lgam = special.gammaln
-        cond = (k <= N) & (N >= 0) & (k >= 0)
-        sv = special.errprint(0)
-        vals = exp(lgam(N+1) - lgam(N-k+1) - lgam(k+1))
-        sv = special.errprint(sv)
-        return where(cond, vals, 0.0)
 
 
 def central_diff_weights(Np, ndiv=1):

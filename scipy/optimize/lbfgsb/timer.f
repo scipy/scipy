@@ -17,9 +17,10 @@ c                        Northwestern University. Evanston, IL. USA
 c                         
 c                        January 21, 2011
 c
-      temp = sngl(ttime)
-      call cpu_time(temp)
-      ttime = dble(temp) 
+
+c     Don't actually return the time --- in case of old Fortran compiler
+
+      ttime = 0
 
       return
 

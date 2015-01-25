@@ -26,7 +26,7 @@ class FindDependenciesLdd:
         p = Popen(self.cmd + [file], stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         if not (p.returncode == 0):
-            raise RuntimeError("Failed to check dependencies for %s" % libfile)
+            raise RuntimeError("Failed to check dependencies for %s" % file)
 
         return stdout
 

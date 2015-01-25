@@ -84,6 +84,15 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
 
   interface
 
+     subroutine fpchec(x,m,t,n,k,ier)
+       real*8 dimension(m),intent(in) :: x
+       integer intent(hide),depend(x) :: m=len(x)
+       real*8 dimension(n),intent(in) :: t
+       integer intent(hide),depend(t) :: n=len(t)
+       integer :: k
+       integer intent(out) :: ier
+     end subroutine fpchec
+
      !!!!!!!!!! Univariate spline !!!!!!!!!!!
 
      subroutine splev(t,n,c,k,x,y,m,e,ier)
@@ -342,6 +351,30 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer intent(out) :: ier
      end subroutine bispev
 
+     subroutine parder(tx,nx,ty,ny,c,kx,ky,nux,nuy,x,mx,y,my,z,wrk,lwrk,iwrk,kwrk,ier)
+       ! z,ier = parder(tx,ty,c,kx,ky,nux,nuy,x,y)
+       real*8 dimension(nx),intent(in) :: tx
+       integer intent(hide),depend(tx) :: nx=len(tx)
+       real*8 dimension(ny),intent(in) :: ty
+       integer intent(hide),depend(ty) :: ny=len(ty)
+       real*8 intent(in),dimension((nx-kx-1)*(ny-ky-1)),depend(nx,ny,kx,ky),&
+            check(len(c)==(nx-kx-1)*(ny-ky-1)):: c
+       integer :: kx
+       integer :: ky
+       integer :: nux
+       integer :: nuy
+       real*8 intent(in),dimension(mx) :: x
+       integer intent(hide),depend(x) :: mx=len(x)
+       real*8 intent(in),dimension(my) :: y
+       integer intent(hide),depend(y) :: my=len(y)
+       real*8 dimension(mx,my),depend(mx,my),intent(out,c) :: z
+       real*8 dimension(lwrk),depend(lwrk),intent(hide,cache) :: wrk
+       integer intent(hide),depend(mx,kx,my,ky,nx,ny) :: lwrk=(nx*ny)+(kx+1)*mx+(ky+1)*my
+       integer dimension(kwrk),depend(kwrk),intent(hide,cache) :: iwrk
+       integer intent(hide),depend(mx,my) :: kwrk=mx+my
+       integer intent(out) :: ier
+     end subroutine parder
+
      subroutine bispeu(tx,nx,ty,ny,c,kx,ky,x,y,z,m,wrk,lwrk,ier)
        ! z,ier = bispeu(tx,ty,c,kx,ky,x,y)
        real*8 dimension(nx),intent(in) :: tx
@@ -360,6 +393,29 @@ static int calc_regrid_lwrk(int mx, int my, int kx, int ky,
        integer intent(hide),depend(kx,ky) :: lwrk=kx+ky+2
        integer intent(out) :: ier
      end subroutine bispeu
+
+     subroutine pardeu(tx,nx,ty,ny,c,kx,ky,nux,nuy,x,y,z,m,wrk,lwrk,iwrk,kwrk,ier)
+       ! z,ier = pardeu(tx,ty,c,kx,ky,nux,nuy,x,y)
+       real*8 dimension(nx),intent(in) :: tx
+       integer intent(hide),depend(tx) :: nx=len(tx)
+       real*8 dimension(ny),intent(in) :: ty
+       integer intent(hide),depend(ty) :: ny=len(ty)
+       real*8 intent(in),dimension((nx-kx-1)*(ny-ky-1)),depend(nx,ny,kx,ky),&
+            check(len(c)==(nx-kx-1)*(ny-ky-1)):: c
+       integer :: kx
+       integer :: ky
+       integer :: nux
+       integer :: nuy
+       real*8 intent(in),dimension(m) :: x
+       real*8 intent(in),dimension(m) :: y
+       real*8 dimension(m),depend(m),intent(out,c) :: z
+       integer intent(hide),depend(x) :: m=len(x)
+       real*8 dimension(lwrk),depend(lwrk),intent(hide,cache) :: wrk
+       integer intent(hide),depend(m,kx,ky,nx,ny) :: lwrk=(nx*ny)+(kx+1)*m+(ky+1)*m
+       integer dimension(kwrk),depend(kwrk),intent(hide,cache) :: iwrk
+       integer intent(hide),depend(m) :: kwrk=m+m
+       integer intent(out) :: ier
+     end subroutine pardeu
 
      subroutine surfit_smth(iopt,m,x,y,z,w,xb,xe,yb,ye,kx,ky,s,nxest,nyest,&
           nmax,eps,nx,tx,ny,ty,c,fp,wrk1,lwrk1,wrk2,lwrk2,&

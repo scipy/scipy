@@ -1,21 +1,9 @@
 HookFile: bscript
 
 Library:
-    CompiledLibrary: linpack_lite
-        Sources: 
-            linpack_lite/dgbfa.f,
-            linpack_lite/dgbsl.f,
-            linpack_lite/dgefa.f,
-            linpack_lite/dgesl.f,
-            linpack_lite/dgtsl.f,
-            linpack_lite/zgbfa.f,
-            linpack_lite/zgbsl.f,
-            linpack_lite/zgefa.f,
-            linpack_lite/zgesl.f
     CompiledLibrary: mach
         Sources:
             mach/d1mach.f,
-            mach/i1mach.f,
             mach/r1mach.f,
             mach/xerror.f
     CompiledLibrary: quadpack
@@ -38,3 +26,8 @@ Library:
         Sources: lsoda.pyf
     Extension: _dop
         Sources: dop.pyf
+    Extension: _test_multivariate
+        Sources: tests/_test_multivariate.c
+    Extension: _test_odeint_banded
+        Sources: tests/banded5x5.f
+

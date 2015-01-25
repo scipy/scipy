@@ -23,7 +23,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 # Scipy imports.
-from scipy.lib.six import callable, string_types
+from scipy._lib.six import callable, string_types
 from scipy import linalg, special
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
@@ -93,6 +93,10 @@ class gaussian_kde(object):
         high_bounds.
     kde.integrate_kde(other_kde) : float
         Integrate two kernel density estimates multiplied together.
+    kde.pdf(points) : ndarray
+        Alias for ``kde.evaluate(points)``.
+    kde.logpdf(points) : ndarray
+        Equivalent to ``np.log(kde.evaluate(points))``.
     kde.resample(size=None) : ndarray
         Randomly sample a dataset from the estimated pdf.
     kde.set_bandwidth(bw_method='scott') : None
@@ -105,7 +109,6 @@ class gaussian_kde(object):
         The default is `scotts_factor`.  A subclass can overwrite this method
         to provide a different method, or set it through a call to
         `kde.set_bandwidth`.
-
 
     Notes
     -----
@@ -122,7 +125,7 @@ class gaussian_kde(object):
     with ``n`` the number of data points and ``d`` the number of dimensions.
     Silverman's Rule [2]_, implemented as `silverman_factor`, is::
 
-        n * (d + 2) / 4.)**(-1. / (d + 4)).
+        (n * (d + 2) / 4.)**(-1. / (d + 4)).
 
     Good general descriptions of kernel density estimation can be found in [1]_
     and [2]_, the mathematics for this multi-dimensional implementation can be
@@ -388,11 +391,12 @@ class gaussian_kde(object):
             large = other
 
         sum_cov = small.covariance + large.covariance
+        sum_cov_chol = linalg.cho_factor(sum_cov)
         result = 0.0
         for i in range(small.n):
             mean = small.dataset[:, i, newaxis]
             diff = large.dataset - mean
-            tdiff = dot(linalg.inv(sum_cov), diff)
+            tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
             energies = sum(diff * tdiff, axis=0) / 2.0
             result += sum(exp(-energies), axis=0)
@@ -511,3 +515,27 @@ class gaussian_kde(object):
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
         self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
+
+    def pdf(self, x):
+        """
+        Evaluate the estimated pdf on a provided set of points.
+
+        Notes
+        -----
+        This is an alias for `gaussian_kde.evaluate`.  See the ``evaluate``
+        docstring for more details.
+
+        """
+        return self.evaluate(x)
+
+    def logpdf(self, x):
+        """
+        Evaluate the log of the estimated pdf on a provided set of points.
+
+        Notes
+        -----
+        See `gaussian_kde.evaluate` for more details; this method simply
+        returns ``np.log(gaussian_kde.evaluate(x))``.
+
+        """
+        return np.log(self.evaluate(x))

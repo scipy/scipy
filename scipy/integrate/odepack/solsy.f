@@ -18,10 +18,10 @@ clll. optimize
 c-----------------------------------------------------------------------
 c this routine manages the solution of the linear system arising from
 c a chord iteration.  it is called if miter .ne. 0.
-c if miter is 1 or 2, it calls dgesl to accomplish this.
+c if miter is 1 or 2, it calls dgetrs to accomplish this.
 c if miter = 3 it updates the coefficient h*el0 in the diagonal
 c matrix, and then computes the solution.
-c if miter is 4 or 5, it calls dgbsl.
+c if miter is 4 or 5, it calls dgbtrs.
 c communication with solsy uses the following variables..
 c wm    = real work space containing the inverse diagonal matrix if
 c         miter = 3 and the lu decomposition of the matrix otherwise.
@@ -41,7 +41,9 @@ c this routine also uses the common variables el0, h, miter, and n.
 c-----------------------------------------------------------------------
       iersl = 0
       go to (100, 100, 300, 400, 400), miter
- 100  call dgesl (wm(3), n, n, iwm(21), x, 0)
+c     Replaced LINPACK dgesl with LAPACK dgetrs
+c 100  call dgesl (wm(3), n, n, iwm(21), x, 0)
+ 100  call dgetrs ('N', n, 1, wm(3), n, iwm(21), x, n, ier)
       return
 c
  300  phl0 = wm(2)
@@ -62,7 +64,9 @@ c
  400  ml = iwm(1)
       mu = iwm(2)
       meband = 2*ml + mu + 1
-      call dgbsl (wm(3), meband, n, ml, mu, iwm(21), x, 0)
+c     Replaced LINPACK dgbsl with LAPACK dgbtrs
+c      call dgbsl (wm(3), meband, n, ml, mu, iwm(21), x, 0)
+      call dgbtrs ('N', n, ml, mu, 1, wm(3), meband, iwm(21), x, n, ier)
       return
 c----------------------- end of subroutine solsy -----------------------
       end

@@ -1,16 +1,9 @@
 from __future__ import absolute_import, print_function
 
 from numpy import arange
-from numpy.testing import TestCase, assert_
+from numpy.testing import TestCase, assert_, run_module_suite
 
 from scipy.weave import standard_array_spec
-
-
-def remove_whitespace(in_str):
-    out = in_str.replace(" ","")
-    out = out.replace("\t","")
-    out = out.replace("\n","")
-    return out
 
 
 class TestArrayConverter(TestCase):
@@ -29,5 +22,4 @@ class TestArrayConverter(TestCase):
 
 
 if __name__ == "__main__":
-    import nose
-    nose.run(argv=['', __file__])
+    run_module_suite()

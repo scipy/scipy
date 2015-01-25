@@ -8,6 +8,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('signal', parent_package, top_path)
 
     config.add_data_dir('tests')
+    config.add_data_dir('benchmarks')
 
     config.add_extension('sigtools',
                          sources=['sigtoolsmodule.c', 'firfilter.c',
@@ -18,11 +19,11 @@ def configuration(parent_package='', top_path=None):
                          )
 
     config.add_extension('_spectral', sources=['_spectral.c'])
+    config.add_extension('_max_len_seq', sources=['_max_len_seq.c'])
 
-    config.add_extension('spline',
-        sources=['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
-                 'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c'],
-    )
+    spline_src = ['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
+                  'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c']
+    config.add_extension('spline', sources=spline_src)
 
     return config
 

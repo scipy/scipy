@@ -58,7 +58,7 @@ cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
     cdef np.uintp_t i
     for i in range(L):
         line[i] = FOREGROUND if \
-            (<data_t *> ((<void *> p) + i * stride))[0] \
+            (<data_t *> ((<char *> p) + i * stride))[0] \
             else BACKGROUND
 
 
@@ -69,7 +69,7 @@ cdef void fused_read_line(data_t *p, np.intp_t stride,
                           np.uintp_t *line, np.intp_t L) nogil:
     cdef np.uintp_t i
     for i in range(L):
-        line[i] = <np.uintp_t> (<data_t *> ((<void *> p) + i * stride))[0]
+        line[i] = <np.uintp_t> (<data_t *> ((<char *> p) + i * stride))[0]
 
 
 ######################################################################
@@ -85,7 +85,7 @@ cdef bint fused_write_line(data_t *p, np.intp_t stride,
         # in-place.
         if line[i] != <np.uintp_t> <data_t> line[i]:
             return True
-        (<data_t *> ((<void *> p) + i * stride))[0] = <data_t> line[i]
+        (<data_t *> ((<char *> p) + i * stride))[0] = <data_t> line[i]
     return False
 
 
@@ -119,13 +119,31 @@ ctypedef bint (*write_line_func_t)(void *p, np.intp_t stride,
 cdef inline np.uintp_t mark_for_merge(np.uintp_t a,
                                       np.uintp_t b,
                                       np.uintp_t *mergetable) nogil:
-    # we keep the mergetable such that merged labels always point to the
-    # smallest value in the merge.
-    if mergetable[a] < mergetable[b]:
-        mergetable[b] = mergetable[a]
-    elif mergetable[a] > mergetable[b]:
-        mergetable[a] = mergetable[b]
-    return mergetable[a]
+
+    cdef:
+        np.uintp_t orig_a, orig_b, minlabel
+
+    orig_a = a
+    orig_b = b
+    # find smallest root for each of a and b
+    while a != mergetable[a]:
+        a = mergetable[a]
+    while b != mergetable[b]:
+        b = mergetable[b]
+    minlabel = a if (a < b) else b
+
+    # merge roots
+    mergetable[a] = mergetable[b] = minlabel
+
+    # merge every step to minlabel
+    a = orig_a
+    b = orig_b
+    while a != minlabel:
+        a, mergetable[a] = mergetable[a], minlabel
+    while b != minlabel:
+        b, mergetable[b] = mergetable[b], minlabel
+
+    return minlabel
 
 
 ######################################################################
@@ -224,14 +242,18 @@ cpdef _label(np.ndarray input,
         write_line_func_t write_line = \
             <write_line_func_t> <void *> <Py_intptr_t> get_write_line(output.take([0]))
         np.flatiter _iti, _ito, _itstruct
-        PyArrayIterObject *iti, *ito, *itstruct
+        PyArrayIterObject *iti
+        PyArrayIterObject *ito
+        PyArrayIterObject *itstruct
         int axis, idim, num_neighbors, ni
         np.intp_t L, delta, i
         np.intp_t si, so, ss
         np.intp_t total_offset
         bint needs_self_labeling, valid, center, use_previous, overflowed
         np.ndarray _line_buffer, _neighbor_buffer
-        np.uintp_t *line_buffer, *neighbor_buffer, *tmp
+        np.uintp_t *line_buffer
+        np.uintp_t *neighbor_buffer
+        np.uintp_t *tmp
         np.uintp_t next_region, src_label, dest_label
         int mergetable_size
         np.uintp_t *mergetable
@@ -302,8 +324,8 @@ cpdef _label(np.ndarray input,
                 PyArray_ITER_RESET(itstruct)
                 for ni in range(num_neighbors):
                     neighbor_use_prev = (<np.int_t *> PyArray_ITER_DATA(itstruct))[0]
-                    neighbor_use_adjacent = (<np.int_t *> (PyArray_ITER_DATA(itstruct) + ss))[0]
-                    neighbor_use_next = (<np.int_t *> (PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
+                    neighbor_use_adjacent = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + ss))[0]
+                    neighbor_use_next = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
                     if not (neighbor_use_prev or
                             neighbor_use_adjacent or
                             neighbor_use_next):
@@ -327,7 +349,7 @@ cpdef _label(np.ndarray input,
                         # becomes next iteration's neighbor buffer, so no
                         # need to read it here.
                         if output.ndim != 2:
-                            read_line(PyArray_ITER_DATA(ito) + total_offset, so,
+                            read_line(<char *> PyArray_ITER_DATA(ito) + total_offset, so,
                                       neighbor_buffer, L)
 
                         # be conservative about how much space we may need
@@ -384,6 +406,10 @@ cpdef _label(np.ndarray input,
             mergetable[FOREGROUND] = -1  # should never be encountered
             mergetable[2] = 1  # labels started here
             dest_label = 2
+            # next_region is still the original value -> we found no regions
+            # set dest_label to 1 so we return 0
+            if next_region < 3:
+                dest_label = 1
             for src_label in range(3, next_region):
                 # labels that map to themselves are new regions
                 if mergetable[src_label] == src_label:
@@ -408,4 +434,5 @@ cpdef _label(np.ndarray input,
         PyDataMem_FREE(<void *> mergetable)
         raise
 
+    PyDataMem_FREE(<void *> mergetable)
     return dest_label - 1

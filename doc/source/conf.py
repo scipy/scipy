@@ -18,7 +18,7 @@ needs_sphinx = '1.1'
 
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'numpydoc',
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'numpydoc',
               'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
               'sphinx.ext.autosummary']
 
@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-2009, The Scipy community'
+copyright = '2008-2014, The Scipy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -236,7 +236,7 @@ numpydoc_use_plots = True
 # Autosummary
 # -----------------------------------------------------------------------------
 
-if sphinx.__version__ >= "0.7": 
+if sphinx.__version__ >= "0.7":
     import glob
     autosummary_generate = glob.glob("*.rst")
 
@@ -262,7 +262,6 @@ coverage_ignore_c_items = {}
 #------------------------------------------------------------------------------
 plot_pre_code = """
 import numpy as np
-import scipy as sp
 np.random.seed(123)
 """
 plot_include_source = True

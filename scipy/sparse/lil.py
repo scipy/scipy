@@ -7,24 +7,22 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix','isspmatrix_lil']
 
-from bisect import bisect_left
-
 import numpy as np
-from scipy.lib.six.moves import xrange
 
 from .base import spmatrix, isspmatrix
-from .sputils import getdtype, isshape, issequence, isscalarlike, ismatrix, \
-    IndexMixin, upcast_scalar
+from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
+                      upcast_scalar, get_index_dtype)
 
-from warnings import warn
-from .base import SparseEfficiencyWarning
+from . import _csparsetools
 
 
 class lil_matrix(spmatrix, IndexMixin):
     """Row-based linked list sparse matrix
 
-    This is an efficient structure for constructing sparse
-    matrices incrementally.
+    This is a structure for constructing sparse matrices incrementally.
+    Note that inserting a single item can take linear time in the worst case;
+    to construct a matrix efficiently, make sure the items are pre-sorted by
+    index, per row.
 
     This can be instantiated in several ways:
         lil_matrix(D)
@@ -165,20 +163,40 @@ class lil_matrix(spmatrix, IndexMixin):
             self[:,:] = self * other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __itruediv__(self,other):
         if isscalarlike(other):
             self[:,:] = self / other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     # Whenever the dimensions change, empty lists should be created for each
     # row
 
-    def getnnz(self):
-        return sum([len(rowvals) for rowvals in self.data])
+    def getnnz(self, axis=None):
+        """Get the count of explicitly-stored values (nonzeros)
+
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole matrix, in
+            each column, or in each row.
+        """
+        if axis is None:
+            return sum([len(rowvals) for rowvals in self.data])
+        if axis < 0:
+            axis += 2
+        if axis == 0:
+            out = np.zeros(self.shape[1])
+            for row in self.rows:
+                out[row] += 1
+            return out
+        elif axis == 1:
+            return np.array([len(rowvals) for rowvals in self.data])
+        else:
+            raise ValueError('axis out of bounds')
     nnz = property(fget=getnnz)
 
     def __str__(self):
@@ -204,80 +222,67 @@ class lil_matrix(spmatrix, IndexMixin):
         new.data[0] = self.data[i][:]
         return new
 
-    def _get1(self, i, j):
-
-        if i < 0:
-            i += self.shape[0]
-        if i < 0 or i >= self.shape[0]:
-            raise IndexError('row index out of bounds')
-
-        if j < 0:
-            j += self.shape[1]
-        if j < 0 or j >= self.shape[1]:
-            raise IndexError('column index out of bounds')
-
-        row = self.rows[i]
-        data = self.data[i]
-
-        pos = bisect_left(row, j)
-        if pos != len(data) and row[pos] == j:
-            return self.dtype.type(data[pos])
-        else:
-            return self.dtype.type(0)
-
     def __getitem__(self, index):
         """Return the element(s) index=(i, j), where j may be a slice.
         This always returns a copy for consistency, since slices into
         Python lists return copies.
         """
+
+        # Scalar fast path first
+        if isinstance(index, tuple) and len(index) == 2:
+            i, j = index
+            # Use isinstance checks for common index types; this is
+            # ~25-50% faster than isscalarlike. Other types are
+            # handled below.
+            if ((isinstance(i, int) or isinstance(i, np.integer)) and
+                    (isinstance(j, int) or isinstance(j, np.integer))):
+                v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
+                                           self.rows, self.data,
+                                           i, j)
+                return self.dtype.type(v)
+
         # Utilities found in IndexMixin
         i, j = self._unpack_index(index)
 
+        # Proper check for other scalar index types
         if isscalarlike(i) and isscalarlike(j):
-            return self._get1(int(i), int(j))
+            v = _csparsetools.lil_get1(self.shape[0], self.shape[1],
+                                       self.rows, self.data,
+                                       i, j)
+            return self.dtype.type(v)
 
         i, j = self._index_to_arrays(i, j)
         if i.size == 0:
-            return lil_matrix((0,0), dtype=self.dtype)
+            return lil_matrix(i.shape, dtype=self.dtype)
 
-        return self.__class__([[self._get1(iii, jjj) for iii, jjj in
-                                zip(ii, jj)] for ii, jj in
-                               zip(i.tolist(), j.tolist())])
+        new = lil_matrix(i.shape, dtype=self.dtype)
 
-    def _insertat2(self, row, data, j, x):
-        """ helper for __setitem__: insert a value in the given row/data at
-        column j. """
-
-        if j < 0:  # handle negative column indices
-            j += self.shape[1]
-
-        if j < 0 or j >= self.shape[1]:
-            raise IndexError('column index out of bounds')
-
-        if not np.isscalar(x):
-            raise ValueError('setting an array element with a sequence')
-
-        try:
-            x = self.dtype.type(x)
-        except (ValueError, TypeError):
-            raise TypeError('Unable to convert value (%s) to dtype [%s]' % (x,self.dtype.name))
-
-        pos = bisect_left(row, j)
-        if x != 0:
-            if pos == len(row):
-                row.append(j)
-                data.append(x)
-            elif row[pos] != j:
-                row.insert(pos, j)
-                data.insert(pos, x)
-            else:
-                data[pos] = x
-        else:
-            if pos < len(row) and row[pos] == j:
-                del row[pos]
-                del data[pos]
+        i, j = _prepare_index_for_memoryview(i, j)
+        _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    new.rows, new.data,
+                                    i, j)
+        return new
 
     def __setitem__(self, index, x):
+        # Scalar fast path first
+        if isinstance(index, tuple) and len(index) == 2:
+            i, j = index
+            # Use isinstance checks for common index types; this is
+            # ~25-50% faster than isscalarlike. Scalar index
+            # assignment for other types is handled below together
+            # with fancy indexing.
+            if ((isinstance(i, int) or isinstance(i, np.integer)) and
+                    (isinstance(j, int) or isinstance(j, np.integer))):
+                x = self.dtype.type(x)
+                if x.size > 1:
+                    # Triggered if input was an ndarray
+                    raise ValueError("Trying to assign a sequence to an item")
+                _csparsetools.lil_insert(self.shape[0], self.shape[1],
+                                         self.rows, self.data, i, j, x)
+                return
+
+        # General indexing
         i, j = self._unpack_index(index)
 
         # shortcut for common case of full matrix assign:
@@ -302,8 +307,10 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError("shape mismatch in assignment")
 
         # Set values
-        for ii, jj, xx in zip(i.ravel(), j.ravel(), x.ravel()):
-            self._insertat2(self.rows[int(ii)], self.data[int(ii)], int(jj), xx)
+        i, j, x = _prepare_index_for_memoryview(i, j, x)
+        _csparsetools.lil_fancy_set(self.shape[0], self.shape[1],
+                                    self.rows, self.data,
+                                    i, j, x)
 
     def _mul_scalar(self, other):
         if other == 0:
@@ -315,16 +322,16 @@ class lil_matrix(spmatrix, IndexMixin):
             new = self.copy()
             new = new.astype(res_dtype)
             # Multiply this scalar by every element.
-            new.data[:] = [[val*other for val in rowvals] for
-                           rowvals in new.data]
+            for j, rowvals in enumerate(new.data):
+                new.data[j] = [val*other for val in rowvals]
         return new
 
     def __truediv__(self, other):           # self / other
         if isscalarlike(other):
             new = self.copy()
             # Divide every element by this scalar
-            new.data = [[val/other for val in rowvals] for
-                        rowvals in new.data]
+            for j, rowvals in enumerate(new.data):
+                new.data[j] = [val/other for val in rowvals]
             return new
         else:
             return self.tocsr() / other
@@ -366,15 +373,16 @@ class lil_matrix(spmatrix, IndexMixin):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
 
-        indptr = np.asarray([len(x) for x in self.rows], dtype=np.intc)
-        indptr = np.concatenate((np.array([0], dtype=np.intc), np.cumsum(indptr)))
-
-        nnz = indptr[-1]
+        lst = [len(x) for x in self.rows]
+        idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
+        indptr = np.asarray(lst, dtype=idx_dtype)
+        indptr = np.concatenate((np.array([0], dtype=idx_dtype),
+                                 np.cumsum(indptr, dtype=idx_dtype)))
 
         indices = []
         for x in self.rows:
             indices.extend(x)
-        indices = np.asarray(indices, dtype=np.intc)
+        indices = np.asarray(indices, dtype=idx_dtype)
 
         data = []
         for x in self.data:
@@ -388,6 +396,47 @@ class lil_matrix(spmatrix, IndexMixin):
         """ Return Compressed Sparse Column format arrays for this matrix.
         """
         return self.tocsr().tocsc()
+
+
+def _prepare_index_for_memoryview(i, j, x=None):
+    """
+    Convert index and data arrays to form suitable for passing to the
+    Cython fancy getset routines.
+
+    The conversions are necessary since to (i) ensure the integer
+    index arrays are in one of the accepted types, and (ii) to ensure
+    the arrays are writable so that Cython memoryview support doesn't
+    choke on them.
+
+    Parameters
+    ----------
+    i, j
+        Index arrays
+    x : optional
+        Data arrays
+
+    Returns
+    -------
+    i, j, x
+        Re-formatted arrays (x is omitted, if input was None)
+
+    """
+    if i.dtype > j.dtype:
+        j = j.astype(i.dtype)
+    elif i.dtype < j.dtype:
+        i = i.astype(j.dtype)
+
+    if not i.flags.writeable or i.dtype not in (np.int32, np.int64):
+        i = i.astype(np.intp)
+    if not j.flags.writeable or j.dtype not in (np.int32, np.int64):
+        j = j.astype(np.intp)
+
+    if x is not None:
+        if not x.flags.writeable:
+            x = x.copy()
+        return i, j, x
+    else:
+        return i, j
 
 
 def isspmatrix_lil(x):

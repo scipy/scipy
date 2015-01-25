@@ -26,8 +26,8 @@ def build_slice_atom(slice_vars, position):
     # and inclusive for blitz on the top end of the range.
     # This difference should really be handle in a blitz specific transform,
     # but I've put it here for convenience. This doesn't cause any
-    # problems in code, its just a maintance hassle (I'll forget I did it here)
-    # and inelegant.  *FIX ME*.
+    # problems in code, its just a maintenance hassle
+    # (I'll forget I did it here) and inelegant.  *FIX ME*.
 
     ###########################################################################
     #                        Handling negative indices.

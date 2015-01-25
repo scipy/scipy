@@ -11,17 +11,19 @@ import warnings
 import numpy as np
 
 from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, TestCase, run_module_suite, dec, \
-        assert_raises, verbose, assert_equal
+        assert_array_almost_equal_nulp, run_module_suite, \
+        assert_raises, assert_equal, assert_array_equal
 
-from numpy import array, finfo, argsort, dot, round, conj, random
+from numpy import dot, conj, random
 from scipy.linalg import eig, eigh
-from scipy.sparse import csc_matrix, csr_matrix, lil_matrix, isspmatrix
+from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
-     ArpackNoConvergence
+     ArpackNoConvergence, arpack
 
 from scipy.linalg import svd, hilbert
+
+from scipy._lib._gcutils import assert_deallocated
 
 
 # eigs() and eigsh() are called many times, so apply a filter for the warnings
@@ -209,7 +211,6 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     exact_eval = d['eval'].astype(typ.upper())
     ind = argsort_which(exact_eval, typ, k, which,
                         sigma, OPpart, mode)
-    exact_eval_a = exact_eval
     exact_eval = exact_eval[ind]
 
     # compute arpack eigenvalues
@@ -245,7 +246,6 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
 
         ind = argsort_which(eval, typ, k, which,
                             sigma, OPpart, mode)
-        eval_a = eval
         eval = eval[ind]
         evec = evec[:,ind]
 
@@ -637,6 +637,170 @@ def test_svd_v0():
     u2, s2, vh2 = svds(x, 1, v0=u[:,0])
 
     assert_allclose(s, s2, atol=np.sqrt(1e-15))
+
+
+def _check_svds(A, k, U, s, VH):
+    n, m = A.shape
+
+    # Check shapes.
+    assert_equal(U.shape, (n, k))
+    assert_equal(s.shape, (k,))
+    assert_equal(VH.shape, (k, m))
+
+    # Check that the original matrix can be reconstituted.
+    A_rebuilt = (U*s).dot(VH)
+    assert_equal(A_rebuilt.shape, A.shape)
+    assert_allclose(A_rebuilt, A)
+
+    # Check that U is a semi-orthogonal matrix.
+    UH_U = np.dot(U.T.conj(), U)
+    assert_equal(UH_U.shape, (k, k))
+    assert_allclose(UH_U, np.identity(k), atol=1e-12)
+
+    # Check that V is a semi-orthogonal matrix.
+    VH_V = np.dot(VH, VH.T.conj())
+    assert_equal(VH_V.shape, (k, k))
+    assert_allclose(VH_V, np.identity(k), atol=1e-12)
+
+
+def test_svd_LM_ones_matrix():
+    # Check that svds can deal with matrix_rank less than k in LM mode.
+    k = 3
+    for n, m in (6, 5), (5, 5), (5, 6):
+        for t in float, complex:
+            A = np.ones((n, m), dtype=t)
+            U, s, VH = svds(A, k)
+
+            # Check some generic properties of svd.
+            _check_svds(A, k, U, s, VH)
+
+            # Check that the largest singular value is near sqrt(n*m)
+            # and the other singular values have been forced to zero.
+            assert_allclose(np.max(s), np.sqrt(n*m))
+            assert_array_equal(sorted(s)[:-1], 0)
+
+
+def test_svd_LM_zeros_matrix():
+    # Check that svds can deal with matrices containing only zeros.
+    k = 1
+    for n, m in (3, 4), (4, 4), (4, 3):
+        for t in float, complex:
+            A = np.zeros((n, m), dtype=t)
+            U, s, VH = svds(A, k)
+
+            # Check some generic properties of svd.
+            _check_svds(A, k, U, s, VH)
+
+            # Check that the singular values are zero.
+            assert_array_equal(s, 0)
+
+
+def test_svd_LM_zeros_matrix_gh_3452():
+    # Regression test for a github issue.
+    # https://github.com/scipy/scipy/issues/3452
+    # Note that for complex dype the size of this matrix is too small for k=1.
+    n, m, k = 4, 2, 1
+    A = np.zeros((n, m))
+    U, s, VH = svds(A, k)
+
+    # Check some generic properties of svd.
+    _check_svds(A, k, U, s, VH)
+
+    # Check that the singular values are zero.
+    assert_array_equal(s, 0)
+
+
+class CheckingLinearOperator(LinearOperator):
+    def __init__(self, A):
+        self.A = A
+        self.dtype = A.dtype
+        self.shape = A.shape
+
+    def matvec(self, x):
+        assert_equal(max(x.shape), np.size(x))
+        return self.A.dot(x)
+
+    def rmatvec(self, x):
+        assert_equal(max(x.shape), np.size(x))
+        return self.A.T.conjugate().dot(x)
+
+
+def test_svd_linop():
+    nmks = [(6, 7, 3),
+            (9, 5, 4),
+            (10, 8, 5)]
+
+    def reorder(args):
+        U, s, VH = args
+        j = np.argsort(s)
+        return U[:,j], s[j], VH[j,:]
+
+    for n, m, k in nmks:
+        # Test svds on a LinearOperator.
+        A = np.random.RandomState(52).randn(n, m)
+        L = CheckingLinearOperator(A)
+
+        v0 = np.ones(min(A.shape))
+
+        U1, s1, VH1 = reorder(svds(A, k, v0=v0))
+        U2, s2, VH2 = reorder(svds(L, k, v0=v0))
+
+        assert_allclose(np.abs(U1), np.abs(U2))
+        assert_allclose(s1, s2)
+        assert_allclose(np.abs(VH1), np.abs(VH2))
+        assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                        np.dot(U2, np.dot(np.diag(s2), VH2)))
+
+        # Try again with which="SM".
+        A = np.random.RandomState(1909).randn(n, m)
+        L = CheckingLinearOperator(A)
+
+        U1, s1, VH1 = reorder(svds(A, k, which="SM"))
+        U2, s2, VH2 = reorder(svds(L, k, which="SM"))
+
+        assert_allclose(np.abs(U1), np.abs(U2))
+        assert_allclose(s1, s2)
+        assert_allclose(np.abs(VH1), np.abs(VH2))
+        assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                        np.dot(U2, np.dot(np.diag(s2), VH2)))
+
+        if k < min(n, m) - 1:
+            # Complex input and explicit which="LM".
+            for (dt, eps) in [(complex, 1e-7), (np.complex64, 1e-3)]:
+                rng = np.random.RandomState(1648)
+                A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
+                L = CheckingLinearOperator(A)
+
+                U1, s1, VH1 = reorder(svds(A, k, which="LM"))
+                U2, s2, VH2 = reorder(svds(L, k, which="LM"))
+
+                assert_allclose(np.abs(U1), np.abs(U2), rtol=eps)
+                assert_allclose(s1, s2, rtol=eps)
+                assert_allclose(np.abs(VH1), np.abs(VH2), rtol=eps)
+                assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
+                                np.dot(U2, np.dot(np.diag(s2), VH2)), rtol=eps)
+
+
+def test_linearoperator_deallocation():
+    # Check that the linear operators used by the Arpack wrappers are
+    # deallocatable by reference counting -- they are big objects, so
+    # Python's cyclic GC may not collect them fast enough before
+    # running out of memory if eigs/eigsh are called in a tight loop.
+
+    M_d = np.eye(10)
+    M_s = csc_matrix(M_d)
+    M_o = aslinearoperator(M_d)
+
+    with assert_deallocated(lambda: arpack.SpLuInv(M_s)):
+        pass
+    with assert_deallocated(lambda: arpack.LuInv(M_d)):
+        pass
+    with assert_deallocated(lambda: arpack.IterInv(M_s)):
+        pass
+    with assert_deallocated(lambda: arpack.IterOpInv(M_o, None, 0.3)):
+        pass
+    with assert_deallocated(lambda: arpack.IterOpInv(M_o, M_o, 0.3)):
+        pass
 
 
 if __name__ == "__main__":

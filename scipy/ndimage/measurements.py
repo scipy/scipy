@@ -156,7 +156,7 @@ def label(input, structure=None, output=None):
     # Use 32 bits if it's large enough for this image.
     # _ni_label.label()  needs two entries for background and
     # foreground tracking
-    need_64bits = input.size < (2**32 - 2)
+    need_64bits = input.size >= (2**31 - 2)
 
     if isinstance(output, numpy.ndarray):
         if output.shape != input.shape:
@@ -165,7 +165,7 @@ def label(input, structure=None, output=None):
     else:
         caller_provided_output = False
         if output is None:
-            output = np.empty(input.shape, np.uintp if need_64bits else np.uint32)
+            output = np.empty(input.shape, np.intp if need_64bits else np.int32)
         else:
             output = np.empty(input.shape, output)
 
@@ -188,7 +188,7 @@ def label(input, structure=None, output=None):
     except _ni_label.NeedMoreBits:
         # Make another attempt with enough bits, then try to cast to the
         # new type.
-        tmp_output = np.empty(input.shape, np.uintp if need_64bits else np.uint32)
+        tmp_output = np.empty(input.shape, np.intp if need_64bits else np.int32)
         max_label = _ni_label._label(input, structure, tmp_output)
         output[...] = tmp_output[...]
         if not np.all(output == tmp_output):
@@ -209,7 +209,8 @@ def find_objects(input, max_label=0):
     Parameters
     ----------
     input : ndarray of ints
-        Array containing objects defined by different labels.
+        Array containing objects defined by different labels. Labels with
+        value 0 are ignored.
     max_label : int, optional
         Maximum label to be searched for in `input`. If max_label is not
         given, the positions of all objects are returned.
@@ -555,9 +556,10 @@ def sum(input, labels=None, index=None):
 
     Returns
     -------
-    sum : list
-        A list of the sums of the values of `input` inside the regions
-        defined by `labels`.
+    sum : ndarray or scalar
+        An array of the sums of values of `input` inside the regions defined
+        by `labels` with the same shape as `index`. If 'index' is None or scalar,
+        a scalar is returned.
 
     See also
     --------
@@ -569,6 +571,11 @@ def sum(input, labels=None, index=None):
     >>> labels = [1,1,2,2]
     >>> sum(input, labels, index=[1,2])
     [1.0, 5.0]
+    >>> sum(input, labels, index=1)
+    1
+    >>> sum(input, labels)
+    6
+
 
     """
     count, sum = _stats(input, labels, index)
@@ -811,7 +818,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         mins[labels[::-1]] = input[::-1]
         result += [mins[idxs]]
     if find_min_positions:
-        minpos = numpy.zeros(labels.max() + 2)
+        minpos = numpy.zeros(labels.max() + 2, int)
         minpos[labels[::-1]] = positions[::-1]
         result += [minpos[idxs]]
     if find_max:
@@ -819,7 +826,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
         maxs[labels] = input
         result += [maxs[idxs]]
     if find_max_positions:
-        maxpos = numpy.zeros(labels.max() + 2)
+        maxpos = numpy.zeros(labels.max() + 2, int)
         maxpos[labels] = positions
         result += [maxpos[idxs]]
     if find_median:
@@ -1067,12 +1074,12 @@ def minimum_position(input, labels=None, index=None):
 
     Returns
     -------
-    output : list of tuples of floats
-        Tuple of floats or list of tuples of floats that specify the location
+    output : list of tuples of ints
+        Tuple of ints or list of tuples of ints that specify the location
         of minima of `input` over the regions determined by `labels` and
         whose index is in `index`.
 
-        If `index` or `labels` are not specified, a tuple of floats is
+        If `index` or `labels` are not specified, a tuple of ints is
         returned specifying the location of the first minimal value of `input`.
 
     See also
@@ -1121,12 +1128,12 @@ def maximum_position(input, labels=None, index=None):
 
     Returns
     -------
-    output : list of tuples of floats
-        List of tuples of floats that specify the location of maxima of
+    output : list of tuples of ints
+        List of tuples of ints that specify the location of maxima of
         `input` over the regions determined by `labels` and whose index
         is in `index`.
 
-        If `index` or `labels` are not specified, a tuple of floats is
+        If `index` or `labels` are not specified, a tuple of ints is
         returned specifying the location of the ``first`` maximal value
         of `input`.
 
@@ -1192,8 +1199,8 @@ def extrema(input, labels=None, index=None):
     >>> ndimage.extrema(a, lbl, index=np.arange(1, nlbl+1))
     (array([1, 4, 3]),
      array([5, 7, 9]),
-     [(0.0, 0.0), (1.0, 3.0), (3.0, 1.0)],
-     [(1.0, 0.0), (2.0, 3.0), (3.0, 0.0)])
+     [(0, 0), (1, 3), (3, 1)],
+     [(1, 0), (2, 3), (3, 0)])
 
     If no index is given, non-zero `labels` are processed:
 
