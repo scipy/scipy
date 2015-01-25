@@ -12,7 +12,7 @@ import warnings
 
 from scipy._lib.six import string_types
 
-__all__ = ['periodogram', 'welch', 'lombscargle']
+__all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence']
 
 
 def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
@@ -385,3 +385,263 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         Pxx = np.rollaxis(Pxx, -1, axis)
 
     return f, Pxx
+
+def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
+              nfft=None, detrend='constant', axis=-1, axisX=None, axisY=None):
+
+    if axisX is None: axisX = axis
+    if axisY is None: axisY = axis
+
+    [ff,Pxx] = welch(x, fs=fs, window=window, nperseg=nperseg,
+                     noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axisX)
+    [_, Pyy] = welch(y, fs=fs, window=window, nperseg=nperseg,
+                     noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axisY)
+    [_, Pxy] = csd(x, y, fs=fs, window=window, nperseg=nperseg,
+                   noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axis,
+                   axisX=axisX, axisY=axisY)
+
+    Cxy = np.abs(Pxy)**2/Pxx/Pyy
+
+    return ff, Cxy
+
+
+def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
+        detrend='constant', return_onesided=True, scaling='density', axis=-1,
+        axisX=None, axisY=None):
+    """
+    Estimate the cross spectral density using Welch's method. 
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    y : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` and `y` time series in units of Hz. 
+        Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to 'hanning'.
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256.
+    noverlap: int, optional
+        Number of points to overlap between segments. If None,
+        ``noverlap = nperseg / 2``.  Defaults to None.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        the FFT length is `nperseg`. Defaults to None.
+    detrend : str or function or False, optional
+        Specifies how to detrend each segment. If `detrend` is a string,
+        it is passed as the ``type`` argument to `detrend`.  If it is a
+        function, it takes a segment and returns a detrended segment.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+    return_onesided : bool, optional
+        If True, return a one-sided spectrum for real data. If False return
+        a two-sided spectrum. Note that for complex data, a two-sided
+        spectrum is always returned.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the power spectral density ('density')
+        where Pxy has units of V**2/Hz if x and y are measured in V and 
+        computing the power spectrum ('spectrum') where Pxy has units of V**2
+        if x and y are measured in V. Defaults to 'density'.
+    axis : int, optional
+        Axis along which the periodogram is computed; the default is over
+        the last axis (i.e. ``axis=-1``).
+    axisX : int, optional
+        Axis along which the CSD is computed for the X data; defaults to the
+        'axis' keyword argument.
+    axisY : int, optional
+        Axis along which the CSD is computed for the Y data; defaults to the
+        'axis' keywrd argument.
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    Pxy : ndarray
+        Power spectral density or power spectrum of x.
+
+    """
+    if axisX is None: axisX = axis
+    if axisY is None: axisY = axis
+
+    if y is x: 
+        psd = True
+        x = np.asarray(x)
+    else:
+        psd = False
+        x = np.asarray(x)
+        y = np.asarray(y)
+
+    if x.size == 0 or y.size == 0:
+        return np.empty(x.shape), np.empty(x.shape)
+
+    if axisX != -1:
+        x = np.rollaxis(x, axisX, len(x.shape))
+    if axisY != -1:
+        y = np.rollaxis(y, axisY, len(y.shape))
+
+    if x.shape[-1] < nperseg:
+        warnings.warn('nperseg = %d, is greater than x.shape[%d] = %d, using '
+                      'nperseg = x.shape[%d]'
+                      % (nperseg, axisX, x.shape[axisX], axisX))
+        nperseg = x.shape[-1]
+
+    if psd is False:
+        if y.shape[-1] < nperseg:
+            warnings.warn('nperseg = %d, is greater than y.shape[%d] = %d, '
+                          'using nperseg = y.shape[%d]'
+                          % (nperseg, axisY, y.shape[axisY], axisY))
+            nperseg = y.shape[-1]
+
+        # Check if we can broadcast the remaining axes together
+        for a, b in zip(x.shape[-2::-1],y.shape[-2::-1]):
+            if a==1 or b==1 or a==b:
+                pass
+            else:
+                raise ValueError('x and y cannot be broadcast together.')
+
+        # Check if x and y are the same length
+        if x.shape[-1] != y.shape[-1]:
+            warnings.warn('Inputs x and y have different lengths along chosen '
+                          'axes.')
+            if x.shape[-1] < y.shape[-1]:
+                warnings.warn('x will be zero-padded to match.')
+                padShape = x.shape
+                padShape[-1] = y.shape[-1] - x.shape[-1]
+                x = np.concatenate((x, np.zeros(padShape)), -1)
+            else:
+                warnings.warn('y will be zero-padded to match.')
+                padShape = y.shape
+                padShape[-1] = x.shape[-1] - y.shape[-1]
+                y = np.concatenate((y, np.zeros(padShape)), -1)
+
+    if isinstance(window, string_types) or type(window) is tuple:
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('Window must be 1-D')
+        if win.shape[0] > x.shape[-1]:
+            raise ValueError('Window is longer than input data.')
+        nperseg = win.shape[0]
+
+    outdtype = np.result_type(np.array([x[0]*y[0]]) * np.array([1], 'F'))
+
+    if np.result_type(np.array(win[0]*np.array([1], 'F'))) != outdtype:
+        win = win.astype(outdtype)
+ 
+    if scaling == 'density':
+        scale = 1.0 / (fs * (win*win).sum())
+    elif scaling == 'spectrum':
+        scale = 1.0 / win.sum()**2
+    else:
+        raise ValueError('Unknown scaling: %r' % scaling)
+
+    if noverlap is None:
+        noverlap = nperseg // 2
+    elif noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+
+    if nfft is None:
+        nfft = nperseg
+    elif nfft < nperseg:
+        raise ValueError('nfft must be greater than or equal to nperseg.')
+
+    if not detrend:
+        detrend_func = lambda seg: seg
+    elif not hasattr(detrend, '__call__'):
+        detrend_func = lambda seg: signaltools.detrend(seg, type=detrend)
+    elif axis != -1:
+        # Wrap this function so that it receives a shape that it could
+        # reasonably expect to receive.
+        def detrend_func(seg):
+            seg = np.rollaxis(seg, -1, axis)
+            seg = detrend(seg)
+            return np.rollaxis(seg, axis, len(seg.shape))
+    else:
+        detrend_func = detrend
+
+    step = nperseg - noverlap
+    indices = np.arange(0, x.shape[-1]-nperseg+1, step)
+
+    if np.isrealobj(x) and np.isrealobj(y) and return_onesided:
+        outshape = list(np.broadcast(x,y).shape)
+        win = win.real
+        if nfft % 2 == 0:  # even
+            outshape[-1] = nfft // 2 + 1
+            Pxy = np.empty(outshape, outdtype)
+        else:  # odd
+            outshape[-1] = (nfft+1) // 2
+            Pxy = np.empty(outshape, outdtype)
+
+        for k, ind in enumerate(indices):
+            x_dt = detrend_func(x[..., ind:ind+nperseg])
+            xft = fftpack.rfft(x_dt*win, nfft)
+            if psd is True:
+                yft=xft
+            else:
+                y_dt = detrend_func(y[..., ind:ind+nperseg])
+                yft = fftpack.rfft(y_dt*win, nfft)
+
+            # fftpack.rfft returns the positive frequency part of the fft
+            # as real values, packed r r i r i r i ...
+            # this indexing is to extract the matching real and imaginary
+            # parts, while also handling the pure real zero and nyquist
+            # frequencies.
+            if k == 0:
+                Pxy[...,0] = xft[0]*yft[0]
+                if nfft % 2 == 0:
+                    centralProduct = ((xft[1:-1:2] - 1j*xft[2:-1:2]) 
+                                      * (yft[1:-1:2] + 1j*yft[2:-1:2]))
+                    Pxy[...,-1] = xft[-1]*yft[-1]
+                else:
+                    centralProduct = ((xft[1::2] - 1j*xft[2::2]) 
+                                      * (yft[1::2] + 1j*yft[2::2]))
+
+                Pxy[...,1:1+len(centralProduct)] = centralProduct
+
+            else:
+                Pxy *= k/(k+1.0)
+                Pxy[...,0] += xft[0]*yft[0] / (k+1.0)
+                if nfft % 2 == 0:
+                    centralProduct = ((xft[1:-1:2] - 1j*xft[2:-1:2]) 
+                                      * (yft[1:-1:2] + 1j*yft[2:-1:2]))
+                    Pxy[...,-1] += xft[-1]*yft[-1] / (k+1.0)
+                else:
+                    centralProduct = ((xft[1::2] - 1j*xft[2::2]) 
+                                      * (yft[1::2] + 1j*yft[2::2]))
+
+                Pxy[...,1:1+len(centralProduct)] += centralProduct / (k+1.0)
+
+        Pxy[..., 1:-1] *= 2*scale
+        Pxy[..., (0,-1)] *= scale
+        f = np.arange(Pxy.shape[-1]) * (fs/nfft)
+    else:
+        for k, ind in enumerate(indices):
+            x_dt = detrend_func(x[..., ind:ind+nperseg])
+            xft = fftpack.fft(x_dt*win, nfft)
+            if psd is True:
+                yft=xft
+            else:
+                y_dt = detrend_func(y[..., ind:ind+nperseg])
+                yft = fftpack.fft(y_dt*win, nfft)
+
+            if k == 0:
+                Pxy = (xft.conj() * yft)
+            else:
+                Pxy *= k/(k+1.0)
+                Pxy += (xft.conj() * yft) / (k+1.0)
+        Pxy *= scale
+        f = fftpack.fftfreq(nfft, 1.0/fs)
+
+    if psd is True:
+        Pxy = Pxy.real
+
+    if axis != -1:
+        Pxy = np.rollaxis(Pxy, -1, axis)
+
+    return f, Pxy
