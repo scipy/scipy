@@ -408,6 +408,9 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     By convention, Pxy is computed with the conjugate FFT of X multiplied by 
     the FFT of Y. 
 
+    If the input series differ in length, the shorter series will be 
+    zero-padded to match.
+
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements.  For the default 'hanning' window an
     overlap of 50\% is a reasonable trade off between accurately estimating
@@ -464,17 +467,13 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
             else:
                 raise ValueError('x and y cannot be broadcast together.')
 
-        # Check if x and y are the same length
+        # Check if x and y are the same length, pad if neccesary
         if x.shape[-1] != y.shape[-1]:
-            warnings.warn('Inputs x and y have different lengths along chosen '
-                          'axes.')
             if x.shape[-1] < y.shape[-1]:
-                warnings.warn('x will be zero-padded to match.')
                 padShape = x.shape
                 padShape[-1] = y.shape[-1] - x.shape[-1]
                 x = np.concatenate((x, np.zeros(padShape)), -1)
             else:
-                warnings.warn('y will be zero-padded to match.')
                 padShape = y.shape
                 padShape[-1] = x.shape[-1] - y.shape[-1]
                 y = np.concatenate((y, np.zeros(padShape)), -1)
