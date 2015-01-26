@@ -10,7 +10,181 @@ import numpy as np
 from scipy.interpolate import interp1d
 from .ltisys import tf2ss, zpk2ss
 
-__all__ = ['dlsim', 'dstep', 'dimpulse']
+__all__ = ['dlsim', 'dstep', 'dimpulse','dlti']
+
+class dlti(object)
+    """Linear Time Invariant class which simplifies representation.
+
+    Parameters
+    ----------
+    args : arguments
+        The `lti` class can be instantiated with either 2, 3 or 4 arguments.
+        The following gives the number of elements in the tuple and the
+        interpretation:
+
+            * 2: (numerator, denominator)
+            * 3: (zeros, poles, gain)
+            * 4: (A, B, C, D)
+
+        Each argument can be an array or sequence.
+
+    Notes
+    -----
+    `lti` instances have all types of representations available; for example
+    after creating an instance s with ``(zeros, poles, gain)`` the transfer
+    function representation (numerator, denominator) can be accessed as
+    ``s.num`` and ``s.den``.
+
+    """
+    
+    def __init__(self, *args, **kwords):
+        """
+        Initialize the LTI system using either:
+
+        -> (numerator, denominator, dt)
+        -> (zeros, poles, gain, dt)
+        X - (A, B, C, D, dt) : state-space.
+
+        """
+
+        N = len(args)
+        if N == 2:  # Numerator denominator transfer function input
+            self._num, self._den = normalize(*args)
+            self._update(N)
+            self.inputs = 1
+            if len(self.num.shape) > 1:
+                self.outputs = self.num.shape[0]
+            else:
+                self.outputs = 1
+        elif N == 3:      # Zero-pole-gain form
+            self._zeros, self._poles, self._gain = args
+            self._update(N)
+            # make sure we have numpy arrays
+            self.zeros = numpy.asarray(self.zeros)
+            self.poles = numpy.asarray(self.poles)
+            self.inputs = 1
+            if len(self.zeros.shape) > 1:
+                self.outputs = self.zeros.shape[0]
+            else:
+                self.outputs = 1
+        elif N == 4:       # State-space form
+            self._A, self._B, self._C, self._D = abcd_normalize(*args)
+            self._update(N)
+            self.inputs = self.B.shape[-1]
+            self.outputs = self.C.shape[0]
+        else:
+            raise ValueError("Needs 2, 3, or 4 arguments.")
+
+
+    def __repr__(self):
+        """
+        Canonical representation using state-space to preserve numerical
+        precision and any MIMO information
+        """
+        return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
+            self.__class__.__name__,
+            repr(self.A),
+            repr(self.B),
+            repr(self.C),
+            repr(self.D),
+            )
+
+    @property
+    def num(self):
+        return self._num
+
+    @num.setter
+    def num(self, value):
+        self._num = value
+        self._update(2)
+
+    @property
+    def den(self):
+        return self._den
+
+    @den.setter
+    def den(self, value):
+        self._den = value
+        self._update(2)
+
+    @property
+    def zeros(self):
+        return self._zeros
+
+    @zeros.setter
+    def zeros(self, value):
+        self._zeros = value
+        self._update(3)
+
+    @property
+    def poles(self):
+        return self._poles
+
+    @poles.setter
+    def poles(self, value):
+        self._poles = value
+        self._update(3)
+
+    @property
+    def gain(self):
+        return self._gain
+
+    @gain.setter
+    def gain(self, value):
+        self._gain = value
+        self._update(3)
+
+    @property
+    def A(self):
+        return self._A
+
+    @A.setter
+    def A(self, value):
+        self._A = value
+        self._update(4)
+
+    @property
+    def B(self):
+        return self._B
+
+    @B.setter
+    def B(self, value):
+        self._B = value
+        self._update(4)
+
+    @property
+    def C(self):
+        return self._C
+
+    @C.setter
+    def C(self, value):
+        self._C = value
+        self._update(4)
+
+    @property
+    def D(self):
+        return self._D
+
+    @D.setter
+    def D(self, value):
+        self._D = value
+        self._update(4)
+
+    def _update(self, N):
+        if N == 2:
+            self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
+            self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
+        if N == 3:
+            self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
+            self._A, self._B, self._C, self._D = zpk2ss(self.zeros,
+                                                        self.poles, self.gain)
+        if N == 4:
+            self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
+            self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
+                                                          self.C, self.D)
+
+
+
 
 
 def dlsim(system, u, t=None, x0=None):
