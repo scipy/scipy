@@ -3410,11 +3410,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     If the p-value is smaller than the threshold, e.g. 1%, 5% or 10%,
     then we reject the null hypothesis of equal averages.
 
-    When a permutation test is performed, the labels are permutated.
-    Each element in each of the samples is assigned a label - 0 corresponding
-    to the first sample and 1 corresponding to the second sample.
-    A vector of these labels is permutated multiple times and these
-    permutations are used to calculate the permutation test.
+    When a permutation test is performed, the labels are permutated using
+    Monte Carlo sampling. Each element in each of the samples is assigned a
+    label - 0 corresponding to the first sample and 1 corresponding to the
+    second sample. A vector of these labels is permutated multiple times and
+    these permutations are used to calculate the permutation test.
     
     References
     ----------
