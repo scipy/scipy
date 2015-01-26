@@ -3364,7 +3364,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return _ttest_ind_from_stats(mean1, mean2, denom, df)
 
     
-def ttest_ind(a, b, axis=0, equal_var=True, permutations=None):
+def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -3389,7 +3389,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None):
         If permutations > 0, then a permutation test will be conducted to
         calculate the p-values
         .. versionadded:: 0.11.0
-
+    random_state : int or RandomState
+        Pseudo number generator state used for random sampling.
+    
     Returns
     -------
     t : float or array
@@ -3466,13 +3468,19 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None):
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
 
+    if random_state is None:
+        random_state = np.random.RandomState()
+    elif type(random_state)==type(1):
+        random_state = np.random.RandomState(seed=random_state)
+        
     if permutations is not None:
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
         return _permutation_ttest(mat, cats,
                                   axis=axis,
                                   equal_var=equal_var,
-                                  permutations=permutations)
+                                  permutations=permutations,
+                                  random_state=random_state)
     else:
         v1 = np.var(a, axis, ddof=1)
         v2 = np.var(b, axis, ddof=1)
@@ -3488,7 +3496,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None):
                                      denom, df)
 
 
-def _init_categorical_perms(cats, permutations=1000):
+def _init_categorical_perms(cats, permutations=1000, random_state=None):
     """
     Creates a matrix filled with category permutations
     
@@ -3496,9 +3504,15 @@ def _init_categorical_perms(cats, permutations=1000):
        List of binary class assignments
     permutations: int
        Number of permutations for permutation test
+    random_state : int or RandomState
+        Pseudo number generator state used for random sampling.
 
     Note: This can only handle binary classes now
     """
+    if random_state is None:
+        random_state = np.random.RandomState()
+    elif type(1)==random_state:
+        random_state = np.random.RandomState(seed=random_state)
     c = len(cats)
     num_cats = len(np.unique(cats))  # Number of distinct categories
     copy_cats = copy.deepcopy(cats)
@@ -3506,10 +3520,11 @@ def _init_categorical_perms(cats, permutations=1000):
     for m in range(permutations+1):
         for i in range(num_cats):
             perms[:,num_cats*m+i] = (copy_cats == i).astype(cats.dtype)
-        np.random.shuffle(copy_cats)
+        random_state.shuffle(copy_cats)
     return perms
 
-def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True):
+
+def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True, random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -3530,6 +3545,8 @@ def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True):
         over which to operate on a and b).
     permutations: int
         Number of permutations used to calculate p-value
+    random_state : int or RandomState
+        Pseudo number generator state used for random sampling.
 
     Returns
     -------
@@ -3543,7 +3560,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True):
         mat = mat.transpose()
     if len(mat.shape) < 2:  # Handle 1-D arrays
         mat = mat.reshape((1, len(mat)))
-    perms = _init_categorical_perms(cats, permutations=1000)
+    perms = _init_categorical_perms(cats, permutations=permutations, random_state=random_state)
     num_cats = 2
     _, c = perms.shape
     permutations = (c - num_cats) / num_cats

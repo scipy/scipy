@@ -2058,10 +2058,11 @@ def test_ttest_perm():
     b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4)))
     p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
     np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
-                                          permutations=1000)
+                                          permutations=1000,
+                                          random_state=0)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-    assert_array_almost_equal(pvalues, array([0.000999, 0.65634366]))
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
     
     ## Test on vertical dimension
     N = 20
@@ -2070,10 +2071,11 @@ def test_ttest_perm():
     b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4))).transpose()
     p_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False)
     np_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False,
-                                          permutations=1000)
+                                          permutations=1000,
+                                          random_state=0)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-    assert_array_almost_equal(pvalues, array([0.000999, 0.65634366]))
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
 
     ## Test on 1 dimensional case
     N = 20
@@ -2082,7 +2084,8 @@ def test_ttest_perm():
     b = np.arange(N/4) + 100
     p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
     np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
-                                          permutations=1000)
+                                          permutations=1000,
+                                          random_state=0)
 
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
     assert_array_almost_equal(pvalues, array([0.000999]))
@@ -2094,7 +2097,8 @@ def test_ttest_perm():
     b = range(100,int(N/4)+100)
     p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
     np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
-                                          permutations=1000)
+                                          permutations=1000,
+                                          random_state=0)
     
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
     assert_array_almost_equal(pvalues, array([0.000999]))
@@ -2106,10 +2110,23 @@ def test_ttest_perm():
     b = np.arange(N/2) + 100
     p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True)
     np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True,
-                                          permutations=1000)
+                                          permutations=1000,
+                                          random_state=0)
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
     assert_array_almost_equal(pvalues, array([0.000999]))
-    
+
+
+    ## Test out random seed
+    N = 20
+    a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
+    b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4)))
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
+                                          permutations=1000,
+                                          random_state=np.random.RandomState(seed=0))
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
+
 def test_ttest_ind():
     # regression test
     tr = 1.0912746897927283
