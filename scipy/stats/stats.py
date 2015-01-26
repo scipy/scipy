@@ -3385,13 +3385,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
+        .. versionadded:: 0.11.0
     permutations : int, optional
         If permutations > 0, then a permutation test will be conducted to
         calculate the p-values
-        .. versionadded:: 0.11.0
+        .. versionadded:: 0.15.2
     random_state : int or RandomState
         Pseudo number generator state used for random sampling.
-    
+        .. versionadded:: 0.15.2    
     Returns
     -------
     t : float or array
