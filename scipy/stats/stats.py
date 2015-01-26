@@ -3471,7 +3471,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
 
     if random_state is None:
         random_state = np.random.RandomState()
-    elif type(random_state)==type(1):
+    elif isinstance(random_state,int):
         random_state = np.random.RandomState(seed=random_state)
         
     if permutations is not None:
@@ -3512,7 +3512,7 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
     """
     if random_state is None:
         random_state = np.random.RandomState()
-    elif type(1)==random_state:
+    elif isinstance(random_state, int):
         random_state = np.random.RandomState(seed=random_state)
     c = len(cats)
     num_cats = len(np.unique(cats))  # Number of distinct categories
