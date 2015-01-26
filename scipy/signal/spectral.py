@@ -203,7 +203,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     -----
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements.  For the default 'hanning' window an
-    overlap of 50% is a reasonable trade off between accurately estimating
+    overlap of 50\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
 
@@ -276,9 +276,11 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     """
     Estimate the magnitude squared coherence estimate, Cxy, of discrete-time 
-    signals X and Y Welch's method. Cxy = abs(Pxy)**2/(Pxx*Pyy), where Pxx and 
-    Pyy are power spectral density estimates of X and Y, and Pxy is the cross
-    spectral density estimate of X and Y. 
+    signals X and Y using Welch's method. 
+    
+    Cxy = abs(Pxy)**2/(Pxx*Pyy), where Pxx and Pyy are power spectral density 
+    estimates of X and Y, and Pxy is the cross spectral density estimate of X 
+    and Y. 
 
     Parameters
     ----------
@@ -329,7 +331,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     --------
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements.  For the default 'hanning' window an
-    overlap of 50% is a reasonable trade off between accurately estimating
+    overlap of 50\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
     """
@@ -399,7 +401,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     periodogram: Simple, optionally modified periodogram
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
     welch: Power spectral density by Welch's method. [Equivalent to csd(x,x)]
-    coherence: Magnitude squred coherence by Welch's method. 
+    coherence: Magnitude squared coherence by Welch's method. 
 
     Notes
     --------
@@ -408,7 +410,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements.  For the default 'hanning' window an
-    overlap of 50% is a reasonable trade off between accurately estimating
+    overlap of 50\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
 
