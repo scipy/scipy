@@ -2366,7 +2366,7 @@ def trim_mean(a, proportiontocut, axis=0):
     return np.mean(newa, axis=axis)
 
 
-def f_oneway(*args):
+def f_oneway(*args, **kwargs):
     """
     Performs a 1-way ANOVA.
 
@@ -2378,6 +2378,12 @@ def f_oneway(*args):
     ----------
     sample1, sample2, ... : array_like
         The sample measurements for each group.
+    permutations : int, optional
+        If permutations > 0, then a permutation test will be conducted to
+        calculate the p-values
+        .. versionadded:: 0.11.0
+    random_state : int or RandomState
+        Pseudo number generator state used for random sampling.
 
     Returns
     -------
@@ -2412,26 +2418,99 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    args = [np.asarray(arg, dtype=float) for arg in args]
-    na = len(args)    # ANOVA on 'na' groups, each in it's own array
-    alldata = np.concatenate(args)
-    bign = len(alldata)
-    sstot = ss(alldata) - (square_of_sums(alldata) / float(bign))
-    ssbn = 0
-    for a in args:
-        ssbn += square_of_sums(a) / float(len(a))
+    if kwargs is not None:
+        return _permutation_f_oneway(args, kwargs)
+    else:
+        args = [np.asarray(arg, dtype=float) for arg in args]
+        na = len(args)    # ANOVA on 'na' groups, each in it's own array
+        alldata = np.concatenate(args)
+        bign = len(alldata)
+        sstot = ss(alldata) - (square_of_sums(alldata) / float(bign))
+        ssbn = 0
+        for a in args:
+            ssbn += square_of_sums(a) / float(len(a))
 
-    ssbn -= (square_of_sums(alldata) / float(bign))
-    sswn = sstot - ssbn
-    dfbn = na - 1
-    dfwn = bign - na
-    msb = ssbn / float(dfbn)
-    msw = sswn / float(dfwn)
-    f = msb / msw
-    prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
-    return f, prob
+        ssbn -= (square_of_sums(alldata) / float(bign))
+        sswn = sstot - ssbn
+        dfbn = na - 1
+        dfwn = bign - na
+        msb = ssbn / float(dfbn)
+        msw = sswn / float(dfwn)
+        f = msb / msw
+        prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+        return f, prob
 
+def _permutation_f_oneway(*args, **kwargs):
+    """
+    Performs a 1-way ANOVA.
 
+    The one-way ANOVA tests the null hypothesis that two or more groups have
+    the same population mean.  The test is applied to samples from two or
+    more groups, possibly with differing sizes.
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        The sample measurements for each group.
+    permutations : int, optional
+        If permutations > 0, then a permutation test will be conducted to
+        calculate the p-values
+        .. versionadded:: 0.11.0
+    random_state : int or RandomState
+        Pseudo number generator state used for random sampling.
+
+    Returns
+    -------
+    F-value : float
+        The computed F-value of the test.
+    p-value : float
+        The associated p-value determined from a permutation test
+    """
+    
+    params = {'permutations':1000, 'random_state':0}
+    for key, val in kwargs.iteritems():
+        if key in params:
+            params[key] = val
+        else:
+            raise ValueError('%s is not a parameter for f_oneway' % key)
+    permutations = params['permutations']
+    random_state = params['random_state']
+    
+    perms = _init_categorical_perms(cats, permutations=permutations, random_state=random_state)
+
+    num_cats = len(np.unique(cats)) # Number of distinct categories
+    n_samp, c = perms.shape
+    permutations = (c-num_cats) / num_cats
+        
+    mat2 = np.multiply(mat, mat)
+
+    S = mat.sum(axis=1)
+    SS = mat2.sum(axis=1)
+    sstot = SS - np.multiply(S,S) / float(n_samp)
+        
+    #Create index to sum the ssE together
+    _sum_idx = _init_categorical_perms(
+        np.arange((permutations+1)*num_cats,dtype=np.int32)/num_cats,
+        permutations=0)
+    
+    ## Perform matrix multiplication on data matrix
+    ## and calculate sums and squared sums and sum of squares
+    _sums  = np.dot(mat, perms)
+    _sums2 = np.dot(np.multiply(mat,mat), perms)
+    
+    tot =  perms.sum(axis=0)
+    ss = _sums2 - np.multiply(_sums,_sums)/tot
+    sserr = np.dot(ss, _sum_idx)
+    sstrt = sstot - sserr
+    dftrt = num_cats-1
+    dferr = np.dot(tot,_sum_idx) - num_cats
+    
+    f_stat = (sstrt / dftrt) / (sserr / dferr)
+
+    cmps =  f_stat[:,1:] >= f_stat[:,0]
+    pvalues = (cmps.sum(axis=1)+1.) / (permutations+1.)        
+    return np.ravel(f_stat[:, 0]), np.ravel(pvalues)
+        
 def pearsonr(x, y):
     """
     Calculates a Pearson correlation coefficient and the p-value for testing
