@@ -95,6 +95,106 @@ class TestLapack(TestCase):
             # clapack module is empty
             pass
 
+class TestLeastSquaresSolvers(TestCase):
+
+    def test_gelsd(self):
+        for dtype in REAL_DTYPES:
+            a1 = np.array([[1.0,2.0],
+                          [4.0,5.0],
+                          [7.0,8.0]], dtype=dtype)
+            b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
+            gelsd, = get_lapack_funcs(('gelsd',), (a1, b1))
+            #x,s,rank,work,iwork,info = *gelsd(a,b,lwork,size_iwork,[cond,overwrite_a,overwrite_b])
+            x, s, rank, work, iwork, info = gelsd(a1, b1, -1, 1)  # Request of sizes
+            lwork = work[0].real.astype(np.int)
+            iwork_size = iwork[0].real.astype(np.int)
+
+            x, s, rank, work, iwork, info = gelsd(a1, b1, lwork, iwork_size, -1, False, False)
+            assert_allclose(x[:-1], np.array([-14.333333333333323, 14.999999999999991], dtype=dtype), rtol=10*np.finfo(dtype).eps)
+            assert_allclose(s, np.array([12.596017180511966, 0.583396253199685], dtype=dtype), rtol=10*np.finfo(dtype).eps)
+
+        for dtype in COMPLEX_DTYPES:
+            a1 = np.array([[1.0+4.0j,2.0],
+                          [4.0+0.5j,5.0-3.0j],
+                          [7.0-2.0j,8.0+0.7j]], dtype=dtype)
+            b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
+            gelsd, = get_lapack_funcs(('gelsd',), (a1, b1))
+            #x,s,rank,work,rwork,iwork,info = cgelsd(a,b,lwork,size_rwork,size_iwork,[cond,overwrite_a,overwrite_b])
+            x, s, rank, work, rwork, iwork, info = gelsd(a1, b1, -1, 1,1)  # Request of sizes
+            lwork = work[0].real.astype(np.int)
+            rwork_size = rwork[0].real.astype(np.int)
+            iwork_size = iwork[0].real.astype(np.int)
+
+            x, s, rank, work, rwork, iwork, info = gelsd(a1, b1, lwork, rwork_size, iwork_size, -1, False, False)
+            assert_allclose(x[:-1], np.array([1.161753632288328-1.901075709391912j, 1.735882340522193+1.521240901196909j],
+                            dtype=dtype), rtol=10*np.finfo(dtype).eps)
+            assert_allclose(s, np.array([13.035514762572043, 4.337666985231382], dtype=dtype), rtol=10*np.finfo(dtype).eps)
+
+    def test_gelss(self):
+
+        for dtype in REAL_DTYPES:
+            a1 = np.array([[1.0,2.0],
+                          [4.0,5.0],
+                          [7.0,8.0]], dtype=dtype)
+            b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
+            gelss, = get_lapack_funcs(('gelss',), (a1, b1))
+            #v,x,s,rank,work,info = dgelss(a,b,[cond,lwork,overwrite_a,overwrite_b])
+            v,x,s,rank,work,info = gelss(a1, b1,-1, -1, False, False)  # Request of sizes
+            lwork = work[0].real.astype(np.int)
+
+            v,x,s,rank,work,info = gelss(a1, b1,-1,lwork, False, False)
+            assert_allclose(x[:-1], np.array([-14.333333333333323, 14.999999999999991], dtype=dtype),rtol=10*np.finfo(dtype).eps)
+            assert_allclose(s, np.array([12.596017180511966, 0.583396253199685], dtype=dtype), rtol=10*np.finfo(dtype).eps)
+
+        for dtype in COMPLEX_DTYPES:
+            a1 = np.array([[1.0+4.0j,2.0],
+                          [4.0+0.5j,5.0-3.0j],
+                          [7.0-2.0j,8.0+0.7j]], dtype=dtype)
+            b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
+            gelss, = get_lapack_funcs(('gelss',), (a1, b1))
+            #v,x,s,rank,work,info = cgelss(a,b,[cond,lwork,overwrite_a,overwrite_b])
+            v, x, s, rank, work, info = gelss(a1, b1,-1, -1, False, False)  # Request of sizes
+            lwork = work[0].real.astype(np.int)
+
+            v,x,s,rank,work,info = gelss(a1, b1,-1,lwork, False, False)
+            assert_allclose(x[:-1], np.array([1.161753632288328-1.901075709391912j, 1.735882340522193+1.521240901196909j],
+                            dtype=dtype), rtol=10*np.finfo(dtype).eps)
+            assert_allclose(s, np.array([13.035514762572043, 4.337666985231382], dtype=dtype), rtol=10*np.finfo(dtype).eps)
+
+    def test_gelsy(self):
+
+        for dtype in REAL_DTYPES:
+            a1 = np.array([[1.0,2.0],
+                          [4.0,5.0],
+                          [7.0,8.0]], dtype=dtype)
+            b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
+            gelsy, = get_lapack_funcs(('gelsy',), (a1, b1))
+            #x,s,rank,work,iwork,info = *gelsd(a,b,lwork,size_iwork,[cond,overwrite_a,overwrite_b])
+            jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
+            v,x,j,rank,work,info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,-1)  # Request of sizes
+            lwork = work[0].real.astype(np.int)
+
+            jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
+            v,x,j,rank,work,info = gelsy(a1, b1, jptv, np.finfo(dtype).eps, lwork, False, False)
+            assert_allclose(x[:-1], np.array([-14.333333333333323, 14.999999999999991], dtype=dtype),rtol=10*np.finfo(dtype).eps)
+            #assert_allclose(s, np.array([ 0.66666669,], dtype=dtype ) )
+
+        for dtype in COMPLEX_DTYPES:
+            a1 = np.array([[1.0+4.0j,2.0],
+                          [4.0+0.5j,5.0-3.0j],
+                          [7.0-2.0j,8.0+0.7j]], dtype=dtype)
+            b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
+            gelsy, = get_lapack_funcs(('gelsy',), (a1, b1))
+            #x,s,rank,work,rwork,iwork,info = cgelsd(a,b,lwork,size_rwork,size_iwork,[cond,overwrite_a,overwrite_b])
+            jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
+            v,x,j,rank,work,rwork,info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,-1)  # Request of sizes
+            lwork = work[0].real.astype(np.int)
+
+            jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
+            v,x,j,rank,work,rwork,info = gelsy(a1, b1, jptv, np.finfo(dtype).eps, lwork, False, False)
+            assert_allclose(x[:-1], np.array([1.161753632288328-1.901075709391912j, 1.735882340522193+1.521240901196909j],
+                            dtype=dtype), rtol=10*np.finfo(dtype).eps)
+            #assert_allclose( s, np.array([ 106.12267169], dtype=dtype ) )
 
 class TestRegression(TestCase):
 
