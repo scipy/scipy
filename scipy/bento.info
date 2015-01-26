@@ -22,7 +22,7 @@ Library:
         integrate,
         interpolate,
         io,
-        lib,
+        _lib,
         linalg,
         misc,
         ndimage,

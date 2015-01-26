@@ -20,3 +20,9 @@ Library:
         Sources:
              interpolative.pyf,
              src/id_dist/src/*.f
+    Extension: _calc_lwork
+        Sources:
+             src/calc_lwork.f
+    Extension: _solve_toeplitz
+        Sources:
+             _solve_toeplitz.c

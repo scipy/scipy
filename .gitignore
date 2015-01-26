@@ -139,6 +139,7 @@ scipy/linalg/_fblasmodule.c
 scipy/linalg/_flapack-f2pywrappers.f
 scipy/linalg/_flapackmodule.c
 scipy/linalg/_interpolativemodule.c
+scipy/linalg/_solve_toeplitz.c
 scipy/linalg/cblas.pyf
 scipy/linalg/clapack.pyf
 scipy/linalg/fblas.pyf

@@ -837,7 +837,7 @@ class PPoly(_PPolyBase):
         # fix continuity of added degrees of freedom
         self._ensure_c_contiguous()
         _ppoly.fix_continuity(c.reshape(c.shape[0], c.shape[1], -1),
-                              self.x, nu)
+                              self.x, nu - 1)
 
         # construct a compatible polynomial
         return self.construct_fast(c, self.x, self.extrapolate)

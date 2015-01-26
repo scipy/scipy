@@ -29,6 +29,20 @@ The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
 `scipy.signal` improvements
 ---------------------------
 
+Support for second order sections (SOS) as a format for IIR filters
+was added.  The new functions are:
+
+* `scipy.signal.sosfilt`
+* `scipy.signal.sosfilt_zi`,
+* `scipy.signal.sos2tf`
+* `scipy.signal.sos2zpk`
+* `scipy.signal.tf2sos`
+* `scipy.signal.zpk2sos`.
+
+Additionally, the filter design functions `iirdesign`, `iirfilter`, `butter`,
+`cheby1`, `cheby2`, `ellip`, and `bessel` can return the filter in the SOS
+format.
+
 The option to use Gustafsson's method for choosing the initial conditions
 of the forward and backward passes was added to `scipy.signal.filtfilt`.
 
@@ -37,6 +51,12 @@ of the forward and backward passes was added to `scipy.signal.filtfilt`.
 
 The Wishart distribution and its inverse have been added, as
 `scipy.stats.wishart` and `scipy.stats.invwishart`.
+
+`scipy.optimize` improvements
+-----------------------------
+
+A new derivative-free method DF-SANE has been added to the nonlinear equation
+system solving function `scipy.optimize.root`.
 
 
 Deprecated features

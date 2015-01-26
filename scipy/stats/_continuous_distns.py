@@ -3542,10 +3542,16 @@ class rayleigh_gen(rv_continuous):
         return r * exp(-0.5 * r**2)
 
     def _cdf(self, r):
-        return 1 - exp(-0.5 * r**2)
+        return -special.expm1(-0.5 * r**2)
 
     def _ppf(self, q):
-        return sqrt(-2 * log(1 - q))
+        return sqrt(-2 * special.log1p(-q))
+        
+    def _sf(self, r):
+        return exp(-0.5 * r**2)
+        
+    def _isf(self, q):
+        return sqrt(-2 * log(q))
 
     def _stats(self):
         val = 4 - pi
