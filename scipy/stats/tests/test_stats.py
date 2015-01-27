@@ -2126,7 +2126,7 @@ def test_ttest_perm():
     assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
 
     ## Test iterations parameter
-    N = 20
+    N = 10000
     np.random.seed(0)
     a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
     b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4)))
@@ -2136,9 +2136,8 @@ def test_ttest_perm():
                                           random_state=np.random.RandomState(seed=0),
                                           iterations=10)
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
-    assert_array_almost_equal(pvalues, array([0.000999, 0.679321]))
+    assert_array_almost_equal(pvalues, array([0.000999, 0.98002]))
 
-    
 
 def test_ttest_ind():
     # regression test

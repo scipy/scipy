@@ -3557,12 +3557,12 @@ def _combine_pseudo_pvalues(pvalues, perm_coefs):
     comb_pvalues: array-like
          Combined pvalues
     """
-    cmps = np.dot((perm_coefs+1.), pvalues )
+    cmps = np.dot((perm_coefs+1.), pvalues)
     comb_pvalues = np.divide(cmps - len(perm_coefs) + 1,
                              (perm_coefs).sum()+1)
     return comb_pvalues
     
-#@profile
+
 def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True, random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
