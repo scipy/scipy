@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.interpolate import interp1d
-from .ltisys import tf2ss, zpk2ss
+from .ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
 
 __all__ = ['dlsim', 'dstep', 'dimpulse','dlti']
 
