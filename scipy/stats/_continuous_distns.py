@@ -1938,7 +1938,7 @@ class gompertz_gen(rv_continuous):
         return -special.expm1(-c * special.expm1(x))
 
     def _ppf(self, q, c):
-        return special.log1p(-1.0/c*special.log1p(-q))
+        return special.log1p(-1.0 / c * special.log1p(-q))
 
     def _entropy(self, c):
         return 1.0 - log(c) - exp(c)*special.expn(1, c)
