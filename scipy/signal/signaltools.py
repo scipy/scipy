@@ -2386,11 +2386,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
         linear filter. The filter is applied to each subarray along
         this axis.  Default is -1.
     zi : array_like, optional
-        Initial conditions for the cascaded filter delays.  It is a (at least
-        2D) vector of shape ``(n_sections, ..., 2)``, with middle dimensions
-        equal to those of the input shape (without the filtered axis).
-        If `zi` is None or is not given then initial rest is assumed. Note
-        that these initial conditions are *not* the same as the initial
+        Initial conditions for the cascaded filter delays.  It is a (at
+        least 2D) vector of shape ``(n_sections, ..., 2, ...)``, where
+        ``..., 2, ...`` denotes the shape of `x`, but with ``x.shape[axis]``
+        replaced by 2.  If `zi` is None or is not given then initial rest
+        (i.e. all zeros) is assumed.
+        Note that these initial conditions are *not* the same as the initial
         conditions given by `lfiltic` or `lfilter_zi`.
 
     Returns
@@ -2434,6 +2435,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    x = np.asarray(x)
 
     sos = atleast_2d(sos)
     if sos.ndim != 2:
@@ -2443,19 +2445,18 @@ def sosfilt(sos, x, axis=-1, zi=None):
     if m != 6:
         raise ValueError('sos array must be shape (n_sections, 6)')
 
-    if zi is not None:
-        use_zi = True
-        zi = np.array(zi)
-        x_zi_shape = np.delete(np.array(x.shape), axis)
-        proper_shape = (zi.ndim >= 2 and
-                        zi.shape[0] == n_sections and zi.shape[-1] == 2 and
-                        np.array_equal(zi.shape[1:-1], x_zi_shape))
-        if not proper_shape:
-            raise ValueError('sos initial states must be shape '
-                             '(n_sections, ..., 2)')
+    use_zi = zi is not None
+    if use_zi:
+        zi = np.asarray(zi)
+        x_zi_shape = list(x.shape)
+        x_zi_shape[axis] = 2
+        x_zi_shape = tuple([n_sections] + x_zi_shape)
+        if zi.shape != x_zi_shape:
+            raise ValueError('Invalid zi shape.  With axis=%r, an input with '
+                             'shape %r, and an sos array with %d sections, zi '
+                             'must have shape %r.' %
+                             (axis, x.shape, n_sections, x_zi_shape))
         zf = zeros_like(zi)
-    else:
-        use_zi = False
 
     for section in range(n_sections):
         if use_zi:
