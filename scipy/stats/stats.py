@@ -175,6 +175,7 @@ import math
 from collections import namedtuple
 
 from scipy._lib.six import xrange
+from scipy._lib._util import check_random_state
 
 # friedmanchisquare patch uses python sum
 pysum = sum  # save it before it gets overwritten
@@ -3473,10 +3474,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
 
-    if random_state is None:
-        random_state = np.random.RandomState()
-    elif isinstance(random_state, int):
-        random_state = np.random.RandomState(seed=random_state)
+    random_state = check_random_state(random_state)
         
     if permutations is not None:
         mat = np.concatenate((a, b), axis=axis)
@@ -3527,10 +3525,7 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
 
     Note: This can only handle binary classes now
     """
-    if random_state is None:
-        random_state = np.random.RandomState()
-    elif isinstance(random_state, int):
-        random_state = np.random.RandomState(seed=random_state)
+    random_state = check_random_state(random_state)
     c = len(cats)
     num_cats = len(np.unique(cats))  # Number of distinct categories
     copy_cats = copy.deepcopy(cats)
