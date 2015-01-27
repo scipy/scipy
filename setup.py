@@ -195,7 +195,7 @@ def setup_package():
     try:
         import numpy
     except:
-        build_requires = ['numpy>=1.5.1']
+        build_requires = ['numpy>=1.6.2']
 
     metadata = dict(
         name = 'scipy',
@@ -230,7 +230,8 @@ def setup_package():
         FULLVERSION, GIT_REVISION = get_version_info()
         metadata['version'] = FULLVERSION
     else:
-        if len(sys.argv) >= 2 and sys.argv[1] == 'bdist_wheel':
+        if (len(sys.argv) >= 2 and sys.argv[1] == 'bdist_wheel') or (
+                    'develop' in sys.argv):
             # bdist_wheel needs setuptools
             import setuptools
 
