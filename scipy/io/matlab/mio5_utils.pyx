@@ -474,11 +474,17 @@ cdef class VarReader5:
         Specializes ``read_element``
         '''
         cdef:
-            cnp.uint32_t mdtype, byte_count
-            void *ptr
+            cnp.uint32_t mdtype, byte_count, i
+            void* ptr
+            unsigned char* byte_ptr
             object data
         data = self.read_element(&mdtype, &byte_count, &ptr)
-        if mdtype != miINT8:
+        if mdtype == miUTF8:  # Some badly-formed .mat files have utf8 here
+            byte_ptr = <unsigned char*> ptr
+            for i in range(byte_count):
+                if byte_ptr[i] > 127:
+                    raise ValueError('Non ascii int8 string ' + str(data))
+        elif mdtype != miINT8:
             raise TypeError('Expecting miINT8 as data type')
         return data
 
@@ -497,15 +503,22 @@ cdef class VarReader5:
            Number of integers read
         '''
         cdef:
-            cnp.uint32_t mdtype, byte_count
-            int i
+            cnp.uint32_t mdtype, byte_count, n_ints
+            int i, check_ints=0
         self.read_element_into(&mdtype, &byte_count, <void *>int32p)
-        if mdtype != miINT32:
+        if mdtype == miUINT32:
+            check_ints = 1
+        elif mdtype != miINT32:
             raise TypeError('Expecting miINT32 as data type')
-        cdef int n_ints = byte_count // 4
+        n_ints = byte_count // 4
         if self.is_swapped:
             for i in range(n_ints):
                 int32p[i] = byteswap_u4(int32p[i])
+        if check_ints:
+            for i in range(n_ints):
+                if int32p[i] < 0:
+                    raise ValueError('Expecting miINT32, got miUINT32 with '
+                                     'negative values')
         return n_ints
 
     def read_full_tag(self):

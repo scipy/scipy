@@ -1195,5 +1195,26 @@ def test_empty_mat_error():
     assert_raises(MatReadError, loadmat, sio)
 
 
+def test_miuint32_compromise():
+    # Reader should accept miUINT32 for miINT32, but check signs
+    # mat file with miUINT32 for miINT32, but OK values
+    filename = pjoin(test_data_path,'miuint32_for_miint32.mat')
+    res = loadmat(filename)
+    assert_equal(res['an_array'], np.arange(10)[None, :])
+    # mat file with miUINT32 for miINT32, with negative value
+    filename = pjoin(test_data_path, 'bad_miuint32.mat')
+    assert_raises(ValueError, loadmat, filename)
+
+
+def test_miutf8_for_miint8_compromise():
+    # Check reader accepts ascii as miUTF8 for array names
+    filename = pjoin(test_data_path,'miutf8_array_name.mat')
+    res = loadmat(filename)
+    assert_equal(res['array_name'], [[1]])
+    # mat file with non-ascii utf8 name raises error
+    filename = pjoin(test_data_path, 'bad_miutf8_array_name.mat')
+    assert_raises(ValueError, loadmat, filename)
+
+
 if __name__ == "__main__":
     run_module_suite()
