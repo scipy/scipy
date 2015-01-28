@@ -1440,6 +1440,46 @@ class TestSOSFilt(TestCase):
         assert_allclose(y[0, 0], np.ones(8))
         assert_allclose(zf[:, 0, 0, :], zi)
 
+    def test_initial_conditions_3d_axis1(self):
+        # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
+
+        # Input array is x.
+        np.random.seed(159)
+        x = np.random.randint(0, 5, size=(2, 15, 3))
+
+        # Design a filter in SOS format.
+        sos = signal.butter(6, 0.35, output='sos')
+        nsections = sos.shape[0]
+
+        # Filter along this axis.
+        axis = 1
+
+        # Initial conditions, all zeros.
+        shp = list(x.shape)
+        shp[axis] = 2
+        shp = [nsections] + shp
+        z0 = np.zeros(shp)
+
+        # Apply the filter to x.
+        yf, zf = sosfilt(sos, x, axis=axis, zi=z0)
+
+        # Apply the filter to x in two stages.
+        y1, z1 = sosfilt(sos, x[:, :5, :], axis=axis, zi=z0)
+        y2, z2 = sosfilt(sos, x[:, 5:, :], axis=axis, zi=z1)
+
+        # y should equal yf, and z2 should equal zf.
+        y = np.concatenate((y1, y2), axis=axis)
+        assert_allclose(y, yf, rtol=1e-10, atol=1e-13)
+        assert_allclose(z2, zf, rtol=1e-10, atol=1e-13)
+
+    def test_bad_zi_shape(self):
+        # The shape of zi is checked before using any values in the
+        # arguments, so np.empty is fine for creating the arguments.
+        x = np.empty((3, 15, 3))
+        sos = np.empty((4, 6))
+        zi = np.empty((4, 3, 3, 2))  # Correct shape is (4, 3, 2, 3)
+        assert_raises(ValueError, sosfilt, sos, x, zi=zi, axis=1)
+
     def test_sosfilt_zi(self):
         sos = signal.butter(6, 0.2, output='sos')
         zi = sosfilt_zi(sos)
