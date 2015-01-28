@@ -786,7 +786,7 @@ interface
      integer intent(in,out,out=j),dimension(n),depend(n) :: jptv
 
      ! LWORK is obtained by the query call
-     integer intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1) :: lwork!=MAX(m*n+3*n+1,2*m*n+nrhs
+     integer intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1) :: lwork
      <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out)::info
 
@@ -815,7 +815,7 @@ interface
      integer intent(in,out,out=j),dimension(n),depend(n) :: jptv
 
      ! LWORK is obtained by the query call
-     integer intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1) :: lwork !=MAX(m*n+3*n+1,2*m*n+nrhs
+     integer intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1) :: lwork
      <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      <ftype2> dimension(2*n),intent(out),depend(n) :: rwork
      integer intent(out)::info
@@ -845,7 +845,7 @@ interface
      <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
 	
      integer intent(in),check(lwork>=1||lwork==-1) :: lwork
-     ! Impossible to calculate lwork explicitely, need to obtain it from query call first
+     ! Impossible to calculate lwork explicitly, need to obtain it from query call first
      ! Same for size_iwork
      <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
 
@@ -878,7 +878,7 @@ interface
      <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
 	
      integer intent(in),check(lwork>=1||lwork==-1) :: lwork
-     ! Impossible to calculate lwork explicitely, need to obtain it from query call first
+     ! Impossible to calculate lwork explicitly, need to obtain it from query call first
      ! Same for size_rwork, size_iwork
      <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
 
