@@ -535,7 +535,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
 
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
-          check_finite=True):
+          check_finite=True, lapack_driver = 'gelsd'):
     """
     Compute least-squares solution to equation Ax = b.
 
@@ -559,7 +559,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-
+    lapack_driver: string, optional
+        Options are 'gelsd', 'gelsy', 'gelss'. Which LAPACK driver used to 
+        solve the least-squares problem. Default is goog choise. However 
+        'gelsy' can work slightly faster on many problems. 'gelss' was used
+        used historically. It is generally slow but uses less memory.
     Returns
     -------
     x : (N,) or (N, K) ndarray
@@ -596,39 +600,42 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         nrhs = 1
     if m != b1.shape[0]:
         raise ValueError('incompatible dimensions')
-    gelss, = get_lapack_funcs(('gelss',), (a1, b1))
+    if not lapack_driver in ('gelsd','gelsy','gelss'):
+        raise ValueError('LAPACK driver "%s"is not found' % lapack_driver)
+    lapack_func, = get_lapack_funcs((lapack_driver,), (a1, b1))
     if n > m:
         # need to extend b matrix as it will be filled with
         # a larger solution matrix
         if len(b1.shape) == 2:
-            b2 = np.zeros((n, nrhs), dtype=gelss.dtype)
+            b2 = np.zeros((n, nrhs), dtype=lapack_func.dtype)
             b2[:m,:] = b1
         else:
-            b2 = np.zeros(n, dtype=gelss.dtype)
+            b2 = np.zeros(n, dtype=lapack_func.dtype)
             b2[:m] = b1
         b1 = b2
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
-    # get optimal work array
-    work = gelss(a1, b1, lwork=-1)[4]
-    lwork = work[0].real.astype(np.int)
-    v, x, s, rank, work, info = gelss(
-        a1, b1, cond=cond, lwork=lwork, overwrite_a=overwrite_a,
-        overwrite_b=overwrite_b)
+    if lapack_driver == 'gelss':
+        # get optimal work array
+        work = lapack_func(a1, b1, lwork=-1)[4]
+        lwork = work[0].real.astype(np.int)
+        v, x, s, rank, work, info = lapack_func(
+            a1, b1, cond=cond, lwork=lwork, overwrite_a=overwrite_a,
+            overwrite_b=overwrite_b)
 
-    if info > 0:
-        raise LinAlgError("SVD did not converge in Linear Least Squares")
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gelss'
-                                                                    % -info)
-    resids = np.asarray([], dtype=x.dtype)
-    if n < m:
-        x1 = x[:n]
-        if rank == n:
-            resids = np.sum(np.abs(x[n:])**2, axis=0)
-        x = x1
+        if info > 0:
+            raise LinAlgError("SVD did not converge in Linear Least Squares")
+        if info < 0:
+            raise ValueError('illegal value in %d-th argument of internal gelss'
+                                                                        % -info)
+        resids = np.asarray([], dtype=x.dtype)
+        if n < m:
+            x1 = x[:n]
+            if rank == n:
+                resids = np.sum(np.abs(x[n:])**2, axis=0)
+            x = x1
     return x, resids, rank, s
 
 
