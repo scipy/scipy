@@ -864,7 +864,7 @@ cdef class VarReader5:
         else:
             raise ValueError('Type %d does not appear to be char type'
                              % mdtype)
-        uc_str = data.decode(codec)
+        uc_str = data.decode(codec, 'replace')
         # cast to array to deal with 2, 4 byte width characters
         arr = np.array(uc_str, dtype='U')
         # could take this to numpy C-API level, but probably not worth
