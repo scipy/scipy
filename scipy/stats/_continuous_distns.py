@@ -1932,13 +1932,13 @@ class gompertz_gen(rv_continuous):
         return exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return log(c) + x - c * (exp(x) - 1.)
+        return log(c) + x - c * special.expm1(x)
 
     def _cdf(self, x, c):
-        return 1.0-exp(-c*(exp(x)-1))
+        return -special.expm1(-c * special.expm1(x))
 
     def _ppf(self, q, c):
-        return log(1-1.0/c*log(1-q))
+        return special.log1p(-1.0 / c * special.log1p(-q))
 
     def _entropy(self, c):
         return 1.0 - log(c) - exp(c)*special.expn(1, c)
