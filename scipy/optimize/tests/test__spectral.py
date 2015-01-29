@@ -1,12 +1,15 @@
 from __future__ import division, absolute_import, print_function
 
 import itertools
+import functools
 
 import numpy as np
 from numpy import exp
 from numpy.testing import assert_, assert_equal, assert_allclose
 
-from scipy.optimize import root, fixpoint
+from scipy.optimize import root, fixpoint, minimize
+from scipy.stats import poisson
+from scipy.special import expit, logit
 
 
 def test_performance():
@@ -236,3 +239,142 @@ def F_10(x, n):
 
 def x0_10(n):
     return np.ones([n])
+
+
+class _PoissonMixtureUnboundedParameterization(object):
+
+    @classmethod
+    def encode(cls, p, mu):
+        return np.concatenate((cls._encode_distribution(p), np.log(mu)))
+
+    @classmethod
+    def decode(cls, X):
+        X = np.asarray(X)
+        n = X.shape[0]
+        encoded_p, log_mu = X[:n//2], X[n//2:]
+        p = cls._decode_distribution(encoded_p)
+        mu = np.exp(log_mu)
+        return p, mu
+
+    @classmethod
+    def _encode_distribution(cls, X):
+        Y = []
+        t = 0
+        for x in X[:-1]:
+            Y.append(x / (1 - t))
+            t += x
+        return logit(Y)
+
+    @classmethod
+    def _decode_distribution(cls, Y):
+        X = []
+        t = 0
+        for y in expit(Y):
+            x = y * (1 - t)
+            X.append(x)
+            t += x
+        X.append(1 - t)
+        return np.array(X)
+
+
+class _PoissonMixtureSimpleParameterization(object):
+
+    @classmethod
+    def encode(cls, p, mu):
+        return np.concatenate((p[:-1], mu))
+
+    @classmethod
+    def decode(cls, X):
+        X = np.asarray(X)
+        n = X.shape[0]
+        truncated_p, mu = X[:n//2], X[n//2:]
+        p = np.concatenate((truncated_p, [1-truncated_p.sum()]))
+        return p, mu
+
+
+def _poisson_mixture_neg_log_likelihood(codec, data, X):
+    p, mu = codec.decode(X)
+    n = data.shape[0]
+    counts = np.arange(n)
+    likelihoods = poisson.pmf(counts[:, np.newaxis], mu).dot(p)
+    return -data.dot(np.log(likelihoods))
+
+
+def _poisson_mixture_em_step(codec, data, X):
+    # For testing EM acceleration with the squarem algorithm.
+    p, mu = codec.decode(X)
+    n = data.shape[0]
+    counts = np.arange(n)
+    unnormalized_pi = p * poisson.pmf(counts[:, np.newaxis], mu)
+    pi = unnormalized_pi / unnormalized_pi.sum(axis=1)[:, np.newaxis]
+    p = data.dot(pi) / data.sum()
+    mu = (data * counts).dot(pi) / data.dot(pi)
+    return codec.encode(p, mu)
+
+
+def test_squarem_poisson_mixtures_table_2():
+    # Ravi Varadhan and Christophe Roland.
+    # Simple and Globally Convergent Methods for Accelerating
+    # the Convergence of Any EM Algorithm.
+    # Scandinavian Journal of Statistics, Vol 35: 335--353, 2008.
+    #
+    # This is a poisson mixture model, with three parameters:
+    # a mixture proportion and two poisson rates.
+    #
+    # For the given data, the maximum likelihood estimates should be:
+    # mixture proportion of the first poisson rate : 0.3599
+    # the first poisson rate : 1.256
+    # the second poisson rate : 2.663
+    # Note that this is not distinguishable from the estimates
+    # (1.0 - 0.3599, 2.663, 1.256).
+    #
+    # The EM strategy is to first conditionally distribute the blame
+    # for each of the ten counts between the two Poisson processes
+    # (this is like the expectation step),
+    # and then to use these condtional distributions to re-estimate the
+    # overall mixing proportion and the two Poisson rates.
+    #
+    data = np.array([162, 267, 271, 185, 111, 61, 27, 8, 3, 1], dtype=float)
+    p = np.array([0.4, 0.6])
+    mu = np.array([1.0, 2.0])
+    p_desired = [0.3599, 0.6401]
+    mu_desired = [1.256, 2.663]
+
+    # Test the unaccelerated EM.
+    codec = _PoissonMixtureSimpleParameterization
+    X0 = codec.encode(p, mu)
+    iterations = 0
+    prev = X0
+    xtol = 1e-8
+    while True:
+        X = _poisson_mixture_em_step(codec, data, prev)
+        iterations += 1
+        if np.linalg.norm(X - prev) < xtol * np.linalg.norm(prev):
+            break
+        prev = X
+    p_opt, mu_opt = codec.decode(X)
+    assert_allclose(p_opt, p_desired, atol=1e-3)
+    assert_allclose(mu_opt, mu_desired, atol=1e-3)
+    # Check the ballpark number of EM iterations.
+    assert_(2061-5 < iterations < 2061+5)
+
+    # Test the accelerated EM.
+    codec = _PoissonMixtureSimpleParameterization
+    X0 = codec.encode(p, mu)
+    f = functools.partial(_poisson_mixture_em_step, codec, data)
+    sol = fixpoint(f, X0, method='squarem')
+    p_opt, mu_opt = codec.decode(sol.fun)
+    assert_allclose(p_opt, p_desired, atol=1e-3)
+    assert_allclose(mu_opt, mu_desired, atol=1e-3)
+    # Check the ballpark number of SQUAREM iterations and function evaluations.
+    assert_(28-5 < sol.nit < 28+5)
+    assert_(108-5 < sol.nfev < 108+5)
+
+    # Test a direct minimization of negative log likelihood.
+    codec = _PoissonMixtureUnboundedParameterization
+    X0 = codec.encode(p, mu)
+    obj = functools.partial(_poisson_mixture_neg_log_likelihood, codec, data)
+    result = minimize(obj, X0, method='L-BFGS-B', options=dict(factr=10.0))
+    p_opt, mu_opt = codec.decode(result.x)
+    assert_allclose(p_opt, p_desired, atol=1e-3)
+    assert_allclose(mu_opt, mu_desired, atol=1e-3)
