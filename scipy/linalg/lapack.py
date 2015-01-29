@@ -81,6 +81,16 @@ All functions
    cgelss
    zgelss
 
+   sgelsd
+   dgelsd
+   cgelsd
+   zgelsd
+
+   sgelsy
+   dgelsy
+   cgelsy
+   zgelsy
+
    sgeqp3
    dgeqp3
    cgeqp3
