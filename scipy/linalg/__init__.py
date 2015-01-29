@@ -130,6 +130,7 @@ Special Matrices
    dft - Discrete Fourier transform matrix
    hadamard - Hadamard matrix of order 2**n
    hankel - Hankel matrix
+   helmert - Helmert matrix
    hilbert - Hilbert matrix
    invhilbert - Inverse Hilbert matrix
    leslie - Leslie matrix

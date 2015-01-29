@@ -8,7 +8,7 @@ from scipy._lib.six import string_types
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
-           'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft']
+           'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft']
 
 
 #-----------------------------------------------------------------------------
@@ -601,6 +601,41 @@ def companion(a):
     c[0] = first_row
     c[list(range(1, n - 1)), list(range(0, n - 2))] = 1
     return c
+
+
+def helmert(n):
+    """
+    Create a Helmert matrix of order `n`.
+
+    This has applications in statistics, compositional or simplicial analysis,
+    and in Aitchison geometry.
+
+    Parameters
+    ----------
+    n : int
+        The size of the array to create.
+
+    Returns
+    -------
+    M : (n, n) ndarray
+        The Helmert matrix.
+
+    Examples
+    --------
+    >>> from scipy.linalg import helmert
+    >>> helmert(5)
+    array([[ 0.4472136 ,  0.4472136 ,  0.4472136 ,  0.4472136 ,  0.4472136 ],
+           [ 0.70710678, -0.70710678,  0.        ,  0.        ,  0.        ],
+           [ 0.40824829,  0.40824829, -0.81649658,  0.        ,  0.        ],
+           [ 0.28867513,  0.28867513,  0.28867513, -0.8660254 ,  0.        ],
+           [ 0.2236068 ,  0.2236068 ,  0.2236068 ,  0.2236068 , -0.89442719]])
+
+    """
+    H = np.tril(np.ones((n, n)), -1) - np.diag(np.arange(n))
+    d = np.arange(n) * np.arange(1, n+1)
+    H[0] = 1
+    d[0] = n
+    return H / np.sqrt(d)[:, np.newaxis]
 
 
 def hilbert(n):
