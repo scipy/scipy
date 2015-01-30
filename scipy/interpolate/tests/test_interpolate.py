@@ -521,6 +521,22 @@ class TestPPolyCommon(TestCase):
                 assert_allclose(p(xp, nu).real, p_re(xp, nu))
                 assert_allclose(p(xp, nu).imag, p_im(xp, nu))
 
+    def test_axis(self):
+        np.random.seed(12345)
+        c = np.random.rand(3, 4, 5, 6, 7, 8)
+        c_s = c.shape
+        xp = np.random.random((1, 2))
+        for axis in (0, 1, 2, 3):
+            k, m = c.shape[axis], c.shape[axis+1]
+            x = np.sort(np.random.rand(m+1))
+            for cls in (PPoly, BPoly):
+                p = cls(c, x, axis=axis)
+                assert_equal(p.c.shape,
+                             c_s[axis:axis+2] + c_s[:axis] + c_s[axis+2:])
+                res = p(xp)
+                targ_shape = c_s[:axis] + xp.shape + c_s[2+axis:]
+                assert_equal(res.shape, targ_shape)
+
 
 class TestPolySubclassing(TestCase):
     class P(PPoly):
