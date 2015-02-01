@@ -10,7 +10,8 @@ from scipy.interpolate import (splrep, splev,
         KroghInterpolator, krogh_interpolate,
         BarycentricInterpolator, barycentric_interpolate,
         PiecewisePolynomial, piecewise_polynomial_interpolate,
-        approximate_taylor_polynomial, pchip, PchipInterpolator)
+        approximate_taylor_polynomial, pchip, PchipInterpolator,
+        Akima1DInterpolator)
 from scipy._lib.six import xrange
 
 
@@ -50,7 +51,8 @@ SHAPES = [(), (0,), (1,), (3, 2, 5)]
 
 
 def test_shapes():
-    for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
+    for ip in [KroghInterpolator, BarycentricInterpolator, pchip,
+               Akima1DInterpolator]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -84,7 +86,14 @@ def test_deriv_shapes():
             pass
         return P(x, y, axis)
 
-    for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace]:
+    def akima_deriv(x, y, axis=0):
+        return Akima1DInterpolator(x, y, axis).derivative()
+
+    def akima_antideriv(x, y, axis=0):
+        return Akima1DInterpolator(x, y, axis).antiderivative()
+
+    for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
+               akima_deriv, akima_antideriv]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):

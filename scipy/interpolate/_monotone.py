@@ -205,7 +205,7 @@ class Akima1DInterpolator(PPoly):
         be equal to the length of *x*.
     axis : int, optional
         Specifies the axis of *y* along which to interpolate. Interpolation
-        defaults to the last axis of *y*.
+        defaults to the first axis of *y*.
 
     Methods
     -------
@@ -231,17 +231,23 @@ class Akima1DInterpolator(PPoly):
 
     """
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, axis=0):
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # http://www.mathworks.de/matlabcentral/fileexchange/1814-akima-interpolation
+        x, y = map(np.asarray, (x, y))
+        axis = axis % y.ndim
+
         if np.any(np.diff(x) < 0.):
             raise ValueError("x must be strictly ascending")
         if x.ndim != 1:
             raise ValueError("x must be 1-dimensional")
         if x.size < 2:
             raise ValueError("at least 2 breakpoints are needed")
-        if x.size != y.shape[0]:
-            raise ValueError("x.shape must equal y.shape[0]")
+        if x.size != y.shape[axis]:
+            raise ValueError("x.shape must equal y.shape[%s]" % axis)
+
+        # move interpolation axis to front
+        y = np.rollaxis(y, axis)
 
         # determine slopes between breakpoints
         m = np.empty((x.size + 3, ) + y.shape[1:])
@@ -280,6 +286,7 @@ class Akima1DInterpolator(PPoly):
         coeff[0] = d
 
         super(Akima1DInterpolator, self).__init__(coeff, x, extrapolate=False)
+        self.axis = axis
 
     def extend(self):
         raise NotImplementedError("Extending a 1D Akima interpolator is not "
