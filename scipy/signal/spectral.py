@@ -488,9 +488,9 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
             raise ValueError('Window is longer than input data.')
         nperseg = win.shape[0]
 
-    outdtype = np.result_type(np.array([x[0]*y[0]]) * np.array([1], 'F'))
+    outdtype = np.result_type(x,y,np.complex64)
 
-    if np.result_type(np.array(win[0]*np.array([1], 'F'))) != outdtype:
+    if np.result_type(win,np.complex64) != outdtype:
         win = win.astype(outdtype)
  
     if scaling == 'density':
