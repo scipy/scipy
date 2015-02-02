@@ -446,19 +446,13 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         x = np.rollaxis(x, axis, len(x.shape))
         y = np.rollaxis(y, axis, len(y.shape))
 
-    if x.shape[-1] < nperseg:
-        warnings.warn('nperseg = %d, is greater than x.shape[%d] = %d, using '
-                      'nperseg = x.shape[%d]'
-                      % (nperseg, axis, x.shape[axis], axis))
-        nperseg = x.shape[-1]
-
     # These checks only neccesary if x!=y
     if not psd:
-        if y.shape[-1] < nperseg:
-            warnings.warn('nperseg = %d, is greater than y.shape[%d] = %d, '
-                          'using nperseg = y.shape[%d]'
-                          % (nperseg, axis, y.shape[axis], axis))
-            nperseg = y.shape[-1]
+        #if y.shape[-1] < nperseg:
+            #warnings.warn('nperseg = %d, is greater than y.shape[%d] = %d, '
+                          #'using nperseg = y.shape[%d]'
+                          #% (nperseg, axis, y.shape[axis], axis))
+            #nperseg = y.shape[-1]
 
         # Check if we can broadcast the remaining axes together
         for a, b in zip(x.shape[-2::-1],y.shape[-2::-1]):
@@ -470,13 +464,19 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         # Check if x and y are the same length, pad if neccesary
         if x.shape[-1] != y.shape[-1]:
             if x.shape[-1] < y.shape[-1]:
-                padShape = x.shape
+                padShape = list(x.shape)
                 padShape[-1] = y.shape[-1] - x.shape[-1]
                 x = np.concatenate((x, np.zeros(padShape)), -1)
             else:
-                padShape = y.shape
+                padShape = list(y.shape)
                 padShape[-1] = x.shape[-1] - y.shape[-1]
                 y = np.concatenate((y, np.zeros(padShape)), -1)
+
+    if x.shape[-1] < nperseg:
+        warnings.warn('nperseg = %d, is greater than x.shape[%d] = %d, using '
+                      'nperseg = x.shape[%d]'
+                      % (nperseg, axis, x.shape[axis], axis))
+        nperseg = x.shape[-1]
 
     if isinstance(window, string_types) or type(window) is tuple:
         win = get_window(window, nperseg)
