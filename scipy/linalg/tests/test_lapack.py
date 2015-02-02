@@ -139,12 +139,19 @@ class TestLeastSquaresSolvers(TestCase):
                           [4.0,5.0],
                           [7.0,8.0]], dtype=dtype)
             b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
-            gelsd, = get_lapack_funcs(('gelsd',), (a1, b1))
+            gelsd, gelsd_lwork = get_lapack_funcs(('gelsd','gelsd_lwork'),
+                                                  (a1, b1))
+
+            m, n = a1.shape
+            if len(b1.shape) == 2:
+                nrhs = b1.shape[1]
+            else:
+                nrhs = 1
 
             # Request of sizes
-            x, s, rank, work, iwork, info = gelsd(a1, b1, -1, 1)
-            lwork = work[0].real.astype(np.int)
-            iwork_size = iwork[0].real.astype(np.int)
+            work,iwork,info = gelsd_lwork(m,n,nrhs,-1)
+            lwork = np.int(np.real(work))
+            iwork_size = iwork
 
             x, s, rank, work, iwork, info = gelsd(a1, b1, lwork, iwork_size,
                                                   -1, False, False)
@@ -160,13 +167,20 @@ class TestLeastSquaresSolvers(TestCase):
                           [4.0+0.5j,5.0-3.0j],
                           [7.0-2.0j,8.0+0.7j]], dtype=dtype)
             b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
-            gelsd, = get_lapack_funcs(('gelsd',), (a1, b1))
+            gelsd, gelsd_lwork = get_lapack_funcs(('gelsd','gelsd_lwork'),
+                                                  (a1, b1))
+
+            m, n = a1.shape
+            if len(b1.shape) == 2:
+                nrhs = b1.shape[1]
+            else:
+                nrhs = 1
 
             # Request of sizes
-            x, s, rank, work, rwork, iwork, info = gelsd(a1, b1, -1, 1,1)
-            lwork = work[0].real.astype(np.int)
-            rwork_size = rwork[0].real.astype(np.int)
-            iwork_size = iwork[0].real.astype(np.int)
+            work,rwork,iwork,info = gelsd_lwork(m,n,nrhs,-1)
+            lwork = np.int(np.real(work))
+            rwork_size = np.int(rwork)
+            iwork_size = iwork
 
             x, s, rank, work, rwork, iwork, info = gelsd(a1, b1, lwork,
                                     rwork_size, iwork_size, -1, False, False)
@@ -185,11 +199,18 @@ class TestLeastSquaresSolvers(TestCase):
                           [4.0,5.0],
                           [7.0,8.0]], dtype=dtype)
             b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
-            gelss, = get_lapack_funcs(('gelss',), (a1, b1))
+            gelss, gelss_lwork = get_lapack_funcs(('gelss','gelss_lwork'),
+                                                  (a1, b1))
+
+            m, n = a1.shape
+            if len(b1.shape) == 2:
+                nrhs = b1.shape[1]
+            else:
+                nrhs = 1
 
             # Request of sizes
-            v,x,s,rank,work,info = gelss(a1, b1,-1, -1, False, False)
-            lwork = work[0].real.astype(np.int)
+            work,info = gelss_lwork(m,n,nrhs,-1)
+            lwork = np.int(np.real(work))
 
             v,x,s,rank,work,info = gelss(a1, b1,-1,lwork, False, False)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
@@ -204,11 +225,18 @@ class TestLeastSquaresSolvers(TestCase):
                           [4.0+0.5j,5.0-3.0j],
                           [7.0-2.0j,8.0+0.7j]], dtype=dtype)
             b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
-            gelss, = get_lapack_funcs(('gelss',), (a1, b1))
+            gelss, gelss_lwork = get_lapack_funcs(('gelss','gelss_lwork'),
+                                                  (a1, b1))
+
+            m, n = a1.shape
+            if len(b1.shape) == 2:
+                nrhs = b1.shape[1]
+            else:
+                nrhs = 1
 
             # Request of sizes
-            v, x, s, rank, work, info = gelss(a1, b1,-1, -1, False, False)
-            lwork = work[0].real.astype(np.int)
+            work,info = gelss_lwork(m,n,nrhs,-1)
+            lwork = np.int(np.real(work))
 
             v,x,s,rank,work,info = gelss(a1, b1,-1,lwork, False, False)
             assert_allclose(x[:-1],
@@ -226,12 +254,17 @@ class TestLeastSquaresSolvers(TestCase):
                           [4.0,5.0],
                           [7.0,8.0]], dtype=dtype)
             b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
-            gelsy, = get_lapack_funcs(('gelsy',), (a1, b1))
+            gelsy, gelsy_lwork = get_lapack_funcs(('gelsy','gelss_lwork'), (a1, b1))
 
-            jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
+            m, n = a1.shape
+            if len(b1.shape) == 2:
+                nrhs = b1.shape[1]
+            else:
+                nrhs = 1
+
             # Request of sizes
-            v,x,j,rank,work,info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,-1)
-            lwork = work[0].real.astype(np.int)
+            work,info = gelsy_lwork(m,n,nrhs,10*np.finfo(dtype).eps)
+            lwork = np.int(np.real(work))
 
             jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
             v,x,j,rank,work,info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,
@@ -245,16 +278,20 @@ class TestLeastSquaresSolvers(TestCase):
                           [4.0+0.5j,5.0-3.0j],
                           [7.0-2.0j,8.0+0.7j]], dtype=dtype)
             b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
-            gelsy, = get_lapack_funcs(('gelsy',), (a1, b1))
+            gelsy, gelsy_lwork = get_lapack_funcs(('gelsy','gelss_lwork'), (a1, b1))
 
-            jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
+            m, n = a1.shape
+            if len(b1.shape) == 2:
+                nrhs = b1.shape[1]
+            else:
+                nrhs = 1
+
             # Request of sizes
-            v,x,j,rank,work,rwork,info = gelsy(a1, b1, jptv,
-                                               np.finfo(dtype).eps,-1)
-            lwork = work[0].real.astype(np.int)
+            work,info = gelsy_lwork(m,n,nrhs,10*np.finfo(dtype).eps)
+            lwork = np.int(np.real(work))
 
             jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
-            v,x,j,rank,work,rwork,info = gelsy(a1, b1, jptv,
+            v,x,j,rank,work,info = gelsy(a1, b1, jptv,
                                                np.finfo(dtype).eps,
                                                 lwork, False, False)
             assert_allclose(x[:-1],
