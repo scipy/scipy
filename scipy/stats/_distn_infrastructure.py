@@ -506,17 +506,14 @@ class rv_frozen(object):
     def interval(self, alpha):
         return self.dist.interval(alpha, *self.args, **self.kwds)
 
-    def expect(self, func=None, lb=None, ub=None, 
-                     conditional=False, **kwds):
+    def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         # expect method only accepts shape parameters as positional args
         # hence convert self.args, self.kwds, also loc/scale
         # See the .expect method docstrings for the meaning of
         # other parameters.
         a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
         if isinstance(self.dist, rv_discrete):
-            if kwds:
-                raise ValueError("Discrete expect does not accept **kwds.")
-            return self.dist.expect(func, a, loc, lb, ub, conditional)
+            return self.dist.expect(func, a, loc, lb, ub, conditional, **kwds)
         else:
             return self.dist.expect(func, a, loc, scale, lb, ub,
                                     conditional, **kwds)
@@ -3127,7 +3124,7 @@ class rv_discrete(rv_generic):
             return ent
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
-               conditional=False):
+               conditional=False, maxcount=1000, tolerance=1e-10, chunksize=48):
         """
         Calculate expected value of a function with respect to the distribution
         for discrete distribution
@@ -3140,13 +3137,22 @@ class rv_discrete(rv_generic):
             argument (parameters) of the distribution
         lb, ub : numbers, optional
             lower and upper bound for integration, default is set to the
-            support of the distribution, lb and ub are inclusive (ul<=k<=ub)
+            support of the distribution, lb and ub are inclusive
+            (``ul <= k <= ub``).
         conditional : bool, optional
             Default is False.
             If true then the expectation is corrected by the conditional
             probability of the integration interval. The return value is the
             expectation of the function, conditional on being in the given
-            interval (k such that ul<=k<=ub).
+            interval (``k`` such that ``ul <= k <= ub``).
+        maxcount : int, optional
+            Maximal number of terms to evaluate (to avoid an endless loop for
+            an infinite sum). Default is 1000.
+        tolerance : float, optional
+            Absolute tolerance for the summation. Default is 1e-10.
+        chunksize : int, optional
+            Iterate over the support of a distributions in chunks of this size.
+            Default is 48.
 
         Returns
         -------
@@ -3156,28 +3162,11 @@ class rv_discrete(rv_generic):
         Notes
         -----
         * function is not vectorized
-        * accuracy: uses self.moment_tol as stopping criterium
-          for heavy tailed distribution e.g. zipf(4), accuracy for
+        * accuracy: for heavy tailed distribution e.g. zipf(4), accuracy for
           mean, variance in example is only 1e-5,
           increasing precision (moment_tol) makes zipf very slow
-        * suppnmin=100 internal parameter for minimum number of points to
-          evaluate could be added as keyword parameter, to evaluate functions
-          with non-monotonic shapes, points include integers in (-suppnmin,
-          suppnmin)
-        * uses maxcount=1000 limits the number of points that are evaluated
-          to break loop for infinite sums
-          (a maximum of suppnmin+1000 positive plus suppnmin+1000 negative
-          integers are evaluated)
 
         """
-
-        # moment_tol = 1e-12 # increase compared to self.moment_tol,
-        # too slow for only small gain in precision for zipf
-
-        # avoid endless loop with unbound integral, eg. var of zipf(2)
-        maxcount = 1000
-        suppnmin = 100  # minimum number of points to evaluate (+ and -)
-
         if func is None:
             def fun(x):
                 # loc and args from outer scope
@@ -3192,11 +3181,11 @@ class rv_discrete(rv_generic):
 
         self._argcheck(*args)  # (re)generate scalar self.a and self.b
         if lb is None:
-            lb = (self.a)
+            lb = self.a
         else:
             lb = lb - loc   # convert bound for standardized distribution
         if ub is None:
-            ub = (self.b)
+            ub = self.b
         else:
             ub = ub - loc   # convert bound for standardized distribution
         if conditional:
@@ -3208,36 +3197,53 @@ class rv_discrete(rv_generic):
         else:
             invfac = 1.0
 
-        tot = 0.0
-        low, upp = self._ppf(0.001, *args), self._ppf(0.999, *args)
-        low = max(min(-suppnmin, low), lb)
-        upp = min(max(suppnmin, upp), ub)
-        supp = np.arange(low, upp+1, self.inc)  # check limits
-        tot = np.sum(fun(supp))
-        diff = 1e100
-        pos = upp + self.inc
-        count = 0
+        x0 = self.ppf(0.5, *args, loc=loc)
+        if x0 < lb:
+            x0 = lb
+        if x0 > ub:
+            x0 = ub
 
-        # handle cases with infinite support
+        # XXX: increase chunksize. Requires fixing skellam.pmf for large x.
 
-        while (pos <= ub) and (diff > self.moment_tol) and count <= maxcount:
-            diff = fun(pos)
-            tot += diff
-            pos += self.inc
-            count += 1
-
-        if self.a < 0:  # handle case when self.a = -inf
-            diff = 1e100
-            pos = low - self.inc
-            while ((pos >= lb) and (diff > self.moment_tol) and
-                   count <= maxcount):
-                diff = fun(pos)
-                tot += diff
-                pos -= self.inc
-                count += 1
-        if count > maxcount:
-            warnings.warn('expect(): sum did not converge', RuntimeWarning)
+        count, tot = 0, 0.
+        for x in _iter_chunked(x0, lb, ub, chunksize=chunksize, inc=self.inc):
+            count += x.size
+            delta = np.sum(fun(x))
+            tot += delta
+            if abs(delta) < tolerance * x.size:
+                break
+            if count > maxcount:
+                warnings.warn('expect(): sum did not converge', RuntimeWarning)
+                break
         return tot/invfac
+
+
+def _iter_chunked(x0, a, b, chunksize=4, inc=1):
+    """Iterate over a support of a distribution in chunks.
+
+    Starts at `x0` (ppf(0.5) could be a good starting point).
+    Generates all integers with step inc from the closed interval [a, b]
+    unless either of `a` or `b` is infinite.
+    Handles all cases with the support being finite, infinite or bi-infinite.
+
+    """
+    chunksize *= inc
+
+    # short-circuit if possible
+    if (b - a) <= chunksize:
+        yield np.arange(a, b+1, inc)
+        return
+
+    # OK, iterate. Expand in both directions all the way to the bounds [a, b].
+    lo, hi = x0, x0
+    while (lo > a) or (hi < b):
+        delta = min(chunksize, b - hi)
+        res_p = np.arange(hi, hi + delta + 1, inc)
+        hi += delta
+        delta = min(chunksize, lo - a)
+        res_n = np.arange(lo - delta, lo, inc)
+        lo -= delta
+        yield np.r_[res_n, res_p]
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):
