@@ -19,27 +19,6 @@ cf2py intent(in) :: n,lo,hi
 
       end
 
-      subroutine orghr(min_lwork,max_lwork,prefix,n,lo,hi)
-      integer min_lwork,max_lwork,n,lo,hi
-      character prefix
-c
-c     Returned maxwrk is actually optimal lwork.
-c
-cf2py intent(out,out=minwrk) :: min_lwork
-cf2py intent(out,out=maxwrk) :: max_lwork
-cf2py intent(in) :: prefix
-cf2py intent(in) :: n,lo,hi
-
-      INTEGER NB
-      EXTERNAL ILAENV
-      INTRINSIC MIN, MAX
-
-      NB = MIN( 64, ILAENV( 1, prefix // 'ORGHR', ' ', n, lo, hi, -1 ) )
-      max_lwork = MAX(1, (hi - lo) * NB)
-      min_lwork = MAX(1, hi - lo)
-
-      end
-
       subroutine gesdd(min_lwork,max_lwork,prefix,m,n,compute_uv)
       integer min_lwork,max_lwork,m,n,compute_uv
       character prefix

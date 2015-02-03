@@ -875,7 +875,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
     lwork, info = gehrd_lwork(ba.shape[0], lo=lo, hi=hi)
     if info != 0:
-        raise ValueError('failed to compute internal gehrd work array size' % info)
+        raise ValueError('failed to compute internal gehrd work array size')
     lwork = int(lwork.real)
 
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
@@ -887,8 +887,11 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         return h
 
     # use orghr/unghr to compute q
-    orghr, = get_lapack_funcs(('orghr',), (a1,))
-    lwork = calc_lwork.orghr(orghr.typecode, n, lo, hi)
+    orghr, orghr_lwork = get_lapack_funcs(('orghr', 'orghr_lwork'), (a1,))
+    lwork, info = orghr_lwork(n, lo=lo, hi=hi)
+    if info != 0:
+        raise ValueError('failed to compute internal orghr work array size')
+    lwork = int(lwork.real)
     q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal orghr '

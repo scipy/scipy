@@ -377,6 +377,20 @@ interface
 
    end subroutine <prefix2>orghr
 
+   subroutine <prefix2>orghr_lwork(n,lo,hi,a,tau,work,lwork,info)
+     ! LWORK computation ofr orghr
+     fortranname <prefix2>orghr
+     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+     integer intent(in) :: n
+     <ftype2> intent(hide) :: a
+     integer intent(in), optional :: lo = 0
+     integer intent(in), optional, depend(n) :: hi = n-1
+     <ftype2> intent(hide) :: tau
+     <ftype2> intent(out) :: work
+     integer intent(hide) :: lwork = -1
+     integer intent(out) :: info
+   end subroutine <prefix2>orghr_lwork
+
    subroutine <prefix2c>unghr(n,lo,hi,a,tau,work,lwork,info)
    !
    ! q,info = orghr(a,tau,lo=0,hi=n-1,lwork=n,overwrite_a=0)
@@ -393,8 +407,21 @@ interface
      <ftype2c> dimension(lwork),intent(cache,hide),depend(lwork) :: work
      integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = hi-lo
      integer intent(out) :: info
-
    end subroutine <prefix2c>unghr
+
+   subroutine <prefix2c>unghr_lwork(n,lo,hi,a,tau,work,lwork,info)
+     ! LWORK computation ofr orghr
+     fortranname <prefix2c>unghr
+     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+     integer intent(in) :: n
+     <ftype2c> intent(hide) :: a
+     integer intent(in), optional :: lo = 0
+     integer intent(in), optional, depend(n) :: hi = n-1
+     <ftype2c> intent(hide) :: tau
+     <ftype2c> intent(out) :: work
+     integer intent(hide) :: lwork = -1
+     integer intent(out) :: info
+   end subroutine <prefix2c>unghr_lwork
 
    subroutine <prefix>gbsv(n,kl,ku,nrhs,ab,piv,b,info)
    ! 

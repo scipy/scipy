@@ -322,6 +322,7 @@ del empty_module
 # some convenience alias for complex functions
 _lapack_alias = {
     'corghr': 'cunghr', 'zorghr': 'zunghr',
+    'corghr_lwork': 'cunghr_lwork', 'zorghr_lwork': 'zunghr_lwork',
     'corgqr': 'cungqr', 'zorgqr': 'zungqr',
     'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',
