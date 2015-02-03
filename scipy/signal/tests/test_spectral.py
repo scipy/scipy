@@ -447,7 +447,6 @@ class TestCSD:
         assert_allclose(f, f1)
         assert_allclose(c, c1)
 
-
     def test_pad_shorter_y(self):
         x = np.zeros(12)
         y = np.zeros(8)
@@ -458,7 +457,6 @@ class TestCSD:
 
         assert_allclose(f, f1)
         assert_allclose(c, c1)
-
 
     def test_real_onesided_even(self):
         x = np.zeros(16)
@@ -615,7 +613,6 @@ class TestCSD:
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
@@ -698,7 +695,7 @@ class TestCSD:
 class TestCoherence:
     def test_identical_input(self):
         x = np.random.randn(20)
-        y = np.copy(x) # So `y is x` -> False
+        y = np.copy(x)  # So `y is x` -> False
 
         f = np.linspace(0, 0.5, 6)
         C = np.ones(6)
@@ -706,7 +703,6 @@ class TestCoherence:
 
         assert_allclose(f, f1)
         assert_allclose(C, C1)
-
 
     def test_phase_shifted_input(self):
         x = np.random.randn(20)

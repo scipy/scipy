@@ -448,11 +448,6 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 
     # These checks only neccesary if x!=y
     if not psd:
-        #if y.shape[-1] < nperseg:
-            #warnings.warn('nperseg = %d, is greater than y.shape[%d] = %d, '
-                          #'using nperseg = y.shape[%d]'
-                          #% (nperseg, axis, y.shape[axis], axis))
-            #nperseg = y.shape[-1]
 
         # Check if we can broadcast the remaining axes together
         for a, b in zip(x.shape[-2::-1],y.shape[-2::-1]):
@@ -473,9 +468,9 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
                 y = np.concatenate((y, np.zeros(padShape)), -1)
 
     if x.shape[-1] < nperseg:
-        warnings.warn('nperseg = %d, is greater than x.shape[%d] = %d, using '
-                      'nperseg = x.shape[%d]'
-                      % (nperseg, axis, x.shape[axis], axis))
+        warnings.warn('nperseg = %d, is greater than input length = %d, using '
+                      'nperseg = %d'
+                      % (nperseg, x.shape[axis], x.shape[axis]))
         nperseg = x.shape[-1]
 
     if isinstance(window, string_types) or type(window) is tuple:
