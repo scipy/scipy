@@ -295,61 +295,6 @@ class TestHelmert(TestCase):
             assert_allclose(U.dot(U.T), C)
             assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
 
-    def test_aitchison_geometry(self):
-
-        def _closure(w):
-            return w / w.sum()
-
-        def _perturbation(p, q):
-            return _closure(p*q)
-
-        def _powering(p, a):
-            return _closure(np.power(p, a))
-
-        def _inner(p, q):
-            L = len(p)
-            lp = np.log(p)
-            lq = np.log(q)
-            return lp.dot(lq) - L * np.mean(lp) * np.mean(lq)
-
-        def _norm(p):
-            return np.sqrt(_inner(p, p))
-
-        def _distance(p, q):
-            return _norm(_perturbation(p, _powering(q, -1)))
-
-        def _ilr_basis(L):
-            return helmert(L)[1:, :].T
-
-        def _ilr(p):
-            L = len(p)
-            U = _ilr_basis(L)
-            return U.T.dot(np.log(p))
-
-        def _iilr(v):
-            L = len(v) + 1
-            U = _ilr_basis(L)
-            return _closure(np.exp(U.dot(v)))
-
-        np.random.seed(1234)
-        for n in range(1, 5):
-            for i in range(3):
-                L = n + 1
-                p = _closure(np.exp(np.random.randn(L)))
-                q = _closure(np.exp(np.random.randn(L)))
-                u = _ilr(p)
-                v = _ilr(q)
-                assert_equal(p.shape, (L, ))
-                assert_equal(q.shape, (L, ))
-                assert_equal(u.shape, (n, ))
-                assert_equal(v.shape, (n, ))
-                assert_allclose(_iilr(u), p)
-                assert_allclose(_iilr(v), q)
-                for a in -1.2, 0.1, 3.0:
-                    assert_allclose(_powering(p, a), _iilr(u * a))
-                assert_allclose(_inner(p, q), u.dot(v))
-                assert_allclose(np.linalg.norm(u - v), _distance(p, q))
-
 
 class TestHilbert(TestCase):
 
