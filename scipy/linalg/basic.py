@@ -861,7 +861,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     
     if lapack_driver in ('gelss', 'gelsd'):
         if cond is None:
-            cond = -1  # The numerical precision will be used i nthis case 
+            cond = np.finfo(lapack_func.dtype).eps * 100
             
         if lapack_driver == 'gelss':
 
@@ -905,7 +905,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             raise LinAlgError("SVD did not converge in Linear Least Squares")
         if info < 0:
             raise ValueError('illegal value in %d-th argument of internal %s'
-                                                    % (lapack_driver, -info))
+                                                    % (-info,lapack_driver))
         resids = np.asarray([], dtype=x.dtype)
         if m > n:
             x1 = x[:n]
@@ -916,7 +916,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         
     elif lapack_driver == 'gelsy':
         if cond is None:
-            cond = np.finfo(lapack_func.dtype).eps * 10
+            cond = np.finfo(lapack_func.dtype).eps * 100
             
         # Request of sizes
         work,info = lapack_func_lwork_query(m,n,nrhs,cond)        
