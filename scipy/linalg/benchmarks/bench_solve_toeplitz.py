@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 import time
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, Tester
 import scipy.linalg
 
 
@@ -39,7 +39,7 @@ def bench_solve_toeplitz():
 
             # toeplitz-specific solver
             tm = time.clock()
-            x_toeplitz = scipy.linalg.solve_toeplitz(c, r=r, b=y)
+            x_toeplitz = scipy.linalg.solve_toeplitz((c, r), y)
             nseconds = time.clock() - tm
             print(fmt % (T.shape, 'toeplitz', T.dtype, nseconds))
 
@@ -47,5 +47,5 @@ def bench_solve_toeplitz():
             assert_array_almost_equal(x_generic, x_toeplitz)
 
 
-if __name__ == '__main__':
-    bench_solve_toeplitz()
+if __name__ == "__main__":
+    Tester().bench()
