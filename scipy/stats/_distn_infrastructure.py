@@ -1267,7 +1267,7 @@ class rv_continuous(rv_generic):
         infinity.
     xtol : float, optional
         The tolerance for fixed point calculation for generic ppf.
-    badvalue : object, optional
+    badvalue : float, optional
         The value in a result arrays that indicates a value that for which
         some argument restriction is violated, default is np.nan.
     name : str, optional
@@ -1287,7 +1287,7 @@ class rv_continuous(rv_generic):
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
-    seed : None or int or np.random.RandomState instance, optional
+    seed : None or int or ``numpy.random.RandomState`` instance, optional
         This parameter defines the RandomState object to use for drawing
         random variates.
         If None (or np.random), the global np.random state is used.
@@ -1319,9 +1319,30 @@ class rv_continuous(rv_generic):
     fit_loc_scale
     nnlf
 
-
     Notes
     -----
+    Public methods of an instance of a distribution class (e.g., ``pdf``,
+    ``cdf``) check their arguments and pass valid arguments to private, 
+    computational methods (``_pdf``, ``_cdf``). For ``pdf(x)``, ``x`` is valid
+    if it is within the support of a distribution, ``self.a <= x <= self.b``.)
+    Whether a shape parameter is valid is decided by an ``_argcheck`` method
+    (which defaults to checking that its arguments are strictly positive.)
+
+    **Subclassing**
+
+    New random variables can be defined by subclassing `rv_continuous` class
+    and re-defining at least the ``_pdf`` or the ``_cdf`` method (normalized
+    to location 0 and scale 1).
+
+    If positive argument checking is not correct for your RV
+    then you will also need to re-define the ``_argcheck`` method.
+
+    Correct, but potentially slow defaults exist for the remaining
+    methods but for speed and/or accuracy you can over-ride::
+
+      _logpdf, _cdf, _logcdf, _ppf, _rvs, _isf, _sf, _logsf
+
+    Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
 
     **Methods that can be overwritten by subclasses**
     ::
@@ -1341,7 +1362,17 @@ class rv_continuous(rv_generic):
     be useful for cross-checking and for debugging, but might work in all
     cases when directly called.
 
-    **Frozen Distribution**
+    A note on ``shapes``: subclasses need not specify them explicitly. In this
+    case, `shapes` will be automatically deduced from the signatures of the
+    overridden methods (`pdf`, `cdf` etc).
+    If, for some reason, you prefer to avoid relying on introspection, you can
+    specify ``shapes`` explicitly as an argument to the instance constructor.
+
+
+    **Frozen Distributions**
+
+    Normally, you must provide shape parameters (and, optionally, location and
+    scale parameters to each call of a method of a distribution.
 
     Alternatively, the object may be called (as a function) to fix the shape,
     location, and scale parameters returning a "frozen" continuous RV object:
@@ -1350,42 +1381,21 @@ class rv_continuous(rv_generic):
         frozen RV object with the same methods but holding the given shape,
         location, and scale fixed
 
-    **Subclassing**
-
-    New random variables can be defined by subclassing rv_continuous class
-    and re-defining at least the ``_pdf`` or the ``_cdf`` method (normalized
-    to location 0 and scale 1) which will be given clean arguments (in between
-    a and b) and passing the argument check method.
-
-    If positive argument checking is not correct for your RV
-    then you will also need to re-define the ``_argcheck`` method.
-
-    Correct, but potentially slow defaults exist for the remaining
-    methods but for speed and/or accuracy you can over-ride::
-
-      _logpdf, _cdf, _logcdf, _ppf, _rvs, _isf, _sf, _logsf
-
-    Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
+    **Statistics**
 
     Statistics are computed using numerical integration by default.
     For speed you can redefine this using ``_stats``:
 
      - take shape parameters and return mu, mu2, g1, g2
      - If you can't compute one of these, return it as None
-     - Can also be defined with a keyword argument ``moments=<str>``,
-       where <str> is a string composed of 'm', 'v', 's',
-       and/or 'k'.  Only the components appearing in string
-       should be computed and returned in the order 'm', 'v',
-       's', or 'k'  with missing values returned as None.
+     - Can also be defined with a keyword argument ``moments``, which is a
+       string composed of 'm', 'v', 's', and/or 'k'.
+       Only the components appearing in string should be computed and 
+       returned in the order 'm', 'v', 's', or 'k'  with missing values
+       returned as None.
 
-    Alternatively, you can override ``_munp``, which takes n and shape
+    Alternatively, you can override ``_munp``, which takes ``n`` and shape
     parameters and returns the nth non-central moment of the distribution.
-
-    A note on ``shapes``: subclasses need not specify them explicitly. In this
-    case, the `shapes` will be automatically deduced from the signatures of the
-    overridden methods.
-    If, for some reason, you prefer to avoid relying on introspection, you can
-    specify ``shapes`` explicitly as an argument to the instance constructor.
 
     Examples
     --------
@@ -1399,7 +1409,7 @@ class rv_continuous(rv_generic):
 
     ``scipy.stats`` distributions are *instances*, so we here we subclass
     `rv_continuous` and create an instance. With this, we now have
-    a fully functional instance with all relevant methods automagically
+    a fully functional distribution with all relevant methods automagically
     generated by the framework.
 
     Note that above we defined a standard normal distribution, with zero mean
