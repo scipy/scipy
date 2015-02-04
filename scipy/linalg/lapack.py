@@ -205,8 +205,8 @@ All functions
    clartg
    zlartg
 
-   dlasd4
    slasd4
+   dlasd4
 
    slaswp
    dlaswp
