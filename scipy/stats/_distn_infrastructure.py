@@ -2424,9 +2424,9 @@ class rv_discrete(rv_generic):
     A generic discrete random variable class meant for subclassing.
 
     `rv_discrete` is a base class to construct specific distribution classes
-    and instances from for discrete random variables. rv_discrete can be used
-    to construct an arbitrary distribution with defined by a list of support
-    points and the corresponding probabilities.
+    and instances for discrete random variables. It can also be used
+    to construct an arbitrary distribution defined by a list of support
+    points and corresponding probabilities.
 
     Parameters
     ----------
@@ -2435,16 +2435,16 @@ class rv_discrete(rv_generic):
     b : float, optional
         Upper bound of the support of the distribution, default: plus infinity
     moment_tol : float, optional
-        The tolerance for the generic calculation of moments
-    values : tuple of two array_like
-        (xk, pk) where xk are points (integers) with positive probability pk
-        with sum(pk) = 1
-    inc : integer
-        increment for the support of the distribution, default: 1
-        other values have not been tested
-    badvalue : object, optional
-        The value in (masked) arrays that indicates a value that should be
-        ignored.
+        The tolerance for the generic calculation of moments.
+    values : tuple of two array_like, optional
+        ``(xk, pk)`` where ``xk`` are integers with non-zero
+        probabilities ``pk``  with ``sum(pk) = 1``.
+    inc : integer, optional
+        Increment for the support of the distribution.
+        Default is 1. (other values have not been tested)
+    badvalue : float, optional
+        The value in a result arrays that indicates a value that for which
+        some argument restriction is violated, default is np.nan.
     name : str, optional
         The name of the instance. This string is used to construct the default
         example for distributions.
@@ -2453,20 +2453,20 @@ class rv_discrete(rv_generic):
         when a subclass has no docstring of its own. Note: `longname` exists
         for backwards compatibility, do not use for new subclasses.
     shapes : str, optional
-        The shape of the distribution. For example ``"m, n"`` for a
-        distribution that takes two integers as the first two arguments for all
-        its methods.  If not provided, shape parameters will be inferred from
+        The shape of the distribution. For example "m, n" for a distribution
+        that takes two integers as the two shape arguments for all its methods
+        If not provided, shape parameters will be inferred from
         the signatures of the private methods, ``_pmf`` and ``_cdf`` of
         the instance.
     extradoc :  str, optional
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
-    seed : None or int or np.random.RandomState instance, optional
+    seed : None or int or ``numpy.random.RandomState`` instance, optional
         This parameter defines the RandomState object to use for drawing
         random variates.
         If None, the global np.random state is used.
-        If integer, it is used to seed the local RandomState instance
+        If integer, it is used to seed the local RandomState instance.
         Default is None.
 
     Methods
@@ -2495,10 +2495,14 @@ class rv_discrete(rv_generic):
     Notes
     -----
 
-    You can construct an arbitrary discrete rv where ``P{X=xk} = pk``
-    by passing to the rv_discrete initialization method (through the
-    values=keyword) a tuple of sequences (xk, pk) which describes only those
-    values of X (xk) that occur with nonzero probability (pk).
+    This class is similar to `rv_continuous`, the main differences being:
+
+    - the support of the distribution is a set of integers
+    - instead of the probability density function, ``pdf`` (and the
+      corresponding private ``_pdf``), this class defines the 
+      *probability mass function*, `pmf` (and the corresponding
+      private ``_pmf``.)
+    - scale parameter is not defined.
 
     To create a new discrete distribution, we would do the following:
 
@@ -2513,24 +2517,14 @@ class rv_discrete(rv_generic):
 
     Note that above we defined the Poisson distribution in the standard form.
     Shifting the distribution can be done by providing the ``loc`` parameter
-    to the methods of the instance. For example, ``poisson.pmf(x, loc)``
-    delegates the work to ``poisson._pmf(x-loc)``.
+    to the methods of the instance. For example, ``poisson.pmf(x, mu, loc)``
+    delegates the work to ``poisson._pmf(x-loc, mu)``.
 
-    The docstring can be created from a template.
+    **Discrete distributions from a list of probabilities**
 
-    Alternatively, the object may be called (as a function) to fix the shape
-    and location parameters returning a "frozen" discrete RV object::
-
-        myrv = generic(<shape(s)>, loc=0)
-            - frozen RV object with the same methods but holding the given
-              shape and location fixed.
-
-    A note on ``shapes``: subclasses need not specify them explicitly. In this
-    case, the `shapes` will be automatically deduced from the signatures of the
-    overridden methods.
-    If, for some reason, you prefer to avoid relying on introspection, you can
-    specify ``shapes`` explicitly as an argument to the instance constructor.
-
+    Alternatively, you can construct an arbitrary discrete rv defined
+    on a finite set of values ``xk`` with ``Prob{X=xk} = pk`` by using the
+    ``values`` keyword argument to the `rv_discrete` constructor.
 
     Examples
     --------
