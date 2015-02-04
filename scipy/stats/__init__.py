@@ -8,50 +8,14 @@ Statistical functions (:mod:`scipy.stats`)
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
 
-Each included distribution is an instance of the class rv_continuous:
-For each given name the following methods are available:
+Each included distribution is an instance of a subclass of `rv_continuous`
+(`rv_discrete` for discrete distributions):
 
 .. autosummary::
    :toctree: generated/
 
    rv_continuous
-   rv_continuous.pdf
-   rv_continuous.logpdf
-   rv_continuous.cdf
-   rv_continuous.logcdf
-   rv_continuous.sf
-   rv_continuous.logsf
-   rv_continuous.ppf
-   rv_continuous.isf
-   rv_continuous.moment
-   rv_continuous.stats
-   rv_continuous.entropy
-   rv_continuous.fit
-   rv_continuous.expect
-
-Calling the instance as a function returns a frozen pdf whose shape,
-location, and scale parameters are fixed.
-
-Similarly, each discrete distribution is an instance of the class
-rv_discrete:
-
-.. autosummary::
-   :toctree: generated/
-
    rv_discrete
-   rv_discrete.rvs
-   rv_discrete.pmf
-   rv_discrete.logpmf
-   rv_discrete.cdf
-   rv_discrete.logcdf
-   rv_discrete.sf
-   rv_discrete.logsf
-   rv_discrete.ppf
-   rv_discrete.isf
-   rv_discrete.stats
-   rv_discrete.moment
-   rv_discrete.entropy
-   rv_discrete.expect
 
 Continuous distributions
 ========================

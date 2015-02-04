@@ -784,6 +784,7 @@ class rv_generic(object):
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
+    __call__.__doc__ = freeze.__doc__
 
     # The actual calculation functions (no basic checking need be done)
     # If these are defined, the others won't be looked at.
@@ -905,7 +906,7 @@ class rv_generic(object):
 
     def stats(self, *args, **kwds):
         """
-        Some statistics of the given RV
+        Some statistics of the given RV.
 
         Parameters
         ----------
@@ -1295,91 +1296,28 @@ class rv_continuous(rv_generic):
 
     Methods
     -------
-    ``rvs(<shape(s)>, loc=0, scale=1, size=1)``
-        random variates
+    rvs
+    pdf
+    logpdf
+    cdf
+    logcdf
+    sf
+    logsf
+    ppf
+    isf
+    moment
+    stats
+    entropy
+    expect
+    median
+    mean
+    std
+    var
+    interval
+    __call__
+    fit
+    fit_loc_scale
 
-    ``pdf(x, <shape(s)>, loc=0, scale=1)``
-        probability density function
-
-    ``logpdf(x, <shape(s)>, loc=0, scale=1)``
-        log of the probability density function
-
-    ``cdf(x, <shape(s)>, loc=0, scale=1)``
-        cumulative density function
-
-    ``logcdf(x, <shape(s)>, loc=0, scale=1)``
-        log of the cumulative density function
-
-    ``sf(x, <shape(s)>, loc=0, scale=1)``
-        survival function (1-cdf --- sometimes more accurate)
-
-    ``logsf(x, <shape(s)>, loc=0, scale=1)``
-        log of the survival function
-
-    ``ppf(q, <shape(s)>, loc=0, scale=1)``
-      percent point function (inverse of cdf --- quantiles)
-
-    ``isf(q, <shape(s)>, loc=0, scale=1)``
-        inverse survival function (inverse of sf)
-
-    ``moment(n, <shape(s)>, loc=0, scale=1)``
-        non-central n-th moment of the distribution.  May not work for array
-        arguments.
-
-    ``stats(<shape(s)>, loc=0, scale=1, moments='mv')``
-        mean('m'), variance('v'), skew('s'), and/or kurtosis('k')
-
-    ``entropy(<shape(s)>, loc=0, scale=1)``
-        (differential) entropy of the RV.
-
-    ``fit(data, <shape(s)>, loc=0, scale=1)``
-        Parameter estimates for generic data
-
-    ``expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)``
-        Expected value of a function with respect to the distribution.
-        Additional kwd arguments passed to integrate.quad
-
-    ``median(<shape(s)>, loc=0, scale=1)``
-        Median of the distribution.
-
-    ``mean(<shape(s)>, loc=0, scale=1)``
-        Mean of the distribution.
-
-    ``std(<shape(s)>, loc=0, scale=1)``
-        Standard deviation of the distribution.
-
-    ``var(<shape(s)>, loc=0, scale=1)``
-        Variance of the distribution.
-
-    ``interval(alpha, <shape(s)>, loc=0, scale=1)``
-        Interval that with `alpha` percent probability contains a random
-        realization of this distribution.
-
-    ``__call__(<shape(s)>, loc=0, scale=1)``
-        Calling a distribution instance creates a frozen RV object with the
-        same methods but holding the given shape, location, and scale fixed.
-        See Notes section.
-
-    **Parameters for Methods**
-
-    x : array_like
-        quantiles
-    q : array_like
-        lower or upper tail probability
-    <shape(s)> : array_like
-        shape parameters
-    loc : array_like, optional
-        location parameter (default=0)
-    scale : array_like, optional
-        scale parameter (default=1)
-    size : int or tuple of ints, optional
-        shape of random variates (default computed from input arguments )
-    moments : string, optional
-        composed of letters ['mvsk'] specifying which moments to compute where
-        'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
-        'k' = (Fisher's) kurtosis. (default='mv')
-    n : int
-        order of moment to calculate in method moments
 
     Notes
     -----
@@ -2522,65 +2460,26 @@ class rv_discrete(rv_generic):
 
     Methods
     -------
-    ``generic.rvs(<shape(s)>, loc=0, size=1)``
-        random variates
+    rvs
+    pmf
+    logpmf
+    cdf
+    logcdf
+    sf
+    logsf
+    ppf
+    isf
+    moment
+    stats
+    entropy
+    expect
+    median
+    mean
+    std
+    var
+    interval
+    __call__
 
-    ``generic.pmf(x, <shape(s)>, loc=0)``
-        probability mass function
-
-    ``logpmf(x, <shape(s)>, loc=0)``
-        log of the probability density function
-
-    ``generic.cdf(x, <shape(s)>, loc=0)``
-        cumulative density function
-
-    ``generic.logcdf(x, <shape(s)>, loc=0)``
-        log of the cumulative density function
-
-    ``generic.sf(x, <shape(s)>, loc=0)``
-        survival function (1-cdf --- sometimes more accurate)
-
-    ``generic.logsf(x, <shape(s)>, loc=0, scale=1)``
-        log of the survival function
-
-    ``generic.ppf(q, <shape(s)>, loc=0)``
-        percent point function (inverse of cdf --- percentiles)
-
-    ``generic.isf(q, <shape(s)>, loc=0)``
-        inverse survival function (inverse of sf)
-
-    ``generic.moment(n, <shape(s)>, loc=0)``
-        non-central n-th moment of the distribution.  May not work for array
-        arguments.
-
-    ``generic.stats(<shape(s)>, loc=0, moments='mv')``
-        mean('m', axis=0), variance('v'), skew('s'), and/or kurtosis('k')
-
-    ``generic.entropy(<shape(s)>, loc=0)``
-        entropy of the RV
-
-    ``generic.expect(func=None, args=(), loc=0, lb=None, ub=None, conditional=False)``
-        Expected value of a function with respect to the distribution.
-        Additional kwd arguments passed to integrate.quad
-
-    ``generic.median(<shape(s)>, loc=0)``
-        Median of the distribution.
-
-    ``generic.mean(<shape(s)>, loc=0)``
-        Mean of the distribution.
-
-    ``generic.std(<shape(s)>, loc=0)``
-        Standard deviation of the distribution.
-
-    ``generic.var(<shape(s)>, loc=0)``
-        Variance of the distribution.
-
-    ``generic.interval(alpha, <shape(s)>, loc=0)``
-        Interval that with `alpha` percent probability contains a random
-        realization of this distribution.
-
-    ``generic(<shape(s)>, loc=0)``
-        calling a distribution instance returns a frozen distribution
 
     Notes
     -----
@@ -2921,7 +2820,7 @@ class rv_discrete(rv_generic):
 
     def logcdf(self, k, *args, **kwds):
         """
-        Log of the cumulative distribution function at k of the given RV
+        Log of the cumulative distribution function at k of the given RV.
 
         Parameters
         ----------
@@ -3041,7 +2940,7 @@ class rv_discrete(rv_generic):
 
     def ppf(self, q, *args, **kwds):
         """
-        Percent point function (inverse of cdf) at q of the given RV
+        Percent point function (inverse of cdf) at q of the given RV.
 
         Parameters
         ----------
@@ -3148,7 +3047,7 @@ class rv_discrete(rv_generic):
                conditional=False):
         """
         Calculate expected value of a function with respect to the distribution
-        for discrete distribution
+        for discrete distribution.
 
         Parameters
         ----------
