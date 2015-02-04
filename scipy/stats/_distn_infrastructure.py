@@ -853,10 +853,10 @@ class rv_generic(object):
         scale : array_like, optional
             Scale parameter (default=1).
         size : int or tuple of ints, optional
-            Defining number of random variates (default=1).
-        random_state : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates
-            If None, rely on self.random_state
+            Defining number of random variates (default is 1).
+        random_state : None or int or ``np.random.RandomState`` instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None, rely on ``self.random_state``.
             Default is None.
 
         Returns
@@ -915,7 +915,7 @@ class rv_generic(object):
             instance object for more information)
         loc : array_like, optional
             location parameter (default=0)
-        scale : array_like, optional (discrete RVs only)
+        scale : array_like, optional (continuous RVs only)
             scale parameter (default=1)
         moments : str, optional
             composed of letters ['mvsk'] defining which moments to compute:
@@ -923,7 +923,7 @@ class rv_generic(object):
             'v' = variance,
             's' = (Fisher's) skew,
             'k' = (Fisher's) kurtosis.
-            (default='mv')
+            (default is 'mv')
 
         Returns
         -------
@@ -1059,18 +1059,19 @@ class rv_generic(object):
 
     def moment(self, n, *args, **kwds):
         """
-        n'th order non-central moment of distribution.
+        n-th order non-central moment of distribution.
 
         Parameters
         ----------
-        n : int, n>=1
+        n : int, n >= 1
             Order of moment.
         arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information).
-        kwds : keyword arguments, optional
-            These can include "loc" and "scale", as well as other keyword
-            arguments relevant for a given distribution.
+        loc : array_like, optional
+            location parameter (default=0)
+        scale : array_like, optional
+            scale parameter (default=1)
 
         """
         args, loc, scale = self._parse_args(*args, **kwds)
@@ -1131,7 +1132,7 @@ class rv_generic(object):
 
     def mean(self, *args, **kwds):
         """
-        Mean of the distribution
+        Mean of the distribution.
 
         Parameters
         ----------
@@ -1147,6 +1148,7 @@ class rv_generic(object):
         -------
         mean : float
             the mean of the distribution
+
         """
         kwds['moments'] = 'm'
         res = self.stats(*args, **kwds)
@@ -1156,7 +1158,7 @@ class rv_generic(object):
 
     def var(self, *args, **kwds):
         """
-        Variance of the distribution
+        Variance of the distribution.
 
         Parameters
         ----------
@@ -1251,7 +1253,7 @@ class rv_continuous(rv_generic):
     A generic continuous random variable class meant for subclassing.
 
     `rv_continuous` is a base class to construct specific distribution classes
-    and instances from for continuous random variables. It cannot be used
+    and instances for continuous random variables. It cannot be used
     directly as a distribution.
 
     Parameters
@@ -1291,7 +1293,7 @@ class rv_continuous(rv_generic):
         This parameter defines the RandomState object to use for drawing
         random variates.
         If None (or np.random), the global np.random state is used.
-        If integer, it is used to seed the local RandomState instance
+        If integer, it is used to seed the local RandomState instance.
         Default is None.
 
     Methods
@@ -1723,7 +1725,7 @@ class rv_continuous(rv_generic):
 
     def sf(self, x, *args, **kwds):
         """
-        Survival function (1-cdf) at x of the given RV.
+        Survival function (1 - `cdf`) at x of the given RV.
 
         Parameters
         ----------
@@ -1807,7 +1809,7 @@ class rv_continuous(rv_generic):
 
     def ppf(self, q, *args, **kwds):
         """
-        Percent point function (inverse of cdf) at q of the given RV.
+        Percent point function (inverse of `cdf`) at q of the given RV.
 
         Parameters
         ----------
@@ -1852,7 +1854,7 @@ class rv_continuous(rv_generic):
 
     def isf(self, q, *args, **kwds):
         """
-        Inverse survival function at q of the given RV.
+        Inverse survival function (inverse of `sf`) at q of the given RV.
 
         Parameters
         ----------
@@ -2193,9 +2195,13 @@ class rv_continuous(rv_generic):
             Function for which integral is calculated. Takes only one argument.
             The default is the identity mapping f(x) = x.
         args : tuple, optional
-            Argument (parameters) of the distribution.
+            Shape parameters of the distribution.
+        loc : float, optional
+            Location parameter (default=0).
+        scale : float, optional
+            Scale parameter (default=1).
         lb, ub : scalar, optional
-            Lower and upper bound for integration. default is set to the
+            Lower and upper bound for integration. Default is set to the
             support of the distribution.
         conditional : bool, optional
             If True, the integral is corrected by the conditional probability
@@ -2695,11 +2701,11 @@ class rv_discrete(rv_generic):
         loc : array_like, optional
             Location parameter (default=0).
         size : int or tuple of ints, optional
-            Defining number of random variates (default=1).  Note that `size`
+            Defining number of random variates (Default is 1).  Note that `size`
             has to be given as keyword, not as positional argument.
-        random_state : None or int or np.random.RandomState instance, optional
-            If int or RandomState, use it for drawing the random variates
-            If None, rely on self.random_state
+        random_state : None or int or ``np.random.RandomState`` instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None, rely on ``self.random_state``.
             Default is None.
 
         Returns
@@ -2718,7 +2724,7 @@ class rv_discrete(rv_generic):
         Parameters
         ----------
         k : array_like
-            quantiles
+            Quantiles.
         arg1, arg2, arg3,... : array_like
             The shape parameter(s) for the distribution (see docstring of the
             instance object for more information)
@@ -2865,7 +2871,7 @@ class rv_discrete(rv_generic):
 
     def sf(self, k, *args, **kwds):
         """
-        Survival function (1-cdf) at k of the given RV.
+        Survival function (1 - `cdf`) at k of the given RV.
 
         Parameters
         ----------
@@ -2905,7 +2911,7 @@ class rv_discrete(rv_generic):
         """
         Log of the survival function of the given RV.
 
-        Returns the log of the "survival function," defined as ``1 - cdf``,
+        Returns the log of the "survival function," defined as 1 - `cdf`,
         evaluated at `k`.
 
         Parameters
@@ -2945,7 +2951,7 @@ class rv_discrete(rv_generic):
 
     def ppf(self, q, *args, **kwds):
         """
-        Percent point function (inverse of cdf) at q of the given RV.
+        Percent point function (inverse of `cdf`) at q of the given RV.
 
         Parameters
         ----------
@@ -2956,8 +2962,6 @@ class rv_discrete(rv_generic):
             instance object for more information).
         loc : array_like, optional
             Location parameter (default=0).
-        scale : array_like, optional
-            Scale parameter (default=1).
 
         Returns
         -------
@@ -3056,19 +3060,24 @@ class rv_discrete(rv_generic):
 
         Parameters
         ----------
-        fn : function (default: identity mapping)
-            Function for which sum is calculated. Takes only one argument.
-        args : tuple
-            argument (parameters) of the distribution
-        lb, ub : numbers, optional
-            lower and upper bound for integration, default is set to the
-            support of the distribution, lb and ub are inclusive (ul<=k<=ub)
+        func : callable, optional
+            Function for which the expectation value is calculated.
+            Takes only one argument.
+            The default is the identity mapping f(k) = k.
+        args : tuple, optional
+            Shape parameters of the distribution.
+        loc : float, optional
+            Location parameter.
+            Default is 0.
+        lb, ub : int, optional
+            Lower and upper bound for integration, default is set to the
+            support of the distribution, inclusive (``ul <= k <= ub``).
         conditional : bool, optional
-            Default is False.
             If true then the expectation is corrected by the conditional
-            probability of the integration interval. The return value is the
-            expectation of the function, conditional on being in the given
-            interval (k such that ul<=k<=ub).
+            probability of the summation interval. The return value is the
+            expectation of the function, `func`, conditional on being in
+            the given interval (k such that ``ul <= k <= ub``).
+            Default is False.
 
         Returns
         -------
