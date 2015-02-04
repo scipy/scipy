@@ -1317,6 +1317,7 @@ class rv_continuous(rv_generic):
     __call__
     fit
     fit_loc_scale
+    nnlf
 
 
     Notes
@@ -1888,7 +1889,7 @@ class rv_continuous(rv_generic):
         return -sum(self._logpdf(x, *args), axis=0)
 
     def nnlf(self, theta, x):
-        '''Return negative loglikelihood function
+        '''Return negative loglikelihood function.
 
         Notes
         -----
