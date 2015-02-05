@@ -173,12 +173,13 @@ moments : str, optional
     'k' = (Fisher's) kurtosis.
     Default is 'mv'.
 """
+
 _doc_default_longsummary = """\
-Continuous random variables are defined from a standard form and may
-require some shape parameters to complete its specification.  Any
-optional keyword parameters can be passed to the methods of the RV
-object as given below:
+As an instance of `rv_continuous` class, `%(name)s` object inherits from it
+a collection of generic methods (see below for the full list),
+and completes them with details specific for this particular distribution.
 """
+
 _doc_default_frozen_note = """
 Alternatively, the object may be called (as a function) to fix the shape,
 location, and scale parameters returning a "frozen" continuous RV object:
@@ -289,7 +290,8 @@ _doc_allmethods = ''.join([docdict_discrete[obj] for obj in _doc_disc_methods])
 docdict_discrete['allmethods'] = docheaders['methods'] + _doc_allmethods
 
 docdict_discrete['longsummary'] = _doc_default_longsummary.replace(
-    'Continuous', 'Discrete')
+    'rv_continuous', 'rv_discrete')
+
 _doc_default_frozen_note = """
 Alternatively, the object may be called (as a function) to fix the shape and
 location parameters returning a "frozen" discrete RV object:
