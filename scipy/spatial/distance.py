@@ -49,9 +49,10 @@ functions. Use ``pdist`` for this purpose.
    seuclidean       -- the normalized Euclidean distance.
    sqeuclidean      -- the squared Euclidean distance.
    wminkowski       -- the weighted Minkowski distance.
-   
-Similarly, distance functions between two boolean vectors (representing sets)
-``u`` and ``v``:
+
+Distance functions between two boolean vectors (representing sets) ``u`` and
+``v``.  As in the case of numerical vectors, ``pdist`` is more efficient for
+computing the distances between all pairs.
 
 .. autosummary::
    :toctree: generated/
@@ -66,6 +67,8 @@ Similarly, distance functions between two boolean vectors (representing sets)
    sokalmichener    -- the Sokal-Michener dissimilarity.
    sokalsneath      -- the Sokal-Sneath dissimilarity.
    yule             -- the Yule dissimilarity.
+
+:func:`hamming` also operates over discrete numerical vectors.
 """
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
