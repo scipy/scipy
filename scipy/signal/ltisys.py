@@ -1513,7 +1513,7 @@ def _KNV0_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
 
 def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     """
-    Compute K such as eigenvalues(A-dot(B, K))=poles.
+    Compute K such that eigenvalues(A-dot(B, K))=poles.
 
     K is the gain matrix such as the plant described by the linear system AX+BU
     will have its closed-loop poles, i.e the eigenvalues ``A - B*K``, as close as
