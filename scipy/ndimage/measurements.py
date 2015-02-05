@@ -1346,7 +1346,7 @@ def histogram(input, min, max, bins, labels=None, index=None):
 
 def watershed_ift(input, markers, structure=None, output=None):
     """
-    Apply watershed from markers using an iterative forest transform algorithm.
+    Apply watershed from markers using image foresting transform algorithm [1].
 
     Parameters
     ----------
@@ -1368,7 +1368,13 @@ def watershed_ift(input, markers, structure=None, output=None):
     watershed_ift : ndarray
         Output.  Same shape as `input`.
 
+    References
+    ----------
+    .. [1] The image foresting transform: theory, algorithms, and applications,
+           Falcão, A. X., Stolfi, J., and Lotufo, R. de Alencar. Pattern
+           Analysis and Machine Intelligence (PAMI), 2004.
     """
+
     input = numpy.asarray(input)
     if input.dtype.type not in [numpy.uint8, numpy.uint16]:
         raise TypeError('only 8 and 16 unsigned inputs are supported')
