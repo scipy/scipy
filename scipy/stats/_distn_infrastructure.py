@@ -203,9 +203,9 @@ Calculate a few first moments:
 Display the probability density function (``pdf``):
 
 >>> x = np.linspace(%(name)s.ppf(0.01, %(shapes)s),
-...               %(name)s.ppf(0.99, %(shapes)s), 100)
+...                 %(name)s.ppf(0.99, %(shapes)s), 100)
 >>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
-...          'r-', lw=5, alpha=0.6, label='%(name)s pdf')
+...        'r-', lw=5, alpha=0.6, label='%(name)s pdf')
 
 Alternatively, freeze the distribution and display the frozen pdf:
 
@@ -743,7 +743,7 @@ class rv_generic(object):
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join(str(_) for _ in shapes_vals)
+        vals = ', '.join('%.3g' % val for val in shapes_vals)
         tempdict['vals'] = vals
 
         if self.shapes:
