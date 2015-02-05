@@ -1372,7 +1372,7 @@ def watershed_ift(input, markers, structure=None, output=None):
     References
     ----------
     .. [1] The image foresting transform: theory, algorithms, and applications,
-           Falcão, A. X., Stolfi, J., and Lotufo, R. de Alencar. Pattern
+           Falcao, A. X., Stolfi, J., and Lotufo, R. de Alencar. Pattern
            Analysis and Machine Intelligence (PAMI), 2004.
     """
 
