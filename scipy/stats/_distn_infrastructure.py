@@ -207,7 +207,11 @@ Display the probability density function (``pdf``):
 >>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
 ...        'r-', lw=5, alpha=0.6, label='%(name)s pdf')
 
-Alternatively, freeze the distribution and display the frozen pdf:
+Alternatively, the distribution object can be called (as a function)
+to fix the shape, location and scale parameters. This returns a "frozen"
+RV object holding the given parameters fixed. 
+
+Freeze the distribution and display the frozen ``pdf``:
 
 >>> rv = %(name)s(%(shapes)s)
 >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
@@ -237,8 +241,7 @@ _doc_default = ''.join([_doc_default_longsummary,
 
 _doc_default_before_notes = ''.join([_doc_default_longsummary,
                                      _doc_allmethods,
-                                     _doc_default_callparams,
-                                     _doc_default_frozen_note])
+                                     _doc_default_callparams])
 
 docdict = {
     'rvs': _doc_rvs,
@@ -318,7 +321,12 @@ Display the probability mass function (``pmf``):
 >>> ax.plot(x, %(name)s.pmf(x, %(shapes)s), 'bo', ms=8, label='%(name)s pmf')
 >>> ax.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b', lw=5, alpha=0.5)
 
-Alternatively, freeze the distribution and display the frozen ``pmf``:
+Alternatively, the distribution object can be called (as a function)
+to fix the shape and location. This returns a "frozen" RV object holding 
+the given parameters fixed. 
+
+Freeze the distribution and display the frozen ``pmf``:
+
 
 >>> rv = %(name)s(%(shapes)s)
 >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1,
@@ -340,8 +348,7 @@ docdict_discrete['example'] = _doc_default_discrete_example
 
 _doc_default_before_notes = ''.join([docdict_discrete['longsummary'],
                                      docdict_discrete['allmethods'],
-                                     docdict_discrete['callparams'],
-                                     docdict_discrete['frozennote']])
+                                     docdict_discrete['callparams']])
 docdict_discrete['before_notes'] = _doc_default_before_notes
 
 _doc_default_disc = ''.join([docdict_discrete['longsummary'],
@@ -349,7 +356,6 @@ _doc_default_disc = ''.join([docdict_discrete['longsummary'],
                              docdict_discrete['frozennote'],
                              docdict_discrete['example']])
 docdict_discrete['default'] = _doc_default_disc
-
 
 # clean up all the separate docstring elements, we do not need them anymore
 for obj in [s for s in dir() if s.startswith('_doc_')]:
