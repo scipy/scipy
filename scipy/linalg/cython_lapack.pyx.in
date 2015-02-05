@@ -181,11 +181,6 @@ Raw function pointers (Fortran-style pointer arguments):
 - zungrq_f
 - zunmqr_f
 
-Friendlier Cython-style interfaces:
-
-- slamch
-- dlamch
-
 """
 
 cdef extern from "fortran_defs.h":
@@ -411,12 +406,20 @@ WRAPPED_SUBROUTINES = [
 {{endfor}}
 
 
-#
-# Friendly wrappers
-#
+# Python functions used for testing calls to Fortran functions.
 
-cpdef double dlamch(char cmach):
-    return dlamch_f(&cmach)
+def _py_dlamch(cmach):
+    # This conversion is necessary to handle Python 3 strings.
+    cmach_bytes = bytes(cmach)
+    # Now that it is a bytes representation, a non-temporary variable
+    # must be passed as a part of the function call.
+    cdef char* cmach_char = cmach_bytes
+    return dlamch_f(cmach_char)
 
-cpdef float slamch(char cmach):
-    return slamch_f(&cmach)
+def _py_slamch(cmach):
+    # This conversion is necessary to handle Python 3 strings.
+    cmach_bytes = bytes(cmach)
+    # Now that it is a bytes representation, a non-temporary variable
+    # must be passed as a part of the function call.
+    cdef char* cmach_char = cmach_bytes
+    return slamch_f(cmach_char)
