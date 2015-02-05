@@ -52,7 +52,6 @@ except ImportError:
 # distribution docstrings
 
 docheaders = {'methods': """\nMethods\n-------\n""",
-              'parameters': """\nParameters\n---------\n""",
               'notes': """\nNotes\n-----\n""",
               'examples': """\nExamples\n--------\n"""}
 
@@ -240,8 +239,7 @@ _doc_default = ''.join([_doc_default_longsummary,
                         _doc_default_example])
 
 _doc_default_before_notes = ''.join([_doc_default_longsummary,
-                                     _doc_allmethods,
-                                     _doc_default_callparams])
+                                     _doc_allmethods])
 
 docdict = {
     'rvs': _doc_rvs,
@@ -347,8 +345,7 @@ Generate random numbers:
 docdict_discrete['example'] = _doc_default_discrete_example
 
 _doc_default_before_notes = ''.join([docdict_discrete['longsummary'],
-                                     docdict_discrete['allmethods'],
-                                     docdict_discrete['callparams']])
+                                     docdict_discrete['allmethods']])
 docdict_discrete['before_notes'] = _doc_default_before_notes
 
 _doc_default_disc = ''.join([docdict_discrete['longsummary'],
