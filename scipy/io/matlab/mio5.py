@@ -72,7 +72,7 @@ script I was working with.
 # Small fragments of current code adapted from matfile.py by Heiko
 # Henkelmann
 
-from collections import namedtuple
+from collections import Counter, namedtuple
 from io import BytesIO
 from itertools import islice
 import os
@@ -217,9 +217,16 @@ class MatFile5Reader(MatFileReader):
 
     @staticmethod
     def _as_identifiers(data):
-        return [  # Extra call to str to avoid returning unicode on Python 2.
+        """Convert a \\0-separated bytestring to a list of unique names.
+        """
+        names = [  # Extra call to str to avoid returning unicode on Python 2.
             name for name in str(data.tostring().decode("ascii")).split("\0")
             if name]
+        if len(set(names)) < len(names):
+            ranges = {name: iter([""] + ["_{}_".format(i) for i in range(1, count)])
+                    for name, count in Counter(names).items()}
+            names = [next(ranges[name]) + name for name in names]
+        return names
 
     def _read_iter(self, stream=None, info_only=None, load_only=None):
         if stream is None:
@@ -298,7 +305,7 @@ class MatFile5Reader(MatFileReader):
                 if load_only is not None and name not in load_only:
                     stream.seek(entry_end)
                     self._check_and_pad_stream(stream, entry_end)
-                    yield None
+                    yield
                     continue
 
                 if matrix_cls == mxCELL_CLASS:
@@ -380,6 +387,9 @@ class MatFile5Reader(MatFileReader):
                     final_dims = ((0,) if not all(dims) else
                                   dims[:-1] if self._chars_as_strings else
                                   dims)
+                    # Replace non-conformant, data-less strings with spaces.
+                    if not pr.size:
+                        pr = ord(" ") * np.ones(dims, int)
                     array = np.array(
                         [joiner(map(chr, line))
                          for line in pr.reshape(aux_dims, order="F").tolist()],

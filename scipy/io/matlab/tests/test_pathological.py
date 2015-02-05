@@ -7,20 +7,9 @@ from __future__ import division, print_function, absolute_import
 from os.path import dirname, join as pjoin
 import sys
 
-if sys.version_info[0] >= 3:
-    from io import BytesIO
-    cStringIO = BytesIO
-else:
-    from io import StringIO as cStringIO
-    from io import StringIO as BytesIO
+from nose.tools import assert_true
 
-import numpy as np
-
-from nose.tools import assert_true, assert_false, \
-     assert_equal, assert_raises
-
-from numpy.testing import assert_array_equal, assert_array_almost_equal, \
-     run_module_suite
+from numpy.testing import run_module_suite
 
 from scipy.io.matlab.mio import loadmat
 
@@ -32,6 +21,9 @@ def test_multiple_fieldnames():
     # Extracted using mio5.varmats_from_mat
     multi_fname = pjoin(TEST_DATA_PATH, 'nasty_duplicate_fieldnames.mat')
     vars = loadmat(multi_fname)
-    funny_names = vars['Summary'].dtype.names
-    assert_true(set(['_1_Station_Q', '_2_Station_Q',
-                     '_3_Station_Q']).issubset(funny_names))
+    funny_names = set(vars['Summary'].dtype.names)
+    assert_true(set(['_1_Station_Q', '_2_Station_Q', '_3_Station_Q']) < funny_names)
+
+
+if __name__ == "__main__":
+    run_module_suite()
