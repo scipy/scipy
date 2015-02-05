@@ -1346,7 +1346,8 @@ def histogram(input, min, max, bins, labels=None, index=None):
 
 def watershed_ift(input, markers, structure=None, output=None):
     """
-    Apply watershed from markers using image foresting transform algorithm [1].
+    Apply watershed from markers using image foresting transform 
+    algorithm [1]_.
 
     Parameters
     ----------
