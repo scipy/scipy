@@ -85,7 +85,7 @@ _doc_logcdf = """\
 """
 _doc_sf = """\
 ``sf(x, %(shapes)s, loc=0, scale=1)``
-    Survival function (1-cdf --- sometimes more accurate).
+    Survival function (``1 - cdf`` --- sometimes more accurate).
 """
 _doc_logsf = """\
 ``logsf(x, %(shapes)s, loc=0, scale=1)``
@@ -93,11 +93,11 @@ _doc_logsf = """\
 """
 _doc_ppf = """\
 ``ppf(q, %(shapes)s, loc=0, scale=1)``
-    Percent point function (inverse of cdf --- percentiles).
+    Percent point function (inverse of ``cdf`` --- percentiles).
 """
 _doc_isf = """\
 ``isf(q, %(shapes)s, loc=0, scale=1)``
-    Inverse survival function (inverse of sf).
+    Inverse survival function (inverse of ``sf``).
 """
 _doc_moment = """\
 ``moment(n, %(shapes)s, loc=0, scale=1)``
