@@ -1224,7 +1224,7 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     mat_ker_pj = np.dot(ker_pole[j], ker_pole[j].T)
     yj = np.dot(mat_ker_pj, Q[:, -1])
 
-    #if Q[:, -1] is "almost" orthogonnal to ker_polebig_B = np.ones((10,9))-np.diag([1]*9,1)[:,1:][j] its
+    #if Q[:, -1] is "almost" orthogonnal to ker_pole[j] its
     #projection into ker_pole[j] will yield a vector
     #close to 0. As we are looking for a vector in ker_pole[j]
     #simply stick with transfer_matrix[:, j] (unless someone provides me with
