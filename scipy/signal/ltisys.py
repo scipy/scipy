@@ -1806,7 +1806,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                                                     transfer_matrix.T)).T
             gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
         except np.linalg.LinAlgError:
-            raise ValueError("The poles you've chosen can't be placed. " + \
+            raise ValueError("The poles you've chosen can't be placed. " + 
             "Check the controllability matrix and try another set of poles")
 
     # Beware: Kautsky solves A+BK but the usual form is A-BK
