@@ -112,7 +112,14 @@ class TestPlacePoles(TestCase):
         big_B[:6,:5] = B
 
         P = [-10,-20,-30,40,50,60,70,-20-5j,-20+5j,5+3j,5-3j]        
-        self._check(big_A, big_B, P, maxiter=1000)
+        self._check(big_A, big_B, P)
+        
+        #check with only complex poles and only real poles
+        P = [-10,-20,-30,-40,-50,-60,-70,-80,-90,-100]      
+        self._check(big_A[:-1,:-1], big_B[:-1,:-1], P)
+        P = [-10+10j,-20+20j,-30+30j,-40+40j,-50+50j,
+             -10-10j,-20-20j,-30-30j,-40-40j,-50-50j]
+        self._check(big_A[:-1,:-1], big_B[:-1,:-1], P)
 
         # need a 5x5 array to ensure YT handles properly when there
         # is only one real pole and several complex

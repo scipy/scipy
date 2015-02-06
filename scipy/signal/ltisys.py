@@ -1382,7 +1382,11 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     # index it is a bit easier to link the code to the paper this way even if it
     # is not very clean. The paper is unclear about what should be done when
     # there is only one real pole => use KNV0 on this real pole seem to work
-    update_order = [[nb_real], [1]]
+    if nb_real > 0:    
+        #update the biggest real pole with the smallest one
+        update_order = [[nb_real], [1]]
+    else:
+        update_order = [[],[]]
     r_comp = np.arange(nb_real+1, len(poles)+1, 2)
     # step 1.a
     r_p = np.arange(1, hnb+nb_real % 2)
