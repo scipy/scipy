@@ -27,7 +27,7 @@ New features
 The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
 
 Added two extra wrappers for LAPACK least-square solvers. Namely, they are 
-*gelsd and *gelsy. Added new parameter to linalg.lstsq which sets the
+`*gelsd` and `*gelsy`. Added new parameter to `linalg.lstsq` which sets the
 appropriate LAPACK wrapper.
 
 `scipy.signal` improvements
