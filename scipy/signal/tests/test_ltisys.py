@@ -201,6 +201,10 @@ class TestPlacePoles(TestCase):
         # should fail as rank(B) is two
         assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
 
+        #unctrollable system
+        assert_raises(ValueError, place_poles, np.ones((4,4)), 
+                      np.ones((4,2)), (1,2,3,4))
+
         # Should not raise ValueError as the poles can be placed but should
         # raise a warning as the convergence is not reached
         with warnings.catch_warnings(record=True) as w:

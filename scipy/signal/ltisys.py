@@ -1675,13 +1675,13 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     #to debug with numpy qr uncomment the line below
     #u, z = np.linalg.qr(B, mode="complete")
     u, z = s_qr(B, mode="full")
-    r = np.linalg.matrix_rank(B)
-    u0 = u[:, :r]
-    u1 = u[:, r:]
-    z = z[:r, :]
+    rankB = np.linalg.matrix_rank(B)
+    u0 = u[:, :rankB]
+    u1 = u[:, rankB:]
+    z = z[:rankB, :]
 
     # If the solution is unique
-    if B.shape[0] == r:
+    if B.shape[0] == rankB:
         # if B is square and full rank there is only one solution
         # such as (A+BK)=diag(P) i.e BK=diag(P)-A
         # if B has as many lines as its rank (but not square) the solution
@@ -1771,7 +1771,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             else:
                 transfer_matrix = np.hstack((transfer_matrix, transfer_matrix_j))
 
-        if B.shape[1] > 1:  # otherwise there is nothing we can optimize
+        if rankB > 1:  # otherwise there is nothing we can optimize
             stop, cur_rtol, nb_iter = update_loop(ker_pole, transfer_matrix,
                                                   poles, B, maxiter, rtol)
             if not stop and rtol > 0:
@@ -1806,7 +1806,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                                                     transfer_matrix.T)).T
             gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
         except np.linalg.LinAlgError:
-            raise ValueError("The poles you've chosen can't be placed")
+            raise ValueError("The poles you've chosen can't be placed. " + 
+            "Check the controllability matrix and try another set of poles")
 
     # Beware: Kautsky solves A+BK but the usual form is A-BK
     gain_matrix = -gain_matrix
