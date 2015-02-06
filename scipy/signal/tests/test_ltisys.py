@@ -114,7 +114,7 @@ class TestPlacePoles(TestCase):
         P = [-10,-20,-30,40,50,60,70,-20-5j,-20+5j,5+3j,5-3j]        
         self._check(big_A, big_B, P, maxiter=1000)
 
-       # need a 5x5 array to ensure YT handles properly when there
+        # need a 5x5 array to ensure YT handles properly when there
         # is only one real pole and several complex
         A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0,
                       0,0,0,5,0,0,0,0,9]).reshape(5,5)
