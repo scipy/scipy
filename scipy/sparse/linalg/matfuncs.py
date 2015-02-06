@@ -187,20 +187,23 @@ class MatrixPowerOperator(LinearOperator):
         self._A = A
         self._p = p
         self._structure = structure
+        self.dtype = A.dtype
         self.ndim = A.ndim
         self.shape = A.shape
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for i in range(self._p):
             x = self._A.dot(x)
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
+        A_T = self._A.T
+        x = x.ravel()
         for i in range(self._p):
-            x = x.dot(self._A)
+            x = A_T.dot(x)
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for i in range(self._p):
             X = _smart_matrix_product(self._A, X, structure=self._structure)
         return X
@@ -232,19 +235,21 @@ class ProductOperator(LinearOperator):
                                 'must all have the same shape.')
             self.shape = (n, n)
             self.ndim = len(self.shape)
+        self.dtype = np.find_common_type([x.dtype for x in args], [])
         self._operator_sequence = args
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for A in reversed(self._operator_sequence):
             x = A.dot(x)
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
+        x = x.ravel()
         for A in self._operator_sequence:
-            x = x.dot(A)
+            x = A.T.dot(x)
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for A in reversed(self._operator_sequence):
             X = _smart_matrix_product(A, X, structure=self._structure)
         return X
@@ -574,6 +579,13 @@ def expm(A):
            31 (3). pp. 970-989. ISSN 1095-7162
 
     """
+    return _expm(A, use_exact_onenorm='auto')
+
+
+def _expm(A, use_exact_onenorm):
+    # Core of expm, separated to allow testing exact and approximate
+    # algorithms.
+
     # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
     if isinstance(A, (list, tuple)):
         A = np.asarray(A)
@@ -583,8 +595,9 @@ def expm(A):
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
-    # Hardcode a matrix order threshold for exact vs. estimated one-norms.
-    use_exact_onenorm = A.shape[0] < 200
+    if use_exact_onenorm == "auto":
+        # Hardcode a matrix order threshold for exact vs. estimated one-norms.
+        use_exact_onenorm = A.shape[0] < 200
 
     # Track functions of A to help compute the matrix exponential.
     h = _ExpmPadeHelper(
