@@ -1224,7 +1224,7 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     mat_ker_pj = np.dot(ker_pole[j], ker_pole[j].T)
     yj = np.dot(mat_ker_pj, Q[:, -1])
 
-    #if Q[:, -1] is "almost" orthogonnal to ker_pole[j] its
+    #if Q[:, -1] is "almost" orthogonnal to ker_polebig_B = np.ones((10,9))-np.diag([1]*9,1)[:,1:][j] its
     #projection into ker_pole[j] will yield a vector
     #close to 0. As we are looking for a vector in ker_pole[j]
     #simply stick with transfer_matrix[:, j] (unless someone provides me with
@@ -1396,7 +1396,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     update_order[0].extend(2*r_p-1)
     update_order[1].extend(2*r_p)
     # step 1.d
-    if hnb == 0:
+    if hnb == 0 and np.isreal(poles[0]):
         update_order[0].append(1)
         update_order[1].append(1)
     update_order[0].extend(r_comp)
@@ -1405,13 +1405,10 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     r_j = np.arange(2, hnb+nb_real % 2)
     for j in r_j:
         for i in range(1, hnb+1):
-            idx_1 = i+j
-            if idx_1 > nb_real:
-                idx_1 = i+j-nb_real
             update_order[0].append(i)
-            update_order[1].append(idx_1)
+            update_order[1].append(i+j)
     # step 2.b
-    if hnb == 0:
+    if hnb == 0 and np.isreal(poles[0]):
         update_order[0].append(1)
         update_order[1].append(1)
     update_order[0].extend(r_comp)
@@ -1426,7 +1423,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
             update_order[0].append(i)
             update_order[1].append(idx_1)
     # step 2.d
-    if hnb == 0:
+    if hnb == 0 and np.isreal(poles[0]):
         update_order[0].append(1)
         update_order[1].append(1)
     update_order[0].extend(r_comp)
@@ -1436,7 +1433,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
         update_order[0].append(i)
         update_order[1].append(i+hnb)
     # step 3.b
-    if hnb == 0:
+    if hnb == 0 and np.isreal(poles[0]):
         update_order[0].append(1)
         update_order[1].append(1)
     update_order[0].extend(r_comp)
@@ -1450,6 +1447,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
         for i, j in update_order:
             if i == j:
                 assert i == 0, "i!=0 for KNV call in YT"
+                assert np.isreal(poles[i]), "calling KNV on a complex pole"
                 _KNV0(B, ker_pole, transfer_matrix, i, poles)
             else:
                 transfer_matrix_not_i_j = np.delete(transfer_matrix, (i, j),
@@ -1462,14 +1460,12 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
                 Q, _ = s_qr(transfer_matrix_not_i_j, mode="full")
                 
                 if np.isreal(poles[i]):
-                    if not np.isreal(poles[j]):
-                        msg = "mixing real and complex in YT_real" + str(poles)
-                        raise RuntimeError(msg)
+                    assert np.isreal(poles[j]), "mixing real and complex " + \
+                        "in YT_real" + str(poles)
                     _YT_real(ker_pole, Q, transfer_matrix, i, j)
                 else:
-                    if np.isreal(poles[j]):
-                        msg = "mixing real and complex in YT_complex" + str(poles)
-                        raise RuntimeError(msg)
+                    assert ~np.isreal(poles[i]), "mixing real and complex " + \
+                        "in YT_real" + str(poles)
                     _YT_complex(ker_pole, Q, transfer_matrix, i, j)
 
         det_transfer_matrix = np.max((np.sqrt(np.spacing(1)),
@@ -1679,12 +1675,13 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     #to debug with numpy qr uncomment the line below
     #u, z = np.linalg.qr(B, mode="complete")
     u, z = s_qr(B, mode="full")
-    u0 = u[:, :B.shape[1]]
-    u1 = u[:, B.shape[1]:]
-    z = z[:B.shape[1], :]
+    r = np.linalg.matrix_rank(B)
+    u0 = u[:, :r]
+    u1 = u[:, r:]
+    z = z[:r, :]
 
     # If the solution is unique
-    if B.shape[0] == np.linalg.matrix_rank(B):
+    if B.shape[0] == r:
         # if B is square and full rank there is only one solution
         # such as (A+BK)=diag(P) i.e BK=diag(P)-A
         # if B has as many lines as its rank (but not square) the solution
@@ -1807,16 +1804,15 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         try:
             m = np.linalg.solve(transfer_matrix.T, np.dot(np.diag(poles),
                                                     transfer_matrix.T)).T
+            gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
         except np.linalg.LinAlgError:
             raise ValueError("The poles you've chosen can't be placed")
-
-        gain_matrix = np.linalg.solve(z, np.dot(u0.T, m-A))
 
     # Beware: Kautsky solves A+BK but the usual form is A-BK
     gain_matrix = -gain_matrix
     # K still contains complex with ~=0j imaginary parts, get rid of them
     gain_matrix = np.real(gain_matrix)
-
+    
     full_state_feedback = Bunch()
     full_state_feedback.gain_matrix = gain_matrix
     full_state_feedback.computed_poles = _order_complex_poles(

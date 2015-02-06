@@ -35,16 +35,12 @@ def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
 
 class TestPlacePoles(TestCase):
 
-    def _check(self, A, B, P, method=None):
+    def _check(self, A, B, P, **kwargs):
         """
         Perform the most common tests on the poles computed by place_poles
         and return the Bunch object for further specific tests
         """  
-        if method is not None:
-            fsf = place_poles(A, B, P, method=method)
-        else:
-            fsf = place_poles(A, B, P)
-
+        fsf = place_poles(A, B, P, **kwargs)
         expected, _ = np.linalg.eig(A - np.dot(B, fsf.gain_matrix))
         _assert_poles_close(expected,fsf.requested_poles)
         _assert_poles_close(expected,fsf.computed_poles)
@@ -64,8 +60,14 @@ class TestPlacePoles(TestCase):
         # Check that both KNV and YT compute correct K matrix
         self._check(A, B, P, method='KNV0')
         self._check(A, B, P, method='YT')
+        
+        # Try to reach the specific case in _YT_real where two singular
+        # values are almost equal. This is to improve code coverage but I
+        # have no way to be sure this code is really reached
+        
+        self._check(A, B, (2,2,3,3))
 
-    def test_complex1(self):
+    def test_complex(self):
         # Test complex pole placement on a linearized car model, taken from L.
         # Jaulin, Automatique pour la robotique, Cours et Exercices, iSTE
         # editions p 184/185
@@ -74,9 +76,45 @@ class TestPlacePoles(TestCase):
         # Test complex poles on YT
         P = np.array([-3, -1, -2-1j, -2+1j])
         self._check(A, B, P)
+        
+        # Try to reach the specific case in _YT_complex where two singular
+        # values are almost equal. This is to improve code coverage but I
+        # have no way to be sure this code is really reached 
+            
+        P = [0-1e-6j,0+1e-6j,-10,10]
+        self._check(A, B, P, maxiter=1000)
 
-    def test_complex2(self):
-        # need a 5x5 array to ensure YT handles properly when there
+        # Try to reach the specific case in _YT_complex where the rank two
+        # update yields two null vectors. This test was found via Monte Carlo.
+
+        A = np.array(
+                    [-2148,-2902, -2267, -598, -1722, -1829, -165, -283, -2546,
+                   -167, -754, -2285, -543, -1700, -584, -2978, -925, -1300,
+                   -1583, -984, -386, -2650, -764, -897, -517, -1598, 2, -1709,
+                   -291, -338, -153, -1804, -1106, -1168, -867, -2297]
+                   ).reshape(6,6)
+                   
+        B = np.array(
+                    [-108, -374, -524, -1285, -1232, -161, -1204, -672, -637,
+                     -15, -483, -23, -931, -780, -1245, -1129, -1290, -1502,
+                     -952, -1374, -62, -964, -930, -939, -792, -756, -1437,
+                     -491, -1543, -686]
+                     ).reshape(6,5)
+        P = [-25.-29.j, -25.+29.j, 31.-42.j, 31.+42.j, 33.-41.j, 33.+41.j]
+        self._check(A, B, P)
+        
+        # Use a lot of poles to go through all cases for update_order
+        # in _YT_loop
+        
+        big_A = np.ones((11,11))-np.eye(11)        
+        big_B = np.ones((11,10))-np.diag([1]*10,1)[:,1:]
+        big_A[:6,:6] = A
+        big_B[:6,:5] = B
+
+        P = [-10,-20,-30,40,50,60,70,-20-5j,-20+5j,5+3j,5-3j]        
+        self._check(big_A, big_B, P, maxiter=1000)
+
+       # need a 5x5 array to ensure YT handles properly when there
         # is only one real pole and several complex
         A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0,
                       0,0,0,5,0,0,0,0,9]).reshape(5,5)
@@ -129,15 +167,35 @@ class TestPlacePoles(TestCase):
         B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
         
         #should fail as the method keyword is invalid
-        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
                       method="foo")
 
+        #should fail as poles are not 1D array
+        assert_raises(ValueError, place_poles, A, B, 
+                      np.array((-2.1,-2.2,-2.3,-2.4)).reshape(4,1))
+
+        #should fail as A is not a 2D array
+        assert_raises(ValueError, place_poles, A[:,:,np.newaxis], B, 
+                      (-2.1,-2.2,-2.3,-2.4), method="foo")
+
+        #should fail as B is not a 2D array
+        assert_raises(ValueError, place_poles, A, B[:,:,np.newaxis], 
+                      (-2.1,-2.2,-2.3,-2.4), method="foo")
+
+        #should fail as there are too many poles
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4,-3),
+                      method="foo")
+
+        #should fail as there are not enough poles
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3),
+                      method="foo")
+                      
         #should fail as the rtol is greater than 1
-        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
                       rtol=42)
 
         #should fail as maxiter is smaller than 1
-        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2),
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
                       maxiter=-42)
 
         # should fail as rank(B) is two
