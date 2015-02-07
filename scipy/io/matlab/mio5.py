@@ -182,7 +182,7 @@ class MatFile5Reader(MatFileReader):
         self._verify_compressed_data_integrity = (
             verify_compressed_data_integrity)
         self._uint16_codec = uint16_codec or sys.getdefaultencoding()
-        self._workspace = []
+        self._objects = []
         self._is_minimat = False
 
     def set_matlab_compatible(self):
@@ -344,8 +344,7 @@ class MatFile5Reader(MatFileReader):
                     pr = MatlabFunction(next(reader).data)
                     dtype = object
                 elif matrix_cls == mxOPAQUE_CLASS:
-                    # MATLAB stores the object name where the dims should be and
-                    # the dims... somewhere I don't know.  FIXME
+                    # MATLAB stores the object name where the dims should be.
                     name, = self._as_identifiers(dims) or ("",)
                     dims = []
                     opaque_components = []
@@ -360,13 +359,11 @@ class MatFile5Reader(MatFileReader):
                             pr[()]["s{}".format(i)] = component
                         dtype = pr.dtype
                     else:
-                        classname, ver_indices = opaque_components
-                        ver_indices, = ver_indices.data.T.tolist()
-                        if ver_indices[:4] != [0xdd000000, 2, 1, 1]:
+                        classname, ver_indexes = opaque_components
+                        if ver_indexes.data[:1] != [[0xdd000000]]:
                             raise ValueError("Unsupported opaque format: {}".
-                                             format(ver_indices))
-                        object_id, class_id = ver_indices[4:]
-                        pr = self._workspace[object_id].props
+                                             format(ver_indexes.data[0]))
+                        pr = self._resolve_objref(ver_indexes.data)
                         dtype = pr.dtype
                 else:
                     pr = next(reader)
@@ -405,7 +402,8 @@ class MatFile5Reader(MatFileReader):
             else:
                 raise ValueError("Unsupported mdtype: {}".format(mdtype))
 
-    def _check_and_pad_stream(self, stream, entry_end):
+    @staticmethod
+    def _check_and_pad_stream(stream, entry_end):
         at = stream.tell()
         unread = entry_end - at
         if unread > 0:
@@ -432,7 +430,7 @@ class MatFile5Reader(MatFileReader):
         '''
         if isinstance(variable_names, string_types):
             variable_names = [variable_names]
-        self._workspace = self._read_minimat()
+        self._load_minimat() # This will set self._objects and self._classes.
         self._prepare_stream()
         variables = {"__header__": self._desc,
                      "__globals__": [],  # FIXME Not covered by tests.
@@ -465,7 +463,9 @@ class MatFile5Reader(MatFileReader):
             infos.append((info.name, BytesIO(self._header + raw)))
         return infos
 
-    def _read_minimat(self):
+    def _load_minimat(self):
+        self._objects = [None]
+        self._classes = []
         if not self._subsys_offset:
             return
         self._stream.seek(self._subsys_offset)
@@ -497,26 +497,26 @@ class MatFile5Reader(MatFileReader):
             strs.append(segments[off:next_off].decode("ascii"))
             off = next_off + 1
         # Segment 1
-        clss = []
         off = headers[2]
         for default in defaults:
             pkg_idx, name_idx, _1, _2 = self._unpack_from("4L", segments, off)
             assert _1 == _2 == 0
-            clss.append(MatlabClass(
-                strs[pkg_idx], strs[name_idx], default.item()))
+            self._classes.append(MatlabClass(
+                strs[pkg_idx], strs[name_idx], np.squeeze(default.item())))
             off += 16
         # Segment 2
         assert off == headers[3]
         props2, off = self._parse_props(strs, segments, off, headers[4], heap)
         # Segment 3
         assert off == headers[4]
-        objs = []
+        stubs = []
         off = headers[4]
         while off < headers[5]:
             cls_idx, _1, _2, seg2_idx, seg4_idx, obj_idx = self._unpack_from(
                 "6L", segments, off)
             assert _1 == _2 == 0
-            objs.append(ObjStub(clss[cls_idx], seg2_idx, seg4_idx, obj_idx))
+            stubs.append(ObjStub(
+                self._classes[cls_idx], seg2_idx, seg4_idx, obj_idx))
             off += 24
         # Segment 4
         assert off == headers[5]
@@ -525,40 +525,20 @@ class MatFile5Reader(MatFileReader):
         assert off == headers[6]
         assert set(segments[headers[6]:headers[7]]) == set(b"\0")
         # Resolve properties
-        real_objs = [None]
-        for obj in objs[1:]:
-            obj_props = obj.cls.defaults.copy()
-            dtype = obj_props.dtype
-            names = dtype.names or []
-            fields = dtype.fields or []
-            extra_fields = []
-            for k, v in props2[obj.seg2].items():
-                if k in fields:
-                    obj_props[k] = v
-                else:
-                    extra_fields.append(k)
-            if extra_fields:
-                # Extra call to str to keep Python 2 happy.
-                dtype = np.dtype(
-                    [(field_name,) + dtype.fields[field_name]
-                     for field_name in names] +
-                    [(str(field_name), "O") for field_name in extra_fields])
-                new_props = np.empty((1, 1), dtype)
-                for k in names:
-                    new_props[k] = obj_props[k]
-                for k, v in props2[obj.seg2].items():
-                    new_props[k] = v
-                obj_props = new_props
-            for k, v in props4[obj.seg4].items():
+        for stub in stubs[1:]:
+            obj_props = stub.cls.defaults.copy()
+            for k, v in props2[stub.seg2].items():
                 obj_props[k] = v
-            real_objs.append(Obj(obj.cls.name, obj_props, obj.id))
+            for k, v in props4[stub.seg4].items():
+                obj_props[k] = v
+            self._objects.append(Obj(stub.cls.name, obj_props, stub.id))
         # Resolve cross_references
-        # FIXME
-        # References are represented as [0xdd000000 2 1 1 objname classname]
-        # but how to distinguish them from normal arrays?
-        # Some of them are in segment 2 but others (those also saved in the
-        # MAT?) are in segment 4.
-        return real_objs
+        for obj in self._objects[1:]:
+            for field in obj.props.dtype.names:
+                prop = obj.props[field].item()
+                if prop.dtype == np.uint32 and prop[:1] == [[0xdd000000]]:
+                    obj.props[field] = np.array(None)
+                    obj.props[field][()] = self._resolve_objref(prop)
 
     def _parse_props(self, strs, segments, off, until, heap):
         props = []
@@ -574,7 +554,8 @@ class MatFile5Reader(MatFileReader):
                 elif flag == 1:
                     value = heap[heap_idx]
                 elif flag == 2:
-                    assert heap_idx in [0, 1]
+                    if heap_idx not in [0, 1]:
+                        raise ValueError("Invalid boolean")
                     value = bool(heap_idx)
                 else:
                     raise ValueError("Unknown flag")
@@ -583,6 +564,18 @@ class MatFile5Reader(MatFileReader):
             off += (-off) % 8
             props.append(d)
         return props or [{}], off
+
+    def _resolve_objref(self, ref):
+        indexes, = ref.T.tolist()
+        ndim = indexes[1]
+        dims = indexes[2:2+ndim]
+        obj_ids = indexes[2+ndim:-1]
+        class_id = indexes[-1]
+        pr = np.empty(dims, dtype=self._classes[class_id].defaults.dtype)
+        for field in pr.dtype.names:
+            pr[field].flat[:] = [self._objects[oid].props[field]
+                                 for oid in obj_ids]
+        return pr
 
 
 def varmats_from_mat(file_obj):
