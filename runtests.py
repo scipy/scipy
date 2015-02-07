@@ -119,6 +119,9 @@ def main(argv):
     if args.gcov:
         gcov_reset_counters()
 
+    if args.debug and args.bench:
+        print("*** Benchmarks should not be run against debug version; remove -g flag ***")
+
     if not args.no_build:
         site_dir = build_project(args)
         sys.path.insert(0, site_dir)
@@ -164,6 +167,20 @@ def main(argv):
         extra_argv += ['--cover-html',
                        '--cover-html-dir='+dst_dir]
 
+    if args.bench:
+        # Run ASV
+        cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
+               'dev']
+        items = extra_argv
+        if args.tests:
+            items += args.tests
+        if args.submodule:
+            items += [args.submodule]
+        for a in items:
+            cmd.extend(['--bench', a])
+        os.execv(sys.executable, [sys.executable] + cmd)
+        sys.exit(1)
+
     test_dir = os.path.join(ROOT_DIR, 'build', 'test')
 
     if args.build_only:
@@ -172,10 +189,7 @@ def main(argv):
         modname = PROJECT_MODULE + '.' + args.submodule
         try:
             __import__(modname)
-            if args.bench:
-                test = sys.modules[modname].bench
-            else:
-                test = sys.modules[modname].test
+            test = sys.modules[modname].test
         except (ImportError, KeyError, AttributeError) as e:
             print("Cannot run tests for %s (%s)" % (modname, e))
             sys.exit(2)
@@ -194,16 +208,10 @@ def main(argv):
             extra_argv = extra_argv + tests[1:]
             kw['extra_argv'] = extra_argv
             from numpy.testing import Tester
-            if args.bench:
-                return Tester(tests[0]).bench(*a, **kw)
-            else:
-                return Tester(tests[0]).test(*a, **kw)
+            return Tester(tests[0]).test(*a, **kw)
     else:
         __import__(PROJECT_MODULE)
-        if args.bench:
-            test = sys.modules[PROJECT_MODULE].bench
-        else:
-            test = sys.modules[PROJECT_MODULE].test
+        test = sys.modules[PROJECT_MODULE].test
 
     # Run the tests under build/test
     try:
@@ -221,16 +229,11 @@ def main(argv):
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
-        if args.bench:
-            result = test(args.mode,
-                          verbose=args.verbose,
-                          extra_argv=extra_argv)
-        else:
-            result = test(args.mode,
-                          verbose=args.verbose,
-                          extra_argv=extra_argv,
-                          doctests=args.doctests,
-                          coverage=args.coverage)
+        result = test(args.mode,
+                      verbose=args.verbose,
+                      extra_argv=extra_argv,
+                      doctests=args.doctests,
+                      coverage=args.coverage)
     finally:
         os.chdir(cwd)
 

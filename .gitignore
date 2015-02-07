@@ -105,6 +105,9 @@ doc/source/generated
 
 # Things specific to this project #
 ###################################
+benchmarks/env
+benchmarks/results
+benchmarks/scipy
 scipy/__config__.py
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
