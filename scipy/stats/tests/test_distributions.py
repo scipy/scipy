@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import re
 import sys
+import pickle
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
@@ -1502,6 +1503,30 @@ class TestFrozen(TestCase):
         # ... and that .rvs method accepts it as an argument
         rndm = np.random.RandomState(1234)
         frozen.rvs(size=8, random_state=rndm)
+
+    def test_pickling(self):
+        # test that a frozen instance pickles and unpickles
+        # (this method is a clone of common_tests.check_pickling)
+        beta = stats.beta(2.3098496451481823, 0.62687954300963677)
+        poiss = stats.poisson(3.)
+        sample = stats.rv_discrete(values=([0, 1, 2, 3],
+                                           [0.1, 0.2, 0.3, 0.4]))
+
+        for distfn in [beta, poiss, sample]:
+            distfn.random_state = 1234
+            distfn.rvs(size=8)
+            s = pickle.dumps(distfn)
+            r0 = distfn.rvs(size=8)
+
+            unpickled = pickle.loads(s)
+            r1 = unpickled.rvs(size=8)
+            assert_equal(r0, r1)
+
+            # also smoke test some methods
+            medians = [distfn.ppf(0.5), unpickled.ppf(0.5)]
+            assert_equal(medians[0], medians[1])
+            assert_equal(distfn.cdf(medians[0]),
+                         unpickled.cdf(medians[1]))
 
     def test_expect(self):
         # smoke test the expect method of the frozen distribution

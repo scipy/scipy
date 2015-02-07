@@ -657,6 +657,15 @@ class rv_generic(object):
     def random_state(self, seed):
         self._random_state = check_random_state(seed)
 
+    def __getstate__(self):
+        return self._ctor_param, self._random_state
+
+    def __setstate__(self, state):
+        ctor_param, r = state
+        self.__init__(**ctor_param)
+        self._random_state = r
+        return self
+
     def _construct_argparser(
             self, meths_to_inspect, locscale_in, locscale_out):
         """Construct the parser for the shape arguments.
