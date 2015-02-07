@@ -551,8 +551,9 @@ class _TestCommon:
 
     def test_empty(self):
         # create empty matrices
-        assert_equal(self.spmatrix((3,3)).todense(), np.zeros((3,3)))
-        assert_equal(self.spmatrix((3,3)).nnz, 0)
+        assert_equal(self.spmatrix((3, 3)).todense(), np.zeros((3,3)))
+        assert_equal(self.spmatrix((3, 3)).nnz, 0)
+        assert_equal(self.spmatrix((3, 2)).count_nonzero(), 0)
 
     def test_invalid_shapes(self):
         assert_raises(ValueError, self.spmatrix, (-1,3))

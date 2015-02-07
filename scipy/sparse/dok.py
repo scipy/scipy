@@ -111,8 +111,17 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             self.shape = arg1.shape
             self.dtype = d.dtype
 
-    def getnnz(self):
+    def count_nonzero(self):
+        """Count number of non-zero entries."""
         return dict.__len__(self)
+
+    def getnnz(self):
+        """Get number of stored entries.
+
+        Equivalent to count_nonzero for DOK matrices (but not necessarily for
+        other sparse matrix formats).
+        """
+        return self.count_nonzero()
     nnz = property(fget=getnnz)
 
     def __len__(self):

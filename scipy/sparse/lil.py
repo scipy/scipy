@@ -44,7 +44,7 @@ class lil_matrix(spmatrix, IndexMixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of nonzero elements
+        Number of stored elements
     data
         LIL format data array of the matrix
     rows
@@ -174,6 +174,15 @@ class lil_matrix(spmatrix, IndexMixin):
 
     # Whenever the dimensions change, empty lists should be created for each
     # row
+
+    def count_nonzero(self):
+        """Count number of non-zero stored entries.
+
+        For LIL matrices, this is equivalent to looking up the ``nnz``
+        attribute, because zeros are never stored (but this is not necessarily
+        true for other sparse matrix formats).
+        """
+        return self.nnz
 
     def getnnz(self, axis=None):
         """Get the count of explicitly-stored values (nonzeros)

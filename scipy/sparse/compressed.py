@@ -88,7 +88,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.check_format(full_check=False)
 
     def getnnz(self, axis=None):
-        """Get the count of explicitly-stored values (nonzeros)
+        """Get the count of explicitly-stored values.
+
+        The name of this method is a misnomer, as the number of stored
+        elements may not actually be the number of non-zeros. Use the
+        count_nonzero member for the actual number of non-zeros.
 
         Parameters
         ----------
