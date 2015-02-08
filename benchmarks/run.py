@@ -13,6 +13,7 @@ import sys
 import subprocess
 import json
 import argparse
+import sysconfig
 
 
 EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
@@ -74,6 +75,7 @@ def run_asv(args, current_repo=False):
     # Control BLAS config
     env['ATLAS'] = 'None'
     env['OPENBLAS_NUM_THREADS'] = '1'
+    env['CFLAGS'] = drop_bad_flags(sysconfig.get_config_var('CFLAGS'))
 
     # Limit memory usage
     try:
@@ -108,6 +110,17 @@ def is_git_repo_root(path):
         return (out.strip() == '.git')
     except OSError:
         return False
+
+
+def drop_bad_flags(flags):
+    """
+    Drop flags that are problematic for compiling old scipy versions
+    """
+    if not flags:
+        return flags
+    return " ".join(x for x in flags.split()
+                    if not (x.startswith("-Werror")
+                            or x in ("-pedantic-errors",)))
 
 
 if __name__ == "__main__":
