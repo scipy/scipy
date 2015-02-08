@@ -1658,8 +1658,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Maximum number of iterations.
 
         .. versionadded:: 0.12.0
-    return_singular_vectors : bool, optional
-        Return singular vectors (True) in addition to singular values
+    return_singular_vectors : bool or str, optional
+        True: return singular vectors (True) in addition to singular values.
+        'u': only return the u matrix, without computing vh (if N > M)
+        'vh': only return the vh matrix, without computing u (if N <= M)
 
         .. versionadded:: 0.12.0
 
@@ -1724,6 +1726,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     # In 'LM' mode try to be clever about small eigenvalues.
     # Otherwise in 'SM' mode do not try to be clever.
+    u = None
+    vh = None
     if which == 'LM':
 
         # Gramian matrices have real non-negative eigenvalues.
@@ -1746,16 +1750,22 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if not return_singular_vectors:
             return s
 
+        ularge = None
+        vhlarge = None
         if n > m:
             vlarge = eigvec[:, above_cutoff]
-            ularge = X_matmat(vlarge) / slarge
+            if return_singular_vectors != 'vh':
+                ularge = (X_matmat(vlarge) / slarge)
             vhlarge = _herm(vlarge)
         else:
             ularge = eigvec[:, above_cutoff]
-            vhlarge = _herm(X_matmat(ularge) / slarge)
+            if return_singular_vectors != 'u':
+                vhlarge = _herm(X_matmat(ularge) / slarge)
 
-        u = _augmented_orthonormal_cols(ularge, nsmall)
-        vh = _augmented_orthonormal_rows(vhlarge, nsmall)
+        if ularge is not None:
+            u = _augmented_orthonormal_cols(ularge, nsmall)
+        if vhlarge is not None:
+            vh = _augmented_orthonormal_rows(vhlarge, nsmall)
 
     else:
 
@@ -1765,10 +1775,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         if n > m:
             v = eigvec
-            u = X_matmat(v) / s
+            if return_singular_vectors != 'vh':
+                u = X_matmat(v) / s
             vh = _herm(v)
         else:
             u = eigvec
-            vh = _herm(X_matmat(u) / s)
+            if return_singular_vectors != 'u':
+                vh = _herm(X_matmat(u) / s)
 
     return u, s, vh

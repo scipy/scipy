@@ -10,9 +10,9 @@ import warnings
 
 import numpy as np
 
-from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, run_module_suite, \
-        assert_raises, assert_equal, assert_array_equal
+from numpy.testing import (assert_allclose, assert_,
+        assert_array_almost_equal_nulp, run_module_suite,
+        assert_raises, assert_equal, assert_array_equal)
 
 from numpy import dot, conj, random
 from scipy.linalg import eig, eigh
@@ -801,6 +801,33 @@ def test_linearoperator_deallocation():
         pass
     with assert_deallocated(lambda: arpack.IterOpInv(M_o, M_o, 0.3)):
         pass
+
+
+def test_svds_partial_return():
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1, 0, 2],
+                  [0, 0, 1]], np.float)
+    # test vertical matrix
+    z = csr_matrix(x)
+    vh_full = svds(z, 2)[-1]
+    vh_partial = svds(z, 2, return_singular_vectors='vh')[-1]
+    assert_allclose(np.abs(vh_full), np.abs(vh_partial), atol=1e-10,
+            err_msg=('right eigenvector matrices differ '
+                     'when using return_singular_vectors parameter'))
+    assert_(svds(z, 2, return_singular_vectors='vh')[0] is None,
+            msg=('left eigenvector matrix was computed '
+                  'when it should not have been'))
+    # test horizontal matrix
+    z = csr_matrix(x.T)
+    u_full = svds(z, 2)[0]
+    u_partial = svds(z, 2, return_singular_vectors='vh')[0]
+    assert_allclose(np.abs(u_full), np.abs(u_partial), atol=1e-10,
+            err_msg=('left eigenvector matrices differ '
+                     'when using return_singular_vectors parameter'))
+    assert_(svds(z, 2, return_singular_vectors='u')[-1] is None,
+            msg=('right eigenvector matrix was computed '
+                 'when it should not have been'))
 
 
 if __name__ == "__main__":
