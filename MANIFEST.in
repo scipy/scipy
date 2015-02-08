@@ -13,6 +13,10 @@ recursive-include tools *
 include cythonize.dat
 # Exclude what we don't want to include
 recursive-exclude scipy/linalg/src/id_dist/src *_subr_*.f
+prune benchmarks/env
+prune benchmarks/results
+prune benchmarks/html
+prune benchmarks/scipy
 prune scipy/special/tests/data/boost
 prune scipy/special/tests/data/gsl
 prune doc/build

@@ -128,7 +128,6 @@ def configuration(parent_package='',top_path=None):
                          include_dirs=[get_numpy_include_dirs()])
 
     config.add_data_dir('tests')
-    config.add_data_dir('benchmarks')
     return config
 
 

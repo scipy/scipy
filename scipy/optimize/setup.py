@@ -71,7 +71,6 @@ def configuration(parent_package='',top_path=None):
                          **numpy_nodepr_api)
 
     config.add_data_dir('tests')
-    config.add_data_dir('benchmarks')
     return config
 
 
