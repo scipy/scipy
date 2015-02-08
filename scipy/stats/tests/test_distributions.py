@@ -1450,6 +1450,12 @@ class TestExpect(TestCase):
         assert_(np.isfinite(stats.rice.expect(lambda x: 2, args=(0.74,))))
         assert_(np.isfinite(stats.rice.expect(lambda x: 3, args=(0.74,))))
 
+    def test_discrete_kwds(self):
+        # check that discrete expect accepts keywords to control the summation
+        n0 = stats.poisson.expect(lambda x: 1, args=(2,))
+        n1 = stats.poisson.expect(lambda x: 1, args=(2,),
+            maxcount=1001, chunksize=32, tolerance=1e-8)
+        assert_almost_equal(n0, n1, decimal=14)
 
 class TestNct(TestCase):
     def test_nc_parameter(self):
