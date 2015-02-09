@@ -10,9 +10,6 @@ from numpy.core import (
     )
 
 
-def isComplexType(t):
-    return issubclass(t, complexfloating)
-
 def norm(x, ord=None, axis=None):
     """
     Norm of a sparse matrix
@@ -116,7 +113,7 @@ def norm(x, ord=None, axis=None):
 
     # Check the default case first and handle it immediately.
     if ord in [None, 'fro', 'f'] and axis is None:
-        if isComplexType(x.dtype.type):
+        if np.iscomplexobj(x):
             sqnorm = dot(x.real, x.real) + dot(x.imag, x.imag)
         else:
             sqnorm = x.power(2).sum()
