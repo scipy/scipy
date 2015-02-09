@@ -399,7 +399,8 @@ class DifferentialEvolutionSolver(object):
 
         # Fill points uniformly in each interval
         rdrange = rng.rand(samples, N) * segsize
-        rdrange += np.atleast_2d(np.arange(0., 1., segsize)).T
+        rdrange += np.atleast_2d(
+            np.linspace(0., 1., samples, endpoint=False)).T
 
         # Make the random pairings
         self.population = np.zeros_like(rdrange)
