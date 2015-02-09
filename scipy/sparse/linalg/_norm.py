@@ -92,14 +92,14 @@ def norm(x, ord=None):
     >>> norm(b, -1)
     6
 
-"""
+    """
     if not issparse(x):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
 
     # Check the default case first and handle it immediately.
     if ord in (None, 'fro', 'f'):
-        if np.iscomplexobj(x):
-            sqnorm = dot(x.real, x.real) + dot(x.imag, x.imag)
+        if np.issubdtype(x.dtype, np.complexfloating):
+            sqnorm = abs(x).power(2).sum()
         else:
             sqnorm = x.power(2).sum()
         return sqrt(sqnorm)
@@ -129,8 +129,6 @@ def norm(x, ord=None):
             return abs(x).sum(axis=row_axis).min(axis=col_axis)[0,0]
         elif ord == -Inf:
             return abs(x).sum(axis=col_axis).min(axis=row_axis)[0,0]
-        elif ord in [None, 'fro', 'f']:
-            return sqrt(x.power(2).sum(axis=axis))
         else:
             raise ValueError("Invalid norm order for matrices.")
     else:
