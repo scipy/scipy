@@ -4,8 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_raises, assert_allclose, assert_equal, assert_,
-        decorators, TestCase, run_module_suite)
+from numpy.testing import assert_raises, assert_equal, TestCase
 
 from numpy import matrix, abs
 from scipy.sparse import *
