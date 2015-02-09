@@ -1032,9 +1032,9 @@ def anderson(x, dist='norm'):
     ----------
     x : array_like
         array of sample data
-    dist : {'norm','expon','logistic','gumbel','extreme1'}, optional
-        the type of distribution to test against.  The default is 'norm'
-        and 'extreme1' is a synonym for 'gumbel'
+    dist : {'norm','expon','logistic','gumbel','gumbel_l','gumbel_r','extreme1'}, optional
+        the type of distribution to test against.  The default is 'norm'.
+        'gumbel' and 'extreme1' are synonyms for 'gumbel_l'
 
     Returns
     -------
@@ -1081,10 +1081,27 @@ def anderson(x, dist='norm'):
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> np.random.seed(10000)
+
+    The null hypothesis that the random sample came from 'normal' distribution
+    cannot be rejected at the 15% level because the returned Anderson-Darling
+    test statistic is smaller than the critical values but can be
+    rejected at the other more stringent critical values of
+    10%, 5%, 2.5% and 1%.
+
+    >>> stats.anderson([np.random.exponenential(size=10),
+    ... dist='norm')
+    (0.54368063100409536,
+     array([ 0.501,  0.57 ,  0.684,  0.798,  0.95 ]),
+     array([ 15. ,  10. ,   5. ,   2.5,   1. ]))
+
     """
-    if dist not in ['norm', 'expon', 'gumbel', 'extreme1', 'logistic']:
+    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1', 'logistic']:
         raise ValueError("Invalid distribution; dist must be 'norm', "
-                         "'expon', 'gumbel', 'extreme1' or 'logistic'.")
+                         "'expon', 'gumbel_l', 'extreme1' or 'logistic'.")
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
@@ -1114,10 +1131,15 @@ def anderson(x, dist='norm'):
         z = distributions.logistic.cdf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
         critical = around(_Avals_logistic / (1.0 + 0.25/N), 3)
-    else:  # (dist == 'gumbel') or (dist == 'extreme1'):
-        xbar, s = distributions.gumbel_l.fit(x)
-        w = (y - xbar) / s
-        z = distributions.gumbel_l.cdf(w)
+    else:  # (dist == 'gumbel_l') or (dist == 'extreme1') or (dist == 'gumbel_r'):
+        if dist == 'gumbel_r':
+            xbar, s = distributions.gumbel_r.fit(x)
+            w = (y - xbar) / s
+            z = distributions.gumbel_r.cdf(w)
+        else:
+            xbar, s = distributions.gumbel_l.fit(x)
+            w = (y - xbar) / s
+            z = distributions.gumbel_l.cdf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
 
