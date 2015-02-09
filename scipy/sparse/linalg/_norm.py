@@ -16,7 +16,7 @@ def norm(x, ord=None):
 
     This function is able to return one of seven different matrix norms,
     depending on the value of the ``ord`` parameter.
-    
+
     Parameters
     ----------
     x : a sparse matrix
@@ -24,21 +24,21 @@ def norm(x, ord=None):
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
         `inf` object.
-    
+
     Returns
     -------
     n : float or matrix
-    
+
     Notes
     -----
     Some of the ord are not implemented because some associated functions like, 
     _multi_svd_norm, are not yet available for sparse matrix. 
-    
+
     This docstring is modified based on numpy.linalg.norm. 
     https://github.com/numpy/numpy/blob/master/numpy/linalg/linalg.py 
-    
+
     The following norms can be calculated:
-    
+
     =====  ============================  
     ord    norm for sparse matrices             
     =====  ============================  
@@ -53,16 +53,16 @@ def norm(x, ord=None):
     -2     Not implemented      
     other  Not implemented                               
     =====  ============================  
-    
+
     The Frobenius norm is given by [1]_:
-    
+
         :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
-    
+
     References
     ----------
     .. [1] G. H. Golub and C. F. Van Loan, *Matrix Computations*,
         Baltimore, MD, Johns Hopkins University Press, 1985, pg. 15
-    
+
     Examples
     --------
     >>> from scipy.sparse import *
@@ -76,7 +76,7 @@ def norm(x, ord=None):
     array([[-4, -3, -2],
            [-1, 0, 1],
            [ 2, 3, 4]])
-           
+
     >>> b = csr_matrix(b)
     >>> norm(b)
     7.745966692414834
@@ -90,7 +90,7 @@ def norm(x, ord=None):
     7
     >>> norm(b, -1)
     6
-    
+
 """
     if not issparse(x):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
@@ -106,7 +106,7 @@ def norm(x, ord=None):
     # Normalize the `axis` argument to a tuple.
     nd = x.ndim
     axis = tuple(range(nd))
-    
+
     if len(axis) == 2:
         row_axis, col_axis = axis
         if not (-nd <= row_axis < nd and -nd <= col_axis < nd):
@@ -134,4 +134,3 @@ def norm(x, ord=None):
             raise ValueError("Invalid norm order for matrices.")
     else:
         raise ValueError("Improper number of dimensions to norm.")
-
