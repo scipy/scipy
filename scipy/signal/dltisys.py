@@ -6,19 +6,21 @@ dltisys - Code related to discrete linear time-invariant systems
 # April 4, 2011
 from __future__ import division, print_function, absolute_import
 
+from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 import numpy as np
 from scipy.interpolate import interp1d
 from .ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
 
-__all__ = ['dlsim', 'dstep', 'dimpulse','dlti']
+__all__ = ['dlsim', 'dstep', 'dimpulse', 'dlti']
 
-class dlti(object)
-    """Linear Time Invariant class which simplifies representation.
+
+class dlti(object):
+    """Discrete Linear Time Invariant class which simplifies representation.
 
     Parameters
     ----------
     args : arguments
-        The `lti` class can be instantiated with either 2, 3 or 4 arguments.
+        The `dlti` class can be instantiated with either 2, 3 or 4 arguments.
         The following gives the number of elements in the tuple and the
         interpretation:
 
@@ -30,20 +32,20 @@ class dlti(object)
 
     Notes
     -----
-    `lti` instances have all types of representations available; for example
-    after creating an instance s with ``(zeros, poles, gain)`` the transfer
+    `dlti` instances have all types of representations available; for example
+    after creating an instance z with ``(zeros, poles, gain)`` the transfer
     function representation (numerator, denominator) can be accessed as
-    ``s.num`` and ``s.den``.
+    ``z.num`` and ``z.den``.
 
     """
-    
+
     def __init__(self, *args, **kwords):
         """
-        Initialize the LTI system using either:
+        Initialize the DLTI system using either:
 
-        -> (numerator, denominator, dt)
-        -> (zeros, poles, gain, dt)
-        X - (A, B, C, D, dt) : state-space.
+            - (numerator, denominator)
+            - (zeros, poles, gain)
+            - (A, B, C, D) : state-space.
 
         """
 
@@ -74,7 +76,6 @@ class dlti(object)
             self.outputs = self.C.shape[0]
         else:
             raise ValueError("Needs 2, 3, or 4 arguments.")
-
 
     def __repr__(self):
         """
@@ -184,8 +185,19 @@ class dlti(object)
                                                           self.C, self.D)
 
 
+    def dimpulse(self, x0=None, t=None, n=None):
+        """
+        Return the impulse response of a discrete-time system.
 
+        """
+        return impulse(self, x0=x0, t=t, n=n)
 
+    def dstep(self, x0=None, t=None, n=None):
+        """
+        Return the step response of a continuous-time system.
+
+        """
+        return dstep(self, x0=x0, t=t, n=n)
 
 def dlsim(system, u, t=None, x0=None):
     """
@@ -268,9 +280,9 @@ def dlsim(system, u, t=None, x0=None):
 
     # Check initial condition
     if x0 is None:
-        xout[0,:] = np.zeros((a.shape[1],))
+        xout[0, :] = np.zeros((a.shape[1],))
     else:
-        xout[0,:] = np.asarray(x0)
+        xout[0, :] = np.asarray(x0)
 
     # Pre-interpolate inputs into the desired time steps
     if t is None:
@@ -284,12 +296,12 @@ def dlsim(system, u, t=None, x0=None):
 
     # Simulate the system
     for i in range(0, out_samples - 1):
-        xout[i+1,:] = np.dot(a, xout[i,:]) + np.dot(b, u_dt[i,:])
-        yout[i,:] = np.dot(c, xout[i,:]) + np.dot(d, u_dt[i,:])
+        xout[i + 1, :] = np.dot(a, xout[i, :]) + np.dot(b, u_dt[i, :])
+        yout[i, :] = np.dot(c, xout[i, :]) + np.dot(d, u_dt[i, :])
 
     # Last point
-    yout[out_samples-1,:] = np.dot(c, xout[out_samples-1,:]) + \
-                            np.dot(d, u_dt[out_samples-1,:])
+    yout[out_samples - 1, :] = np.dot(c, xout[out_samples - 1, :]) + \
+                            np.dot(d, u_dt[out_samples - 1, :])
 
     if len(system) == 5:
         return tout, yout, xout
@@ -358,7 +370,7 @@ def dimpulse(system, x0=None, t=None, n=None):
     yout = None
     for i in range(0, n_inputs):
         u = np.zeros((t.shape[0], n_inputs))
-        u[0,i] = 1.0
+        u[0, i] = 1.0
 
         one_output = dlsim(system, u, t=t, x0=x0)
 
@@ -433,7 +445,7 @@ def dstep(system, x0=None, t=None, n=None):
     yout = None
     for i in range(0, n_inputs):
         u = np.zeros((t.shape[0], n_inputs))
-        u[:,i] = np.ones((t.shape[0],))
+        u[:, i] = np.ones((t.shape[0],))
 
         one_output = dlsim(system, u, t=t, x0=x0)
 
