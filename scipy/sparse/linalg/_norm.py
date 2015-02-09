@@ -10,7 +10,7 @@ from numpy.core import (
     )
 
 
-def norm(x, ord=None, axis=None):
+def norm(x, ord=None):
     """
     Norm of a sparse matrix
 
@@ -24,9 +24,6 @@ def norm(x, ord=None, axis=None):
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
         `inf` object.
-    axis : {int, None}, optional
-        If `axis` is an integer, it specifies the axis of `x` along which to
-        compute the vector norms. 
     
     Returns
     -------
@@ -94,25 +91,12 @@ def norm(x, ord=None, axis=None):
     >>> norm(b, -1)
     6
     
-    Using the `axis` argument to compute vector norms:
-    
-    >>> c = np.array([[ 1, 2, 3],
-    ...               [-1, 1, 4]])
-    >>> c = csr_matrix(c)
-    >>> norm(c, axis=0)
-    matrix[[ 1.41421356, 2.23606798, 5. ]]
-    >>> norm(c, axis=1)
-    matrix[[ 3.74165739, 4.24264069]]
-    >>> norm(c, ord=1, axis=1)
-    matrix[[6]
-           [6]]
-
 """
     if not issparse(x):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
 
     # Check the default case first and handle it immediately.
-    if ord in [None, 'fro', 'f'] and axis is None:
+    if ord in (None, 'fro', 'f'):
         if np.iscomplexobj(x):
             sqnorm = dot(x.real, x.real) + dot(x.imag, x.imag)
         else:
@@ -121,27 +105,9 @@ def norm(x, ord=None, axis=None):
 
     # Normalize the `axis` argument to a tuple.
     nd = x.ndim
-    if axis is None:
-        axis = tuple(range(nd))
+    axis = tuple(range(nd))
     
-    if np.isscalar(axis):
-        if ord == Inf:
-            return max(abs(x).sum(axis=axis))
-        elif ord == -Inf:
-            return min(abs(x).sum(axis=axis))
-        elif ord == 0:
-            # Zero norm
-            return (x != 0).sum(axis=axis)
-        elif ord == 1:
-            # special case for speedup
-            return abs(x).sum(axis=axis)
-        elif ord == -1:
-            return min(abs(x).sum(axis=axis))             
-        elif ord is None:            
-            return sqrt(x.power(2).sum(axis=axis))        
-        else:
-            raise NotImplementedError
-    elif len(axis) == 2:
+    if len(axis) == 2:
         row_axis, col_axis = axis
         if not (-nd <= row_axis < nd and -nd <= col_axis < nd):
             raise ValueError('Invalid axis %r for an array with shape %r' %
