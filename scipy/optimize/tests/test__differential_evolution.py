@@ -357,6 +357,20 @@ class TestDifferentialEvolutionSolver(TestCase):
         self.assertRaises(
             ValueError, _differentialevolution._make_random_gen, 'a')
 
+    def test_gh_4511_regression(self):
+        # This modification of the differential evolution docstring example
+        # uses a custom popsize that had triggered an off-by-one error.
+        # Because we do not care about solving the optimization problem in
+        # this test, we use maxiter=1 to reduce the testing time.
+
+        def ackley(x):
+            arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
+            arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
+            return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
+
+        bounds = [(-5, 5), (-5, 5)]
+        result = differential_evolution(ackley, bounds, popsize=1815, maxiter=1)
+
 
 if __name__ == '__main__':
     run_module_suite()
