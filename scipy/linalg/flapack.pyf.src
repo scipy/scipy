@@ -708,7 +708,7 @@ interface
 
    end subroutine <prefix2>gelss
 
-    subroutine <prefix2>gelss_lwork(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
+    subroutine <prefix2>gelss_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
 
    ! work,info = gelss_lwork(m,n,nrhs,cond=-1.0)
    ! Query for optimal lwork size
@@ -719,7 +719,6 @@ interface
 
      integer intent(in):: m 
      integer intent(in):: n
-     integer intent(hide),depend(m,n):: minmn = MIN(m,n)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
      <ftype2> intent(hide) :: a
 
@@ -768,7 +767,7 @@ interface
 
    end subroutine <prefix2c>gelss
 
-   subroutine <prefix2c>gelss_lwork(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,info)
+   subroutine <prefix2c>gelss_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,rwork,lwork,info)
 
    ! work,info = gelss_lwork(m,n,nrhs,cond=-1.0)
    ! Query for optimal lwork size
@@ -779,7 +778,6 @@ interface
 
      integer intent(in):: m
      integer intent(in):: n
-     integer intent(hide),depend(m,n):: minmn = MIN(m,n)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
      <ftype2c> intent(hide) :: a
 
@@ -797,7 +795,7 @@ interface
 
    end subroutine <prefix2>gelss_lwork
 
-   subroutine <prefix2>gelsy(m,n,minmn,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
+   subroutine <prefix2>gelsy(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
 
    ! v,x,j,rank,work,info = dgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
    ! Solve Minimize 2-norm(A * X - B).
@@ -807,7 +805,6 @@ interface
 
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
-     integer intent(hide),depend(m,n):: minmn = MIN(m,n)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
      <ftype2> dimension(m,n),intent(in,out,copy,out=v) :: a
 
@@ -826,7 +823,7 @@ interface
 
    end subroutine <prefix2>gelsy
 
-   subroutine <prefix2>gelsy_lwork(m,n,minmn,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
+   subroutine <prefix2>gelsy_lwork(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
 
    ! work,info = dgelsy_lwork(m,n,nrhs,cond)
    ! Query for optimal lwork size
@@ -837,7 +834,6 @@ interface
 
      integer intent(in) :: m
      integer intent(in) :: n
-     integer intent(hide),depend(m,n):: minmn = MIN(m,n)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
      <ftype2> intent(hide) :: a
 
@@ -848,14 +844,13 @@ interface
      integer intent(hide) :: r
      integer intent(hide):: jptv
 
-     ! LWORK is obtained by the query call
      integer intent(in),optional :: lwork = -1
      <ftype2> intent(out) :: work
      integer intent(out)::info
 
    end subroutine <prefix2>gelsy_lwork
 
-   subroutine <prefix2c>gelsy(m,n,minmn,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork,info)
+   subroutine <prefix2c>gelsy(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork,info)
 
    ! v,x,j,rank,work,rwork,info = zgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
    ! Solve Minimize 2-norm(A * X - B).
@@ -865,7 +860,6 @@ interface
 
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
-     integer intent(hide),depend(m,n):: minmn = MIN(m,n)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
      <ftype2c> dimension(m,n),intent(in,out,copy,out=v) :: a
 
@@ -885,7 +879,7 @@ interface
 
    end subroutine <prefix2c>gelsy
 
-   subroutine <prefix2c>gelsy_lwork(m,n,minmn,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork,info)
+   subroutine <prefix2c>gelsy_lwork(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork,info)
 
    ! work,info = zgelsy_lwork(m,n,nrhs,cond)
    ! Query for optimal lwork size
@@ -896,7 +890,6 @@ interface
 
      integer intent(in) :: m
      integer intent(in)):: n
-     integer intent(hide) :: minmn = MIN(m,n)
      integer intent(hide) :: maxmn = MAX(m,n)
      <ftype2c> intent(hide) :: a
 
@@ -907,7 +900,6 @@ interface
      integer intent(hide) :: r
      integer intent(hide) :: jptv
 
-     ! LWORK is obtained by the query call
      integer intent(in),optional :: lwork = -1
      <ftype2c> intent(out) :: work
      <ftype2> intent(hide) :: rwork
@@ -948,7 +940,7 @@ interface
 
    end subroutine <prefix2>gelsd
 
-   subroutine <prefix2>gelsd_lwork(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_iwork,iwork,info)
+   subroutine <prefix2>gelsd_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,iwork,info)
 
    ! work,iwork,info = dgelsd_lwork(m,n,nrhs,cond=-1.0)
    ! Query for optimal lwork size
@@ -959,7 +951,6 @@ interface
 
      integer intent(in) :: m
      integer intent(in) :: n
-     integer intent(hide),depend(m,n):: minmn = MIN(m,n)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
      <ftype2> intent(hide) :: a
 
@@ -971,11 +962,8 @@ interface
      <ftype2> intent(hide) :: s
 	
      integer intent(in),optional :: lwork = -1
-     ! Impossible to calculate lwork explicitly, need to obtain it from query call first
-     ! Same for size_iwork
      <ftype2> intent(out) :: work
 
-     integer intent(hide) :: size_iwork
      integer intent(out) :: iwork	
      integer intent(out)::info
 
@@ -1017,7 +1005,7 @@ interface
 
    end subroutine <prefix2c>gelsd
 
-   subroutine <prefix2c>gelsd_lwork(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_rwork,rwork, size_iwork,iwork,info)
+   subroutine <prefix2c>gelsd_lwork(m,n,maxmn,nrhs,a,b,s,cond,r,work,lwork,rwork,iwork,info)
 
    ! work,rwork,iwork,info = zgelsd_lwork(m,n,nrhs,lwork=-1.0,cond=-1.0)
    ! Query for optimal lwork size
@@ -1028,7 +1016,6 @@ interface
 
      integer intent(in) :: m
      integer intent(in) :: n
-     integer intent(hide),depend(m,n):: minmn = MIN(m,n)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
      <ftype2c> intent(hide) :: a
 
@@ -1040,14 +1027,9 @@ interface
      <ftype2> intent(hide) :: s
 	
      integer intent(in),optional :: lwork = -1
-     ! Impossible to calculate lwork explicitly, need to obtain it from query call first
-     ! Same for size_rwork, size_iwork
      <ftype2c> intent(out) :: work
-
-     integer intent(hide) :: size_rwork
      <ftype2> intent(out) :: rwork
 
-     integer intent(hide) :: size_iwork
      integer intent(out) :: iwork	
      integer intent(out)::info
 
