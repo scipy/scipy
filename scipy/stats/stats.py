@@ -3519,7 +3519,7 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
     num_cats = len(np.unique(cats))  # Number of distinct categories
     copy_cats = copy.deepcopy(cats)
     perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
-    for m in range(permutations+1
+    for m in range(permutations+1):
         for i in range(num_cats):
             perms[:,num_cats*m+i] = (copy_cats == i).astype(cats.dtype)
         random_state.shuffle(copy_cats)
