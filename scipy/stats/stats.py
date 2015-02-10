@@ -3521,7 +3521,7 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
     perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
     for m in range(permutations+1
         for i in range(num_cats):
-            perms[:,num_cats*m+i]=(copy_cats == i).astype(cats.dtype)
+            perms[:,num_cats*m+i] = (copy_cats == i).astype(cats.dtype)
         random_state.shuffle(copy_cats)
     return perms
 
