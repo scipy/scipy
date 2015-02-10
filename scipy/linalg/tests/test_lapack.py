@@ -12,6 +12,8 @@ import numpy as np
 
 from scipy.linalg import _flapack as flapack
 from scipy.linalg import inv
+from scipy.linalg import svd
+
 try:
     from scipy.linalg import _clapack as clapack
 except ImportError:
@@ -135,6 +137,38 @@ class TestDpotr(TestCase):
                     assert_allclose(np.tril(dpt), np.tril(inv(a)))
                 else:
                     assert_allclose(np.triu(dpt), np.triu(inv(a)))
+                    
+class TestDlasd4(TestCase):
+    def test_sing_val_update(self):
+
+        sigmas = np.array([4., 3., 2., 0])
+        m_vec = np.array([3.12, 5.7, -4.8, -2.2])
+
+        M = np.hstack((np.vstack((np.diag(sigmas[0:-1]),
+                        np.zeros((1,len(m_vec) - 1)))), m_vec[:, np.newaxis]))
+        SM = svd(M, full_matrices=False, compute_uv=False, overwrite_a=False,
+                 check_finite=False)
+
+        it_len = len(sigmas)
+        sgm = np.concatenate((sigmas[::-1], (sigmas[0] +
+                              it_len*np.sqrt(np.sum(np.power(m_vec,2))),)))
+        mvc = np.concatenate((m_vec[::-1], (0,)))
+
+        lasd4 = get_lapack_funcs('lasd4',(sigmas,))
+
+        roots = []
+        for i in range(1, it_len+1):
+            res = lasd4(i, sgm, mvc)
+            roots.append(res[1])
+
+            assert_((res[3] <= 0),"LAPACK root finding dlasd4 failed to fined \
+                                    the last singular value")
+        roots = np.array(roots)[::-1]
+
+        assert_((not np.any(np.isnan(roots)),"There are NaN roots"))
+        assert_allclose(SM, roots, atol=100*np.finfo(np.float64).eps,
+                        rtol=100*np.finfo(np.float64).eps)
+
 
 if __name__ == "__main__":
     run_module_suite()

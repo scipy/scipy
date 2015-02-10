@@ -26,6 +26,11 @@ New features
 
 The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
 
+Added wrapper for potentially useful LAPACK function `*lasd4`. It computes the
+square root of the i-th updated eigenvalue of a positive symmetric rank-one
+modification to a positive diagonal matrix. See its LAPACK documentation and
+unit tests for it to get more info.
+
 `scipy.signal` improvements
 ---------------------------
 

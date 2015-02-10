@@ -164,6 +164,9 @@ All functions
 
    chegvx
    zhegvx
+   
+   dlasd4
+   slasd4
 
    slaswp
    dlaswp
