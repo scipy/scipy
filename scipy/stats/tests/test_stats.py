@@ -2926,16 +2926,31 @@ class TestFOneWay(TestCase):
         F, p = stats.f_oneway([0,2], [0,2])
         assert_equal(F, 0.0)
 
+        # Test it with permutations enabled
+        F, p = stats.f_oneway([0,2], [0,2], permutations=5)
+        assert_equal(F, 0.0)
+
+    
     def test_basic(self):
         # Despite being a floating point calculation, this data should
         # result in F being exactly 2.0.
         F, p = stats.f_oneway([0,2], [2,4])
         assert_equal(F, 2.0)
 
+        # Test with permutations enabled
+        F, p = stats.f_oneway([0,2], [2,4], permutations = 5)
+        assert_equal(F, 2.0)
+
     def test_large_integer_array(self):
         a = np.array([655, 788], dtype=np.uint16)
         b = np.array([789, 772], dtype=np.uint16)
         F, p = stats.f_oneway(a, b)
+        assert_almost_equal(F, 0.77450216931805538)
+
+        # Test with permutations enabled
+        a = np.array([655, 788], dtype=np.uint16)
+        b = np.array([789, 772], dtype=np.uint16)
+        F, p = stats.f_oneway(a, b, permutations = 5)
         assert_almost_equal(F, 0.77450216931805538)
 
 

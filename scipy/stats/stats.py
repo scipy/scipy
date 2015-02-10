@@ -2366,7 +2366,7 @@ def trim_mean(a, proportiontocut, axis=0):
     return np.mean(newa, axis=axis)
 
 
-def f_oneway(*args, **kwargs):
+def f_oneway(*args, **kwds):
     """
     Performs a 1-way ANOVA.
 
@@ -2378,10 +2378,13 @@ def f_oneway(*args, **kwargs):
     ----------
     sample1, sample2, ... : array_like
         The sample measurements for each group.
+    axis : int, optional
+        Axis to conduct F test on.  
     permutations : int, optional
-        If permutations > 0, then a permutation test will be conducted to
-        calculate the p-values
-        .. versionadded:: 0.11.0
+        Number of permutations that will be used to calculate p-values
+        using a permutation test.  The permutation test will only be conducted
+        if permutations > 0 
+        .. versionadded:: 0.15.0
     random_state : int or RandomState
         Pseudo number generator state used for random sampling.
 
@@ -2418,8 +2421,8 @@ def f_oneway(*args, **kwargs):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    if kwargs is not None:
-        return _permutation_f_oneway(args, kwargs)
+    if kwds is not None:
+        return _permutation_f_oneway(args, kwds)
     else:
         args = [np.asarray(arg, dtype=float) for arg in args]
         na = len(args)    # ANOVA on 'na' groups, each in it's own array
@@ -2440,7 +2443,7 @@ def f_oneway(*args, **kwargs):
         prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
         return f, prob
 
-def _permutation_f_oneway(*args, **kwargs):
+def _permutation_f_oneway(*args, **kwds):
     """
     Performs a 1-way ANOVA.
 
@@ -2452,6 +2455,8 @@ def _permutation_f_oneway(*args, **kwargs):
     ----------
     sample1, sample2, ... : array_like
         The sample measurements for each group.
+    axis : int, optional
+        Axis to conduct permutation test on.  
     permutations : int, optional
         If permutations > 0, then a permutation test will be conducted to
         calculate the p-values
@@ -2467,14 +2472,18 @@ def _permutation_f_oneway(*args, **kwargs):
         The associated p-value determined from a permutation test
     """
     
-    params = {'permutations':1000, 'random_state':0}
-    for key, val in kwargs.iteritems():
+    params = {'permutations':1000, 'random_state':0, 'axis':0}
+    for key, val in kwds.iteritems():
         if key in params:
             params[key] = val
         else:
             raise ValueError('%s is not a parameter for f_oneway' % key)
     permutations = params['permutations']
     random_state = params['random_state']
+
+    mat = np.concatenate(args, axis=axis)
+    cats = np.hstack([np.zeros(X[i].shape[axis]) + i for i in len(args)])
+
     
     perms = _init_categorical_perms(cats, permutations=permutations, random_state=random_state)
 
