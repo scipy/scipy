@@ -43,51 +43,54 @@ class dlti(object):
         """
         Initialize the DLTI system using either:
 
-            - (numerator, denominator)
-            - (zeros, poles, gain)
-            - (A, B, C, D) : state-space.
+            - (numerator, denominator, dt)
+            - (zeros, poles, gain, dt)
+            - (A, B, C, D, dt) : state-space.
 
         """
 
         N = len(args)
-        if N == 2:  # Numerator denominator transfer function input
-            self._num, self._den = normalize(*args)
+        if N == 3:  # Numerator denominator dt transfer function input
+            self._num, self._den, = normalize(args[0],args[1])
+            self._dt = args[2]
             self._update(N)
             self.inputs = 1
             if len(self.num.shape) > 1:
                 self.outputs = self.num.shape[0]
             else:
                 self.outputs = 1
-        elif N == 3:      # Zero-pole-gain form
-            self._zeros, self._poles, self._gain = args
+        elif N == 4:      # Zero-pole-gain dt form
+            self._zeros, self._poles, self._gain, self._dt = args
             self._update(N)
             # make sure we have numpy arrays
-            self.zeros = numpy.asarray(self.zeros)
-            self.poles = numpy.asarray(self.poles)
+            self.zeros = np.asarray(self.zeros)
+            self.poles = np.asarray(self.poles)
             self.inputs = 1
             if len(self.zeros.shape) > 1:
                 self.outputs = self.zeros.shape[0]
             else:
                 self.outputs = 1
-        elif N == 4:       # State-space form
-            self._A, self._B, self._C, self._D = abcd_normalize(*args)
+        elif N == 5:       # State-space dt form
+            self._A, self._B, self._C, self._D, = abcd_normalize(args[0:3])
+            self._dt = args[4]
             self._update(N)
             self.inputs = self.B.shape[-1]
             self.outputs = self.C.shape[0]
         else:
-            raise ValueError("Needs 2, 3, or 4 arguments.")
+            raise ValueError("Needs 3, 4, or 5 arguments.")
 
     def __repr__(self):
         """
         Canonical representation using state-space to preserve numerical
         precision and any MIMO information
         """
-        return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
+        return '{0}(\n{1},\n{2},\n{3},\n{4}\n,{5})'.format(
             self.__class__.__name__,
             repr(self.A),
             repr(self.B),
             repr(self.C),
             repr(self.D),
+            repr(self.dt),
             )
 
     @property
@@ -97,7 +100,7 @@ class dlti(object):
     @num.setter
     def num(self, value):
         self._num = value
-        self._update(2)
+        self._update(3)
 
     @property
     def den(self):
@@ -106,7 +109,7 @@ class dlti(object):
     @den.setter
     def den(self, value):
         self._den = value
-        self._update(2)
+        self._update(3)
 
     @property
     def zeros(self):
@@ -115,7 +118,7 @@ class dlti(object):
     @zeros.setter
     def zeros(self, value):
         self._zeros = value
-        self._update(3)
+        self._update(4)
 
     @property
     def poles(self):
@@ -124,7 +127,7 @@ class dlti(object):
     @poles.setter
     def poles(self, value):
         self._poles = value
-        self._update(3)
+        self._update(4)
 
     @property
     def gain(self):
@@ -133,7 +136,7 @@ class dlti(object):
     @gain.setter
     def gain(self, value):
         self._gain = value
-        self._update(3)
+        self._update(4)
 
     @property
     def A(self):
@@ -142,7 +145,7 @@ class dlti(object):
     @A.setter
     def A(self, value):
         self._A = value
-        self._update(4)
+        self._update(5)
 
     @property
     def B(self):
@@ -151,7 +154,7 @@ class dlti(object):
     @B.setter
     def B(self, value):
         self._B = value
-        self._update(4)
+        self._update(5)
 
     @property
     def C(self):
@@ -160,7 +163,7 @@ class dlti(object):
     @C.setter
     def C(self, value):
         self._C = value
-        self._update(4)
+        self._update(5)
 
     @property
     def D(self):
@@ -169,17 +172,25 @@ class dlti(object):
     @D.setter
     def D(self, value):
         self._D = value
-        self._update(4)
+        self._update(5)
+
+    @property
+    def dt(self):
+        return self._dt
+
+    @dt.setter
+    def dt(self,value):
+        self._dt = value
 
     def _update(self, N):
-        if N == 2:
+        if N == 3:
             self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
             self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
-        if N == 3:
+        if N == 4:
             self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
             self._A, self._B, self._C, self._D = zpk2ss(self.zeros,
                                                         self.poles, self.gain)
-        if N == 4:
+        if N == 5:
             self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
             self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
                                                           self.C, self.D)
@@ -190,7 +201,7 @@ class dlti(object):
         Return the impulse response of a discrete-time system.
 
         """
-        return impulse(self, x0=x0, t=t, n=n)
+        return dimpulse(self, x0=x0, t=t, n=n)
 
     def dstep(self, x0=None, t=None, n=None):
         """
@@ -280,9 +291,9 @@ def dlsim(system, u, t=None, x0=None):
 
     # Check initial condition
     if x0 is None:
-        xout[0, :] = np.zeros((a.shape[1],))
+        xout[0,:] = np.zeros((a.shape[1],))
     else:
-        xout[0, :] = np.asarray(x0)
+        xout[0,:] = np.asarray(x0)
 
     # Pre-interpolate inputs into the desired time steps
     if t is None:
@@ -295,13 +306,13 @@ def dlsim(system, u, t=None, x0=None):
         u_dt = u_dt_interp(tout).transpose()
 
     # Simulate the system
-    for i in range(0, out_samples - 1):
-        xout[i + 1, :] = np.dot(a, xout[i, :]) + np.dot(b, u_dt[i, :])
-        yout[i, :] = np.dot(c, xout[i, :]) + np.dot(d, u_dt[i, :])
+    for i in range(0, out_samples-1):
+        xout[i + 1,:] = np.dot(a, xout[i,:]) + np.dot(b, u_dt[i,:])
+        yout[i, :] = np.dot(c, xout[i,:]) + np.dot(d, u_dt[i,:])
 
     # Last point
-    yout[out_samples - 1, :] = np.dot(c, xout[out_samples - 1, :]) + \
-                            np.dot(d, u_dt[out_samples - 1, :])
+    yout[out_samples - 1,:] = np.dot(c, xout[out_samples-1,:]) + \
+                            np.dot(d, u_dt[out_samples-1,:])
 
     if len(system) == 5:
         return tout, yout, xout
@@ -370,7 +381,7 @@ def dimpulse(system, x0=None, t=None, n=None):
     yout = None
     for i in range(0, n_inputs):
         u = np.zeros((t.shape[0], n_inputs))
-        u[0, i] = 1.0
+        u[0,i] = 1.0
 
         one_output = dlsim(system, u, t=t, x0=x0)
 
@@ -445,7 +456,7 @@ def dstep(system, x0=None, t=None, n=None):
     yout = None
     for i in range(0, n_inputs):
         u = np.zeros((t.shape[0], n_inputs))
-        u[:, i] = np.ones((t.shape[0],))
+        u[:,i] = np.ones((t.shape[0],))
 
         one_output = dlsim(system, u, t=t, x0=x0)
 
