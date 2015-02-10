@@ -3365,7 +3365,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return _ttest_ind_from_stats(mean1, mean2, denom, df)
 
     
-def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None, iterations=1):
+def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -3388,15 +3388,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
         population variance [2]_.
         .. versionadded:: 0.11.0
     permutations : int, optional
-        If permutations > 0, then a permutation test will be conducted to
-        calculate the p-values
+        The number of permutations that will be used to calculate p-values
+        using a permutation test.  The permutation test will only be run
+        if permutations > 0.
         .. versionadded:: 0.15.2
     random_state : int or RandomState
         Pseudo number generator state used for random sampling.
-        .. versionadded:: 0.15.2
-    iterations : int
-        Number of permutation tests to run and combine their
-        resulting pvalues
         .. versionadded:: 0.15.2
     Returns
     -------
@@ -3479,23 +3476,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     if permutations is not None:
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
-        assert iterations > 0, "Not enough iterations"
         t_stat, pvalues = _permutation_ttest(mat, cats,
                                              axis=axis,
                                              equal_var=equal_var,
                                              permutations=permutations,
                                              random_state=random_state)
-        all_pvalues = pvalues
-        for it in range(1,iterations):
-            _, pvalues = _permutation_ttest(mat, cats,
-                                            axis=axis,
-                                            equal_var=equal_var,
-                                            permutations=permutations,
-                                            random_state=random_state)
-            all_pvalues = np.vstack((all_pvalues, pvalues))
-        if iterations > 1:
-            perm_coefs = np.array([permutations]*iterations)
-            pvalues = _combine_pseudo_pvalues(all_pvalues, perm_coefs)
         return t_stat, pvalues
     else:
         v1 = np.var(a, axis, ddof=1)
@@ -3530,35 +3515,15 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
     num_cats = len(np.unique(cats))  # Number of distinct categories
     copy_cats = copy.deepcopy(cats)
     perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
-    for m in range(permutations+1):
+    for m in range(permutations+1
         for i in range(num_cats):
-            perms[:,num_cats*m+i] = (copy_cats == i).astype(cats.dtype)
+            perms[:,num_cats*m+i]=(copy_cats == i).astype(cats.dtype)
         random_state.shuffle(copy_cats)
     return perms
 
-def _combine_pseudo_pvalues(pvalues, perm_coefs):
-    """
-    Combines p-values from multiple permutation tests
-
-    Parameters
-    ----------
-    pvalues: array_like
-         Type I error estimates obtained from multiple permutation tests
-    perm_coefs: array_like
-         Number of permutations used in each permutation test
-
-    Returns
-    -------
-    comb_pvalues: array-like
-         Combined pvalues
-    """
-    cmps = np.dot((perm_coefs+1.), pvalues)
-    comb_pvalues = np.divide(cmps - len(perm_coefs) + 1,
-                             (perm_coefs).sum()+1)
-    return comb_pvalues
     
 
-def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True, random_state=None):
+def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -3579,6 +3544,9 @@ def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True, ran
         over which to operate on a and b).
     permutations: int
         Number of permutations used to calculate p-value
+    equal_var: bool
+        If false, a Welch's t-test is conducted.  Otherwise,
+        a ordinary t-test is conducted
     random_state : int or RandomState
         Pseudo number generator state used for random sampling.
 
