@@ -859,6 +859,13 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
+
+    # if 2x2 or smaller: already in Hessenberg
+    if a1.shape[0] <= 2:
+        if calc_q:
+            return a1, numpy.eye(a1.shape[0])
+        return a1
+
     gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd','gebal', 'gehrd_lwork'), (a1,))
     ba, lo, hi, pivscale, info = gebal(a1, permute=0, overwrite_a=overwrite_a)
     if info < 0:
@@ -868,35 +875,27 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
     lwork, info = gehrd_lwork(ba.shape[0], lo=lo, hi=hi)
     if info != 0:
-        raise ValueError('failed to compute internal gehrd work array size' % info)
+        raise ValueError('failed to compute internal gehrd work array size. '
+                            'LAPACK info = %d ' % info)
     lwork = int(lwork.real)
 
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gehrd '
                                         '(hessenberg)' % -info)
-
+    h = numpy.triu(hq, -1)
     if not calc_q:
-        for i in range(lo, hi):
-            hq[i+2:hi+1, i] = 0.0
-        return hq
+        return h
 
-    # XXX: Use ORGHR routines to compute q.
-    typecode = hq.dtype
-    ger,gemm = get_blas_funcs(('ger','gemm'), dtype=typecode)
-    q = None
-    for i in range(lo, hi):
-        if tau[i] == 0.0:
-            continue
-        v = zeros(n, dtype=typecode)
-        v[i+1] = 1.0
-        v[i+2:hi+1] = hq[i+2:hi+1, i]
-        hq[i+2:hi+1, i] = 0.0
-        h = ger(-tau[i], v, v,a=diag(ones(n, dtype=typecode)), overwrite_a=1)
-        if q is None:
-            q = h
-        else:
-            q = gemm(1.0, q, h)
-    if q is None:
-        q = diag(ones(n, dtype=typecode))
-    return hq, q
+    # use orghr/unghr to compute q
+    orghr, orghr_lwork = get_lapack_funcs(('orghr', 'orghr_lwork'), (a1,))
+    lwork, info = orghr_lwork(n, lo=lo, hi=hi)
+    if info != 0:
+        raise ValueError('failed to compute internal orghr work array size. '
+                            'LAPACK info = %d ' % info)
+    lwork = int(lwork.real)
+    q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
+    if info < 0:
+        raise ValueError('illegal value in %d-th argument of internal orghr '
+                         '(hessenberg)' % -info)
+    return h, q

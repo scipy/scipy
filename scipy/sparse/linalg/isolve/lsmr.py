@@ -131,7 +131,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
            "LSMR: An iterative algorithm for sparse least-squares problems",
            SIAM J. Sci. Comput., vol. 33, pp. 2950-2971, 2011.
            http://arxiv.org/abs/1006.0758
-    .. [2] LSMR Software, http://www.stanford.edu/~clfong/lsmr.html
+    .. [2] LSMR Software, http://web.stanford.edu/group/SOL/software/lsmr/
 
     """
 

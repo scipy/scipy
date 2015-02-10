@@ -7,7 +7,7 @@ import numpy as np
 
 import scipy.linalg
 import scipy.sparse.linalg
-from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
 
 __all__ = ['expm_multiply']
 
@@ -238,38 +238,6 @@ _theta = {
         }
 
 
-class MatrixPowerOperator(LinearOperator):
-
-    def __init__(self, A, p):
-        if A.ndim != 2 or A.shape[0] != A.shape[1]:
-            raise ValueError('expected A to be like a square matrix')
-        if p < 0:
-            raise ValueError('expected p to be a non-negative integer')
-        self._A = A
-        self._p = p
-        self.ndim = A.ndim
-        self.shape = A.shape
-
-    def matvec(self, x):
-        for i in range(self._p):
-            x = self._A.dot(x)
-        return x
-
-    def rmatvec(self, x):
-        for i in range(self._p):
-            x = x.dot(self._A)
-        return x
-
-    def matmat(self, X):
-        for i in range(self._p):
-            X = self._A.dot(X)
-        return X
-
-    @property
-    def T(self):
-        return MatrixPowerOperator(self._A.T, self._p)
-
-
 def _onenormest_matrix_power(A, p,
         t=2, itmax=5, compute_v=False, compute_w=False):
     """
@@ -310,7 +278,7 @@ def _onenormest_matrix_power(A, p,
     #XXX Eventually turn this into an API function in the  _onenormest module,
     #XXX and remove its underscore,
     #XXX but wait until expm_multiply goes into scipy.
-    return scipy.sparse.linalg.onenormest(MatrixPowerOperator(A, p))
+    return scipy.sparse.linalg.onenormest(aslinearoperator(A) ** p)
 
 
 class LazyOperatorNormInfo:

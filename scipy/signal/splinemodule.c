@@ -4,14 +4,6 @@
 
 
 #define PYERR(message) do {PyErr_SetString(PyExc_ValueError, message); goto fail;} while(0)
-#define DATA(arr) ((arr)->data)
-#define DIMS(arr) ((arr)->dimensions)
-#define STRIDES(arr) ((arr)->strides)
-#define ELSIZE(arr) ((arr)->descr->elsize)
-#define OBJECTTYPE(arr) ((arr)->descr->type_num)
-#define BASEOBJ(arr) ((PyArrayObject *)((arr)->base))
-#define RANK(arr) ((arr)->nd)
-#define ISCONTIGUOUS(m) ((m)->flags & NPY_CONTIGUOUS)
 
 static void convert_strides(npy_intp*,npy_intp*,int,int);
 
@@ -78,22 +70,26 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
  
-  ck = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),thetype);
+  ck = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), thetype);
   if (ck == NULL) goto fail;
-  M = DIMS(a_image)[0];
-  N = DIMS(a_image)[1];
+  M = PyArray_DIMS(a_image)[0];
+  N = PyArray_DIMS(a_image)[1];
 
-  convert_strides(STRIDES(a_image), instrides, ELSIZE(a_image), 2);
+  convert_strides(PyArray_STRIDES(a_image), instrides, PyArray_ITEMSIZE(a_image), 2);
   outstrides[0] = N;
   outstrides[1] = 1;
 
   if (thetype == NPY_FLOAT) {
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-3;
-    retval = S_cubic_spline2D((float *)DATA(a_image), (float *)DATA(ck), M, N, lambda, instrides, outstrides, precision);
+    retval = S_cubic_spline2D((float *)PyArray_DATA(a_image),
+                              (float *)PyArray_DATA(ck),
+                              M, N, lambda, instrides, outstrides, precision);
   }
   else if (thetype == NPY_DOUBLE) {
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-    retval = D_cubic_spline2D((double *)DATA(a_image), (double *)DATA(ck), M, N, lambda, instrides, outstrides, precision);
+    retval = D_cubic_spline2D((double *)PyArray_DATA(a_image),
+                              (double *)PyArray_DATA(ck),
+                              M, N, lambda, instrides, outstrides, precision);
   }
 
   if (retval == -3) PYERR("Precision too high.  Error did not converge.");
@@ -137,22 +133,26 @@ static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
  
-  ck = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),thetype);
+  ck = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), thetype);
   if (ck == NULL) goto fail;
-  M = DIMS(a_image)[0];
-  N = DIMS(a_image)[1];
+  M = PyArray_DIMS(a_image)[0];
+  N = PyArray_DIMS(a_image)[1];
 
-  convert_strides(STRIDES(a_image), instrides, ELSIZE(a_image), 2);
+  convert_strides(PyArray_STRIDES(a_image), instrides, PyArray_ITEMSIZE(a_image), 2);
   outstrides[0] = N;
   outstrides[1] = 1;
 
   if (thetype == NPY_FLOAT) {
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-3;
-    retval = S_quadratic_spline2D((float *)DATA(a_image), (float *)DATA(ck), M, N, lambda, instrides, outstrides, precision);
+    retval = S_quadratic_spline2D((float *)PyArray_DATA(a_image),
+                                  (float *)PyArray_DATA(ck),
+                                  M, N, lambda, instrides, outstrides, precision);
   }
   else if (thetype == NPY_DOUBLE) {
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-    retval = D_quadratic_spline2D((double *)DATA(a_image), (double *)DATA(ck), M, N, lambda, instrides, outstrides, precision);
+    retval = D_quadratic_spline2D((double *)PyArray_DATA(a_image),
+                                  (double *)PyArray_DATA(ck),
+                                  M, N, lambda, instrides, outstrides, precision);
   }
 
   if (retval == -3) PYERR("Precision too high.  Error did not converge.");
@@ -194,47 +194,47 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   
   if ((a_image == NULL) || (a_hrow == NULL) || (a_hcol==NULL)) goto fail;
   
-  out = (PyArrayObject *)PyArray_SimpleNew(2,DIMS(a_image),thetype);
+  out = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), thetype);
   if (out == NULL) goto fail;
-  M = DIMS(a_image)[0];
-  N = DIMS(a_image)[1];
+  M = PyArray_DIMS(a_image)[0];
+  N = PyArray_DIMS(a_image)[1];
 
-  convert_strides(STRIDES(a_image), instrides, ELSIZE(a_image), 2);
+  convert_strides(PyArray_STRIDES(a_image), instrides, PyArray_ITEMSIZE(a_image), 2);
   outstrides[0] = N;
   outstrides[1] = 1;
 
   switch (thetype) {
   case NPY_FLOAT:
-    ret = S_separable_2Dconvolve_mirror((float *)DATA(a_image), 
-					(float *)DATA(out), M, N,
-					(float *)DATA(a_hrow), 
-					(float *)DATA(a_hcol),
-					DIMS(a_hrow)[0], DIMS(a_hcol)[0], 
+    ret = S_separable_2Dconvolve_mirror((float *)PyArray_DATA(a_image), 
+					(float *)PyArray_DATA(out), M, N,
+					(float *)PyArray_DATA(a_hrow), 
+					(float *)PyArray_DATA(a_hcol),
+					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
     break;
   case NPY_DOUBLE:
-    ret = D_separable_2Dconvolve_mirror((double *)DATA(a_image), 
-					(double *)DATA(out), M, N, 
-					(double *)DATA(a_hrow), 
-					(double *)DATA(a_hcol),
-					DIMS(a_hrow)[0], DIMS(a_hcol)[0], 
+    ret = D_separable_2Dconvolve_mirror((double *)PyArray_DATA(a_image), 
+					(double *)PyArray_DATA(out), M, N, 
+					(double *)PyArray_DATA(a_hrow), 
+					(double *)PyArray_DATA(a_hcol),
+					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
     break;
 #ifdef __GNUC__
   case NPY_CFLOAT:
-    ret = C_separable_2Dconvolve_mirror((__complex__ float *)DATA(a_image), 
-					(__complex__ float *)DATA(out), M, N, 
-					(__complex__ float *)DATA(a_hrow), 
-					(__complex__ float *)DATA(a_hcol),
-					DIMS(a_hrow)[0], DIMS(a_hcol)[0], 
+    ret = C_separable_2Dconvolve_mirror((__complex__ float *)PyArray_DATA(a_image), 
+					(__complex__ float *)PyArray_DATA(out), M, N, 
+					(__complex__ float *)PyArray_DATA(a_hrow), 
+					(__complex__ float *)PyArray_DATA(a_hcol),
+					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0], 
 					instrides, outstrides);
     break;
   case NPY_CDOUBLE:
-    ret = Z_separable_2Dconvolve_mirror((__complex__ double *)DATA(a_image), 
-					(__complex__ double *)DATA(out), M, N, 
-					(__complex__ double *)DATA(a_hrow), 
-					(__complex__ double *)DATA(a_hcol),
-					DIMS(a_hrow)[0], DIMS(a_hcol)[0], 
+    ret = Z_separable_2Dconvolve_mirror((__complex__ double *)PyArray_DATA(a_image), 
+					(__complex__ double *)PyArray_DATA(out), M, N, 
+					(__complex__ double *)PyArray_DATA(a_hrow), 
+					(__complex__ double *)PyArray_DATA(a_hcol),
+					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0], 
 					instrides, outstrides);
     break;
 #endif
@@ -304,11 +304,11 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
   
   if ((a_sig == NULL)) goto fail;
   
-  out = (PyArrayObject *)PyArray_SimpleNew(1,DIMS(a_sig),thetype);
+  out = (PyArrayObject *)PyArray_SimpleNew(1, PyArray_DIMS(a_sig), thetype);
   if (out == NULL) goto fail;
-  N = DIMS(a_sig)[0];
+  N = PyArray_DIMS(a_sig)[0];
 
-  convert_strides(STRIDES(a_sig), &instrides, ELSIZE(a_sig), 1);
+  convert_strides(PyArray_STRIDES(a_sig), &instrides, PyArray_ITEMSIZE(a_sig), 1);
   outstrides = 1;
 
   switch (thetype) {
@@ -318,8 +318,8 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
       float rz1 = z1.real;
 
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;      
-      ret = S_IIR_forback1 (rc0, rz1, (float *)DATA(a_sig), 
-			    (float *)DATA(out), N,
+      ret = S_IIR_forback1 (rc0, rz1, (float *)PyArray_DATA(a_sig), 
+			    (float *)PyArray_DATA(out), N,
 			    instrides, outstrides, (float )precision);
     }
     break;
@@ -329,8 +329,8 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
       double rz1 = z1.real;
 
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = D_IIR_forback1 (rc0, rz1, (double *)DATA(a_sig), 
-			    (double *)DATA(out), N,
+      ret = D_IIR_forback1 (rc0, rz1, (double *)PyArray_DATA(a_sig), 
+			    (double *)PyArray_DATA(out), N,
 			    instrides, outstrides, precision);
     }
     break;
@@ -340,8 +340,8 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
       __complex__ float zc0 = c0.real + 1.0i*c0.imag;
       __complex__ float zz1 = z1.real + 1.0i*z1.imag;      
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-      ret = C_IIR_forback1 (zc0, zz1, (__complex__ float *)DATA(a_sig), 
-			    (__complex__ float *)DATA(out), N,
+      ret = C_IIR_forback1 (zc0, zz1, (__complex__ float *)PyArray_DATA(a_sig), 
+			    (__complex__ float *)PyArray_DATA(out), N,
 			    instrides, outstrides, (float )precision);
     }
     break;
@@ -350,8 +350,8 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
       __complex__ double zc0 = c0.real + 1.0i*c0.imag;
       __complex__ double zz1 = z1.real + 1.0i*z1.imag;      
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = Z_IIR_forback1 (zc0, zz1, (__complex__ double *)DATA(a_sig), 
-			    (__complex__ double *)DATA(out), N,
+      ret = Z_IIR_forback1 (zc0, zz1, (__complex__ double *)PyArray_DATA(a_sig), 
+			    (__complex__ double *)PyArray_DATA(out), N,
 			    instrides, outstrides, precision);
     }
     break;
@@ -428,24 +428,24 @@ static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
   
   if ((a_sig == NULL)) goto fail;
   
-  out = (PyArrayObject *)PyArray_SimpleNew(1,DIMS(a_sig),thetype);
+  out = (PyArrayObject *)PyArray_SimpleNew(1, PyArray_DIMS(a_sig), thetype);
   if (out == NULL) goto fail;
-  N = DIMS(a_sig)[0];
+  N = PyArray_DIMS(a_sig)[0];
 
-  convert_strides(STRIDES(a_sig), &instrides, ELSIZE(a_sig), 1);
+  convert_strides(PyArray_STRIDES(a_sig), &instrides, PyArray_ITEMSIZE(a_sig), 1);
   outstrides = 1;
 
   switch (thetype) {
   case NPY_FLOAT:
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;      
-    ret = S_IIR_forback2 (r, omega, (float *)DATA(a_sig), 
-			  (float *)DATA(out), N,
+    ret = S_IIR_forback2 (r, omega, (float *)PyArray_DATA(a_sig), 
+			  (float *)PyArray_DATA(out), N,
 			  instrides, outstrides, precision);
     break;
   case NPY_DOUBLE:
     if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-    ret = D_IIR_forback2 (r, omega, (double *)DATA(a_sig), 
-			  (double *)DATA(out), N,
+    ret = D_IIR_forback2 (r, omega, (double *)PyArray_DATA(a_sig), 
+			  (double *)PyArray_DATA(out), N,
 			  instrides, outstrides, precision);
     break;
   default:

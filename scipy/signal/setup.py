@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+from scipy._build_utils import numpy_nodepr_api
+
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -15,15 +17,15 @@ def configuration(parent_package='', top_path=None):
                                   'medianfilter.c', 'lfilter.c.src',
                                   'correlate_nd.c.src'],
                          depends=['sigtools.h'],
-                         include_dirs=['.']
-                         )
+                         include_dirs=['.'],
+                         **numpy_nodepr_api)
 
     config.add_extension('_spectral', sources=['_spectral.c'])
     config.add_extension('_max_len_seq', sources=['_max_len_seq.c'])
 
     spline_src = ['splinemodule.c', 'S_bspline_util.c', 'D_bspline_util.c',
                   'C_bspline_util.c', 'Z_bspline_util.c', 'bspline_util.c']
-    config.add_extension('spline', sources=spline_src)
+    config.add_extension('spline', sources=spline_src, **numpy_nodepr_api)
 
     return config
 
