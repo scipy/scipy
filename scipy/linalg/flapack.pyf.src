@@ -745,7 +745,7 @@ interface
 	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
    	! Computes i-th square root of eigenvalue of rank one augmented diagonal matrix. Needed by SVD update procedure
 	
-	callstatement { i++; (*f2py_func)( &n, &i, d, z, delta, &rho, &sigma, work, &info ) }
+	callstatement { i++; (*f2py_func)( &n, &i, d, z, delta, &rho, &sigma, work, &info); }
      callprotoargument int*, int*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, int*
 	
 	integer intent(hide),depend(d):: n = shape(d,0)

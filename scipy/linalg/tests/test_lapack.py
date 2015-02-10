@@ -157,12 +157,12 @@ class TestDlasd4(TestCase):
         lasd4 = get_lapack_funcs('lasd4',(sigmas,))
 
         roots = []
-        for i in range(1, it_len+1):
+        for i in range(0, it_len):
             res = lasd4(i, sgm, mvc)
             roots.append(res[1])
 
-            assert_((res[3] <= 0),"LAPACK root finding dlasd4 failed to fined \
-                                    the last singular value")
+            assert_((res[3] <= 0),"LAPACK root finding dlasd4 failed to find \
+                                    the singular value %i" % i)
         roots = np.array(roots)[::-1]
 
         assert_((not np.any(np.isnan(roots)),"There are NaN roots"))
