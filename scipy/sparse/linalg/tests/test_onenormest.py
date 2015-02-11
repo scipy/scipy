@@ -26,13 +26,13 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
         self.ndim = 2
         self.shape = (A.shape[0], B.shape[1])
 
-    def matvec(self, x):
+    def _matvec(self, x):
         return np.dot(self.A, np.dot(self.B, x))
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
         return np.dot(np.dot(x, self.A), self.B)
 
-    def matmat(self, X):
+    def _matmat(self, X):
         return np.dot(self.A, np.dot(self.B, X))
 
     @property

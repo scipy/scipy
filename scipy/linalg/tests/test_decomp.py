@@ -1760,6 +1760,18 @@ class TestHessenberg(TestCase):
         assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
         assert_array_almost_equal(h,h1,decimal=4)
 
+    def test_2x2(self):
+        a = [[2, 1], [7, 12]]
+
+        h, q = hessenberg(a, calc_q=1)
+        assert_array_almost_equal(q, np.eye(2))
+        assert_array_almost_equal(h, a)
+
+        b = [[2-7j, 1+2j], [7+3j, 12-2j]]
+        h2, q2 = hessenberg(b, calc_q=1)
+        assert_array_almost_equal(q2, np.eye(2))
+        assert_array_almost_equal(h2, b)
+
 
 class TestQZ(TestCase):
     def setUp(self):

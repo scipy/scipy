@@ -2048,7 +2048,6 @@ def _desc_stats(x1, x2, axis=0):
         nobs = x.shape[axis]
         return mu, std, nobs
     return _stats(x1, axis) + _stats(x2, axis)
-
 def test_ttest_perm():
 
     ## Test on horizontal dimension
@@ -2115,7 +2114,6 @@ def test_ttest_perm():
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
     assert_array_almost_equal(pvalues, array([0.000999]))
 
-
     ## Test out random seed
     N = 20
     a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
@@ -2126,6 +2124,7 @@ def test_ttest_perm():
                                           random_state=np.random.RandomState(seed=0))
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
     assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
+
 
 def test_ttest_ind():
     # regression test

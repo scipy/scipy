@@ -3484,13 +3484,15 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
-    permutations : int, optional
-        If permutations > 0, then a permutation test will be conducted to
-        calculate the p-values
         .. versionadded:: 0.11.0
+    permutations : int, optional
+        The number of permutations that will be used to calculate p-values
+        using a permutation test.  The permutation test will only be run
+        if permutations > 0.
+        .. versionadded:: 0.15.2
     random_state : int or RandomState
         Pseudo number generator state used for random sampling.
-    
+        .. versionadded:: 0.15.2
     Returns
     -------
     t : float or array
@@ -3514,6 +3516,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     label - 0 corresponding to the first sample and 1 corresponding to the
     second sample. A vector of these labels is permutated multiple times and
     these permutations are used to calculate the permutation test.
+    
+    The running time of the permutation test is O(NMP) where N is the
+    length of x and y, M is the width of x and y, and P is the number
+    of permutations.  The memory usage is O(NP + NM).
     
     References
     ----------
@@ -3566,16 +3572,21 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7095211267d7e0f9a72c55968fa8ba1ded6625e3
     random_state = check_random_state(random_state)
         
     if permutations is not None:
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
-        return _permutation_ttest(mat, cats,
-                                  axis=axis,
-                                  equal_var=equal_var,
-                                  permutations=permutations,
-                                  random_state=random_state)
+        t_stat, pvalues = _permutation_ttest(mat, cats,
+                                             axis=axis,
+                                             equal_var=equal_var,
+                                             permutations=permutations,
+                                             random_state=random_state)
+        return t_stat, pvalues
     else:
         v1 = np.var(a, axis, ddof=1)
         v2 = np.var(b, axis, ddof=1)
@@ -3616,7 +3627,7 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
     return perms
 
 
-def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True, random_state=None):
+def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
@@ -3637,6 +3648,9 @@ def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True, ran
         over which to operate on a and b).
     permutations: int
         Number of permutations used to calculate p-value
+    equal_var: bool
+        If false, a Welch's t-test is conducted.  Otherwise,
+        a ordinary t-test is conducted
     random_state : int or RandomState
         Pseudo number generator state used for random sampling.
 
@@ -3668,7 +3682,8 @@ def _permutation_ttest(mat, cats, axis=0, permutations=1000, equal_var=True, ran
     _avgs2 = _sums2 / tot
     _vars = _avgs2 - np.multiply(_avgs, _avgs)
     _samp_vars = np.multiply(tot, _vars) / (tot-1)
-    idx = np.arange(0, (permutations+1) * num_cats, num_cats, dtype=np.int32)    
+    idx = np.arange(0, (permutations+1) * num_cats, num_cats, dtype=np.int32)
+    
     # Calculate the t statistic
     if not equal_var:
         denom = np.sqrt(np.divide(_samp_vars[:, idx+1], tot[idx+1]) +

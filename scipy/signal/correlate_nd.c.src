@@ -49,13 +49,13 @@ scipy_signal_sigtools_correlateND(PyObject *NPY_UNUSED(dummy), PyObject *args)
         goto clean_ay;
     }
 
-    if (ax->nd != ay->nd) {
+    if (PyArray_NDIM(ax) != PyArray_NDIM(ay)) {
         PyErr_SetString(PyExc_ValueError,
                 "Arrays must have the same number of dimensions.");
         goto clean_aout;
     }
 
-    if (ax->nd == 0) {
+    if (PyArray_NDIM(ax) == 0) {
         PyErr_SetString(PyExc_ValueError, "Cannot convolve zero-dimensional arrays.");
         goto clean_aout;
     }
@@ -189,7 +189,7 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
     int i, j;
     PyObject *tmp, *tmp2;
     char *zero;
-    PyArray_CopySwapFunc *copyswap = curx->ao->descr->f->copyswap;
+    PyArray_CopySwapFunc *copyswap = PyArray_DESCR(curx->ao)->f->copyswap;
 
     zero = PyArray_Zero(curx->ao);
 
@@ -242,18 +242,18 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
         case CORR_MODE_VALID:
             /* Only walk through the input points such as the correponding
              * output will not depend on 0 padding */
-            for(i = 0; i < itx->ao->nd; ++i) {
-                bounds[2*i] = ity->ao->dimensions[i] - 1;
-                bounds[2*i+1] = itx->ao->dimensions[i] - 1;
+            for(i = 0; i < PyArray_NDIM(itx->ao); ++i) {
+                bounds[2*i] = PyArray_DIMS(ity->ao)[i] - 1;
+                bounds[2*i+1] = PyArray_DIMS(itx->ao)[i] - 1;
             }
             break;
         case CORR_MODE_SAME:
             /* Only walk through the input such as the output will be centered
                relatively to the output as computed in the full mode */
-            for(i = 0; i < itx->ao->nd; ++i) {
-                nz = itx->ao->dimensions[i];
+            for(i = 0; i < PyArray_NDIM(itx->ao); ++i) {
+                nz = PyArray_DIMS(itx->ao)[i];
                 /* Recover 'original' nx, before it was zero-padded */
-                nx = nz - ity->ao->dimensions[i] + 1;
+                nx = nz - PyArray_DIMS(ity->ao)[i] + 1;
                 if ((nz - nx) % 2 == 0) {
                     bounds[2*i] = (nz - nx) / 2;
                 } else {
@@ -263,9 +263,9 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
             }
             break;
         case CORR_MODE_FULL:
-            for(i = 0; i < itx->ao->nd; ++i) {
+            for(i = 0; i < PyArray_NDIM(itx->ao); ++i) {
                 bounds[2*i] = 0;
-                bounds[2*i+1] = itx->ao->dimensions[i] - 1;
+                bounds[2*i+1] = PyArray_DIMS(itx->ao)[i] - 1;
             }
             break;
         default:
@@ -282,8 +282,8 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
 
     /* Compute boundaries for the neighborhood iterator: the neighborhood for x
        should have the same dimensions as y */
-    for(i = 0; i < ity->ao->nd; ++i) {
-        bounds[2*i] = -ity->ao->dimensions[i] + 1;
+    for(i = 0; i < PyArray_NDIM(ity->ao); ++i) {
+        bounds[2*i] = -PyArray_DIMS(ity->ao)[i] + 1;
         bounds[2*i+1] = 0;
     }
 
@@ -300,7 +300,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
  * #type = ubyte, byte, ushort, short, uint, int, ulong, long, ulonglong,
  *         longlong, float, double, longdouble, cfloat, cdouble, clongdouble#
  */
-        case PyArray_@TYPE@:
+        case NPY_@TYPE@:
             _imp_correlate_nd_@type@(curx, curneighx, ity, itz);
             break;
 /**end repeat**/
