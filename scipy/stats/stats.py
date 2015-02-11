@@ -2423,11 +2423,15 @@ def f_oneway(*args, **kwds):
 
     """
     args = [np.asarray(arg, dtype=float) for arg in args]
+
+    axis=0
+    if 'axis' in kwds: axis = kwds['axis']
+    
     if len(kwds) > 0:
         return _permutation_f_oneway(*args, **kwds)
     else:
         na = len(args)    # ANOVA on 'na' groups, each in it's own array
-        alldata = np.concatenate(args)
+        alldata = np.concatenate(args, axis=axis)
         bign = len(alldata)
         sstot = ss(alldata) - (square_of_sums(alldata) / float(bign))
         ssbn = 0
