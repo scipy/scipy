@@ -3525,7 +3525,6 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
         random_state.shuffle(copy_cats)
     return perms
 
-    
 
 def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, random_state=None):
     """
