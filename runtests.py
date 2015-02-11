@@ -103,9 +103,16 @@ def main(argv):
                         help="Show build output rather than using a log file")
     parser.add_argument("--bench", action="store_true",
                         help="Run benchmark suite instead of test suite")
+    parser.add_argument("--bench-compare", action="append", metavar="COMMIT",
+                        help=("Compare benchmark results to COMMIT. "
+                              "Note that you need to commit your changes first!"))
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     args = parser.parse_args(argv)
+
+    if args.bench_compare:
+        args.bench = True
+        args.no_build = True # ASV does the building
 
     if args.lcov_html:
         # generate C code coverage output
@@ -169,17 +176,48 @@ def main(argv):
 
     if args.bench:
         # Run ASV
-        cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-               'dev']
         items = extra_argv
         if args.tests:
             items += args.tests
         if args.submodule:
             items += [args.submodule]
+
+        bench_args = []
         for a in items:
-            cmd.extend(['--bench', a])
-        os.execv(sys.executable, [sys.executable] + cmd)
-        sys.exit(1)
+            bench_args.extend(['--bench', a])
+
+        if not args.bench_compare:
+            cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
+                   'dev'] + bench_args
+            os.execv(sys.executable, [sys.executable] + cmd)
+            sys.exit(1)
+        else:
+            if len(args.bench_compare) == 1:
+                commit_a = args.bench_compare[0]
+                commit_b = 'HEAD'
+            elif len(args.bench_compare) == 2:
+                commit_a, commit_b = args.bench_compare
+            else:
+                p.error("Too many commits to compare benchmarks for")
+
+            p = subprocess.Popen(['git', 'rev-parse', commit_b], stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            commit_b = out.strip()
+
+            p = subprocess.Popen(['git', 'rev-parse', commit_a], stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            commit_a = out.strip()
+
+            cmd = [sys.executable,
+                   os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
+                   '--current-repo', 'run', '--skip-existing',
+                   '-j', '2']
+            subprocess.check_call(cmd + bench_args + [commit_b + "^!"])
+            subprocess.check_call(cmd + bench_args + [commit_a + "^!"])
+            cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
+                   '--current-repo', 'compare', commit_a, commit_b]
+            os.execv(sys.executable, [sys.executable] + cmd)
+            sys.exit(1)
 
     test_dir = os.path.join(ROOT_DIR, 'build', 'test')
 

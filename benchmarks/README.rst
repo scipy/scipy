@@ -13,22 +13,23 @@ Usage
 Run a benchmark against currently installed Scipy version (don't
 record the result)::
 
-    cd benchmarks
-    asv dev --bench bench_sparse.Arithmetic
-
-You only need to specify the start of the benchmark full name:
-
-    asv dev --bench bench_spatial_ckdtree.Basics.track_sparse_distance_matrix
-
-Run benchmarks using Scipy ``runtests.py`` (does not record results)::
-
     python runtests.py --bench bench_sparse.Arithmetic
 
-Run benchmarks against various Scipy git versions (record results)::
+Compare change in benchmark results to another branch::
 
-    asv run --bench bench_sparse.Arithmetic
+    python runtests.py --bench-compare master bench_sparse.Arithmetic
 
-More in `ASV documentation`_
+Run ASV commands::
+
+    ./run.py run --skip-existing-commits --steps 10 ALL
+    ./run.py publish
+    ./run.py preview
+
+The ``run.py`` script sets up some environment variables and does other minor
+maintenance jobs for you, including cloning the results repository of Scipy
+benchmarks.
+
+More on how to use ``asv`` can be found in `ASV documentation`_
 
 .. _ASV documentation: https://spacetelescope.github.io/asv/
 
