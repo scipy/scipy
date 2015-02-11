@@ -17,7 +17,9 @@ from __future__ import division, print_function, absolute_import
 #   Rewrote lsim
 # May 2015: Felix Berkenkamp
 #   Split lti class into subclasses
-#
+# Feb 2016: Irvin Probst irvin DOT probst AT ensta-bretagne DOT fr
+#   Added controller_fessenberg, controllability_matrix, observability_matrix
+
 
 import warnings
 import numpy as np
@@ -43,8 +45,8 @@ from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'TransferFunction', 'ZerosPolesGain', 'StateSpace', 'lsim',
            'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
-           'freqresp', 'place_poles']
-
+           'freqresp', 'place_poles', 'controllability_matrix',
+           'observability_matrix', 'controller_hessenberg']
 
 def tf2ss(num, den):
     r"""Transfer function to state-space representation.
@@ -1248,9 +1250,9 @@ def lsim(system, U, T, X0=None, interp=True):
     else:
         raise ValueError("Initial time must be nonnegative")
 
-    no_input = (U is None
-                or (isinstance(U, (int, float)) and U == 0.)
-                or not np.any(U))
+    no_input = (U is None or
+                (isinstance(U, (int, float)) and U == 0.) or
+                not np.any(U))
 
     if n_steps == 1:
         yout = squeeze(dot(xout, transpose(C)))
@@ -1754,9 +1756,9 @@ def freqresp(system, w=None, n=10000):
 
     return w, h
 
+# This class will be used by place_poles and controller_hessenberg
+# to return their results. See http://code.activestate.com/recipes/52308/
 
-# This class will be used by place_poles to return its results
-# see http://code.activestate.com/recipes/52308/
 class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
@@ -2159,6 +2161,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     ----------
     A, B : ndarray
         State-space representation of linear system ``AX + BU``.
+
     poles : array_like
         Desired real poles and/or complex conjugates poles.
         Complex poles are only supported with ``method="YT"`` (default).
@@ -2494,3 +2497,283 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     full_state_feedback.nb_iter = nb_iter
 
     return full_state_feedback
+
+
+def controller_hessenberg(A, B, C=None, tol=1e-8):
+    r"""
+    Reduce the linear system :math:`AX+BU` to its controller Hessenberg form.
+
+    Find an orthogonnal similarity transformation P and reduce the linear
+    system :math:`AX+BU` to the controller Hessenberg form
+    :math:`\bar A, \bar B, \bar C` (Abar, Bbar, Cbar) where:
+
+    .. math::
+        \begin{array}{lcl} P A P^T &=& \bar A \\
+                            P B &=& \bar B\end{array}
+
+    The new system has the following form:
+
+    .. math::
+
+        \bar A = \left[ \begin{array}{cc}
+                        H_c & H_{xx} \\
+                        0 & H_{nc}
+                        \end{array} \right]
+
+    :math:`\bar A` is a block upper Hessenberg matrix hence the `H` prefix used
+    for its blocks.
+
+    .. math::
+
+        \bar B = \left [ \begin{array}{c} B_c \\ 0 \end{array} \right ]
+
+
+    :math:`H_c, B_c` is the controllable part of the original system. If the
+    real part of the eigenvalues of :math:`H_{nc}` are negative the system
+    will be stabilizable.
+
+    Parameters
+    ----------
+    A, B : ndarray
+        State-space representation of linear system :math:`AX+BU`.
+
+    C : ndarray, optionnal
+        The output matrix of the linear system (i.e :math:`Y=CX`).
+        Default is None.
+
+    tol : float, optionnal
+        Absolute tolerance to use when computing the (un)controllable parts
+        of the linear system. Same as `allclose` by default, i.e 1e-8.
+
+    Returns
+    -------
+    hessenberg_form : Bunch object
+        hessenberg_form is composed of:
+            Abar, Bbar : ndarray
+                The controller Hessenberg form of the linear system
+                :math:`AX+BU`
+
+            Cbar : ndarray
+                Optionnaly if C (output matrix) is given the function will also
+                return :math:`\bar C = C P` otherwise `Cbar = None` will be
+                returned. Cbar has the following form:
+
+                 .. math::
+                     \bar C = \left[ \begin{array}{cc}
+                                     C_c & C_{nc}
+                                     \end{array} \right]
+
+                With :math:`C_c` such that the transfer function of (A,B,C) and
+                (Hc,Bc,Cc) are the same.
+
+            P : ndarray
+                The orthogonnal similarity transformation
+
+            control_index : int
+                The controllability index, i.e the number of controllable
+                states, of the linear system :math:`AX+BU`. If
+                ``control_index == A.shape[0]`` then the linear system is
+                controllable.
+
+    Examples
+    --------
+    A simple example demonstrating how to check the control index of a linear
+    system.
+
+    >>> from scipy import signal
+
+    >>> A = np.array([[ 1.380,  -0.2077,  6.715, -5.676  ],
+    ...               [-0.5814, -4.290,   0,      0.6750 ],
+    ...               [ 1.067,   4.273,  -6.654,  5.893  ],
+    ...               [ 0.0480,  4.273,   1.343, -2.104  ]])
+    >>> B = np.array([[ 0,      5.679 ],
+    ...               [ 1.136,  1.136 ],
+    ...               [ 0,      0,    ],
+    ...               [-3.146,  0     ]])
+    >>> hessenberg_form = signal.controller_hessenberg(A, B)
+    >>> hessenberg_form.control_index
+    4
+
+    References
+    ----------
+    .. [1] Datta Biswa, "Numerical Methods for Linear Control Systems",
+           Elsevier, pp 173-183, 2003.
+
+    """
+    A = np.asarray(A)
+    B = np.asarray(B)
+    if A.ndim != 2:
+        raise ValueError("A must be a 2D array/matrix.")
+    if B.ndim != 2:
+        raise ValueError("B must be a 2D array/matrix")
+    if C is not None:
+        C = np.asarray(C)
+        if C.ndim != 2:
+            raise ValueError("C must be a 2D array/matrix")
+    if A.shape[0] != A.shape[1]:
+        raise ValueError("A must be square")
+
+    stop = False
+    P = None
+    # H_sub => the submatrix of H we are working on
+    H_sub = B
+
+    # where to seek the submatrices H_sub
+    H_start = 0
+    control_index = 0
+    while not stop:
+        # page 174 step 0
+        P_update, R, _ = s_qr(H_sub, pivoting=True)
+        # be consistent with [1] they use the form Q A P = R
+        # whereas scipy uses A P = Q R. The variables names
+        # are chosen to match [1] therefore P_update refers to "Q" from
+        # the QR decomposition and not the permutation matrix usually
+        # named "P".
+        P_update = P_update.T
+
+        H_start = control_index
+
+        # find the first occurence of a zero line in R, this will
+        # reveal the rank of H_sub
+        zero_lines_idx = np.where(np.all(
+                            np.isclose(R, 0, atol=tol), axis=1))[0]
+
+        if not zero_lines_idx.shape[0]:
+            control_index += np.min(R.shape)
+        else:
+            control_index += zero_lines_idx[0]
+
+#        It looks like this condition from the paper is useless as the checks
+#        at the end of the loop will break anyway. If a bug is discovered the
+#        first place to look at should be this one.
+#        if control_index == A.shape[0] and H_start != 0:
+#             "if n1 + n2 + ... = n stop" page 175
+#            break
+
+#        form P2 = ... page 174 note that for P1 we have H_start=0 so that's
+#        OK even if it is useless
+        P_update_full = np.zeros(
+            (H_start + P_update.shape[0], H_start + P_update.shape[1])
+        )
+        P_update_full[:H_start, :H_start] = np.eye(H_start)
+        P_update_full[H_start:, H_start:] = P_update
+
+        if P is None:  # P1
+            P = P_update_full
+        else:
+            P = np.dot(P_update_full, P)  # "update P as above page 175"
+
+        # update H and extract the new "H_k_k-1" we will work on
+        H = np.dot(np.dot(P, A), P.T)
+        H_sub = H[control_index:, H_start:control_index]
+        if np.allclose(H_sub, 0, atol=tol):  # or H_k_k-1" is a zero matrix
+            stop = True
+
+    Bbar = np.dot(P, B)
+    if C is None:
+        Cbar = None
+    else:
+        Cbar = np.dot(C, P.T)
+
+    hessenberg_form = Bunch()
+    hessenberg_form.Abar = H
+    hessenberg_form.Bbar = Bbar
+    hessenberg_form.Cbar = Cbar
+    hessenberg_form.P = P
+    hessenberg_form.control_index = control_index
+    return hessenberg_form
+
+
+def controllability_matrix(A, B):
+    r"""
+    Compute the controllability matrix of the linear system :math:`AX+BU`.
+
+    If a linear system is controllable it is possible to find a set of inputs
+    U such as any configuration of the state-vector X is reachable in finite
+    time starting from any other configuration.
+    If the rank of the controllability matrix is not equal to the dimension of
+    the state-space the system is not controllable.
+
+    Parameters
+    ----------
+    A, B : ndarray
+        State-space representation of linear system :math:`AX+BU`.
+
+    Returns
+    -------
+    Ctrb_mat : ndarray
+        The controllability matrix
+
+    Notes
+    -----
+    Even if the rank of the controllability matrix equals the dimension of the
+    state-space the system might be very difficult, if not impossible, to
+    control, its condition number should also be checked. **One should only
+    rely on the rank of this matrix for educational purposes due to the
+    numerical instability of this computation.**
+    For serious control design `controller_hessenberg` is the way to go.
+    """
+
+    A = np.asarray(A)
+    B = np.asarray(B)
+    if A.ndim != 2:
+        raise ValueError("A must be a 2D array/matrix.")
+    if B.ndim != 2:
+        raise ValueError("B must be a 2D array/matrix")
+    if A.shape[0] != A.shape[1]:
+        raise ValueError("A must be square")
+
+    Ctrb_mat = np.zeros((A.shape[0], A.shape[0] * B.shape[1]))
+    Ctrb_mat[:, 0:B.shape[1]] = B
+    for dim in range(1, A.shape[0]):
+        Ctrb_mat[:, dim * B.shape[1]:(dim + 1) * B.shape[1]] = np.dot(
+            A, Ctrb_mat[:, (dim - 1) * B.shape[1]:dim * B.shape[1]])
+    return Ctrb_mat
+
+
+def observability_matrix(A, C):
+    r"""
+    Compute the observability matrix of a linear system.
+
+    Given the linear system:
+
+    .. math::
+
+        \begin{array}{lcl} \dot X &=& A X + B U \\
+                                    Y &=& C X \end{array}
+
+    If this linear system is observable it is possible to reconstruct
+    its internal state by measuring its outputs Y.
+    If the rank of the observability matrix is not equal to the dimension of
+    the state-space the system is not observable.
+
+    Parameters
+    ----------
+    A, C : ndarray
+        State-space representation of linear system
+
+        .. math::
+
+            \begin{array}{lcl} \dot X &=& A X + B U \\
+                                        Y &=& C X \end{array}
+
+    Returns
+    -------
+    Obsv_mat : ndarray
+        The observability matrix
+
+    Notes
+    -----
+    Even if the rank of the observability matrix equals the dimension of the
+    state-space the system might be very difficult, if not impossible, to
+    observe, its condition number should also be checked. **One should only
+    rely on the rank of this matrix for educational purposes due to the
+    numerical instability of this computation.**
+    """
+
+    C = np.asarray(C)
+    if C.ndim != 2:
+        raise ValueError("C must be a 2D array/matrix")
+
+    Obsv_mat = controllability_matrix(A.T, C.T).T
+    return Obsv_mat

@@ -8,9 +8,127 @@ from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
 from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                                  bode, freqresp, lsim, impulse, step,
                                  abcd_normalize, place_poles,
-                                 TransferFunction, StateSpace, ZerosPolesGain)
+                                 TransferFunction, StateSpace, ZerosPolesGain,
+                                 controllability_matrix,
+                                 observability_matrix, controller_hessenberg)
+
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
+
+
+class TestCtrbObsv:
+    # The output from controller_hessenberg has been tested with random
+    # controllable and uncontrollable system against Octave which uses tb01ud
+    # from Slicot and all results were similar using the default tolerances of
+    # `allclose`.
+
+    def test_hessenberg(self):
+        # use np.allclose tolerances, atol = 0 from assert_allclose is
+        # unrealistic here especially for the comparison between
+        # np.linalg.inv(h_f.P) and h_f.P.T
+
+        # Test from the book the algorithm comes from (see [1] in docstring)
+        # it gives us references values to test against what we compute (p 177)
+        A = np.array([[1, 1, 1], [1, 1, 1], [0, 0, 1]])
+        B = np.array([[1, 1], [1, 1], [1, 1]])
+
+        ref_Abar = np.array([[2.3333, -0.4714, 0], [0.9428, 0.6667, 0],
+                             [0, 0, 0]])
+        ref_Bbar = np.array([[-1.7321, -1.7321], [0, 0], [0, 0]])
+
+        h_f = controller_hessenberg(A, B)
+
+        assert_allclose(h_f.P.dot(A.dot(h_f.P.T)), h_f.Abar,
+                        rtol=1e-5, atol=1e-8)
+        assert_allclose(h_f.P.dot(B), h_f.Bbar, rtol=1e-5, atol=1e-8)
+        assert_allclose(np.linalg.inv(h_f.P), h_f.P.T, rtol=1e-5, atol=1e-8)
+        assert_equal(2, h_f.control_index)
+        # the reference book only gives 5 digits, we have to relax allclose
+        assert_allclose(h_f.Abar, ref_Abar, rtol=1e-5, atol=1e-4)
+        assert_allclose(h_f.Bbar, ref_Bbar, rtol=1e-5, atol=1e-4)
+
+        # check tol argument, this should give a bogus but predictable result
+        # if we use an absolute tolerance big enough the system will be seen
+        # as fully uncontrollable
+        h_f = controller_hessenberg(A, B, tol=42)
+        assert_equal(0, h_f.control_index)
+
+        # This one is from the reference book also but interestingly the final
+        # result shown page 181 is neither what we get nor what octave outputs.
+        # Let's check against Octave as more throughout tests showed that
+        # controller_hessenberg always has the same output.
+
+        A = np.array([0.7665, 0.1665, 0.9047, 0.4540, 0.5007, 0.4777, 0.4865,
+                      0.5045, 0.2661, 0.3841, 0.2378, 0.8977, 0.5163, 0.0907,
+                      0.2771, 0.2749, 0.9092, 0.3190, 0.9478, 0.9138, 0.3593,
+                      0.0606, 0.9866, 0.0737, 0.5297]).reshape((5, 5))
+
+        B = np.array([0.4644, 0.8278, 0.9410, 0.1254, 0.0501, 0.0159, 0.7615,
+                      0.6885, 0.7702, 0.8682]).reshape((5, 2))
+
+        ref_Abar = np.array([1.84863, -0.39173, 0.71525, 0.37312, -0.93855,
+                             -0.33500, 0.38992, -0.37632, -0.26125, 0.34406,
+                             1.16576, 0.41306, 0.02290, -0.03569, 0.00808,
+                             0.00000, 0.34959, -0.16118, 0.19671, -0.09386,
+                             0.00000, 0.00000, -0.32070, 0.15724, 0.78864]
+                            ).reshape((5, 5))
+
+        ref_Bbar = np.array([-1.50889, -1.12414, 0, 0.81568, 0, 0, 0, 0, 0, 0]
+                            ).reshape((5, 2))
+
+        h_f = controller_hessenberg(A, B)
+        assert_allclose(h_f.P.dot(A.dot(h_f.P.T)), h_f.Abar,
+                        rtol=1e-5, atol=1e-8)
+        assert_allclose(h_f.P.dot(B), h_f.Bbar, rtol=1e-5, atol=1e-8)
+        assert_allclose(np.linalg.inv(h_f.P), h_f.P.T, rtol=1e-5, atol=1e-8)
+        assert_equal(5, h_f.control_index)
+        assert_allclose(h_f.Abar, ref_Abar, rtol=1e-5, atol=1e-4)
+        assert_allclose(h_f.Bbar, ref_Bbar, rtol=1e-5, atol=1e-4)
+
+    def test_control(self):
+        A = np.array([[1, 1, 0], [0, 1, 0], [0, 0, 1]])
+        # this system is not controllable
+        B = np.array([[0, 0], [1, 0], [1, 0]])
+        ctrb_ref = np.array(
+            [0, 0, 1, 0, 2, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+        ).reshape((3, 6))
+        assert_equal(controllability_matrix(A, B), ctrb_ref)
+
+        # this one is
+        B = np.array([[0, 0], [1, 0], [1, 1]])
+        ctrb_ref = np.array(
+            [0, 0, 1, 0, 2, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1]
+        ).reshape((3, 6))
+        assert_equal(controllability_matrix(A, B), ctrb_ref)
+
+    def test_observ(self):
+        # this system is not observable
+        A = np.array([[1, 1, 0], [0, 1, 0], [0, 0, 1]])
+        C = np.array([[1, 1, 0], [0, 1, 0]])
+        obsv_ref = np.array(
+            [1, 1, 0, 0, 1, 0, 1, 2, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0]
+        ).reshape((6, 3))
+        assert_equal(observability_matrix(A, C), obsv_ref)
+
+        # this one is (canonical observability form)
+        A = np.array([[0, 0, 1], [1, 0, 2], [0, 1, 3]])
+        C = np.array([[0, 0, 1]])
+        obsv_ref = np.array([0, 0, 1, 0, 1, 3, 1, 3, 11]).reshape((3, 3))
+        assert_equal(observability_matrix(A, C), obsv_ref)
+
+    def test_errors(self):
+        A = np.array([[1, 1, 1], [1, 1, 1], [0, 0, 1]])
+        B = np.array([[1, 1], [1, 1], [1, 1]])
+        for func in (observability_matrix, controllability_matrix,
+                     controller_hessenberg):
+            # A and B must be 2D arrays
+            assert_raises(ValueError, func, A.flatten(), B)
+            assert_raises(ValueError, func, A, B.flatten())
+            assert_raises(ValueError, func, np.atleast_3d(A), B)
+            assert_raises(ValueError, func, A, np.atleast_3d(B))
+
+            # A must be square
+            assert_raises(ValueError, func, A[:, :2], B)
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):

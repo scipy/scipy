@@ -188,6 +188,9 @@ LTI Representations
    sos2tf        -- second-order-sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
    place_poles   -- pole placement.
+   controllability_matrix   -- Compute the controllability matrix of a linear system
+   observability_matrix     -- Compute the observability matrix of a linear system
+   controller_hessenberg    -- Compute the block Hessenberg form of a linear system
    
 Waveforms
 =========
