@@ -175,6 +175,7 @@ import math
 from collections import namedtuple
 
 from scipy._lib.six import xrange
+from scipy._lib._util import check_random_state
 
 # friedmanchisquare patch uses python sum
 pysum = sum  # save it before it gets overwritten
@@ -2481,15 +2482,17 @@ def _permutation_f_oneway(*args, **kwds):
     permutations = params['permutations']
     random_state = params['random_state']
     axis = params['axis']
+
     mat = np.concatenate(args, axis=axis)
-    if len(mat.shape) == 1:
-        mat = mat.reshape((1,len(mat)))
-    cats = np.hstack([np.zeros(arg.shape[axis])+i for i, arg in enumerate(args)])
+    if axis == 0:
+        mat = mat.transpose()
+    
+    if len(mat.shape) < 2:  # Handle 1-D arrays
+        mat = mat.reshape((1, len(mat)))
+
+    cats = np.hstack([np.zeros(arg.shape[axis]) + i for i, arg in enumerate(args)])
     
     perms = _init_categorical_perms(cats, permutations=permutations, random_state=random_state)
-    print(mat)
-    print(cats)
-    print(perms)
     num_cats = len(np.unique(cats)) # Number of distinct categories
     n_samp, c = perms.shape
     permutations = (c-num_cats) / num_cats
@@ -2499,12 +2502,10 @@ def _permutation_f_oneway(*args, **kwds):
     S = mat.sum(axis=1)
     SS = mat2.sum(axis=1)
     sstot = SS - np.multiply(S,S) / float(n_samp)
-        
+    sstot = sstot.reshape((len(sstot),1))
     #Create index to sum the ssE together
     sum_groups = np.arange((permutations+1)*num_cats,dtype=np.int32) // num_cats
     _sum_idx = _init_categorical_perms(sum_groups,permutations=0)
-    print(sum_groups)
-    print(_sum_idx)
     
     ## Perform matrix multiplication on data matrix
     ## and calculate sums and squared sums and sum of squares
@@ -2520,10 +2521,9 @@ def _permutation_f_oneway(*args, **kwds):
     
     f_stat = (sstrt / dftrt) / (sserr / dferr)
 
-    cmps =  f_stat[:,1:] >= f_stat[:,0]
-    pvalues = (cmps.sum(axis=1)+1.) / (permutations+1.)
+    cmps =  f_stat[:,1:].transpose() >= f_stat[:,0]
+    pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
     
-    print(_sum_idx)
     return np.ravel(f_stat[:, 0]), np.ravel(pvalues)
         
 def pearsonr(x, y):
@@ -3603,10 +3603,7 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
 
     Note: This can only handle binary classes now
     """
-    if random_state is None:
-        random_state = np.random.RandomState()
-    elif type(1)==type(random_state):
-        random_state = np.random.RandomState(seed=random_state)
+    random_state = check_random_state(random_state)
     c = len(cats)
     num_cats = len(np.unique(cats))  # Number of distinct categories
     copy_cats = copy.deepcopy(cats)

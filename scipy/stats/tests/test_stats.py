@@ -2953,7 +2953,22 @@ class TestFOneWay(TestCase):
         F, p = stats.f_oneway(a, b, permutations = 5)
         assert_almost_equal(F, 0.77450216931805538)
 
+    def test_large_array(self):
+        N = 20
+        np.random.seed(0)
+        a = np.vstack((np.arange(N/2),
+                       np.random.random(N/2)))
+        b = np.vstack((np.arange(N/4) + 100,
+                       np.random.random(N/4)))
+        c = np.vstack((np.arange(N/4) + 200,
+                       np.random.random(N/4)))
+        np_f_stats, _ = stats.f_oneway(a, b, c)
+        F, p = stats.f_oneway(a, b, c, axis=1, permutations = 1000)
+        assert_array_almost_equal(F, np_f_stats, 5)
+        assert_array_almost_equal(p, array([0.000999, 0.24975025]))
+        
 
+        
 class TestKruskal(TestCase):
     def test_simple(self):
         x = [1]
