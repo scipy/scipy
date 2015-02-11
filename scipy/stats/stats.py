@@ -2421,10 +2421,10 @@ def f_oneway(*args, **kwds):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     """
-    if kwds is not None:
-        return _permutation_f_oneway(args, kwds)
+    args = [np.asarray(arg, dtype=float) for arg in args]
+    if len(kwds) > 0:
+        return _permutation_f_oneway(*args, **kwds)
     else:
-        args = [np.asarray(arg, dtype=float) for arg in args]
         na = len(args)    # ANOVA on 'na' groups, each in it's own array
         alldata = np.concatenate(args)
         bign = len(alldata)
@@ -2472,7 +2472,7 @@ def _permutation_f_oneway(*args, **kwds):
         The associated p-value determined from a permutation test
     """
     
-    params = {'permutations':1000, 'random_state':0, 'axis':0}
+    params = {'permutations':10000, 'random_state':0, 'axis':0}
     for key, val in kwds.iteritems():
         if key in params:
             params[key] = val
@@ -2480,13 +2480,16 @@ def _permutation_f_oneway(*args, **kwds):
             raise ValueError('%s is not a parameter for f_oneway' % key)
     permutations = params['permutations']
     random_state = params['random_state']
-
+    axis = params['axis']
     mat = np.concatenate(args, axis=axis)
-    cats = np.hstack([np.zeros(X[i].shape[axis]) + i for i in len(args)])
-
+    if len(mat.shape) == 1:
+        mat = mat.reshape((1,len(mat)))
+    cats = np.hstack([np.zeros(arg.shape[axis])+i for i, arg in enumerate(args)])
     
     perms = _init_categorical_perms(cats, permutations=permutations, random_state=random_state)
-
+    print(mat)
+    print(cats)
+    print(perms)
     num_cats = len(np.unique(cats)) # Number of distinct categories
     n_samp, c = perms.shape
     permutations = (c-num_cats) / num_cats
@@ -2498,9 +2501,10 @@ def _permutation_f_oneway(*args, **kwds):
     sstot = SS - np.multiply(S,S) / float(n_samp)
         
     #Create index to sum the ssE together
-    _sum_idx = _init_categorical_perms(
-        np.arange((permutations+1)*num_cats,dtype=np.int32)/num_cats,
-        permutations=0)
+    sum_groups = np.arange((permutations+1)*num_cats,dtype=np.int32) // num_cats
+    _sum_idx = _init_categorical_perms(sum_groups,permutations=0)
+    print(sum_groups)
+    print(_sum_idx)
     
     ## Perform matrix multiplication on data matrix
     ## and calculate sums and squared sums and sum of squares
@@ -2511,13 +2515,15 @@ def _permutation_f_oneway(*args, **kwds):
     ss = _sums2 - np.multiply(_sums,_sums)/tot
     sserr = np.dot(ss, _sum_idx)
     sstrt = sstot - sserr
-    dftrt = num_cats-1
+    dftrt = num_cats - 1
     dferr = np.dot(tot,_sum_idx) - num_cats
     
     f_stat = (sstrt / dftrt) / (sserr / dferr)
 
     cmps =  f_stat[:,1:] >= f_stat[:,0]
-    pvalues = (cmps.sum(axis=1)+1.) / (permutations+1.)        
+    pvalues = (cmps.sum(axis=1)+1.) / (permutations+1.)
+    
+    print(_sum_idx)
     return np.ravel(f_stat[:, 0]), np.ravel(pvalues)
         
 def pearsonr(x, y):
@@ -3599,7 +3605,7 @@ def _init_categorical_perms(cats, permutations=1000, random_state=None):
     """
     if random_state is None:
         random_state = np.random.RandomState()
-    elif type(1)==random_state:
+    elif type(1)==type(random_state):
         random_state = np.random.RandomState(seed=random_state)
     c = len(cats)
     num_cats = len(np.unique(cats))  # Number of distinct categories
