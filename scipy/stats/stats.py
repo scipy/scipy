@@ -2424,8 +2424,9 @@ def f_oneway(*args, **kwds):
     """
     args = [np.asarray(arg, dtype=float) for arg in args]
 
-    axis=0
-    if 'axis' in kwds: axis = kwds['axis']
+    axis = 0
+    if 'axis' in kwds:
+        axis = kwds['axis']
     
     if len(kwds) > 0:
         return _permutation_f_oneway(*args, **kwds)
@@ -2491,13 +2492,13 @@ def _permutation_f_oneway(*args, **kwds):
     if axis == 0:
         mat = mat.transpose()
     
-    if len(mat.shape) < 2:  # Handle 1-D arrays
+    if len(mat.shape) < 2:  
         mat = mat.reshape((1, len(mat)))
 
     cats = np.hstack([np.zeros(arg.shape[axis]) + i for i, arg in enumerate(args)])
     
     perms = _init_categorical_perms(cats, permutations=permutations, random_state=random_state)
-    num_cats = len(np.unique(cats)) # Number of distinct categories
+    num_cats = len(np.unique(cats)) 
     n_samp, c = perms.shape
     permutations = (c-num_cats) / num_cats
         
@@ -2507,25 +2508,25 @@ def _permutation_f_oneway(*args, **kwds):
     SS = mat2.sum(axis=1)
     sstot = SS - np.multiply(S,S) / float(n_samp)
     sstot = sstot.reshape((len(sstot),1))
-    #Create index to sum the ssE together
-    sum_groups = np.arange((permutations+1)*num_cats,dtype=np.int32) // num_cats
-    _sum_idx = _init_categorical_perms(sum_groups,permutations=0)
+    # Create index to sum the ssE together
+    sum_groups = np.arange((permutations+1)*num_cats, dtype=np.int32) // num_cats
+    _sum_idx = _init_categorical_perms(sum_groups, permutations=0)
     
-    ## Perform matrix multiplication on data matrix
-    ## and calculate sums and squared sums and sum of squares
-    _sums  = np.dot(mat, perms)
-    _sums2 = np.dot(np.multiply(mat,mat), perms)
+    # Perform matrix multiplication on data matrix
+    # and calculate sums and squared sums and sum of squares
+    _sums = np.dot(mat, perms)
+    _sums2 = np.dot(np.multiply(mat, mat), perms)
     
-    tot =  perms.sum(axis=0)
-    ss = _sums2 - np.multiply(_sums,_sums)/tot
+    tot = perms.sum(axis=0)
+    ss = _sums2 - np.multiply(_sums, _sums)/tot
     sserr = np.dot(ss, _sum_idx)
     sstrt = sstot - sserr
     dftrt = num_cats - 1
-    dferr = np.dot(tot,_sum_idx) - num_cats
+    dferr = np.dot(tot, _sum_idx) - num_cats
     
     f_stat = (sstrt / dftrt) / (sserr / dferr)
 
-    cmps =  f_stat[:,1:].transpose() >= f_stat[:,0]
+    cmps = f_stat[:, 1:].transpose() >= f_stat[:, 0]
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
     
     return np.ravel(f_stat[:, 0]), np.ravel(pvalues)
@@ -3565,11 +3566,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
-
-    if random_state is None:
-        random_state = np.random.RandomState()
-    elif type(random_state)==type(1):
-        random_state = np.random.RandomState(seed=random_state)
+    random_state = check_random_state(random_state)
         
     if permutations is not None:
         mat = np.concatenate((a, b), axis=axis)
