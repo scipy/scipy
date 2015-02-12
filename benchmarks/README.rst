@@ -10,14 +10,14 @@ Benchmarking Scipy with Airspeed Velocity.
 Usage
 -----
 
-Run a benchmark against currently installed Scipy version (don't
-record the result)::
+Run a benchmark against currently checked out Scipy version (don't record the
+result)::
 
-    python runtests.py --bench bench_sparse.Arithmetic
+    python runtests.py --bench sparse.Arithmetic
 
 Compare change in benchmark results to another branch::
 
-    python runtests.py --bench-compare master bench_sparse.Arithmetic
+    python runtests.py --bench-compare master sparse.Arithmetic
 
 Run ASV commands::
 
