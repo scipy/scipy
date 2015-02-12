@@ -108,6 +108,8 @@ doc/source/generated
 benchmarks/env
 benchmarks/results
 benchmarks/scipy
+benchmarks/html
+benchmarks/scipy-benchmarks
 scipy/__config__.py
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
