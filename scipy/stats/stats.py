@@ -3572,12 +3572,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
-<<<<<<< HEAD
-=======
-
->>>>>>> 7095211267d7e0f9a72c55968fa8ba1ded6625e3
     random_state = check_random_state(random_state)
-        
+    
     if permutations is not None:
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
