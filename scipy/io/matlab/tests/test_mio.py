@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
@@ -1193,6 +1193,26 @@ def test_empty_mat_error():
     # Test we get a specific warning for an empty mat file
     sio = BytesIO()
     assert_raises(MatReadError, loadmat, sio)
+
+
+def test_unicode_utf16():
+    # Test we save unicode data as utf16, not utf8
+    # See https://github.com/scipy/scipy/issues/4431
+    for in_str in (u('Python'),  # ASCII
+                   u("Hello to China 你好"),  # BMP, not ASCII
+                   u("G-clef: \U0001D11E F-clef: \U0001D122")  # non BMP
+                  ):
+        sio = BytesIO()
+        savemat(sio, {'char': in_str})
+        reader = MatFile5Reader(sio)
+        reader.initialize_read()
+        reader.read_file_header()
+        hdr, _ = reader.read_var_header()
+        # Confirm this is a string matrix
+        assert_equal(hdr.mclass, mio5p.mxCHAR_CLASS)
+        # Get the mdtype of the string, check its miUTF16
+        mdtype, byte_count, tag_data = reader._matrix_reader.read_tag()
+        assert_equal(mdtype, mio5p.miUTF16)
 
 
 if __name__ == "__main__":
