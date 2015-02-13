@@ -2479,7 +2479,7 @@ def _permutation_f_oneway(*args, **kwds):
     """
     
     params = {'permutations':10000, 'random_state':0, 'axis':0}
-    for key, val in kwds.iteritems():
+    for key, val in kwds.items():
         if key in params:
             params[key] = val
         else:
