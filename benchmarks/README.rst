@@ -26,8 +26,8 @@ Run ASV commands::
     ./run.py preview
 
 The ``run.py`` script sets up some environment variables and does other minor
-maintenance jobs for you, including cloning the results repository of Scipy
-benchmarks.
+maintenance jobs for you. The benchmark suite is runnable directly using the
+``asv`` command.
 
 More on how to use ``asv`` can be found in `ASV documentation`_
 
