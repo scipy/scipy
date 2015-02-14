@@ -72,8 +72,7 @@ def run_asv(args, current_repo=False):
     if sys.platform.startswith('linux'):
         env['PATH'] = os.pathsep.join(EXTRA_PATH + env.get('PATH', '').split(os.pathsep))
 
-    # Control BLAS config
-    env['ATLAS'] = 'None'
+    # Control BLAS and CFLAGS
     env['OPENBLAS_NUM_THREADS'] = '1'
     env['CFLAGS'] = drop_bad_flags(sysconfig.get_config_var('CFLAGS'))
 
