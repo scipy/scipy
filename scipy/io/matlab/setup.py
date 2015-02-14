@@ -9,7 +9,6 @@ def configuration(parent_package='io',top_path=None):
     config.add_extension('mio_utils', sources=['mio_utils.c'])
     config.add_extension('mio5_utils', sources=['mio5_utils.c'])
     config.add_data_dir('tests')
-    config.add_data_dir('benchmarks')
     return config
 
 if __name__ == '__main__':
