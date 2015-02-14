@@ -20,8 +20,6 @@ import sysconfig
 EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
               '/usr/local/lib/ccache', '/usr/local/lib/f90cache']
 
-RESULT_REPO = "git@github.com:pv/scipy-bench.git"
-
 from benchmarks.common import set_mem_rlimit
 
 
@@ -90,12 +88,11 @@ def run_asv(args, current_repo=False):
     if args and args[0] == 'dev':
         import scipy
         print("Running benchmarks for Scipy version %s at %s" % (scipy.__version__, scipy.__file__))
-    else:
-        setup_sync()
 
     # Override gh-pages
     if 'gh-pages' in args:
-        return do_gh_pages(env)
+        print("gh-pages command is disabled")
+        return 1
 
     # Run
     try:
@@ -107,70 +104,6 @@ def run_asv(args, current_repo=False):
             print("to run Scipy benchmarks")
             return 1
         raise
-
-
-def setup_sync():
-    cwd = os.path.abspath(os.path.dirname(__file__))
-    sync_dir = os.path.join(cwd, 'scipy-benchmarks')
-    results_dir = os.path.join(cwd, 'results')
-    results_dir_bak = os.path.join(cwd, 'results.bak')
-
-    if not is_git_repo_root(sync_dir):
-        subprocess.check_call(['git', 'clone', RESULT_REPO, sync_dir])
-
-    if os.path.isdir(results_dir) and not os.path.islink(results_dir):
-        os.rename(results_dir, results_dir_bak)
-
-    if not os.path.islink(results_dir):
-        os.symlink(os.path.join('scipy-benchmarks', 'results'), results_dir)
-
-
-def do_gh_pages(env):
-    cwd = os.path.abspath(os.path.dirname(__file__))
-    sync_dir = os.path.join(cwd, 'scipy-benchmarks')
-    tmp_clone = os.path.join(cwd, 'scipy-benchmarks.tmp')
-
-    subprocess.check_call(['git', 'checkout', 'master'], cwd=sync_dir)
-    subprocess.check_call(['git', 'pull', '--ff-only'], cwd=sync_dir)
-
-    subprocess.check_call(['asv', 'publish'], env=env, cwd=cwd)
-
-    if os.path.exists(tmp_clone):
-        shutil.rmtree(tmp_clone)
-
-    subprocess.check_call(['git', 'clone', '--shared', '-b', 'master',
-                           sync_dir, tmp_clone])
-    assert is_git_repo_root(tmp_clone)
-
-    def git_tmp(*args):
-        subprocess.check_call(['git', '-C', tmp_clone] + list(args))
-
-    def git_tmp_failok(*args):
-        subprocess.call(['git', '-C', tmp_clone] + list(args))
-
-    git_tmp('remote', 'add', 'upstream', RESULT_REPO)
-    git_tmp_failok('branch', '-D', 'gh-pages')
-    git_tmp('checkout', '--orphan', 'gh-pages')
-
-    html_root = os.path.join(cwd, 'html')
-    for fn in os.listdir(html_root):
-        src = os.path.join(html_root, fn)
-        dst = os.path.join(tmp_clone, fn)
-        if os.path.isdir(src):
-            shutil.copytree(src, dst)
-        else:
-            shutil.copyfile(src, dst)
-
-    with open(os.path.join(tmp_clone, '.nojekyll'), 'wb') as fd:
-        fd.write(b'\n')
-
-    git_tmp('add', '-f', '.')
-    git_tmp('commit', '-m', 'Generated from sources')
-    git_tmp('push', '-f', 'upstream', 'gh-pages')
-
-    shutil.rmtree(tmp_clone)
-
-    return 0
 
 
 def is_git_repo_root(path):
