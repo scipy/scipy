@@ -9,7 +9,7 @@ from __future__ import division, print_function, absolute_import
 from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 import numpy as np
 from scipy.interpolate import interp1d
-from .ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
+from .ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk, abcd_normalize
 
 __all__ = ['dlsim', 'dstep', 'dimpulse', 'dlti']
 
@@ -71,7 +71,7 @@ class dlti(object):
             else:
                 self.outputs = 1
         elif N == 5:       # State-space dt form
-            self._A, self._B, self._C, self._D, = abcd_normalize(args[0:3])
+            self._A, self._B, self._C, self._D, = abcd_normalize(args[0],args[1],args[2],args[3])
             self._dt = args[4]
             self._update(N)
             self.inputs = self.B.shape[-1]

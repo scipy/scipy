@@ -10,6 +10,7 @@ import numpy as np
 from scipy import linalg
 
 from .ltisys import tf2ss, ss2tf, zpk2ss, ss2zpk
+from .dltisys import dlti
 
 __all__ = ['cont2discrete']
 
