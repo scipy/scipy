@@ -1,7 +1,10 @@
 from __future__ import division, absolute_import, print_function
 from .common import run_monitored, set_mem_rlimit
 
-from scipy.stats import spearmanr
+try:
+    from scipy.stats import spearmanr
+except ImportError:
+    pass
 
 
 class Leaks(object):

@@ -5,7 +5,11 @@ from __future__ import division, absolute_import, print_function
 
 import numpy as np
 from numpy.testing import assert_allclose
-import scipy.linalg
+
+try:
+    import scipy.linalg
+except ImportError:
+    pass
 
 
 class Sqrtm(object):

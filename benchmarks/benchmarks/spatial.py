@@ -1,8 +1,12 @@
 from __future__ import division, absolute_import, print_function
 
 import sys
-from scipy.spatial import cKDTree, KDTree
 import numpy as np
+
+try:
+    from scipy.spatial import cKDTree, KDTree
+except ImportError:
+    pass
 
 
 class Build(object):

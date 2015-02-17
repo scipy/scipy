@@ -6,17 +6,19 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import time
 import collections
+import sys
 
 import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty, random, zeros
 
-from scipy import sparse
-from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
-                          dok_matrix, rand, SparseEfficiencyWarning)
-
-import scipy
-import sys
+try:
+    import scipy
+    from scipy import sparse
+    from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
+                              dok_matrix, rand, SparseEfficiencyWarning)
+except ImportError:
+    pass
 
 
 def random_sparse(m,n,nnz_per_row):

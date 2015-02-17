@@ -6,7 +6,10 @@ import time
 
 import numpy as np
 
-import scipy.sparse.linalg
+try:
+    import scipy.sparse.linalg
+except ImportError:
+    pass
 
 
 class BenchmarkOneNormEst(object):

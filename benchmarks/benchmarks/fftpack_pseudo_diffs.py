@@ -5,7 +5,11 @@ from __future__ import division, absolute_import, print_function
 import sys
 
 from numpy import arange, sin, cos, pi, exp, tanh, sign
-from scipy.fftpack import diff, fft, ifft, tilbert, hilbert, shift, fftfreq
+
+try:
+    from scipy.fftpack import diff, fft, ifft, tilbert, hilbert, shift, fftfreq
+except ImportError:
+    pass
 
 
 def random(size):

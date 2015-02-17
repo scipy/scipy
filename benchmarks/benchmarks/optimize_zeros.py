@@ -3,8 +3,11 @@ from __future__ import division, print_function, absolute_import
 from math import sqrt
 
 # Import testing parameters
-from scipy.optimize._tstutils import (methods, mstrings, functions,
-     fstrings, description)
+try:
+    from scipy.optimize._tstutils import (methods, mstrings, functions,
+                                          fstrings, description)
+except ImportError:
+    pass
 
 
 class Zeros(object):
