@@ -2410,6 +2410,19 @@ def f_oneway(*args, **kwds):
     possible to use the Kruskal-Wallis H-test (`scipy.stats.kruskal`) although
     with some loss of power.
 
+
+    When a permutation test is performed, the labels are permutated using
+    Monte Carlo sampling. Each element in each of the samples is assigned a
+    label - 0 corresponding to the first sample and 1 corresponding to the
+    second sample. A vector of these labels is permutated multiple times and
+    these permutations are used to calculate the permutation test.
+    
+    The running time of the permutation test is O(NMKP) where N is the
+    length of x and y, M is the width of x and y, K is the number of distinct
+    classes being test and P is the number of permutations.
+    The memory usage is O(KNP + NM).
+    
+
     The algorithm is from Heiman[2], pp.394-7.
 
 
@@ -2420,6 +2433,9 @@ def f_oneway(*args, **kwds):
            http://faculty.vassar.edu/lowry/ch14pt1.html
 
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
+
+    .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
+
 
     """
     args = [np.asarray(arg, dtype=float) for arg in args]

@@ -21,6 +21,15 @@ This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
 New features
 ============
 
+Benchmark suite
+---------------
+
+The benchmark suite has switched to using `Airspeed Velocity
+<http://spacetelescope.github.io/asv/>`__ for benchmarking. You can
+run the suite locally via ``python runtests.py --bench``. For more
+details, see ``benchmarks/README.rst``.
+
+
 `scipy.linalg` improvements
 ---------------------------
 

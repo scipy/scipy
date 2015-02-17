@@ -40,7 +40,7 @@ def save(ar, fileName):
 
 
 def _assert_symmetric(M, rtol=1e-5, atol=1e-8):
-    assert_allclose(M.T, M, rtol=rtol, atol=atol, err_msg=str(M.T - M))
+    assert_allclose(M.T, M, rtol=rtol, atol=atol)
 
 
 ##
