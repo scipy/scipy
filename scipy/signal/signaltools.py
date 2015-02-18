@@ -850,7 +850,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
        a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[M]*x[n-M]
                              - a[1]*y[n-1] - ... - a[N]*y[n-N]
 
-    using the following difference equations::
+    where `M` is the degree of the numerator, `N` is the degree of the
+    denominator, and `n` is the sample number.  It is implemented using
+    the following difference equations::
 
          y[m] = b[0]*x[m] + z[0,m-1]
          z[0,m] = b[1]*x[m] + z[1,m-1] - a[1]*y[m]
@@ -1232,7 +1234,7 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     """
     Compute b(s) and a(s) from partial fraction expansion.
 
-    If `M` is the order of numerator `b` and `N` the order of denominator
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
 
               b(s)     b[0] s**(M) + b[1] s**(M-1) + ... + b[M]
@@ -1251,6 +1253,10 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
           r[i]      r[i+1]              r[i+n-1]
         -------- + ----------- + ... + -----------
         (s-p[i])  (s-p[i])**2          (s-p[i])**n
+
+    This function is used for polynomials in positive powers of s or z,
+    such as analog filters or digital filters in controls engineering.  For
+    negative powers of z (typical for digital filters in DSP), use `invresz`.
 
     Parameters
     ----------
@@ -1279,7 +1285,7 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
 
     See Also
     --------
-    residue, unique_roots
+    residue, invresz, unique_roots
 
     """
     extra = k
@@ -1315,7 +1321,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     """
     Compute partial-fraction expansion of b(s) / a(s).
 
-    If `M` is the order of numerator `b` and `N` the order of denominator
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
 
               b(s)     b[0] s**(M) + b[1] s**(M-1) + ... + b[M]
@@ -1335,6 +1341,10 @@ def residue(b, a, tol=1e-3, rtype='avg'):
         -------- + ----------- + ... + -----------
         (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
+    This function is used for polynomials in positive powers of s or z,
+    such as analog filters or digital filters in controls engineering.  For
+    negative powers of z (typical for digital filters in DSP), use `residuez`.
+
     Parameters
     ----------
     b : array_like
@@ -1353,7 +1363,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
     See Also
     --------
-    invres, numpy.poly, unique_roots
+    invres, residuez, numpy.poly, unique_roots
 
     """
 
@@ -1396,7 +1406,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     """
     Compute partial-fraction expansion of b(z) / a(z).
 
-    If `M` is the order of numerator `b` and `N` the order of denominator
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
 
                 b(z)     b[0] + b[1] z**(-1) + ... + b[M] z**(-M)
@@ -1416,6 +1426,9 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
+    This function is used for polynomials in negative powers of z,
+    such as digital filters in DSP.  For positive powers, use `residue`.
+
     Parameters
     ----------
     b : array_like
@@ -1434,7 +1447,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
     See also
     --------
-    invresz, unique_roots
+    invresz, residue, unique_roots
 
     """
     b, a = map(asarray, (b, a))
@@ -1486,7 +1499,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """
     Compute b(z) and a(z) from partial fraction expansion.
 
-    If `M` is the order of numerator `b` and `N` the order of denominator
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
     `a`::
 
                 b(z)     b[0] + b[1] z**(-1) + ... + b[M] z**(-M)
@@ -1505,6 +1518,9 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
              r[i]              r[i+1]                    r[i+n-1]
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+
+    This function is used for polynomials in negative powers of z,
+    such as digital filters in DSP.  For positive powers, use `invres`.
 
     Parameters
     ----------
