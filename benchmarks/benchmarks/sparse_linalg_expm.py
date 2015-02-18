@@ -7,8 +7,8 @@ import math
 import numpy as np
 from numpy.testing import assert_allclose
 
-import scipy.linalg
 try:
+    import scipy.linalg
     from scipy.sparse.linalg import expm_multiply
 except ImportError:
     pass

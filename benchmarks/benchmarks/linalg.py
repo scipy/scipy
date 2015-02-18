@@ -2,10 +2,14 @@ from __future__ import division, absolute_import, print_function
 
 import sys
 import numpy.linalg as nl
-import scipy.linalg as sl
 
 from numpy.testing import assert_
 from numpy.random import rand
+
+try:
+    import scipy.linalg as sl
+except ImportError:
+    pass
 
 
 def random(size):

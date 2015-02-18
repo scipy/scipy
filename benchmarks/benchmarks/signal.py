@@ -3,7 +3,11 @@ from __future__ import division, absolute_import, print_function
 from itertools import product
 
 import numpy as np
-from scipy.signal import convolve2d, correlate2d
+
+try:
+    from scipy.signal import convolve2d, correlate2d
+except ImportError:
+    pass
 
 
 class Convolve2D(object):

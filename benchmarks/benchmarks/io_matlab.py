@@ -12,7 +12,11 @@ import collections
 from io import BytesIO
 
 import numpy as np
-from scipy.io import savemat, loadmat
+
+try:
+    from scipy.io import savemat, loadmat
+except ImportError:
+    pass
 
 
 class MemUsage(object):

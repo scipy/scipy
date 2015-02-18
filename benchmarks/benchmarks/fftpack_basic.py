@@ -3,7 +3,6 @@
 from __future__ import division, absolute_import, print_function
 
 import sys
-from scipy.fftpack import ifft, fft, fftn, irfft, rfft
 
 from numpy.testing import assert_array_almost_equal
 
@@ -11,6 +10,11 @@ from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
 import numpy.fft
 
 from numpy.random import rand
+
+try:
+    from scipy.fftpack import ifft, fft, fftn, irfft, rfft
+except ImportError:
+    pass
 
 
 def random(size):

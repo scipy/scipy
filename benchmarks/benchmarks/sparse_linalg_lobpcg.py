@@ -6,11 +6,15 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 import time
-from scipy import array, r_, ones, arange, sort, diag, cos, rand, pi
-from scipy.linalg import eigh, orth, cho_factor, cho_solve
-import scipy.sparse
-from scipy.sparse.linalg import lobpcg
-from scipy.sparse.linalg.interface import LinearOperator
+
+try:
+    from scipy import array, r_, ones, arange, sort, diag, cos, rand, pi
+    from scipy.linalg import eigh, orth, cho_factor, cho_solve
+    import scipy.sparse
+    from scipy.sparse.linalg import lobpcg
+    from scipy.sparse.linalg.interface import LinearOperator
+except ImportError:
+    pass
 
 
 def _sakurai(n):

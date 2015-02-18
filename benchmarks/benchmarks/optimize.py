@@ -5,8 +5,11 @@ from collections import defaultdict
 
 import numpy as np
 
-import scipy.optimize
-from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
+try:
+    import scipy.optimize
+    from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
+except ImportError:
+    pass
 
 from . import test_functions as funcs
 

@@ -8,8 +8,11 @@ import time
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-from scipy import linalg, sparse
-import scipy.sparse.linalg
+try:
+    from scipy import linalg, sparse
+    import scipy.sparse.linalg
+except ImportError:
+    pass
 
 
 def _create_sparse_poisson1d(n):
