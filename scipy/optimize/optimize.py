@@ -1732,7 +1732,6 @@ class Brent:
         _cg = self._cg
         #################################
         #BEGIN CORE ALGORITHM
-        #we are making NO CHANGES in this
         #################################
         x = w = v = xb
         fw = fv = fx = func(*((x,) + self.args))
@@ -1752,6 +1751,9 @@ class Brent:
             # check for convergence
             if numpy.abs(x - xmid) < (tol2 - 0.5 * (b - a)):
                 break
+            # XXX In the first iteration, rat is only bound in the true case
+            # of this conditional. This used to cause an UnboundLocalError
+            # (gh-4140). It should be set before the if (but to what?).
             if (numpy.abs(deltax) <= tol1):
                 if (x >= xmid):
                     deltax = a - x       # do a golden section step
@@ -1899,6 +1901,8 @@ def _minimize_scalar_brent(func, brack=None, args=(),
                            **unknown_options):
     _check_unknown_options(unknown_options)
     tol = xtol
+    if tol < 0:
+        raise ValueError('tolerance should be >= 0, got %r' % tol)
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=True, maxiter=maxiter)
