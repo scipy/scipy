@@ -1400,8 +1400,8 @@ def exponential(M, center=None, tau=1., sym=True):
         array is returned.
     center : float, optional
         Parameter defining the center location of the window function.
-        The default value if not given is ``center = (M-1) / 2``.
-        Changing this parameter makes sense for non-symmetric windows, only.
+        The default value if not given is ``center = (M-1) / 2``.  This
+        parameter must take its default value for symmetric windows.
     tau : float, optional
         Parameter defining the decay.  For ``center = 0`` use ``tau = -(M-1) / ln(x)``
         if ``x`` is the fraction of the window remaining at the end.
@@ -1420,7 +1420,7 @@ def exponential(M, center=None, tau=1., sym=True):
     -----
     The Exponential window is defined as
 
-    .. math::  w(n) = \exp^{-|n-center| / \tau}
+    .. math::  w(n) = e^{-|n-center| / \tau}
 
     References
     ----------
@@ -1429,23 +1429,41 @@ def exponential(M, center=None, tau=1., sym=True):
 
     Examples
     --------
-    Plot the window:
+    Plot the symmetric window and its frequency response:
 
     >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
-    >>> M = 50
-    >>> tau = -(M-1) / np.log(0.01)
-    >>> window = signal.exponential(M=M, center=10, tau=tau)
+
+    >>> M = 51
+    >>> tau = 3.0 
+    >>> window = signal.exponential(M, tau=tau)
     >>> plt.plot(window)
-    >>> plt.title("Exponential window")
+    >>> plt.title("Exponential Window (tau=3.0)")
     >>> plt.ylabel("Amplitude")
     >>> plt.xlabel("Sample")
-    >>> plt.show()
 
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -35, 0])
+    >>> plt.title("Frequency response of the Exponential window (tau=3.0)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
+    This function can also generate non-symmetric windows:
+
+    >>> tau2 = -(M-1) / np.log(0.01)
+    >>> window2 = signal.exponential(M, 0, tau2, False)
+    >>> plt.figure()
+    >>> plt.plot(window2)
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
     """
     if sym and center is not None:
-        raise ValueError("Parameter ``center`` can only be None for the "
-                         " (default) symmetric window")
+        raise ValueError("If sym==True, center must be None.")
     if M < 1:
         return np.array([])
     if M == 1:
@@ -1453,9 +1471,7 @@ def exponential(M, center=None, tau=1., sym=True):
     odd = M % 2
     if not sym and not odd:
         M = M + 1
-    if sym:
-        center = (M-1) / 2
-    elif center is None:
+    if center is None:
         center = (M-1) / 2
 
     n = np.arange(0, M)
