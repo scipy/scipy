@@ -2034,17 +2034,17 @@ class rv_continuous(rv_generic):
             Special keyword arguments are recognized as holding certain
             parameters fixed:
 
-            f0...fn : hold respective shape parameters fixed.
+            - f0...fn : hold respective shape parameters fixed.
 
-            floc : hold location parameter fixed to specified value.
+            - floc : hold location parameter fixed to specified value.
 
-            fscale : hold scale parameter fixed to specified value.
+            - fscale : hold scale parameter fixed to specified value.
 
-            optimizer : The optimizer to use.  The optimizer must take func,
-                        and starting position as the first two arguments,
-                        plus args (for extra arguments to pass to the
-                        function to be optimized) and disp=0 to suppress
-                        output as keyword arguments.
+            - optimizer : The optimizer to use.  The optimizer must take ``func``,
+              and starting position as the first two arguments,
+              plus ``args`` (for extra arguments to pass to the
+              function to be optimized) and ``disp=0`` to suppress
+              output as keyword arguments.
 
         Returns
         -------
