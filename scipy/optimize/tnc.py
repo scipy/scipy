@@ -274,59 +274,58 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     Minimize a scalar function of one or more variables using a truncated
     Newton (TNC) algorithm.
 
-    Options for the TNC algorithm are:
-        eps : float
-            Step size used for numerical approximation of the jacobian.
-        scale : list of floats
-            Scaling factors to apply to each variable.  If None, the
-            factors are up-low for interval bounded variables and
-            1+|x] fo the others.  Defaults to None
-        offset : float
-            Value to subtract from each variable.  If None, the
-            offsets are (up+low)/2 for interval bounded variables
-            and x for the others.
-        disp : bool
-           Set to True to print convergence messages.
-        maxCGit : int
-            Maximum number of hessian*vector evaluations per main
-            iteration.  If maxCGit == 0, the direction chosen is
-            -gradient if maxCGit < 0, maxCGit is set to
-            max(1,min(50,n/2)).  Defaults to -1.
-        maxiter : int
-            Maximum number of function evaluation.  if None, `maxiter` is
-            set to max(100, 10*len(x0)).  Defaults to None.
-        eta : float
-            Severity of the line search. if < 0 or > 1, set to 0.25.
-            Defaults to -1.
-        stepmx : float
-            Maximum step for the line search.  May be increased during
-            call.  If too small, it will be set to 10.0.  Defaults to 0.
-        accuracy : float
-            Relative precision for finite difference calculations.  If
-            <= machine_precision, set to sqrt(machine_precision).
-            Defaults to 0.
-        minfev : float
-            Minimum function value estimate.  Defaults to 0.
-        ftol : float
-            Precision goal for the value of f in the stoping criterion.
-            If ftol < 0.0, ftol is set to 0.0 defaults to -1.
-        xtol : float
-            Precision goal for the value of x in the stopping
-            criterion (after applying x scaling factors).  If xtol <
-            0.0, xtol is set to sqrt(machine_precision).  Defaults to
-            -1.
-        gtol : float
-            Precision goal for the value of the projected gradient in
-            the stopping criterion (after applying x scaling factors).
-            If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
-            Setting it to 0.0 is not recommended.  Defaults to -1.
-        rescale : float
-            Scaling factor (in log10) used to trigger f value
-            rescaling.  If 0, rescale at each iteration.  If a large
-            value, never rescale.  If < 0, rescale is set to 1.3.
+    Options
+    -------
+    eps : float
+        Step size used for numerical approximation of the jacobian.
+    scale : list of floats
+        Scaling factors to apply to each variable.  If None, the
+        factors are up-low for interval bounded variables and
+        1+|x] fo the others.  Defaults to None
+    offset : float
+        Value to subtract from each variable.  If None, the
+        offsets are (up+low)/2 for interval bounded variables
+        and x for the others.
+    disp : bool
+       Set to True to print convergence messages.
+    maxCGit : int
+        Maximum number of hessian*vector evaluations per main
+        iteration.  If maxCGit == 0, the direction chosen is
+        -gradient if maxCGit < 0, maxCGit is set to
+        max(1,min(50,n/2)).  Defaults to -1.
+    maxiter : int
+        Maximum number of function evaluation.  if None, `maxiter` is
+        set to max(100, 10*len(x0)).  Defaults to None.
+    eta : float
+        Severity of the line search. if < 0 or > 1, set to 0.25.
+        Defaults to -1.
+    stepmx : float
+        Maximum step for the line search.  May be increased during
+        call.  If too small, it will be set to 10.0.  Defaults to 0.
+    accuracy : float
+        Relative precision for finite difference calculations.  If
+        <= machine_precision, set to sqrt(machine_precision).
+        Defaults to 0.
+    minfev : float
+        Minimum function value estimate.  Defaults to 0.
+    ftol : float
+        Precision goal for the value of f in the stoping criterion.
+        If ftol < 0.0, ftol is set to 0.0 defaults to -1.
+    xtol : float
+        Precision goal for the value of x in the stopping
+        criterion (after applying x scaling factors).  If xtol <
+        0.0, xtol is set to sqrt(machine_precision).  Defaults to
+        -1.
+    gtol : float
+        Precision goal for the value of the projected gradient in
+        the stopping criterion (after applying x scaling factors).
+        If gtol < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
+        Setting it to 0.0 is not recommended.  Defaults to -1.
+    rescale : float
+        Scaling factor (in log10) used to trigger f value
+        rescaling.  If 0, rescale at each iteration.  If a large
+        value, never rescale.  If < 0, rescale is set to 1.3.
 
-    This function is called by the `minimize` function with `method=TNC`.
-    It is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
     epsilon = eps

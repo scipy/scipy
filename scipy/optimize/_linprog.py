@@ -397,10 +397,6 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                   each variable x_i will be bounded by lb[i] and ub[i].
         Infinite bounds are specified using -np.inf (negative)
         or np.inf (positive).
-    maxiter : int
-       The maximum number of iterations to perform.
-    disp : bool
-        If True, print exit status message to sys.stdout
     callback : callable
         If a callback function is provide, it will be called within each
         iteration of the simplex algorithm. The callback must have the
@@ -412,6 +408,13 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         "phase" : Whether the algorithm is in Phase 1 or Phase 2.
         "bv" : A structured array containing a string representation of each
                basic variable and its current value.
+
+    Options
+    -------
+    maxiter : int
+       The maximum number of iterations to perform.
+    disp : bool
+        If True, print exit status message to sys.stdout
     tol : float
         The tolerance which determines when a solution is "close enough" to zero
         in Phase 1 to be considered a basic feasible solution or close enough
@@ -825,7 +828,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
     method : str, optional
-        Type of solver.  At this time only 'simplex' is supported.
+        Type of solver.  At this time only 'simplex' is supported
+        :ref:`(see here) <optimize.linprog-simplex>`.
     callback : callable, optional
         If a callback function is provide, it will be called within each
         iteration of the simplex algorithm. The callback must have the signature
@@ -883,7 +887,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *Simplex*.
+    'method' parameter. The default method is :ref:`Simplex <optimize.linprog-simplex>`.
 
     Method *Simplex* uses the Simplex algorithm (as it relates to Linear
     Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
