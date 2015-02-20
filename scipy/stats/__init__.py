@@ -8,7 +8,7 @@ Statistical functions (:mod:`scipy.stats`)
 This module contains a large number of probability distributions as
 well as a growing library of statistical functions.
 
-Each included distribution is an instance of a subclass of `rv_continuous`
+Each univariate distribution is an instance of a subclass of `rv_continuous`
 (`rv_discrete` for discrete distributions):
 
 .. autosummary::
