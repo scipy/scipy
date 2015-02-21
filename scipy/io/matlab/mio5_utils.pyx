@@ -483,7 +483,7 @@ cdef class VarReader5:
             byte_ptr = <unsigned char*> ptr
             for i in range(byte_count):
                 if byte_ptr[i] > 127:
-                    raise ValueError('Non ascii int8 string ' + str(data))
+                    raise ValueError('Non ascii int8 string')
         elif mdtype != miINT8:
             raise TypeError('Expecting miINT8 as data type')
         return data
