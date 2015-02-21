@@ -7,6 +7,7 @@ import warnings
 import time
 import collections
 import sys
+import timeit
 
 import numpy
 import numpy as np
@@ -278,22 +279,25 @@ class Getset(object):
         self.v = v
 
     def _timeit(self, kernel, recopy):
-        iter = 0
         min_time = 1e99
         if not recopy:
             kernel(self.m, self.i, self.j, self.v)
-        start = time.clock()
-        while iter < 5000:
-            iter += 1
+
+        number = 1
+        start = time.time()
+        while time.time() - start < 0.5:
             if recopy:
                 m = self.m.copy()
             else:
                 m = self.m
-            a = time.clock()
-            kernel(m, self.i, self.j, self.v)
-            min_time = min(min_time, time.clock() - a)
-            if a - start > 0.5:
-                break
+            while True:
+                duration = timeit.timeit(lambda: kernel(m, self.i, self.j, self.v),
+                                         number=number)
+                if duration > 1e-5:
+                    break
+                else:
+                    number *= 10
+            min_time = min(min_time, duration/number)
         return min_time
 
     def track_fancy_setitem(self, N, sparsity_pattern, format):
