@@ -6,8 +6,10 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
 
-class Leaks(object):
+
+class Leaks(Benchmark):
     def track_leaks(self):
         set_mem_rlimit()
 

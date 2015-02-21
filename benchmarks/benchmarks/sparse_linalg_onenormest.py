@@ -11,14 +11,15 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
 
-class BenchmarkOneNormEst(object):
+
+class BenchmarkOneNormEst(Benchmark):
     params = [
         [2, 3, 5, 10, 30, 100, 300, 500, 1000],
         ['exact', 'onenormest']
     ]
     param_names = ['n', 'solver']
-    goal_time = 0.5
 
     def setup(self, n, solver):
         np.random.seed(1234)

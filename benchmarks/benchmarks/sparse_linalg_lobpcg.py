@@ -16,6 +16,8 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
+
 
 def _sakurai(n):
     """ Example taken from
@@ -60,14 +62,12 @@ def _precond(LorU, lower, x):
     return _as2d(y)
 
 
-class Bench(object):
+class Bench(Benchmark):
     params = [
         [],
         ['lobpcg', 'eigh']
     ]
     param_names = ['n', 'solver']
-    goal_time = 0.5
-    timeout = 120
 
     def __init__(self):
         self.time_mikota.__func__.params = list(self.params)

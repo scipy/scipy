@@ -18,8 +18,10 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
 
-class MemUsage(object):
+
+class MemUsage(Benchmark):
     param_names = ['size', 'compressed']
     timeout = 4*60
 
@@ -94,13 +96,12 @@ class MemUsage(object):
         return peak_mem / size
 
 
-class StructArr(object):
+class StructArr(Benchmark):
     params = [
         [(10, 10, 20), (20, 20, 40), (30, 30, 50)],
         [False, True]
     ]
     param_names = ['(vars, fields, structs)', 'compression']
-    goal_time = 0.5
 
     @staticmethod
     def make_structarr(n_vars, n_fields, n_structs):

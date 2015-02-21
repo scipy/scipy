@@ -11,15 +11,16 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
 
-class Sqrtm(object):
+
+class Sqrtm(Benchmark):
     params = [
         ['float64', 'complex128'],
         [64, 256],
         [32, 64, 256]
     ]
     param_names = ['dtype', 'n', 'blocksize']
-    goal_time = 0.5
 
     def setup(self, dtype, n, blocksize):
         n = int(n)

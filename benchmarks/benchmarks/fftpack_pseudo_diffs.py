@@ -11,9 +11,7 @@ try:
 except ImportError:
     pass
 
-
-def random(size):
-    return rand(*size)
+from .common import Benchmark
 
 
 def direct_diff(x,k=1,period=None):
@@ -61,13 +59,12 @@ def direct_shift(x,a,period=None):
     return ifft(fft(x)*exp(k*a)).real
 
 
-class Bench(object):
+class Bench(Benchmark):
     params = [
         [100, 256, 512, 1000, 1024, 2048, 2048*2, 2048*4],
         ['fft', 'direct'],
     ]
     param_names = ['size', 'type']
-    goal_time = 0.5
 
     def setup(self, size, type):
         size = int(size)

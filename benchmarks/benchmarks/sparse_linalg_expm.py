@@ -13,6 +13,8 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
+
 
 def random_sparse_csr(m, n, nnz_per_row):
     # Copied from the scipy.sparse benchmark.
@@ -34,10 +36,9 @@ def random_sparse_csc(m, n, nnz_per_row):
     return M.tocsc()
 
 
-class ExpmMultiply(object):
+class ExpmMultiply(Benchmark):
     params = [['sparse', 'full']]
     param_names = ['run format']
-    goal_time = 0.5
 
     def setup(self, *args):
         self.n = 2000
@@ -61,7 +62,7 @@ class ExpmMultiply(object):
             expm_col_entry = A_expm_col_j[self.i]
 
 
-class Expm(object):
+class Expm(Benchmark):
     params = [
         [30, 100, 300],
         ['sparse', 'dense']

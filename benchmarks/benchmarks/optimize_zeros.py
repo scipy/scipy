@@ -9,14 +9,15 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
 
-class Zeros(object):
+
+class Zeros(Benchmark):
     params = [
         fstrings,
         mstrings
     ]
     param_names = ['test function', 'solver']
-    goal_time = 0.5
 
     def setup(self, func, meth):
         self.a = .5

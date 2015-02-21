@@ -9,8 +9,10 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
 
-class Convolve2D(object):
+
+class Convolve2D(Benchmark):
     def setup(self):
         np.random.seed(1234)
 

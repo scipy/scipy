@@ -10,16 +10,16 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
 
-class SolveToeplitz(object):
+
+class SolveToeplitz(Benchmark):
     params = (
         ('float64', 'complex128'),
         (100, 300, 1000),
         ('toeplitz', 'generic')
     )
     param_names = ('dtype', 'n', 'solver')
-    goal_time = 0.5
-    timeout = 120
 
     def setup(self, dtype, n, soltype):
         random = np.random.RandomState(1234)

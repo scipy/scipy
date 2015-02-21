@@ -21,6 +21,8 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
+
 
 def random_sparse(m,n,nnz_per_row):
     rows = numpy.arange(m).repeat(nnz_per_row)
@@ -53,14 +55,13 @@ def poisson2d(N,dtype='d',format=None):
     return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
 
-class Arithmetic(object):
+class Arithmetic(Benchmark):
     param_names = ['format', 'XY', 'op']
     params = [
         ['csr'],
         ['AA', 'AB', 'BA', 'BB'],
         ['__add__', '__sub__', 'multiply', '__mul__']
     ]
-    goal_time = 0.5
 
     def setup(self, format, XY, op):
         self.matrices = {}
@@ -79,10 +80,9 @@ class Arithmetic(object):
         self.fn(self.y)
 
 
-class Sort(object):
+class Sort(Benchmark):
     params = ['Rand10', 'Rand25', 'Rand50', 'Rand100', 'Rand200']
     param_names = ['matrix']
-    goal_time = 0.5
 
     def setup(self, matrix):
         matrices = []
@@ -105,9 +105,8 @@ class Sort(object):
         self.A.sort_indices()
 
 
-class Matvec(object):
+class Matvec(Benchmark):
     param_names = ['matrix']
-    goal_time = 0.5
 
     @property
     def params(self):
@@ -144,13 +143,12 @@ class Matvec(object):
         self.x = ones(self.A.shape[1], dtype=float)
 
     def time_matvec(self, matrix):
-        y = self.A * self.x
+        self.A * self.x
 
 
-class Matvecs(object):
+class Matvecs(Benchmark):
     params = ['dia', 'coo', 'csr', 'csc', 'bsr']
     param_names = ["format"]
-    goal_time = 0.5
 
     def setup(self, *args):
         self.matrices = {}
@@ -167,7 +165,7 @@ class Matvecs(object):
         y = A*self.x
 
 
-class Matmul(object):
+class Matmul(Benchmark):
     def setup(self):
         H1, W1 = 1, 100000
         H2, W2 = W1, 1000
@@ -190,13 +188,12 @@ class Matmul(object):
             matrix3 = self.matrix1 * self.matrix2
 
 
-class Construction(object):
+class Construction(Benchmark):
     params = [
         ['Empty', 'Identity', 'Poisson5pt'],
         ['lil', 'dok']
     ]
     param_names = ['matrix', 'format']
-    goal_time = 0.5
 
     def setup(self, name, format):
         self.matrices = {}
@@ -215,13 +212,12 @@ class Construction(object):
             T[i,j] = v
 
 
-class Conversion(object):
+class Conversion(Benchmark):
     params = [
         ['csr','csc','coo','dia','lil','dok'],
         ['csr','csc','coo','dia','lil','dok'],
     ]
     param_names = ['from_format', 'to_format']
-    goal_time = 0.5
 
     def setup(self, fromfmt, tofmt):
         self.A = poisson2d(100)
@@ -241,14 +237,13 @@ class Conversion(object):
         x = self.fn()
 
 
-class Getset(object):
+class Getset(Benchmark):
     params = [
         [1, 10, 100, 1000, 10000],
         ['different', 'same'],
         ['csr', 'csc', 'lil', 'dok']
     ]
     param_names = ['N', 'sparsity pattern', 'format']
-    goal_time = 0.5
 
     def setup(self, N, sparsity_pattern, format):
         self.A = rand(1000, 1000, density=1e-5)

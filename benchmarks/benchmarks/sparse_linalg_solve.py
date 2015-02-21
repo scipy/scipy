@@ -14,6 +14,8 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
+
 
 def _create_sparse_poisson1d(n):
     # Make Gilbert Strang's favorite matrix
@@ -30,13 +32,12 @@ def _create_sparse_poisson2d(n):
     return P2d
 
 
-class Bench(object):
+class Bench(Benchmark):
     params = [
         [4, 6, 10, 16, 25, 40, 64, 100, 160, 250, 400, 640, 1000, 1600],
         ['sparse', 'dense']
     ]
     param_names = ['(n,n)', 'solver']
-    goal_time = 0.5
 
     def setup(self, n, solver):
         dense_is_active = (n**2 < 600)

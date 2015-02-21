@@ -10,6 +10,13 @@ import textwrap
 import subprocess
 
 
+class Benchmark(object):
+    """
+    Base class with sensible options
+    """
+    goal_time = 0.25
+
+
 def run_monitored(code):
     """
     Run code in a new Python process, and monitor peak memory usage.
