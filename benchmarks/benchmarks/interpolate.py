@@ -43,7 +43,6 @@ class Leaks(Benchmark):
             print("*"*79)
             print("PROBABLE MEMORY LEAK")
             print("*"*79)
-            raise AssertionError("Probable memory leak")
         else:
             print("PROBABLY NO MEMORY LEAK")
 
