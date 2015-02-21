@@ -188,7 +188,7 @@ def main(argv):
 
         if not args.bench_compare:
             cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-                   'dev'] + bench_args
+                   'run', '-n', '-e', '--python=same'] + bench_args
             os.execv(sys.executable, [sys.executable] + cmd)
             sys.exit(1)
         else:
