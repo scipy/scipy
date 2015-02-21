@@ -10,6 +10,8 @@ from .common import Benchmark
 
 
 class Leaks(Benchmark):
+    unit = "relative increase with repeats"
+
     def track_leaks(self):
         set_mem_rlimit()
 

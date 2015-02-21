@@ -19,6 +19,7 @@ from .common import Benchmark
 class MemUsage(Benchmark):
     param_names = ['size', 'compressed']
     timeout = 4*60
+    unit = "actual/optimal memory usage ratio"
 
     @property
     def params(self):

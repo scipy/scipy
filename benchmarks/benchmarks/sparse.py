@@ -241,8 +241,12 @@ class Getset(Benchmark):
         ['csr', 'csc', 'lil', 'dok']
     ]
     param_names = ['N', 'sparsity pattern', 'format']
+    unit = "seconds"
 
     def setup(self, N, sparsity_pattern, format):
+        if format == 'dok' and N > 500:
+            raise NotImplementedError()
+
         self.A = rand(1000, 1000, density=1e-5)
 
         A = self.A
@@ -293,9 +297,6 @@ class Getset(Benchmark):
         return min_time
 
     def track_fancy_setitem(self, N, sparsity_pattern, format):
-        if format == 'dok' and N > 500:
-            return np.nan
-
         def kernel(A, i, j, v):
             A[i, j] = v
 
@@ -304,9 +305,6 @@ class Getset(Benchmark):
             return self._timeit(kernel, sparsity_pattern == 'different')
 
     def track_fancy_getitem(self, N, sparsity_pattern, format):
-        if format == 'dok' and N > 500:
-            return np.nan
-
         def kernel(A, i, j, v):
             A[i, j]
 
