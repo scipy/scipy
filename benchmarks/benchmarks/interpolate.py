@@ -6,8 +6,12 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
 
-class Leaks(object):
+
+class Leaks(Benchmark):
+    unit = "relative increase with repeats"
+
     def track_leaks(self):
         set_mem_rlimit()
 
@@ -41,7 +45,6 @@ class Leaks(object):
             print("*"*79)
             print("PROBABLE MEMORY LEAK")
             print("*"*79)
-            raise AssertionError("Probable memory leak")
         else:
             print("PROBABLY NO MEMORY LEAK")
 

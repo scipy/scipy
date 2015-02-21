@@ -1,6 +1,5 @@
 from __future__ import division, absolute_import, print_function
 
-import sys
 import numpy.linalg as nl
 
 from numpy.testing import assert_
@@ -11,19 +10,20 @@ try:
 except ImportError:
     pass
 
+from .common import Benchmark
+
 
 def random(size):
     return rand(*size)
 
 
-class Bench(object):
+class Bench(Benchmark):
     params = [
         [20, 100, 500, 1000],
         ['contig', 'nocont'],
         ['numpy', 'scipy']
     ]
     param_names = ['size', 'contiguous', 'module']
-    goal_time = 0.5
 
     def setup(self, size, contig, module):
         a = random([size,size])
