@@ -1,6 +1,5 @@
 from __future__ import division, absolute_import, print_function
 
-import sys
 import numpy.linalg as nl
 
 from numpy.testing import assert_

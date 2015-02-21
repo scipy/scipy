@@ -3,7 +3,6 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
 
 try:
     import scipy.linalg
@@ -42,6 +41,6 @@ class SolveToeplitz(Benchmark):
 
     def time_solve_toeplitz(self, dtype, n, soltype):
         if soltype == 'toeplitz':
-            x_toeplitz = scipy.linalg.solve_toeplitz((self.c, self.r), self.y)
+            scipy.linalg.solve_toeplitz((self.c, self.r), self.y)
         else:
-            x_generic = scipy.linalg.solve(self.T, self.y)
+            scipy.linalg.solve(self.T, self.y)

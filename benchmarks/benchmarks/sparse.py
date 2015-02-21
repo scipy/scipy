@@ -6,7 +6,6 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import time
 import collections
-import sys
 import timeit
 
 import numpy
@@ -14,7 +13,6 @@ import numpy as np
 from numpy import ones, array, asarray, empty, random, zeros
 
 try:
-    import scipy
     from scipy import sparse
     from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
                               dok_matrix, rand, SparseEfficiencyWarning)
@@ -162,7 +160,7 @@ class Matvecs(Benchmark):
 
     def time_matvecs(self, fmt):
         A = self.matrices[fmt]
-        y = A*self.x
+        A*self.x
 
 
 class Matmul(Benchmark):
@@ -185,7 +183,7 @@ class Matmul(Benchmark):
 
     def time_large(self):
         for i in range(100):
-            matrix3 = self.matrix1 * self.matrix2
+            self.matrix1 * self.matrix2
 
 
 class Construction(Benchmark):
@@ -225,7 +223,6 @@ class Conversion(Benchmark):
         A = self.A
         base = getattr(A,'to' + fromfmt)()
 
-        result = np.nan
         try:
             self.fn = getattr(base, 'to' + tofmt)
         except:
@@ -234,7 +231,7 @@ class Conversion(Benchmark):
             self.fn = fn
 
     def time_conversion(self, fromfmt, tofmt):
-        x = self.fn()
+        self.fn()
 
 
 class Getset(Benchmark):
@@ -280,7 +277,7 @@ class Getset(Benchmark):
 
         number = 1
         start = time.time()
-        while time.time() - start < 0.5:
+        while time.time() - start < 0.1:
             if recopy:
                 m = self.m.copy()
             else:
@@ -304,7 +301,7 @@ class Getset(Benchmark):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', SparseEfficiencyWarning)
-            return self._timeit(kernel, sparsity_pattern=='different')
+            return self._timeit(kernel, sparsity_pattern == 'different')
 
     def track_fancy_getitem(self, N, sparsity_pattern, format):
         if format == 'dok' and N > 500:
@@ -315,4 +312,4 @@ class Getset(Benchmark):
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', SparseEfficiencyWarning)
-            return self._timeit(kernel, sparsity_pattern=='different')
+            return self._timeit(kernel, sparsity_pattern == 'different')

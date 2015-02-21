@@ -2,11 +2,6 @@ from __future__ import division, absolute_import, print_function
 from .common import set_mem_rlimit, run_monitored, get_mem_info
 
 import os
-import sys
-import re
-import subprocess
-import time
-import textwrap
 import tempfile
 import collections
 from io import BytesIO

@@ -2,8 +2,6 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import time
-
 import numpy as np
 
 try:
@@ -36,7 +34,7 @@ class BenchmarkOneNormEst(Benchmark):
         if solver == 'exact':
             # Get the exact values of one-norms of squares.
             for M in self.matrices:
-                M2 = M.dot(M)
+                M.dot(M)
                 scipy.sparse.linalg.matfuncs._onenorm(M)
         elif solver == 'onenormest':
             # Get the estimates of one-norms of squares.

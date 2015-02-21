@@ -2,8 +2,6 @@
 """
 from __future__ import division, absolute_import, print_function
 
-import sys
-
 from numpy import arange, sin, cos, pi, exp, tanh, sign
 
 try:

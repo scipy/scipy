@@ -3,9 +3,6 @@ from __future__ import division, absolute_import, print_function
 from functools import partial
 
 import numpy as np
-from numpy.testing import assert_allclose
-
-import time
 
 try:
     from scipy import array, r_, ones, arange, sort, diag, cos, rand, pi
@@ -99,7 +96,7 @@ class Bench(Benchmark):
                     matmat=partial(_precond, LorU, lower))
             eigs, vecs = lobpcg(self.A, X, self.B, M, tol=1e-4, maxiter=40)
         else:
-            w = eigh(self.A, self.B, eigvals_only=True, eigvals=(0, m-1))
+            eigh(self.A, self.B, eigvals_only=True, eigvals=(0, m-1))
 
     def time_sakurai(self, n, solver):
         m = 3
@@ -108,4 +105,4 @@ class Bench(Benchmark):
             eigs, vecs, resnh = lobpcg(self.A, X, self.B, tol=1e-6, maxiter=500,
                     retResidualNormsHistory=1)
         else:
-            w_eigh = eigh(self.A_dense, self.B_dense, eigvals_only=True, eigvals=(0, m-1))
+            eigh(self.A_dense, self.B_dense, eigvals_only=True, eigvals=(0, m-1))

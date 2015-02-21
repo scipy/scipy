@@ -4,8 +4,7 @@ from math import sqrt
 
 # Import testing parameters
 try:
-    from scipy.optimize._tstutils import (methods, mstrings, functions,
-                                          fstrings, description)
+    from scipy.optimize._tstutils import methods, mstrings, functions, fstrings
 except ImportError:
     pass
 
@@ -22,7 +21,6 @@ class Zeros(Benchmark):
     def setup(self, func, meth):
         self.a = .5
         self.b = sqrt(3)
-        repeat = 2000
 
         self.func = functions[fstrings.index(func)]
         self.meth = methods[mstrings.index(meth)]

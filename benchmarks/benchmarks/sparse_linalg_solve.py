@@ -3,14 +3,12 @@ Check the speed of the conjugate gradient solver.
 """
 from __future__ import division, absolute_import, print_function
 
-import time
-
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_equal
 
 try:
     from scipy import linalg, sparse
-    import scipy.sparse.linalg
+    from scipy.sparse.linalg import cg
 except ImportError:
     pass
 
@@ -57,14 +55,10 @@ class Bench(Benchmark):
         if solver == 'dense':
             linalg.solve(self.P_dense, self.b)
         else:
-            sparse.linalg.cg(self.P_sparse, self.b)
+            cg(self.P_sparse, self.b)
 
     def time_spsolve(self, n, solver):
         if solver == 'dense':
             linalg.solve(self.P_dense, self.b)
         else:
-            sparse.linalg.cg(self.P_sparse, self.b)
-
-
-if __name__ == '__main__':
-    Tester().bench()
+            cg(self.P_sparse, self.b)

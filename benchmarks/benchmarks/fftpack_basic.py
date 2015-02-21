@@ -2,10 +2,6 @@
 """
 from __future__ import division, absolute_import, print_function
 
-import sys
-
-from numpy.testing import assert_array_almost_equal
-
 from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
 import numpy.fft
 
@@ -45,7 +41,7 @@ def direct_idft(x):
 
 class Fft(Benchmark):
     params = [
-        [100, 256, 512, 1000,  1024, 2048, 2048*2, 2048*4],
+        [100, 256, 512, 1000, 1024, 2048, 2048*2, 2048*4],
         ['real', 'cmplx'],
         ['scipy', 'numpy']
     ]
@@ -72,7 +68,7 @@ class Fft(Benchmark):
 
 class RFft(Benchmark):
     params = [
-        [100, 256, 512, 1000,  1024, 2048, 2048*2, 2048*4],
+        [100, 256, 512, 1000, 1024, 2048, 2048*2, 2048*4],
         ['scipy', 'numpy']
     ]
     param_names = ['size', 'module']
