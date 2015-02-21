@@ -57,6 +57,13 @@ def procrustes(data1, data2):
     disparity : float
         :math:`M^{2}` as defined above.
 
+    Raises
+    ------
+    ValueError
+        If the input arrays are not two-dimensional.
+        If the shape of the input arrays is different.
+        If the input arrays have zero columns or zero rows.
+
     See Also
     --------
     orthogonal_procrustes
@@ -89,74 +96,35 @@ def procrustes(data1, data2):
     0.0
 
     """
+
+    data1 = np.asarray(data1, dtype=np.double)
+    data2 = np.asarray(data2, dtype=np.double)
+
+    if data1.ndim != 2 or data2.ndim != 2:
+        raise ValueError("Input matrices must be two-dimensional")
     num_rows, num_cols = np.shape(data1)
     if (num_rows, num_cols) != np.shape(data2):
         raise ValueError("Input matrices must be of same shape")
     if num_rows == 0 or num_cols == 0:
         raise ValueError("Input matrices must be >0 rows and >0 cols")
 
-    # standardize each matrix
-    mtx1 = _center(data1)
-    mtx2 = _center(data2)
+    # translate all the data to the origin
+    mtx1 = data1-np.mean(data1, 0)
+    mtx2 = data2-np.mean(data2, 0)
 
     if (not np.any(mtx1)) or (not np.any(mtx2)):
         raise ValueError("input matrices must contain >1 unique points")
 
-    mtx1 = _normalize(mtx1)
-    mtx2 = _normalize(mtx2)
+    # change scaling of data (in rows) such that trace(mtx*mtx') = 1
+    mtx1 = mtx1/np.linalg.norm(mtx1)
+    mtx2 = mtx2/np.linalg.norm(mtx2)
 
-    # transform mtx2 to minimize disparity (sum((mtx1[i,j] - mtx2[i,j])^2))
-    mtx2, disparity = orthogonal_procrustes(mtx1, mtx2)
+    # transform mtx2 to minimize disparity
+    R, s = orthogonal_procrustes(mtx1, mtx2)
+    mtx2 = np.dot(mtx2, R.T) * s
 
-    # When mtx1 and mtx2 can match exactly, orthogonal_procrustes returns a
-    # matrix with:
-    #   |-1 0|
-    #   | 0 1|
-    # Thus we only really need to return mtx1 and a disparity of zero.
-    #
-    # Note: we check for shape first, because if the shape is not equal
-    # np.allclose will raise an error.
-    if mtx2.shape == (2, 2) and np.allclose(np.array([[-1, 0], [0, 1]]), mtx2,
-                                            atol=1e-8):
-        mtx2 = mtx1
-        disparity = 0
+    # measure the dissimilarity between the two datasets
+    disparity = np.sum(np.square(mtx1 - mtx2))
 
     return mtx1, mtx2, disparity
 
-
-def _center(mtx):
-    """Translate all data (rows of the matrix) to center on the origin
-
-    Parameters
-    ----------
-    mtx : array_like
-        Matrix to translate the data for.
-
-    Returns
-    -------
-    result : array_like ('d') array
-        Shifted version of the input data.  The new matrix is such that the
-        center of mass of the row vectors is centered at the origin.
-
-    """
-    result = np.array(mtx, 'd')
-    result -= np.mean(result, 0)
-    # subtract each column's mean from each element in that column
-    return result
-
-
-def _normalize(mtx):
-    """change scaling of data (in rows) such that trace(mtx*mtx') = 1
-
-    Parameters
-    ----------
-    mtx : array_like
-        Matrix to scale the data for.
-
-    Notes
-    -----
-    mtx' denotes the transpose of mtx
-
-    """
-    mtx = np.asarray(mtx, dtype=float)
-    return mtx / np.linalg.norm(mtx)

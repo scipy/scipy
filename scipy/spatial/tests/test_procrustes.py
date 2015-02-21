@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from unittest import TestCase, main
 
 import numpy as np
-from scipy.spatial.procrustes import procrustes, _center, _normalize
+from scipy.spatial.procrustes import procrustes
 
 
 class ProcrustesTests(TestCase):
@@ -36,11 +36,11 @@ class ProcrustesTests(TestCase):
                               'd') / np.sqrt(4)
 
     def test_procrustes(self):
-        """tests procrustes' ability to match two matrices.
-
-        the second matrix is a rotated, shifted, scaled, and mirrored version
-        of the first, in two dimensions only
-        """
+        # tests procrustes' ability to match two matrices.
+        #
+        # the second matrix is a rotated, shifted, scaled, and mirrored version
+        # of the first, in two dimensions only
+        #
         # can shift, mirror, and scale an 'L'?
         a, b, disparity = procrustes(self.data1, self.data2)
         np.testing.assert_allclose(b, a)
@@ -55,7 +55,7 @@ class ProcrustesTests(TestCase):
         #self.assertTrue(disp13 < 0.5 ** 2)
 
     def test_procrustes2(self):
-        """procrustes disparity should not depend on order of matrices"""
+        # procrustes disparity should not depend on order of matrices
         m1, m3, disp13 = procrustes(self.data1, self.data3)
         m3_2, m1_2, disp31 = procrustes(self.data3, self.data1)
         np.testing.assert_almost_equal(disp13, disp31)
@@ -95,17 +95,6 @@ class ProcrustesTests(TestCase):
         np.testing.assert_raises(ValueError, procrustes,
                                  np.array([[42, 42], [42, 42]]),
                                  np.array([[45, 45], [45, 45]]))
-
-    def test_center(self):
-        centered_mtx = _center(self.data1)
-        column_means = centered_mtx.mean(0)
-        for col_mean in column_means:
-            np.testing.assert_equal(col_mean, 0.)
-
-    def test_normalize(self):
-        norm_mtx = _normalize(self.data1)
-        np.testing.assert_equal(np.trace(np.dot(norm_mtx,
-                                                np.transpose(norm_mtx))), 1.)
 
 
 if __name__ == '__main__':
