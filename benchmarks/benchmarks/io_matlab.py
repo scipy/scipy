@@ -36,11 +36,11 @@ class MemUsage(Benchmark):
         ])
         return sizes
 
-    def setup(self, *args):
+    def setup(self, size, compressed):
         set_mem_rlimit()
         self.sizes = self._get_sizes()
+        size = int(self.sizes[size])
 
-    def _basic_setup(self, size, compressed):
         mem_info = get_mem_info()
         try:
             mem_available = mem_info['memavailable']
@@ -50,29 +50,27 @@ class MemUsage(Benchmark):
         max_size = int(mem_available * 0.7)//4
 
         if size > max_size:
-            return np.nan
+            raise NotImplementedError()
 
-        # Setup temp file, make it fit in memory
-        f = tempfile.NamedTemporaryFile(suffix='.mat')
-        os.unlink(f.name)
-        return f
+        # Setup temp file
+        f = tempfile.NamedTemporaryFile(delete=False, suffix='.mat')
+        f.close()
+        self.filename = f.name
+
+    def teardown(self, size, compressed):
+        os.unlink(self.filename)
 
     def track_loadmat(self, size, compressed):
         size = int(self.sizes[size])
 
-        f = self._basic_setup(size, compressed)
-
-        try:
-            x = np.random.rand(size//8).view(dtype=np.uint8)
-            savemat(f.name, dict(x=x), do_compression=compressed, oned_as='row')
-            del x
-        except MemoryError:
-            return np.nan
+        x = np.random.rand(size//8).view(dtype=np.uint8)
+        savemat(self.filename, dict(x=x), do_compression=compressed, oned_as='row')
+        del x
 
         code = """
         from scipy.io import loadmat
         loadmat('%s')
-        """ % (f.name,)
+        """ % (self.filename,)
         time, peak_mem = run_monitored(code)
 
         return peak_mem / size
@@ -80,14 +78,12 @@ class MemUsage(Benchmark):
     def track_savemat(self, size, compressed):
         size = int(self.sizes[size])
 
-        f = self._basic_setup(size, compressed)
-
         code = """
         import numpy as np
         from scipy.io import savemat
         x = np.random.rand(%d//8).view(dtype=np.uint8)
         savemat('%s', dict(x=x), do_compression=%r, oned_as='row')
-        """ % (size, f.name, compressed)
+        """ % (size, self.filename, compressed)
         time, peak_mem = run_monitored(code)
         return peak_mem / size
 
