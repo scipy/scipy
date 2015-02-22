@@ -170,28 +170,27 @@ References
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-import math
-from collections import namedtuple
-
-from scipy._lib.six import xrange
-from scipy._lib._util import check_random_state
-
-# friedmanchisquare patch uses python sum
-pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
 from scipy._lib.six import callable, string_types
+from scipy._lib.six import xrange
+from scipy._lib._util import check_random_state
 from numpy import array, asarray, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
+
+import warnings
+import math
+from collections import namedtuple
 import copy
 
 from . import futil
 from . import distributions
-
 from ._rank import rankdata, tiecorrect
+
+# friedmanchisquare patch uses python sum
+pysum = sum  # save it before it gets overwritten
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -265,7 +264,7 @@ def find_repeats(arr):
     return v1[:n], v2[:n]
 
 #######
-### NAN friendly functions
+#  NAN friendly functions
 ########
 
 
@@ -472,7 +471,7 @@ def nanmedian(x, axis=0):
 
 
 #####################################
-########  CENTRAL TENDENCY  ########
+#         CENTRAL TENDENCY          #
 #####################################
 
 
@@ -906,7 +905,7 @@ def tsem(a, limits=None, inclusive=(True, True)):
 
 
 #####################################
-############  MOMENTS  #############
+#              MOMENTS              #
 #####################################
 
 def moment(a, moment=1, axis=0):
@@ -1148,7 +1147,7 @@ def describe(a, axis=0, ddof=1):
     return _DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
-########  NORMALITY TESTS  ##########
+#         NORMALITY TESTS           #
 #####################################
 
 
@@ -1355,7 +1354,7 @@ def jarque_bera(x):
 
 
 #####################################
-######  FREQUENCY FUNCTIONS  #######
+#        FREQUENCY FUNCTIONS        #
 #####################################
 
 def itemfreq(a):
@@ -1817,7 +1816,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
 
 #####################################
-######  VARIABILITY FUNCTIONS  #####
+#        VARIABILITY FUNCTIONS      #
 #####################################
 
 def obrientransform(*args):
@@ -2097,7 +2096,7 @@ def zmap(scores, compare, axis=0, ddof=0):
 
 
 #####################################
-#######  TRIMMING FUNCTIONS  #######
+#         TRIMMING FUNCTIONS        #
 #####################################
 
 def threshold(a, threshmin=None, threshmax=None, newval=0):
@@ -3199,7 +3198,7 @@ def theilslopes(y, x=None, alpha=0.95):
 
 
 #####################################
-#####  INFERENTIAL STATISTICS  #####
+#       INFERENTIAL STATISTICS      #
 #####################################
 
 def ttest_1samp(a, popmean, axis=0):
@@ -3557,11 +3556,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
     if len(mat.shape) < 2:  # Handle 1-D arrays
         mat = mat.reshape((1, len(mat)))
 
-    # _avgs = np.zeros(2*(permutations+1))
-    # _avgs2 = np.zeros(2*(permutations+1))
-    # _vars = np.zeros(2*(permutations+1))
-    # _samp_vars = np.zeros(2*(permutations+1))
-    r, c = mat.shape # get number of tests being conducted
+    r, c = mat.shape
     t_stat = np.zeros((r, 2*(permutations+1)))
     
     copy_cats = copy.deepcopy(cats)
@@ -3596,13 +3591,10 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
             denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))
         t_stat[:, p] = np.ravel(np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom))
         random_state.shuffle(copy_cats)
-
                 
     # Calculate the p-values
-    cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
-        
+    cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])        
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
-    
     return t_stat[:, 0], pvalues
 
 
@@ -4569,7 +4561,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
 
 #####################################
-####  PROBABILITY CALCULATIONS  ####
+#      PROBABILITY CALCULATIONS     #
 #####################################
 
 zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
@@ -4641,7 +4633,7 @@ def betai(a, b, x):
 
 
 #####################################
-#######  ANOVA CALCULATIONS  #######
+#         ANOVA CALCULATIONS        #
 #####################################
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
@@ -4724,7 +4716,7 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 
 
 #####################################
-#######  SUPPORT FUNCTIONS  ########
+#         SUPPORT FUNCTIONS         #
 #####################################
 
 def ss(a, axis=0):
