@@ -3417,11 +3417,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     label - 0 corresponding to the first sample and 1 corresponding to the
     second sample. A vector of these labels is permutated multiple times and
     these permutations are used to calculate the permutation test.
-    
-    The running time of the permutation test is O(NMP) where N is the
-    length of x and y, M is the width of x and y, and P is the number
-    of permutations.  The memory usage is O(NP + NM).
-    
+        
     References
     ----------
     .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
