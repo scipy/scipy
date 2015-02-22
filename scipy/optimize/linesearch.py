@@ -23,7 +23,7 @@ __all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
            'line_search_armijo']
 
-class LineSearchWarning(UserWarning):
+class LineSearchWarning(RuntimeWarning):
     pass
 
 
