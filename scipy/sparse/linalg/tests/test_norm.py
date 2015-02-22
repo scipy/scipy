@@ -45,12 +45,13 @@ class TestVsNumpyNorm(TestCase):
     _test_matrices = (
             (np.arange(9) - 4).reshape((3, 3)),
             [
-                [ 1, 2, 3],
+                [1, 2, 3],
                 [-1, 1, 4]],
             [
-                [ 1, 0, 3],
+                [1, 0, 3],
                 [-1, 1, 4j]],
             )
+
     def test_sparse_matrix_norms(self):
         for sparse_type in self._sparse_types:
             for M in self._test_matrices:
