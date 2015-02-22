@@ -5,13 +5,17 @@ from collections import defaultdict
 
 import numpy as np
 
-import scipy.optimize
-from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
+try:
+    import scipy.optimize
+    from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
+except ImportError:
+    pass
 
 from . import test_functions as funcs
+from .common import Benchmark
 
 
-class _BenchOptimizers(object):
+class _BenchOptimizers(Benchmark):
     """a framework for benchmarking the optimizer
 
     Parameters
@@ -133,7 +137,7 @@ class _BenchOptimizers(object):
                 self.add_result(res, t1-t0, method)
 
 
-class BenchSmoothUnbounded(object):
+class BenchSmoothUnbounded(Benchmark):
     """Benchmark the optimizers with smooth, unbounded, functions"""
     params = [
         ['rosenbrock', 'rosenbrock_tight',
@@ -145,7 +149,6 @@ class BenchSmoothUnbounded(object):
         ["mean_nfev", "mean_time"]
     ]
     param_names = ["test function", "solver", "result type"]
-    timeout = 120
 
     def setup(self, func_name, method_name, ret_val):
         b = getattr(self, 'run_' + func_name)(methods=[method_name])

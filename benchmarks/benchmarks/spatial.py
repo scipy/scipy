@@ -1,17 +1,21 @@
 from __future__ import division, absolute_import, print_function
 
-import sys
-from scipy.spatial import cKDTree, KDTree
 import numpy as np
 
+try:
+    from scipy.spatial import cKDTree, KDTree
+except ImportError:
+    pass
 
-class Build(object):
+from .common import Benchmark
+
+
+class Build(Benchmark):
     params = [
         [(3,10000,1000), (8,10000,1000), (16,10000,1000)],
         ['KDTree', 'cKDTree'],
     ]
     param_names = ['(m, n, r)', 'class']
-    goal_time = 0.5
 
     def setup(self, mnr, cls_name):
         self.cls = KDTree if cls_name == 'KDTree' else cKDTree
@@ -37,13 +41,12 @@ class Build(object):
             self.cls(self.data)
 
 
-class Query(object):
+class Query(Benchmark):
     params = [
         [(3,10000,1000), (8,10000,1000), (16,10000,1000)],
         ['KDTree', 'cKDTree', 'cKDTree_flat'],
     ]
     param_names = ['(m, n, r)', 'class']
-    goal_time = 0.5
 
     @staticmethod
     def do_setup(self, mnr, cls_name):
@@ -73,14 +76,13 @@ class Query(object):
         self.T.query(self.queries)
 
 
-class Radius(object):
+class Radius(Benchmark):
     params = [
         [(3,10000,1000)],
         [0.2, 0.5],
         ['KDTree', 'cKDTree', 'cKDTree_flat'],
     ]
     param_names = ['(m, n, r)', 'probe radius', 'class']
-    goal_time = 0.5
 
     def __init__(self):
         self.time_query_pairs.__func__.params = list(self.params)
@@ -98,7 +100,7 @@ class Radius(object):
         self.T.query_pairs(probe_radius)
 
 
-class Neighbors(object):
+class Neighbors(Benchmark):
     params = [
         [(3,1000,1000),
          (8,1000,1000),
@@ -107,8 +109,6 @@ class Neighbors(object):
         ['KDTree', 'cKDTree'],
     ]
     param_names = ['(m, n1, n2)', 'probe radius', 'class']
-    goal_time = 0.5
-    timeout = 120
 
     def setup(self, mn1n2, probe_radius, cls_str):
         m, n1, n2 = mn1n2

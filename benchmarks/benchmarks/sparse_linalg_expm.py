@@ -1,17 +1,17 @@
 """benchmarks for the scipy.sparse.linalg._expm_multiply module"""
 from __future__ import division, print_function, absolute_import
 
-import time
 import math
 
 import numpy as np
-from numpy.testing import assert_allclose
 
-import scipy.linalg
 try:
+    import scipy.linalg
     from scipy.sparse.linalg import expm_multiply
 except ImportError:
     pass
+
+from .common import Benchmark
 
 
 def random_sparse_csr(m, n, nnz_per_row):
@@ -34,16 +34,14 @@ def random_sparse_csc(m, n, nnz_per_row):
     return M.tocsc()
 
 
-class ExpmMultiply(object):
+class ExpmMultiply(Benchmark):
     params = [['sparse', 'full']]
     param_names = ['run format']
-    goal_time = 0.5
 
     def setup(self, *args):
         self.n = 2000
         self.i = 100
         self.j = 200
-        shape = (self.n, self.n)
         nnz_per_row = 25
         self.A = random_sparse_csr(self.n, self.n, nnz_per_row)
         self.A_dense = self.A.toarray()
@@ -52,22 +50,21 @@ class ExpmMultiply(object):
         if format == 'full':
             # computing full expm of the dense array...
             A_expm = scipy.linalg.expm(self.A_dense)
-            full_expm_entry = A_expm[self.i, self.j]
+            A_expm[self.i, self.j]
         else:
             # computing only column', j, 'of expm of the sparse matrix...
             v = np.zeros(self.n, dtype=float)
             v[self.j] = 1
             A_expm_col_j = expm_multiply(self.A, v)
-            expm_col_entry = A_expm_col_j[self.i]
+            A_expm_col_j[self.i]
 
 
-class Expm(object):
+class Expm(Benchmark):
     params = [
         [30, 100, 300],
         ['sparse', 'dense']
     ]
     param_names = ['n', 'format']
-    goal_time = 0.5
 
     def setup(self, n, format):
         np.random.seed(1234)
@@ -75,7 +72,6 @@ class Expm(object):
         # Let the number of nonzero entries per row
         # scale like the log of the order of the matrix.
         nnz_per_row = int(math.ceil(math.log(n)))
-        shape = (n, n)
 
         # time the sampling of a random sparse matrix
         self.A_sparse = random_sparse_csc(n, n, nnz_per_row)
@@ -85,6 +81,6 @@ class Expm(object):
 
     def time_expm(self, n, format):
         if format == 'sparse':
-            A_sparse_expm = scipy.linalg.expm(self.A_sparse)
+            scipy.linalg.expm(self.A_sparse)
         elif format == 'dense':
-            A_dense_expm = scipy.linalg.expm(self.A_dense)
+            scipy.linalg.expm(self.A_dense)

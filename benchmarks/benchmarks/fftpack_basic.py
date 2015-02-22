@@ -2,15 +2,17 @@
 """
 from __future__ import division, absolute_import, print_function
 
-import sys
-from scipy.fftpack import ifft, fft, fftn, irfft, rfft
-
-from numpy.testing import assert_array_almost_equal
-
 from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
 import numpy.fft
 
 from numpy.random import rand
+
+try:
+    from scipy.fftpack import ifft, fft, fftn, irfft, rfft
+except ImportError:
+    pass
+
+from .common import Benchmark
 
 
 def random(size):
@@ -37,14 +39,13 @@ def direct_idft(x):
     return y
 
 
-class Fft(object):
+class Fft(Benchmark):
     params = [
-        [100, 256, 512, 1000,  1024, 2048, 2048*2, 2048*4],
+        [100, 256, 512, 1000, 1024, 2048, 2048*2, 2048*4],
         ['real', 'cmplx'],
         ['scipy', 'numpy']
     ]
     param_names = ['size', 'type', 'module']
-    goal_time = 0.5
 
     def setup(self, size, cmplx, module):
         if cmplx == 'cmplx':
@@ -65,13 +66,12 @@ class Fft(object):
             ifft(self.x)
 
 
-class RFft(object):
+class RFft(Benchmark):
     params = [
-        [100, 256, 512, 1000,  1024, 2048, 2048*2, 2048*4],
+        [100, 256, 512, 1000, 1024, 2048, 2048*2, 2048*4],
         ['scipy', 'numpy']
     ]
     param_names = ['size', 'module']
-    goal_time = 0.5
 
     def setup(self, size, module):
         self.x = random([size]).astype(double)
@@ -89,14 +89,13 @@ class RFft(object):
             irfft(self.x)
 
 
-class Fftn(object):
+class Fftn(Benchmark):
     params = [
         ["100x100", "1000x100", "256x256", "512x512"],
         ['real', 'cmplx'],
         ['scipy', 'numpy']
     ]
     param_names = ['size', 'type', 'module']
-    goal_time = 0.5
 
     def setup(self, size, cmplx, module):
         size = map(int, size.split("x"))

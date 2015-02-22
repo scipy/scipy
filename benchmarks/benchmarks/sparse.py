@@ -6,17 +6,20 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import time
 import collections
+import timeit
 
 import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty, random, zeros
 
-from scipy import sparse
-from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
-                          dok_matrix, rand, SparseEfficiencyWarning)
+try:
+    from scipy import sparse
+    from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
+                              dok_matrix, rand, SparseEfficiencyWarning)
+except ImportError:
+    pass
 
-import scipy
-import sys
+from .common import Benchmark
 
 
 def random_sparse(m,n,nnz_per_row):
@@ -50,14 +53,13 @@ def poisson2d(N,dtype='d',format=None):
     return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
 
 
-class Arithmetic(object):
+class Arithmetic(Benchmark):
     param_names = ['format', 'XY', 'op']
     params = [
         ['csr'],
         ['AA', 'AB', 'BA', 'BB'],
         ['__add__', '__sub__', 'multiply', '__mul__']
     ]
-    goal_time = 0.5
 
     def setup(self, format, XY, op):
         self.matrices = {}
@@ -76,10 +78,9 @@ class Arithmetic(object):
         self.fn(self.y)
 
 
-class Sort(object):
+class Sort(Benchmark):
     params = ['Rand10', 'Rand25', 'Rand50', 'Rand100', 'Rand200']
     param_names = ['matrix']
-    goal_time = 0.5
 
     def setup(self, matrix):
         matrices = []
@@ -102,9 +103,8 @@ class Sort(object):
         self.A.sort_indices()
 
 
-class Matvec(object):
+class Matvec(Benchmark):
     param_names = ['matrix']
-    goal_time = 0.5
 
     @property
     def params(self):
@@ -141,13 +141,12 @@ class Matvec(object):
         self.x = ones(self.A.shape[1], dtype=float)
 
     def time_matvec(self, matrix):
-        y = self.A * self.x
+        self.A * self.x
 
 
-class Matvecs(object):
+class Matvecs(Benchmark):
     params = ['dia', 'coo', 'csr', 'csc', 'bsr']
     param_names = ["format"]
-    goal_time = 0.5
 
     def setup(self, *args):
         self.matrices = {}
@@ -161,10 +160,10 @@ class Matvecs(object):
 
     def time_matvecs(self, fmt):
         A = self.matrices[fmt]
-        y = A*self.x
+        A*self.x
 
 
-class Matmul(object):
+class Matmul(Benchmark):
     def setup(self):
         H1, W1 = 1, 100000
         H2, W2 = W1, 1000
@@ -184,16 +183,15 @@ class Matmul(object):
 
     def time_large(self):
         for i in range(100):
-            matrix3 = self.matrix1 * self.matrix2
+            self.matrix1 * self.matrix2
 
 
-class Construction(object):
+class Construction(Benchmark):
     params = [
         ['Empty', 'Identity', 'Poisson5pt'],
         ['lil', 'dok']
     ]
     param_names = ['matrix', 'format']
-    goal_time = 0.5
 
     def setup(self, name, format):
         self.matrices = {}
@@ -212,13 +210,12 @@ class Construction(object):
             T[i,j] = v
 
 
-class Conversion(object):
+class Conversion(Benchmark):
     params = [
         ['csr','csc','coo','dia','lil','dok'],
         ['csr','csc','coo','dia','lil','dok'],
     ]
     param_names = ['from_format', 'to_format']
-    goal_time = 0.5
 
     def setup(self, fromfmt, tofmt):
         self.A = poisson2d(100)
@@ -226,7 +223,6 @@ class Conversion(object):
         A = self.A
         base = getattr(A,'to' + fromfmt)()
 
-        result = np.nan
         try:
             self.fn = getattr(base, 'to' + tofmt)
         except:
@@ -235,19 +231,22 @@ class Conversion(object):
             self.fn = fn
 
     def time_conversion(self, fromfmt, tofmt):
-        x = self.fn()
+        self.fn()
 
 
-class Getset(object):
+class Getset(Benchmark):
     params = [
         [1, 10, 100, 1000, 10000],
         ['different', 'same'],
         ['csr', 'csc', 'lil', 'dok']
     ]
     param_names = ['N', 'sparsity pattern', 'format']
-    goal_time = 0.5
+    unit = "seconds"
 
     def setup(self, N, sparsity_pattern, format):
+        if format == 'dok' and N > 500:
+            raise NotImplementedError()
+
         self.A = rand(1000, 1000, density=1e-5)
 
         A = self.A
@@ -276,42 +275,39 @@ class Getset(object):
         self.v = v
 
     def _timeit(self, kernel, recopy):
-        iter = 0
         min_time = 1e99
         if not recopy:
             kernel(self.m, self.i, self.j, self.v)
-        start = time.clock()
-        while iter < 5000:
-            iter += 1
+
+        number = 1
+        start = time.time()
+        while time.time() - start < 0.1:
             if recopy:
                 m = self.m.copy()
             else:
                 m = self.m
-            a = time.clock()
-            kernel(m, self.i, self.j, self.v)
-            min_time = min(min_time, time.clock() - a)
-            if a - start > 0.5:
-                break
+            while True:
+                duration = timeit.timeit(lambda: kernel(m, self.i, self.j, self.v),
+                                         number=number)
+                if duration > 1e-5:
+                    break
+                else:
+                    number *= 10
+            min_time = min(min_time, duration/number)
         return min_time
 
     def track_fancy_setitem(self, N, sparsity_pattern, format):
-        if format == 'dok' and N > 500:
-            return np.nan
-
         def kernel(A, i, j, v):
             A[i, j] = v
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', SparseEfficiencyWarning)
-            return self._timeit(kernel, sparsity_pattern=='different')
+            return self._timeit(kernel, sparsity_pattern == 'different')
 
     def track_fancy_getitem(self, N, sparsity_pattern, format):
-        if format == 'dok' and N > 500:
-            return np.nan
-
         def kernel(A, i, j, v):
             A[i, j]
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', SparseEfficiencyWarning)
-            return self._timeit(kernel, sparsity_pattern=='different')
+            return self._timeit(kernel, sparsity_pattern == 'different')

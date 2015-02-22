@@ -170,28 +170,27 @@ References
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-import math
-from collections import namedtuple
-
-from scipy._lib.six import xrange
-from scipy._lib._util import check_random_state
-
-# friedmanchisquare patch uses python sum
-pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
 from scipy._lib.six import callable, string_types
+from scipy._lib.six import xrange
+from scipy._lib._util import check_random_state
 from numpy import array, asarray, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
+
+import warnings
+import math
+from collections import namedtuple
 import copy
 
 from . import futil
 from . import distributions
-
 from ._rank import rankdata, tiecorrect
+
+# friedmanchisquare patch uses python sum
+pysum = sum  # save it before it gets overwritten
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -265,7 +264,7 @@ def find_repeats(arr):
     return v1[:n], v2[:n]
 
 #######
-### NAN friendly functions
+#  NAN friendly functions
 ########
 
 
@@ -472,7 +471,7 @@ def nanmedian(x, axis=0):
 
 
 #####################################
-########  CENTRAL TENDENCY  ########
+#         CENTRAL TENDENCY          #
 #####################################
 
 
@@ -906,7 +905,7 @@ def tsem(a, limits=None, inclusive=(True, True)):
 
 
 #####################################
-############  MOMENTS  #############
+#              MOMENTS              #
 #####################################
 
 def moment(a, moment=1, axis=0):
@@ -1148,7 +1147,7 @@ def describe(a, axis=0, ddof=1):
     return _DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
-########  NORMALITY TESTS  ##########
+#         NORMALITY TESTS           #
 #####################################
 
 
@@ -1355,7 +1354,7 @@ def jarque_bera(x):
 
 
 #####################################
-######  FREQUENCY FUNCTIONS  #######
+#        FREQUENCY FUNCTIONS        #
 #####################################
 
 def itemfreq(a):
@@ -1817,7 +1816,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
 
 #####################################
-######  VARIABILITY FUNCTIONS  #####
+#        VARIABILITY FUNCTIONS      #
 #####################################
 
 def obrientransform(*args):
@@ -2097,7 +2096,7 @@ def zmap(scores, compare, axis=0, ddof=0):
 
 
 #####################################
-#######  TRIMMING FUNCTIONS  #######
+#         TRIMMING FUNCTIONS        #
 #####################################
 
 def threshold(a, threshmin=None, threshmax=None, newval=0):
@@ -2445,7 +2444,9 @@ def f_oneway(*args, **kwds):
         axis = kwds['axis']
     
     if len(kwds) > 0:
-        return _permutation_f_oneway(*args, **kwds)
+        mat = np.concatenate(args, axis=axis)
+        cats = np.hstack([np.zeros(arg.shape[axis]) + i for i, arg in enumerate(args)])
+        return _permutation_f_oneway(mat, cats, **kwds)
     else:
         na = len(args)    # ANOVA on 'na' groups, each in it's own array
         alldata = np.concatenate(args, axis=axis)
@@ -2465,7 +2466,7 @@ def f_oneway(*args, **kwds):
         prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
         return f, prob
 
-def _permutation_f_oneway(*args, **kwds):
+def _permutation_f_oneway(mat, cats, **kwds):
     """
     Performs a 1-way ANOVA.
 
@@ -2495,53 +2496,48 @@ def _permutation_f_oneway(*args, **kwds):
     """
     
     params = {'permutations':10000, 'random_state':0, 'axis':0}
-    for key, val in kwds.items():
-        if key in params:
-            params[key] = val
-        else:
-            raise ValueError('%s is not a parameter for f_oneway' % key)
+    for key in ('permutations', 'random_state', 'axis'):
+        if key in kwargs:
+            setattr(params[key], key, kwargs[key])
     permutations = params['permutations']
     random_state = params['random_state']
     axis = params['axis']
 
-    mat = np.concatenate(args, axis=axis)
+    random_state = check_random_state(random_state)
     if axis == 0:
-        mat = mat.transpose()
-    
+        mat = mat.transpose()    
     if len(mat.shape) < 2:  
         mat = mat.reshape((1, len(mat)))
 
-    cats = np.hstack([np.zeros(arg.shape[axis]) + i for i, arg in enumerate(args)])
-    
-    perms = _init_categorical_perms(cats, permutations=permutations, random_state=random_state)
-    num_cats = len(np.unique(cats)) 
-    n_samp, c = perms.shape
-    permutations = (c-num_cats) / num_cats
+    for p in range(permutations+1):
+        perms = _init_summation_index(cats)
+        num_cats = len(np.unique(cats)) 
+        n_samp, c = perms.shape
+        permutations = (c-num_cats) / num_cats
+        mat2 = np.multiply(mat, mat)
+        S = mat.sum(axis=1)
+        SS = mat2.sum(axis=1)
+        sstot = SS - np.multiply(S,S) / float(n_samp)
+        sstot = sstot.reshape((len(sstot),1))
+        # Create index to sum the ssE together
+        sum_groups = np.arange((permutations+1)*num_cats, dtype=np.int32) // num_cats
+        _sum_idx = _init_summation_index(sum_groups, permutations=0)
+
+        # Perform matrix multiplication on data matrix
+        # and calculate sums and squared sums and sum of squares
+        _sums = np.dot(mat, perms)
+        _sums2 = np.dot(np.multiply(mat, mat), perms)
+
+        tot = perms.sum(axis=0)
+        ss = _sums2 - np.multiply(_sums, _sums)/tot
+        sserr = np.dot(ss, _sum_idx)
+        sstrt = sstot - sserr
+        dftrt = num_cats - 1
+        dferr = np.dot(tot, _sum_idx) - num_cats
+
+        f_stat[:, p] = np.ravel( (sstrt / dftrt) / (sserr / dferr) )
+        random_state.shuffle(copy_cats)
         
-    mat2 = np.multiply(mat, mat)
-
-    S = mat.sum(axis=1)
-    SS = mat2.sum(axis=1)
-    sstot = SS - np.multiply(S,S) / float(n_samp)
-    sstot = sstot.reshape((len(sstot),1))
-    # Create index to sum the ssE together
-    sum_groups = np.arange((permutations+1)*num_cats, dtype=np.int32) // num_cats
-    _sum_idx = _init_categorical_perms(sum_groups, permutations=0)
-    
-    # Perform matrix multiplication on data matrix
-    # and calculate sums and squared sums and sum of squares
-    _sums = np.dot(mat, perms)
-    _sums2 = np.dot(np.multiply(mat, mat), perms)
-    
-    tot = perms.sum(axis=0)
-    ss = _sums2 - np.multiply(_sums, _sums)/tot
-    sserr = np.dot(ss, _sum_idx)
-    sstrt = sstot - sserr
-    dftrt = num_cats - 1
-    dferr = np.dot(tot, _sum_idx) - num_cats
-    
-    f_stat = (sstrt / dftrt) / (sserr / dferr)
-
     cmps = f_stat[:, 1:].transpose() >= f_stat[:, 0]
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
     
@@ -3313,7 +3309,7 @@ def theilslopes(y, x=None, alpha=0.95):
 
 
 #####################################
-#####  INFERENTIAL STATISTICS  #####
+#       INFERENTIAL STATISTICS      #
 #####################################
 
 def ttest_1samp(a, popmean, axis=0):
@@ -3614,28 +3610,19 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
                                      denom, df)
 
 
-def _init_categorical_perms(cats, permutations=1000, random_state=None):
+def _init_summation_index(cats):
     """
     Creates a matrix filled with category permutations
     
     cats: numpy.array
-       List of binary class assignments
-    permutations: int
-       Number of permutations for permutation test
-    random_state : int or RandomState
-        Pseudo number generator state used for random sampling.
-
-    Note: This can only handle binary classes now
+       List of class assignments
     """
-    random_state = check_random_state(random_state)
     c = len(cats)
     num_cats = len(np.unique(cats))  # Number of distinct categories
     copy_cats = copy.deepcopy(cats)
-    perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
-    for m in range(permutations+1):
-        for i in range(num_cats):
-            perms[:,num_cats*m+i] = (copy_cats == i).astype(cats.dtype)
-        random_state.shuffle(copy_cats)
+    perms = np.array(np.zeros((c, num_cats), dtype=cats.dtype))
+    for i in range(num_cats):
+        perms[:,i] = (copy_cats == i).astype(cats.dtype)
     return perms
 
 
@@ -3673,44 +3660,51 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
     prob : float or array
         The two-tailed p-value.
     """
-    
+    random_state = check_random_state(random_state)
     if axis == 0:
         mat = mat.transpose()
     if len(mat.shape) < 2:  # Handle 1-D arrays
         mat = mat.reshape((1, len(mat)))
-    perms = _init_categorical_perms(cats, permutations=permutations, random_state=random_state)
-    num_cats = 2
-    _, c = perms.shape
-    permutations = (c - num_cats) / num_cats
+
+    r, c = mat.shape
+    t_stat = np.zeros((r, 2*(permutations+1)))
     
-    # Perform matrix multiplication on data matrix
-    # and calculate sums and squared sums
-    _sums = np.dot(mat, perms)
-    _sums2 = np.dot(np.multiply(mat, mat), perms)
-    
-    # Calculate means and sample variances
-    tot = perms.sum(axis=0)
-    _avgs = _sums / tot
-    _avgs2 = _sums2 / tot
-    _vars = _avgs2 - np.multiply(_avgs, _avgs)
-    _samp_vars = np.multiply(tot, _vars) / (tot-1)
-    idx = np.arange(0, (permutations+1) * num_cats, num_cats, dtype=np.int32)
-    
-    # Calculate the t statistic
-    if not equal_var:
-        denom = np.sqrt(np.divide(_samp_vars[:, idx+1], tot[idx+1]) +
-                         np.divide(_samp_vars[:, idx], tot[idx]))
-    else:
-        df = tot[idx] + tot[idx+1] - 2
-        svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) * _samp_vars[:, idx]) / df
-        denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))
+    copy_cats = copy.deepcopy(cats)
+    num_cats = 2  # Only 2 classes in t-test
+    perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
+
+    for p in range(permutations+1):
+
+        perms = _init_summation_index(copy_cats)
+
+        # Perform matrix multiplication on data matrix
+        # and calculate sums and squared sums
+        _sums = np.dot(mat, perms)
+        _sums2 = np.dot(np.multiply(mat, mat), perms)
+
+        # Calculate means and sample variances
+        tot = perms.sum(axis=0)
+        _avgs = _sums / tot
+        _avgs2 = _sums2 / tot
+        _vars = _avgs2 - np.multiply(_avgs, _avgs)
+        _samp_vars = np.multiply(tot, _vars) / (tot-1)
         
-    t_stat = np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom)
-    
+        idx = np.arange(0, num_cats, num_cats, dtype=np.int32)
+
+        # Calculate the t statistic
+        if not equal_var:
+            denom = np.sqrt(np.divide(_samp_vars[:, idx+1], tot[idx+1]) +
+                            np.divide(_samp_vars[:, idx], tot[idx]))
+        else:
+            df = tot[idx] + tot[idx+1] - 2
+            svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) * _samp_vars[:, idx]) / df
+            denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))
+        t_stat[:, p] = np.ravel(np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom))
+        random_state.shuffle(copy_cats)
+                
     # Calculate the p-values
-    cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
+    cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])        
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
-    
     return t_stat[:, 0], pvalues
 
 
@@ -4677,7 +4671,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
 
 #####################################
-####  PROBABILITY CALCULATIONS  ####
+#      PROBABILITY CALCULATIONS     #
 #####################################
 
 zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
@@ -4749,7 +4743,7 @@ def betai(a, b, x):
 
 
 #####################################
-#######  ANOVA CALCULATIONS  #######
+#         ANOVA CALCULATIONS        #
 #####################################
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
@@ -4832,7 +4826,7 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 
 
 #####################################
-#######  SUPPORT FUNCTIONS  ########
+#         SUPPORT FUNCTIONS         #
 #####################################
 
 def ss(a, axis=0):

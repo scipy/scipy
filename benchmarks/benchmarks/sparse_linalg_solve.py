@@ -3,13 +3,16 @@ Check the speed of the conjugate gradient solver.
 """
 from __future__ import division, absolute_import, print_function
 
-import time
-
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_equal
 
-from scipy import linalg, sparse
-import scipy.sparse.linalg
+try:
+    from scipy import linalg, sparse
+    from scipy.sparse.linalg import cg
+except ImportError:
+    pass
+
+from .common import Benchmark
 
 
 def _create_sparse_poisson1d(n):
@@ -27,13 +30,12 @@ def _create_sparse_poisson2d(n):
     return P2d
 
 
-class Bench(object):
+class Bench(Benchmark):
     params = [
         [4, 6, 10, 16, 25, 40, 64, 100, 160, 250, 400, 640, 1000, 1600],
         ['sparse', 'dense']
     ]
     param_names = ['(n,n)', 'solver']
-    goal_time = 0.5
 
     def setup(self, n, solver):
         dense_is_active = (n**2 < 600)
@@ -53,14 +55,10 @@ class Bench(object):
         if solver == 'dense':
             linalg.solve(self.P_dense, self.b)
         else:
-            sparse.linalg.cg(self.P_sparse, self.b)
+            cg(self.P_sparse, self.b)
 
     def time_spsolve(self, n, solver):
         if solver == 'dense':
             linalg.solve(self.P_dense, self.b)
         else:
-            sparse.linalg.cg(self.P_sparse, self.b)
-
-
-if __name__ == '__main__':
-    Tester().bench()
+            cg(self.P_sparse, self.b)

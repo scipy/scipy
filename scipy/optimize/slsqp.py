@@ -219,19 +219,18 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     Minimize a scalar function of one or more variables using Sequential
     Least SQuares Programming (SLSQP).
 
-    Options for the SLSQP algorithm are:
-        ftol : float
-            Precision goal for the value of f in the stopping criterion.
-        eps : float
-            Step size used for numerical approximation of the jacobian.
-        disp : bool
-            Set to True to print convergence messages. If False,
-            `verbosity` is ignored and set to 0.
-        maxiter : int
-            Maximum number of iterations.
+    Options
+    -------
+    ftol : float
+        Precision goal for the value of f in the stopping criterion.
+    eps : float
+        Step size used for numerical approximation of the jacobian.
+    disp : bool
+        Set to True to print convergence messages. If False,
+        `verbosity` is ignored and set to 0.
+    maxiter : int
+        Maximum number of iterations.
 
-    This function is called by the `minimize` function with
-    `method=SLSQP`. It is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
     fprime = jac

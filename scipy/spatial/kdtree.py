@@ -435,7 +435,7 @@ class KDTree(object):
         --------
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 2:8]
-        >>> tree = spatial.KDTree(zip(x.ravel(), y.ravel()))
+        >>> tree = spatial.KDTree(list(zip(x.ravel(), y.ravel())))
         >>> tree.data
         array([[0, 2],
                [0, 3],

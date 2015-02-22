@@ -4,18 +4,22 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-from numpy.testing import assert_allclose
-import scipy.linalg
+
+try:
+    import scipy.linalg
+except ImportError:
+    pass
+
+from .common import Benchmark
 
 
-class Sqrtm(object):
+class Sqrtm(Benchmark):
     params = [
         ['float64', 'complex128'],
         [64, 256],
         [32, 64, 256]
     ]
     param_names = ['dtype', 'n', 'blocksize']
-    goal_time = 0.5
 
     def setup(self, dtype, n, blocksize):
         n = int(n)

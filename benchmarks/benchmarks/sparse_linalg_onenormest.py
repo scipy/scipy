@@ -2,20 +2,22 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import time
-
 import numpy as np
 
-import scipy.sparse.linalg
+try:
+    import scipy.sparse.linalg
+except ImportError:
+    pass
+
+from .common import Benchmark
 
 
-class BenchmarkOneNormEst(object):
+class BenchmarkOneNormEst(Benchmark):
     params = [
         [2, 3, 5, 10, 30, 100, 300, 500, 1000],
         ['exact', 'onenormest']
     ]
     param_names = ['n', 'solver']
-    goal_time = 0.5
 
     def setup(self, n, solver):
         np.random.seed(1234)
@@ -32,7 +34,7 @@ class BenchmarkOneNormEst(object):
         if solver == 'exact':
             # Get the exact values of one-norms of squares.
             for M in self.matrices:
-                M2 = M.dot(M)
+                M.dot(M)
                 scipy.sparse.linalg.matfuncs._onenorm(M)
         elif solver == 'onenormest':
             # Get the estimates of one-norms of squares.

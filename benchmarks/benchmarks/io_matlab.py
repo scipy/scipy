@@ -2,22 +2,24 @@ from __future__ import division, absolute_import, print_function
 from .common import set_mem_rlimit, run_monitored, get_mem_info
 
 import os
-import sys
-import re
-import subprocess
-import time
-import textwrap
 import tempfile
 import collections
 from io import BytesIO
 
 import numpy as np
-from scipy.io import savemat, loadmat
+
+try:
+    from scipy.io import savemat, loadmat
+except ImportError:
+    pass
+
+from .common import Benchmark
 
 
-class MemUsage(object):
+class MemUsage(Benchmark):
     param_names = ['size', 'compressed']
     timeout = 4*60
+    unit = "actual/optimal memory usage ratio"
 
     @property
     def params(self):
@@ -34,11 +36,11 @@ class MemUsage(object):
         ])
         return sizes
 
-    def setup(self, *args):
+    def setup(self, size, compressed):
         set_mem_rlimit()
         self.sizes = self._get_sizes()
+        size = int(self.sizes[size])
 
-    def _basic_setup(self, size, compressed):
         mem_info = get_mem_info()
         try:
             mem_available = mem_info['memavailable']
@@ -48,29 +50,27 @@ class MemUsage(object):
         max_size = int(mem_available * 0.7)//4
 
         if size > max_size:
-            return np.nan
+            raise NotImplementedError()
 
-        # Setup temp file, make it fit in memory
-        f = tempfile.NamedTemporaryFile(suffix='.mat')
-        os.unlink(f.name)
-        return f
+        # Setup temp file
+        f = tempfile.NamedTemporaryFile(delete=False, suffix='.mat')
+        f.close()
+        self.filename = f.name
+
+    def teardown(self, size, compressed):
+        os.unlink(self.filename)
 
     def track_loadmat(self, size, compressed):
         size = int(self.sizes[size])
 
-        f = self._basic_setup(size, compressed)
-
-        try:
-            x = np.random.rand(size//8).view(dtype=np.uint8)
-            savemat(f.name, dict(x=x), do_compression=compressed, oned_as='row')
-            del x
-        except MemoryError:
-            return np.nan
+        x = np.random.rand(size//8).view(dtype=np.uint8)
+        savemat(self.filename, dict(x=x), do_compression=compressed, oned_as='row')
+        del x
 
         code = """
         from scipy.io import loadmat
         loadmat('%s')
-        """ % (f.name,)
+        """ % (self.filename,)
         time, peak_mem = run_monitored(code)
 
         return peak_mem / size
@@ -78,25 +78,22 @@ class MemUsage(object):
     def track_savemat(self, size, compressed):
         size = int(self.sizes[size])
 
-        f = self._basic_setup(size, compressed)
-
         code = """
         import numpy as np
         from scipy.io import savemat
         x = np.random.rand(%d//8).view(dtype=np.uint8)
         savemat('%s', dict(x=x), do_compression=%r, oned_as='row')
-        """ % (size, f.name, compressed)
+        """ % (size, self.filename, compressed)
         time, peak_mem = run_monitored(code)
         return peak_mem / size
 
 
-class StructArr(object):
+class StructArr(Benchmark):
     params = [
         [(10, 10, 20), (20, 20, 40), (30, 30, 50)],
         [False, True]
     ]
     param_names = ['(vars, fields, structs)', 'compression']
-    goal_time = 0.5
 
     @staticmethod
     def make_structarr(n_vars, n_fields, n_structs):

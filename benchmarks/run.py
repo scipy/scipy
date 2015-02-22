@@ -84,7 +84,7 @@ def run_asv(args, current_repo=False):
 
     # Check scipy version if in dev mode; otherwise clone and setup results
     # repository
-    if args and args[0] == 'dev':
+    if args and (args[0] == 'dev' or '--python=same' in args):
         import scipy
         print("Running benchmarks for Scipy version %s at %s" % (scipy.__version__, scipy.__file__))
 

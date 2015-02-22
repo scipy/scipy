@@ -3,10 +3,16 @@ from __future__ import division, absolute_import, print_function
 from itertools import product
 
 import numpy as np
-from scipy.signal import convolve2d, correlate2d
+
+try:
+    from scipy.signal import convolve2d, correlate2d
+except ImportError:
+    pass
+
+from .common import Benchmark
 
 
-class Convolve2D(object):
+class Convolve2D(Benchmark):
     def setup(self):
         np.random.seed(1234)
 
