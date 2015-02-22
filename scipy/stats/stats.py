@@ -170,27 +170,27 @@ References
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+import math
+from collections import namedtuple
+
+from scipy._lib.six import xrange
+from scipy._lib._util import check_random_state
+
+# friedmanchisquare patch uses python sum
+pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
 from scipy._lib.six import callable, string_types
-from scipy._lib.six import xrange
-from scipy._lib._util import check_random_state
 from numpy import array, asarray, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
-
-import warnings
-import math
-from collections import namedtuple
 import copy
-
 from . import futil
 from . import distributions
-from ._rank import rankdata, tiecorrect
 
-# friedmanchisquare patch uses python sum
-pysum = sum  # save it before it gets overwritten
+from ._rank import rankdata, tiecorrect
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
