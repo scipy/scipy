@@ -2497,8 +2497,8 @@ def _permutation_f_oneway(mat, cats, **kwds):
     
     params = {'permutations':10000, 'random_state':0, 'axis':0}
     for key in ('permutations', 'random_state', 'axis'):
-        if key in kwargs:
-            setattr(params[key], key, kwargs[key])
+        if key in kwds:
+            setattr(params[key], key, kwds[key])
     permutations = params['permutations']
     random_state = params['random_state']
     axis = params['axis']
