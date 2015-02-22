@@ -213,10 +213,10 @@ class TestC2D(TestCase):
         dnum, dden = ss2tf(Ad, Bd, Cd, Dd)
 
         # Compute the discrete tf using cont2discrete.
-        c2dnum, c2dden, dt = c2d((cnum, cden), h, method='gbt', alpha=alpha)
+        sys = c2d((cnum, cden), h, method='gbt', alpha=alpha)
 
-        assert_allclose(dnum, c2dnum)
-        assert_allclose(dden, c2dden)
+        assert_allclose(dnum, sys.num)
+        assert_allclose(dden, sys.den)
 
         # Convert explicit solution to zpk.
         dz, dp, dk = ss2zpk(Ad, Bd, Cd, Dd)
