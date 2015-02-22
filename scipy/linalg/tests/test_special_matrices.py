@@ -283,17 +283,19 @@ class TestHelmert(TestCase):
 
     def test_orthogonality(self):
         for n in range(1, 7):
-            H = helmert(n)
+            H = helmert(n, full=True)
             I = np.eye(n)
             assert_allclose(H.dot(H.T), I, atol=1e-12)
             assert_allclose(H.T.dot(H), I, atol=1e-12)
 
     def test_subspace(self):
         for n in range(2, 7):
-            U = helmert(n)[1:, :].T
-            C = np.eye(n) - np.ones((n, n)) / n
-            assert_allclose(U.dot(U.T), C)
-            assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
+            H_full = helmert(n, full=True)
+            H_partial = helmert(n)
+            for U in H_full[1:, :].T, H_partial.T:
+                C = np.eye(n) - np.ones((n, n)) / n
+                assert_allclose(U.dot(U.T), C)
+                assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
 
 
 class TestHilbert(TestCase):

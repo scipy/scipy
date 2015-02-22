@@ -603,7 +603,7 @@ def companion(a):
     return c
 
 
-def helmert(n):
+def helmert(n, full=False):
     """
     Create a Helmert matrix of order `n`.
 
@@ -614,16 +614,22 @@ def helmert(n):
     ----------
     n : int
         The size of the array to create.
+    full : bool, optional
+        If True the (n, n) ndarray will be returned.
+        Otherwise the submatrix that does not include the first
+        row will be returned.
+        Default: False.
 
     Returns
     -------
-    M : (n, n) ndarray
+    M : ndarray
         The Helmert matrix.
+        The shape is (n, n) or (n-1, n) depending on the `full` argument.
 
     Examples
     --------
     >>> from scipy.linalg import helmert
-    >>> helmert(5)
+    >>> helmert(5, full=True)
     array([[ 0.4472136 ,  0.4472136 ,  0.4472136 ,  0.4472136 ,  0.4472136 ],
            [ 0.70710678, -0.70710678,  0.        ,  0.        ,  0.        ],
            [ 0.40824829,  0.40824829, -0.81649658,  0.        ,  0.        ],
@@ -635,7 +641,11 @@ def helmert(n):
     d = np.arange(n) * np.arange(1, n+1)
     H[0] = 1
     d[0] = n
-    return H / np.sqrt(d)[:, np.newaxis]
+    H_full = H / np.sqrt(d)[:, np.newaxis]
+    if full:
+        return H_full
+    else:
+        return H_full[1:]
 
 
 def hilbert(n):
