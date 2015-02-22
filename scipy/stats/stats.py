@@ -3508,13 +3508,12 @@ def _init_summation_index(cats):
     cats: numpy.array
        List of class assignments
     """
-    random_state = check_random_state(random_state)
     c = len(cats)
     num_cats = len(np.unique(cats))  # Number of distinct categories
     copy_cats = copy.deepcopy(cats)
-    perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
+    perms = np.array(np.zeros((c, num_cats), dtype=cats.dtype))
     for i in range(num_cats):
-        perms[:,num_cats*m+i] = (copy_cats == i).astype(cats.dtype)
+        perms[:,i] = (copy_cats == i).astype(cats.dtype)
     return perms
 
 
@@ -3557,18 +3556,21 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
         mat = mat.transpose()
     if len(mat.shape) < 2:  # Handle 1-D arrays
         mat = mat.reshape((1, len(mat)))
-    c = len(cats)
-    t_stat = np.zeros(permutations)
+
+    # _avgs = np.zeros(2*(permutations+1))
+    # _avgs2 = np.zeros(2*(permutations+1))
+    # _vars = np.zeros(2*(permutations+1))
+    # _samp_vars = np.zeros(2*(permutations+1))
+    r, c = mat.shape # get number of tests being conducted
+    t_stat = np.zeros((r, 2*(permutations+1)))
     
     copy_cats = copy.deepcopy(cats)
     num_cats = 2  # Only 2 classes in t-test
     perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
-    
-    for p in range(permutations):
 
-        num_cats = 2
+    for p in range(permutations+1):
+
         perms = _init_summation_index(copy_cats)
-        _, c = perms.shape
 
         # Perform matrix multiplication on data matrix
         # and calculate sums and squared sums
@@ -3581,21 +3583,21 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
         _avgs2 = _sums2 / tot
         _vars = _avgs2 - np.multiply(_avgs, _avgs)
         _samp_vars = np.multiply(tot, _vars) / (tot-1)
-        idx = np.arange(0, (permutations+1) * num_cats, num_cats, dtype=np.int32)
+        
+        idx = np.arange(0, num_cats, num_cats, dtype=np.int32)
 
         # Calculate the t statistic
         if not equal_var:
             denom = np.sqrt(np.divide(_samp_vars[:, idx+1], tot[idx+1]) +
-                             np.divide(_samp_vars[:, idx], tot[idx]))
+                            np.divide(_samp_vars[:, idx], tot[idx]))
         else:
             df = tot[idx] + tot[idx+1] - 2
             svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) * _samp_vars[:, idx]) / df
             denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))
-
-        t_stat[p] = np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom)
+        t_stat[:, p] = np.ravel(np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom))
         random_state.shuffle(copy_cats)
-        
-        
+
+                
     # Calculate the p-values
     cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
         
