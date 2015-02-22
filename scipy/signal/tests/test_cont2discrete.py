@@ -24,13 +24,14 @@ class TestC2D(TestCase):
         # c and d in discrete should be equal to their continuous counterparts
         dt_requested = 0.5
 
-        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested, method='zoh')
+        # ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested, method='zoh')
+        sys = c2d((ac, bc, cc, dc), dt_requested, method='zoh')
 
-        assert_array_almost_equal(ad_truth, ad)
-        assert_array_almost_equal(bd_truth, bd)
-        assert_array_almost_equal(cc, cd)
-        assert_array_almost_equal(dc, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert_array_almost_equal(ad_truth, sys.A)
+        assert_array_almost_equal(bd_truth, sys.B)
+        assert_array_almost_equal(cc, sys.C)
+        assert_array_almost_equal(dc, sys.D)
+        assert_almost_equal(dt_requested, sys.dt)
 
     def test_gbt(self):
         ac = np.eye(2)
@@ -50,13 +51,15 @@ class TestC2D(TestCase):
                              [0.2],
                              [-0.205]])
 
-        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
-                                 method='gbt', alpha=alpha)
+        #ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
+        #                         method='gbt', alpha=alpha)
+        sys = c2d((ac, bc, cc, dc), dt_requested, method='gbt', alpha=alpha)
 
-        assert_array_almost_equal(ad_truth, ad)
-        assert_array_almost_equal(bd_truth, bd)
-        assert_array_almost_equal(cd_truth, cd)
-        assert_array_almost_equal(dd_truth, dd)
+
+        assert_array_almost_equal(ad_truth, sys.A)
+        assert_array_almost_equal(bd_truth, sys.B)
+        assert_array_almost_equal(cd_truth, sys.C)
+        assert_array_almost_equal(dd_truth, sys.D)
 
     def test_euler(self):
         ac = np.eye(2)
@@ -73,14 +76,13 @@ class TestC2D(TestCase):
                              [1.0, 0.25]])
         dd_truth = dc
 
-        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
-                                 method='euler')
+        sys = c2d((ac, bc, cc, dc), dt_requested, method='euler')
 
-        assert_array_almost_equal(ad_truth, ad)
-        assert_array_almost_equal(bd_truth, bd)
-        assert_array_almost_equal(cd_truth, cd)
-        assert_array_almost_equal(dd_truth, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert_array_almost_equal(ad_truth, sys.A)
+        assert_array_almost_equal(bd_truth, sys.B)
+        assert_array_almost_equal(cd_truth, sys.C)
+        assert_array_almost_equal(dd_truth, sys.D)
+        assert_almost_equal(dt_requested, sys.dt)
 
     def test_backward_diff(self):
         ac = np.eye(2)
@@ -99,13 +101,12 @@ class TestC2D(TestCase):
                              [1.0],
                              [0.295]])
 
-        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
-                                 method='backward_diff')
+        sys = c2d((ac, bc, cc, dc), dt_requested, method='backward_diff')
 
-        assert_array_almost_equal(ad_truth, ad)
-        assert_array_almost_equal(bd_truth, bd)
-        assert_array_almost_equal(cd_truth, cd)
-        assert_array_almost_equal(dd_truth, dd)
+        assert_array_almost_equal(ad_truth, sys.A)
+        assert_array_almost_equal(bd_truth, sys.B)
+        assert_array_almost_equal(cd_truth, sys.C)
+        assert_array_almost_equal(dd_truth, sys.D)
 
     def test_bilinear(self):
         ac = np.eye(2)
@@ -124,14 +125,13 @@ class TestC2D(TestCase):
                              [1.0 / 3.0],
                              [-0.121666666666667]])
 
-        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
-                                 method='bilinear')
+        sys = c2d((ac, bc, cc, dc), dt_requested, method='bilinear')
 
-        assert_array_almost_equal(ad_truth, ad)
-        assert_array_almost_equal(bd_truth, bd)
-        assert_array_almost_equal(cd_truth, cd)
-        assert_array_almost_equal(dd_truth, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert_array_almost_equal(ad_truth, sys.A)
+        assert_array_almost_equal(bd_truth, sys.B)
+        assert_array_almost_equal(cd_truth, sys.C)
+        assert_array_almost_equal(dd_truth, sys.D)
+        assert_almost_equal(dt_requested, sys.dt)
 
         # Same continuous system again, but change sampling rate
 
@@ -142,14 +142,14 @@ class TestC2D(TestCase):
 
         dt_requested = 1.0 / 3.0
 
-        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
+        sys = c2d((ac, bc, cc, dc), dt_requested,
                                  method='bilinear')
 
-        assert_array_almost_equal(ad_truth, ad)
-        assert_array_almost_equal(bd_truth, bd)
-        assert_array_almost_equal(cd_truth, cd)
-        assert_array_almost_equal(dd_truth, dd)
-        assert_almost_equal(dt_requested, dt)
+        assert_array_almost_equal(ad_truth, sys.A)
+        assert_array_almost_equal(bd_truth, sys.B)
+        assert_array_almost_equal(cd_truth, sys.C)
+        assert_array_almost_equal(dd_truth, sys.D)
+        assert_almost_equal(dt_requested, sys.dt)
 
     def test_transferfunction(self):
         numc = np.array([0.25, 0.25, 0.5])
@@ -160,11 +160,11 @@ class TestC2D(TestCase):
 
         dt_requested = 0.5
 
-        num, den, dt = c2d((numc, denc), dt_requested, method='zoh')
+        sys = c2d((numc, denc), dt_requested, method='zoh')
 
-        assert_array_almost_equal(numd, num)
-        assert_array_almost_equal(dend, den)
-        assert_almost_equal(dt_requested, dt)
+        assert_array_almost_equal(numd, sys.num)
+        assert_array_almost_equal(dend, sys.den)
+        assert_almost_equal(dt_requested, sys.dt)
 
     def test_zerospolesgain(self):
         zeros_c = np.array([0.5, -0.5])
@@ -178,13 +178,13 @@ class TestC2D(TestCase):
 
         dt_requested = 0.5
 
-        zeros, poles, k, dt = c2d((zeros_c, poles_c, k_c), dt_requested,
+        sys = c2d((zeros_c, poles_c, k_c), dt_requested,
                                   method='zoh')
 
-        assert_array_almost_equal(zeros_d, zeros)
-        assert_array_almost_equal(polls_d, poles)
-        assert_almost_equal(k_d, k)
-        assert_almost_equal(dt_requested, dt)
+        assert_array_almost_equal(zeros_d, sys.zeros)
+        assert_array_almost_equal(polls_d, sys.poles)
+        assert_almost_equal(k_d, sys.gain)
+        assert_almost_equal(dt_requested, sys.dt)
 
     def test_gbt_with_sio_tf_and_zpk(self):
         """Test method='gbt' with alpha=0.25 for tf and zpk cases."""
@@ -222,11 +222,12 @@ class TestC2D(TestCase):
         dz, dp, dk = ss2zpk(Ad, Bd, Cd, Dd)
 
         # Compute the discrete zpk using cont2discrete.
-        c2dz, c2dp, c2dk, dt = c2d((cz, cp, ck), h, method='gbt', alpha=alpha)
+        #c2dz, c2dp, c2dk, dt = c2d((cz, cp, ck), h, method='gbt', alpha=alpha)
+        sys = c2d((cz, cp, ck), h, method='gbt', alpha=alpha)
 
-        assert_allclose(dz, c2dz)
-        assert_allclose(dp, c2dp)
-        assert_allclose(dk, c2dk)
+        assert_allclose(dz, sys.zeros)
+        assert_allclose(dp, sys.poles)
+        assert_allclose(dk, sys.gain)
 
     def test_discrete_approx(self):
         """

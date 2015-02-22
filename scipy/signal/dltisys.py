@@ -70,7 +70,7 @@ class dlti(object):
                 self.outputs = self.zeros.shape[0]
             else:
                 self.outputs = 1
-        elif N == 5:       # State-space dt form
+        elif N == 5:       # State-space with dt form
             self._A, self._B, self._C, self._D, = abcd_normalize(args[0],args[1],args[2],args[3])
             self._dt = args[4]
             self._update(N)
@@ -264,6 +264,8 @@ def dlsim(system, u, t=None, x0=None):
     array([ 0.,  0.,  0.,  1.])
 
     """
+    ### OBRAS #####
+    """
     if len(system) == 3:
         a, b, c, d = tf2ss(system[0], system[1])
         dt = system[2]
@@ -276,6 +278,13 @@ def dlsim(system, u, t=None, x0=None):
         raise ValueError("System argument should be a discrete transfer " +
                          "function, zeros-poles-gain specification, or " +
                          "state-space system")
+    """
+    if isinstance(system, dlti):
+        sys = system
+    else:
+        sys = dlti(*system)
+
+    a, b, c, d, dt = sys.A, sys.B, sys.C, sys.D, sys.dt
 
     if t is None:
         out_samples = max(u.shape)
@@ -353,6 +362,8 @@ def dimpulse(system, x0=None, t=None, n=None):
     impulse, dstep, dlsim, cont2discrete
 
     """
+    # Obras ###
+    """
     # Determine the system type and set number of inputs and time steps
     if len(system) == 3:
         n_inputs = 1
@@ -368,6 +379,16 @@ def dimpulse(system, x0=None, t=None, n=None):
                          "function, zeros-poles-gain specification, or " +
                          "state-space system")
 
+    """
+
+    if isinstance(system, dlti):
+        system = system
+    else:
+        system = dlti(*system)
+
+    n_inputs = system.A.shape[1]
+
+
     # Default to 100 samples if unspecified
     if n is None:
         n = 100
@@ -375,7 +396,7 @@ def dimpulse(system, x0=None, t=None, n=None):
     # If time is not specified, use the number of samples
     # and system dt
     if t is None:
-        t = np.linspace(0, n * dt, n, endpoint=False)
+        t = np.linspace(0, n * system.dt, n, endpoint=False)
 
     # For each input, implement a step change
     yout = None
