@@ -3,6 +3,8 @@ from __future__ import division, print_function, absolute_import
 
 from os.path import join
 
+from scipy._build_utils import numpy_nodepr_api
+
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -40,13 +42,13 @@ def configuration(parent_package='',top_path=None):
     # odepack
     odepack_libs = ['odepack','mach'] + lapack_libs
 
+    odepack_opts = lapack_opt.copy()
+    odepack_opts.update(numpy_nodepr_api)
     config.add_extension('_odepack',
                          sources=['_odepackmodule.c'],
                          libraries=odepack_libs,
-                         depends=(['__odepack.h','multipack.h']
-                                  + odepack_src
-                                  + mach_src),
-                         **lapack_opt)
+                         depends=(odepack_src + mach_src),
+                         **odepack_opts)
 
     # vode
     config.add_extension('vode',
