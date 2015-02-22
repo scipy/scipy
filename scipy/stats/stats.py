@@ -170,27 +170,27 @@ References
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+import math
+from collections import namedtuple
+
+from scipy._lib.six import xrange
+from scipy._lib._util import check_random_state
+
+# friedmanchisquare patch uses python sum
+pysum = sum  # save it before it gets overwritten
 
 # Scipy imports.
 from scipy._lib.six import callable, string_types
-from scipy._lib.six import xrange
-from scipy._lib._util import check_random_state
 from numpy import array, asarray, ma, zeros, sum
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
-
-import warnings
-import math
-from collections import namedtuple
 import copy
-
 from . import futil
 from . import distributions
-from ._rank import rankdata, tiecorrect
 
-# friedmanchisquare patch uses python sum
-pysum = sum  # save it before it gets overwritten
+from ._rank import rankdata, tiecorrect
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -2497,8 +2497,7 @@ def _permutation_f_oneway(mat, cats, **kwds):
     
     params = {'permutations':10000, 'random_state':0, 'axis':0}
     for key in ('permutations', 'random_state', 'axis'):
-        if key in kwds:
-            setattr(params[key], key, kwds[key])
+        params[key] = kwds.get(key, params[key])
     permutations = params['permutations']
     random_state = params['random_state']
     axis = params['axis']
@@ -2508,20 +2507,21 @@ def _permutation_f_oneway(mat, cats, **kwds):
         mat = mat.transpose()    
     if len(mat.shape) < 2:  
         mat = mat.reshape((1, len(mat)))
-
+    r, c = mat.shape
+    num_cats = len(np.unique(cats)) 
+    f_stat = np.zeros((r, num_cats*(permutations+1)))
+    copy_cats = copy.deepcopy(cats)
     for p in range(permutations+1):
-        perms = _init_summation_index(cats)
-        num_cats = len(np.unique(cats)) 
+        perms = _init_summation_index(copy_cats)
         n_samp, c = perms.shape
-        permutations = (c-num_cats) / num_cats
         mat2 = np.multiply(mat, mat)
         S = mat.sum(axis=1)
         SS = mat2.sum(axis=1)
         sstot = SS - np.multiply(S,S) / float(n_samp)
         sstot = sstot.reshape((len(sstot),1))
         # Create index to sum the ssE together
-        sum_groups = np.arange((permutations+1)*num_cats, dtype=np.int32) // num_cats
-        _sum_idx = _init_summation_index(sum_groups, permutations=0)
+        sum_groups = np.arange(num_cats, dtype=np.int32) // num_cats
+        _sum_idx = _init_summation_index(sum_groups)
 
         # Perform matrix multiplication on data matrix
         # and calculate sums and squared sums and sum of squares
@@ -2534,8 +2534,8 @@ def _permutation_f_oneway(mat, cats, **kwds):
         sstrt = sstot - sserr
         dftrt = num_cats - 1
         dferr = np.dot(tot, _sum_idx) - num_cats
-
-        f_stat[:, p] = np.ravel( (sstrt / dftrt) / (sserr / dferr) )
+        f_stat[:, p] = np.ravel((sstrt / dftrt) / (sserr / dferr))
+        
         random_state.shuffle(copy_cats)
         
     cmps = f_stat[:, 1:].transpose() >= f_stat[:, 0]
@@ -3528,11 +3528,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     label - 0 corresponding to the first sample and 1 corresponding to the
     second sample. A vector of these labels is permutated multiple times and
     these permutations are used to calculate the permutation test.
-    
-    The running time of the permutation test is O(NMP) where N is the
-    length of x and y, M is the width of x and y, and P is the number
-    of permutations.  The memory usage is O(NP + NM).
-    
+        
     References
     ----------
     .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
@@ -3667,11 +3663,10 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
         mat = mat.reshape((1, len(mat)))
 
     r, c = mat.shape
-    t_stat = np.zeros((r, 2*(permutations+1)))
+    num_cats = 2  # Only 2 classes in t-test
+    t_stat = np.zeros((r, num_cats*(permutations+1)))
     
     copy_cats = copy.deepcopy(cats)
-    num_cats = 2  # Only 2 classes in t-test
-    perms = np.array(np.zeros((c, num_cats*(permutations+1)), dtype=cats.dtype))
 
     for p in range(permutations+1):
 
