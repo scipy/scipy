@@ -155,37 +155,36 @@ def _root_hybr(func, x0, args=(), jac=None,
     Find the roots of a multivariate function using MINPACK's hybrd and
     hybrj routines (modified Powell method).
 
-    Options for the hybrd algorithm are:
-        col_deriv : bool
-            Specify whether the Jacobian function computes derivatives down
-            the columns (faster, because there is no transpose operation).
-        xtol : float
-            The calculation will terminate if the relative error between two
-            consecutive iterates is at most `xtol`.
-        maxfev : int
-            The maximum number of calls to the function. If zero, then
-            ``100*(N+1)`` is the maximum where N is the number of elements
-            in `x0`.
-        band : tuple
-            If set to a two-sequence containing the number of sub- and
-            super-diagonals within the band of the Jacobi matrix, the
-            Jacobi matrix is considered banded (only for ``fprime=None``).
-        eps : float
-            A suitable step length for the forward-difference
-            approximation of the Jacobian (for ``fprime=None``). If
-            `eps` is less than the machine precision, it is assumed
-            that the relative errors in the functions are of the order of
-            the machine precision.
-        factor : float
-            A parameter determining the initial step bound
-            (``factor * || diag * x||``).  Should be in the interval
-            ``(0.1, 100)``.
-        diag : sequence
-            N positive entries that serve as a scale factors for the
-            variables.
+    Options
+    -------
+    col_deriv : bool
+        Specify whether the Jacobian function computes derivatives down
+        the columns (faster, because there is no transpose operation).
+    xtol : float
+        The calculation will terminate if the relative error between two
+        consecutive iterates is at most `xtol`.
+    maxfev : int
+        The maximum number of calls to the function. If zero, then
+        ``100*(N+1)`` is the maximum where N is the number of elements
+        in `x0`.
+    band : tuple
+        If set to a two-sequence containing the number of sub- and
+        super-diagonals within the band of the Jacobi matrix, the
+        Jacobi matrix is considered banded (only for ``fprime=None``).
+    eps : float
+        A suitable step length for the forward-difference
+        approximation of the Jacobian (for ``fprime=None``). If
+        `eps` is less than the machine precision, it is assumed
+        that the relative errors in the functions are of the order of
+        the machine precision.
+    factor : float
+        A parameter determining the initial step bound
+        (``factor * || diag * x||``).  Should be in the interval
+        ``(0.1, 100)``.
+    diag : sequence
+        N positive entries that serve as a scale factors for the
+        variables.
 
-    This function is called by the `root` function with `method=hybr`. It
-    is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
     epsfcn = eps
