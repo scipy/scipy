@@ -25,8 +25,7 @@ def norm(x, ord=None):
     Parameters
     ----------
     x : a sparse matrix
-        Input sparse matrix. If `axis` is None, `x` must be 1-D or 2-D
-        sparse matrix.
+        Input sparse matrix.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
         `inf` object.
@@ -109,7 +108,6 @@ def norm(x, ord=None):
             sqnorm = x.power(2).sum()
         return sqrt(sqnorm)
 
-    # Normalize the `axis` argument to a tuple.
     nd = x.ndim
     axis = tuple(range(nd))
 
