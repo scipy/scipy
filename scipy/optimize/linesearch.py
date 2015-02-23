@@ -13,13 +13,18 @@ Functions
 """
 from __future__ import division, print_function, absolute_import
 
+from warnings import warn
+
 from scipy.optimize import minpack2
 import numpy as np
 from scipy._lib.six import xrange
 
-__all__ = ['line_search_wolfe1', 'line_search_wolfe2',
+__all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
            'line_search_armijo']
+
+class LineSearchWarning(RuntimeWarning):
+    pass
 
 
 #------------------------------------------------------------------------------
@@ -214,19 +219,22 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     Returns
     -------
-    alpha : float
-        Alpha for which ``x_new = x0 + alpha * pk``.
+    alpha : float or None
+        Alpha for which ``x_new = x0 + alpha * pk``,
+        or None if the line search algorithm did not converge.
     fc : int
         Number of function evaluations made.
     gc : int
         Number of gradient evaluations made.
-    new_fval : float
-        New function value ``f(x_new)=f(x0+alpha*pk)``.
+    new_fval : float or None
+        New function value ``f(x_new)=f(x0+alpha*pk)``,
+        or None if the line search algorithm did not converge.
     old_fval : float
         Old function value ``f(x0)``.
-    new_slope : float
+    new_slope : float or None
         The local slope along the search direction at the
-        new value ``<myfprime(x_new), pk>``.
+        new value ``<myfprime(x_new), pk>``,
+        or None if the line search algorithm did not converge.
     
 
     Notes
@@ -266,11 +274,12 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gfk = fprime(xk, *args)
     derphi0 = np.dot(gfk, pk)
 
-    alpha_star, phi_star, old_fval, derphi_star = \
-                scalar_search_wolfe2(phi, derphi, old_fval, old_old_fval,
-                                     derphi0, c1, c2, amax)
+    alpha_star, phi_star, old_fval, derphi_star = scalar_search_wolfe2(
+            phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax)
 
-    if derphi_star is not None:
+    if derphi_star is None:
+        warn('The line search algorithm did not converge', LineSearchWarning)
+    else:
         # derphi_star is a number (derphi) -- so use the most recently
         # calculated gradient used in computing it derphi = gfk*pk
         # this is the gradient at the next step no need to compute it
@@ -309,14 +318,15 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
 
     Returns
     -------
-    alpha_star : float
-        Best alpha
-    phi_star
+    alpha_star : float or None
+        Best alpha, or None if the line search algorithm did not converge.
+    phi_star : float
         phi at alpha_star
-    phi0
+    phi0 : float
         phi at 0
-    derphi_star
-        derphi at alpha_star
+    derphi_star : float or None
+        derphi at alpha_star, or None if the line search algorithm
+        did not converge.
 
     Notes
     -----
@@ -398,6 +408,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
         alpha_star = alpha1
         phi_star = phi_a1
         derphi_star = None
+        warn('The line search algorithm did not converge', LineSearchWarning)
 
     return alpha_star, phi_star, phi0, derphi_star
 
