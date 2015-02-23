@@ -152,16 +152,6 @@ def resample_column(i, X):
     X[:, i] = np.random.randint(0, 2, size=X.shape[0])*2 - 1
 
 
-def norm_1d_1(v):
-    # this is faster than calling the numpy/scipy norm function
-    return np.sum(np.abs(v))
-
-
-def norm_1d_inf(v):
-    # this is faster than calling the numpy/scipy norm function
-    return np.max(np.abs(v))
-
-
 def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
@@ -223,12 +213,12 @@ def _algorithm_2_2(A, AT, t):
     ind = range(t)
     while True:
         Y = np.asarray(A_linear_operator.matmat(X))
-        g = [norm_1d_1(Y[:, j]) for j in range(t)]
+        g = np.sum(np.abs(Y), axis=0)
         best_j = np.argmax(g)
         g = sorted(g, reverse=True)
         S = sign_round_up(Y)
         Z = np.asarray(AT_linear_operator.matmat(S))
-        h = [norm_1d_inf(row) for row in Z]
+        h = np.max(np.abs(Z), axis=1)
 
         # If this algorithm runs for fewer than two iterations,
         # then its return values do not have the properties indicated
@@ -351,7 +341,7 @@ def _onenormest_core(A, AT, t, itmax):
     while True:
         Y = np.asarray(A_linear_operator.matmat(X))
         nmults += 1
-        mags = [norm_1d_1(Y[:, j]) for j in range(t)]
+        mags = np.sum(np.abs(Y), axis=0)
         est = np.max(mags)
         best_j = np.argmax(mags)
         if est > est_old or k == 2:
@@ -380,7 +370,7 @@ def _onenormest_core(A, AT, t, itmax):
         # (3)
         Z = np.asarray(AT_linear_operator.matmat(S))
         nmults += 1
-        h = [norm_1d_inf(row) for row in Z]
+        h = np.max(np.abs(Z), axis=1)
         # (4)
         if k >= 2 and max(h) == h[ind_best]:
             break
