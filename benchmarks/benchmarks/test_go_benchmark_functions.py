@@ -3,7 +3,7 @@ Unit tests for the global optimization benchmark functions
 """
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import go_benchmark_functions as gbf
+from . import go_benchmark_functions as gbf
 import inspect
 from numpy.testing import TestCase, run_module_suite
 

@@ -5,7 +5,10 @@ import numpy as np
 from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
                    arange, pi, prod, roll, sign, sin, sqrt, sum, where,
                    zeros, tan, tanh, dot)
-from scipy.special import factorial
+try:
+    from scipy.special import factorial
+except ImportError:
+    pass
 from .go_benchmark import Benchmark
 
 
