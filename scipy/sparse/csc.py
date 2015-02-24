@@ -197,6 +197,5 @@ class csc_matrix(_cs_matrix, IndexMixin):
         """
         return (x[1],x[0])
 
-
 def isspmatrix_csc(x):
     return isinstance(x, csc_matrix)
