@@ -1659,25 +1659,34 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         .. versionadded:: 0.12.0
     return_singular_vectors : bool or str, optional
-        True: return singular vectors (True) in addition to singular values.
-        'u': only return the u matrix, without computing vh (if N > M)
-        'vh': only return the vh matrix, without computing u (if N <= M)
+        - True: return singular vectors (True) in addition to singular values.
 
         .. versionadded:: 0.12.0
+
+        - "u": only return the u matrix, without computing vh (if N > M).
+        - "vh": only return the vh matrix, without computing u (if N <= M).
+
+        .. versionadded:: 0.16.0
 
     Returns
     -------
     u : ndarray, shape=(M, k)
         Unitary matrix having left singular vectors as columns.
+        If `return_singular_vectors` is "vh", this variable is not computed,
+        and None is returned instead.
     s : ndarray, shape=(k,)
         The singular values.
     vt : ndarray, shape=(k, N)
         Unitary matrix having right singular vectors as rows.
+        If `return_singular_vectors` is "u", this variable is not computed,
+        and None is returned instead.
+
 
     Notes
     -----
     This is a naive implementation using ARPACK as an eigensolver
     on A.H * A or A * A.H, depending on which one is more efficient.
+
     """
     if not (isinstance(A, LinearOperator) or isspmatrix(A)):
         A = np.asarray(A)
