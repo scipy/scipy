@@ -944,8 +944,17 @@ def moment(a, moment=1, axis=0):
             # the input was 1D, so return a scalar instead of a rank-0 array
             return np.float64(0.0)
     else:
-        mn = np.expand_dims(np.mean(a, axis), axis)
-        s = np.power((a - mn), moment)
+        # Subtract mean along the axis, compute element-wise square
+        a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
+        a_zero_mean_2 = a_zero_mean**2
+        
+        s = a_zero_mean_2.copy()
+        for k in range(1, mom // 2):
+            s *= x_zero_mean_2
+        
+        if mom % 2:
+            s *= x_zero_mean
+        
         return np.mean(s, axis)
 
 
