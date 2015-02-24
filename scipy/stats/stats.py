@@ -945,15 +945,15 @@ def moment(a, moment=1, axis=0):
             return np.float64(0.0)
     else:
         # Subtract mean along the axis, compute element-wise square
-        a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
+        a_zero_mean = np.float64(a - np.expand_dims(np.mean(a, axis), axis))
         a_zero_mean_2 = a_zero_mean**2
         
         s = a_zero_mean_2.copy()
-        for k in range(1, mom // 2):
-            s *= x_zero_mean_2
+        for k in range(1, moment // 2):
+            s *= a_zero_mean_2
         
-        if mom % 2:
-            s *= x_zero_mean
+        if moment % 2:
+            s *= a_zero_mean
         
         return np.mean(s, axis)
 
