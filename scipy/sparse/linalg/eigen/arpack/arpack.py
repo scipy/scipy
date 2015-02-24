@@ -1658,8 +1658,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Maximum number of iterations.
 
         .. versionadded:: 0.12.0
-    return_singular_vectors : bool, optional
-        Return singular vectors (True) in addition to singular values
+    return_singular_vectors : bool or str, optional
+        True: return singular vectors (True) in addition to singular values.
+        'u': only return the u matrix, without computing vh (if N > M)
+        'vh': only return the vh matrix, without computing u (if N <= M)
 
         .. versionadded:: 0.12.0
 
@@ -1748,14 +1750,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         if n > m:
             vlarge = eigvec[:, above_cutoff]
-            ularge = X_matmat(vlarge) / slarge
+            ularge = X_matmat(vlarge) / slarge if return_singular_vectors != 'vh' else None
             vhlarge = _herm(vlarge)
         else:
             ularge = eigvec[:, above_cutoff]
-            vhlarge = _herm(X_matmat(ularge) / slarge)
+            vhlarge = _herm(X_matmat(ularge) / slarge) if return_singular_vectors != 'u' else None
 
-        u = _augmented_orthonormal_cols(ularge, nsmall)
-        vh = _augmented_orthonormal_rows(vhlarge, nsmall)
+        u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
+        vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
 
     else:
 
@@ -1765,10 +1767,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         if n > m:
             v = eigvec
-            u = X_matmat(v) / s
+            u = X_matmat(v) / s if return_singular_vectors != 'vh' else None
             vh = _herm(v)
         else:
             u = eigvec
-            vh = _herm(X_matmat(u) / s)
+            vh = _herm(X_matmat(u) / s) if return_singular_vectors != 'u' else None
 
     return u, s, vh
