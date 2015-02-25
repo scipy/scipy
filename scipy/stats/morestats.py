@@ -408,6 +408,13 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
 
     """
     x = np.asarray(x)
+    _perform_fit = fit or (plot is not None)
+    if x.size == 0:
+        if _perform_fit:
+            return (x, x), (np.nan, np.nan, 0.0)
+        else:
+            return x, x
+
     osm_uniform = _calc_uniform_order_statistic_medians(x)
     dist = _parse_dist_kw(dist, enforce_subclass=False)
     if sparams is None:
@@ -419,8 +426,8 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
 
     osm = dist.ppf(osm_uniform, *sparams)
     osr = sort(x)
-    if fit or (plot is not None):
-        # perform a linear fit.
+    if _perform_fit:
+        # perform a linear least squares fit.
         slope, intercept, r, prob, sterrest = stats.linregress(osm, osr)
 
     if plot is not None:

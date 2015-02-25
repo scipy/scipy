@@ -580,6 +580,19 @@ class TestProbplot(TestCase):
         # Raise ValueError when given an invalid distribution.
         assert_raises(ValueError, stats.probplot, [1], dist="plate_of_shrimp")
 
+    def test_empty(self):
+        assert_equal(stats.probplot([], fit=False),
+                     (np.array([]), np.array([])))
+        assert_equal(stats.probplot([], fit=True),
+                     ((np.array([]), np.array([])),
+                      (np.nan, np.nan, 0.0)))
+
+    def test_array_of_size_one(self):
+        with np.errstate(invalid='ignore'):
+            assert_equal(stats.probplot([1], fit=True),
+                         ((np.array([0.]), np.array([1])),
+                          (np.nan, np.nan, 0.0)))
+
 
 def test_wilcoxon_bad_arg():
     # Raise ValueError when two args of different lengths are given or
