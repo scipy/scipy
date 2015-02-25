@@ -624,14 +624,14 @@ class TestCorrSpearmanrTies(TestCase):
         assert_almost_equal(sr, pr)
 
 
-##    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
-##    should appear on the diagonal and the total should be 899999955.
-##    If the table cannot hold these values, forget about working with
-##    census data.  You can also tabulate HUGE against TINY.  There is no
-##    reason a tabulation program should not be able to distinguish
-##    different values regardless of their magnitude.
+#    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
+#    should appear on the diagonal and the total should be 899999955.
+#    If the table cannot hold these values, forget about working with
+#    census data.  You can also tabulate HUGE against TINY.  There is no
+#    reason a tabulation program should not be able to distinguish
+#    different values regardless of their magnitude.
 
-### I need to figure out how to do this one.
+# I need to figure out how to do this one.
 
 
 def test_kendalltau():
@@ -690,12 +690,12 @@ class TestRegression(TestCase):
         r = y[2]
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,1.0)
-##     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
-##     should tell you that this model is "singular" because BIG and
-##     LITTLE are linear combinations of each other.  Cryptic error
-##     messages are unacceptable here.  Singularity is the most
-##     fundamental regression error.
-### Need to figure out how to handle multiple linear regression.  Not obvious
+#     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
+#     should tell you that this model is "singular" because BIG and
+#     LITTLE are linear combinations of each other.  Cryptic error
+#     messages are unacceptable here.  Singularity is the most
+#     fundamental regression error.
+# Need to figure out how to handle multiple linear regression.  Not obvious
 
     def test_regressZEROX(self):
         # W.IV.D. Regress ZERO on X.
