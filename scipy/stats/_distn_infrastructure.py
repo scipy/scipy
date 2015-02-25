@@ -175,7 +175,7 @@ moments : str, optional
 """
 
 _doc_default_longsummary = """\
-As an instance of `rv_continuous` class, `%(name)s` object inherits from it
+As an instance of the `rv_continuous` class, `%(name)s` object inherits from it
 a collection of generic methods (see below for the full list),
 and completes them with details specific for this particular distribution.
 """
@@ -207,6 +207,17 @@ Display the probability density function (``pdf``):
 >>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
 ...        'r-', lw=5, alpha=0.6, label='%(name)s pdf')
 
+To shift and/or scale the distribution use the ``loc`` and ``scale`` parameters.
+For example, 
+
+>>> loc, scale = 4, 5
+>>> %(name)s.cdf(x, %(shapes)s, loc, scale)
+
+is equivalent to
+
+>>> y = (x - loc) / scale
+>>> %(name)s.cdf(y, %(shapes)s)
+
 Alternatively, the distribution object can be called (as a function)
 to fix the shape, location and scale parameters. This returns a "frozen"
 RV object holding the given parameters fixed. 
@@ -231,6 +242,7 @@ And compare the histogram:
 >>> ax.hist(r, normed=True, histtype='stepfilled', alpha=0.2)
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
+
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
@@ -314,12 +326,24 @@ Calculate a few first moments:
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
+
 Display the probability mass function (``pmf``):
 
 >>> x = np.arange(%(name)s.ppf(0.01, %(shapes)s),
 ...               %(name)s.ppf(0.99, %(shapes)s))
 >>> ax.plot(x, %(name)s.pmf(x, %(shapes)s), 'bo', ms=8, label='%(name)s pmf')
 >>> ax.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b', lw=5, alpha=0.5)
+
+To shift the distribution use the ``loc`` parameter. For example,
+
+>>> loc = 4
+>>> %(name)s.cdf(x, %(shapes)s, loc)
+
+is equivalent to
+
+>>> y = (x - loc)
+>>> %(name)s.cdf(y, %(shapes)s)
+
 
 Alternatively, the distribution object can be called (as a function)
 to fix the shape and location. This returns a "frozen" RV object holding 
