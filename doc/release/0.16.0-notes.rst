@@ -60,7 +60,8 @@ format.
 The option to use Gustafsson's method for choosing the initial conditions
 of the forward and backward passes was added to `scipy.signal.filtfilt`.
 
-An exponential (Poisson) window was added as `scipy.signal.exponential`.
+An exponential (Poisson) window was added as `scipy.signal.exponential`, and a
+Tukey window was added as `scipy.signal.tukey`.
 
 `scipy.stats` improvements
 --------------------------

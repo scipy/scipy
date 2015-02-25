@@ -221,6 +221,7 @@ Window functions
    parzen            -- Parzen window
    slepian           -- Slepian window
    triang            -- Triangular window
+   tukey             -- Tukey window
 
 Wavelets
 ========
