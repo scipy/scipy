@@ -91,6 +91,9 @@ and `scipy.linalg.lapack`.
 
 The deprecated function ``scipy.special.all_mat`` has been removed.
 
+The deprecated functions ``fprob``, ``ksprob`` and ``zprob`` have been
+removed from `scipy.stats`.
+
 
 Other changes
 =============
