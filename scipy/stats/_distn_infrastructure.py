@@ -297,7 +297,6 @@ Calculate a few first moments:
 %(set_vals_stmt)s
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
-
 Display the probability mass function (``pmf``):
 
 >>> x = np.arange(%(name)s.ppf(0.01, %(shapes)s),
@@ -305,23 +304,11 @@ Display the probability mass function (``pmf``):
 >>> ax.plot(x, %(name)s.pmf(x, %(shapes)s), 'bo', ms=8, label='%(name)s pmf')
 >>> ax.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b', lw=5, alpha=0.5)
 
-To shift the distribution use the ``loc`` parameter. For example,
-
->>> loc = 4
->>> %(name)s.cdf(x, %(shapes)s, loc)
-
-is equivalent to
-
->>> y = (x - loc)
->>> %(name)s.cdf(y, %(shapes)s)
-
-
 Alternatively, the distribution object can be called (as a function)
 to fix the shape and location. This returns a "frozen" RV object holding 
 the given parameters fixed. 
 
 Freeze the distribution and display the frozen ``pmf``:
-
 
 >>> rv = %(name)s(%(shapes)s)
 >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1,
@@ -339,7 +326,17 @@ Generate random numbers:
 
 >>> r = %(name)s.rvs(%(shapes)s, size=1000)
 """
+
+
+_doc_default_discrete_locscale = """\
+The probability mass function above is defined in the "standartized" form.
+To shift distribution use the ``loc`` parameter.
+Specifically, ``%(name)s.pmf(k, %(shapes)s, loc)`` is identically
+equivalent to ``%(name)s.pmf(k - loc, %(shapes)s)``.
+"""
+
 docdict_discrete['example'] = _doc_default_discrete_example
+docdict_discrete['after_notes'] = _doc_default_discrete_locscale
 
 _doc_default_before_notes = ''.join([docdict_discrete['longsummary'],
                                      docdict_discrete['allmethods']])
