@@ -1370,6 +1370,8 @@ class TestMoments(TestCase):
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
+    np.random.seed(1234)
+    testcase_moment_accuracy = np.random.rand(42)
     testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
     def test_moment(self):
@@ -1421,6 +1423,14 @@ class TestMoments(TestCase):
 
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
+    
+    def test_moment_accuracy(self):
+        # 'moment' must have a small enough error compared to the slower
+        #  but very accurate numpy.power() implementation.
+        tc_no_mean = self.testcase_moment_accuracy - \
+                     np.mean(self.testcase_moment_accuracy)
+        assert_allclose(np.power(tc_no_mean, 42).mean(), 
+                            stats.moment(self.testcase_moment_accuracy, 42))
 
 
 class TestThreshold(TestCase):

@@ -944,17 +944,28 @@ def moment(a, moment=1, axis=0):
             # the input was 1D, so return a scalar instead of a rank-0 array
             return np.float64(0.0)
     else:
-        # Subtract mean along the axis, compute element-wise square
+        # Exponentiation by squares: form exponent sequence
+        n_list = [moment]
+        current_n = moment
+        while current_n > 2:
+            if current_n % 2:
+                current_n = (current_n-1)/2
+            else:
+                current_n /= 2
+            n_list.append(current_n)
+        
+        # Starting point for exponentiation by squares
         a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
-        a_zero_mean_2 = a_zero_mean**2
+        if n_list[-1] == 1:
+            s = a_zero_mean.copy()
+        else:
+            s = a_zero_mean**2
         
-        s = a_zero_mean_2.copy()
-        for k in range(1, moment // 2):
-            s *= a_zero_mean_2
-        
-        if moment % 2:
-            s *= a_zero_mean
-        
+        # Perform multiplications
+        for n in n_list[-2::-1]:
+            s = s**2
+            if n % 2:
+                s *= a_zero_mean
         return np.mean(s, axis)
 
 
