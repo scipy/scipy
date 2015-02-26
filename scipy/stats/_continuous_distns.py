@@ -986,13 +986,11 @@ class expon_gen(rv_continuous):
     -----
     The probability density function for `expon` is::
 
-        expon.pdf(x) = lambda * exp(- lambda*x)
+        expon.pdf(x) = exp(-x)
 
     for ``x >= 0``.
 
-    The scale parameter is equal to ``scale = 1.0 / lambda``.
-
-    `expon` does not have shape parameters.
+    %(after_notes)s
 
     %(example)s
 
@@ -1814,23 +1812,16 @@ class gamma_gen(rv_continuous):
     -----
     The probability density function for `gamma` is::
 
-        gamma.pdf(x, a) = lambda**a * x**(a-1) * exp(-lambda*x) / gamma(a)
+        gamma.pdf(x, a) = x**(a-1) * exp(-x) / gamma(a)
 
     for ``x >= 0``, ``a > 0``. Here ``gamma(a)`` refers to the gamma function.
 
-    The scale parameter is equal to ``scale = 1.0 / lambda``.
-
-    `gamma` has a shape parameter `a` which needs to be set explicitly. For
-    instance:
-
-        >>> from scipy.stats import gamma
-        >>> rv = gamma(3., loc = 0., scale = 2.)
-
-    produces a frozen form of `gamma` with shape ``a = 3.``, ``loc =0.``
-    and ``lambda = 1./scale = 1./2.``.
+    `gamma` has a shape parameter `a` which needs to be set explicitly.
 
     When ``a`` is an integer, `gamma` reduces to the Erlang
     distribution, and when ``a=1`` to the exponential distribution.
+
+    %(after_notes)s
 
     %(example)s
 
