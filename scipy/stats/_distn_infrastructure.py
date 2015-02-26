@@ -150,30 +150,6 @@ _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_expect, _doc_median,
                            _doc_mean, _doc_var, _doc_std, _doc_interval])
 
-# Note that the two lines for %(shapes) are searched for and replaced in
-# rv_continuous and rv_discrete - update there if the exact string changes
-_doc_default_callparams = """
-Parameters
-----------
-x : array_like
-    quantiles
-q : array_like
-    lower or upper tail probability
-%(shapes)s : array_like
-    shape parameters
-loc : array_like, optional
-    location parameter (default=0)
-scale : array_like, optional
-    scale parameter (default=1)
-size : int or tuple of ints, optional
-    shape of random variates (default computed from input arguments )
-moments : str, optional
-    composed of letters ['mvsk'] specifying which moments to compute where
-    'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
-    'k' = (Fisher's) kurtosis.
-    Default is 'mv'.
-"""
-
 _doc_default_longsummary = """\
 As an instance of the `rv_continuous` class, `%(name)s` object inherits from it
 a collection of generic methods (see below for the full list),
@@ -247,8 +223,6 @@ And compare the histogram:
 
 _doc_default = ''.join([_doc_default_longsummary,
                         _doc_allmethods,
-                        _doc_default_callparams,
-                        _doc_default_frozen_note,
                         _doc_default_example])
 
 _doc_default_before_notes = ''.join([_doc_default_longsummary,
@@ -275,7 +249,6 @@ docdict = {
     'var': _doc_var,
     'median': _doc_median,
     'allmethods': _doc_allmethods,
-    'callparams': _doc_default_callparams,
     'longsummary': _doc_default_longsummary,
     'frozennote': _doc_default_frozen_note,
     'example': _doc_default_example,
@@ -782,7 +755,7 @@ class rv_generic(object):
 
         if self.shapes is None:
             # remove shapes from call parameters if there are none
-            for item in ['callparams', 'default', 'before_notes']:
+            for item in ['default', 'before_notes']:
                 tempdict[item] = tempdict[item].replace(
                     "\n%(shapes)s : array_like\n    shape parameters", "")
         for i in range(2):
