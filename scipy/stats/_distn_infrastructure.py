@@ -183,17 +183,6 @@ Display the probability density function (``pdf``):
 >>> ax.plot(x, %(name)s.pdf(x, %(shapes)s),
 ...        'r-', lw=5, alpha=0.6, label='%(name)s pdf')
 
-To shift and/or scale the distribution use the ``loc`` and ``scale`` parameters.
-For example, 
-
->>> loc, scale = 4, 5
->>> %(name)s.cdf(x, %(shapes)s, loc, scale)
-
-is equivalent to
-
->>> y = (x - loc) / scale
->>> %(name)s.cdf(y, %(shapes)s)
-
 Alternatively, the distribution object can be called (as a function)
 to fix the shape, location and scale parameters. This returns a "frozen"
 RV object holding the given parameters fixed. 
@@ -219,6 +208,14 @@ And compare the histogram:
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
 
+"""
+
+_doc_default_locscale = """\  
+The probability density above is defined in the "standartized" form. To shift
+and/or scale the distribution use the ``loc`` and ``scale`` parameters.
+Specifically, ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
+equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
+``y = (x - loc) / scale``.
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
@@ -253,7 +250,8 @@ docdict = {
     'frozennote': _doc_default_frozen_note,
     'example': _doc_default_example,
     'default': _doc_default,
-    'before_notes': _doc_default_before_notes
+    'before_notes': _doc_default_before_notes,
+    'after_notes': _doc_default_locscale
 }
 
 # Reuse common content between continuous and discrete docs, change some
