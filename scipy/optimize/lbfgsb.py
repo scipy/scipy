@@ -71,7 +71,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         `func` returns only the function value).
     bounds : list
         ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
+        the bounds on that parameter. Use None or +-inf for one of ``min`` or
         ``max`` when there is no bound in that direction.
     m : int
         The maximum number of variable metric corrections
