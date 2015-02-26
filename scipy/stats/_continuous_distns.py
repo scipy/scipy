@@ -645,6 +645,16 @@ class fisk_gen(burr_gen):
 
     %(before_notes)s
 
+    Notes
+    -----
+    The probability density function for `fisk` is::
+
+        fisk.pdf(x, c) = c * x**(-c-1) * (1 + x**(-c))**(-2)
+
+    for ``x > 0``.
+
+    `fisk` takes ``c`` as a shape parameters.
+
     See Also
     --------
     burr
