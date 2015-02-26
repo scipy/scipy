@@ -173,7 +173,6 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     # build options
     if disp is None:
         disp = iprint
-
     opts = {'disp': disp,
             'iprint': iprint,
             'maxcor': m,
@@ -252,9 +251,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
     # unbounded variables must use None, not +-inf, for optimizer to work properly
-    l = [None if l == -np.inf else l for l, _ in bounds]
-    u = [None if u == np.inf else u for _, u in bounds]
-    bounds = zip(l, u)
+    bounds = [(None if l == -np.inf else l, None if u == np.inf else u) for l, u in bounds]
 
     if disp is not None:
         if disp == 0:
