@@ -4647,6 +4647,7 @@ def square_of_sums(a, axis=0):
         return float(s) * s
 
 
+@np.deprecate(message="scipy.stats.fastsort is deprecated in scipy 0.16.0")
 def fastsort(a):
     """
     Sort an array and provide the argsort.

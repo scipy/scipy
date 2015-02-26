@@ -77,6 +77,9 @@ Deprecated features
 untested and rarely used.  Statsmodels provides equivalent functionality
 with ``statsmodels.distributions.ExpandedNormal``.
 
+``scipy.stats.fastsort`` is deprecated.  This function is unnecessary,
+``numpy.argsort`` can be used instead.
+
 
 Backwards incompatible changes
 ==============================
