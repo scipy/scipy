@@ -176,16 +176,12 @@ from collections import namedtuple
 
 from scipy._lib.six import xrange
 
-# friedmanchisquare patch uses python sum
-pysum = sum  # save it before it gets overwritten
-
 # Scipy imports.
 from scipy._lib.six import callable, string_types
-from numpy import array, asarray, ma, zeros, sum
+from numpy import array, asarray, ma, zeros
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
-
 from . import futil
 from . import distributions
 
@@ -263,7 +259,7 @@ def find_repeats(arr):
     return v1[:n], v2[:n]
 
 #######
-### NAN friendly functions
+#  NAN friendly functions
 ########
 
 
@@ -470,7 +466,7 @@ def nanmedian(x, axis=0):
 
 
 #####################################
-########  CENTRAL TENDENCY  ########
+#         CENTRAL TENDENCY          #
 #####################################
 
 
@@ -904,7 +900,7 @@ def tsem(a, limits=None, inclusive=(True, True)):
 
 
 #####################################
-############  MOMENTS  #############
+#              MOMENTS              #
 #####################################
 
 def moment(a, moment=1, axis=0):
@@ -1146,7 +1142,7 @@ def describe(a, axis=0, ddof=1):
     return _DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
-########  NORMALITY TESTS  ##########
+#         NORMALITY TESTS           #
 #####################################
 
 
@@ -1353,7 +1349,7 @@ def jarque_bera(x):
 
 
 #####################################
-######  FREQUENCY FUNCTIONS  #######
+#        FREQUENCY FUNCTIONS        #
 #####################################
 
 def itemfreq(a):
@@ -1606,11 +1602,11 @@ def percentileofscore(a, score, kind='rank'):
         return pct
 
     elif kind == 'strict':
-        return sum(a < score) / float(n) * 100
+        return np.sum(a < score) / float(n) * 100
     elif kind == 'weak':
-        return sum(a <= score) / float(n) * 100
+        return np.sum(a <= score) / float(n) * 100
     elif kind == 'mean':
-        return (sum(a < score) + sum(a <= score)) * 50 / float(n)
+        return (np.sum(a < score) + np.sum(a <= score)) * 50 / float(n)
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
@@ -1815,7 +1811,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
 
 #####################################
-######  VARIABILITY FUNCTIONS  #####
+#        VARIABILITY FUNCTIONS      #
 #####################################
 
 def obrientransform(*args):
@@ -2095,7 +2091,7 @@ def zmap(scores, compare, axis=0, ddof=0):
 
 
 #####################################
-#######  TRIMMING FUNCTIONS  #######
+#         TRIMMING FUNCTIONS        #
 #####################################
 
 def threshold(a, threshmin=None, threshmax=None, newval=0):
@@ -3197,7 +3193,7 @@ def theilslopes(y, x=None, alpha=0.95):
 
 
 #####################################
-#####  INFERENTIAL STATISTICS  #####
+#       INFERENTIAL STATISTICS      #
 #####################################
 
 def ttest_1samp(a, popmean, axis=0):
@@ -3346,6 +3342,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
+    
     .. versionadded:: 0.16.0
 
     References
@@ -3361,7 +3358,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                                              std2**2, nobs2)
     return _ttest_ind_from_stats(mean1, mean2, denom, df)
 
-
+    
 def ttest_ind(a, b, axis=0, equal_var=True):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
@@ -3383,9 +3380,9 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
-
         .. versionadded:: 0.11.0
 
+    
     Returns
     -------
     t : float or array
@@ -3463,7 +3460,6 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-
     return _ttest_ind_from_stats(np.mean(a, axis),
                                  np.mean(b, axis),
                                  denom, df)
@@ -4347,7 +4343,7 @@ def friedmanchisquare(*args):
             ties += t * (t*t - 1)
     c = 1 - ties / float(k*(k*k - 1)*n)
 
-    ssbn = pysum(pysum(data)**2)
+    ssbn = np.sum(data.sum(axis=0)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
     return chisq, chisqprob(chisq, k - 1)
 
@@ -4432,7 +4428,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
 
 #####################################
-####  PROBABILITY CALCULATIONS  ####
+#      PROBABILITY CALCULATIONS     #
 #####################################
 
 zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
@@ -4504,7 +4500,7 @@ def betai(a, b, x):
 
 
 #####################################
-#######  ANOVA CALCULATIONS  #######
+#         ANOVA CALCULATIONS        #
 #####################################
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
@@ -4587,7 +4583,7 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 
 
 #####################################
-#######  SUPPORT FUNCTIONS  ########
+#         SUPPORT FUNCTIONS         #
 #####################################
 
 def ss(a, axis=0):
