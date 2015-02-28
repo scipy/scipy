@@ -41,6 +41,7 @@ from . import _lbfgsb
 from .optimize import (approx_fprime, MemoizeJac, OptimizeResult,
                        _check_unknown_options, wrap_function,
                        _approx_fprime_helper)
+from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['fmin_l_bfgs_b']
 
@@ -338,9 +339,102 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     else:
         warnflag = 2
 
+    # these two portions of the workspace are described in the mainlb
+    # subroutine in lbfgsb.f. See line 363.
+    s = wa[0: m*n].reshape(m, n)
+    y = wa[m*n: 2*m*n].reshape(m, n)
+    n_corrs = min(n_iterations-1, maxcor)
+    hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
+
     return OptimizeResult(fun=f, jac=g, nfev=n_function_evals[0],
                           nit=n_iterations, status=warnflag, message=task_str,
-                          x=x, success=(warnflag == 0))
+                          x=x, success=(warnflag == 0), hess_inv=hess_inv)
+
+
+class LbfgsInvHessProduct(LinearOperator):
+    """Linear operator for the BFGS approximate inverse Hessian.
+
+    References
+    ----------
+    .. [1] Nocedal, Jorge. "Updating quasi-Newton matrices with limited
+       storage." Mathematics of computation 35.151 (1980): 773-782.
+    """
+    def __init__(self, sk, yk):
+        """Construct the operator
+
+        Parameters
+        ----------
+        sk : array_like, shape=(n_corr, n)
+            Array of `n_corr` most recent updates to the solution vector.
+            (See [1]).
+        yk : array_like, shape=(n_corr, n)
+            Array of `n_corr` most recent updates to the gradient. (See [1]).
+        """
+        if sk.shape != yk.shape or sk.ndim != 2:
+            raise ValueError('sk and yk must have matching shape, (n_corrs, n)')
+        n_corrs, n = sk.shape
+
+        super(LbfgsInvHessProduct, self).__init__(
+            dtype=np.float64, shape=(n, n))
+
+        self.sk = sk
+        self.yk = yk
+        self.n_corrs = n_corrs
+        self.rho = 1 / np.einsum('ij,ij->i', sk, yk)
+
+    def _matvec(self, x):
+        """Efficient matrix-vector multiply with the BFGS matrices.
+
+        This calculation is described in Section (4) of [1].
+
+        Parameters
+        ----------
+        x : ndarray
+            An array with shape (n,) or (n,1).
+
+        Returns
+        -------
+        y : ndarray
+            The matrix-vector product
+        """
+        s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
+        q = np.array(x, dtype=self.dtype, copy=True)
+        if q.ndim == 2 and q.shape[1] == 1:
+            q = q.reshape(-1)
+
+        alpha = np.zeros(n_corrs)
+
+        for i in range(n_corrs-1, -1, -1):
+            alpha[i] = rho[i] * np.dot(s[i], q)
+            q = q - alpha[i]*y[i]
+
+        r = q
+        for i in range(n_corrs):
+            beta = rho[i] * np.dot(y[i], r)
+            r = r + s[i] * (alpha[i] - beta)
+
+        return r
+
+    def todense(self):
+        """Return a dense array representation of this operator.
+
+        Returns
+        -------
+        arr : ndarray, shape=(n, n)
+            A NumPy array with the same shape and containing
+            the same data represented by this LinearOperator.
+        """
+        s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
+        I = np.eye(*self.shape, dtype=self.dtype)
+        Hk = I
+
+        for i in range(n_corrs):
+            A1 = I - s[i][:, np.newaxis] * y[i][np.newaxis, :] * rho[i]
+            A2 = I - y[i][:, np.newaxis] * s[i][np.newaxis, :] * rho[i]
+
+            Hk = np.dot(A1, np.dot(Hk, A2)) + (rho[i] * s[i][:, np.newaxis] *
+                                                        s[i][np.newaxis, :])
+        return Hk
 
 
 if __name__ == '__main__':

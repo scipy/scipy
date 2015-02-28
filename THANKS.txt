@@ -34,7 +34,7 @@ Damian Eads for hierarchical clustering, dendrogram plotting,
 Anne Archibald for kd-trees and nearest neighbor in scipy.spatial.
 Pauli Virtanen for Sphinx documentation generation, online documentation
     framework and interpolation bugfixes.
-Josef Perktold for major improvements to scipy.stats and its test suite and 
+Josef Perktold for major improvements to scipy.stats and its test suite and
               fixes and tests to optimize.curve_fit and leastsq.
 David Morrill for getting the scoreboard test system up and running.
 Louis Luangkesorn for providing multiple tests for the stats module.
@@ -65,7 +65,7 @@ Ondrej Certik for Debian packaging.
 Paul Ivanov for porting Numeric-style C code to the new NumPy API.
 Ariel Rokem for contributions on percentileofscore fixes and tests.
 Yosef Meller for tests in the optimization module.
-Ralf Gommers for release management, code clean up and improvements 
+Ralf Gommers for release management, code clean up and improvements
     to doc-string generation.
 Bruce Southey for bug-fixes and improvements to scipy.stats.
 Ernest Adrogué for the Skellam distribution.
@@ -92,7 +92,7 @@ Thouis (Ray) Jones for bug fixes in ndimage.
 Yaroslav Halchenko for a bug fix in ndimage.
 Thomas Robitaille for the IDL 'save' reader.
 Fazlul Shahriar for fixes to the NetCDF3 I/O.
-Chris Jordan-Squire for bug fixes, documentation improvements and 
+Chris Jordan-Squire for bug fixes, documentation improvements and
     scipy.special.logit & expit.
 Christoph Gohlke for many bug fixes and help with Windows specific issues.
 Jacob Silterra for cwt-based peak finding in scipy.signal.
@@ -138,9 +138,9 @@ Alex Rothberg for stats.combine_pvalues.
 Brandon Liu for stats.combine_pvalues.
 Clark Fitzgerald for namedtuple outputs in scipy.stats.
 Florian Wilhelm for usage of RandomState in scipy.stats distributions.
-Robert T. McGibbon for Levinson-Durbin Toeplitz solver.
+Robert T. McGibbon for Levinson-Durbin Toeplitz solver, Hessian information
+    from L-BFGS-B.
 Alex Conley for the Exponentially Modified Normal distribution.
-
 
 Institutions
 ------------
