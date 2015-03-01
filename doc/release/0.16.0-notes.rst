@@ -29,7 +29,6 @@ The benchmark suite has switched to using `Airspeed Velocity
 run the suite locally via ``python runtests.py --bench``. For more
 details, see ``benchmarks/README.rst``.
 
-
 `scipy.linalg` improvements
 ---------------------------
 
@@ -39,6 +38,11 @@ Added wrapper for potentially useful LAPACK function `*lasd4`. It computes the
 square root of the i-th updated eigenvalue of a positive symmetric rank-one
 modification to a positive diagonal matrix. See its LAPACK documentation and
 unit tests for it to get more info.
+
+A full set of Cython wrappers for BLAS and LAPACK has been added in the
+modules ``scipy.linalg.cython_blas` and ``scipy.linalg.cython_lapack`.
+In Cython, these wrappers can now be cimported from their corresponding
+modules and used without linking directly against BLAS or LAPACK.
 
 `scipy.signal` improvements
 ---------------------------
