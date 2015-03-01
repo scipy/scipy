@@ -38,8 +38,8 @@ from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
-           'freqresp', 'place_poles']
+           'tf', 'zpk', 'ss', 'lsim', 'lsim2', 'impulse', 'impulse2', 'step',
+           'step2', 'bode', 'freqresp', 'place_poles']
 
 
 def tf2ss(num, den):
@@ -280,165 +280,141 @@ class lti(object):
     args : arguments
         The `lti` class can be instantiated with either 2, 3 or 4 arguments.
         The following gives the number of elements in the tuple and the
-        interpretation:
+        corresponding subclass that is created:
 
-            * 2: (numerator, denominator)
-            * 3: (zeros, poles, gain)
-            * 4: (A, B, C, D)
+            * 2: tf:  (numerator, denominator)
+            * 3: zpk: (zeros, poles, gain)
+            * 4: ss:  (A, B, C, D)
 
         Each argument can be an array or sequence.
 
     Notes
     -----
-    `lti` instances have all types of representations available; for example
-    after creating an instance s with ``(zeros, poles, gain)`` the transfer
-    function representation (numerator, denominator) can be accessed as
-    ``s.num`` and ``s.den``.
+    `lti` instances do not exist directly. Instead `lti` creates an instance of
+    one of its subclasses: tf, zpk or ss
 
     """
-    def __init__(self, *args, **kwords):
-        """
-        Initialize the LTI system using either:
-
-            - (numerator, denominator)
-            - (zeros, poles, gain)
-            - (A, B, C, D) : state-space.
-
-        """
-        N = len(args)
-        if N == 2:  # Numerator denominator transfer function input
-            self._num, self._den = normalize(*args)
-            self._update(N)
-            self.inputs = 1
-            if len(self.num.shape) > 1:
-                self.outputs = self.num.shape[0]
+    def __new__(cls, *args, **kwargs):
+        """Create an instance of a the appropriate subclass."""
+        if cls is lti:
+            N = len(args)
+            if N == 2:
+                return super(lti, cls).__new__(tf)
+            elif N == 3:
+                return super(lti, cls).__new__(zpk)
+            elif N == 4:
+                return super(lti, cls).__new__(ss)
             else:
-                self.outputs = 1
-        elif N == 3:      # Zero-pole-gain form
-            self._zeros, self._poles, self._gain = args
-            self._update(N)
-            # make sure we have numpy arrays
-            self.zeros = numpy.asarray(self.zeros)
-            self.poles = numpy.asarray(self.poles)
-            self.inputs = 1
-            if len(self.zeros.shape) > 1:
-                self.outputs = self.zeros.shape[0]
-            else:
-                self.outputs = 1
-        elif N == 4:       # State-space form
-            self._A, self._B, self._C, self._D = abcd_normalize(*args)
-            self._update(N)
-            self.inputs = self.B.shape[-1]
-            self.outputs = self.C.shape[0]
-        else:
-            raise ValueError("Needs 2, 3, or 4 arguments.")
+                raise ValueError('Needs 2, 3 or 4 arguments.')
+        # __new__ was called from a subclass, let it call its own __init__
+        return super(lti, cls).__new__(cls)
 
-    def __repr__(self):
+    def __init__(self, *args, **kwargs):
+        """Initialize the `lti` baseclass.
+
+        The heavy lifting is done by the subclasses.
         """
-        Canonical representation using state-space to preserve numerical
-        precision and any MIMO information
-        """
-        return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
-            self.__class__.__name__,
-            repr(self.A),
-            repr(self.B),
-            repr(self.C),
-            repr(self.D),
-            )
+        self.inputs = None
+        self.outputs = None
 
     @property
     def num(self):
-        return self._num
+        return self.tf().num
 
     @num.setter
-    def num(self, value):
-        self._num = value
-        self._update(2)
+    def num(self, num):
+        obj = self.tf()
+        obj.num = num
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     @property
     def den(self):
-        return self._den
+        return self.tf().den
 
     @den.setter
-    def den(self, value):
-        self._den = value
-        self._update(2)
+    def den(self, den):
+        obj = self.tf()
+        obj.den = den
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     @property
     def zeros(self):
-        return self._zeros
+        return self.zpk().zeros
 
     @zeros.setter
-    def zeros(self, value):
-        self._zeros = value
-        self._update(3)
+    def zeros(self, zeros):
+        obj = self.zpk()
+        obj.zeros = zeros
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     @property
     def poles(self):
-        return self._poles
+        return self.zpk().poles
 
     @poles.setter
-    def poles(self, value):
-        self._poles = value
-        self._update(3)
+    def poles(self, poles):
+        obj = self.zpk()
+        obj.poles = poles
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     @property
     def gain(self):
-        return self._gain
+        return self.zpk().gain
 
     @gain.setter
-    def gain(self, value):
-        self._gain = value
-        self._update(3)
+    def gain(self, gain):
+        obj = self.zpk()
+        obj.gain = gain
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     @property
     def A(self):
-        return self._A
+        return self.ss().A
 
     @A.setter
-    def A(self, value):
-        self._A = value
-        self._update(4)
+    def A(self, A):
+        obj = self.ss()
+        obj.A = A
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     @property
     def B(self):
-        return self._B
+        return self.ss().B
 
     @B.setter
-    def B(self, value):
-        self._B = value
-        self._update(4)
+    def B(self, B):
+        obj = self.ss()
+        obj.B = B
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     @property
     def C(self):
-        return self._C
+        return self.ss().C
 
     @C.setter
-    def C(self, value):
-        self._C = value
-        self._update(4)
+    def C(self, C):
+        obj = self.ss()
+        obj.C = C
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     @property
     def D(self):
-        return self._D
+        return self.ss().D
 
     @D.setter
-    def D(self, value):
-        self._D = value
-        self._update(4)
-
-    def _update(self, N):
-        if N == 2:
-            self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
-            self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
-        if N == 3:
-            self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
-            self._A, self._B, self._C, self._D = zpk2ss(self.zeros,
-                                                        self.poles, self.gain)
-        if N == 4:
-            self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
-            self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
-                                                          self.C, self.D)
+    def D(self, D):
+        obj = self.ss()
+        obj.D = D
+        source_class = type(self)
+        self.copy(source_class(obj), copy=False)
 
     def impulse(self, X0=None, T=None, N=None):
         """
@@ -500,6 +476,399 @@ class lti(object):
 
         """
         return freqresp(self, w=w, n=n)
+
+
+class tf(lti):
+    """Linear Time Invariant system class in state-space form.
+
+    Parameters
+    ----------
+    args : arguments
+        The `tf` class can be instantiated with 1 or 2 arguments.
+        The following gives the number of elements in the tuple and the
+        interpretation:
+
+            * 1: (lti system: ss, tf or zpk)
+            * 2: (numerator, denominator)
+
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialize the state space LTI system
+
+        Parameters
+        ----------
+        args : arguments
+            The following arguments are possible
+            * an instance of the lti class (ss, tf, zpk)
+            * (numerator, denominator)
+
+        """
+        super(tf, self).__init__(self, *args, **kwargs)
+
+        self._num = None
+        self._den = None
+
+        if len(args) == 1:  # Input is an lti system
+            self.copy(args[0].tf())
+        else:  # Input is (num, den)
+            self.num, self.den = normalize(*args)
+
+    def __repr__(self):
+        """Return representation of the system's transfer function"""
+        return '{0}(\n{1},\n{2}\n)'.format(
+            self.__class__.__name__,
+            repr(self.num),
+            repr(self.den),
+            )
+
+    @property
+    def num(self):
+        return self._num
+
+    @num.setter
+    def num(self, num):
+        self._num = num
+
+        # Update dimensions
+        if len(self.num.shape) > 1:
+            self.outputs, self.inputs = self.num.shape
+        else:
+            self.outputs = 1
+            self.inputs = 1
+
+    @property
+    def den(self):
+        return self._den
+
+    @den.setter
+    def den(self, den):
+        self._den = den
+
+    def copy(self, system, copy=True):
+        """Copy the parameters of another tf system
+
+        Parameters
+        ----------
+        system : tf
+            The ss system that is to be copied
+        copy : bool, optional
+            Whether to copy arrays
+
+        """
+        self.num = system.num
+        self.den = system.den
+        if copy:
+            self.num = self.num.copy()
+            self.den = self.den.copy()
+
+    def tf(self):
+        """Convert system representation to transfer function.
+
+        Returns
+        -------
+        sys : instance of tf
+            The current object (self)
+
+        """
+        return self
+
+    def zpk(self):
+        """Convert system representation to zero, pole, gain.
+
+        Returns
+        -------
+        sys : instance of zpk
+            The current object (self)
+
+        """
+        return zpk(*tf2zpk(self.num, self.den))
+
+    def ss(self):
+        """Convert system representation to state space.
+
+        Returns
+        -------
+        sys : instance of ss
+            State space model of the current system
+
+        """
+        return ss(*tf2ss(self.num, self.den))
+
+
+class zpk(lti):
+    """Linear Time Invariant system class in zeros, poles, gain form.
+
+    Parameters
+    ----------
+    args : arguments
+        The `zpk` class can be instantiated with 1 or 3 arguments.
+        The following gives the number of elements in the tuple and the
+        interpretation:
+
+            * 1: (lti system: ss, tf or zpk)
+            * 3: (zeros, poles, gain)
+
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialize the zero, pole, gain LTI system
+
+        Parameters
+        ----------
+        args : arguments
+            The following arguments are possible
+            * an instance of the lti class (ss, tf, zpk)
+            * (zeros, poles, gain)
+
+        """
+        super(zpk, self).__init__(self, *args, **kwargs)
+
+        self._zeros = None
+        self._poles = None
+        self._gain = None
+
+        if len(args) == 1:
+            self.copy(args[0].zpk())
+        else:
+            self.zeros, self.poles, self.gain = args
+
+    def __repr__(self):
+        """Return representation of the zpk systen"""
+        return '{0}(\n{1},\n{2},\n{3}\n)'.format(
+            self.__class__.__name__,
+            repr(self.zeros),
+            repr(self.poles),
+            repr(self.gain),
+            )
+
+    @property
+    def zeros(self):
+        return self._zeros
+
+    @zeros.setter
+    def zeros(self, zeros):
+        zeros = numpy.asarray(zeros)
+        self._zeros = zeros
+
+        # Update dimensions
+        if len(self.zeros.shape) > 1:
+            self.outputs, self.inputs = self.zeros.shape
+        else:
+            self.outputs = 1
+            self.inputs = 1
+
+    @property
+    def poles(self):
+        return self._poles
+
+    @poles.setter
+    def poles(self, poles):
+        poles = numpy.asarray(poles)
+        self._poles = poles
+
+    @property
+    def gain(self):
+        return self._gain
+
+    @gain.setter
+    def gain(self, gain):
+        self._gain = gain
+
+    def copy(self, system, copy=True):
+        """Copy the parameters of another zpk system
+
+        Parameters
+        ----------
+        system : instance of zpk
+            The zpk system that is to be copied
+        copy : bool, optional
+            Whether to copy arrays
+
+        """
+        self.poles = system.poles
+        self.zeros = system.zeros
+        self.gain = system.gain
+        if copy:
+            self.poles = self.poles.copy()
+            self.zeros = self.zeros.copy()
+
+    def tf(self):
+        """Convert system representation to transfer function.
+
+        Returns
+        -------
+        sys : instance of tf
+            Transfer function of the current system
+
+        """
+        return tf(*zpk2tf(self.zeros, self.poles, self.gain))
+
+    def zpk(self):
+        """Convert system representation to zero, pole, gain.
+
+        Returns
+        -------
+        sys : instance of zpk
+            Zero, pole, gain representation of the current system
+
+        """
+        return self
+
+    def ss(self):
+        """Convert system representation to state space.
+
+        Returns
+        -------
+        sys : instance of ss
+            State space model of the current system
+
+        """
+        return ss(*zpk2ss(self.zeros, self.poles, self.gain))
+
+
+class ss(lti):
+    """Linear Time Invariant system class in state-space form.
+
+    Parameters
+    ----------
+    args : arguments
+        The `ss` class can be instantiated with 1 or 4 arguments.
+        The following gives the number of elements in the tuple and the
+        interpretation:
+
+            * 1: (lti system: ss, tf or zpk)
+            * 4: (A, B, C, D)
+
+    """
+    def __init__(self, *args, **kwargs):
+        """Initialize the state space LTI system
+
+        Parameters
+        ----------
+        args : arguments
+            The following arguments are possible
+            * an instance of the lti class (ss, tf, zpk)
+            * (A, B, C, D) state-space matrices
+
+        """
+        super(ss, self).__init__(self, *args, **kwargs)
+
+        self._A = None
+        self._B = None
+        self._C = None
+        self._D = None
+
+        if len(args) == 1:
+            self.copy(args[0].ss())
+        else:
+            self.A, self.B, self.C, self.D = abcd_normalize(*args)
+
+    def __repr__(self):
+        """Return representation of the state-space systen"""
+        return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
+            self.__class__.__name__,
+            repr(self.A),
+            repr(self.B),
+            repr(self.C),
+            repr(self.D),
+            )
+
+    @property
+    def A(self):
+        return self._A
+
+    @A.setter
+    def A(self, A):
+        self._A = A
+
+    @property
+    def B(self):
+        return self._B
+
+    @B.setter
+    def B(self, B):
+        self._B = B
+        self.inputs = self.B.shape[-1]
+
+    @property
+    def C(self):
+        return self._C
+
+    @C.setter
+    def C(self, C):
+        self._C = C
+        self.outputs = self.C.shape[0]
+
+    @property
+    def D(self):
+        return self._D
+
+    @D.setter
+    def D(self, D):
+        self._D = D
+
+    def copy(self, system, copy=True):
+        """Copy the parameters of another ss system
+
+        Parameters
+        ----------
+        system : instance of ss
+            The state-space system that is to be copied
+        copy : bool, optional
+            Whether to copy arrays
+
+        """
+        self.A = system.A
+        self.B = system.B
+        self.C = system.C
+        self.D = system.D
+        if copy:
+            self.A = self.A.copy()
+            self.B = self.B.copy()
+            self.C = self.C.copy()
+            self.D = self.D.copy()
+
+    def tf(self, **kwargs):
+        """Convert system representation to transfer function.
+
+        Parameters
+        ----------
+        kwargs : dict, optional
+            Additional keywords passed to ss2zpk
+
+        Returns
+        -------
+        sys : instance of tf
+            Transfer function of the current system
+
+        """
+        return tf(*ss2tf(self._A, self._B, self._C, self._D, **kwargs))
+
+    def zpk(self, **kwargs):
+        """Convert system representation to zero, pole, gain.
+
+        Parameters
+        ----------
+        kwargs : dict, optional
+            Additional keywords passed to ss2zpk
+
+        Returns
+        -------
+        sys : instance of zpk
+            Zero, pole, gain representation of the current system
+
+        """
+        return zpk(*ss2zpk(self._A, self._B, self._C, self._D, **kwargs))
+
+    def ss(self):
+        """Convert system representation to state space.
+
+        Returns
+        -------
+        sys : instance of ss
+            The current object (self)
+
+        """
+        return self
 
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
