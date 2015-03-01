@@ -47,7 +47,7 @@ def use_solver(**kwargs):
     #TODO: pass other options to scikit
 
 
-def spsolve(A, b, permc_spec=None, use_umfpack=True):
+def spsolve(A, b, permc_spec=None, use_umfpack=True, return_dense=False):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
@@ -68,6 +68,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     use_umfpack : bool (optional)
         if True (default) then use umfpack for the solution.  This is
         only referenced if b is a vector and ``scikit-umfpack`` is installed.
+    return_dense : bool (optional)
+        if False (default) then a sparse representation is returned.  If True,
+        it will return the dense representation (this is faster).  This argument
+        only applies when not use umfpack.
 
     Returns
     -------
@@ -157,23 +161,13 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
             # Create a sparse output matrix by repeatedly applying
             # the sparse factorization to solve columns of b.
-            data_segs = []
-            row_segs = []
-            col_segs = []
+            x = np.empty(b.shape, dtype=A.dtype)
             for j in range(b.shape[1]):
                 bj = b[:, j].A.ravel()
-                xj = Afactsolve(bj)
-                w = np.flatnonzero(xj)
-                segment_length = w.shape[0]
-                row_segs.append(w)
-                col_segs.append(np.ones(segment_length, dtype=int)*j)
-                data_segs.append(np.asarray(xj[w], dtype=A.dtype))
-            sparse_data = np.concatenate(data_segs)
-            sparse_row = np.concatenate(row_segs)
-            sparse_col = np.concatenate(col_segs)
-            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
-                           shape=b.shape, dtype=A.dtype)
+                x[:,j] = Afactsolve(bj)
 
+            if not return_dense:
+                x = A.__class__(x)
     return x
 
 

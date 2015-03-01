@@ -241,7 +241,21 @@ class TestLinsolve(TestCase):
         assert_equal(b.nnz, 2)
         assert_equal(x.nnz, 2)
         assert_allclose(x.A, b.A, atol=1e-12, rtol=1e-12)
-
+    
+    def test_dense_return(self):
+        ident = csc_matrix([
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]])
+        b = csc_matrix([
+            [0, 1],
+            [1, 0],
+            [0, 0]])
+        x_dense = spsolve(ident, b, return_dense=True)
+        x_sparse = spsolve(ident, b)
+        self.assertTrue(isinstance(x_dense, np.ndarray))
+        self.assertTrue(isinstance(x_sparse, csc_matrix))
+        assert_equal(x_dense, x_sparse.todense())
 
 class TestSplu(object):
     def setUp(self):
