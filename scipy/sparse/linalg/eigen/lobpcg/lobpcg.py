@@ -156,7 +156,7 @@ def lobpcg(A, X,
     maxiter : integer, optional
         maximum number of iterations
         by default: maxiter=min(n,20)
-    largest : boolean, optional
+    largest : bool, optional
         when True, solve for the largest eigenvalues, otherwise the smallest
     verbosityLevel : integer, optional
         controls solver output.  default: verbosityLevel = 0.

@@ -101,7 +101,7 @@ def freqs(b, a, worN=None, plot=None):
         of the response curve (determined by pole-zero locations).  If a single
         integer, then compute at that many frequencies.  Otherwise, compute the
         response at the angular frequencies (e.g. rad/s) given in `worN`.
-    plot : callable
+    plot : callable, optional
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
         response inside `freqs`.
@@ -560,7 +560,7 @@ def tf2sos(b, a, pairing='nearest'):
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
-    pairing : {'nearest', 'keep_odd'}
+    pairing : {'nearest', 'keep_odd'}, optional
         The method to use to combine pairs of poles and zeros into sections.
         See `zpk2sos`.
 
@@ -679,7 +679,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
         Poles of the transfer function.
     k : float
         System gain.
-    pairing : {'nearest', 'keep_odd'}
+    pairing : {'nearest', 'keep_odd'}, optional
         The method to use to combine pairs of poles and zeros into sections.
         See Notes below.
 

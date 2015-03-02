@@ -45,7 +45,7 @@ def make_system(A, M, x0, b, xtype=None):
         initial guess to iterative method
     b : array_like
         right hand side
-    xtype : {'f', 'd', 'F', 'D', None}
+    xtype : {'f', 'd', 'F', 'D', None}, optional
         dtype of the x vector
 
     Returns

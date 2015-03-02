@@ -65,12 +65,12 @@ class _Interpolator1D(object):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Points to evaluate the interpolant at.
 
         Returns
         -------
-        y : array-like
+        y : array_like
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
 
@@ -151,10 +151,9 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Point or points at which to evaluate the derivatives
-
-        der : None or integer
+        der : int or None, optional
             How many derivatives to extract; None for all potentially
             nonzero derivatives (that is a number equal to the number
             of points). This number includes the function value as 0th
@@ -196,7 +195,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Point or points at which to evaluate the derivatives
 
         der : integer, optional
@@ -237,9 +236,9 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
 
     Parameters
     ----------
-    xi : array-like, length N
+    xi : array_like, length N
         Known x-coordinates. Must be sorted in increasing order.
-    yi : array-like
+    yi : array_like
         Known y-coordinates. When an xi occurs two or more times in
         a row, the corresponding yi's represent derivative values.
     axis : int, optional
@@ -355,7 +354,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         return cn[:der]
 
 
-def krogh_interpolate(xi,yi,x,der=0,axis=0):
+def krogh_interpolate(xi, yi, x, der=0, axis=0):
     """
     Convenience function for polynomial interpolation.
 
@@ -370,7 +369,7 @@ def krogh_interpolate(xi,yi,x,der=0,axis=0):
         vectors of length R, or scalars if R=1.
     x : array_like
         Point or points at which to evaluate the derivatives.
-    der : int or list
+    der : int or list, optional
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number
@@ -476,10 +475,10 @@ class BarycentricInterpolator(_Interpolator1D):
 
     Parameters
     ----------
-    xi : array-like
+    xi : array_like
         1-d array of x coordinates of the points the polynomial
         should pass through
-    yi : array-like
+    yi : array_like, optional
         The y coordinates of the points the polynomial should pass through.
         If None, the y values will be supplied later via the `set_y` method.
     axis : int, optional
@@ -581,12 +580,12 @@ class BarycentricInterpolator(_Interpolator1D):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Points to evaluate the interpolant at.
 
         Returns
         -------
-        y : array-like
+        y : array_like
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
 
@@ -679,13 +678,13 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
 
     Parameters
     ----------
-    xi : array-like
+    xi : array_like
         a sorted 1-d array of x-coordinates
-    yi : array-like or list of array-likes
+    yi : array_like or list of array_likes
         yi[i][j] is the j-th derivative known at xi[i]   (for axis=0)
-    orders : list of integers, or integer
+    orders : list of int, or int, optional
         a list of polynomial orders, or a single universal order
-    direction : {None, 1, -1}
+    direction : {None, 1, -1}, optional
         indicates whether the xi are increasing or decreasing
         +1 indicates increasing
         -1 indicates decreasing
@@ -778,7 +777,7 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
             Input
         yi : array_like
             `yi` is the list of derivatives known at `xi`
-        order : integer or None
+        order : int or None, optional
             a polynomial order, or instructions to use the highest
             possible order
 
@@ -818,7 +817,7 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         yi : list of lists of length N1
             ``yi[i]`` (if ``axis == 0``) is the list of derivatives known
             at ``xi[i]``.
-        orders : int or list of ints
+        orders : int or list of ints, optional
             A list of polynomial orders, or a single universal order.
         direction : {None, 1, -1}
             Indicates whether the `xi` are increasing or decreasing.
@@ -876,7 +875,7 @@ class PiecewisePolynomial(_Interpolator1DWithDerivatives):
         return y
 
 
-def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
+def piecewise_polynomial_interpolate(xi, yi, x, orders=None, der=0, axis=0):
     """
     Convenience function for piecewise polynomial interpolation.
 
@@ -890,7 +889,7 @@ def piecewise_polynomial_interpolate(xi,yi,x,orders=None,der=0,axis=0):
         Coordinates at which to evalualte the polynomial.
     orders : int or list of ints, optional
         A list of polynomial orders, or a single universal order.
-    der : int or list
+    der : int or list, optional
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number

@@ -27,7 +27,7 @@ def quad_explain(output=sys.stdout):
 
     Parameters
     ----------
-    output : instance with "write" method
+    output : instance with "write" method, optional
         Information about `quad` is passed to ``output.write()``.
         Default is ``sys.stdout``.
 
@@ -458,7 +458,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     func : callable
         A Python function or method of at least two variables: y must be the
         first argument and x the second argument.
-    (a,b) : tuple
+    a, b : float
         The limits of integration in x: `a` < `b`
     gfun : callable
         The lower boundary curve in y which is a function taking a single
@@ -471,7 +471,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     epsabs : float, optional
         Absolute tolerance passed directly to the inner 1-D quadrature
         integration. Default is 1.49e-8.
-    epsrel : float
+    epsrel : float, optional
         Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
 
     Returns
@@ -519,7 +519,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     func : function
         A Python function or method of at least three variables in the
         order (z, y, x).
-    (a,b) : tuple
+    a, b : float
         The limits of integration in x: `a` < `b`
     gfun : function
         The lower boundary curve in y which is a function taking a single
@@ -532,7 +532,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         two floats in the order (x, y) and returns a float.
     rfun : function
         The upper boundary surface in z. (Same requirements as `qfun`.)
-    args : Arguments
+    args : tuple, optional
         Extra arguments to pass to `func`.
     epsabs : float, optional
         Absolute tolerance passed directly to the innermost 1-D quadrature
@@ -595,7 +595,7 @@ def nquad(func, ranges, args=None, opts=None):
         and the function's restype to ``(c_double)``.  Its pointer may then be
         passed into `nquad` normally.
         This allows the underlying Fortran library to evaluate the function in
-        the innermost integration calls without callbacks to Python, and also 
+        the innermost integration calls without callbacks to Python, and also
         speeds up the evaluation of the function itself.
     ranges : iterable object
         Each element of ranges may be either a sequence  of 2 numbers, or else

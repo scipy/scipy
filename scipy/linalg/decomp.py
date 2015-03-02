@@ -61,7 +61,7 @@ def _asarray_validated(a, check_finite=True,
     -------
     ret : ndarray
         The converted validated array.
-        
+
     """
     if not sparse_ok:
         import scipy.sparse
@@ -169,7 +169,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         Whether to overwrite `a`; may improve performance.  Default is False.
     overwrite_b : bool, optional
         Whether to overwrite `b`; may improve performance.  Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -301,7 +301,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         Whether to overwrite data in `a` (may improve performance)
     overwrite_b : bool, optional
         Whether to overwrite data in `b` (may improve performance)
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -522,7 +522,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
         In doubt, leave this parameter untouched.
 
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -635,9 +635,9 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
     b : (M, M) array_like, optional
         Right-hand side matrix in a generalized eigenvalue problem.
         If omitted, identity matrix is assumed.
-    overwrite_a : boolean, optional
+    overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -696,7 +696,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         Indexes of the smallest and largest (in ascending order) eigenvalues
         and corresponding eigenvectors to be returned: 0 <= lo < hi <= M-1.
         If omitted, all eigenvalues and eigenvectors are returned.
-    type : integer, optional
+    type : int, optional
         Specifies the problem type to be solved:
 
            type = 1: a   v[:,i] = w[i] b v[:,i]
@@ -708,7 +708,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         Whether to overwrite data in `a` (may improve performance)
     overwrite_b : bool, optional
         Whether to overwrite data in `b` (may improve performance)
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -776,11 +776,11 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
     ----------
     a_band : (u+1, M) array_like
         The bands of the M by M matrix a.
-    lower : boolean
+    lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
-    overwrite_a_band:
+    overwrite_a_band : bool, optional
         Discard data in a_band (may enhance performance)
-    select : {'a', 'v', 'i'}
+    select : {'a', 'v', 'i'}, optional
         Which eigenvalues to calculate
 
         ======  ========================================
@@ -790,9 +790,9 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         'v'     Eigenvalues in the interval (min, max]
         'i'     Eigenvalues with indices min <= i <= max
         ======  ========================================
-    select_range : (min, max)
+    select_range : (min, max), optional
         Range of selected eigenvalues
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -841,7 +841,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
         Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.

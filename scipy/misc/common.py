@@ -33,7 +33,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
         version is lower than 1.7.0.
 
         .. versionadded:: 0.11.0
-    keepdims: bool, optional
+    keepdims : bool, optional
         If this is set to True, the axes which are reduced are left in the
         result as dimensions with size one. With this option, the result
         will broadcast correctly against the original array.

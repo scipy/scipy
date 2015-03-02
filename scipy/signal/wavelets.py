@@ -208,11 +208,11 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     ----------
     M : int
         Length of the wavelet.
-    w : float
+    w : float, optional
         Omega0. Default is 5
-    s : float
+    s : float, optional
         Scaling factor, windowed from ``-s*2*pi`` to ``+s*2*pi``. Default is 1.
-    complete : bool
+    complete : bool, optional
         Whether to use the complete or the standard version.
 
     Returns

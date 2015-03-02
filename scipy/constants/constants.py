@@ -355,7 +355,7 @@ def lambda2nu(lambda_):
 
     Parameters
     ----------
-    lambda : array_like
+    lambda_ : array_like
         Wavelength(s) to be converted.
 
     Returns

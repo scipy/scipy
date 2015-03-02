@@ -30,7 +30,7 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
 
     dt : float
         The discretization time step.
-    method : {"gbt", "bilinear", "euler", "backward_diff", "zoh"}
+    method : {"gbt", "bilinear", "euler", "backward_diff", "zoh"}, optional
         Which method to use:
 
            * gbt: generalized bilinear transformation
@@ -39,7 +39,7 @@ def cont2discrete(sys, dt, method="zoh", alpha=None):
            * backward_diff: Backwards differencing ("gbt" with alpha=1.0)
            * zoh: zero-order hold (default)
 
-    alpha : float within [0, 1]
+    alpha : float within [0, 1], optional
         The generalized bilinear transformation weighting parameter, which
         should only be specified with method="gbt", and is ignored otherwise
 

@@ -15,7 +15,7 @@ def axis_slice(a, start=None, stop=None, step=None, axis=-1):
         The array to be sliced.
     start, stop, step : int or None
         The slice parameters.
-    axis : int
+    axis : int, optional
         The axis of `a` to be sliced.
 
     Examples
@@ -63,7 +63,7 @@ def odd_ext(x, n, axis=-1):
         The array to be extended.
     n : int
         The number of elements by which to extend x at each end of the axis.
-    axis : int
+    axis : int, optional
         The axis along which to extend x.  Default is -1.
 
     Examples
@@ -99,7 +99,7 @@ def even_ext(x, n, axis=-1):
         The array to be extended.
     n : int
         The number of elements by which to extend x at each end of the axis.
-    axis : int
+    axis : int, optional
         The axis along which to extend x.  Default is -1.
 
     Examples
@@ -136,7 +136,7 @@ def const_ext(x, n, axis=-1):
         The array to be extended.
     n : int
         The number of elements by which to extend x at each end of the axis.
-    axis : int
+    axis : int, optional
         The axis along which to extend x.  Default is -1.
 
     Examples

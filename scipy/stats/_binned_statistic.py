@@ -186,7 +186,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
             will be called on the values in each bin.  Empty bins will be
             represented by function([]), or NaN if this returns an error.
 
-    bins : int or [int, int] or array-like or [array, array], optional
+    bins : int or [int, int] or array_like or [array, array], optional
         The bin specification:
 
           * the number of bins for the two dimensions (nx=ny=bins),

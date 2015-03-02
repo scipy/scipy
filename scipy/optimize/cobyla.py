@@ -38,24 +38,24 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         Constraint functions; must all be ``>=0`` (a single function
         if only 1 constraint). Each function takes the parameters `x`
         as its first argument.
-    args : tuple
+    args : tuple, optional
         Extra arguments to pass to function.
-    consargs : tuple
+    consargs : tuple, optional
         Extra arguments to pass to constraint functions (default of None means
         use same extra arguments as those passed to func).
         Use ``()`` for no extra arguments.
-    rhobeg :
+    rhobeg : float, optional
         Reasonable initial changes to the variables.
-    rhoend :
+    rhoend : float, optional
         Final accuracy in the optimization (not precisely guaranteed). This
         is a lower bound on the size of the trust region.
-    iprint : {0, 1, 2, 3}
+    iprint : {0, 1, 2, 3}, optional
         Controls the frequency of output; 0 implies no output.  Deprecated.
-    disp : {0, 1, 2, 3}
+    disp : {0, 1, 2, 3}, optional
         Over-rides the iprint interface.  Preferred.
-    maxfun : int
+    maxfun : int, optional
         Maximum number of function evaluations.
-    catol : float
+    catol : float, optional
         Absolute tolerance for constraint violations.
 
     Returns

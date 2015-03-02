@@ -1132,20 +1132,20 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     X : ndarray
         An m by n array of m original observations in an
         n-dimensional space.
-    metric : string or function
+    metric : str or function, optional
         The distance metric to use. The distance function can
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
         'jaccard', 'kulsinski', 'mahalanobis', 'matching',
         'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
         'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-    w : ndarray
+    w : ndarray, optional
         The weight vector (for weighted Minkowski).
-    p : double
+    p : double, optional
         The p-norm to apply (for Minkowski, weighted and unweighted)
-    V : ndarray
-            The variance vector (for standardized Euclidean).
-    VI : ndarray
+    V : ndarray, optional
+        The variance vector (for standardized Euclidean).
+    VI : ndarray, optional
         The inverse of the covariance matrix (for Mahalanobis).
 
     Returns
@@ -1611,7 +1611,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         condensed distance matrix. The warning message explains why
         the distance matrix is not valid.  `name` is used when
         referencing the offending variable.
-    throws : throw, optional
+    throw : bool, optional
         Throws an exception if the variable passed is not a valid
         condensed distance matrix.
     name : bool, optional

@@ -89,7 +89,7 @@ class PchipInterpolator(object):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Points to evaluate the interpolant at.
         der : int, optional
             Order of derivative to evaluate. Must be non-negative.
@@ -99,7 +99,7 @@ class PchipInterpolator(object):
 
         Returns
         -------
-        y : array-like
+        y : ndarray
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
 
@@ -207,7 +207,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         parameter to select correct axis.
     x : scalar or array_like
         Of length M.
-    der : integer or list
+    der : int or list, optional
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number

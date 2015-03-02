@@ -31,18 +31,18 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         A square matrix.
     b : (M,) or (M, N) array_like
         Right-hand side matrix in ``a x = b``.
-    sym_pos : bool
+    sym_pos : bool, optional
         Assume `a` is symmetric and positive definite.
-    lower : boolean
+    lower : bool, optional
         Use only data contained in the lower triangle of `a`, if `sym_pos` is
         true.  Default is to use upper triangle.
-    overwrite_a : bool
+    overwrite_a : bool, optional
         Allow overwriting data in `a` (may enhance performance).
         Default is False.
-    overwrite_b : bool
+    overwrite_b : bool, optional
         Allow overwriting data in `b` (may enhance performance).
         Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -111,7 +111,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         A triangular matrix
     b : (M,) or (M, N) array_like
         Right-hand side matrix in `a x = b`
-    lower : boolean
+    lower : bool, optional
         Use only data contained in the lower triangle of `a`.
         Default is to use upper triangle.
     trans : {0, 1, 2, 'N', 'T', 'C'}, optional
@@ -195,11 +195,11 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         Banded matrix
     b : (M,) or (M, K) array_like
         Right-hand side
-    overwrite_ab : boolean, optional
+    overwrite_ab : bool, optional
         Discard data in `ab` (may enhance performance)
-    overwrite_b : boolean, optional
+    overwrite_b : bool, optional
         Discard data in `b` (may enhance performance)
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -280,7 +280,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         Discard data in `b` (may enhance performance)
     lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -300,7 +300,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     overwrite_ab = overwrite_ab or _datacopied(a1, ab)
-    
+
     if a1.shape[0] == 2:
         ptsv, = get_lapack_funcs(('ptsv',), (a1, b1))
         if lower:
@@ -340,7 +340,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         of ``r``, it will be converted to a 1-D array.
     b : (M,) or (M, K) array_like
         Right-hand side in ``T x = b``.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (result entirely NaNs) if the inputs do contain infinities or NaNs.
@@ -408,7 +408,7 @@ def inv(a, overwrite_a=False, check_finite=True):
         Square matrix to be inverted.
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -494,9 +494,9 @@ def det(a, overwrite_a=False, check_finite=True):
     ----------
     a : (M, M) array_like
         A square matrix.
-    overwrite_a : bool
+    overwrite_a : bool, optional
         Allow overwriting data in a (may enhance performance).
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -555,7 +555,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         Discard data in `a` (may enhance performance). Default is False.
     overwrite_b : bool, optional
         Discard data in `b` (may enhance performance). Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -649,7 +649,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         are considered zero.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -708,7 +708,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         If None or -1, suitable machine precision is used.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -776,12 +776,12 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         zero.
 
         If None or -1, suitable machine precision is used.
-    lower : bool
+    lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
         triangle of a. (Default: lower)
     return_rank : bool, optional
         if True, return the effective rank of the matrix
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.

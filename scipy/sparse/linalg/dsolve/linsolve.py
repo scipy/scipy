@@ -65,7 +65,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
         - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
         - ``COLAMD``: approximate minimum degree column ordering
-    use_umfpack : bool (optional)
+    use_umfpack : bool, optional
         if True (default) then use umfpack for the solution.  This is
         only referenced if b is a vector and ``scikit-umfpack`` is installed.
 

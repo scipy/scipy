@@ -1360,7 +1360,7 @@ def watershed_ift(input, markers, structure=None, output=None):
         A structuring element defining the connectivity of the object can be
         provided. If None, an element is generated with a squared
         connectivity equal to one.
-    out : ndarray
+    output : ndarray, optional
         An output array can optionally be provided.  The same shape as input.
 
     Returns

@@ -28,16 +28,16 @@ def tri(N, M=None, k=0, dtype=None):
 
     Parameters
     ----------
-    N : integer
+    N : int
         The size of the first dimension of the matrix.
-    M : integer or None
+    M : int or None, optional
         The size of the second dimension of the matrix. If `M` is None,
         `M = N` is assumed.
-    k : integer
+    k : int, optional
         Number of subdiagonal below which matrix is filled with ones.
         `k` = 0 is the main diagonal, `k` < 0 subdiagonal and `k` > 0
         superdiagonal.
-    dtype : dtype
+    dtype : dtype, optional
         Data type of the matrix.
 
     Returns
@@ -80,7 +80,7 @@ def tril(m, k=0):
     ----------
     m : array_like
         Matrix whose elements to return
-    k : integer
+    k : int, optional
         Diagonal above which to zero elements.
         `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
         `k` > 0 superdiagonal.
@@ -152,7 +152,7 @@ def toeplitz(c, r=None):
     c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
         will be converted to a 1-D array.
-    r : array_like
+    r : array_like, optional
         First row of the matrix. If None, ``r = conjugate(c)`` is assumed;
         in this case, if c[0] is real, the result is a Hermitian matrix.
         r[0] is ignored; the first row of the returned matrix is
@@ -256,7 +256,7 @@ def hankel(c, r=None):
     c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
         will be converted to a 1-D array.
-    r : array_like
+    r : array_like, optional
         Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
         r[0] is ignored; the last row of the returned matrix is
         ``[c[-1], r[1:]]``.  Whatever the actual shape of `r`, it will be
@@ -312,7 +312,7 @@ def hadamard(n, dtype=int):
     ----------
     n : int
         The order of the matrix.  `n` must be a power of 2.
-    dtype : numpy dtype
+    dtype : dtype, optional
         The data type of the array to be constructed.
 
     Returns
@@ -699,7 +699,7 @@ def invhilbert(n, exact=False):
     ----------
     n : int
         The order of the Hilbert matrix.
-    exact : bool
+    exact : bool, optional
         If False, the data type of the array that is returned is np.float64,
         and the array is an approximation of the inverse.
         If True, the array is the exact integer inverse array.  To represent

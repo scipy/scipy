@@ -63,7 +63,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     col_deriv : bool, optional
         Specify whether the Jacobian function computes derivatives down
         the columns (faster, because there is no transpose operation).
-    xtol : float
+    xtol : float, optional
         The calculation will terminate if the relative error between two
         consecutive iterates is at most `xtol`.
     maxfev : int, optional
@@ -271,36 +271,36 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         fitting might fail.
     x0 : ndarray
         The starting estimate for the minimization.
-    args : tuple
+    args : tuple, optional
         Any extra arguments to func are placed in this tuple.
-    Dfun : callable
+    Dfun : callable, optional
         A function or method to compute the Jacobian of func with derivatives
         across the rows. If this is None, the Jacobian will be estimated.
-    full_output : bool
+    full_output : bool, optional
         non-zero to return all optional outputs.
-    col_deriv : bool
+    col_deriv : bool, optional
         non-zero to specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
-    ftol : float
+    ftol : float, optional
         Relative error desired in the sum of squares.
-    xtol : float
+    xtol : float, optional
         Relative error desired in the approximate solution.
-    gtol : float
+    gtol : float, optional
         Orthogonality desired between the function vector and the columns of
         the Jacobian.
-    maxfev : int
+    maxfev : int, optional
         The maximum number of calls to the function. If zero, then 100*(N+1) is
         the maximum where N is the number of elements in x0.
-    epsfcn : float
+    epsfcn : float, optional
         A variable used in determining a suitable step length for the forward-
         difference approximation of the Jacobian (for Dfun=None). 
         Normally the actual step length will be sqrt(epsfcn)*x
         If epsfcn is less than the machine precision, it is assumed that the 
         relative errors are of the order of the machine precision.
-    factor : float
+    factor : float, optional
         A parameter determining the initial step bound
         (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
-    diag : sequence
+    diag : sequence, optional
         N positive entries that serve as a scale factors for the variables.
 
     Returns
@@ -468,7 +468,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         The independent variable where the data is measured.
     ydata : M-length sequence
         The dependent data --- nominally f(xdata, ...)
-    p0 : None, scalar, or N-length sequence
+    p0 : None, scalar, or N-length sequence, optional
         Initial guess for the parameters.  If None, then the initial
         values will all be 1 (if the number of parameters for the function
         can be determined using introspection, otherwise a ValueError

@@ -824,7 +824,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         is not 1, then both `a` and `b` are normalized by ``a[0]``.
     x : array_like
         An N-dimensional input array.
-    axis : int
+    axis : int, optional
         The axis of the input data array along which to apply the
         linear filter. The filter is applied to each subarray along
         this axis.  Default is -1.
@@ -2381,7 +2381,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
         coefficients.
     x : array_like
         An N-dimensional input array.
-    axis : int
+    axis : int, optional
         The axis of the input data array along which to apply the
         linear filter. The filter is applied to each subarray along
         this axis.  Default is -1.

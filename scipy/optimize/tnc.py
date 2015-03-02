@@ -110,69 +110,69 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
         is aborted.
     x0 : array_like
         Initial estimate of minimum.
-    fprime : callable ``fprime(x, *args)``
+    fprime : callable ``fprime(x, *args)``, optional
         Gradient of `func`. If None, then either `func` must return the
         function value and the gradient (``f,g = func(x, *args)``)
         or `approx_grad` must be True.
-    args : tuple
+    args : tuple, optional
         Arguments to pass to function.
-    approx_grad : bool
+    approx_grad : bool, optional
         If true, approximate the gradient numerically.
-    bounds : list
+    bounds : list, optional
         (min, max) pairs for each element in x0, defining the
         bounds on that parameter. Use None or +/-inf for one of
         min or max when there is no bound in that direction.
-    epsilon : float
+    epsilon : float, optional
         Used if approx_grad is True. The stepsize in a finite
         difference approximation for fprime.
-    scale : array_like
+    scale : array_like, optional
         Scaling factors to apply to each variable.  If None, the
         factors are up-low for interval bounded variables and
         1+|x| for the others.  Defaults to None.
-    offset : array_like
+    offset : array_like, optional
         Value to subtract from each variable.  If None, the
         offsets are (up+low)/2 for interval bounded variables
         and x for the others.
-    messages :
+    messages : int, optional
         Bit mask used to select messages display during
         minimization values defined in the MSGS dict.  Defaults to
         MGS_ALL.
-    disp : int
+    disp : int, optional
         Integer interface to messages.  0 = no message, 5 = all messages
-    maxCGit : int
+    maxCGit : int, optional
         Maximum number of hessian*vector evaluations per main
         iteration.  If maxCGit == 0, the direction chosen is
         -gradient if maxCGit < 0, maxCGit is set to
         max(1,min(50,n/2)).  Defaults to -1.
-    maxfun : int
+    maxfun : int, optional
         Maximum number of function evaluation.  if None, maxfun is
         set to max(100, 10*len(x0)).  Defaults to None.
-    eta : float
+    eta : float, optional
         Severity of the line search. if < 0 or > 1, set to 0.25.
         Defaults to -1.
-    stepmx : float
+    stepmx : float, optional
         Maximum step for the line search.  May be increased during
         call.  If too small, it will be set to 10.0.  Defaults to 0.
-    accuracy : float
+    accuracy : float, optional
         Relative precision for finite difference calculations.  If
         <= machine_precision, set to sqrt(machine_precision).
         Defaults to 0.
-    fmin : float
+    fmin : float, optional
         Minimum function value estimate.  Defaults to 0.
-    ftol : float
+    ftol : float, optional
         Precision goal for the value of f in the stoping criterion.
         If ftol < 0.0, ftol is set to 0.0 defaults to -1.
-    xtol : float
+    xtol : float, optional
         Precision goal for the value of x in the stopping
         criterion (after applying x scaling factors).  If xtol <
         0.0, xtol is set to sqrt(machine_precision).  Defaults to
         -1.
-    pgtol : float
+    pgtol : float, optional
         Precision goal for the value of the projected gradient in
         the stopping criterion (after applying x scaling factors).
         If pgtol < 0.0, pgtol is set to 1e-2 * sqrt(accuracy).
         Setting it to 0.0 is not recommended.  Defaults to -1.
-    rescale : float
+    rescale : float, optional
         Scaling factor (in log10) used to trigger f value
         rescaling.  If 0, rescale at each iteration.  If a large
         value, never rescale.  If < 0, rescale is set to 1.3.

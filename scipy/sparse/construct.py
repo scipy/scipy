@@ -29,17 +29,17 @@ def spdiags(data, diags, m, n, format=None):
 
     Parameters
     ----------
-    data   : array_like
+    data : array_like
         matrix diagonals stored row-wise
-    diags  : diagonals to set
+    diags : diagonals to set
         - k = 0  the main diagonal
         - k > 0  the k-th upper diagonal
         - k < 0  the k-th lower diagonal
     m, n : int
         shape of the result
-    format : format of the result (e.g. "csr")
-        By default (format=None) an appropriate sparse matrix
-        format is returned.  This choice is subject to change.
+    format : str, optional
+        Format of the result. By default (format=None) an appropriate sparse
+        matrix format is returned.  This choice is subject to change.
 
     See Also
     --------
@@ -69,7 +69,7 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
     diagonals : sequence of array_like
         Sequence of arrays containing the matrix diagonals,
         corresponding to `offsets`.
-    offsets  : sequence of int
+    offsets : sequence of int
         Diagonals to set:
           - k = 0  the main diagonal
           - k > 0  the k-th upper diagonal
@@ -194,11 +194,11 @@ def identity(n, dtype='d', format=None):
 
     Parameters
     ----------
-    n : integer
+    n : int
         Shape of the identity matrix.
-    dtype :
+    dtype : dtype, optional
         Data type of the matrix
-    format : string
+    format : str, optional
         Sparse format of the result, e.g. format="csr", etc.
 
     Examples
@@ -223,15 +223,15 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
     Parameters
     ----------
-    n : integer
+    n : int
         Number of rows in the matrix.
-    m : integer, optional
+    m : int, optional
         Number of columns. Default: n
-    k : integer, optional
+    k : int, optional
         Diagonal to place ones on. Default: 0 (main diagonal)
-    dtype :
+    dtype : dtype, optional
         Data type of the matrix
-    format : string
+    format : str, optional
         Sparse format of the result, e.g. format="csr", etc.
 
     Examples
@@ -366,7 +366,7 @@ def kronsum(A, B, format=None):
         square matrix
     B
         square matrix
-    format : string
+    format : str
         format of the result (e.g. "csr")
 
     Returns
@@ -431,10 +431,13 @@ def hstack(blocks, format=None, dtype=None):
     ----------
     blocks
         sequence of sparse matrices with compatible shapes
-    format : string
+    format : str
         sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
+    dtype : dtype, optional
+        The data-type of the output matrix.  If not given, the dtype is
+        determined from that of `blocks`.
 
     See Also
     --------
@@ -461,10 +464,13 @@ def vstack(blocks, format=None, dtype=None):
     ----------
     blocks
         sequence of sparse matrices with compatible shapes
-    format : string
+    format : str, optional
         sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
+    dtype : dtype, optional
+        The data-type of the output matrix.  If not given, the dtype is
+        determined from that of `blocks`.
 
     See Also
     --------
@@ -497,7 +503,7 @@ def bmat(blocks, format=None, dtype=None):
         The sparse format of the result (e.g. "csr").  By default an
         appropriate sparse matrix format is returned.
         This choice is subject to change.
-    dtype : dtype specifier, optional
+    dtype : dtype, optional
         The data-type of the output matrix.  If not given, the dtype is
         determined from that of `blocks`.
 
@@ -615,7 +621,7 @@ def block_diag(mats, format=None, dtype=None):
 
     Parameters
     ----------
-    A, B, ... : sequence of matrices
+    mats : sequence of matrices
         Input matrices.
     format : str, optional
         The sparse format of the result (e.g. "csr").  If not given, the matrix
@@ -670,12 +676,12 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     ----------
     m, n : int
         shape of the matrix
-    density : real
+    density : real, optional
         density of the generated matrix: density equal to one means a full
         matrix, density of 0 means a matrix with no non-zero items.
-    format : str
+    format : str, optional
         sparse matrix format.
-    dtype : dtype
+    dtype : dtype, optional
         type of the returned matrix values.
     random_state : {numpy.random.RandomState, int}, optional
         Random number generator or random seed. If not given, the singleton

@@ -429,7 +429,7 @@ def arr_to_2d(arr, oned_as='row'):
     Parameters
     ----------
     arr : array
-    oned_as : {'row', 'column'}
+    oned_as : {'row', 'column'}, optional
        Whether to reshape 1D vectors as row vectors or column vectors.
        See documentation for ``matdims`` for more detail
 
@@ -493,7 +493,7 @@ class VarWriter4(object):
 
         Parameters
         ----------
-        arr : array-like
+        arr : array_like
            array to write
         name : str
            name in matlab workspace

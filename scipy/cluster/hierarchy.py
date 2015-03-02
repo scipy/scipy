@@ -356,7 +356,7 @@ def centroid(y):
 
     Parameters
     ----------
-    Q : ndarray
+    y : ndarray
         A condensed or redundant distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
@@ -402,7 +402,7 @@ def median(y):
 
     Parameters
     ----------
-    Q : ndarray
+    y : ndarray
         A condensed or redundant distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
@@ -444,7 +444,7 @@ def ward(y):
 
     Parameters
     ----------
-    Q : ndarray
+    y : ndarray
         A condensed or redundant distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that

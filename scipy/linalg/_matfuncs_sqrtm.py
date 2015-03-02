@@ -31,7 +31,7 @@ def _sqrtm_triu(T, blocksize=64):
     ----------
     T : (N, N) array_like upper triangular
         Matrix whose square root to evaluate
-    blocksize : integer, optional
+    blocksize : int, optional
         If the blocksize is not degenerate with respect to the
         size of the input array, then use a blocked algorithm. (Default: 64)
 

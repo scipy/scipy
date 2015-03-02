@@ -92,7 +92,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         Parameters
         ----------
-        axis : None, 0, or 1
+        axis : {None, 0, 1}, optional
             Select between the number of values across the whole matrix, in
             each column, or in each row.
         """
@@ -127,12 +127,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """check whether the matrix format is valid
 
         Parameters
-        ==========
-
-            - full_check : {bool}
-                - True  - rigorous check, O(N) operations : default
-                - False - basic check, O(1) operations
-
+        ----------
+        full_check : bool, optional
+            If `True`, rigorous check, O(N) operations. Otherwise
+            basic check, O(1) operations (default True).
         """
         # use _swap to determine proper bounds
         major_name,minor_name = self._swap(('row','column'))

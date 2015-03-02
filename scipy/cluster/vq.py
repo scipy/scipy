@@ -628,13 +628,13 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         centroids to generate. If `minit` initialization string is
         'matrix', or if a ndarray is given instead, it is
         interpreted as initial cluster to use instead.
-    iter : int
+    iter : int, optional
         Number of iterations of the k-means algrithm to run. Note
         that this differs in meaning from the iters parameter to
         the kmeans function.
-    thresh : float
+    thresh : float, optional
         (not used yet)
-    minit : string
+    minit : str, optional
         Method for initialization. Available methods are 'random',
         'points', 'uniform', and 'matrix':
 
@@ -649,7 +649,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
         'matrix': interpret the k parameter as a k by M (or length k
         array for one-dimensional data) array of initial centroids.
-    missing : string
+    missing : str, optional
         Method to deal with empty clusters. Available methods are
         'warn' and 'raise':
 
