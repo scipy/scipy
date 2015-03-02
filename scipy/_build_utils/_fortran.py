@@ -33,7 +33,7 @@ def uses_accelerate(info):
 
 
 def uses_mkl(info):
-    r_mkl = re.compile("mkl_core")
+    r_mkl = re.compile("mkl")
     libraries = info.get('libraries', '')
     for library in libraries:
         if r_mkl.search(library):
