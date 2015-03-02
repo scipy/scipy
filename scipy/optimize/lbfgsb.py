@@ -71,7 +71,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         `func` returns only the function value).
     bounds : list
         ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
+        the bounds on that parameter. Use None or +-inf for one of ``min`` or
         ``max`` when there is no bound in that direction.
     m : int
         The maximum number of variable metric corrections
@@ -250,6 +250,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         bounds = [(None, None)] * n
     if len(bounds) != n:
         raise ValueError('length of x0 != length of bounds')
+    # unbounded variables must use None, not +-inf, for optimizer to work properly
+    bounds = [(None if l == -np.inf else l, None if u == np.inf else u) for l, u in bounds]
 
     if disp is not None:
         if disp == 0:
