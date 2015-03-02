@@ -35,7 +35,8 @@ from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
-                         line_search_wolfe2 as line_search)
+                         line_search_wolfe2 as line_search,
+                         LineSearchWarning)
 
 
 # standard status messages of optimizers
@@ -693,8 +694,10 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
     if ret[0] is None:
         # line search failed: try different one.
-        ret = line_search_wolfe2(f, fprime, xk, pk, gfk,
-                                 old_fval, old_old_fval)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', LineSearchWarning)
+            ret = line_search_wolfe2(f, fprime, xk, pk, gfk,
+                                     old_fval, old_old_fval)
 
     if ret[0] is None:
         raise _LineSearchError()
