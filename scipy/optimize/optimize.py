@@ -1915,8 +1915,6 @@ def _minimize_scalar_brent(func, brack=None, args=(),
     -------
     maxiter : int
         Maximum number of iterations to perform.
-    disp : bool
-        Set to True to print convergence messages.
     xtol : float
         Relative error in solution `xopt` acceptable for convergence.
 
@@ -1990,8 +1988,6 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     -------
     maxiter : int
         Maximum number of iterations to perform.
-    disp : bool
-        Set to True to print convergence messages.
     xtol : float
         Relative error in solution `xopt` acceptable for convergence.
 
