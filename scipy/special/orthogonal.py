@@ -753,6 +753,13 @@ def h_roots_asy(n):
     See Also
     --------
     h_roots
+
+    References
+    ----------
+    .. [townsend.trogdon.olver-2014]
+    Townsend, A. and Trogdon, T. and Olver, S. (2014)
+    *Fast computation of Gauss quadrature nodes and
+    weights on the whole real line*. ArXiv 1410.5286.
     """
     iv = initial_values(n)
     nodes, weights = newton(n, iv)
