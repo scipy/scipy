@@ -99,8 +99,8 @@ __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
            'jacobi', 'laguerre', 'genlaguerre', 'hermite', 'hermitenorm',
            'gegenbauer', 'sh_legendre', 'sh_chebyt', 'sh_chebyu', 'sh_jacobi',
            'p_roots', 'ps_roots', 'j_roots', 'js_roots', 'l_roots', 'la_roots',
-           'he_roots', 'ts_roots', 'us_roots', 's_roots', 't_roots', 'u_roots',
-           'c_roots', 'cg_roots', 'h_roots', 'h_roots_asy',
+           'he_roots', 'he_roots_asy', 'ts_roots', 'us_roots', 's_roots',
+           't_roots', 'u_roots', 'c_roots', 'cg_roots', 'h_roots', 'h_roots_asy',
            'eval_legendre', 'eval_chebyt', 'eval_chebyu', 'eval_chebyc',
            'eval_chebys', 'eval_jacobi', 'eval_laguerre', 'eval_genlaguerre',
            'eval_hermite', 'eval_hermitenorm', 'eval_gegenbauer',
@@ -821,6 +821,8 @@ def he_roots(n, mu=False):
     :math:`He_n(x)`.  These sample points and weights correctly integrate
     polynomials of degree :math:`2*n - 1` or less over the interval
     :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-(x/2)^2}`.
+    For n larger than 200 an optimal asymptotic algorithm is used which
+    computes nodes and weights in linear time.
 
     Parameters
     ----------
@@ -848,12 +850,63 @@ def he_roots(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    mu0 = np.sqrt(np.pi/2.0)
-    an_func = lambda k: 0.0*k
-    bn_func = lambda k: np.sqrt(k)
-    f = cephes.eval_hermitenorm
-    df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    if n <= 200:
+        mu0 = np.sqrt(np.pi/2.0)
+        an_func = lambda k: 0.0*k
+        bn_func = lambda k: np.sqrt(k)
+        f = cephes.eval_hermitenorm
+        df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
+        return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    else:
+        nodes, weights = he_roots_asy(n)
+        if mu:
+            return nodes, weights, sum(weights)
+        else:
+            return nodes, weights
+
+
+def he_roots_asy(n):
+    """Gauss-Hermite (statistician's) quadrature
+
+    Computes the sample points and weights for Gauss-Hermite quadrature.
+    The sample points are the roots of the `n`th degree Hermite polynomial,
+    :math:`He_n(x)`.  These sample points and weights correctly integrate
+    polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-(x/2)^2}`.
+    This method relies on asymptotic expansions which work best for n > 200.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order
+
+    Returns
+    -------
+    x : ndarray
+        Sample points
+    w : ndarray
+        Weights
+
+    See Also
+    --------
+    he_roots
+
+    References
+    ----------
+    .. [townsend.trogdon.olver-2014]
+    Townsend, A. and Trogdon, T. and Olver, S. (2014)
+    *Fast computation of Gauss quadrature nodes and
+    weights on the whole real line*. ArXiv 1410.5286.
+    """
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError("n must be a positive integer.")
+
+    nodes, weights = h_roots_asy(n)
+    # Transform
+    nodes *= sqrt(2)
+    weights /= sqrt(2)
+    return nodes, weights
 
 
 def hermitenorm(n, monic=False):
