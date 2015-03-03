@@ -749,7 +749,7 @@ interface
      callprotoargument int*, int*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, int*
 	
 	integer intent(hide),depend(d):: n = shape(d,0)
-	integer intent(in),check(i>=0 && i<=(shape(d,0)-1)):: i
+	integer intent(in),depend(d),check(i>=0 && i<=(shape(d,0)-1)):: i
 	
 	<ftype2> dimension(n),intent(in)           :: d
 	<ftype2> dimension(n),intent(in),depend(n) :: z
