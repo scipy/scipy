@@ -54,6 +54,8 @@ Functions::
   la_roots               -- Generalized Laguerre
   h_roots                -- Hermite
   he_roots               -- Hermite (unit-variance)
+  h_roots_asy            -- Hermite, asymptotic version
+  he_roots_asy           -- Hermite (unit-variance), asymptotic version
   cg_roots               -- Ultraspherical (Gegenbauer)
   t_roots                -- Chebyshev of the first kind
   u_roots                -- Chebyshev of the second kind
