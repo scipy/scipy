@@ -501,6 +501,8 @@ def h_roots(n, mu=False):
     :math:`H_n(x)`.  These sample points and weights correctly integrate
     polynomials of degree :math:`2*n - 1` or less over the interval
     :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-x^2}`.
+    For n larger than 200 an optimal asymptotic algorithm is used which
+    computes nodes and weights in linear time.
 
     Parameters
     ----------
@@ -528,12 +530,19 @@ def h_roots(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    mu0 = np.sqrt(np.pi)
-    an_func = lambda k: 0.0*k
-    bn_func = lambda k: np.sqrt(k/2.0)
-    f = cephes.eval_hermite
-    df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    if n <= 200:
+        mu0 = np.sqrt(np.pi)
+        an_func = lambda k: 0.0*k
+        bn_func = lambda k: np.sqrt(k/2.0)
+        f = cephes.eval_hermite
+        df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
+        return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    else:
+        nodes, weights = h_roots_asy(n)
+        if mu:
+            return nodes, weights, sum(weights)
+        else:
+            return nodes, weights
 
 
 def compute_tauk(n, k, steps=10):
@@ -737,6 +746,7 @@ def h_roots_asy(n):
     :math:`H_n(x)`.  These sample points and weights correctly integrate
     polynomials of degree :math:`2*n - 1` or less over the interval
     :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-x^2}`.
+    This method relies on asymptotic expansions which work best for n > 200.
 
     Parameters
     ----------
@@ -761,6 +771,10 @@ def h_roots_asy(n):
     *Fast computation of Gauss quadrature nodes and
     weights on the whole real line*. ArXiv 1410.5286.
     """
+    m = int(n)
+    if n < 1 or n != m:
+        raise ValueError("n must be a positive integer.")
+
     iv = initial_values(n)
     nodes, weights = newton(n, iv)
     # Combine with negative parts
