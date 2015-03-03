@@ -19,7 +19,7 @@ def norm(a, ord=None):
 
     Parameters
     ----------
-    x : (M,) or (M, N) array_like
+    a : (M,) or (M, N) array_like
         Input array.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's

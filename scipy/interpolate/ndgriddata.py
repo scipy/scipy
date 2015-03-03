@@ -119,7 +119,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         convex hull of the input points.  If not provided, then the
         default is ``nan``. This option has no effect for the
         'nearest' method.
-    rescale : boolean, optional
+    rescale : bool, optional
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.

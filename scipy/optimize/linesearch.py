@@ -124,10 +124,12 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
         Value of `f` at the previous point
     derphi0 : float, optional
         Value `derphi` at 0
-    amax : float, optional
-        Maximum step size
     c1, c2 : float, optional
         Wolfe parameters
+    amax, amin : float, optional
+        Maximum and minimum step size
+    xtol : float, optional
+        Relative tolerance for an acceptable step.
 
     Returns
     -------
@@ -216,6 +218,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         Parameter for Armijo condition rule.
     c2 : float, optional
         Parameter for curvature condition rule.
+    amax : float, optional
+        Maximum step size
 
     Returns
     -------
@@ -235,7 +239,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         The local slope along the search direction at the
         new value ``<myfprime(x_new), pk>``,
         or None if the line search algorithm did not converge.
-    
+
 
     Notes
     -----
@@ -298,10 +302,9 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
 
     Parameters
     ----------
-    phi : callable f(x,*args)
+    phi : callable f(x)
         Objective scalar function.
-
-    derphi : callable f'(x,*args), optional
+    derphi : callable f'(x), optional
         Objective function derivative (can be None)
     phi0 : float, optional
         Value of phi at s=0
@@ -309,12 +312,12 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
         Value of phi at previous point
     derphi0 : float, optional
         Value of derphi at s=0
-    args : tuple
-        Additional arguments passed to objective function.
-    c1 : float
+    c1 : float, optional
         Parameter for Armijo condition rule.
-    c2 : float
+    c2 : float, optional
         Parameter for curvature condition rule.
+    amax : float, optional
+        Maximum step size
 
     Returns
     -------

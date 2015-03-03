@@ -765,7 +765,7 @@ cdef class cKDTree:
 
     Parameters
     ----------
-    data : array-like, shape (n,m)
+    data : array_like, shape (n,m)
         The n data points of dimension m to be indexed. This array is 
         not copied unless this is necessary to produce a contiguous 
         array of doubles, and so modifying this data will result in 

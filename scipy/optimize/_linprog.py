@@ -266,7 +266,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
         The phase of the optimization being executed.  In phase 1 a basic
         feasible solution is sought and the T has an additional row representing
         an alternate objective function.
-    callback : callable
+    callback : callable, optional
         If a callback function is provided, it will be called within each
         iteration of the simplex algorithm. The callback must have the
         signature `callback(xk, **kwargs)` where xk is the current solution
@@ -374,7 +374,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     c : array_like
         Coefficients of the linear objective function to be maximized.
-    A_ub :
+    A_ub : array_like
         2-D array which, when matrix-multiplied by x, gives the values of the
         upper-bound inequality constraints at x.
     b_ub : array_like
@@ -808,16 +808,16 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     c : array_like
         Coefficients of the linear objective function to be minimized.
-    A_ub :
+    A_ub : array_like, optional
         2-D array which, when matrix-multiplied by x, gives the values of the
         upper-bound inequality constraints at x.
-    b_ub : array_like
+    b_ub : array_like, optional
         1-D array of values representing the upper-bound of each inequality
         constraint (row) in A_ub.
-    A_eq : array_like
+    A_eq : array_like, optional
         2-D array which, when matrix-multiplied by x, gives the values of the
         equality constraints at x.
-    b_eq : array_like
+    b_eq : array_like, optional
         1-D array of values representing the RHS of each equality constraint
         (row) in A_eq.
     bounds : sequence, optional

@@ -428,7 +428,7 @@ class HBFile(object):
         ----------
         file : file-object
             StringIO work as well
-        hb_info : HBInfo
+        hb_info : HBInfo, optional
             Should be given as an argument for writing, in which case the file
             should be writable.
         """

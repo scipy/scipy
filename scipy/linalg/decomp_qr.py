@@ -54,7 +54,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         qr decomposition. If pivoting, compute the decomposition
         ``A P = Q R`` as above, but where P is chosen such that the diagonal
         of R is non-increasing.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -184,9 +184,9 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
 
     Parameters
     ----------
-    a : ndarray, shape (M, N)
+    a : array_like, shape (M, N)
         Matrix to be decomposed
-    c : ndarray, one- or two-dimensional
+    c : array_like, one- or two-dimensional
         calculate the product of c and q, depending on the mode:
     mode : {'left', 'right'}, optional
         ``dot(Q, c)`` is returned if mode is 'left',

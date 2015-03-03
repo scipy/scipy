@@ -35,7 +35,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
         Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -127,7 +127,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
         Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -190,7 +190,7 @@ def orth(A):
 
     Parameters
     ----------
-    A : (M, N) ndarray
+    A : (M, N) array_like
         Input array
 
     Returns

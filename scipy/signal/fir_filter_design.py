@@ -63,7 +63,7 @@ def kaiser_atten(numtaps, width):
 
     Parameters
     ----------
-    N : int
+    numtaps : int
         The number of taps in the FIR filter.
     width : float
         The desired width of the transition region between passband and
@@ -160,18 +160,18 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         latter case, the frequencies in `cutoff` should be positive and
         monotonically increasing between 0 and `nyq`.  The values 0 and
         `nyq` must not be included in `cutoff`.
-    width : float or None
+    width : float or None, optional
         If `width` is not None, then assume it is the approximate width
         of the transition region (expressed in the same units as `nyq`)
         for use in Kaiser FIR filter design.  In this case, the `window`
         argument is ignored.
-    window : string or tuple of string and parameter values
+    window : string or tuple of string and parameter values, optional
         Desired window to use. See `scipy.signal.get_window` for a list
         of windows and required parameters.
-    pass_zero : bool
+    pass_zero : bool, optional
         If True, the gain at the frequency 0 (i.e. the "DC gain") is 1.
         Otherwise the DC gain is 0.
-    scale : bool
+    scale : bool, optional
         Set to True to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency.
         That frequency is either:
@@ -182,7 +182,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
           `nyq` (i.e the filter is a single band highpass filter);
           center of first passband otherwise
 
-    nyq : float
+    nyq : float, optional
         Nyquist frequency.  Each frequency in `cutoff` must be between 0
         and `nyq`.
 
@@ -343,10 +343,10 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0,
         Window function to use. Default is "hamming".  See
         `scipy.signal.get_window` for the complete list of possible values.
         If None, no window function is applied.
-    nyq : float
+    nyq : float, optional
         Nyquist frequency.  Each frequency in `freq` must be between 0 and
         `nyq` (inclusive).
-    antisymmetric : bool
+    antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
 

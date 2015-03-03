@@ -163,7 +163,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         Defaults to 'hanning'.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg / 2``.  Defaults to None.
     nfft : int, optional
@@ -295,7 +295,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     outdtype = (np.array([x[0]]) * np.array([1], 'f')).dtype.char.lower()
     if win.dtype != outdtype:
         win = win.astype(outdtype)
- 
+
     if scaling == 'density':
         scale = 1.0 / (fs * (win*win).sum())
     elif scaling == 'spectrum':

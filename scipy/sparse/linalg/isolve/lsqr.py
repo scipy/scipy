@@ -126,12 +126,12 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         Right-hand side vector ``b``.
     damp : float
         Damping coefficient.
-    atol, btol : float
+    atol, btol : float, optional
         Stopping tolerances. If both are 1.0e-9 (say), the final
         residual norm should be accurate to about 9 digits.  (The
         final x will usually have fewer correct digits, depending on
         cond(A) and the size of damp.)
-    conlim : float
+    conlim : float, optional
         Another stopping tolerance.  lsqr terminates if an estimate of
         ``cond(A)`` exceeds `conlim`.  For compatible systems ``Ax =
         b``, `conlim` could be as large as 1.0e+12 (say).  For
@@ -139,11 +139,11 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         Maximum precision can be obtained by setting ``atol = btol =
         conlim = zero``, but the number of iterations may then be
         excessive.
-    iter_lim : int
+    iter_lim : int, optional
         Explicit limitation on number of iterations (for safety).
-    show : bool
+    show : bool, optional
         Display an iteration log.
-    calc_var : bool
+    calc_var : bool, optional
         Whether to estimate diagonals of ``(A'A + damp^2*I)^{-1}``.
 
     Returns

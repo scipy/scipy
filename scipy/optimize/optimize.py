@@ -1860,20 +1860,20 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     ----------
     func : callable f(x,*args)
         Objective function.
-    args
+    args : tuple, optional
         Additional arguments (if present).
-    brack : tuple
+    brack : tuple, optional
         Triple (a,b,c) where (a<b<c) and func(b) <
         func(a),func(c).  If bracket consists of two numbers (a,c)
         then they are assumed to be a starting interval for a
         downhill bracket search (see `bracket`); it doesn't always
         mean that the obtained solution will satisfy a<=x<=c.
-    tol : float
+    tol : float, optional
         Stop if between iteration change is less than `tol`.
-    full_output : bool
+    full_output : bool, optional
         If True, return all output args (xmin, fval, iter,
         funcalls).
-    maxiter : int
+    maxiter : int, optional
         Maximum number of iterations in solution.
 
     Returns
@@ -1951,17 +1951,17 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     ----------
     func : callable func(x,*args)
         Objective function to minimize.
-    args : tuple
+    args : tuple, optional
         Additional arguments (if present), passed to func.
-    brack : tuple
+    brack : tuple, optional
         Triple (a,b,c), where (a<b<c) and func(b) <
         func(a),func(c).  If bracket consists of two numbers (a,
         c), then they are assumed to be a starting interval for a
         downhill bracket search (see `bracket`); it doesn't always
         mean that obtained solution will satisfy a<=x<=c.
-    tol : float
+    tol : float, optional
         x tolerance stop criterion
-    full_output : bool
+    full_output : bool, optional
         If True, return optional outputs.
 
     See also

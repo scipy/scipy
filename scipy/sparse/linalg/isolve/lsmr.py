@@ -53,7 +53,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
         where damp is a scalar.  If damp is None or 0, the system
         is solved without regularization.
-    atol, btol : float
+    atol, btol : float, optional
         Stopping tolerances. `lsmr` continues iterations until a
         certain backward error estimate is smaller than some quantity
         depending on atol and btol.  Let ``r = b - Ax`` be the
@@ -71,7 +71,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         of `A` have 7 correct digits, set atol = 1e-7. This prevents
         the algorithm from doing unnecessary work beyond the
         uncertainty of the input data.
-    conlim : float
+    conlim : float, optional
         `lsmr` terminates if an estimate of ``cond(A)`` exceeds
         `conlim`.  For compatible systems ``Ax = b``, conlim could be
         as large as 1.0e+12 (say).  For least-squares problems,
@@ -79,12 +79,12 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         default value is 1e+8.  Maximum precision can be obtained by
         setting ``atol = btol = conlim = 0``, but the number of
         iterations may then be excessive.
-    maxiter : int
+    maxiter : int, optional
         `lsmr` terminates if the number of iterations reaches
         `maxiter`.  The default is ``maxiter = min(m, n)``.  For
         ill-conditioned systems, a larger value of `maxiter` may be
         needed.
-    show : bool
+    show : bool, optional
         Print iterations logs if ``show=True``.
 
     Returns

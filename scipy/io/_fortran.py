@@ -18,11 +18,11 @@ class FortranFile(object):
 
     Parameters
     ----------
-    filename: file or str
+    filename : file or str
         Open file object or filename.
     mode : {'r', 'w'}, optional
         Read-write mode, default is 'r'.
-    header_dtype : data-type
+    header_dtype : dtype, optional
         Data type of the header. Size and endiness must match the input/output file.
 
     Notes
@@ -117,7 +117,7 @@ class FortranFile(object):
 
         Parameters
         ----------
-        dtype : data-type
+        dtype : dtype, optional
             Data type specifying the size and endiness of the data.
 
         Returns
@@ -186,7 +186,7 @@ class FortranFile(object):
 
         Parameters
         ----------
-        dtype : data-type
+        dtype : dtype, optional
             Data type specifying the size and endiness of the data.
 
         Returns
@@ -209,7 +209,7 @@ class FortranFile(object):
 
         Parameters
         ----------
-        dtype : data-type
+        dtype : dtype, optional
             Data type specifying the size and endiness of the data.
 
         Returns

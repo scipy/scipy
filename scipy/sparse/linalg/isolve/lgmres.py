@@ -34,18 +34,18 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0  : {array, matrix}
         Starting guess for the solution.
-    tol : float
+    tol : float, optional
         Tolerance to achieve. The algorithm terminates when either the relative
         or the absolute residual is below `tol`.
-    maxiter : int
+    maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, dense matrix, LinearOperator}
+    M : {sparse matrix, dense matrix, LinearOperator}, optional
         Preconditioner for A.  The preconditioner should approximate the
         inverse of A.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
-    callback : function
+    callback : function, optional
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
     inner_m : int, optional

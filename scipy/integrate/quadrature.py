@@ -92,9 +92,9 @@ def vectorize1(func, args=(), vec_func=False):
     ----------
     func : callable
         User defined function.
-    args : tuple
+    args : tuple, optional
         Extra arguments for the function.
-    vec_func : bool
+    vec_func : bool, optional
         True if the function func takes vector arguments.
 
     Returns
@@ -144,7 +144,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
         Upper limit of integration.
     args : tuple, optional
         Extra arguments to pass to function.
-    tol, rol : float, optional
+    tol, rtol : float, optional
         Iteration stops when error between last two iterates is less than
         `tol` OR the relative change is less than `rtol`.
     maxiter : int, optional

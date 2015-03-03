@@ -39,12 +39,12 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     ----------
     data : array_like
         Data array.
-    prob : sequence
+    prob : sequence, optional
         Sequence of quantiles to compute.
-    axis : int
+    axis : int or None, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
-    var : boolean
+    var : bool, optional
         Whether to return the variance of the estimate.
 
     Returns
@@ -107,10 +107,10 @@ def hdmedian(data, axis=-1, var=False):
     ----------
     data : ndarray
         Data array.
-    axis : int
+    axis : int, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
-    var : boolean
+    var : bool, optional
         Whether to return the variance of the estimate.
 
     """
@@ -126,9 +126,9 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
     ----------
     data : array_like
         Data array.
-    prob : sequence
+    prob : sequence, optional
         Sequence of quantiles to compute.
-    axis : int
+    axis : int, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
 
@@ -232,11 +232,11 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
 
     Parameters
     ----------
-    data: ndarray
+    data : ndarray
         Data array.
-    prob: sequence
+    prob : sequence, optional
         Sequence of quantiles to compute.
-    axis : int
+    axis : int or None, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
 
@@ -279,11 +279,11 @@ def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
     ----------
     data : ndarray
         Data array.
-    prob : sequence
+    prob : sequence, optional
         Sequence of quantiles to compute.
-    alpha : float
+    alpha : float, optional
         Confidence level of the intervals.
-    axis : integer
+    axis : int or None, optional
         Axis along which to compute the quantiles.
         If None, use a flattened array.
 
@@ -306,9 +306,9 @@ def median_cihs(data, alpha=0.05, axis=None):
     data : array_like
         Input data. Masked values are discarded. The input should be 1D only,
         or `axis` should be set to None.
-    alpha : float
+    alpha : float, optional
         Confidence level of the intervals.
-    axis : integer
+    axis : int or None, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
 
@@ -428,7 +428,7 @@ def rsh(data, points=None):
     ----------
     data : sequence
         Input data. Masked values are ignored.
-    points : sequence
+    points : sequence or None, optional
         Sequence of points where to evaluate Rosenblatt shifted histogram.
         If None, use the data.
 

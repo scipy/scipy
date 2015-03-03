@@ -659,7 +659,7 @@ class _PPolyBase(object):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Points to evaluate the interpolant at.
         nu : int, optional
             Order of derivative to evaluate. Must be non-negative.
@@ -669,7 +669,7 @@ class _PPolyBase(object):
 
         Returns
         -------
-        y : array-like
+        y : array_like
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
 
@@ -758,7 +758,7 @@ class PPoly(_PPolyBase):
 
         Parameters
         ----------
-        n : int, optional
+        nu : int, optional
             Order of derivative to evaluate. (Default: 1)
             If negative, the antiderivative is returned.
 
@@ -806,7 +806,7 @@ class PPoly(_PPolyBase):
 
         Parameters
         ----------
-        n : int, optional
+        nu : int, optional
             Order of antiderivative to evaluate. (Default: 1)
             If negative, the derivative is returned.
 
@@ -1189,7 +1189,7 @@ class BPoly(_PPolyBase):
         ----------
         xi : array_like
             sorted 1D array of x-coordinates
-        yi : array_like or list of array-likes
+        yi : array_like or list of array_likes
             ``yi[i][j]`` is the ``j``-th derivative known at ``xi[i]``
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
@@ -1437,10 +1437,10 @@ class RegularGridInterpolator(object):
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions.
 
-    method : str
+    method : str, optional
         The method of interpolation to perform. Supported are "linear" and
         "nearest". This parameter will become the default for the object's
-        ``__call__`` method.
+        ``__call__`` method. Default is "linear".
 
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
@@ -1632,7 +1632,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     xi : ndarray of shape (..., ndim)
         The coordinates to sample the gridded data at
 
-    method : str
+    method : str, optional
         The method of interpolation to perform. Supported are "linear" and
         "nearest", and "splinef2d". "splinef2d" is only supported for
         2-dimensional data.

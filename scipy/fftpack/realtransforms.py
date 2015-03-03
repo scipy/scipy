@@ -200,7 +200,7 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
 
     Parameters
     ----------
-    x : array-like
+    x : array_like
         input array.
     n : int, optional
         Length of the transform.
@@ -414,7 +414,7 @@ def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
 
     Parameters
     ----------
-    x : array-like
+    x : array_like
         input array.
     n : int, optional
         Length of the transform.

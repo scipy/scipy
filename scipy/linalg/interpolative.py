@@ -758,7 +758,7 @@ def estimate_spectral_norm(A, its=20):
     A : :class:`scipy.sparse.linalg.LinearOperator`
         Matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with the
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    its : int
+    its : int, optional
         Number of power method iterations.
 
     Returns
@@ -794,7 +794,7 @@ def estimate_spectral_norm_diff(A, B, its=20):
     B : :class:`scipy.sparse.linalg.LinearOperator`
         Second matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    its : int
+    its : int, optional
         Number of power method iterations.
 
     Returns

@@ -102,8 +102,8 @@ class Rectangle(object):
         ----------
         d : int
             Axis to split hyperrectangle along.
-        split :
-            Input.
+        split : float
+            Position along axis `d` to split at.
 
         """
         mid = np.copy(self.maxes)
@@ -399,18 +399,18 @@ class KDTree(object):
         ----------
         x : array_like, last dimension self.m
             An array of points to query.
-        k : integer
+        k : int, optional
             The number of nearest neighbors to return.
-        eps : nonnegative float
+        eps : nonnegative float, optional
             Return approximate nearest neighbors; the kth returned value
             is guaranteed to be no further than (1+eps) times the
             distance to the real kth nearest neighbor.
-        p : float, 1<=p<=infinity
+        p : float, 1<=p<=infinity, optional
             Which Minkowski p-norm to use.
             1 is the sum-of-absolute-values "Manhattan" distance
             2 is the usual Euclidean distance
             infinity is the maximum-coordinate-difference distance
-        distance_upper_bound : nonnegative float
+        distance_upper_bound : nonnegative float, optional
             Return only neighbors within this distance. This is used to prune
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
@@ -803,7 +803,7 @@ class KDTree(object):
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
             a single tree traversal.
-        p : float, 1<=p<=infinity
+        p : float, 1<=p<=infinity, optional
             Which Minkowski p-norm to use
 
         Returns
@@ -916,7 +916,7 @@ class KDTree(object):
         return result
 
 
-def distance_matrix(x,y,p=2,threshold=1000000):
+def distance_matrix(x, y, p=2, threshold=1000000):
     """
     Compute the distance matrix.
 

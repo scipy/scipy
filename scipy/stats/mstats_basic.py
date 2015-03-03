@@ -165,7 +165,7 @@ def count_tied_groups(x, use_missing=False):
     ----------
     x : sequence
         Sequence of data on which to counts the ties
-    use_missing : boolean
+    use_missing : bool, optional
         Whether to consider missing values as tied.
 
     Returns
@@ -224,7 +224,7 @@ def rankdata(data, axis=None, use_missing=False):
         Axis along which to perform the ranking.
         If None, the array is first flattened. An exception is raised if
         the axis is specified for arrays with a dimension larger than 2
-    use_missing : {boolean}, optional
+    use_missing : bool, optional
         Whether the masked values have a rank of 0 (False) or equal to the
         average rank of the unmasked values (True).
 
@@ -452,9 +452,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
 
     Parameters
     ----------
-    xdata : sequence
+    x : sequence
         First data list (for example, time).
-    ydata : sequence
+    y : sequence
         Second data list.
     use_ties : {True, False}, optional
         Whether ties correction should be performed.
@@ -1490,17 +1490,18 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 kurtosis.__doc__ = stats.kurtosis.__doc__
 
 
-def describe(a, axis=0,ddof=0):
+def describe(a, axis=0, ddof=0):
     """
     Computes several descriptive statistics of the passed array.
 
     Parameters
     ----------
-    a : array
-
-    axis : int or None
-
-    ddof : int
+    a : array_like
+        Data array
+    axis : int or None, optional
+        Axis along which to calculate statistics. Default 0. If None,
+        compute over the whole array `a`.
+    ddof : int, optional
         degree of freedom (default 0); note that default ddof is different
         from the same routine in stats.describe
 
@@ -1686,7 +1687,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     axis : int, optional
         Axis along which to perform the trimming.
         If None (default), the input array is first flattened.
-    limit : tuple
+    limit : tuple, optional
         Tuple of (lower, upper) values.
         Values of `a` outside this open interval are ignored.
 
@@ -1897,7 +1898,7 @@ def sem(a, axis=0, ddof=1):
     a : array_like
         An array containing the values for which the standard error is
         returned.
-    axis : int or None, optional.
+    axis : int or None, optional
         If axis is None, ravel `a` first. If axis is an integer, this will be
         the axis over which to operate. Defaults to 0.
     ddof : int, optional

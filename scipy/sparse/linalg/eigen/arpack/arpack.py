@@ -1309,7 +1309,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     A : An N x N matrix, array, sparse matrix, or LinearOperator representing
         the operation A * x, where A is a real symmetric matrix
         For buckling mode (see below) A must additionally be positive-definite
-    k : int
+    k : int, optional
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
         eigenvectors of a matrix.
@@ -1654,7 +1654,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Default: random
 
         .. versionadded:: 0.12.0
-    maxiter: int, optional
+    maxiter : int, optional
         Maximum number of iterations.
 
         .. versionadded:: 0.12.0

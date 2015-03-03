@@ -196,7 +196,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     %(output)s
     %(mode)s
     %(cval)s
-    truncate : float
+    truncate : float, optional
         Truncate the filter at this many standard deviations.
         Default is 4.0.
 
@@ -707,7 +707,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     Parameters
     ----------
     %(input)s
-    size : integer
+    size : int
         length of uniform filter
     %(axis)s
     %(output)s
@@ -738,7 +738,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     Parameters
     ----------
     %(input)s
-    size : int or sequence of ints
+    size : int or sequence of ints, optional
         The sizes of the uniform filter are given for each axis as a
         sequence, or as a single number, in which case the size is
         equal for all axes.
@@ -1030,7 +1030,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     Parameters
     ----------
     %(input)s
-    rank : integer
+    rank : int
         The rank parameter may be less then zero, i.e., rank = -1
         indicates the largest element.
     %(size_foot)s
