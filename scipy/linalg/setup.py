@@ -142,14 +142,16 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('cython_blas',
                          sources=['cython_blas.c'],
-                         depends=['fortran_defs.h', 'cython_blas.pxd', 'blas_pointers.pyx.in'],
+                         depends=['fortran_defs.h', 'cython_blas.pxd',
+                                  'cython_blas.pyx'],
                          include_dirs=['.'],
                          libraries=['fwrappers'],
                          extra_info=lapack_opt)
 
     config.add_extension('cython_lapack',
                          sources=['cython_lapack.c'],
-                         depends=['fortran_defs.h', 'cython_lapack.pxd', 'lapack_pointers.pyx.in'],
+                         depends=['fortran_defs.h', 'cython_lapack.pxd',
+                                  'lapack_pointers.pyx.in'],
                          include_dirs=['.'],
                          libraries=['fwrappers'],
                          extra_info=lapack_opt)
