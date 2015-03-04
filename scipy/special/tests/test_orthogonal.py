@@ -397,6 +397,19 @@ def test_h_roots():
     assert_raises(ValueError, orth.h_roots, 0)
     assert_raises(ValueError, orth.h_roots, 3.3)
 
+def test_h_roots_asy():
+    def helper(n, mu):
+        x, w = orth.h_roots_asy(n)
+        return x, w, sum(w)
+
+    verify_gauss_quad(helper, orth.eval_hermite, 150, atol=1e-12)
+    verify_gauss_quad(helper, orth.eval_hermite, 151, atol=1e-12)
+    # Hermite polynomial evaluation fails
+    #verify_gauss_quad(helper, orth.eval_hermite, 300, atol=1e-12)
+    #verify_gauss_quad(helper, orth.eval_hermite, 501, atol=1e-12)
+    #verify_gauss_quad(helper, orth.eval_hermite, 999, atol=1e-12)
+    #verify_gauss_quad(helper, orth.eval_hermite, 1000, atol=1e-12)
+
 def test_he_roots():
     verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 5)
     verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 25, atol=1e-13)
