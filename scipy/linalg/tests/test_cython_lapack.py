@@ -7,11 +7,13 @@ class test_lamch(TestCase):
     
     def test_slamch(self):
         for c in b'esbpnrmulo':
-            assert_allclose(cython_lapack._py_slamch(c), lapack.slamch(c))
+            assert_allclose(cython_lapack._test_slamch(c),
+                            lapack.slamch(c))
     
     def test_dlamch(self):
         for c in b'esbpnrmulo':
-            assert_allclose(cython_lapack._py_dlamch(c), lapack.dlamch(c))
+            assert_allclose(cython_lapack._test_dlamch(c),
+                            lapack.dlamch(c))
 
 
 if __name__ == "__main__":
