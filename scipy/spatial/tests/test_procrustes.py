@@ -96,6 +96,25 @@ class ProcrustesTests(TestCase):
                                  np.array([[42, 42], [42, 42]]),
                                  np.array([[45, 45], [45, 45]]))
 
+    def test_procrustes_bad_number_of_dimensions(self):
+        # fewer dimensions in one dataset
+        np.testing.assert_raises(ValueError, procrustes,
+                                 np.array([1, 1, 2, 3, 5, 8]),
+                                 np.array([[1, 2], [3, 4]]))
+
+        # fewer dimensions in both datasets
+        np.testing.assert_raises(ValueError, procrustes,
+                                 np.array([1, 1, 2, 3, 5, 8]),
+                                 np.array([1, 1, 2, 3, 5, 8]))
+
+        # zero dimensions
+        np.testing.assert_raises(ValueError, procrustes, np.array(7),
+                                 np.array(11))
+
+        # extra dimensions
+        np.testing.assert_raises(ValueError, procrustes,
+                                 np.array([[[11], [7]]]),
+                                 np.array([[[5, 13]]]))
 
 if __name__ == '__main__':
     main()

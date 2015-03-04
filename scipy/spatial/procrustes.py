@@ -113,7 +113,7 @@ def procrustes(data1, data2):
     mtx2 = data2-np.mean(data2, 0)
 
     if (not np.any(mtx1)) or (not np.any(mtx2)):
-        raise ValueError("input matrices must contain >1 unique points")
+        raise ValueError("Input matrices must contain >1 unique points")
 
     # change scaling of data (in rows) such that trace(mtx*mtx') = 1
     mtx1 = mtx1/np.linalg.norm(mtx1)
