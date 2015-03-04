@@ -30,11 +30,7 @@ def get_type(info, arg):
 
 def make_signature(filename):
     info = crackfortran.crackfortran(filename)[0]
-    try:
-        name = info['name']
-    except:
-        print named
-        raise
+    name = info['name']
     if '_' in name:
         info = info['body']
         name = info['name']
@@ -44,7 +40,7 @@ def make_signature(filename):
         return_type = get_type(info, name)
     arglist = [' *'.join([get_type(info, arg), arg]) for arg in info['args']]
     args = ', '.join(arglist)
-    # eliminate strange variable naming that replaces rank with rank_bn
+    # Eliminate strange variable naming that replaces rank with rank_bn.
     args = args.replace('rank_bn', 'rank')
     return '{} {}({})\n'.format(return_type, name, args)
 

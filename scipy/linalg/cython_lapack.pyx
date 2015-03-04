@@ -1162,12 +1162,12 @@ cdef d _wrap_dlange(char *norm, int *m, int *n, d *a, int *lda, d *work) nogil:
     return out
 cdef dlange_t *dlange_f = &_wrap_dlange
 
-ctypedef void _wdlangt_t(d *out, char *norm, int *n, d *dl, d *d, d *du) nogil
+ctypedef void _wdlangt_t(d *out, char *norm, int *n, d *dl, d *d_, d *du) nogil
 cdef extern from "_lapack_subroutine_wrappers.h":
-    void _fortran_dlangt "F_FUNC(dlangtwrp, DLANGTWRP)"(d *out, char *norm, int *n, d *dl, d *d, d *du) nogil
-cdef d _wrap_dlangt(char *norm, int *n, d *dl, d *d, d *du) nogil:
+    void _fortran_dlangt "F_FUNC(dlangtwrp, DLANGTWRP)"(d *out, char *norm, int *n, d *dl, d *d_, d *du) nogil
+cdef d _wrap_dlangt(char *norm, int *n, d *dl, d *d_, d *du) nogil:
     cdef d out
-    _fortran_dlangt(&out, norm, n, dl, d, du)
+    _fortran_dlangt(&out, norm, n, dl, d_, du)
     return out
 cdef dlangt_t *dlangt_f = &_wrap_dlangt
 
@@ -1198,12 +1198,12 @@ cdef d _wrap_dlansp(char *norm, char *uplo, int *n, d *ap, d *work) nogil:
     return out
 cdef dlansp_t *dlansp_f = &_wrap_dlansp
 
-ctypedef void _wdlanst_t(d *out, char *norm, int *n, d *d, d *e) nogil
+ctypedef void _wdlanst_t(d *out, char *norm, int *n, d *d_, d *e) nogil
 cdef extern from "_lapack_subroutine_wrappers.h":
-    void _fortran_dlanst "F_FUNC(dlanstwrp, DLANSTWRP)"(d *out, char *norm, int *n, d *d, d *e) nogil
-cdef d _wrap_dlanst(char *norm, int *n, d *d, d *e) nogil:
+    void _fortran_dlanst "F_FUNC(dlanstwrp, DLANSTWRP)"(d *out, char *norm, int *n, d *d_, d *e) nogil
+cdef d _wrap_dlanst(char *norm, int *n, d *d_, d *e) nogil:
     cdef d out
-    _fortran_dlanst(&out, norm, n, d, e)
+    _fortran_dlanst(&out, norm, n, d_, e)
     return out
 cdef dlanst_t *dlanst_f = &_wrap_dlanst
 
@@ -1441,12 +1441,12 @@ cdef d _wrap_zlange(char *norm, int *m, int *n, z *a, int *lda, d *work) nogil:
     return out
 cdef zlange_t *zlange_f = &_wrap_zlange
 
-ctypedef void _wzlangt_t(d *out, char *norm, int *n, z *dl, z *d, z *du) nogil
+ctypedef void _wzlangt_t(d *out, char *norm, int *n, z *dl, z *d_, z *du) nogil
 cdef extern from "_lapack_subroutine_wrappers.h":
-    void _fortran_zlangt "F_FUNC(zlangtwrp, ZLANGTWRP)"(d *out, char *norm, int *n, z *dl, z *d, z *du) nogil
-cdef d _wrap_zlangt(char *norm, int *n, z *dl, z *d, z *du) nogil:
+    void _fortran_zlangt "F_FUNC(zlangtwrp, ZLANGTWRP)"(d *out, char *norm, int *n, z *dl, z *d_, z *du) nogil
+cdef d _wrap_zlangt(char *norm, int *n, z *dl, z *d_, z *du) nogil:
     cdef d out
-    _fortran_zlangt(&out, norm, n, dl, d, du)
+    _fortran_zlangt(&out, norm, n, dl, d_, du)
     return out
 cdef zlangt_t *zlangt_f = &_wrap_zlangt
 
@@ -1486,12 +1486,12 @@ cdef d _wrap_zlanhs(char *norm, int *n, z *a, int *lda, d *work) nogil:
     return out
 cdef zlanhs_t *zlanhs_f = &_wrap_zlanhs
 
-ctypedef void _wzlanht_t(d *out, char *norm, int *n, d *d, z *e) nogil
+ctypedef void _wzlanht_t(d *out, char *norm, int *n, d *d_, z *e) nogil
 cdef extern from "_lapack_subroutine_wrappers.h":
-    void _fortran_zlanht "F_FUNC(zlanhtwrp, ZLANHTWRP)"(d *out, char *norm, int *n, d *d, z *e) nogil
-cdef d _wrap_zlanht(char *norm, int *n, d *d, z *e) nogil:
+    void _fortran_zlanht "F_FUNC(zlanhtwrp, ZLANHTWRP)"(d *out, char *norm, int *n, d *d_, z *e) nogil
+cdef d _wrap_zlanht(char *norm, int *n, d *d_, z *e) nogil:
     cdef d out
-    _fortran_zlanht(&out, norm, n, d, e)
+    _fortran_zlanht(&out, norm, n, d_, e)
     return out
 cdef zlanht_t *zlanht_f = &_wrap_zlanht
 

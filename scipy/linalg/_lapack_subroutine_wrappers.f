@@ -582,8 +582,8 @@
       end
 
       subroutine zlangbwrp(ret, norm, n, kl, ku, ab, ldab, work)
-        external wzlangb
-        double precision wzlangb
+        external zlangb
+        double precision zlangb
         double precision ret
         character norm
         integer n
@@ -592,12 +592,12 @@
         complex*16 ab
         integer ldab
         double precision work
-        ret = wzlangb(norm, n, kl, ku, ab, ldab, work)
+        ret = zlangb(norm, n, kl, ku, ab, ldab, work)
       end
 
       subroutine zlangewrp(ret, norm, m, n, a, lda, work)
-        external wzlange
-        double precision wzlange
+        external zlange
+        double precision zlange
         double precision ret
         character norm
         integer m
@@ -605,24 +605,24 @@
         complex*16 a
         integer lda
         double precision work
-        ret = wzlange(norm, m, n, a, lda, work)
+        ret = zlange(norm, m, n, a, lda, work)
       end
 
       subroutine zlangtwrp(ret, norm, n, dl, d, du)
-        external wzlangt
-        double precision wzlangt
+        external zlangt
+        double precision zlangt
         double precision ret
         character norm
         integer n
         complex*16 dl
         complex*16 d
         complex*16 du
-        ret = wzlangt(norm, n, dl, d, du)
+        ret = zlangt(norm, n, dl, d, du)
       end
 
       subroutine zlanhbwrp(ret, norm, uplo, n, k, ab, ldab, work)
-        external wzlanhb
-        double precision wzlanhb
+        external zlanhb
+        double precision zlanhb
         double precision ret
         character norm
         character uplo
@@ -631,12 +631,12 @@
         complex*16 ab
         integer ldab
         double precision work
-        ret = wzlanhb(norm, uplo, n, k, ab, ldab, work)
+        ret = zlanhb(norm, uplo, n, k, ab, ldab, work)
       end
 
       subroutine zlanhewrp(ret, norm, uplo, n, a, lda, work)
-        external wzlanhe
-        double precision wzlanhe
+        external zlanhe
+        double precision zlanhe
         double precision ret
         character norm
         character uplo
@@ -644,47 +644,47 @@
         complex*16 a
         integer lda
         double precision work
-        ret = wzlanhe(norm, uplo, n, a, lda, work)
+        ret = zlanhe(norm, uplo, n, a, lda, work)
       end
 
       subroutine zlanhpwrp(ret, norm, uplo, n, ap, work)
-        external wzlanhp
-        double precision wzlanhp
+        external zlanhp
+        double precision zlanhp
         double precision ret
         character norm
         character uplo
         integer n
         complex*16 ap
         double precision work
-        ret = wzlanhp(norm, uplo, n, ap, work)
+        ret = zlanhp(norm, uplo, n, ap, work)
       end
 
       subroutine zlanhswrp(ret, norm, n, a, lda, work)
-        external wzlanhs
-        double precision wzlanhs
+        external zlanhs
+        double precision zlanhs
         double precision ret
         character norm
         integer n
         complex*16 a
         integer lda
         double precision work
-        ret = wzlanhs(norm, n, a, lda, work)
+        ret = zlanhs(norm, n, a, lda, work)
       end
 
       subroutine zlanhtwrp(ret, norm, n, d, e)
-        external wzlanht
-        double precision wzlanht
+        external zlanht
+        double precision zlanht
         double precision ret
         character norm
         integer n
         double precision d
         complex*16 e
-        ret = wzlanht(norm, n, d, e)
+        ret = zlanht(norm, n, d, e)
       end
 
       subroutine zlansbwrp(ret, norm, uplo, n, k, ab, ldab, work)
-        external wzlansb
-        double precision wzlansb
+        external zlansb
+        double precision zlansb
         double precision ret
         character norm
         character uplo
@@ -693,24 +693,24 @@
         complex*16 ab
         integer ldab
         double precision work
-        ret = wzlansb(norm, uplo, n, k, ab, ldab, work)
+        ret = zlansb(norm, uplo, n, k, ab, ldab, work)
       end
 
       subroutine zlanspwrp(ret, norm, uplo, n, ap, work)
-        external wzlansp
-        double precision wzlansp
+        external zlansp
+        double precision zlansp
         double precision ret
         character norm
         character uplo
         integer n
         complex*16 ap
         double precision work
-        ret = wzlansp(norm, uplo, n, ap, work)
+        ret = zlansp(norm, uplo, n, ap, work)
       end
 
       subroutine zlansywrp(ret, norm, uplo, n, a, lda, work)
-        external wzlansy
-        double precision wzlansy
+        external zlansy
+        double precision zlansy
         double precision ret
         character norm
         character uplo
@@ -718,12 +718,12 @@
         complex*16 a
         integer lda
         double precision work
-        ret = wzlansy(norm, uplo, n, a, lda, work)
+        ret = zlansy(norm, uplo, n, a, lda, work)
       end
 
       subroutine zlantbwrp(ret, norm, uplo, diag, n, k, ab, ldab, work)
-        external wzlantb
-        double precision wzlantb
+        external zlantb
+        double precision zlantb
         double precision ret
         character norm
         character uplo
@@ -733,12 +733,12 @@
         complex*16 ab
         integer ldab
         double precision work
-        ret = wzlantb(norm, uplo, diag, n, k, ab, ldab, work)
+        ret = zlantb(norm, uplo, diag, n, k, ab, ldab, work)
       end
 
       subroutine zlantpwrp(ret, norm, uplo, diag, n, ap, work)
-        external wzlantp
-        double precision wzlantp
+        external zlantp
+        double precision zlantp
         double precision ret
         character norm
         character uplo
@@ -746,12 +746,12 @@
         integer n
         complex*16 ap
         double precision work
-        ret = wzlantp(norm, uplo, diag, n, ap, work)
+        ret = zlantp(norm, uplo, diag, n, ap, work)
       end
 
       subroutine zlantrwrp(ret, norm, uplo, diag, m, n, a, lda, work)
-        external wzlantr
-        double precision wzlantr
+        external zlantr
+        double precision zlantr
         double precision ret
         character norm
         character uplo
@@ -761,5 +761,5 @@
         complex*16 a
         integer lda
         double precision work
-        ret = wzlantr(norm, uplo, diag, m, n, a, lda, work)
+        ret = zlantr(norm, uplo, diag, m, n, a, lda, work)
       end

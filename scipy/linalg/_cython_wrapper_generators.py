@@ -45,7 +45,15 @@ cdef {name}_t *{name}_f = &_wrap_{name}
 """
 
 def pyx_decl_func(name, ret_type, args, header_name):
-    argnames = ', '.join(arg_names_and_types(args)[1])
+    argtypes, argnames = arg_names_and_types(args)
+    # Fix the case where one of the arguments has the same name as the
+    # abbreviation for the argument type.
+    # Otherwise the variable passed as an argument is considered overwrites
+    # the previous typedef and Cython compilation fails.
+    if ret_type in argnames:
+        argnames = [n if n != ret_type else ret_type + '_' for n in argnames]
+        args = ', '.join([' *'.join([n, t]) for n, t in zip(argtypes, argnames)])
+    argnames = ', '.join(argnames)
     c_ret_type = c_types[ret_type]
     return pyx_func_template.format(name=name, upname=name.upper(), args=args,
                                     ret_type=ret_type, c_ret_type=c_ret_type,
@@ -410,11 +418,8 @@ def process_fortran_name(name):
     return name
 
 def fort_subroutine_wrapper(name, ret_type, args):
-    if name[0] in ['c', 's', 'z']:
+    if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
         wrapper = 'w' + name
-        #if name[1:] not in ['lamch', 'dot', 'dotu', 'dotc', 'nrm2', 'asum']:
-        #    wrapper = name
-        #    print name
     else:
         wrapper = name
     types, names = arg_names_and_types(args)

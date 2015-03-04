@@ -6,7 +6,7 @@ from os.path import join
 
 
 def configuration(parent_package='',top_path=None):
-    from numpy.distutils.system_info import get_info, NotFoundError
+    from numpy.distutils.system_info import get_info, NotFoundError, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from scipy._build_utils import (get_sgemv_fix, get_g77_abi_wrappers,
                                     split_fortran_files)
@@ -139,7 +139,8 @@ def configuration(parent_package='',top_path=None):
     sources = ['_blas_subroutine_wrappers.f', '_lapack_subroutine_wrappers.f']
     sources += get_g77_abi_wrappers(lapack_opt)
     sources += get_sgemv_fix(lapack_opt)
-    config.add_library('fwrappers', sources=sources)
+    includes = numpy_info().get_include_dirs()
+    config.add_library('fwrappers', sources=sources, include_dirs=includes)
 
     config.add_extension('cython_blas',
                          sources=['cython_blas.c'],
@@ -151,9 +152,8 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('cython_lapack',
                          sources=['cython_lapack.c'],
-                         depends=depends=['fortran_defs.h',
-                                          'cython_lapack.pxd',
-                                          'cython_lapack.pyx'],
+                         depends=['fortran_defs.h', 'cython_lapack.pxd',
+                                  'cython_lapack.pyx'],
                          include_dirs=['.'],
                          libraries=['fwrappers'],
                          extra_info=lapack_opt)
