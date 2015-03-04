@@ -547,7 +547,7 @@ def h_roots(n, mu=False):
             return nodes, weights
 
 
-def compute_tauk(n, k, steps=10):
+def compute_tauk(n, k, steps=5):
     """Helper function for lemma 3.1
     """
     a = n % 2 - 0.5
