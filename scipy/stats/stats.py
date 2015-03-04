@@ -139,8 +139,6 @@ Probability Calculations
    :toctree: generated/
 
    chisqprob
-   zprob
-   fprob
    betai
 
 ANOVA Functions
@@ -200,7 +198,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
+           'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
            'nanstd', 'nanmedian', 'combine_pvalues', ]
@@ -4182,7 +4180,7 @@ def mannwhitneyu(x, y, use_continuity=True):
     else:
         z = abs((bigu - n1*n2/2.0) / sd)  # normal approximation for prob calc
 
-    return smallu, distributions.norm.sf(z)  # (1.0 - zprob(z))
+    return smallu, distributions.norm.sf(z)
 
 
 def ranksums(x, y):
@@ -4439,11 +4437,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 #      PROBABILITY CALCULATIONS     #
 #####################################
 
-zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
-                             'use norm.cdf or special.ndtr instead\n',
-                     old_name='zprob')(special.ndtr)
-
-
 def chisqprob(chisq, df):
     """
     Probability value (1-tail) for the Chi^2 probability distribution.
@@ -4464,16 +4457,6 @@ def chisqprob(chisq, df):
 
     """
     return special.chdtrc(df, chisq)
-
-
-ksprob = np.deprecate(message='ksprob is deprecated in scipy 0.14, '
-                              'use stats.kstwobign.sf or special.kolmogorov '
-                              'instead\n',
-                      old_name='ksprob')(special.kolmogorov)
-
-fprob = np.deprecate(message='fprob is deprecated in scipy 0.14, '
-                             'use stats.f.sf or special.fdtrc instead\n',
-                     old_name='fprob')(special.fdtrc)
 
 
 def betai(a, b, x):
@@ -4672,6 +4655,7 @@ def square_of_sums(a, axis=0):
         return float(s) * s
 
 
+@np.deprecate(message="scipy.stats.fastsort is deprecated in scipy 0.16.0")
 def fastsort(a):
     """
     Sort an array and provide the argsort.

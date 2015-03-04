@@ -304,7 +304,6 @@ from __future__ import division, print_function, absolute_import
 
 from .stats import *
 from .distributions import *
-from .rv import *
 from .morestats import *
 from ._binned_statistic import *
 from .kde import gaussian_kde
