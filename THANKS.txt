@@ -139,7 +139,8 @@ Brandon Liu for stats.combine_pvalues.
 Clark Fitzgerald for namedtuple outputs in scipy.stats.
 Florian Wilhelm for usage of RandomState in scipy.stats distributions.
 Robert T. McGibbon for Levinson-Durbin Toeplitz solver.
-
+Alexander Grigorevskiy for adding extra LAPACK least-square solvers and 
+    modifying linalg.lstsq function accordingly.
 
 Institutions
 ------------
