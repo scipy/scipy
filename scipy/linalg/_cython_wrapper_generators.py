@@ -44,6 +44,15 @@ cdef {ret_type} _wrap_{name}({args}) nogil:
 cdef {name}_t *{name}_f = &_wrap_{name}
 """
 
+pyx_func_template = """
+cdef extern from "{header_name}":
+    void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {args}) nogil
+cdef {ret_type} {name}({args}) nogil:
+    cdef {ret_type} out
+    _fortran_{name}(&out, {argnames})
+    return out
+"""
+
 def pyx_decl_func(name, ret_type, args, header_name):
     argtypes, argnames = arg_names_and_types(args)
     # Fix the case where one of the arguments has the same name as the
@@ -64,9 +73,18 @@ pyx_sub_template = """cdef extern from "{header_name}":
 cdef {name}_t *{name}_f = &_fortran_{name}
 """
 
+pyx_sub_template = """cdef extern from "{header_name}":
+    void _fortran_{name} "F_FUNC({name},{upname})"({args}) nogil
+cdef void {name}({args}) nogil:
+    _fortran_{name}({argnames})
+"""
+
 def pyx_decl_sub(name, args, header_name):
+    argtypes, argnames = arg_names_and_types(args)
+    argnames = ', '.join(argnames)
     return pyx_sub_template.format(name=name, upname=name.upper(),
-                                   args=args, header_name=header_name)
+                                   args=args, argnames=argnames,
+                                   header_name=header_name)
 
 blas_pyx_preamble = '''# cython: boundscheck = False
 # cython: wraparound = False
@@ -139,27 +157,27 @@ cpdef float complex _test_cdotc(float complex[:] cx, float complex[:] cy) nogil:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
         int incy = cy.strides[0] // sizeof(cy[0])
-    return cdotc_f(&n, &cx[0], &incx, &cy[0], &incy)
+    return cdotc(&n, &cx[0], &incx, &cy[0], &incy)
 
 cpdef float complex _test_cdotu(float complex[:] cx, float complex[:] cy) nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
         int incy = cy.strides[0] // sizeof(cy[0])
-    return cdotu_f(&n, &cx[0], &incx, &cy[0], &incy)
+    return cdotu(&n, &cx[0], &incx, &cy[0], &incy)
 
 cpdef double _test_dasum(double[:] dx) nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
-    return dasum_f(&n, &dx[0], &incx)
+    return dasum(&n, &dx[0], &incx)
 
 cpdef double _test_ddot(double[:] dx, double[:] dy) nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
         int incy = dy.strides[0] // sizeof(dy[0])
-    return ddot_f(&n, &dx[0], &incx, &dy[0], &incy)
+    return ddot(&n, &dx[0], &incx, &dy[0], &incy)
 
 cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
                 double[:,:] c) nogil except -1:
@@ -202,7 +220,7 @@ cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
             with gil:
                 raise ValueError("Output array does not have the correct shape.")
         ldc = (&c[1,0]) - c0 if c.shape[0] > 1 else 1
-        dgemm_f(transa, transb, &m, &n, &k, &alpha, b0, &lda, a0,
+        dgemm(transa, transb, &m, &n, &k, &alpha, b0, &lda, a0,
                    &ldb, &beta, c0, &ldc)
     elif _is_contiguous(c, 0):
         if _is_contiguous(a, 1):
@@ -233,7 +251,7 @@ cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
             with gil:
                 raise ValueError("Output array does not have the correct shape.")
         ldc = (&c[0,1]) - c0 if c.shape[1] > 1 else 1
-        dgemm_f(transa, transb, &m, &n, &k, &alpha, a0, &lda, b0,
+        dgemm(transa, transb, &m, &n, &k, &alpha, a0, &lda, b0,
                    &ldb, &beta, c0, &ldc)
     else:
         with gil:
@@ -244,88 +262,88 @@ cpdef double _test_dnrm2(double[:] x) nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
-    return dnrm2_f(&n, &x[0], &incx)
+    return dnrm2(&n, &x[0], &incx)
 
 cpdef double _test_dzasum(double complex[:] zx) nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
-    return dzasum_f(&n, &zx[0], &incx)
+    return dzasum(&n, &zx[0], &incx)
 
 cpdef double _test_dznrm2(double complex[:] x) nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
-    return dznrm2_f(&n, &x[0], &incx)
+    return dznrm2(&n, &x[0], &incx)
 
 cpdef int _test_icamax(float complex[:] cx) nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
-    return icamax_f(&n, &cx[0], &incx)
+    return icamax(&n, &cx[0], &incx)
 
 cpdef int _test_idamax(double[:] dx) nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
-    return idamax_f(&n, &dx[0], &incx)
+    return idamax(&n, &dx[0], &incx)
 
 cpdef int _test_isamax(float[:] sx) nogil:
     cdef:
         int n = sx.shape[0]
         int incx = sx.strides[0] // sizeof(sx[0])
-    return isamax_f(&n, &sx[0], &incx)
+    return isamax(&n, &sx[0], &incx)
 
 cpdef int _test_izamax(double complex[:] zx) nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
-    return izamax_f(&n, &zx[0], &incx)
+    return izamax(&n, &zx[0], &incx)
 
 cpdef float _test_sasum(float[:] sx) nogil:
     cdef:
         int n = sx.shape[0]
         int incx = sx.shape[0] // sizeof(sx[0])
-    return sasum_f(&n, &sx[0], &incx)
+    return sasum(&n, &sx[0], &incx)
 
 cpdef float _test_scasum(float complex[:] cx) nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
-    return scasum_f(&n, &cx[0], &incx)
+    return scasum(&n, &cx[0], &incx)
 
 cpdef float _test_scnrm2(float complex[:] x) nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
-    return scnrm2_f(&n, &x[0], &incx)
+    return scnrm2(&n, &x[0], &incx)
 
 cpdef float _test_sdot(float[:] sx, float[:] sy) nogil:
     cdef:
         int n = sx.shape[0]
         int incx = sx.strides[0] // sizeof(sx[0])
         int incy = sy.strides[0] // sizeof(sy[0])
-    return sdot_f(&n, &sx[0], &incx, &sy[0], &incy)
+    return sdot(&n, &sx[0], &incx, &sy[0], &incy)
 
 cpdef float _test_snrm2(float[:] x) nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.shape[0] // sizeof(x[0])
-    return snrm2_f(&n, &x[0], &incx)
+    return snrm2(&n, &x[0], &incx)
 
 cpdef double complex _test_zdotc(double complex[:] zx, double complex[:] zy) nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
         int incy = zy.strides[0] // sizeof(zy[0])
-    return zdotc_f(&n, &zx[0], &incx, &zy[0], &incy)
+    return zdotc(&n, &zx[0], &incx, &zy[0], &incy)
 
 cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
         int incy = zy.strides[0] // sizeof(zy[0])
-    return zdotu_f(&n, &zx[0], &incx, &zy[0], &incy)
+    return zdotu(&n, &zx[0], &incx, &zy[0], &incy)
 """
 
 def generate_blas_pyx(func_sigs, sub_sigs, all_sigs, header_name):
@@ -344,7 +362,7 @@ def _test_dlamch(cmach):
     # Now that it is a bytes representation, a non-temporary variable
     # must be passed as a part of the function call.
     cdef char* cmach_char = cmach_bytes
-    return dlamch_f(cmach_char)
+    return dlamch(cmach_char)
 
 def _test_slamch(cmach):
     # This conversion is necessary to handle Python 3 strings.
@@ -352,7 +370,7 @@ def _test_slamch(cmach):
     # Now that it is a bytes representation, a non-temporary variable
     # must be passed as a part of the function call.
     cdef char* cmach_char = cmach_bytes
-    return slamch_f(cmach_char)
+    return slamch(cmach_char)
 """
 
 def generate_lapack_pyx(func_sigs, sub_sigs, all_sigs, header_name):
@@ -364,6 +382,8 @@ def generate_lapack_pyx(func_sigs, sub_sigs, all_sigs, header_name):
 
 pxd_template = """ctypedef {ret_type} {name}_t({args}) nogil
 cdef {name}_t *{name}_f
+"""
+pxd_template = """cdef {ret_type} {name}({args}) nogil
 """
 
 def pxd_decl(name, ret_type, args):
@@ -557,12 +577,13 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
              lapack_signature_file="cython_lapack_signatures.txt",
              blas_name="cython_blas",
              lapack_name="cython_lapack",
-             blas_fortran_name="_blas_subroutine_wrappers",
-             lapack_fortran_name="_lapack_subroutine_wrappers"):
+             blas_fortran_name="_blas_subroutine_wrappers.f",
+             lapack_fortran_name="_lapack_subroutine_wrappers.f",
+             blas_header_name="_blas_subroutines.h",
+             lapack_header_name="_lapack_subroutines.h"):
     with open(blas_signature_file, 'r') as f:
         blas_sigs = f.readlines()
     blas_sigs = filter_lines(blas_sigs)
-    blas_header_name = blas_fortran_name + '.h'
     blas_pyx = generate_blas_pyx(*(blas_sigs + (blas_header_name,)))
     with open(blas_name + '.pyx', 'w') as f:
         f.write(blas_pyx)
@@ -570,7 +591,7 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
     with open(blas_name + '.pxd', 'w') as f:
         f.write(blas_pxd)
     blas_fortran = generate_fortran(blas_sigs[0])
-    with open(blas_fortran_name + '.f', 'w') as f:
+    with open(blas_fortran_name, 'w') as f:
         f.write(blas_fortran)
     blas_c_header = generate_c_header(*(blas_sigs + ('BLAS',)))
     with open(blas_header_name, 'w') as f:
@@ -578,7 +599,6 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
     with open(lapack_signature_file, 'r') as f:
         lapack_sigs = f.readlines()
     lapack_sigs = filter_lines(lapack_sigs)
-    lapack_header_name = lapack_fortran_name + '.h'
     lapack_pyx = generate_lapack_pyx(*(lapack_sigs + (lapack_header_name,)))
     with open(lapack_name + '.pyx', 'w') as f:
         f.write(lapack_pyx)
@@ -586,10 +606,10 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
     with open(lapack_name + '.pxd', 'w') as f:
         f.write(lapack_pxd)
     lapack_fortran = generate_fortran(lapack_sigs[0])
-    with open(lapack_fortran_name + '.f', 'w') as f:
+    with open(lapack_fortran_name, 'w') as f:
         f.write(lapack_fortran)
     lapack_c_header = generate_c_header(*(lapack_sigs + ('LAPACK',)))
-    with open(lapack_fortran_name + '.h', 'w') as f:
+    with open(lapack_header_name, 'w') as f:
         f.write(lapack_c_header)
 
 if __name__ == '__main__':
