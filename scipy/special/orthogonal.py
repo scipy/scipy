@@ -492,8 +492,8 @@ def laguerre(n, monic=False):
                     lambda x: eval_laguerre(n, x))
     return p
 
-
 # Hermite  1                         H_n(x)
+
 
 def h_roots(n, mu=False):
     """Gauss-Hermite (physicst's) quadrature
@@ -503,8 +503,6 @@ def h_roots(n, mu=False):
     :math:`H_n(x)`.  These sample points and weights correctly integrate
     polynomials of degree :math:`2*n - 1` or less over the interval
     :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-x^2}`.
-    For n larger than 200 an optimal asymptotic algorithm is used which
-    computes nodes and weights in linear time.
 
     Parameters
     ----------
@@ -522,6 +520,18 @@ def h_roots(n, mu=False):
     mu : float
         Sum of the weights
 
+    Notes
+    -----
+    For small n up to 150 a modified version of the Golub-Welsch
+    algorithm is used. Nodes are computed from the eigenvalue
+    problem and improved by one step of a Newton iteration.
+    The weights are computed from the well-known analytical formula.
+
+    For n larger than 150 an optimal asymptotic algorithm is applied
+    which computes nodes and weights in a numerically stable manner.
+    The algorithm has linear runtime making computation for very
+    large n (several thousand or more) feasible.
+
     See Also
     --------
     integrate.quadrature
@@ -532,7 +542,7 @@ def h_roots(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    if n <= 200:
+    if n <= 150:
         mu0 = np.sqrt(np.pi)
         an_func = lambda k: 0.0*k
         bn_func = lambda k: np.sqrt(k/2.0)
@@ -547,21 +557,67 @@ def h_roots(n, mu=False):
             return nodes, weights
 
 
-def compute_tauk(n, k, steps=5):
-    """Helper function for lemma 3.1
+def compute_tauk(n, k, maxit=5):
+    """Helper function for Tricomi initial guesses
+
+    For details, see formula 3.1 in lemma 3.1 in the
+    original paper.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    k : ndarray of type int
+        Index of roots :math:`\tau_k` to compute
+    maxit : int
+        Number of Newton maxit performed, the default
+        value of 5 is sufficient.
+
+    Returns
+    -------
+    tauk : ndarray
+        Roots of equation 3.1
+
+    See Also
+    --------
+    initial_nodes_a
+    h_roots_asy
     """
     a = n % 2 - 0.5
     c = (4.0*floor(n/2.0) - 4.0*k + 3.0)*pi / (4.0*floor(n/2.0) + 2.0*a + 2.0)
     f = lambda x: x - sin(x) - c
     df = lambda x: 1.0 - cos(x)
     xi = 0.5*pi
-    for i in xrange(steps):
+    for i in xrange(maxit):
         xi = xi - f(xi)/df(xi)
     return xi
 
 
 def initial_nodes_a(n, k):
-    """Lemma 3.1 (Tricomi initial guesses)
+    """Tricomi initial guesses
+
+    Computes an initial approximation to the square of the `k`-th
+    (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
+    of order :math:`n`. The formula is the one from lemma 3.1 in the
+    original paper. The guesses are accurate except in the region
+    near :math:`\sqrt{2n + 1}`.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    k : ndarray of type int
+        Index of roots to compute
+
+    Returns
+    -------
+    xksq : ndarray
+        Square of the approximate roots
+
+    See Also
+    --------
+    initial_nodes
+    h_roots_asy
     """
     tauk = compute_tauk(n, k)
     sigk = cos(0.5*tauk)**2
@@ -573,8 +629,26 @@ def initial_nodes_a(n, k):
 
 
 def compute_am(m):
-    """Compute approximations to the roots of the Airy Ai(x) function.
-    This formula is exact for m > 10.
+    """Approximation of the roots of the Airy function
+
+    Computes an asymptotic approximation to the root :math:`a_m`
+    of the Airy function :math:`Ai(x)` for large values of :math:`m`.
+    This formula is essentially exact for :math:`m > 10`.
+
+    Parameters
+    ----------
+    m : ndarray of type int
+        Index of the root :math:`a_m`
+
+    Returns
+    -------
+    am : ndarray
+        The `m`-th root :math:`a_m` of the function :math:`Ai(x)`
+
+    See Also
+    --------
+    airy_root
+    h_roots_asy
     """
     sm = 3*pi*(4*m-1) / 8.0
     coeffs = row_stack([1.0, 5.0/48.0, -5.0/36.0, 77125.0/82944.0,
@@ -585,7 +659,25 @@ def compute_am(m):
 
 
 def airy_root(m):
-    """Compute approximations to all roots of the Airy Ai(x) function.
+    """Approximation of the roots of the Airy function
+
+    Computes an approximation to the `m`-th root :math:`a_m` of the
+    Airy function :math:`Ai(x)`. For :math:`m < 10` we use a lookup
+    table and an asymptotic expansion otherwise.
+
+    Parameters
+    ----------
+    m : ndarray of type int
+        Index of the root :math:`a_m`
+
+    Returns
+    -------
+    am : ndarray
+        The `m`-th root :math:`a_m` of the function :math:`Ai(x)`
+
+    See Also
+    --------
+    h_roots_asy
     """
     airyroots = array([
             -2.3381074104597670385,
@@ -598,7 +690,7 @@ def airy_root(m):
              -11.008524303733262893,
              -11.936015563236262517,
              -12.828776752865757200])
-
+    # Note: This specialized code is much faster than 'ai_zeros'
     am = zeros_like(m, dtype=floating)
     I = m <= 10
     am[I] = airyroots[m[I]-1]
@@ -608,7 +700,30 @@ def airy_root(m):
 
 
 def initial_nodes_b(n, k):
-    """Lemma 3.2 (Gatteschi initial guesses)
+    """Gatteschi initial guesses
+
+    Computes an initial approximation to the square of the `k`-th
+    (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
+    of order :math:`n`. The formula is the one from lemma 3.2 in the
+    original paper. The guesses are accurate in the region just
+    below :math:`\sqrt{2n + 1}`.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    k : ndarray of type int
+        Index of roots to compute
+
+    Returns
+    -------
+    xksq : ndarray
+        Square of the approximate root
+
+    See Also
+    --------
+    initial_nodes
+    h_roots_asy
     """
     a = n % 2 - 0.5
     nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
@@ -624,11 +739,27 @@ def initial_nodes_b(n, k):
     return xksq
 
 
-def initial_values(n):
-    """Compute initial approximetaion to the Hermite roots of order n.
+def initial_nodes(n):
+    """Initial guesses for the Hermite roots
 
-    Both initial guesses are used for the region where they are
-    accurate and then combined.
+    Computes an initial approximation to the non-negative
+    roots :math:`x_k` of the Hermite polynomial :math:`H_n`
+    of order :math:`n`. The Tricomi and Gatteschi initial
+    guesses are used in the region where they are accurate.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+
+    Returns
+    -------
+    xk : ndarray
+        Approximate roots
+
+    See Also
+    --------
+    h_roots_asy
     """
     # Turnover point
     # linear polynomial fit to error of 10, 25, 40, ..., 1000 point rules
@@ -648,7 +779,38 @@ def initial_values(n):
 
 
 def pbcf(n, theta):
-    """Asymptotic series expansion of parabolic cylinder function.
+    """Asymptotic series expansion of parabolic cylinder function
+
+    The implementation is based on sections 3.2 and 3.3 from the
+    original paper. Compared to the published version this code
+    adds one more term to the asymptotic series. The detailed
+    formulas can be found at [parabolic-asymptotics]_. The evaluation
+    is done in a transformed variable :math:`\theta := \arccos(t)`
+    where :math:`t := x / \mu` and :math:`\mu := \sqrt{2n + 1}`.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    theta : ndarray
+        Transformed position variable
+
+    Returns
+    -------
+    U : ndarray
+        Value of the parabolic cylinder function :math:`U(a, \theta)`.
+    Ud : ndarray
+        Value of the derivative :math:`U^{\prime}(a, \theta)` of
+        the parabolic cylinder function.
+
+    See Also
+    --------
+    h_roots_asy
+
+    References
+    ----------
+    .. [parabolic-asymptotics]
+       http://dlmf.nist.gov/12.10#vii
     """
     mu = sqrt(2.0*n + 1.0)
     st = sin(theta)
@@ -732,6 +894,28 @@ def pbcf(n, theta):
 def newton(n, x_initial, maxit=5):
     """Newton iteration for polishing the asymptotic approximation
     to the zeros of the Hermite polynomials.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    x_initial : ndarray
+        Initial guesses for the roots
+    maxit : int
+        Maximal number of Newton iterations.
+        The default 5 is sufficient, usually
+        only one or two steps are needed.
+
+    Returns
+    -------
+    nodes : ndarray
+        Quadrature nodes
+    weights : ndarray
+        Quadrature weights
+
+    See Also
+    --------
+    h_roots_asy
     """
     # Variable transformation
     mu = sqrt(2.0*n + 1.0)
@@ -762,7 +946,9 @@ def h_roots_asy(n):
     :math:`H_n(x)`.  These sample points and weights correctly integrate
     polynomials of degree :math:`2*n - 1` or less over the interval
     :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-x^2}`.
-    This method relies on asymptotic expansions which work best for n > 200.
+    This method relies on asymptotic expansions which work best for n > 150.
+    The algorithm has linear runtime making computation for very large n
+    feasible.
 
     Parameters
     ----------
@@ -771,10 +957,10 @@ def h_roots_asy(n):
 
     Returns
     -------
-    x : ndarray
-        Sample points
-    w : ndarray
-        Weights
+    nodes : ndarray
+        Quadrature nodes
+    weights : ndarray
+        Quadrature weights
 
     See Also
     --------
@@ -783,15 +969,15 @@ def h_roots_asy(n):
     References
     ----------
     .. [townsend.trogdon.olver-2014]
-    Townsend, A. and Trogdon, T. and Olver, S. (2014)
-    *Fast computation of Gauss quadrature nodes and
-    weights on the whole real line*. ArXiv 1410.5286.
+       Townsend, A. and Trogdon, T. and Olver, S. (2014)
+       *Fast computation of Gauss quadrature nodes and
+       weights on the whole real line*. ArXiv 1410.5286.
     """
     m = int(n)
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    iv = initial_values(n)
+    iv = initial_nodes(n)
     nodes, weights = newton(n, iv)
     # Combine with negative parts
     if n % 2 == 0:
@@ -856,6 +1042,18 @@ def he_roots(n, mu=False):
     mu : float
         Sum of the weights
 
+    Notes
+    -----
+    For small n up to 150 a modified version of the Golub-Welsch
+    algorithm is used. Nodes are computed from the eigenvalue
+    problem and improved by one step of a Newton iteration.
+    The weights are computed from the well-known analytical formula.
+
+    For n larger than 150 an optimal asymptotic algorithm is used
+    which computes nodes and weights in a numerical stable manner.
+    The algorithm has linear runtime making computation for very
+    large n (several thousand or more) feasible.
+
     See Also
     --------
     integrate.quadrature
@@ -866,7 +1064,7 @@ def he_roots(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    if n <= 200:
+    if n <= 150:
         mu0 = np.sqrt(np.pi/2.0)
         an_func = lambda k: 0.0*k
         bn_func = lambda k: np.sqrt(k)
