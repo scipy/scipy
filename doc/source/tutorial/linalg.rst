@@ -117,14 +117,14 @@ using ``A.I`` if ``A`` is a Matrix. For example, let
 .. math::
    :nowrap:
 
-    \[ \mathbf{A=}\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]\]
+    \mathbf{A=}\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]
 
 then
 
 .. math::
    :nowrap:
 
-    \[ \mathbf{A^{-1}=\frac{1}{25}\left[\begin{array}{ccc} -37 & 9 & 22\\ 14 & 2 & -9\\ 4 & -3 & 1\end{array}\right]=\left[\begin{array}{ccc} -1.48 & 0.36 & 0.88\\ 0.56 & 0.08 & -0.36\\ 0.16 & -0.12 & 0.04\end{array}\right].}\]
+    \mathbf{A^{-1}=\frac{1}{25}\left[\begin{array}{ccc} -37 & 9 & 22\\ 14 & 2 & -9\\ 4 & -3 & 1\end{array}\right]=\left[\begin{array}{ccc} -1.48 & 0.36 & 0.88\\ 0.56 & 0.08 & -0.36\\ 0.16 & -0.12 & 0.04\end{array}\right].}
 
 The following example demonstrates this computation in SciPy
 
@@ -139,7 +139,7 @@ The following example demonstrates this computation in SciPy
     >>> A.dot(linalg.inv(A)) #double check
     array([[  1.00000000e+00,   0.00000000e+00],
           [  4.44089210e-16,   1.00000000e+00]])
-    
+
 Solving linear system
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -160,7 +160,7 @@ We could find the solution vector using a matrix inverse:
 .. math::
    :nowrap:
 
-    \[ \left[\begin{array}{c} x\\ y\\ z\end{array}\right]=\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]^{-1}\left[\begin{array}{c} 10\\ 8\\ 3\end{array}\right]=\frac{1}{25}\left[\begin{array}{c} -232\\ 129\\ 19\end{array}\right]=\left[\begin{array}{c} -9.28\\ 5.16\\ 0.76\end{array}\right].\]
+    \left[\begin{array}{c} x\\ y\\ z\end{array}\right]=\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]^{-1}\left[\begin{array}{c} 10\\ 8\\ 3\end{array}\right]=\frac{1}{25}\left[\begin{array}{c} -232\\ 129\\ 19\end{array}\right]=\left[\begin{array}{c} -9.28\\ 5.16\\ 0.76\end{array}\right].
 
 However, it is better to use the linalg.solve command which can be
 faster and more numerically stable. In this case it however gives the
@@ -204,7 +204,7 @@ be the determinant of the matrix left by removing the
 .. math::
    :nowrap:
 
-    \[ \left|\mathbf{A}\right|=\sum_{j}\left(-1\right)^{i+j}a_{ij}M_{ij}.\]
+    \left|\mathbf{A}\right|=\sum_{j}\left(-1\right)^{i+j}a_{ij}M_{ij}.
 
 This is a recursive way to define the determinant where the base case
 is defined by accepting that the determinant of a :math:`1\times1` matrix is the only matrix element. In SciPy the determinant can be
@@ -213,7 +213,7 @@ calculated with :obj:`linalg.det` . For example, the determinant of
 .. math::
    :nowrap:
 
-    \[ \mathbf{A=}\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]\]
+    \mathbf{A=}\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]
 
 is
 
@@ -250,7 +250,7 @@ For vector *x* , the order parameter can be any real number including
 .. math::
    :nowrap:
 
-    \[ \left\Vert \mathbf{x}\right\Vert =\left\{ \begin{array}{cc} \max\left|x_{i}\right| & \textrm{ord}=\textrm{inf}\\ \min\left|x_{i}\right| & \textrm{ord}=-\textrm{inf}\\ \left(\sum_{i}\left|x_{i}\right|^{\textrm{ord}}\right)^{1/\textrm{ord}} & \left|\textrm{ord}\right|<\infty.\end{array}\right.\]
+    \left\Vert \mathbf{x}\right\Vert =\left\{ \begin{array}{cc} \max\left|x_{i}\right| & \textrm{ord}=\textrm{inf}\\ \min\left|x_{i}\right| & \textrm{ord}=-\textrm{inf}\\ \left(\sum_{i}\left|x_{i}\right|^{\textrm{ord}}\right)^{1/\textrm{ord}} & \left|\textrm{ord}\right|<\infty.\end{array}\right.
 
 
 
@@ -259,7 +259,7 @@ For matrix :math:`\mathbf{A}` the only valid values for norm are :math:`\pm2,\pm
 .. math::
    :nowrap:
 
-    \[ \left\Vert \mathbf{A}\right\Vert =\left\{ \begin{array}{cc} \max_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=\textrm{inf}\\ \min_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=-\textrm{inf}\\ \max_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=1\\ \min_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=-1\\ \max\sigma_{i} & \textrm{ord}=2\\ \min\sigma_{i} & \textrm{ord}=-2\\ \sqrt{\textrm{trace}\left(\mathbf{A}^{H}\mathbf{A}\right)} & \textrm{ord}=\textrm{'fro'}\end{array}\right.\]
+    \left\Vert \mathbf{A}\right\Vert =\left\{ \begin{array}{cc} \max_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=\textrm{inf}\\ \min_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=-\textrm{inf}\\ \max_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=1\\ \min_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=-1\\ \max\sigma_{i} & \textrm{ord}=2\\ \min\sigma_{i} & \textrm{ord}=-2\\ \sqrt{\textrm{trace}\left(\mathbf{A}^{H}\mathbf{A}\right)} & \textrm{ord}=\textrm{'fro'}\end{array}\right.
 
 where :math:`\sigma_{i}` are the singular values of :math:`\mathbf{A}` .
 
@@ -296,7 +296,7 @@ through a set of coefficients :math:`c_{j}` and model functions
 .. math::
    :nowrap:
 
-    \[ y_{i}=\sum_{j}c_{j}f_{j}\left(\mathbf{x}_{i}\right)+\epsilon_{i}\]
+    y_{i}=\sum_{j}c_{j}f_{j}\left(\mathbf{x}_{i}\right)+\epsilon_{i}
 
 where :math:`\epsilon_{i}` represents uncertainty in the data. The
 strategy of least squares is to pick the coefficients :math:`c_{j}` to
@@ -305,7 +305,7 @@ minimize
 .. math::
    :nowrap:
 
-    \[ J\left(\mathbf{c}\right)=\sum_{i}\left|y_{i}-\sum_{j}c_{j}f_{j}\left(x_{i}\right)\right|^{2}.\]
+    J\left(\mathbf{c}\right)=\sum_{i}\left|y_{i}-\sum_{j}c_{j}f_{j}\left(x_{i}\right)\right|^{2}.
 
 
 
@@ -314,7 +314,7 @@ Theoretically, a global minimum will occur when
 .. math::
    :nowrap:
 
-    \[ \frac{\partial J}{\partial c_{n}^{*}}=0=\sum_{i}\left(y_{i}-\sum_{j}c_{j}f_{j}\left(x_{i}\right)\right)\left(-f_{n}^{*}\left(x_{i}\right)\right)\]
+    \frac{\partial J}{\partial c_{n}^{*}}=0=\sum_{i}\left(y_{i}-\sum_{j}c_{j}f_{j}\left(x_{i}\right)\right)\left(-f_{n}^{*}\left(x_{i}\right)\right)
 
 or
 
@@ -328,14 +328,14 @@ where
 .. math::
    :nowrap:
 
-    \[ \left\{ \mathbf{A}\right\} _{ij}=f_{j}\left(x_{i}\right).\]
+    \left\{ \mathbf{A}\right\} _{ij}=f_{j}\left(x_{i}\right).
 
 When :math:`\mathbf{A^{H}A}` is invertible, then
 
 .. math::
    :nowrap:
 
-    \[ \mathbf{c}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}\mathbf{y}=\mathbf{A}^{\dagger}\mathbf{y}\]
+    \mathbf{c}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}\mathbf{y}=\mathbf{A}^{\dagger}\mathbf{y}
 
 where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of
 :math:`\mathbf{A}.` Notice that using this definition of
@@ -344,7 +344,7 @@ where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of
 .. math::
    :nowrap:
 
-    \[ \mathbf{y}=\mathbf{Ac}+\boldsymbol{\epsilon}.\]
+    \mathbf{y}=\mathbf{Ac}+\boldsymbol{\epsilon}.
 
 The command :obj:`linalg.lstsq` will solve the linear least squares
 problem for :math:`\mathbf{c}` given :math:`\mathbf{A}` and
@@ -360,7 +360,7 @@ problem. The data shown below were generated using the model:
 .. math::
    :nowrap:
 
-    \[ y_{i}=c_{1}e^{-x_{i}}+c_{2}x_{i}\]
+    y_{i}=c_{1}e^{-x_{i}}+c_{2}x_{i}
 
 where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5` ,
 and :math:`c_{2}=4.` Noise is added to :math:`y_{i}` and the
@@ -406,21 +406,21 @@ then if :math:`M>N` the generalized inverse is
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}^{\dagger}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}\]
+    \mathbf{A}^{\dagger}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}
 
 while if :math:`M<N` matrix the generalized inverse is
 
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}^{\#}=\mathbf{A}^{H}\left(\mathbf{A}\mathbf{A}^{H}\right)^{-1}.\]
+    \mathbf{A}^{\#}=\mathbf{A}^{H}\left(\mathbf{A}\mathbf{A}^{H}\right)^{-1}.
 
 In both cases for :math:`M=N` , then
 
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}^{\dagger}=\mathbf{A}^{\#}=\mathbf{A}^{-1}\]
+    \mathbf{A}^{\dagger}=\mathbf{A}^{\#}=\mathbf{A}^{-1}
 
 as long as :math:`\mathbf{A}` is invertible.
 
@@ -444,7 +444,7 @@ eigenvalue-eigenvector problem is to find for some square matrix
 .. math::
    :nowrap:
 
-    \[ \mathbf{Av}=\lambda\mathbf{v}.\]
+    \mathbf{Av}=\lambda\mathbf{v}.
 
 For an :math:`N\times N` matrix, there are :math:`N` (not necessarily
 distinct) eigenvalues --- roots of the (characteristic) polynomial
@@ -452,7 +452,7 @@ distinct) eigenvalues --- roots of the (characteristic) polynomial
 .. math::
    :nowrap:
 
-    \[ \left|\mathbf{A}-\lambda\mathbf{I}\right|=0.\]
+    \left|\mathbf{A}-\lambda\mathbf{I}\right|=0.
 
 The eigenvectors, :math:`\mathbf{v}` , are also sometimes called right
 eigenvectors to distinguish them from another set of left eigenvectors
@@ -461,14 +461,14 @@ that satisfy
 .. math::
    :nowrap:
 
-    \[ \mathbf{v}_{L}^{H}\mathbf{A}=\lambda\mathbf{v}_{L}^{H}\]
+    \mathbf{v}_{L}^{H}\mathbf{A}=\lambda\mathbf{v}_{L}^{H}
 
 or
 
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}^{H}\mathbf{v}_{L}=\lambda^{*}\mathbf{v}_{L}.\]
+    \mathbf{A}^{H}\mathbf{v}_{L}=\lambda^{*}\mathbf{v}_{L}.
 
 With it's default optional arguments, the command :obj:`linalg.eig`
 returns :math:`\lambda` and :math:`\mathbf{v}.` However, it can also
@@ -491,7 +491,7 @@ eigenvalue problem can be solved, then it provides a decomposition of
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}=\mathbf{BV}\boldsymbol{\Lambda}\mathbf{V}^{-1}\]
+    \mathbf{A}=\mathbf{BV}\boldsymbol{\Lambda}\mathbf{V}^{-1}
 
 where :math:`\mathbf{V}` is the collection of eigenvectors into
 columns and :math:`\boldsymbol{\Lambda}` is a diagonal matrix of
@@ -508,7 +508,7 @@ the matrix
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}=\left[\begin{array}{ccc} 1 & 5 & 2\\ 2 & 4 & 1\\ 3 & 6 & 2\end{array}\right].\]
+    \mathbf{A}=\left[\begin{array}{ccc} 1 & 5 & 2\\ 2 & 4 & 1\\ 3 & 6 & 2\end{array}\right].
 
 The characteristic polynomial is
 
@@ -573,7 +573,7 @@ the singular values. Then
 .. math::
    :nowrap:
 
-    \[ \mathbf{A=U}\boldsymbol{\Sigma}\mathbf{V}^{H}\]
+    \mathbf{A=U}\boldsymbol{\Sigma}\mathbf{V}^{H}
 
 is the singular-value decomposition of :math:`\mathbf{A}.` Every
 matrix has a singular value decomposition. Sometimes, the singular
@@ -622,7 +622,7 @@ matrix :math:`\mathbf{A}` as
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}=\mathbf{PLU}\]
+    \mathbf{A}=\mathbf{PLU}
 
 where :math:`\mathbf{P}` is an :math:`M\times M` permutation matrix (a
 permutation of the rows of the identity matrix), :math:`\mathbf{L}` is
@@ -638,14 +638,14 @@ side does. For example, suppose we are going to solve
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}\mathbf{x}_{i}=\mathbf{b}_{i}\]
+    \mathbf{A}\mathbf{x}_{i}=\mathbf{b}_{i}
 
 for many different :math:`\mathbf{b}_{i}` . The LU decomposition allows this to be written as
 
 .. math::
    :nowrap:
 
-    \[ \mathbf{PLUx}_{i}=\mathbf{b}_{i}.\]
+    \mathbf{PLUx}_{i}=\mathbf{b}_{i}.
 
 Because :math:`\mathbf{L}` is lower-triangular, the equation can be
 solved for :math:`\mathbf{U}\mathbf{x}_{i}` and finally
@@ -693,14 +693,14 @@ matrix :math:`\mathbf{R}` such that
 .. math::
    :nowrap:
 
-    \[ \mathbf{A=QR}.\]
+    \mathbf{A=QR}.
 
 Notice that if the SVD of :math:`\mathbf{A}` is known then the QR decomposition can be found
 
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{H}=\mathbf{QR}\]
+    \mathbf{A}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{H}=\mathbf{QR}
 
 implies that :math:`\mathbf{Q}=\mathbf{U}` and
 :math:`\mathbf{R}=\boldsymbol{\Sigma}\mathbf{V}^{H}.` Note, however,
@@ -718,7 +718,7 @@ decomposition finds (not-necessarily unique) matrices
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}=\mathbf{ZT}\mathbf{Z}^{H}\]
+    \mathbf{A}=\mathbf{ZT}\mathbf{Z}^{H}
 
 where :math:`\mathbf{Z}` is a unitary matrix and :math:`\mathbf{T}` is
 either upper-triangular or quasi-upper triangular depending on whether
@@ -810,7 +810,7 @@ Consider the function :math:`f\left(x\right)` with Taylor series expansion
 .. math::
    :nowrap:
 
-    \[ f\left(x\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}x^{k}.\]
+    f\left(x\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}x^{k}.
 
 A matrix function can be defined using this Taylor series for the
 square matrix :math:`\mathbf{A}` as
@@ -818,7 +818,7 @@ square matrix :math:`\mathbf{A}` as
 .. math::
    :nowrap:
 
-    \[ f\left(\mathbf{A}\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}\mathbf{A}^{k}.\]
+    f\left(\mathbf{A}\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}\mathbf{A}^{k}.
 
 While, this serves as a useful representation of a matrix function, it
 is rarely the best way to calculate a matrix function.
@@ -833,7 +833,7 @@ can be defined for square matrices as
 .. math::
    :nowrap:
 
-    \[ e^{\mathbf{A}}=\sum_{k=0}^{\infty}\frac{1}{k!}\mathbf{A}^{k}.\]
+    e^{\mathbf{A}}=\sum_{k=0}^{\infty}\frac{1}{k!}\mathbf{A}^{k}.
 
 The command :obj:`linalg.expm3` uses this Taylor series definition to compute the matrix exponential.
 Due to poor convergence properties it is not often used.
@@ -844,14 +844,14 @@ eigenvalue decomposition of :math:`\mathbf{A}` :
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}\]
+    \mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}
 
 and note that
 
 .. math::
    :nowrap:
 
-    \[ e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol{\Lambda}}\mathbf{V}^{-1}\]
+    e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol{\Lambda}}\mathbf{V}^{-1}
 
 where the matrix exponential of the diagonal matrix :math:`\boldsymbol{\Lambda}` is just the exponential of its elements. This method is implemented in :obj:`linalg.expm2` .
 
@@ -865,7 +865,7 @@ as the inverse of the matrix exponential.
 .. math::
    :nowrap:
 
-    \[ \mathbf{A}\equiv\exp\left(\log\left(\mathbf{A}\right)\right).\]
+    \mathbf{A}\equiv\exp\left(\log\left(\mathbf{A}\right)\right).
 
 The matrix logarithm can be obtained with :obj:`linalg.logm` .
 
@@ -888,14 +888,14 @@ The tangent is
 .. math::
    :nowrap:
 
-    \[ \tan\left(x\right)=\frac{\sin\left(x\right)}{\cos\left(x\right)}=\left[\cos\left(x\right)\right]^{-1}\sin\left(x\right)\]
+    \tan\left(x\right)=\frac{\sin\left(x\right)}{\cos\left(x\right)}=\left[\cos\left(x\right)\right]^{-1}\sin\left(x\right)
 
 and so the matrix tangent is defined as
 
 .. math::
    :nowrap:
 
-    \[ \left[\cos\left(\mathbf{A}\right)\right]^{-1}\sin\left(\mathbf{A}\right).\]
+    \left[\cos\left(\mathbf{A}\right)\right]^{-1}\sin\left(\mathbf{A}\right).
 
 
 
