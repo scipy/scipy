@@ -430,11 +430,24 @@ fortran_template = """      subroutine {name}wrp(ret, {argnames})
       end
 """
 
-def process_fortran_name(name):
+dims = {'work':'(*)', 'ab':'(ldab,*)', 'a':'(lda,*)', 'dl':'(*)', 'd':'(*)',
+        'du':'(*)', 'ap':'(*)', 'e':'(*)'}
+        
+
+def process_fortran_name(name, funcname):
     if 'inc' in name:
         return name
     if 'x' in name or 'y' in name:
         return name + '(n)'
+    if name in ['name', 'opts']:
+        if funcname == 'ilaenv':
+            return name + '*(*)'
+        elif funcname == 'iparmq':
+            return name + '(*)'
+    if funcname == 'lsamen' and name in ['ca', 'cb']:
+        return name + '*(*)'
+    if name in dims:
+        return name + dims[name]
     return name
 
 def fort_subroutine_wrapper(name, ret_type, args):
@@ -445,7 +458,7 @@ def fort_subroutine_wrapper(name, ret_type, args):
     types, names = arg_names_and_types(args)
     argnames = ', '.join(names)
     
-    names = [process_fortran_name(n) for n in names]
+    names = [process_fortran_name(n, name) for n in names]
     argdecls = '\n        '.join('{} {}'.format(fortran_types[t], n)
                                  for n, t in zip(names, types))
     return fortran_template.format(name=name, wrapper=wrapper,
