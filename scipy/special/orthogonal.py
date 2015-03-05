@@ -586,7 +586,7 @@ def compute_tauk(n, k, maxit=5):
     f = lambda x: x - sin(x) - c
     df = lambda x: 1.0 - cos(x)
     xi = 0.5*pi
-    for i in xrange(maxit):
+    for i in range(maxit):
         xi = xi - f(xi)/df(xi)
     return xi
 
@@ -920,7 +920,7 @@ def newton(n, x_initial, maxit=5):
     t = x_initial / mu
     theta = arccos(t)
     # Newton iteration
-    for i in xrange(maxit):
+    for i in range(maxit):
         u, ud = pbcf(n, theta)
         dtheta = u / (sqrt(2.0) * mu * sin(theta) * ud)
         theta = theta + dtheta
