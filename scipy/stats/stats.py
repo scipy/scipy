@@ -170,16 +170,16 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import math
+import copy
 from collections import namedtuple
 
-from scipy._lib.six import xrange
-
-# Scipy imports.
-from scipy._lib.six import callable, string_types
+import numpy as np
 from numpy import array, asarray, ma, zeros
+
+from scipy._lib.six import xrange, callable, string_types
+from scipy._lib._util import check_random_state
 import scipy.special as special
 import scipy.linalg as linalg
-import numpy as np
 from . import futil
 from . import distributions
 
@@ -953,14 +953,14 @@ def moment(a, moment=1, axis=0):
             else:
                 current_n /= 2
             n_list.append(current_n)
-        
+
         # Starting point for exponentiation by squares
         a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
             s = a_zero_mean**2
-        
+
         # Perform multiplications
         for n in n_list[-2::-1]:
             s = s**2
@@ -3387,7 +3387,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return _ttest_ind_from_stats(mean1, mean2, denom, df)
 
 
-def ttest_ind(a, b, axis=0, equal_var=True):
+def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -3409,7 +3409,14 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
         .. versionadded:: 0.11.0
-
+    permutations : int, optional
+        The number of permutations that will be used to calculate p-values
+        using a permutation test.  The permutation test will only be run
+        if permutations > 0.
+        .. versionadded:: 0.15.2
+    random_state : int or RandomState
+        Pseudo number generator state used for random sampling.
+        .. versionadded:: 0.15.2
 
     Returns
     -------
@@ -3429,11 +3436,19 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     If the p-value is smaller than the threshold, e.g. 1%, 5% or 10%,
     then we reject the null hypothesis of equal averages.
 
+    When a permutation test is performed, the labels are permutated using
+    Monte Carlo sampling. Each element in each of the samples is assigned a
+    label - 0 corresponding to the first sample and 1 corresponding to the
+    second sample. A vector of these labels is permutated multiple times and
+    these permutations are used to calculate the permutation test.
+
     References
     ----------
     .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
     .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+
+    .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
 
     Examples
     --------
@@ -3479,18 +3494,128 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
 
-    v1 = np.var(a, axis, ddof=1)
-    v2 = np.var(b, axis, ddof=1)
-    n1 = a.shape[axis]
-    n2 = b.shape[axis]
+    random_state = check_random_state(random_state)
 
-    if equal_var:
-        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
+    if permutations is not None:
+        mat = np.concatenate((a, b), axis=axis)
+        cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
+        t_stat, pvalues = _permutation_ttest(mat, cats,
+                                             axis=axis,
+                                             equal_var=equal_var,
+                                             permutations=permutations,
+                                             random_state=random_state)
+        return t_stat, pvalues
     else:
-        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-    return _ttest_ind_from_stats(np.mean(a, axis),
-                                 np.mean(b, axis),
-                                 denom, df)
+        v1 = np.var(a, axis, ddof=1)
+        v2 = np.var(b, axis, ddof=1)
+        n1 = a.shape[axis]
+        n2 = b.shape[axis]
+
+        if equal_var:
+            df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
+        else:
+            df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
+        return _ttest_ind_from_stats(np.mean(a, axis),
+                                     np.mean(b, axis),
+                                     denom, df)
+
+
+def _init_summation_index(cats):
+    """
+    Creates a matrix filled with category permutations
+
+    cats: numpy.array
+       List of class assignments
+    """
+    c = len(cats)
+    num_cats = len(np.unique(cats))  # Number of distinct categories
+    copy_cats = copy.deepcopy(cats)
+    perms = np.array(np.zeros((c, num_cats), dtype=cats.dtype))
+    for i in range(num_cats):
+        perms[:,i] = (copy_cats == i).astype(cats.dtype)
+    return perms
+
+
+def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, random_state=None):
+    """
+    Calculates the T-test for the means of TWO INDEPENDENT samples of scores
+    using permutation methods
+
+    This test is an equivalent to scipy.stats.ttest_ind, except it doesn't require the
+    normality assumption since it uses a permutation test.  This function is only
+    called from ttest_ind if the p-value is calculated using a permutation test
+
+    Parameters
+    ----------
+    mat : array_like
+        This contains all of the data values for both groups.
+    cats: array_like
+        This array must be 1 dimensional and have the same size as
+        the length of the specified axis.  This encodes information
+        about which category each element of the mat array belongs to
+    axis : int, optional
+        Axis can equal None (ravel array first), or an integer (the axis
+        over which to operate on a and b).
+    permutations: int
+        Number of permutations used to calculate p-value
+    equal_var: bool
+        If false, a Welch's t-test is conducted.  Otherwise,
+        a ordinary t-test is conducted
+    random_state : int or RandomState
+        Pseudo number generator state used for random sampling.
+
+    Returns
+    -------
+    t : float or array
+        The calculated t-statistic.
+    prob : float or array
+        The two-tailed p-value.
+    """
+    random_state = check_random_state(random_state)
+    if axis == 0:
+        mat = mat.transpose()
+    if len(mat.shape) < 2:  # Handle 1-D arrays
+        mat = mat.reshape((1, len(mat)))
+
+    r, c = mat.shape
+    num_cats = 2  # Only 2 classes in t-test
+    t_stat = np.zeros((r, num_cats*(permutations+1)))
+
+    copy_cats = copy.deepcopy(cats)
+
+    for p in range(permutations+1):
+
+        perms = _init_summation_index(copy_cats)
+
+        # Perform matrix multiplication on data matrix
+        # and calculate sums and squared sums
+        _sums = np.dot(mat, perms)
+        _sums2 = np.dot(np.multiply(mat, mat), perms)
+
+        # Calculate means and sample variances
+        tot = perms.sum(axis=0)
+        _avgs = _sums / tot
+        _avgs2 = _sums2 / tot
+        _vars = _avgs2 - np.multiply(_avgs, _avgs)
+        _samp_vars = np.multiply(tot, _vars) / (tot-1)
+
+        idx = np.arange(0, num_cats, num_cats, dtype=np.int32)
+
+        # Calculate the t statistic
+        if not equal_var:
+            denom = np.sqrt(np.divide(_samp_vars[:, idx+1], tot[idx+1]) +
+                            np.divide(_samp_vars[:, idx], tot[idx]))
+        else:
+            df = tot[idx] + tot[idx+1] - 2
+            svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) * _samp_vars[:, idx]) / df
+            denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))
+        t_stat[:, p] = np.ravel(np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom))
+        random_state.shuffle(copy_cats)
+
+    # Calculate the p-values
+    cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
+    pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
+    return t_stat[:, 0], pvalues
 
 
 def ttest_rel(a, b, axis=0):
