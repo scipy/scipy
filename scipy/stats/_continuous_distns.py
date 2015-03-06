@@ -3640,10 +3640,10 @@ class rayleigh_gen(rv_continuous):
 
     def _ppf(self, q):
         return sqrt(-2 * special.log1p(-q))
-        
+
     def _sf(self, r):
         return exp(-0.5 * r**2)
-        
+
     def _isf(self, q):
         return sqrt(-2 * log(q))
 
@@ -3701,7 +3701,6 @@ class reciprocal_gen(rv_continuous):
 reciprocal = reciprocal_gen(name="reciprocal")
 
 
-# FIXME: PPF does not work.
 class rice_gen(rv_continuous):
     """A Rice continuous random variable.
 
@@ -3730,7 +3729,21 @@ class rice_gen(rv_continuous):
         return np.sqrt((t*t).sum(axis=0))
 
     def _pdf(self, x, b):
-        return x * exp(-(x-b)*(x-b)/2.0) * special.i0e(x*b)
+        # The extra complexity here is to handle the overflow in
+        # special.i0 with large arguments.  When x is large enough
+        # to make i0 overflow, the first part of the expression
+        # will be zero anyway, so we don't evaluate i0 for those
+        # large values.
+        x = np.maximum(x, 0)
+        y = x * exp(-(x**2 + b**2)/2.0)
+        if np.isscalar(y):
+            if y == 0:
+                return y
+            else:
+                return y * special.i0(x*b)
+        notzero = (y != 0)
+        y[notzero] *= special.i0(x[notzero]*b)
+        return y
 
     def _munp(self, n, b):
         nd2 = n/2.0
