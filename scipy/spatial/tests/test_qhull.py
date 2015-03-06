@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, run_module_suite,
                            assert_, dec, assert_allclose, assert_array_equal,
                            assert_raises)
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree

@@ -777,7 +777,7 @@ class _BivariateSplineBase(object):
 
         Parameters
         ----------
-        x, y : array-like
+        x, y : array_like
             Input coordinates.
 
             If `grid` is False, evaluate the spline at points ``(x[i],
@@ -938,13 +938,13 @@ class BivariateSpline(_BivariateSplineBase):
 
         Parameters
         ----------
-        xi, yi : array-like
+        xi, yi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
-        dx : int
+        dx : int, optional
             Order of x-derivative
 
             .. versionadded:: 0.14.0
-        dy : int
+        dy : int, optional
             Order of y-derivative
 
             .. versionadded:: 0.14.0
@@ -1211,7 +1211,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Parameters
         ----------
-        theta, phi : array-like
+        theta, phi : array_like
             Input coordinates.
 
             If `grid` is False, evaluate the spline at points
@@ -1221,7 +1221,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
             If `grid` is True: evaluate spline at the grid points
             defined by the coordinate arrays theta, phi. The arrays
             must be sorted to increasing order.
-        dtheta : int
+        dtheta : int, optional
             Order of theta-derivative
 
             .. versionadded:: 0.14.0
@@ -1256,13 +1256,13 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Parameters
         ----------
-        theta, phi : array-like
+        theta, phi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
-        dtheta : int
+        dtheta : int, optional
             Order of theta-derivative
 
             .. versionadded:: 0.14.0
-        dphi : int
+        dphi : int, optional
             Order of phi-derivative
 
             .. versionadded:: 0.14.0

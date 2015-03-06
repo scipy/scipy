@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller
 from .mio4 import MatFile4Reader, MatFile4Writer

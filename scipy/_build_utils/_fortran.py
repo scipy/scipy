@@ -33,7 +33,7 @@ def uses_accelerate(info):
 
 
 def uses_mkl(info):
-    r_mkl = re.compile("mkl_core")
+    r_mkl = re.compile("mkl")
     libraries = info.get('libraries', '')
     for library in libraries:
         if r_mkl.search(library):
@@ -46,8 +46,7 @@ def needs_g77_abi_wrapper(info):
     """Returns True if g77 ABI wrapper must be used."""
     if uses_accelerate(info) or uses_veclib(info):
         return True
-    # XXX: is this really true only on Mac OS X ?
-    elif uses_mkl(info) and sys.platform == "darwin":
+    elif uses_mkl(info):
         return True
     else:
         return False

@@ -13,13 +13,18 @@ Functions
 """
 from __future__ import division, print_function, absolute_import
 
+from warnings import warn
+
 from scipy.optimize import minpack2
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
-__all__ = ['line_search_wolfe1', 'line_search_wolfe2',
+__all__ = ['LineSearchWarning', 'line_search_wolfe1', 'line_search_wolfe2',
            'scalar_search_wolfe1', 'scalar_search_wolfe2',
            'line_search_armijo']
+
+class LineSearchWarning(RuntimeWarning):
+    pass
 
 
 #------------------------------------------------------------------------------
@@ -119,10 +124,12 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
         Value of `f` at the previous point
     derphi0 : float, optional
         Value `derphi` at 0
-    amax : float, optional
-        Maximum step size
     c1, c2 : float, optional
         Wolfe parameters
+    amax, amin : float, optional
+        Maximum and minimum step size
+    xtol : float, optional
+        Relative tolerance for an acceptable step.
 
     Returns
     -------
@@ -211,23 +218,28 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         Parameter for Armijo condition rule.
     c2 : float, optional
         Parameter for curvature condition rule.
+    amax : float, optional
+        Maximum step size
 
     Returns
     -------
-    alpha : float
-        Alpha for which ``x_new = x0 + alpha * pk``.
+    alpha : float or None
+        Alpha for which ``x_new = x0 + alpha * pk``,
+        or None if the line search algorithm did not converge.
     fc : int
         Number of function evaluations made.
     gc : int
         Number of gradient evaluations made.
-    new_fval : float
-        New function value ``f(x_new)=f(x0+alpha*pk)``.
+    new_fval : float or None
+        New function value ``f(x_new)=f(x0+alpha*pk)``,
+        or None if the line search algorithm did not converge.
     old_fval : float
         Old function value ``f(x0)``.
-    new_slope : float
+    new_slope : float or None
         The local slope along the search direction at the
-        new value ``<myfprime(x_new), pk>``.
-    
+        new value ``<myfprime(x_new), pk>``,
+        or None if the line search algorithm did not converge.
+
 
     Notes
     -----
@@ -266,11 +278,12 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         gfk = fprime(xk, *args)
     derphi0 = np.dot(gfk, pk)
 
-    alpha_star, phi_star, old_fval, derphi_star = \
-                scalar_search_wolfe2(phi, derphi, old_fval, old_old_fval,
-                                     derphi0, c1, c2, amax)
+    alpha_star, phi_star, old_fval, derphi_star = scalar_search_wolfe2(
+            phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax)
 
-    if derphi_star is not None:
+    if derphi_star is None:
+        warn('The line search algorithm did not converge', LineSearchWarning)
+    else:
         # derphi_star is a number (derphi) -- so use the most recently
         # calculated gradient used in computing it derphi = gfk*pk
         # this is the gradient at the next step no need to compute it
@@ -289,10 +302,9 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
 
     Parameters
     ----------
-    phi : callable f(x,*args)
+    phi : callable f(x)
         Objective scalar function.
-
-    derphi : callable f'(x,*args), optional
+    derphi : callable f'(x), optional
         Objective function derivative (can be None)
     phi0 : float, optional
         Value of phi at s=0
@@ -300,23 +312,24 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
         Value of phi at previous point
     derphi0 : float, optional
         Value of derphi at s=0
-    args : tuple
-        Additional arguments passed to objective function.
-    c1 : float
+    c1 : float, optional
         Parameter for Armijo condition rule.
-    c2 : float
+    c2 : float, optional
         Parameter for curvature condition rule.
+    amax : float, optional
+        Maximum step size
 
     Returns
     -------
-    alpha_star : float
-        Best alpha
-    phi_star
+    alpha_star : float or None
+        Best alpha, or None if the line search algorithm did not converge.
+    phi_star : float
         phi at alpha_star
-    phi0
+    phi0 : float
         phi at 0
-    derphi_star
-        derphi at alpha_star
+    derphi_star : float or None
+        derphi at alpha_star, or None if the line search algorithm
+        did not converge.
 
     Notes
     -----
@@ -398,6 +411,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
         alpha_star = alpha1
         phi_star = phi_a1
         derphi_star = None
+        warn('The line search algorithm did not converge', LineSearchWarning)
 
     return alpha_star, phi_star, phi0, derphi_star
 
@@ -658,3 +672,160 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
 
     # Failed to find a suitable step length
     return None, phi_a1
+
+
+#------------------------------------------------------------------------------
+# Non-monotone line search for DF-SANE
+#------------------------------------------------------------------------------
+
+def _nonmonotone_line_search_cruz(f, x_k, d, prev_fs, eta,
+                                  gamma=1e-4, tau_min=0.1, tau_max=0.5):
+    """
+    Nonmonotone backtracking line search as described in [1]_
+
+    Parameters
+    ----------
+    f : callable
+        Function returning a tuple ``(f, F)`` where ``f`` is the value
+        of a merit function and ``F`` the residual.
+    x_k : ndarray
+        Initial position
+    d : ndarray
+        Search direction
+    prev_fs : float
+        List of previous merit function values. Should have ``len(prev_fs) <= M``
+        where ``M`` is the nonmonotonicity window parameter.
+    eta : float
+        Allowed merit function increase, see [1]_
+    gamma, tau_min, tau_max : float, optional
+        Search parameters, see [1]_
+
+    Returns
+    -------
+    alpha : float
+        Step length
+    xp : ndarray
+        Next position
+    fp : float
+        Merit function value at next position
+    Fp : ndarray
+        Residual at next position
+
+    References
+    ----------
+    [1] "Spectral residual method without gradient information for solving
+        large-scale nonlinear systems of equations." W. La Cruz,
+        J.M. Martinez, M. Raydan. Math. Comp. **75**, 1429 (2006).
+
+    """
+    f_k = prev_fs[-1]
+    f_bar = max(prev_fs)
+
+    alpha_p = 1
+    alpha_m = 1
+    alpha = 1
+
+    while True:
+        xp = x_k + alpha_p * d
+        fp, Fp = f(xp)
+
+        if fp <= f_bar + eta - gamma * alpha_p**2 * f_k:
+            alpha = alpha_p
+            break
+
+        alpha_tp = alpha_p**2 * f_k / (fp + (2*alpha_p - 1)*f_k)
+
+        xp = x_k - alpha_m * d
+        fp, Fp = f(xp)
+
+        if fp <= f_bar + eta - gamma * alpha_m**2 * f_k:
+            alpha = -alpha_m
+            break
+
+        alpha_tm = alpha_m**2 * f_k / (fp + (2*alpha_m - 1)*f_k)
+
+        alpha_p = np.clip(alpha_tp, tau_min * alpha_p, tau_max * alpha_p)
+        alpha_m = np.clip(alpha_tm, tau_min * alpha_m, tau_max * alpha_m)
+
+    return alpha, xp, fp, Fp
+
+
+def _nonmonotone_line_search_cheng(f, x_k, d, f_k, C, Q, eta,
+                                   gamma=1e-4, tau_min=0.1, tau_max=0.5,
+                                   nu=0.85):
+    """
+    Nonmonotone line search from [1]
+
+    Parameters
+    ----------
+    f : callable
+        Function returning a tuple ``(f, F)`` where ``f`` is the value
+        of a merit function and ``F`` the residual.
+    x_k : ndarray
+        Initial position
+    d : ndarray
+        Search direction
+    f_k : float
+        Initial merit function value
+    C, Q : float
+        Control parameters. On the first iteration, give values
+        Q=1.0, C=f_k
+    eta : float
+        Allowed merit function increase, see [1]_
+    nu, gamma, tau_min, tau_max : float, optional
+        Search parameters, see [1]_
+
+    Returns
+    -------
+    alpha : float
+        Step length
+    xp : ndarray
+        Next position
+    fp : float
+        Merit function value at next position
+    Fp : ndarray
+        Residual at next position
+    C : float
+        New value for the control parameter C
+    Q : float
+        New value for the control parameter Q
+
+    References
+    ----------
+    .. [1] W. Cheng & D.-H. Li, ''A derivative-free nonmonotone line
+           search and its application to the spectral residual
+           method'', IMA J. Numer. Anal. 29, 814 (2009).
+
+    """
+    alpha_p = 1
+    alpha_m = 1
+    alpha = 1
+
+    while True:
+        xp = x_k + alpha_p * d
+        fp, Fp = f(xp)
+
+        if fp <= C + eta - gamma * alpha_p**2 * f_k:
+            alpha = alpha_p
+            break
+
+        alpha_tp = alpha_p**2 * f_k / (fp + (2*alpha_p - 1)*f_k)
+
+        xp = x_k - alpha_m * d
+        fp, Fp = f(xp)
+
+        if fp <= C + eta - gamma * alpha_m**2 * f_k:
+            alpha = -alpha_m
+            break
+
+        alpha_tm = alpha_m**2 * f_k / (fp + (2*alpha_m - 1)*f_k)
+
+        alpha_p = np.clip(alpha_tp, tau_min * alpha_p, tau_max * alpha_p)
+        alpha_m = np.clip(alpha_tm, tau_min * alpha_m, tau_max * alpha_m)
+
+    # Update C and Q
+    Q_next = nu * Q + 1
+    C = (nu * Q * (C + eta) + fp) / Q_next
+    Q = Q_next
+
+    return alpha, xp, fp, Fp, C, Q

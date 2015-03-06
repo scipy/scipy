@@ -120,6 +120,8 @@ class TestSLSQP(TestCase):
                            method='SLSQP', options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2.5, 0.5])
+        assert_(2.5 <= res.x[0])
+        assert_(res.x[1] <= 0.5)
 
     def test_minimize_unbounded_combined(self):
         # Minimize, method='SLSQP': unbounded, combined function and jacobian.
@@ -210,6 +212,8 @@ class TestSLSQP(TestCase):
                        options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [0.8, 0.8], atol=1e-3)
+        assert_(-0.8 <= res.x[0] <= 1)
+        assert_(-1 <= res.x[1] <= 0.8)
 
     # fmin_slsqp
     def test_unbounded_approximated(self):
@@ -281,6 +285,8 @@ class TestSLSQP(TestCase):
         x, fx, its, imode, smode = res
         assert_(imode == 0, imode)
         assert_array_almost_equal(x, [0.8, 0.8], decimal=3)
+        assert_(-0.8 <= x[0] <= 1)
+        assert_(-1 <= x[1] <= 0.8)
 
     def test_scalar_constraints(self):
         # Regression test for gh-2182

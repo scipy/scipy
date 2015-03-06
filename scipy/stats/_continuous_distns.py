@@ -203,6 +203,8 @@ class alpha_gen(rv_continuous):
 
     where ``Phi(alpha)`` is the normal CDF, ``x > 0``, and ``a > 0``.
 
+    `alpha` takes ``a`` as a shape parameter.
+
     %(example)s
 
     """
@@ -353,6 +355,8 @@ class beta_gen(rv_continuous):
 
     for ``0 < x < 1``, ``a > 0``, ``b > 0``, where ``gamma(z)`` is the gamma
     function (`scipy.special.gamma`).
+
+    `beta` takes ``a`` and ``b`` as shape parameters.
 
     %(example)s
 
@@ -509,6 +513,8 @@ class betaprime_gen(rv_continuous):
     for ``x > 0``, ``a > 0``, ``b > 0``, where ``beta(a, b)`` is the beta
     function (see `scipy.special.beta`).
 
+    `betaprime` takes ``a`` and ``b`` as shape parameters.
+
     %(example)s
 
     """
@@ -557,6 +563,8 @@ class bradford_gen(rv_continuous):
         bradford.pdf(x, c) = c / (k * (1+c*x)),
 
     for ``0 < x < 1``, ``c > 0`` and ``k = log(1+c)``.
+
+    `bradford` takes ``c`` as a shape parameter.
 
     %(example)s
 
@@ -608,6 +616,8 @@ class burr_gen(rv_continuous):
 
     for ``x > 0``.
 
+    `burr` takes ``c`` and ``d`` as shape parameters.
+
     %(example)s
 
     """
@@ -631,6 +641,8 @@ class fisk_gen(burr_gen):
 
     The Fisk distribution is also known as the log-logistic distribution, and
     equals the Burr distribution with ``d == 1``.
+
+    `fisk` takes ``c`` as a shape parameter.
 
     %(before_notes)s
 
@@ -718,6 +730,8 @@ class chi_gen(rv_continuous):
         - ``chi(2, 0, scale)`` is equivalent to `rayleigh`
         - ``chi(3, 0, scale)`` is equivalent to `maxwell`
 
+    `chi` takes ``df`` as a shape parameter.
+
     %(example)s
 
     """
@@ -755,6 +769,8 @@ class chi2_gen(rv_continuous):
     The probability density function for `chi2` is::
 
         chi2.pdf(x, df) = 1 / (2*gamma(df/2)) * (x/2)**(df/2-1) * exp(-x/2)
+
+    `chi2` takes ``df`` as a shape parameter.
 
     %(example)s
 
@@ -833,6 +849,8 @@ class dgamma_gen(rv_continuous):
 
     for ``a > 0``.
 
+    `dgamma` takes ``a`` as a shape parameter.
+
     %(example)s
 
     """
@@ -878,6 +896,8 @@ class dweibull_gen(rv_continuous):
     The probability density function for `dweibull` is::
 
         dweibull.pdf(x, c) = c / 2 * abs(x)**(c-1) * exp(-abs(x)**c)
+
+    `dweibull` takes ``d`` as a shape parameter.
 
     %(example)s
 
@@ -984,6 +1004,8 @@ class exponweib_gen(rv_continuous):
 
     for ``x > 0``, ``a > 0``, ``c > 0``.
 
+    `exponweib` takes ``a`` and ``c`` as shape parameters.
+
     %(example)s
 
     """
@@ -1020,6 +1042,8 @@ class exponpow_gen(rv_continuous):
     for ``x >= 0``, ``b > 0``.  Note that this is a different distribution
     from the exponential power distribution that is also known under the names
     "generalized normal" or "generalized Gaussian".
+
+    `exponpow` takes ``b`` as a shape parameter.
 
     References
     ----------
@@ -1063,6 +1087,8 @@ class fatiguelife_gen(rv_continuous):
             (x+1) / (2*c*sqrt(2*pi*x**3)) * exp(-(x-1)**2/(2*x*c**2))
 
     for ``x > 0``.
+
+    `fatiguelife` takes ``c`` as a shape parameter.
 
     References
     ----------
@@ -1122,6 +1148,8 @@ class foldcauchy_gen(rv_continuous):
 
     for ``x >= 0``.
 
+    `foldcauchy` takes ``c`` as a shape parameter.
+
     %(example)s
 
     """
@@ -1154,6 +1182,8 @@ class f_gen(rv_continuous):
                              (df2+df1*x)**((df1+df2)/2) * B(df1/2, df2/2)
 
     for ``x > 0``.
+
+    `f` takes ``dfn`` and ``dfd`` as shape parameters.
 
     %(example)s
 
@@ -1233,6 +1263,8 @@ class foldnorm_gen(rv_continuous):
 
     for ``c >= 0``.
 
+    `foldnorm` takes ``c`` as a shape parameter.
+
     %(example)s
 
     """
@@ -1291,6 +1323,8 @@ class frechet_r_gen(rv_continuous):
 
     for ``x > 0``, ``c > 0``.
 
+    `frechet_r` takes ``c`` as a shape parameter.
+
     %(example)s
 
     """
@@ -1333,6 +1367,8 @@ class frechet_l_gen(rv_continuous):
 
     for ``x < 0``, ``c > 0``.
 
+    `frechet_l` takes ``c`` as a shape parameter.
+
     %(example)s
 
     """
@@ -1371,6 +1407,8 @@ class genlogistic_gen(rv_continuous):
         genlogistic.pdf(x, c) = c * exp(-x) / (1 + exp(-x))**(c+1)
 
     for ``x > 0``, ``c > 0``.
+
+    `genlogistic` takes ``c`` as a shape parameter.
 
     %(example)s
 
@@ -1414,6 +1452,8 @@ class genpareto_gen(rv_continuous):
 
     defined for ``x >= 0`` if ``c >=0``, and for
     ``0 <= x <= -1/c`` if ``c < 0``.
+
+    `genpareto` takes ``c`` as a shape parameter.
 
     For ``c == 0``, `genpareto` reduces to the exponential
     distribution, `expon`::
@@ -1483,6 +1523,8 @@ class genexpon_gen(rv_continuous):
 
     for ``x >= 0``, ``a, b, c > 0``.
 
+    `genexpon` takes ``a``, ``b`` and ``c`` as shape parameters.
+
     References
     ----------
     H.K. Ryu, "An Extension of Marshall and Olkin's Bivariate Exponential
@@ -1527,6 +1569,8 @@ class genextreme_gen(rv_continuous):
 
     Note that several sources and software packages use the opposite
     convention for the sign of the shape parameter ``c``.
+
+    `genextreme` takes ``c`` as a shape parameter.
 
     %(example)s
 
@@ -1838,6 +1882,8 @@ class gengamma_gen(rv_continuous):
 
     for ``x > 0``, ``a > 0``, and ``c != 0``.
 
+    `gengamma` takes ``a`` and ``c`` as shape parameters.
+
     %(example)s
 
     """
@@ -1884,6 +1930,8 @@ class genhalflogistic_gen(rv_continuous):
 
     for ``0 <= x <= 1/c``, and ``c > 0``.
 
+    `genhalflogistic` takes ``c`` as a shape parameter.
+
     %(example)s
 
     """
@@ -1925,6 +1973,8 @@ class gompertz_gen(rv_continuous):
 
     for ``x >= 0``, ``c > 0``.
 
+    `gompertz` takes ``c`` as a shape parameter.
+
     %(example)s
 
     """
@@ -1932,13 +1982,13 @@ class gompertz_gen(rv_continuous):
         return exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return log(c) + x - c * (exp(x) - 1.)
+        return log(c) + x - c * special.expm1(x)
 
     def _cdf(self, x, c):
-        return 1.0-exp(-c*(exp(x)-1))
+        return -special.expm1(-c * special.expm1(x))
 
     def _ppf(self, q, c):
-        return log(1-1.0/c*log(1-q))
+        return special.log1p(-1.0 / c * special.log1p(-q))
 
     def _entropy(self, c):
         return 1.0 - log(c) - exp(c)*special.expn(1, c)
@@ -2202,6 +2252,8 @@ class gausshyper_gen(rv_continuous):
     for ``0 <= x <= 1``, ``a > 0``, ``b > 0``, and
     ``C = 1 / (B(a, b) F[2, 1](c, a; a+b; -z))``
 
+    `gausshyper` takes ``a``, ``b``, ``c`` and ``z`` as shape parameters.
+
     %(example)s
 
     """
@@ -2232,6 +2284,8 @@ class invgamma_gen(rv_continuous):
         invgamma.pdf(x, a) = x**(-a-1) / gamma(a) * exp(-1/x)
 
     for x > 0, a > 0.
+
+    `invgamma` takes ``a`` as a shape parameter.
 
     `invgamma` is a special case of `gengamma` with ``c == -1``.
 
@@ -2285,6 +2339,8 @@ class invgauss_gen(rv_continuous):
 
     for ``x > 0``.
 
+    `invgauss` takes ``mu`` as a shape parameter.
+
     When `mu` is too small, evaluating the cumulative density function will be
     inaccurate due to ``cdf(mu -> 0) = inf * 0``.
     NaNs are returned for ``mu <= 0.0028``.
@@ -2325,6 +2381,8 @@ class invweibull_gen(rv_continuous):
         invweibull.pdf(x, c) = c * x**(-c-1) * exp(-x**(-c))
 
     for ``x > 0``, ``c > 0``.
+
+    `invweibull` takes ``c`` as a shape parameter.
 
     References
     ----------
@@ -2372,6 +2430,8 @@ class johnsonsb_gen(rv_continuous):
 
     for ``0 < x < 1`` and ``a, b > 0``, and ``phi`` is the normal pdf.
 
+    `johnsonsb` takes ``a`` and ``b`` as shape parameters.
+
     %(example)s
 
     """
@@ -2407,6 +2467,8 @@ class johnsonsu_gen(rv_continuous):
                                  phi(a + b * log(x + sqrt(x**2 + 1)))
 
     for all ``x, a, b > 0``, and `phi` is the normal pdf.
+
+    `johnsonsu` takes ``a`` and ``b`` as shape parameters.
 
     %(example)s
 
@@ -2639,6 +2701,8 @@ class loggamma_gen(rv_continuous):
 
     for all ``x, c > 0``.
 
+    `loggamma` takes ``c`` as a shape parameter.
+
     %(example)s
 
     """
@@ -2679,6 +2743,8 @@ class loglaplace_gen(rv_continuous):
                              = c / 2 * x**(-c-1),  for x >= 1
 
     for ``c > 0``.
+
+    `loglaplace` takes ``c`` as a shape parameter.
 
     References
     ----------
@@ -2723,6 +2789,8 @@ class lognorm_gen(rv_continuous):
         lognorm.pdf(x, s) = 1 / (s*x*sqrt(2*pi)) * exp(-1/2*(log(x)/s)**2)
 
     for ``x > 0``, ``s > 0``.
+
+    `lognorm` takes ``s`` as a shape parameter.
 
     If ``log(x)`` is normally distributed with mean ``mu`` and variance
     ``sigma**2``, then ``x`` is log-normally distributed with shape parameter
@@ -2861,6 +2929,8 @@ class mielke_gen(rv_continuous):
 
     for ``x > 0``.
 
+    `mielke` takes ``k`` and ``s`` as shape parameters.
+
     %(example)s
 
     """
@@ -2889,6 +2959,8 @@ class nakagami_gen(rv_continuous):
                               x**(2*nu-1) * exp(-nu*x**2)
 
     for ``x > 0``, ``nu > 0``.
+
+    `nakagami` takes ``nu`` as a shape parameter.
 
     %(example)s
 
@@ -2925,6 +2997,8 @@ class ncx2_gen(rv_continuous):
                               * I[(df-2)/2](sqrt(nc*x))
 
     for ``x > 0``.
+
+    `ncx2` takes ``df`` and ``nc`` as shape parameters.
 
     %(example)s
 
@@ -2968,6 +3042,8 @@ class ncf_gen(rv_continuous):
                     (B(v1/2, v2/2) * gamma((v1+v2)/2))
 
     for ``df1, df2, nc > 0``.
+
+    `ncf` takes ``df1``, ``df2`` and ``nc`` as shape parameters.
 
     %(example)s
 
@@ -3024,6 +3100,8 @@ class t_gen(rv_continuous):
 
     for ``df > 0``.
 
+    `t` takes ``df`` as a shape parameter.
+
     %(example)s
 
     """
@@ -3076,6 +3154,8 @@ class nct_gen(rv_continuous):
                              2**df*exp(nc**2/2) * (df+x**2)**(df/2) * gamma(df/2)
 
     for ``df > 0``.
+
+    `nct` takes ``df`` and ``nc`` as shape parameters.
 
     %(example)s
 
@@ -3160,6 +3240,8 @@ class pareto_gen(rv_continuous):
 
     for ``x >= 1``, ``b > 0``.
 
+    `pareto` takes ``b`` as a shape parameter.
+
     %(example)s
 
     """
@@ -3220,6 +3302,8 @@ class lomax_gen(rv_continuous):
 
     for ``x >= 0``, ``c > 0``.
 
+    `lomax` takes ``c`` as a shape parameter.
+
     %(example)s
 
     """
@@ -3267,6 +3351,8 @@ class pearson3_gen(rv_continuous):
             beta = 2 / (skew * stddev)
             alpha = (stddev * beta)**2
             zeta = loc - alpha / beta
+
+    `pearson3` takes ``skew`` as a shape parameter.
 
     %(example)s
 
@@ -3390,6 +3476,8 @@ class powerlaw_gen(rv_continuous):
 
     for ``0 <= x <= 1``, ``a > 0``.
 
+    `powerlaw` takes ``a`` as a shape parameter.
+
     `powerlaw` is a special case of `beta` with ``b == 1``.
 
     %(example)s
@@ -3436,6 +3524,8 @@ class powerlognorm_gen(rv_continuous):
     where ``phi`` is the normal pdf, and ``Phi`` is the normal cdf,
     and ``x > 0``, ``s, c > 0``.
 
+    `powerlognorm` takes ``c`` and ``s`` as shape parameters.
+
     %(example)s
 
     """
@@ -3464,6 +3554,8 @@ class powernorm_gen(rv_continuous):
 
     where ``phi`` is the normal pdf, and ``Phi`` is the normal cdf,
     and ``x > 0``, ``c > 0``.
+
+    `powernorm` takes ``c`` as a shape parameter.
 
     %(example)s
 
@@ -3494,6 +3586,8 @@ class rdist_gen(rv_continuous):
         rdist.pdf(x, c) = (1-x**2)**(c/2-1) / B(1/2, c/2)
 
     for ``-1 <= x <= 1``, ``c > 0``.
+
+    `rdist` takes ``c`` as a shape parameter.
 
     %(example)s
 
@@ -3542,10 +3636,16 @@ class rayleigh_gen(rv_continuous):
         return r * exp(-0.5 * r**2)
 
     def _cdf(self, r):
-        return 1 - exp(-0.5 * r**2)
+        return -special.expm1(-0.5 * r**2)
 
     def _ppf(self, q):
-        return sqrt(-2 * log(1 - q))
+        return sqrt(-2 * special.log1p(-q))
+        
+    def _sf(self, r):
+        return exp(-0.5 * r**2)
+        
+    def _isf(self, q):
+        return sqrt(-2 * log(q))
 
     def _stats(self):
         val = 4 - pi
@@ -3569,6 +3669,8 @@ class reciprocal_gen(rv_continuous):
         reciprocal.pdf(x, a, b) = 1 / (x*log(b/a))
 
     for ``a <= x <= b``, ``a, b > 0``.
+
+    `reciprocal` takes ``a`` and ``b`` as shape parameters.
 
     %(example)s
 
@@ -3613,6 +3715,8 @@ class rice_gen(rv_continuous):
 
     for ``x > 0``, ``b > 0``.
 
+    `rice` takes ``b`` as a shape parameter.
+
     %(example)s
 
     """
@@ -3650,6 +3754,8 @@ class recipinvgauss_gen(rv_continuous):
         recipinvgauss.pdf(x, mu) = 1/sqrt(2*pi*x) * exp(-(1-mu*x)**2/(2*x*mu**2))
 
     for ``x >= 0``.
+
+    `recipinvgauss` takes ``mu`` as a shape parameter.
 
     %(example)s
 
@@ -3712,6 +3818,8 @@ class triang_gen(rv_continuous):
     ``loc`` to ``(loc + c*scale)`` and then downsloping for ``(loc + c*scale)``
     to ``(loc+scale)``.
 
+    `triang` takes ``c`` as a shape parameter.
+
     The standard form is in the range [0, 1] with c the mode.
     The location parameter shifts the start to `loc`.
     The scale parameter changes the width from 1 to `scale`.
@@ -3756,6 +3864,8 @@ class truncexpon_gen(rv_continuous):
 
     for ``0 < x < b``.
 
+    `truncexpon` takes ``b`` as a shape parameter.
+
     %(example)s
 
     """
@@ -3764,16 +3874,16 @@ class truncexpon_gen(rv_continuous):
         return (b > 0)
 
     def _pdf(self, x, b):
-        return exp(-x)/(1-exp(-b))
+        return exp(-x)/(-special.expm1(-b))
 
     def _logpdf(self, x, b):
-        return -x - log(1-exp(-b))
+        return -x - log(-special.expm1(-b))
 
     def _cdf(self, x, b):
-        return (1.0-exp(-x))/(1-exp(-b))
+        return special.expm1(-x)/special.expm1(-b)
 
     def _ppf(self, q, b):
-        return -log(1-q+q*exp(-b))
+        return -special.log1p(q*special.expm1(-b))
 
     def _munp(self, n, b):
         # wrong answer with formula, same as in continuous.pdf
@@ -3806,6 +3916,8 @@ class truncnorm_gen(rv_continuous):
     deviation, use::
 
         a, b = (myclip_a - my_mean) / my_std, (myclip_b - my_mean) / my_std
+
+    `truncnorm` takes ``a`` and ``b`` as shape parameters.
 
     %(example)s
 
@@ -3865,6 +3977,8 @@ class tukeylambda_gen(rv_continuous):
         - approx Normal         (lam=0.14)
         - u-shape               (lam = 0.5)
         - uniform from -1 to 1  (lam = 1)
+
+    `tukeylambda` takes ``lam`` as a shape parameter.
 
     %(example)s
 
@@ -3943,6 +4057,8 @@ class vonmises_gen(rv_continuous):
 
     for ``-pi <= x <= pi``, ``kappa > 0``.
 
+    `vonmises` takes ``kappa`` as a shape parameter.
+
     See Also
     --------
     vonmises_line : The same distribution, defined on a [-pi, pi] segment
@@ -4012,6 +4128,8 @@ class wrapcauchy_gen(rv_continuous):
         wrapcauchy.pdf(x, c) = (1-c**2) / (2*pi*(1+c**2-2*c*cos(x)))
 
     for ``0 <= x <= 2*pi``, ``0 < c < 1``.
+
+    `wrapcauchy` takes ``c`` as a shape parameter.
 
     %(example)s
 

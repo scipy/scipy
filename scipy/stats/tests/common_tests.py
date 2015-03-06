@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 import numpy.testing as npt
 
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 from scipy import stats
 
 

@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 from numpy import asarray_chkfinite, single, asarray
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 # Local imports.
 from . import misc
@@ -53,7 +53,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
             'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         Defaults to None (no sorting).
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -193,7 +193,7 @@ def rsf2csf(T, Z, check_finite=True):
         Real Schur form of the original matrix
     Z : (M, M) array_like
         Schur transformation matrix
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.

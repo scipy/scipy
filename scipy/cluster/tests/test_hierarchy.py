@@ -38,7 +38,7 @@ import numpy as np
 from numpy.testing import (TestCase, run_module_suite, dec, assert_raises,
                            assert_allclose, assert_equal, assert_)
 
-from scipy.lib.six import xrange, u
+from scipy._lib.six import xrange, u
 
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (

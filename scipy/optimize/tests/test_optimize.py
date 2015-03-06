@@ -527,9 +527,9 @@ class TestOptimize(object):
             else:
                 jac = dfunc
 
-            sol1 = optimize.minimize(func, [1,1], jac=jac, tol=1e-10,
+            sol1 = optimize.minimize(func, [1, 1], jac=jac, tol=1e-10,
                                      method=method)
-            sol2 = optimize.minimize(func, [1,1], jac=jac, tol=1.0,
+            sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
                                      method=method)
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
@@ -795,6 +795,10 @@ class TestOptimizeScalar(TestCase):
         optimize.minimize_scalar(self.fun, args=1.5)
 
 
+def test_brent_negative_tolerance():
+    assert_raises(ValueError, optimize.brent, np.cos, tol=-.01)
+
+
 class TestNewtonCg(object):
     def test_rosenbrock(self):
         x0 = np.array([-1.2, 1.0])
@@ -911,4 +915,3 @@ class TestOptimizeResultAttributes(TestCase):
 
 if __name__ == "__main__":
     run_module_suite()
-

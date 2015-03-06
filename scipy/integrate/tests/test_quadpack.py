@@ -7,7 +7,7 @@ from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_, TestCase, run_module_suite, dec,
         assert_allclose, assert_array_less, assert_almost_equal)
 from scipy.integrate import quad, dblquad, tplquad, nquad
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 try:
     import ctypes
@@ -49,9 +49,9 @@ class TestCtypesQuad(TestCase):
 
     @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
     def test_typical(self):
-        assert_quad(quad(self.lib.sin,0,5),quad(math.sin,0,5)[0])
-        assert_quad(quad(self.lib.cos,0,5),quad(math.cos,0,5)[0])
-        assert_quad(quad(self.lib.tan,0,1),quad(math.tan,0,1)[0])
+        assert_quad(quad(self.lib.sin, 0, 5), quad(math.sin, 0, 5)[0])
+        assert_quad(quad(self.lib.cos, 0, 5), quad(math.cos, 0, 5)[0])
+        assert_quad(quad(self.lib.tan, 0, 1), quad(math.tan, 0, 1)[0])
 
     #@dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
     # This doesn't seem to always work.  Need a better way to figure out
@@ -76,8 +76,8 @@ class TestMultivariateCtypesQuad(TestCase):
     def setUp(self):
         self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
-        argtypes = (ctypes.c_int,ctypes.c_double)
-        for name in ['_multivariate_typical','_multivariate_indefinite',
+        argtypes = (ctypes.c_int, ctypes.c_double)
+        for name in ['_multivariate_typical', '_multivariate_indefinite',
                      '_multivariate_sin']:
             func = getattr(self.lib, name)
             func.restype = restype
@@ -87,14 +87,14 @@ class TestMultivariateCtypesQuad(TestCase):
                 msg="Compiled test functions not loaded")
     def test_typical(self):
         # 1) Typical function with two extra arguments:
-        assert_quad(quad(self.lib._multivariate_typical,0,pi,(2,1.8)),
+        assert_quad(quad(self.lib._multivariate_typical, 0, pi, (2, 1.8)),
                     0.30614353532540296487)
 
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
                 msg="Compiled test functions not loaded")
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
-        assert_quad(quad(self.lib._multivariate_indefinite,0,Inf),
+        assert_quad(quad(self.lib._multivariate_indefinite, 0, Inf),
                     0.577215664901532860606512)
 
     @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
@@ -127,15 +127,15 @@ class TestMultivariateCtypesQuad(TestCase):
 class TestQuad(TestCase):
     def test_typical(self):
         # 1) Typical function with two extra arguments:
-        def myfunc(x,n,z):       # Bessel function integrand
+        def myfunc(x, n, z):       # Bessel function integrand
             return cos(n*x-z*sin(x))/pi
-        assert_quad(quad(myfunc,0,pi,(2,1.8)), 0.30614353532540296487)
+        assert_quad(quad(myfunc, 0, pi, (2, 1.8)), 0.30614353532540296487)
 
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
         def myfunc(x):           # Euler's constant integrand
             return -exp(-x)*log(x)
-        assert_quad(quad(myfunc,0,Inf), 0.577215664901532860606512)
+        assert_quad(quad(myfunc, 0, Inf), 0.577215664901532860606512)
 
     def test_singular(self):
         # 3) Singular points in region of integration.
@@ -147,89 +147,94 @@ class TestQuad(TestCase):
             else:
                 return 0.0
 
-        assert_quad(quad(myfunc,0,10,points=[2.5,5.0]),
+        assert_quad(quad(myfunc, 0, 10, points=[2.5, 5.0]),
                     1 - cos(2.5) + exp(-2.5) - exp(-5.0))
 
     def test_sine_weighted_finite(self):
         # 4) Sine weighted integral (finite limits)
-        def myfunc(x,a):
+        def myfunc(x, a):
             return exp(a*(x-1))
 
         ome = 2.0**3.4
-        assert_quad(quad(myfunc,0,1,args=20,weight='sin',wvar=ome),
+        assert_quad(quad(myfunc, 0, 1, args=20, weight='sin', wvar=ome),
                     (20*sin(ome)-ome*cos(ome)+ome*exp(-20))/(20**2 + ome**2))
 
     def test_sine_weighted_infinite(self):
         # 5) Sine weighted integral (infinite limits)
-        def myfunc(x,a):
+        def myfunc(x, a):
             return exp(-x*a)
 
         a = 4.0
         ome = 3.0
-        assert_quad(quad(myfunc,0,Inf,args=a,weight='sin',wvar=ome),
+        assert_quad(quad(myfunc, 0, Inf, args=a, weight='sin', wvar=ome),
                     ome/(a**2 + ome**2))
 
     def test_cosine_weighted_infinite(self):
         # 6) Cosine weighted integral (negative infinite limits)
-        def myfunc(x,a):
+        def myfunc(x, a):
             return exp(x*a)
 
         a = 2.5
         ome = 2.3
-        assert_quad(quad(myfunc,-Inf,0,args=a,weight='cos',wvar=ome),
+        assert_quad(quad(myfunc, -Inf, 0, args=a, weight='cos', wvar=ome),
                     a/(a**2 + ome**2))
 
     def test_algebraic_log_weight(self):
         # 6) Algebraic-logarithmic weight.
-        def myfunc(x,a):
+        def myfunc(x, a):
             return 1/(1+x+2**(-a))
 
         a = 1.5
-        assert_quad(quad(myfunc,-1,1,args=a,weight='alg',wvar=(-0.5,-0.5)),
+        assert_quad(quad(myfunc, -1, 1, args=a, weight='alg',
+                         wvar=(-0.5, -0.5)),
                     pi/sqrt((1+2**(-a))**2 - 1))
 
     def test_cauchypv_weight(self):
         # 7) Cauchy prinicpal value weighting w(x) = 1/(x-c)
-        def myfunc(x,a):
+        def myfunc(x, a):
             return 2.0**(-a)/((x-1)**2+4.0**(-a))
 
         a = 0.4
-        tabledValue = (2.0**(-0.4)*log(1.5)-2.0**(-1.4)*log((4.0**(-a)+16)/(4.0**(-a)+1))
-                     - arctan(2.0**(a+2)) - arctan(2.0**a))/(4.0**(-a) + 1)
-        assert_quad(quad(myfunc,0,5,args=0.4,weight='cauchy',wvar=2.0),
+        tabledValue = ((2.0**(-0.4)*log(1.5) -
+                        2.0**(-1.4)*log((4.0**(-a)+16) / (4.0**(-a)+1)) -
+                        arctan(2.0**(a+2)) -
+                        arctan(2.0**a)) /
+                       (4.0**(-a) + 1))
+        assert_quad(quad(myfunc, 0, 5, args=0.4, weight='cauchy', wvar=2.0),
                     tabledValue, errTol=1.9e-8)
 
     def test_double_integral(self):
         # 8) Double Integral test
-        def simpfunc(y,x):       # Note order of arguments.
+        def simpfunc(y, x):       # Note order of arguments.
             return x+y
 
         a, b = 1.0, 2.0
-        assert_quad(dblquad(simpfunc,a,b,lambda x: x, lambda x: 2*x),
+        assert_quad(dblquad(simpfunc, a, b, lambda x: x, lambda x: 2*x),
                     5/6.0 * (b**3.0-a**3.0))
 
     def test_triple_integral(self):
         # 9) Triple Integral test
-        def simpfunc(z,y,x):      # Note order of arguments.
+        def simpfunc(z, y, x):      # Note order of arguments.
             return x+y+z
 
         a, b = 1.0, 2.0
-        assert_quad(tplquad(simpfunc,a,b,
+        assert_quad(tplquad(simpfunc, a, b,
                             lambda x: x, lambda x: 2*x,
-                            lambda x,y: x-y, lambda x,y: x+y),
+                            lambda x, y: x - y, lambda x, y: x + y),
                     8/3.0 * (b**4.0 - a**4.0))
 
 
 class TestNQuad(TestCase):
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
-            return x0**2 + x1*x2 - x3**3 + np.sin(x0) + (1 if
-                        (x0 - 0.2*x3 - 0.5 - 0.25*x1 > 0) else 0)
+            val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
+                   (1 if (x0 - 0.2*x3 - 0.5 - 0.25*x1 > 0) else 0))
+            return val
 
         def opts_basic(*args):
             return {'points': [0.2*args[2] + 0.5 + 0.25*args[0]]}
 
-        res = nquad(func1, [[0,1], [-1,1], [.13,.8], [-.15,1]],
+        res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
                     opts=[opts_basic, {}, {}, {}])
         assert_quad(res, 1.5267454070738635)
 
@@ -237,7 +242,9 @@ class TestNQuad(TestCase):
         scale = .1
 
         def func2(x0, x1, x2, x3, t0, t1):
-            return x0*x1*x3**2 + np.sin(x2) + 1 + (1 if x0 + t1*x1 - t0 > 0 else 0)
+            val = (x0*x1*x3**2 + np.sin(x2) + 1 +
+                   (1 if x0 + t1*x1 - t0 > 0 else 0))
+            return val
 
         def lim0(x1, x2, x3, t0, t1):
             return [scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
@@ -255,7 +262,7 @@ class TestNQuad(TestCase):
             return [scale * (t0 + t1) - 1, scale * (t0 + t1) + 1]
 
         def opts0(x1, x2, x3, t0, t1):
-            return {'points':[t0 - t1*x1]}
+            return {'points': [t0 - t1*x1]}
 
         def opts1(x2, x3, t0, t1):
             return {}
@@ -266,7 +273,7 @@ class TestNQuad(TestCase):
         def opts3(t0, t1):
             return {}
 
-        res = nquad(func2, [lim0, lim1, lim2, lim3], args=(0,0),
+        res = nquad(func2, [lim0, lim1, lim2, lim3], args=(0, 0),
                     opts=[opts0, opts1, opts2, opts3])
         assert_quad(res, 25.066666666666663)
 
@@ -331,7 +338,7 @@ class TestNQuad(TestCase):
         def func2d(x0, x1):
             return x0**2 + x1**3 - x0 * x1 + 1
 
-        res, reserr = dblquad(func2d, -2, 2, lambda x:-3, lambda x:3)
+        res, reserr = dblquad(func2d, -2, 2, lambda x: -3, lambda x: 3)
         res2, reserr2 = nquad(func2d, [[-3, 3], (-2, 2)])
         assert_almost_equal(res, res2)
         assert_almost_equal(reserr, reserr2)

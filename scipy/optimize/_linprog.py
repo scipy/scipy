@@ -266,7 +266,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
         The phase of the optimization being executed.  In phase 1 a basic
         feasible solution is sought and the T has an additional row representing
         an alternate objective function.
-    callback : callable
+    callback : callable, optional
         If a callback function is provided, it will be called within each
         iteration of the simplex algorithm. The callback must have the
         signature `callback(xk, **kwargs)` where xk is the current solution
@@ -374,7 +374,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     c : array_like
         Coefficients of the linear objective function to be maximized.
-    A_ub :
+    A_ub : array_like
         2-D array which, when matrix-multiplied by x, gives the values of the
         upper-bound inequality constraints at x.
     b_ub : array_like
@@ -397,10 +397,6 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                   each variable x_i will be bounded by lb[i] and ub[i].
         Infinite bounds are specified using -np.inf (negative)
         or np.inf (positive).
-    maxiter : int
-       The maximum number of iterations to perform.
-    disp : bool
-        If True, print exit status message to sys.stdout
     callback : callable
         If a callback function is provide, it will be called within each
         iteration of the simplex algorithm. The callback must have the
@@ -412,6 +408,13 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         "phase" : Whether the algorithm is in Phase 1 or Phase 2.
         "bv" : A structured array containing a string representation of each
                basic variable and its current value.
+
+    Options
+    -------
+    maxiter : int
+       The maximum number of iterations to perform.
+    disp : bool
+        If True, print exit status message to sys.stdout
     tol : float
         The tolerance which determines when a solution is "close enough" to zero
         in Phase 1 to be considered a basic feasible solution or close enough
@@ -469,23 +472,24 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     The input for this problem is as follows:
 
+    >>> from scipy.optimize import linprog
     >>> c = [-1, 4]
     >>> A = [[-3, 1], [1, 2]]
     >>> b = [6, 4]
     >>> x0_bnds = (None, None)
     >>> x1_bnds = (-3, None)
-    >>> res = linprog(c, A, b, bounds=(x0_bnds, x1_bnds), options={"disp":True})
+    >>> res = linprog(c, A, b, bounds=(x0_bnds, x1_bnds))
     >>> print(res)
     Optimization terminated successfully.
-         Current function value: 11.428571
-         Iterations: 2
+         Current function value: -22.000000
+         Iterations: 1
     status: 0
-    success: True
-    fun: 11.428571428571429
-    x: array([-1.14285714,  2.57142857])
-    slack: array([], dtype=np.float64)
+    x: array([ 10.,  -3.])
+    slack: array([ 39.,   0.])
+    nit: 1
     message: 'Optimization terminated successfully.'
-    nit: 2
+    fun: -22.0
+    success: True
 
     References
     ----------
@@ -804,16 +808,16 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     c : array_like
         Coefficients of the linear objective function to be minimized.
-    A_ub :
+    A_ub : array_like, optional
         2-D array which, when matrix-multiplied by x, gives the values of the
         upper-bound inequality constraints at x.
-    b_ub : array_like
+    b_ub : array_like, optional
         1-D array of values representing the upper-bound of each inequality
         constraint (row) in A_ub.
-    A_eq : array_like
+    A_eq : array_like, optional
         2-D array which, when matrix-multiplied by x, gives the values of the
         equality constraints at x.
-    b_eq : array_like
+    b_eq : array_like, optional
         1-D array of values representing the RHS of each equality constraint
         (row) in A_eq.
     bounds : sequence, optional
@@ -824,7 +828,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
     method : str, optional
-        Type of solver.  At this time only 'simplex' is supported.
+        Type of solver.  At this time only 'simplex' is supported
+        :ref:`(see here) <optimize.linprog-simplex>`.
     callback : callable, optional
         If a callback function is provide, it will be called within each
         iteration of the simplex algorithm. The callback must have the signature
@@ -882,7 +887,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *Simplex*.
+    'method' parameter. The default method is :ref:`Simplex <optimize.linprog-simplex>`.
 
     Method *Simplex* uses the Simplex algorithm (as it relates to Linear
     Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm

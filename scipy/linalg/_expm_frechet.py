@@ -26,7 +26,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     compute_expm : bool, optional
         Whether to compute also `expm_A` in addition to `expm_frechet_AE`.
         Default is True.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -286,9 +286,9 @@ def vec(M):
 
     Parameters
     ----------
-    M : 2d array-like
+    M : 2d array_like
         Input matrix
-    
+
     Returns
     -------
     v : 1d ndarray
@@ -304,11 +304,11 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
 
     Parameters
     ----------
-    A : array-like with shape (N, N)
+    A : array_like with shape (N, N)
         Matrix to be expm'd.
     method : str, optional
         Extra keyword to be passed to expm_frechet.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -356,9 +356,9 @@ def expm_cond(A, check_finite=True):
 
     Parameters
     ----------
-    A : 2d array-like
+    A : 2d array_like
         Square input matrix with shape (N, N).
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.

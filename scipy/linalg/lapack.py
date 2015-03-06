@@ -25,178 +25,272 @@ All functions
 .. autosummary::
    :toctree: generated/
 
-   cgbsv
-   cgbtrf
-   cgbtrs
-   cgebal
-   cgees
-   cgeev
-   cgegv
-   cgehrd
-   cgelss
-   cgeqp3
-   cgeqrf
-   cgerqf
-   cgesdd
-   cgesv
-   cgetrf
-   cgetri
-   cgetrs
-   cgges
-   cggev
-   chbevd
-   chbevx
-   cheev
-   cheevd
-   cheevr
-   chegv
-   chegvd
-   chegvx
-   claswp
-   clauum
-   cpbsv
-   cpbtrf
-   cpbtrs
-   cposv
-   cpotrf
-   cpotri
-   cpotrs
-   ctrsyl
-   ctrtri
-   ctrtrs
-   cungqr
-   cungrq
-   cunmqr
-   dgbsv
-   dgbtrf
-   dgbtrs
-   dgebal
-   dgees
-   dgeev
-   dgegv
-   dgehrd
-   dgelss
-   dgeqp3
-   dgeqrf
-   dgerqf
-   dgesdd
-   dgesv
-   dgetrf
-   dgetri
-   dgetrs
-   dgges
-   dggev
-   dlamch
-   dlaswp
-   dlauum
-   dorgqr
-   dorgrq
-   dormqr
-   dpbsv
-   dpbtrf
-   dpbtrs
-   dposv
-   dpotrf
-   dpotri
-   dpotrs
-   dsbev
-   dsbevd
-   dsbevx
-   dsyev
-   dsyevd
-   dsyevr
-   dsygv
-   dsygvd
-   dsygvx
-   dtrsyl
-   dtrtri
-   dtrtrs
+
    sgbsv
-   sgbtrf
-   sgbtrs
-   sgebal
-   sgees
-   sgeev
-   sgegv
-   sgehrd
-   sgelss
-   sgeqp3
-   sgeqrf
-   sgerqf
-   sgesdd
-   sgesv
-   sgetrf
-   sgetri
-   sgetrs
-   sgges
-   sggev
-   slamch
-   slaswp
-   slauum
-   sorgqr
-   sorgrq
-   sormqr
-   spbsv
-   spbtrf
-   spbtrs
-   sposv
-   spotrf
-   spotri
-   spotrs
-   ssbev
-   ssbevd
-   ssbevx
-   ssyev
-   ssyevd
-   ssyevr
-   ssygv
-   ssygvd
-   ssygvx
-   strsyl
-   strtri
-   strtrs
+   dgbsv
+   cgbsv
    zgbsv
+
+   sgbtrf
+   dgbtrf
+   cgbtrf
    zgbtrf
+
+   sgbtrs
+   dgbtrs
+   cgbtrs
    zgbtrs
+
+   sgebal
+   dgebal
+   cgebal
    zgebal
+
+   sgees
+   dgees
+   cgees
    zgees
+
+   sgeev
+   dgeev
+   cgeev
    zgeev
+
+   sgeev_lwork
+   dgeev_lwork
+   cgeev_lwork
+   zgeev_lwork
+
+   sgegv
+   dgegv
+   cgegv
    zgegv
+
+   sgehrd
+   dgehrd
+   cgehrd
    zgehrd
+
+   sgehrd_lwork
+   dgehrd_lwork
+   cgehrd_lwork
+   zgehrd_lwork
+
+   sgelss
+   dgelss
+   cgelss
    zgelss
+
+   sgeqp3
+   dgeqp3
+   cgeqp3
    zgeqp3
+
+   sgeqrf
+   dgeqrf
+   cgeqrf
    zgeqrf
+
+   sgerqf
+   dgerqf
+   cgerqf
    zgerqf
+
+   sgesdd
+   dgesdd
+   cgesdd
    zgesdd
+
+   sgesdd_lwork
+   dgesdd_lwork
+   cgesdd_lwork
+   zgesdd_lwork
+
+   sgesv
+   dgesv
+   cgesv
    zgesv
+
+   sgetrf
+   dgetrf
+   cgetrf
    zgetrf
+
+   sgetri
+   dgetri
+   cgetri
    zgetri
+
+   sgetri_lwork
+   dgetri_lwork
+   cgetri_lwork
+   zgetri_lwork
+
+   sgetrs
+   dgetrs
+   cgetrs
    zgetrs
+
+   sgges
+   dgges
+   cgges
    zgges
+
+   sggev
+   dggev
+   cggev
    zggev
+
+   chbevd
    zhbevd
+
+   chbevx
    zhbevx
+
+   cheev
    zheev
+
+   cheevd
    zheevd
+
+   cheevr
    zheevr
+
+   chegv
    zhegv
+
+   chegvd
    zhegvd
+
+   chegvx
    zhegvx
+   
+   dlasd4
+   slasd4
+
+   slaswp
+   dlaswp
+   claswp
    zlaswp
+
+   slauum
+   dlauum
+   clauum
    zlauum
+
+   spbsv
+   dpbsv
+   cpbsv
    zpbsv
+
+   spbtrf
+   dpbtrf
+   cpbtrf
    zpbtrf
+
+   spbtrs
+   dpbtrs
+   cpbtrs
    zpbtrs
+
+   sposv
+   dposv
+   cposv
    zposv
+
+   spotrf
+   dpotrf
+   cpotrf
    zpotrf
+
+   spotri
+   dpotri
+   cpotri
    zpotri
+
+   spotrs
+   dpotrs
+   cpotrs
    zpotrs
+
+   strsyl
+   dtrsyl
+   ctrsyl
    ztrsyl
+
+   strtri
+   dtrtri
+   ctrtri
    ztrtri
+
+   strtrs
+   dtrtrs
+   ctrtrs
    ztrtrs
+
+   cunghr
+   zunghr
+
+   cungqr
    zungqr
+
+   cungrq
    zungrq
+
+   cunmqr
    zunmqr
+
+   sgtsv
+   dgtsv
+   cgtsv
+   zgtsv
+
+   sptsv
+   dptsv
+   cptsv
+   zptsv
+
+   slamch
+   dlamch
+
+   sorghr
+   dorghr
+
+   sorgqr
+   dorgqr
+
+   sorgrq
+   dorgrq
+
+   sormqr
+   dormqr
+
+   ssbev
+   dsbev
+
+   ssbevd
+   dsbevd
+
+   ssbevx
+   dsbevx
+
+   ssyev
+   dsyev
+
+   ssyevd
+   dsyevd
+
+   ssyevr
+   dsyevr
+
+   ssygv
+   dsygv
+
+   ssygvd
+   dsygvd
+
+   ssygvx
+   dsygvx
 
 """
 #
@@ -219,7 +313,7 @@ except ImportError:
     _clapack = None
 
 # Backward compatibility
-from scipy.lib._util import DeprecatedImport as _DeprecatedImport
+from scipy._lib._util import DeprecatedImport as _DeprecatedImport
 clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
 flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 
@@ -230,6 +324,8 @@ del empty_module
 
 # some convenience alias for complex functions
 _lapack_alias = {
+    'corghr': 'cunghr', 'zorghr': 'zunghr',
+    'corghr_lwork': 'cunghr_lwork', 'zorghr_lwork': 'zunghr_lwork',
     'corgqr': 'cungqr', 'zorgqr': 'zungqr',
     'cormqr': 'cunmqr', 'zormqr': 'zunmqr',
     'corgrq': 'cungrq', 'zorgrq': 'zungrq',

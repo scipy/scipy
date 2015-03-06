@@ -16,7 +16,7 @@ import sys
 
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from scipy.linalg import inv, eigh, cho_factor, cho_solve, cholesky
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
 
@@ -40,7 +40,7 @@ def save(ar, fileName):
 
 
 def _assert_symmetric(M, rtol=1e-5, atol=1e-8):
-    assert_allclose(M.T, M, rtol=rtol, atol=atol, err_msg=str(M.T - M))
+    assert_allclose(M.T, M, rtol=rtol, atol=atol)
 
 
 ##
@@ -58,11 +58,6 @@ def as2d(ar):
         aux = np.array(ar, copy=False)
         aux.shape = (ar.shape[0], 1)
         return aux
-
-
-class CallableLinearOperator(LinearOperator):
-    def __call__(self, x):
-        return self.matmat(x)
 
 
 def _makeOperator(operatorInput, expectedShape):
@@ -85,12 +80,6 @@ def _makeOperator(operatorInput, expectedShape):
 
     if operator.shape != expectedShape:
         raise ValueError('operator has invalid shape')
-
-    if sys.version_info[0] >= 3:
-        # special methods are looked up on the class -- so make a new one
-        operator.__class__ = CallableLinearOperator
-    else:
-        operator.__call__ = operator.matmat
 
     return operator
 
@@ -167,7 +156,7 @@ def lobpcg(A, X,
     maxiter : integer, optional
         maximum number of iterations
         by default: maxiter=min(n,20)
-    largest : boolean, optional
+    largest : bool, optional
         when True, solve for the largest eigenvalues, otherwise the smallest
     verbosityLevel : integer, optional
         controls solver output.  default: verbosityLevel = 0.

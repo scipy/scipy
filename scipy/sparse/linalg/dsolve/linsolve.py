@@ -56,7 +56,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         The square matrix A will be converted into CSC or CSR form
     b : ndarray or sparse matrix
         The matrix or vector representing the right hand side of the equation.
-        If a vector, b.size must
+        If a vector, b.size must be (n,) or (n, 1)
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -65,9 +65,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
         - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
         - ``COLAMD``: approximate minimum degree column ordering
-    use_umfpack : bool (optional)
+    use_umfpack : bool, optional
         if True (default) then use umfpack for the solution.  This is
-        only referenced if b is a vector.
+        only referenced if b is a vector and ``scikit-umfpack`` is installed.
 
     Returns
     -------
@@ -149,21 +149,30 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         else:
             # b is sparse
             Afactsolve = factorized(A)
-            tempj = empty(M, dtype=int)
-            x = A.__class__(b.shape)
 
-            if not (isspmatrix_csr(b) or isspmatrix_csc(b)):
-                warn('spsolve requires sparse b be in CSC or CSR matrix format',
-                     SparseEfficiencyWarning)
+            if not isspmatrix_csc(b):
+                warn('spsolve is more efficient when sparse b '
+                     'is in the CSC matrix format', SparseEfficiencyWarning)
                 b = csc_matrix(b)
 
+            # Create a sparse output matrix by repeatedly applying
+            # the sparse factorization to solve columns of b.
+            data_segs = []
+            row_segs = []
+            col_segs = []
             for j in range(b.shape[1]):
-                col = b[:, j].toarray()
-                xj = Afactsolve(ravel(col))
-                w = nonzero(xj)[0]
-                tempj.fill(j)
-                x = x + A.__class__((xj[w], (w, tempj[:len(w)])),
-                                    shape=b.shape, dtype=A.dtype)
+                bj = b[:, j].A.ravel()
+                xj = Afactsolve(bj)
+                w = np.flatnonzero(xj)
+                segment_length = w.shape[0]
+                row_segs.append(w)
+                col_segs.append(np.ones(segment_length, dtype=int)*j)
+                data_segs.append(np.asarray(xj[w], dtype=A.dtype))
+            sparse_data = np.concatenate(data_segs)
+            sparse_row = np.concatenate(row_segs)
+            sparse_col = np.concatenate(col_segs)
+            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
+                           shape=b.shape, dtype=A.dtype)
 
     return x
 

@@ -15,7 +15,7 @@ from nose import SkipTest
 import numpy
 import numpy as np
 from numpy import typecodes, array
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 from scipy import special
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
@@ -2171,7 +2171,22 @@ def test_infinite_input():
 def test_lomax_accuracy():
     # regression test for gh-4033
     p = stats.lomax.ppf(stats.lomax.cdf(1e-100,1),1)
-    assert_equal(p, 1e-100)
+    assert_allclose(p, 1e-100)
+    
+def test_gompertz_accuracy():
+    # Regression test for gh-4031
+    p = stats.gompertz.ppf(stats.gompertz.cdf(1e-100,1),1)
+    assert_allclose(p, 1e-100)
+    
+def test_truncexpon_accuracy():
+    # regression test for gh-4035
+    p = stats.truncexpon.ppf(stats.truncexpon.cdf(1e-100,1),1)
+    assert_allclose(p, 1e-100)
+
+def test_rayleigh_accuracy():
+    # regression test for gh-4034
+    p = stats.rayleigh.isf(stats.rayleigh.sf(9,1),1)
+    assert_almost_equal(p, 9.0, decimal=15)
 
 if __name__ == "__main__":
     run_module_suite()

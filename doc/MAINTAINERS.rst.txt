@@ -318,7 +318,6 @@ scipy.spatial
 
 Maintainers:
 
-    - Waren Weckesser
     - Pauli Virtanen (Qhull wrappers)
 
 Status:

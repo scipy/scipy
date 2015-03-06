@@ -20,7 +20,7 @@ from numpy import (product, zeros, array, dot, transpose, ones,
 import scipy.interpolate as interpolate
 import scipy.integrate as integrate
 import scipy.linalg as linalg
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
                    squeeze, diag, asarray)
 
@@ -628,9 +628,9 @@ def lsim(system, U, T, X0=None, interp=1):
     T : array_like
         The time steps at which the input is defined and at which the
         output is desired.
-    X0 :
+    X0 : array_like, optional
         The initial conditions on the state vector (zero by default).
-    interp : {1, 0}
+    interp : {1, 0}, optional
         Whether to use linear (1) or zero-order hold (0) interpolation.
 
     Returns
@@ -891,7 +891,7 @@ def step(system, X0=None, T=None, N=None):
         Initial state-vector (default is zero).
     T : array_like, optional
         Time points (computed if not given).
-    N : int
+    N : int, optional
         Number of time points to compute if `T` is not given.
 
     Returns
@@ -943,7 +943,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
         Initial state-vector (default is zero).
     T : array_like, optional
         Time points (computed if not given).
-    N : int
+    N : int, optional
         Number of time points to compute if `T` is not given.
     kwargs : various types
         Additional keyword arguments are passed on the function

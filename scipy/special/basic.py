@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
                    where, mgrid, sin, place, issubdtype, extract,
                    less, inexact, nan, zeros, atleast_1d, sinc)
@@ -734,7 +734,7 @@ def clpmn(m, n, z, type=3):
        Legendre function
     z : float or complex
         Input value.
-    type : int
+    type : int, optional
        takes values 2 or 3
        2: cut on the real axis ``|x| > 1``
        3: cut on the real axis ``-1 < x < 1`` (default)
@@ -1381,7 +1381,7 @@ def factorial2(n, exact=False):
         return vals
 
 
-def factorialk(n,k,exact=True):
+def factorialk(n, k, exact=True):
     """
     n(!!...!)  = multifactorial of order k
     k times
@@ -1390,6 +1390,8 @@ def factorialk(n,k,exact=True):
     ----------
     n : int
         Calculate multifactorial. If `n` < 0, the return value is 0.
+    k : int
+        Order of multifactorial.
     exact : bool, optional
         If exact is set to True, calculate the answer exactly using
         integer arithmetic.

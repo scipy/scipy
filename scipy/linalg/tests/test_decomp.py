@@ -17,7 +17,7 @@ from numpy.testing import (TestCase, assert_equal, assert_array_almost_equal,
         assert_array_equal, assert_raises, assert_, assert_allclose,
         run_module_suite, dec)
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
@@ -1759,6 +1759,18 @@ class TestHessenberg(TestCase):
         h,q = hessenberg(a,calc_q=1, check_finite=False)
         assert_array_almost_equal(dot(transp(q),dot(a,q)),h)
         assert_array_almost_equal(h,h1,decimal=4)
+
+    def test_2x2(self):
+        a = [[2, 1], [7, 12]]
+
+        h, q = hessenberg(a, calc_q=1)
+        assert_array_almost_equal(q, np.eye(2))
+        assert_array_almost_equal(h, a)
+
+        b = [[2-7j, 1+2j], [7+3j, 12-2j]]
+        h2, q2 = hessenberg(b, calc_q=1)
+        assert_array_almost_equal(q2, np.eye(2))
+        assert_array_almost_equal(h2, b)
 
 
 class TestQZ(TestCase):

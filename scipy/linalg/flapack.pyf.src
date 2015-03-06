@@ -269,6 +269,17 @@ interface
      
    end subroutine <prefix2c>pbsv
 
+   subroutine <prefix>ptsv(n, nrhs, d, e, b, info)
+     callstatement (*f2py_func)(&n, &nrhs, d, e, b, &n, &info);
+     callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+     integer intent(hide), depend(d) :: n = len(d)
+     integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+     <real, double precision, \0, \1> dimension(*), intent(in,out,copy) :: d
+     <ftype> dimension(n-1), intent(in,out,copy,out=du), depend(d,n) :: e
+     <ftype> dimension(*,*), intent(in,out,copy,out=x), depend(d,n), check(shape(b,0)==n) :: b
+     integer intent(out) :: info
+   end subroutine <prefix>ptsv
+
    subroutine <prefix>gebal(scale,permute,n,a,m,lo,hi,pivscale,info)
    !
    ! ba,lo,hi,pivscale,info = gebal(a,scale=0,permute=0,overwrite_a=0)
@@ -347,6 +358,71 @@ interface
      integer intent(out) :: info
    end subroutine <prefix>gehrd_lwork
 
+   subroutine <prefix2>orghr(n,lo,hi,a,tau,work,lwork,info)
+   !
+   ! q,info = orghr(a,tau,lo=0,hi=n-1,lwork=n,overwrite_a=0)
+   ! Compute orthogonal matrix Q for Hessenberg reduction from the matrix
+   ! that was computed by gehrd
+   !
+     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
+     callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*
+     integer intent(hide),depend(a) :: n = shape(a,0)
+     <ftype2> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
+     integer intent(in),optional :: lo = 0
+     integer intent(in),optional,depend(n) :: hi = n-1
+     <ftype2> dimension(n-1),intent(in),depend(n) :: tau
+     <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
+     integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = hi-lo
+     integer intent(out) :: info
+
+   end subroutine <prefix2>orghr
+
+   subroutine <prefix2>orghr_lwork(n,lo,hi,a,tau,work,lwork,info)
+     ! LWORK computation ofr orghr
+     fortranname <prefix2>orghr
+     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+     integer intent(in) :: n
+     <ftype2> intent(hide) :: a
+     integer intent(in), optional :: lo = 0
+     integer intent(in), optional, depend(n) :: hi = n-1
+     <ftype2> intent(hide) :: tau
+     <ftype2> intent(out) :: work
+     integer intent(hide) :: lwork = -1
+     integer intent(out) :: info
+   end subroutine <prefix2>orghr_lwork
+
+   subroutine <prefix2c>unghr(n,lo,hi,a,tau,work,lwork,info)
+   !
+   ! q,info = orghr(a,tau,lo=0,hi=n-1,lwork=n,overwrite_a=0)
+   ! Compute orthogonal matrix Q for Hessenberg reduction from the matrix
+   ! that was computed by gehrd
+   !
+     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,a,&n,tau,work,&lwork,&info); }
+     callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,int*
+     integer intent(hide),depend(a) :: n = shape(a,0)
+     <ftype2c> dimension(n,n),intent(in,out,copy,out=ht,aligned8),check(shape(a,0)==shape(a,1)) :: a
+     integer intent(in),optional :: lo = 0
+     integer intent(in),optional,depend(n) :: hi = n-1
+     <ftype2c> dimension(n-1),intent(in),depend(n) :: tau
+     <ftype2c> dimension(lwork),intent(cache,hide),depend(lwork) :: work
+     integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = hi-lo
+     integer intent(out) :: info
+   end subroutine <prefix2c>unghr
+
+   subroutine <prefix2c>unghr_lwork(n,lo,hi,a,tau,work,lwork,info)
+     ! LWORK computation ofr orghr
+     fortranname <prefix2c>unghr
+     callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+     integer intent(in) :: n
+     <ftype2c> intent(hide) :: a
+     integer intent(in), optional :: lo = 0
+     integer intent(in), optional, depend(n) :: hi = n-1
+     <ftype2c> intent(hide) :: tau
+     <ftype2c> intent(out) :: work
+     integer intent(hide) :: lwork = -1
+     integer intent(out) :: info
+   end subroutine <prefix2c>unghr_lwork
+
    subroutine <prefix>gbsv(n,kl,ku,nrhs,ab,piv,b,info)
    ! 
    ! lub,piv,x,info = gbsv(kl,ku,ab,b,overwrite_ab=0,overwrite_b=0)
@@ -369,6 +445,18 @@ interface
      intent(in,out,copy,out=x) b
      intent(in,out,copy,out=lub) ab
    end subroutine <prefix>gbsv
+
+   subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
+     callstatement (*f2py_func)(&n, &nrhs, dl, d, du, b, &n, &info);
+     callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+     integer intent(hide), depend(d) :: n = len(d)
+     integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+     <ftype> dimension(n-1), intent(in,out,copy,out=du2), depend(d,n) :: dl
+     <ftype> dimension(*), intent(in,out,copy) :: d
+     <ftype> dimension(n-1), intent(in,out,copy), depend(d,n) :: du
+     <ftype> dimension(*,*), intent(in,out,copy,out=x), depend(d,n), check(shape(b,0)==n) :: b
+     integer intent(out) :: info
+   end subroutine <prefix>gtsv
 
    subroutine <prefix>gesv(n,nrhs,a,piv,b,info)
 
@@ -651,6 +739,30 @@ interface
      integer intent(out)::info
 
    end subroutine <prefix2c>gelss
+
+   subroutine <prefix2>lasd4( n, i, d, z, delta, rho, sigma, work, info )
+    
+	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
+   	! Computes i-th square root of eigenvalue of rank one augmented diagonal matrix. Needed by SVD update procedure
+	
+	callstatement { i++; (*f2py_func)( &n, &i, d, z, delta, &rho, &sigma, work, &info); }
+     callprotoargument int*, int*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, int*
+	
+	integer intent(hide),depend(d):: n = shape(d,0)
+	integer intent(in),depend(d),check(i>=0 && i<=(shape(d,0)-1)):: i
+	
+	<ftype2> dimension(n),intent(in)           :: d
+	<ftype2> dimension(n),intent(in),depend(n) :: z
+	
+	<ftype2> intent(out) :: sigma
+	<ftype2> dimension(n),intent(out),depend(n) :: delta
+	<ftype2> intent(in),optional:: rho = 1.0
+	
+	<ftype2> dimension(n),intent(out),depend(n) :: work
+	integer intent(out) :: info
+
+   end subroutine <prefix2>lasd4
+
 
    subroutine <prefix2>geqp3(m,n,a,jpvt,tau,work,lwork,info)
 

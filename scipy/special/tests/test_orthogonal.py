@@ -4,7 +4,7 @@ from numpy.testing import (rand, TestCase, assert_array_almost_equal,
                            assert_almost_equal, assert_allclose, assert_raises,
                            run_module_suite)
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 import numpy as np
 from numpy import array, sqrt
 import scipy.special.orthogonal as orth

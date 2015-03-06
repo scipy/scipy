@@ -1040,7 +1040,7 @@ add_newdoc('scipy.special', 'expit',
 
     Notes
     -----
-    As a ufunc logit takes a number of optional
+    As a ufunc expit takes a number of optional
     keyword arguments. For more information
     see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 

@@ -105,6 +105,11 @@ doc/source/generated
 
 # Things specific to this project #
 ###################################
+benchmarks/env
+benchmarks/results
+benchmarks/scipy
+benchmarks/html
+benchmarks/scipy-benchmarks
 scipy/__config__.py
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
@@ -139,6 +144,7 @@ scipy/linalg/_fblasmodule.c
 scipy/linalg/_flapack-f2pywrappers.f
 scipy/linalg/_flapackmodule.c
 scipy/linalg/_interpolativemodule.c
+scipy/linalg/_solve_toeplitz.c
 scipy/linalg/cblas.pyf
 scipy/linalg/clapack.pyf
 scipy/linalg/fblas.pyf

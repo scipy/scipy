@@ -204,9 +204,6 @@ following, a *SciPy module* is defined as a Python package, say
   - A directory ``tests/`` that contains files ``test_<name>.py``
     corresponding to modules ``yyy/<name>{.py,.so,/}``.
 
-  - A directory ``benchmarks/`` that contains files ``bench_<name>.py``
-    corresponding to modules ``yyy/<name>{.py,.so,/}``.
-
 * Private modules should be prefixed with an underscore ``_``,
   for instance ``yyy/_somemodule.py``.
 

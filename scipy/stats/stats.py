@@ -139,8 +139,6 @@ Probability Calculations
    :toctree: generated/
 
    chisqprob
-   zprob
-   fprob
    betai
 
 ANOVA Functions
@@ -177,12 +175,9 @@ from collections import namedtuple
 from scipy._lib.six import xrange
 from scipy._lib._util import check_random_state
 
-# friedmanchisquare patch uses python sum
-pysum = sum  # save it before it gets overwritten
-
 # Scipy imports.
 from scipy._lib.six import callable, string_types
-from numpy import array, asarray, ma, zeros, sum
+from numpy import array, asarray, ma, zeros
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
@@ -205,7 +200,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
+           'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
            'nanstd', 'nanmedian', 'combine_pvalues', ]
@@ -278,9 +273,9 @@ def nanmean(x, axis=0):
     ----------
     x : ndarray
         Input array.
-    axis : int, optional
-        Axis along which the mean is computed. Default is 0, i.e. the
-        first axis.
+    axis : int or None, optional
+        Axis along which the mean is computed. Default is 0.
+        If None, compute over the whole array `x`.
 
     Returns
     -------
@@ -420,9 +415,9 @@ def nanmedian(x, axis=0):
     ----------
     x : array_like
         Input array.
-    axis : int, optional
-        Axis along which the median is computed. Default is 0, i.e. the
-        first axis.
+    axis : int or None, optional
+        Axis along which the median is computed. Default is 0.
+        If None, compute over the whole array `x`.
 
     Returns
     -------
@@ -486,8 +481,9 @@ def gmean(a, axis=0, dtype=None):
     ----------
     a : array_like
         Input array or object that can be converted to an array.
-    axis : int, optional, default axis=0
-        Axis along which the geometric mean is computed.
+    axis : int or None, optional
+        Axis along which the geometric mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
     dtype : dtype, optional
         Type of the returned array and of the accumulator in which the
         elements are summed. If dtype is not specified, it defaults to the
@@ -539,8 +535,9 @@ def hmean(a, axis=0, dtype=None):
     ----------
     a : array_like
         Input array, masked array or object that can be converted to an array.
-    axis : int, optional, default axis=0
-        Axis along which the harmonic mean is computed.
+    axis : int or None, optional
+        Axis along which the harmonic mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
     dtype : dtype, optional
         Type of the returned array and of the accumulator in which the
         elements are summed. If `dtype` is not specified, it defaults to the
@@ -596,8 +593,9 @@ def mode(a, axis=0):
     ----------
     a : array_like
         n-dimensional array of which to find mode(s).
-    axis : int, optional
-        Axis along which to operate. Default is 0, i.e. the first axis.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
@@ -781,9 +779,9 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
         Values in the input array less than the given limit will be ignored.
         When lowerlimit is None, then all values are used. The default value
         is None.
-    axis : None or int, optional
-        Operate along this axis.  None means to use the flattened array and
-        the default is zero
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the whole
+        array `a`.
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
@@ -813,9 +811,9 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
         Values in the input array greater than the given limit will be ignored.
         When upperlimit is None, then all values are used. The default value
         is None.
-    axis : None or int, optional
-        Operate along this axis.  None means to use the flattened array and
-        the default is zero.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
@@ -919,11 +917,11 @@ def moment(a, moment=1, axis=0):
     ----------
     a : array_like
        data
-    moment : int
+    moment : int, optional
        order of central moment that is returned
-    axis : int or None
-       Axis along which the central moment is computed. If None, then the data
-       array is raveled. The default axis is zero.
+    axis : int or None, optional
+       Axis along which the central moment is computed. Default is 0.
+       If None, compute over the whole array `a`.
 
     Returns
     -------
@@ -959,8 +957,9 @@ def variation(a, axis=0):
     ----------
     a : array_like
         Input array.
-    axis : int or None
-        Axis along which to calculate the coefficient of variation.
+    axis : int or None, optional
+        Axis along which to calculate the coefficient of variation. Default
+        is 0. If None, compute over the whole array `a`.
 
     References
     ----------
@@ -986,9 +985,10 @@ def skew(a, axis=0, bias=True):
     ----------
     a : ndarray
         data
-    axis : int or None
-        axis along which skewness is calculated
-    bias : bool
+    axis : int or None, optional
+        Axis along which skewness is calculated. Default is 0.
+        If None, compute over the whole array `a`.
+    bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
 
     Returns
@@ -1043,12 +1043,13 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     ----------
     a : array
         data for which the kurtosis is calculated
-    axis : int or None
-        Axis along which the kurtosis is calculated
-    fisher : bool
+    axis : int or None, optional
+        Axis along which the kurtosis is calculated. Default is 0.
+        If None, compute over the whole array `a`.
+    fisher : bool, optional
         If True, Fisher's definition is used (normal ==> 0.0). If False,
         Pearson's definition is used (normal ==> 3.0).
-    bias : bool
+    bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
 
     Returns
@@ -1105,9 +1106,9 @@ def describe(a, axis=0, ddof=1):
     ----------
     a : array_like
        Input data.
-    axis : int, optional
-       Axis along which statistics are calculated.  If axis is None, then data
-       array is raveled.  The default axis is zero.
+    axis : int or None, optional
+       Axis along which statistics are calculated. Default is 0.
+       If None, compute over the whole array `a`.
     ddof : int, optional
         Delta degrees of freedom.  Default is 1.
 
@@ -1162,7 +1163,10 @@ def skewtest(a, axis=0):
     Parameters
     ----------
     a : array
-    axis : int or None
+        The data to be tested
+    axis : int or None, optional
+       Axis along which statistics are calculated. Default is 0.
+       If None, compute over the whole array `a`.
 
     Returns
     -------
@@ -1209,9 +1213,9 @@ def kurtosistest(a, axis=0):
     ----------
     a : array
         array of the sample data
-    axis : int or None
-        the axis to operate along, or None to work on the whole array.
-        The default is the first axis.
+    axis : int or None, optional
+       Axis along which to compute test. Default is 0. If None,
+       compute over the whole array `a`.
 
     Returns
     -------
@@ -1269,9 +1273,9 @@ def normaltest(a, axis=0):
     ----------
     a : array_like
         The array containing the data to be tested.
-    axis : int or None
-        If None, the array is treated as a single data set, regardless of
-        its shape.  Otherwise, each 1-d array along axis `axis` is tested.
+    axis : int or None, optional
+        Axis along which to compute test. Default is 0. If None,
+        compute over the whole array `a`.
 
     Returns
     -------
@@ -1419,7 +1423,7 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
         Tuple of two scalars, the lower and upper limits within which to
         compute the percentile. Values of `a` outside
         this (closed) interval will be ignored.
-    interpolation : {'fraction', 'lower', 'higher'}, optional
+    interpolation_method : {'fraction', 'lower', 'higher'}, optional
         This optional parameter specifies the interpolation method to use,
         when the desired quantile lies between two data points `i` and `j`
 
@@ -1429,8 +1433,8 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
           - higher: ``j``.
 
     axis : int, optional
-        Axis along which the percentiles are computed. The default (None)
-        is to compute the median along a flattened version of the array.
+        Axis along which the percentiles are computed. Default is None. If
+        None, compute over the whole array `a`.
 
     Returns
     -------
@@ -1607,11 +1611,11 @@ def percentileofscore(a, score, kind='rank'):
         return pct
 
     elif kind == 'strict':
-        return sum(a < score) / float(n) * 100
+        return np.sum(a < score) / float(n) * 100
     elif kind == 'weak':
-        return sum(a <= score) / float(n) * 100
+        return np.sum(a <= score) / float(n) * 100
     elif kind == 'mean':
-        return (sum(a < score) + sum(a <= score)) * 50 / float(n)
+        return (np.sum(a < score) + np.sum(a <= score)) * 50 / float(n)
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
@@ -1729,7 +1733,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
         Input array.
     numbins : int, optional
         The number of bins to use for the histogram. Default is 10.
-    defaultlimits : tuple (lower, upper), optional
+    defaultreallimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
         If no value is given, a range slightly larger than the range of the
         values in `a` is used. Specifically ``(a.min() - s, a.max() + s)``,
@@ -1915,8 +1919,8 @@ def signaltonoise(a, axis=0, ddof=0):
     a : array_like
         An array_like object containing the sample data.
     axis : int or None, optional
-        If axis is equal to None, the array is first ravel'd. If axis is an
-        integer, this is the axis over which to operate. Default is 0.
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
     ddof : int, optional
         Degrees of freedom correction for standard deviation. Default is 0.
 
@@ -1943,9 +1947,9 @@ def sem(a, axis=0, ddof=1):
     a : array_like
         An array containing the values for which the standard error is
         returned.
-    axis : int or None, optional.
-        If axis is None, ravel `a` first. If axis is an integer, this will be
-        the axis over which to operate. Defaults to 0.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
     ddof : int, optional
         Delta degrees-of-freedom. How many degrees of freedom to adjust
         for bias in limited samples relative to the population estimate
@@ -1992,8 +1996,8 @@ def zscore(a, axis=0, ddof=0):
     a : array_like
         An array like object containing the sample data.
     axis : int or None, optional
-        If `axis` is equal to None, the array is first raveled. If `axis` is
-        an integer, this is the axis over which to operate. Default is 0.
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
@@ -2062,7 +2066,7 @@ def zmap(scores, compare, axis=0, ddof=0):
         `scores`.
     axis : int or None, optional
         Axis over which mean and variance of `compare` are calculated.
-        Default is 0.
+        Default is 0. If None, compute over the whole array `scores`.
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
@@ -2226,9 +2230,8 @@ def trimboth(a, proportiontocut, axis=0):
     proportiontocut : float
         Proportion (in range 0-1) of total data set to trim of each end.
     axis : int or None, optional
-        Axis along which the observations are trimmed. The default is to trim
-        along axis=0. If axis is None then the array will be flattened before
-        trimming.
+        Axis along which to trim data. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
@@ -2315,9 +2318,8 @@ def trim_mean(a, proportiontocut, axis=0):
     proportiontocut : float
         Fraction to cut off of both tails of the distribution
     axis : int or None, optional
-        Axis along which the trimmed means are computed. The default is axis=0.
-        If axis is None then the trimmed mean will be computed for the
-        flattened array.
+        Axis along which the trimmed means are computed. Default is 0.
+        If None, compute over the whole array `a`.
 
     Returns
     -------
@@ -3091,9 +3093,9 @@ def theilslopes(y, x=None, alpha=0.95):
     ----------
     y : array_like
         Dependent variable.
-    x : {None, array_like}, optional
+    x : array_like or None, optional
         Independent variable. If None, use ``arange(len(y))`` instead.
-    alpha : float
+    alpha : float, optional
         Confidence degree between 0 and 1. Default is 95% confidence.
         Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
         interpreted as "find the 90% confidence interval".
@@ -3216,9 +3218,9 @@ def ttest_1samp(a, popmean, axis=0):
     popmean : float or array_like
         expected value in null hypothesis, if array_like than it must have the
         same shape as `a` excluding the axis dimension
-    axis : int, optional, (default axis=0)
-        Axis can equal None (ravel array first), or an integer (the axis
-        over which to operate on a).
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        array `a`.
 
     Returns
     -------
@@ -3377,9 +3379,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     a, b : array_like
         The arrays must have the same shape, except in the dimension
         corresponding to `axis` (the first, by default).
-    axis : int, optional
-        Axis can equal None (ravel array first), or an integer (the axis
-        over which to operate on a and b).
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        arrays, `a`, and `b`.
     equal_var : bool, optional
         If True (default), perform a standard independent 2 sample test
         that assumes equal population variances [1]_.
@@ -3605,9 +3607,9 @@ def ttest_rel(a, b, axis=0):
     ----------
     a, b : array_like
         The arrays must have the same shape.
-    axis : int, optional, (default axis=0)
-        Axis can equal None (ravel array first), or an integer (the axis
-        over which to operate on a and b).
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        arrays, `a`, and `b`.
 
     Returns
     -------
@@ -4304,7 +4306,7 @@ def mannwhitneyu(x, y, use_continuity=True):
     else:
         z = abs((bigu - n1*n2/2.0) / sd)  # normal approximation for prob calc
 
-    return smallu, distributions.norm.sf(z)  # (1.0 - zprob(z))
+    return smallu, distributions.norm.sf(z)
 
 
 def ranksums(x, y):
@@ -4472,7 +4474,7 @@ def friedmanchisquare(*args):
             ties += t * (t*t - 1)
     c = 1 - ties / float(k*(k*k - 1)*n)
 
-    ssbn = pysum(pysum(data)**2)
+    ssbn = np.sum(data.sum(axis=0)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
     return chisq, chisqprob(chisq, k - 1)
 
@@ -4484,14 +4486,15 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Parameters
     ----------
-    p: array_like, 1-D
+    pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests.
-    method: str
+    method : {'fisher', 'stouffer'}, optional
         Name of method to use to combine p-values. The following methods are
         available:
-        - "fisher": Fisher's method (Fisher's combined probability test)
-        - "stouffer": Stouffer's Z-score method
-    weights: array_like, 1-D, optional
+        - "fisher": Fisher's method (Fisher's combined probability test),
+          the default.
+        - "stouffer": Stouffer's Z-score method.
+    weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
     Returns
@@ -4560,11 +4563,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 #      PROBABILITY CALCULATIONS     #
 #####################################
 
-zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
-                             'use norm.cdf or special.ndtr instead\n',
-                     old_name='zprob')(special.ndtr)
-
-
 def chisqprob(chisq, df):
     """
     Probability value (1-tail) for the Chi^2 probability distribution.
@@ -4585,16 +4583,6 @@ def chisqprob(chisq, df):
 
     """
     return special.chdtrc(df, chisq)
-
-
-ksprob = np.deprecate(message='ksprob is deprecated in scipy 0.14, '
-                              'use stats.kstwobign.sf or special.kolmogorov '
-                              'instead\n',
-                      old_name='ksprob')(special.kolmogorov)
-
-fprob = np.deprecate(message='fprob is deprecated in scipy 0.14, '
-                             'use stats.f.sf or special.fdtrc instead\n',
-                     old_name='fprob')(special.fdtrc)
 
 
 def betai(a, b, x):
@@ -4724,8 +4712,8 @@ def ss(a, axis=0):
     a : array_like
         Input array.
     axis : int or None, optional
-        The axis along which to calculate. If None, use whole array.
-        Default is 0, i.e. along the first axis.
+        Axis along which to calculate. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
@@ -4763,8 +4751,8 @@ def square_of_sums(a, axis=0):
     a : array_like
         Input array.
     axis : int or None, optional
-        If axis is None, ravel `a` first. If `axis` is an integer, this will
-        be the axis over which to operate. Defaults to 0.
+        Axis along which to calculate. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
@@ -4793,6 +4781,7 @@ def square_of_sums(a, axis=0):
         return float(s) * s
 
 
+@np.deprecate(message="scipy.stats.fastsort is deprecated in scipy 0.16.0")
 def fastsort(a):
     """
     Sort an array and provide the argsort.

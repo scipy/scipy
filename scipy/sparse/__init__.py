@@ -45,6 +45,7 @@ Building sparse matrices:
    hstack - Stack sparse matrices horizontally (column wise)
    vstack - Stack sparse matrices vertically (row wise)
    rand - Random values in a given shape
+   norm - Return norm of a sparse matrix
 
 Sparse matrix tools:
 

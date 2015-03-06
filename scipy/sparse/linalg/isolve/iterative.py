@@ -7,9 +7,9 @@ __all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
 from . import _iterative
 
 from scipy.sparse.linalg.interface import LinearOperator
-from scipy.lib.decorator import decorator
+from scipy._lib.decorator import decorator
 from .utils import make_system
-from scipy.lib._util import _aligned_zeros
+from scipy._lib._util import _aligned_zeros
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 

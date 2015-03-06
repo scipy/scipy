@@ -14,7 +14,7 @@ from numpy import (isscalar, r_, log, sum, around, unique, asarray,
                    pi, exp, ravel, angle, count_nonzero)
 from numpy.testing.decorators import setastest
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 from scipy import optimize
 from scipy import special
 from . import statlib
@@ -1780,7 +1780,7 @@ def mood(x, y, axis=0):
     ----------
     x, y : array_like
         Arrays of sample data.
-    axis: int, optional
+    axis : int, optional
         The axis along which the samples are tested.  `x` and `y` can be of
         different length along `axis`.
         If `axis` is None, `x` and `y` are flattened and the test is done on

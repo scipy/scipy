@@ -13,7 +13,7 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import OptimizeResult, _check_unknown_options
 
@@ -38,24 +38,24 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         Constraint functions; must all be ``>=0`` (a single function
         if only 1 constraint). Each function takes the parameters `x`
         as its first argument.
-    args : tuple
+    args : tuple, optional
         Extra arguments to pass to function.
-    consargs : tuple
+    consargs : tuple, optional
         Extra arguments to pass to constraint functions (default of None means
         use same extra arguments as those passed to func).
         Use ``()`` for no extra arguments.
-    rhobeg :
+    rhobeg : float, optional
         Reasonable initial changes to the variables.
-    rhoend :
+    rhoend : float, optional
         Final accuracy in the optimization (not precisely guaranteed). This
         is a lower bound on the size of the trust region.
-    iprint : {0, 1, 2, 3}
+    iprint : {0, 1, 2, 3}, optional
         Controls the frequency of output; 0 implies no output.  Deprecated.
-    disp : {0, 1, 2, 3}
+    disp : {0, 1, 2, 3}, optional
         Over-rides the iprint interface.  Preferred.
-    maxfun : int
+    maxfun : int, optional
         Maximum number of function evaluations.
-    catol : float
+    catol : float, optional
         Absolute tolerance for constraint violations.
 
     Returns
@@ -181,22 +181,21 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
 
-    Options for the COBYLA algorithm are:
-        rhobeg : float
-            Reasonable initial changes to the variables.
-        tol : float
-            Final accuracy in the optimization (not precisely guaranteed).
-            This is a lower bound on the size of the trust region.
-        disp : bool
-            Set to True to print convergence messages. If False,
-            `verbosity` is ignored as set to 0.
-        maxiter : int
-            Maximum number of function evaluations.
-        catol : float
-            Tolerance (absolute) for constraint violations
+    Options
+    -------
+    rhobeg : float
+        Reasonable initial changes to the variables.
+    tol : float
+        Final accuracy in the optimization (not precisely guaranteed).
+        This is a lower bound on the size of the trust region.
+    disp : bool
+        Set to True to print convergence messages. If False,
+        `verbosity` is ignored as set to 0.
+    maxiter : int
+        Maximum number of function evaluations.
+    catol : float
+        Tolerance (absolute) for constraint violations
 
-    This function is called by the `minimize` function with
-    `method=COBYLA`. It is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
     maxfun = maxiter

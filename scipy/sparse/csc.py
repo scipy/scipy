@@ -7,7 +7,7 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from ._sparsetools import csc_tocsr
 from . import _sparsetools
@@ -196,7 +196,6 @@ class csc_matrix(_cs_matrix, IndexMixin):
         """swap the members of x if this is a column-oriented matrix
         """
         return (x[1],x[0])
-
 
 def isspmatrix_csc(x):
     return isinstance(x, csc_matrix)

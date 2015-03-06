@@ -9,7 +9,7 @@ from functools import partial
 
 import numpy as np
 
-from scipy.lib.six import next
+from scipy._lib.six import next
 
 """A module to read arff files."""
 

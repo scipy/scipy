@@ -32,7 +32,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy
 
-from scipy.lib.six import integer_types, string_types
+from scipy._lib.six import integer_types, string_types
 
 
 def _extend_mode_to_code(mode):

@@ -8,7 +8,7 @@ __all__ = ['csr_matrix', 'isspmatrix_csr']
 
 
 import numpy as np
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 
 from ._sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
@@ -418,7 +418,6 @@ class csr_matrix(_cs_matrix, IndexMixin):
         shape = (i1 - i0, j1 - j0)
 
         return self.__class__((data,indices,indptr), shape=shape)
-
 
 def isspmatrix_csr(x):
     return isinstance(x, csr_matrix)

@@ -8,7 +8,7 @@ from numpy import asarray_chkfinite
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 __all__ = ['qz']
 
@@ -82,7 +82,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         2d array to decompose
     B : (N, N) array_like
         2d array to decompose
-    output : str {'real','complex'}
+    output : {'real', 'complex'}, optional
         Construct the real or complex QZ decomposition for real matrices.
         Default is 'real'.
     lwork : int, optional
@@ -106,7 +106,11 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
             - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         Defaults to None (no sorting).
-    check_finite : boolean
+    overwrite_a : bool, optional
+        Whether to overwrite data in a (may improve performance)
+    overwrite_b : bool, optional
+        Whether to overwrite data in b (may improve performance)
+    check_finite : bool, optional
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.

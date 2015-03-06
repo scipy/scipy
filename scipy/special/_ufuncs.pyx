@@ -4828,7 +4828,7 @@ cdef char *ufunc_expit_doc = (
     "\n"
     "Notes\n"
     "-----\n"
-    "As a ufunc logit takes a number of optional\n"
+    "As a ufunc expit takes a number of optional\n"
     "keyword arguments. For more information\n"
     "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
     "\n"

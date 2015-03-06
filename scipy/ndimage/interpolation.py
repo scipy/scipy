@@ -157,7 +157,7 @@ def geometric_transform(input, mapping, output_shape=None,
         A callable object that accepts a tuple of length equal to the output
         array rank, and returns the corresponding input coordinates as a tuple
         of length equal to the input array rank.
-    output_shape : tuple of ints
+    output_shape : tuple of ints, optional
         Shape tuple.
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned

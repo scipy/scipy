@@ -8,7 +8,7 @@ import sys
 
 import numpy as np
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from .sputils import isdense, isscalarlike, isintlike
 
 
@@ -250,6 +250,9 @@ class spmatrix(object):
 
         """
         return self * other
+
+    def power(self, n, dtype=None):            
+        return self.tocsr().power(n, dtype=dtype)
 
     def __eq__(self, other):
         return self.tocsr().__eq__(other)

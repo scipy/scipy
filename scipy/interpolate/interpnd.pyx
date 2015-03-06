@@ -215,7 +215,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         Value used to fill in for requested points outside of the
         convex hull of the input points.  If not provided, then
         the default is ``nan``.
-    rescale : boolean, optional
+    rescale : bool, optional
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
@@ -794,7 +794,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Absolute/relative tolerance for gradient estimation.
     maxiter : int, optional
         Maximum number of iterations in gradient estimation.
-    rescale : boolean, optional
+    rescale : bool, optional
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
