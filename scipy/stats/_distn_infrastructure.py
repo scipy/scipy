@@ -211,7 +211,7 @@ And compare the histogram:
 """
 
 _doc_default_locscale = """\  
-The probability density above is defined in the "standartized" form. To shift
+The probability density above is defined in the "standardized" form. To shift
 and/or scale the distribution use the ``loc`` and ``scale`` parameters.
 Specifically, ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
 equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
@@ -329,7 +329,7 @@ Generate random numbers:
 
 
 _doc_default_discrete_locscale = """\
-The probability mass function above is defined in the "standartized" form.
+The probability mass function above is defined in the "standardized" form.
 To shift distribution use the ``loc`` parameter.
 Specifically, ``%(name)s.pmf(k, %(shapes)s, loc)`` is identically
 equivalent to ``%(name)s.pmf(k - loc, %(shapes)s)``.
