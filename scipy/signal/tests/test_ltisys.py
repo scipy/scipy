@@ -3,14 +3,240 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose, assert_raises,
-                           run_module_suite)
+from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
+                           assert_, assert_raises, TestCase, run_module_suite)
 from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                                  bode, freqresp, impulse, step,
-                                 abcd_normalize)
+                                 abcd_normalize, place_poles)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
+
+
+def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
+    """
+    Check each pole in P1 is close to a pole in P2 with a 1e-8
+    relative tolerance or 1e-8 absolute tolerance (useful for zero poles). 
+    These tolerance are very scrict but the systems tested are known to 
+    accept these poles so we should not be far from what is requested.    
+    """
+    P2 = P2.copy()
+    for p1 in P1:
+        found = False
+        for p2_idx in range(P2.shape[0]):
+            if np.allclose([np.real(p1), np.imag(p1)],
+                           [np.real(P2[p2_idx]), np.imag(P2[p2_idx])],
+                           rtol, atol):
+                found = True
+                np.delete(P2, p2_idx)
+                break
+        if not found:
+            raise ValueError("Can't find pole " + str(p1) + " in " + str(P2))
+
+
+class TestPlacePoles(TestCase):
+
+    def _check(self, A, B, P, **kwargs):
+        """
+        Perform the most common tests on the poles computed by place_poles
+        and return the Bunch object for further specific tests
+        """  
+        fsf = place_poles(A, B, P, **kwargs)
+        expected, _ = np.linalg.eig(A - np.dot(B, fsf.gain_matrix))
+        _assert_poles_close(expected,fsf.requested_poles)
+        _assert_poles_close(expected,fsf.computed_poles)
+        _assert_poles_close(P,fsf.requested_poles)
+            
+        return fsf
+
+    def test_real(self):
+        # Test real pole placement using KNV and YT0 algorithm and example 1 in
+        # section 4 of the reference publication (see place_poles docstring)
+        A = np.array([1.380, -0.2077, 6.715, -5.676, -0.5814, -4.290, 0,
+                      0.6750, 1.067, 4.273, -6.654, 5.893, 0.0480, 4.273,
+                      1.343, -2.104]).reshape(4, 4)
+        B = np.array([0, 5.679, 1.136, 1.136, 0, 0, -3.146,0]).reshape(4, 2)
+        P = np.array([-0.2, -0.5, -5.0566, -8.6659])
+
+        # Check that both KNV and YT compute correct K matrix
+        self._check(A, B, P, method='KNV0')
+        self._check(A, B, P, method='YT')
+        
+        # Try to reach the specific case in _YT_real where two singular
+        # values are almost equal. This is to improve code coverage but I
+        # have no way to be sure this code is really reached
+        
+        self._check(A, B, (2,2,3,3))
+
+    def test_complex(self):
+        # Test complex pole placement on a linearized car model, taken from L.
+        # Jaulin, Automatique pour la robotique, Cours et Exercices, iSTE
+        # editions p 184/185
+        A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
+        B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+        # Test complex poles on YT
+        P = np.array([-3, -1, -2-1j, -2+1j])
+        self._check(A, B, P)
+        
+        # Try to reach the specific case in _YT_complex where two singular
+        # values are almost equal. This is to improve code coverage but I
+        # have no way to be sure this code is really reached 
+            
+        P = [0-1e-6j,0+1e-6j,-10,10]
+        self._check(A, B, P, maxiter=1000)
+
+        # Try to reach the specific case in _YT_complex where the rank two
+        # update yields two null vectors. This test was found via Monte Carlo.
+
+        A = np.array(
+                    [-2148,-2902, -2267, -598, -1722, -1829, -165, -283, -2546,
+                   -167, -754, -2285, -543, -1700, -584, -2978, -925, -1300,
+                   -1583, -984, -386, -2650, -764, -897, -517, -1598, 2, -1709,
+                   -291, -338, -153, -1804, -1106, -1168, -867, -2297]
+                   ).reshape(6,6)
+                   
+        B = np.array(
+                    [-108, -374, -524, -1285, -1232, -161, -1204, -672, -637,
+                     -15, -483, -23, -931, -780, -1245, -1129, -1290, -1502,
+                     -952, -1374, -62, -964, -930, -939, -792, -756, -1437,
+                     -491, -1543, -686]
+                     ).reshape(6,5)
+        P = [-25.-29.j, -25.+29.j, 31.-42.j, 31.+42.j, 33.-41.j, 33.+41.j]
+        self._check(A, B, P)
+        
+        # Use a lot of poles to go through all cases for update_order
+        # in _YT_loop
+        
+        big_A = np.ones((11,11))-np.eye(11)        
+        big_B = np.ones((11,10))-np.diag([1]*10,1)[:,1:]
+        big_A[:6,:6] = A
+        big_B[:6,:5] = B
+
+        P = [-10,-20,-30,40,50,60,70,-20-5j,-20+5j,5+3j,5-3j]        
+        self._check(big_A, big_B, P)
+        
+        #check with only complex poles and only real poles
+        P = [-10,-20,-30,-40,-50,-60,-70,-80,-90,-100]      
+        self._check(big_A[:-1,:-1], big_B[:-1,:-1], P)
+        P = [-10+10j,-20+20j,-30+30j,-40+40j,-50+50j,
+             -10-10j,-20-20j,-30-30j,-40-40j,-50-50j]
+        self._check(big_A[:-1,:-1], big_B[:-1,:-1], P)
+
+        # need a 5x5 array to ensure YT handles properly when there
+        # is only one real pole and several complex
+        A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0,
+                      0,0,0,5,0,0,0,0,9]).reshape(5,5)
+        B = np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
+        P = np.array([-2, -3+1j, -3-1j, -1+1j, -1-1j])
+        place_poles(A,B,P)
+
+        # same test with an odd number of real poles > 1
+        # this is another specific case of YT
+        P = np.array([-2, -3, -4, -1+1j, -1-1j])
+        self._check(A, B, P)
+
+    def test_tricky_B(self):
+        # check we handle as we should the 1 column B matrices and
+        # n column B matrices (with n such as shape(A)=(n, n))
+        A = np.array([1.380, -0.2077, 6.715, -5.676, -0.5814, -4.290, 0,
+                      0.6750, 1.067, 4.273, -6.654, 5.893, 0.0480, 4.273,
+                      1.343, -2.104]).reshape(4, 4)
+        B = np.array([0, 5.679, 1.136, 1.136, 0, 0, -3.146, 0, 1, 2, 3, 4,
+                      5, 6, 7, 8]).reshape(4, 4)
+
+        # KNV or YT are not called here, it's a specific case with only
+        # one unique solution
+        P = np.array([-0.2, -0.5, -5.0566, -8.6659])
+        fsf = self._check(A, B, P)
+        #rtol and nb_iter should be set to 0 as the solution is unique
+        assert_equal(fsf.rtol,0)        
+        assert_equal(fsf.nb_iter,0)        
+
+        # check with complex poles too as they trigger a specific case in
+        # the specific case :-)
+        P = np.array((-2+1j,-2-1j,-3,-2))
+        fsf = self._check(A, B, P)
+        assert_equal(fsf.rtol,0)        
+        assert_equal(fsf.nb_iter,0)       
+        
+        #now test with a B matrix with only one column (no optimisation)
+        B = B[:,0].reshape(4,1)
+        P = np.array((-2+1j,-2-1j,-3,-2))
+        fsf = self._check(A, B, P)
+        
+        #rtol and nb_iter are meaningless here as we can't optimize anything,
+        #check they are set to NaN as expected         
+        assert_equal(fsf.rtol,np.nan)        
+        assert_equal(fsf.nb_iter,np.nan)   
+                    
+    def test_errors(self):
+        # Test input mistakes from user
+        A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
+        B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+        
+        #should fail as the method keyword is invalid
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
+                      method="foo")
+
+        #should fail as poles are not 1D array
+        assert_raises(ValueError, place_poles, A, B, 
+                      np.array((-2.1,-2.2,-2.3,-2.4)).reshape(4,1))
+
+        #should fail as A is not a 2D array
+        assert_raises(ValueError, place_poles, A[:,:,np.newaxis], B, 
+                      (-2.1,-2.2,-2.3,-2.4), method="foo")
+
+        #should fail as B is not a 2D array
+        assert_raises(ValueError, place_poles, A, B[:,:,np.newaxis], 
+                      (-2.1,-2.2,-2.3,-2.4), method="foo")
+
+        #should fail as there are too many poles
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4,-3),
+                      method="foo")
+
+        #should fail as there are not enough poles
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3),
+                      method="foo")
+                      
+        #should fail as the rtol is greater than 1
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
+                      rtol=42)
+
+        #should fail as maxiter is smaller than 1
+        assert_raises(ValueError, place_poles, A, B, (-2.1,-2.2,-2.3,-2.4),
+                      maxiter=-42)
+
+        # should fail as rank(B) is two
+        assert_raises(ValueError, place_poles, A, B, (-2,-2,-2,-2))
+
+        #unctrollable system
+        assert_raises(ValueError, place_poles, np.ones((4,4)), 
+                      np.ones((4,2)), (1,2,3,4))
+
+        # Should not raise ValueError as the poles can be placed but should
+        # raise a warning as the convergence is not reached
+        with warnings.catch_warnings(record=True) as w:
+            fsf = place_poles(A, B, (-1,-2,-3,-4), rtol=1e-16, maxiter=42)
+            assert_(len(w) == 1)
+            assert_(issubclass(w[-1].category, UserWarning))
+            assert_("Convergence was not reached after maxiter iterations"
+                    in str(w[-1].message))
+            assert_equal(fsf.nb_iter,42)   
+
+        # should fail as a complex misses its conjugate
+        assert_raises(ValueError, place_poles, A, B, (-2+1j,-2-1j,-2+3j,-2))
+
+        # should fail as poles are not in a 1D array-like
+        assert_raises(ValueError, place_poles, A, B, ((-2+1j,-2-1j,-2+3j,-2)))
+
+        # should fail as A is not square
+        assert_raises(ValueError, place_poles, A[:,:3], B, (-2,-3,-4,-5))
+
+        # should fail as B has not the same number of lines as A
+        assert_raises(ValueError, place_poles, A, B[:3,:], (-2,-3,-4,-5))
+
+        # should fail as KNV0 does not support complex poles
+        assert_raises(ValueError, place_poles, A, B,
+                      (-2+1j,-2-1j,-2+3j,-2-3j), method="KNV0")
 
 
 class TestSS2TF:
