@@ -873,7 +873,7 @@ class TestBetaPrime(TestCase):
         assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
 
     def test_cdf(self):
-        # regression test for gh-4030: Implementation of 
+        # regression test for gh-4030: Implementation of
         # scipy.stats.betaprime.cdf()
         x = stats.betaprime.cdf(0, 0.2, 0.3)
         assert_equal(x, 0.0)
@@ -882,7 +882,7 @@ class TestBetaPrime(TestCase):
         x = np.array([0.2, 0.5, 0.6])
         cdfs = stats.betaprime.cdf(x, alpha, beta)
         assert_(np.isfinite(cdfs).all())
-        
+
         # check the new cdf implementation vs generic one:
         gen_cdf = stats.rv_continuous._cdf_single
         cdfs_g = [gen_cdf(stats.betaprime, val, alpha, beta) for val in x]
@@ -1442,8 +1442,8 @@ class TestExpect(TestCase):
         assert_almost_equal(res1, res2, decimal=14)
 
     def test_rice_overflow(self):
-        # rice.pdf(999, 0.74) was inf since special.i0 silentyly overflows
-        # check that using i0e fixes it
+        # rice.pdf(999, 0.74) was inf since special.i0 silently overflows;
+        # check that this is now trapped.
         assert_(np.isfinite(stats.rice.pdf(999, 0.74)))
 
         assert_(np.isfinite(stats.rice.expect(lambda x: 1, args=(0.74,))))
@@ -2172,12 +2172,12 @@ def test_lomax_accuracy():
     # regression test for gh-4033
     p = stats.lomax.ppf(stats.lomax.cdf(1e-100,1),1)
     assert_allclose(p, 1e-100)
-    
+
 def test_gompertz_accuracy():
     # Regression test for gh-4031
     p = stats.gompertz.ppf(stats.gompertz.cdf(1e-100,1),1)
     assert_allclose(p, 1e-100)
-    
+
 def test_truncexpon_accuracy():
     # regression test for gh-4035
     p = stats.truncexpon.ppf(stats.truncexpon.cdf(1e-100,1),1)
