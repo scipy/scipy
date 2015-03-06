@@ -624,14 +624,14 @@ class TestCorrSpearmanrTies(TestCase):
         assert_almost_equal(sr, pr)
 
 
-##    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
-##    should appear on the diagonal and the total should be 899999955.
-##    If the table cannot hold these values, forget about working with
-##    census data.  You can also tabulate HUGE against TINY.  There is no
-##    reason a tabulation program should not be able to distinguish
-##    different values regardless of their magnitude.
+#    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
+#    should appear on the diagonal and the total should be 899999955.
+#    If the table cannot hold these values, forget about working with
+#    census data.  You can also tabulate HUGE against TINY.  There is no
+#    reason a tabulation program should not be able to distinguish
+#    different values regardless of their magnitude.
 
-### I need to figure out how to do this one.
+# I need to figure out how to do this one.
 
 
 def test_kendalltau():
@@ -690,12 +690,12 @@ class TestRegression(TestCase):
         r = y[2]
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,1.0)
-##     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
-##     should tell you that this model is "singular" because BIG and
-##     LITTLE are linear combinations of each other.  Cryptic error
-##     messages are unacceptable here.  Singularity is the most
-##     fundamental regression error.
-### Need to figure out how to handle multiple linear regression.  Not obvious
+#     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
+#     should tell you that this model is "singular" because BIG and
+#     LITTLE are linear combinations of each other.  Cryptic error
+#     messages are unacceptable here.  Singularity is the most
+#     fundamental regression error.
+# Need to figure out how to handle multiple linear regression.  Not obvious
 
     def test_regressZEROX(self):
         # W.IV.D. Regress ZERO on X.
@@ -2048,6 +2048,82 @@ def _desc_stats(x1, x2, axis=0):
         nobs = x.shape[axis]
         return mu, std, nobs
     return _stats(x1, axis) + _stats(x2, axis)
+def test_ttest_perm():
+
+    # Test on horizontal dimension
+    N = 20
+    np.random.seed(0)
+    a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
+    b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4)))
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
+                                          permutations=1000,
+                                          random_state=0)
+
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
+
+    # Test on vertical dimension
+    N = 20
+    np.random.seed(0)
+    a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4))).transpose()
+    b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4))).transpose()
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False,
+                                          permutations=1000,
+                                          random_state=0)
+
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
+
+    # Test on 1 dimensional case
+    N = 20
+    np.random.seed(0)
+    a = np.arange((3*N)/4)
+    b = np.arange(N/4) + 100
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
+                                          permutations=1000,
+                                          random_state=0)
+
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999]))
+
+    # Test just arrays
+    N = 20
+    np.random.seed(0)
+    a = range(int((3*N)/4))
+    b = range(100,int(N/4)+100)
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
+                                          permutations=1000,
+                                          random_state=0)
+
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999]))
+
+    # Test equal variance
+    N = 20
+    np.random.seed(0)
+    a = np.arange(N/2)
+    b = np.arange(N/2) + 100
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True,
+                                          permutations=1000,
+                                          random_state=0)
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999]))
+
+    # Test out random seed
+    N = 20
+    a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
+    b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4)))
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
+                                          permutations=1000,
+                                          random_state=np.random.RandomState(seed=0))
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
 
 
 def test_ttest_ind():
