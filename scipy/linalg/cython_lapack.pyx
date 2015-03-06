@@ -506,10 +506,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - dzsum1
 - icmax1
 - ieeeck
-- ilaenv
-- iparmq
 - izmax1
-- lsamen
 - sbdsdc
 - sbdsqr
 - scsum1
@@ -1245,34 +1242,10 @@ cdef int ieeeck(int *ispec, s *zero, s *one) nogil:
 
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_ilaenv "F_FUNC(ilaenvwrp, ILAENVWRP)"(int *out, int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4) nogil
-cdef int ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4) nogil:
-    cdef int out
-    _fortran_ilaenv(&out, ispec, name, opts, n1, n2, n3, n4)
-    return out
-
-
-cdef extern from "_lapack_subroutines.h":
-    void _fortran_iparmq "F_FUNC(iparmqwrp, IPARMQWRP)"(int *out, int *ispec, char *name, char *opts, int *n, int *ilo, int *ihi, int *lwork) nogil
-cdef int iparmq(int *ispec, char *name, char *opts, int *n, int *ilo, int *ihi, int *lwork) nogil:
-    cdef int out
-    _fortran_iparmq(&out, ispec, name, opts, n, ilo, ihi, lwork)
-    return out
-
-
-cdef extern from "_lapack_subroutines.h":
     void _fortran_izmax1 "F_FUNC(izmax1wrp, IZMAX1WRP)"(int *out, int *n, z *cx, int *incx) nogil
 cdef int izmax1(int *n, z *cx, int *incx) nogil:
     cdef int out
     _fortran_izmax1(&out, n, cx, incx)
-    return out
-
-
-cdef extern from "_lapack_subroutines.h":
-    void _fortran_lsamen "F_FUNC(lsamenwrp, LSAMENWRP)"(bint *out, int *n, char *ca, char *cb) nogil
-cdef bint lsamen(int *n, char *ca, char *cb) nogil:
-    cdef bint out
-    _fortran_lsamen(&out, n, ca, cb)
     return out
 
 

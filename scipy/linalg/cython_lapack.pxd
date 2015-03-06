@@ -993,13 +993,7 @@ cdef int icmax1(int *n, c *cx, int *incx) nogil
 
 cdef int ieeeck(int *ispec, s *zero, s *one) nogil
 
-cdef int ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4) nogil
-
-cdef int iparmq(int *ispec, char *name, char *opts, int *n, int *ilo, int *ihi, int *lwork) nogil
-
 cdef int izmax1(int *n, z *cx, int *incx) nogil
-
-cdef bint lsamen(int *n, char *ca, char *cb) nogil
 
 cdef void sbdsdc(char *uplo, char *compq, int *n, s *d, s *e, s *u, int *ldu, s *vt, int *ldvt, s *q, int *iq, s *work, int *iwork, int *info) nogil
 

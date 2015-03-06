@@ -117,6 +117,6 @@ if __name__ == '__main__':
                        'lauum', 'lacon', 'langb', 'lange', 'langt', 'lanhb',
                        'lanhe', 'lanhp', 'lanhs', 'lanht', 'lansb', 'lansp',
                        'lanst', 'lansy', 'lantb', 'lantp', 'lantr', 'lanv2']
-        exclusions = ['sisnan', 'csrot', 'zdrot']
+        exclusions = ['sisnan', 'csrot', 'zdrot', 'ilaenv', 'iparmq', 'lsamen']
         sigs_from_dir(src_dir, outfile, manual_wrappers=lapack_manual_wrappers,
                       exclusions=exclusions, auxiliaries=auxiliaries)

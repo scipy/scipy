@@ -92,10 +92,7 @@ void F_FUNC(dlantrwrp, DLANTRWRP)(double *ret, char *norm, char *uplo, char *dia
 void F_FUNC(dzsum1wrp, DZSUM1WRP)(double *ret, int *n, _scipy_linalg_double_complex *cx, int *incx);
 void F_FUNC(icmax1wrp, ICMAX1WRP)(int *ret, int *n, _scipy_linalg_float_complex *cx, int *incx);
 void F_FUNC(ieeeckwrp, IEEECKWRP)(int *ret, int *ispec, float *zero, float *one);
-void F_FUNC(ilaenvwrp, ILAENVWRP)(int *ret, int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4);
-void F_FUNC(iparmqwrp, IPARMQWRP)(int *ret, int *ispec, char *name, char *opts, int *n, int *ilo, int *ihi, int *lwork);
 void F_FUNC(izmax1wrp, IZMAX1WRP)(int *ret, int *n, _scipy_linalg_double_complex *cx, int *incx);
-void F_FUNC(lsamenwrp, LSAMENWRP)(int *ret, int *n, char *ca, char *cb);
 void F_FUNC(scsum1wrp, SCSUM1WRP)(float *ret, int *n, _scipy_linalg_float_complex *cx, int *incx);
 void F_FUNC(slamchwrp, SLAMCHWRP)(float *ret, char *cmach);
 void F_FUNC(slangbwrp, SLANGBWRP)(float *ret, char *norm, int *n, int *kl, int *ku, float *ab, int *ldab, float *work);

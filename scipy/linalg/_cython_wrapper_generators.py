@@ -439,13 +439,6 @@ def process_fortran_name(name, funcname):
         return name
     if 'x' in name or 'y' in name:
         return name + '(n)'
-    if name in ['name', 'opts']:
-        if funcname == 'ilaenv':
-            return name + '*(*)'
-        elif funcname == 'iparmq':
-            return name + '(*)'
-    if funcname == 'lsamen' and name in ['ca', 'cb']:
-        return name + '*(*)'
     if name in dims:
         return name + dims[name]
     return name
