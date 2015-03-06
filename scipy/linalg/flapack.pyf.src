@@ -740,6 +740,30 @@ interface
 
    end subroutine <prefix2c>gelss
 
+   subroutine <prefix2>lasd4( n, i, d, z, delta, rho, sigma, work, info )
+    
+	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
+   	! Computes i-th square root of eigenvalue of rank one augmented diagonal matrix. Needed by SVD update procedure
+	
+	callstatement { i++; (*f2py_func)( &n, &i, d, z, delta, &rho, &sigma, work, &info); }
+     callprotoargument int*, int*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, int*
+	
+	integer intent(hide),depend(d):: n = shape(d,0)
+	integer intent(in),depend(d),check(i>=0 && i<=(shape(d,0)-1)):: i
+	
+	<ftype2> dimension(n),intent(in)           :: d
+	<ftype2> dimension(n),intent(in),depend(n) :: z
+	
+	<ftype2> intent(out) :: sigma
+	<ftype2> dimension(n),intent(out),depend(n) :: delta
+	<ftype2> intent(in),optional:: rho = 1.0
+	
+	<ftype2> dimension(n),intent(out),depend(n) :: work
+	integer intent(out) :: info
+
+   end subroutine <prefix2>lasd4
+
+
    subroutine <prefix2>geqp3(m,n,a,jpvt,tau,work,lwork,info)
 
    ! qr_a,jpvt,tau,work,info = geqp3(a,lwork=3*(n+1),overwrite_a=0)
