@@ -1464,8 +1464,8 @@ class RegularGridInterpolator(object):
 
     .. versionadded:: 0.14
 
-    Example
-    -------
+    Examples
+    --------
 
     Evaluate a simple example function on the points of a 3D grid:
 
@@ -1475,21 +1475,22 @@ class RegularGridInterpolator(object):
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
     >>> z = np.linspace(7, 9, 33)
-    >>> # Our "data" array is defined by data[i,j,k] = f(x[i], y[j], z[k]):
-    >>> data = f(*np.meshgrid(x,y,z,indexing='ij',sparse=True))
+    >>> data = f(*np.meshgrid(x, y, z, indexing='ij', sparse=True))
 
-    Define an interpolating function from this data:
+    ``data`` is now a 3D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
+    Next, define an interpolating function from this data:
 
     >>> my_interpolating_function = RegularGridInterpolator((x,y,z), data)
 
     Evaluate the interpolating function at the two points
-    (x,y,z) = (2.1, 6.2, 8.3) and (3.3, 5.2, 7.1):
+    ``(x,y,z) = (2.1, 6.2, 8.3)`` and ``(3.3, 5.2, 7.1)``:
 
     >>> pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
     >>> my_interpolating_function(pts)
     array([ 125.80469388,  146.30069388])
-    
-    which is indeed a close approximation to [f(2.1,6.2,8.3), f(3.3,5.2,7.1)].
+
+    which is indeed a close approximation to
+    ``[f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)]``.
 
     See also
     --------
