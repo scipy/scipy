@@ -1002,6 +1002,18 @@ cdef extern from "fortran_defs.h":
 
 from numpy cimport npy_complex64, npy_complex128
 
+cdef extern from "_lapack_subroutines.h":
+    # Function pointer type declarations for
+    # gees and gges families of functions.
+    ctypedef bint _cselect1(npy_complex64*)
+    ctypedef bint _cselect2(npy_complex64*, npy_complex64*)
+    ctypedef bint _dselect2(d*, d*)
+    ctypedef bint _dselect3(d*, d*, d*)
+    ctypedef bint _sselect2(s*, s*)
+    ctypedef bint _sselect3(s*, s*, s*)
+    ctypedef bint _zselect1(npy_complex128*)
+    ctypedef bint _zselect2(npy_complex128*, npy_complex128*)
+
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_clangb "F_FUNC(clangbwrp, CLANGBWRP)"(s *out, char *norm, int *n, int *kl, int *ku, npy_complex64 *ab, int *ldab, s *work) nogil
@@ -1547,14 +1559,14 @@ cdef void cgeequ(int *m, int *n, c *a, int *lda, s *r, s *c, s *rowcnd, s *colcn
     _fortran_cgeequ(m, n, <npy_complex64*>a, lda, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_cgees "F_FUNC(cgees,CGEES)"(char *jobvs, char *sort, cselect1 *select, int *n, npy_complex64 *a, int *lda, int *sdim, npy_complex64 *w, npy_complex64 *vs, int *ldvs, npy_complex64 *work, int *lwork, s *rwork, bint *bwork, int *info) nogil
+    void _fortran_cgees "F_FUNC(cgees,CGEES)"(char *jobvs, char *sort, _cselect1 *select, int *n, npy_complex64 *a, int *lda, int *sdim, npy_complex64 *w, npy_complex64 *vs, int *ldvs, npy_complex64 *work, int *lwork, s *rwork, bint *bwork, int *info) nogil
 cdef void cgees(char *jobvs, char *sort, cselect1 *select, int *n, c *a, int *lda, int *sdim, c *w, c *vs, int *ldvs, c *work, int *lwork, s *rwork, bint *bwork, int *info) nogil:
-    _fortran_cgees(jobvs, sort, select, n, <npy_complex64*>a, lda, sdim, <npy_complex64*>w, <npy_complex64*>vs, ldvs, <npy_complex64*>work, lwork, rwork, bwork, info)
+    _fortran_cgees(jobvs, sort, <_cselect1*>select, n, <npy_complex64*>a, lda, sdim, <npy_complex64*>w, <npy_complex64*>vs, ldvs, <npy_complex64*>work, lwork, rwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_cgeesx "F_FUNC(cgeesx,CGEESX)"(char *jobvs, char *sort, cselect1 *select, char *sense, int *n, npy_complex64 *a, int *lda, int *sdim, npy_complex64 *w, npy_complex64 *vs, int *ldvs, s *rconde, s *rcondv, npy_complex64 *work, int *lwork, s *rwork, bint *bwork, int *info) nogil
+    void _fortran_cgeesx "F_FUNC(cgeesx,CGEESX)"(char *jobvs, char *sort, _cselect1 *select, char *sense, int *n, npy_complex64 *a, int *lda, int *sdim, npy_complex64 *w, npy_complex64 *vs, int *ldvs, s *rconde, s *rcondv, npy_complex64 *work, int *lwork, s *rwork, bint *bwork, int *info) nogil
 cdef void cgeesx(char *jobvs, char *sort, cselect1 *select, char *sense, int *n, c *a, int *lda, int *sdim, c *w, c *vs, int *ldvs, s *rconde, s *rcondv, c *work, int *lwork, s *rwork, bint *bwork, int *info) nogil:
-    _fortran_cgeesx(jobvs, sort, select, sense, n, <npy_complex64*>a, lda, sdim, <npy_complex64*>w, <npy_complex64*>vs, ldvs, rconde, rcondv, <npy_complex64*>work, lwork, rwork, bwork, info)
+    _fortran_cgeesx(jobvs, sort, <_cselect1*>select, sense, n, <npy_complex64*>a, lda, sdim, <npy_complex64*>w, <npy_complex64*>vs, ldvs, rconde, rcondv, <npy_complex64*>work, lwork, rwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_cgeev "F_FUNC(cgeev,CGEEV)"(char *jobvl, char *jobvr, int *n, npy_complex64 *a, int *lda, npy_complex64 *w, npy_complex64 *vl, int *ldvl, npy_complex64 *vr, int *ldvr, npy_complex64 *work, int *lwork, s *rwork, int *info) nogil
@@ -1727,14 +1739,14 @@ cdef void cggbal(char *job, int *n, c *a, int *lda, c *b, int *ldb, int *ilo, in
     _fortran_cggbal(job, n, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, ilo, ihi, lscale, rscale, work, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_cgges "F_FUNC(cgges,CGGES)"(char *jobvsl, char *jobvsr, char *sort, cselect2 *selctg, int *n, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, int *sdim, npy_complex64 *alpha, npy_complex64 *beta, npy_complex64 *vsl, int *ldvsl, npy_complex64 *vsr, int *ldvsr, npy_complex64 *work, int *lwork, s *rwork, bint *bwork, int *info) nogil
+    void _fortran_cgges "F_FUNC(cgges,CGGES)"(char *jobvsl, char *jobvsr, char *sort, _cselect2 *selctg, int *n, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, int *sdim, npy_complex64 *alpha, npy_complex64 *beta, npy_complex64 *vsl, int *ldvsl, npy_complex64 *vsr, int *ldvsr, npy_complex64 *work, int *lwork, s *rwork, bint *bwork, int *info) nogil
 cdef void cgges(char *jobvsl, char *jobvsr, char *sort, cselect2 *selctg, int *n, c *a, int *lda, c *b, int *ldb, int *sdim, c *alpha, c *beta, c *vsl, int *ldvsl, c *vsr, int *ldvsr, c *work, int *lwork, s *rwork, bint *bwork, int *info) nogil:
-    _fortran_cgges(jobvsl, jobvsr, sort, selctg, n, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, sdim, <npy_complex64*>alpha, <npy_complex64*>beta, <npy_complex64*>vsl, ldvsl, <npy_complex64*>vsr, ldvsr, <npy_complex64*>work, lwork, rwork, bwork, info)
+    _fortran_cgges(jobvsl, jobvsr, sort, <_cselect2*>selctg, n, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, sdim, <npy_complex64*>alpha, <npy_complex64*>beta, <npy_complex64*>vsl, ldvsl, <npy_complex64*>vsr, ldvsr, <npy_complex64*>work, lwork, rwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_cggesx "F_FUNC(cggesx,CGGESX)"(char *jobvsl, char *jobvsr, char *sort, cselect2 *selctg, char *sense, int *n, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, int *sdim, npy_complex64 *alpha, npy_complex64 *beta, npy_complex64 *vsl, int *ldvsl, npy_complex64 *vsr, int *ldvsr, s *rconde, s *rcondv, npy_complex64 *work, int *lwork, s *rwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
+    void _fortran_cggesx "F_FUNC(cggesx,CGGESX)"(char *jobvsl, char *jobvsr, char *sort, _cselect2 *selctg, char *sense, int *n, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, int *sdim, npy_complex64 *alpha, npy_complex64 *beta, npy_complex64 *vsl, int *ldvsl, npy_complex64 *vsr, int *ldvsr, s *rconde, s *rcondv, npy_complex64 *work, int *lwork, s *rwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
 cdef void cggesx(char *jobvsl, char *jobvsr, char *sort, cselect2 *selctg, char *sense, int *n, c *a, int *lda, c *b, int *ldb, int *sdim, c *alpha, c *beta, c *vsl, int *ldvsl, c *vsr, int *ldvsr, s *rconde, s *rcondv, c *work, int *lwork, s *rwork, int *iwork, int *liwork, bint *bwork, int *info) nogil:
-    _fortran_cggesx(jobvsl, jobvsr, sort, selctg, sense, n, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, sdim, <npy_complex64*>alpha, <npy_complex64*>beta, <npy_complex64*>vsl, ldvsl, <npy_complex64*>vsr, ldvsr, rconde, rcondv, <npy_complex64*>work, lwork, rwork, iwork, liwork, bwork, info)
+    _fortran_cggesx(jobvsl, jobvsr, sort, <_cselect2*>selctg, sense, n, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, sdim, <npy_complex64*>alpha, <npy_complex64*>beta, <npy_complex64*>vsl, ldvsl, <npy_complex64*>vsr, ldvsr, rconde, rcondv, <npy_complex64*>work, lwork, rwork, iwork, liwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_cggev "F_FUNC(cggev,CGGEV)"(char *jobvl, char *jobvr, int *n, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *alpha, npy_complex64 *beta, npy_complex64 *vl, int *ldvl, npy_complex64 *vr, int *ldvr, npy_complex64 *work, int *lwork, s *rwork, int *info) nogil
@@ -2727,14 +2739,14 @@ cdef void dgeequ(int *m, int *n, d *a, int *lda, d *r, d *c, d *rowcnd, d *colcn
     _fortran_dgeequ(m, n, a, lda, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_dgees "F_FUNC(dgees,DGEES)"(char *jobvs, char *sort, dselect2 *select, int *n, d *a, int *lda, int *sdim, d *wr, d *wi, d *vs, int *ldvs, d *work, int *lwork, bint *bwork, int *info) nogil
+    void _fortran_dgees "F_FUNC(dgees,DGEES)"(char *jobvs, char *sort, _dselect2 *select, int *n, d *a, int *lda, int *sdim, d *wr, d *wi, d *vs, int *ldvs, d *work, int *lwork, bint *bwork, int *info) nogil
 cdef void dgees(char *jobvs, char *sort, dselect2 *select, int *n, d *a, int *lda, int *sdim, d *wr, d *wi, d *vs, int *ldvs, d *work, int *lwork, bint *bwork, int *info) nogil:
-    _fortran_dgees(jobvs, sort, select, n, a, lda, sdim, wr, wi, vs, ldvs, work, lwork, bwork, info)
+    _fortran_dgees(jobvs, sort, <_dselect2*>select, n, a, lda, sdim, wr, wi, vs, ldvs, work, lwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_dgeesx "F_FUNC(dgeesx,DGEESX)"(char *jobvs, char *sort, dselect2 *select, char *sense, int *n, d *a, int *lda, int *sdim, d *wr, d *wi, d *vs, int *ldvs, d *rconde, d *rcondv, d *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
+    void _fortran_dgeesx "F_FUNC(dgeesx,DGEESX)"(char *jobvs, char *sort, _dselect2 *select, char *sense, int *n, d *a, int *lda, int *sdim, d *wr, d *wi, d *vs, int *ldvs, d *rconde, d *rcondv, d *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
 cdef void dgeesx(char *jobvs, char *sort, dselect2 *select, char *sense, int *n, d *a, int *lda, int *sdim, d *wr, d *wi, d *vs, int *ldvs, d *rconde, d *rcondv, d *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil:
-    _fortran_dgeesx(jobvs, sort, select, sense, n, a, lda, sdim, wr, wi, vs, ldvs, rconde, rcondv, work, lwork, iwork, liwork, bwork, info)
+    _fortran_dgeesx(jobvs, sort, <_dselect2*>select, sense, n, a, lda, sdim, wr, wi, vs, ldvs, rconde, rcondv, work, lwork, iwork, liwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dgeev "F_FUNC(dgeev,DGEEV)"(char *jobvl, char *jobvr, int *n, d *a, int *lda, d *wr, d *wi, d *vl, int *ldvl, d *vr, int *ldvr, d *work, int *lwork, int *info) nogil
@@ -2907,14 +2919,14 @@ cdef void dggbal(char *job, int *n, d *a, int *lda, d *b, int *ldb, int *ilo, in
     _fortran_dggbal(job, n, a, lda, b, ldb, ilo, ihi, lscale, rscale, work, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_dgges "F_FUNC(dgges,DGGES)"(char *jobvsl, char *jobvsr, char *sort, dselect3 *selctg, int *n, d *a, int *lda, d *b, int *ldb, int *sdim, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *work, int *lwork, bint *bwork, int *info) nogil
+    void _fortran_dgges "F_FUNC(dgges,DGGES)"(char *jobvsl, char *jobvsr, char *sort, _dselect3 *selctg, int *n, d *a, int *lda, d *b, int *ldb, int *sdim, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *work, int *lwork, bint *bwork, int *info) nogil
 cdef void dgges(char *jobvsl, char *jobvsr, char *sort, dselect3 *selctg, int *n, d *a, int *lda, d *b, int *ldb, int *sdim, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *work, int *lwork, bint *bwork, int *info) nogil:
-    _fortran_dgges(jobvsl, jobvsr, sort, selctg, n, a, lda, b, ldb, sdim, alphar, alphai, beta, vsl, ldvsl, vsr, ldvsr, work, lwork, bwork, info)
+    _fortran_dgges(jobvsl, jobvsr, sort, <_dselect3*>selctg, n, a, lda, b, ldb, sdim, alphar, alphai, beta, vsl, ldvsl, vsr, ldvsr, work, lwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_dggesx "F_FUNC(dggesx,DGGESX)"(char *jobvsl, char *jobvsr, char *sort, dselect3 *selctg, char *sense, int *n, d *a, int *lda, d *b, int *ldb, int *sdim, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *rconde, d *rcondv, d *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
+    void _fortran_dggesx "F_FUNC(dggesx,DGGESX)"(char *jobvsl, char *jobvsr, char *sort, _dselect3 *selctg, char *sense, int *n, d *a, int *lda, d *b, int *ldb, int *sdim, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *rconde, d *rcondv, d *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
 cdef void dggesx(char *jobvsl, char *jobvsr, char *sort, dselect3 *selctg, char *sense, int *n, d *a, int *lda, d *b, int *ldb, int *sdim, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *rconde, d *rcondv, d *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil:
-    _fortran_dggesx(jobvsl, jobvsr, sort, selctg, sense, n, a, lda, b, ldb, sdim, alphar, alphai, beta, vsl, ldvsl, vsr, ldvsr, rconde, rcondv, work, lwork, iwork, liwork, bwork, info)
+    _fortran_dggesx(jobvsl, jobvsr, sort, <_dselect3*>selctg, sense, n, a, lda, b, ldb, sdim, alphar, alphai, beta, vsl, ldvsl, vsr, ldvsr, rconde, rcondv, work, lwork, iwork, liwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dggev "F_FUNC(dggev,DGGEV)"(char *jobvl, char *jobvr, int *n, d *a, int *lda, d *b, int *ldb, d *alphar, d *alphai, d *beta, d *vl, int *ldvl, d *vr, int *ldvr, d *work, int *lwork, int *info) nogil
@@ -3847,14 +3859,14 @@ cdef void sgeequ(int *m, int *n, s *a, int *lda, s *r, s *c, s *rowcnd, s *colcn
     _fortran_sgeequ(m, n, a, lda, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_sgees "F_FUNC(sgees,SGEES)"(char *jobvs, char *sort, sselect2 *select, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *work, int *lwork, bint *bwork, int *info) nogil
+    void _fortran_sgees "F_FUNC(sgees,SGEES)"(char *jobvs, char *sort, _sselect2 *select, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *work, int *lwork, bint *bwork, int *info) nogil
 cdef void sgees(char *jobvs, char *sort, sselect2 *select, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *work, int *lwork, bint *bwork, int *info) nogil:
-    _fortran_sgees(jobvs, sort, select, n, a, lda, sdim, wr, wi, vs, ldvs, work, lwork, bwork, info)
+    _fortran_sgees(jobvs, sort, <_sselect2*>select, n, a, lda, sdim, wr, wi, vs, ldvs, work, lwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_sgeesx "F_FUNC(sgeesx,SGEESX)"(char *jobvs, char *sort, sselect2 *select, char *sense, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
+    void _fortran_sgeesx "F_FUNC(sgeesx,SGEESX)"(char *jobvs, char *sort, _sselect2 *select, char *sense, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
 cdef void sgeesx(char *jobvs, char *sort, sselect2 *select, char *sense, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil:
-    _fortran_sgeesx(jobvs, sort, select, sense, n, a, lda, sdim, wr, wi, vs, ldvs, rconde, rcondv, work, lwork, iwork, liwork, bwork, info)
+    _fortran_sgeesx(jobvs, sort, <_sselect2*>select, sense, n, a, lda, sdim, wr, wi, vs, ldvs, rconde, rcondv, work, lwork, iwork, liwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sgeev "F_FUNC(sgeev,SGEEV)"(char *jobvl, char *jobvr, int *n, s *a, int *lda, s *wr, s *wi, s *vl, int *ldvl, s *vr, int *ldvr, s *work, int *lwork, int *info) nogil
@@ -4027,14 +4039,14 @@ cdef void sggbal(char *job, int *n, s *a, int *lda, s *b, int *ldb, int *ilo, in
     _fortran_sggbal(job, n, a, lda, b, ldb, ilo, ihi, lscale, rscale, work, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_sgges "F_FUNC(sgges,SGGES)"(char *jobvsl, char *jobvsr, char *sort, sselect3 *selctg, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *work, int *lwork, bint *bwork, int *info) nogil
+    void _fortran_sgges "F_FUNC(sgges,SGGES)"(char *jobvsl, char *jobvsr, char *sort, _sselect3 *selctg, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *work, int *lwork, bint *bwork, int *info) nogil
 cdef void sgges(char *jobvsl, char *jobvsr, char *sort, sselect3 *selctg, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *work, int *lwork, bint *bwork, int *info) nogil:
-    _fortran_sgges(jobvsl, jobvsr, sort, selctg, n, a, lda, b, ldb, sdim, alphar, alphai, beta, vsl, ldvsl, vsr, ldvsr, work, lwork, bwork, info)
+    _fortran_sgges(jobvsl, jobvsr, sort, <_sselect3*>selctg, n, a, lda, b, ldb, sdim, alphar, alphai, beta, vsl, ldvsl, vsr, ldvsr, work, lwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_sggesx "F_FUNC(sggesx,SGGESX)"(char *jobvsl, char *jobvsr, char *sort, sselect3 *selctg, char *sense, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
+    void _fortran_sggesx "F_FUNC(sggesx,SGGESX)"(char *jobvsl, char *jobvsr, char *sort, _sselect3 *selctg, char *sense, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
 cdef void sggesx(char *jobvsl, char *jobvsr, char *sort, sselect3 *selctg, char *sense, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info) nogil:
-    _fortran_sggesx(jobvsl, jobvsr, sort, selctg, sense, n, a, lda, b, ldb, sdim, alphar, alphai, beta, vsl, ldvsl, vsr, ldvsr, rconde, rcondv, work, lwork, iwork, liwork, bwork, info)
+    _fortran_sggesx(jobvsl, jobvsr, sort, <_sselect3*>selctg, sense, n, a, lda, b, ldb, sdim, alphar, alphai, beta, vsl, ldvsl, vsr, ldvsr, rconde, rcondv, work, lwork, iwork, liwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sggev "F_FUNC(sggev,SGGEV)"(char *jobvl, char *jobvr, int *n, s *a, int *lda, s *b, int *ldb, s *alphar, s *alphai, s *beta, s *vl, int *ldvl, s *vr, int *ldvr, s *work, int *lwork, int *info) nogil
@@ -4967,14 +4979,14 @@ cdef void zgeequ(int *m, int *n, z *a, int *lda, d *r, d *c, d *rowcnd, d *colcn
     _fortran_zgeequ(m, n, <npy_complex128*>a, lda, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_zgees "F_FUNC(zgees,ZGEES)"(char *jobvs, char *sort, zselect1 *select, int *n, npy_complex128 *a, int *lda, int *sdim, npy_complex128 *w, npy_complex128 *vs, int *ldvs, npy_complex128 *work, int *lwork, d *rwork, bint *bwork, int *info) nogil
+    void _fortran_zgees "F_FUNC(zgees,ZGEES)"(char *jobvs, char *sort, _zselect1 *select, int *n, npy_complex128 *a, int *lda, int *sdim, npy_complex128 *w, npy_complex128 *vs, int *ldvs, npy_complex128 *work, int *lwork, d *rwork, bint *bwork, int *info) nogil
 cdef void zgees(char *jobvs, char *sort, zselect1 *select, int *n, z *a, int *lda, int *sdim, z *w, z *vs, int *ldvs, z *work, int *lwork, d *rwork, bint *bwork, int *info) nogil:
-    _fortran_zgees(jobvs, sort, select, n, <npy_complex128*>a, lda, sdim, <npy_complex128*>w, <npy_complex128*>vs, ldvs, <npy_complex128*>work, lwork, rwork, bwork, info)
+    _fortran_zgees(jobvs, sort, <_zselect1*>select, n, <npy_complex128*>a, lda, sdim, <npy_complex128*>w, <npy_complex128*>vs, ldvs, <npy_complex128*>work, lwork, rwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_zgeesx "F_FUNC(zgeesx,ZGEESX)"(char *jobvs, char *sort, zselect1 *select, char *sense, int *n, npy_complex128 *a, int *lda, int *sdim, npy_complex128 *w, npy_complex128 *vs, int *ldvs, d *rconde, d *rcondv, npy_complex128 *work, int *lwork, d *rwork, bint *bwork, int *info) nogil
+    void _fortran_zgeesx "F_FUNC(zgeesx,ZGEESX)"(char *jobvs, char *sort, _zselect1 *select, char *sense, int *n, npy_complex128 *a, int *lda, int *sdim, npy_complex128 *w, npy_complex128 *vs, int *ldvs, d *rconde, d *rcondv, npy_complex128 *work, int *lwork, d *rwork, bint *bwork, int *info) nogil
 cdef void zgeesx(char *jobvs, char *sort, zselect1 *select, char *sense, int *n, z *a, int *lda, int *sdim, z *w, z *vs, int *ldvs, d *rconde, d *rcondv, z *work, int *lwork, d *rwork, bint *bwork, int *info) nogil:
-    _fortran_zgeesx(jobvs, sort, select, sense, n, <npy_complex128*>a, lda, sdim, <npy_complex128*>w, <npy_complex128*>vs, ldvs, rconde, rcondv, <npy_complex128*>work, lwork, rwork, bwork, info)
+    _fortran_zgeesx(jobvs, sort, <_zselect1*>select, sense, n, <npy_complex128*>a, lda, sdim, <npy_complex128*>w, <npy_complex128*>vs, ldvs, rconde, rcondv, <npy_complex128*>work, lwork, rwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zgeev "F_FUNC(zgeev,ZGEEV)"(char *jobvl, char *jobvr, int *n, npy_complex128 *a, int *lda, npy_complex128 *w, npy_complex128 *vl, int *ldvl, npy_complex128 *vr, int *ldvr, npy_complex128 *work, int *lwork, d *rwork, int *info) nogil
@@ -5147,14 +5159,14 @@ cdef void zggbal(char *job, int *n, z *a, int *lda, z *b, int *ldb, int *ilo, in
     _fortran_zggbal(job, n, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, ilo, ihi, lscale, rscale, work, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_zgges "F_FUNC(zgges,ZGGES)"(char *jobvsl, char *jobvsr, char *sort, zselect2 *selctg, int *n, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, int *sdim, npy_complex128 *alpha, npy_complex128 *beta, npy_complex128 *vsl, int *ldvsl, npy_complex128 *vsr, int *ldvsr, npy_complex128 *work, int *lwork, d *rwork, bint *bwork, int *info) nogil
+    void _fortran_zgges "F_FUNC(zgges,ZGGES)"(char *jobvsl, char *jobvsr, char *sort, _zselect2 *selctg, int *n, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, int *sdim, npy_complex128 *alpha, npy_complex128 *beta, npy_complex128 *vsl, int *ldvsl, npy_complex128 *vsr, int *ldvsr, npy_complex128 *work, int *lwork, d *rwork, bint *bwork, int *info) nogil
 cdef void zgges(char *jobvsl, char *jobvsr, char *sort, zselect2 *selctg, int *n, z *a, int *lda, z *b, int *ldb, int *sdim, z *alpha, z *beta, z *vsl, int *ldvsl, z *vsr, int *ldvsr, z *work, int *lwork, d *rwork, bint *bwork, int *info) nogil:
-    _fortran_zgges(jobvsl, jobvsr, sort, selctg, n, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, sdim, <npy_complex128*>alpha, <npy_complex128*>beta, <npy_complex128*>vsl, ldvsl, <npy_complex128*>vsr, ldvsr, <npy_complex128*>work, lwork, rwork, bwork, info)
+    _fortran_zgges(jobvsl, jobvsr, sort, <_zselect2*>selctg, n, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, sdim, <npy_complex128*>alpha, <npy_complex128*>beta, <npy_complex128*>vsl, ldvsl, <npy_complex128*>vsr, ldvsr, <npy_complex128*>work, lwork, rwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_zggesx "F_FUNC(zggesx,ZGGESX)"(char *jobvsl, char *jobvsr, char *sort, zselect2 *selctg, char *sense, int *n, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, int *sdim, npy_complex128 *alpha, npy_complex128 *beta, npy_complex128 *vsl, int *ldvsl, npy_complex128 *vsr, int *ldvsr, d *rconde, d *rcondv, npy_complex128 *work, int *lwork, d *rwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
+    void _fortran_zggesx "F_FUNC(zggesx,ZGGESX)"(char *jobvsl, char *jobvsr, char *sort, _zselect2 *selctg, char *sense, int *n, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, int *sdim, npy_complex128 *alpha, npy_complex128 *beta, npy_complex128 *vsl, int *ldvsl, npy_complex128 *vsr, int *ldvsr, d *rconde, d *rcondv, npy_complex128 *work, int *lwork, d *rwork, int *iwork, int *liwork, bint *bwork, int *info) nogil
 cdef void zggesx(char *jobvsl, char *jobvsr, char *sort, zselect2 *selctg, char *sense, int *n, z *a, int *lda, z *b, int *ldb, int *sdim, z *alpha, z *beta, z *vsl, int *ldvsl, z *vsr, int *ldvsr, d *rconde, d *rcondv, z *work, int *lwork, d *rwork, int *iwork, int *liwork, bint *bwork, int *info) nogil:
-    _fortran_zggesx(jobvsl, jobvsr, sort, selctg, sense, n, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, sdim, <npy_complex128*>alpha, <npy_complex128*>beta, <npy_complex128*>vsl, ldvsl, <npy_complex128*>vsr, ldvsr, rconde, rcondv, <npy_complex128*>work, lwork, rwork, iwork, liwork, bwork, info)
+    _fortran_zggesx(jobvsl, jobvsr, sort, <_zselect2*>selctg, sense, n, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, sdim, <npy_complex128*>alpha, <npy_complex128*>beta, <npy_complex128*>vsl, ldvsl, <npy_complex128*>vsr, ldvsr, rconde, rcondv, <npy_complex128*>work, lwork, rwork, iwork, liwork, bwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zggev "F_FUNC(zggev,ZGGEV)"(char *jobvl, char *jobvr, int *n, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *alpha, npy_complex128 *beta, npy_complex128 *vl, int *ldvl, npy_complex128 *vr, int *ldvr, npy_complex128 *work, int *lwork, d *rwork, int *info) nogil

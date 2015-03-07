@@ -43,6 +43,19 @@ cdef {ret_type} {name}({args}) nogil:
     return out
 """
 
+npy_types = {'c':'npy_complex64', 'z':'npy_complex128',
+             'cselect1':'_cselect1', 'cselect2':'_cselect2',
+             'dselect2':'_dselect2', 'dselect3':'_dselect3',
+             'sselect2':'_sselect2', 'sselect3':'_sselect3',
+             'zselect1':'_zselect1', 'zselect2':'_zselect2'}
+
+def arg_casts(arg):
+    if arg in ['npy_complex64', 'npy_complex128', '_cselect1', '_cselect2',
+               '_dselect2', '_dselect3', '_sselect2', '_sselect3',
+               '_zselect1', '_zselect2']:
+        return '<{}*>'.format(arg)
+    return ''
+
 def pyx_decl_func(name, ret_type, args, header_name):
     argtypes, argnames = arg_names_and_types(args)
     # Fix the case where one of the arguments has the same name as the
@@ -51,15 +64,12 @@ def pyx_decl_func(name, ret_type, args, header_name):
     # the previous typedef and Cython compilation fails.
     if ret_type in argnames:
         argnames = [n if n != ret_type else ret_type + '_' for n in argnames]
-        args = ', '.join([' *'.join([n, t]) for n, t in zip(argtypes, argnames)])
-    argtypes = [(t if t != 'c' else 'npy_complex64') if t != 'z' else 'npy_complex128'
-                for t in argtypes]
+        args = ', '.join([' *'.join([n, t])
+                          for n, t in zip(argtypes, argnames)])
+    argtypes = [npy_types.get(t, t) for t in argtypes]
     fort_args = ', '.join([' *'.join([n, t])
                            for n, t in zip(argtypes, argnames)])
-    argnames = [n if t != 'npy_complex64' else '<npy_complex64*>' + n
-                for n, t in zip(argnames, argtypes)]
-    argnames = [n if t != 'npy_complex128' else '<npy_complex128*>' + n
-                for n, t in zip(argnames, argtypes)]
+    argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
     argnames = ', '.join(argnames)
     c_ret_type = c_types[ret_type]
     return pyx_func_template.format(name=name, upname=name.upper(), args=args,
@@ -75,14 +85,10 @@ cdef void {name}({args}) nogil:
 
 def pyx_decl_sub(name, args, header_name):
     argtypes, argnames = arg_names_and_types(args)
-    argtypes = [(t if t != 'c' else 'npy_complex64') if t != 'z' else 'npy_complex128'
-                for t in argtypes]
+    argtypes = [npy_types.get(t, t) for t in argtypes]
     fort_args = ', '.join([' *'.join([n, t])
                            for n, t in zip(argtypes, argnames)])
-    argnames = [n if t != 'npy_complex64' else '<npy_complex64*>' + n
-                for n, t in zip(argnames, argtypes)]
-    argnames = [n if t != 'npy_complex128' else '<npy_complex128*>' + n
-                for n, t in zip(argnames, argtypes)]
+    argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
     argnames = ', '.join(argnames)
     return pyx_sub_template.format(name=name, upname=name.upper(),
                                    args=args, fort_args=fort_args,
@@ -144,6 +150,18 @@ cdef extern from "fortran_defs.h":
     pass
 
 from numpy cimport npy_complex64, npy_complex128
+
+cdef extern from "_lapack_subroutines.h":
+    # Function pointer type declarations for
+    # gees and gges families of functions.
+    ctypedef bint _cselect1(npy_complex64*)
+    ctypedef bint _cselect2(npy_complex64*, npy_complex64*)
+    ctypedef bint _dselect2(d*, d*)
+    ctypedef bint _dselect3(d*, d*, d*)
+    ctypedef bint _sselect2(s*, s*)
+    ctypedef bint _sselect3(s*, s*, s*)
+    ctypedef bint _zselect1(npy_complex128*)
+    ctypedef bint _zselect2(npy_complex128*, npy_complex128*)
 
 '''
 
