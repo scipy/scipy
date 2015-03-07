@@ -4,111 +4,68 @@
 #ifndef SCIPY_LINALG_BLAS_FORTRAN_WRAPPERS_H
 #define SCIPY_LINALG_BLAS_FORTRAN_WRAPPERS_H
 #include "fortran_defs.h"
-
-// Mimic the complex number definitions from cython.
-#if !defined(_SCIPY_LINALG_CCOMPLEX)
-  #if defined(__cplusplus)
-    #define _SCIPY_LINALG_CCOMPLEX 1
-  #elif defined(_Complex_I)
-    #define _SCIPY_LINALG_CCOMPLEX 1
-  #else
-    #define _SCIPY_LINALG_CCOMPLEX 0
-  #endif
-#endif
-
-#if _SCIPY_LINALG_CCOMPLEX
-  #ifdef __cplusplus
-    #include <complex>
-  #else
-    #include <complex.h>
-  #endif
-#endif
-
-#if _SCIPY_LINALG_CCOMPLEX && !defined(__cplusplus) && defined(__sun__) && defined(__GNUC__)
-  #undef _Complex_I
-  #define _Complex_I 1.0fj
-#endif
-
-#if _SCIPY_LINALG_CCOMPLEX
-  #ifdef __cplusplus
-    typedef ::std::complex< float > _scipy_linalg_float_complex;
-  #else
-    typedef float _Complex _scipy_linalg_float_complex;
-  #endif
-#else
-    typedef struct { float real, imag; } _scipy_linalg_float_complex;
-#endif
-
-#if _SCIPY_LINALG_CCOMPLEX
-  #ifdef __cplusplus
-    typedef ::std::complex< double > _scipy_linalg_double_complex;
-  #else
-    typedef double _Complex _scipy_linalg_double_complex;
-  #endif
-#else
-    typedef struct { double real, imag; } _scipy_linalg_double_complex;
-#endif
+#include "numpy/arrayobject.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void F_FUNC(cdotcwrp, CDOTCWRP)(_scipy_linalg_float_complex *ret, int *n, _scipy_linalg_float_complex *cx, int *incx, _scipy_linalg_float_complex *cy, int *incy);
-void F_FUNC(cdotuwrp, CDOTUWRP)(_scipy_linalg_float_complex *ret, int *n, _scipy_linalg_float_complex *cx, int *incx, _scipy_linalg_float_complex *cy, int *incy);
+void F_FUNC(cdotcwrp, CDOTCWRP)(npy_complex64 *ret, int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy);
+void F_FUNC(cdotuwrp, CDOTUWRP)(npy_complex64 *ret, int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy);
 void F_FUNC(dasumwrp, DASUMWRP)(double *ret, int *n, double *dx, int *incx);
-void F_FUNC(dcabs1wrp, DCABS1WRP)(double *ret, _scipy_linalg_double_complex *z);
+void F_FUNC(dcabs1wrp, DCABS1WRP)(double *ret, npy_complex128 *z);
 void F_FUNC(ddotwrp, DDOTWRP)(double *ret, int *n, double *dx, int *incx, double *dy, int *incy);
 void F_FUNC(dnrm2wrp, DNRM2WRP)(double *ret, int *n, double *x, int *incx);
 void F_FUNC(dsdotwrp, DSDOTWRP)(double *ret, int *n, float *sx, int *incx, float *sy, int *incy);
-void F_FUNC(dzasumwrp, DZASUMWRP)(double *ret, int *n, _scipy_linalg_double_complex *zx, int *incx);
-void F_FUNC(dznrm2wrp, DZNRM2WRP)(double *ret, int *n, _scipy_linalg_double_complex *x, int *incx);
-void F_FUNC(icamaxwrp, ICAMAXWRP)(int *ret, int *n, _scipy_linalg_float_complex *cx, int *incx);
+void F_FUNC(dzasumwrp, DZASUMWRP)(double *ret, int *n, npy_complex128 *zx, int *incx);
+void F_FUNC(dznrm2wrp, DZNRM2WRP)(double *ret, int *n, npy_complex128 *x, int *incx);
+void F_FUNC(icamaxwrp, ICAMAXWRP)(int *ret, int *n, npy_complex64 *cx, int *incx);
 void F_FUNC(idamaxwrp, IDAMAXWRP)(int *ret, int *n, double *dx, int *incx);
 void F_FUNC(isamaxwrp, ISAMAXWRP)(int *ret, int *n, float *sx, int *incx);
-void F_FUNC(izamaxwrp, IZAMAXWRP)(int *ret, int *n, _scipy_linalg_double_complex *zx, int *incx);
+void F_FUNC(izamaxwrp, IZAMAXWRP)(int *ret, int *n, npy_complex128 *zx, int *incx);
 void F_FUNC(lsamewrp, LSAMEWRP)(int *ret, char *ca, char *cb);
 void F_FUNC(sasumwrp, SASUMWRP)(float *ret, int *n, float *sx, int *incx);
-void F_FUNC(scasumwrp, SCASUMWRP)(float *ret, int *n, _scipy_linalg_float_complex *cx, int *incx);
-void F_FUNC(scnrm2wrp, SCNRM2WRP)(float *ret, int *n, _scipy_linalg_float_complex *x, int *incx);
+void F_FUNC(scasumwrp, SCASUMWRP)(float *ret, int *n, npy_complex64 *cx, int *incx);
+void F_FUNC(scnrm2wrp, SCNRM2WRP)(float *ret, int *n, npy_complex64 *x, int *incx);
 void F_FUNC(sdotwrp, SDOTWRP)(float *ret, int *n, float *sx, int *incx, float *sy, int *incy);
 void F_FUNC(sdsdotwrp, SDSDOTWRP)(float *ret, int *n, float *sb, float *sx, int *incx, float *sy, int *incy);
 void F_FUNC(snrm2wrp, SNRM2WRP)(float *ret, int *n, float *x, int *incx);
-void F_FUNC(zdotcwrp, ZDOTCWRP)(_scipy_linalg_double_complex *ret, int *n, _scipy_linalg_double_complex *zx, int *incx, _scipy_linalg_double_complex *zy, int *incy);
-void F_FUNC(zdotuwrp, ZDOTUWRP)(_scipy_linalg_double_complex *ret, int *n, _scipy_linalg_double_complex *zx, int *incx, _scipy_linalg_double_complex *zy, int *incy);
+void F_FUNC(zdotcwrp, ZDOTCWRP)(npy_complex128 *ret, int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy);
+void F_FUNC(zdotuwrp, ZDOTUWRP)(npy_complex128 *ret, int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy);
 
-void F_FUNC(caxpy,CAXPY)(int *n, _scipy_linalg_float_complex *ca, _scipy_linalg_float_complex *cx, int *incx, _scipy_linalg_float_complex *cy, int *incy);
-void F_FUNC(ccopy,CCOPY)(int *n, _scipy_linalg_float_complex *cx, int *incx, _scipy_linalg_float_complex *cy, int *incy);
-void F_FUNC(cgbmv,CGBMV)(char *trans, int *m, int *n, int *kl, int *ku, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *y, int *incy);
-void F_FUNC(cgemm,CGEMM)(char *transa, char *transb, int *m, int *n, int *k, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *b, int *ldb, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *c, int *ldc);
-void F_FUNC(cgemv,CGEMV)(char *trans, int *m, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *y, int *incy);
-void F_FUNC(cgerc,CGERC)(int *m, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *y, int *incy, _scipy_linalg_float_complex *a, int *lda);
-void F_FUNC(cgeru,CGERU)(int *m, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *y, int *incy, _scipy_linalg_float_complex *a, int *lda);
-void F_FUNC(chbmv,CHBMV)(char *uplo, int *n, int *k, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *y, int *incy);
-void F_FUNC(chemm,CHEMM)(char *side, char *uplo, int *m, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *b, int *ldb, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *c, int *ldc);
-void F_FUNC(chemv,CHEMV)(char *uplo, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *y, int *incy);
-void F_FUNC(cher,CHER)(char *uplo, int *n, float *alpha, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *a, int *lda);
-void F_FUNC(cher2,CHER2)(char *uplo, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *y, int *incy, _scipy_linalg_float_complex *a, int *lda);
-void F_FUNC(cher2k,CHER2K)(char *uplo, char *trans, int *n, int *k, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *b, int *ldb, float *beta, _scipy_linalg_float_complex *c, int *ldc);
-void F_FUNC(cherk,CHERK)(char *uplo, char *trans, int *n, int *k, float *alpha, _scipy_linalg_float_complex *a, int *lda, float *beta, _scipy_linalg_float_complex *c, int *ldc);
-void F_FUNC(chpmv,CHPMV)(char *uplo, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *ap, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *y, int *incy);
-void F_FUNC(chpr,CHPR)(char *uplo, int *n, float *alpha, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *ap);
-void F_FUNC(chpr2,CHPR2)(char *uplo, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *x, int *incx, _scipy_linalg_float_complex *y, int *incy, _scipy_linalg_float_complex *ap);
-void F_FUNC(crotg,CROTG)(_scipy_linalg_float_complex *ca, _scipy_linalg_float_complex *cb, float *c, _scipy_linalg_float_complex *s);
-void F_FUNC(cscal,CSCAL)(int *n, _scipy_linalg_float_complex *ca, _scipy_linalg_float_complex *cx, int *incx);
-void F_FUNC(csrot,CSROT)(int *n, _scipy_linalg_float_complex *cx, int *incx, _scipy_linalg_float_complex *cy, int *incy, float *c, float *s);
-void F_FUNC(csscal,CSSCAL)(int *n, float *sa, _scipy_linalg_float_complex *cx, int *incx);
-void F_FUNC(cswap,CSWAP)(int *n, _scipy_linalg_float_complex *cx, int *incx, _scipy_linalg_float_complex *cy, int *incy);
-void F_FUNC(csymm,CSYMM)(char *side, char *uplo, int *m, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *b, int *ldb, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *c, int *ldc);
-void F_FUNC(csyr2k,CSYR2K)(char *uplo, char *trans, int *n, int *k, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *b, int *ldb, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *c, int *ldc);
-void F_FUNC(csyrk,CSYRK)(char *uplo, char *trans, int *n, int *k, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *beta, _scipy_linalg_float_complex *c, int *ldc);
-void F_FUNC(ctbmv,CTBMV)(char *uplo, char *trans, char *diag, int *n, int *k, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *x, int *incx);
-void F_FUNC(ctbsv,CTBSV)(char *uplo, char *trans, char *diag, int *n, int *k, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *x, int *incx);
-void F_FUNC(ctpmv,CTPMV)(char *uplo, char *trans, char *diag, int *n, _scipy_linalg_float_complex *ap, _scipy_linalg_float_complex *x, int *incx);
-void F_FUNC(ctpsv,CTPSV)(char *uplo, char *trans, char *diag, int *n, _scipy_linalg_float_complex *ap, _scipy_linalg_float_complex *x, int *incx);
-void F_FUNC(ctrmm,CTRMM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *b, int *ldb);
-void F_FUNC(ctrmv,CTRMV)(char *uplo, char *trans, char *diag, int *n, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *x, int *incx);
-void F_FUNC(ctrsm,CTRSM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, _scipy_linalg_float_complex *alpha, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *b, int *ldb);
-void F_FUNC(ctrsv,CTRSV)(char *uplo, char *trans, char *diag, int *n, _scipy_linalg_float_complex *a, int *lda, _scipy_linalg_float_complex *x, int *incx);
+void F_FUNC(caxpy,CAXPY)(int *n, npy_complex64 *ca, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy);
+void F_FUNC(ccopy,CCOPY)(int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy);
+void F_FUNC(cgbmv,CGBMV)(char *trans, int *m, int *n, int *kl, int *ku, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy);
+void F_FUNC(cgemm,CGEMM)(char *transa, char *transb, int *m, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *beta, npy_complex64 *c, int *ldc);
+void F_FUNC(cgemv,CGEMV)(char *trans, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy);
+void F_FUNC(cgerc,CGERC)(int *m, int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *y, int *incy, npy_complex64 *a, int *lda);
+void F_FUNC(cgeru,CGERU)(int *m, int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *y, int *incy, npy_complex64 *a, int *lda);
+void F_FUNC(chbmv,CHBMV)(char *uplo, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy);
+void F_FUNC(chemm,CHEMM)(char *side, char *uplo, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *beta, npy_complex64 *c, int *ldc);
+void F_FUNC(chemv,CHEMV)(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy);
+void F_FUNC(cher,CHER)(char *uplo, int *n, float *alpha, npy_complex64 *x, int *incx, npy_complex64 *a, int *lda);
+void F_FUNC(cher2,CHER2)(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *y, int *incy, npy_complex64 *a, int *lda);
+void F_FUNC(cher2k,CHER2K)(char *uplo, char *trans, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, float *beta, npy_complex64 *c, int *ldc);
+void F_FUNC(cherk,CHERK)(char *uplo, char *trans, int *n, int *k, float *alpha, npy_complex64 *a, int *lda, float *beta, npy_complex64 *c, int *ldc);
+void F_FUNC(chpmv,CHPMV)(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *ap, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy);
+void F_FUNC(chpr,CHPR)(char *uplo, int *n, float *alpha, npy_complex64 *x, int *incx, npy_complex64 *ap);
+void F_FUNC(chpr2,CHPR2)(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *y, int *incy, npy_complex64 *ap);
+void F_FUNC(crotg,CROTG)(npy_complex64 *ca, npy_complex64 *cb, float *c, npy_complex64 *s);
+void F_FUNC(cscal,CSCAL)(int *n, npy_complex64 *ca, npy_complex64 *cx, int *incx);
+void F_FUNC(csrot,CSROT)(int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy, float *c, float *s);
+void F_FUNC(csscal,CSSCAL)(int *n, float *sa, npy_complex64 *cx, int *incx);
+void F_FUNC(cswap,CSWAP)(int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy);
+void F_FUNC(csymm,CSYMM)(char *side, char *uplo, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *beta, npy_complex64 *c, int *ldc);
+void F_FUNC(csyr2k,CSYR2K)(char *uplo, char *trans, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *beta, npy_complex64 *c, int *ldc);
+void F_FUNC(csyrk,CSYRK)(char *uplo, char *trans, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *beta, npy_complex64 *c, int *ldc);
+void F_FUNC(ctbmv,CTBMV)(char *uplo, char *trans, char *diag, int *n, int *k, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx);
+void F_FUNC(ctbsv,CTBSV)(char *uplo, char *trans, char *diag, int *n, int *k, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx);
+void F_FUNC(ctpmv,CTPMV)(char *uplo, char *trans, char *diag, int *n, npy_complex64 *ap, npy_complex64 *x, int *incx);
+void F_FUNC(ctpsv,CTPSV)(char *uplo, char *trans, char *diag, int *n, npy_complex64 *ap, npy_complex64 *x, int *incx);
+void F_FUNC(ctrmm,CTRMM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb);
+void F_FUNC(ctrmv,CTRMV)(char *uplo, char *trans, char *diag, int *n, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx);
+void F_FUNC(ctrsm,CTRSM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb);
+void F_FUNC(ctrsv,CTRSV)(char *uplo, char *trans, char *diag, int *n, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx);
 void F_FUNC(daxpy,DAXPY)(int *n, double *da, double *dx, int *incx, double *dy, int *incy);
 void F_FUNC(dcopy,DCOPY)(int *n, double *dx, int *incx, double *dy, int *incy);
 void F_FUNC(dgbmv,DGBMV)(char *trans, int *m, int *n, int *kl, int *ku, double *alpha, double *a, int *lda, double *x, int *incx, double *beta, double *y, int *incy);
@@ -170,39 +127,39 @@ void F_FUNC(strmv,STRMV)(char *uplo, char *trans, char *diag, int *n, float *a, 
 void F_FUNC(strsm,STRSM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, float *alpha, float *a, int *lda, float *b, int *ldb);
 void F_FUNC(strsv,STRSV)(char *uplo, char *trans, char *diag, int *n, float *a, int *lda, float *x, int *incx);
 void F_FUNC(xerbla,XERBLA)(char *srname, int *info);
-void F_FUNC(zaxpy,ZAXPY)(int *n, _scipy_linalg_double_complex *za, _scipy_linalg_double_complex *zx, int *incx, _scipy_linalg_double_complex *zy, int *incy);
-void F_FUNC(zcopy,ZCOPY)(int *n, _scipy_linalg_double_complex *zx, int *incx, _scipy_linalg_double_complex *zy, int *incy);
-void F_FUNC(zdrot,ZDROT)(int *n, _scipy_linalg_double_complex *cx, int *incx, _scipy_linalg_double_complex *cy, int *incy, double *c, double *s);
-void F_FUNC(zdscal,ZDSCAL)(int *n, double *da, _scipy_linalg_double_complex *zx, int *incx);
-void F_FUNC(zgbmv,ZGBMV)(char *trans, int *m, int *n, int *kl, int *ku, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *y, int *incy);
-void F_FUNC(zgemm,ZGEMM)(char *transa, char *transb, int *m, int *n, int *k, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *b, int *ldb, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *c, int *ldc);
-void F_FUNC(zgemv,ZGEMV)(char *trans, int *m, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *y, int *incy);
-void F_FUNC(zgerc,ZGERC)(int *m, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *y, int *incy, _scipy_linalg_double_complex *a, int *lda);
-void F_FUNC(zgeru,ZGERU)(int *m, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *y, int *incy, _scipy_linalg_double_complex *a, int *lda);
-void F_FUNC(zhbmv,ZHBMV)(char *uplo, int *n, int *k, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *y, int *incy);
-void F_FUNC(zhemm,ZHEMM)(char *side, char *uplo, int *m, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *b, int *ldb, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *c, int *ldc);
-void F_FUNC(zhemv,ZHEMV)(char *uplo, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *y, int *incy);
-void F_FUNC(zher,ZHER)(char *uplo, int *n, double *alpha, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *a, int *lda);
-void F_FUNC(zher2,ZHER2)(char *uplo, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *y, int *incy, _scipy_linalg_double_complex *a, int *lda);
-void F_FUNC(zher2k,ZHER2K)(char *uplo, char *trans, int *n, int *k, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *b, int *ldb, double *beta, _scipy_linalg_double_complex *c, int *ldc);
-void F_FUNC(zherk,ZHERK)(char *uplo, char *trans, int *n, int *k, double *alpha, _scipy_linalg_double_complex *a, int *lda, double *beta, _scipy_linalg_double_complex *c, int *ldc);
-void F_FUNC(zhpmv,ZHPMV)(char *uplo, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *ap, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *y, int *incy);
-void F_FUNC(zhpr,ZHPR)(char *uplo, int *n, double *alpha, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *ap);
-void F_FUNC(zhpr2,ZHPR2)(char *uplo, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *x, int *incx, _scipy_linalg_double_complex *y, int *incy, _scipy_linalg_double_complex *ap);
-void F_FUNC(zrotg,ZROTG)(_scipy_linalg_double_complex *ca, _scipy_linalg_double_complex *cb, double *c, _scipy_linalg_double_complex *s);
-void F_FUNC(zscal,ZSCAL)(int *n, _scipy_linalg_double_complex *za, _scipy_linalg_double_complex *zx, int *incx);
-void F_FUNC(zswap,ZSWAP)(int *n, _scipy_linalg_double_complex *zx, int *incx, _scipy_linalg_double_complex *zy, int *incy);
-void F_FUNC(zsymm,ZSYMM)(char *side, char *uplo, int *m, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *b, int *ldb, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *c, int *ldc);
-void F_FUNC(zsyr2k,ZSYR2K)(char *uplo, char *trans, int *n, int *k, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *b, int *ldb, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *c, int *ldc);
-void F_FUNC(zsyrk,ZSYRK)(char *uplo, char *trans, int *n, int *k, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *beta, _scipy_linalg_double_complex *c, int *ldc);
-void F_FUNC(ztbmv,ZTBMV)(char *uplo, char *trans, char *diag, int *n, int *k, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *x, int *incx);
-void F_FUNC(ztbsv,ZTBSV)(char *uplo, char *trans, char *diag, int *n, int *k, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *x, int *incx);
-void F_FUNC(ztpmv,ZTPMV)(char *uplo, char *trans, char *diag, int *n, _scipy_linalg_double_complex *ap, _scipy_linalg_double_complex *x, int *incx);
-void F_FUNC(ztpsv,ZTPSV)(char *uplo, char *trans, char *diag, int *n, _scipy_linalg_double_complex *ap, _scipy_linalg_double_complex *x, int *incx);
-void F_FUNC(ztrmm,ZTRMM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *b, int *ldb);
-void F_FUNC(ztrmv,ZTRMV)(char *uplo, char *trans, char *diag, int *n, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *x, int *incx);
-void F_FUNC(ztrsm,ZTRSM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, _scipy_linalg_double_complex *alpha, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *b, int *ldb);
-void F_FUNC(ztrsv,ZTRSV)(char *uplo, char *trans, char *diag, int *n, _scipy_linalg_double_complex *a, int *lda, _scipy_linalg_double_complex *x, int *incx);
+void F_FUNC(zaxpy,ZAXPY)(int *n, npy_complex128 *za, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy);
+void F_FUNC(zcopy,ZCOPY)(int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy);
+void F_FUNC(zdrot,ZDROT)(int *n, npy_complex128 *cx, int *incx, npy_complex128 *cy, int *incy, double *c, double *s);
+void F_FUNC(zdscal,ZDSCAL)(int *n, double *da, npy_complex128 *zx, int *incx);
+void F_FUNC(zgbmv,ZGBMV)(char *trans, int *m, int *n, int *kl, int *ku, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy);
+void F_FUNC(zgemm,ZGEMM)(char *transa, char *transb, int *m, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *beta, npy_complex128 *c, int *ldc);
+void F_FUNC(zgemv,ZGEMV)(char *trans, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy);
+void F_FUNC(zgerc,ZGERC)(int *m, int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *y, int *incy, npy_complex128 *a, int *lda);
+void F_FUNC(zgeru,ZGERU)(int *m, int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *y, int *incy, npy_complex128 *a, int *lda);
+void F_FUNC(zhbmv,ZHBMV)(char *uplo, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy);
+void F_FUNC(zhemm,ZHEMM)(char *side, char *uplo, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *beta, npy_complex128 *c, int *ldc);
+void F_FUNC(zhemv,ZHEMV)(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy);
+void F_FUNC(zher,ZHER)(char *uplo, int *n, double *alpha, npy_complex128 *x, int *incx, npy_complex128 *a, int *lda);
+void F_FUNC(zher2,ZHER2)(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *y, int *incy, npy_complex128 *a, int *lda);
+void F_FUNC(zher2k,ZHER2K)(char *uplo, char *trans, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, double *beta, npy_complex128 *c, int *ldc);
+void F_FUNC(zherk,ZHERK)(char *uplo, char *trans, int *n, int *k, double *alpha, npy_complex128 *a, int *lda, double *beta, npy_complex128 *c, int *ldc);
+void F_FUNC(zhpmv,ZHPMV)(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *ap, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy);
+void F_FUNC(zhpr,ZHPR)(char *uplo, int *n, double *alpha, npy_complex128 *x, int *incx, npy_complex128 *ap);
+void F_FUNC(zhpr2,ZHPR2)(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *y, int *incy, npy_complex128 *ap);
+void F_FUNC(zrotg,ZROTG)(npy_complex128 *ca, npy_complex128 *cb, double *c, npy_complex128 *s);
+void F_FUNC(zscal,ZSCAL)(int *n, npy_complex128 *za, npy_complex128 *zx, int *incx);
+void F_FUNC(zswap,ZSWAP)(int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy);
+void F_FUNC(zsymm,ZSYMM)(char *side, char *uplo, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *beta, npy_complex128 *c, int *ldc);
+void F_FUNC(zsyr2k,ZSYR2K)(char *uplo, char *trans, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *beta, npy_complex128 *c, int *ldc);
+void F_FUNC(zsyrk,ZSYRK)(char *uplo, char *trans, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *beta, npy_complex128 *c, int *ldc);
+void F_FUNC(ztbmv,ZTBMV)(char *uplo, char *trans, char *diag, int *n, int *k, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx);
+void F_FUNC(ztbsv,ZTBSV)(char *uplo, char *trans, char *diag, int *n, int *k, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx);
+void F_FUNC(ztpmv,ZTPMV)(char *uplo, char *trans, char *diag, int *n, npy_complex128 *ap, npy_complex128 *x, int *incx);
+void F_FUNC(ztpsv,ZTPSV)(char *uplo, char *trans, char *diag, int *n, npy_complex128 *ap, npy_complex128 *x, int *incx);
+void F_FUNC(ztrmm,ZTRMM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb);
+void F_FUNC(ztrmv,ZTRMV)(char *uplo, char *trans, char *diag, int *n, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx);
+void F_FUNC(ztrsm,ZTRSM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb);
+void F_FUNC(ztrsv,ZTRSV)(char *uplo, char *trans, char *diag, int *n, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx);
 
 #ifdef __cplusplus
 }

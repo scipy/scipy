@@ -171,20 +171,22 @@ Raw function pointers (Fortran-style pointer arguments):
 cdef extern from "fortran_defs.h":
     pass
 
+from numpy cimport npy_complex64, npy_complex128
+
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cdotc "F_FUNC(cdotcwrp, CDOTCWRP)"(c *out, int *n, c *cx, int *incx, c *cy, int *incy) nogil
+    void _fortran_cdotc "F_FUNC(cdotcwrp, CDOTCWRP)"(c *out, int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy) nogil
 cdef c cdotc(int *n, c *cx, int *incx, c *cy, int *incy) nogil:
     cdef c out
-    _fortran_cdotc(&out, n, cx, incx, cy, incy)
+    _fortran_cdotc(&out, n, <npy_complex64*>cx, incx, <npy_complex64*>cy, incy)
     return out
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cdotu "F_FUNC(cdotuwrp, CDOTUWRP)"(c *out, int *n, c *cx, int *incx, c *cy, int *incy) nogil
+    void _fortran_cdotu "F_FUNC(cdotuwrp, CDOTUWRP)"(c *out, int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy) nogil
 cdef c cdotu(int *n, c *cx, int *incx, c *cy, int *incy) nogil:
     cdef c out
-    _fortran_cdotu(&out, n, cx, incx, cy, incy)
+    _fortran_cdotu(&out, n, <npy_complex64*>cx, incx, <npy_complex64*>cy, incy)
     return out
 
 
@@ -197,10 +199,10 @@ cdef d dasum(int *n, d *dx, int *incx) nogil:
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_dcabs1 "F_FUNC(dcabs1wrp, DCABS1WRP)"(d *out, z *z) nogil
+    void _fortran_dcabs1 "F_FUNC(dcabs1wrp, DCABS1WRP)"(d *out, npy_complex128 *z) nogil
 cdef d dcabs1(z *z) nogil:
     cdef d out
-    _fortran_dcabs1(&out, z)
+    _fortran_dcabs1(&out, <npy_complex128*>z)
     return out
 
 
@@ -229,26 +231,26 @@ cdef d dsdot(int *n, s *sx, int *incx, s *sy, int *incy) nogil:
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_dzasum "F_FUNC(dzasumwrp, DZASUMWRP)"(d *out, int *n, z *zx, int *incx) nogil
+    void _fortran_dzasum "F_FUNC(dzasumwrp, DZASUMWRP)"(d *out, int *n, npy_complex128 *zx, int *incx) nogil
 cdef d dzasum(int *n, z *zx, int *incx) nogil:
     cdef d out
-    _fortran_dzasum(&out, n, zx, incx)
+    _fortran_dzasum(&out, n, <npy_complex128*>zx, incx)
     return out
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_dznrm2 "F_FUNC(dznrm2wrp, DZNRM2WRP)"(d *out, int *n, z *x, int *incx) nogil
+    void _fortran_dznrm2 "F_FUNC(dznrm2wrp, DZNRM2WRP)"(d *out, int *n, npy_complex128 *x, int *incx) nogil
 cdef d dznrm2(int *n, z *x, int *incx) nogil:
     cdef d out
-    _fortran_dznrm2(&out, n, x, incx)
+    _fortran_dznrm2(&out, n, <npy_complex128*>x, incx)
     return out
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_icamax "F_FUNC(icamaxwrp, ICAMAXWRP)"(int *out, int *n, c *cx, int *incx) nogil
+    void _fortran_icamax "F_FUNC(icamaxwrp, ICAMAXWRP)"(int *out, int *n, npy_complex64 *cx, int *incx) nogil
 cdef int icamax(int *n, c *cx, int *incx) nogil:
     cdef int out
-    _fortran_icamax(&out, n, cx, incx)
+    _fortran_icamax(&out, n, <npy_complex64*>cx, incx)
     return out
 
 
@@ -269,10 +271,10 @@ cdef int isamax(int *n, s *sx, int *incx) nogil:
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_izamax "F_FUNC(izamaxwrp, IZAMAXWRP)"(int *out, int *n, z *zx, int *incx) nogil
+    void _fortran_izamax "F_FUNC(izamaxwrp, IZAMAXWRP)"(int *out, int *n, npy_complex128 *zx, int *incx) nogil
 cdef int izamax(int *n, z *zx, int *incx) nogil:
     cdef int out
-    _fortran_izamax(&out, n, zx, incx)
+    _fortran_izamax(&out, n, <npy_complex128*>zx, incx)
     return out
 
 
@@ -293,18 +295,18 @@ cdef s sasum(int *n, s *sx, int *incx) nogil:
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_scasum "F_FUNC(scasumwrp, SCASUMWRP)"(s *out, int *n, c *cx, int *incx) nogil
+    void _fortran_scasum "F_FUNC(scasumwrp, SCASUMWRP)"(s *out, int *n, npy_complex64 *cx, int *incx) nogil
 cdef s scasum(int *n, c *cx, int *incx) nogil:
     cdef s out
-    _fortran_scasum(&out, n, cx, incx)
+    _fortran_scasum(&out, n, <npy_complex64*>cx, incx)
     return out
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_scnrm2 "F_FUNC(scnrm2wrp, SCNRM2WRP)"(s *out, int *n, c *x, int *incx) nogil
+    void _fortran_scnrm2 "F_FUNC(scnrm2wrp, SCNRM2WRP)"(s *out, int *n, npy_complex64 *x, int *incx) nogil
 cdef s scnrm2(int *n, c *x, int *incx) nogil:
     cdef s out
-    _fortran_scnrm2(&out, n, x, incx)
+    _fortran_scnrm2(&out, n, <npy_complex64*>x, incx)
     return out
 
 
@@ -333,184 +335,184 @@ cdef s snrm2(int *n, s *x, int *incx) nogil:
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zdotc "F_FUNC(zdotcwrp, ZDOTCWRP)"(z *out, int *n, z *zx, int *incx, z *zy, int *incy) nogil
+    void _fortran_zdotc "F_FUNC(zdotcwrp, ZDOTCWRP)"(z *out, int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy) nogil
 cdef z zdotc(int *n, z *zx, int *incx, z *zy, int *incy) nogil:
     cdef z out
-    _fortran_zdotc(&out, n, zx, incx, zy, incy)
+    _fortran_zdotc(&out, n, <npy_complex128*>zx, incx, <npy_complex128*>zy, incy)
     return out
 
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zdotu "F_FUNC(zdotuwrp, ZDOTUWRP)"(z *out, int *n, z *zx, int *incx, z *zy, int *incy) nogil
+    void _fortran_zdotu "F_FUNC(zdotuwrp, ZDOTUWRP)"(z *out, int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy) nogil
 cdef z zdotu(int *n, z *zx, int *incx, z *zy, int *incy) nogil:
     cdef z out
-    _fortran_zdotu(&out, n, zx, incx, zy, incy)
+    _fortran_zdotu(&out, n, <npy_complex128*>zx, incx, <npy_complex128*>zy, incy)
     return out
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_caxpy "F_FUNC(caxpy,CAXPY)"(int *n, c *ca, c *cx, int *incx, c *cy, int *incy) nogil
+    void _fortran_caxpy "F_FUNC(caxpy,CAXPY)"(int *n, npy_complex64 *ca, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy) nogil
 cdef void caxpy(int *n, c *ca, c *cx, int *incx, c *cy, int *incy) nogil:
-    _fortran_caxpy(n, ca, cx, incx, cy, incy)
+    _fortran_caxpy(n, <npy_complex64*>ca, <npy_complex64*>cx, incx, <npy_complex64*>cy, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ccopy "F_FUNC(ccopy,CCOPY)"(int *n, c *cx, int *incx, c *cy, int *incy) nogil
+    void _fortran_ccopy "F_FUNC(ccopy,CCOPY)"(int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy) nogil
 cdef void ccopy(int *n, c *cx, int *incx, c *cy, int *incy) nogil:
-    _fortran_ccopy(n, cx, incx, cy, incy)
+    _fortran_ccopy(n, <npy_complex64*>cx, incx, <npy_complex64*>cy, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cgbmv "F_FUNC(cgbmv,CGBMV)"(char *trans, int *m, int *n, int *kl, int *ku, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil
+    void _fortran_cgbmv "F_FUNC(cgbmv,CGBMV)"(char *trans, int *m, int *n, int *kl, int *ku, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy) nogil
 cdef void cgbmv(char *trans, int *m, int *n, int *kl, int *ku, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil:
-    _fortran_cgbmv(trans, m, n, kl, ku, alpha, a, lda, x, incx, beta, y, incy)
+    _fortran_cgbmv(trans, m, n, kl, ku, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>x, incx, <npy_complex64*>beta, <npy_complex64*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cgemm "F_FUNC(cgemm,CGEMM)"(char *transa, char *transb, int *m, int *n, int *k, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc) nogil
+    void _fortran_cgemm "F_FUNC(cgemm,CGEMM)"(char *transa, char *transb, int *m, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *beta, npy_complex64 *c, int *ldc) nogil
 cdef void cgemm(char *transa, char *transb, int *m, int *n, int *k, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc) nogil:
-    _fortran_cgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_cgemm(transa, transb, m, n, k, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, <npy_complex64*>beta, <npy_complex64*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cgemv "F_FUNC(cgemv,CGEMV)"(char *trans, int *m, int *n, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil
+    void _fortran_cgemv "F_FUNC(cgemv,CGEMV)"(char *trans, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy) nogil
 cdef void cgemv(char *trans, int *m, int *n, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil:
-    _fortran_cgemv(trans, m, n, alpha, a, lda, x, incx, beta, y, incy)
+    _fortran_cgemv(trans, m, n, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>x, incx, <npy_complex64*>beta, <npy_complex64*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cgerc "F_FUNC(cgerc,CGERC)"(int *m, int *n, c *alpha, c *x, int *incx, c *y, int *incy, c *a, int *lda) nogil
+    void _fortran_cgerc "F_FUNC(cgerc,CGERC)"(int *m, int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *y, int *incy, npy_complex64 *a, int *lda) nogil
 cdef void cgerc(int *m, int *n, c *alpha, c *x, int *incx, c *y, int *incy, c *a, int *lda) nogil:
-    _fortran_cgerc(m, n, alpha, x, incx, y, incy, a, lda)
+    _fortran_cgerc(m, n, <npy_complex64*>alpha, <npy_complex64*>x, incx, <npy_complex64*>y, incy, <npy_complex64*>a, lda)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cgeru "F_FUNC(cgeru,CGERU)"(int *m, int *n, c *alpha, c *x, int *incx, c *y, int *incy, c *a, int *lda) nogil
+    void _fortran_cgeru "F_FUNC(cgeru,CGERU)"(int *m, int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *y, int *incy, npy_complex64 *a, int *lda) nogil
 cdef void cgeru(int *m, int *n, c *alpha, c *x, int *incx, c *y, int *incy, c *a, int *lda) nogil:
-    _fortran_cgeru(m, n, alpha, x, incx, y, incy, a, lda)
+    _fortran_cgeru(m, n, <npy_complex64*>alpha, <npy_complex64*>x, incx, <npy_complex64*>y, incy, <npy_complex64*>a, lda)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_chbmv "F_FUNC(chbmv,CHBMV)"(char *uplo, int *n, int *k, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil
+    void _fortran_chbmv "F_FUNC(chbmv,CHBMV)"(char *uplo, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy) nogil
 cdef void chbmv(char *uplo, int *n, int *k, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil:
-    _fortran_chbmv(uplo, n, k, alpha, a, lda, x, incx, beta, y, incy)
+    _fortran_chbmv(uplo, n, k, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>x, incx, <npy_complex64*>beta, <npy_complex64*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_chemm "F_FUNC(chemm,CHEMM)"(char *side, char *uplo, int *m, int *n, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc) nogil
+    void _fortran_chemm "F_FUNC(chemm,CHEMM)"(char *side, char *uplo, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *beta, npy_complex64 *c, int *ldc) nogil
 cdef void chemm(char *side, char *uplo, int *m, int *n, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc) nogil:
-    _fortran_chemm(side, uplo, m, n, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_chemm(side, uplo, m, n, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, <npy_complex64*>beta, <npy_complex64*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_chemv "F_FUNC(chemv,CHEMV)"(char *uplo, int *n, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil
+    void _fortran_chemv "F_FUNC(chemv,CHEMV)"(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy) nogil
 cdef void chemv(char *uplo, int *n, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil:
-    _fortran_chemv(uplo, n, alpha, a, lda, x, incx, beta, y, incy)
+    _fortran_chemv(uplo, n, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>x, incx, <npy_complex64*>beta, <npy_complex64*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cher "F_FUNC(cher,CHER)"(char *uplo, int *n, s *alpha, c *x, int *incx, c *a, int *lda) nogil
+    void _fortran_cher "F_FUNC(cher,CHER)"(char *uplo, int *n, s *alpha, npy_complex64 *x, int *incx, npy_complex64 *a, int *lda) nogil
 cdef void cher(char *uplo, int *n, s *alpha, c *x, int *incx, c *a, int *lda) nogil:
-    _fortran_cher(uplo, n, alpha, x, incx, a, lda)
+    _fortran_cher(uplo, n, alpha, <npy_complex64*>x, incx, <npy_complex64*>a, lda)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cher2 "F_FUNC(cher2,CHER2)"(char *uplo, int *n, c *alpha, c *x, int *incx, c *y, int *incy, c *a, int *lda) nogil
+    void _fortran_cher2 "F_FUNC(cher2,CHER2)"(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *y, int *incy, npy_complex64 *a, int *lda) nogil
 cdef void cher2(char *uplo, int *n, c *alpha, c *x, int *incx, c *y, int *incy, c *a, int *lda) nogil:
-    _fortran_cher2(uplo, n, alpha, x, incx, y, incy, a, lda)
+    _fortran_cher2(uplo, n, <npy_complex64*>alpha, <npy_complex64*>x, incx, <npy_complex64*>y, incy, <npy_complex64*>a, lda)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cher2k "F_FUNC(cher2k,CHER2K)"(char *uplo, char *trans, int *n, int *k, c *alpha, c *a, int *lda, c *b, int *ldb, s *beta, c *c, int *ldc) nogil
+    void _fortran_cher2k "F_FUNC(cher2k,CHER2K)"(char *uplo, char *trans, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, s *beta, npy_complex64 *c, int *ldc) nogil
 cdef void cher2k(char *uplo, char *trans, int *n, int *k, c *alpha, c *a, int *lda, c *b, int *ldb, s *beta, c *c, int *ldc) nogil:
-    _fortran_cher2k(uplo, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_cher2k(uplo, trans, n, k, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, beta, <npy_complex64*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cherk "F_FUNC(cherk,CHERK)"(char *uplo, char *trans, int *n, int *k, s *alpha, c *a, int *lda, s *beta, c *c, int *ldc) nogil
+    void _fortran_cherk "F_FUNC(cherk,CHERK)"(char *uplo, char *trans, int *n, int *k, s *alpha, npy_complex64 *a, int *lda, s *beta, npy_complex64 *c, int *ldc) nogil
 cdef void cherk(char *uplo, char *trans, int *n, int *k, s *alpha, c *a, int *lda, s *beta, c *c, int *ldc) nogil:
-    _fortran_cherk(uplo, trans, n, k, alpha, a, lda, beta, c, ldc)
+    _fortran_cherk(uplo, trans, n, k, alpha, <npy_complex64*>a, lda, beta, <npy_complex64*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_chpmv "F_FUNC(chpmv,CHPMV)"(char *uplo, int *n, c *alpha, c *ap, c *x, int *incx, c *beta, c *y, int *incy) nogil
+    void _fortran_chpmv "F_FUNC(chpmv,CHPMV)"(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *ap, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy) nogil
 cdef void chpmv(char *uplo, int *n, c *alpha, c *ap, c *x, int *incx, c *beta, c *y, int *incy) nogil:
-    _fortran_chpmv(uplo, n, alpha, ap, x, incx, beta, y, incy)
+    _fortran_chpmv(uplo, n, <npy_complex64*>alpha, <npy_complex64*>ap, <npy_complex64*>x, incx, <npy_complex64*>beta, <npy_complex64*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_chpr "F_FUNC(chpr,CHPR)"(char *uplo, int *n, s *alpha, c *x, int *incx, c *ap) nogil
+    void _fortran_chpr "F_FUNC(chpr,CHPR)"(char *uplo, int *n, s *alpha, npy_complex64 *x, int *incx, npy_complex64 *ap) nogil
 cdef void chpr(char *uplo, int *n, s *alpha, c *x, int *incx, c *ap) nogil:
-    _fortran_chpr(uplo, n, alpha, x, incx, ap)
+    _fortran_chpr(uplo, n, alpha, <npy_complex64*>x, incx, <npy_complex64*>ap)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_chpr2 "F_FUNC(chpr2,CHPR2)"(char *uplo, int *n, c *alpha, c *x, int *incx, c *y, int *incy, c *ap) nogil
+    void _fortran_chpr2 "F_FUNC(chpr2,CHPR2)"(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *y, int *incy, npy_complex64 *ap) nogil
 cdef void chpr2(char *uplo, int *n, c *alpha, c *x, int *incx, c *y, int *incy, c *ap) nogil:
-    _fortran_chpr2(uplo, n, alpha, x, incx, y, incy, ap)
+    _fortran_chpr2(uplo, n, <npy_complex64*>alpha, <npy_complex64*>x, incx, <npy_complex64*>y, incy, <npy_complex64*>ap)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_crotg "F_FUNC(crotg,CROTG)"(c *ca, c *cb, s *c, c *s) nogil
+    void _fortran_crotg "F_FUNC(crotg,CROTG)"(npy_complex64 *ca, npy_complex64 *cb, s *c, npy_complex64 *s) nogil
 cdef void crotg(c *ca, c *cb, s *c, c *s) nogil:
-    _fortran_crotg(ca, cb, c, s)
+    _fortran_crotg(<npy_complex64*>ca, <npy_complex64*>cb, c, <npy_complex64*>s)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cscal "F_FUNC(cscal,CSCAL)"(int *n, c *ca, c *cx, int *incx) nogil
+    void _fortran_cscal "F_FUNC(cscal,CSCAL)"(int *n, npy_complex64 *ca, npy_complex64 *cx, int *incx) nogil
 cdef void cscal(int *n, c *ca, c *cx, int *incx) nogil:
-    _fortran_cscal(n, ca, cx, incx)
+    _fortran_cscal(n, <npy_complex64*>ca, <npy_complex64*>cx, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_csrot "F_FUNC(csrot,CSROT)"(int *n, c *cx, int *incx, c *cy, int *incy, s *c, s *s) nogil
+    void _fortran_csrot "F_FUNC(csrot,CSROT)"(int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy, s *c, s *s) nogil
 cdef void csrot(int *n, c *cx, int *incx, c *cy, int *incy, s *c, s *s) nogil:
-    _fortran_csrot(n, cx, incx, cy, incy, c, s)
+    _fortran_csrot(n, <npy_complex64*>cx, incx, <npy_complex64*>cy, incy, c, s)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_csscal "F_FUNC(csscal,CSSCAL)"(int *n, s *sa, c *cx, int *incx) nogil
+    void _fortran_csscal "F_FUNC(csscal,CSSCAL)"(int *n, s *sa, npy_complex64 *cx, int *incx) nogil
 cdef void csscal(int *n, s *sa, c *cx, int *incx) nogil:
-    _fortran_csscal(n, sa, cx, incx)
+    _fortran_csscal(n, sa, <npy_complex64*>cx, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_cswap "F_FUNC(cswap,CSWAP)"(int *n, c *cx, int *incx, c *cy, int *incy) nogil
+    void _fortran_cswap "F_FUNC(cswap,CSWAP)"(int *n, npy_complex64 *cx, int *incx, npy_complex64 *cy, int *incy) nogil
 cdef void cswap(int *n, c *cx, int *incx, c *cy, int *incy) nogil:
-    _fortran_cswap(n, cx, incx, cy, incy)
+    _fortran_cswap(n, <npy_complex64*>cx, incx, <npy_complex64*>cy, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_csymm "F_FUNC(csymm,CSYMM)"(char *side, char *uplo, int *m, int *n, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc) nogil
+    void _fortran_csymm "F_FUNC(csymm,CSYMM)"(char *side, char *uplo, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *beta, npy_complex64 *c, int *ldc) nogil
 cdef void csymm(char *side, char *uplo, int *m, int *n, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc) nogil:
-    _fortran_csymm(side, uplo, m, n, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_csymm(side, uplo, m, n, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, <npy_complex64*>beta, <npy_complex64*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_csyr2k "F_FUNC(csyr2k,CSYR2K)"(char *uplo, char *trans, int *n, int *k, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc) nogil
+    void _fortran_csyr2k "F_FUNC(csyr2k,CSYR2K)"(char *uplo, char *trans, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *beta, npy_complex64 *c, int *ldc) nogil
 cdef void csyr2k(char *uplo, char *trans, int *n, int *k, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc) nogil:
-    _fortran_csyr2k(uplo, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_csyr2k(uplo, trans, n, k, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, <npy_complex64*>beta, <npy_complex64*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_csyrk "F_FUNC(csyrk,CSYRK)"(char *uplo, char *trans, int *n, int *k, c *alpha, c *a, int *lda, c *beta, c *c, int *ldc) nogil
+    void _fortran_csyrk "F_FUNC(csyrk,CSYRK)"(char *uplo, char *trans, int *n, int *k, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *beta, npy_complex64 *c, int *ldc) nogil
 cdef void csyrk(char *uplo, char *trans, int *n, int *k, c *alpha, c *a, int *lda, c *beta, c *c, int *ldc) nogil:
-    _fortran_csyrk(uplo, trans, n, k, alpha, a, lda, beta, c, ldc)
+    _fortran_csyrk(uplo, trans, n, k, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>beta, <npy_complex64*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ctbmv "F_FUNC(ctbmv,CTBMV)"(char *uplo, char *trans, char *diag, int *n, int *k, c *a, int *lda, c *x, int *incx) nogil
+    void _fortran_ctbmv "F_FUNC(ctbmv,CTBMV)"(char *uplo, char *trans, char *diag, int *n, int *k, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx) nogil
 cdef void ctbmv(char *uplo, char *trans, char *diag, int *n, int *k, c *a, int *lda, c *x, int *incx) nogil:
-    _fortran_ctbmv(uplo, trans, diag, n, k, a, lda, x, incx)
+    _fortran_ctbmv(uplo, trans, diag, n, k, <npy_complex64*>a, lda, <npy_complex64*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ctbsv "F_FUNC(ctbsv,CTBSV)"(char *uplo, char *trans, char *diag, int *n, int *k, c *a, int *lda, c *x, int *incx) nogil
+    void _fortran_ctbsv "F_FUNC(ctbsv,CTBSV)"(char *uplo, char *trans, char *diag, int *n, int *k, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx) nogil
 cdef void ctbsv(char *uplo, char *trans, char *diag, int *n, int *k, c *a, int *lda, c *x, int *incx) nogil:
-    _fortran_ctbsv(uplo, trans, diag, n, k, a, lda, x, incx)
+    _fortran_ctbsv(uplo, trans, diag, n, k, <npy_complex64*>a, lda, <npy_complex64*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ctpmv "F_FUNC(ctpmv,CTPMV)"(char *uplo, char *trans, char *diag, int *n, c *ap, c *x, int *incx) nogil
+    void _fortran_ctpmv "F_FUNC(ctpmv,CTPMV)"(char *uplo, char *trans, char *diag, int *n, npy_complex64 *ap, npy_complex64 *x, int *incx) nogil
 cdef void ctpmv(char *uplo, char *trans, char *diag, int *n, c *ap, c *x, int *incx) nogil:
-    _fortran_ctpmv(uplo, trans, diag, n, ap, x, incx)
+    _fortran_ctpmv(uplo, trans, diag, n, <npy_complex64*>ap, <npy_complex64*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ctpsv "F_FUNC(ctpsv,CTPSV)"(char *uplo, char *trans, char *diag, int *n, c *ap, c *x, int *incx) nogil
+    void _fortran_ctpsv "F_FUNC(ctpsv,CTPSV)"(char *uplo, char *trans, char *diag, int *n, npy_complex64 *ap, npy_complex64 *x, int *incx) nogil
 cdef void ctpsv(char *uplo, char *trans, char *diag, int *n, c *ap, c *x, int *incx) nogil:
-    _fortran_ctpsv(uplo, trans, diag, n, ap, x, incx)
+    _fortran_ctpsv(uplo, trans, diag, n, <npy_complex64*>ap, <npy_complex64*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ctrmm "F_FUNC(ctrmm,CTRMM)"(char *side, char *uplo, char *transa, char *diag, int *m, int *n, c *alpha, c *a, int *lda, c *b, int *ldb) nogil
+    void _fortran_ctrmm "F_FUNC(ctrmm,CTRMM)"(char *side, char *uplo, char *transa, char *diag, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb) nogil
 cdef void ctrmm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, c *alpha, c *a, int *lda, c *b, int *ldb) nogil:
-    _fortran_ctrmm(side, uplo, transa, diag, m, n, alpha, a, lda, b, ldb)
+    _fortran_ctrmm(side, uplo, transa, diag, m, n, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>b, ldb)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ctrmv "F_FUNC(ctrmv,CTRMV)"(char *uplo, char *trans, char *diag, int *n, c *a, int *lda, c *x, int *incx) nogil
+    void _fortran_ctrmv "F_FUNC(ctrmv,CTRMV)"(char *uplo, char *trans, char *diag, int *n, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx) nogil
 cdef void ctrmv(char *uplo, char *trans, char *diag, int *n, c *a, int *lda, c *x, int *incx) nogil:
-    _fortran_ctrmv(uplo, trans, diag, n, a, lda, x, incx)
+    _fortran_ctrmv(uplo, trans, diag, n, <npy_complex64*>a, lda, <npy_complex64*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ctrsm "F_FUNC(ctrsm,CTRSM)"(char *side, char *uplo, char *transa, char *diag, int *m, int *n, c *alpha, c *a, int *lda, c *b, int *ldb) nogil
+    void _fortran_ctrsm "F_FUNC(ctrsm,CTRSM)"(char *side, char *uplo, char *transa, char *diag, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb) nogil
 cdef void ctrsm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, c *alpha, c *a, int *lda, c *b, int *ldb) nogil:
-    _fortran_ctrsm(side, uplo, transa, diag, m, n, alpha, a, lda, b, ldb)
+    _fortran_ctrsm(side, uplo, transa, diag, m, n, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>b, ldb)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ctrsv "F_FUNC(ctrsv,CTRSV)"(char *uplo, char *trans, char *diag, int *n, c *a, int *lda, c *x, int *incx) nogil
+    void _fortran_ctrsv "F_FUNC(ctrsv,CTRSV)"(char *uplo, char *trans, char *diag, int *n, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx) nogil
 cdef void ctrsv(char *uplo, char *trans, char *diag, int *n, c *a, int *lda, c *x, int *incx) nogil:
-    _fortran_ctrsv(uplo, trans, diag, n, a, lda, x, incx)
+    _fortran_ctrsv(uplo, trans, diag, n, <npy_complex64*>a, lda, <npy_complex64*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
     void _fortran_daxpy "F_FUNC(daxpy,DAXPY)"(int *n, d *da, d *dx, int *incx, d *dy, int *incy) nogil
@@ -818,169 +820,169 @@ cdef void xerbla(char *srname, int *info) nogil:
     _fortran_xerbla(srname, info)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zaxpy "F_FUNC(zaxpy,ZAXPY)"(int *n, z *za, z *zx, int *incx, z *zy, int *incy) nogil
+    void _fortran_zaxpy "F_FUNC(zaxpy,ZAXPY)"(int *n, npy_complex128 *za, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy) nogil
 cdef void zaxpy(int *n, z *za, z *zx, int *incx, z *zy, int *incy) nogil:
-    _fortran_zaxpy(n, za, zx, incx, zy, incy)
+    _fortran_zaxpy(n, <npy_complex128*>za, <npy_complex128*>zx, incx, <npy_complex128*>zy, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zcopy "F_FUNC(zcopy,ZCOPY)"(int *n, z *zx, int *incx, z *zy, int *incy) nogil
+    void _fortran_zcopy "F_FUNC(zcopy,ZCOPY)"(int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy) nogil
 cdef void zcopy(int *n, z *zx, int *incx, z *zy, int *incy) nogil:
-    _fortran_zcopy(n, zx, incx, zy, incy)
+    _fortran_zcopy(n, <npy_complex128*>zx, incx, <npy_complex128*>zy, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zdrot "F_FUNC(zdrot,ZDROT)"(int *n, z *cx, int *incx, z *cy, int *incy, d *c, d *s) nogil
+    void _fortran_zdrot "F_FUNC(zdrot,ZDROT)"(int *n, npy_complex128 *cx, int *incx, npy_complex128 *cy, int *incy, d *c, d *s) nogil
 cdef void zdrot(int *n, z *cx, int *incx, z *cy, int *incy, d *c, d *s) nogil:
-    _fortran_zdrot(n, cx, incx, cy, incy, c, s)
+    _fortran_zdrot(n, <npy_complex128*>cx, incx, <npy_complex128*>cy, incy, c, s)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zdscal "F_FUNC(zdscal,ZDSCAL)"(int *n, d *da, z *zx, int *incx) nogil
+    void _fortran_zdscal "F_FUNC(zdscal,ZDSCAL)"(int *n, d *da, npy_complex128 *zx, int *incx) nogil
 cdef void zdscal(int *n, d *da, z *zx, int *incx) nogil:
-    _fortran_zdscal(n, da, zx, incx)
+    _fortran_zdscal(n, da, <npy_complex128*>zx, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zgbmv "F_FUNC(zgbmv,ZGBMV)"(char *trans, int *m, int *n, int *kl, int *ku, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil
+    void _fortran_zgbmv "F_FUNC(zgbmv,ZGBMV)"(char *trans, int *m, int *n, int *kl, int *ku, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy) nogil
 cdef void zgbmv(char *trans, int *m, int *n, int *kl, int *ku, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil:
-    _fortran_zgbmv(trans, m, n, kl, ku, alpha, a, lda, x, incx, beta, y, incy)
+    _fortran_zgbmv(trans, m, n, kl, ku, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>x, incx, <npy_complex128*>beta, <npy_complex128*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zgemm "F_FUNC(zgemm,ZGEMM)"(char *transa, char *transb, int *m, int *n, int *k, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc) nogil
+    void _fortran_zgemm "F_FUNC(zgemm,ZGEMM)"(char *transa, char *transb, int *m, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *beta, npy_complex128 *c, int *ldc) nogil
 cdef void zgemm(char *transa, char *transb, int *m, int *n, int *k, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc) nogil:
-    _fortran_zgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_zgemm(transa, transb, m, n, k, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, <npy_complex128*>beta, <npy_complex128*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zgemv "F_FUNC(zgemv,ZGEMV)"(char *trans, int *m, int *n, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil
+    void _fortran_zgemv "F_FUNC(zgemv,ZGEMV)"(char *trans, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy) nogil
 cdef void zgemv(char *trans, int *m, int *n, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil:
-    _fortran_zgemv(trans, m, n, alpha, a, lda, x, incx, beta, y, incy)
+    _fortran_zgemv(trans, m, n, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>x, incx, <npy_complex128*>beta, <npy_complex128*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zgerc "F_FUNC(zgerc,ZGERC)"(int *m, int *n, z *alpha, z *x, int *incx, z *y, int *incy, z *a, int *lda) nogil
+    void _fortran_zgerc "F_FUNC(zgerc,ZGERC)"(int *m, int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *y, int *incy, npy_complex128 *a, int *lda) nogil
 cdef void zgerc(int *m, int *n, z *alpha, z *x, int *incx, z *y, int *incy, z *a, int *lda) nogil:
-    _fortran_zgerc(m, n, alpha, x, incx, y, incy, a, lda)
+    _fortran_zgerc(m, n, <npy_complex128*>alpha, <npy_complex128*>x, incx, <npy_complex128*>y, incy, <npy_complex128*>a, lda)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zgeru "F_FUNC(zgeru,ZGERU)"(int *m, int *n, z *alpha, z *x, int *incx, z *y, int *incy, z *a, int *lda) nogil
+    void _fortran_zgeru "F_FUNC(zgeru,ZGERU)"(int *m, int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *y, int *incy, npy_complex128 *a, int *lda) nogil
 cdef void zgeru(int *m, int *n, z *alpha, z *x, int *incx, z *y, int *incy, z *a, int *lda) nogil:
-    _fortran_zgeru(m, n, alpha, x, incx, y, incy, a, lda)
+    _fortran_zgeru(m, n, <npy_complex128*>alpha, <npy_complex128*>x, incx, <npy_complex128*>y, incy, <npy_complex128*>a, lda)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zhbmv "F_FUNC(zhbmv,ZHBMV)"(char *uplo, int *n, int *k, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil
+    void _fortran_zhbmv "F_FUNC(zhbmv,ZHBMV)"(char *uplo, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy) nogil
 cdef void zhbmv(char *uplo, int *n, int *k, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil:
-    _fortran_zhbmv(uplo, n, k, alpha, a, lda, x, incx, beta, y, incy)
+    _fortran_zhbmv(uplo, n, k, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>x, incx, <npy_complex128*>beta, <npy_complex128*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zhemm "F_FUNC(zhemm,ZHEMM)"(char *side, char *uplo, int *m, int *n, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc) nogil
+    void _fortran_zhemm "F_FUNC(zhemm,ZHEMM)"(char *side, char *uplo, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *beta, npy_complex128 *c, int *ldc) nogil
 cdef void zhemm(char *side, char *uplo, int *m, int *n, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc) nogil:
-    _fortran_zhemm(side, uplo, m, n, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_zhemm(side, uplo, m, n, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, <npy_complex128*>beta, <npy_complex128*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zhemv "F_FUNC(zhemv,ZHEMV)"(char *uplo, int *n, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil
+    void _fortran_zhemv "F_FUNC(zhemv,ZHEMV)"(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy) nogil
 cdef void zhemv(char *uplo, int *n, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil:
-    _fortran_zhemv(uplo, n, alpha, a, lda, x, incx, beta, y, incy)
+    _fortran_zhemv(uplo, n, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>x, incx, <npy_complex128*>beta, <npy_complex128*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zher "F_FUNC(zher,ZHER)"(char *uplo, int *n, d *alpha, z *x, int *incx, z *a, int *lda) nogil
+    void _fortran_zher "F_FUNC(zher,ZHER)"(char *uplo, int *n, d *alpha, npy_complex128 *x, int *incx, npy_complex128 *a, int *lda) nogil
 cdef void zher(char *uplo, int *n, d *alpha, z *x, int *incx, z *a, int *lda) nogil:
-    _fortran_zher(uplo, n, alpha, x, incx, a, lda)
+    _fortran_zher(uplo, n, alpha, <npy_complex128*>x, incx, <npy_complex128*>a, lda)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zher2 "F_FUNC(zher2,ZHER2)"(char *uplo, int *n, z *alpha, z *x, int *incx, z *y, int *incy, z *a, int *lda) nogil
+    void _fortran_zher2 "F_FUNC(zher2,ZHER2)"(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *y, int *incy, npy_complex128 *a, int *lda) nogil
 cdef void zher2(char *uplo, int *n, z *alpha, z *x, int *incx, z *y, int *incy, z *a, int *lda) nogil:
-    _fortran_zher2(uplo, n, alpha, x, incx, y, incy, a, lda)
+    _fortran_zher2(uplo, n, <npy_complex128*>alpha, <npy_complex128*>x, incx, <npy_complex128*>y, incy, <npy_complex128*>a, lda)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zher2k "F_FUNC(zher2k,ZHER2K)"(char *uplo, char *trans, int *n, int *k, z *alpha, z *a, int *lda, z *b, int *ldb, d *beta, z *c, int *ldc) nogil
+    void _fortran_zher2k "F_FUNC(zher2k,ZHER2K)"(char *uplo, char *trans, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, d *beta, npy_complex128 *c, int *ldc) nogil
 cdef void zher2k(char *uplo, char *trans, int *n, int *k, z *alpha, z *a, int *lda, z *b, int *ldb, d *beta, z *c, int *ldc) nogil:
-    _fortran_zher2k(uplo, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_zher2k(uplo, trans, n, k, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, beta, <npy_complex128*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zherk "F_FUNC(zherk,ZHERK)"(char *uplo, char *trans, int *n, int *k, d *alpha, z *a, int *lda, d *beta, z *c, int *ldc) nogil
+    void _fortran_zherk "F_FUNC(zherk,ZHERK)"(char *uplo, char *trans, int *n, int *k, d *alpha, npy_complex128 *a, int *lda, d *beta, npy_complex128 *c, int *ldc) nogil
 cdef void zherk(char *uplo, char *trans, int *n, int *k, d *alpha, z *a, int *lda, d *beta, z *c, int *ldc) nogil:
-    _fortran_zherk(uplo, trans, n, k, alpha, a, lda, beta, c, ldc)
+    _fortran_zherk(uplo, trans, n, k, alpha, <npy_complex128*>a, lda, beta, <npy_complex128*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zhpmv "F_FUNC(zhpmv,ZHPMV)"(char *uplo, int *n, z *alpha, z *ap, z *x, int *incx, z *beta, z *y, int *incy) nogil
+    void _fortran_zhpmv "F_FUNC(zhpmv,ZHPMV)"(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *ap, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy) nogil
 cdef void zhpmv(char *uplo, int *n, z *alpha, z *ap, z *x, int *incx, z *beta, z *y, int *incy) nogil:
-    _fortran_zhpmv(uplo, n, alpha, ap, x, incx, beta, y, incy)
+    _fortran_zhpmv(uplo, n, <npy_complex128*>alpha, <npy_complex128*>ap, <npy_complex128*>x, incx, <npy_complex128*>beta, <npy_complex128*>y, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zhpr "F_FUNC(zhpr,ZHPR)"(char *uplo, int *n, d *alpha, z *x, int *incx, z *ap) nogil
+    void _fortran_zhpr "F_FUNC(zhpr,ZHPR)"(char *uplo, int *n, d *alpha, npy_complex128 *x, int *incx, npy_complex128 *ap) nogil
 cdef void zhpr(char *uplo, int *n, d *alpha, z *x, int *incx, z *ap) nogil:
-    _fortran_zhpr(uplo, n, alpha, x, incx, ap)
+    _fortran_zhpr(uplo, n, alpha, <npy_complex128*>x, incx, <npy_complex128*>ap)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zhpr2 "F_FUNC(zhpr2,ZHPR2)"(char *uplo, int *n, z *alpha, z *x, int *incx, z *y, int *incy, z *ap) nogil
+    void _fortran_zhpr2 "F_FUNC(zhpr2,ZHPR2)"(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *y, int *incy, npy_complex128 *ap) nogil
 cdef void zhpr2(char *uplo, int *n, z *alpha, z *x, int *incx, z *y, int *incy, z *ap) nogil:
-    _fortran_zhpr2(uplo, n, alpha, x, incx, y, incy, ap)
+    _fortran_zhpr2(uplo, n, <npy_complex128*>alpha, <npy_complex128*>x, incx, <npy_complex128*>y, incy, <npy_complex128*>ap)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zrotg "F_FUNC(zrotg,ZROTG)"(z *ca, z *cb, d *c, z *s) nogil
+    void _fortran_zrotg "F_FUNC(zrotg,ZROTG)"(npy_complex128 *ca, npy_complex128 *cb, d *c, npy_complex128 *s) nogil
 cdef void zrotg(z *ca, z *cb, d *c, z *s) nogil:
-    _fortran_zrotg(ca, cb, c, s)
+    _fortran_zrotg(<npy_complex128*>ca, <npy_complex128*>cb, c, <npy_complex128*>s)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zscal "F_FUNC(zscal,ZSCAL)"(int *n, z *za, z *zx, int *incx) nogil
+    void _fortran_zscal "F_FUNC(zscal,ZSCAL)"(int *n, npy_complex128 *za, npy_complex128 *zx, int *incx) nogil
 cdef void zscal(int *n, z *za, z *zx, int *incx) nogil:
-    _fortran_zscal(n, za, zx, incx)
+    _fortran_zscal(n, <npy_complex128*>za, <npy_complex128*>zx, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zswap "F_FUNC(zswap,ZSWAP)"(int *n, z *zx, int *incx, z *zy, int *incy) nogil
+    void _fortran_zswap "F_FUNC(zswap,ZSWAP)"(int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy) nogil
 cdef void zswap(int *n, z *zx, int *incx, z *zy, int *incy) nogil:
-    _fortran_zswap(n, zx, incx, zy, incy)
+    _fortran_zswap(n, <npy_complex128*>zx, incx, <npy_complex128*>zy, incy)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zsymm "F_FUNC(zsymm,ZSYMM)"(char *side, char *uplo, int *m, int *n, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc) nogil
+    void _fortran_zsymm "F_FUNC(zsymm,ZSYMM)"(char *side, char *uplo, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *beta, npy_complex128 *c, int *ldc) nogil
 cdef void zsymm(char *side, char *uplo, int *m, int *n, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc) nogil:
-    _fortran_zsymm(side, uplo, m, n, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_zsymm(side, uplo, m, n, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, <npy_complex128*>beta, <npy_complex128*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zsyr2k "F_FUNC(zsyr2k,ZSYR2K)"(char *uplo, char *trans, int *n, int *k, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc) nogil
+    void _fortran_zsyr2k "F_FUNC(zsyr2k,ZSYR2K)"(char *uplo, char *trans, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *beta, npy_complex128 *c, int *ldc) nogil
 cdef void zsyr2k(char *uplo, char *trans, int *n, int *k, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc) nogil:
-    _fortran_zsyr2k(uplo, trans, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+    _fortran_zsyr2k(uplo, trans, n, k, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, <npy_complex128*>beta, <npy_complex128*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_zsyrk "F_FUNC(zsyrk,ZSYRK)"(char *uplo, char *trans, int *n, int *k, z *alpha, z *a, int *lda, z *beta, z *c, int *ldc) nogil
+    void _fortran_zsyrk "F_FUNC(zsyrk,ZSYRK)"(char *uplo, char *trans, int *n, int *k, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *beta, npy_complex128 *c, int *ldc) nogil
 cdef void zsyrk(char *uplo, char *trans, int *n, int *k, z *alpha, z *a, int *lda, z *beta, z *c, int *ldc) nogil:
-    _fortran_zsyrk(uplo, trans, n, k, alpha, a, lda, beta, c, ldc)
+    _fortran_zsyrk(uplo, trans, n, k, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>beta, <npy_complex128*>c, ldc)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ztbmv "F_FUNC(ztbmv,ZTBMV)"(char *uplo, char *trans, char *diag, int *n, int *k, z *a, int *lda, z *x, int *incx) nogil
+    void _fortran_ztbmv "F_FUNC(ztbmv,ZTBMV)"(char *uplo, char *trans, char *diag, int *n, int *k, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx) nogil
 cdef void ztbmv(char *uplo, char *trans, char *diag, int *n, int *k, z *a, int *lda, z *x, int *incx) nogil:
-    _fortran_ztbmv(uplo, trans, diag, n, k, a, lda, x, incx)
+    _fortran_ztbmv(uplo, trans, diag, n, k, <npy_complex128*>a, lda, <npy_complex128*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ztbsv "F_FUNC(ztbsv,ZTBSV)"(char *uplo, char *trans, char *diag, int *n, int *k, z *a, int *lda, z *x, int *incx) nogil
+    void _fortran_ztbsv "F_FUNC(ztbsv,ZTBSV)"(char *uplo, char *trans, char *diag, int *n, int *k, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx) nogil
 cdef void ztbsv(char *uplo, char *trans, char *diag, int *n, int *k, z *a, int *lda, z *x, int *incx) nogil:
-    _fortran_ztbsv(uplo, trans, diag, n, k, a, lda, x, incx)
+    _fortran_ztbsv(uplo, trans, diag, n, k, <npy_complex128*>a, lda, <npy_complex128*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ztpmv "F_FUNC(ztpmv,ZTPMV)"(char *uplo, char *trans, char *diag, int *n, z *ap, z *x, int *incx) nogil
+    void _fortran_ztpmv "F_FUNC(ztpmv,ZTPMV)"(char *uplo, char *trans, char *diag, int *n, npy_complex128 *ap, npy_complex128 *x, int *incx) nogil
 cdef void ztpmv(char *uplo, char *trans, char *diag, int *n, z *ap, z *x, int *incx) nogil:
-    _fortran_ztpmv(uplo, trans, diag, n, ap, x, incx)
+    _fortran_ztpmv(uplo, trans, diag, n, <npy_complex128*>ap, <npy_complex128*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ztpsv "F_FUNC(ztpsv,ZTPSV)"(char *uplo, char *trans, char *diag, int *n, z *ap, z *x, int *incx) nogil
+    void _fortran_ztpsv "F_FUNC(ztpsv,ZTPSV)"(char *uplo, char *trans, char *diag, int *n, npy_complex128 *ap, npy_complex128 *x, int *incx) nogil
 cdef void ztpsv(char *uplo, char *trans, char *diag, int *n, z *ap, z *x, int *incx) nogil:
-    _fortran_ztpsv(uplo, trans, diag, n, ap, x, incx)
+    _fortran_ztpsv(uplo, trans, diag, n, <npy_complex128*>ap, <npy_complex128*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ztrmm "F_FUNC(ztrmm,ZTRMM)"(char *side, char *uplo, char *transa, char *diag, int *m, int *n, z *alpha, z *a, int *lda, z *b, int *ldb) nogil
+    void _fortran_ztrmm "F_FUNC(ztrmm,ZTRMM)"(char *side, char *uplo, char *transa, char *diag, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb) nogil
 cdef void ztrmm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, z *alpha, z *a, int *lda, z *b, int *ldb) nogil:
-    _fortran_ztrmm(side, uplo, transa, diag, m, n, alpha, a, lda, b, ldb)
+    _fortran_ztrmm(side, uplo, transa, diag, m, n, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>b, ldb)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ztrmv "F_FUNC(ztrmv,ZTRMV)"(char *uplo, char *trans, char *diag, int *n, z *a, int *lda, z *x, int *incx) nogil
+    void _fortran_ztrmv "F_FUNC(ztrmv,ZTRMV)"(char *uplo, char *trans, char *diag, int *n, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx) nogil
 cdef void ztrmv(char *uplo, char *trans, char *diag, int *n, z *a, int *lda, z *x, int *incx) nogil:
-    _fortran_ztrmv(uplo, trans, diag, n, a, lda, x, incx)
+    _fortran_ztrmv(uplo, trans, diag, n, <npy_complex128*>a, lda, <npy_complex128*>x, incx)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ztrsm "F_FUNC(ztrsm,ZTRSM)"(char *side, char *uplo, char *transa, char *diag, int *m, int *n, z *alpha, z *a, int *lda, z *b, int *ldb) nogil
+    void _fortran_ztrsm "F_FUNC(ztrsm,ZTRSM)"(char *side, char *uplo, char *transa, char *diag, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb) nogil
 cdef void ztrsm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, z *alpha, z *a, int *lda, z *b, int *ldb) nogil:
-    _fortran_ztrsm(side, uplo, transa, diag, m, n, alpha, a, lda, b, ldb)
+    _fortran_ztrsm(side, uplo, transa, diag, m, n, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>b, ldb)
 
 cdef extern from "_blas_subroutines.h":
-    void _fortran_ztrsv "F_FUNC(ztrsv,ZTRSV)"(char *uplo, char *trans, char *diag, int *n, z *a, int *lda, z *x, int *incx) nogil
+    void _fortran_ztrsv "F_FUNC(ztrsv,ZTRSV)"(char *uplo, char *trans, char *diag, int *n, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx) nogil
 cdef void ztrsv(char *uplo, char *trans, char *diag, int *n, z *a, int *lda, z *x, int *incx) nogil:
-    _fortran_ztrsv(uplo, trans, diag, n, a, lda, x, incx)
+    _fortran_ztrsv(uplo, trans, diag, n, <npy_complex128*>a, lda, <npy_complex128*>x, incx)
 
 
 # Python-accessible wrappers for testing:

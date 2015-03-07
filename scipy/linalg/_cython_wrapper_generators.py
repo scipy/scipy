@@ -16,10 +16,10 @@ fortran_types = {'int':'integer',
                  'bint':'logical'}
 
 c_types = {'int':'int',
-           'c':'_scipy_linalg_float_complex',
+           'c':'npy_complex64',
            'd':'double',
            's':'float',
-           'z':'_scipy_linalg_double_complex',
+           'z':'npy_complex128',
            'char':'char',
            'bint':'int',
            'cselect1':'_cselect1',
@@ -34,19 +34,9 @@ c_types = {'int':'int',
 def arg_names_and_types(args):
     return zip(*[arg.split(' *') for arg in args.split(', ')])
 
-pyx_func_template = """ctypedef void _w{name}_t({ret_type} *out, {args}) nogil
-cdef extern from "{header_name}":
-    void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {args}) nogil
-cdef {ret_type} _wrap_{name}({args}) nogil:
-    cdef {ret_type} out
-    _fortran_{name}(&out, {argnames})
-    return out
-cdef {name}_t *{name}_f = &_wrap_{name}
-"""
-
 pyx_func_template = """
 cdef extern from "{header_name}":
-    void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {args}) nogil
+    void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {fort_args}) nogil
 cdef {ret_type} {name}({args}) nogil:
     cdef {ret_type} out
     _fortran_{name}(&out, {argnames})
@@ -62,29 +52,41 @@ def pyx_decl_func(name, ret_type, args, header_name):
     if ret_type in argnames:
         argnames = [n if n != ret_type else ret_type + '_' for n in argnames]
         args = ', '.join([' *'.join([n, t]) for n, t in zip(argtypes, argnames)])
+    argtypes = [(t if t != 'c' else 'npy_complex64') if t != 'z' else 'npy_complex128'
+                for t in argtypes]
+    fort_args = ', '.join([' *'.join([n, t])
+                           for n, t in zip(argtypes, argnames)])
+    argnames = [n if t != 'npy_complex64' else '<npy_complex64*>' + n
+                for n, t in zip(argnames, argtypes)]
+    argnames = [n if t != 'npy_complex128' else '<npy_complex128*>' + n
+                for n, t in zip(argnames, argtypes)]
     argnames = ', '.join(argnames)
     c_ret_type = c_types[ret_type]
     return pyx_func_template.format(name=name, upname=name.upper(), args=args,
-                                    ret_type=ret_type, c_ret_type=c_ret_type,
-                                    argnames=argnames, header_name=header_name)
+                                    fort_args=fort_args, ret_type=ret_type,
+                                    c_ret_type=c_ret_type, argnames=argnames,
+                                    header_name=header_name)
 
 pyx_sub_template = """cdef extern from "{header_name}":
-    void _fortran_{name} "F_FUNC({name},{upname})"({args}) nogil
-cdef {name}_t *{name}_f = &_fortran_{name}
-"""
-
-pyx_sub_template = """cdef extern from "{header_name}":
-    void _fortran_{name} "F_FUNC({name},{upname})"({args}) nogil
+    void _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
 cdef void {name}({args}) nogil:
     _fortran_{name}({argnames})
 """
 
 def pyx_decl_sub(name, args, header_name):
     argtypes, argnames = arg_names_and_types(args)
+    argtypes = [(t if t != 'c' else 'npy_complex64') if t != 'z' else 'npy_complex128'
+                for t in argtypes]
+    fort_args = ', '.join([' *'.join([n, t])
+                           for n, t in zip(argtypes, argnames)])
+    argnames = [n if t != 'npy_complex64' else '<npy_complex64*>' + n
+                for n, t in zip(argnames, argtypes)]
+    argnames = [n if t != 'npy_complex128' else '<npy_complex128*>' + n
+                for n, t in zip(argnames, argtypes)]
     argnames = ', '.join(argnames)
     return pyx_sub_template.format(name=name, upname=name.upper(),
-                                   args=args, argnames=argnames,
-                                   header_name=header_name)
+                                   args=args, fort_args=fort_args,
+                                   argnames=argnames, header_name=header_name)
 
 blas_pyx_preamble = '''# cython: boundscheck = False
 # cython: wraparound = False
@@ -107,6 +109,8 @@ Raw function pointers (Fortran-style pointer arguments):
 
 cdef extern from "fortran_defs.h":
     pass
+
+from numpy cimport npy_complex64, npy_complex128
 
 '''
 
@@ -138,6 +142,8 @@ Raw function pointers (Fortran-style pointer arguments):
 
 cdef extern from "fortran_defs.h":
     pass
+
+from numpy cimport npy_complex64, npy_complex128
 
 '''
 
@@ -483,64 +489,18 @@ def c_sub_decl(name, return_type, args):
 c_preamble = """#ifndef SCIPY_LINALG_{lib}_FORTRAN_WRAPPERS_H
 #define SCIPY_LINALG_{lib}_FORTRAN_WRAPPERS_H
 #include "fortran_defs.h"
-"""
-
-# Mimic the complex declarations from cython
-complex_decls = """
-// Mimic the complex number definitions from cython.
-#if !defined(_SCIPY_LINALG_CCOMPLEX)
-  #if defined(__cplusplus)
-    #define _SCIPY_LINALG_CCOMPLEX 1
-  #elif defined(_Complex_I)
-    #define _SCIPY_LINALG_CCOMPLEX 1
-  #else
-    #define _SCIPY_LINALG_CCOMPLEX 0
-  #endif
-#endif
-
-#if _SCIPY_LINALG_CCOMPLEX
-  #ifdef __cplusplus
-    #include <complex>
-  #else
-    #include <complex.h>
-  #endif
-#endif
-
-#if _SCIPY_LINALG_CCOMPLEX && !defined(__cplusplus) && defined(__sun__) && defined(__GNUC__)
-  #undef _Complex_I
-  #define _Complex_I 1.0fj
-#endif
-
-#if _SCIPY_LINALG_CCOMPLEX
-  #ifdef __cplusplus
-    typedef ::std::complex< float > _scipy_linalg_float_complex;
-  #else
-    typedef float _Complex _scipy_linalg_float_complex;
-  #endif
-#else
-    typedef struct { float real, imag; } _scipy_linalg_float_complex;
-#endif
-
-#if _SCIPY_LINALG_CCOMPLEX
-  #ifdef __cplusplus
-    typedef ::std::complex< double > _scipy_linalg_double_complex;
-  #else
-    typedef double _Complex _scipy_linalg_double_complex;
-  #endif
-#else
-    typedef struct { double real, imag; } _scipy_linalg_double_complex;
-#endif
+#include "numpy/arrayobject.h"
 """
 
 lapack_decls = """
-typedef int (*_cselect1)(_scipy_linalg_float_complex*);
-typedef int (*_cselect2)(_scipy_linalg_float_complex*, _scipy_linalg_float_complex*);
+typedef int (*_cselect1)(npy_complex64*);
+typedef int (*_cselect2)(npy_complex64*, npy_complex64*);
 typedef int (*_dselect2)(double*, double*);
 typedef int (*_dselect3)(double*, double*, double*);
 typedef int (*_sselect2)(float*, float*);
 typedef int (*_sselect3)(float*, float*, float*);
-typedef int (*_zselect1)(_scipy_linalg_double_complex*);
-typedef int (*_zselect2)(_scipy_linalg_double_complex*, _scipy_linalg_double_complex*);
+typedef int (*_zselect1)(npy_complex128*);
+typedef int (*_zselect2)(npy_complex128*, npy_complex128*);
 """
 
 cpp_guard = """
@@ -561,10 +521,9 @@ def generate_c_header(func_sigs, sub_sigs, all_sigs, lib_name):
     funcs = "".join(c_func_decl(*sig) for sig in func_sigs)
     subs = "\n" + "".join(c_sub_decl(*sig) for sig in sub_sigs)
     if lib_name == 'LAPACK':
-        preamble = (c_preamble.format(lib=lib_name) +
-                    complex_decls + lapack_decls)
+        preamble = (c_preamble.format(lib=lib_name) + lapack_decls)
     else:
-        preamble = c_preamble.format(lib=lib_name) + complex_decls
+        preamble = c_preamble.format(lib=lib_name)
     return "".join([preamble, cpp_guard, funcs, subs, c_end])
 
 def split_signature(sig):
