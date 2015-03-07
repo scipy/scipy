@@ -58,10 +58,9 @@ def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None,
     signatures = []
     for filename in files:
         name = filename.split('\\')[-1][:-2]
-        if name in exclusions:
-            continue
-        # Exclude auxiliary routines that are not explicitly included.
         if name[1:3] == 'la' and name[1:] not in auxiliaries:
+            continue
+        if name in exclusions:
             continue
         signatures.append(make_signature(filename))
     if manual_wrappers is not None:
@@ -90,6 +89,7 @@ void dgeesx(char *jobvs, char *sort, dselect2 *select, char *sense, int *n, d *a
 void dgges(char *jobvsl, char *jobvsr, char *sort, dselect3 *selctg, int *n, d *a, int *lda, d *b, int *ldb, int *sdim, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *work, int *lwork, bint *bwork, int *info)
 void dggesx(char *jobvsl, char *jobvsr, char *sort, dselect3 *selctg, char *sense, int *n, d *a, int *lda, d *b, int *ldb, int *sdim, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *rconde, d *rcondv, d *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info)
 d dlamch(char *cmach)
+void ilaver(int *vers_major, int *vers_minor, int *vers_patch)
 void sgees(char *jobvs, char *sort, sselect2 *select, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *work, int *lwork, bint *bwork, int *info)
 void sgeesx(char *jobvs, char *sort, sselect2 *select, char *sense, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info)
 void sgges(char *jobvsl, char *jobvsr, char *sort, sselect3 *selctg, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *work, int *lwork, bint *bwork, int *info)
@@ -112,12 +112,17 @@ if __name__ == '__main__':
         auxiliaries = ['laenv', 'lacon', 'lacn2', 'laswp', 'larf', 'larz',
                        'lauum', 'lacon', 'langb', 'lange', 'langt', 'lanhb',
                        'lanhe', 'lanhp', 'lanhs', 'lanht', 'lansb', 'lansp',
-                       'lanst', 'lansy', 'lantb', 'lantp', 'lantr', 'lanv2']
+                       'lanst', 'lansy', 'lantb', 'lantp', 'lantr', 'lanv2',
+                       'lartg', 'larfg', 'lasd4']
         # Exclude all routines that do not have consistent interfaces from
         # LAPACK 3.1.0 through 3.5.0.
         # Also exclude routines with string arguments to avoid
         # compatibility woes with different standards for string arguments.
+        # Exclude sisnan and slaneg since they aren't currently included in
+        # The ABI compatibility wrappers.
         exclusions = ['sisnan', 'csrot', 'zdrot', 'ilaenv', 'iparmq', 'lsamen',
-                      'xerbla', 'zcgesv']
+                      'xerbla', 'zcgesv', 'dlaisnan', 'slaisnan', 'dlazq3',
+                      'dlazq4', 'slazq3', 'slazq4', 'dlasq3', 'dlasq4',
+                      'slasq3', 'slasq4', 'dlasq5', 'slasq5', 'slaneg']
         sigs_from_dir(src_dir, outfile, manual_wrappers=lapack_manual_wrappers,
                       exclusions=exclusions, auxiliaries=auxiliaries)

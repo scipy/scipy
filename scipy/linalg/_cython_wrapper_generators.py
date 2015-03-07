@@ -64,6 +64,8 @@ def pyx_decl_func(name, ret_type, args, header_name):
     # the previous typedef and Cython compilation fails.
     if ret_type in argnames:
         argnames = [n if n != ret_type else ret_type + '_' for n in argnames]
+        argnames = [n if n not in ['lambda', 'in'] else n + '_'
+                    for n in argnames]
         args = ', '.join([' *'.join([n, t])
                           for n, t in zip(argtypes, argnames)])
     argtypes = [npy_types.get(t, t) for t in argtypes]
@@ -72,6 +74,7 @@ def pyx_decl_func(name, ret_type, args, header_name):
     argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
     argnames = ', '.join(argnames)
     c_ret_type = c_types[ret_type]
+    args = args.replace('lambda', 'lambda_')
     return pyx_func_template.format(name=name, upname=name.upper(), args=args,
                                     fort_args=fort_args, ret_type=ret_type,
                                     c_ret_type=c_ret_type, argnames=argnames,
@@ -86,10 +89,12 @@ cdef void {name}({args}) nogil:
 def pyx_decl_sub(name, args, header_name):
     argtypes, argnames = arg_names_and_types(args)
     argtypes = [npy_types.get(t, t) for t in argtypes]
+    argnames = [n if n not in ['lambda', 'in'] else n + '_' for n in argnames]
     fort_args = ', '.join([' *'.join([n, t])
                            for n, t in zip(argtypes, argnames)])
     argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
     argnames = ', '.join(argnames)
+    args = args.replace('*lambda,', '*lambda_,').replace('*in,', '*in_,')
     return pyx_sub_template.format(name=name, upname=name.upper(),
                                    args=args, fort_args=fort_args,
                                    argnames=argnames, header_name=header_name)
@@ -409,6 +414,7 @@ pxd_template = """cdef {ret_type} {name}({args}) nogil
 """
 
 def pxd_decl(name, ret_type, args):
+    args = args.replace('lambda', 'lambda_').replace('*in,', '*in_,')
     return pxd_template.format(name=name, ret_type=ret_type, args=args)
 
 blas_pxd_preamble = """ctypedef float s
@@ -453,13 +459,14 @@ fortran_template = """      subroutine {name}wrp(ret, {argnames})
 """
 
 dims = {'work':'(*)', 'ab':'(ldab,*)', 'a':'(lda,*)', 'dl':'(*)', 'd':'(*)',
-        'du':'(*)', 'ap':'(*)', 'e':'(*)'}
+        'du':'(*)', 'ap':'(*)', 'e':'(*)', 'lld':'(*)'}
         
 
 def process_fortran_name(name, funcname):
     if 'inc' in name:
         return name
-    if 'x' in name or 'y' in name:
+    xy_exclusions = ['ladiv', 'lapy2', 'lapy3']
+    if ('x' in name or 'y' in name) and funcname[1:] not in xy_exclusions:
         return name + '(n)'
     if name in dims:
         return name + dims[name]
