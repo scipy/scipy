@@ -128,7 +128,6 @@ Raw function pointers (Fortran-style pointer arguments):
 - strmv
 - strsm
 - strsv
-- xerbla
 - zaxpy
 - zcopy
 - zdotc
@@ -813,11 +812,6 @@ cdef extern from "_blas_subroutines.h":
     void _fortran_strsv "F_FUNC(strsv,STRSV)"(char *uplo, char *trans, char *diag, int *n, s *a, int *lda, s *x, int *incx) nogil
 cdef void strsv(char *uplo, char *trans, char *diag, int *n, s *a, int *lda, s *x, int *incx) nogil:
     _fortran_strsv(uplo, trans, diag, n, a, lda, x, incx)
-
-cdef extern from "_blas_subroutines.h":
-    void _fortran_xerbla "F_FUNC(xerbla,XERBLA)"(char *srname, int *info) nogil
-cdef void xerbla(char *srname, int *info) nogil:
-    _fortran_xerbla(srname, info)
 
 cdef extern from "_blas_subroutines.h":
     void _fortran_zaxpy "F_FUNC(zaxpy,ZAXPY)"(int *n, npy_complex128 *za, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy) nogil

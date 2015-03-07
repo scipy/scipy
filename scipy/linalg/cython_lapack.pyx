@@ -10,11 +10,9 @@ Usable from Cython via::
     cimport scipy.linalg.cython_lapack
 
 This module provides Cython-level wrappers for all primary routines included
-in LAPACK 3.1.0 and some of the fixed-api auxiliary routines.
-
-The signature for dcgesv changed from LAPACK 3.1.1 to LAPACK 3.2.0.
-The version here is the newer of the two since it matches the signature
-from later versions of LAPACK and the version in the CLAPACK included in OSX.
+in LAPACK 3.1.0 except for `zcgesv` since its interface is not consistent
+from LAPACK 3.1.0 to 3.5.0. It also provides some of the
+fixed-api auxiliary routines.
 
 Raw function pointers (Fortran-style pointer arguments):
 
@@ -743,9 +741,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - strtrs
 - stzrqf
 - stzrzf
-- xerbla
 - zbdsqr
-- zcgesv
 - zdrscl
 - zgbbrd
 - zgbcon
@@ -4884,19 +4880,9 @@ cdef void stzrzf(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, in
     _fortran_stzrzf(m, n, a, lda, tau, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
-    void _fortran_xerbla "F_FUNC(xerbla,XERBLA)"(char *srname, int *info) nogil
-cdef void xerbla(char *srname, int *info) nogil:
-    _fortran_xerbla(srname, info)
-
-cdef extern from "_lapack_subroutines.h":
     void _fortran_zbdsqr "F_FUNC(zbdsqr,ZBDSQR)"(char *uplo, int *n, int *ncvt, int *nru, int *ncc, d *d, d *e, npy_complex128 *vt, int *ldvt, npy_complex128 *u, int *ldu, npy_complex128 *c, int *ldc, d *rwork, int *info) nogil
 cdef void zbdsqr(char *uplo, int *n, int *ncvt, int *nru, int *ncc, d *d, d *e, z *vt, int *ldvt, z *u, int *ldu, z *c, int *ldc, d *rwork, int *info) nogil:
     _fortran_zbdsqr(uplo, n, ncvt, nru, ncc, d, e, <npy_complex128*>vt, ldvt, <npy_complex128*>u, ldu, <npy_complex128*>c, ldc, rwork, info)
-
-cdef extern from "_lapack_subroutines.h":
-    void _fortran_zcgesv "F_FUNC(zcgesv,ZCGESV)"(int *n, int *nrhs, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, npy_complex128 *work, npy_complex64 *swork, d *rwork, int *iter, int *info) nogil
-cdef void zcgesv(int *n, int *nrhs, z *a, int *lda, int *ipiv, z *b, int *ldb, z *x, int *ldx, z *work, c *swork, d *rwork, int *iter, int *info) nogil:
-    _fortran_zcgesv(n, nrhs, <npy_complex128*>a, lda, ipiv, <npy_complex128*>b, ldb, <npy_complex128*>x, ldx, <npy_complex128*>work, <npy_complex64*>swork, rwork, iter, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zdrscl "F_FUNC(zdrscl,ZDRSCL)"(int *n, d *sa, npy_complex128 *sx, int *incx) nogil

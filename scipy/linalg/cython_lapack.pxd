@@ -1467,11 +1467,7 @@ cdef void stzrqf(int *m, int *n, s *a, int *lda, s *tau, int *info) nogil
 
 cdef void stzrzf(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil
 
-cdef void xerbla(char *srname, int *info) nogil
-
 cdef void zbdsqr(char *uplo, int *n, int *ncvt, int *nru, int *ncc, d *d, d *e, z *vt, int *ldvt, z *u, int *ldu, z *c, int *ldc, d *rwork, int *info) nogil
-
-cdef void zcgesv(int *n, int *nrhs, z *a, int *lda, int *ipiv, z *b, int *ldb, z *x, int *ldx, z *work, c *swork, d *rwork, int *iter, int *info) nogil
 
 cdef void zdrscl(int *n, d *sa, z *sx, int *incx) nogil
 

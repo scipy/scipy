@@ -232,8 +232,6 @@ cdef void strsm(char *side, char *uplo, char *transa, char *diag, int *m, int *n
 
 cdef void strsv(char *uplo, char *trans, char *diag, int *n, s *a, int *lda, s *x, int *incx) nogil
 
-cdef void xerbla(char *srname, int *info) nogil
-
 cdef void zaxpy(int *n, z *za, z *zx, int *incx, z *zy, int *incy) nogil
 
 cdef void zcopy(int *n, z *zx, int *incx, z *zy, int *incy) nogil

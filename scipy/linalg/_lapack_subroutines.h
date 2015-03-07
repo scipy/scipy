@@ -759,9 +759,7 @@ void F_FUNC(strtri,STRTRI)(char *uplo, char *diag, int *n, float *a, int *lda, i
 void F_FUNC(strtrs,STRTRS)(char *uplo, char *trans, char *diag, int *n, int *nrhs, float *a, int *lda, float *b, int *ldb, int *info);
 void F_FUNC(stzrqf,STZRQF)(int *m, int *n, float *a, int *lda, float *tau, int *info);
 void F_FUNC(stzrzf,STZRZF)(int *m, int *n, float *a, int *lda, float *tau, float *work, int *lwork, int *info);
-void F_FUNC(xerbla,XERBLA)(char *srname, int *info);
 void F_FUNC(zbdsqr,ZBDSQR)(char *uplo, int *n, int *ncvt, int *nru, int *ncc, double *d, double *e, npy_complex128 *vt, int *ldvt, npy_complex128 *u, int *ldu, npy_complex128 *c, int *ldc, double *rwork, int *info);
-void F_FUNC(zcgesv,ZCGESV)(int *n, int *nrhs, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, npy_complex128 *work, npy_complex64 *swork, double *rwork, int *iter, int *info);
 void F_FUNC(zdrscl,ZDRSCL)(int *n, double *sa, npy_complex128 *sx, int *incx);
 void F_FUNC(zgbbrd,ZGBBRD)(char *vect, int *m, int *n, int *ncc, int *kl, int *ku, npy_complex128 *ab, int *ldab, double *d, double *e, npy_complex128 *q, int *ldq, npy_complex128 *pt, int *ldpt, npy_complex128 *c, int *ldc, npy_complex128 *work, double *rwork, int *info);
 void F_FUNC(zgbcon,ZGBCON)(char *norm, int *n, int *kl, int *ku, npy_complex128 *ab, int *ldab, int *ipiv, double *anorm, double *rcond, npy_complex128 *work, double *rwork, int *info);

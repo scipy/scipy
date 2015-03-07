@@ -31,9 +31,6 @@ def get_type(info, arg):
 def make_signature(filename):
     info = crackfortran.crackfortran(filename)[0]
     name = info['name']
-    if '_' in name:
-        info = info['body']
-        name = info['name']
     if info['block'] == 'subroutine':
         return_type = 'void'
     else:
@@ -98,7 +95,6 @@ void sgeesx(char *jobvs, char *sort, sselect2 *select, char *sense, int *n, s *a
 void sgges(char *jobvsl, char *jobvsr, char *sort, sselect3 *selctg, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *work, int *lwork, bint *bwork, int *info)
 void sggesx(char *jobvsl, char *jobvsr, char *sort, sselect3 *selctg, char *sense, int *n, s *a, int *lda, s *b, int *ldb, int *sdim, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *liwork, bint *bwork, int *info)
 s slamch(char *cmach)
-void zcgesv(int *n, int *nrhs, z *a, int *lda, int *ipiv, z *b, int *ldb, z *x, int *ldx, z *work, c *swork, d *rwork, int *iter, int *info)
 void zgees(char *jobvs, char *sort, zselect1 *select, int *n, z *a, int *lda, int *sdim, z *w, z *vs, int *ldvs, z *work, int *lwork, d *rwork, bint *bwork, int *info)
 void zgeesx(char *jobvs, char *sort, zselect1 *select, char *sense, int *n, z *a, int *lda, int *sdim, z *w, z *vs, int *ldvs, d *rconde, d *rcondv, z *work, int *lwork, d *rwork, bint *bwork, int *info)
 void zgges(char *jobvsl, char *jobvsr, char *sort, zselect2 *selctg, int *n, z *a, int *lda, z *b, int *ldb, int *sdim, z *alpha, z *beta, z *vsl, int *ldvsl, z *vsr, int *ldvsr, z *work, int *lwork, d *rwork, bint *bwork, int *info)
@@ -110,13 +106,18 @@ if __name__ == '__main__':
     # Exclude scabs and sisnan since they aren't currently included
     # in the scipy-specific ABI wrappers.
     if libname.lower() == 'blas':
-        sigs_from_dir(src_dir, outfile, exclusions=['scabs1'])
+        sigs_from_dir(src_dir, outfile, exclusions=['scabs1', 'xerbla'])
     elif libname.lower() == 'lapack':
         # Auxiliary routines are excluded unless explicitly included.
         auxiliaries = ['laenv', 'lacon', 'lacn2', 'laswp', 'larf', 'larz',
                        'lauum', 'lacon', 'langb', 'lange', 'langt', 'lanhb',
                        'lanhe', 'lanhp', 'lanhs', 'lanht', 'lansb', 'lansp',
                        'lanst', 'lansy', 'lantb', 'lantp', 'lantr', 'lanv2']
-        exclusions = ['sisnan', 'csrot', 'zdrot', 'ilaenv', 'iparmq', 'lsamen']
+        # Exclude all routines that do not have consistent interfaces from
+        # LAPACK 3.1.0 through 3.5.0.
+        # Also exclude routines with string arguments to avoid
+        # compatibility woes with different standards for string arguments.
+        exclusions = ['sisnan', 'csrot', 'zdrot', 'ilaenv', 'iparmq', 'lsamen',
+                      'xerbla', 'zcgesv']
         sigs_from_dir(src_dir, outfile, manual_wrappers=lapack_manual_wrappers,
                       exclusions=exclusions, auxiliaries=auxiliaries)

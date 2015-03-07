@@ -126,7 +126,6 @@ void F_FUNC(strmm,STRMM)(char *side, char *uplo, char *transa, char *diag, int *
 void F_FUNC(strmv,STRMV)(char *uplo, char *trans, char *diag, int *n, float *a, int *lda, float *x, int *incx);
 void F_FUNC(strsm,STRSM)(char *side, char *uplo, char *transa, char *diag, int *m, int *n, float *alpha, float *a, int *lda, float *b, int *ldb);
 void F_FUNC(strsv,STRSV)(char *uplo, char *trans, char *diag, int *n, float *a, int *lda, float *x, int *incx);
-void F_FUNC(xerbla,XERBLA)(char *srname, int *info);
 void F_FUNC(zaxpy,ZAXPY)(int *n, npy_complex128 *za, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy);
 void F_FUNC(zcopy,ZCOPY)(int *n, npy_complex128 *zx, int *incx, npy_complex128 *zy, int *incy);
 void F_FUNC(zdrot,ZDROT)(int *n, npy_complex128 *cx, int *incx, npy_complex128 *cy, int *incy, double *c, double *s);

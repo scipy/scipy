@@ -114,7 +114,6 @@ void strmm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, s *
 void strmv(char *uplo, char *trans, char *diag, int *n, s *a, int *lda, s *x, int *incx)
 void strsm(char *side, char *uplo, char *transa, char *diag, int *m, int *n, s *alpha, s *a, int *lda, s *b, int *ldb)
 void strsv(char *uplo, char *trans, char *diag, int *n, s *a, int *lda, s *x, int *incx)
-void xerbla(char *srname, int *info)
 void zaxpy(int *n, z *za, z *zx, int *incx, z *zy, int *incy)
 void zcopy(int *n, z *zx, int *incx, z *zy, int *incy)
 z zdotc(int *n, z *zx, int *incx, z *zy, int *incy)
