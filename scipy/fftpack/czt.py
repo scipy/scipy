@@ -51,9 +51,9 @@ class CZT:
     around a spiral with exponentially increasing radius.  Regardless,
     angle will increase linearly.
 
-    The chirp-z transform can be faster than an equivalent fft with
+    The chirp-z transform can be faster than an equivalent FFT with
     zero padding.  Try it with your own array sizes to see.  It is
-    theoretically faster for large prime fourier transforms, but not
+    theoretically faster for large prime Fourier transforms, but not
     in practice.
 
     The chirp-z transform is considerably less precise than the
@@ -61,7 +61,7 @@ class CZT:
     from the direct transform rather than the on the order of 1e-15 as
     seen with zero-padding.
 
-    See zoomfft for a friendlier interface to partial fft calculations.
+    See zoomfft for a friendlier interface to partial FFT calculations.
     """
     def __init__(self, n, m=None, w=1, a=1):
         """
@@ -71,16 +71,17 @@ class CZT:
         ----------
         n : int
           The size of the signal
-        m : int
+        m : int, optional
           The number of points desired.  The default is the length of
           the input data.
-        a : complex
-          The starting point in the complex plane.  The default is 1.
-        w : complex or float
+        w : complex or float, optional
           If w is complex, it is the ratio between points in each step.
-          If w is float, it serves as a frequency scaling factor. for instance
-          when assigning w=0.5, the result FT will span half of frequncy range
-          (that fft would result) at half of the frequncy step size.
+          If w is float, it serves as a frequency scaling factor. For instance
+          when assigning w=0.5, the result FT will span half of the
+          frequency range (that FFT would result) at half of the frequency
+          step size.
+        a : complex, optional
+          The starting point in the complex plane.  The default is 1.
 
         Returns:
         --------
@@ -111,7 +112,7 @@ class CZT:
         ----------
         x : array
           The signal to transform.
-        axis : int
+        axis : int, optional
           Array dimension to operate over.  The default is the final
           dimension.
 
@@ -158,11 +159,11 @@ class ZoomFFT(CZT):
         ----------
         n : int
           size of the signal
-        m : int
-          size of the output
-        f1, f2 : float
+        f1, f2 : float, optional
           start and end frequencies; if f2 is not specified, use 0 to f1
-        Fs : float
+        m : int, optional
+          size of the output
+        Fs : float, optional
           sampling frequency (default=2)
 
         Returns:
@@ -199,12 +200,12 @@ class ScaledFFT(CZT):
 
     def __init__(self, n, m=None, scale=1.0):
         """
-        Scaled fft transform.
+        Scaled FFT transform.
 
-        Similar to fft, where the frequency range is scaled and divided
+        Similar to FFT, where the frequency range is scaled and divided
         into m-1 equal steps.  Like the FFT, frequencies are arranged from
         0 to scale*Fs/2-delta followed by -scale*Fs/2 to -delta, where delta
-        is the step size scale*Fs/m for sampling frequence Fs. The intended
+        is the step size scale*Fs/m for sampling frequency Fs. The intended
         use is in a convolution of two signals, each has its own sampling step.
 
         This is equivalent to:
@@ -225,10 +226,10 @@ class ScaledFFT(CZT):
         ----------
         n : int
           Size of the signal
-        m : int
+        m : int, optional
           The size of the output.
           Default: m=n
-        scale : float
+        scale : float, optional
           Frequency scaling factor.
           Default: scale=1.0
 
@@ -259,11 +260,11 @@ def scaledfft(x, m=None, scale=1.0, axis=-1):
     ----------
     x : array
         input array
-    m : int
+    m : int, optional
         The length of the output signal
-    scale : float
+    scale : float, optional
         A frequency scaling factor
-    axis : int
+    axis : int, optional
         The array dimension to operate over.  The default is the
         final dimension.
 
@@ -284,15 +285,15 @@ def czt(x, m=None, w=1.0, a=1, axis=-1):
     ----------
     x : array
         The set of data to transform.
-    m : int
+    m : int, optional
         The number of points desired. Default is the length of the input data.
-    a : complex
-        The starting point in the complex plane.  Default is 1.
-    w : complex or float
+    w : complex or float, optional
         If w is complex, it is the ratio between points in each step.
         If w is float, it is the frequency step scale (relative to the
-        normal dft frquency step).
-    axis : int
+        normal dft frequency step).
+    a : complex, optional
+        The starting point in the complex plane.  Default is 1.
+    axis : int, optional
         Array dimension to operate over.  Default is the final dimension.
 
     Returns:
@@ -302,7 +303,7 @@ def czt(x, m=None, w=1.0, a=1, axis=-1):
     larger array.  To save space, you may want to call it as
     y = ascontiguousarray(czt(x))
 
-    See zoomfft for a friendlier interface to partial fft calculations.
+    See zoomfft for a friendlier interface to partial FFT calculations.
 
     If the transform needs to be repeated, use CZT to construct a
     specialized transform function which can be reused without
@@ -319,31 +320,31 @@ def zoomfft(x, f1, f2=None, m=None, Fs=2, axis=-1):
 
     Parameters:
     ----------
-    m : int
-        The number of points to evaluate.  The default is the length of x.
-    f1, f2 : float
+    x : array
+        The input signal.
+    f1, f2 : float, optional
         The frequency range. If f2 is not specified, the range 0-f1 is assumed.
-    Fs : float
+    m : int, optional
+        The number of points to evaluate.  The default is the length of x.
+    Fs : float, optional
         The sampling frequency.  With a sampling frequency of
         10kHz for example, the range f1 and f2 can be expressed in kHz.
         The default sampling frequency is 2, so f1 and f2 should be
         in the range 0,1 to keep the transform below the Nyquist
         frequency.
-    x : array
-        The input signal.
-    axis : int
+    axis : int, optional
         The array dimension the transform operates over.  The default is the
         final dimension.
 
     Returns:
     -------
     array
-        The transformed signal.  The fourier transform will be calculate
+        The transformed signal.  The Fourier transform will be calculate
         at the points f1, f1+df, f1+2df, ..., f2, where df=(f2-f1)/m.
 
     Notes
     -----
-    zoomfft(x, 0, 2-2./len(x)) is equivalent to fft(x).
+    ``zoomfft(x, 0, 2-2./len(x))`` is equivalent to ``fft(x)``.
 
     To graph the magnitude of the resulting transform, use::
 
