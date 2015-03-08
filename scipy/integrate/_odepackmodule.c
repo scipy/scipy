@@ -43,12 +43,15 @@ the result tuple when the full_output argument is non-zero.
     goto fail; \
 }
 
-static PyObject *multipack_python_function = NULL;
-static PyObject *multipack_python_jacobian = NULL;
-static PyObject *multipack_extra_arguments = NULL;    /* a tuple */
-static int multipack_jac_transpose = 1;
-static int multipack_jac_type;
+typedef struct _odepack_globals {
+    PyObject *python_function;
+    PyObject *python_jacobian;
+    PyObject *extra_arguments;  /* a tuple */
+    int jac_transpose;
+    int jac_type;
+} odepack_params;
 
+static odepack_params global_params = {NULL, NULL, NULL, 0, 0};
 
 static
 PyObject *call_python_function(PyObject *func, npy_intp n, double *x,
@@ -168,14 +171,14 @@ ode_function(int *n, double *t, double *y, double *ydot)
     }
     PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*t));
     /* arg1 now owns newly created reference */
-    if ((arglist = PySequence_Concat(arg1, multipack_extra_arguments)) == NULL) {
+    if ((arglist = PySequence_Concat(arg1, global_params.extra_arguments)) == NULL) {
         *n = -1;
         Py_DECREF(arg1);
         return;
     }
     Py_DECREF(arg1);    /* arglist has reference */
 
-    result_array = (PyArrayObject *)call_python_function(multipack_python_function,
+    result_array = (PyArrayObject *)call_python_function(global_params.python_function,
                                                     *n, y, arglist, odepack_error);
     if (result_array == NULL) {
         *n = -1;
@@ -273,14 +276,14 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
     }
     PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*t));
     /* arg1 now owns newly created reference */
-    if ((arglist = PySequence_Concat(arg1, multipack_extra_arguments)) == NULL) {
+    if ((arglist = PySequence_Concat(arg1, global_params.extra_arguments)) == NULL) {
         *n = -1;
         Py_DECREF(arg1);
         return -1;
     }
     Py_DECREF(arg1);    /* arglist has reference */
 
-    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian,
+    result_array = (PyArrayObject *)call_python_function(global_params.python_jacobian,
                                                          *n, y, arglist, odepack_error);
     if (result_array == NULL) {
         *n = -1;
@@ -289,14 +292,14 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
     }
 
     ncols = *n;
-    if (multipack_jac_type == 4) {
+    if (global_params.jac_type == 4) {
         nrows = *ml + *mu + 1;
     }
     else {
         nrows = *n;
     }
 
-    if (!multipack_jac_transpose) {
+    if (!global_params.jac_transpose) {
         int tmp;
         tmp = nrows;
         nrows = ncols;
@@ -332,7 +335,7 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
     }
     if (dim_error) {
         char *b = "";
-        if (multipack_jac_type == 4) {
+        if (global_params.jac_type == 4) {
             b = "banded ";
         }
         PyErr_Format(PyExc_RuntimeError,
@@ -344,27 +347,27 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
     }
 
     /*
-     *  multipack_jac_type is either 1 (full Jacobian) or 4 (banded Jacobian).
-     *  multipack_jac_transpose is !col_deriv, so if multipack_jac_transpose
+     *  global_params.jac_type is either 1 (full Jacobian) or 4 (banded Jacobian).
+     *  global_params.jac_transpose is !col_deriv, so if global_params.jac_transpose
      *  is 0, the array created by the user is already in Fortran order, and
      *  a transpose is not needed when it is copied to pd.
      */
 
-    if ((multipack_jac_type == 1) && !multipack_jac_transpose) {
+    if ((global_params.jac_type == 1) && !global_params.jac_transpose) {
         /* Full Jacobian, no transpose needed, so we can use memcpy. */
         memcpy(pd, PyArray_DATA(result_array), (*n)*(*nrowpd)*sizeof(double));
     }
     else {
         /*
-         *  multipack_jac_type == 4 (banded Jacobian), or
-         *  multipack_jac_type == 1 and multipack_jac_transpose == 1.
+         *  global_params.jac_type == 4 (banded Jacobian), or
+         *  global_params.jac_type == 1 and global_params.jac_transpose == 1.
          *
-         *  We can't use memcpy when multipack_jac_type is 4 because the leading
+         *  We can't use memcpy when global_params.jac_type is 4 because the leading
          *  dimension of pd doesn't necessarily equal the number of rows of the
          *  matrix.
          */
         int m;  /* Number of rows in the (full or packed banded) Jacobian. */
-        if (multipack_jac_type == 4) {
+        if (global_params.jac_type == 4) {
             m = *ml + *mu + 1;
         }
         else {
@@ -372,7 +375,7 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
         }
         copy_array_to_fortran(pd, *nrowpd, m, *n,
             (double *) PyArray_DATA(result_array),
-            !multipack_jac_transpose);
+            !global_params.jac_transpose);
     }
 
     Py_DECREF(arglist);
@@ -494,42 +497,6 @@ static char doc_odeint[] =
     "hmax=0.0, hmin=0.0, ixpr=0.0, mxstep=0.0, mxhnil=0, mxordn=0, "
     "mxords=0)\n  yprime = fun(y,t,...)";
 
-/*
- *  The macros INIT_JAC_FUNC and RESTORE_JAC_FUNC are only
- *  used in odepack_odeint().
- */
-
-#define INIT_JAC_FUNC(fun,Dfun,arg,col_deriv,errobj,jac_type) { \
-    store_multipack_globals[0] = multipack_python_function; \
-    store_multipack_globals[1] = multipack_extra_arguments; \
-    store_multipack_globals[2] = multipack_python_jacobian; \
-    store_multipack_globals3 = multipack_jac_transpose; \
-    if (arg == NULL) { \
-        if ((arg = PyTuple_New(0)) == NULL) goto fail; \
-    } \
-    else {\
-        Py_INCREF(arg);   /* We decrement on exit. */ \
-    } \
-    if (!PyTuple_Check(arg)) { \
-        PYERR(errobj,"Extra Arguments must be in a tuple"); \
-    } \
-    /* Set up callback functions */ \
-    if (!PyCallable_Check(fun) || (Dfun != Py_None && !PyCallable_Check(Dfun))) { \
-        PYERR(errobj,"The function and its Jacobian must be callable functions."); \
-    } \
-    multipack_python_function = fun; \
-    multipack_extra_arguments = arg; \
-    multipack_python_jacobian = Dfun; \
-    multipack_jac_transpose = !(col_deriv); \
-    multipack_jac_type = jac_type; \
-}
-
-#define RESTORE_JAC_FUNC() \
-    multipack_python_function = store_multipack_globals[0]; \
-    multipack_extra_arguments = store_multipack_globals[1]; \
-    multipack_python_jacobian = store_multipack_globals[2]; \
-    multipack_jac_transpose = store_multipack_globals3;
-
 
 static PyObject *
 odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
@@ -559,9 +526,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
                              "ml", "mu", "full_output", "rtol", "atol", "tcrit",
                              "h0", "hmax", "hmin", "ixpr", "mxstep", "mxhnil",
                              "mxordn", "mxords", NULL};
-
-    PyObject *store_multipack_globals[4];
-    int store_multipack_globals3;
+    odepack_params save_params;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "OOO|OOiiiiOOOdddiiiii", kwlist,
                                      &fcn, &y0, &p_tout, &extra_args, &Dfun,
@@ -598,7 +563,30 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         mu = 0;
     }
 
-    INIT_JAC_FUNC(fcn, Dfun, extra_args, col_deriv, odepack_error, jt);
+    /* Stash the current global_params in save_params. */
+    memcpy(&save_params, &global_params, sizeof(save_params));
+
+    if (extra_args == NULL) {
+        if ((extra_args = PyTuple_New(0)) == NULL) {
+            goto fail;
+        }
+    }
+    else {
+        Py_INCREF(extra_args);   /* We decrement on exit. */
+    }
+    if (!PyTuple_Check(extra_args)) {
+        PYERR(odepack_error, "Extra arguments must be in a tuple");
+    }
+    if (!PyCallable_Check(fcn) || (Dfun != Py_None && !PyCallable_Check(Dfun))) {
+        PYERR(odepack_error, "The function and its Jacobian must be callable functions.");
+    }
+
+    /* Set global_params from the function arguments. */
+    global_params.python_function = fcn;
+    global_params.extra_arguments = extra_args;
+    global_params.python_jacobian = Dfun;
+    global_params.jac_transpose = !(col_deriv);
+    global_params.jac_type = jt;
 
     /* Initial input vector */
     ap_y = (PyArrayObject *) PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 0);
@@ -662,7 +650,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     iwork = (int *)(wa + lrw);
 
     iwork[0] = ml;
-    iwork[1] = mu;      /* ignored if not needed */
+    iwork[1] = mu;
 
     if (h0 != 0.0 || hmax != 0.0 || hmin != 0.0 || ixpr != 0 || mxstep != 0 ||
             mxhnil != 0 || mxordn != 0 || mxords != 0) {
@@ -745,7 +733,8 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         k++;
     }
 
-    RESTORE_JAC_FUNC();
+    /* Restore global_params from the previously stashed save_params. */
+    memcpy(&global_params, &save_params, sizeof(save_params));
 
     Py_DECREF(extra_args);
     Py_DECREF(ap_atol);
@@ -778,7 +767,9 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     }
 
 fail:
-    RESTORE_JAC_FUNC();
+    /* Restore global_params from the previously stashed save_params. */
+    memcpy(&global_params, &save_params, sizeof(save_params));
+
     Py_XDECREF(extra_args);
     Py_XDECREF(ap_y);
     Py_XDECREF(ap_rtol);
