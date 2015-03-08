@@ -12,7 +12,7 @@ from scipy import special
 from scipy import optimize
 from scipy import integrate
 from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
-                           inv_boxcox, inv_boxcox1p)
+                           inv_boxcox, inv_boxcox1p, erfc)
 
 from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
@@ -30,8 +30,7 @@ from ._distn_infrastructure import (
         _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
         )
 
-from ._constants import _XMIN, _EULER, _ZETA3
-
+from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
@@ -988,6 +987,69 @@ class expon_gen(rv_continuous):
     def _entropy(self):
         return 1.0
 expon = expon_gen(a=0.0, name='expon')
+
+
+## Exponentially Modified Normal (exponential distribution
+##  convolved with a Normal).
+## This is called an exponentially modified gaussian on wikipedia
+class exponnorm_gen(rv_continuous):
+    """An exponentially modified Normal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `exponnorm` is::
+
+        exponnorm.pdf(x, K) = 1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc(- (x - 1/K) / sqrt(2))
+           
+    where the shape parameter ``K > 0``.
+
+    It can be thought of as the sum of a normally distributed random
+    value with mean ``loc`` and sigma ``scale`` and an exponentially
+    distributed random number with a pdf proportional to ``exp(-lambda * x)``
+    where ``lambda = (K * scale)**(-1)``.
+
+    .. versionadded:: 0.16.0
+
+    %(example)s
+
+    """
+    def _rvs(self, K):
+        expval = self._random_state.standard_exponential(self._size) * K
+        gval = self._random_state.standard_normal(self._size)
+        return expval + gval
+
+    def _pdf(self, x, K):
+        invK = 1.0 / K
+        exparg = 0.5 * invK**2 - invK * x
+        # Avoid overflows; setting exp(exparg) to the max float works
+        #  all right here
+        expval = _lazywhere(exparg < _LOGXMAX, (exparg,), exp, _XMAX)
+        return 0.5 * invK * expval * erfc(-(x - invK) / sqrt(2))
+
+    def _logpdf(self, x, K):
+        invK = 1.0 / K
+        exparg = 0.5 * invK**2 - invK * x
+        return exparg + log(0.5 * invK * erfc(-(x - invK) / sqrt(2)))
+    
+    def _cdf(self, x, K):
+        invK = 1.0 / K
+        expval = invK * (0.5 * invK - x)
+        return special.ndtr(x) - exp(expval) * special.ndtr(x - invK)
+
+    def _sf(self, x, K):
+        invK = 1.0 / K
+        expval = invK * (0.5 * invK - x)
+        return special.ndtr(-x) + exp(expval) * special.ndtr(x - invK)
+
+    def _stats(self, K):
+        K2 = K * K
+        opK2 = 1.0 + K2
+        skw = 2 * K**3 * opK2**(-1.5)
+        krt = 6.0 * K2 * K2 * opK2**(-2)
+        return K, opK2, skw, krt
+exponnorm = exponnorm_gen(name='exponnorm')
 
 
 class exponweib_gen(rv_continuous):

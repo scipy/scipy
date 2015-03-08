@@ -68,6 +68,9 @@ An exponential (Poisson) window was added as `scipy.signal.exponential`.
 The Wishart distribution and its inverse have been added, as
 `scipy.stats.wishart` and `scipy.stats.invwishart`.
 
+The Exponentially Modified Normal distribution has been
+added as `scipy.stats.exponnorm`.
+
 `scipy.optimize` improvements
 -----------------------------
 

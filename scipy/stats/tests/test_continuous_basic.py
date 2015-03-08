@@ -25,6 +25,9 @@ These tests currently check only/mostly for serious errors and exceptions,
 not for numerically exact results.
 """
 
+## Note that you need to add new distributions you want tested
+## to _distr_params
+
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
 ## Last four of these fail all around. Need to be checked
