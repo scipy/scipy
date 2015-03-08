@@ -13,6 +13,7 @@
     // benchmarked
     "repo": "https://github.com/scipy/scipy.git",
     "dvcs": "git",
+    "branches": ["master", "maintenance/0.15.x", "maintenance/0.14.x"],
 
     // The base URL to "how a commit for the project.
     "show_commit_url": "http://github.com/scipy/scipy/commit/",
