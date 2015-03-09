@@ -991,6 +991,10 @@ class expon_gen(rv_continuous):
     for ``x >= 0``.
 
     %(after_notes)s
+    
+    A common parameterization for `expon` is in terms of the rate parameter
+    ``lambda``, such that ``pdf = lambda * exp(-lambda * x)``. This
+    parameterization corresponds to using ``scale = 1 / lambda``.
 
     %(example)s
 
