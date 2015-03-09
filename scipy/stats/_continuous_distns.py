@@ -1002,7 +1002,7 @@ class exponnorm_gen(rv_continuous):
     The probability density function for `exponnorm` is::
 
         exponnorm.pdf(x, K) = 1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc(- (x - 1/K) / sqrt(2))
-           
+
     where the shape parameter ``K > 0``.
 
     It can be thought of as the sum of a normally distributed random
@@ -1032,7 +1032,7 @@ class exponnorm_gen(rv_continuous):
         invK = 1.0 / K
         exparg = 0.5 * invK**2 - invK * x
         return exparg + log(0.5 * invK * erfc(-(x - invK) / sqrt(2)))
-    
+
     def _cdf(self, x, K):
         invK = 1.0 / K
         expval = invK * (0.5 * invK - x)
@@ -3702,10 +3702,10 @@ class rayleigh_gen(rv_continuous):
 
     def _ppf(self, q):
         return sqrt(-2 * special.log1p(-q))
-        
+
     def _sf(self, r):
         return exp(-0.5 * r**2)
-        
+
     def _isf(self, q):
         return sqrt(-2 * log(q))
 
@@ -3762,8 +3762,7 @@ class reciprocal_gen(rv_continuous):
         return 0.5*log(a*b)+log(log(b/a))
 reciprocal = reciprocal_gen(name="reciprocal")
 
-
-# FIXME: PPF does not work.
+# FIXME: add _cdf, _ppf methods?
 class rice_gen(rv_continuous):
     """A Rice continuous random variable.
 
@@ -3779,6 +3778,12 @@ class rice_gen(rv_continuous):
 
     `rice` takes ``b`` as a shape parameter.
 
+    The Rice distribution describes the length, ``r``, of a 2-D vector
+    with components ``(U+u, V+v)``, where ``U, V`` are constant, ``u, v``
+    are independent Gaussian random variables with standard deviation
+    ``s``.  Let ``R = (U**2 + V**2)**0.5``. Then the pdf of ``r`` is
+    ``rice.pdf(x, R/s, scale=s)``.
+
     %(example)s
 
     """
@@ -3792,6 +3797,10 @@ class rice_gen(rv_continuous):
         return np.sqrt((t*t).sum(axis=0))
 
     def _pdf(self, x, b):
+        # We use (x**2 + b**2)/2 = ((x-b)**2)/2 + xb.
+        # The factor of exp(-xb) is then included in the i0e function
+        # in place of the modified Bessel function, i0, improving
+        # numerical stability for large values of xb.
         return x * exp(-(x-b)*(x-b)/2.0) * special.i0e(x*b)
 
     def _munp(self, n, b):
