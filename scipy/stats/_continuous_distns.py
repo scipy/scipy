@@ -1043,14 +1043,23 @@ class exponnorm_gen(rv_continuous):
     -----
     The probability density function for `exponnorm` is::
 
-        exponnorm.pdf(x, K) = 1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc(- (x - 1/K) / sqrt(2))
-
+        exponnorm.pdf(x, K) = 1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc(-(x - 1/K) / sqrt(2))
+           
     where the shape parameter ``K > 0``.
 
     It can be thought of as the sum of a normally distributed random
     value with mean ``loc`` and sigma ``scale`` and an exponentially
     distributed random number with a pdf proportional to ``exp(-lambda * x)``
     where ``lambda = (K * scale)**(-1)``.
+
+    %(after_notes)s
+
+    An alternative parameterization of this distribution (for example, in
+    `Wikipedia <http://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution>`_)
+    involves three parameters, :math:`\mu`, :math:`\lambda` and :math:`\sigma`.
+    In the present parameterization this corresponds to having ``loc`` and
+    ``scale`` equal to :math:`\mu` and :math:`\sigma`, respectively, and
+    shape parameter :math:`K = 1/\sigma\lambda`.
 
     .. versionadded:: 0.16.0
 
