@@ -106,7 +106,7 @@ class CZT:
         self.w, self.a = w, a
         self.m, self.n = m, n
 
-        k = arange(max(m, n))
+        k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
         wk2 = w**(k**2/2.)
         nfft = _next_regular(n+m-1)
         self._Awk2 = (a**-k * wk2)[:n]
