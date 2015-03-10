@@ -28,9 +28,10 @@ zoomfft : array
 scaledfft : array
    compute a limited frequency FFT for a signal
 """
+from __future__ import division, absolute_import, print_function
+
 __all__ = ['czt', 'zoomfft', 'scaledfft', 'CZT', 'ZoomFFT', 'ScaledFFT']
 
-import math
 import cmath
 
 import numpy as np
