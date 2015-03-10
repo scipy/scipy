@@ -65,7 +65,7 @@ class CZT:
 
     See zoomfft for a friendlier interface to partial FFT calculations.
     """
-    def __init__(self, n, m=None, w=1, a=1):
+    def __init__(self, n, m=None, w=None, a=1, factor=None):
         """
         Chirp-Z transform definition.
 
@@ -76,14 +76,15 @@ class CZT:
         m : int, optional
           The number of points desired.  The default is the length of
           the input data.
-        w : complex or float, optional
-          If w is complex, it is the ratio between points in each step.
-          If w is float, it serves as a frequency scaling factor. For instance
-          when assigning w=0.5, the result FT will span half of the
-          frequency range (that FFT would result) at half of the frequency
-          step size.
+        w : complex, optional
+          The ratio between points in each step.
         a : complex, optional
           The starting point in the complex plane.  The default is 1.
+        factor : float, optional
+          Frequency scaling factor. For instance, when assigning factor=0.5,
+          the resulting FT will span half of the frequency range that an FFT
+          would produce, at half of the frequency step size.  This is an
+          alternative to `w`, and both cannot be specified at the same time.
 
         Returns:
         --------
@@ -93,10 +94,15 @@ class CZT:
         """
         if m is None:
             m = n
-        if w is None:
-            w = cmath.exp(-1j*pi/m)
-        elif type(w) in (float, int):
-            w = cmath.exp(-2j*pi/m * w)
+
+        if w is not None and factor is not None:
+            raise ValueError('Only w or factor can be specified; not both.')
+        elif w is None and factor is None:
+            # Default to FFT
+            w = cmath.exp(-2j*pi/m)
+        elif w is None:
+            w = cmath.exp(-2j*pi/m * factor)
+
         self.w, self.a = w, a
         self.m, self.n = m, n
 
@@ -279,7 +285,7 @@ def scaledfft(x, m=None, scale=1.0, axis=-1):
     return transform(x, axis)
 
 
-def czt(x, m=None, w=1.0, a=1, axis=-1):
+def czt(x, m=None, w=None, a=1, factor=None, axis=-1):
     """
     Compute the frequency response around a spiral.
 
@@ -289,12 +295,13 @@ def czt(x, m=None, w=1.0, a=1, axis=-1):
         The set of data to transform.
     m : int, optional
         The number of points desired. Default is the length of the input data.
-    w : complex or float, optional
-        If w is complex, it is the ratio between points in each step.
-        If w is float, it is the frequency step scale (relative to the
-        normal dft frequency step).
+    w : complex, optional
+        The ratio between points in each step.
     a : complex, optional
         The starting point in the complex plane.  Default is 1.
+    factor : float, optional
+        The frequency step scale (relative to the normal DFT frequency step).
+        Cannot be specified at the same time as `w`.
     axis : int, optional
         Array dimension to operate over.  Default is the final dimension.
 
@@ -312,7 +319,7 @@ def czt(x, m=None, w=1.0, a=1, axis=-1):
     recomputing constants.
     """
     x = np.asarray(x)
-    transform = CZT(x.shape[axis], m=m, w=w, a=a)
+    transform = CZT(x.shape[axis], m=m, w=w, a=a, factor=factor)
     return transform(x, axis=axis)
 
 
