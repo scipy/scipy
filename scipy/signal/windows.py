@@ -1590,12 +1590,11 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        boxcar, triang, blackman, hamming, hann, bartlett, exponential,
-        flattop, parzen, bohman, blackmanharris, nuttall, barthann, tukey,
-        kaiser (needs beta), gaussian (needs std),
-        general_gaussian (needs power, width),
+        boxcar, triang, blackman, hamming, hann, bartlett, flattop, parzen,
+        bohman, blackmanharris, nuttall, barthann, kaiser (needs beta),
+        gaussian (needs std), general_gaussian (needs power, width),
         slepian (needs width), chebwin (needs attenuation)
-
+        exponential (needs decay scale), tukey (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
 
@@ -1636,8 +1635,9 @@ def get_window(window, Nx, fftbins=True):
             if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                           'general gaussian', 'general_gaussian',
                           'general gauss', 'general_gauss', 'ggs',
-                          'slepian', 'optimal', 'slep', 'dss',
-                          'chebwin', 'cheb']:
+                          'slepian', 'optimal', 'slep', 'dss', 'dpss',
+                          'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
+                          'tuk']:
                 raise ValueError("The '" + window + "' window needs one or "
                                  "more parameters  -- pass a tuple.")
             else:
