@@ -6,6 +6,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include <numpy/noprefix.h>
+#include <numpy/npy_3kcompat.h>
 
 #if PY_VERSION_HEX >= 0x03000000
 #define PyNumber_Divide PyNumber_TrueDivide
@@ -63,6 +64,40 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
           const PyArrayObject * zf, PyArrayObject * y, int axis,
           BasicFilterFunction * filter_func);
 
+PyObject*
+convert_shape_to_errmsg(intp ndim, intp *shape, intp theaxis, intp val)
+{
+    intp j, axis_size;
+    PyObject *msg, *tmp;
+
+    if (ndim == 1) {
+        msg = PyUString_FromFormat("Unexpected shape for zi, Expected (%" \
+                                    NPY_INTP_FMT ",).", shape[0]);
+        return msg;
+    }
+
+    msg = PyUString_FromFormat("Unexpected shape for zi.  Expected: (");
+    if (!msg) {
+        return 0;
+    }
+    for (j = 0; j < ndim; ++j) {
+        axis_size = j != theaxis ? shape[j] : val;
+
+        if (j == ndim - 1) {
+            tmp = PyUString_FromFormat("%" NPY_INTP_FMT, axis_size);
+        } else {
+            tmp = PyUString_FromFormat("%" NPY_INTP_FMT ",", axis_size);
+        }
+        if (!tmp) {
+            Py_DECREF(msg);
+            return 0;
+        }
+        PyUString_ConcatAndDel(&msg, tmp);
+    }
+    PyUString_ConcatAndDel(&msg, PyUString_FromString(")."));
+    return msg;
+}
+
 /*
  * XXX: Error checking not done yet
  */
@@ -73,7 +108,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
     int axis, typenum, theaxis, st;
     char *ara_ptr, input_flag = 0, *azero;
-    intp na, nb, nal;
+    intp na, nb, nal, zi_size;
     BasicFilterFunction *basic_filter;
 
     axis = -1;
@@ -176,11 +211,21 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 
     na = PyArray_SIZE(ara);
     nb = PyArray_SIZE(arb);
+    zi_size = (na > nb ? na : nb) - 1;
     if (input_flag) {
-        if (PyArray_DIMS(arVi)[theaxis] != (na > nb ? na : nb) - 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "The number of initial conditions must be max([len(a),len(b)]) - 1");
-            goto fail;
+        intp k;
+        for (k = 0; k < PyArray_NDIM(arX); ++k) {
+            if ((k == theaxis && PyArray_DIM(arVi, k) != zi_size) ||
+               (k != theaxis && PyArray_DIM(arX, k) != PyArray_DIM(arVi, k))) {
+                PyObject *msg = convert_shape_to_errmsg(PyArray_NDIM(arX),
+                        PyArray_DIMS(arX), theaxis, zi_size);
+                if (!msg) {
+                    goto fail;
+                }
+                PyErr_SetObject(PyExc_ValueError, msg);
+                Py_DECREF(msg);
+                goto fail;
+            }
         }
     }
 
