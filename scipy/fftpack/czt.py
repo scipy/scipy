@@ -149,7 +149,7 @@ class ZoomFFT(CZT):
     This is a specialization of the chirp Z transform, CZT for a set of
     equally spaced frequencies.
     """
-    def __init__(self, n, f1, f2=None, m=None, Fs=2):
+    def __init__(self, n, fn, m=None, Fs=2):
         """
         Zoom FFT transform.
 
@@ -159,8 +159,9 @@ class ZoomFFT(CZT):
         ----------
         n : int
           size of the signal
-        f1, f2 : float, optional
-          start and end frequencies; if f2 is not specified, use 0 to f1
+        fn : array_like, optional
+          A scalar or length-2 sequence giving the start and end frequencies.
+          If a scalar, use 0 to f1.
         m : int, optional
           size of the output
         Fs : float, optional
@@ -188,8 +189,13 @@ class ZoomFFT(CZT):
         """
         if m is None:
             m = n
-        if f2 is None:
-            f1, f2 = 0., f1
+        if np.size(fn) == 2:
+            f1, f2 = fn
+        elif np.size(fn) == 1:
+            f1, f2 = 0.0, fn
+        else:
+            raise ValueError('fn must be a scalar or 2-length sequence')
+
         w = cmath.exp(-2j * pi * (f2-f1) / ((m-1)*Fs))
         a = cmath.exp(2j * pi * f1/Fs)
         CZT.__init__(self, n, m=m, w=w, a=a)
@@ -210,7 +216,7 @@ class ScaledFFT(CZT):
 
         This is equivalent to:
 
-            fftshift(zoomfft(x, -scale, scale*(m-2.)/m, m=m))
+            fftshift(zoomfft(x, [-scale, scale*(m-2.)/m], m=m))
 
         For example:
 
@@ -314,7 +320,7 @@ def czt(x, m=None, w=1.0, a=1, axis=-1):
     return transform(x, axis=axis)
 
 
-def zoomfft(x, f1, f2=None, m=None, Fs=2, axis=-1):
+def zoomfft(x, fn, m=None, Fs=2, axis=-1):
     """
     Compute the Fourier transform of x for frequencies in [f1, f2].
 
@@ -322,8 +328,9 @@ def zoomfft(x, f1, f2=None, m=None, Fs=2, axis=-1):
     ----------
     x : array
         The input signal.
-    f1, f2 : float, optional
-        The frequency range. If f2 is not specified, the range 0-f1 is assumed.
+    fn : array_like, optional
+        A scalar or length-2 sequence giving the frequency range. If a scalar,
+        the range 0-fn is assumed.
     m : int, optional
         The number of points to evaluate.  The default is the length of x.
     Fs : float, optional
@@ -344,18 +351,18 @@ def zoomfft(x, f1, f2=None, m=None, Fs=2, axis=-1):
 
     Notes
     -----
-    ``zoomfft(x, 0, 2-2./len(x))`` is equivalent to ``fft(x)``.
+    ``zoomfft(x, [0, 2-2./len(x)])`` is equivalent to ``fft(x)``.
 
     To graph the magnitude of the resulting transform, use::
 
-        plot(linspace(f1,f2,m), abs(zoomfft(x,f1,f2,m))).
+        plot(linspace(f1, f2, m), abs(zoomfft(x, [f1, f2], m)))
 
     If the transform needs to be repeated, use ZoomFFT to construct
     a specialized transform function which can be reused without
     recomputing constants.
     """
     x = np.asarray(x)
-    transform = ZoomFFT(x.shape[axis], f1, f2=f2, m=m, Fs=Fs)
+    transform = ZoomFFT(x.shape[axis], fn, m=m, Fs=Fs)
     return transform(x, axis=axis)
 
 
@@ -370,14 +377,14 @@ def _test1(x, show=False, plots=[1, 2, 3, 4]):
     yover = fft(x, over*len(x))
 
     # Check that zoomfft is the equivalent of fft
-    y1 = zoomfft(x, 0, 2-2./len(y))
+    y1 = zoomfft(x, [0, 2-2./len(y)])
 
     # Check that zoomfft with oversampling is equivalent to zero padding
-    y2 = zoomfft(x, 0, 2-2./len(yover), m=len(yover))
+    y2 = zoomfft(x, [0, 2-2./len(yover)], m=len(yover))
 
     # Check that zoomfft works on a subrange
     f1, f2 = w[3], w[6]
-    y3 = zoomfft(x, f1, f2, m=3*over+1)
+    y3 = zoomfft(x, [f1, f2], m=3*over+1)
     w3 = np.linspace(f1, f2, len(y3))
     idx3 = slice(3*over, 6*over+1)
 
@@ -475,8 +482,8 @@ def test(demo=None, plots=[1, 2, 3]):
 
     # Check transform on n-D array input
     x = np.reshape(np.arange(3*2*28), (3, 2, 28))
-    y1 = zoomfft(x, 0, 2-2./28)
-    y2 = zoomfft(x[2, 0, :], 0, 2-2./28)
+    y1 = zoomfft(x, [0, 2-2./28])
+    y2 = zoomfft(x[2, 0, :], [0, 2-2./28])
     err = np.linalg.norm(y2-y1[2, 0])
     assert err < 1e-15, "error for n-D array is %g" % (err,)
 
@@ -491,7 +498,7 @@ def test(demo=None, plots=[1, 2, 3]):
     _test1(x, show=(demo == 3), plots=plots)
 
     # 4: Sines
-    x = np.zeros(100)
+    x = np.zeros(100, dtype=complex)
     x[[1, 5, 21]] = 1
     _test1(x, show=(demo == 4), plots=plots)
 
@@ -515,7 +522,7 @@ def demo_scaledfft(v, scale, m):
     pylab.figure()
     pylab.plot(x, shift(abs(fft(v))), label='fft')
     pylab.plot(x, shift(abs(scaledfft(v))), 'ro', label='x1 scaled fft')
-    pylab.plot(xz, abs(zoomfft(v, -scale, scale*(m-2.)/m, m=m)),
+    pylab.plot(xz, abs(zoomfft(v, [-scale, scale*(m-2.)/m], m=m)),
                'bo', label='zoomfft')
     pylab.plot(xz, shift(abs(scaledfft(v, m=m, scale=scale))),
                'gx', label='x'+str(scale)+' scaled fft')

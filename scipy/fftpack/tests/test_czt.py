@@ -23,14 +23,14 @@ def check_zoomfft(x):
     yover = fft(x, over*len(x))
 
     # Check that zoomfft is the equivalent of fft
-    y1 = zoomfft(x, 0, 2-2./len(y))
+    y1 = zoomfft(x, [0, 2-2./len(y)])
 
     # Check that zoomfft with oversampling is equivalent to zero padding
-    y2 = zoomfft(x, 0, 2-2./len(yover), m=len(yover))
+    y2 = zoomfft(x, [0, 2-2./len(yover)], m=len(yover))
 
     # Check that zoomfft works on a subrange
     f1, f2 = w[3], w[6]
-    y3 = zoomfft(x, f1, f2, m=3*over+1)
+    y3 = zoomfft(x, [f1, f2], m=3*over+1)
     w3 = np.linspace(f1, f2, len(y3))
     idx3 = slice(3*over, 6*over+1)
 
