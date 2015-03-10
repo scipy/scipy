@@ -3,19 +3,19 @@
 """
 Chirp z-transform.
 
-We provide two interfaces to the chirp z transform, an object interface
+We provide two interfaces to the chirp z transform: an object interface
 which precalculates part of the transform and can be applied efficiently
-to many different data sets and a functional interface which is applied
+to many different data sets, and a functional interface which is applied
 only to the given data set.
 
 Transforms
 ----------
 
-CZT : callable (x,axis=-1)->array
+CZT : callable (x, axis=-1) -> array
    define a chirp-z transform that can be applied to different signals
-ZoomFFT : callable (x,axis=-1)->array
+ZoomFFT : callable (x, axis=-1) -> array
    define a Fourier transform on a range of frequencies
-ScaledFFT : callable (x,axis=-1)->array
+ScaledFFT : callable (x, axis=-1) -> array
    define a limited frequency FFT
 
 Functions
@@ -87,7 +87,8 @@ class CZT:
         Returns:
         --------
         CZT
-          callable object f(x,axis=-1) for computing the chirp-z transform on x
+          callable object ``f(x, axis=-1)`` for computing the chirp-z transform
+          on `x`
         """
         if m is None:
             m = n
@@ -171,13 +172,13 @@ class ZoomFFT(CZT):
         Returns:
         -------
         A ZoomFFT instance
-          A callable object f(x,axis=-1) for computing the zoom FFT on x.
+          A callable object f(x, axis=-1) for computing the zoom FFT on x.
 
         Sampling frequency is 1/dt, the time step between samples in the
         signal x.  The unit circle corresponds to frequencies from 0 up
         to the sampling frequency.  The default sampling frequency of 2
-        means that f1,f2 values up to the Nyquist frequency are in the
-        range [0,1). For f1,f2 values expressed in radians, a sampling
+        means that f1, f2 values up to the Nyquist frequency are in the
+        range [0, 1). For f1, f2 values expressed in radians, a sampling
         frequency of 1/pi should be used.
 
         To plot the transform results use something like the following:
@@ -185,7 +186,7 @@ class ZoomFFT(CZT):
             t = transform(len(x), f1, f2, m)
             f = linspace(f1, f2, m)
             y = t(x)
-            plot(f,y)
+            plot(f, y)
 
         """
         if m is None:
@@ -221,13 +222,13 @@ class ScaledFFT(CZT):
 
         For example:
 
-            m, n = 10,len(x)
+            m, n = 10, len(x)
             sf = ScaledFFT(n, m=m, scale=0.25)
             X = fftshift(fft(x))
             W = linspace(-8, 8*(n-2.)/n, n)
             SX = fftshift(sf(x))
             SW = linspace(-2, 2*(m-2.)/m, m)
-            plot(X,W,SX,SW)
+            plot(X, W, SX, SW)
 
         Parameters:
         ----------
@@ -338,7 +339,7 @@ def zoomfft(x, fn, m=None, Fs=2, axis=-1):
         The sampling frequency.  With a sampling frequency of
         10kHz for example, the range f1 and f2 can be expressed in kHz.
         The default sampling frequency is 2, so f1 and f2 should be
-        in the range 0,1 to keep the transform below the Nyquist
+        in the range 0, 1 to keep the transform below the Nyquist
         frequency.
     axis : int, optional
         The array dimension the transform operates over.  The default is the
@@ -385,9 +386,9 @@ def _test1(x, show=False, plots=[1, 2, 3, 4]):
 
     # Check that zoomfft works on a subrange
     f1, f2 = w[3], w[6]
-    y3 = zoomfft(x, [f1, f2], m=3*over+1)
+    y3 = zoomfft(x, [f1, f2], m=3*over + 1)
     w3 = np.linspace(f1, f2, len(y3))
-    idx3 = slice(3*over, 6*over+1)
+    idx3 = slice(3*over, 6*over + 1)
 
     if not show:
         plots = []
