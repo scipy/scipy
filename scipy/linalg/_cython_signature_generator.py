@@ -44,22 +44,17 @@ def make_signature(filename):
 def get_sig_name(line):
     return line.split('(')[0].split(' ')[-1]
 
-def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None,
-                  auxiliaries=None):
+def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
     if directory[-1] in ['/', '\\']:
         directory = directory[:-1]
     files = glob.glob(directory + '/*.f*')
     if exclusions is None:
         exclusions = []
-    if auxiliaries is None:
-        auxiliaries = []
     if manual_wrappers is not None:
         exclusions += [get_sig_name(l) for l in manual_wrappers.split('\n')]
     signatures = []
     for filename in files:
         name = filename.split('\\')[-1][:-2]
-        if name[1:3] == 'la' and name[1:] not in auxiliaries:
-            continue
         if name in exclusions:
             continue
         signatures.append(make_signature(filename))
@@ -108,12 +103,6 @@ if __name__ == '__main__':
     if libname.lower() == 'blas':
         sigs_from_dir(src_dir, outfile, exclusions=['scabs1', 'xerbla'])
     elif libname.lower() == 'lapack':
-        # Auxiliary routines are excluded unless explicitly included.
-        auxiliaries = ['laenv', 'lacon', 'lacn2', 'laswp', 'larf', 'larz',
-                       'lauum', 'lacon', 'langb', 'lange', 'langt', 'lanhb',
-                       'lanhe', 'lanhp', 'lanhs', 'lanht', 'lansb', 'lansp',
-                       'lanst', 'lansy', 'lantb', 'lantp', 'lantr', 'lanv2',
-                       'lartg', 'larfg', 'lasd4']
         # Exclude all routines that do not have consistent interfaces from
         # LAPACK 3.1.0 through 3.5.0.
         # Also exclude routines with string arguments to avoid
@@ -125,4 +114,4 @@ if __name__ == '__main__':
                       'dlazq4', 'slazq3', 'slazq4', 'dlasq3', 'dlasq4',
                       'slasq3', 'slasq4', 'dlasq5', 'slasq5', 'slaneg']
         sigs_from_dir(src_dir, outfile, manual_wrappers=lapack_manual_wrappers,
-                      exclusions=exclusions, auxiliaries=auxiliaries)
+                      exclusions=exclusions)
