@@ -2386,11 +2386,13 @@ C             DLMF 9.9.18
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AI/AD
            IF (KF.EQ.2) RT=RT0-BI/BD
-           IF (DABS((RT-RT0)/RT).GT.1.D-12) THEN
+           ERR=DABS((RT-RT0)/RT)
+           IF (ERR.GT.1.D-12) THEN
               RT0=RT
               GOTO 10
            ELSE
               XA(I)=RT
+              IF (ERR.GT.1D-14) CALL AIRYB(RT,AI,BI,AD,BD)
               IF (KF.EQ.1) XD(I)=AD
               IF (KF.EQ.2) XD(I)=BD
            ENDIF
@@ -2425,11 +2427,13 @@ C             DLMF 9.9.19
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AD/(AI*X)
            IF (KF.EQ.2) RT=RT0-BD/(BI*X)
-           IF (DABS((RT-RT0)/RT).GT.1.0D-12) THEN
+           ERR=DABS((RT-RT0)/RT)
+           IF (ERR.GT.1.0D-12) THEN
               RT0=RT
               GOTO 20
            ELSE
               XB(I)=RT
+              IF (ERR.GT.1D-14) CALL AIRYB(RT,AI,BI,AD,BD)
               IF (KF.EQ.1) XC(I)=AI
               IF (KF.EQ.2) XC(I)=BI
            ENDIF
