@@ -94,6 +94,7 @@ from scipy.special import airy
 # Local imports.
 from . import _ufuncs as cephes
 _gam = cephes.gamma
+from . import specfun
 
 __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
            'jacobi', 'laguerre', 'genlaguerre', 'hermite', 'hermitenorm',
@@ -726,7 +727,7 @@ def initial_nodes_b(n, k):
     a = n % 2 - 0.5
     nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
     # Airy roots by approximation
-    ak = airy_root(k)
+    ak = flipud(specfun.airyzo(k, 1)[0])
     # Initial approximation of Hermite roots (square)
     xksq = (nu +
             2.0**(2.0/3.0) * ak * nu**(1.0/3.0) +
