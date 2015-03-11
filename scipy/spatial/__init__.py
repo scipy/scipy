@@ -81,6 +81,7 @@ Functions
    distance_matrix
    minkowski_distance
    minkowski_distance_p
+   procrustes
 
 """
 
@@ -90,6 +91,7 @@ from .kdtree import *
 from .ckdtree import *
 from .qhull import *
 from ._plotutils import *
+from .procrustes import procrustes
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 __all__ += ['distance']
