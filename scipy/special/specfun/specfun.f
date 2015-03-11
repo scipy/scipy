@@ -2359,23 +2359,28 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION XA(NT),XB(NT),XC(NT),XD(NT)
         PI=3.141592653589793D0
-        RT0=0.0D0
         RT=0.0D0
         DO 15 I=1,NT
+           RT0=0D0
            IF (KF.EQ.1) THEN
-              U=3.0*PI*(4.0*I-1)/8.0D0
+              U=3.0D0*PI*(4.0D0*I-1)/8.0D0
               U1=1/(U*U)
-              RT0=-(U*U)**(1.0/3.0)*((((-15.5902*U1+.929844)*U1
-     &            -.138889)*U1+.10416667D0)*U1+1.0D0)
            ELSE IF (KF.EQ.2) THEN
               IF (I.EQ.1) THEN
-                 RT0=-1.17371
+                 RT0=-1.17371D0
               ELSE
-                 U=3.0*PI*(4.0*I-3.0)/8.0
-                 U1=1.0D0/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((-15.5902*U1+.929844)*U1
-     &               -.138889)*U1+.10416667)*U1+1.0)
+                 U=3.0D0*PI*(4.0D0*I-3.0D0)/8.0D0
+                 U1=1/(U*U)
               ENDIF
+           ENDIF
+           IF (RT0.EQ.0) THEN
+C             DLMF 9.9.18
+              RT0=-(U*U)**(1.0D0/3.0D0)*(
+     &            + 1D0
+     &            + U1*(5D0/48D0
+     &            + U1*(-5D0/36D0
+     &            + U1*(77125D0/82944D0
+     &            + U1*(-108056875D0/6967296D0)))))
            ENDIF
 10         X=RT0
            CALL AIRYB(X,AI,BI,AD,BD)
@@ -2391,25 +2396,31 @@ C
            ENDIF
 15      CONTINUE
         DO 25 I=1,NT
+           RT0=0D0
            IF (KF.EQ.1) THEN
               IF (I.EQ.1) THEN
-                 RT0=-1.01879
+                 RT0=-1.01879D0
               ELSE
-                 U=3.0*PI*(4.0*I-3.0)/8.0
+                 U=3.0D0*PI*(4.0D0*I-3.0D0)/8.0D0
                  U1=1/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((15.0168*U1-.873954)
-     &            *U1+.121528)*U1-.145833D0)*U1+1.0D0)
               ENDIF
            ELSE IF (KF.EQ.2) THEN
               IF (I.EQ.1) THEN
-                 RT0=-2.29444
+                 RT0=-2.29444D0
               ELSE
-                 U=3.0*PI*(4.0*I-1.0)/8.0
-                 U1=1.0/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((15.0168*U1-.873954)
-     &               *U1+.121528)*U1-.145833)*U1+1.0)
+                 U=3.0D0*PI*(4.0D0*I-1.0D0)/8.0D0
+                 U1=1/(U*U)
               ENDIF
            ENDIF
+           IF (RT0.EQ.0) THEN
+C             DLMF 9.9.19
+              RT0=-(U*U)**(1.0D0/3.0D0)*(
+     &            + 1D0
+     &            + U1*(-7D0/48D0
+     &            + U1*(+35D0/288D0
+     &            + U1*(-181223D0/207360D0
+     &            + U1*(18683371D0/1244160D0)))))
+           END IF
 20         X=RT0
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AD/(AI*X)
