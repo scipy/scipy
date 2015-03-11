@@ -657,47 +657,6 @@ def compute_am(m):
     return am
 
 
-def airy_root(m):
-    """Approximation of the roots of the Airy function
-
-    Computes an approximation to the `m`-th root :math:`a_m` of the
-    Airy function :math:`Ai(x)`. For :math:`m < 10` we use a lookup
-    table and an asymptotic expansion otherwise.
-
-    Parameters
-    ----------
-    m : ndarray of type int
-        Index of the root :math:`a_m`
-
-    Returns
-    -------
-    am : ndarray
-        The `m`-th root :math:`a_m` of the function :math:`Ai(x)`
-
-    See Also
-    --------
-    h_roots_asy
-    """
-    airyroots = array([
-             -2.3381074104597670385,
-             -4.0879494441309706166,
-             -5.5205598280955510591,
-             -6.7867080900717589988,
-             -7.9441335871208531231,
-             -9.0226508533409803802,
-             -10.040174341558085931,
-             -11.008524303733262893,
-             -11.936015563236262517,
-             -12.828776752865757200])
-    # Note: This specialized code is much faster than 'ai_zeros'
-    am = zeros_like(m, dtype=floating)
-    I = m <= 10
-    am[I] = airyroots[m[I]-1]
-    J = m > 10
-    am[J] = compute_am(m[J])
-    return am
-
-
 def initial_nodes_b(n, k):
     """Gatteschi initial guesses
 
