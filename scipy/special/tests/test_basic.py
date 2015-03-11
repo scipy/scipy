@@ -895,10 +895,35 @@ class TestAiry(TestCase):
     def test_bi_zeros(self):
         bi = special.bi_zeros(2)
         bia = (array([-1.17371322, -3.2710930]),
-        array([-2.29443968, -4.07315509]),
-        array([-0.45494438, 0.39652284]),
-        array([0.60195789, -0.76031014]))
+               array([-2.29443968, -4.07315509]),
+               array([-0.45494438, 0.39652284]),
+               array([0.60195789, -0.76031014]))
         assert_array_almost_equal(bi,bia,4)
+
+        bi = special.bi_zeros(5)
+        assert_array_almost_equal(bi[0],array([-1.173713222709127,
+                                               -3.271093302836352,
+                                               -4.830737841662016,
+                                               -6.169852128310251,
+                                               -7.376762079367764]),11)
+
+        assert_array_almost_equal(bi[1],array([-2.294439682614122,
+                                               -4.073155089071828,
+                                               -5.512395729663599,
+                                               -6.781294445990305,
+                                               -7.940178689168587]),10)
+
+        assert_array_almost_equal(bi[2],array([-0.454944383639657,
+                                               0.396522836094465,
+                                               -0.367969161486959,
+                                               0.349499116831805,
+                                               -0.336026240133662]),11)
+
+        assert_array_almost_equal(bi[3],array([0.601957887976239,
+                                               -0.760310141492801,
+                                               0.836991012619261,
+                                               -0.88947990142654,
+                                               0.929983638568022]),11)
 
     def test_ai_zeros(self):
         ai = special.ai_zeros(1)
@@ -988,30 +1013,13 @@ class TestKelvin(TestCase):
         assert_almost_equal(mberp,-0.49306712470943909,5)  # this may not be exact
 
     def test_bei_zeros(self):
-        bi = special.bi_zeros(5)
-        assert_array_almost_equal(bi[0],array([-1.173713222709127,
-                                               -3.271093302836352,
-                                               -4.830737841662016,
-                                               -6.169852128310251,
-                                               -7.376762079367764]),11)
-
-        assert_array_almost_equal(bi[1],array([-2.294439682614122,
-                                               -4.073155089071828,
-                                               -5.512395729663599,
-                                               -6.781294445990305,
-                                               -7.940178689168587]),10)
-
-        assert_array_almost_equal(bi[2],array([-0.454944383639657,
-                                               0.396522836094465,
-                                               -0.367969161486959,
-                                               0.349499116831805,
-                                               -0.336026240133662]),11)
-
-        assert_array_almost_equal(bi[3],array([0.601957887976239,
-                                               -0.760310141492801,
-                                               0.836991012619261,
-                                               -0.88947990142654,
-                                               0.929983638568022]),11)
+        # Abramowitz & Stegun, Table 9.12
+        bi = special.bei_zeros(5)
+        assert_array_almost_equal(bi,array([5.02622,
+                                            9.45541,
+                                            13.89349,
+                                            18.33398,
+                                            22.77544]),4)
 
     def test_beip_zeros(self):
         bip = special.beip_zeros(5)
@@ -1019,7 +1027,7 @@ class TestKelvin(TestCase):
                                                8.280987849760042,
                                                12.742147523633703,
                                                17.193431752512542,
-                                               21.641143941167325]),4)
+                                               21.641143941167325]),8)
 
     def test_ber_zeros(self):
         ber = special.ber_zeros(5)
