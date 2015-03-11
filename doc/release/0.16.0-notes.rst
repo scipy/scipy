@@ -62,6 +62,12 @@ of the forward and backward passes was added to `scipy.signal.filtfilt`.
 
 An exponential (Poisson) window was added as `scipy.signal.exponential`.
 
+`scipy.spatial` improvements
+----------------------------
+
+The function `scipy.spatial.procrustes` for Procrustes analysis (statistical
+shape analysis) was added.
+
 `scipy.stats` improvements
 --------------------------
 

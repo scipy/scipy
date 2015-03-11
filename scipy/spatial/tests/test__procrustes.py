@@ -1,9 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-from unittest import TestCase, main
-
 import numpy as np
-from scipy.spatial.procrustes import procrustes
+from numpy.testing import (TestCase, run_module_suite, assert_allclose,
+                           assert_equal, assert_almost_equal, assert_raises)
+
+from scipy.spatial import procrustes
 
 
 class ProcrustesTests(TestCase):
@@ -43,12 +44,12 @@ class ProcrustesTests(TestCase):
         #
         # can shift, mirror, and scale an 'L'?
         a, b, disparity = procrustes(self.data1, self.data2)
-        np.testing.assert_allclose(b, a)
-        np.testing.assert_almost_equal(disparity, 0.)
+        assert_allclose(b, a)
+        assert_almost_equal(disparity, 0.)
 
         # if first mtx is standardized, leaves first mtx unchanged?
         m4, m5, disp45 = procrustes(self.data4, self.data5)
-        np.testing.assert_equal(m4, self.data4)
+        assert_equal(m4, self.data4)
 
         # at worst, data3 is an 'L' with one point off by .5
         m1, m3, disp13 = procrustes(self.data1, self.data3)
@@ -58,7 +59,7 @@ class ProcrustesTests(TestCase):
         # procrustes disparity should not depend on order of matrices
         m1, m3, disp13 = procrustes(self.data1, self.data3)
         m3_2, m1_2, disp31 = procrustes(self.data3, self.data1)
-        np.testing.assert_almost_equal(disp13, disp31)
+        assert_almost_equal(disp13, disp31)
 
         # try with 3d, 8 pts per
         rand1 = np.array([[2.61955202, 0.30522265, 0.55515826],
@@ -80,41 +81,41 @@ class ProcrustesTests(TestCase):
                          [-0.86106154, -0.28687488, 0.9644429]])
         res1, res3, disp13 = procrustes(rand1, rand3)
         res3_2, res1_2, disp31 = procrustes(rand3, rand1)
-        np.testing.assert_almost_equal(disp13, disp31)
+        assert_almost_equal(disp13, disp31)
 
     def test_procrustes_shape_mismatch(self):
-        np.testing.assert_raises(ValueError, procrustes,
-                                 np.array([[1, 2], [3, 4]]),
-                                 np.array([[5, 6, 7], [8, 9, 10]]))
+        assert_raises(ValueError, procrustes,
+                      np.array([[1, 2], [3, 4]]),
+                      np.array([[5, 6, 7], [8, 9, 10]]))
 
     def test_procrustes_empty_rows_or_cols(self):
         empty = np.array([[]])
-        np.testing.assert_raises(ValueError, procrustes, empty, empty)
+        assert_raises(ValueError, procrustes, empty, empty)
 
     def test_procrustes_no_variation(self):
-        np.testing.assert_raises(ValueError, procrustes,
-                                 np.array([[42, 42], [42, 42]]),
-                                 np.array([[45, 45], [45, 45]]))
+        assert_raises(ValueError, procrustes,
+                      np.array([[42, 42], [42, 42]]),
+                      np.array([[45, 45], [45, 45]]))
 
     def test_procrustes_bad_number_of_dimensions(self):
         # fewer dimensions in one dataset
-        np.testing.assert_raises(ValueError, procrustes,
-                                 np.array([1, 1, 2, 3, 5, 8]),
-                                 np.array([[1, 2], [3, 4]]))
+        assert_raises(ValueError, procrustes,
+                      np.array([1, 1, 2, 3, 5, 8]),
+                      np.array([[1, 2], [3, 4]]))
 
         # fewer dimensions in both datasets
-        np.testing.assert_raises(ValueError, procrustes,
-                                 np.array([1, 1, 2, 3, 5, 8]),
-                                 np.array([1, 1, 2, 3, 5, 8]))
+        assert_raises(ValueError, procrustes,
+                      np.array([1, 1, 2, 3, 5, 8]),
+                      np.array([1, 1, 2, 3, 5, 8]))
 
         # zero dimensions
-        np.testing.assert_raises(ValueError, procrustes, np.array(7),
-                                 np.array(11))
+        assert_raises(ValueError, procrustes, np.array(7), np.array(11))
 
         # extra dimensions
-        np.testing.assert_raises(ValueError, procrustes,
-                                 np.array([[[11], [7]]]),
-                                 np.array([[[5, 13]]]))
+        assert_raises(ValueError, procrustes,
+                      np.array([[[11], [7]]]),
+                      np.array([[[5, 13]]]))
+
 
 if __name__ == '__main__':
-    main()
+    run_module_suite()

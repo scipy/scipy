@@ -59,7 +59,7 @@ structure of the simplices satisfies the condition:
     simplex, opposite to the j-vertex. It is -1 in case of no
     neighbor.
 
-Convex hull facets also define a hyperplane equation:
+Convex hull facets also define a hyperplane equation::
 
     (hull.equations[i,:-1] * coord).sum() + hull.equations[i,-1] == 0
 
@@ -91,7 +91,7 @@ from .kdtree import *
 from .ckdtree import *
 from .qhull import *
 from ._plotutils import *
-from .procrustes import procrustes
+from ._procrustes import procrustes
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 __all__ += ['distance']
