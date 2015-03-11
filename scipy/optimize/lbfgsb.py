@@ -43,7 +43,7 @@ from .optimize import (approx_fprime, MemoizeJac, OptimizeResult,
                        _approx_fprime_helper)
 from scipy.sparse.linalg import LinearOperator
 
-__all__ = ['fmin_l_bfgs_b']
+__all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
 
 
 def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
@@ -352,7 +352,12 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
 
 class LbfgsInvHessProduct(LinearOperator):
-    """Linear operator for the BFGS approximate inverse Hessian.
+    """Linear operator for the L-BFGS approximate inverse Hessian.
+
+    This operator computes the product of a vector with the approximate inverse
+    of the Hessian of the objective function, using the L-BFGS limited
+    memory approximation to the inverse Hessian, accumulated during the
+    optimization.
 
     References
     ----------

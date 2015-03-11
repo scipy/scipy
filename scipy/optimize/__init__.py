@@ -200,8 +200,8 @@ The `linprog` function supports the following methods:
    optimize.linprog-simplex
 
 
-Utility Functions
-=================
+Utilities
+=========
 
 .. autosummary::
    :toctree: generated/
@@ -212,6 +212,7 @@ Utility Functions
    line_search - Return a step that satisfies the strong Wolfe conditions
 
    show_options - Show specific options optimization solvers
+   LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian
 
 """
 
@@ -222,7 +223,7 @@ from ._minimize import *
 from ._root import *
 from .minpack import *
 from .zeros import *
-from .lbfgsb import fmin_l_bfgs_b
+from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
 from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *
