@@ -20,7 +20,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'band_stop_obj', 'buttord', 'cheb1ord', 'cheb2ord', 'ellipord',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'filter_dict', 'band_dict', 'BadCoefficients',
-           'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk']
+           'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'sosfreqz']
 
 
 class BadCoefficients(UserWarning):
@@ -242,6 +242,110 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     w = atleast_1d(w)
     zm1 = exp(-1j * w)
     h = polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
+    if plot is not None:
+        plot(w, h)
+
+    return w, h
+
+
+def sosfreqz(sos, worN=None, whole=False, plot=None):
+    """
+    Compute the frequency response of a digital filter in SOS format.
+
+    Given `sos`, an array with shape (n, 6) of second order sections of
+    a digital filter, compute the frequency response of the system function::
+
+               B0(z)*B1(z)*...*B{n-1}(z)
+        H(z) = -------------------------
+               A0(z)*A1(z)*...*A{n-1}(z)
+
+    for z = exp(omega*1j), where B{k}(z) and A{k}(z) are numerator and
+    denominator of the transfer function of the k-th second order section.
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``. Each row corresponds to a second-order
+        section, with the first three columns providing the numerator
+        coefficients and the last three providing the denominator
+        coefficients.
+    worN : {None, int, array_like}, optional
+        If None (default), then compute at 512 frequencies equally spaced
+        around the unit circle.
+        If a single integer, then compute at that many frequencies.
+        If an array_like, compute the response at the frequencies given (in
+        radians/sample).
+    whole : bool, optional
+        Normally, frequencies are computed from 0 to the Nyquist frequency,
+        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
+        compute frequencies from 0 to 2*pi radians/sample.
+    plot : callable
+        A callable that takes two arguments. If given, the return parameters
+        `w` and `h` are passed to plot. Useful for plotting the frequency
+        response inside `sosfreqz`.
+
+    Returns
+    -------
+    w : ndarray
+        The normalized frequencies at which h was computed, in radians/sample.
+    h : ndarray
+        The frequency response.
+
+    See Also
+    --------
+    sosfilt
+
+    Notes
+    -----
+    Using Matplotlib's "plot" function as the callable for `plot` produces
+    unexpected results. It plots the real part of the complex transfer
+    function, not the magnitude.  Try ``lambda w, h: plot(w, abs(h))``.
+
+    Examples
+    --------
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    Design an 8th order bandpass filter in SOS format.
+
+    >>> sos = signal.ellip(8, 0.5, 60, (0.2, 0.4), btype='bandpass',
+    ...                    output='sos')
+
+    Compute the frequency response on a grid of 1500 points.
+
+    >>> w, h = signal.sosfreqz(sos, worN=1500)
+
+    Plot the response.
+
+    >>> plt.subplot(2, 1, 1)
+    >>> db = 20*np.log10(np.abs(h[h != 0]))
+    >>> plt.plot(w[h != 0]/np.pi, db)
+    >>> plt.ylim(-75, 5)
+    >>> plt.grid(True)
+    >>> plt.yticks([0, -20, -40, -60])
+    >>> plt.ylabel('Gain [dB]')
+    >>> plt.title('Frequency Response')
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(w/np.pi, np.arctan2(h.imag, h.real))
+    >>> plt.grid(True)
+    >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
+    ...            ['$-\pi$', '$-\pi/2$', '0', '$\pi/2$', '$\pi$'])
+    >>> plt.ylabel('Phase [rad]')
+    >>> plt.xlabel('Frequency (relative to Nyquist)')
+    >>> plt.show()
+
+    """
+
+    # A valid SOS array must have a least one section, so it should be
+    # safe to access sos[0, :] without checking the length of sos.
+    w, h = freqz(sos[0, :3], sos[0, 3:], worN=worN, whole=whole)
+
+    for row in sos[1:]:
+        w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole)
+        h *= rowh
+
     if plot is not None:
         plot(w, h)
 

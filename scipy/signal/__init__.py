@@ -82,6 +82,7 @@ Filter design
                     -- response.
    freqs         -- Analog filter frequency response.
    freqz         -- Digital filter frequency response.
+   sosfreqz      -- Digital filter frequency response for SOS format filter.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
    kaiser_atten  -- Compute the attenuation of a Kaiser FIR filter, given
