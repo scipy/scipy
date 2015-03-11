@@ -2381,7 +2381,7 @@ C
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AI/AD
            IF (KF.EQ.2) RT=RT0-BI/BD
-           IF (DABS((RT-RT0)/RT).GT.1.D-9) THEN
+           IF (DABS((RT-RT0)/RT).GT.1.D-12) THEN
               RT0=RT
               GOTO 10
            ELSE
@@ -2414,7 +2414,7 @@ C
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AD/(AI*X)
            IF (KF.EQ.2) RT=RT0-BD/(BI*X)
-           IF (DABS((RT-RT0)/RT).GT.1.0D-9) THEN
+           IF (DABS((RT-RT0)/RT).GT.1.0D-12) THEN
               RT0=RT
               GOTO 20
            ELSE
@@ -7460,7 +7460,7 @@ C                BD --- Bi'(x)
 C       =======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION CK(41),DK(41)
+        DIMENSION CK(51),DK(51)
         EPS=1.0D-15
         PI=3.141592653589793D0
         C1=0.355028053887817D0
@@ -7511,20 +7511,34 @@ C
 45         AD=C1*DF-C2*DG
            BD=SR3*(C1*DF+C2*DG)
         ELSE
+           KM=INT(24.5-XA)
+           IF (XA.LT.6.0) KM=14
+           IF (XA.GT.15.0) KM=10
+           IF (X.GT.0.0D0) THEN
+              KMAX=KM
+           ELSE
+C             Choose cutoffs so that the remainder term in asymptotic
+C             expansion is epsilon size. The X<0 branch needs to be fast
+C             in order to make AIRYZO efficient
+              IF (XA.GT.70.0) KM=3
+              IF (XA.GT.500.0) KM=2
+              IF (XA.GT.1000.0) KM=1
+              KM2=KM
+              IF (XA.GT.150.0) KM2=1
+              IF (XA.GT.3000.0) KM2=0
+              KMAX=2*KM+1
+           ENDIF
            XE=XA*XQ/1.5D0
            XR1=1.0D0/XE
            XAR=1.0D0/XQ
            XF=DSQRT(XAR)
            RP=0.5641895835477563D0
            R=1.0D0
-           DO 50 K=1,40
+           DO 50 K=1,KMAX
               R=R*(6.0D0*K-1.0D0)/216.0D0*(6.0D0*K-3.0D0)
      &          /K*(6.0D0*K-5.0D0)/(2.0D0*K-1.0D0)
               CK(K)=R
 50            DK(K)=-(6.0D0*K+1.0D0)/(6.0D0*K-1.0D0)*CK(K)
-           KM=INT(24.5-XA)
-           IF (XA.LT.6.0) KM=14
-           IF (XA.GT.15.0) KM=10
            IF (X.GT.0.0D0) THEN
               SAI=1.0D0
               SAD=1.0D0
@@ -7559,7 +7573,7 @@ C
               SSB=CK(1)*XR1
               SDB=DK(1)*XR1
               R=XR1
-              DO 70 K=1,KM
+              DO 70 K=1,KM2
                  R=-R*XR2
                  SSB=SSB+CK(2*K+1)*R
 70               SDB=SDB+DK(2*K+1)*R

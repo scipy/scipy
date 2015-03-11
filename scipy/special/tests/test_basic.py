@@ -907,6 +907,54 @@ class TestAiry(TestCase):
                                      array([0.5357]),
                                      array([0.7012])),4)
 
+    def test_ai_zeros_big(self):
+        z, zp, ai_zpx, aip_zx = special.ai_zeros(50000)
+        ai_z, aip_z, _, _ = special.airy(z)
+        ai_zp, aip_zp, _, _ = special.airy(zp)
+
+        ai_envelope = 1/abs(z)**(1./4)
+        aip_envelope = abs(zp)**(1./4)
+
+        # Check values
+        assert_allclose(ai_zpx, ai_zp, rtol=1e-10)
+        assert_allclose(aip_zx, aip_z, rtol=1e-10)
+
+        # Check they are zeros
+        assert_allclose(ai_z/ai_envelope, 0, atol=1e-10, rtol=0)
+        assert_allclose(aip_zp/aip_envelope, 0, atol=1e-10, rtol=0)
+
+        # Check first zeros, DLMF 9.9.1
+        assert_allclose(z[:6],
+            [-2.3381074105, -4.0879494441, -5.5205598281,
+             -6.7867080901, -7.9441335871, -9.0226508533], rtol=1e-10)
+        assert_allclose(zp[:6],
+            [-1.0187929716, -3.2481975822, -4.8200992112,
+             -6.1633073556, -7.3721772550, -8.4884867340], rtol=1e-10)
+
+    def test_bi_zeros_big(self):
+        z, zp, bi_zpx, bip_zx = special.bi_zeros(50000)
+        _, _, bi_z, bip_z = special.airy(z)
+        _, _, bi_zp, bip_zp = special.airy(zp)
+
+        bi_envelope = 1/abs(z)**(1./4)
+        bip_envelope = abs(zp)**(1./4)
+
+        # Check values
+        assert_allclose(bi_zpx, bi_zp, rtol=1e-10)
+        assert_allclose(bip_zx, bip_z, rtol=1e-10)
+
+        # Check they are zeros
+        assert_allclose(bi_z/bi_envelope, 0, atol=1e-10, rtol=0)
+        assert_allclose(bip_zp/bip_envelope, 0, atol=1e-10, rtol=0)
+
+        # Check first zeros, DLMF 9.9.2
+        assert_allclose(z[:6],
+            [-1.1737132227, -3.2710933028, -4.8307378417,
+             -6.1698521283, -7.3767620794, -8.4919488465], rtol=1e-10)
+        assert_allclose(zp[:6],
+            [-2.2944396826, -4.0731550891, -5.5123957297,
+             -6.7812944460, -7.9401786892, -9.0195833588], rtol=1e-10)
+
 
 class TestAssocLaguerre(TestCase):
     def test_assoc_laguerre(self):
