@@ -611,20 +611,23 @@ def mode(a, axis=0):
                       [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    (array([[ 3.,  1.,  0.,  0.]]), array([[ 1.,  1.,  1.,  1.]]))
+    (array([[3, 1, 0, 0]]), array([[1, 1, 1, 1]]))
 
     To get mode of whole array, specify axis=None:
 
     >>> stats.mode(a, axis=None)
-    (array([ 3.]), array([ 3.]))
+    (array([3]), array([3]))
 
     """
     a, axis = _chk_asarray(a, axis)
+    if a.size == 0:
+        return np.array([]), np.array([])
+
     scores = np.unique(np.ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
     oldmostfreq = np.zeros(testshape, dtype=a.dtype)
-    oldcounts = np.zeros(testshape)
+    oldcounts = np.zeros(testshape, dtype=int)
     for score in scores:
         template = (a == score)
         counts = np.expand_dims(np.sum(template, axis), axis)
