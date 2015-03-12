@@ -627,36 +627,6 @@ def initial_nodes_a(n, k):
     return xksq
 
 
-def compute_am(m):
-    """Approximation of the roots of the Airy function
-
-    Computes an asymptotic approximation to the root :math:`a_m`
-    of the Airy function :math:`Ai(x)` for large values of :math:`m`.
-    This formula is essentially exact for :math:`m > 10`.
-
-    Parameters
-    ----------
-    m : ndarray of type int
-        Index of the root :math:`a_m`
-
-    Returns
-    -------
-    am : ndarray
-        The `m`-th root :math:`a_m` of the function :math:`Ai(x)`
-
-    See Also
-    --------
-    airy_root
-    h_roots_asy
-    """
-    sm = 3*pi*(4*m-1) / 8.0
-    coeffs = row_stack([1.0, 5.0/48.0, -5.0/36.0, 77125.0/82944.0,
-                        -108056875.0/6967296.0, 162375596875.0/334430208.0])
-    smp = column_stack([ones_like(sm), sm**(-2), sm**(-4), sm**(-6), sm**(-8), sm**(-10)])
-    am = -sm**(2.0/3.0) * dot(smp, coeffs).reshape((-1,))
-    return am
-
-
 def initial_nodes_b(n, k):
     """Gatteschi initial guesses
 
