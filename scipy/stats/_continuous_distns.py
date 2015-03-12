@@ -16,7 +16,7 @@ from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
 
 from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
-                   tanh, cos, cosh, sinh, sign)
+                   tanh, cos, cosh, sinh)
 
 from numpy import polyval, place, extract, any, asarray, nan, inf, pi
 
@@ -4423,13 +4423,13 @@ class gennorm_gen(rv_continuous):
 
     `gennorm` takes ``beta`` as a shape parameter.
     For ``beta = 1``, it is identical to a Laplace distribution.
-    For ``beta = 2``, it is identical to a normal distribution 
-    with ``scale=1/sqrt(2)``.
+    For ``beta = 2``, it is identical to a normal distribution
+    (with ``scale=1/sqrt(2)``).
 
     See Also
     --------
-    laplace: Laplace distribution
-    norm: normal distribution
+    laplace : Laplace distribution
+    norm : normal distribution
 
     References
     ----------
@@ -4442,18 +4442,20 @@ class gennorm_gen(rv_continuous):
     """
 
     def _pdf(self, x, beta):
-        return exp(self._logpdf(x, beta))
+        return np.exp(self._logpdf(x, beta))
 
     def _logpdf(self, x, beta):
-        return log(.5 * beta) - special.gammaln(1. / beta) - abs(x)**beta
+        return np.log(.5 * beta) - special.gammaln(1. / beta) - abs(x)**beta
 
     def _cdf(self, x, beta):
         c = .5 * np.sign(x)
+        # evaluating (.5 + c) first prevents numerical cancellation
         return (.5 + c) - c * special.gammaincc(1. / beta, abs(x)**beta)
 
     def _ppf(self, x, beta):
-        c = sign(x - .5)
-        return c * special.gammainccinv(1. / beta, 1. + c - 2.*c*x)**(1. / beta)
+        c = np.sign(x - .5)
+        # evaluating (1. + c) first prevents numerical cancellation
+        return c * special.gammainccinv(1. / beta, (1. + c) - 2.*c*x)**(1. / beta)
 
     def _sf(self, x, beta):
         return self._cdf(-x, beta)
@@ -4485,8 +4487,8 @@ class halfgennorm_gen(rv_continuous):
 
     `gennorm` takes ``beta`` as a shape parameter.
     For ``beta = 1``, it is identical to an exponential distribution.
-    For ``beta = 2``, it is identical to a half normal distribution 
-    with ``scale=1/sqrt(2)``.
+    For ``beta = 2``, it is identical to a half normal distribution
+    (with ``scale=1/sqrt(2)``).
 
     See Also
     --------
@@ -4505,10 +4507,10 @@ class halfgennorm_gen(rv_continuous):
     """
 
     def _pdf(self, x, beta):
-        return exp(self._logpdf(x, beta))
+        return np.exp(self._logpdf(x, beta))
 
     def _logpdf(self, x, beta):
-        return log(beta) - special.gammaln(1. / beta) - x**beta
+        return np.log(beta) - special.gammaln(1. / beta) - x**beta
 
     def _cdf(self, x, beta):
         return special.gammainc(1. / beta, x**beta)
