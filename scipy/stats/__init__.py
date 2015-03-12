@@ -49,6 +49,7 @@ Continuous distributions
    frechet_r         -- Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
    frechet_l         -- Frechet Left Sided, Weibull_max
    genlogistic       -- Generalized Logistic
+   gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto
    genexpon          -- Generalized Exponential
    genextreme        -- Generalized Extreme Value
@@ -63,6 +64,7 @@ Continuous distributions
    halfcauchy        -- Half Cauchy
    halflogistic      -- Half Logistic
    halfnorm          -- Half Normal
+   halfgennorm       -- Generalized Half Normal
    hypsecant         -- Hyperbolic Secant
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian

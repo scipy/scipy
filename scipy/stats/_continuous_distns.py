@@ -4423,7 +4423,8 @@ class gennorm_gen(rv_continuous):
 
     `gennorm` takes ``beta`` as a shape parameter.
     For ``beta = 1``, it is identical to a Laplace distribution.
-    For ``beta = 2``, it is identical to a normal distribution (with ``scale=1/sqrt(2)``).
+    For ``beta = 2``, it is identical to a normal distribution 
+    with ``scale=1/sqrt(2)``.
 
     See Also
     --------
@@ -4447,12 +4448,12 @@ class gennorm_gen(rv_continuous):
         return log(.5 * beta) - special.gammaln(1. / beta) - abs(x)**beta
 
     def _cdf(self, x, beta):
-        c = .5 * sign(x)
+        c = .5 * np.sign(x)
         return (.5 + c) - c * special.gammaincc(1. / beta, abs(x)**beta)
 
     def _ppf(self, x, beta):
         c = sign(x - .5)
-        return c * special.gammainccinv(1. / beta, (1. + c) - 2. * c * x) ** (1. / beta)
+        return c * special.gammainccinv(1. / beta, 1. + c - 2.*c*x)**(1. / beta)
 
     def _sf(self, x, beta):
         return self._cdf(-x, beta)
@@ -4461,15 +4462,13 @@ class gennorm_gen(rv_continuous):
         return -self._ppf(x, beta)
 
     def _stats(self, beta):
-        c1 = special.gammaln(1. / beta)
-        c3 = special.gammaln(3. / beta)
-        c5 = special.gammaln(5. / beta)
-        return 0., exp(c3 - c1), 0., exp(c5 + c1 - 2. * c3) - 3.
+        c1, c3, c5 = special.gammaln([1./beta, 3./beta, 5./beta])
+        return 0., np.exp(c3 - c1), 0., np.exp(c5 + c1 - 2. * c3) - 3.
 
     def _entropy(self, beta):
-        return 1. / beta - log(.5 * beta) + special.gammaln(1. / beta)
-
+        return 1. / beta - np.log(.5 * beta) + special.gammaln(1. / beta)
 gennorm = gennorm_gen(name='gennorm')
+
 
 class halfgennorm_gen(rv_continuous):
     """The upper half of a generalized normal continuous random variable.
@@ -4486,13 +4485,14 @@ class halfgennorm_gen(rv_continuous):
 
     `gennorm` takes ``beta`` as a shape parameter.
     For ``beta = 1``, it is identical to an exponential distribution.
-    For ``beta = 2``, it is identical to a half normal distribution (with ``scale=1/sqrt(2)``).
+    For ``beta = 2``, it is identical to a half normal distribution 
+    with ``scale=1/sqrt(2)``.
 
     See Also
     --------
-    gennorm: generalized normal distribution
-    expon: exponential distribution
-    halfnorm: half normal distribution
+    gennorm : generalized normal distribution
+    expon : exponential distribution
+    halfnorm : half normal distribution
 
     References
     ----------
@@ -4514,17 +4514,16 @@ class halfgennorm_gen(rv_continuous):
         return special.gammainc(1. / beta, x**beta)
 
     def _ppf(self, x, beta):
-        return special.gammaincinv(1. / beta, x) ** (1. / beta)
+        return special.gammaincinv(1. / beta, x)**(1. / beta)
 
     def _sf(self, x, beta):
         return special.gammaincc(1. / beta, x**beta)
 
     def _isf(self, x, beta):
-        return special.gammainccinv(1. / beta, x) ** (1. / beta)
+        return special.gammainccinv(1. / beta, x)**(1. / beta)
 
     def _entropy(self, beta):
-        return 1. / beta - log(beta) + special.gammaln(1. / beta)
-
+        return 1. / beta - np.log(beta) + special.gammaln(1. / beta)
 halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 
