@@ -85,9 +85,8 @@ from __future__ import division, print_function, absolute_import
 
 # Scipy imports.
 import numpy as np
-from numpy import (any, exp, inf, pi, sqrt, floor, sin, cos, array, around,
-                   int, ceil, flipud, hstack, arccos, dot, column_stack,
-                   row_stack, ones_like, zeros_like, floating, arange)
+from numpy import (any, exp, inf, pi, sqrt, floor, sin, cos, around,
+                   int, ceil, flipud, hstack, arccos, arange)
 from scipy import linalg
 from scipy.special import airy
 
