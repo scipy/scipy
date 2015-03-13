@@ -353,6 +353,12 @@ class TestNQuad(TestCase):
         res2 = nquad(func3d, [[-np.pi, np.pi], [-2, 2], (-1, 2)], args=(2, 3))
         assert_almost_equal(res, res2)
 
+    def test_dict_as_opts(self):
+        try:
+            out = nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
+        except(TypeError):
+            assert False
+
 
 if __name__ == "__main__":
     run_module_suite()

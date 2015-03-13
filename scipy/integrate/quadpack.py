@@ -690,7 +690,7 @@ def nquad(func, ranges, args=None, opts=None):
         opts = [dict([])] * depth
 
     if isinstance(opts, dict):
-        opts = [opts] * depth
+        opts = [_OptFunc(opts)] * depth
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
 
