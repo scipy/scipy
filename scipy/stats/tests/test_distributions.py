@@ -41,7 +41,7 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
          'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
-         'vonmises', 'vonmises_line', 'pearson3']
+         'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -288,6 +288,42 @@ class TestGeom(TestCase):
         expected = array([1.0, 2.0, 3.0])
         assert_array_almost_equal(vals, expected)
 
+class TestGennorm(TestCase):
+    def test_laplace(self):
+        # test against Laplace (special case for beta=1)
+        points = [1, 2, 3]
+        pdf1 = stats.gennorm.pdf(points, 1)
+        pdf2 = stats.laplace.pdf(points)
+        assert_almost_equal(pdf1, pdf2)
+
+    def test_norm(self):
+        # test against normal (special case for beta=2)
+        points = [1, 2, 3]
+        pdf1 = stats.gennorm.pdf(points, 2)
+        pdf2 = stats.norm.pdf(points, scale=2**-.5)
+        assert_almost_equal(pdf1, pdf2)
+
+class TestHalfgennorm(TestCase):
+    def test_expon(self):
+        # test against exponential (special case for beta=1)
+        points = [1, 2, 3]
+        pdf1 = stats.halfgennorm.pdf(points, 1)
+        pdf2 = stats.expon.pdf(points)
+        assert_almost_equal(pdf1, pdf2)
+
+    def test_halfnorm(self):
+        # test against half normal (special case for beta=2)
+        points = [1, 2, 3]
+        pdf1 = stats.halfgennorm.pdf(points, 2)
+        pdf2 = stats.halfnorm.pdf(points, scale=2**-.5)
+        assert_almost_equal(pdf1, pdf2)
+
+    def test_gennorm(self):
+        # test against generalized normal
+        points = [1, 2, 3]
+        pdf1 = stats.halfgennorm.pdf(points, .497324)
+        pdf2 = stats.gennorm.pdf(points, .497324)
+        assert_almost_equal(pdf1, 2*pdf2)
 
 class TestTruncnorm(TestCase):
     def test_ppf_ticket1131(self):
@@ -775,7 +811,7 @@ class TestExpon(TestCase):
         assert_equal(stats.expon.cdf(1e-18), 1e-18)
         assert_equal(stats.expon.isf(stats.expon.sf(40)), 40)
 
-        
+
 class TestExponNorm(TestCase):
     def test_moments(self):
         # Some moment test cases based on non-loc/scaled formula
@@ -785,9 +821,9 @@ class TestExponNorm(TestCase):
             opK2 = 1.0 + 1 / (lam*sig)**2
             exp_skew = 2 / (lam * sig)**3 * opK2**(-1.5)
             exp_kurt = 6.0 * (1 + (lam * sig)**2)**(-2)
-            return [mu + 1/lam, sig*sig + 1.0/(lam*lam), exp_skew, exp_kurt] 
+            return [mu + 1/lam, sig*sig + 1.0/(lam*lam), exp_skew, exp_kurt]
 
-        mu, sig, lam = 0, 1, 1        
+        mu, sig, lam = 0, 1, 1
         K = 1.0 / (lam * sig)
         sts = stats.exponnorm.stats(K, loc=mu, scale=sig, moments='mvsk')
         assert_almost_equal(sts, get_moms(lam, sig, mu))
@@ -803,7 +839,7 @@ class TestExponNorm(TestCase):
         K = 1.0 / (lam * sig)
         sts = stats.exponnorm.stats(K, loc=mu, scale=sig, moments='mvsk')
         assert_almost_equal(sts, get_moms(lam, sig, mu))
-        
+
     def test_extremes_x(self):
         # Test for extreme values against overflows
         assert_almost_equal(stats.exponnorm.pdf(-900, 1), 0.0)
@@ -907,7 +943,7 @@ class TestBetaPrime(TestCase):
         assert_allclose(b.pdf(x), np.exp(b.logpdf(x)))
 
     def test_cdf(self):
-        # regression test for gh-4030: Implementation of 
+        # regression test for gh-4030: Implementation of
         # scipy.stats.betaprime.cdf()
         x = stats.betaprime.cdf(0, 0.2, 0.3)
         assert_equal(x, 0.0)
@@ -916,7 +952,7 @@ class TestBetaPrime(TestCase):
         x = np.array([0.2, 0.5, 0.6])
         cdfs = stats.betaprime.cdf(x, alpha, beta)
         assert_(np.isfinite(cdfs).all())
-        
+
         # check the new cdf implementation vs generic one:
         gen_cdf = stats.rv_continuous._cdf_single
         cdfs_g = [gen_cdf(stats.betaprime, val, alpha, beta) for val in x]
@@ -2206,12 +2242,12 @@ def test_lomax_accuracy():
     # regression test for gh-4033
     p = stats.lomax.ppf(stats.lomax.cdf(1e-100,1),1)
     assert_allclose(p, 1e-100)
-    
+
 def test_gompertz_accuracy():
     # Regression test for gh-4031
     p = stats.gompertz.ppf(stats.gompertz.cdf(1e-100,1),1)
     assert_allclose(p, 1e-100)
-    
+
 def test_truncexpon_accuracy():
     # regression test for gh-4035
     p = stats.truncexpon.ppf(stats.truncexpon.cdf(1e-100,1),1)
