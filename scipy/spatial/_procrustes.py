@@ -15,7 +15,7 @@ __all__ = ['procrustes']
 
 
 def procrustes(data1, data2):
-    r"""Procrustes analysis, a similarity test for two data sets
+    r"""Procrustes analysis, a similarity test for two data sets.
 
     Each input matrix is a set of points or vectors (the rows of the matrix).
     The dimension of the space is the number of columns of each matrix. Given
@@ -38,21 +38,19 @@ def procrustes(data1, data2):
     Parameters
     ----------
     data1 : array_like
-        matrix, n rows represent points in k (columns) space data1 is the
-        reference data, after it is standardised, the data from data2 will
-        be transformed to fit the pattern in data1 (must have >1 unique
-        points).
-
+        Matrix, n rows represent points in k (columns) space `data1` is the
+        reference data, after it is standardised, the data from `data2` will be
+        transformed to fit the pattern in `data1` (must have >1 unique points).
     data2 : array_like
-        n rows of data in k space to be fit to data1.  Must be the  same
-        shape (numrows, numcols) as data1 (must have >1 unique points).
+        n rows of data in k space to be fit to `data1`.  Must be the  same
+        shape ``(numrows, numcols)`` as data1 (must have >1 unique points).
 
     Returns
     -------
     mtx1 : array_like
-        a standardized version of data1
+        A standardized version of `data1`.
     mtx2 : array_like
-        the orientation of data2 that best fits data1. Centered, but not
+        The orientation of `data2` that best fits `data1`. Centered, but not
         necessarily :math:`tr(AA^{T}) = 1`.
     disparity : float
         :math:`M^{2}` as defined above.
@@ -66,7 +64,7 @@ def procrustes(data1, data2):
 
     See Also
     --------
-    orthogonal_procrustes
+    scipy.linalg.orthogonal_procrustes
 
     Notes
     -----
@@ -86,9 +84,11 @@ def procrustes(data1, data2):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.spatial import procrustes
-    # the b matrix is a rotated, shifted, scaled and mirrored version of a
+
+    The matrix ``b`` is a rotated, shifted, scaled and mirrored version of
+    ``a`` here:
+
     >>> a = np.array([[1, 3], [1, 2], [1, 1], [2, 1]], 'd')
     >>> b = np.array([[4, -2], [4, -4], [4, -6], [2, -6]], 'd')
     >>> mtx1, mtx2, disparity = procrustes(a, b)
@@ -96,7 +96,6 @@ def procrustes(data1, data2):
     0.0
 
     """
-
     mtx1 = np.array(data1, dtype=np.double, copy=True)
     mtx2 = np.array(data2, dtype=np.double, copy=True)
 
