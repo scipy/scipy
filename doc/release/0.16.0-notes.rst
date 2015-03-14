@@ -57,6 +57,9 @@ Additionally, the filter design functions `iirdesign`, `iirfilter`, `butter`,
 `cheby1`, `cheby2`, `ellip`, and `bessel` can return the filter in the SOS
 format.
 
+The function `scipy.signal.place_poles`, which provides two methods to place
+poles for linear systems, was added.
+
 The option to use Gustafsson's method for choosing the initial conditions
 of the forward and backward passes was added to `scipy.signal.filtfilt`.
 
