@@ -142,6 +142,7 @@ Robert T. McGibbon for Levinson-Durbin Toeplitz solver.
 Alex Conley for the Exponentially Modified Normal distribution.
 Abraham Escalante for contributions to scipy.stats
 Johannes Ballé for the generalized normal distribution.
+Irvin Probst (ENSTA Bretagne) for pole placement.
 
 
 Institutions
