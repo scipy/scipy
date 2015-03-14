@@ -33,9 +33,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     Parameters
     ----------
-    points : (Npoints, Ndims) ndarray of floats
+    x : (Npoints, Ndims) ndarray of floats
         Data point coordinates.
-    values : (Npoints,) ndarray of float or complex
+    y : (Npoints,) ndarray of float or complex
         Data values.
     rescale : boolean, optional
         Rescale points to unit cube before performing interpolation.
