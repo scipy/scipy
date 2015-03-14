@@ -827,6 +827,17 @@ def test_svds_partial_return():
     if svds(z, 2, return_singular_vectors='u')[-1] is not None:
         raise AssertionError('right eigenvector matrix was computed when it should not have been')
 
+def test_svds_wrong_eigen_type():
+    # Regression test for a github issue.
+    # https://github.com/scipy/scipy/issues/4590
+    # Function was not checking for eigenvalue type and unintended
+    # values could be returned.
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1, 0, 2],
+                  [0, 0, 1]], np.float)
+    assert_raises(ValueError, svds, x, 1, which='LA')
+
 
 if __name__ == "__main__":
     run_module_suite()
