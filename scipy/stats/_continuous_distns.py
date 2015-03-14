@@ -4408,6 +4408,127 @@ class wrapcauchy_gen(rv_continuous):
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*pi, name='wrapcauchy')
 
 
+class gennorm_gen(rv_continuous):
+    """A generalized normal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `gennorm` is [1]_::
+
+                                     beta
+        gennorm.pdf(x, beta) =  ---------------  exp(-|x|**beta)
+                                2 gamma(1/beta)
+
+    `gennorm` takes ``beta`` as a shape parameter.
+    For ``beta = 1``, it is identical to a Laplace distribution.
+    For ``beta = 2``, it is identical to a normal distribution
+    (with ``scale=1/sqrt(2)``).
+
+    See Also
+    --------
+    laplace : Laplace distribution
+    norm : normal distribution
+
+    References
+    ----------
+
+    .. [1] "Generalized normal distribution, Version 1",
+           https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
+
+    %(example)s
+
+    """
+
+    def _pdf(self, x, beta):
+        return np.exp(self._logpdf(x, beta))
+
+    def _logpdf(self, x, beta):
+        return np.log(.5 * beta) - special.gammaln(1. / beta) - abs(x)**beta
+
+    def _cdf(self, x, beta):
+        c = .5 * np.sign(x)
+        # evaluating (.5 + c) first prevents numerical cancellation
+        return (.5 + c) - c * special.gammaincc(1. / beta, abs(x)**beta)
+
+    def _ppf(self, x, beta):
+        c = np.sign(x - .5)
+        # evaluating (1. + c) first prevents numerical cancellation
+        return c * special.gammainccinv(1. / beta, (1. + c) - 2.*c*x)**(1. / beta)
+
+    def _sf(self, x, beta):
+        return self._cdf(-x, beta)
+
+    def _isf(self, x, beta):
+        return -self._ppf(x, beta)
+
+    def _stats(self, beta):
+        c1, c3, c5 = special.gammaln([1./beta, 3./beta, 5./beta])
+        return 0., np.exp(c3 - c1), 0., np.exp(c5 + c1 - 2. * c3) - 3.
+
+    def _entropy(self, beta):
+        return 1. / beta - np.log(.5 * beta) + special.gammaln(1. / beta)
+gennorm = gennorm_gen(name='gennorm')
+
+
+class halfgennorm_gen(rv_continuous):
+    """The upper half of a generalized normal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `halfgennorm` is::
+
+                                        beta
+        halfgennorm.pdf(x, beta) =  -------------  exp(-|x|**beta)
+                                    gamma(1/beta)
+
+    `gennorm` takes ``beta`` as a shape parameter.
+    For ``beta = 1``, it is identical to an exponential distribution.
+    For ``beta = 2``, it is identical to a half normal distribution
+    (with ``scale=1/sqrt(2)``).
+
+    See Also
+    --------
+    gennorm : generalized normal distribution
+    expon : exponential distribution
+    halfnorm : half normal distribution
+
+    References
+    ----------
+
+    .. [1] "Generalized normal distribution, Version 1",
+           https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
+
+    %(example)s
+
+    """
+
+    def _pdf(self, x, beta):
+        return np.exp(self._logpdf(x, beta))
+
+    def _logpdf(self, x, beta):
+        return np.log(beta) - special.gammaln(1. / beta) - x**beta
+
+    def _cdf(self, x, beta):
+        return special.gammainc(1. / beta, x**beta)
+
+    def _ppf(self, x, beta):
+        return special.gammaincinv(1. / beta, x)**(1. / beta)
+
+    def _sf(self, x, beta):
+        return special.gammaincc(1. / beta, x**beta)
+
+    def _isf(self, x, beta):
+        return special.gammainccinv(1. / beta, x)**(1. / beta)
+
+    def _entropy(self, beta):
+        return 1. / beta - np.log(beta) + special.gammaln(1. / beta)
+halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
