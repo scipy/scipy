@@ -140,6 +140,7 @@ Clark Fitzgerald for namedtuple outputs in scipy.stats.
 Florian Wilhelm for usage of RandomState in scipy.stats distributions.
 Robert T. McGibbon for Levinson-Durbin Toeplitz solver.
 Alex Conley for the Exponentially Modified Normal distribution.
+Abraham Escalante for contributions to scipy.stats
 
 
 Institutions
