@@ -1242,9 +1242,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args) {
                       type, maxiter, grid_density);
         if (err < 0) {
 	  if (err == -1) {
-            sprintf(mystr, "Failure to converge after %d iterations.\n      " \
-                           "Design may still be correct.",
-                    maxiter);
+            sprintf(mystr, "Failure to converge after %d iterations.\n", maxiter);
 	    PyErr_SetString(PyExc_ValueError, mystr);
 	    goto fail;
 	  }
