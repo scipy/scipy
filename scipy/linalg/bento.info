@@ -28,9 +28,9 @@ Library:
              _solve_toeplitz.c
     Extension: cython_blas
         Sources:
-            cython_blas.c
+            cython_blas.c,
             _blas_subroutine_wrappers.f
     Extension: cython_lapack
         Sources:
-            cython_lapack.c
+            cython_lapack.c,
             _lapack_subroutine_wrappers.f
