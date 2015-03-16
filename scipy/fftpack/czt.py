@@ -369,8 +369,6 @@ def zoomfft(x, fn, m=None, Fs=2, axis=-1):
 
 
 def _test1(x, show=False, plots=[1, 2, 3, 4]):
-    norm = np.linalg.norm
-
     # Normal fft and zero-padded fft equivalent to 10x oversampling
     over = 10
     w = np.linspace(0, 2-2./len(x), len(x))
@@ -446,24 +444,6 @@ def _test1(x, show=False, plots=[1, 2, 3, 4]):
     if plots != []:
         pylab.show()
 
-    err = norm(y-y1)/norm(y)
-    # print "direct err %g"%err
-    assert err < 1e-10, "error for direct transform is %g" % (err,)
-    err = norm(yover-y2)/norm(yover)
-    # print "over err %g"%err
-    assert err < 1e-10, "error for oversampling is %g" % (err,)
-    err = norm(yover[idx3]-y3)/norm(yover[idx3])
-    # print "range err %g"%err
-    assert err < 1e-10, "error for subrange is %g" % (err,)
-
-
-def _testscaled(x):
-    n = len(x)
-    norm = np.linalg.norm
-    assert norm(fft(x)-scaledfft(x)) < 1e-10
-    assert norm(fftshift(fft(x))[n/4:3*n/4] -
-                fftshift(scaledfft(x, scale=0.5, m=n/2))) < 1e-10
-
 
 def test(demo=None, plots=[1, 2, 3]):
     # 0: Gauss
@@ -484,10 +464,6 @@ def test(demo=None, plots=[1, 2, 3]):
 
     # Check transform on n-D array input
     x = np.reshape(np.arange(3*2*28), (3, 2, 28))
-    y1 = zoomfft(x, [0, 2-2./28])
-    y2 = zoomfft(x[2, 0, :], [0, 2-2./28])
-    err = np.linalg.norm(y2-y1[2, 0])
-    assert err < 1e-15, "error for n-D array is %g" % (err,)
 
     # 2: Random (not a test condition)
     if demo == 2:
