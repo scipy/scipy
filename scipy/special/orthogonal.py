@@ -559,7 +559,7 @@ def h_roots(n, mu=False):
         df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
-        nodes, weights = _h_roots_asy(n)
+        nodes, weights = _h_roots_asy(m)
         if mu:
             return nodes, weights, sum(weights)
         else:
@@ -909,10 +909,6 @@ def _h_roots_asy(n):
        *Fast computation of Gauss quadrature nodes and
        weights on the whole real line*. ArXiv 1410.5286.
     """
-    m = int(n)
-    if n < 1 or n != m:
-        raise ValueError("n must be a positive integer.")
-
     iv = _initial_nodes(n)
     nodes, weights = _newton(n, iv)
     # Combine with negative parts
@@ -1006,7 +1002,7 @@ def he_roots(n, mu=False):
         df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
-        nodes, weights = _h_roots_asy(n)
+        nodes, weights = _h_roots_asy(m)
         # Transform
         nodes *= sqrt(2)
         weights /= sqrt(2)
