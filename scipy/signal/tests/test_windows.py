@@ -29,6 +29,7 @@ window_funcs = [
     ('cosine', ()),
     ('hann', ()),
     ('exponential', ()),
+    ('tukey', (0.5,)),
     ]
 
 
@@ -142,6 +143,36 @@ def test_exponential():
         else:
             win = signal.exponential(*k)
             assert_allclose(win, v, rtol=1e-14)
+
+
+tukey_data = {
+    (4, 0.5, True): array([0.0, 1.0, 1.0, 0.0]),
+    (4, 0.9, True): array([0.0, 0.84312081893436686, 0.84312081893436686, 0.0]),
+    (4, 1.0, True): array([0.0, 0.75, 0.75, 0.0]),
+    (4, 0.5, False): array([0.0, 1.0, 1.0, 1.0]),
+    (4, 0.9, False): array([0.0, 0.58682408883346526, 1.0, 0.58682408883346526]),
+    (4, 1.0, False): array([0.0, 0.5, 1.0, 0.5]),
+    (5, 0.0, True): array([1.0, 1.0, 1.0, 1.0, 1.0]),
+    (5, 0.8, True): array([0.0, 0.69134171618254492, 1.0, 0.69134171618254492, 0.0]),
+    (5, 1.0, True): array([0.0, 0.5, 1.0, 0.5, 0.0]),
+}
+
+def test_tukey():
+    # Test against hardcoded data
+    for k, v in tukey_data.items():
+        if v is None:
+            assert_raises(ValueError, signal.tukey, *k)
+        else:
+            win = signal.tukey(*k)
+            assert_allclose(win, v, rtol=1e-14)
+
+    # Test extremes of alpha correspond to boxcar and hann
+    tuk0 = signal.tukey(100,0)
+    tuk1 = signal.tukey(100,1)
+    box0 = signal.boxcar(100)
+    han1 = signal.hann(100)
+    assert_array_almost_equal(tuk0, box0)
+    assert_array_almost_equal(tuk1, han1)
 
 
 class TestGetWindow(object):
