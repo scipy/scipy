@@ -545,12 +545,17 @@ class _PPolyBase(object):
             extrapolate = True
         self.extrapolate = bool(extrapolate)
 
-        if not (0 <= axis < self.c.ndim):
-            raise ValueError("%s must be between 0 and %s" % (axis, c.ndim))
+        if not (0 <= axis < self.c.ndim - 1):
+            raise ValueError("%s must be between 0 and %s" % (axis, c.ndim-1))
 
-        # roll the interpolation axis to be the first one in self.c
         self.axis = axis
         if axis != 0:
+            # roll the interpolation axis to be the first one in self.c
+            # More specifically, the target shape for self.c is (k, m, ...),
+            # and axis !=0 means that we have c.shape (..., k, m, ...)
+            #                                               ^
+            #                                              axis
+            # So we roll two of them.
             self.c = np.rollaxis(self.c, axis+1)
             self.c = np.rollaxis(self.c, axis+1)
 
@@ -728,9 +733,8 @@ class PPoly(_PPolyBase):
     extrapolate : bool, optional
         Whether to extrapolate to ouf-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
-    axis : integer, optional
-        Interpolation axis.
-        Default is zero.
+    axis : int, optional
+        Interpolation axis. Default is zero.
 
     Attributes
     ----------
@@ -1049,9 +1053,8 @@ class BPoly(_PPolyBase):
     extrapolate : bool, optional
         Whether to extrapolate to ouf-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
-    axis : integer, optional
-        Interpolation axis.
-        Default is zero.
+    axis : int, optional
+        Interpolation axis. Default is zero.
 
     Attributes
     ----------
