@@ -90,7 +90,7 @@ from __future__ import division, print_function, absolute_import
 # Scipy imports.
 import numpy as np
 from numpy import (any, exp, inf, pi, sqrt, floor, sin, cos, around,
-                   int, ceil, flipud, hstack, arccos, arange)
+                   int, hstack, arccos, arange)
 from scipy import linalg
 from scipy.special import airy
 
@@ -666,7 +666,7 @@ def _initial_nodes_b(n, k):
     a = n % 2 - 0.5
     nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
     # Airy roots by approximation
-    ak = flipud(specfun.airyzo(k.max(), 1)[0])
+    ak = specfun.airyzo(k.max(), 1)[0][::-1]
     # Initial approximation of Hermite roots (square)
     xksq = (nu +
             2.0**(2.0/3.0) * ak * nu**(1.0/3.0) +
@@ -705,7 +705,7 @@ def _initial_nodes(n):
     turnover = around(fit).astype(int)
     # Compute all approximations
     ia = arange(1, int(floor(n*0.5)+1))
-    ib = flipud(arange(1, int(1+n-ceil(n*0.5))))
+    ib = ia[::-1]
     xasq = _initial_nodes_a(n, ia[:turnover+1])
     xbsq = _initial_nodes_b(n, ib[turnover+1:])
     # Combine
@@ -913,11 +913,11 @@ def _h_roots_asy(n):
     nodes, weights = _newton(n, iv)
     # Combine with negative parts
     if n % 2 == 0:
-        nodes = hstack([-flipud(nodes), nodes])
-        weights = hstack([flipud(weights), weights])
+        nodes = hstack([-nodes[::-1], nodes])
+        weights = hstack([weights[::-1], weights])
     else:
-        nodes = hstack([-flipud(nodes[1:]), nodes])
-        weights = hstack([flipud(weights[1:]), weights])
+        nodes = hstack([-nodes[-1:0:-1], nodes])
+        weights = hstack([weights[-1:0:-1], weights])
     # Scale weights
     weights *= sqrt(pi) / sum(weights)
     return nodes, weights
