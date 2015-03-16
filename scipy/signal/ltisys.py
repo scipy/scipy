@@ -1237,11 +1237,11 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
         # transfer_matrix[:, j]=real(xj)
         # transfer_matrix[:, j+1]=imag(xj)
 
-         # Add this at the beginning of this function if you wish to test
-         # complex support:
-         #    if ~np.isreal(P[j]) and (j>=B.shape[0]-1 or P[j]!=np.conj(P[j+1])):
-         #        return
-         # Problems arise when imag(xj)=>0 I have no idea on how to fix this
+        # Add this at the beginning of this function if you wish to test
+        # complex support:
+        #    if ~np.isreal(P[j]) and (j>=B.shape[0]-1 or P[j]!=np.conj(P[j+1])):
+        #        return
+        # Problems arise when imag(xj)=>0 I have no idea on how to fix this
 
 
 def _YT_real(ker_pole, Q, transfer_matrix, i, j):
