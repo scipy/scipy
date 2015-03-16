@@ -45,12 +45,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from __future__ import division, print_function, absolute_import
 
 import sys
+import numpy as np
 
-from numpy import (sqrt, log, asarray, newaxis, all, dot, exp, eye,
-                   float_)
 from scipy import linalg
-from scipy._lib.six import callable, get_method_function, \
-     get_function_code
+from scipy._lib.six import callable, get_method_function, get_function_code
+from scipy.special import xlogy
 
 __all__ = ['Rbf']
 
@@ -111,16 +110,16 @@ class Rbf(object):
     """
 
     def _euclidean_norm(self, x1, x2):
-        return sqrt(((x1 - x2)**2).sum(axis=0))
+        return np.sqrt(((x1 - x2)**2).sum(axis=0))
 
     def _h_multiquadric(self, r):
-        return sqrt((1.0/self.epsilon*r)**2 + 1)
+        return np.sqrt((1.0/self.epsilon*r)**2 + 1)
 
     def _h_inverse_multiquadric(self, r):
-        return 1.0/sqrt((1.0/self.epsilon*r)**2 + 1)
+        return 1.0/np.sqrt((1.0/self.epsilon*r)**2 + 1)
 
     def _h_gaussian(self, r):
-        return exp(-(1.0/self.epsilon*r)**2)
+        return np.exp(-(1.0/self.epsilon*r)**2)
 
     def _h_linear(self, r):
         return r
@@ -132,9 +131,7 @@ class Rbf(object):
         return r**5
 
     def _h_thin_plate(self, r):
-        result = r**2 * log(r)
-        result[r == 0] = 0  # the spline is zero at zero
-        return result
+        return xlogy(r**2, r)
 
     # Setup self._function and do smoke test on initial r
     def _init_function(self, r):
@@ -186,10 +183,10 @@ class Rbf(object):
         return a0
 
     def __init__(self, *args, **kwargs):
-        self.xi = asarray([asarray(a, dtype=float_).flatten()
+        self.xi = np.asarray([np.asarray(a, dtype=np.float_).flatten()
                            for a in args[:-1]])
         self.N = self.xi.shape[-1]
-        self.di = asarray(args[-1]).flatten()
+        self.di = np.asarray(args[-1]).flatten()
 
         if not all([x.size == self.di.size for x in self.xi]):
             raise ValueError("All arrays must be equal length.")
@@ -198,7 +195,11 @@ class Rbf(object):
         r = self._call_norm(self.xi, self.xi)
         self.epsilon = kwargs.pop('epsilon', None)
         if self.epsilon is None:
-            self.epsilon = r.mean()
+            # default epsilon is the "the average distance between nodes"
+            dim = self.xi.shape[0]
+            ximax = np.amax(self.xi, axis=1)
+            ximin = np.amin(self.xi, axis=1)
+            self.epsilon = np.power(np.prod(ximax - ximin)/self.N, 1.0/dim)
         self.smooth = kwargs.pop('smooth', 0.0)
 
         self.function = kwargs.pop('function', 'multiquadric')
@@ -209,23 +210,23 @@ class Rbf(object):
         for item, value in kwargs.items():
             setattr(self, item, value)
 
-        self.A = self._init_function(r) - eye(self.N)*self.smooth
+        self.A = self._init_function(r) - np.eye(self.N)*self.smooth
         self.nodes = linalg.solve(self.A, self.di)
 
     def _call_norm(self, x1, x2):
         if len(x1.shape) == 1:
-            x1 = x1[newaxis, :]
+            x1 = x1[np.newaxis, :]
         if len(x2.shape) == 1:
-            x2 = x2[newaxis, :]
-        x1 = x1[..., :, newaxis]
-        x2 = x2[..., newaxis, :]
+            x2 = x2[np.newaxis, :]
+        x1 = x1[..., :, np.newaxis]
+        x2 = x2[..., np.newaxis, :]
         return self.norm(x1, x2)
 
     def __call__(self, *args):
-        args = [asarray(x) for x in args]
+        args = [np.asarray(x) for x in args]
         if not all([x.shape == y.shape for x in args for y in args]):
             raise ValueError("Array lengths must be equal")
         shp = args[0].shape
-        xa = asarray([a.flatten() for a in args], dtype=float_)
+        xa = np.asarray([a.flatten() for a in args], dtype=np.float_)
         r = self._call_norm(xa, self.xi)
-        return dot(self._function(r), self.nodes).reshape(shp)
+        return np.dot(self._function(r), self.nodes).reshape(shp)
