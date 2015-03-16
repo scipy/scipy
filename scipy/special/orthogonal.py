@@ -767,8 +767,8 @@ def _pbcf(n, theta):
     # Polynomials
     # http://dlmf.nist.gov/12.10#E9
     # http://dlmf.nist.gov/12.10#E10
-    u0 = 1.0
     ctp = ct ** arange(16).reshape((-1,1))
+    u0 = 1.0
     u1 = (1.0*ctp[3,:] - 6.0*ct) / 24.0
     u2 = (-9.0*ctp[4,:] + 249.0*ctp[2,:] + 145.0) / 1152.0
     u3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 28287.0*ctp[5,:] - 151995.0*ctp[3,:] - 259290.0*ct) / 414720.0
@@ -788,12 +788,13 @@ def _pbcf(n, theta):
     P = 2.0*sqrt(pi) * mu**(1.0/6.0) * phi
     # Terms for U
     # http://dlmf.nist.gov/12.10#E42
+    phip = phi ** arange(6, 31, 6).reshape((-1,1))
     A0 = b0*u0
-    A1 = (b2*u0 + phi**6*b1*u1 + phi**12*b0*u2) / zeta**3
-    A2 = (b4*u0 + phi**6*b3*u1 + phi**12*b2*u2 + phi**18*b1*u3 + phi**24*b0*u4) / zeta**6
-    B0 = -(a1*u0 + phi**6*a0*u1) / zeta**2
-    B1 = -(a3*u0 + phi**6*a2*u1 + phi**12*a1*u2 + phi**18*a0*u3) / zeta**5
-    B2 = -(a5*u0 + phi**6*a4*u1 + phi**12*a3*u2 + phi**18*a2*u3 + phi**24*a1*u4 + phi**30*a0*u5) / zeta**8
+    A1 = (b2*u0 + phip[0,:]*b1*u1 + phip[1,:]*b0*u2) / zeta**3
+    A2 = (b4*u0 + phip[0,:]*b3*u1 + phip[1,:]*b2*u2 + phip[2,:]*b1*u3 + phip[3,:]*b0*u4) / zeta**6
+    B0 = -(a1*u0 + phip[0,:]*a0*u1) / zeta**2
+    B1 = -(a3*u0 + phip[0,:]*a2*u1 + phip[1,:]*a1*u2 + phip[2,:]*a0*u3) / zeta**5
+    B2 = -(a5*u0 + phip[0,:]*a4*u1 + phip[1,:]*a3*u2 + phip[2,:]*a2*u3 + phip[3,:]*a1*u4 + phip[4,:]*a0*u5) / zeta**8
     # U
     # http://dlmf.nist.gov/12.10#E35
     U = P * (Ai * (A0 + A1/mu**2.0 + A2/mu**4.0) +
@@ -802,12 +803,12 @@ def _pbcf(n, theta):
     Pd = sqrt(2.0*pi) * mu**(2.0/6.0) / phi
     # Terms for derivative of U
     # http://dlmf.nist.gov/12.10#E46
-    C0 = -(b1*v0 + phi**6*b0*v1) / zeta
-    C1 = -(b3*v0 + phi**6*b2*v1 + phi**12*b1*v2 + phi**18*b0*v3) / zeta**4
-    C2 = -(b5*v0 + phi**6*b4*v1 + phi**12*b3*v2 + phi**18*b2*v3 + phi**24*b1*v4 + phi**30*b0*v5) / zeta**7
+    C0 = -(b1*v0 + phip[0,:]*b0*v1) / zeta
+    C1 = -(b3*v0 + phip[0,:]*b2*v1 + phip[1,:]*b1*v2 + phip[2,:]*b0*v3) / zeta**4
+    C2 = -(b5*v0 + phip[0,:]*b4*v1 + phip[1,:]*b3*v2 + phip[2,:]*b2*v3 + phip[3,:]*b1*v4 + phip[4,:]*b0*v5) / zeta**7
     D0 = a0*v0
-    D1 = (a2*v0 + phi**6*a1*v1 + phi**12*a0*v2) / zeta**3
-    D2 = (a4*v0 + phi**6*a3*v1 + phi**12*a2*v2 + phi**18*a1*v3 + phi**24*a0*v4) / zeta**6
+    D1 = (a2*v0 + phip[0,:]*a1*v1 + phip[1,:]*a0*v2) / zeta**3
+    D2 = (a4*v0 + phip[0,:]*a3*v1 + phip[1,:]*a2*v2 + phip[2,:]*a1*v3 + phip[3,:]*a0*v4) / zeta**6
     # Derivative of U
     # http://dlmf.nist.gov/12.10#E36
     Ud = Pd * (Ai * (C0 + C1/mu**2.0 + C2/mu**4.0) / mu**(4.0/6.0) +
