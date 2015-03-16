@@ -852,16 +852,16 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     where `M` is the degree of the numerator, `N` is the degree of the
     denominator, and `n` is the sample number.  It is implemented using
-    the following difference equations::
+    the following difference equations (assuming M = N)::
 
-         y[m] = b[0]*x[m] + z[0,m-1]
-         z[0,m] = b[1]*x[m] + z[1,m-1] - a[1]*y[m]
+         a[0]*y[n] = b[0] * x[n]               + d[0][n-1]
+           d[0][n] = b[1] * x[n] - a[1] * y[n] + d[1][n-1]
+           d[1][n] = b[2] * x[n] - a[2] * y[n] + d[2][n-1]
          ...
-         z[n-3,m] = b[n-2]*x[m] + z[n-2,m-1] - a[n-2]*y[m]
-         z[n-2,m] = b[n-1]*x[m] - a[n-1]*y[m]
+         d[N-2][n] = b[N-1]*x[n] - a[N-1]*y[n] + d[N-1][n-1]
+         d[N-1][n] = b[N] * x[n] - a[N] * y[n]
 
-    where m is the output sample number and ``n = max(len(a), len(b))`` is the
-    model order.
+    where `d` are the state variables.
 
     The rational transfer function describing this filter in the
     z-transform domain is::
