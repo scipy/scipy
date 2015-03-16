@@ -76,6 +76,10 @@ Functions::
    Tables*. Gaithersburg, MD: National Bureau of Standards.
    http://www.math.sfu.ca/~cbm/aands/
 
+.. [townsend.trogdon.olver-2014]
+   Townsend, A. and Trogdon, T. and Olver, S. (2014)
+   *Fast computation of Gauss quadrature nodes and
+   weights on the whole real line*. ArXiv 1410.5286.
 """
 #
 # Author:  Travis Oliphant 2000
@@ -535,6 +539,13 @@ def h_roots(n, mu=False):
     integrate.quadrature
     integrate.fixed_quad
     numpy.polynomial.hermite.hermgauss
+
+    References
+    ----------
+    .. [townsend.trogdon.olver-2014]
+       Townsend, A. and Trogdon, T. and Olver, S. (2014)
+       *Fast computation of Gauss quadrature nodes and
+       weights on the whole real line*. ArXiv 1410.5286.
     """
     m = int(n)
     if n < 1 or n != m:
