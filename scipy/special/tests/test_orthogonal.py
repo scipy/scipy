@@ -389,10 +389,18 @@ def test_h_roots():
     verify_gauss_quad(orth.h_roots, orth.eval_hermite, 25, atol=1e-13)
     verify_gauss_quad(orth.h_roots, orth.eval_hermite, 100, atol=1e-12)
 
+    # Golub-Welsch branch
     x, w = orth.h_roots(5, False)
     y, v, m = orth.h_roots(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
+
+    # Asymptotic branch (switch over at n >= 150)
+    x, w = orth.h_roots(200, False)
+    y, v, m = orth.h_roots(200, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+    assert_allclose(sum(v), m, 1e-14, 1e-14)
 
     assert_raises(ValueError, orth.h_roots, 0)
     assert_raises(ValueError, orth.h_roots, 3.3)
