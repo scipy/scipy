@@ -635,6 +635,27 @@ class _TestLinearFilter(TestCase):
             assert_array_almost_equal(y, y_r)
             assert_array_almost_equal(zf, zf_r)
     
+    def test_zi_pseudobroadcast(self):
+        x = self.generate((4, 5, 20))
+        b,a = signal.butter(8, 0.2, output='ba')
+        b = self.convert_dtype(b)
+        a = self.convert_dtype(a)
+        zi_size = b.shape[0] - 1
+
+        # lfilter requires x.ndim == zi.ndim exactly.  However, zi can have
+        # length 1 dimensions.
+        zi_full = self.convert_dtype(np.ones((4, 5, zi_size)))
+        zi_sing = self.convert_dtype(np.ones((1, 1, zi_size)))
+
+        y_full, zf_full = lfilter(b, a, x, zi=zi_full)
+        y_sing, zf_sing = lfilter(b, a, x, zi=zi_sing)
+
+        assert_array_almost_equal(y_sing, y_full)
+        assert_array_almost_equal(zf_full, zf_sing)
+
+        # lfilter does not prepend ones 
+        assert_raises(ValueError, lfilter, b, a, x, -1, np.ones(zi_size))
+    
     def base_bad_size_zi(self, b, a, x, axis, zi):
         b = self.convert_dtype(b)
         a = self.convert_dtype(a)

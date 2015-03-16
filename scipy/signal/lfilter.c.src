@@ -134,6 +134,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     int axis, typenum, theaxis, st;
     char *ara_ptr, input_flag = 0, *azero;
     intp na, nb, nal, zi_size;
+    intp zf_shape[NPY_MAXDIMS];
     BasicFilterFunction *basic_filter;
 
     axis = -1;
@@ -176,21 +177,6 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             goto fail;
 
         input_flag = 1;
-    }
-
-    arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
-                                              PyArray_DIMS(arX), typenum);
-    if (arY == NULL) {
-        goto fail;
-    }
-
-    if (input_flag) {
-        arVf = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arVi),
-                                                   PyArray_DIMS(arVi),
-                                                   typenum);
-        if (arVf == NULL) {
-            goto fail;
-        }
     }
 
     if (PyArray_TYPE(arX) < 256) {
@@ -238,10 +224,15 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     nb = PyArray_SIZE(arb);
     zi_size = (na > nb ? na : nb) - 1;
     if (input_flag) {
-        intp k;
+        intp k, Vik, Xk;
         for (k = 0; k < PyArray_NDIM(arX); ++k) {
-            if ((k == theaxis && PyArray_DIM(arVi, k) != zi_size) ||
-               (k != theaxis && PyArray_DIM(arX, k) != PyArray_DIM(arVi, k))) {
+            Vik = PyArray_DIM(arVi, k);
+            Xk = PyArray_DIM(arX, k);
+            if (k == theaxis && Vik == zi_size) {
+                zf_shape[k] = zi_size;
+            } else if (k != theaxis && (Vik == Xk || Vik == 1)) {
+                zf_shape[k] = Xk;
+            } else {
                 PyObject *msg = convert_shape_to_errmsg(PyArray_NDIM(arX),
                         PyArray_DIMS(arX), PyArray_DIMS(arVi),
                         theaxis, zi_size);
@@ -252,6 +243,21 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                 Py_DECREF(msg);
                 goto fail;
             }
+        }
+    }
+
+    arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
+                                              PyArray_DIMS(arX), typenum);
+    if (arY == NULL) {
+        goto fail;
+    }
+
+    if (input_flag) {
+        arVf = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arVi),
+                                                   zf_shape,
+                                                   typenum);
+        if (arVf == NULL) {
+            goto fail;
         }
     }
 
