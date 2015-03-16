@@ -537,6 +537,12 @@ class TestPPolyCommon(TestCase):
                 targ_shape = c_s[:axis] + xp.shape + c_s[2+axis:]
                 assert_equal(res.shape, targ_shape)
 
+        # c array needs two axes for the coefficients and intervals, so
+        # 0 <= axis < c.ndim-1; raise otherwise
+        for axis in (-1, 4, 5, 6):
+            for cls in (BPoly, PPoly):
+                assert_raises(ValueError, cls, **dict(c=c, x=x, axis=axis))
+
 
 class TestPolySubclassing(TestCase):
     class P(PPoly):
