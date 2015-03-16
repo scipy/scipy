@@ -666,7 +666,7 @@ def _initial_nodes_b(n, k):
     a = n % 2 - 0.5
     nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
     # Airy roots by approximation
-    ak = flipud(specfun.airyzo(k, 1)[0])
+    ak = flipud(specfun.airyzo(k.max(), 1)[0])
     # Initial approximation of Hermite roots (square)
     xksq = (nu +
             2.0**(2.0/3.0) * ak * nu**(1.0/3.0) +
