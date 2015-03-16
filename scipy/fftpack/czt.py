@@ -92,6 +92,10 @@ class CZT:
           callable object ``f(x, axis=-1)`` for computing the chirp-z transform
           on `x`
         """
+        if n < 1:
+            raise ValueError("Invalid number of CZT data "
+                             "points (%d) specified." % n)
+
         if m is None:
             m = n
 
@@ -189,6 +193,10 @@ class ZoomFFT(CZT):
             plot(f, y)
 
         """
+        if n < 1:
+            raise ValueError("Invalid number of CZT data "
+                             "points (%d) specified." % n)
+
         if m is None:
             m = n
         if np.size(fn) == 2:
@@ -246,6 +254,10 @@ class ScaledFFT(CZT):
         callable f(x, axis=-1)
           function for computing the scaled FFT on x.
         """
+        if n < 1:
+            raise ValueError("Invalid number of CZT data "
+                             "points (%d) specified." % n)
+
         if m is None:
             m = n
         w = np.exp(-2j * pi / m * scale)
@@ -281,6 +293,7 @@ def scaledfft(x, m=None, scale=1.0, axis=-1):
         An array of the same rank of 'x', but with the size if
         the 'axis' dimension set to 'm'
     """
+    x = np.asarray(x)
     transform = ScaledFFT(x.shape[axis], m, scale)
     return transform(x, axis)
 

@@ -5,7 +5,7 @@ A unit test module for czt.py
 '''
 from __future__ import division, absolute_import, print_function
 
-from numpy.testing import run_module_suite, assert_, assert_allclose
+from numpy.testing import run_module_suite, assert_, assert_allclose, assert_raises
 from czt import czt, zoomfft, scaledfft
 import numpy as np
 
@@ -74,6 +74,7 @@ def test_1D():
 
     # Random signals
     lengths = np.random.randint(8, 200, 20)
+    np.append(lengths, 1)
     for length in lengths:
         x = np.random.random(length)
         yield check_zoomfft, x
@@ -132,6 +133,18 @@ def test_large_prime():
     y = fft(x)
     y1 = czt(x)
     assert_allclose(y, y1, rtol=1e-6)
+
+
+def test_empty_input():
+    assert_raises(ValueError, czt, [])
+    assert_raises(ValueError, scaledfft, [])
+    assert_raises(ValueError, zoomfft, [], 0.5)
+
+
+def test_0_rank_input():
+    assert_raises(IndexError, czt, 5)
+    assert_raises(IndexError, scaledfft, 5)
+    assert_raises(IndexError, zoomfft, 5, 0.5)
 
 
 if __name__ == '__main__':
