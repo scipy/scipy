@@ -413,6 +413,7 @@ def test_h_roots_asy():
         x, w = orth._h_roots_asy(N)
         H = hermite_recursion(N+1, x)
         assert_allclose(H[-1,:], np.zeros(N), rtol, atol)
+        assert_allclose(sum(w), sqrt(np.pi), rtol, atol)
 
     test(150, atol=1e-12)
     test(151, atol=1e-12)
@@ -422,6 +423,8 @@ def test_h_roots_asy():
     test(501, atol=1e-12)
     test(999, atol=1e-12)
     test(1000, atol=1e-12)
+    test(2000, atol=1e-12)
+    test(5000, atol=1e-12)
 
 def test_he_roots():
     verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 5)
