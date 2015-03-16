@@ -410,7 +410,7 @@ def test_h_roots_asy():
 
     # This tests only the nodes
     def test(N, rtol=1e-15, atol=1e-14):
-        x, w = orth.h_roots_asy(N)
+        x, w = orth._h_roots_asy(N)
         H = hermite_recursion(N+1, x)
         assert_allclose(H[-1,:], np.zeros(N), rtol, atol)
 

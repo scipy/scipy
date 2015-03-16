@@ -548,14 +548,14 @@ def h_roots(n, mu=False):
         df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
-        nodes, weights = h_roots_asy(n)
+        nodes, weights = _h_roots_asy(n)
         if mu:
             return nodes, weights, sum(weights)
         else:
             return nodes, weights
 
 
-def compute_tauk(n, k, maxit=5):
+def _compute_tauk(n, k, maxit=5):
     """Helper function for Tricomi initial guesses
 
     For details, see formula 3.1 in lemma 3.1 in the
@@ -591,7 +591,7 @@ def compute_tauk(n, k, maxit=5):
     return xi
 
 
-def initial_nodes_a(n, k):
+def _initial_nodes_a(n, k):
     """Tricomi initial guesses
 
     Computes an initial approximation to the square of the `k`-th
@@ -617,7 +617,7 @@ def initial_nodes_a(n, k):
     initial_nodes
     h_roots_asy
     """
-    tauk = compute_tauk(n, k)
+    tauk = _compute_tauk(n, k)
     sigk = cos(0.5*tauk)**2
     a = n % 2 - 0.5
     nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
@@ -626,7 +626,7 @@ def initial_nodes_a(n, k):
     return xksq
 
 
-def initial_nodes_b(n, k):
+def _initial_nodes_b(n, k):
     """Gatteschi initial guesses
 
     Computes an initial approximation to the square of the `k`-th
@@ -666,7 +666,7 @@ def initial_nodes_b(n, k):
     return xksq
 
 
-def initial_nodes(n):
+def _initial_nodes(n):
     """Initial guesses for the Hermite roots
 
     Computes an initial approximation to the non-negative
@@ -695,8 +695,8 @@ def initial_nodes(n):
     # Compute all approximations
     ia = arange(1, int(floor(n*0.5)+1))
     ib = flipud(arange(1, int(1+n-ceil(n*0.5))))
-    xasq = initial_nodes_a(n, ia[:turnover+1])
-    xbsq = initial_nodes_b(n, ib[turnover+1:])
+    xasq = _initial_nodes_a(n, ia[:turnover+1])
+    xbsq = _initial_nodes_b(n, ib[turnover+1:])
     # Combine
     iv = sqrt(hstack([xasq, xbsq]))
     # Central node is always zero
@@ -705,7 +705,7 @@ def initial_nodes(n):
     return iv
 
 
-def pbcf(n, theta):
+def _pbcf(n, theta):
     """Asymptotic series expansion of parabolic cylinder function
 
     The implementation is based on sections 3.2 and 3.3 from the
@@ -819,7 +819,7 @@ def pbcf(n, theta):
     return U, Ud
 
 
-def newton(n, x_initial, maxit=5):
+def _newton(n, x_initial, maxit=5):
     """Newton iteration for polishing the asymptotic approximation
     to the zeros of the Hermite polynomials.
 
@@ -851,7 +851,7 @@ def newton(n, x_initial, maxit=5):
     theta = arccos(t)
     # Newton iteration
     for i in range(maxit):
-        u, ud = pbcf(n, theta)
+        u, ud = _pbcf(n, theta)
         dtheta = u / (sqrt(2.0) * mu * sin(theta) * ud)
         theta = theta + dtheta
         if max(abs(dtheta)) < 1e-14:
@@ -866,7 +866,7 @@ def newton(n, x_initial, maxit=5):
     return x, w
 
 
-def h_roots_asy(n):
+def _h_roots_asy(n):
     """Gauss-Hermite (physicst's) quadrature for large n
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
@@ -905,8 +905,8 @@ def h_roots_asy(n):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    iv = initial_nodes(n)
-    nodes, weights = newton(n, iv)
+    iv = _initial_nodes(n)
+    nodes, weights = _newton(n, iv)
     # Combine with negative parts
     if n % 2 == 0:
         nodes = hstack([-flipud(nodes), nodes])
@@ -998,7 +998,7 @@ def he_roots(n, mu=False):
         df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
-        nodes, weights = h_roots_asy(n)
+        nodes, weights = _h_roots_asy(n)
         # Transform
         nodes *= sqrt(2)
         weights /= sqrt(2)
