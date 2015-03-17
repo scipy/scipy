@@ -1,4 +1,5 @@
 import itertools
+
 import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_raises
 from scipy import linalg
@@ -467,10 +468,24 @@ class BaseQRdelete(BaseQRdeltas):
         r = r[1:]
         assert_raises(ValueError, qr_delete, q, r, 0, 1)
 
-    def test_integer_input(self):
-        q = np.arange(16).reshape(4, 4)
-        r = q.copy()  # doesn't matter
-        assert_raises(ValueError, qr_delete, q, r, 0, 1)
+    def test_unsupported_dtypes(self):
+        dts = ['int8', 'int16', 'int32', 'int64', 
+               'uint8', 'uint16', 'uint32', 'uint64',
+               'float16', 'longdouble', 'longcomplex',
+               'bool']
+        a, q0, r0 = self.generate('tall')
+        for dtype in dts:
+            q = q0.real.astype(dtype)
+            r = r0.real.astype(dtype)
+            assert_raises(ValueError, qr_delete, q, r0, 0, 1, 'row')
+            assert_raises(ValueError, qr_delete, q, r0, 0, 2, 'row')
+            assert_raises(ValueError, qr_delete, q, r0, 0, 1, 'col')
+            assert_raises(ValueError, qr_delete, q, r0, 0, 2, 'col')
+
+            assert_raises(ValueError, qr_delete, q0, r, 0, 1, 'row')
+            assert_raises(ValueError, qr_delete, q0, r, 0, 2, 'row')
+            assert_raises(ValueError, qr_delete, q0, r, 0, 1, 'col')
+            assert_raises(ValueError, qr_delete, q0, r, 0, 2, 'col')
 
     def test_check_finite(self):
         a0, q0, r0 = self.generate('tall')
@@ -856,13 +871,23 @@ class BaseQRinsert(BaseQRdeltas):
         assert_raises(ValueError, qr_insert, q[:-2], r, u, 0, 'col')
         assert_raises(ValueError, qr_insert, q, r, u[1:], 0, 'col')
 
-    def test_integer_input(self):
-        q = np.arange(16).reshape(4, 4)
-        r = q.copy()  # doesn't matter
-        u = q[:, 0].copy()
-        assert_raises(ValueError, qr_insert, q, r, u, 0, 'row')
-        assert_raises(ValueError, qr_insert, q, r, u, 0, 'col')
-    
+    def test_unsupported_dtypes(self):
+        dts = ['int8', 'int16', 'int32', 'int64', 
+               'uint8', 'uint16', 'uint32', 'uint64',
+               'float16', 'longdouble', 'longcomplex',
+               'bool']
+        a, q0, r0, u0 = self.generate('sqr', which='row')
+        for dtype in dts:
+            q = q0.real.astype(dtype)
+            r = r0.real.astype(dtype)
+            u = u0.real.astype(dtype)
+            assert_raises(ValueError, qr_insert, q, r0, u0, 0, 'row')
+            assert_raises(ValueError, qr_insert, q, r0, u0, 0, 'col')
+            assert_raises(ValueError, qr_insert, q0, r, u0, 0, 'row')
+            assert_raises(ValueError, qr_insert, q0, r, u0, 0, 'col')
+            assert_raises(ValueError, qr_insert, q0, r0, u, 0, 'row')
+            assert_raises(ValueError, qr_insert, q0, r0, u, 0, 'col')
+
     def test_check_finite(self):
         a0, q0, r0, u0 = self.generate('sqr', which='row', p=3)
 
@@ -1207,6 +1232,22 @@ class BaseQRupdate(BaseQRdeltas):
         assert_raises(ValueError, qr_update, q, r, u[1:], v)
         assert_raises(ValueError, qr_update, q, r, u, v[1:])
 
+    def test_unsupported_dtypes(self):
+        dts = ['int8', 'int16', 'int32', 'int64', 
+               'uint8', 'uint16', 'uint32', 'uint64',
+               'float16', 'longdouble', 'longcomplex',
+               'bool']
+        a, q0, r0, u0, v0 = self.generate('tall')
+        for dtype in dts:
+            q = q0.real.astype(dtype)
+            r = r0.real.astype(dtype)
+            u = u0.real.astype(dtype)
+            v = v0.real.astype(dtype)
+            assert_raises(ValueError, qr_update, q, r0, u0, v0)
+            assert_raises(ValueError, qr_update, q0, r, u0, v0)
+            assert_raises(ValueError, qr_update, q0, r0, u, v0)
+            assert_raises(ValueError, qr_update, q0, r0, u0, v)
+
     def test_integer_input(self):
         q = np.arange(16).reshape(4, 4)
         r = q.copy()  # doesn't matter
@@ -1320,4 +1361,8 @@ def check_form_qTu(q_order, u_order, u_shape, dtype):
     expected = np.dot(q.T.conj(), u)
     res = _decomp_update._form_qTu(q, u)
     assert_allclose(res, expected, rtol=rtol, atol=atol)
+
+
+if __name__ == "__main__":
+    run_module_suite()
  

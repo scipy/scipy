@@ -14,7 +14,7 @@ Routines for updating QR decompositions
 # additonally covers updating complete orthogonal factorizations and cholesky
 # decompositions (i.e. updating R alone).
 #
-# 1. Golub, G. H. & Loan, C. F. van V. Matrix Computations, 3rd Ed.
+# 1. Golub, G. H. & Van Loan, C. F. Matrix Computations, 3rd Ed.
 #    (Johns Hopkins University Press, 1996).
 #
 # 2. Hammarling, S. & Lucas, C. Updating the QR factorization and the least
@@ -39,7 +39,10 @@ from libc.math cimport sqrt, fabs, hypot
 from libc.string cimport memset
 cimport numpy as cnp
 
-cdef int NPY_ANYORDER = 0  
+# This is used in place of, e.g.  cnp.NPY_C_CONTIGUOUS, to indicate that a C 
+# F or non contiguous array is acceptable.
+cdef int ARRAY_ANYORDER = 0
+
 cdef int MEMORY_ERROR = limits.INT_MAX
 
 # These are commented out in the numpy support we cimported above.
@@ -451,12 +454,15 @@ cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u,
         axpy(n, 1, s, 1, s+n, 1)
         s[n] = 0
         return False
+
     scal(m, 1/wpnorm, u, 1)
     axpy(n, 1, s, 1, s+n, 1)
     s[n] = wpnorm
     return True
 
-cdef int thin_qr_row_delete(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* r, int* rs, int k, int p_eco, int p_full) nogil:
+cdef int thin_qr_row_delete(int m, int n, blas_t* q, int* qs, bint qisF,
+                            blas_t* r, int* rs, int k, int p_eco,
+                            int p_full) nogil:
     cdef int i, j, argmin_row_norm 
     cdef size_t usize = (m + 3*n + 1) * sizeof(blas_t)
     cdef blas_t* s
@@ -589,7 +595,7 @@ cdef int qr_block_col_delete(int m, int o, int n, blas_t* q, int* qs,
     return 0
 
 cdef void thin_qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
-        int* rs, blas_t* u, int* us, int k) nogil:
+                             int* rs, blas_t* u, int* us, int k) nogil:
     cdef int j
     cdef blas_t c, s
 
@@ -620,7 +626,8 @@ cdef void qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
         swap(m, row(q, qs, j), qs[1], row(q, qs, j-1), qs[1])
 
 cdef int thin_qr_block_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
-        int* rs, blas_t* u, int* us, int k, int p) nogil:
+                                  int* rs, blas_t* u, int* us, int k,
+                                  int p) nogil:
     # as below this should someday call lapack's xtpqrt.
     cdef int j
     cdef blas_t rjj, tau
@@ -673,7 +680,7 @@ cdef int thin_qr_block_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     libc.stdlib.free(work)
 
 cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
-                              blas_t* r, int* rs, int k, int p) nogil:
+                             blas_t* r, int* rs, int k, int p) nogil:
     # this should someday call lapack's xtpqrt (requires lapack >= 3.4
     # released nov 11). RHEL6's atlas doesn't seem to have it.
     # On input this looks something like this:
@@ -724,8 +731,8 @@ cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
     return 0
 
 cdef void thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
-        int* rs, blas_t* u, int* us, int k, int p_eco, int p_full,
-        blas_t* rcond) nogil:
+                             int* rs, blas_t* u, int* us, int k, int p_eco,
+                             int p_full, blas_t* rcond) nogil:
     # here q and r will always be fortran ordered since we have to allocate them
     cdef int i, j, info
     cdef blas_t c, sn 
@@ -817,7 +824,7 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
         # query the workspace, 
         info = geqrf(m-n+p, p, index2(r, rs, n-p, k), rs[1], tau, &c, -1)
         info = ormqr(side, trans, m, m-(n-p), p, index2(r, rs, n-p, k), rs[1],
-                tau, index2(q, qs, 0, n-p), qs[1], &s, -1)
+                     tau, index2(q, qs, 0, n-p), qs[1], &s, -1)
 
         # we're only doing one allocation, so use the larger
         lwork = to_lwork(c, s)
@@ -1062,7 +1069,7 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
 
 cdef void hessenberg_qr(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                         int k) nogil:
-    """Reduce an upper hessenberg matrix r, to upper triangluar, starting in
+    """Reduce an upper hessenberg matrix r, to upper triangular, starting in
        row j.  Apply these transformation to q as well. Both full and economic
        decompositions are supported here. 
     """
@@ -1134,7 +1141,8 @@ def _reorth(cnp.ndarray q, cnp.ndarray u, rcond):
     cdef cnp.npy_intp size
     cdef bint qisF
 
-    if q.ndim != 2: raise ValueError('q must be 2d')
+    if q.ndim != 2:
+        raise ValueError('q must be 2d')
     m = q.shape[0]
     n = q.shape[1]
     if cnp.PyArray_CHKFLAGS(q, cnp.NPY_F_CONTIGUOUS):
@@ -1143,8 +1151,10 @@ def _reorth(cnp.ndarray q, cnp.ndarray u, rcond):
         qisF = False
     else:
         raise ValueError('q must be one segment.')
-    if u.ndim != 1: raise ValueError('u must be 1d')
-    if u.shape[0] != m: raise ValueError('u.shape[0] must be q.shape[0]')
+    if u.ndim != 1:
+        raise ValueError('u must be 1d')
+    if u.shape[0] != m:
+        raise ValueError('u.shape[0] must be q.shape[0]')
     typecode = cnp.PyArray_TYPE(q)
     if cnp.PyArray_TYPE(u) != typecode:
         raise ValueError('q and u must have the same type.')
@@ -1165,19 +1175,23 @@ def _reorth(cnp.ndarray q, cnp.ndarray u, rcond):
 
     if typecode == cnp.NPY_FLOAT:
         rc_f = rcond
-        info = reorth(m, n, <float*>qp, qs, qisF, <float*>up, us, <float*>sp, &rc_f)
+        info = reorth(m, n, <float*>qp, qs, qisF, <float*>up, us, <float*>sp,
+                      &rc_f)
         return u, s[:n+1], rc_f, info
     if typecode == cnp.NPY_DOUBLE:
         rc_d = rcond
-        info = reorth(m, n, <double*>qp, qs, qisF, <double*>up, us, <double*>sp, &rc_d)
+        info = reorth(m, n, <double*>qp, qs, qisF, <double*>up, us,
+                      <double*>sp, &rc_d)
         return u, s[:n+1], rc_d, info
     if typecode == cnp.NPY_CFLOAT:
         rc_f = rcond
-        info = reorth(m, n, <float_complex*>qp, qs, qisF, <float_complex*>up, us, <float_complex*>sp, <float_complex*>&rc_f)
+        info = reorth(m, n, <float_complex*>qp, qs, qisF, <float_complex*>up,
+                      us, <float_complex*>sp, <float_complex*>&rc_f)
         return u, s[:n+1], rc_f, info
     if typecode == cnp.NPY_CDOUBLE:
         rc_d = rcond
-        info = reorth(m, n, <double_complex*>qp, qs, qisF, <double_complex*>up, us, <double_complex*>sp, <double_complex*>&rc_d)
+        info = reorth(m, n, <double_complex*>qp, qs, qisF, <double_complex*>up,
+                      us, <double_complex*>sp, <double_complex*>&rc_d)
         return u, s[:n+1], rc_d, info
 
 cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
@@ -1246,7 +1260,9 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
         s[n] = unorm*wnorm
         return 0
 
-    # if the above check failed, try one reorthogonalization
+    # if we get here, u does not yet contain the orthogonal vector we are 
+    # looking for. According to Reichel, one reorthogonalization will always
+    # be enough.
     if qisF:
         if blas_t is float or blas_t is double:
             gemv(T, m, n, 1, q, qs[1], u, us[0], 0, s+n, 1)
@@ -1271,6 +1287,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
         scal(n, unorm, s, 1)
         s[n] = 0
         return 1
+
     scal(m, 1/wpnorm, u, us[0])
     axpy(n, 1, s, 1, s+n, 1)
     scal(n, unorm, s, 1)
@@ -1434,9 +1451,9 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
                         col(<double_complex*>qTuvoid, qTus, k), qTus[1])
                 blas_t_2d_conj(m, p, col(<double_complex*>qTuvoid, qTus, k), qTus)
         else:
-            raise ValueError('1 <= u.ndim <= 2')
+            raise ValueError('Shape of u is incorrect, should be 1 <= u.ndim <= 2')
     else:
-        raise ValueError('q must be either F or C contig')
+        raise ValueError('q must be either F or C contiguous')
 
 cdef validate_array(cnp.ndarray a, bint chkfinite):
     # here we check that a has positive strides and that its size is small
@@ -1450,7 +1467,7 @@ cdef validate_array(cnp.ndarray a, bint chkfinite):
                 (a.strides[j] / a.descr.itemsize) >= limits.INT_MAX:
             copy = True
         if a.shape[j] >= limits.INT_MAX:
-            raise ValueError('Input array to large for use with BLAS')
+            raise ValueError('Input array too large for use with BLAS')
 
     if chkfinite:
         if not np.isfinite(a).all():
@@ -1482,59 +1499,65 @@ cdef validate_qr(object q0, object r0, bint overwrite_q, int q_order,
     R = PyArray_CheckFromAny(r0, NULL, 0, 0, r_order, NULL)
 
     if Q.ndim != 2 or R.ndim != 2:
-        raise ValueError('Q and R must be 2d')
+        raise ValueError('Q and R must be 2-D')
 
     typecode = cnp.PyArray_TYPE(Q)
 
     if typecode != cnp.PyArray_TYPE(R):
-        raise ValueError('q and r must have the same type')
+        raise ValueError('Q and R must have the same dtype')
 
     if not (typecode == cnp.NPY_FLOAT or typecode == cnp.NPY_DOUBLE 
             or typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE):
-        raise ValueError('only floatingcomplex arrays supported')
+        raise ValueError('Only arrays with dtypes float32, float64, '
+                         'complex64, and complex128 are supported.')
 
     # we support MxM MxN and MxN NxN
     if Q.shape[1] != R.shape[0]:
-        raise ValueError('Q and R do not have compatible shapes')
+        raise ValueError('Q and R do not have compatible shapes. Expected '
+                         '(M,M) (M,N) or (M,N) (N,N) but found %s %s for Q '
+                         'and R respectively' %
+                         (str(getattr(Q, 'shape')), str(getattr(R, 'shape'))))
 
     # so one or the other or both should be square.
     if Q.shape[0] != Q.shape[1] and R.shape[0] == R.shape[1]:
         economic = True
     elif Q.shape[0] != Q.shape[1]:
-        raise ValueError('bad shapes.')
+        raise ValueError('Expected (M,M) (M,N) or (M,N) (N,N) but found %s %s '
+                         'for Q and R respectively' %
+                         (str(getattr(Q, 'shape')), str(getattr(R, 'shape'))))
 
     Q = validate_array(Q, chkfinite)
     R = validate_array(R, chkfinite)
 
     return Q, R, typecode, Q.shape[0], R.shape[1], economic
  
-cdef void* extract(cnp.ndarray a, int* as):
-    if a.ndim == 2:
-        as[0] = a.strides[0] / cnp.PyArray_ITEMSIZE(a)
-        as[1] = a.strides[1] / cnp.PyArray_ITEMSIZE(a)
-    elif a.ndim == 1:
-        as[0] = a.strides[0] / cnp.PyArray_ITEMSIZE(a)
-        as[1] = 0
-    return cnp.PyArray_DATA(a)
+cdef void* extract(cnp.ndarray arr, int* arrs):
+    if arr.ndim == 2:
+        arrs[0] = arr.strides[0] / cnp.PyArray_ITEMSIZE(arr)
+        arrs[1] = arr.strides[1] / cnp.PyArray_ITEMSIZE(arr)
+    elif arr.ndim == 1:
+        arrs[0] = arr.strides[0] / cnp.PyArray_ITEMSIZE(arr)
+        arrs[1] = 0
+    return cnp.PyArray_DATA(arr)
 
 @cython.embedsignature(True)
 def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
     """QR downdate on row or column deletions
 
-    If ``A = Q R`` is the qr factorization of A, return the qr factorization
-    of `A` where `p` rows or columns have been removed starting at row or
-    column `k`.
+    If ``A = Q R`` is the QR factorization of ``A``, return the QR
+    factorization of ``A`` where ``p`` rows or columns have been removed
+    starting at row or column ``k``.
 
     Parameters
     ----------
     Q : (M, M) or (M, N) array_like
         Unitary/orthogonal matrix from QR decomposition.
     R : (M, N) or (N, N) array_like
-        Upper trianglar matrix from QR decomposition.
+        Upper triangular matrix from QR decomposition.
     k : int
-        index of the first row or column to delete.
+        Index of the first row or column to delete.
     p : int, optional
-        number of rows or columns to delete, defaults to 1.
+        Number of rows or columns to delete, defaults to 1.
     which: {'row', 'col'}, optional
         Determines if rows or columns will be deleted, defaults to 'row'
     overwrite_qr : bool, optional
@@ -1545,6 +1568,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default is True.
 
     Returns
     -------
@@ -1553,12 +1577,29 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
     R1 : ndarray
         Updated upper triangular factor
 
+    See Also
+    --------
+    qr, qr_multiply, qr_insert, qr_update
+
     Notes
     -----
-    This routine does not guarantee that the diagonal entries of `R1` are
+    This routine does not guarantee that the diagonal entries of ``R1`` are
     positive.
 
     .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] Golub, G. H. & Van Loan, C. F. Matrix Computations, 3rd Ed.
+           (Johns Hopkins University Press, 1996).
+
+    .. [2] Daniel, J. W., Gragg, W. B., Kaufman, L. & Stewart, G. W.
+           Reorthogonalization and stable algorithms for updating the
+           Gram-Schmidt QR factorization. Math. Comput. 30, 772-795 (1976).
+
+    .. [3] Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
+           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377
+           (1990).
 
     Examples
     --------
@@ -1570,7 +1611,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
                       [  7.,   8.,  -6.]])
     >>> q, r = linalg.qr(a)
 
-    Given this q, r decomposition, update q and r when 2 rows are removed.
+    Given this QR decomposition, update q and r when 2 rows are removed.
 
     >>> q1, r1 = linalg.qr_delete(q, r, 2, 2, 'row', False)
     >>> q1
@@ -1617,13 +1658,13 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
 
     if which == 'row':
         q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
-                NPY_ANYORDER, overwrite_qr, NPY_ANYORDER, check_finite)
+                ARRAY_ANYORDER, overwrite_qr, ARRAY_ANYORDER, check_finite)
         if not (-m <= k1 < m):
-            raise ValueError('k is not a valid index')
+            raise ValueError("'k' is out of bounds")
         if k1 < 0:
             k1 += m
         if k1 + p1 > m or p1 <= 0: 
-            raise ValueError('p out of range')
+            raise ValueError("'p' is out of range")
         if economic:
             if not cnp.PyArray_ISONESEGMENT(q1):
                 q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
@@ -1653,7 +1694,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
             if info == 1:
                 return q1[p_full:-p_eco, p_full:], r1[p_full:,:]
             elif info == MEMORY_ERROR:
-                raise MemoryError('malloc failed')
+                raise MemoryError('Unable to allocate memory for array.')
             else:
                 raise ValueError('Reorthogonalization Failed, unable to perform row deletion.')
         else:
@@ -1671,20 +1712,22 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
                     <double_complex*>extract(r1, rs), rs, k1, p1)
             return q1[p1:, p1:], r1[p1:, :]
     elif which == 'col':
+        # Special case single column removal to be more accepting of C ordered
+        # inputs and to avoid allocating a work array for that case.
         if p1 > 1:
             q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
                     cnp.NPY_F_CONTIGUOUS, overwrite_qr, cnp.NPY_F_CONTIGUOUS,
                     check_finite)
         else:
             q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qr,
-                    NPY_ANYORDER, overwrite_qr, NPY_ANYORDER, check_finite)
+                    ARRAY_ANYORDER, overwrite_qr, ARRAY_ANYORDER, check_finite)
         o = n if economic else m
         if not (-n <= k1 < n):
-            raise ValueError('k is not a valid index')
+            raise ValueError("'k' is out of bounds")
         if k1 < 0:
             k1 += n
         if k1 + p1 > n or p1 <= 0:
-            raise ValueError('p out of range')
+            raise ValueError("'p' is out of range")
 
         if p1 == 1:
             if typecode == cnp.NPY_FLOAT:
@@ -1713,41 +1756,42 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
                 info = qr_block_col_delete(m, o, n, <double_complex*>extract(q1, qs), qs,
                     <double_complex*>extract(r1, rs), rs, k1, p1)
             if info == MEMORY_ERROR:
-                raise MemoryError('malloc failed')
+                raise MemoryError('Unable to allocate memory for array')
         if economic:
             return q1[:, :-p], r1[:-p, :-p]
         else:
             return q1, r1[:, :-p]
     else:
-        raise ValueError("which must be either 'row' or 'col'")
+        raise ValueError("'which' must be either 'row' or 'col'")
 
 @cython.embedsignature(True)
 def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
     """QR update on row or column insertions
 
-    If ``A = Q R`` is the qr factorization of A, return the qr factorization
-    of `A` where rows or columns have been inserted starting at row or
-    column `k`.
+    If ``A = Q R`` is the QR factorization of ``A``, return the QR
+    factorization of ``A`` where rows or columns have been inserted starting
+    at row or column ``k``.
 
     Parameters
     ----------
     Q : (M, M) array_like
-        Unitary/orthogonal matrix from the qr decomposition of A.
+        Unitary/orthogonal matrix from the QR decomposition of A.
     R : (M, N) array_like
-        Upper triangular matrix from the qr decomposition of A.
+        Upper triangular matrix from the QR decomposition of A.
     u : (N,), (p, N), (M,), or (M, p) array_like
-        Rows or coluns to insert
+        Rows or columns to insert
     k : int
         Index before which `u` is to be inserted.
     which: {'row', 'col'}, optional
         Determines if rows or columns will be inserted, defaults to 'row'
     overwrite_qru : bool, optional
-        If True, consume Q, and u, if possible, while performing the update,
+        If True, consume Q, R, and u, if possible, while performing the update,
         otherwise make copies as necessary. Defaults to True.
     check_finite : bool, optional
-        Whether to check that the input matrix contains only finite numbers.
+        Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default is True.
 
     Returns
     -------
@@ -1756,12 +1800,29 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
     R1 : ndarray
         Updated upper triangular factor
 
+    See Also
+    --------
+    qr, qr_multiply, qr_delete, qr_update
+
     Notes
     -----
-    This routine does not guarantee that the diagonal entries of `R1` are
+    This routine does not guarantee that the diagonal entries of ``R1`` are
     positive.
 
     .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] Golub, G. H. & Van Loan, C. F. Matrix Computations, 3rd Ed.
+           (Johns Hopkins University Press, 1996).
+
+    .. [2] Daniel, J. W., Gragg, W. B., Kaufman, L. & Stewart, G. W.
+           Reorthogonalization and stable algorithms for updating the
+           Gram-Schmidt QR factorization. Math. Comput. 30, 772-795 (1976).
+
+    .. [3] Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
+           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377
+           (1990).
 
     Examples
     --------
@@ -1771,7 +1832,7 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
                       [  7.,   8.,  -6.]])
     >>> q, r = linalg.qr(a)
 
-    Given this q, r decomposition, update q and r when 2 rows are inserted.
+    Given this QR decomposition, update q and r when 2 rows are inserted.
                       
     >>> u = np.array([[  6.,  -9.,  -3.], 
                       [ -3.,  10.,   1.]])
@@ -1823,7 +1884,7 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
     elif which == 'col':
         return qr_insert_col(Q, R, u, k, overwrite_qru, check_finite)
     else:
-        raise ValueError("which must be either 'row' or 'col'")
+        raise ValueError("'which' must be either 'row' or 'col'")
 
 def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
@@ -1841,15 +1902,15 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
     # 1 full q alloc, r alloc, u any
     # p full q alloc, r alloc, u any
         
-    q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
-            True, NPY_ANYORDER, check_finite)
+    q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, ARRAY_ANYORDER,
+            True, ARRAY_ANYORDER, check_finite)
     u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
 
     if cnp.PyArray_TYPE(u1) != typecode:
-        raise ValueError('u must have the same type as Q and R')
+        raise ValueError("'u' must have the same type as 'Q' and 'R'")
 
     if not (-m <= k1 < m):
-        raise ValueError('k is not a valid index')
+        raise ValueError("'k' is out of bounds")
 
     if k1 < 0:
         k1 += m
@@ -1857,11 +1918,17 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
     if u1.ndim == 2:
         p = u.shape[0]
         if u.shape[1] != n:
-            raise ValueError('bad size u')
-    else:
+            raise ValueError("'u' should be either (N,) or (p,N) when "
+                             "inserting rows. Found %s." %
+                             str(getattr(u, 'shape')))
+    elif u1.ndim == 1:
         p = 1
         if u.shape[0] != n:
-            raise ValueError('bad size u')
+            raise ValueError("'u' should be either (N,) or (p,N) when "
+                             "inserting rows. Found %s." %
+                             str(getattr(u, 'shape')))
+    else:
+        raise ValueError("'u' can be at most 2-D")
 
     u1 = validate_array(u1, check_finite)
 
@@ -1969,13 +2036,13 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
                         <double_complex*>extract(qnew, qs), qs,
                         <double_complex*>extract(rnew, rs), rs, k1, p)
             if info == MEMORY_ERROR:
-                raise MemoryError('malloc failed')
+                raise MemoryError('Unable to allocate memory for array')
         return qnew, rnew
 
 def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
     cdef int j, k1 = k 
-    cdef int q_flags = NPY_ANYORDER
+    cdef int q_flags = ARRAY_ANYORDER
     cdef int u_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
     cdef int typecode, m, n, p, info, p_eco, p_full
     cdef int qs[2]
@@ -1992,25 +2059,34 @@ def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
     # 1 full, q any, r, alloc, u any 
     # p full, q F, r alloc, u any (handled in form_qTu)
 
-    q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
-            True, NPY_ANYORDER, check_finite)
+    q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, ARRAY_ANYORDER,
+            True, ARRAY_ANYORDER, check_finite)
     if not overwrite_qru:
         u_flags |= cnp.NPY_ENSURECOPY | cnp.NPY_F_CONTIGUOUS
     u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
         
     if cnp.PyArray_TYPE(u1) != typecode:
-        raise ValueError('u must have the same type as Q and R')
+        raise ValueError("'u' must have the same type as Q and R")
     if not (-n <= k1 < n):
-        raise ValueError('k is not a valid index')
+        raise ValueError("'k' is out of bounds")
     if k1 < 0:
         k1 += n
 
-    if u1.shape[0] != m:
-        raise ValueError('bad size u')
     if u1.ndim == 2:
-        p = u1.shape[1]
-    else:
+        p = u.shape[1]
+        if u.shape[0] != m:
+            raise ValueError("'u' should be either (M,) or (M,p) when "
+                             "inserting columns. Found %s." %
+                             str(getattr(u, 'shape')))
+    elif u1.ndim == 1:
         p = 1
+        if u.shape[0] != m:
+            raise ValueError("'u' should be either (M,) or (M,p) when "
+                             "inserting columns. Found %s." %
+                             str(getattr(u, 'shape')))
+    else:
+        raise ValueError("'u' can be at most 2-D")
+
     if economic:
         if n+p <= m:
             p_eco = p
@@ -2103,21 +2179,22 @@ def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
                         qs, <double_complex*>rvoid, rs, k1, p)
             if info != 0:
                 if info > 0: 
-                    raise ValueError('The {0}th argument to ?geqrf was'
+                    raise ValueError('The {0}th argument to ?geqrf was '
                             'invalid'.format(info))
                 elif info < 0:
-                    raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
+                    raise ValueError('The {0}th argument to ?ormqr/?unmqr was '
                             'invalid'.format(abs(info)))
                 elif info == MEMORY_ERROR:
-                    raise MemoryError('malloc failed')
+                    raise MemoryError("Unable to allocate memory for array")
         return q1, rnew
 
 @cython.embedsignature(True)
 def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
     """Rank-k QR update
 
-    If ``A = Q R`` is the qr factorization of A, return the qr factorization
-    of ``A + U V**T`` for real A or ``A + U V**H`` for complex A.
+    If ``A = Q R`` is the QR factorization of ``A``, return the QR
+    factorization of ``A + u v**T`` for real ``A`` or ``A + u v**H``
+    for complex ``A``.
 
     Parameters
     ----------
@@ -2136,6 +2213,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default is True.
 
     Returns
     -------
@@ -2144,12 +2222,29 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
     R1 : ndarray
         Updated upper triangular factor
 
+    See Also
+    --------
+    qr, qr_multiply, qr_delete, qr_insert
+
     Notes
     -----
     This routine does not guarantee that the diagonal entries of `R1` are
     real or positive.
 
     .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] Golub, G. H. & Van Loan, C. F. Matrix Computations, 3rd Ed.
+           (Johns Hopkins University Press, 1996).
+
+    .. [2] Daniel, J. W., Gragg, W. B., Kaufman, L. & Stewart, G. W.
+           Reorthogonalization and stable algorithms for updating the
+           Gram-Schmidt QR factorization. Math. Comput. 30, 772-795 (1976).
+
+    .. [3] Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
+           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377
+           (1990).
 
     Examples
     --------
@@ -2195,6 +2290,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
     True
 
     Updating economic (reduced, thin) decompositions is also possible:
+
     >>> qe, re = linalg.qr(a, mode='economic')
     >>> qe_up, re_up = linalg.qr_update(qe, re, u, v, False)
     >>> qe_up
@@ -2213,6 +2309,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
     True
 
     Similarly to the above, perform a rank 2 update.
+
     >>> u2 = np.array([[ 7., -1,],
                        [-2.,  4.],
                        [ 4.,  2.],
@@ -2255,12 +2352,12 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
     cdef int vs[2]
     cdef int ss[2]
     cdef bint economic, qisF = False
-    cdef cnp.npy_intp ndim, len
+    cdef cnp.npy_intp ndim, length
 
     # Rather than overspecify our order requirements on Q and R, let anything
     # through then adjust.
-    q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qruv, NPY_ANYORDER,
-            overwrite_qruv, NPY_ANYORDER, check_finite)
+    q1, r1, typecode, m, n, economic = validate_qr(Q, R, overwrite_qruv, ARRAY_ANYORDER,
+            overwrite_qruv, ARRAY_ANYORDER, check_finite)
 
     if not overwrite_qruv:
         uv_flags |= cnp.NPY_ENSURECOPY
@@ -2277,7 +2374,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
         raise ValueError('v.shape[0] must equal R.shape[1]')
 
     if u1.ndim > 2 or v1.ndim > 2:
-        raise ValueError('u and v can be no more than 2d')
+        raise ValueError('u and v can be no more than 2-D')
 
     if u1.ndim != v1.ndim:
         raise ValueError('u and v must have the same number of dimensions')
@@ -2299,8 +2396,8 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
 
     if economic:
         ndim = 1
-        len = 2*n
-        s = cnp.PyArray_ZEROS(ndim, &len, typecode, 1)
+        length = 2*n
+        s = cnp.PyArray_ZEROS(ndim, &length, typecode, 1)
         if not cnp.PyArray_ISONESEGMENT(q1):
             q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
             qisF = True
@@ -2407,7 +2504,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
             # v.T must be F contiguous --> v must be C contiguous
             if not cnp.PyArray_CHKFLAGS(v1, cnp.NPY_C_CONTIGUOUS):
                 v1 = PyArray_FromArraySafe(v1, NULL, cnp.NPY_C_CONTIGUOUS)
-            # can we do better than this python call to get the strides right?
+
             v1 = v1.T
             form_qTu(q1, u1, qTuvoid, qTus, 0)
             if typecode == cnp.NPY_FLOAT:
@@ -2436,13 +2533,13 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
                     <double_complex*>extract(v1, vs), vs)
             if info != 0:
                 if info > 0: 
-                    raise ValueError('The {0}th argument to ?geqrf was'
+                    raise ValueError('The {0}th argument to ?geqrf was '
                             'invalid'.format(info))
                 elif info < 0:
-                    raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
+                    raise ValueError('The {0}th argument to ?ormqr/?unmqr was '
                             'invalid'.format(abs(info)))
                 elif info == MEMORY_ERROR:
-                    raise MemoryError('malloc failed')
+                    raise MemoryError('Unable to allocate memory for array.')
     return q1, r1
 
 cnp.import_array()
