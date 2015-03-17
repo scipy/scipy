@@ -6,6 +6,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include <numpy/noprefix.h>
+#include <numpy/npy_3kcompat.h>
 
 #if PY_VERSION_HEX >= 0x03000000
 #define PyNumber_Divide PyNumber_TrueDivide
@@ -63,6 +64,65 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
           const PyArrayObject * zf, PyArrayObject * y, int axis,
           BasicFilterFunction * filter_func);
 
+PyObject*
+convert_shape_to_errmsg(intp ndim, intp *Xshape, intp *Vishape, intp theaxis, intp val)
+{
+    intp j, expect_size;
+    PyObject *msg, *tmp, *msg1, *tmp1;
+
+    if (ndim == 1) {
+        msg = PyUString_FromFormat("Unexpected shape for zi: expected (%"   \
+                                    NPY_INTP_FMT ",), found (%" NPY_INTP_FMT \
+                                    ",).", val, Vishape[0]);
+        return msg;
+    }
+
+    msg = PyUString_FromString("Unexpected shape for zi:  expected (");
+    if (!msg) {
+        return 0;
+    }
+
+    msg1 = PyUString_FromString("), found (");
+    if (!msg1) {
+        Py_DECREF(msg);
+        return 0;
+    }
+
+    for (j = 0; j < ndim; ++j) {
+        expect_size = j != theaxis ? Xshape[j] : val;
+
+        if (j == ndim - 1) {
+            tmp = PyUString_FromFormat("%" NPY_INTP_FMT, expect_size);
+            tmp1 = PyUString_FromFormat("%" NPY_INTP_FMT, Vishape[j]);
+        } else {
+            tmp = PyUString_FromFormat("%" NPY_INTP_FMT ",", expect_size);
+            tmp1 = PyUString_FromFormat("%" NPY_INTP_FMT ",", Vishape[j]);
+        }
+        if (!tmp) {
+            Py_DECREF(msg);
+            Py_DECREF(msg1);
+            Py_XDECREF(tmp1);
+            return 0;
+        }
+        if (!tmp1) {
+            Py_DECREF(msg);
+            Py_DECREF(msg1);
+            Py_DECREF(tmp);
+            return 0;
+        }
+        PyUString_ConcatAndDel(&msg, tmp);
+        PyUString_ConcatAndDel(&msg1, tmp1);
+    }
+    tmp = PyUString_FromString(").");
+    if (!tmp) {
+        Py_DECREF(msg);
+        Py_DECREF(msg1);
+    }
+    PyUString_ConcatAndDel(&msg1, tmp);
+    PyUString_ConcatAndDel(&msg, msg1);
+    return msg;
+}
+
 /*
  * XXX: Error checking not done yet
  */
@@ -73,7 +133,8 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
     int axis, typenum, theaxis, st;
     char *ara_ptr, input_flag = 0, *azero;
-    intp na, nb, nal;
+    intp na, nb, nal, zi_size;
+    intp zf_shape[NPY_MAXDIMS];
     BasicFilterFunction *basic_filter;
 
     axis = -1;
@@ -116,21 +177,6 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             goto fail;
 
         input_flag = 1;
-    }
-
-    arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
-                                              PyArray_DIMS(arX), typenum);
-    if (arY == NULL) {
-        goto fail;
-    }
-
-    if (input_flag) {
-        arVf = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arVi),
-                                                   PyArray_DIMS(arVi),
-                                                   typenum);
-        if (arVf == NULL) {
-            goto fail;
-        }
     }
 
     if (PyArray_TYPE(arX) < 256) {
@@ -176,10 +222,41 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 
     na = PyArray_SIZE(ara);
     nb = PyArray_SIZE(arb);
+    zi_size = (na > nb ? na : nb) - 1;
     if (input_flag) {
-        if (PyArray_DIMS(arVi)[theaxis] != (na > nb ? na : nb) - 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "The number of initial conditions must be max([len(a),len(b)]) - 1");
+        intp k, Vik, Xk;
+        for (k = 0; k < PyArray_NDIM(arX); ++k) {
+            Vik = PyArray_DIM(arVi, k);
+            Xk = PyArray_DIM(arX, k);
+            if (k == theaxis && Vik == zi_size) {
+                zf_shape[k] = zi_size;
+            } else if (k != theaxis && (Vik == Xk || Vik == 1)) {
+                zf_shape[k] = Xk;
+            } else {
+                PyObject *msg = convert_shape_to_errmsg(PyArray_NDIM(arX),
+                        PyArray_DIMS(arX), PyArray_DIMS(arVi),
+                        theaxis, zi_size);
+                if (!msg) {
+                    goto fail;
+                }
+                PyErr_SetObject(PyExc_ValueError, msg);
+                Py_DECREF(msg);
+                goto fail;
+            }
+        }
+    }
+
+    arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
+                                              PyArray_DIMS(arX), typenum);
+    if (arY == NULL) {
+        goto fail;
+    }
+
+    if (input_flag) {
+        arVf = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arVi),
+                                                   zf_shape,
+                                                   typenum);
+        if (arVf == NULL) {
             goto fail;
         }
     }
