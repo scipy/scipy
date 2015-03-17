@@ -68,3 +68,15 @@ class Bench(Benchmark):
             nl.svd(self.a)
         else:
             sl.svd(self.a)
+
+    def time_1_norm(self, size, contig, module):
+        if module == 'numpy':
+            nl.norm(self.a, ord=1)
+        else:
+            sl.norm(self.a, ord=1)
+
+    def time_inf_norm(self, size, contig, module):
+        if module == 'numpy':
+            nl.norm(self.a, ord=np.inf)
+        else:
+            sl.norm(self.a, ord=np.inf)
