@@ -2,16 +2,17 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
+import numpy as np
+
 from numpy.testing import (assert_almost_equal, assert_array_equal,
         TestCase, run_module_suite, assert_allclose, assert_equal, assert_)
-from scipy.interpolate import (KroghInterpolator, krogh_interpolate,
+from scipy.interpolate import (splrep, splev,
+        KroghInterpolator, krogh_interpolate,
         BarycentricInterpolator, barycentric_interpolate,
         PiecewisePolynomial, piecewise_polynomial_interpolate,
-        approximate_taylor_polynomial, pchip, PchipInterpolator)
+        approximate_taylor_polynomial, pchip, PchipInterpolator,
+        Akima1DInterpolator)
 from scipy._lib.six import xrange
-import scipy
-import numpy as np
-from scipy.interpolate import splrep, splev
 
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
@@ -39,17 +40,19 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
 
     # check also values
     if xi.size > 0 and deriv_shape is None:
-        bs_shape = (y.shape[:axis] + ((1,)*len(x_shape)) + y.shape[axis:][1:])
-        yv = y[((slice(None,None,None),)*(axis % y.ndim))+(1,)].reshape(bs_shape)
+        bs_shape = y.shape[:axis] + (1,)*len(x_shape) + y.shape[axis:][1:]
+        yv = y[((slice(None,),)*(axis % y.ndim)) + (1,)]
+        yv = yv.reshape(bs_shape)
 
         yi, y = np.broadcast_arrays(yi, yv)
         assert_allclose(yi, y)
 
-SHAPES = [(), (0,), (1,), (3,2,5)]
+SHAPES = [(), (0,), (1,), (3, 2, 5)]
 
 
 def test_shapes():
-    for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
+    for ip in [KroghInterpolator, BarycentricInterpolator, pchip,
+               Akima1DInterpolator]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -83,7 +86,14 @@ def test_deriv_shapes():
             pass
         return P(x, y, axis)
 
-    for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace]:
+    def akima_deriv(x, y, axis=0):
+        return Akima1DInterpolator(x, y, axis).derivative()
+
+    def akima_antideriv(x, y, axis=0):
+        return Akima1DInterpolator(x, y, axis).antiderivative()
+
+    for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
+               akima_deriv, akima_antideriv]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -104,7 +114,7 @@ def test_complex():
 
 class CheckKrogh(TestCase):
     def setUp(self):
-        self.true_poly = scipy.poly1d([-2,3,1,5,-4])
+        self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)
         self.ys = self.true_poly(self.xs)
@@ -236,7 +246,7 @@ class CheckTaylor(TestCase):
 
 class CheckBarycentric(TestCase):
     def setUp(self):
-        self.true_poly = scipy.poly1d([-2,3,1,5,-4])
+        self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)
         self.ys = self.true_poly(self.xs)
