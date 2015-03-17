@@ -1818,6 +1818,161 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
     True
 
     """
+    if which == 'row':
+        return qr_insert_row(Q, R, u, k, overwrite_qru, check_finite)
+    elif which == 'col':
+        return qr_insert_col(Q, R, u, k, overwrite_qru, check_finite)
+    else:
+        raise ValueError("which must be either 'row' or 'col'")
+
+def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
+    cdef cnp.ndarray q1, r1, u1, qnew, rnew
+    cdef int j, k1 = k 
+    cdef int u_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
+    cdef int typecode, m, n, p, info 
+    cdef int qs[2]
+    cdef int rs[2]
+    cdef int us[2]
+    cdef cnp.npy_intp shape[2]
+    cdef bint economic
+
+    # 1 eco q alloc, r any, u any
+    # p eco q alloc, r F, u F
+    # 1 full q alloc, r alloc, u any
+    # p full q alloc, r alloc, u any
+        
+    q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
+            True, NPY_ANYORDER, check_finite)
+    u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
+
+    if cnp.PyArray_TYPE(u1) != typecode:
+        raise ValueError('u must have the same type as Q and R')
+
+    if not (-m <= k1 < m):
+        raise ValueError('k is not a valid index')
+
+    if k1 < 0:
+        k1 += m
+
+    if u1.ndim == 2:
+        p = u.shape[0]
+        if u.shape[1] != n:
+            raise ValueError('bad size u')
+    else:
+        p = 1
+        if u.shape[0] != n:
+            raise ValueError('bad size u')
+
+    u1 = validate_array(u1, check_finite)
+
+    if economic:
+        if not overwrite_qru:
+            r1 = PyArray_FromArraySafe(r1, NULL,
+                    cnp.NPY_F_CONTIGUOUS | cnp.NPY_ENSURECOPY)
+            u1 = PyArray_FromArraySafe(u1, NULL,
+                    cnp.NPY_F_CONTIGUOUS | cnp.NPY_ENSURECOPY)
+
+        shape[0] = m + p
+        shape[1] = n + p
+        qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+        qnew[:-p,:-p] = q1
+        for j in range(p):
+            qnew[m+j, n+j] = 1
+
+        if p == 1:
+            if typecode == cnp.NPY_FLOAT:
+                thin_qr_row_insert(m+p, n,
+                        <float*>extract(qnew, qs), qs,
+                        <float*>extract(r1, rs), rs,
+                        <float*>extract(u1, us), us, k1)
+            elif typecode == cnp.NPY_DOUBLE:
+                thin_qr_row_insert(m+p, n,
+                        <double*>extract(qnew, qs), qs,
+                        <double*>extract(r1, rs), rs,
+                        <double*>extract(u1, us), us, k1)
+            elif typecode == cnp.NPY_CFLOAT:
+                thin_qr_row_insert(m+p, n,
+                        <float_complex*>extract(qnew, qs), qs,
+                        <float_complex*>extract(r1, rs), rs,
+                        <float_complex*>extract(u1, us), us, k1)
+            else:  # cnp.NPY_CDOUBLE:
+                thin_qr_row_insert(m+p, n,
+                        <double_complex*>extract(qnew, qs), qs,
+                        <double_complex*>extract(r1, rs), rs,
+                        <double_complex*>extract(u1, us), us, k1)
+        else:
+            # only copies if if necessary.
+            r1 = PyArray_FromArraySafe(r1, NULL, cnp.NPY_F_CONTIGUOUS)
+            u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+            if typecode == cnp.NPY_FLOAT:
+                thin_qr_block_row_insert(m+p, n,
+                        <float*>extract(qnew, qs), qs,
+                        <float*>extract(r1, rs), rs,
+                        <float*>extract(u1, us), us, k1, p)
+            elif typecode == cnp.NPY_DOUBLE:
+                thin_qr_block_row_insert(m+p, n,
+                        <double*>extract(qnew, qs), qs,
+                        <double*>extract(r1, rs), rs,
+                        <double*>extract(u1, us), us, k1, p)
+            elif typecode == cnp.NPY_CFLOAT:
+                thin_qr_block_row_insert(m+p, n,
+                        <float_complex*>extract(qnew, qs), qs,
+                        <float_complex*>extract(r1, rs), rs,
+                        <float_complex*>extract(u1, us), us, k1, p)
+            else:  # cnp.NPY_CDOUBLE:
+                thin_qr_block_row_insert(m+p, n,
+                        <double_complex*>extract(qnew, qs), qs,
+                        <double_complex*>extract(r1, rs), rs,
+                        <double_complex*>extract(u1, us), us, k1, p)
+        return qnew[:, :-p], r1
+    else:
+        shape[0] = m + p
+        shape[1] = m + p
+        qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+        shape[1] = n
+        rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+        
+        rnew[:m,:] = r1    
+        rnew[m:,:] = u1
+        qnew[:-p,:-p] = q1;
+        for j in range(m, m+p):
+            qnew[j, j] = 1
+
+        if p == 1:
+            if typecode == cnp.NPY_FLOAT:
+                qr_row_insert(m+p, n, <float*>extract(qnew, qs), qs,
+                        <float*>extract(rnew, rs), rs, k1)
+            elif typecode == cnp.NPY_DOUBLE:
+                qr_row_insert(m+p, n, <double*>extract(qnew, qs), qs,
+                        <double*>extract(rnew, rs), rs, k1)
+            elif typecode == cnp.NPY_CFLOAT:
+                qr_row_insert(m+p, n, <float_complex*>extract(qnew, qs), qs,
+                        <float_complex*>extract(rnew, rs), rs, k1)
+            else:  # cnp.NPY_CDOUBLE:
+                qr_row_insert(m+p, n, <double_complex*>extract(qnew, qs),
+                        qs, <double_complex*>extract(rnew, rs), rs, k1)
+        else:
+            if typecode == cnp.NPY_FLOAT:
+                info = qr_block_row_insert(m+p, n,
+                        <float*>extract(qnew, qs), qs,
+                        <float*>extract(rnew, rs), rs, k1, p)
+            elif typecode == cnp.NPY_DOUBLE:
+                info = qr_block_row_insert(m+p, n,
+                        <double*>extract(qnew, qs), qs,
+                        <double*>extract(rnew, rs), rs, k1, p)
+            elif typecode == cnp.NPY_CFLOAT:
+                info = qr_block_row_insert(m+p, n,
+                        <float_complex*>extract(qnew, qs), qs,
+                        <float_complex*>extract(rnew, rs), rs, k1, p)
+            else:  # cnp.NPY_CDOUBLE
+                info = qr_block_row_insert(m+p, n,
+                        <double_complex*>extract(qnew, qs), qs,
+                        <double_complex*>extract(rnew, rs), rs, k1, p)
+            if info == MEMORY_ERROR:
+                raise MemoryError('malloc failed')
+        return qnew, rnew
+
+def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
     cdef int j, k1 = k 
     cdef int q_flags = NPY_ANYORDER
@@ -1832,252 +1987,130 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
     cdef float frc = 0
     cdef double drc = 0
 
-    if which == 'row':
-        q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
-                True, NPY_ANYORDER, check_finite)
-        u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
-        if cnp.PyArray_TYPE(u1) != typecode:
-            raise ValueError('u must have the same type as Q and R')
-        if not (-m <= k1 < m):
-            raise ValueError('k is not a valid index')
-        if k1 < 0:
-            k1 += m
+    # 1 eco q alloc, r alloc, u any
+    # p eco q alloc, r alloc, u any unless eco->fat then F
+    # 1 full, q any, r, alloc, u any 
+    # p full, q F, r alloc, u any (handled in form_qTu)
 
-        if u1.ndim == 2:
-            p = u.shape[0]
-            if u.shape[1] != n:
-                raise ValueError('bad size u')
+    q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
+            True, NPY_ANYORDER, check_finite)
+    if not overwrite_qru:
+        u_flags |= cnp.NPY_ENSURECOPY | cnp.NPY_F_CONTIGUOUS
+    u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
+        
+    if cnp.PyArray_TYPE(u1) != typecode:
+        raise ValueError('u must have the same type as Q and R')
+    if not (-n <= k1 < n):
+        raise ValueError('k is not a valid index')
+    if k1 < 0:
+        k1 += n
+
+    if u1.shape[0] != m:
+        raise ValueError('bad size u')
+    if u1.ndim == 2:
+        p = u1.shape[1]
+    else:
+        p = 1
+    if economic:
+        if n+p <= m:
+            p_eco = p
+            p_full = 0
         else:
-            p = 1
-            if u.shape[0] != n:
-                raise ValueError('bad size u')
+            p_eco = m-n
+            p_full = p - p_eco
+            if not cnp.PyArray_CHKFLAGS(u1, cnp.NPY_F_CONTIGUOUS):
+                u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+        shape[0] = m
+        shape[1] = n+p_eco
+        qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+        qnew[:,:-p_eco] = q1
+
+        shape[0] = n+p_eco
+        shape[1] = n+p
+        rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+        rnew[:n,:k1] = r1[:,:k1]
+        rnew[:n,k1+p:] = r1[:,k1:]
+        u1 = validate_array(u1, check_finite)
+        if typecode == cnp.NPY_FLOAT:
+            thin_qr_col_insert(m, n, <float*>extract(qnew, qs), qs,
+                    <float*>extract(rnew, rs), rs,
+                    <float*>extract(u1, us), us, k1, p_eco, p_full, &frc)
+        elif typecode == cnp.NPY_DOUBLE:
+            thin_qr_col_insert(m, n, <double*>extract(qnew, qs), qs,
+                    <double*>extract(rnew, rs), rs,
+                    <double*>extract(u1, us), us, k1, p_eco, p_full, &drc)
+        elif typecode == cnp.NPY_CFLOAT:
+            thin_qr_col_insert(m, n, <float_complex*>extract(qnew, qs), qs,
+                    <float_complex*>extract(rnew, rs), rs,
+                    <float_complex*>extract(u1, us), us, k1, p_eco, p_full,
+                    <float_complex*>&frc)
+        else:  # cnp.NPY_CDOUBLE:
+            thin_qr_col_insert(m, n, <double_complex*>extract(qnew, qs), qs,
+                    <double_complex*>extract(rnew, rs), rs,
+                    <double_complex*>extract(u1, us), us, k1, p_eco, p_full,
+                    <double_complex*>&drc)
+        return qnew, rnew
+    else:
+        if (not cnp.PyArray_ISONESEGMENT(q1)) or u1.ndim == 2:
+            q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+        if (not overwrite_qru and cnp.PyArray_CHKFLAGS(q1, cnp.NPY_C_CONTIGUOUS)
+            and (typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE)):
+            u_flags |= cnp.NPY_ENSURECOPY
+            u1 = PyArray_FromArraySafe(u1, NULL, u_flags)
+
+        shape[0] = m
+        shape[1] = n+p
+        rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
+
+        rnew[:,:k1] = r1[:,:k1]
+        rnew[:,k1+p:] = r1[:,k1:]
 
         u1 = validate_array(u1, check_finite)
-        if economic:
-            shape[0] = m+p
-            shape[1] = n+p
-            qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-            qnew[:-p,:-p] = q1
-            for j in range(p):
-                qnew[m+j, n+j] = 1
-            if not overwrite_qru:
-                r1 = r1.copy('F')
-                u1 = u1.copy('F')
-
-            if p == 1:
-                if typecode == cnp.NPY_FLOAT:
-                    thin_qr_row_insert(m+p, n,
-                            <float*>extract(qnew, qs), qs,
-                            <float*>extract(r1, rs), rs,
-                            <float*>extract(u1, us), us, k1)
-                elif typecode == cnp.NPY_DOUBLE:
-                    thin_qr_row_insert(m+p, n,
-                            <double*>extract(qnew, qs), qs,
-                            <double*>extract(r1, rs), rs,
-                            <double*>extract(u1, us), us, k1)
-                elif typecode == cnp.NPY_CFLOAT:
-                    thin_qr_row_insert(m+p, n,
-                            <float_complex*>extract(qnew, qs), qs,
-                            <float_complex*>extract(r1, rs), rs,
-                            <float_complex*>extract(u1, us), us, k1)
-                else:  # cnp.NPY_CDOUBLE:
-                    thin_qr_row_insert(m+p, n,
-                            <double_complex*>extract(qnew, qs), qs,
-                            <double_complex*>extract(r1, rs), rs,
-                            <double_complex*>extract(u1, us), us, k1)
-            else:
-                if not cnp.PyArray_CHKFLAGS(r1, cnp.NPY_F_CONTIGUOUS):
-                    r1 = PyArray_FromArraySafe(r1, NULL, cnp.NPY_F_CONTIGUOUS)
-                if not cnp.PyArray_CHKFLAGS(u1, cnp.NPY_F_CONTIGUOUS):
-                    u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
-                if typecode == cnp.NPY_FLOAT:
-                    thin_qr_block_row_insert(m+p, n,
-                            <float*>extract(qnew, qs), qs,
-                            <float*>extract(r1, rs), rs,
-                            <float*>extract(u1, us), us, k1, p)
-                elif typecode == cnp.NPY_DOUBLE:
-                    thin_qr_block_row_insert(m+p, n,
-                            <double*>extract(qnew, qs), qs,
-                            <double*>extract(r1, rs), rs,
-                            <double*>extract(u1, us), us, k1, p)
-                elif typecode == cnp.NPY_CFLOAT:
-                    thin_qr_block_row_insert(m+p, n,
-                            <float_complex*>extract(qnew, qs), qs,
-                            <float_complex*>extract(r1, rs), rs,
-                            <float_complex*>extract(u1, us), us, k1, p)
-                else:  # cnp.NPY_CDOUBLE:
-                    thin_qr_block_row_insert(m+p, n,
-                            <double_complex*>extract(qnew, qs), qs,
-                            <double_complex*>extract(r1, rs), rs,
-                            <double_complex*>extract(u1, us), us, k1, p)
-            return qnew[:, :-p], r1
-        else:
-            shape[0] = m+p
-            shape[1] = m+p
-            qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-            shape[1] = n
-            rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-            
-            # doing this by hand is unlikely to be any quicker.
-            rnew[:m,:] = r1    
-            rnew[m:,:] = u1
-            qnew[:-p,:-p] = q1;
-            ind = np.arange(m,m+p)
-            qnew[ind,ind] = 1
-
-            if p == 1:
-                if typecode == cnp.NPY_FLOAT:
-                    qr_row_insert(m+p, n, <float*>extract(qnew, qs), qs,
-                            <float*>extract(rnew, rs), rs, k1)
-                elif typecode == cnp.NPY_DOUBLE:
-                    qr_row_insert(m+p, n, <double*>extract(qnew, qs), qs,
-                            <double*>extract(rnew, rs), rs, k1)
-                elif typecode == cnp.NPY_CFLOAT:
-                    qr_row_insert(m+p, n, <float_complex*>extract(qnew, qs), qs,
-                            <float_complex*>extract(rnew, rs), rs, k1)
-                else:  # cnp.NPY_CDOUBLE:
-                    qr_row_insert(m+p, n, <double_complex*>extract(qnew, qs),
-                            qs, <double_complex*>extract(rnew, rs), rs, k1)
-            else:
-                if typecode == cnp.NPY_FLOAT:
-                    info = qr_block_row_insert(m+p, n,
-                            <float*>extract(qnew, qs), qs,
-                            <float*>extract(rnew, rs), rs, k1, p)
-                elif typecode == cnp.NPY_DOUBLE:
-                    info = qr_block_row_insert(m+p, n,
-                            <double*>extract(qnew, qs), qs,
-                            <double*>extract(rnew, rs), rs, k1, p)
-                elif typecode == cnp.NPY_CFLOAT:
-                    info = qr_block_row_insert(m+p, n,
-                            <float_complex*>extract(qnew, qs), qs,
-                            <float_complex*>extract(rnew, rs), rs, k1, p)
-                else:  # cnp.NPY_CDOUBLE
-                    info = qr_block_row_insert(m+p, n,
-                            <double_complex*>extract(qnew, qs), qs,
-                            <double_complex*>extract(rnew, rs), rs, k1, p)
-                if info == MEMORY_ERROR:
-                    raise MemoryError('malloc failed')
-            return qnew, rnew
-
-    elif which == 'col':
-        q1, r1, typecode, m, n, economic = validate_qr(Q, R, True, NPY_ANYORDER,
-                True, NPY_ANYORDER, check_finite)
+        rvoid = extract(rnew, rs)
+        form_qTu(q1, u1, rvoid, rs, k1)
         if not overwrite_qru:
-            u_flags |= cnp.NPY_ENSURECOPY
-        u1 = PyArray_CheckFromAny(u, NULL, 0, 0, u_flags, NULL)
-            
-        if cnp.PyArray_TYPE(u1) != typecode:
-            raise ValueError('u must have the same type as Q and R')
-        if not (-n <= k1 < n):
-            raise ValueError('k is not a valid index')
-        if k1 < 0:
-            k1 += n
-
-        if u1.shape[0] != m:
-            raise ValueError('bad size u')
-        if u1.ndim == 2:
-            p = u1.shape[1]
-        else:
-            p = 1
-        if economic:
-            if n+p <= m:
-                p_eco = p
-                p_full = 0
-            else:
-                p_eco = m-n
-                p_full = p - p_eco
-                if not cnp.PyArray_CHKFLAGS(u1, cnp.NPY_F_CONTIGUOUS):
-                    u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
-            shape[0] = m
-            shape[1] = n+p_eco
-            qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-            qnew[:,:-p_eco] = q1
-
-            shape[0] = n+p_eco
-            shape[1] = n+p
-            rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-            rnew[:n,:k1] = r1[:,:k1]
-            rnew[:n,k1+p:] = r1[:,k1:]
-            u1 = validate_array(u1, check_finite)
+            q1 = q1.copy('F')
+        
+        if p == 1:
             if typecode == cnp.NPY_FLOAT:
-                thin_qr_col_insert(m, n, <float*>extract(qnew, qs), qs,
-                        <float*>extract(rnew, rs), rs, <float*>extract(u1, us), us, k1, p_eco, p_full, &frc)
+                qr_col_insert(m, n+p, <float*>extract(q1, qs), qs,
+                        <float*>rvoid, rs, k1)
             elif typecode == cnp.NPY_DOUBLE:
-                thin_qr_col_insert(m, n, <double*>extract(qnew, qs), qs,
-                        <double*>extract(rnew, rs), rs, <double*>extract(u1, us), us, k1, p_eco, p_full, &drc)
+                qr_col_insert(m, n+p, <double*>extract(q1, qs), qs,
+                        <double*>rvoid, rs, k1)
             elif typecode == cnp.NPY_CFLOAT:
-                thin_qr_col_insert(m, n, <float_complex*>extract(qnew, qs), qs,
-                        <float_complex*>extract(rnew, rs), rs, <float_complex*>extract(u1, us), us, k1, p_eco, p_full, <float_complex*>&frc)
-            else:  # cnp.NPY_CDOUBLE:
-                thin_qr_col_insert(m, n, <double_complex*>extract(qnew, qs), qs,
-                        <double_complex*>extract(rnew, rs), rs, <double_complex*>extract(u1, us), us, k1, p_eco, p_full, <double_complex*>&drc)
-            return qnew, rnew
+                qr_col_insert(m, n+p, <float_complex*>extract(q1, qs), qs,
+                        <float_complex*>rvoid, rs, k1)
+            else:  # cnp.NPY_CDOUBLE
+                qr_col_insert(m, n+p, <double_complex*>extract(q1, qs), qs,
+                        <double_complex*>rvoid, rs, k1)
         else:
-            if (not cnp.PyArray_ISONESEGMENT(q1)) or u1.ndim == 2:
-                q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
-            if (not overwrite_qru and cnp.PyArray_CHKFLAGS(q1, cnp.NPY_C_CONTIGUOUS)
-                and (typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE)):
-                u_flags |= cnp.NPY_ENSURECOPY
-                u1 = PyArray_FromArraySafe(u1, NULL, u_flags)
-
-            shape[0] = m
-            shape[1] = n+p
-            rnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
-
-            rnew[:,:k1] = r1[:,:k1]
-            rnew[:,k1+p:] = r1[:,k1:]
-
-            u1 = validate_array(u1, check_finite)
-            rvoid = extract(rnew, rs)
-            if p == 1:
-                form_qTu(q1, u1, rvoid, rs, k1)
-            else:
-                form_qTu(q1, u1, rvoid, rs, k1)
-            if not overwrite_qru:
-                q1 = q1.copy('F')
-            
-            if p == 1:
-                if typecode == cnp.NPY_FLOAT:
-                    qr_col_insert(m, n+p, <float*>extract(q1, qs), qs,
-                            <float*>rvoid, rs, k1)
-                elif typecode == cnp.NPY_DOUBLE:
-                    qr_col_insert(m, n+p, <double*>extract(q1, qs), qs,
-                            <double*>rvoid, rs, k1)
-                elif typecode == cnp.NPY_CFLOAT:
-                    qr_col_insert(m, n+p, <float_complex*>extract(q1, qs), qs,
-                            <float_complex*>rvoid, rs, k1)
-                else:  # cnp.NPY_CDOUBLE
-                    qr_col_insert(m, n+p, <double_complex*>extract(q1, qs), qs,
-                            <double_complex*>rvoid, rs, k1)
-            else:
-                if typecode == cnp.NPY_FLOAT:
-                    info = qr_block_col_insert(m, n+p,
-                            <float*>extract(q1, qs), qs,
-                            <float*>rvoid, rs, k1, p)
-                elif typecode == cnp.NPY_DOUBLE:
-                    info = qr_block_col_insert(m, n+p,
-                            <double*>extract(q1, qs), qs,
-                            <double*>rvoid, rs, k1, p)
-                elif typecode == cnp.NPY_CFLOAT:
-                    info = qr_block_col_insert(m, n+p,
-                            <float_complex*>extract(q1, qs),
-                            qs, <float_complex*>rvoid, rs, k1, p)
-                else:  # cnp.NPY_CDOUBLE:
-                    info = qr_block_col_insert(m, n+p,
-                            <double_complex*>extract(q1, qs),
-                            qs, <double_complex*>rvoid, rs, k1, p)
-                if info != 0:
-                    if info > 0: 
-                        raise ValueError('The {0}th argument to ?geqrf was'
-                                'invalid'.format(info))
-                    elif info < 0:
-                        raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
-                                'invalid'.format(abs(info)))
-                    elif info == MEMORY_ERROR:
-                        raise MemoryError('malloc failed')
-            return q1, rnew
-    else:
-        raise ValueError("which must be either 'row' or 'col'")
+            if typecode == cnp.NPY_FLOAT:
+                info = qr_block_col_insert(m, n+p,
+                        <float*>extract(q1, qs), qs,
+                        <float*>rvoid, rs, k1, p)
+            elif typecode == cnp.NPY_DOUBLE:
+                info = qr_block_col_insert(m, n+p,
+                        <double*>extract(q1, qs), qs,
+                        <double*>rvoid, rs, k1, p)
+            elif typecode == cnp.NPY_CFLOAT:
+                info = qr_block_col_insert(m, n+p,
+                        <float_complex*>extract(q1, qs),
+                        qs, <float_complex*>rvoid, rs, k1, p)
+            else:  # cnp.NPY_CDOUBLE:
+                info = qr_block_col_insert(m, n+p,
+                        <double_complex*>extract(q1, qs),
+                        qs, <double_complex*>rvoid, rs, k1, p)
+            if info != 0:
+                if info > 0: 
+                    raise ValueError('The {0}th argument to ?geqrf was'
+                            'invalid'.format(info))
+                elif info < 0:
+                    raise ValueError('The {0}th argument to ?ormqr/?unmqr was'
+                            'invalid'.format(abs(info)))
+                elif info == MEMORY_ERROR:
+                    raise MemoryError('malloc failed')
+        return q1, rnew
 
 @cython.embedsignature(True)
 def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
