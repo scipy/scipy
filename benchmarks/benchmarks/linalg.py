@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, print_function
 
 import numpy.linalg as nl
 
+import numpy as np
 from numpy.testing import assert_
 from numpy.random import rand
 
