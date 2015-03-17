@@ -6,7 +6,7 @@
  * SGEMV in Accelerate framework will segfault on MacOS X version 10.9
  * (aka Mavericks) if arrays are not aligned to 32 byte boundaries
  * and the CPU supports AVX instructions. This can produce segfaults
- * in parts of SciPy whcih uses the SGEMV subroutine. As of October
+ * in parts of SciPy which uses the SGEMV subroutine. As of October
  * 2014 that is scipy.linalg.blas, SuperLU and ARPACK. This patch 
  * overshadows the symbols cblas_sgemv, sgemv_ and sgemv exported by 
  * Accelerate to produce the correct behavior. The MacOS X version and 
