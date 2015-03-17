@@ -8,7 +8,7 @@ __all__ = ['LinAlgError', 'norm']
 
 _nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
 _lange_prefix = {'f': 's', 'F': 'c', 'D': 'z'}
-_lange_norm_code = {1 : '1', np.inf : 'i'}
+_lange_norm_code = {1: '1', np.inf: 'i'}
 
 
 def norm(a, ord=None):
