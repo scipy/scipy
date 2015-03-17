@@ -98,10 +98,6 @@ class BaseQRdeltas(object):
             a = a + 1j * b
         a = a.astype(self.dtype)
         q, r = linalg.qr(a, mode=mode)
-        # numpy 1.5.1 np.triu can modify array dtype. So qr of 'f' arrays
-        # will return a 'd' r and a 'f' q.
-        if r.dtype != self.dtype:
-            r = r.astype(self.dtype)
         return a, q, r
 
 class BaseQRdelete(BaseQRdeltas):

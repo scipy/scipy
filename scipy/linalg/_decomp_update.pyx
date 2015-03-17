@@ -342,19 +342,6 @@ cdef inline int ormqr(char* side, char* trans, int m, int n, int k, blas_t* a,
 # Utility routines
 #------------------------------------------------------------------------------
 
-cdef cnp.ndarray PyArray_FromArraySafe(cnp.ndarray arr, void* newtype, int flags):
-    """In Numpy 1.5.1, Use of the NPY_F_CONTIGUOUS flag is broken when used
-    with a 1D input array.  The work around is to pass NPY_C_CONTIGUOUS since
-    for 1D arrays these are equivalent.  This is Numpy's gh-2287, fixed in
-    9b8ff38.
-
-    FIXME: Is it worth only applying this for numpy 1.5.1? 
-    """
-    if arr.ndim == 1 and (flags & cnp.NPY_F_CONTIGUOUS):
-        flags = flags & ~cnp.NPY_F_CONTIGUOUS
-        flags |= cnp.NPY_C_CONTIGUOUS
-    return PyArray_FromArray(arr, newtype, flags)
-
 cdef void blas_t_conj(int n, blas_t* x, int* xs) nogil:
     cdef int j
     if blas_t is float_complex or blas_t is double_complex:
@@ -1376,7 +1363,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
                 uvoid = extract(u, us)
                 ldu = us[0]
             else:
-                u = PyArray_FromArraySafe(u, NULL, cnp.NPY_F_CONTIGUOUS)
+                u = PyArray_FromArray(u, NULL, cnp.NPY_F_CONTIGUOUS)
                 utrans = N
                 uvoid = extract(u, us)
                 ldu = us[1]
@@ -1428,7 +1415,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
                 uvoid = extract(u, us)
                 ldu = us[0]
             else:
-                u = PyArray_FromArraySafe(u, NULL, cnp.NPY_F_CONTIGUOUS)
+                u = PyArray_FromArray(u, NULL, cnp.NPY_F_CONTIGUOUS)
                 utrans = N
                 uvoid = extract(u, us)
                 ldu = us[1]
@@ -1474,7 +1461,7 @@ cdef validate_array(cnp.ndarray a, bint chkfinite):
             raise ValueError('array must not contain infs or NaNs')
 
     if copy:
-            return PyArray_FromArraySafe(a, NULL, cnp.NPY_F_CONTIGUOUS)
+            return PyArray_FromArray(a, NULL, cnp.NPY_F_CONTIGUOUS)
     return a
 
 cdef validate_qr(object q0, object r0, bint overwrite_q, int q_order,
@@ -1667,7 +1654,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
             raise ValueError("'p' is out of range")
         if economic:
             if not cnp.PyArray_ISONESEGMENT(q1):
-                q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+                q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
                 qisF = True
             elif cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
                 qisF = True
@@ -1934,9 +1921,9 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
 
     if economic:
         if not overwrite_qru:
-            r1 = PyArray_FromArraySafe(r1, NULL,
+            r1 = PyArray_FromArray(r1, NULL,
                     cnp.NPY_F_CONTIGUOUS | cnp.NPY_ENSURECOPY)
-            u1 = PyArray_FromArraySafe(u1, NULL,
+            u1 = PyArray_FromArray(u1, NULL,
                     cnp.NPY_F_CONTIGUOUS | cnp.NPY_ENSURECOPY)
 
         shape[0] = m + p
@@ -1969,8 +1956,8 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
                         <double_complex*>extract(u1, us), us, k1)
         else:
             # only copies if if necessary.
-            r1 = PyArray_FromArraySafe(r1, NULL, cnp.NPY_F_CONTIGUOUS)
-            u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+            r1 = PyArray_FromArray(r1, NULL, cnp.NPY_F_CONTIGUOUS)
+            u1 = PyArray_FromArray(u1, NULL, cnp.NPY_F_CONTIGUOUS)
             if typecode == cnp.NPY_FLOAT:
                 thin_qr_block_row_insert(m+p, n,
                         <float*>extract(qnew, qs), qs,
@@ -2095,7 +2082,7 @@ def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
             p_eco = m-n
             p_full = p - p_eco
             if not cnp.PyArray_CHKFLAGS(u1, cnp.NPY_F_CONTIGUOUS):
-                u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+                u1 = PyArray_FromArray(u1, NULL, cnp.NPY_F_CONTIGUOUS)
         shape[0] = m
         shape[1] = n+p_eco
         qnew = cnp.PyArray_ZEROS(2, shape, typecode, 1)
@@ -2128,11 +2115,11 @@ def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
         return qnew, rnew
     else:
         if (not cnp.PyArray_ISONESEGMENT(q1)) or u1.ndim == 2:
-            q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+            q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
         if (not overwrite_qru and cnp.PyArray_CHKFLAGS(q1, cnp.NPY_C_CONTIGUOUS)
             and (typecode == cnp.NPY_CFLOAT or typecode == cnp.NPY_CDOUBLE)):
             u_flags |= cnp.NPY_ENSURECOPY
-            u1 = PyArray_FromArraySafe(u1, NULL, u_flags)
+            u1 = PyArray_FromArray(u1, NULL, u_flags)
 
         shape[0] = m
         shape[1] = n+p
@@ -2399,7 +2386,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
         length = 2*n
         s = cnp.PyArray_ZEROS(ndim, &length, typecode, 1)
         if not cnp.PyArray_ISONESEGMENT(q1):
-            q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+            q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
             qisF = True
         elif cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
             qisF = True
@@ -2468,7 +2455,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
         qTuvoid = extract(qTu, qTus)
         if p == 1:
             if not cnp.PyArray_ISONESEGMENT(q1):
-                q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+                q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
             form_qTu(q1, u1, qTuvoid, qTus, 0)
             if typecode == cnp.NPY_FLOAT:
                 qr_rank_1_update(m, n,
@@ -2496,14 +2483,14 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
                     <double_complex*>extract(v1, vs), vs)
         else:
             if not cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
-                q1 = PyArray_FromArraySafe(q1, NULL, cnp.NPY_F_CONTIGUOUS)
+                q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
             if not cnp.PyArray_CHKFLAGS(r1, cnp.NPY_F_CONTIGUOUS):
-                r1 = PyArray_FromArraySafe(r1, NULL, cnp.NPY_F_CONTIGUOUS)
+                r1 = PyArray_FromArray(r1, NULL, cnp.NPY_F_CONTIGUOUS)
             if not cnp.PyArray_ISONESEGMENT(u1):
-                u1 = PyArray_FromArraySafe(u1, NULL, cnp.NPY_F_CONTIGUOUS)
+                u1 = PyArray_FromArray(u1, NULL, cnp.NPY_F_CONTIGUOUS)
             # v.T must be F contiguous --> v must be C contiguous
             if not cnp.PyArray_CHKFLAGS(v1, cnp.NPY_C_CONTIGUOUS):
-                v1 = PyArray_FromArraySafe(v1, NULL, cnp.NPY_C_CONTIGUOUS)
+                v1 = PyArray_FromArray(v1, NULL, cnp.NPY_C_CONTIGUOUS)
 
             v1 = v1.T
             form_qTu(q1, u1, qTuvoid, qTus, 0)
