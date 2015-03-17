@@ -34,3 +34,6 @@ Library:
         Sources:
             cython_lapack.c,
             _lapack_subroutine_wrappers.f
+    Extension: _decomp_update
+        Sources:
+            _decomp_update.c
