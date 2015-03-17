@@ -2,11 +2,13 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import LinAlgError
-from . import blas
+from . import blas, lapack
 
 __all__ = ['LinAlgError', 'norm']
 
 _nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
+_lange_prefix = {'f': 's', 'F': 'c', 'D': 'z'}
+_lange_norm_code = {1 : '1', np.inf : 'i'}
 
 
 def norm(a, ord=None):
@@ -112,14 +114,20 @@ def norm(a, ord=None):
     nan
 
     """
-    # Differs from numpy only in non-finite handling and the use of
-    # blas
+    # Differs from numpy only in non-finite handling and the use of blas.
     a = np.asarray_chkfinite(a)
-    if ord in (None, 2) and (a.ndim == 1) and (a.dtype.char in 'fdFD'):
-        # use blas for fast and stable euclidean norm
-        func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
-        nrm2 = getattr(blas, func_name)
-        return nrm2(a)
+    if a.dtype.char in 'fdFD':
+        if ord in (None, 2) and (a.ndim == 1):
+            # use blas for fast and stable euclidean norm
+            func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
+            nrm2 = getattr(blas, func_name)
+            return nrm2(a)
+        if ord in (None, 'fro', 1, np.inf) and (a.ndim == 2):
+            # use lapack for a few fast matrix norms
+            func_name = _lange_prefix.get(a.dtype.char, 'd') + 'lange'
+            code = _lange_norm_code.get(ord, 'f')
+            lange = getattr(lapack, func_name)
+            return lange(code, a)
     return np.linalg.norm(a, ord=ord)
 
 
