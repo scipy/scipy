@@ -1319,7 +1319,7 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
         for m in range(mult[k]):
             t2 = temp[:]
             t2.extend([pout[k]] * (mult[k] - m - 1))
-            b = polyadd(b, r[indx] * poly(t2))
+            b = polyadd(b, r[indx] * atleast_1d(poly(t2)))
             indx += 1
     b = real_if_close(b)
     while allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
@@ -1519,7 +1519,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
         for m in range(mult[k]):
             t2 = temp[:]
             t2.extend([pout[k]] * (mult[k] - m - 1))
-            brev = polyadd(brev, (r[indx] * poly(t2))[::-1])
+            brev = polyadd(brev, (r[indx] * atleast_1d(poly(t2)))[::-1])
             indx += 1
     b = real_if_close(brev[::-1])
     return b, a
