@@ -1654,11 +1654,12 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
                 p_full = p1 - p_eco
             qptr = extract(q1, qs)
             rptr = extract(r1, rs)
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                info = thin_qr_row_delete(m, n, <{{CNAME}}*>qptr, qs, qisF,
-                    <{{CNAME}}*>rptr, rs, k1, p_eco, p_full)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    info = thin_qr_row_delete(m, n, <{{CNAME}}*>qptr, qs, qisF,
+                        <{{CNAME}}*>rptr, rs, k1, p_eco, p_full)
+                {{endfor}}
             if info == 1:
                 return q1[p_full:-p_eco, p_full:], r1[p_full:,:]
             elif info == MEMORY_ERROR:
@@ -1668,11 +1669,12 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
         else:
             qptr = extract(q1, qs)
             rptr = extract(r1, rs)
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                qr_block_row_delete(m, n, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, k1, p1)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    qr_block_row_delete(m, n, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, k1, p1)
+                {{endfor}}
             return q1[p1:, p1:], r1[p1:, :]
     elif which == 'col':
         # Special case single column removal to be more accepting of C ordered
@@ -1695,17 +1697,19 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
         qptr = extract(q1, qs)
         rptr = extract(r1, rs)
         if p1 == 1:
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                qr_col_delete(m, o, n, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, k1)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    qr_col_delete(m, o, n, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, k1)
+                {{endfor}}
         else:
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                info = qr_block_col_delete(m, o, n, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, k1, p1)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    info = qr_block_col_delete(m, o, n, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, k1, p1)
+                {{endfor}}
             if info == MEMORY_ERROR:
                 raise MemoryError('Unable to allocate memory for array')
         if economic:
@@ -1918,11 +1922,12 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
             qptr = extract(qnew, qs)
             rptr = extract(r1, rs)
             uptr = extract(u1, us)
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                thin_qr_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    thin_qr_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1)
+                {{endfor}}
         else:
             # only copies if if necessary.
             r1 = PyArray_FromArray(r1, NULL, cnp.NPY_F_CONTIGUOUS)
@@ -1930,11 +1935,12 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
             qptr = extract(qnew, qs)
             rptr = extract(r1, rs)
             uptr = extract(u1, us)
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                thin_qr_block_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1, p)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    thin_qr_block_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1, p)
+                {{endfor}}
         return qnew[:, :-p], r1
     else:
         shape[0] = m + p
@@ -1952,17 +1958,19 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
         qptr = extract(qnew, qs)
         rptr = extract(rnew, rs)
         if p == 1:
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                qr_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, k1)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    qr_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, k1)
+                {{endfor}}
         else:
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                info = qr_block_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, k1, p)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    info = qr_block_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, k1, p)
+                {{endfor}}
             if info == MEMORY_ERROR:
                 raise MemoryError('Unable to allocate memory for array')
         return qnew, rnew
@@ -2052,12 +2060,13 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
 {{py: 
 RCONDS = ['&frc', '&drc', '<float_complex*>&frc', '<double_complex*>&drc']
 }}
-        {{for COND, TYPECODE, CNAME, RC in zip(CONDS, TCODES, CNAMES, RCONDS)}}
-        {{COND}} typecode == {{TYPECODE}}:
-            info = thin_qr_col_insert(m, n, <{{CNAME}}*>qptr, qs,
-                <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1, p_eco,
-                p_full, {{RC}})
-        {{endfor}}
+        with nogil:
+            {{for COND, TYPECODE, CNAME, RC in zip(CONDS, TCODES, CNAMES, RCONDS)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                info = thin_qr_col_insert(m, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1, p_eco,
+                    p_full, {{RC}})
+            {{endfor}}
         if info == 2:
             raise LinAlgError("One of the columns of u lies in the span of Q. "
                               "Found reciprocal condition number of %s for Q "
@@ -2086,17 +2095,19 @@ RCONDS = ['&frc', '&drc', '<float_complex*>&frc', '<double_complex*>&drc']
         
         qptr = extract(q1, qs)
         if p == 1:
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                qr_col_insert(m, n+p, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, k1)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    qr_col_insert(m, n+p, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, k1)
+                {{endfor}}
         else:
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                info = qr_block_col_insert(m, n+p, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, k1, p)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    info = qr_block_col_insert(m, n+p, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, k1, p)
+                {{endfor}}
             if info != 0:
                 if info > 0: 
                     raise ValueError('The {0}th argument to ?geqrf was '
@@ -2335,20 +2346,21 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
         uptr = extract(u1, us)
         vptr = extract(v1, vs)
         sptr = extract(s, ss)
-        if p == 1:
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                thin_qr_rank_1_update(m, n, <{{CNAME}}*>qptr, qs, qisF,
-                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us,
-                    <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
-            {{endfor}}
-        else:
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                thin_qr_rank_p_update(m, n, p, <{{CNAME}}*>qptr, qs, qisF,
-                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us,
-                    <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
-            {{endfor}}
+        with nogil:
+            if p == 1:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    thin_qr_rank_1_update(m, n, <{{CNAME}}*>qptr, qs, qisF,
+                        <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us,
+                        <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
+                {{endfor}}
+            else:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    thin_qr_rank_p_update(m, n, p, <{{CNAME}}*>qptr, qs, qisF,
+                        <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us,
+                        <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
+                {{endfor}}
     else:
         qTu = cnp.PyArray_ZEROS(u1.ndim, u1.shape, typecode, 1)
         qTuptr = extract(qTu, qTus)
@@ -2359,12 +2371,13 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
             qptr = extract(q1, qs)
             rptr = extract(r1, rs)
             vptr = extract(v1, vs)
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                qr_rank_1_update(m, n, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>qTuptr, qTus,
-                    <{{CNAME}}*>vptr, vs)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    qr_rank_1_update(m, n, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, <{{CNAME}}*>qTuptr, qTus,
+                        <{{CNAME}}*>vptr, vs)
+                {{endfor}}
         else:
             if not cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
                 q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
@@ -2380,12 +2393,13 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
             qptr = extract(q1, qs)
             rptr = extract(r1, rs)
             vptr = extract(v1, vs)
-            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
-            {{COND}} typecode == {{TYPECODE}}:
-                info = qr_rank_p_update(m, n, p, <{{CNAME}}*>qptr, qs,
-                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>qTuptr, qTus,
-                    <{{CNAME}}*>vptr, vs)
-            {{endfor}}
+            with nogil:
+                {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+                {{COND}} typecode == {{TYPECODE}}:
+                    info = qr_rank_p_update(m, n, p, <{{CNAME}}*>qptr, qs,
+                        <{{CNAME}}*>rptr, rs, <{{CNAME}}*>qTuptr, qTus,
+                        <{{CNAME}}*>vptr, vs)
+                {{endfor}}
             if info != 0:
                 if info > 0: 
                     raise ValueError('The {0}th argument to ?geqrf was '
