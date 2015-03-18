@@ -12,7 +12,7 @@ import warnings
 
 from scipy._lib.six import string_types
 
-__all__ = ['periodogram', 'welch', 'lombscargle']
+__all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence']
 
 
 def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
@@ -203,7 +203,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     -----
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements.  For the default 'hanning' window an
-    overlap of 50% is a reasonable trade off between accurately estimating
+    overlap of 50\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
 
@@ -267,18 +267,210 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     2.0077340678640727
 
     """
-    x = np.asarray(x)
+    [f, Pxx] = csd(x, x, fs, window, nperseg, noverlap, nfft, detrend, 
+                   return_onesided, scaling, axis)
+
+    return f, Pxx
+
+def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
+              nfft=None, detrend='constant', axis=-1):
+    """
+    Estimate the magnitude squared coherence estimate, Cxy, of discrete-time 
+    signals X and Y using Welch's method. 
+    
+    Cxy = abs(Pxy)**2/(Pxx*Pyy), where Pxx and Pyy are power spectral density 
+    estimates of X and Y, and Pxy is the cross spectral density estimate of X 
+    and Y. 
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    y : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` and `y` time series in units of Hz. 
+        Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to 'hanning'.
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256.
+    noverlap: int, optional
+        Number of points to overlap between segments. If None,
+        ``noverlap = nperseg / 2``.  Defaults to None.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        the FFT length is `nperseg`. Defaults to None.
+    detrend : str or function or False, optional
+        Specifies how to detrend each segment. If `detrend` is a string,
+        it is passed as the ``type`` argument to `detrend`.  If it is a
+        function, it takes a segment and returns a detrended segment.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+    axis : int, optional
+        Axis along which the CSD is computed for both inputs; the default is 
+        over the last axis (i.e. ``axis=-1``).
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    Cxy : ndarray
+        Magnitude squared coherence of x and y.
+
+    See Also
+    --------
+    periodogram: Simple, optionally modified periodogram
+    lombscargle: Lomb-Scargle periodogram for unevenly sampled data
+    welch: Power spectral density by Welch's method.
+    csd: Cross spectral density by Welch's method. 
+
+    Notes
+    --------
+    An appropriate amount of overlap will depend on the choice of window
+    and on your requirements.  For the default 'hanning' window an
+    overlap of 50\% is a reasonable trade off between accurately estimating
+    the signal power, while not over counting any of the data.  Narrower
+    windows may require a larger overlap.
+    """
+    [ff,Pxx] = welch(x, fs, window, nperseg, noverlap, nfft, detrend, axis)
+    [_, Pyy] = welch(y, fs, window, nperseg, noverlap, nfft, detrend, axis)
+    [_, Pxy] = csd(x, y, fs, window, nperseg, noverlap, nfft, detrend, axis)
+
+    Cxy = np.abs(Pxy)**2/Pxx/Pyy
+
+    return ff, Cxy
+
+
+def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
+        detrend='constant', return_onesided=True, scaling='density', axis=-1):
+    """
+    Estimate the cross power spectral density, Pxy, using Welch's method. 
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    y : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` and `y` time series in units of Hz. 
+        Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to 'hanning'.
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256.
+    noverlap: int, optional
+        Number of points to overlap between segments. If None,
+        ``noverlap = nperseg / 2``.  Defaults to None.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        the FFT length is `nperseg`. Defaults to None.
+    detrend : str or function or False, optional
+        Specifies how to detrend each segment. If `detrend` is a string,
+        it is passed as the ``type`` argument to `detrend`.  If it is a
+        function, it takes a segment and returns a detrended segment.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+    return_onesided : bool, optional
+        If True, return a one-sided spectrum for real data. If False return
+        a two-sided spectrum. Note that for complex data, a two-sided
+        spectrum is always returned.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the power spectral density ('density')
+        where Pxy has units of V**2/Hz if x and y are measured in V and 
+        computing the power spectrum ('spectrum') where Pxy has units of V**2
+        if x and y are measured in V. Defaults to 'density'.
+    axis : int, optional
+        Axis along which the CSD is computed for both inputs; the default is 
+        over the last axis (i.e. ``axis=-1``).
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    Pxy : ndarray
+        Cross spectral density or cross power spectrum of x,y.
+
+    See Also
+    --------
+    periodogram: Simple, optionally modified periodogram
+    lombscargle: Lomb-Scargle periodogram for unevenly sampled data
+    welch: Power spectral density by Welch's method. [Equivalent to csd(x,x)]
+    coherence: Magnitude squared coherence by Welch's method. 
+
+    Notes
+    --------
+    By convention, Pxy is computed with the conjugate FFT of X multiplied by 
+    the FFT of Y. 
+
+    If the input series differ in length, the shorter series will be 
+    zero-padded to match.
+
+    An appropriate amount of overlap will depend on the choice of window
+    and on your requirements.  For the default 'hanning' window an
+    overlap of 50\% is a reasonable trade off between accurately estimating
+    the signal power, while not over counting any of the data.  Narrower
+    windows may require a larger overlap.
+
+    If `noverlap` is 0, this method is equivalent to Bartlett's method [2]_.
+
+    References
+    ----------
+    .. [1] P. Welch, "The use of the fast Fourier transform for the
+           estimation of power spectra: A method based on time averaging
+           over short, modified periodograms", IEEE Trans. Audio
+           Electroacoust. vol. 15, pp. 70-73, 1967.
+    .. [2] M.S. Bartlett, "Periodogram Analysis and Continuous Spectra",
+           Biometrika, vol. 37, pp. 1-16, 1950.
+    """
+
+    if y is x: 
+        psd = True
+        x = np.asarray(x)
+    else:
+        psd = False
+        x = np.asarray(x)
+        y = np.asarray(y)
 
     if x.size == 0:
         return np.empty(x.shape), np.empty(x.shape)
+    if y.size == 0:
+        return np.empty(y.shape), np.empty(y.shape)
 
     if axis != -1:
         x = np.rollaxis(x, axis, len(x.shape))
+        y = np.rollaxis(y, axis, len(y.shape))
+
+    # These checks only neccesary if x!=y
+    if not psd:
+
+        # Check if we can broadcast the remaining axes together
+        for a, b in zip(x.shape[-2::-1],y.shape[-2::-1]):
+            if a == 1 or b == 1 or a == b:
+                pass
+            else:
+                raise ValueError('x and y cannot be broadcast together.')
+
+        # Check if x and y are the same length, pad if neccesary
+        if x.shape[-1] != y.shape[-1]:
+            if x.shape[-1] < y.shape[-1]:
+                padShape = list(x.shape)
+                padShape[-1] = y.shape[-1] - x.shape[-1]
+                x = np.concatenate((x, np.zeros(padShape)), -1)
+            else:
+                padShape = list(y.shape)
+                padShape[-1] = x.shape[-1] - y.shape[-1]
+                y = np.concatenate((y, np.zeros(padShape)), -1)
 
     if x.shape[-1] < nperseg:
-        warnings.warn('nperseg = %d, is greater than x.shape[%d] = %d, using '
-                      'nperseg = x.shape[%d]'
-                      % (nperseg, axis, x.shape[axis], axis))
+        warnings.warn('nperseg = %d, is greater than input length = %d, using '
+                      'nperseg = %d'
+                      % (nperseg, x.shape[axis], x.shape[axis]))
         nperseg = x.shape[-1]
 
     if isinstance(window, string_types) or type(window) is tuple:
@@ -286,14 +478,14 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     else:
         win = np.asarray(window)
         if len(win.shape) != 1:
-            raise ValueError('window must be 1-D')
+            raise ValueError('Window must be 1-D')
         if win.shape[0] > x.shape[-1]:
-            raise ValueError('window is longer than x.')
+            raise ValueError('Window is longer than input data.')
         nperseg = win.shape[0]
 
-    # numpy 1.5.1 doesn't have result_type.
-    outdtype = (np.array([x[0]]) * np.array([1], 'f')).dtype.char.lower()
-    if win.dtype != outdtype:
+    outdtype = np.result_type(x,y,np.complex64)
+
+    if np.result_type(win,np.complex64) != outdtype:
         win = win.astype(outdtype)
 
     if scaling == 'density':
@@ -330,58 +522,82 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     step = nperseg - noverlap
     indices = np.arange(0, x.shape[-1]-nperseg+1, step)
 
-    if np.isrealobj(x) and return_onesided:
-        outshape = list(x.shape)
+    if np.isrealobj(x) and np.isrealobj(y) and return_onesided:
+        outshape = list(np.broadcast(x,y).shape)
+        win = win.real
         if nfft % 2 == 0:  # even
             outshape[-1] = nfft // 2 + 1
-            Pxx = np.empty(outshape, outdtype)
-            for k, ind in enumerate(indices):
-                x_dt = detrend_func(x[..., ind:ind+nperseg])
-                xft = fftpack.rfft(x_dt*win, nfft)
-                # fftpack.rfft returns the positive frequency part of the fft
-                # as real values, packed r r i r i r i ...
-                # this indexing is to extract the matching real and imaginary
-                # parts, while also handling the pure real zero and nyquist
-                # frequencies.
-                if k == 0:
-                    Pxx[..., (0,-1)] = xft[..., (0,-1)]**2
-                    Pxx[..., 1:-1] = xft[..., 1:-1:2]**2 + xft[..., 2::2]**2
-                else:
-                    Pxx *= k/(k+1.0)
-                    Pxx[..., (0,-1)] += xft[..., (0,-1)]**2 / (k+1.0)
-                    Pxx[..., 1:-1] += (xft[..., 1:-1:2]**2 + xft[..., 2::2]**2) \
-                                    / (k+1.0)
+            Pxy = np.empty(outshape, outdtype)
         else:  # odd
             outshape[-1] = (nfft+1) // 2
-            Pxx = np.empty(outshape, outdtype)
-            for k, ind in enumerate(indices):
-                x_dt = detrend_func(x[..., ind:ind+nperseg])
-                xft = fftpack.rfft(x_dt*win, nfft)
-                if k == 0:
-                    Pxx[..., 0] = xft[..., 0]**2
-                    Pxx[..., 1:] = xft[..., 1::2]**2 + xft[..., 2::2]**2
-                else:
-                    Pxx *= k/(k+1.0)
-                    Pxx[..., 0] += xft[..., 0]**2 / (k+1)
-                    Pxx[..., 1:] += (xft[..., 1::2]**2 + xft[..., 2::2]**2) \
-                                  / (k+1.0)
+            Pxy = np.empty(outshape, outdtype)
 
-        Pxx[..., 1:-1] *= 2*scale
-        Pxx[..., (0,-1)] *= scale
-        f = np.arange(Pxx.shape[-1]) * (fs/nfft)
+        for k, ind in enumerate(indices):
+            x_dt = detrend_func(x[..., ind:ind+nperseg])
+            xft = fftpack.rfft(x_dt*win, nfft)
+            if psd:
+                yft = xft
+            else:
+                y_dt = detrend_func(y[..., ind:ind+nperseg])
+                yft = fftpack.rfft(y_dt*win, nfft)
+
+            # fftpack.rfft returns the positive frequency part of the fft
+            # as real values, packed r r i r i r i ...
+            # this indexing is to extract the matching real and imaginary
+            # parts, while also handling the pure real zero and nyquist
+            # frequencies.
+            if k == 0:
+                Pxy[...,0] = xft[...,0]*yft[...,0]
+                if nfft % 2 == 0:
+                    product = ((xft[...,1:-1:2] - 1j*xft[...,2:-1:2]) 
+                                      * (yft[...,1:-1:2] + 1j*yft[...,2:-1:2]))
+                    Pxy[...,-1] = xft[...,-1]*yft[...,-1]
+                else:
+                    product = ((xft[...,1::2] - 1j*xft[...,2::2]) 
+                                      * (yft[...,1::2] + 1j*yft[...,2::2]))
+
+                Pxy[...,1:1+product.shape[-1]] = product
+
+            else:
+                Pxy *= k/(k+1.0)
+                Pxy[...,0] += xft[0]*yft[0] / (k+1.0)
+                if nfft % 2 == 0:
+                    product = ((xft[...,1:-1:2] - 1j*xft[...,2:-1:2]) 
+                                      * (yft[...,1:-1:2] + 1j*yft[...,2:-1:2]))
+                    Pxy[...,-1] += xft[...,-1]*yft[...,-1] / (k+1.0)
+                else:
+                    product = ((xft[...,1::2] - 1j*xft[...,2::2]) 
+                                      * (yft[...,1::2] + 1j*yft[...,2::2]))
+
+                Pxy[...,1:1+product.shape[-1]] += product / (k+1.0)
+
+        Pxy[..., 1:-1] *= 2*scale
+        Pxy[..., (0,-1)] *= scale
+        f = np.arange(Pxy.shape[-1]) * (fs/nfft)
     else:
         for k, ind in enumerate(indices):
             x_dt = detrend_func(x[..., ind:ind+nperseg])
             xft = fftpack.fft(x_dt*win, nfft)
-            if k == 0:
-                Pxx = (xft * xft.conj()).real
+            if psd:
+                yft = xft
             else:
-                Pxx *= k/(k+1.0)
-                Pxx += (xft * xft.conj()).real / (k+1.0)
-        Pxx *= scale
+                y_dt = detrend_func(y[..., ind:ind+nperseg])
+                yft = fftpack.fft(y_dt*win, nfft)
+
+            if k == 0:
+                Pxy = (xft.conj() * yft)
+            else:
+                Pxy *= k/(k+1.0)
+                Pxy += (xft.conj() * yft) / (k+1.0)
+
+        Pxy *= scale
+        Pxy = Pxy.astype(outdtype)
         f = fftpack.fftfreq(nfft, 1.0/fs)
 
-    if axis != -1:
-        Pxx = np.rollaxis(Pxx, -1, axis)
+    if psd:
+        Pxy = Pxy.real
 
-    return f, Pxx
+    if axis != -1:
+        Pxy = np.rollaxis(Pxy, -1, axis)
+
+    return f, Pxy
