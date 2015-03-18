@@ -8,7 +8,6 @@ __all__ = ['LinAlgError', 'norm']
 
 _nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
 _lange_prefix = {'f': 's', 'F': 'c', 'D': 'z'}
-_lange_norm_code = {1: '1', np.inf: 'i'}
 
 
 def norm(a, ord=None):
@@ -122,12 +121,25 @@ def norm(a, ord=None):
             func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
             nrm2 = getattr(blas, func_name)
             return nrm2(a)
-        if ord in (None, 'fro', 1, np.inf) and (a.ndim == 2):
+        elif ord in (None, 'fro', 1, np.inf) and (a.ndim == 2):
             # use lapack for a few fast matrix norms
             func_name = _lange_prefix.get(a.dtype.char, 'd') + 'lange'
-            code = _lange_norm_code.get(ord, 'f')
             lange = getattr(lapack, func_name)
-            return lange(code, a)
+            if ord == 1:
+                if np.isfortran(a):
+                    return lange('1', a)
+                elif np.isfortran(a.T):
+                    return lange('i', a.T)
+            elif ord == np.inf:
+                if np.isfortran(a):
+                    return lange('i', a)
+                elif np.isfortran(a.T):
+                    return lange('1', a.T)
+            else:
+                if np.isfortran(a):
+                    return lange('f', a)
+                elif np.isfortran(a.T):
+                    return lange('f', a.T)
     return np.linalg.norm(a, ord=ord)
 
 
