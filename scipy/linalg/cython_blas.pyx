@@ -167,6 +167,17 @@ Raw function pointers (Fortran-style pointer arguments):
 
 """
 
+# Within scipy, these wrappers can be used via relative or absolute cimport.
+# Examples:
+# from ..linalg cimport cython_blas
+# from scipy.linalg cimport cython_blas
+# cimport scipy.linalg.cython_blas as cython_blas
+# cimport ..linalg.cython_blas as cython_blas
+
+# Within scipy, if BLAS functions are needed in C/C++/Fortran,
+# these wrappers should not be used.
+# The original libraries should be linked directly.
+
 cdef extern from "fortran_defs.h":
     pass
 
