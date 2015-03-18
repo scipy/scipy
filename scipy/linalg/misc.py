@@ -121,8 +121,10 @@ def norm(a, ord=None):
             func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
             nrm2 = getattr(blas, func_name)
             return nrm2(a)
-        elif ord in (None, 'fro', 1, np.inf) and (a.ndim == 2):
-            # use lapack for a few fast matrix norms
+
+        if a.ndim == 2:
+            # Use lapack for a couple fast matrix norms.
+            # For some reason the *lange frobenius norm is slow.
             lange_args = None
             if ord == 1:
                 if np.isfortran(a):
@@ -134,15 +136,11 @@ def norm(a, ord=None):
                     lange_args = 'i', a
                 elif np.isfortran(a.T):
                     lange_args = '1', a.T
-            else:
-                if np.isfortran(a):
-                    lange_args = 'f', a
-                elif np.isfortran(a.T):
-                    lange_args = 'f', a.T
             if lange_args:
                 func_name = _lange_prefix.get(a.dtype.char, 'd') + 'lange'
                 lange = getattr(lapack, func_name)
                 return lange(*lange_args)
+
     return np.linalg.norm(a, ord=ord)
 
 
