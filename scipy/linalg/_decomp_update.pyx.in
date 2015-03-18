@@ -32,6 +32,15 @@ Routines for updating QR decompositions
 #    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377 (1990).
 # 
 
+{{py: 
+
+TCODES = ['cnp.NPY_FLOAT', 'cnp.NPY_DOUBLE', 'cnp.NPY_CFLOAT', 'cnp.NPY_CDOUBLE']
+CNAMES = ['float', 'double', 'float_complex', 'double_complex']
+CONDS = ['if', 'elif', 'elif', 'else:  #']
+PREFIX = ['s', 'd', 'c', 'z']    
+
+}}
+
 cimport cython
 cimport libc.stdlib
 cimport libc.limits 
@@ -84,47 +93,31 @@ cdef inline blas_t* row(blas_t* a, int* as, int i) nogil:
 
 cdef inline blas_t* col(blas_t* a, int* as, int j) nogil:
     return a + j*as[1]
-    
+
 cdef inline void copy(int n, blas_t* x, int incx, blas_t* y, int incy) nogil:
-    if blas_t is float:
-        blas_pointers.scopy(&n, x, &incx, y, &incy) 
-    elif blas_t is double:
-        blas_pointers.dcopy(&n, x, &incx, y, &incy)
-    elif blas_t is float_complex:
-        blas_pointers.ccopy(&n, x, &incx, y, &incy)
-    else:
-        blas_pointers.zcopy(&n, x, &incx, y, &incy)
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        blas_pointers.{{C}}copy(&n, x, &incx, y, &incy)
+    {{endfor}}
 
 cdef inline void swap(int n, blas_t* x, int incx, blas_t* y, int incy) nogil:
-    if blas_t is float:
-        blas_pointers.sswap(&n, x, &incx, y, &incy) 
-    elif blas_t is double:
-        blas_pointers.dswap(&n, x, &incx, y, &incy)
-    elif blas_t is float_complex:
-        blas_pointers.cswap(&n, x, &incx, y, &incy)
-    else:
-        blas_pointers.zswap(&n, x, &incx, y, &incy)
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        blas_pointers.{{C}}swap(&n, x, &incx, y, &incy)
+    {{endfor}}
 
 cdef inline void scal(int n, blas_t a, blas_t* x, int incx) nogil:
-    if blas_t is float:
-        blas_pointers.sscal(&n, &a, x, &incx)
-    elif blas_t is double:
-        blas_pointers.dscal(&n, &a, x, &incx)
-    elif blas_t is float_complex:
-        blas_pointers.cscal(&n, &a, x, &incx)
-    else:
-        blas_pointers.zscal(&n, &a, x, &incx)
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        blas_pointers.{{C}}scal(&n, &a, x, &incx)
+    {{endfor}}
 
 cdef inline void axpy(int n, blas_t a, blas_t* x, int incx,
                       blas_t* y, int incy) nogil:
-    if blas_t is float:
-        blas_pointers.saxpy(&n, &a, x, &incx, y, &incy)
-    elif blas_t is double:
-        blas_pointers.daxpy(&n, &a, x, &incx, y, &incy)
-    elif blas_t is float_complex:
-        blas_pointers.caxpy(&n, &a, x, &incx, y, &incy)
-    else:
-        blas_pointers.zaxpy(&n, &a, x, &incx, y, &incy)
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        blas_pointers.{{C}}axpy(&n, &a, x, &incx, y, &incy)
+    {{endfor}}
 
 cdef inline blas_t nrm2(int n, blas_t* x, int incx) nogil:
     # since dnrm2 etc are functions, we can't at present call them...
@@ -235,25 +228,17 @@ cdef inline void rot(int n, blas_t* x, int incx, blas_t* y, int incy,
 
 cdef inline void larfg(int n, blas_t* alpha, blas_t* x, int incx,
                        blas_t* tau) nogil:
-    if blas_t is float:
-        lapack_pointers.slarfg(&n, alpha, x, &incx, tau)
-    elif blas_t is double:
-        lapack_pointers.dlarfg(&n, alpha, x, &incx, tau)
-    elif blas_t is float_complex:
-        lapack_pointers.clarfg(&n, alpha, x, &incx, tau)
-    else:
-        lapack_pointers.zlarfg(&n, alpha, x, &incx, tau)
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        lapack_pointers.{{C}}larfg(&n, alpha, x, &incx, tau)
+    {{endfor}}
 
 cdef inline void larf(char* side, int m, int n, blas_t* v, int incv, blas_t tau,
     blas_t* c, int ldc, blas_t* work) nogil:
-    if blas_t is float:
-        lapack_pointers.slarf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
-    elif blas_t is double:
-        lapack_pointers.dlarf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
-    elif blas_t is float_complex:
-        lapack_pointers.clarf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
-    else:
-        lapack_pointers.zlarf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        lapack_pointers.{{C}}larf(side, &m, &n, v, &incv, &tau, c, &ldc, work)
+    {{endfor}}
 
 cdef inline void ger(int m, int n, blas_t alpha, blas_t* x, int incx, blas_t* y,
         int incy, blas_t* a, int lda) nogil:
@@ -268,61 +253,36 @@ cdef inline void ger(int m, int n, blas_t alpha, blas_t* x, int incx, blas_t* y,
 
 cdef inline void gemv(char* trans, int m, int n, blas_t alpha, blas_t* a,
         int lda, blas_t* x, int incx, blas_t beta, blas_t* y, int incy) nogil:
-    if blas_t is float:
-        blas_pointers.sgemv(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta,
-                y, &incy)
-    elif blas_t is double:
-        blas_pointers.dgemv(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta,
-                y, &incy)
-    elif blas_t is float_complex:
-        blas_pointers.cgemv(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta,
-                y, &incy)
-    else:
-        blas_pointers.zgemv(trans, &m, &n, &alpha, a, &lda, x, &incx, &beta,
-                y, &incy)
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        blas_pointers.{{C}}gemv(trans, &m, &n, &alpha, a, &lda, x, &incx,
+                &beta, y, &incy)
+    {{endfor}}
 
 cdef inline void gemm(char* transa, char* transb, int m, int n, int k,
         blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb, blas_t beta,
         blas_t* c, int ldc) nogil:
-    if blas_t is float:
-        blas_pointers.sgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        blas_pointers.{{C}}gemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
                 b, &ldb, &beta, c, &ldc)
-    elif blas_t is double:
-        blas_pointers.dgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
-                b, &ldb, &beta, c, &ldc)
-    elif blas_t is float_complex:
-        blas_pointers.cgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
-                b, &ldb, &beta, c, &ldc)
-    else:
-        blas_pointers.zgemm(transa, transb, &m, &n, &k, &alpha, a, &lda,
-                b, &ldb, &beta, c, &ldc)
+    {{endfor}}
 
 cdef inline void trmm(char* side, char* uplo, char* transa, char* diag, int m,
         int n, blas_t alpha, blas_t* a, int lda, blas_t* b, int ldb) nogil:
-    if blas_t is float:
-        blas_pointers.strmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        blas_pointers.{{C}}trmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
                 b, &ldb)
-    elif blas_t is double:
-        blas_pointers.dtrmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
-                b, &ldb)
-    elif blas_t is float_complex:
-        blas_pointers.ctrmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
-                b, &ldb)
-    else:
-        blas_pointers.ztrmm(side, uplo, transa, diag, &m, &n, &alpha, a, &lda,
-                b, &ldb)
+    {{endfor}}
 
 cdef inline int geqrf(int m, int n, blas_t* a, int lda, blas_t* tau,
                       blas_t* work, int lwork) nogil:
     cdef int info
-    if blas_t is float:
-        lapack_pointers.sgeqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
-    elif blas_t is double:
-        lapack_pointers.dgeqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
-    elif blas_t is float_complex:
-        lapack_pointers.cgeqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
-    else:
-        lapack_pointers.zgeqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, PREFIX)}}
+    {{COND}} blas_t is {{CNAME}}:
+        lapack_pointers.{{C}}geqrf(&m, &n, a, &lda, tau, work, &lwork, &info)
+    {{endfor}}
     return info
 
 cdef inline int ormqr(char* side, char* trans, int m, int n, int k, blas_t* a,
@@ -1663,6 +1623,8 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
     cdef int p1 = p
     cdef int p_eco, p_full
     cdef int typecode, m, n, info
+    cdef void* qptr
+    cdef void* rptr
     cdef int qs[2]
     cdef int rs[2]
     cdef bint economic, qisF = False 
@@ -1690,18 +1652,13 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
             else:
                 p_eco = m-n
                 p_full = p1 - p_eco
-            if typecode == cnp.NPY_FLOAT:
-                info = thin_qr_row_delete(m, n, <float*>extract(q1, qs), qs, qisF,
-                    <float*>extract(r1, rs), rs, k1, p_eco, p_full)
-            elif typecode == cnp.NPY_DOUBLE:
-                info = thin_qr_row_delete(m, n, <double*>extract(q1, qs), qs, qisF,
-                    <double*>extract(r1, rs), rs, k1, p_eco, p_full)
-            elif typecode == cnp.NPY_CFLOAT:
-                info = thin_qr_row_delete(m, n, <float_complex*>extract(q1, qs), qs, qisF,
-                    <float_complex*>extract(r1, rs), rs, k1, p_eco, p_full)
-            else:  #  cnp.NPY_CDOUBLE
-                info = thin_qr_row_delete(m, n, <double_complex*>extract(q1, qs), qs, qisF,
-                    <double_complex*>extract(r1, rs), rs, k1, p_eco, p_full)
+            qptr = extract(q1, qs)
+            rptr = extract(r1, rs)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                info = thin_qr_row_delete(m, n, <{{CNAME}}*>qptr, qs, qisF,
+                    <{{CNAME}}*>rptr, rs, k1, p_eco, p_full)
+            {{endfor}}
             if info == 1:
                 return q1[p_full:-p_eco, p_full:], r1[p_full:,:]
             elif info == MEMORY_ERROR:
@@ -1709,18 +1666,13 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
             else:
                 raise ValueError('Reorthogonalization Failed, unable to perform row deletion.')
         else:
-            if typecode == cnp.NPY_FLOAT:
-                qr_block_row_delete(m, n, <float*>extract(q1, qs), qs,
-                    <float*>extract(r1, rs), rs, k1, p1)
-            elif typecode == cnp.NPY_DOUBLE:
-                qr_block_row_delete(m, n, <double*>extract(q1, qs), qs,
-                    <double*>extract(r1, rs), rs, k1, p1)
-            elif typecode == cnp.NPY_CFLOAT:
-                qr_block_row_delete(m, n, <float_complex*>extract(q1, qs), qs,
-                    <float_complex*>extract(r1, rs), rs, k1, p1)
-            else:  # cnp.NPY_CDOUBLE:
-                qr_block_row_delete(m, n, <double_complex*>extract(q1, qs), qs,
-                    <double_complex*>extract(r1, rs), rs, k1, p1)
+            qptr = extract(q1, qs)
+            rptr = extract(r1, rs)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                qr_block_row_delete(m, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, k1, p1)
+            {{endfor}}
             return q1[p1:, p1:], r1[p1:, :]
     elif which == 'col':
         # Special case single column removal to be more accepting of C ordered
@@ -1740,32 +1692,20 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
         if k1 + p1 > n or p1 <= 0:
             raise ValueError("'p' is out of range")
 
+        qptr = extract(q1, qs)
+        rptr = extract(r1, rs)
         if p1 == 1:
-            if typecode == cnp.NPY_FLOAT:
-                qr_col_delete(m, o, n, <float*>extract(q1, qs), qs, 
-                    <float*>extract(r1, rs), rs, k1)
-            elif typecode == cnp.NPY_DOUBLE:
-                qr_col_delete(m, o, n, <double*>extract(q1, qs), qs, 
-                    <double*>extract(r1, rs), rs, k1)
-            elif typecode == cnp.NPY_CFLOAT:
-                qr_col_delete(m, o, n, <float_complex*>extract(q1, qs), qs,
-                    <float_complex*>extract(r1, rs), rs, k1)
-            else:  # cnp.NPY_CDOUBLE:
-                qr_col_delete(m, o, n, <double_complex*>extract(q1, qs), qs,
-                    <double_complex*>extract(r1, rs), rs, k1)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                qr_col_delete(m, o, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, k1)
+            {{endfor}}
         else:
-            if typecode == cnp.NPY_FLOAT:
-                info = qr_block_col_delete(m, o, n, <float*>extract(q1, qs), qs,
-                    <float*>extract(r1, rs), rs, k1, p1)
-            elif typecode == cnp.NPY_DOUBLE:
-                info = qr_block_col_delete(m, o, n, <double*>extract(q1, qs), qs,
-                    <double*>extract(r1, rs), rs, k1, p1)
-            elif typecode == cnp.NPY_CFLOAT:
-                info = qr_block_col_delete(m, o, n, <float_complex*>extract(q1, qs), qs,
-                    <float_complex*>extract(r1, rs), rs, k1, p1)
-            else:  # cnp.NPY_CDOUBLE:
-                info = qr_block_col_delete(m, o, n, <double_complex*>extract(q1, qs), qs,
-                    <double_complex*>extract(r1, rs), rs, k1, p1)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                info = qr_block_col_delete(m, o, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, k1, p1)
+            {{endfor}}
             if info == MEMORY_ERROR:
                 raise MemoryError('Unable to allocate memory for array')
         if economic:
@@ -1916,6 +1856,9 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
     cdef int j, k1 = k 
     cdef int u_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
     cdef int typecode, m, n, p, info 
+    cdef void* qptr
+    cdef void* rptr
+    cdef void* uptr
     cdef int qs[2]
     cdef int rs[2]
     cdef int us[2]
@@ -1972,50 +1915,26 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
             qnew[m+j, n+j] = 1
 
         if p == 1:
-            if typecode == cnp.NPY_FLOAT:
-                thin_qr_row_insert(m+p, n,
-                        <float*>extract(qnew, qs), qs,
-                        <float*>extract(r1, rs), rs,
-                        <float*>extract(u1, us), us, k1)
-            elif typecode == cnp.NPY_DOUBLE:
-                thin_qr_row_insert(m+p, n,
-                        <double*>extract(qnew, qs), qs,
-                        <double*>extract(r1, rs), rs,
-                        <double*>extract(u1, us), us, k1)
-            elif typecode == cnp.NPY_CFLOAT:
-                thin_qr_row_insert(m+p, n,
-                        <float_complex*>extract(qnew, qs), qs,
-                        <float_complex*>extract(r1, rs), rs,
-                        <float_complex*>extract(u1, us), us, k1)
-            else:  # cnp.NPY_CDOUBLE:
-                thin_qr_row_insert(m+p, n,
-                        <double_complex*>extract(qnew, qs), qs,
-                        <double_complex*>extract(r1, rs), rs,
-                        <double_complex*>extract(u1, us), us, k1)
+            qptr = extract(qnew, qs)
+            rptr = extract(r1, rs)
+            uptr = extract(u1, us)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                thin_qr_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1)
+            {{endfor}}
         else:
             # only copies if if necessary.
             r1 = PyArray_FromArray(r1, NULL, cnp.NPY_F_CONTIGUOUS)
             u1 = PyArray_FromArray(u1, NULL, cnp.NPY_F_CONTIGUOUS)
-            if typecode == cnp.NPY_FLOAT:
-                thin_qr_block_row_insert(m+p, n,
-                        <float*>extract(qnew, qs), qs,
-                        <float*>extract(r1, rs), rs,
-                        <float*>extract(u1, us), us, k1, p)
-            elif typecode == cnp.NPY_DOUBLE:
-                thin_qr_block_row_insert(m+p, n,
-                        <double*>extract(qnew, qs), qs,
-                        <double*>extract(r1, rs), rs,
-                        <double*>extract(u1, us), us, k1, p)
-            elif typecode == cnp.NPY_CFLOAT:
-                thin_qr_block_row_insert(m+p, n,
-                        <float_complex*>extract(qnew, qs), qs,
-                        <float_complex*>extract(r1, rs), rs,
-                        <float_complex*>extract(u1, us), us, k1, p)
-            else:  # cnp.NPY_CDOUBLE:
-                thin_qr_block_row_insert(m+p, n,
-                        <double_complex*>extract(qnew, qs), qs,
-                        <double_complex*>extract(r1, rs), rs,
-                        <double_complex*>extract(u1, us), us, k1, p)
+            qptr = extract(qnew, qs)
+            rptr = extract(r1, rs)
+            uptr = extract(u1, us)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                thin_qr_block_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1, p)
+            {{endfor}}
         return qnew[:, :-p], r1
     else:
         shape[0] = m + p
@@ -2030,36 +1949,20 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
         for j in range(m, m+p):
             qnew[j, j] = 1
 
+        qptr = extract(qnew, qs)
+        rptr = extract(rnew, rs)
         if p == 1:
-            if typecode == cnp.NPY_FLOAT:
-                qr_row_insert(m+p, n, <float*>extract(qnew, qs), qs,
-                        <float*>extract(rnew, rs), rs, k1)
-            elif typecode == cnp.NPY_DOUBLE:
-                qr_row_insert(m+p, n, <double*>extract(qnew, qs), qs,
-                        <double*>extract(rnew, rs), rs, k1)
-            elif typecode == cnp.NPY_CFLOAT:
-                qr_row_insert(m+p, n, <float_complex*>extract(qnew, qs), qs,
-                        <float_complex*>extract(rnew, rs), rs, k1)
-            else:  # cnp.NPY_CDOUBLE:
-                qr_row_insert(m+p, n, <double_complex*>extract(qnew, qs),
-                        qs, <double_complex*>extract(rnew, rs), rs, k1)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                qr_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, k1)
+            {{endfor}}
         else:
-            if typecode == cnp.NPY_FLOAT:
-                info = qr_block_row_insert(m+p, n,
-                        <float*>extract(qnew, qs), qs,
-                        <float*>extract(rnew, rs), rs, k1, p)
-            elif typecode == cnp.NPY_DOUBLE:
-                info = qr_block_row_insert(m+p, n,
-                        <double*>extract(qnew, qs), qs,
-                        <double*>extract(rnew, rs), rs, k1, p)
-            elif typecode == cnp.NPY_CFLOAT:
-                info = qr_block_row_insert(m+p, n,
-                        <float_complex*>extract(qnew, qs), qs,
-                        <float_complex*>extract(rnew, rs), rs, k1, p)
-            else:  # cnp.NPY_CDOUBLE
-                info = qr_block_row_insert(m+p, n,
-                        <double_complex*>extract(qnew, qs), qs,
-                        <double_complex*>extract(rnew, rs), rs, k1, p)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                info = qr_block_row_insert(m+p, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, k1, p)
+            {{endfor}}
             if info == MEMORY_ERROR:
                 raise MemoryError('Unable to allocate memory for array')
         return qnew, rnew
@@ -2070,8 +1973,10 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
     cdef int q_flags = ARRAY_ANYORDER
     cdef int u_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
     cdef int typecode, m, n, p, info, p_eco, p_full
+    cdef void* qptr
+    cdef void* rptr
+    cdef void* uptr
     cdef int qs[2]
-    cdef void* rvoid
     cdef int rs[2]
     cdef int us[2]
     cdef cnp.npy_intp shape[2]
@@ -2141,24 +2046,18 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
         rnew[:n,:k1] = r1[:,:k1]
         rnew[:n,k1+p:] = r1[:,k1:]
         u1 = validate_array(u1, check_finite)
-        if typecode == cnp.NPY_FLOAT:
-            info = thin_qr_col_insert(m, n, <float*>extract(qnew, qs), qs,
-                    <float*>extract(rnew, rs), rs,
-                    <float*>extract(u1, us), us, k1, p_eco, p_full, &frc)
-        elif typecode == cnp.NPY_DOUBLE:
-            info = thin_qr_col_insert(m, n, <double*>extract(qnew, qs), qs,
-                    <double*>extract(rnew, rs), rs,
-                    <double*>extract(u1, us), us, k1, p_eco, p_full, &drc)
-        elif typecode == cnp.NPY_CFLOAT:
-            info = thin_qr_col_insert(m, n, <float_complex*>extract(qnew, qs), qs,
-                    <float_complex*>extract(rnew, rs), rs,
-                    <float_complex*>extract(u1, us), us, k1, p_eco, p_full,
-                    <float_complex*>&frc)
-        else:  # cnp.NPY_CDOUBLE:
-            info = thin_qr_col_insert(m, n, <double_complex*>extract(qnew, qs), qs,
-                    <double_complex*>extract(rnew, rs), rs,
-                    <double_complex*>extract(u1, us), us, k1, p_eco, p_full,
-                    <double_complex*>&drc)
+        qptr = extract(qnew, qs)
+        rptr = extract(rnew, rs)
+        uptr = extract(u1, us)
+{{py: 
+RCONDS = ['&frc', '&drc', '<float_complex*>&frc', '<double_complex*>&drc']
+}}
+        {{for COND, TYPECODE, CNAME, RC in zip(CONDS, TCODES, CNAMES, RCONDS)}}
+        {{COND}} typecode == {{TYPECODE}}:
+            info = thin_qr_col_insert(m, n, <{{CNAME}}*>qptr, qs,
+                <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k1, p_eco,
+                p_full, {{RC}})
+        {{endfor}}
         if info == 2:
             raise LinAlgError("One of the columns of u lies in the span of Q. "
                               "Found reciprocal condition number of %s for Q "
@@ -2180,41 +2079,24 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
         rnew[:,k1+p:] = r1[:,k1:]
 
         u1 = validate_array(u1, check_finite)
-        rvoid = extract(rnew, rs)
-        form_qTu(q1, u1, rvoid, rs, k1)
+        rptr = extract(rnew, rs)
+        form_qTu(q1, u1, rptr, rs, k1)
         if not overwrite_qru:
             q1 = q1.copy('F')
         
+        qptr = extract(q1, qs)
         if p == 1:
-            if typecode == cnp.NPY_FLOAT:
-                qr_col_insert(m, n+p, <float*>extract(q1, qs), qs,
-                        <float*>rvoid, rs, k1)
-            elif typecode == cnp.NPY_DOUBLE:
-                qr_col_insert(m, n+p, <double*>extract(q1, qs), qs,
-                        <double*>rvoid, rs, k1)
-            elif typecode == cnp.NPY_CFLOAT:
-                qr_col_insert(m, n+p, <float_complex*>extract(q1, qs), qs,
-                        <float_complex*>rvoid, rs, k1)
-            else:  # cnp.NPY_CDOUBLE
-                qr_col_insert(m, n+p, <double_complex*>extract(q1, qs), qs,
-                        <double_complex*>rvoid, rs, k1)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                qr_col_insert(m, n+p, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, k1)
+            {{endfor}}
         else:
-            if typecode == cnp.NPY_FLOAT:
-                info = qr_block_col_insert(m, n+p,
-                        <float*>extract(q1, qs), qs,
-                        <float*>rvoid, rs, k1, p)
-            elif typecode == cnp.NPY_DOUBLE:
-                info = qr_block_col_insert(m, n+p,
-                        <double*>extract(q1, qs), qs,
-                        <double*>rvoid, rs, k1, p)
-            elif typecode == cnp.NPY_CFLOAT:
-                info = qr_block_col_insert(m, n+p,
-                        <float_complex*>extract(q1, qs),
-                        qs, <float_complex*>rvoid, rs, k1, p)
-            else:  # cnp.NPY_CDOUBLE:
-                info = qr_block_col_insert(m, n+p,
-                        <double_complex*>extract(q1, qs),
-                        qs, <double_complex*>rvoid, rs, k1, p)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                info = qr_block_col_insert(m, n+p, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, k1, p)
+            {{endfor}}
             if info != 0:
                 if info > 0: 
                     raise ValueError('The {0}th argument to ?geqrf was '
@@ -2382,9 +2264,14 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     cdef cnp.ndarray q1, r1, u1, v1, qTu, s
     cdef int uv_flags = cnp.NPY_BEHAVED_NS | cnp.NPY_ELEMENTSTRIDES
     cdef int typecode, p, m, n, info
+    cdef void* qptr
+    cdef void* rptr
+    cdef void* uptr
+    cdef void* vptr
+    cdef void* sptr
+    cdef void* qTuptr
     cdef int qs[2]
     cdef int rs[2]
-    cdef void* qTuvoid
     cdef int qTus[2]
     cdef int us[2]
     cdef int vs[2]
@@ -2443,95 +2330,41 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
             qisF = True
         else:
             qisF = False
+        qptr = extract(q1, qs)
+        rptr = extract(r1, rs)
+        uptr = extract(u1, us)
+        vptr = extract(v1, vs)
+        sptr = extract(s, ss)
         if p == 1:
-            if typecode == cnp.NPY_FLOAT:
-                thin_qr_rank_1_update(m, n,
-                    <float*>extract(q1, qs), qs, qisF,
-                    <float*>extract(r1, rs), rs,
-                    <float*>extract(u1, us), us,
-                    <float*>extract(v1, vs), vs,
-                    <float*>extract(s, ss), ss)
-            elif typecode == cnp.NPY_DOUBLE:
-                thin_qr_rank_1_update(m, n,
-                    <double*>extract(q1, qs), qs, qisF,
-                    <double*>extract(r1, rs), rs,
-                    <double*>extract(u1, us), us,
-                    <double*>extract(v1, vs), vs,
-                    <double*>extract(s, ss), ss)
-            elif typecode == cnp.NPY_CFLOAT:
-                thin_qr_rank_1_update(m, n,
-                    <float_complex*>extract(q1, qs), qs, qisF,
-                    <float_complex*>extract(r1, rs), rs,
-                    <float_complex*>extract(u1, us), us,
-                    <float_complex*>extract(v1, vs), vs,
-                    <float_complex*>extract(s, ss), ss)
-            else: # cnp.NPY_CDOUBLE
-                thin_qr_rank_1_update(m, n,
-                    <double_complex*>extract(q1, qs), qs, qisF,
-                    <double_complex*>extract(r1, rs), rs,
-                    <double_complex*>extract(u1, us), us,
-                    <double_complex*>extract(v1, vs), vs,
-                    <double_complex*>extract(s, ss), ss)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                thin_qr_rank_1_update(m, n, <{{CNAME}}*>qptr, qs, qisF,
+                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us,
+                    <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
+            {{endfor}}
         else:
-            if typecode == cnp.NPY_FLOAT:
-                thin_qr_rank_p_update(m, n, p,
-                    <float*>extract(q1, qs), qs, qisF,
-                    <float*>extract(r1, rs), rs,
-                    <float*>extract(u1, us), us,
-                    <float*>extract(v1, vs), vs,
-                    <float*>extract(s, ss), ss)
-            elif typecode == cnp.NPY_DOUBLE:
-                thin_qr_rank_p_update(m, n, p,
-                    <double*>extract(q1, qs), qs, qisF,
-                    <double*>extract(r1, rs), rs,
-                    <double*>extract(u1, us), us,
-                    <double*>extract(v1, vs), vs,
-                    <double*>extract(s, ss), ss)
-            elif typecode == cnp.NPY_CFLOAT:
-                thin_qr_rank_p_update(m, n, p,
-                    <float_complex*>extract(q1, qs), qs, qisF,
-                    <float_complex*>extract(r1, rs), rs,
-                    <float_complex*>extract(u1, us), us,
-                    <float_complex*>extract(v1, vs), vs,
-                    <float_complex*>extract(s, ss), ss)
-            else: # cnp.NPY_CDOUBLE
-                thin_qr_rank_p_update(m, n, p,
-                    <double_complex*>extract(q1, qs), qs, qisF,
-                    <double_complex*>extract(r1, rs), rs,
-                    <double_complex*>extract(u1, us), us,
-                    <double_complex*>extract(v1, vs), vs,
-                    <double_complex*>extract(s, ss), ss)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                thin_qr_rank_p_update(m, n, p, <{{CNAME}}*>qptr, qs, qisF,
+                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us,
+                    <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
+            {{endfor}}
     else:
         qTu = cnp.PyArray_ZEROS(u1.ndim, u1.shape, typecode, 1)
-        qTuvoid = extract(qTu, qTus)
+        qTuptr = extract(qTu, qTus)
         if p == 1:
             if not cnp.PyArray_ISONESEGMENT(q1):
                 q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
-            form_qTu(q1, u1, qTuvoid, qTus, 0)
-            if typecode == cnp.NPY_FLOAT:
-                qr_rank_1_update(m, n,
-                    <float*>extract(q1, qs), qs,
-                    <float*>extract(r1, rs), rs,
-                    <float*>qTuvoid, qTus,
-                    <float*>extract(v1, vs), vs)
-            elif typecode == cnp.NPY_DOUBLE:
-                qr_rank_1_update(m, n,
-                    <double*>extract(q1, qs), qs,
-                    <double*>extract(r1, rs), rs,
-                    <double*>qTuvoid, qTus,
-                    <double*>extract(v1, vs), vs)
-            elif typecode == cnp.NPY_CFLOAT:
-                qr_rank_1_update(m, n,
-                    <float_complex*>extract(q1, qs), qs,
-                    <float_complex*>extract(r1, rs), rs,
-                    <float_complex*>qTuvoid, qTus,
-                    <float_complex*>extract(v1, vs), vs)
-            else: # cnp.NPY_CDOUBLE
-                qr_rank_1_update(m, n,
-                    <double_complex*>extract(q1, qs), qs,
-                    <double_complex*>extract(r1, rs), rs,
-                    <double_complex*>qTuvoid, qTus,
-                    <double_complex*>extract(v1, vs), vs)
+            form_qTu(q1, u1, qTuptr, qTus, 0)
+            qptr = extract(q1, qs)
+            rptr = extract(r1, rs)
+            vptr = extract(v1, vs)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                qr_rank_1_update(m, n, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>qTuptr, qTus,
+                    <{{CNAME}}*>vptr, vs)
+            {{endfor}}
         else:
             if not cnp.PyArray_CHKFLAGS(q1, cnp.NPY_F_CONTIGUOUS):
                 q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
@@ -2542,33 +2375,17 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
             # v.T must be F contiguous --> v must be C contiguous
             if not cnp.PyArray_CHKFLAGS(v1, cnp.NPY_C_CONTIGUOUS):
                 v1 = PyArray_FromArray(v1, NULL, cnp.NPY_C_CONTIGUOUS)
-
             v1 = v1.T
-            form_qTu(q1, u1, qTuvoid, qTus, 0)
-            if typecode == cnp.NPY_FLOAT:
-                info = qr_rank_p_update(m, n, p,
-                    <float*>extract(q1, qs), qs,
-                    <float*>extract(r1, rs), rs,
-                    <float*>qTuvoid, qTus,
-                    <float*>extract(v1, vs), vs)
-            elif typecode == cnp.NPY_DOUBLE:
-                info = qr_rank_p_update(m, n, p,
-                    <double*>extract(q1, qs), qs,
-                    <double*>extract(r1, rs), rs,
-                    <double*>qTuvoid, qTus,
-                    <double*>extract(v1, vs), vs)
-            elif typecode == cnp.NPY_CFLOAT:
-                info = qr_rank_p_update(m, n, p,
-                    <float_complex*>extract(q1, qs), qs,
-                    <float_complex*>extract(r1, rs), rs,
-                    <float_complex*>qTuvoid, qTus,
-                    <float_complex*>extract(v1, vs), vs)
-            else: # cnp.NPY_CDOUBLE
-                info = qr_rank_p_update(m, n, p,
-                    <double_complex*>extract(q1, qs), qs,
-                    <double_complex*>extract(r1, rs), rs,
-                    <double_complex*>qTuvoid, qTus,
-                    <double_complex*>extract(v1, vs), vs)
+            form_qTu(q1, u1, qTuptr, qTus, 0)
+            qptr = extract(q1, qs)
+            rptr = extract(r1, rs)
+            vptr = extract(v1, vs)
+            {{for COND, TYPECODE, CNAME in zip(CONDS, TCODES, CNAMES)}}
+            {{COND}} typecode == {{TYPECODE}}:
+                info = qr_rank_p_update(m, n, p, <{{CNAME}}*>qptr, qs,
+                    <{{CNAME}}*>rptr, rs, <{{CNAME}}*>qTuptr, qTus,
+                    <{{CNAME}}*>vptr, vs)
+            {{endfor}}
             if info != 0:
                 if info > 0: 
                     raise ValueError('The {0}th argument to ?geqrf was '
