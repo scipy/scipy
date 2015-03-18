@@ -123,23 +123,26 @@ def norm(a, ord=None):
             return nrm2(a)
         elif ord in (None, 'fro', 1, np.inf) and (a.ndim == 2):
             # use lapack for a few fast matrix norms
-            func_name = _lange_prefix.get(a.dtype.char, 'd') + 'lange'
-            lange = getattr(lapack, func_name)
+            lange_args = None
             if ord == 1:
                 if np.isfortran(a):
-                    return lange('1', a)
+                    lange_args = '1', a
                 elif np.isfortran(a.T):
-                    return lange('i', a.T)
+                    lange_args = 'i', a.T
             elif ord == np.inf:
                 if np.isfortran(a):
-                    return lange('i', a)
+                    lange_args = 'i', a
                 elif np.isfortran(a.T):
-                    return lange('1', a.T)
+                    lange_args = '1', a.T
             else:
                 if np.isfortran(a):
-                    return lange('f', a)
+                    lange_args = 'f', a
                 elif np.isfortran(a.T):
-                    return lange('f', a.T)
+                    lange_args = 'f', a.T
+            if lange_args:
+                func_name = _lange_prefix.get(a.dtype.char, 'd') + 'lange'
+                lange = getattr(lapack, func_name)
+                return lange(*lange_args)
     return np.linalg.norm(a, ord=ord)
 
 
