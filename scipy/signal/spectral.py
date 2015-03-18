@@ -12,7 +12,7 @@ import warnings
 
 from scipy._lib.six import string_types
 
-__all__ = ['periodogram', 'welch', 'lombscargle']
+__all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence']
 
 
 def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
@@ -267,19 +267,276 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     2.0077340678640727
 
     """
+
+    freqs, Pxx = csd(x, x, fs, window, nperseg, noverlap, nfft, detrend,
+                     return_onesided, scaling, axis)
+
+    return freqs, Pxx.real 
+
+
+def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
+        detrend='constant', return_onesided=True, scaling='density', axis=-1):
+    """
+    Estimate the cross power spectral density, Pxy, using Welch's method. 
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    y : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` and `y` time series in units of Hz. 
+        Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to 'hanning'.
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256.
+    noverlap: int, optional
+        Number of points to overlap between segments. If None,
+        ``noverlap = nperseg / 2``.  Defaults to None.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        the FFT length is `nperseg`. Defaults to None.
+    detrend : str or function or False, optional
+        Specifies how to detrend each segment. If `detrend` is a string,
+        it is passed as the ``type`` argument to `detrend`.  If it is a
+        function, it takes a segment and returns a detrended segment.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+    return_onesided : bool, optional
+        If True, return a one-sided spectrum for real data. If False return
+        a two-sided spectrum. Note that for complex data, a two-sided
+        spectrum is always returned.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the power spectral density ('density')
+        where Pxy has units of V**2/Hz if x and y are measured in V and 
+        computing the power spectrum ('spectrum') where Pxy has units of V**2
+        if x and y are measured in V. Defaults to 'density'.
+    axis : int, optional
+        Axis along which the CSD is computed for both inputs; the default is 
+        over the last axis (i.e. ``axis=-1``).
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    Pxy : ndarray
+        Cross spectral density or cross power spectrum of x,y.
+
+    See Also
+    --------
+    periodogram: Simple, optionally modified periodogram
+    lombscargle: Lomb-Scargle periodogram for unevenly sampled data
+    welch: Power spectral density by Welch's method. [Equivalent to csd(x,x)]
+    coherence: Magnitude squared coherence by Welch's method. 
+
+    Notes
+    --------
+    By convention, Pxy is computed with the conjugate FFT of X multiplied by 
+    the FFT of Y. 
+
+    If the input series differ in length, the shorter series will be 
+    zero-padded to match.
+
+    An appropriate amount of overlap will depend on the choice of window
+    and on your requirements.  For the default 'hanning' window an
+    overlap of 50\% is a reasonable trade off between accurately estimating
+    the signal power, while not over counting any of the data.  Narrower
+    windows may require a larger overlap.
+
+    If `noverlap` is 0, this method is equivalent to Bartlett's method [2]_.
+
+    References
+    ----------
+    .. [1] P. Welch, "The use of the fast Fourier transform for the
+           estimation of power spectra: A method based on time averaging
+           over short, modified periodograms", IEEE Trans. Audio
+           Electroacoust. vol. 15, pp. 70-73, 1967.
+    .. [2] M.S. Bartlett, "Periodogram Analysis and Continuous Spectra",
+           Biometrika, vol. 37, pp. 1-16, 1950.
+    """
+
+    freqs, Pxy, _ = spectral_helper(x, y, fs, window, nperseg, noverlap, nfft, 
+                                    detrend, return_onesided, scaling, axis,
+                                    mode='psd')
+
+    # Last two axes of Pxy are window index, freq index. Average over windows.
+    if len(Pxy.shape) >= 2 and Pxy.size > 0:
+        if Pxy.shape[-2] > 1:
+            Pxy = Pxy.mean(axis=-2)
+        else:
+            Pxy = Pxy[..., 0,:]
+
+    return freqs, Pxy
+
+
+def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
+              nfft=None, detrend='constant', axis=-1):
+    """
+    Estimate the magnitude squared coherence estimate, Cxy, of discrete-time 
+    signals X and Y using Welch's method. 
+    
+    Cxy = abs(Pxy)**2/(Pxx*Pyy), where Pxx and Pyy are power spectral density 
+    estimates of X and Y, and Pxy is the cross spectral density estimate of X 
+    and Y. 
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    y : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` and `y` time series in units of Hz. 
+        Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to 'hanning'.
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256.
+    noverlap: int, optional
+        Number of points to overlap between segments. If None,
+        ``noverlap = nperseg / 2``.  Defaults to None.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        the FFT length is `nperseg`. Defaults to None.
+    detrend : str or function or False, optional
+        Specifies how to detrend each segment. If `detrend` is a string,
+        it is passed as the ``type`` argument to `detrend`.  If it is a
+        function, it takes a segment and returns a detrended segment.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+    axis : int, optional
+        Axis along which the CSD is computed for both inputs; the default is 
+        over the last axis (i.e. ``axis=-1``).
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    Cxy : ndarray
+        Magnitude squared coherence of x and y.
+
+    See Also
+    --------
+    periodogram: Simple, optionally modified periodogram
+    lombscargle: Lomb-Scargle periodogram for unevenly sampled data
+    welch: Power spectral density by Welch's method.
+    csd: Cross spectral density by Welch's method. 
+
+    Notes
+    --------
+    An appropriate amount of overlap will depend on the choice of window
+    and on your requirements.  For the default 'hanning' window an
+    overlap of 50\% is a reasonable trade off between accurately estimating
+    the signal power, while not over counting any of the data.  Narrower
+    windows may require a larger overlap.
+    """
+    [ff,Pxx] = welch(x, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
+    [_, Pyy] = welch(y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
+    [_, Pxy] = csd(x, y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
+
+    Cxy = np.abs(Pxy)**2/Pxx/Pyy
+
+    return ff, Cxy
+
+
+def spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256, 
+                    noverlap=None, nfft=None, detrend='constant', 
+                    return_onesided=True, scaling='spectrum', axis=-1, 
+                    mode='psd'):
+    '''
+    This is a helper function that implements the commonality between the
+    psd, csd, spectrogram and complex, magnitude, angle, and phase spectrums.
+    Assumes 1D input vectors. nfft<=nperseg (allow zero padding)
+    '''
+    if mode not in ['psd', 'complex', 'magnitude', 'angle', 'phase']:
+        raise ValueError("Unknown value for mode %s, must be one of: "
+                         "'default', 'psd', 'complex', "
+                         "'magnitude', 'angle', 'phase'" % mode)
+
+    # If x and y are the same object we can save ourselves some computation. 
+    same_data = y is x
+
+    if not same_data and mode != 'psd':
+        raise ValueError("x and y must be equal if mode is not 'psd'")
+
+    # Ensure we have np.arrays, get outdtype
     x = np.asarray(x)
+    if not same_data:
+        y = np.asarray(y)
+        outdtype = np.result_type(x,y,np.complex64)
+    else:
+        outdtype = np.result_type(x,np.complex64)
+
+    if x.ndim > 1 or y.ndim > 1:
+        if axis != -1:
+            x = np.rollaxis(x, axis, len(x.shape))
+            if not same_data:
+                y = np.rollaxis(y, axis, len(y.shape))
+            # Output is going to have new last axis for window index
+            if axis < 0:
+                axis = len(np.broadcast(x,y).shape)-axis
 
     if x.size == 0:
-        return np.empty(x.shape), np.empty(x.shape)
+        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape) 
 
-    if axis != -1:
-        x = np.rollaxis(x, axis, len(x.shape))
+    if not same_data:
+        if y.size == 0:
+            return np.empty(y.shape), np.empty(y.shape), np.empty(y.shape) 
 
+        # Check if we can broadcast the outer axes together
+        for a, b in zip(x.shape[-2::-1],y.shape[-2::-1]):
+            if a == 1 or b == 1 or a == b:
+                pass
+            else:
+                raise ValueError('x and y cannot be broadcast together.')
+
+        # Check if x and y are the same length, zero-pad if neccesary
+        if x.shape[-1] != y.shape[-1]:
+            if x.shape[-1] < y.shape[-1]:
+                padShape = list(x.shape)
+                padShape[-1] = y.shape[-1] - x.shape[-1]
+                x = np.concatenate((x, np.zeros(padShape)), -1)
+            else:
+                padShape = list(y.shape)
+                padShape[-1] = x.shape[-1] - y.shape[-1]
+                y = np.concatenate((y, np.zeros(padShape)), -1)
+
+    # X and Y are same length now, can test nperseg with either
     if x.shape[-1] < nperseg:
-        warnings.warn('nperseg = %d, is greater than x.shape[%d] = %d, using '
-                      'nperseg = x.shape[%d]'
-                      % (nperseg, axis, x.shape[axis], axis))
+        warnings.warn('nperseg = {0:d}, is greater than input length = {1:d}, '
+                      'using nperseg = {1:d}'.format(nperseg, x.shape[-1]))
         nperseg = x.shape[-1]
+
+    if nfft is None:
+        nfft = nperseg
+    elif nfft < nperseg:
+        raise ValueError('nfft must be greater than or equal to nperseg.')
+
+    if noverlap is None:
+        noverlap = nperseg/2
+    elif noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+
+    # Handle detrending and window functions
+    if not detrend:
+        detrend_func = lambda d: d
+    elif not hasattr(detrend, '__call__'):
+        detrend_func = lambda d: signaltools.detrend(d, type=detrend, axis=-1)
+    elif axis != -1:
+        # Wrap this function so that it receives a shape that it could
+        # reasonably expect to receive.
+        def detrend_func(d):
+            d = np.rollaxis(d, -1, axis)
+            d = detrend(d)
+            return np.rollaxis(d, axis, len(d.shape))
+    else:
+        detrend_func = detrend
 
     if isinstance(window, string_types) or type(window) is tuple:
         win = get_window(window, nperseg)
@@ -289,99 +546,246 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
             raise ValueError('window must be 1-D')
         if win.shape[0] > x.shape[-1]:
             raise ValueError('window is longer than x.')
-        nperseg = win.shape[0]
 
-    # numpy 1.5.1 doesn't have result_type.
-    outdtype = (np.array([x[0]]) * np.array([1], 'f')).dtype.char.lower()
-    if win.dtype != outdtype:
+    if np.result_type(win,np.complex64) != outdtype:
         win = win.astype(outdtype)
 
-    if scaling == 'density':
-        scale = 1.0 / (fs * (win*win).sum())
-    elif scaling == 'spectrum':
-        scale = 1.0 / win.sum()**2
+    if mode == 'psd':
+        if scaling == 'density':
+            scale = 1.0 / (fs * (win*win).sum())
+        elif scaling == 'spectrum':
+            scale = 1.0 / win.sum()**2
+        else:
+            raise ValueError('Unknown scaling: %r' % scaling)
     else:
-        raise ValueError('Unknown scaling: %r' % scaling)
+        scale = 1
 
-    if noverlap is None:
-        noverlap = nperseg // 2
-    elif noverlap >= nperseg:
-        raise ValueError('noverlap must be less than nperseg.')
-
-    if nfft is None:
-        nfft = nperseg
-    elif nfft < nperseg:
-        raise ValueError('nfft must be greater than or equal to nperseg.')
-
-    if not detrend:
-        detrend_func = lambda seg: seg
-    elif not hasattr(detrend, '__call__'):
-        detrend_func = lambda seg: signaltools.detrend(seg, type=detrend)
-    elif axis != -1:
-        # Wrap this function so that it receives a shape that it could
-        # reasonably expect to receive.
-        def detrend_func(seg):
-            seg = np.rollaxis(seg, -1, axis)
-            seg = detrend(seg)
-            return np.rollaxis(seg, axis, len(seg.shape))
+    if return_onesided is True:
+        if np.iscomplexobj(x):
+            sides = 'twosided'
+        else:
+            sides = 'onesided'
+            if not same_data:
+                if np.iscomplexobj(y):
+                    sides = 'twosided'
     else:
-        detrend_func = detrend
+        sides = 'twosided'
 
-    step = nperseg - noverlap
-    indices = np.arange(0, x.shape[-1]-nperseg+1, step)
+    if sides == 'twosided':
+        numFreqs = nfft
+    elif sides == 'onesided':
+        if nperseg % 2:
+            numFreqs = (nfft + 1)//2
+        else:
+            numFreqs = nfft//2 + 1
 
-    if np.isrealobj(x) and return_onesided:
-        outshape = list(x.shape)
-        if nfft % 2 == 0:  # even
-            outshape[-1] = nfft // 2 + 1
-            Pxx = np.empty(outshape, outdtype)
-            for k, ind in enumerate(indices):
-                x_dt = detrend_func(x[..., ind:ind+nperseg])
-                xft = fftpack.rfft(x_dt*win, nfft)
-                # fftpack.rfft returns the positive frequency part of the fft
-                # as real values, packed r r i r i r i ...
-                # this indexing is to extract the matching real and imaginary
-                # parts, while also handling the pure real zero and nyquist
-                # frequencies.
-                if k == 0:
-                    Pxx[..., (0,-1)] = xft[..., (0,-1)]**2
-                    Pxx[..., 1:-1] = xft[..., 1:-1:2]**2 + xft[..., 2::2]**2
-                else:
-                    Pxx *= k/(k+1.0)
-                    Pxx[..., (0,-1)] += xft[..., (0,-1)]**2 / (k+1.0)
-                    Pxx[..., 1:-1] += (xft[..., 1:-1:2]**2 + xft[..., 2::2]**2) \
-                                    / (k+1.0)
-        else:  # odd
-            outshape[-1] = (nfft+1) // 2
-            Pxx = np.empty(outshape, outdtype)
-            for k, ind in enumerate(indices):
-                x_dt = detrend_func(x[..., ind:ind+nperseg])
-                xft = fftpack.rfft(x_dt*win, nfft)
-                if k == 0:
-                    Pxx[..., 0] = xft[..., 0]**2
-                    Pxx[..., 1:] = xft[..., 1::2]**2 + xft[..., 2::2]**2
-                else:
-                    Pxx *= k/(k+1.0)
-                    Pxx[..., 0] += xft[..., 0]**2 / (k+1)
-                    Pxx[..., 1:] += (xft[..., 1::2]**2 + xft[..., 2::2]**2) \
-                                  / (k+1.0)
+    # Stride, detrend, apply windows
+    result = stride_windows(x, nperseg, noverlap, axis=-1)
+    result = detrend_func(result)
+    result = apply_window(result, win, axis=-1)
 
-        Pxx[..., 1:-1] *= 2*scale
-        Pxx[..., (0,-1)] *= scale
-        f = np.arange(Pxx.shape[-1]) * (fs/nfft)
-    else:
-        for k, ind in enumerate(indices):
-            x_dt = detrend_func(x[..., ind:ind+nperseg])
-            xft = fftpack.fft(x_dt*win, nfft)
-            if k == 0:
-                Pxx = (xft * xft.conj()).real
-            else:
-                Pxx *= k/(k+1.0)
-                Pxx += (xft * xft.conj()).real / (k+1.0)
-        Pxx *= scale
-        f = fftpack.fftfreq(nfft, 1.0/fs)
+    # Zero pad here, now that windowing is done
+    padShape = list(result.shape)
+    padShape[-1] = nfft - padShape[-1]
+    result = np.concatenate((result, np.zeros(padShape)), axis=-1)
+
+    # Perform the fft, don't keep redundant info
+    result = fftpack.fft(result, n=nfft, axis=-1)[...,:numFreqs]
+    freqs = fftpack.fftfreq(nfft, 1/fs)[:numFreqs]
+
+    if not same_data:
+        # All the same operations on the y data
+        resultY = stride_windows(y, nfft, noverlap, axis=-1)
+        resultY = detrend_func(resultY)
+        resultY = apply_window(resultY, win, axis=-1)
+        padShape = list(resultY.shape)
+        padShape[-1] = nfft - padShape[-1]
+        resultY = np.concatenate((resultY, np.zeros(padShape)), axis=-1)
+        resultY = fftpack.fft(resultY, n=nfft, axis=-1)[...,:numFreqs]
+        result = np.conjugate(result) * resultY
+    elif mode == 'psd':
+        result = np.conjugate(result) * result
+    elif mode == 'magnitude':
+        result = np.absolute(result)
+    elif mode == 'angle' or mode == 'phase':
+        result = np.angle(result)
+    elif mode == 'complex':
+        pass
+
+    result *= scale
+    if mode == 'psd' and sides == 'onesided':
+        result[...,1:-1] *= 2
+
+    t = np.arange(nfft/2, len(x) - nfft/2 + 1, nfft - noverlap)/fs
+
+    if sides == 'twosided':
+        pass
+        #freqs = fftpack.fftshift(freqs)
+        #result = fftpack.fftshift(result, axes=-1)
+    elif not nperseg % 2:
+        # get the last value correctly, it is negative otherwise
+        freqs[-1] *= -1
+
+    # we unwrap the phase here to handle the onesided vs. twosided case
+    if mode == 'phase':
+        result = np.unwrap(result, axis=-1)
+
+    result = result.astype(outdtype)
+    
+    # All imaginary parts are zero anyways
+    if same_data:
+        result = result.real 
 
     if axis != -1:
-        Pxx = np.rollaxis(Pxx, -1, axis)
+        result = np.rollaxis(result, -1, axis)
 
-    return f, Pxx
+    return freqs, result, t
+
+
+def stride_windows(x, n, noverlap=0, axis=-1):
+    '''
+    Get all windows of x with length n as a single array,
+    using strides to avoid data duplication.
+
+    Last axis of result is the window index
+
+    .. warning::
+
+        It is not safe to write to the output array.  Multiple
+        elements may point to the same piece of memory,
+        so modifying one value may change others.
+
+    Call signature::
+
+        stride_windows(x, n, noverlap=0)
+
+      *x*: 1D array or sequence
+        Array or sequence containing the data.
+
+      *n*: integer
+        The number of data points in each window.
+
+      *noverlap*: integer
+        The overlap between adjacent windows.
+        Default is 0 (no overlap)
+
+      *axis*: integer
+        The axis along which to window the data, default is -1 (last axis)
+
+    Refs:
+        `stackoverflaw: Rolling window for 1D arrays in Numpy?
+        <http://stackoverflow.com/a/6811241>`_
+        `stackoverflaw: Using strides for an efficient moving average filter
+        <http://stackoverflow.com/a/4947453>`_
+    '''
+
+    if noverlap >= n:
+        raise ValueError('noverlap must be less than n')
+    if n < 1:
+        raise ValueError('n cannot be less than 1')
+
+    x = np.asarray(x)
+
+    # Put windowing data axis at -1 spot
+    x = np.rollaxis(x, axis, len(x.shape))
+
+    if n == 1 and noverlap == 0:
+        return x[...,np.newaxis]
+
+    if n > x.shape[-1]:
+        raise ValueError('n cannot be greater than the length of data')
+
+    # np.lib.stride_tricks.as_strided easily leads to memory corruption for
+    # non integer shape and strides, i.e. noverlap or n.
+    noverlap = int(noverlap)
+    n = int(n)
+
+    step = n - noverlap
+    shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, n)
+    strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
+
+    result = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
+
+    result = np.rollaxis(result, -1, axis)
+
+    return result
+
+
+def stride_repeat(x, shape, axis=-1):
+    '''
+    Repeat the values in an array in a memory-efficient manner.
+
+    .. warning::
+
+        It is not safe to write to the output array.  Multiple
+        elements may point to the same piece of memory, so
+        modifying one value may change others.
+
+    Call signature::
+
+        stride_repeat(x, n, axis=0)
+
+      *x*: 1D array or sequence
+        Array or sequence containing the data.
+
+      *shape*: tuple
+        The shape to extend the array to. 
+
+      *axis*: integer
+        The axis along which the data will run. 
+
+    Refs:
+        `stackoverflaw: Repeat NumPy array without replicating data?
+        <http://stackoverflow.com/a/5568169>`_
+    '''
+
+    x = np.asarray(x)
+    if x.ndim != 1:
+        raise ValueError('only 1-dimensional arrays can be used')
+
+    if shape[axis] != len(x):
+        raise ValueError('Incompatible shapes')
+
+    if len(shape) <= 1:
+        return x
+
+    strides = np.zeros(len(shape), dtype='int64')
+    strides[axis] = x.strides[0]
+
+    return np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
+
+
+def apply_window(x, win, axis=-1):
+    '''
+    Apply the given window to the given 1D or 2D array along the given axis.
+
+    Call signature::
+
+        apply_window(x, window, axis=0, return_window=False)
+
+      *x*: 1D or 2D array or sequence
+        Array or sequence containing the data.
+
+      *win*: array.
+        An array with length *x*.shape[*axis*]
+
+      *axis*: integer
+        The axis over which to do the repetition.
+
+    '''
+    x = np.asarray(x)
+    win = np.asarray(win)
+
+    if axis+1 > x.ndim:
+        raise ValueError('axis(=%s) out of bounds' % axis)
+    if win.ndim != 1:
+        raise ValueError('window must be 1-D')
+    if win.shape[0] != x.shape[axis]:
+        raise ValueError('The len(window) must be the same as the shape '
+                            'of x for the chosen axis')
+
+    if x.ndim == 1:
+        return win * x
+    else:
+        winRep = stride_repeat(win, x.shape, axis)
+        return winRep * x
