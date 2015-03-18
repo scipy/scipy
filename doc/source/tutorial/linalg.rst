@@ -122,7 +122,15 @@ then
 
 .. math::
 
-    \mathbf{A^{-1}=\frac{1}{25}\left[\begin{array}{ccc} -37 & 9 & 22\\ 14 & 2 & -9\\ 4 & -3 & 1\end{array}\right]=\left[\begin{array}{ccc} -1.48 & 0.36 & 0.88\\ 0.56 & 0.08 & -0.36\\ 0.16 & -0.12 & 0.04\end{array}\right].}
+    \mathbf{A^{-1}} = \frac{1}{25}
+        \left[\begin{array}{ccc} -37 & 9 & 22 \\ 
+                                  14 & 2 & -9 \\ 
+                                  4 & -3 & 1
+              \end{array}\right] = %
+         \left[\begin{array}{ccc} -1.48 & 0.36 & 0.88  \\
+                                   0.56 & 0.08 & -0.36 \\
+                                   0.16 & -0.12 & 0.04
+               \end{array}\right].
 
 The following example demonstrates this computation in SciPy
 
@@ -151,7 +159,10 @@ to solve the following simultaneous equations:
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} x+3y+5z & = & 10\\ 2x+5y+z & = & 8\\ 2x+3y+8z & = & 3\end{eqnarray*}
+    \begin{eqnarray*} x + 3y + 5z & = & 10 \\
+                      2x + 5y + z & = & 8  \\
+                      2x + 3y + 8z & = & 3
+    \end{eqnarray*}
 
 We could find the solution vector using a matrix inverse:
 
