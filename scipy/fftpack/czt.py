@@ -46,24 +46,26 @@ class CZT:
 
     Transform to compute the frequency response around a spiral.
     Objects of this class are callables which can compute the
-    chirp-z transform on their inputs.  This object precalculates
-    constants for the given transform.
+    chirp-z transform on their inputs.  This object precalculates the constant
+    chirps used in the given transform.
 
-    If w does not lie on the unit circle, then the transform will be
+    If `w` does not lie on the unit circle, then the transform will be
     around a spiral with exponentially increasing radius.  Regardless,
     angle will increase linearly.
 
     The chirp-z transform can be faster than an equivalent FFT with
-    zero padding.  Try it with your own array sizes to see.  It is
-    theoretically faster for large prime Fourier transforms, but not
-    in practice.
+    zero padding.  Try it with your own array sizes to see.
+
+    Its most common application is computing large prime-length Fourier
+    transforms in O(N log N) time, rather than the O(N**2) time required by
+    the direct DFT calculation used in `fft`.
 
     The chirp-z transform is considerably less precise than the
     equivalent zero-padded FFT, with differences on the order of 1e-7
-    from the direct transform rather than the on the order of 1e-15 as
+    from the direct transform rather than 1e-15 as
     seen with zero-padding.
 
-    See zoomfft for a friendlier interface to partial FFT calculations.
+    See zoomfft for a friendly interface to partial FFT calculations.
     """
     def __init__(self, n, m=None, w=None, a=1, factor=None):
         """
@@ -131,8 +133,9 @@ class CZT:
 
         Returns:
         -------
-          An array of the same dimensions as x, but with the length of the
-          transformed axis set to m.  Note that this is a view on a much
+        out : ndarray
+          An array of the same dimensions as `x`, but with the length of the
+          transformed axis set to `m`.  Note that this is a view on a much
           larger array.
         """
         x = np.asarray(x)
@@ -152,7 +155,7 @@ class ZoomFFT(CZT):
     """
     Zoom FFT transform.
 
-    This is a specialization of the chirp Z transform, CZT for a set of
+    This is a specialization of the chirp Z transform(CZT) for a set of
     equally spaced frequencies.
     """
     def __init__(self, n, fn, m=None, Fs=2):
@@ -178,6 +181,8 @@ class ZoomFFT(CZT):
         A ZoomFFT instance
           A callable object f(x, axis=-1) for computing the zoom FFT on x.
 
+        Notes
+        -----
         Sampling frequency is 1/dt, the time step between samples in the
         signal x.  The unit circle corresponds to frequencies from 0 up
         to the sampling frequency.  The default sampling frequency of 2
@@ -290,8 +295,9 @@ def scaledfft(x, m=None, scale=1.0, axis=-1):
 
     Returns:
     -------
-        An array of the same rank of 'x', but with the size if
-        the 'axis' dimension set to 'm'
+    out : ndarray
+        An array of the same rank of `x`, but with the size of
+        the `axis` dimension set to `m`
     """
     x = np.asarray(x)
     transform = ScaledFFT(x.shape[axis], m, scale)
@@ -320,11 +326,14 @@ def czt(x, m=None, w=None, a=1, factor=None, axis=-1):
 
     Returns:
     -------
-    An array of the same dimensions as x, but with the length of the
-    transformed axis set to m.  Note that this is a view on a much
-    larger array.  To save space, you may want to call it as
-    y = ascontiguousarray(czt(x))
+    out : ndarray
+        An array of the same dimensions as `x`, but with the length of the
+        transformed axis set to `m`.  Note that this is a view on a much
+        larger array.  To save space, you may want to call it as
+        ``y = ascontiguousarray(czt(x))``
 
+    Notes
+    -----
     See zoomfft for a friendlier interface to partial FFT calculations.
 
     If the transform needs to be repeated, use CZT to construct a
@@ -361,8 +370,8 @@ def zoomfft(x, fn, m=None, Fs=2, axis=-1):
 
     Returns:
     -------
-    array
-        The transformed signal.  The Fourier transform will be calculate
+    out : ndarray
+        The transformed signal.  The Fourier transform will be calculated
         at the points f1, f1+df, f1+2df, ..., f2, where df=(f2-f1)/m.
 
     Notes
