@@ -70,6 +70,22 @@ class Bench(Benchmark):
         else:
             sl.svd(self.a)
 
+
+class Norm(Benchmark):
+    params = [
+        [(20, 20), (100, 100), (1000, 1000), (20, 1000), (1000, 20)],
+        ['contig', 'nocont'],
+        ['numpy', 'scipy']
+    ]
+    param_names = ['shape', 'contiguous', 'module']
+
+    def setup(self, shape, contig, module):
+        a = np.random.randn(*shape)
+        if contig != 'contig':
+            a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
+            assert_(not a.flags['CONTIGUOUS'])
+        self.a = a
+
     def time_1_norm(self, size, contig, module):
         if module == 'numpy':
             nl.norm(self.a, ord=1)
