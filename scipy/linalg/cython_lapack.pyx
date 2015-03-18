@@ -14,6 +14,9 @@ in LAPACK 3.1.0 except for ``zcgesv`` since its interface is not consistent
 from LAPACK 3.1.0 to 3.5.0. It also provides some of the
 fixed-api auxiliary routines.
 
+These wrappers do not check for alignment of arrays.
+Alignment should be checked before these wrappers are used.
+
 Raw function pointers (Fortran-style pointer arguments):
 
 - cbdsqr

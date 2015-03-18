@@ -13,6 +13,9 @@ Usable from Cython via::
 
     cimport scipy.linalg.cython_blas
 
+These wrappers do not check for alignment of arrays.
+Alignment should be checked before these wrappers are used.
+
 Raw function pointers (Fortran-style pointer arguments):
 
 - caxpy
