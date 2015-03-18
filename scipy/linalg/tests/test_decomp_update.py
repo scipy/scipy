@@ -1,7 +1,10 @@
+from __future__ import division, print_function, absolute_import
+
 import itertools
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_raises
+from numpy.testing import (assert_, assert_allclose, assert_raises,
+         run_module_suite)
 from scipy import linalg
 import scipy.linalg._decomp_update as _decomp_update
 from scipy.linalg._decomp_update import *
@@ -553,7 +556,7 @@ class BaseQRinsert(BaseQRdeltas):
     def test_sqr_1_col(self):
         a, q, r, u = self.generate('sqr', which='col')
         for col in range(r.shape[1]):
-            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
@@ -561,7 +564,7 @@ class BaseQRinsert(BaseQRdeltas):
         # sqr + cols --> fat always
         a, q, r, u = self.generate('sqr', which='col', p=3)
         for col in range(r.shape[1]):
-            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
@@ -583,7 +586,7 @@ class BaseQRinsert(BaseQRdeltas):
     def test_tall_1_col(self):
         a, q, r, u = self.generate('tall', which='col')
         for col in range(r.shape[1]):
-            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
@@ -594,7 +597,7 @@ class BaseQRinsert(BaseQRdeltas):
     def base_tall_p_col_xxx(self, p):
         a, q, r, u = self.generate('tall', which='col', p=p)
         for col in range(r.shape[1]):
-            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col*np.ones(p, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
@@ -643,7 +646,7 @@ class BaseQRinsert(BaseQRdeltas):
     def test_fat_1_col(self):
         a, q, r, u = self.generate('fat', which='col')
         for col in range(r.shape[1]):
-            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
@@ -651,7 +654,7 @@ class BaseQRinsert(BaseQRdeltas):
         # fat + cols --> fat always
         a, q, r, u = self.generate('fat', which='col', p=3)
         for col in range(r.shape[1]):
-            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
@@ -673,9 +676,17 @@ class BaseQRinsert(BaseQRdeltas):
     def test_economic_1_col(self):
         a, q, r, u = self.generate('tall', 'economic',  which='col')
         for col in range(r.shape[1]):
-            q1, r1 = qr_insert(q, r, u.copy(), col, 'col', False)
+            q1, r1 = qr_insert(q, r, u.copy(), col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
+    def test_economic_1_col_bad_update(self):
+        # When the column to be added lies in the span of Q, the update is
+        # not meaningful.  This is detected, and a LinAlgError is issued.
+        q = np.eye(5 ,3, dtype=self.dtype)
+        r = np.eye(3, dtype=self.dtype)
+        u = np.array([1, 0, 0, 0, 0], self.dtype)
+        assert_raises(linalg.LinAlgError, qr_insert, q, r, u, 0, 'col')
 
     # for column adds to economic matrices there are three cases to test
     # eco + pcol --> eco
@@ -684,7 +695,7 @@ class BaseQRinsert(BaseQRdeltas):
     def base_economic_p_col_xxx(self, p):
         a, q, r, u = self.generate('tall', 'economic', which='col', p=p)
         for col in range(r.shape[1]):
-            q1, r1 = qr_insert(q, r, u, col, 'col', False)
+            q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col*np.ones(p, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
@@ -719,25 +730,25 @@ class BaseQRinsert(BaseQRdeltas):
             q = q0.copy('F')
             r = r0.copy('F')
             u = u0.copy('F')
-            q1, r1 = qr_insert(qs, r, u, k, which, False)
+            q1, r1 = qr_insert(qs, r, u, k, which, overwrite_qru=False)
             check_qr(q1, r1, ai, self.rtol, self.atol)
-            q1o, r1o = qr_insert(qs, r, u, k, which, True)
+            q1o, r1o = qr_insert(qs, r, u, k, which, overwrite_qru=True)
             check_qr(q1o, r1o, ai, self.rtol, self.atol)
 
             q = q0.copy('F')
             r = r0.copy('F')
             u = u0.copy('F')
-            q2, r2 = qr_insert(q, rs, u, k, which, False)
+            q2, r2 = qr_insert(q, rs, u, k, which, overwrite_qru=False)
             check_qr(q2, r2, ai, self.rtol, self.atol)
-            q2o, r2o = qr_insert(q, rs, u, k, which, True)
+            q2o, r2o = qr_insert(q, rs, u, k, which, overwrite_qru=True)
             check_qr(q2o, r2o, ai, self.rtol, self.atol)
 
             q = q0.copy('F')
             r = r0.copy('F')
             u = u0.copy('F')
-            q3, r3 = qr_insert(q, r, us, k, which, False)
+            q3, r3 = qr_insert(q, r, us, k, which, overwrite_qru=False)
             check_qr(q3, r3, ai, self.rtol, self.atol)
-            q3o, r3o = qr_insert(q, r, us, k, which, True)
+            q3o, r3o = qr_insert(q, r, us, k, which, overwrite_qru=True)
             check_qr(q3o, r3o, ai, self.rtol, self.atol)
 
             q = q0.copy('F')
@@ -745,9 +756,9 @@ class BaseQRinsert(BaseQRdeltas):
             u = u0.copy('F')
             # since some of these were consumed above
             qs, rs, us = adjust_strides((q, r, u))
-            q5, r5 = qr_insert(qs, rs, us, k, which, False)
+            q5, r5 = qr_insert(qs, rs, us, k, which, overwrite_qru=False)
             check_qr(q5, r5, ai, self.rtol, self.atol)
-            q5o, r5o = qr_insert(qs, rs, us, k, which, True)
+            q5o, r5o = qr_insert(qs, rs, us, k, which, overwrite_qru=True)
             check_qr(q5o, r5o, ai, self.rtol, self.atol)
     
     def test_non_unit_strides_1_row(self):
@@ -807,13 +818,13 @@ class BaseQRinsert(BaseQRdeltas):
         q = q0.copy('C')
         u0 = u.copy()
         # don't overwrite
-        q1, r1 = qr_insert(q, r, u, 0, 'col', False)
+        q1, r1 = qr_insert(q, r, u, 0, 'col', overwrite_qru=False)
         a1 = np.insert(a, 0, u0, 1)
         check_qr(q1, r1, a1, self.rtol, self.atol)
         check_qr(q, r, a, self.rtol, self.atol)
 
         # try overwriting
-        q2, r2 = qr_insert(q, r, u, 0, 'col', True)
+        q2, r2 = qr_insert(q, r, u, 0, 'col', overwrite_qru=True)
         check_qr(q2, r2, a1, self.rtol, self.atol)
         # verify the overwriting
         assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
@@ -822,12 +833,12 @@ class BaseQRinsert(BaseQRdeltas):
         # now try with a fortran ordered Q
         qF = q0.copy('F')
         u1 = u0.copy()
-        q3, r3 = qr_insert(qF, r, u1, 0, 'col', False)
+        q3, r3 = qr_insert(qF, r, u1, 0, 'col', overwrite_qru=False)
         check_qr(q3, r3, a1, self.rtol, self.atol)
         check_qr(qF, r, a, self.rtol, self.atol)
 
         # try overwriting
-        q4, r4 = qr_insert(qF, r, u1, 0, 'col', True)
+        q4, r4 = qr_insert(qF, r, u1, 0, 'col', overwrite_qru=True)
         check_qr(q4, r4, a1, self.rtol, self.atol)
         assert_allclose(q4, qF, rtol=self.rtol, atol=self.atol)
 
@@ -840,12 +851,12 @@ class BaseQRinsert(BaseQRdeltas):
         a1 = np.insert(a, np.zeros(3, np.intp), u, 1)
 
         # don't overwrite
-        q1, r1 = qr_insert(q, r, u, 0, 'col', False)
+        q1, r1 = qr_insert(q, r, u, 0, 'col', overwrite_qru=False)
         check_qr(q1, r1, a1, self.rtol, self.atol)
         check_qr(q, r, a, self.rtol, self.atol)
 
         # try overwriting
-        q2, r2 = qr_insert(q, r, u, 0, 'col', True)
+        q2, r2 = qr_insert(q, r, u, 0, 'col', overwrite_qru=True)
         check_qr(q2, r2, a1, self.rtol, self.atol)
         assert_allclose(q2, q, rtol=self.rtol, atol=self.atol)
 

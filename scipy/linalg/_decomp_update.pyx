@@ -34,16 +34,20 @@ Routines for updating QR decompositions
 
 cimport cython
 cimport libc.stdlib
-cimport libc.limits as limits
+cimport libc.limits 
+cimport libc.float
 from libc.math cimport sqrt, fabs, hypot
 from libc.string cimport memset
+
 cimport numpy as cnp
+
+from numpy.linalg import LinAlgError
 
 # This is used in place of, e.g.  cnp.NPY_C_CONTIGUOUS, to indicate that a C 
 # F or non contiguous array is acceptable.
 cdef int ARRAY_ANYORDER = 0
 
-cdef int MEMORY_ERROR = limits.INT_MAX
+cdef int MEMORY_ERROR = libc.limits.INT_MAX
 
 # These are commented out in the numpy support we cimported above.
 # Here I have declared them as taking void* instead of PyArrayDescr
@@ -717,13 +721,13 @@ cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
     libc.stdlib.free(work)
     return 0
 
-cdef void thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
+cdef int thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
                              int* rs, blas_t* u, int* us, int k, int p_eco,
                              int p_full, blas_t* rcond) nogil:
     # here q and r will always be fortran ordered since we have to allocate them
     cdef int i, j, info
     cdef blas_t c, sn 
-    cdef blas_t rc
+    cdef blas_t rc0, rc;
     cdef blas_t* s
     cdef char* N = 'N'
     cdef char* T = 'T'
@@ -732,8 +736,13 @@ cdef void thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     
     if blas_t is float or blas_t is double:
         TC = T
+        rc0 = rcond[0]
+    elif blas_t is float_complex:
+        TC = C
+        rc0 = (<float*>rcond)[0]
     else:
         TC = C
+        rc0 = (<double*>rcond)[0]
     
     # on entry, Q and R have both been increased in size, Q via the appending
     # columns of zeros, and R by the addition of both columns and rows of
@@ -746,7 +755,15 @@ cdef void thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     for j in range(p_eco):
         rc = rcond[0]
         info = reorth(m, n+j, q, qs, True, col(u, us, j), us, s,  &rc)
-        #libc.stdio.printf('info = %d, rcond = %g\n', info, rc)
+        if info == 2:
+            if blas_t is float or blas_t is double:
+                rcond[0] = rc;
+            elif blas_t is float_complex:
+                rcond[0] = (<float*>&rc)[0]
+            else:
+                rcond[0] = (<double*>&rc)[0]
+            libc.stdlib.free(s)
+            return info
         copy(m, col(u, us, j), us[0], col(q, qs, n+j), qs[0])
         copy(n+j+1, s, 1, col(r, rs, k+j), rs[0]) 
 
@@ -763,6 +780,8 @@ cdef void thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
         gemm(TC, N, m, p_full, m, 1, q, qs[1], col(u, us, p_eco), us[1], 0,
              col(r, rs, k+p_eco), rs[1]) 
         qr_block_col_insert(m, n+p_eco+p_full, q, qs, r, rs, k+p_eco, p_full)
+
+    return 0
 
 cdef void qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                         int k) nogil:
@@ -1187,8 +1206,13 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
        find vectors s, w and scalar p such that u = Qs + pw where w is of unit
        length and orthogonal to the columns of q.
 
-       FIX comment on return values, and RCOND 
+       This function returns 0 or 1 on sucess, and 2 if the recipercal
+       condition number of [q, u/||u||] is less than RCOND. This condition is
+       important when inserting columns, because updating may not be meaningful
+       if u is a linear combination of the columns of q.
 
+       If 1 is returned, u lies in span Q. 
+       
        The method used for orthogonalizing u against q is described in [5]
        listed in the file header.
     """
@@ -1451,9 +1475,9 @@ cdef validate_array(cnp.ndarray a, bint chkfinite):
 
     for j in range(a.ndim):
         if a.strides[j] <= 0 or \
-                (a.strides[j] / a.descr.itemsize) >= limits.INT_MAX:
+                (a.strides[j] / a.descr.itemsize) >= libc.limits.INT_MAX:
             copy = True
-        if a.shape[j] >= limits.INT_MAX:
+        if a.shape[j] >= libc.limits.INT_MAX:
             raise ValueError('Input array too large for use with BLAS')
 
     if chkfinite:
@@ -1752,7 +1776,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
         raise ValueError("'which' must be either 'row' or 'col'")
 
 @cython.embedsignature(True)
-def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
+def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=True, check_finite=True):
     """QR update on row or column insertions
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
@@ -1771,6 +1795,11 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
         Index before which `u` is to be inserted.
     which: {'row', 'col'}, optional
         Determines if rows or columns will be inserted, defaults to 'row'
+    rcond : float
+        Lower bound on the reciprocal condition number of ``Q`` augmented with
+        ``u/||u||`` Only used when updating economic mode (thin, (M,N) (N,N))
+        decompositions.  If None, machine precision is used.  Defaults to 
+        None.
     overwrite_qru : bool, optional
         If True, consume Q, R, and u, if possible, while performing the update,
         otherwise make copies as necessary. Defaults to True.
@@ -1786,6 +1815,12 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
         Updated unitary/orthogonal factor
     R1 : ndarray
         Updated upper triangular factor
+
+    Raises
+    ------
+    LinAlgError :
+        If updating a (M,N) (N,N) factorization and the reciprocal condition
+        number of Q augmented with u/||u|| is smaller than rcond.
 
     See Also
     --------
@@ -1867,9 +1902,12 @@ def qr_insert(Q, R, u, k, which='row', overwrite_qru=True, check_finite=True):
 
     """
     if which == 'row':
+        if rcond is not None:
+            raise ValueError("'rcond' is unused when inserting rows and "
+                             "must be None")
         return qr_insert_row(Q, R, u, k, overwrite_qru, check_finite)
     elif which == 'col':
-        return qr_insert_col(Q, R, u, k, overwrite_qru, check_finite)
+        return qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite)
     else:
         raise ValueError("'which' must be either 'row' or 'col'")
 
@@ -1903,14 +1941,14 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
         k1 += m
 
     if u1.ndim == 2:
-        p = u.shape[0]
-        if u.shape[1] != n:
+        p = u1.shape[0]
+        if u1.shape[1] != n:
             raise ValueError("'u' should be either (N,) or (p,N) when "
                              "inserting rows. Found %s." %
                              str(getattr(u, 'shape')))
     elif u1.ndim == 1:
         p = 1
-        if u.shape[0] != n:
+        if u1.shape[0] != n:
             raise ValueError("'u' should be either (N,) or (p,N) when "
                              "inserting rows. Found %s." %
                              str(getattr(u, 'shape')))
@@ -2026,7 +2064,7 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
                 raise MemoryError('Unable to allocate memory for array')
         return qnew, rnew
 
-def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
+def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
     cdef int j, k1 = k 
     cdef int q_flags = ARRAY_ANYORDER
@@ -2038,8 +2076,8 @@ def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
     cdef int us[2]
     cdef cnp.npy_intp shape[2]
     cdef bint economic
-    cdef float frc = 0
-    cdef double drc = 0
+    cdef float frc = libc.float.FLT_EPSILON
+    cdef double drc = libc.float.DBL_EPSILON
 
     # 1 eco q alloc, r alloc, u any
     # p eco q alloc, r alloc, u any unless eco->fat then F
@@ -2060,19 +2098,28 @@ def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
         k1 += n
 
     if u1.ndim == 2:
-        p = u.shape[1]
-        if u.shape[0] != m:
+        p = u1.shape[1]
+        if u1.shape[0] != m:
             raise ValueError("'u' should be either (M,) or (M,p) when "
                              "inserting columns. Found %s." %
                              str(getattr(u, 'shape')))
     elif u1.ndim == 1:
         p = 1
-        if u.shape[0] != m:
+        if u1.shape[0] != m:
             raise ValueError("'u' should be either (M,) or (M,p) when "
                              "inserting columns. Found %s." %
                              str(getattr(u, 'shape')))
     else:
         raise ValueError("'u' can be at most 2-D")
+
+    if rcond is not None and economic:
+        if typecode == cnp.NPY_DOUBLE or typecode == cnp.NPY_CDOUBLE:
+            drc = rcond   
+        else:
+            frc = rcond
+    elif rcond is not None:
+        raise ValueError("'rcond' is not used when updated full, (M,M) (M,N) "
+                         "decompositions and must be None.")
 
     if economic:
         if n+p <= m:
@@ -2095,23 +2142,27 @@ def qr_insert_col(Q, R, u, k, overwrite_qru, check_finite):
         rnew[:n,k1+p:] = r1[:,k1:]
         u1 = validate_array(u1, check_finite)
         if typecode == cnp.NPY_FLOAT:
-            thin_qr_col_insert(m, n, <float*>extract(qnew, qs), qs,
+            info = thin_qr_col_insert(m, n, <float*>extract(qnew, qs), qs,
                     <float*>extract(rnew, rs), rs,
                     <float*>extract(u1, us), us, k1, p_eco, p_full, &frc)
         elif typecode == cnp.NPY_DOUBLE:
-            thin_qr_col_insert(m, n, <double*>extract(qnew, qs), qs,
+            info = thin_qr_col_insert(m, n, <double*>extract(qnew, qs), qs,
                     <double*>extract(rnew, rs), rs,
                     <double*>extract(u1, us), us, k1, p_eco, p_full, &drc)
         elif typecode == cnp.NPY_CFLOAT:
-            thin_qr_col_insert(m, n, <float_complex*>extract(qnew, qs), qs,
+            info = thin_qr_col_insert(m, n, <float_complex*>extract(qnew, qs), qs,
                     <float_complex*>extract(rnew, rs), rs,
                     <float_complex*>extract(u1, us), us, k1, p_eco, p_full,
                     <float_complex*>&frc)
         else:  # cnp.NPY_CDOUBLE:
-            thin_qr_col_insert(m, n, <double_complex*>extract(qnew, qs), qs,
+            info = thin_qr_col_insert(m, n, <double_complex*>extract(qnew, qs), qs,
                     <double_complex*>extract(rnew, rs), rs,
                     <double_complex*>extract(u1, us), us, k1, p_eco, p_full,
                     <double_complex*>&drc)
+        if info == 2:
+            raise LinAlgError("One of the columns of u lies in the span of Q. "
+                              "Found reciprocal condition number of %s for Q "
+                              "augmented with u/||u||." % str(drc))
         return qnew, rnew
     else:
         if (not cnp.PyArray_ISONESEGMENT(q1)) or u1.ndim == 2:
