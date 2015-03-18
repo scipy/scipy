@@ -97,3 +97,9 @@ class Norm(Benchmark):
             nl.norm(self.a, ord=np.inf)
         else:
             sl.norm(self.a, ord=np.inf)
+
+    def time_frobenius_norm(self, size, contig, module):
+        if module == 'numpy':
+            nl.norm(self.a)
+        else:
+            sl.norm(self.a)
