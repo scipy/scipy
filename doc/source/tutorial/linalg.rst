@@ -115,14 +115,12 @@ the Numpy array, A, is obtained using :obj:`linalg.inv` ``(A)`` , or
 using ``A.I`` if ``A`` is a Matrix. For example, let
 
 .. math::
-   :nowrap:
 
-    \mathbf{A=}\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]
+    \mathbf{A} = \left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]
 
 then
 
 .. math::
-   :nowrap:
 
     \mathbf{A^{-1}=\frac{1}{25}\left[\begin{array}{ccc} -37 & 9 & 22\\ 14 & 2 & -9\\ 4 & -3 & 1\end{array}\right]=\left[\begin{array}{ccc} -1.48 & 0.36 & 0.88\\ 0.56 & 0.08 & -0.36\\ 0.16 & -0.12 & 0.04\end{array}\right].}
 
@@ -158,7 +156,6 @@ to solve the following simultaneous equations:
 We could find the solution vector using a matrix inverse:
 
 .. math::
-   :nowrap:
 
     \left[\begin{array}{c} x\\ y\\ z\end{array}\right]=\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]^{-1}\left[\begin{array}{c} 10\\ 8\\ 3\end{array}\right]=\frac{1}{25}\left[\begin{array}{c} -232\\ 129\\ 19\end{array}\right]=\left[\begin{array}{c} -9.28\\ 5.16\\ 0.76\end{array}\right].
 
@@ -202,7 +199,6 @@ be the determinant of the matrix left by removing the
 :math:`\mathbf{A}` . Then for any row :math:`i,`
 
 .. math::
-   :nowrap:
 
     \left|\mathbf{A}\right|=\sum_{j}\left(-1\right)^{i+j}a_{ij}M_{ij}.
 
@@ -211,7 +207,6 @@ is defined by accepting that the determinant of a :math:`1\times1` matrix is the
 calculated with :obj:`linalg.det` . For example, the determinant of
 
 .. math::
-   :nowrap:
 
     \mathbf{A=}\left[\begin{array}{ccc} 1 & 3 & 5\\ 2 & 5 & 1\\ 2 & 3 & 8\end{array}\right]
 
@@ -248,7 +243,6 @@ For vector *x* , the order parameter can be any real number including
 ``inf`` or ``-inf``. The computed norm is
 
 .. math::
-   :nowrap:
 
     \left\Vert \mathbf{x}\right\Vert =\left\{ \begin{array}{cc} \max\left|x_{i}\right| & \textrm{ord}=\textrm{inf}\\ \min\left|x_{i}\right| & \textrm{ord}=-\textrm{inf}\\ \left(\sum_{i}\left|x_{i}\right|^{\textrm{ord}}\right)^{1/\textrm{ord}} & \left|\textrm{ord}\right|<\infty.\end{array}\right.
 
@@ -257,7 +251,6 @@ For vector *x* , the order parameter can be any real number including
 For matrix :math:`\mathbf{A}` the only valid values for norm are :math:`\pm2,\pm1,` :math:`\pm` inf, and 'fro' (or 'f') Thus,
 
 .. math::
-   :nowrap:
 
     \left\Vert \mathbf{A}\right\Vert =\left\{ \begin{array}{cc} \max_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=\textrm{inf}\\ \min_{i}\sum_{j}\left|a_{ij}\right| & \textrm{ord}=-\textrm{inf}\\ \max_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=1\\ \min_{j}\sum_{i}\left|a_{ij}\right| & \textrm{ord}=-1\\ \max\sigma_{i} & \textrm{ord}=2\\ \min\sigma_{i} & \textrm{ord}=-2\\ \sqrt{\textrm{trace}\left(\mathbf{A}^{H}\mathbf{A}\right)} & \textrm{ord}=\textrm{'fro'}\end{array}\right.
 
@@ -294,7 +287,6 @@ through a set of coefficients :math:`c_{j}` and model functions
 :math:`f_{j}\left(\mathbf{x}_{i}\right)` via the model
 
 .. math::
-   :nowrap:
 
     y_{i}=\sum_{j}c_{j}f_{j}\left(\mathbf{x}_{i}\right)+\epsilon_{i}
 
@@ -303,7 +295,6 @@ strategy of least squares is to pick the coefficients :math:`c_{j}` to
 minimize
 
 .. math::
-   :nowrap:
 
     J\left(\mathbf{c}\right)=\sum_{i}\left|y_{i}-\sum_{j}c_{j}f_{j}\left(x_{i}\right)\right|^{2}.
 
@@ -312,7 +303,6 @@ minimize
 Theoretically, a global minimum will occur when
 
 .. math::
-   :nowrap:
 
     \frac{\partial J}{\partial c_{n}^{*}}=0=\sum_{i}\left(y_{i}-\sum_{j}c_{j}f_{j}\left(x_{i}\right)\right)\left(-f_{n}^{*}\left(x_{i}\right)\right)
 
@@ -326,14 +316,12 @@ or
 where
 
 .. math::
-   :nowrap:
 
     \left\{ \mathbf{A}\right\} _{ij}=f_{j}\left(x_{i}\right).
 
 When :math:`\mathbf{A^{H}A}` is invertible, then
 
 .. math::
-   :nowrap:
 
     \mathbf{c}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}\mathbf{y}=\mathbf{A}^{\dagger}\mathbf{y}
 
@@ -342,7 +330,6 @@ where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of
 :math:`\mathbf{A}` the model can be written
 
 .. math::
-   :nowrap:
 
     \mathbf{y}=\mathbf{Ac}+\boldsymbol{\epsilon}.
 
@@ -358,7 +345,6 @@ The following example and figure demonstrate the use of
 problem. The data shown below were generated using the model:
 
 .. math::
-   :nowrap:
 
     y_{i}=c_{1}e^{-x_{i}}+c_{2}x_{i}
 
@@ -404,21 +390,18 @@ decomposition. Let :math:`\mathbf{A}` be an :math:`M\times N` matrix,
 then if :math:`M>N` the generalized inverse is
 
 .. math::
-   :nowrap:
 
     \mathbf{A}^{\dagger}=\left(\mathbf{A}^{H}\mathbf{A}\right)^{-1}\mathbf{A}^{H}
 
 while if :math:`M<N` matrix the generalized inverse is
 
 .. math::
-   :nowrap:
 
     \mathbf{A}^{\#}=\mathbf{A}^{H}\left(\mathbf{A}\mathbf{A}^{H}\right)^{-1}.
 
 In both cases for :math:`M=N` , then
 
 .. math::
-   :nowrap:
 
     \mathbf{A}^{\dagger}=\mathbf{A}^{\#}=\mathbf{A}^{-1}
 
@@ -442,7 +425,6 @@ eigenvalue-eigenvector problem is to find for some square matrix
 :math:`\mathbf{v}` such that
 
 .. math::
-   :nowrap:
 
     \mathbf{Av}=\lambda\mathbf{v}.
 
@@ -450,7 +432,6 @@ For an :math:`N\times N` matrix, there are :math:`N` (not necessarily
 distinct) eigenvalues --- roots of the (characteristic) polynomial
 
 .. math::
-   :nowrap:
 
     \left|\mathbf{A}-\lambda\mathbf{I}\right|=0.
 
@@ -459,14 +440,12 @@ eigenvectors to distinguish them from another set of left eigenvectors
 that satisfy
 
 .. math::
-   :nowrap:
 
     \mathbf{v}_{L}^{H}\mathbf{A}=\lambda\mathbf{v}_{L}^{H}
 
 or
 
 .. math::
-   :nowrap:
 
     \mathbf{A}^{H}\mathbf{v}_{L}=\lambda^{*}\mathbf{v}_{L}.
 
@@ -489,7 +468,6 @@ eigenvalue problem can be solved, then it provides a decomposition of
 :math:`\mathbf{A}` as
 
 .. math::
-   :nowrap:
 
     \mathbf{A}=\mathbf{BV}\boldsymbol{\Lambda}\mathbf{V}^{-1}
 
@@ -506,7 +484,6 @@ As an example, consider finding the eigenvalues and eigenvectors of
 the matrix
 
 .. math::
-   :nowrap:
 
     \mathbf{A}=\left[\begin{array}{ccc} 1 & 5 & 2\\ 2 & 4 & 1\\ 3 & 6 & 2\end{array}\right].
 
@@ -571,7 +548,6 @@ in an :math:`M\times N` zero matrix
 the singular values. Then
 
 .. math::
-   :nowrap:
 
     \mathbf{A=U}\boldsymbol{\Sigma}\mathbf{V}^{H}
 
@@ -620,9 +596,8 @@ The LU decomposition finds a representation for the :math:`M\times N`
 matrix :math:`\mathbf{A}` as
 
 .. math::
-   :nowrap:
 
-    \mathbf{A}=\mathbf{PLU}
+    \mathbf{A}=\mathbf{P}\,\mathbf{L}\,\mathbf{U}
 
 where :math:`\mathbf{P}` is an :math:`M\times M` permutation matrix (a
 permutation of the rows of the identity matrix), :math:`\mathbf{L}` is
@@ -636,14 +611,12 @@ equations where the left-hand-side does not change but the right hand
 side does. For example, suppose we are going to solve
 
 .. math::
-   :nowrap:
 
     \mathbf{A}\mathbf{x}_{i}=\mathbf{b}_{i}
 
 for many different :math:`\mathbf{b}_{i}` . The LU decomposition allows this to be written as
 
 .. math::
-   :nowrap:
 
     \mathbf{PLUx}_{i}=\mathbf{b}_{i}.
 
@@ -691,14 +664,12 @@ matrix :math:`\mathbf{Q}` and an :math:`M\times N` upper-trapezoidal
 matrix :math:`\mathbf{R}` such that
 
 .. math::
-   :nowrap:
 
     \mathbf{A=QR}.
 
 Notice that if the SVD of :math:`\mathbf{A}` is known then the QR decomposition can be found
 
 .. math::
-   :nowrap:
 
     \mathbf{A}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{H}=\mathbf{QR}
 
@@ -716,7 +687,6 @@ decomposition finds (not-necessarily unique) matrices
 :math:`\mathbf{T}` and :math:`\mathbf{Z}` such that
 
 .. math::
-   :nowrap:
 
     \mathbf{A}=\mathbf{ZT}\mathbf{Z}^{H}
 
@@ -784,6 +754,7 @@ interpolative decomposition (ID) of a matrix. For a matrix :math:`A
 this is a factorization
 
 .. math::
+
   A \Pi =
   \begin{bmatrix}
    A \Pi_{1} & A \Pi_{2}
@@ -808,7 +779,6 @@ Matrix Functions
 Consider the function :math:`f\left(x\right)` with Taylor series expansion
 
 .. math::
-   :nowrap:
 
     f\left(x\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}x^{k}.
 
@@ -816,7 +786,6 @@ A matrix function can be defined using this Taylor series for the
 square matrix :math:`\mathbf{A}` as
 
 .. math::
-   :nowrap:
 
     f\left(\mathbf{A}\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}\mathbf{A}^{k}.
 
@@ -831,7 +800,6 @@ The matrix exponential is one of the more common matrix functions. It
 can be defined for square matrices as
 
 .. math::
-   :nowrap:
 
     e^{\mathbf{A}}=\sum_{k=0}^{\infty}\frac{1}{k!}\mathbf{A}^{k}.
 
@@ -842,14 +810,12 @@ Another method to compute the matrix exponential is to find an
 eigenvalue decomposition of :math:`\mathbf{A}` :
 
 .. math::
-   :nowrap:
 
     \mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}
 
 and note that
 
 .. math::
-   :nowrap:
 
     e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol{\Lambda}}\mathbf{V}^{-1}
 
@@ -863,7 +829,6 @@ The inverse of the matrix exponential is the matrix logarithm defined
 as the inverse of the matrix exponential.
 
 .. math::
-   :nowrap:
 
     \mathbf{A}\equiv\exp\left(\log\left(\mathbf{A}\right)\right).
 
@@ -886,14 +851,12 @@ sin and cosine can be defined using Euler's identity as
 The tangent is
 
 .. math::
-   :nowrap:
 
     \tan\left(x\right)=\frac{\sin\left(x\right)}{\cos\left(x\right)}=\left[\cos\left(x\right)\right]^{-1}\sin\left(x\right)
 
 and so the matrix tangent is defined as
 
 .. math::
-   :nowrap:
 
     \left[\cos\left(\mathbf{A}\right)\right]^{-1}\sin\left(\mathbf{A}\right).
 
