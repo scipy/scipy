@@ -143,6 +143,7 @@ Alex Conley for the Exponentially Modified Normal distribution.
 Abraham Escalante for contributions to scipy.stats
 Johannes Ballé for the generalized normal distribution.
 Irvin Probst (ENSTA Bretagne) for pole placement.
+Ian Henriksen for Cython wrappers for BLAS and LAPACK
 
 
 Institutions
