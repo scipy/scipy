@@ -1552,7 +1552,7 @@ cdef void* extract(cnp.ndarray arr, int* arrs):
     return cnp.PyArray_DATA(arr)
 
 @cython.embedsignature(True)
-def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
+def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
     """QR downdate on row or column deletions
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
@@ -1574,7 +1574,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
     overwrite_qr : bool, optional
         If True, consume Q and R, overwriting their contents with their
         downdated versions, and returning approriately sized views.  
-        Defaults to True.
+        Defaults to False.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -1776,7 +1776,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=True, check_finite=True):
         raise ValueError("'which' must be either 'row' or 'col'")
 
 @cython.embedsignature(True)
-def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=True, check_finite=True):
+def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_finite=True):
     """QR update on row or column insertions
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
@@ -1802,7 +1802,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=True, check_fin
         None.
     overwrite_qru : bool, optional
         If True, consume Q, R, and u, if possible, while performing the update,
-        otherwise make copies as necessary. Defaults to True.
+        otherwise make copies as necessary. Defaults to False.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -2118,7 +2118,7 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
         else:
             frc = rcond
     elif rcond is not None:
-        raise ValueError("'rcond' is not used when updated full, (M,M) (M,N) "
+        raise ValueError("'rcond' is not used when updating full, (M,M) (M,N) "
                          "decompositions and must be None.")
 
     if economic:
@@ -2227,7 +2227,7 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
         return q1, rnew
 
 @cython.embedsignature(True)
-def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
+def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     """Rank-k QR update
 
     If ``A = Q R`` is the QR factorization of ``A``, return the QR
@@ -2246,7 +2246,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=True, check_finite=True):
         Right update vector
     overwrite_qruv : bool, optional
         If True, consume Q, R, u, and v, if possible, while performing the
-        update, otherwise make copies as necessary. Defaults to True.
+        update, otherwise make copies as necessary. Defaults to False.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
