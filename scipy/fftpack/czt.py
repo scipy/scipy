@@ -55,10 +55,12 @@ def czt_points(m, w=None, a=1, factor=None):
     a : complex, optional
         The starting point in the complex plane.  The default is 1.
     factor : float, optional
-        Frequency scaling factor. For instance, when assigning factor=0.5,
-        the resulting FT will span half of the frequency range that an FFT
-        would produce, at half of the frequency step size.  This is an
-        alternative to `w`, and both cannot be specified at the same time.
+        Frequency scaling factor. This is a simpler and more precise way
+        to specify FFT-like transforms along the unit circle.  For
+        instance, when assigning factor=0.5, the resulting FT will span
+        half of the frequency range that an FFT would produce, at half of
+        the frequency step size.  This is an alternative to `w`, and both
+        cannot be specified at the same time.
 
     Returns
     -------
@@ -70,18 +72,22 @@ def czt_points(m, w=None, a=1, factor=None):
         raise ValueError("Invalid number of CZT data "
                          "points (%d) specified." % m)
 
+    k = arange(0, m)
+
     a = 1.0 * a  # at least float
 
     if w is not None and factor is not None:
         raise ValueError('Only w or factor can be specified; not both.')
-    elif w is None and factor is None:
-        # Default to FFT
-        w = cmath.exp(-2j*pi/m)
     elif w is None:
-        w = cmath.exp(-2j*pi/m * factor)
+        if factor is None:
+            # Nothing specified, default to FFT-like
+            factor = 1
 
-    k = arange(0, m)
-    return a*w**-k
+        return a * np.exp(2j * pi * factor * arange(m) / m)
+    else:
+        # w specified
+        w = 1.0 * w  # at least float
+        return a * w**-k
 
 
 class CZT:
@@ -107,7 +113,10 @@ class CZT:
     The chirp-z transform is considerably less precise than the
     equivalent zero-padded FFT, with differences on the order of 1e-7
     from the direct transform rather than 1e-15 as
-    seen with zero-padding.
+    seen with zero-padding.  Accuracy is better when using `factor` rather than
+    `w`, as any error in `w` is accumulated for long data lengths, drifting
+    away from the unit circle, but `factor` is limited to transforms that are
+    on the unit circle.
 
     See zoomfft for a friendly interface to partial FFT calculations.
     """
@@ -123,14 +132,17 @@ class CZT:
           The number of points desired.  The default is the length of
           the input data.
         w : complex, optional
-          The ratio between points in each step.
+          The ratio between points in each step.  This must be precise or the
+          accumulated error will degrade the tail of the output sequence.
         a : complex, optional
           The starting point in the complex plane.  The default is 1.
         factor : float, optional
-          Frequency scaling factor. For instance, when assigning factor=0.5,
-          the resulting FT will span half of the frequency range that an FFT
-          would produce, at half of the frequency step size.  This is an
-          alternative to `w`, and both cannot be specified at the same time.
+            Frequency scaling factor. This is a simpler and more precise way
+            to specify FFT-like transforms along the unit circle.  For
+            instance, when assigning factor=0.5, the resulting FT will span
+            half of the frequency range that an FFT would produce, at half of
+            the frequency step size.  This is an alternative to `w`, and both
+            cannot be specified at the same time.
 
         Returns
         -------
@@ -145,21 +157,26 @@ class CZT:
         if m is None:
             m = n
 
+        k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
+
         if w is not None and factor is not None:
             raise ValueError('Only w or factor can be specified; not both.')
-        elif w is None and factor is None:
-            # Default to FFT
-            w = cmath.exp(-2j*pi/m)
         elif w is None:
+            if factor is None:
+                # Nothing specified, default to FFT-like
+                factor = 1
+
             w = cmath.exp(-2j*pi/m * factor)
+            wk2 = np.exp(-(1j * pi * factor * k**2) / m)
+        else:
+            # w specified
+            wk2 = w**(k**2/2.)
 
         a = 1.0 * a  # at least float
 
         self.w, self.a = w, a
         self.m, self.n = m, n
 
-        k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
-        wk2 = w**(k**2/2.)
         nfft = _next_regular(n+m-1)
         self._Awk2 = (a**-k * wk2)[:n]
         self._nfft = nfft

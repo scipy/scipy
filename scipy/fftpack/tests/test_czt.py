@@ -25,7 +25,7 @@ def check_czt(x):
     y = fft(x, 100*len(x))
     y1 = czt(x, 100*len(x))
     err = norm(y-y1)/norm(y)
-    assert_(err < 3e-10, "error for direct transform is %g" % (err,))
+    assert_(err < 1e-10, "error for direct transform is %g" % (err,))
 
 
 def check_zoomfft(x):
@@ -127,12 +127,13 @@ def test_1D():
     check_scaledfft(x)
 
 
-def test_large_prime():
-    np.random.seed(0)
-    x = np.random.rand(10007)
-    y = fft(x)
-    y1 = czt(x)
-    assert_allclose(y, y1, rtol=1e-6)
+def test_large_prime_lengths():
+    np.random.seed(0)  # Deterministic randomness
+    for N in (101, 1009, 10007):
+        x = np.random.rand(N)
+        y = fft(x)
+        y1 = czt(x)
+        assert_allclose(y, y1, rtol=1e-9)
 
 
 def test_empty_input():
