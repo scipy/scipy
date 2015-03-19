@@ -5,7 +5,8 @@ A unit test module for czt.py
 '''
 from __future__ import division, absolute_import, print_function
 
-from numpy.testing import run_module_suite, assert_, assert_allclose, assert_raises
+from numpy.testing import (run_module_suite, assert_, assert_allclose,
+                           assert_raises)
 from czt import czt, zoomfft, scaledfft, czt_points
 import numpy as np
 
@@ -69,8 +70,7 @@ def check_scaledfft(x):
 def test_1D():
     # Test of 1D version of the transforms
 
-    # Deterministic randomness
-    np.random.seed(0)
+    np.random.seed(0)  # Deterministic randomness
 
     # Random signals
     lengths = np.random.randint(8, 200, 20)
@@ -148,10 +148,38 @@ def test_0_rank_input():
     assert_raises(IndexError, zoomfft, 5, 0.5)
 
 
+def test_czt_math():
+    for impulse in ([0, 0, 1],
+                    [0, 0, 1, 0, 0],
+                    np.concatenate(([0, 0, 1], np.zeros(100)))):
+        for m in (1, 3, 5, 8, 101, 1021):
+            for a in (1, 2, 0.5, 1.1):
+                for w in (None, 0.7+0.7j):
+                    # z-transform of an impulse is 1 everywhere
+                    assert_allclose(czt(impulse[2:], m=m, a=a),
+                                    np.ones(m))
+
+                    # z-transform of a delayed impulse is z**-1
+                    assert_allclose(czt(impulse[1:], m=m, a=a),
+                                    czt_points(m=m, a=a)**-1)
+
+                    # z-transform of a 2-delayed impulse is z**-2
+                    assert_allclose(czt(impulse, m=m, a=a),
+                                    czt_points(m=m, a=a)**-2)
+
+
 def test_int_args():
     # Integer argument `a` was producing all 0s
     assert_allclose(abs(czt([0, 1], m=10, a=2)), 0.5*np.ones(10))
     assert_allclose(czt_points(11, w=2), 1/(2**np.arange(11)))
+
+
+def test_conflicting_args():
+    # Cannot specify factor and w at the same time
+    assert_raises(ValueError, czt, x=np.ones(8),
+                  w=0.70710678118654746+1j*0.70710678118654746,
+                  factor=1)
+
 
 def test_czt_points():
     for N in (1, 2, 3, 8, 11, 100, 101, 10007):
