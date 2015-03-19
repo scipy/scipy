@@ -15,7 +15,7 @@ from scipy import signal
 from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-    invres, vectorstrength, signaltools, lfiltic, tf2sos, sosfilt, sosfilt_zi)
+    invres, invresz, vectorstrength, signaltools, lfiltic, tf2sos, sosfilt, sosfilt_zi)
 from scipy.signal.signaltools import _filtfilt_gust
 
 
@@ -1332,7 +1332,20 @@ class TestHilbert2(object):
 
 
 class TestPartialFractionExpansion(TestCase):
-
+    def test_invresz_one_coefficient_bug(self):
+        # This test was inspired by github issue 4646.
+        r = [1]
+        p = [2]
+        k = [0]
+        
+        a_expected = [1.0, 0.0]
+        b_expected = [1.0, -2.0]
+        
+        a_observed, b_observed = invresz(r, p, k)
+        
+        assert_allclose(a_observed, a_expected)
+        assert_allclose(b_observed, b_expected)
+        
     def test_invres_distinct_roots(self):
         # This test was inspired by github issue 2496.
         r = [3 / 10, -1 / 6, -2 / 15]
