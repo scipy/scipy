@@ -45,7 +45,7 @@ def czt_points(m, w=None, a=1, factor=None):
     Returns the points at which the Z-transform is computed when doing a CZT
     with the same arguments.
 
-    Parameters:
+    Parameters
     ----------
     m : int, optional
         The number of points desired.  The default is the length of
@@ -113,7 +113,7 @@ class CZT:
         """
         Chirp-Z transform definition.
 
-        Parameters:
+        Parameters
         ----------
         n : int
           The size of the signal
@@ -130,8 +130,8 @@ class CZT:
           would produce, at half of the frequency step size.  This is an
           alternative to `w`, and both cannot be specified at the same time.
 
-        Returns:
-        --------
+        Returns
+        -------
         CZT
           callable object ``f(x, axis=-1)`` for computing the chirp-z transform
           on `x`
@@ -165,7 +165,7 @@ class CZT:
 
     def __call__(self, x, axis=-1):
         """
-        Parameters:
+        Parameters
         ----------
         x : array
           The signal to transform.
@@ -173,7 +173,7 @@ class CZT:
           Array dimension to operate over.  The default is the final
           dimension.
 
-        Returns:
+        Returns
         -------
         out : ndarray
           An array of the same dimensions as `x`, but with the length of the
@@ -213,7 +213,7 @@ class ZoomFFT(CZT):
 
         Defines a Fourier transform for a set of equally spaced frequencies.
 
-        Parameters:
+        Parameters
         ----------
         n : int
           size of the signal
@@ -225,7 +225,7 @@ class ZoomFFT(CZT):
         Fs : float, optional
           sampling frequency (default=2)
 
-        Returns:
+        Returns
         -------
         A ZoomFFT instance
           A callable object f(x, axis=-1) for computing the zoom FFT on x.
@@ -292,7 +292,7 @@ class ScaledFFT(CZT):
             SW = linspace(-2, 2*(m-2.)/m, m)
             plot(X, W, SX, SW)
 
-        Parameters:
+        Parameters
         ----------
         n : int
           Size of the signal
@@ -303,7 +303,7 @@ class ScaledFFT(CZT):
           Frequency scaling factor.
           Default: scale=1.0
 
-        Returns:
+        Returns
         -------
         callable f(x, axis=-1)
           function for computing the scaled FFT on x.
@@ -330,7 +330,7 @@ def scaledfft(x, m=None, scale=1.0, axis=-1):
 
     See ScaledFFT doc for details
 
-    Parameters:
+    Parameters
     ----------
     x : array
         input array
@@ -342,7 +342,7 @@ def scaledfft(x, m=None, scale=1.0, axis=-1):
         The array dimension to operate over.  The default is the
         final dimension.
 
-    Returns:
+    Returns
     -------
     out : ndarray
         An array of the same rank of `x`, but with the size of
@@ -357,7 +357,7 @@ def czt(x, m=None, w=None, a=1, factor=None, axis=-1):
     """
     Compute the frequency response around a spiral.
 
-    Parameters:
+    Parameters
     ----------
     x : array
         The set of data to transform.
@@ -373,7 +373,7 @@ def czt(x, m=None, w=None, a=1, factor=None, axis=-1):
     axis : int, optional
         Array dimension to operate over.  Default is the final dimension.
 
-    Returns:
+    Returns
     -------
     out : ndarray
         An array of the same dimensions as `x`, but with the length of the
@@ -398,7 +398,7 @@ def zoomfft(x, fn, m=None, Fs=2, axis=-1):
     """
     Compute the Fourier transform of x for frequencies in [f1, f2].
 
-    Parameters:
+    Parameters
     ----------
     x : array
         The input signal.
