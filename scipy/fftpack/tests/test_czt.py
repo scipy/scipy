@@ -147,6 +147,11 @@ def test_0_rank_input():
     assert_raises(IndexError, zoomfft, 5, 0.5)
 
 
+def test_int_args():
+    # Integer argument `a` was producing all 0s
+    assert_allclose(abs(czt([0, 1], m=10, a=2)), 0.5*np.ones(10))
+    assert_allclose(czt_points(11, w=2), 1/(2**np.arange(11)))
+
 if __name__ == '__main__':
     np.random.seed()
     run_module_suite()

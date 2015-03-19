@@ -70,6 +70,8 @@ def czt_points(m, w=None, a=1, factor=None):
         raise ValueError("Invalid number of CZT data "
                          "points (%d) specified." % m)
 
+    a = 1.0 * a  # at least float
+
     if w is not None and factor is not None:
         raise ValueError('Only w or factor can be specified; not both.')
     elif w is None and factor is None:
@@ -150,6 +152,8 @@ class CZT:
             w = cmath.exp(-2j*pi/m)
         elif w is None:
             w = cmath.exp(-2j*pi/m * factor)
+
+        a = 1.0 * a  # at least float
 
         self.w, self.a = w, a
         self.m, self.n = m, n
