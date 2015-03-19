@@ -6,7 +6,7 @@ A unit test module for czt.py
 from __future__ import division, absolute_import, print_function
 
 from numpy.testing import run_module_suite, assert_, assert_allclose, assert_raises
-from czt import czt, zoomfft, scaledfft
+from czt import czt, zoomfft, scaledfft, czt_points
 import numpy as np
 
 fft = np.fft.fft
@@ -151,6 +151,15 @@ def test_int_args():
     # Integer argument `a` was producing all 0s
     assert_allclose(abs(czt([0, 1], m=10, a=2)), 0.5*np.ones(10))
     assert_allclose(czt_points(11, w=2), 1/(2**np.arange(11)))
+
+def test_czt_points():
+    for N in (1, 2, 3, 8, 11, 100, 101, 10007):
+        assert_allclose(czt_points(N), np.exp(2j*np.pi*np.arange(N)/N))
+
+    assert_allclose(czt_points(7, w=1), np.ones(7))
+    assert_allclose(czt_points(11, w=2.), 1/(2**np.arange(11)))
+
+    # Test every branch with every combination of args
 
 if __name__ == '__main__':
     np.random.seed()
