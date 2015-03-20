@@ -217,7 +217,7 @@ optional flag allows for specification of which part of the output signal to
 return. The default value of 'full' returns the entire signal. If the flag has
 a value of 'same' then only the middle :math:`K` values are returned starting
 at :math:`y\left[\left\lfloor \frac{M-1}{2}\right\rfloor \right]` so that the
-output has the same length as the largest input. If the flag has a value of
+output has the same length as the first input. If the flag has a value of
 'valid' then only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1`
 output values are returned where :math:`z` depends on all of the values of the
 smallest input from :math:`h\left[0\right]` to :math:`h\left[M\right].` In
