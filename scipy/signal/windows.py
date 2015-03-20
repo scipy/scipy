@@ -740,6 +740,7 @@ def tukey(M, alpha=0.5, sym=True):
            IEEE 66 (1): 51-83. doi:10.1109/PROC.1978.10837
     .. [2] Wikipedia, "Window function",
            http://en.wikipedia.org/wiki/Window_function#Tukey_window
+
     Examples
     --------
     Plot the window and its frequency response:
@@ -753,6 +754,7 @@ def tukey(M, alpha=0.5, sym=True):
     >>> plt.title("Tukey window")
     >>> plt.ylabel("Amplitude")
     >>> plt.xlabel("Sample")
+    >>> plt.ylim([0, 1.1])
 
     >>> plt.figure()
     >>> A = fft(window, 2048) / (len(window)/2.0)
