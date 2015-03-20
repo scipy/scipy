@@ -122,6 +122,9 @@ def test_vonmises_line_support():
     assert_equal(stats.vonmises_line.a, -np.pi)
     assert_equal(stats.vonmises_line.b, np.pi)
 
+def test_vonmises_numerical():
+    vm = stats.vonmises(800)
+    assert_almost_equal(vm.cdf(0), 0.5)
 
 class TestRandInt(TestCase):
     def test_rvs(self):

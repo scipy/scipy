@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.stats
-from scipy.special import i0
+from scipy.special import i0, i0e
 import numpy.testing
 
 cimport cython
@@ -30,7 +30,7 @@ cdef double von_mises_cdf_series(double k,double x,unsigned int p):
         return 0.5 + x / (2 * NPY_PI) + V / NPY_PI
 
 cdef von_mises_cdf_normalapprox(k, x):
-    b = sqrt(NPY_2_PI) * np.exp(k) / i0(k)
+    b = sqrt(NPY_2_PI) / i0e(k) # Check for negative k
     z = b*np.sin(x/2.)
     return scipy.stats.norm.cdf(z)
 
