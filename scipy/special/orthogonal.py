@@ -750,7 +750,6 @@ def _pbcf(n, theta):
     .. [parabolic-asymptotics]
        http://dlmf.nist.gov/12.10#vii
     """
-    mu = sqrt(2.0*n + 1.0)
     st = sin(theta)
     ct = cos(theta)
     # http://dlmf.nist.gov/12.10#vii
