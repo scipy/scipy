@@ -147,6 +147,16 @@
 #include <float.h>		/* DBL_EPSILON */
 #include "mconf.h"
 
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
+#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+#pragma GCC optimize("unroll-loops")
+#define cephes_isnan(x) __builtin_isnan(x)
+#endif
+#endif
+#ifndef cephes_isnan
+#define cephes_isnan(x) npy_isnan(x)
+#endif
+
 
 extern double SQRTH;
 extern double MAXLOG;
@@ -408,7 +418,7 @@ double ndtr(double a)
 {
     double x, y, z;
 
-    if (npy_isnan(a)) {
+    if (cephes_isnan(a)) {
 	mtherr("ndtr", DOMAIN);
 	return (NPY_NAN);
     }
@@ -434,7 +444,7 @@ double erfc(double a)
 {
     double p, q, x, y, z;
 
-    if (npy_isnan(a)) {
+    if (cephes_isnan(a)) {
 	mtherr("erfc", DOMAIN);
 	return (NPY_NAN);
     }
@@ -485,7 +495,7 @@ double erf(double x)
 {
     double y, z;
 
-    if (npy_isnan(x)) {
+    if (cephes_isnan(x)) {
 	mtherr("erf", DOMAIN);
 	return (NPY_NAN);
     }
