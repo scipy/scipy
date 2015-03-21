@@ -147,4 +147,21 @@ extern int merror;
 
 #define gamma Gamma
 
+/*
+ * Enable loop unrolling on GCC and use faster isnan et al.
+ */
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
+#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+#pragma GCC optimize("unroll-loops")
+#define cephes_isnan(x) __builtin_isnan(x)
+#define cephes_isinf(x) __builtin_isinf(x)
+#define cephes_isfinite(x) __builtin_isfinite(x)
+#endif
+#endif
+#ifndef cephes_isnan
+#define cephes_isnan(x) npy_isnan(x)
+#define cephes_isinf(x) npy_isinf(x)
+#define cephes_isfinite(x) npy_isfinite(x)
+#endif
+
 #endif				/* CEPHES_MCONF_H */

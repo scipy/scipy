@@ -147,17 +147,6 @@
 #include <float.h>		/* DBL_EPSILON */
 #include "mconf.h"
 
-#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
-#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
-#pragma GCC optimize("unroll-loops")
-#define cephes_isnan(x) __builtin_isnan(x)
-#endif
-#endif
-#ifndef cephes_isnan
-#define cephes_isnan(x) npy_isnan(x)
-#endif
-
-
 extern double SQRTH;
 extern double MAXLOG;
 

@@ -179,7 +179,7 @@ double exp10(double x)
     double px, xx;
     short n;
 
-    if (npy_isnan(x))
+    if (cephes_isnan(x))
 	return (x);
     if (x > MAXL10) {
 	return (NPY_INFINITY);
