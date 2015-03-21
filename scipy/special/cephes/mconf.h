@@ -70,6 +70,7 @@
 
 #include "cephes_names.h"
 #include "protos.h"
+#include "polevl.h"
 
 /* Constant definitions for math error conditions
  */
