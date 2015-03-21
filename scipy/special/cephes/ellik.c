@@ -65,15 +65,15 @@ double ellik(double phi,  double m)
     double a, b, c, e, temp, t, K, denom, npio2;
     int d, mod, sign;
 
-    if (isnan(phi) || isnan(m))
+    if (cephes_isnan(phi) || cephes_isnan(m))
         return NPY_NAN;
     if (m > 1.0)
         return NPY_NAN;
-    if (isinf(phi) || isinf(m))
+    if (cephes_isinf(phi) || cephes_isinf(m))
     {
-        if (isinf(m) && isfinite(phi))
+        if (cephes_isinf(m) && cephes_isfinite(phi))
             return 0.0;
-        else if (isinf(phi) && isfinite(m))
+        else if (cephes_isinf(phi) && cephes_isfinite(m))
             return phi;
         else
             return NPY_NAN;

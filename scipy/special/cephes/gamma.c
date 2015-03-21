@@ -322,7 +322,7 @@ double Gamma(double x)
     int i;
 
     sgngam = 1;
-    if (!npy_isfinite(x)) {
+    if (!cephes_isfinite(x)) {
 	return x;
     }
     q = fabs(x);
@@ -550,7 +550,7 @@ double lgam(double x)
 
     sgngam = 1;
 
-    if (!npy_isfinite(x))
+    if (!cephes_isfinite(x))
 	return x;
 
     if (x < -34.0) {

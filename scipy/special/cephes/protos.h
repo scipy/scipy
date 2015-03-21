@@ -114,8 +114,6 @@ extern long lsqrt(long x);
 extern int minv(double A[], double X[], int n, double B[], int IPS[]);
 extern void mmmpy(int r, int c, double *A, double *B, double *Y);
 extern int mtherr(char *name, int code);
-extern double polevl(double x, double *P, int N);
-extern double p1evl(double x, double *P, int N);
 extern void mtransp(int n, double *A, double *T);
 extern void mvmpy(int r, int c, double *A, double *V, double *Y);
 extern double nbdtrc(int k, int n, double p);

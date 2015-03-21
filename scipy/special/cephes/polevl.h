@@ -48,12 +48,14 @@
  * Copyright 1984, 1987, 1988 by Stephen L. Moshier
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
  */
-#include "protos.h"
 
-double polevl(x, coef, N)
-double x;
-double coef[];
-int N;
+#ifndef CEPHES_POLEV
+#define CEPHES_POLEV
+
+#include "protos.h"
+#include <numpy/npy_common.h>
+
+static NPY_INLINE double polevl(double x, double coef[], int N)
 {
     double ans;
     int i;
@@ -76,10 +78,7 @@ int N;
  * Otherwise same as polevl.
  */
 
-double p1evl(x, coef, N)
-double x;
-double coef[];
-int N;
+static NPY_INLINE double p1evl(double x, double coef[], int N)
 {
     double ans;
     double *p;
@@ -95,3 +94,5 @@ int N;
 
     return (ans);
 }
+
+#endif

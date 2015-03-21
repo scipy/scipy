@@ -66,13 +66,13 @@ double ellie(double phi, double m)
     double lphi, t, E, denom, npio2;
     int d, mod, sign;
 
-    if (isnan(phi) || isnan(m))
+    if (cephes_isnan(phi) || cephes_isnan(m))
         return NPY_NAN;
     if (m > 1.0)
         return NPY_NAN;
-    if (isinf(phi))
+    if (cephes_isinf(phi))
         return phi;
-    if (isinf(m))
+    if (cephes_isinf(m))
         return -m;
     if (m == 0.0)
 	return (phi);
