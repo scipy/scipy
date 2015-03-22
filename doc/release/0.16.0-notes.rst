@@ -101,6 +101,11 @@ with ``statsmodels.distributions.ExpandedNormal``.
 ``scipy.stats.fastsort`` is deprecated.  This function is unnecessary,
 ``numpy.argsort`` can be used instead.
 
+``scipy.stats.signaltonoise`` is deprecated. This function did not belong in 
+``scipy.stats`` and is rarely used. See issue #609 for details.
+
+``scipy.stats.histogram2`` is deprecated. This function is unnecessary, 
+``numpy.histogram2d`` can be used instead.
 
 Backwards incompatible changes
 ==============================

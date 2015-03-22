@@ -953,14 +953,14 @@ def moment(a, moment=1, axis=0):
             else:
                 current_n /= 2
             n_list.append(current_n)
-        
+
         # Starting point for exponentiation by squares
         a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
             s = a_zero_mean**2
-        
+
         # Perform multiplications
         for n in n_list[-2::-1]:
             s = s**2
@@ -1928,6 +1928,7 @@ def obrientransform(*args):
     return np.array(arrays, dtype=dt)
 
 
+@np.deprecate(message="scipy.stats.signaltonoise is deprecated in scipy 0.16.0")
 def signaltonoise(a, axis=0, ddof=0):
     """
     The signal-to-noise ratio of the input data.

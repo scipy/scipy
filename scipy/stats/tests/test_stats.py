@@ -1263,8 +1263,10 @@ class TestVariability(TestCase):
 
         # y = stats.signaltonoise(self.shoes[0])
         # assert_approx_equal(y,4.5709967)
-        y = stats.signaltonoise(self.testcase)
-        assert_approx_equal(y,2.236067977)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            y = stats.signaltonoise(self.testcase)
+        assert_approx_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used:
@@ -1427,13 +1429,13 @@ class TestMoments(TestCase):
 
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
-    
+
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
         #  but very accurate numpy.power() implementation.
         tc_no_mean = self.testcase_moment_accuracy - \
                      np.mean(self.testcase_moment_accuracy)
-        assert_allclose(np.power(tc_no_mean, 42).mean(), 
+        assert_allclose(np.power(tc_no_mean, 42).mean(),
                             stats.moment(self.testcase_moment_accuracy, 42))
 
 
