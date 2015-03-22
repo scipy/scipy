@@ -16,6 +16,10 @@ import numpy as np
 from scipy._lib.six import callable
 from scipy.optimize import _cobyla
 from .optimize import OptimizeResult, _check_unknown_options
+try:
+    from itertools import izip
+except ImportError:
+    izip = zip
 
 
 __all__ = ['fmin_cobyla']
@@ -37,7 +41,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     cons : sequence
         Constraint functions; must all be ``>=0`` (a single function
         if only 1 constraint). Each function takes the parameters `x`
-        as its first argument.
+        as its first argument, and it can return either a single number or
+        an array or list of numbers.
     args : tuple, optional
         Extra arguments to pass to function.
     consargs : tuple, optional
@@ -231,12 +236,24 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         if 'args' not in con:
             con['args'] = ()
 
-    m = len(constraints)
+    # m is the total number of constraint values
+    # it takes into account that some constraints may be vector-valued
+    cons_lengths = []
+    for c in constraints:
+        f = c['fun'](x0, *c['args'])
+        try:
+            cons_length = len(f)
+        except TypeError:
+            cons_length = 1
+        cons_lengths.append(cons_length)
+    m = sum(cons_lengths)
 
     def calcfc(x, con):
         f = fun(x, *args)
-        for k, c in enumerate(constraints):
-            con[k] = c['fun'](x, *c['args'])
+        i = 0
+        for size, c in izip(cons_lengths, constraints):
+            con[i: i + size] = c['fun'](x, *c['args'])
+            i += size
         return f
 
     info = np.zeros(4, np.float64)

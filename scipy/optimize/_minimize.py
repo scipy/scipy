@@ -37,7 +37,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
     """Minimization of scalar function of one or more variables.
-     
+    
     In general, the optimization problems are of the form:
     
     minimize f(x)
@@ -215,7 +215,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
     approximations to the objective function and each constraint. The
-    method wraps a FORTRAN implementation of the algorithm.
+    method wraps a FORTRAN implementation of the algorithm. The
+    constraints functions 'fun' may return either a single number
+    or an array or list of numbers.
 
     Method :ref:`SLSQP <optimize.minimize-slsqp>` uses Sequential
     Least SQuares Programming to minimize a function of several
