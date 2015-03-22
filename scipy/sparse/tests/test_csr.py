@@ -46,7 +46,7 @@ def test_csr_getrowsequence():
         assert_array_almost_equal(Z[[2], :], Zcsr[[2], :].toarray())
         assert_array_almost_equal(Z[[0, 2], :], Zcsr[[0, 2], :].toarray())
         assert_array_almost_equal(Z[[1, 2], :], Zcsr[[1, 2], :].toarray())
-        assert_array_almost_equal(Z[[2, 0], :], Zcsr[[2, 1], :].toarray())
+        assert_array_almost_equal(Z[[2, 0], :], Zcsr[[2, 0], :].toarray())
 
 def test_csr_getrow():
     N = 10
