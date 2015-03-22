@@ -289,8 +289,53 @@ class csr_matrix(_cs_matrix, IndexMixin):
         elif issequence(row):
             # [[1,2],??]
             if isintlike(col) or isinstance(col,slice):
-                P = extractor(row, self.shape[0])     # [[1,2],j] or [[1,2],1:2]
-                return (P*self)[:,col]
+                row_indices = asindices(row)
+
+                # make all indices in [0, self.shape[0])
+                row_indices += (row_indices < 0) * self.shape[0]
+
+                shape = (row_indices.size, self.shape[1])
+
+                # The output array is going to have a bunch of contiguous
+                # slices of the data and indices arrays. Let's compute the
+                # endpoints of these slices.
+                starts = self.indptr[row_indices]
+                ends = self.indptr[row_indices + 1]
+                lens = ends - starts
+
+                range_starts = lens.cumsum()
+
+                # indptr of output
+                indptr = np.hstack((0, range_starts))
+
+                # data and indices are only nonzero if we are slicing any data
+                data = np.array([], dtype=self.data.dtype)
+                indices = np.array([], dtype=np.intp)
+                if np.count_nonzero(lens) != 0:
+                    # data and indices aren't affected by empty rows, so we can
+                    # only consider non-zero rows and columns
+                    range_starts, uniq_idx = np.unique(range_starts,
+                                                       return_index=True)
+                    starts = starts[uniq_idx]
+                    ends = ends[uniq_idx]
+
+                    # we'll modify idxs to refer to the elements we want from data
+                    # and indices.
+                    idxs = np.ones(range_starts[-1], dtype=np.intp)
+                    idxs[0] = starts[0]
+                    idxs[range_starts[:-1]] += starts[1:] - ends[:-1]
+                    idxs = idxs.cumsum()
+
+                    data = self.data[idxs]
+                    indices = self.indices[idxs]
+
+                sliced = csr_matrix((data, indices, indptr), shape=shape)
+
+                # avoid extra copy when possible
+                if col == slice(None, None, None):
+                    return sliced
+                else:
+                    return sliced[:, col]
 
         if not (issequence(col) and issequence(row)):
             # Sample elementwise

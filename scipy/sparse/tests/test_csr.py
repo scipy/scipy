@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, run_module_suite, assert_
+from scipy._lib.six import xrange
 from scipy.sparse import csr_matrix
 
 
@@ -28,6 +29,25 @@ def test_csr_rowslice():
         for sl in slices:
             yield _check_csr_rowslice, i, sl, X, Xcsr
 
+def test_csr_getrowsequence():
+    N = 3
+    np.random.seed(0)
+    X = np.random.random((N, N))
+
+    # test over all 2 ** (N ** 2) sparsity patterns on NxN matrix
+    for i in xrange(2 ** (N ** 2)):
+        bits = [int(c) for c in bin(i)[2:]]
+        if len(bits) < (N ** 2):
+            bits = ([0] * (N ** 2 - len(bits))) + bits
+
+        Z = X * np.array(bits, dtype=np.int).reshape((N, N))
+        Zcsr = csr_matrix(Z)
+
+        assert_array_almost_equal(Z[[0], :], Zcsr[[0], :].toarray())
+        assert_array_almost_equal(Z[[2], :], Zcsr[[2], :].toarray())
+        assert_array_almost_equal(Z[[0, 2], :], Zcsr[[0, 2], :].toarray())
+        assert_array_almost_equal(Z[[1, 2], :], Zcsr[[1, 2], :].toarray())
+        assert_array_almost_equal(Z[[2, 0], :], Zcsr[[2, 0], :].toarray())
 
 def test_csr_getrow():
     N = 10
