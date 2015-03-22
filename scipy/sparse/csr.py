@@ -289,7 +289,11 @@ class csr_matrix(_cs_matrix, IndexMixin):
         elif issequence(row):
             # [[1,2],??]
             if isintlike(col) or isinstance(col,slice):
-                row_indices = np.asarray(row)
+                row_indices = asindices(row)
+
+                # make all indices in [0, self.shape[0])
+                row_indices += (row_indices < 0) * self.shape[0]
+
                 shape = (row_indices.size, self.shape[1])
 
                 # The output array is going to have a bunch of contiguous
