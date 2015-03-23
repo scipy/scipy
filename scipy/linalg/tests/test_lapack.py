@@ -153,8 +153,8 @@ class TestLeastSquaresSolvers(TestCase):
             lwork = np.int(np.real(work))
             iwork_size = iwork
 
-            x, s, rank, work, iwork, info = gelsd(a1, b1, lwork, iwork_size,
-                                                  -1, False, False)
+            x, s, rank, info = gelsd(a1, b1, lwork, iwork_size,
+                                    -1, False, False)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
                                             14.999999999999991], dtype=dtype),
                                             rtol=25*np.finfo(dtype).eps)
@@ -177,13 +177,13 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work,rwork,iwork,info = gelsd_lwork(m,n,nrhs,-1)
+            work, rwork, iwork, info = gelsd_lwork(m,n,nrhs,-1)
             lwork = np.int(np.real(work))
             rwork_size = np.int(rwork)
             iwork_size = iwork
 
-            x, s, rank, work, rwork, iwork, info = gelsd(a1, b1, lwork,
-                                    rwork_size, iwork_size, -1, False, False)
+            x, s, rank, info = gelsd(a1, b1, lwork, rwork_size, iwork_size,
+                                     -1, False, False)
             assert_allclose(x[:-1],
                             np.array([1.161753632288328-1.901075709391912j,
                                       1.735882340522193+1.521240901196909j],
@@ -263,12 +263,12 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work,info = gelsy_lwork(m,n,nrhs,10*np.finfo(dtype).eps)
+            work, info = gelsy_lwork(m,n,nrhs,10*np.finfo(dtype).eps)
             lwork = np.int(np.real(work))
 
             jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
-            v,x,j,rank,work,info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,
-                                         lwork, False, False)
+            v, x, j, rank, info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,
+                                        lwork, False, False)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
                                             14.999999999999991], dtype=dtype),
                                             rtol=25*np.finfo(dtype).eps)
@@ -287,13 +287,12 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work,info = gelsy_lwork(m,n,nrhs,10*np.finfo(dtype).eps)
+            work, info = gelsy_lwork(m,n,nrhs,10*np.finfo(dtype).eps)
             lwork = np.int(np.real(work))
 
             jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
-            v,x,j,rank,work,info = gelsy(a1, b1, jptv,
-                                               np.finfo(dtype).eps,
-                                                lwork, False, False)
+            v, x, j, rank, info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,
+                                        lwork, False, False)
             assert_allclose(x[:-1],
                             np.array([1.161753632288328-1.901075709391912j,
                                       1.735882340522193+1.521240901196909j],
