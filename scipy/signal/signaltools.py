@@ -140,6 +140,7 @@ def correlate(in1, in2, mode='full'):
     >>> ax_corr.axhline(0.5, ls=':')
     >>> ax_corr.set_title('Cross-correlated with rectangular pulse')
     >>> ax_orig.margins(0, 0.1)
+    >>> fig.tight_layout()
     >>> fig.show()
 
     """
@@ -304,6 +305,7 @@ def fftconvolve(in1, in2, mode="full"):
     >>> ax_orig.set_title('White noise')
     >>> ax_mag.plot(np.arange(-len(sig)+1,len(sig)), autocorr)
     >>> ax_mag.set_title('Autocorrelation')
+    >>> fig.tight_layout()
     >>> fig.show()
 
     Gaussian blur implemented using FFT convolution.  Notice the dark borders
@@ -418,6 +420,29 @@ def convolve(in1, in2, mode='full'):
     --------
     numpy.polymul : performs polynomial multiplication (same operation, but
                     also accepts poly1d objects)
+
+    Examples
+    --------
+    Smooth a square pulse using a Hann window:
+
+    >>> from scipy import signal
+    >>> sig = np.repeat([0., 1., 0.], 100)
+    >>> win = signal.hann(50)
+    >>> filtered = signal.convolve(sig, win, mode='same') / sum(win)
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, (ax_orig, ax_win, ax_filt) = plt.subplots(3, 1, sharex=True)
+    >>> ax_orig.plot(sig)
+    >>> ax_orig.set_title('Original pulse')
+    >>> ax_orig.margins(0, 0.1)
+    >>> ax_win.plot(win)
+    >>> ax_win.set_title('Filter impulse response')
+    >>> ax_win.margins(0, 0.1)
+    >>> ax_filt.plot(filtered)
+    >>> ax_filt.set_title('Filtered signal')
+    >>> ax_filt.margins(0, 0.1)
+    >>> fig.tight_layout()
+    >>> fig.show()
 
     """
     volume = asarray(in1)
