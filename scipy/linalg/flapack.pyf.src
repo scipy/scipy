@@ -818,9 +818,9 @@ interface
 
    end subroutine <prefix2>gelss_lwork
 
-   subroutine <prefix2>gelsy(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
+   subroutine <prefix2>gelsy(m,n,maxmn,minmn,nrhs,a,b,jptv,cond,r,work,lwork,info)
 
-   ! v,x,j,rank,work,info = dgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
+   ! v,x,j,rank,info = dgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
    ! Solve Minimize 2-norm(A * X - B).
 
      callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,jptv,&cond,&r,work,&lwork,&info)
@@ -829,6 +829,7 @@ interface
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+     integer intent(hide),depend(m,n):: minmn = MIN(m,n)
      <ftype2> dimension(m,n),intent(in,out,copy,out=v) :: a
 
      integer depend(b),intent(hide):: nrhs = shape(b,1)
@@ -840,8 +841,9 @@ interface
      integer intent(in,out,out=j),dimension(n),depend(n) :: jptv
 
      ! LWORK is obtained by the query call
-     integer intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1) :: lwork
-     <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     integer intent(in),depend(nrhs,m,n,minmn) :: lwork 
+     check(lwork>=MAX(minmn+3*n+1, 2*minmn*nrhs)) :: lwork
+     <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
      integer intent(out)::info
 
    end subroutine <prefix2>gelsy
@@ -873,9 +875,9 @@ interface
 
    end subroutine <prefix2>gelsy_lwork
 
-   subroutine <prefix2c>gelsy(m,n,maxmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork,info)
+   subroutine <prefix2c>gelsy(m,n,maxmn,minmn,nrhs,a,b,jptv,cond,r,work,lwork,rwork,info)
 
-   ! v,x,j,rank,work,rwork,info = zgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
+   ! v,x,j,rank,info = zgelsy(a,b,jptv,cond,lwork,overwrite_a=True,overwrite_b=True)
    ! Solve Minimize 2-norm(A * X - B).
 
      callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,jptv,&cond,&r,work,&lwork,rwork,&info)
@@ -884,6 +886,7 @@ interface
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
+     integer intent(hide), depend(m,n) :: minmn = MIN(m,n)
      <ftype2c> dimension(m,n),intent(in,out,copy,out=v) :: a
 
      integer depend(b),intent(hide):: nrhs = shape(b,1)
@@ -895,9 +898,10 @@ interface
      integer intent(in,out,out=j),dimension(n),depend(n) :: jptv
 
      ! LWORK is obtained by the query call
-     integer intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1) :: lwork
-     <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
-     <ftype2> dimension(2*n),intent(hide),depend(n) :: rwork
+     integer intent(in),depend(nrhs,m,n,minmn) :: lwork
+     check(lwork>=minmn+MAX(MAX(2*minmn, n+1), minmn+nrhs)) :: lwork
+     <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+     <ftype2> dimension(2*n),intent(hide,cache),depend(n) :: rwork
      integer intent(out)::info
 
    end subroutine <prefix2c>gelsy
@@ -932,7 +936,7 @@ interface
 
    subroutine <prefix2>gelsd(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_iwork,iwork,info)
 
-   ! x,s,rank,work,iwork,info = dgelsd(a,b,lwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
+   ! x,s,rank,info = dgelsd(a,b,lwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
    ! Solve Minimize 2-norm(A * X - B).
     
      callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,iwork,&info)
@@ -952,13 +956,13 @@ interface
      integer intent(out,out=rank) :: r
      <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
 	
-     integer intent(in),check(lwork>=1||lwork==-1) :: lwork
+     integer intent(in),check(lwork>=1) :: lwork
      ! Impossible to calculate lwork explicitly, need to obtain it from query call first
      ! Same for size_iwork
-     <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
 
      integer intent(in) :: size_iwork
-     integer intent(out),dimension(size_iwork),depend(size_iwork) :: iwork	
+     integer intent(cache,hide),dimension(MAX(1,size_iwork)),depend(size_iwork) :: iwork	
      integer intent(out)::info
 
    end subroutine <prefix2>gelsd
@@ -994,7 +998,7 @@ interface
 
    subroutine <prefix2c>gelsd(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,size_rwork,rwork, size_iwork,iwork,info)
 
-   ! x,s,rank,work,rwork,iwork,info = zgelsd(a,b,lwork,size_rwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
+   ! x,s,rank,info = zgelsd(a,b,lwork,size_rwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
    ! Solve Minimize 2-norm(A * X - B).
 
      callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork, rwork, iwork,&info)
@@ -1017,13 +1021,13 @@ interface
      integer intent(in),check(lwork>=1||lwork==-1) :: lwork
      ! Impossible to calculate lwork explicitly, need to obtain it from query call first
      ! Same for size_rwork, size_iwork
-     <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
+     <ftype2c> dimension(MAX(lwork,1)),intent(cache,hide),depend(lwork) :: work
 
      integer intent(in) :: size_rwork
-     <ftype2> intent(out),dimension(size_rwork),depend(size_rwork) :: rwork
+     <ftype2> intent(cache,hide),dimension(MAX(1,size_rwork)),depend(size_rwork) :: rwork
 
      integer intent(in) :: size_iwork
-     integer intent(out),dimension(size_iwork),depend(size_iwork) :: iwork	
+     integer intent(cache,hide),dimension(MAX(1,size_iwork)),depend(size_iwork) :: iwork	
      integer intent(out)::info
 
    end subroutine <prefix2c>gelsd
