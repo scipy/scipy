@@ -107,8 +107,19 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
 
 
 def sign_round_up(X):
-    # differs from numpy sign in the way it handles entries that are zero
-    return np.sign(np.sign(X) + 0.5)
+    """
+    This should do the right thing for both real and complex matrices.
+
+    From Higham and Tisseur:
+    "Everything in this section remains valid for complex matrices
+    provided that sign(A) is redefined as the matrix (aij / |aij|)
+    (and sign(0) = 1) transposes are replaced by conjugate transposes.
+
+    """
+    Y = X.copy()
+    Y[Y == 0] = 1
+    Y /= np.abs(Y)
+    return Y
 
 
 def elementary_vector(n, i):
