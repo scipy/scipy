@@ -40,6 +40,9 @@ square root of the i-th updated eigenvalue of a positive symmetric rank-one
 modification to a positive diagonal matrix. See its LAPACK documentation and
 unit tests for it to get more info.
 
+Added two extra wrappers for LAPACK least-square solvers. Namely, they are 
+*gelsd and *gelsy.
+
 `scipy.signal` improvements
 ---------------------------
 
