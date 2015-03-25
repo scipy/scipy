@@ -254,9 +254,6 @@ class Akima1DInterpolator(PPoly):
     y : ndarray, shape (m, ...)
         N-D array of real values. The length of *y* along the first axis must
         be equal to the length of *x*.
-    axis : int, optional
-        Specifies the axis of *y* along which to interpolate. Interpolation
-        defaults to the last axis of *y*.
 
     Methods
     -------
