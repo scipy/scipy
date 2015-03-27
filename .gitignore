@@ -147,6 +147,8 @@ scipy/linalg/_interpolativemodule.c
 scipy/linalg/_solve_toeplitz.c
 scipy/linalg/cblas.pyf
 scipy/linalg/clapack.pyf
+scipy/linalg/cython_blas.c
+scipy/linalg/cython_lapack.c
 scipy/linalg/fblas.pyf
 scipy/linalg/flapack.pyf
 scipy/linalg/src/id_dist/src/*_subr_*.f
