@@ -46,7 +46,7 @@ def norm(x, ord=None, axis=None):
 
     Returns
     -------
-    n : float or matrix
+    n : float or ndarray
 
     Notes
     -----
