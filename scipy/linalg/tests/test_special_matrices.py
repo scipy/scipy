@@ -259,6 +259,11 @@ class TestBlockDiag:
         a = block_diag()
         assert_equal(a.ndim, 2)
         assert_equal(a.nbytes, 0)
+    
+    def test_empty_matrix_arg(self):
+        # regression test for gh-4596: check the shape of the result for empty matrix inputs
+        a = block_diag([[1, 0], [0, 1]], [], [[2, 3], [4, 5], [6, 7]])
+        assert_array_equal(a, [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 2, 3], [0, 0, 4, 5], [0, 0, 6, 7]])
 
 
 class TestKron:

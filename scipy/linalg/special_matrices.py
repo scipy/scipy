@@ -528,7 +528,7 @@ def block_diag(*arrs):
         raise ValueError("arguments in the following positions have dimension "
                          "greater than 2: %s" % bad_args)
 
-    shapes = np.array([a.shape for a in arrs])
+    shapes = np.array([a.shape if a.size > 0 else [0, 0] for a in arrs])
     out = np.zeros(np.sum(shapes, axis=0), dtype=arrs[0].dtype)
 
     r, c = 0, 0
