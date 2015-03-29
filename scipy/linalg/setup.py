@@ -130,8 +130,6 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_dir('tests')
 
-    config.add_data_dir('benchmarks')
-
     # Cython BLAS/LAPACK
     config.add_data_files('cython_blas.pxd')
     config.add_data_files('cython_lapack.pxd')
