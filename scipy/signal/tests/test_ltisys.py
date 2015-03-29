@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, assert_raises, TestCase, run_module_suite)
 from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
-                                 bode, freqresp, impulse, step,
+                                 bode, freqresp, lsim, impulse, step,
                                  abcd_normalize, place_poles)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
@@ -308,6 +308,91 @@ class TestSS2TF:
         assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
+class TestLsim(object):
+    def lti_nowarn(self, *args):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
+            system = lti(*args)
+        return system
+
+    def test_first_order(self):
+        # y' = -y
+        # exact solution is y(t) = exp(-t)
+        system = self.lti_nowarn(-1.,1.,1.,0.)
+        t = np.linspace(0,5)
+        u = np.zeros_like(t)
+        tout, y, x = lsim(system, u, t, X0=[1.0])
+        expected_x = np.exp(-tout)
+        assert_almost_equal(x, expected_x)
+        assert_almost_equal(y, expected_x)
+
+    def test_integrator(self):
+        # integrator: y' = u
+        system = self.lti_nowarn(0., 1., 1., 0.)
+        t = np.linspace(0,5)
+        u = t
+        tout, y, x = lsim(system, u, t)
+        expected_x = 0.5 * tout**2
+        assert_almost_equal(x, expected_x)
+        assert_almost_equal(y, expected_x)
+
+    def test_double_integrator(self):
+        # double integrator: y'' = 2u
+        A = np.mat("0. 1.; 0. 0.")
+        B = np.mat("0.; 1.")
+        C = np.mat("2. 0.")
+        system = self.lti_nowarn(A, B, C, 0.)
+        t = np.linspace(0,5)
+        u = np.ones_like(t)
+        tout, y, x = lsim(system, u, t)
+        expected_x = np.transpose(np.array([0.5 * tout**2, tout]))
+        expected_y = tout**2
+        assert_almost_equal(x, expected_x)
+        assert_almost_equal(y, expected_y)
+
+    def test_jordan_block(self):
+        # Non-diagonalizable A matrix
+        #   x1' + x1 = x2
+        #   x2' + x2 = u
+        #   y = x1
+        # Exact solution with u = 0 is y(t) = t exp(-t)
+        A = np.mat("-1. 1.; 0. -1.")
+        B = np.mat("0.; 1.")
+        C = np.mat("1. 0.")
+        system = self.lti_nowarn(A, B, C, 0.)
+        t = np.linspace(0,5)
+        u = np.zeros_like(t)
+        tout, y, x = lsim(system, u, t, X0=[0.0, 1.0])
+        expected_y = tout * np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_miso(self):
+        # A system with two state variables, two inputs, and one output.
+        A = np.array([[-1.0, 0.0], [0.0, -2.0]])
+        B = np.array([[1.0, 0.0], [0.0, 1.0]])
+        C = np.array([1.0, 0.0])
+        D = np.zeros((1,2))
+        system = self.lti_nowarn(A, B, C, D)
+
+        t = np.linspace(0, 5.0, 101)
+        u = np.zeros_like(t)
+        tout, y, x = lsim(system, u, t, X0=[1.0, 1.0])
+        expected_y = np.exp(-tout)
+        expected_x0 = np.exp(-tout)
+        expected_x1 = np.exp(-2.0*tout)
+        assert_almost_equal(y, expected_y)
+        assert_almost_equal(x[:,0], expected_x0)
+        assert_almost_equal(x[:,1], expected_x1)
+
+    def test_nonzero_initial_time(self):
+        system = self.lti_nowarn(-1.,1.,1.,0.)
+        t = np.linspace(1,2)
+        u = np.zeros_like(t)
+        tout, y, x = lsim(system, u, t, X0=[1.0])
+        expected_y = np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+
 class Test_lsim2(object):
 
     def test_01(self):
@@ -435,6 +520,15 @@ class _TestImpulseFuncs(object):
         expected_y = np.ones_like(tout)
         assert_almost_equal(y, expected_y)
 
+    def test_06(self):
+        # Second order system with a repeated root:
+        #     x''(t) + 2*x(t) + x(t) = u(t)
+        # The exact impulse response is t*exp(-t).
+        system = ([1.0], [1.0, 2.0, 1.0])
+        tout, y = self.func(system)
+        expected_y = tout * np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
     def test_array_like(self):
         # Test that function can accept sequences, scalars.
         system = ([1.0], [1.0, 2.0, 1.0])
@@ -442,24 +536,14 @@ class _TestImpulseFuncs(object):
         tout, y = self.func(system, X0=[3], T=[5, 6])
         tout, y = self.func(system, X0=[3], T=[5])
 
-
-class TestImpulse2(_TestImpulseFuncs):
-    def setup(self):
-        self.func = impulse2
-
     def test_array_like2(self):
         system = ([1.0], [1.0, 2.0, 1.0])
         tout, y = self.func(system, X0=3, T=5)
 
-    def test_06(self):
-        # Second order system with a repeated root:
-        #     x''(t) + 2*x(t) + x(t) = u(t)
-        # The exact impulse response is t*exp(-t).
-        # Doesn't pass for `impulse` (on some systems, see gh-2654)
-        system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y = self.func(system)
-        expected_y = tout * np.exp(-tout)
-        assert_almost_equal(y, expected_y)
+
+class TestImpulse2(_TestImpulseFuncs):
+    def setup(self):
+        self.func = impulse2
 
 
 class TestImpulse(_TestImpulseFuncs):
@@ -508,6 +592,23 @@ class _TestStepFuncs(object):
         system = ([1.0],[1.0,1.0])
         tout, y = self.func(system, X0=[3.0])
         expected_y = 1 + 2.0*np.exp(-tout)
+        assert_almost_equal(y, expected_y)
+
+    def test_05(self):
+        # Simple integrator: x'(t) = u(t)
+        # Exact step response is x(t) = t.
+        system = ([1.0],[1.0,0.0])
+        tout, y = self.func(system)
+        expected_y = tout
+        assert_almost_equal(y, expected_y)
+
+    def test_06(self):
+        # Second order system with a repeated root:
+        #     x''(t) + 2*x(t) + x(t) = u(t)
+        # The exact step response is 1 - (1 + t)*exp(-t).
+        system = ([1.0], [1.0, 2.0, 1.0])
+        tout, y = self.func(system)
+        expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_array_like(self):
