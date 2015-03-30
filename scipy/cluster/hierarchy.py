@@ -1188,63 +1188,32 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     """
     R = np.asarray(R, order='c')
     valid = True
+    nameStr = "%r " % name if name else ''
     try:
         if type(R) != np.ndarray:
-            if name:
-                raise TypeError(('Variable \'%s\' passed as inconsistency '
-                                'matrix is not a numpy array.') % name)
-            else:
-                raise TypeError('Variable passed as inconsistency matrix '
-                                'is not a numpy array.')
+            raise TypeError('Variable %spassed as inconsistency matrix is not '
+                            'a numpy array.' % nameStr)
         if R.dtype != np.double:
-            if name:
-                raise TypeError(('Inconsistency matrix \'%s\' must contain '
-                                 'doubles (double).') % name)
-            else:
-                raise TypeError('Inconsistency matrix must contain doubles '
-                                '(double).')
+            raise TypeError('Inconsistency matrix %smust contain doubles '
+                            '(double).' % nameStr)
         if len(R.shape) != 2:
-            if name:
-                raise ValueError(('Inconsistency matrix \'%s\' must have '
-                                  'shape=2 (i.e. be two-dimensional).') % name)
-            else:
-                raise ValueError('Inconsistency matrix must have shape=2 '
-                                 '(i.e. be two-dimensional).')
+            raise ValueError('Inconsistency matrix %smust have shape=2 (i.e. '
+                             'be two-dimensional).' % nameStr)
         if R.shape[1] != 4:
-            if name:
-                raise ValueError(('Inconsistency matrix \'%s\' must have 4 '
-                                  'columns.') % name)
-            else:
-                raise ValueError('Inconsistency matrix must have 4 columns.')
+            raise ValueError('Inconsistency matrix %smust have 4 columns.' %
+                             nameStr)
         if R.shape[0] < 1:
-            if name:
-                raise ValueError(('Inconsistency matrix \'%s\' must have at '
-                                  'least one row.') % name)
-            else:
-                raise ValueError('Inconsistency matrix must have at least '
-                                 'one row.')
+            raise ValueError('Inconsistency matrix %smust have at least one '
+                             'row.' % nameStr)
         if (R[:, 0] < 0).any():
-            if name:
-                raise ValueError(('Inconsistency matrix \'%s\' contains '
-                                  'negative link height means.') % name)
-            else:
-                raise ValueError('Inconsistency matrix contains negative '
-                                 'link height means.')
+            raise ValueError('Inconsistency matrix %scontains negative link '
+                             'height means.' % nameStr)
         if (R[:, 1] < 0).any():
-            if name:
-                raise ValueError(('Inconsistency matrix \'%s\' contains '
-                                  'negative link height standard '
-                                  'deviations.') % name)
-            else:
-                raise ValueError('Inconsistency matrix contains negative '
-                                 'link height standard deviations.')
+            raise ValueError('Inconsistency matrix %scontains negative link '
+                             'height standard deviations.' % nameStr)
         if (R[:, 2] < 0).any():
-            if name:
-                raise ValueError(('Inconsistency matrix \'%s\' contains '
-                                  'negative link counts.') % name)
-            else:
-                raise ValueError('Inconsistency matrix contains negative '
-                                 'link counts.')
+            raise ValueError('Inconsistency matrix %scontains negative link '
+                             'counts.' % nameStr)
     except Exception as e:
         if throw:
             raise
@@ -1289,69 +1258,38 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     """
     Z = np.asarray(Z, order='c')
     valid = True
+    nameStr = "%r " % name if name else ''
     try:
         if type(Z) != np.ndarray:
-            if name:
-                raise TypeError(('\'%s\' passed as a linkage is not a valid '
-                                 'array.') % name)
-            else:
-                raise TypeError('Variable is not a valid array.')
+            raise TypeError('Passed linkage argument %sis not a valid array.' %
+                            nameStr)
         if Z.dtype != np.double:
-            if name:
-                raise TypeError('Linkage matrix \'%s\' must contain doubles.'
-                                % name)
-            else:
-                raise TypeError('Linkage matrix must contain doubles.')
+            raise TypeError('Linkage matrix %smust contain doubles.' % nameStr)
         if len(Z.shape) != 2:
-            if name:
-                raise ValueError(('Linkage matrix \'%s\' must have shape=2 '
-                                  '(i.e. be two-dimensional).') % name)
-            else:
-                raise ValueError('Linkage matrix must have shape=2 '
-                                 '(i.e. be two-dimensional).')
+            raise ValueError('Linkage matrix %smust have shape=2 (i.e. be '
+                             'two-dimensional).' % nameStr)
         if Z.shape[1] != 4:
-            if name:
-                raise ValueError('Linkage matrix \'%s\' must have 4 columns.'
-                                 % name)
-            else:
-                raise ValueError('Linkage matrix must have 4 columns.')
+            raise ValueError('Linkage matrix %smust have 4 columns.' % nameStr)
         if Z.shape[0] == 0:
             raise ValueError('Linkage must be computed on at least two '
                              'observations.')
         n = Z.shape[0]
         if n > 1:
             if ((Z[:, 0] < 0).any() or (Z[:, 1] < 0).any()):
-                if name:
-                    raise ValueError(('Linkage \'%s\' contains negative '
-                                      'indices.') % name)
-                else:
-                    raise ValueError('Linkage contains negative indices.')
+                raise ValueError('Linkage %scontains negative indices.' %
+                                 nameStr)
             if (Z[:, 2] < 0).any():
-                if name:
-                    raise ValueError(('Linkage \'%s\' contains negative '
-                                      'distances.') % name)
-                else:
-                    raise ValueError('Linkage contains negative distances.')
+                raise ValueError('Linkage %scontains negative distances.' %
+                                 nameStr)
             if (Z[:, 3] < 0).any():
-                if name:
-                    raise ValueError('Linkage \'%s\' contains negative counts.'
-                                     % name)
-                else:
-                    raise ValueError('Linkage contains negative counts.')
+                raise ValueError('Linkage %scontains negative counts.' %
+                                 nameStr)
         if _check_hierarchy_uses_cluster_before_formed(Z):
-            if name:
-                raise ValueError(('Linkage \'%s\' uses non-singleton cluster '
-                                  'before its formed.') % name)
-            else:
-                raise ValueError("Linkage uses non-singleton cluster before "
-                                 "it's formed.")
+            raise ValueError('Linkage %suses non-singleton cluster before '
+                             'it is formed.' % nameStr)
         if _check_hierarchy_uses_cluster_more_than_once(Z):
-            if name:
-                raise ValueError(('Linkage \'%s\' uses the same cluster more '
-                                  'than once.') % name)
-            else:
-                raise ValueError('Linkage uses the same cluster more than '
-                                 'once.')
+            raise ValueError('Linkage %suses the same cluster more than once.'
+                             % nameStr)
     except Exception as e:
         if throw:
             raise
