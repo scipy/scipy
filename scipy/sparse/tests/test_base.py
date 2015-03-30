@@ -3271,6 +3271,30 @@ class TestCSR(sparse_test_class()):
         M.sum_duplicates()
         assert_equal(2, len(M.indices))  # unaffected content
 
+    def test_scalar_idx_dtype(self):
+        # Check that index dtype takes into account all parameters
+        # passed to sparsetools, including the scalar ones
+        indptr = np.zeros(2, dtype=np.int32)
+        indices = np.zeros(0, dtype=np.int32)
+        vals = np.zeros(0)
+        a = csr_matrix((vals, indices, indptr), shape=(1, 2**31-1))
+        b = csr_matrix((vals, indices, indptr), shape=(1, 2**31))
+        ij = np.zeros((2, 0), dtype=np.int32)
+        c = csr_matrix((vals, ij), shape=(1, 2**31-1))
+        d = csr_matrix((vals, ij), shape=(1, 2**31))
+        e = csr_matrix((1, 2**31-1))
+        f = csr_matrix((1, 2**31))
+        assert_equal(a.indptr.dtype, np.int32)
+        assert_equal(b.indptr.dtype, np.int64)
+        assert_equal(c.indptr.dtype, np.int32)
+        assert_equal(d.indptr.dtype, np.int64)
+        assert_equal(e.indptr.dtype, np.int32)
+        assert_equal(f.indptr.dtype, np.int64)
+
+        # These shouldn't fail
+        for x in [a, b, c, d, e, f]:
+            x + x
+
 
 class TestCSC(sparse_test_class()):
     spmatrix = csc_matrix
@@ -3386,6 +3410,30 @@ class TestCSC(sparse_test_class()):
         if isspmatrix(SIJ):
             SIJ = SIJ.todense()
         assert_equal(SIJ, D[I,J])
+
+    def test_scalar_idx_dtype(self):
+        # Check that index dtype takes into account all parameters
+        # passed to sparsetools, including the scalar ones
+        indptr = np.zeros(2, dtype=np.int32)
+        indices = np.zeros(0, dtype=np.int32)
+        vals = np.zeros(0)
+        a = csc_matrix((vals, indices, indptr), shape=(2**31-1, 1))
+        b = csc_matrix((vals, indices, indptr), shape=(2**31, 1))
+        ij = np.zeros((2, 0), dtype=np.int32)
+        c = csc_matrix((vals, ij), shape=(2**31-1, 1))
+        d = csc_matrix((vals, ij), shape=(2**31, 1))
+        e = csr_matrix((1, 2**31-1))
+        f = csr_matrix((1, 2**31))
+        assert_equal(a.indptr.dtype, np.int32)
+        assert_equal(b.indptr.dtype, np.int64)
+        assert_equal(c.indptr.dtype, np.int32)
+        assert_equal(d.indptr.dtype, np.int64)
+        assert_equal(e.indptr.dtype, np.int32)
+        assert_equal(f.indptr.dtype, np.int64)
+
+        # These shouldn't fail
+        for x in [a, b, c, d, e, f]:
+            x + x
 
 
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
@@ -3824,6 +3872,37 @@ class TestBSR(sparse_test_class(getset=False,
     def test_setdiag(self):
         pass
 
+    def test_scalar_idx_dtype(self):
+        # Check that index dtype takes into account all parameters
+        # passed to sparsetools, including the scalar ones
+        indptr = np.zeros(2, dtype=np.int32)
+        indices = np.zeros(0, dtype=np.int32)
+        vals = np.zeros((0, 1, 1))
+        a = bsr_matrix((vals, indices, indptr), shape=(1, 2**31-1))
+        b = bsr_matrix((vals, indices, indptr), shape=(1, 2**31))
+        c = bsr_matrix((1, 2**31-1))
+        d = bsr_matrix((1, 2**31))
+        assert_equal(a.indptr.dtype, np.int32)
+        assert_equal(b.indptr.dtype, np.int64)
+        assert_equal(c.indptr.dtype, np.int32)
+        assert_equal(d.indptr.dtype, np.int64)
+
+        try:
+            vals2 = np.zeros((0, 1, 2**31-1))
+            vals3 = np.zeros((0, 1, 2**31))
+            e = bsr_matrix((vals2, indices, indptr), shape=(1, 2**31-1))
+            f = bsr_matrix((vals3, indices, indptr), shape=(1, 2**31))
+            assert_equal(e.indptr.dtype, np.int32)
+            assert_equal(f.indptr.dtype, np.int64)
+        except (MemoryError, ValueError):
+            # May fail on 32-bit Python
+            e = 0
+            f = 0
+
+        # These shouldn't fail
+        for x in [a, b, c, d, e, f]:
+            x + x
+
 
 #------------------------------------------------------------------------------
 # Tests for non-canonical representations (with duplicates, unsorted indices)
@@ -3989,7 +4068,8 @@ class Test64Bit(object):
     # The following features are missing, so skip the tests:
     SKIP_TESTS = {
         'test_expm': 'expm for 64-bit indices not available',
-        'test_solve': 'linsolve for 64-bit indices not available'
+        'test_solve': 'linsolve for 64-bit indices not available',
+        'test_scalar_idx_dtype': 'test implemented in base class',
     }
 
     def _create_some_matrix(self, mat_cls, m, n):
@@ -4126,6 +4206,7 @@ class Test64Bit(object):
 
         check_limited()
         check_unlimited()
+
 
 if __name__ == "__main__":
     run_module_suite()

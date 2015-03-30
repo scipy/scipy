@@ -264,9 +264,18 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         }
         else if (*p == 'i') {
             /* Integer scalars */
-            Py_ssize_t value;
+            PY_LONG_LONG value;
 
-            value = PyInt_AsSsize_t(arg_arrays[j]);
+#if PY_VERSION_HEX >= 0x03000000
+            value = PyLong_AsLongLong(arg_arrays[j]);
+#else
+            if (PyInt_Check(arg_arrays[j])) {
+                value = PyInt_AsLong(arg_arrays[j]);
+            }
+            else {
+                value = PyLong_AsLongLong(arg_arrays[j]);
+            }
+#endif
             if (PyErr_Occurred()) {
                 goto fail;
             }

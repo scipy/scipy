@@ -37,7 +37,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 # create empty matrix
                 self.shape = arg1   # spmatrix checks for errors here
                 M, N = self.shape
-                idx_dtype = get_index_dtype(maxval=self._swap((M,N))[1])
+                # Select index dtype large enough to pass array and
+                # scalar parameters to sparsetools
+                idx_dtype = get_index_dtype(maxval=max(M,N))
                 self.data = np.zeros(0, getdtype(dtype, default=float))
                 self.indices = np.zeros(0, idx_dtype)
                 self.indptr = np.zeros(self._swap((M,N))[0] + 1, dtype=idx_dtype)
@@ -50,7 +52,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
-                    idx_dtype = get_index_dtype((indices, indptr), check_contents=True)
+
+                    # Select index dtype large enough to pass array and
+                    # scalar parameters to sparsetools
+                    maxval = None
+                    if shape is not None:
+                        maxval = max(shape)
+                    idx_dtype = get_index_dtype((indices, indptr), maxval=maxval, check_contents=True)
+
                     self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
