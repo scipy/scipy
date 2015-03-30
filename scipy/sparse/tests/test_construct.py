@@ -4,13 +4,14 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array, matrix
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-        assert_array_equal, assert_raises, assert_array_almost_equal_nulp
+from numpy.testing import (TestCase, run_module_suite, assert_equal, assert_,
+        assert_array_equal, assert_raises, assert_array_almost_equal_nulp)
 
 from scipy.sparse import csr_matrix, coo_matrix
 
 from scipy.sparse import construct
 from scipy.sparse.construct import rand as sprand
+from scipy.sparse.construct import randn as sprandn
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
@@ -351,35 +352,48 @@ class TestConstructUtils(TestCase):
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
 
+    def test_random_sampling(self):
+        # Simple sanity checks for sparse random sampling.
+        for f in sprand, sprandn:
+            for t in [np.float32, np.float64, np.longdouble]:
+                x = f(5, 10, density=0.1, dtype=t)
+                assert_equal(x.dtype, t)
+                assert_equal(x.shape, (5, 10))
+                assert_equal(x.nonzero()[0].size, 5)
+
+            x1 = f(5, 10, density=0.1, random_state=4321)
+            assert_equal(x1.dtype, np.double)
+
+            x2 = f(5, 10, density=0.1, random_state=np.random.RandomState(4321))
+
+            assert_array_equal(x1.data, x2.data)
+            assert_array_equal(x1.row, x2.row)
+            assert_array_equal(x1.col, x2.col)
+
+            for density in [0.0, 0.1, 0.5, 1.0]:
+                x = f(5, 10, density=density)
+                assert_equal(x.nnz, int(density * np.prod(x.shape)))
+
+            for fmt in ['coo', 'csc', 'csr', 'lil']:
+                x = f(5, 10, format=fmt)
+                assert_equal(x.format, fmt)
+
+            assert_raises(ValueError, lambda: f(5, 10, 1.1))
+            assert_raises(ValueError, lambda: f(5, 10, -0.1))
+
     def test_rand(self):
-        # Simple sanity checks for sparse.rand
-        for t in [np.float32, np.float64, np.longdouble]:
-            x = sprand(5, 10, density=0.1, dtype=t)
-            assert_equal(x.dtype, t)
-            assert_equal(x.shape, (5, 10))
-            assert_equal(x.nonzero()[0].size, 5)
+        # Simple distributional checks for sparse.rand.
+        x = sprand(10, 20, density=0.5, dtype=np.float64, random_state=4321)
+        assert_(np.all(np.less_equal(0, x.data)))
+        assert_(np.all(np.less_equal(x.data, 1)))
 
-        x1 = sprand(5, 10, density=0.1,
-                    random_state=4321)
-        assert_equal(x1.dtype, np.double)
-
-        x2 = sprand(5, 10, density=0.1,
-                    random_state=np.random.RandomState(4321))
-
-        assert_array_equal(x1.data, x2.data)
-        assert_array_equal(x1.row, x2.row)
-        assert_array_equal(x1.col, x2.col)
-
-        for density in [0.0, 0.1, 0.5, 1.0]:
-            x = sprand(5, 10, density=density)
-            assert_equal(x.nnz, int(density * np.prod(x.shape)))
-
-        for fmt in ['coo', 'csc', 'csr', 'lil']:
-            x = sprand(5, 10, format=fmt)
-            assert_equal(x.format, fmt)
-
-        assert_raises(ValueError, lambda: sprand(5, 10, 1.1))
-        assert_raises(ValueError, lambda: sprand(5, 10, -0.1))
+    def test_randn(self):
+        # Simple distributional checks for sparse.randn.
+        # Statistically, some of these should be negative
+        # and some should be greater than 1.
+        x = sprandn(10, 20, density=0.5, dtype=np.float64, random_state=4321)
+        assert_(np.any(np.less(x.data, 0)))
+        assert_(np.any(np.less(1, x.data)))
 
 
 if __name__ == "__main__":
