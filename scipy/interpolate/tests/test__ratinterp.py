@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_less, assert_equal
 
+from scipy._lib.six import xrange
 from scipy.interpolate._ratinterp import floater_hormann, lsq_rational, _sort_and_average_duplicates
 from scipy.special import factorial
 
@@ -15,7 +16,7 @@ def test_floater_hormann_weights():
         # Non-vectorized computation
         n = len(x)
         u = np.zeros((n,), dtype=float)
-        for i in range(n):
+        for i in xrange(n):
             for k in xrange(max(i-d, 0), min(i+1, n-d)):
                 c = 1.0
                 for p in xrange(k, k+d+1):
@@ -30,7 +31,7 @@ def test_floater_hormann_weights():
     y = np.random.rand(31)
     x.sort()
 
-    for d in range(0, x.size+1):
+    for d in xrange(0, x.size+1):
         # Check weights
         u0 = weights(x, min(d, x.size-1))
         ip = floater_hormann(x, y, d=d)
@@ -145,3 +146,47 @@ def test_sort_and_average_duplicates():
     assert_equal(x, [1, 2, 4])
     assert_allclose(y, [[(1+2+4)/3, 3, 5]]*4)
 
+
+def test_polynomials():
+    def func(x):
+        return (1 + 5*x + 2*x**3) / (3j + x + x**2)
+
+    xx = np.linspace(0, 1, 7)
+    ip = lsq_rational(xx, func(xx))
+
+    # Check power basis form (low order so it still works)
+    numer = ip.get_numerator()
+    denom = ip.get_denominator()
+
+    numer_coef = numer.coef / numer.coef[-1]
+    denom_coef = denom.coef / numer.coef[-1]
+    assert_allclose(numer_coef, [0, 0, 0, 2, 0, 5, 1], atol=1e-6)
+    assert_allclose(denom_coef, [0, 0, 0, 0, 1, 1, 3j], atol=1e-6)
+
+    xx = np.linspace(0, 1, 200)
+    assert_allclose(numer(xx)/denom(xx), ip(xx), rtol=1e-8)
+
+    def root_cmp(a, b, radius):
+        a = a[abs(a) < radius]
+        a.sort()
+        b = b[abs(b) < radius]
+        b.sort()
+        assert_allclose(a, b)
+
+    root_cmp(ip.numerator_roots, numer.roots, 1e3)
+    root_cmp(ip.denominator_roots, denom.roots, 1e3)
+
+    # Check barycentric form
+    numer_bary = ip.get_numerator('barycentric')
+    denom_bary = ip.get_denominator('barycentric')
+    assert_allclose(numer_bary(xx), numer(xx))
+    assert_allclose(denom_bary(xx), denom(xx))
+
+    # Check barycentric form (high order should still work)
+    xx = np.linspace(0, 1, 100)
+    yy = np.cos(2*np.pi*xx)
+    ip = floater_hormann(xx, yy)
+    xx = np.linspace(0, 1, 5000)
+    numer = ip.get_numerator('barycentric')
+    denom = ip.get_denominator('barycentric')
+    assert_allclose(numer(xx) / denom(xx), ip(xx))

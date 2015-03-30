@@ -504,7 +504,7 @@ class BarycentricInterpolator(_Interpolator1D):
         self.set_yi(yi)
         self.n = len(self.xi)
 
-        self.wi = np.zeros(self.n)
+        self.wi = np.zeros(self.n, dtype=np.find_common_type([self.xi.dtype, np.inexact], []))
         self.wi[0] = 1
         for j in xrange(1,self.n):
             self.wi[:j] *= (self.xi[j]-self.xi[:j])

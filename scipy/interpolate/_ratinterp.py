@@ -11,10 +11,8 @@ import numpy as np
 from numpy import linspace, pi
 import scipy.linalg
 
-try:
-    from scipy._lib.six import xrange
-except ImportError:
-    from scipy.lib.six import xrange
+from scipy.interpolate import BarycentricInterpolator
+from scipy._lib.six import xrange
 
 
 __all__ = ['floater_hormann', 'lsq_rational',
@@ -145,9 +143,8 @@ class RationalBarycentricInterpolation(object):
 
         Parameters
         ----------
-        format : {'poly1d'}
+        format : {'poly1d', 'barycentric'}
             Format of returned polynomial, see below.
-            Currently only 'poly1d' is available
 
         Returns
         -------
@@ -161,7 +158,9 @@ class RationalBarycentricInterpolation(object):
 
         """
         if format == 'poly1d':
-            return _lagpoly(self.x, self.u * self.y / abs(self.u).max())
+            return _lagpoly_poly1d(self.x, self.u * self.y / abs(self.u).max())
+        elif format == 'barycentric':
+            return _lagpoly_barycentric(self.x, self.u * self.y / abs(self.u).max())
         else:
             raise ValueError("Invalid polynomial format")
 
@@ -171,9 +170,8 @@ class RationalBarycentricInterpolation(object):
 
         Parameters
         ----------
-        format : {'poly1d'}
+        format : {'poly1d', 'barycentric'}
             Format of returned polynomial, see below.
-            Currently only 'poly1d' is available
 
         Returns
         -------
@@ -187,7 +185,9 @@ class RationalBarycentricInterpolation(object):
 
         """
         if format == 'poly1d':
-            return _lagpoly(self.x, self.u / abs(self.u).max())
+            return _lagpoly_poly1d(self.x, self.u / abs(self.u).max())
+        elif format == 'barycentric':
+            return _lagpoly_barycentric(self.x, self.u / abs(self.u).max())
         else:
             raise ValueError("Invalid polynomial format")
 
@@ -224,7 +224,7 @@ class RationalBarycentricInterpolation(object):
         return self._denominator_roots
 
 
-def _lagpoly(x, u):
+def _lagpoly_poly1d(x, u):
     """
     poly1d power-basis representation of the polynomial
 
@@ -240,6 +240,25 @@ def _lagpoly(x, u):
             pt *= np.poly1d([1.0, -x[k]])
         p += pt
     return p
+
+
+def _lagpoly_barycentric(x, u):
+    """
+    Barycentric representation of the polynomial
+
+    .. math:: p(z) = [\prod_n (z - x_n)] \sum_n \frac{u_n}{z - x_n}
+    """
+
+    # XXX: this may underflow (accompanied by overflow inside BarycentricInterpolator)
+
+    # w[i] = \prod_{j != i} (x[i] - x[j])
+    w = np.zeros(len(x), dtype=np.find_common_type([x.dtype, np.inexact], []))
+    w[0] = 1
+    for j in xrange(1, len(x)):
+        w[:j] *= (x[:j] - x[j])
+        w[j] = np.multiply.reduce(x[j] - x[:j])
+
+    return BarycentricInterpolator(x, u * w)
 
 
 def floater_hormann(x, y, d=3):
