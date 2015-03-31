@@ -430,8 +430,8 @@ class TestWelch(TestCase):
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.41666667, 0.38194444, 0.55555556,
-            0.55555556, 0.55555556, 0.55555556, 0.55555556, 0.38194444], 'f')
+        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552, 
+            0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype, 'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
 
@@ -686,8 +686,8 @@ class TestCSD:
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.41666667, 0.38194444, 0.55555556,
-            0.55555556, 0.55555556, 0.55555556, 0.55555556, 0.38194444], 'f')
+        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552, 
+            0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype, 'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
 

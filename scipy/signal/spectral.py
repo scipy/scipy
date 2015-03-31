@@ -271,13 +271,13 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     freqs, Pxx = csd(x, x, fs, window, nperseg, noverlap, nfft, detrend,
                      return_onesided, scaling, axis)
 
-    return freqs, Pxx.real 
+    return freqs, Pxx.real
 
 
 def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
-    Estimate the cross power spectral density, Pxy, using Welch's method. 
+    Estimate the cross power spectral density, Pxy, using Welch's method.
 
     Parameters
     ----------
@@ -286,7 +286,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     y : array_like
         Time series of measurement values
     fs : float, optional
-        Sampling frequency of the `x` and `y` time series in units of Hz. 
+        Sampling frequency of the `x` and `y` time series in units of Hz.
         Defaults to 1.0.
     window : str or tuple or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
@@ -312,11 +312,11 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where Pxy has units of V**2/Hz if x and y are measured in V and 
+        where Pxy has units of V**2/Hz if x and y are measured in V and
         computing the power spectrum ('spectrum') where Pxy has units of V**2
         if x and y are measured in V. Defaults to 'density'.
     axis : int, optional
-        Axis along which the CSD is computed for both inputs; the default is 
+        Axis along which the CSD is computed for both inputs; the default is
         over the last axis (i.e. ``axis=-1``).
 
     Returns
@@ -331,14 +331,14 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     periodogram: Simple, optionally modified periodogram
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
     welch: Power spectral density by Welch's method. [Equivalent to csd(x,x)]
-    coherence: Magnitude squared coherence by Welch's method. 
+    coherence: Magnitude squared coherence by Welch's method.
 
     Notes
     --------
-    By convention, Pxy is computed with the conjugate FFT of X multiplied by 
-    the FFT of Y. 
+    By convention, Pxy is computed with the conjugate FFT of X multiplied by
+    the FFT of Y.
 
-    If the input series differ in length, the shorter series will be 
+    If the input series differ in length, the shorter series will be
     zero-padded to match.
 
     An appropriate amount of overlap will depend on the choice of window
@@ -359,7 +359,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
            Biometrika, vol. 37, pp. 1-16, 1950.
     """
 
-    freqs, Pxy, _ = spectral_helper(x, y, fs, window, nperseg, noverlap, nfft, 
+    freqs, Pxy, _ = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
                                     detrend, return_onesided, scaling, axis,
                                     mode='psd')
 
@@ -376,12 +376,12 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     """
-    Estimate the magnitude squared coherence estimate, Cxy, of discrete-time 
-    signals X and Y using Welch's method. 
-    
-    Cxy = abs(Pxy)**2/(Pxx*Pyy), where Pxx and Pyy are power spectral density 
-    estimates of X and Y, and Pxy is the cross spectral density estimate of X 
-    and Y. 
+    Estimate the magnitude squared coherence estimate, Cxy, of discrete-time
+    signals X and Y using Welch's method.
+
+    Cxy = abs(Pxy)**2/(Pxx*Pyy), where Pxx and Pyy are power spectral density
+    estimates of X and Y, and Pxy is the cross spectral density estimate of X
+    and Y.
 
     Parameters
     ----------
@@ -390,7 +390,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     y : array_like
         Time series of measurement values
     fs : float, optional
-        Sampling frequency of the `x` and `y` time series in units of Hz. 
+        Sampling frequency of the `x` and `y` time series in units of Hz.
         Defaults to 1.0.
     window : str or tuple or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
@@ -411,7 +411,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
         function, it takes a segment and returns a detrended segment.
         If `detrend` is False, no detrending is done.  Defaults to 'constant'.
     axis : int, optional
-        Axis along which the CSD is computed for both inputs; the default is 
+        Axis along which the CSD is computed for both inputs; the default is
         over the last axis (i.e. ``axis=-1``).
 
     Returns
@@ -426,7 +426,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     periodogram: Simple, optionally modified periodogram
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
     welch: Power spectral density by Welch's method.
-    csd: Cross spectral density by Welch's method. 
+    csd: Cross spectral density by Welch's method.
 
     Notes
     --------
@@ -445,21 +445,89 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     return ff, Cxy
 
 
-def spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256, 
-                    noverlap=None, nfft=None, detrend='constant', 
-                    return_onesided=True, scaling='spectrum', axis=-1, 
+def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
+                    noverlap=None, nfft=None, detrend='constant',
+                    return_onesided=True, scaling='spectrum', axis=-1,
                     mode='psd'):
     '''
+    Calculate various forms of windowed FFTs for PSD, CSD, etc.
+
     This is a helper function that implements the commonality between the
-    psd, csd, spectrogram and complex, magnitude, angle, and phase spectrums.
-    Assumes 1D input vectors. nfft<=nperseg (allow zero padding)
+    psd, csd, and spectrogram functions. It is not designed to be called
+    externally. The windows are not averaged over; the result from each window
+    is returned.
+
+    Parameters
+    ---------
+    x : array_like
+        Array or sequence containing the data to be analyzed.
+    y : array_like
+        Array or sequence containing the data to be analyzed. If this is
+        the same object in memoery as x (i.e. _spectral_helper(x, x, ...)),
+        the extra computations are spared.
+    fs : float, optional
+        Sampling frequency of the time series in units of Hz. Defaults
+        to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to 'hanning'.
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256.
+    noverlap : int, optional
+        Number of points to overlap between segments. If None,
+        ``noverlap = nperseg / 2``.  Defaults to None.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        the FFT length is `nperseg`. Defaults to None.
+    detrend : str or function or False, optional
+        Specifies how to detrend each segment. If `detrend` is a string,
+        it is passed as the ``type`` argument to `detrend`.  If it is a
+        function, it takes a segment and returns a detrended segment.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+    return_onesided : bool, optional
+        If True, return a one-sided spectrum for real data. If False return
+        a two-sided spectrum. Note that for complex data, a two-sided
+        spectrum is always returned.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the power spectral density ('density')
+        where Pxx has units of V**2/Hz if x is measured in V and computing
+        the power spectrum ('spectrum') where Pxx has units of V**2 if x is
+        measured in V. Defaults to 'density'.
+    axis : int, optional
+        Axis along which the periodogram is computed; the default is over
+        the last axis (i.e. ``axis=-1``).
+    mode : str, optional
+        Defines what kind of return values are expected. Options are ['psd',
+        'complex', 'magnitude', 'angle', 'phase'].
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    result : ndarray
+        Array of output data, contents dependant on *mode* kwarg.
+    t : ndarray
+        Array of times corresponding to each data segment
+
+    References
+    ----------
+    stackoverflow: Rolling window for 1D arrays in Numpy?
+    <http://stackoverflow.com/a/6811241>
+    stackoverflow: Using strides for an efficient moving average filter
+    <http://stackoverflow.com/a/4947453>
+
+    Notes
+    -----
+    Adapted from matplotlib.mlab
     '''
     if mode not in ['psd', 'complex', 'magnitude', 'angle', 'phase']:
         raise ValueError("Unknown value for mode %s, must be one of: "
                          "'default', 'psd', 'complex', "
                          "'magnitude', 'angle', 'phase'" % mode)
 
-    # If x and y are the same object we can save ourselves some computation. 
+    # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
 
     if not same_data and mode != 'psd':
@@ -473,21 +541,21 @@ def spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     else:
         outdtype = np.result_type(x,np.complex64)
 
-    if x.ndim > 1 or y.ndim > 1:
+    if x.ndim > 1:
         if axis != -1:
             x = np.rollaxis(x, axis, len(x.shape))
-            if not same_data:
+            if not same_data and y.ndim > 1:
                 y = np.rollaxis(y, axis, len(y.shape))
             # Output is going to have new last axis for window index
             if axis < 0:
                 axis = len(np.broadcast(x,y).shape)-axis
 
     if x.size == 0:
-        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape) 
+        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
 
     if not same_data:
         if y.size == 0:
-            return np.empty(y.shape), np.empty(y.shape), np.empty(y.shape) 
+            return np.empty(y.shape), np.empty(y.shape), np.empty(y.shape)
 
         # Check if we can broadcast the outer axes together
         for a, b in zip(x.shape[-2::-1],y.shape[-2::-1]):
@@ -580,9 +648,9 @@ def spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
             numFreqs = nfft//2 + 1
 
     # Stride, detrend, apply windows
-    result = stride_windows(x, nperseg, noverlap, axis=-1)
+    result = _stride_windows(x, nperseg, noverlap, axis=-1)
     result = detrend_func(result)
-    result = apply_window(result, win, axis=-1)
+    result = _apply_window(result, win, axis=-1)
 
     # Zero pad here, now that windowing is done
     padShape = list(result.shape)
@@ -595,9 +663,9 @@ def spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
 
     if not same_data:
         # All the same operations on the y data
-        resultY = stride_windows(y, nfft, noverlap, axis=-1)
+        resultY = _stride_windows(y, nfft, noverlap, axis=-1)
         resultY = detrend_func(resultY)
-        resultY = apply_window(resultY, win, axis=-1)
+        resultY = _apply_window(resultY, win, axis=-1)
         padShape = list(resultY.shape)
         padShape[-1] = nfft - padShape[-1]
         resultY = np.concatenate((resultY, np.zeros(padShape)), axis=-1)
@@ -631,10 +699,10 @@ def spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         result = np.unwrap(result, axis=-1)
 
     result = result.astype(outdtype)
-    
+
     # All imaginary parts are zero anyways
     if same_data:
-        result = result.real 
+        result = result.real
 
     if axis != -1:
         result = np.rollaxis(result, -1, axis)
@@ -642,41 +710,48 @@ def spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     return freqs, result, t
 
 
-def stride_windows(x, n, noverlap=0, axis=-1):
+def _stride_windows(x, n, noverlap=0, axis=-1):
     '''
-    Get all windows of x with length n as a single array,
-    using strides to avoid data duplication.
+    Return all subsegments of an array of data in a memory-efficient manner.
 
-    Last axis of result is the window index
+    Overlapping segments can be returned, using strides to avoid data
+    duplication. The output array contains a new axis, corresponding to the
+    window index.
 
-    .. warning::
-
-        It is not safe to write to the output array.  Multiple
-        elements may point to the same piece of memory,
-        so modifying one value may change others.
-
-    Call signature::
-
-        stride_windows(x, n, noverlap=0)
-
-      *x*: 1D array or sequence
+    Parameters
+    ---------
+    x : array_like
         Array or sequence containing the data.
 
-      *n*: integer
+    n : int
         The number of data points in each window.
 
-      *noverlap*: integer
-        The overlap between adjacent windows.
-        Default is 0 (no overlap)
+    noverlap : int, optional
+        The overlap between adjacent windows. Default is 0 (no overlap)
 
-      *axis*: integer
-        The axis along which to window the data, default is -1 (last axis)
+    axis : int, optional
+        The axis along which the data will be windowed. The default is the last
+        axis (-1).
 
-    Refs:
-        `stackoverflaw: Rolling window for 1D arrays in Numpy?
-        <http://stackoverflow.com/a/6811241>`_
-        `stackoverflaw: Using strides for an efficient moving average filter
-        <http://stackoverflow.com/a/4947453>`_
+    Returns
+    -------
+    xs : ndarray
+        Strided Array
+
+    References
+    ----------
+    stackoverflow: Rolling window for 1D arrays in Numpy?
+    <http://stackoverflow.com/a/6811241>
+    stackoverflow: Using strides for an efficient moving average filter
+    <http://stackoverflow.com/a/4947453>
+
+    Notes
+    -----
+    WARNING: It is not safe to write to the output array. Multiple elements
+    may point to the same piece of memory, so modifying one value may change
+    others.
+
+    Adapted from matplotlib.mlab
     '''
 
     if noverlap >= n:
@@ -711,32 +786,41 @@ def stride_windows(x, n, noverlap=0, axis=-1):
     return result
 
 
-def stride_repeat(x, shape, axis=-1):
+def _stride_repeat(x, shape, axis=-1):
     '''
-    Repeat the values in an array in a memory-efficient manner.
+    Repeat the values in a 1D array in a memory-efficient manner.
 
-    .. warning::
+    Parameters
+    ---------
+    x : array_like
+        1D array or sequence containing the data.
 
-        It is not safe to write to the output array.  Multiple
-        elements may point to the same piece of memory, so
-        modifying one value may change others.
+    shape : tuple
+        The shape to extend the array to. *shape*[*axis*] must equal
+        *x*.size
 
-    Call signature::
+    axis : int, optional
+        The axis along which the data will be strided. The default is the last
+        axis (-1).
 
-        stride_repeat(x, n, axis=0)
+    Returns
+    -------
+    xs : ndarray
+        Strided Array
 
-      *x*: 1D array or sequence
-        Array or sequence containing the data.
+    References
+    ----------
+    stackoverflow: Repeat NumPy array without replicating data?
+    <http://stackoverflow.com/a/5568169>
 
-      *shape*: tuple
-        The shape to extend the array to. 
+    Notes
+    -----
+    WARNING: It is not safe to write to the output array. Multiple elements
+    may point to the same piece of memory, so modifying one value may change
+    others.
 
-      *axis*: integer
-        The axis along which the data will run. 
+    Adapted from matplotlib.mlab
 
-    Refs:
-        `stackoverflaw: Repeat NumPy array without replicating data?
-        <http://stackoverflow.com/a/5568169>`_
     '''
 
     x = np.asarray(x)
@@ -755,22 +839,30 @@ def stride_repeat(x, shape, axis=-1):
     return np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
 
 
-def apply_window(x, win, axis=-1):
+def _apply_window(x, win, axis=-1):
     '''
-    Apply the given window to the given 1D or 2D array along the given axis.
+    Apply the given window to a data array along the given axis.
 
-    Call signature::
+    Parameters
+    ---------
+    x : array_like
+        Array or sequence containing the data to be windowed.
 
-        apply_window(x, window, axis=0, return_window=False)
+    win : array_like
+        A 1D array with length *x*.shape[*axis*]
 
-      *x*: 1D or 2D array or sequence
-        Array or sequence containing the data.
+    axis : int, optional
+        Axis along which the window is applied; the default is over
+        the last axis (i.e. ``axis=-1``).
 
-      *win*: array.
-        An array with length *x*.shape[*axis*]
+    Returns
+    -------
+    wx : ndarray
+        Windowed Array
 
-      *axis*: integer
-        The axis over which to do the repetition.
+    Notes
+    -----
+    Adapted from matplotlib.mlab
 
     '''
     x = np.asarray(x)
@@ -787,5 +879,5 @@ def apply_window(x, win, axis=-1):
     if x.ndim == 1:
         return win * x
     else:
-        winRep = stride_repeat(win, x.shape, axis)
+        winRep = _stride_repeat(win, x.shape, axis)
         return winRep * x
