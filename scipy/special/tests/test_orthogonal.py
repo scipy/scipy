@@ -9,6 +9,7 @@ import numpy as np
 from numpy import array, sqrt
 import scipy.special.orthogonal as orth
 from scipy.special import gamma
+from scipy import integrate
 
 
 class TestCheby(TestCase):
@@ -335,6 +336,10 @@ def test_j_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.jacobi(5, 3, 2).weight_func
+    muI, muI_err = integrate.quad(weight_func, -1, 1)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.j_roots, 0, 1, 1)
     assert_raises(ValueError, orth.j_roots, 3.3, 1, 1)
     assert_raises(ValueError, orth.j_roots, 3, -2, 1)
@@ -378,6 +383,10 @@ def test_js_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.sh_jacobi(5, 3, 2).weight_func
+    muI, muI_err = integrate.quad(weight_func, 0, 1)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.js_roots, 0, 1, 1)
     assert_raises(ValueError, orth.js_roots, 3.3, 1, 1)
     assert_raises(ValueError, orth.js_roots, 3, 1, 2)    # p - q <= -1
@@ -401,6 +410,10 @@ def test_h_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
     assert_allclose(sum(v), m, 1e-14, 1e-14)
+
+    weight_func = orth.hermite(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, -np.inf, np.inf)
+    assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, orth.h_roots, 0)
     assert_raises(ValueError, orth.h_roots, 3.3)
@@ -444,6 +457,10 @@ def test_he_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.hermitenorm(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, -np.inf, np.inf)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.he_roots, 0)
     assert_raises(ValueError, orth.he_roots, 3.3)
 
@@ -483,6 +500,10 @@ def test_cg_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.gegenbauer(5, 2).weight_func
+    muI, muI_err = integrate.quad(weight_func, -1, 1)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.cg_roots, 0, 2)
     assert_raises(ValueError, orth.cg_roots, 3.3, 2)
     assert_raises(ValueError, orth.cg_roots, 3, -.75)
@@ -497,6 +518,10 @@ def test_t_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.chebyt(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, -1, 1)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.t_roots, 0)
     assert_raises(ValueError, orth.t_roots, 3.3)
 
@@ -509,6 +534,10 @@ def test_u_roots():
     y, v, m = orth.u_roots(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
+
+    weight_func = orth.chebyu(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, -1, 1)
+    assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, orth.u_roots, 0)
     assert_raises(ValueError, orth.u_roots, 3.3)
@@ -523,6 +552,10 @@ def test_c_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.chebyc(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, -2, 2)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.c_roots, 0)
     assert_raises(ValueError, orth.c_roots, 3.3)
 
@@ -535,6 +568,10 @@ def test_s_roots():
     y, v, m = orth.s_roots(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
+
+    weight_func = orth.chebys(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, -2, 2)
+    assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, orth.s_roots, 0)
     assert_raises(ValueError, orth.s_roots, 3.3)
@@ -549,6 +586,10 @@ def test_ts_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.sh_chebyt(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, 0, 1)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.ts_roots, 0)
     assert_raises(ValueError, orth.ts_roots, 3.3)
 
@@ -561,6 +602,10 @@ def test_us_roots():
     y, v, m = orth.us_roots(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
+
+    weight_func = orth.sh_chebyu(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, 0, 1)
+    assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, orth.us_roots, 0)
     assert_raises(ValueError, orth.us_roots, 3.3)
@@ -575,6 +620,10 @@ def test_p_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.legendre(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, -1, 1)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.p_roots, 0)
     assert_raises(ValueError, orth.p_roots, 3.3)
 
@@ -588,6 +637,10 @@ def test_ps_roots():
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    weight_func = orth.sh_legendre(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, 0, 1)
+    assert_allclose(m, muI, rtol=muI_err)
+
     assert_raises(ValueError, orth.ps_roots, 0)
     assert_raises(ValueError, orth.ps_roots, 3.3)
 
@@ -600,6 +653,10 @@ def test_l_roots():
     y, v, m = orth.l_roots(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
+
+    weight_func = orth.laguerre(5).weight_func
+    muI, muI_err = integrate.quad(weight_func, 0, np.inf)
+    assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, orth.l_roots, 0)
     assert_raises(ValueError, orth.l_roots, 3.3)
@@ -632,6 +689,10 @@ def test_la_roots():
     y, v, m = orth.la_roots(5, 2, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
+
+    weight_func = lambda x: x**2 * np.exp(-x)
+    muI, muI_err = integrate.quad(weight_func, 0, np.inf)
+    assert_allclose(m, muI, rtol=muI_err)
 
     assert_raises(ValueError, orth.la_roots, 0, 2)
     assert_raises(ValueError, orth.la_roots, 3.3, 2)

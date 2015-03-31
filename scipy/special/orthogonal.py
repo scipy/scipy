@@ -327,9 +327,15 @@ def js_roots(n, p1, q1, mu=False):
     """
     if (p1-q1) <= -1 or q1 <= 0:
         raise ValueError("(p - q) must be greater than -1, and q must be greater than 0.")
-    xw = j_roots(n, p1-q1, q1-1, mu)
-    return ((xw[0] + 1) / 2,) + xw[1:]
-
+    x, w, m = j_roots(n, p1-q1, q1-1, True)
+    x = (x + 1) / 2
+    scale = 2.0**p1
+    w /= scale
+    m /= scale
+    if mu:
+        return x, w, m
+    else:
+        return x, w
 
 def sh_jacobi(n, p, q, monic=False):
     """Returns the nth order Jacobi polynomial, G_n(p,q,x)
@@ -551,8 +557,8 @@ def h_roots(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
+    mu0 = np.sqrt(np.pi)
     if n <= 150:
-        mu0 = np.sqrt(np.pi)
         an_func = lambda k: 0.0*k
         bn_func = lambda k: np.sqrt(k/2.0)
         f = cephes.eval_hermite
@@ -561,7 +567,7 @@ def h_roots(n, mu=False):
     else:
         nodes, weights = _h_roots_asy(m)
         if mu:
-            return nodes, weights, sum(weights)
+            return nodes, weights, mu0
         else:
             return nodes, weights
 
@@ -993,8 +999,8 @@ def he_roots(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
+    mu0 = np.sqrt(2.0*np.pi)
     if n <= 150:
-        mu0 = np.sqrt(np.pi/2.0)
         an_func = lambda k: 0.0*k
         bn_func = lambda k: np.sqrt(k)
         f = cephes.eval_hermitenorm
@@ -1004,9 +1010,9 @@ def he_roots(n, mu=False):
         nodes, weights = _h_roots_asy(m)
         # Transform
         nodes *= sqrt(2)
-        weights /= sqrt(2)
+        weights *= sqrt(2)
         if mu:
-            return nodes, weights, sum(weights)
+            return nodes, weights, mu0
         else:
             return nodes, weights
 
@@ -1023,7 +1029,7 @@ def hermitenorm(n, monic=False):
     else:
         n1 = n
     x, w, mu0 = he_roots(n1, mu=True)
-    wfunc = lambda x: exp(-x * x / 4.0)
+    wfunc = lambda x: exp(-x * x / 2.0)
     if n == 0:
         x, w = [], []
     hn = sqrt(2 * pi) * _gam(n + 1)
@@ -1263,8 +1269,14 @@ def c_roots(n, mu=False):
     integrate.quadrature
     integrate.fixed_quad
     """
-    xw = t_roots(n, mu)
-    return (2 * xw[0],) + xw[1:]
+    x, w, m = t_roots(n, True)
+    x *= 2
+    w *= 2
+    m *= 2
+    if mu:
+        return x, w, m
+    else:
+        return x, w
 
 
 def chebyc(n, monic=False):
@@ -1324,13 +1336,19 @@ def s_roots(n, mu=False):
     integrate.quadrature
     integrate.fixed_quad
     """
-    xw = u_roots(n, mu)
-    return (2 * xw[0],) + xw[1:]
+    x, w, m = u_roots(n, True)
+    x *= 2
+    w *= 2
+    m *= 2
+    if mu:
+        return x, w, m
+    else:
+        return x, w
 
 
 def chebys(n, monic=False):
     """Return nth order Chebyshev polynomial of second kind, Sn(x).  Orthogonal
-    over [-2,2] with weight function (1-(x/)**2)**(1/2).
+    over [-2,2] with weight function (1-(x/2)**2)**(1/2).
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1438,8 +1456,14 @@ def us_roots(n, mu=False):
     integrate.quadrature
     integrate.fixed_quad
     """
-    xw = u_roots(n, mu)
-    return ((xw[0] + 1) / 2,) + xw[1:]
+    x, w, m = u_roots(n, True)
+    x = (x + 1) / 2
+    m_us = cephes.beta(1.5, 1.5)
+    w *= m_us / m
+    if mu:
+        return x, w, m_us
+    else:
+        return x, w
 
 
 def sh_chebyu(n, monic=False):
@@ -1577,9 +1601,13 @@ def ps_roots(n, mu=False):
     integrate.quadrature
     integrate.fixed_quad
     """
-    xw = p_roots(n, mu)
-    return ((xw[0] + 1) / 2,) + xw[1:]
-
+    x, w = p_roots(n)
+    x = (x + 1) / 2
+    w /= 2
+    if mu:
+        return x, w, 1.0
+    else:
+        return x, w
 
 def sh_legendre(n, monic=False):
     """Returns the nth order shifted Legendre polynomial, P^*_n(x), orthogonal
