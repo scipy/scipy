@@ -12,7 +12,7 @@ class Gear(Benchmark):
     r"""
     Gear objective function.
 
-    This class defines the Gear global optimization problem. This
+    This class defines the Gear [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -27,6 +27,7 @@ class Gear(Benchmark):
     *Global optimum*: :math:`f(x) = 2.7 \cdot 10^{-12}` for :math:`x =
     [16, 19, 43, 49]`, where the various :math:`x_i` may be permuted.
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=4):
@@ -48,7 +49,7 @@ class Giunta(Benchmark):
     r"""
     Giunta objective function.
 
-    This class defines the Giunta global optimization problem. This
+    This class defines the Giunta [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -64,6 +65,11 @@ class Giunta(Benchmark):
     *Global optimum*: :math:`f(x) = 0.06447042053690566` for
     :math:`x = [0.4673200277395354, 0.4673200169591304]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil has the wrong fglob.  I think there is a lower value.
     """
 
     def __init__(self, dimensions=2):
@@ -78,7 +84,7 @@ class Giunta(Benchmark):
         self.nfev += 1
 
         arg = 16 * x / 15.0 - 1
-        return 0.6 + sum(sin(arg) + sin(arg) ** 2 + sin(4 * arg) / 50)
+        return 0.6 + sum(sin(arg) + sin(arg) ** 2 + sin(4 * arg) / 50.)
 
 
 class GoldsteinPrice(Benchmark):
@@ -86,7 +92,7 @@ class GoldsteinPrice(Benchmark):
     r"""
     Goldstein-Price objective function.
 
-    This class defines the Goldstein-Price global optimization problem. This
+    This class defines the Goldstein-Price [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -101,6 +107,9 @@ class GoldsteinPrice(Benchmark):
 
     *Global optimum*: :math:`f(x) = 3` for :math:`x = [0, -1]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -114,12 +123,12 @@ class GoldsteinPrice(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        a = 1 + (x[0] + x[1] + 1) ** 2 * \
-            (19 - 14 * x[0] + 3 * x[0] ** 2 -
-             14 * x[1] + 6 * x[0] * x[1] + 3 * x[1] ** 2)
-        b = 30 + (2 * x[0] - 3 * x[1]) ** 2 * \
-            (18 - 32 * x[0] + 12 * x[0] ** 2 +
-             48 * x[1] - 36 * x[0] * x[1] + 27 * x[1] ** 2)
+        a = (1 + (x[0] + x[1] + 1) ** 2
+             * (19 - 14 * x[0] + 3 * x[0] ** 2
+             - 14 * x[1] + 6 * x[0] * x[1] + 3 * x[1] ** 2))
+        b = (30 + (2 * x[0] - 3 * x[1]) ** 2
+             * (18 - 32 * x[0] + 12 * x[0] ** 2
+             + 48 * x[1] - 36 * x[0] * x[1] + 27 * x[1] ** 2))
         return a * b
 
 
@@ -143,13 +152,16 @@ class Griewank(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-600.0] * self.N,
-                           [600.0] * self.N)
+        self._bounds = zip([-100.0] * self.N,
+                           [100.0] * self.N)
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -159,7 +171,7 @@ class Griewank(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        i = arange(1., np.size(x))
+        i = arange(1., np.size(x) + 1.)
         return sum(x ** 2 / 4000) - prod(cos(x / sqrt(i))) + 1
 
 
@@ -168,7 +180,7 @@ class Gulf(Benchmark):
     r"""
     Gulf objective function.
 
-    This class defines the Gulf global optimization problem. This is a
+    This class defines the Gulf [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -189,6 +201,9 @@ class Gulf(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [50, 25, 1.5]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO Gavana has absolute of (u - x[1]) term. Jamil doesn't... Leaving it in.
     """
 
     def __init__(self, dimensions=3):
@@ -204,6 +219,6 @@ class Gulf(Benchmark):
 
         m = 99.
         i = arange(1., m + 1)
-        y = 25 + (-50 * log(i / 100.)) ** (2 / 3.)
-        vec = (exp(-((abs(y - x[1])) ** x[2] / x[0])) - i / 100.)
+        u = 25 + (-50 * log(i / 100.)) ** (2 / 3.)
+        vec = (exp(-((abs(u - x[1])) ** x[2] / x[0])) - i / 100.)
         return sum(vec ** 2)

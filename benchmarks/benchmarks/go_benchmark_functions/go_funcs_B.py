@@ -19,27 +19,27 @@ class BartelsConn(Benchmark):
          \lvert {\sin(x_1)} \rvert + \lvert {\cos(x_2)} \rvert
 
 
-    with :math:`x_i \in [-5, 5]` for :math:`i = 1, 2`.
+    with :math:`x_i \in [-500, 500]` for :math:`i = 1, 2`.
 
     *Global optimum*: :math:`f(x) = 1` for :math:`x = [0, 0]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-500.] * self.N, [500.] * self.N)
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 1.0
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (abs(x[0] ** 2.0 + x[1] ** 2.0 + x[0] * x[1]) + abs(sin(x[1]))
+        return (abs(x[0] ** 2.0 + x[1] ** 2.0 + x[0] * x[1]) + abs(sin(x[0]))
                 + abs(cos(x[1])))
 
 
@@ -62,9 +62,9 @@ class Beale(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x=[3, 0.5]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -104,9 +104,9 @@ class BiggsExp02(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
@@ -149,9 +149,9 @@ class BiggsExp03(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10, 5]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
@@ -194,9 +194,9 @@ class BiggsExp04(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10, 1, 5]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
@@ -239,9 +239,9 @@ class BiggsExp05(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10, 1, 5, 4]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
@@ -284,6 +284,9 @@ class Bird(Benchmark):
     = [4.701055751981055, 3.152946019601391]` or :math:`x =
     [-1.582142172055011, -3.130246799635430]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -302,12 +305,12 @@ class Bird(Benchmark):
                 + cos(x[1]) * exp((1 - sin(x[0])) ** 2) + (x[0] - x[1]) ** 2)
 
 
-class Bohachevsky(Benchmark):
+class Bohachevsky1(Benchmark):
 
     r"""
-    Bohachevsky objective function.
+    Bohachevsky 1 objective function.
 
-    The Bohachevsky [1]_ global optimization problem is a multimodal
+    The Bohachevsky 1 [1]_ global optimization problem is a multimodal
     minimization problem defined as follows
 
         .. math::
@@ -322,29 +325,108 @@ class Bohachevsky(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for :math:`i = 1,
     ..., n`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
+    TODO: equation needs to be fixed up in the docstring. see Jamil#17
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-15.0] * self.N, [15.0] * self.N)
-        self.custom_bounds = [(-2, 2), (-2, 2)]
+        self._bounds = zip([-100.0] * self.N, [100.0] * self.N)
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        x0 = x[:-1]
-        x1 = roll(x, -1)[:-1]
+        return (x[0] ** 2 + 2 * x[1] ** 2 - 0.3 * cos(3 * pi * x[0])
+                - 0.4 * cos(4 * pi * x[1]) + 0.7)
 
-        return sum(x0 ** 2 + 2 * x1 ** 2 - 0.3 * cos(3 * pi * x0)
-                   - 0.4 * cos(4 * pi * x1) + 0.7)
+
+class Bohachevsky2(Benchmark):
+
+    r"""
+    Bohachevsky 2 objective function.
+
+    The Bohachevsky 2 [1]_ global optimization problem is a multimodal
+    minimization problem defined as follows
+
+        .. math::
+
+        f_{\text{Bohachevsky}}(x) = \sum_{i=1}^{n-1}\left[x_i^2 + 2 x_{i+1}^2 -
+        0.3 \cos(3 \pi x_i) - 0.4 \cos(4 \pi x_{i + 1}) + 0.7 \right]
+
+
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in
+    [-15, 15]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for :math:`i = 1,
+    ..., n`
+
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: equation needs to be fixed up in the docstring. Jamil is also wrong.
+    There should be no 0.4 factor in front of the cos term
+    """
+
+    def __init__(self, dimensions=2):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([-100.0] * self.N, [100.0] * self.N)
+        self.global_optimum = [[0 for _ in range(self.N)]]
+        self.fglob = 0.0
+
+    def fun(self, x, *args):
+        self.nfev += 1
+
+        return (x[0] ** 2 + 2 * x[1] ** 2 - 0.3 * cos(3 * pi * x[0])
+                 * cos(4 * pi * x[1]) + 0.3)
+
+
+class Bohachevsky3(Benchmark):
+
+    r"""
+    Bohachevsky 3 objective function.
+
+    The Bohachevsky 3 [1]_ global optimization problem is a multimodal
+    minimization problem defined as follows
+
+        .. math::
+
+        f_{\text{Bohachevsky}}(x) = \sum_{i=1}^{n-1}\left[x_i^2 + 2 x_{i+1}^2 -
+        0.3 \cos(3 \pi x_i) - 0.4 \cos(4 \pi x_{i + 1}) + 0.7 \right]
+
+
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in
+    [-15, 15]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for :math:`i = 1,
+    ..., n`
+
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: equation needs to be fixed up in the docstring. Jamil#19
+    """
+
+    def __init__(self, dimensions=2):
+        Benchmark.__init__(self, dimensions)
+
+        self._bounds = zip([-100.0] * self.N, [100.0] * self.N)
+        self.global_optimum = [[0 for _ in range(self.N)]]
+        self.fglob = 0.0
+
+    def fun(self, x, *args):
+        self.nfev += 1
+
+        return (x[0] ** 2 + 2 * x[1] ** 2
+                - 0.3 * cos(3 * pi * x[0] + 4 * pi * x[1]) + 0.3)
 
 
 class BoxBetts(Benchmark):
@@ -374,6 +456,9 @@ class BoxBetts(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10, 1]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=3):
@@ -388,7 +473,7 @@ class BoxBetts(Benchmark):
 
         i = arange(1, 11)
         g = (exp(-0.1 * i * x[0]) - exp(-0.1 * i * x[1])
-             - (exp(-0.1 * i) - exp(-1.0 * i)) * x[2])
+             - (exp(-0.1 * i) - exp(-i)) * x[2])
         return sum(g**2)
 
 
@@ -410,8 +495,13 @@ class Branin01(Benchmark):
     with :math:`x_1 \in [-5, 10], x_2 \in [0, 15]`
 
     *Global optimum*: :math:`f(x) = 0.39788735772973816` for :math:`x =
-    [-\pi, 12.275]` or :math:`x = [\pi, 2.275]` or :math:`x = [9.42478, 2.475]`
+    [-\pi, 12.275]` or :math:`x = [\pi, 2.275]` or :math:`x = [3\pi, 2.475]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: Jamil#22, one of the solutions is different
     """
 
     def __init__(self, dimensions=2):
@@ -419,7 +509,7 @@ class Branin01(Benchmark):
 
         self._bounds = [(-5., 10.), (0., 15.)]
 
-        self.global_optimum = [[-pi, 12.275], [pi, 2.275], [9.42478, 2.475]]
+        self.global_optimum = [[-pi, 12.275], [pi, 2.275], [3 * pi, 2.475]]
         self.fglob = 0.39788735772973816
 
     def fun(self, x, *args):
@@ -450,6 +540,7 @@ class Branin02(Benchmark):
 
     *Global optimum*: :math:`f(x) = 5.559037` for :math:`x = [-3.2, 12.53]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -486,10 +577,11 @@ class Brent(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [-10, -10]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
+    TODO solution is different to Jamil#24
     """
 
     def __init__(self, dimensions=2):
@@ -527,9 +619,9 @@ class Brown(Benchmark):
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 0` for
     :math:`i=1,...,n`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
@@ -570,14 +662,15 @@ class Bukin02(Benchmark):
 
     *Global optimum*: :math:`f(x) = -124.75` for :math:`x = [-15, 0]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
+    TODO: I think that Gavana and Jamil are wrong on this function. In both
+    sources the x[1] term is not squared. As such there will be a minimum at
+    the smallest value of x[1].
     """
 
-    # TODO: check.  Infinity77 equation is different to code.
-    # Jamil also has wrong minimum.
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
@@ -611,9 +704,9 @@ class Bukin04(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [-10, 0]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
@@ -649,9 +742,9 @@ class Bukin06(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [-10, 1]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 

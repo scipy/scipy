@@ -28,9 +28,9 @@ class CarromTable(Benchmark):
     *Global optimum*: :math:`f(x) = -24.15681551650653` for :math:`x_i = \pm
     9.646157266348881` for :math:`i = 1, 2`
 
-    ..[1] S. K. Mishra, Global Optimization By Differential Evolution and
-     Particle Swarm Methods: Evaluation On Some Benchmark Functions, Munich
-     Research Papers in Economics
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
@@ -49,7 +49,7 @@ class CarromTable(Benchmark):
 
         u = cos(x[0]) * cos(x[1])
         v = sqrt(x[0] ** 2 + x[1] ** 2)
-        return -((u * exp(abs(1 - v / pi))) ** 2) / 30
+        return -((u * exp(abs(1 - v / pi))) ** 2) / 30.
 
 
 class Chichinadze(Benchmark):
@@ -57,7 +57,7 @@ class Chichinadze(Benchmark):
     """
     Chichinadze objective function.
 
-    This class defines the Chichinadze global optimization problem. This is a
+    This class defines the Chichinadze [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -73,6 +73,14 @@ class Chichinadze(Benchmark):
     *Global optimum*: :math:`f(x) = -42.94438701899098` for :math:`x =
     [6.189866586965680, 0.5]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: Jamil#33 has a dividing factor of 2 in the sin term.  However, f(x)
+    for the given solution does not give the global minimum. i.e. the equation
+    is at odds with the solution.
+    Only by removing the dividing factor of 2, i.e. `8 * sin(5 * pi * x[0])`
+    does the given solution result in the given global minimum.
+    Do we keep the result or equation?
     """
 
     def __init__(self, dimensions=2):
@@ -97,7 +105,7 @@ class Cigar(Benchmark):
     """
     Cigar objective function.
 
-    This class defines the Cigar global optimization problem. This
+    This class defines the Cigar [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -111,6 +119,7 @@ class Cigar(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -170,20 +179,23 @@ class Cola(Benchmark):
     This function has bounds :math:`x_0 \in [0, 4]` and :math:`x_i \in [-4, 4]`
     for :math:`i = 1, ..., n-1`.
     *Global optimum* 11.7464.
+
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=17):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = [[0.0, 4.0]] + \
-            list(zip([-4.0] * (self.N - 1),
+        self._bounds = [[0.0, 4.0]] + list(zip([-4.0] * (self.N - 1),
                  [4.0] * (self.N - 1)))
 
-        self.global_optimum = [
-            [0.651906, 1.30194, 0.099242, -0.883791, -0.8796,
-             0.204651, -3.28414, 0.851188, -3.46245, 2.53245,
-             -0.895246, 1.40992, -3.07367, 1.96257, -2.97872,
-             -0.807849, -1.68978]]
+        self.global_optimum = [[0.651906, 1.30194, 0.099242, -0.883791,
+                                -0.8796, 0.204651, -3.28414, 0.851188,
+                                -3.46245, 2.53245, -0.895246, 1.40992,
+                                -3.07367, 1.96257, -2.97872, -0.807849,
+                                -1.68978]]
         self.fglob = 11.7464
 
         self.d = asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -235,6 +247,11 @@ class Colville(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 1` for
     :math:`i = 1, ..., 4`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO docstring equation is wrong use Jamil#36
     """
 
     def __init__(self, dimensions=4):
@@ -248,11 +265,11 @@ class Colville(Benchmark):
     def fun(self, x, *args):
 
         self.nfev += 1
-        return (100 * (x[0] ** 2 - x[1]) ** 2
-                + (x[0] - 1) ** 2 + (x[2] - 1) ** 2
-                + 90 * (x[2] ** 2 - x[3]) ** 2
+        return (100 * (x[0] - x[1] ** 2) ** 2
+                + (1 - x[0]) ** 2 + (1 - x[2]) ** 2
+                + 90 * (x[3] - x[2] ** 2) ** 2
                 + 10.1 * ((x[1] - 1) ** 2 + (x[3] - 1) ** 2)
-                + 19.8 * (1 / x[1]) * (x[3] - 1))
+                + 19.8 * (x[1] - 1) * (x[3] - 1))
 
 
 class Corana(Benchmark):
@@ -260,7 +277,7 @@ class Corana(Benchmark):
     """
     Corana objective function.
 
-    This class defines the Corana global optimization problem. This
+    This class defines the Corana [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -283,6 +300,7 @@ class Corana(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., 4`
 
+    ..[1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=4):
@@ -294,7 +312,6 @@ class Corana(Benchmark):
         self.fglob = 0.0
 
     def fun(self, x, *args):
-
         self.nfev += 1
 
         d = [1., 1000., 10., 100.]
@@ -328,6 +345,13 @@ class CosineMixture(Benchmark):
     *Global optimum*: :math:`f(x) = -0.1N` for :math:`x_i = 0` for
     :math:`i = 1, ..., N`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO, Jamil #38 has wrong minimum and wrong fglob. I plotted it.
+    -(x**2) term is always negative if x is negative.
+     cos(5 * pi * x) is equal to -1 for x=-1.
     """
 
     def __init__(self, dimensions=2):
@@ -336,8 +360,8 @@ class CosineMixture(Benchmark):
         self.change_dimensionality = True
         self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
-        self.global_optimum = [[0 for _ in range(self.N)]]
-        self.fglob = -0.1 * self.N
+        self.global_optimum = [[-1. for _ in range(self.N)]]
+        self.fglob = -0.9 * self.N
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -350,7 +374,7 @@ class CrossInTray(Benchmark):
     """
     Cross-in-Tray objective function.
 
-    This class defines the Cross-in-Tray global optimization problem. This is a
+    This class defines the Cross-in-Tray [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -365,6 +389,9 @@ class CrossInTray(Benchmark):
     *Global optimum*: :math:`f(x) = -2.062611870822739` for :math:`x_i = 
     \pm 1.349406608602084` for :math:`i = 1, 2`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -391,7 +418,7 @@ class CrossLegTable(Benchmark):
     """
     Cross-Leg-Table objective function.
 
-    This class defines the Cross-Leg-Table global optimization problem. This
+    This class defines the Cross-Leg-Table [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -406,6 +433,9 @@ class CrossLegTable(Benchmark):
     *Global optimum*: :math:`f(x) = -1`. The global minimum is found on the
     planes :math:`x_1 = 0` and :math:`x_2 = 0`
 
+    ..[1] Mishra, S. Global Optimization by Differential Evolution and Particle
+    Swarm Methods: Evaluation on Some Benchmark Functions Munich University,
+    2006
     """
 
     def __init__(self, dimensions=2):
@@ -417,8 +447,8 @@ class CrossLegTable(Benchmark):
         self.fglob = -1.0
 
     def fun(self, x, *args):
-
         self.nfev += 1
+
         u = 100 - sqrt(x[0] ** 2 + x[1] ** 2) / pi
         v = sin(x[0]) * sin(x[1])
         return -(abs(v * exp(abs(u))) + 1) ** (-0.1)
@@ -429,7 +459,7 @@ class CrownedCross(Benchmark):
     """
     Crowned Cross objective function.
 
-    This class defines the Crowned Cross global optimization problem. This
+    This class defines the Crowned Cross [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -444,6 +474,9 @@ class CrownedCross(Benchmark):
     *Global optimum*: :math:`f(x_i) = 0.0001`. The global minimum is found on
     the planes :math:`x_1 = 0` and :math:`x_2 = 0`
 
+    ..[1] Mishra, S. Global Optimization by Differential Evolution and Particle
+    Swarm Methods: Evaluation on Some Benchmark Functions Munich University,
+    2006
     """
 
     def __init__(self, dimensions=2):
@@ -467,7 +500,7 @@ class Csendes(Benchmark):
     """
     Csendes objective function.
 
-    This class defines the Csendes global optimization problem. This is a
+    This class defines the Csendes [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -482,6 +515,9 @@ class Csendes(Benchmark):
     *Global optimum*: :math:`f(x) = 0.0` for :math:`x_i = 0` for
     :math:`i = 1, ..., N`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -534,6 +570,11 @@ class Cube(Benchmark):
 
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`x = [1, 1]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: jamil#41 has the wrong solution.
     """
 
     def __init__(self, dimensions=2):

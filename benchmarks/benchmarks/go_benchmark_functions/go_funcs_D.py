@@ -12,7 +12,7 @@ class Damavandi(Benchmark):
     """
     Damavandi objective function.
 
-    This class defines the Damavandi global optimization problem. This is a
+    This class defines the Damavandi [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -28,12 +28,14 @@ class Damavandi(Benchmark):
     *Global optimum*: :math:`f(x) = 0.0` for :math:`x_i = 2` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
-        Benchmark.__init__(self, dimensions)
+        Benchmark.__init__(self, 2)
 
-        self.change_dimensionality = True
         self._bounds = zip([0.0] * self.N, [14.0] * self.N)
 
         self.global_optimum = [[2 for _ in range(self.N)]]
@@ -70,7 +72,7 @@ class Deb01(Benchmark):
     """
     Deb 1 objective function.
 
-    This class defines the Deb 1 global optimization problem. This is a
+    This class defines the Deb 1 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -85,6 +87,9 @@ class Deb01(Benchmark):
     :math:`5^n` that are evenly spaced in the function landscape, where
     :math:`n` represents the dimension of the problem.
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -102,12 +107,12 @@ class Deb01(Benchmark):
         return -(1.0 / self.N) * sum(sin(5 * pi * x) ** 6.0)
 
 
-class Deb02(Benchmark):
+class Deb03(Benchmark):
 
     """
-    Deb 2 objective function.
+    Deb 3 objective function.
 
-    This class defines the Deb 2 global optimization problem. This is a
+    This class defines the Deb 3 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -123,6 +128,9 @@ class Deb02(Benchmark):
     :math:`5^n` that are evenly spaced in the function landscape, where
     :math:`n` represents the dimension of the problem.
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -130,7 +138,7 @@ class Deb02(Benchmark):
 
         self.change_dimensionality = True
 
-        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
 
         self.global_optimum = [[0.93388314, 0.68141781]]
         self.fglob = -1.0
@@ -162,6 +170,7 @@ class Decanomial(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [2, -3]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -189,7 +198,7 @@ class Deceptive(Benchmark):
     """
     Deceptive objective function.
 
-    This class defines the Deceptive global optimization problem. This is a
+    This class defines the Deceptive [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -221,6 +230,11 @@ class Deceptive(Benchmark):
     *Global optimum*: :math:`f(x) = -1` for :math:`x_i = \alpha_i` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: this function was taken from the Gavana website. The following code
+    is based on his code.  His code and the website don't match, the equations
+    are wrong.
     """
 
     def __init__(self, dimensions=2):
@@ -264,7 +278,7 @@ class DeckkersAarts(Benchmark):
     """
     Deckkers-Aarts objective function.
 
-    This class defines the Deckkers-Aarts global optimization problem. This
+    This class defines the Deckkers-Aarts [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -278,6 +292,11 @@ class DeckkersAarts(Benchmark):
     *Global optimum*: :math:`f(x) = -24776.518242168` for
     :math:`x = [0, \pm 14.9451209]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: jamil solution and global minimum are slightly wrong.
     """
 
     def __init__(self, dimensions=2):
@@ -300,7 +319,7 @@ class DeflectedCorrugatedSpring(Benchmark):
     """
     DeflectedCorrugatedSpring objective function.
 
-    This class defines the Deflected Corrugated Spring function global
+    This class defines the Deflected Corrugated Spring [1]_ function global
     optimization problem. This is a multimodal minimization problem defined as
     follows:
 
@@ -316,9 +335,14 @@ class DeflectedCorrugatedSpring(Benchmark):
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in
     [0, 2\alpha]` for :math:`i = 1, ..., n`.
 
-    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = \alpha` for
+    *Global optimum*: :math:`f(x) = -1` for :math:`x_i = \alpha` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: website has a different equation to the gavana codebase. The function
+    below is different to the equation above.  Also, the global minimum is
+    wrong.
     """
 
     def __init__(self, dimensions=2):
@@ -344,7 +368,7 @@ class DeVilliersGlasser01(Benchmark):
     """
     DeVilliers-Glasser 1 objective function.
 
-    This class defines the DeVilliers-Glasser 1 function global optimization
+    This class defines the DeVilliers-Glasser 1 [1]_ function global optimization
     problem. This is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -361,6 +385,10 @@ class DeVilliersGlasser01(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`x = [60.137, 1.371, 3.112, 1.761]`.
+
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
 
@@ -386,7 +414,7 @@ class DeVilliersGlasser02(Benchmark):
     """
     DeVilliers-Glasser 2 objective function.
 
-    This class defines the DeVilliers-Glasser 2 function global optimization problem. This
+    This class defines the DeVilliers-Glasser 2 [1]_ function global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -405,6 +433,9 @@ class DeVilliersGlasser02(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for
     :math:`x = [53.81, 1.27, 3.012, 2.13, 0.507]`.
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=5):
@@ -446,6 +477,11 @@ class DixonPrice(Benchmark):
     *Global optimum*: :math:`f(x_i) = 0` for
     :math:`x_i = 2^{- \frac{(2^i - 2)}{2^i}}` for :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: Gavana code not correct.  i array should start from 2.
     """
 
     def __init__(self, dimensions=2):
@@ -462,7 +498,7 @@ class DixonPrice(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        i = arange(1, self.N)
+        i = arange(2, self.N + 1)
         s = i * (2.0 * x[1:] ** 2.0 - x[:-1]) ** 2.0
         return sum(s) + (x[0] - 1.0) ** 2.0
 
@@ -472,7 +508,7 @@ class Dolan(Benchmark):
     """
     Dolan objective function.
 
-    This class defines the Dolan global optimization problem. This
+    This class defines the Dolan [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -486,6 +522,10 @@ class Dolan(Benchmark):
     *Global optimum*: :math:`f(x_i) = 10^{-5}` for 
     :math:`x = [8.39045925, 4.81424707, 7.34574133, 68.88246895, 3.85470806]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO Jamil equation is missing the absolute brackets around the entire
+    expression.
     """
 
     def __init__(self, dimensions=5):
@@ -494,10 +534,9 @@ class Dolan(Benchmark):
         self._bounds = zip([-100.0] * self.N,
                            [100.0] * self.N)
 
-        self.global_optimum = [
-            [8.39045925, 4.81424707, 7.34574133, 68.88246895,
-             3.85470806]]
-        self.fglob = 1e-5
+        self.global_optimum = [[-74.10522498, 44.33511286, 6.21069214,
+                               18.42772233, -16.5839403]]
+        self.fglob = 0
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -512,7 +551,7 @@ class DropWave(Benchmark):
     """
     DropWave objective function.
 
-    This class defines the DropWave global optimization problem. This is a
+    This class defines the DropWave [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -525,6 +564,7 @@ class DropWave(Benchmark):
 
     *Global optimum*: :math:`f(x) = -1` for :math:`x = [0, 0]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):

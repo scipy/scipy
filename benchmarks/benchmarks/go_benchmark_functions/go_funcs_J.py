@@ -10,7 +10,7 @@ class JennrichSampson(Benchmark):
     r"""
     Jennrich-Sampson objective function.
 
-    This class defines the Jennrich-Sampson global optimization problem. This
+    This class defines the Jennrich-Sampson [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -24,6 +24,9 @@ class JennrichSampson(Benchmark):
     *Global optimum*: :math:`f(x) = 124.3621824` for
     :math:`x = [0.257825, 0.257825]`.
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -47,7 +50,7 @@ class Judge(Benchmark):
     """
     Judge objective function.
 
-    This class defines the Judge global optimization problem. This
+    This class defines the Judge [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -78,6 +81,7 @@ class Judge(Benchmark):
     *Global optimum*: :math:`f(x_i) = 16.0817307` for
     :math:`\mathbf{x} = [0.86479, 1.2357]`.
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):

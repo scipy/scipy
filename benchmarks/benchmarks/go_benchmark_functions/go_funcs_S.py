@@ -237,39 +237,42 @@ class Schaffer04(Benchmark):
         return 0.5 + num / den
 
 
-class SchmidtVetters(Benchmark):
 
-    r"""
-    Schmidt-Vetters objective function.
-
-    This class defines the Schmidt-Vetters global optimization problem. This
-    is a multimodal minimization problem defined as follows:
-
-    .. math::
-
-        f_{\text{SchmidtVetters}}(x) = \frac{1}{1 + (x_1 - x_2)^2}
-        + \sin \left(\frac{\pi x_2 + x_3}{2} \right)
-        + e^{\left(\frac{x_1+x_2}{x_2} - 2\right)^2}
-
-    with :math:`x_i \in [0, 10]` for :math:`i = 1, 2, 3`.
-
-    *Global optimum*: :math:`f(x) = 2.99643266` for
-    :math:`x = [0.79876108,  0.79962581,  0.79848824]`
-
-    """
-
-    def __init__(self, dimensions=3):
-        Benchmark.__init__(self, dimensions)
-        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
-
-        self.global_optimum = [[0.79876108, 0.79962581, 0.79848824]]
-        self.fglob = 2.99643266
-
-    def fun(self, x, *args):
-        self.nfev += 1
-
-        return (1 / (1 + (x[0] - x[1]) ** 2) + sin((pi * x[1] + x[2]) / 2)
-                + exp(((x[0] + x[1]) / x[1] - 2) ** 2))
+# class SchmidtVetters(Benchmark):
+#
+#     r"""
+#     Schmidt-Vetters objective function.
+#
+#     This class defines the Schmidt-Vetters global optimization problem. This
+#     is a multimodal minimization problem defined as follows:
+#
+#     .. math::
+#
+#         f_{\text{SchmidtVetters}}(x) = \frac{1}{1 + (x_1 - x_2)^2}
+#         + \sin \left(\frac{\pi x_2 + x_3}{2} \right)
+#         + e^{\left(\frac{x_1+x_2}{x_2} - 2\right)^2}
+#
+#     with :math:`x_i \in [0, 10]` for :math:`i = 1, 2, 3`.
+#
+#     *Global optimum*: :math:`f(x) = 2.99643266` for
+#     :math:`x = [0.79876108,  0.79962581,  0.79848824]`
+#
+#     TODO equation seems right, but [7.07083412 , 10., 3.14159293] produces a
+#     lower minimum, 0.193973
+#     """
+#
+#     def __init__(self, dimensions=3):
+#         Benchmark.__init__(self, dimensions)
+#         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
+#
+#         self.global_optimum = [[0.79876108, 0.79962581, 0.79848824]]
+#         self.fglob = 2.99643266
+#
+#     def fun(self, x, *args):
+#         self.nfev += 1
+#
+#         return (1 / (1 + (x[0] - x[1]) ** 2) + sin((pi * x[1] + x[2]) / 2)
+#                 + exp(((x[0] + x[1]) / x[1] - 2) ** 2))
 
 
 class Schwefel01(Benchmark):
@@ -731,7 +734,7 @@ class Shekel10(Benchmark):
     r"""
     Shekel 10 objective function.
 
-    This class defines the Shekel 10 global optimization problem. This
+    This class defines the Shekel 10 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -766,6 +769,11 @@ class Shekel10(Benchmark):
     *Global optimum*: :math:`f(x) = -10.5362837` for :math:`x_i = 4` for
     :math:`i = 1, ..., 4`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Found a lower global minimum than Jamil#132...
     """
 
     def __init__(self, dimensions=4):
@@ -773,8 +781,11 @@ class Shekel10(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [[4.0 for _ in range(self.N)]]
-        self.fglob = -10.5362837262
+        self.global_optimum = [[4.0007465377266271,
+                                4.0005929234621407,
+                                3.9996633941680968,
+                                3.9995098017834123]]
+        self.fglob = -10.536409816692023
         self.A = asarray([[4.0, 4.0, 4.0, 4.0],
                           [1.0, 1.0, 1.0, 1.0],
                           [8.0, 8.0, 8.0, 8.0],

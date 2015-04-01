@@ -7,7 +7,7 @@ from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
                    zeros, tan, tanh, dot)
 
 try:
-    from scipy.misc import factorial
+    from scipy.special import factorial
 except ImportError:
     pass
 
@@ -109,8 +109,18 @@ class Benchmark(object):
         val = self.fun(asarray(x))
         if abs(val - self.fglob) < tol:
             return True
+
+        # the solution should still be in bounds, otherwise immediate fail.
+        if (np.any(x > np.asfarray(self.bounds)[:, 1])
+            or np.any(x < np.asfarray(self.bounds)[:, 0])):
+            return False
+
+        # you found a lower global minimum.  This shouldn't happen.
         if val < self.fglob:
-            return True
+            raise ValueError("Found a lower global minimum",
+                             x,
+                             val,
+                             self.fglob)
 
         return False
 

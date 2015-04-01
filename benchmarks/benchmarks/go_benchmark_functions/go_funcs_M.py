@@ -17,7 +17,7 @@ class Matyas(Benchmark):
     r"""
     Matyas objective function.
 
-    This class defines the Matyas global optimization problem. This is a
+    This class defines the Matyas [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -29,6 +29,9 @@ class Matyas(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -50,7 +53,7 @@ class McCormick(Benchmark):
     r"""
     McCormick objective function.
 
-    This class defines the McCormick global optimization problem. This is a
+    This class defines the McCormick [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -58,18 +61,20 @@ class McCormick(Benchmark):
        f_{\text{McCormick}}(x) = - x_{1} + 2 x_{2} + \left(x_{1}
        - x_{2}\right)^{2} + \sin\left(x_{1} + x_{2}\right) + 1
 
-
     with :math:`x_1 \in [-1.5, 4]`, :math:`x_2 \in [-3, 4]`.
 
     *Global optimum*: :math:`f(x) = -1.913222954981037` for
     :math:`x = [-0.5471975602214493, -1.547197559268372]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = [(-1.5, 4.0), (-3.0, 4.0)]
+        self._bounds = [(-1.5, 4.0), (-3.0, 3.0)]
 
         self.global_optimum = [[-0.5471975602214493, -1.547197559268372]]
         self.fglob = -1.913222954981037
@@ -84,11 +89,13 @@ class McCormick(Benchmark):
 class Meyer(Benchmark):
 
     r"""
-    Meyer objective function.
+    Meyer [1]_ objective function.
 
+    ..[1] http://www.itl.nist.gov/div898/strd/nls/data/mgh10.shtml
+
+    TODO NIST regression standard
     """
 
-    # TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
@@ -110,7 +117,6 @@ class Meyer(Benchmark):
         self.nfev += 1
 
         vec = x[0] * exp(x[1] / (self.b + x[2]))
-
         return sum((self.a - vec) ** 2)
 
 
@@ -119,7 +125,7 @@ class Michalewicz(Benchmark):
     r"""
     Michalewicz objective function.
 
-    This class defines the Michalewicz global optimization problem. This
+    This class defines the Michalewicz [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -134,6 +140,10 @@ class Michalewicz(Benchmark):
 
     *Global optimum*: :math:`f(x_i) = -1.8013` for :math:`x = [0, 0]`
 
+    .. [1] Adorio, E. MVF - "Multivariate Test Functions Library in C for
+    Unconstrained Global Optimization", 2005
+
+    TODO: could change dimensionality, but global minimum might change.
     """
 
     def __init__(self, dimensions=2):
@@ -155,7 +165,7 @@ class Michalewicz(Benchmark):
 class MieleCantrell(Benchmark):
 
     r"""
-    Miele-Cantrell objective function.
+    Miele-Cantrell [1]_ objective function.
 
     This class defines the Miele-Cantrell global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -170,6 +180,9 @@ class MieleCantrell(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 1, 1, 1]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=4):
@@ -192,7 +205,7 @@ class Mishra01(Benchmark):
     r"""
     Mishra 1 objective function.
 
-    This class defines the Mishra 1 global optimization problem. This
+    This class defines the Mishra 1 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -212,6 +225,9 @@ class Mishra01(Benchmark):
     *Global optimum*: :math:`f(x) = 2` for :math:`x_i = 1` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -236,7 +252,7 @@ class Mishra02(Benchmark):
     r"""
     Mishra 2 objective function.
 
-    This class defines the Mishra 2 global optimization problem. This
+    This class defines the Mishra 2 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -257,6 +273,9 @@ class Mishra02(Benchmark):
     *Global optimum*: :math:`f(x) = 2` for :math:`x_i = 1` 
     for :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -281,7 +300,7 @@ class Mishra03(Benchmark):
     r"""
     Mishra 3 objective function.
 
-    This class defines the Mishra 3 global optimization problem. This
+    This class defines the Mishra 3 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -295,6 +314,12 @@ class Mishra03(Benchmark):
     *Global optimum*: :math:`f(x) = -0.1999` for 
     :math:`x = [-9.99378322, -9.99918927]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: I think that Jamil#76 has the wrong global minimum, a smaller one
+    is possible
     """
 
     def __init__(self, dimensions=2):
@@ -317,7 +342,7 @@ class Mishra04(Benchmark):
     r"""
     Mishra 4 objective function.
 
-    This class defines the Mishra 4 global optimization problem. This is a
+    This class defines the Mishra 4 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -325,12 +350,16 @@ class Mishra04(Benchmark):
        f_{\text{Mishra04}}({x}) = \sqrt{\lvert \sin{\sqrt{\lvert
        x_1^2 + x_2^2 \rvert}} \rvert} + 0.01(x_1 + x_2)
 
-
     with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
 
     *Global optimum*: :math:`f(x) = -0.17767` for
     :math:`x = [-8.71499636, -9.0533148]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: I think that Jamil#77 has the wrong minimum, not possible
     """
 
     def __init__(self, dimensions=2):
@@ -338,8 +367,8 @@ class Mishra04(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [[-8.92011797, -8.85128046]]
-        self.fglob = -0.17768386538
+        self.global_optimum = [[-8.88055269734, -8.89097599857]]
+        self.fglob = -0.177715264826
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -353,7 +382,7 @@ class Mishra05(Benchmark):
     r"""
     Mishra 5 objective function.
 
-    This class defines the Mishra 5 global optimization problem. This is a
+    This class defines the Mishra 5 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -366,6 +395,11 @@ class Mishra05(Benchmark):
 
     *Global optimum*: :math:`f(x) = -0.119829` for :math:`x = [-1.98682, -10]`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO Line 381 in paper
     """
 
     def __init__(self, dimensions=2):
@@ -374,12 +408,12 @@ class Mishra05(Benchmark):
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [[-1.98682, -10.0]]
-        self.fglob = -0.119829
+        self.fglob = -1.019829519930646
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (0.01 * (x[0] + x[1])
+        return (0.01 * x[0] + 0.1 * x[1]
                 + (sin((cos(x[0]) + cos(x[1])) ** 2) ** 2
                    + cos((sin(x[0]) + sin(x[1])) ** 2) ** 2 + x[0]) ** 2)
 
@@ -389,7 +423,7 @@ class Mishra06(Benchmark):
     r"""
     Mishra 6 objective function.
 
-    This class defines the Mishra 6 global optimization problem. This
+    This class defines the Mishra 6 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -403,6 +437,11 @@ class Mishra06(Benchmark):
 
     *Global optimum*: :math:`f(x_i) = -2.28395` for :math:`x = [2.88631, 1.82326]`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO line 397
     """
 
     def __init__(self, dimensions=2):
@@ -427,7 +466,7 @@ class Mishra07(Benchmark):
     r"""
     Mishra 7 objective function.
 
-    This class defines the Mishra 7 global optimization problem. This
+    This class defines the Mishra 7 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -441,6 +480,9 @@ class Mishra07(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = \sqrt{n}` 
     for :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -464,7 +506,7 @@ class Mishra08(Benchmark):
     r"""
     Mishra 8 objective function.
 
-    This class defines the Mishra 8 global optimization problem. This
+    This class defines the Mishra 8 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -479,6 +521,11 @@ class Mishra08(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [2, -3]`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO Line 1065
     """
 
     def __init__(self, dimensions=2):
@@ -486,7 +533,7 @@ class Mishra08(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
         self.custom_bounds = [(1.0, 2.0), (-4.0, 1.0)]
-        self.global_optimum = [[2.0, 3.0]]
+        self.global_optimum = [[2.0, -3.0]]
         self.fglob = 0.0
 
     def fun(self, x, *args):
@@ -496,7 +543,7 @@ class Mishra08(Benchmark):
                   - 960 * x[0] ** 7 + 3360 * x[0] ** 6 - 8064 * x[0] ** 5
                   + 13340 * x[0] ** 4 - 15360 * x[0] ** 3 + 11520 * x[0] ** 2
                   - 5120 * x[0] + 2624)
-        val *= abs(x[1] ** 2 + 12 * x[1] ** 2 +
+        val += abs(x[1] ** 4 + 12 * x[1] ** 3 +
                    54 * x[1] ** 2 + 108 * x[1] + 81)
         return 0.001 * val ** 2
 
@@ -506,7 +553,7 @@ class Mishra09(Benchmark):
     r"""
     Mishra 9 objective function.
 
-    This class defines the Mishra 9 global optimization problem. This
+    This class defines the Mishra 9 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -528,6 +575,11 @@ class Mishra09(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 2, 3]`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO Line 1103
     """
 
     def __init__(self, dimensions=3):
@@ -543,8 +595,8 @@ class Mishra09(Benchmark):
         a = (2 * x[0] ** 3 + 5 * x[0] * x[1]
              + 4 * x[2] - 2 * x[0] ** 2 * x[2] - 18)
         b = x[0] + x[1] ** 3 + x[0] * x[1] ** 2 + x[0] * x[2] ** 2 - 22.0
-        c = 8 * x[0] ** 2 + 2 * x[1] * x[2] + \
-            2 * x[1] ** 2 + 3 * x[1] ** 3 - 52
+        c = (8 * x[0] ** 2 + 2 * x[1] * x[2]
+            + 2 * x[1] ** 2 + 3 * x[1] ** 3 - 52)
 
         return (a * c * b ** 2 + a * b * c ** 2 + b ** 2
                 + (x[0] + x[1] - x[2]) ** 2) ** 2
@@ -563,11 +615,15 @@ class Mishra10(Benchmark):
        f_{\text{Mishra10}}({x}) = \left[ \lfloor x_1 \perp x_2 \rfloor - 
        \lfloor x_1 \rfloor - \lfloor x_2 \rfloor \right]^2
 
-
     with :math:`x_i \in [-10, 10]` for :math:`i =1, 2`.
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [2, 2]`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO line 1115
     """
 
     def __init__(self, dimensions=2):
@@ -581,7 +637,6 @@ class Mishra10(Benchmark):
         self.nfev += 1
 
         x1, x2 = int(x[0]), int(x[1])
-        # TODO rewrite equation above with nint(x)
         f1 = x1 + x2
         f2 = x1 * x2
         return (f1 - f2) ** 2.0
@@ -592,7 +647,7 @@ class Mishra11(Benchmark):
     r"""
     Mishra 11 objective function.
 
-    This class defines the Mishra 11 global optimization problem. This is a
+    This class defines the Mishra 11 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -608,6 +663,9 @@ class Mishra11(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -647,6 +705,7 @@ class MultiModal(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):

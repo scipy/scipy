@@ -9,7 +9,7 @@ class FreudensteinRoth(Benchmark):
     r"""
     FreudensteinRoth objective function.
 
-    This class defines the Freudenstein & Roth global optimization problem.
+    This class defines the Freudenstein & Roth [1]_ global optimization problem.
     This is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -23,6 +23,9 @@ class FreudensteinRoth(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [5, 4]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):

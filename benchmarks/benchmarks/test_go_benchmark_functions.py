@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from . import go_benchmark_functions as gbf
 import inspect
-from numpy.testing import TestCase, run_module_suite
+from numpy.testing import TestCase, run_module_suite, assert_
 
 
 class TestGoBenchmarkFunctions(TestCase):
@@ -28,7 +28,7 @@ class TestGoBenchmarkFunctions(TestCase):
 
             f = klass()
             print(name, f.fun(np.asarray(f.global_optimum[0])), f.fglob)
-            assert(f.success(f.global_optimum[0]))
+            assert_(f.success(f.global_optimum[0]))
 
     def test_solution_exists(self):
         # Every benchmark function should have a minimum energy

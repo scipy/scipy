@@ -10,7 +10,7 @@ class Infinity(Benchmark):
     r"""
     Infinity objective function.
 
-    This class defines the Infinity global optimization problem. This
+    This class defines the Infinity [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -25,6 +25,7 @@ class Infinity(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):

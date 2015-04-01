@@ -147,5 +147,5 @@ class UrsemWaves(Benchmark):
 
         u = -0.9 * x[0] ** 2
         v = (x[1] ** 2 - 4.5 * x[1] ** 2) * x[0] * x[1]
-        w = 4.7 * cos(2 * x[0] - x[1] ** 2 * (2 + x[0])) * sin(2.5 * pi * x[0])
+        w = 4.7 * cos(3 * x[0] - x[1] ** 2 * (2 + x[0])) * sin(2.5 * pi * x[0])
         return (u + v + w)

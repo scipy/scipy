@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-from numpy import asarray, atleast_2d, floor, arange, sin, sqrt, prod, sum
+from numpy import asarray, atleast_2d, floor, arange, sin, sqrt, prod, sum, round
 from .go_benchmark import Benchmark
 
 
@@ -10,7 +10,7 @@ class Katsuura(Benchmark):
     r"""
     Katsuura objective function.
 
-    This class defines the Katsuura global optimization problem. This is a
+    This class defines the Katsuura [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -27,6 +27,12 @@ class Katsuura(Benchmark):
     *Global optimum*: :math:`f(x) = 1` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`.
 
+    .. [1] Adorio, E. MVF - "Multivariate Test Functions Library in C for
+    Unconstrained Global Optimization", 2005
+    .. [2] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: Adorio has wrong global minimum.  Adorio uses round, Gavana docstring
+    uses floor, but Gavana code uses round.  We'll use round...
     """
 
     def __init__(self, dimensions=2):
@@ -45,7 +51,7 @@ class Katsuura(Benchmark):
         d = 32
         k = atleast_2d(arange(1, d + 1)).T
         i = arange(0., self.N * 1.)
-        inner = floor(2 ** k * x) * (2. ** (-k))
+        inner = round(2 ** k * x) * (2. ** (-k))
         return prod(sum(inner, axis=0) * (i + 1) + 1)
 
 
@@ -54,7 +60,7 @@ class Keane(Benchmark):
     r"""
     Keane objective function.
 
-    This class defines the Keane global optimization problem. This
+    This class defines the Keane [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -68,6 +74,12 @@ class Keane(Benchmark):
     *Global optimum*: :math:`f(x) = 0.0` for 
     :math:`x = [7.85396153, 7.85396135]`.
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: Jamil #69, there is no way that the function can have a negative
+    value.  Everything is squared.  I think that they have the wrong solution.
     """
 
     def __init__(self, dimensions=2):
@@ -91,14 +103,13 @@ class Kowalik(Benchmark):
     r"""
     Kowalik objective function.
 
-    This class defines the Kowalik global optimization problem. This
+    This class defines the Kowalik [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
 
         f_{\text{Kowalik}}(x) = \sum_{i=0}^{10} \left [ a_i
         - \frac{x_1 (b_i^2 + b_i x_2)} {b_i^2 + b_i x_3 + x_4} \right ]^2
-
 
     Where:
 
@@ -117,8 +128,8 @@ class Kowalik(Benchmark):
     *Global optimum*: :math:`f(x) = 0.00030748610` for :math:`x = 
     [0.192833, 0.190836, 0.123117, 0.135766]`.
 
+    ..[1] http://www.itl.nist.gov/div898/strd/nls/data/mgh09.shtml
     """
-    # TODO, this is a NIST regression standard dataset
 
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
@@ -126,14 +137,15 @@ class Kowalik(Benchmark):
         self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.global_optimum = [[0.192833, 0.190836, 0.123117, 0.135766]]
         self.fglob = 0.00030748610
-        self.b = asarray([4.0, 2.0, 1.0, 1 / 2.0, 1 / 4.0, 1 / 6.0, 1 / 8.0,
+
+        self.a = asarray([4.0, 2.0, 1.0, 1 / 2.0, 1 / 4.0, 1 / 6.0, 1 / 8.0,
                           1 / 10.0, 1 / 12.0, 1 / 14.0, 1 / 16.0])
-        self.a = asarray([0.1957, 0.1947, 0.1735, 0.1600, 0.0844, 0.0627,
+        self.b = asarray([0.1957, 0.1947, 0.1735, 0.1600, 0.0844, 0.0627,
                           0.0456, 0.0342, 0.0323, 0.0235, 0.0246])
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        vec = self.a - (x[0] * (self.b ** 2 + self.b * x[1])
-                   / (self.b ** 2 + self.b * x[2] + x[3]))
+        vec = self.b - (x[0] * (self.a ** 2 + self.a * x[1])
+                   / (self.a ** 2 + self.a * x[2] + x[3]))
         return sum(vec ** 2)

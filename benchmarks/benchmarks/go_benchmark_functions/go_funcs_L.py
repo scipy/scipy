@@ -10,7 +10,7 @@ class Langermann(Benchmark):
     r"""
     Langermann objective function.
 
-    This class defines the Langermann global optimization problem. This
+    This class defines the Langermann [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -37,6 +37,9 @@ class Langermann(Benchmark):
     *Global optimum*: :math:`f(x) = -5.1621259`
     for :math:`x = [2.00299219, 1.006096]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: Langermann from Gavana is _not the same_ as Jamil #68.
     """
 
     def __init__(self, dimensions=2):
@@ -150,7 +153,7 @@ class Leon(Benchmark):
     r"""
     Leon objective function.
 
-    This class defines the Leon global optimization problem. This
+    This class defines the Leon [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -163,6 +166,9 @@ class Leon(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 1]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -176,7 +182,7 @@ class Leon(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return 100 * (x[1] - x[0] ** 2.0) ** 2.0 + (1 - x[0]) ** 2.0
+        return 100. * (x[1] - x[0] ** 2.0) ** 2.0 + (1 - x[0]) ** 2.0
 
 
 class Levy03(Benchmark):
@@ -184,13 +190,12 @@ class Levy03(Benchmark):
     r"""
     Levy 3 objective function.
 
-    This class defines the Levy 3 global optimization problem. This
+    This class defines the Levy 3 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
 
         f_{\text{Levy03}}(\mathbf{x}) = \sin^2(\pi y_1)+\sum_{i=1}^{n-1}(y_i-1)^2[1+10\sin^2(\pi y_{i+1})]+(y_n-1)^2
-
 
     Where, in this exercise:
 
@@ -203,6 +208,14 @@ class Levy03(Benchmark):
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO: not clear what the Levy function definition is.  Gavana, Mishra,
+    Adorio have different forms. Indeed Levy 3 docstring from Gavana
+    disagrees with the Gavana code!  The following code is from the Mishra
+    listing of Levy08.
     """
 
     def __init__(self, dimensions=2):
@@ -213,14 +226,14 @@ class Levy03(Benchmark):
 
         self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
 
         y = 1 + (x - 1) / 4
-        v = sum((y[: -1] - 1) ** 2 * (1 + 10 * sin(pi * y[1:]) ** 2))
-        return sin(pi * y[0]) ** 2 + v + (y[-1] - 1) ** 2
+        v = sum((y[:-1] - 1) ** 2 * (1 + 10 * sin(pi * y[1:]) ** 2))
+        z = (y[-1] - 1) ** 2
+        return sin(pi * y[0]) ** 2 + v + z
 
 
 class Levy05(Benchmark):
@@ -228,18 +241,20 @@ class Levy05(Benchmark):
     r"""
     Levy 5 objective function.
 
-    This class defines the Levy 5 global optimization problem. This
+    This class defines the Levy 5 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
 
         f_{\text{Levy05}}(\mathbf{x}) = \sum_{i=1}^{5} i \cos \left[(i-1)x_1 + i \right] \times \sum_{j=1}^{5} j \cos \left[(j+1)x_2 + j \right] + (x_1 + 1.42513)^2 + (x_2 + 0.80032)^2
 
-
     Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10, 10]` for :math:`i=1,...,n`.
 
     *Global optimum*: :math:`f(x_i) = -176.1375779` for :math:`\mathbf{x} = [-1.30685, -1.42485]`.
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
     """
 
     def __init__(self, dimensions=2):
@@ -266,7 +281,7 @@ class Levy13(Benchmark):
     r"""
     Levy13 objective function.
 
-    This class defines the Levy13 global optimization problem. This is a
+    This class defines the Levy13 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -281,6 +296,9 @@ class Levy13(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 1]`
 
+    .. [1] Mishra, S. Some new test functions for global optimization and
+    performance of repulsive particle swarm method.
+    Munich Personal RePEc Archive, 2006, 2718
     """
 
     def __init__(self, dimensions=2):

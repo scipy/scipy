@@ -25,9 +25,11 @@ class Ackley01(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Adorio, E. MVF - "Multivariate Test Functions Library in C for
+    Unconstrained Global Optimization", 2005
+
+    TODO: the -0.2 factor in the exponent of the first term is given as
+    -0.02 in Jamil et al.
     """
 
     def __init__(self, dimensions=2):
@@ -63,9 +65,9 @@ class Ackley02(Benchmark):
 
     *Global optimum*: :math:`f(x) = -200` for :math:`x = [0, 0]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
     """
     def __init__(self, dimensions=2):
@@ -99,9 +101,12 @@ class Ackley03(Benchmark):
     *Global optimum*: :math:`f(x) = -195.62902825923879` for :math:`x
     = [-0.68255758, -0.36070859]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+     TODO: I think the minus sign is missing in front of the first term in eqn3
+      in [1]_.  This changes the global minimum
     """
 
     def __init__(self, dimensions=2):
@@ -135,9 +140,9 @@ class Adjiman(Benchmark):
 
     *Global optimum*: :math:`f(x) = -2.02181` for :math:`x = [2.0, 0.10578]`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -172,9 +177,9 @@ class Alpine01(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -210,10 +215,11 @@ class Alpine02(Benchmark):
     *Global optimum*: :math:`f(x) = -6.1295` for :math:`x =
     [7.91705268, 4.81584232]` for :math:`i = 1, 2`
 
-    .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
-     functions for global optimization problems, Int. Journal of Mathematical
-     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013)
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
 
+    TODO: eqn 7 in [1]_ has the wrong global minimum value.
     """
 
     def __init__(self, dimensions=2):
@@ -249,6 +255,10 @@ class AMGM(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x_1 = x_2 = ... = x_n` for
     :math:`i = 1, ..., n`
+
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO, retrieved 2015
+
+    TODO: eqn 7 in [1]_ has the wrong global minimum value.
     """
 
     def __init__(self, dimensions=2):

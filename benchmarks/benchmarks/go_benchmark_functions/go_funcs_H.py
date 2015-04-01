@@ -3,8 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
+                   arange, pi, sign, sin, sqrt, sum, tan, tanh)
 from .go_benchmark import Benchmark
 
 
@@ -13,7 +12,7 @@ class Hansen(Benchmark):
     r"""
     Hansen objective function.
 
-    This class defines the Hansen global optimization problem. This is a
+    This class defines the Hansen [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -27,6 +26,11 @@ class Hansen(Benchmark):
     *Global optimum*: :math:`f(x) = -176.54179` for
     :math:`x = [-7.58989583, -7.70831466]`.
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil #61 is missing the starting value of i.
     """
 
     def __init__(self, dimensions=2):
@@ -52,7 +56,7 @@ class Hartmann3(Benchmark):
     r"""
     Hartmann3 objective function.
 
-    This class defines the Hartmann3 global optimization problem. This is a
+    This class defines the Hartmann3 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -82,6 +86,11 @@ class Hartmann3(Benchmark):
     *Global optimum*: :math:`f(x) = -3.8627821478` 
     for :math:`x = [0.11461292,  0.55564907,  0.85254697]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil #62 has an incorrect coefficient. p[1, 1] should be 0.4387
     """
 
     def __init__(self, dimensions=3):
@@ -92,19 +101,23 @@ class Hartmann3(Benchmark):
         self.global_optimum = [[0.11461292, 0.55564907, 0.85254697]]
         self.fglob = -3.8627821478
 
-        self.a = asarray([[3.0, 0.1, 3.0, 0.1],
-                          [10.0, 10.0, 10.0, 10.0],
-                          [30.0, 35.0, 30.0, 35.0]])
-        self.p = asarray([[0.36890, 0.46990, 0.10910, 0.03815],
-                          [0.11700, 0.43870, 0.87320, 0.57430],
-                          [0.26730, 0.74700, 0.55470, 0.88280]])
-        self.c = asarray([1.0, 1.2, 3.0, 3.2])
+        self.a = asarray([[  3. ,  10. ,  30. ],
+                          [  0.1,  10. ,  35. ],
+                          [  3. ,  10. ,  30. ],
+                          [  0.1,  10. ,  35. ]])
+
+        self.p = asarray([[ 0.3689 ,  0.117  ,  0.2673 ],
+                          [ 0.4699 ,  0.4387 ,  0.747  ],
+                          [ 0.1091 ,  0.8732 ,  0.5547 ],
+                          [ 0.03815,  0.5743 ,  0.8828 ]])
+
+        self.c = asarray([1., 1.2, 3., 3.2])
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        XX = np.atleast_2d(x).T
-        d = sum(self.a * (XX - self.p) ** 2, axis=0)
+        XX = np.atleast_2d(x)
+        d = sum(self.a * (XX - self.p) ** 2, axis=1)
         return -sum(self.c * exp(-d))
 
 
@@ -113,7 +126,7 @@ class Hartmann6(Benchmark):
     r"""
     Hartmann6 objective function.
 
-    This class defines the Hartmann6 global optimization problem. This is a
+    This class defines the Hartmann6 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -159,6 +172,9 @@ class Hartmann6(Benchmark):
     :math:`{x} = [0.20168952, 0.15001069, 0.47687398, 0.27533243, 0.31165162,
     0.65730054]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=6):
@@ -168,28 +184,26 @@ class Hartmann6(Benchmark):
 
         self.global_optimum = [[0.20168952, 0.15001069, 0.47687398, 0.27533243,
                                 0.31165162, 0.65730054]]
+
         self.fglob = -3.32236801141551
 
-        self.a = asarray([[10.00, 0.05, 3.00, 17.00],
-                          [3.00, 10.00, 3.50, 8.00],
-                          [17.00, 17.00, 1.70, 0.05],
-                          [3.50, 0.10, 10.00, 10.00],
-                          [1.70, 8.00, 17.00, 0.10],
-                          [8.00, 14.00, 8.00, 14.00]])
+        self.a = asarray([[ 10.  ,   3.  ,  17.  ,   3.5 ,   1.7 ,   8.  ],
+                          [  0.05,  10.  ,  17.  ,   0.1 ,   8.  ,  14.  ],
+                          [  3.  ,   3.5 ,   1.7 ,  10.  ,  17.  ,   8.  ],
+                          [ 17.  ,   8.  ,   0.05,  10.  ,   0.1 ,  14.  ]])
 
-        self.p = asarray([[0.1312, 0.2329, 0.2348, 0.4047],
-                          [0.1696, 0.4135, 0.1451, 0.8828],
-                          [0.5569, 0.8307, 0.3522, 0.8732],
-                          [0.0124, 0.3736, 0.2883, 0.5743],
-                          [0.8283, 0.1004, 0.3047, 0.1091],
-                          [0.5886, 0.9991, 0.6650, 0.0381]])
+        self.p = asarray([[0.1312, 0.1696, 0.5569, 0.0124, 0.8283, 0.5886],
+                          [0.2329, 0.4135, 0.8307, 0.3736, 0.1004, 0.9991],
+                          [0.2348, 0.1451, 0.3522, 0.2883, 0.3047, 0.665 ],
+                          [0.4047, 0.8828, 0.8732, 0.5743, 0.1091, 0.0381]])
+
         self.c = asarray([1.0, 1.2, 3.0, 3.2])
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        XX = np.atleast_2d(x).T
-        d = sum(self.a * (XX - self.p) ** 2, axis=0)
+        XX = np.atleast_2d(x)
+        d = sum(self.a * (XX - self.p) ** 2, axis=1)
         return -sum(self.c * exp(-d))
 
 
@@ -198,7 +212,7 @@ class HelicalValley(Benchmark):
     r"""
     HelicalValley objective function.
 
-    This class defines the HelicalValley global optimization problem. This
+    This class defines the HelicalValley [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -214,17 +228,23 @@ class HelicalValley(Benchmark):
         2\pi\Psi(x,y) =  \begin{cases} \arctan(y/x) & \textrm{for} x > 0 \\
         \pi + \arctan(y/x) & \textrm{for } x < 0 \end{cases}
 
-
     with :math:`x_i \in [-100, 100]` for :math:`i = 1, 2, 3`.
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 0, 0]`
 
+    .. [1] Fletcher, R. & Powell, M. A Rapidly Convergent Descent Method for
+    Minimzation, Computer Journal, 1963, 62, 163-168
+
+    TODO: Jamil equation is different to original reference. The above paper
+    can be obtained from
+    http://galton.uchicago.edu/~lekheng/courses/302/classics/
+    fletcher-powell.pdf
     """
 
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N, [100] * self.N)
+        self._bounds = zip([-10.] * self.N, [10.] * self.N)
 
         self.global_optimum = [[1.0, 0.0, 0.0]]
         self.fglob = 0.0
@@ -232,8 +252,10 @@ class HelicalValley(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (100 * ((x[2] - 10 * arctan2(x[1], x[0]) / 2 / pi) ** 2
-                + (sqrt(x[0] ** 2 + x[1] ** 2) - 1) ** 2) + x[2] ** 2)
+        r = sqrt(x[0] ** 2 + x[1] ** 2)
+        theta = 1 / (2. * pi) * arctan2(x[1], x[0])
+
+        return x[2] ** 2 + 100 * ((x[2] - 10 * theta) ** 2 + (r - 1) ** 2)
 
 
 class HimmelBlau(Benchmark):
@@ -241,7 +263,7 @@ class HimmelBlau(Benchmark):
     r"""
     HimmelBlau objective function.
 
-    This class defines the HimmelBlau global optimization problem. This
+    This class defines the HimmelBlau [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -253,12 +275,15 @@ class HimmelBlau(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [3, 2]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-6] * self.N, [6] * self.N)
+        self._bounds = zip([-5.] * self.N, [5.] * self.N)
 
         self.global_optimum = [[3.0, 2.0]]
         self.fglob = 0.0
@@ -274,7 +299,7 @@ class HolderTable(Benchmark):
     r"""
     HolderTable objective function.
 
-    This class defines the HolderTable global optimization problem. This
+    This class defines the HolderTable [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -289,6 +314,10 @@ class HolderTable(Benchmark):
     *Global optimum*: :math:`f(x) = -19.20850256788675` for
     :math:`x_i = \pm 9.664590028909654` for :math:`i = 1, 2`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: Jamil #146 equation is wrong - should be squaring the x1 and x2
+    terms, but isn't. Gavana does.
     """
 
     def __init__(self, dimensions=2):
@@ -309,59 +338,12 @@ class HolderTable(Benchmark):
                     * exp(abs(1 - sqrt(x[0] ** 2 + x[1] ** 2) / pi)))
 
 
-class Holzman(Benchmark):
-
-    r"""
-    Holzman objective function.
-
-    This class defines the Holzman global optimization problem. This
-    is a multimodal minimization problem defined as follows:
-
-    .. math::
-
-        f_{\text{Holzman}}(x) = \sum_{i=1}^{100} \left [ e^{\frac{1}{x_1}
-        (u_i-x_2)^{x_3}} -0.01(i) \right ]
-
-
-    Where, in this exercise:
-
-    .. math::
-
-        u_i = 25 + (-50 \log{[0.01i]})^{2/3}
-
-
-    Here, :math:`n` represents the number of dimensions and
-    :math:`x_1 \in [0, 100], x_2 \in [0, 25.6], x_3 \in [0, 5]`.
-
-    *Global optimum*: :math:`f(x) = 0` for :math:`x = [50, 25, 1.5]`
-
-    """
-
-    def __init__(self, dimensions=3):
-        Benchmark.__init__(self, dimensions)
-
-        self._bounds = ([0.0, 100.0], [0.0, 25.6], [0.0, 5.0])
-
-        self.global_optimum = [[50.0, 25.0, 1.5]]
-        self.fglob = 0.0
-
-    def fun(self, x, *args):
-        self.nfev += 1
-
-        i = arange(1, 101)
-        t = 2 / 3.
-        u = 25 + (-50 * log(0.01 * i)) ** t
-        v = (u - x[1]) ** x[2]
-        w = exp(-v / x[0])
-        return sum(-0.01 * i + w)
-
-
 class Hosaki(Benchmark):
 
     r"""
     Hosaki objective function.
 
-    This class defines the Hosaki global optimization problem. This
+    This class defines the Hosaki [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -374,12 +356,15 @@ class Hosaki(Benchmark):
 
     *Global optimum*: :math:`f(x) = -2.3458115` for :math:`x = [4, 2]`.
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = ([0., 5.], [0., 6.])
         self.custom_bounds = [(0, 5), (0, 5)]
 
         self.global_optimum = [[4, 2]]

@@ -10,7 +10,7 @@ class Easom(Benchmark):
     r"""
     Easom objective function.
 
-    This class defines the Easom global optimization problem. This is a
+    This class defines the Easom [1]_ global optimization problem. This is a
     a multimodal minimization problem defined as follows:
 
     .. math::
@@ -26,6 +26,11 @@ class Easom(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Gavana website disagrees with Jamil, etc. Gavana equation in docstring is totally wrong.
     """
 
     def __init__(self, dimensions=2):
@@ -34,18 +39,13 @@ class Easom(Benchmark):
         self._bounds = zip([-100.0] * self.N,
                            [100.0] * self.N)
 
-        self.global_optimum = [[0 for _ in range(self.N)]]
-        self.fglob = 0.0
+        self.global_optimum = [[pi for _ in range(self.N)]]
+        self.fglob = -1.0
 
     def fun(self, x, *args):
         self.nfev += 1
-
-        a = 20.0
-        b = 0.2
-        c = 2 * pi
-
-        return (-a * exp(-b * sqrt(sum(x ** 2) / self.N))
-                - exp(sum(cos(c * x)) / self.N) + a + exp(1))
+        a = (x[0] - pi)**2 + (x[1] - pi)**2
+        return -cos(x[0]) * cos(x[1]) * exp(-a)
 
 
 class Eckerle4(Benchmark):
@@ -53,9 +53,13 @@ class Eckerle4(Benchmark):
     Eckerle4 objective function.
     Eckerle, K., NIST (1979).
     Circular Interference Transmittance Study.
+
+    ..[1] http://www.itl.nist.gov/div898/strd/nls/data/eckerle4.shtml
+
+    #TODO, this is a NIST regression standard dataset, docstring needs
+    improving
     """
 
-    # TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
@@ -102,7 +106,7 @@ class EggCrate(Benchmark):
     r"""
     Egg Crate objective function.
 
-    This class defines the Egg Crate global optimization problem. This
+    This class defines the Egg Crate [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -115,6 +119,9 @@ class EggCrate(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -127,14 +134,13 @@ class EggCrate(Benchmark):
 
     def fun(self, x, *args):
         self.nfev += 1
-
         return x[0] ** 2 + x[1] ** 2 + 25 * (sin(x[0]) ** 2 + sin(x[1]) ** 2)
 
 
 class EggHolder(Benchmark):
 
     r"""
-    Egg Holder objective function.
+    Egg Holder [1]_ objective function.
 
     This class defines the Egg Holder global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -152,6 +158,11 @@ class EggHolder(Benchmark):
     *Global optimum*: :math:`f(x) = -959.640662711` for
     :math:`{x} = [512, 404.2319]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: Jamil is missing a minus sign on the fglob value
     """
 
     def __init__(self, dimensions=2):
@@ -175,7 +186,7 @@ class EggHolder(Benchmark):
 class ElAttarVidyasagarDutta(Benchmark):
 
     r"""
-    El-Attar-Vidyasagar-Dutta objective function.
+    El-Attar-Vidyasagar-Dutta [1]_ objective function.
 
     This class defines the El-Attar-Vidyasagar-Dutta function global
     optimization problem. This is a multimodal minimization problem defined as
@@ -192,6 +203,7 @@ class ElAttarVidyasagarDutta(Benchmark):
     *Global optimum*: :math:`f(x) = 1.712780354` for
     :math:`x= [3.40918683, -2.17143304]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -229,6 +241,9 @@ class Exp2(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 10.]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -238,13 +253,13 @@ class Exp2(Benchmark):
         self.custom_bounds = [(0, 2), (0, 20)]
 
         self.global_optimum = [[1.0, 10.]]
-        self.fglob = 0
+        self.fglob = 0.
 
     def fun(self, x, *args):
         self.nfev += 1
 
         i = arange(10.)
-        vec = (exp(-i * x[0] / 10.) - 5 * exp(-i * x[1] / 10.) - exp(-i / 10)
+        vec = (exp(-i * x[0] / 10.) - 5 * exp(-i * x[1] / 10.) - exp(-i / 10.)
                + 5 * exp(-i)) ** 2
 
         return sum(vec)
@@ -253,7 +268,7 @@ class Exp2(Benchmark):
 class Exponential(Benchmark):
 
     r"""
-    Exponential objective function.
+    Exponential [1] objective function.
 
     This class defines the Exponential global optimization problem. This
     is a multimodal minimization problem defined as follows:
@@ -269,6 +284,11 @@ class Exponential(Benchmark):
     *Global optimum*: :math:`f(x_i) = -1` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil are missing a minus sign on fglob
     """
 
     def __init__(self, dimensions=2):
