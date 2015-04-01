@@ -564,7 +564,7 @@ def linkage(y, method='single', metric='euclidean'):
         :math:`v` in the forest. This is also known as the UPGMC
         algorithm.
 
-      * method='median' assigns math:`d(s,t)` like the ``centroid``
+      * method='median' assigns :math:`d(s,t)` like the ``centroid``
         method. When two clusters :math:`s` and :math:`t` are combined
         into a new cluster :math:`u`, the average of centroids s and t
         give the new centroid :math:`u`. This is also known as the
