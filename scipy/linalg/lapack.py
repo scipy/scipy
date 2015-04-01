@@ -80,7 +80,32 @@ All functions
    dgelss
    cgelss
    zgelss
+   
+   sgelss_lwork
+   dgelss_lwork
+   cgelss_lwork
+   zgelss_lwork
+   
+   sgelsd
+   dgelsd
+   cgelsd
+   zgelsd
+   
+   sgelsd_lwork
+   dgelsd_lwork
+   cgelsd_lwork
+   zgelsd_lwork
+   
+   sgelsy
+   dgelsy
+   cgelsy
+   zgelsy
 
+   sgelsy_lwork
+   dgelsy_lwork
+   cgelsy_lwork
+   zgelsy_lwork
+   
    sgeqp3
    dgeqp3
    cgeqp3
