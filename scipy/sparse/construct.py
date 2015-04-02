@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 __docformat__ = "restructuredtext en"
 
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
-            'hstack', 'vstack', 'bmat', 'rand', 'randn', 'diags', 'block_diag']
+           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
 
 
 import numpy as np
@@ -668,7 +668,8 @@ def block_diag(mats, format=None, dtype=None):
     return bmat(rows, format=format, dtype=dtype)
 
 
-def _random(m, n, density, format, dtype, random_state, function_name):
+def random(m, n, density=0.01, format='coo', dtype=None,
+           random_state=None, data_rvs=None):
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
@@ -685,9 +686,17 @@ def _random(m, n, density, format, dtype, random_state, function_name):
         type of the returned matrix values.
     random_state : {numpy.random.RandomState, int}, optional
         Random number generator or random seed. If not given, the singleton
-        numpy.random will be used.
-    function_name : str
-        The name of the sampling function, e.g. 'rand', 'randn'.
+        numpy.random will be used.  This random state will be used
+        for sampling the sparsity structure, but not necessarily for sampling
+        the values of the structurally nonzero entries of the matrix.
+    data_rvs : callable, optional
+        Samples a requested number of random values.
+        This function should take a single argument specifying the length
+        of the ndarray that it will return.  The structurally nonzero entries
+        of the sparse random matrix will be taken from the array sampled
+        by this function.  By default, uniform [0, 1) random values will be
+        sampled using the same random state as is used for sampling
+        the sparsity structure.
 
     Notes
     -----
@@ -718,7 +727,8 @@ greater than %d - this is not supported on this machine
         random_state = np.random
     elif isinstance(random_state, (int, np.integer)):
         random_state = np.random.RandomState(random_state)
-    f_sample = getattr(random_state, function_name)
+    if data_rvs is None:
+        data_rvs = random_state.rand
 
     # Use the algorithm from python's random.sample for k < mn/3.
     if mn < 3*k:
@@ -737,7 +747,7 @@ greater than %d - this is not supported on this machine
 
     j = np.floor(ind * 1. / m).astype(tp)
     i = (ind - j * m).astype(tp)
-    vals = f_sample(k).astype(dtype)
+    vals = data_rvs(k).astype(dtype)
     return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
 
 
@@ -765,31 +775,4 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     Only float types are supported for now.
 
     """
-    return _random(m, n, density, format, dtype, random_state, 'rand')
-
-
-def randn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
-    """Generate a sparse matrix of the given shape and density with normally
-    distributed values.
-
-    Parameters
-    ----------
-    m, n : int
-        shape of the matrix
-    density : real, optional
-        density of the generated matrix: density equal to one means a full
-        matrix, density of 0 means a matrix with no non-zero items.
-    format : str, optional
-        sparse matrix format.
-    dtype : dtype, optional
-        type of the returned matrix values.
-    random_state : {numpy.random.RandomState, int}, optional
-        Random number generator or random seed. If not given, the singleton
-        numpy.random will be used.
-
-    Notes
-    -----
-    Only float types are supported for now.
-
-    """
-    return _random(m, n, density, format, dtype, random_state, 'randn')
+    return random(m, n, density, format, dtype, random_state)

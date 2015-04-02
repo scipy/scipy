@@ -11,11 +11,21 @@ from scipy.sparse import csr_matrix, coo_matrix
 
 from scipy.sparse import construct
 from scipy.sparse.construct import rand as sprand
-from scipy.sparse.construct import randn as sprandn
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
 #TODO check whether format=XXX is respected
+
+
+def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+    # Helper function for testing.
+    if random_state is None:
+        random_state = np.random
+    elif isinstance(random_state, (int, np.integer)):
+        random_state = np.random.RandomState(random_state)
+    data_rvs = random_state.randn
+    return construct.random(m, n, density, format, dtype,
+                            random_state, data_rvs)
 
 
 class TestConstructUtils(TestCase):
@@ -354,7 +364,7 @@ class TestConstructUtils(TestCase):
 
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
-        for f in sprand, sprandn:
+        for f in sprand, _sprandn:
             for t in [np.float32, np.float64, np.longdouble]:
                 x = f(5, 10, density=0.1, dtype=t)
                 assert_equal(x.dtype, t)
@@ -383,17 +393,21 @@ class TestConstructUtils(TestCase):
 
     def test_rand(self):
         # Simple distributional checks for sparse.rand.
-        x = sprand(10, 20, density=0.5, dtype=np.float64, random_state=4321)
-        assert_(np.all(np.less_equal(0, x.data)))
-        assert_(np.all(np.less_equal(x.data, 1)))
+        for random_state in None, 4321, np.random.RandomState():
+            x = sprand(10, 20, density=0.5, dtype=np.float64,
+                       random_state=random_state)
+            assert_(np.all(np.less_equal(0, x.data)))
+            assert_(np.all(np.less_equal(x.data, 1)))
 
     def test_randn(self):
         # Simple distributional checks for sparse.randn.
         # Statistically, some of these should be negative
         # and some should be greater than 1.
-        x = sprandn(10, 20, density=0.5, dtype=np.float64, random_state=4321)
-        assert_(np.any(np.less(x.data, 0)))
-        assert_(np.any(np.less(1, x.data)))
+        for random_state in None, 4321, np.random.RandomState():
+            x = _sprandn(10, 20, density=0.5, dtype=np.float64,
+                         random_state=random_state)
+            assert_(np.any(np.less(x.data, 0)))
+            assert_(np.any(np.less(1, x.data)))
 
 
 if __name__ == "__main__":
