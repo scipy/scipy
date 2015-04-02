@@ -2,12 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import LinAlgError
-from . import blas, lapack
+from .blas import get_blas_funcs
+from .lapack import get_lapack_funcs
 
 __all__ = ['LinAlgError', 'norm']
-
-_nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
-_lange_prefix = {'f': 's', 'F': 'c', 'D': 'z'}
 
 
 def norm(a, ord=None):
@@ -118,8 +116,7 @@ def norm(a, ord=None):
     if a.dtype.char in 'fdFD':
         if ord in (None, 2) and (a.ndim == 1):
             # use blas for fast and stable euclidean norm
-            func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
-            nrm2 = getattr(blas, func_name)
+            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype)
             return nrm2(a)
 
         if a.ndim == 2:
@@ -137,8 +134,7 @@ def norm(a, ord=None):
                 elif np.isfortran(a.T):
                     lange_args = '1', a.T
             if lange_args:
-                func_name = _lange_prefix.get(a.dtype.char, 'd') + 'lange'
-                lange = getattr(lapack, func_name)
+                lange = get_lapack_funcs('lange', dtype=a.dtype)
                 return lange(*lange_args)
 
     return np.linalg.norm(a, ord=ord)
