@@ -698,6 +698,22 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sampled using the same random state as is used for sampling
         the sparsity structure.
 
+    Examples
+    --------
+    >>> from scipy.sparse import construct
+    >>> from scipy import stats
+    >>> class CustomRandomState(object):
+        ...     def randint(self, k):
+        ...         i = np.random.randint(k)
+        ...         return i - i % 2
+    >>> rs = CustomRandomState()
+    >>> rvs = stats.poisson(25, loc=10).rvs
+    >>> S = construct.random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
+    >>> S.A
+    array([[ 36.,   0.,  33.,   0.],
+           [  0.,   0.,   0.,   0.],
+           [  0.,   0.,  36.,   0.]])
+
     Notes
     -----
     Only float types are supported for now.
