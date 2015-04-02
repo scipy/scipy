@@ -1571,7 +1571,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
             if not (D - D.T <= tol).all():
                 if name:
                     raise ValueError(('Distance matrix \'%s\' must be '
-                                      'symmetric within tolerance %d.')
+                                      'symmetric within tolerance %5.5f.')
                                      % (name, tol))
                 else:
                     raise ValueError('Distance matrix must be symmetric within'
