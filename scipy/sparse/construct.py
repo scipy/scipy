@@ -761,8 +761,7 @@ greater than %d - this is not supported on this machine
             selected.add(j)
             ind[i] = j
 
-    j = np.floor(ind * 1. / m).astype(tp)
-    i = (ind - j * m).astype(tp)
+    j, i = np.unravel_index(ind, (n, m))
     vals = data_rvs(k).astype(dtype)
     return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
 
