@@ -1930,6 +1930,7 @@ def obrientransform(*args):
     return np.array(arrays, dtype=dt)
 
 
+@np.deprecate(message="scipy.stats.signaltonoise is deprecated in scipy 0.16.0")
 def signaltonoise(a, axis=0, ddof=0):
     """
     The signal-to-noise ratio of the input data.
