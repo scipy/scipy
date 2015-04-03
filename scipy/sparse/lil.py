@@ -7,6 +7,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix','isspmatrix_lil']
 
+import array
 import numpy as np
 
 from .base import spmatrix, isspmatrix
@@ -14,6 +15,32 @@ from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
                       upcast_scalar, get_index_dtype)
 
 from . import _csparsetools
+
+
+def _dtype_to_typecode(dtype):
+
+    if dtype == np.int32:
+        type_flag = 'i'
+    elif dtype == np.uint32:
+        type_flag = 'I'
+    elif dtype == np.int64:
+        type_flag = 'l'
+    elif dtype == np.int8:
+        type_flag = 'b'
+    elif dtype == np.uint8:
+        type_flag = 'B'
+    elif dtype == np.int16:
+        type_flag = 'h'
+    elif dtype == np.uint16:
+        type_flag = 'H'
+    elif dtype == np.float32:
+        type_flag = 'f'
+    elif dtype == np.float64:
+        type_flag = 'd'
+    else:
+        raise Exception('Dtype not supported.')
+
+    return type_flag
 
 
 class lil_matrix(spmatrix, IndexMixin):
@@ -83,6 +110,15 @@ class lil_matrix(spmatrix, IndexMixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         spmatrix.__init__(self)
         self.dtype = getdtype(dtype, arg1, default=float)
+        if self.dtype in (np.complex,
+                          np.complex64,
+                          np.complex256,
+                          np.bool,
+                          np.uint64,
+                          np.float128):
+            self.typecode = None
+        else:
+            self.typecode = _dtype_to_typecode(self.dtype)
 
         # First get the shape
         if isspmatrix(arg1):
@@ -106,9 +142,13 @@ class lil_matrix(spmatrix, IndexMixin):
                 self.shape = (M,N)
                 self.rows = np.empty((M,), dtype=object)
                 self.data = np.empty((M,), dtype=object)
+
                 for i in range(M):
-                    self.rows[i] = []
-                    self.data[i] = []
+                    self.rows[i] = array.array('i')
+                    if self.typecode:
+                        self.data[i] = array.array(self.typecode)
+                    else:
+                        self.data[i] = []
             else:
                 raise TypeError('unrecognized lil_matrix constructor usage')
         else:
@@ -261,7 +301,7 @@ class lil_matrix(spmatrix, IndexMixin):
         _csparsetools.lil_fancy_get(self.shape[0], self.shape[1],
                                     self.rows, self.data,
                                     new.rows, new.data,
-                                    i, j)
+                                    i, j, self.typecode)
         return new
 
     def __setitem__(self, index, x):

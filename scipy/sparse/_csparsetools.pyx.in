@@ -60,6 +60,7 @@ def define_dispatch_map2(map_name, prefix, types, types2):
     return "\n".join(result)
 }}
 
+from cpython cimport array as c_array
 cimport cython
 cimport numpy as cnp
 import numpy as np
@@ -89,7 +90,7 @@ cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
         Value at indices.
 
     """
-    cdef list row, data
+    cdef c_array.array row
 
     if i < -M or i >= M:
         raise IndexError('row index (%d) out of bounds' % (i,))
@@ -130,7 +131,7 @@ cpdef int lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows,
         Value to insert.
 
     """
-    cdef list row, data
+    cdef c_array.array row
 
     if i < -M or i >= M:
         raise IndexError('row index (%d) out of bounds' % (i,))
@@ -167,7 +168,8 @@ def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
                   object[:] new_rows,
                   object[:] new_datas,
                   cnp.ndarray i_idx,
-                  cnp.ndarray j_idx):
+                  cnp.ndarray j_idx,
+                  typecode):
     """
     Get multiple items at given indices in LIL matrix and store to
     another LIL.
@@ -183,7 +185,7 @@ def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
         Indices of elements to insert to the new LIL matrix.
 
     """
-    return _LIL_FANCY_GET_DISPATCH[i_idx.dtype](M, N, rows, datas, new_rows, new_datas, i_idx, j_idx)
+    return _LIL_FANCY_GET_DISPATCH[i_idx.dtype](M, N, rows, datas, new_rows, new_datas, i_idx, j_idx, typecode)
 
 
 {{for NAME, IDX_T in get_dispatch(IDX_TYPES)}}
@@ -193,16 +195,19 @@ def _lil_fancy_get_{{NAME}}(cnp.npy_intp M, cnp.npy_intp N,
                             object[:] new_rows,
                             object[:] new_datas,
                             {{IDX_T}}[:,:] i_idx,
-                            {{IDX_T}}[:,:] j_idx):
+                            {{IDX_T}}[:,:] j_idx,
+                            typecode):
     cdef cnp.npy_intp x, y
     cdef cnp.npy_intp i, j
     cdef object value
-    cdef list new_row
-    cdef list new_data
+    cdef c_array.array new_row
 
     for x in range(i_idx.shape[0]):
-        new_row = []
-        new_data = []
+        new_row = c_array.array('i')
+        if typecode is not None:
+            new_data = c_array.array(typecode)
+        else:
+            new_data = []
 
         for y in range(i_idx.shape[1]):
             i = i_idx[x,y]
@@ -278,7 +283,7 @@ def _lil_fancy_set_{{PYIDX}}_{{PYVALUE}}(cnp.npy_intp M, cnp.npy_intp N,
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline cnp.npy_intp bisect_left(list a, cnp.npy_intp x) except -1:
+cdef inline cnp.npy_intp bisect_left(int[::1] a, cnp.npy_intp x) except -1:
     """
     Bisection search in a sorted list.
 
