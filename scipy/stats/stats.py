@@ -953,14 +953,14 @@ def moment(a, moment=1, axis=0):
             else:
                 current_n /= 2
             n_list.append(current_n)
-        
+
         # Starting point for exponentiation by squares
         a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
             s = a_zero_mean**2
-        
+
         # Perform multiplications
         for n in n_list[-2::-1]:
             s = s**2
@@ -1641,6 +1641,8 @@ def percentileofscore(a, score, kind='rank'):
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
 
+@np.deprecate(message=("scipy.stats.histogram2 is deprecated in scipy 0.16.0; "
+                       "use np.histogram2d instead"))
 def histogram2(a, bins):
     """
     Compute histogram using divisions in bins.
