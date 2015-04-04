@@ -484,7 +484,7 @@ def block_diag(*arrs):
     Parameters
     ----------
     A, B, C, ... : array_like, up to 2-D
-        Input arrays.  A 1-D array or array_like sequence of length `n`is
+        Input arrays.  A 1-D array or array_like sequence of length `n` is
         treated as a 2-D array with shape ``(1,n)``.
 
     Returns
@@ -497,6 +497,8 @@ def block_diag(*arrs):
     -----
     If all the input arrays are square, the output is known as a
     block diagonal matrix.
+
+    Empty sequences (i.e., array-likes of zero size) are ignored.
 
     Examples
     --------
@@ -528,7 +530,7 @@ def block_diag(*arrs):
         raise ValueError("arguments in the following positions have dimension "
                          "greater than 2: %s" % bad_args)
 
-    shapes = np.array([a.shape for a in arrs])
+    shapes = np.array([a.shape if a.size > 0 else [0, 0] for a in arrs])
     out = np.zeros(np.sum(shapes, axis=0), dtype=arrs[0].dtype)
 
     r, c = 0, 0
