@@ -580,6 +580,19 @@ class TestProbplot(TestCase):
         # Raise ValueError when given an invalid distribution.
         assert_raises(ValueError, stats.probplot, [1], dist="plate_of_shrimp")
 
+    def test_empty(self):
+        assert_equal(stats.probplot([], fit=False),
+                     (np.array([]), np.array([])))
+        assert_equal(stats.probplot([], fit=True),
+                     ((np.array([]), np.array([])),
+                      (np.nan, np.nan, 0.0)))
+
+    def test_array_of_size_one(self):
+        with np.errstate(invalid='ignore'):
+            assert_equal(stats.probplot([1], fit=True),
+                         ((np.array([0.]), np.array([1])),
+                          (np.nan, np.nan, 0.0)))
+
 
 def test_wilcoxon_bad_arg():
     # Raise ValueError when two args of different lengths are given or
@@ -619,6 +632,60 @@ def test_kstatvar_bad_arg():
     data = [1]
     n = 10
     assert_raises(ValueError, stats.kstatvar, data, n=n)
+
+
+class TestPpccPlot(TestCase):
+    def setUp(self):
+        np.random.seed(7654321)
+        self.x = stats.loggamma.rvs(5, size=500) + 5
+
+    def test_basic(self):
+        N = 5
+        svals, ppcc = stats.ppcc_plot(self.x, -10, 10, N=N)
+        ppcc_expected = [0.21139644, 0.21384059, 0.98766719, 0.97980182, 0.93519298]
+        assert_allclose(svals, np.linspace(-10, 10, num=N))
+        assert_allclose(ppcc, ppcc_expected)
+
+    def test_dist(self):
+        # Test that we can specify distributions both by name and as objects.
+        svals1, ppcc1 = stats.ppcc_plot(self.x, -10, 10, dist='tukeylambda')
+        svals2, ppcc2 = stats.ppcc_plot(self.x, -10, 10, dist=stats.tukeylambda)
+        assert_allclose(svals1, svals2, rtol=1e-20)
+        assert_allclose(ppcc1, ppcc2, rtol=1e-20)
+        # Test that 'tukeylambda' is the default dist
+        svals3, ppcc3 = stats.ppcc_plot(self.x, -10, 10)
+        assert_allclose(svals1, svals3, rtol=1e-20)
+        assert_allclose(ppcc1, ppcc3, rtol=1e-20)
+
+    @dec.skipif(not have_matplotlib)
+    def test_plot_kwarg(self):
+        # Check with the matplotlib.pyplot module
+        fig = plt.figure()
+        fig.add_subplot(111)
+        stats.ppcc_plot(self.x, -20, 20, plot=plt)
+        plt.close()
+
+        # Check that a Matplotlib Axes object is accepted
+        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
+        stats.ppcc_plot(self.x, -20, 20, plot=ax)
+        plt.close()
+
+    def test_invalid_inputs(self):
+        # `b` has to be larger than `a`
+        assert_raises(ValueError, stats.ppcc_plot, self.x, 1, 0)
+
+        # Raise ValueError when given an invalid distribution.
+        assert_raises(ValueError, stats.ppcc_plot, [1, 2, 3], 0, 1,
+                      dist="plate_of_shrimp")
+
+    def test_empty(self):
+        # For consistency with probplot return for one empty array,
+        # ppcc contains all zeros and svals is the same as for normal array
+        # input.
+        svals, ppcc = stats.ppcc_plot([], 0, 1)
+        assert_allclose(svals, np.linspace(0, 1, num=80))
+        assert_allclose(ppcc, np.zeros(80, dtype=float))
 
 
 def test_ppcc_max_bad_arg():

@@ -4227,10 +4227,11 @@ class tukeylambda_gen(rv_continuous):
         return special.tklmbda(x, lam)
 
     def _ppf(self, q, lam):
-        q = q*1.0
-        vals1 = (q**lam - (1-q)**lam)/lam
-        vals2 = log(q/(1-q))
-        return where((lam == 0) & (q == q), vals2, vals1)
+        q = q * 1.0
+        return _lazywhere((lam == 0) & (q == q),
+                          [q, lam],
+                          f=lambda q, lam: log(q/(1-q)),
+                          f2=lambda q, lam: (q**lam - (1-q)**lam)/lam)
 
     def _stats(self, lam):
         return 0, _tlvar(lam), 0, _tlkurt(lam)
