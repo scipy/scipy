@@ -231,7 +231,9 @@ class lil_matrix(spmatrix, IndexMixin):
         if axis == 0:
             out = np.zeros(self.shape[1])
             for row in self.rows:
-                out[row] += 1
+                # Turn into a list for compatibility
+                # with Python 2.6
+                out[list(row)] += 1
             return out
         elif axis == 1:
             return np.array([len(rowvals) for rowvals in self.data])
