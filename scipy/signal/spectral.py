@@ -165,7 +165,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         Length of each segment.  Defaults to 256.
     noverlap : int, optional
         Number of points to overlap between segments. If None,
-        ``noverlap = nperseg / 2``.  Defaults to None.
+        ``noverlap = nperseg // 2``.  Defaults to None.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired.  If None,
         the FFT length is `nperseg`. Defaults to None.
@@ -297,7 +297,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         Length of each segment.  Defaults to 256.
     noverlap: int, optional
         Number of points to overlap between segments. If None,
-        ``noverlap = nperseg / 2``.  Defaults to None.
+        ``noverlap = nperseg // 2``.  Defaults to None.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired.  If None,
         the FFT length is `nperseg`. Defaults to None.
@@ -360,8 +360,8 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     """
 
     freqs, Pxy, _ = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
-                                    detrend, return_onesided, scaling, axis,
-                                    mode='psd')
+                                     detrend, return_onesided, scaling, axis,
+                                     mode='psd')
 
     # Last two axes of Pxy are window index, freq index. Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
@@ -401,7 +401,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
         Length of each segment.  Defaults to 256.
     noverlap: int, optional
         Number of points to overlap between segments. If None,
-        ``noverlap = nperseg / 2``.  Defaults to None.
+        ``noverlap = nperseg // 2``.  Defaults to None.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired.  If None,
         the FFT length is `nperseg`. Defaults to None.
@@ -436,13 +436,14 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
     """
-    [ff,Pxx] = welch(x, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
-    [_, Pyy] = welch(y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
-    [_, Pxy] = csd(x, y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
+    freqs, Pxx = welch(x, fs, window, nperseg, noverlap, nfft, detrend, 
+                       axis=axis)
+    _, Pyy = welch(y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
+    _, Pxy = csd(x, y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
 
-    Cxy = np.abs(Pxy)**2/Pxx/Pyy
+    Cxy = np.abs(Pxy)**2 / Pxx / Pyy
 
-    return ff, Cxy
+    return freqs, Cxy
 
 
 def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
@@ -477,7 +478,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         Length of each segment.  Defaults to 256.
     noverlap : int, optional
         Number of points to overlap between segments. If None,
-        ``noverlap = nperseg / 2``.  Defaults to None.
+        ``noverlap = nperseg // 2``.  Defaults to None.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired.  If None,
         the FFT length is `nperseg`. Defaults to None.
@@ -504,7 +505,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
 
     Returns
     -------
-    f : ndarray
+    freqs : ndarray
         Array of sample frequencies.
     result : ndarray
         Array of output data, contents dependant on *mode* kwarg.
@@ -587,7 +588,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         raise ValueError('nfft must be greater than or equal to nperseg.')
 
     if noverlap is None:
-        noverlap = nperseg/2
+        noverlap = nperseg//2
     elif noverlap >= nperseg:
         raise ValueError('noverlap must be less than nperseg.')
 
@@ -684,13 +685,9 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     if mode == 'psd' and sides == 'onesided':
         result[...,1:-1] *= 2
 
-    t = np.arange(nfft/2, len(x) - nfft/2 + 1, nfft - noverlap)/fs
+    t = np.arange(nfft//2, len(x) - nfft//2 + 1, nfft - noverlap)/fs
 
-    if sides == 'twosided':
-        pass
-        #freqs = fftpack.fftshift(freqs)
-        #result = fftpack.fftshift(result, axes=-1)
-    elif not nperseg % 2:
+    if sides != 'twosided' and not nperseg % 2:
         # get the last value correctly, it is negative otherwise
         freqs[-1] *= -1
 
