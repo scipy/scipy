@@ -568,13 +568,13 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         # Check if x and y are the same length, zero-pad if neccesary
         if x.shape[-1] != y.shape[-1]:
             if x.shape[-1] < y.shape[-1]:
-                padShape = list(x.shape)
-                padShape[-1] = y.shape[-1] - x.shape[-1]
-                x = np.concatenate((x, np.zeros(padShape)), -1)
+                pad_shape = list(x.shape)
+                pad_shape[-1] = y.shape[-1] - x.shape[-1]
+                x = np.concatenate((x, np.zeros(pad_shape)), -1)
             else:
-                padShape = list(y.shape)
-                padShape[-1] = x.shape[-1] - y.shape[-1]
-                y = np.concatenate((y, np.zeros(padShape)), -1)
+                pad_shape = list(y.shape)
+                pad_shape[-1] = x.shape[-1] - y.shape[-1]
+                y = np.concatenate((y, np.zeros(pad_shape)), -1)
 
     # X and Y are same length now, can test nperseg with either
     if x.shape[-1] < nperseg:
@@ -582,15 +582,23 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
                       'using nperseg = {1:d}'.format(nperseg, x.shape[-1]))
         nperseg = x.shape[-1]
 
+    nperseg = int(nperseg)
+    if nperseg < 1:
+        raise ValueError('nperseg must be a positive integer')
+
     if nfft is None:
         nfft = nperseg
     elif nfft < nperseg:
         raise ValueError('nfft must be greater than or equal to nperseg.')
+    else:
+        nfft = int(nfft)
 
     if noverlap is None:
         noverlap = nperseg//2
     elif noverlap >= nperseg:
         raise ValueError('noverlap must be less than nperseg.')
+    else:
+        noverlap = int(noverlap)
 
     # Handle detrending and window functions
     if not detrend:
@@ -613,8 +621,8 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         win = np.asarray(window)
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
-        if win.shape[0] > x.shape[-1]:
-            raise ValueError('window is longer than x.')
+        if win.shape[0] != nperseg:
+            raise ValueError('window must have length of nperseg')
 
     if np.result_type(win,np.complex64) != outdtype:
         win = win.astype(outdtype)
@@ -641,37 +649,23 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         sides = 'twosided'
 
     if sides == 'twosided':
-        numFreqs = nfft
+        num_freqs = nfft
     elif sides == 'onesided':
         if nperseg % 2:
-            numFreqs = (nfft + 1)//2
+            num_freqs = (nfft + 1)//2
         else:
-            numFreqs = nfft//2 + 1
+            num_freqs = nfft//2 + 1
 
-    # Stride, detrend, apply windows
-    result = _stride_windows(x, nperseg, noverlap, axis=-1)
-    result = detrend_func(result)
-    result = _apply_window(result, win, axis=-1)
-
-    # Zero pad here, now that windowing is done
-    padShape = list(result.shape)
-    padShape[-1] = nfft - padShape[-1]
-    result = np.concatenate((result, np.zeros(padShape)), axis=-1)
-
-    # Perform the fft, don't keep redundant info
-    result = fftpack.fft(result, n=nfft, axis=-1)[...,:numFreqs]
-    freqs = fftpack.fftfreq(nfft, 1/fs)[:numFreqs]
+    # Perform the windowed FFTs
+    result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft)
+    result = result[..., :num_freqs]
+    freqs = fftpack.fftfreq(nfft, 1/fs)[:num_freqs]
 
     if not same_data:
         # All the same operations on the y data
-        resultY = _stride_windows(y, nfft, noverlap, axis=-1)
-        resultY = detrend_func(resultY)
-        resultY = _apply_window(resultY, win, axis=-1)
-        padShape = list(resultY.shape)
-        padShape[-1] = nfft - padShape[-1]
-        resultY = np.concatenate((resultY, np.zeros(padShape)), axis=-1)
-        resultY = fftpack.fft(resultY, n=nfft, axis=-1)[...,:numFreqs]
-        result = np.conjugate(result) * resultY
+        result_y = _fft_helper(y, win, detrend_func, nperseg, noverlap, nfft)
+        result_y = result_y[..., :num_freqs]
+        result = np.conjugate(result) * result_y
     elif mode == 'psd':
         result = np.conjugate(result) * result
     elif mode == 'magnitude':
@@ -707,103 +701,20 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     return freqs, result, t
 
 
-def _stride_windows(x, n, noverlap=0, axis=-1):
+def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
     '''
-    Return all subsegments of an array of data in a memory-efficient manner.
+    Calculate windowed FFT, for internal use by scipy.signal._spectral_helper
 
-    Overlapping segments can be returned, using strides to avoid data
-    duplication. The output array contains a new axis, corresponding to the
-    window index.
-
-    Parameters
-    ---------
-    x : array_like
-        Array or sequence containing the data.
-
-    n : int
-        The number of data points in each window.
-
-    noverlap : int, optional
-        The overlap between adjacent windows. Default is 0 (no overlap)
-
-    axis : int, optional
-        The axis along which the data will be windowed. The default is the last
-        axis (-1).
+    This is a helper function that does the main FFT calculation for 
+    _spectral helper. All input valdiation is performed there, and the data 
+    axis is assumed to be the last axis of x. It is not designed to be called
+    externally. The windows are not averaged over; the result from each window
+    is returned.
 
     Returns
     -------
-    xs : ndarray
-        Strided Array
-
-    References
-    ----------
-    stackoverflow: Rolling window for 1D arrays in Numpy?
-    <http://stackoverflow.com/a/6811241>
-    stackoverflow: Using strides for an efficient moving average filter
-    <http://stackoverflow.com/a/4947453>
-
-    Notes
-    -----
-    WARNING: It is not safe to write to the output array. Multiple elements
-    may point to the same piece of memory, so modifying one value may change
-    others.
-
-    Adapted from matplotlib.mlab
-    '''
-
-    if noverlap >= n:
-        raise ValueError('noverlap must be less than n')
-    if n < 1:
-        raise ValueError('n cannot be less than 1')
-
-    x = np.asarray(x)
-
-    # Put windowing data axis at -1 spot
-    x = np.rollaxis(x, axis, len(x.shape))
-
-    if n == 1 and noverlap == 0:
-        return x[...,np.newaxis]
-
-    if n > x.shape[-1]:
-        raise ValueError('n cannot be greater than the length of data')
-
-    # np.lib.stride_tricks.as_strided easily leads to memory corruption for
-    # non integer shape and strides, i.e. noverlap or n.
-    noverlap = int(noverlap)
-    n = int(n)
-
-    step = n - noverlap
-    shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, n)
-    strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
-
-    result = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
-
-    result = np.rollaxis(result, -1, axis)
-
-    return result
-
-
-def _stride_repeat(x, shape, axis=-1):
-    '''
-    Repeat the values in a 1D array in a memory-efficient manner.
-
-    Parameters
-    ---------
-    x : array_like
-        1D array or sequence containing the data.
-
-    shape : tuple
-        The shape to extend the array to. *shape*[*axis*] must equal
-        *x*.size
-
-    axis : int, optional
-        The axis along which the data will be strided. The default is the last
-        axis (-1).
-
-    Returns
-    -------
-    xs : ndarray
-        Strided Array
+    result : ndarray
+        Array of FFT data
 
     References
     ----------
@@ -812,69 +723,39 @@ def _stride_repeat(x, shape, axis=-1):
 
     Notes
     -----
-    WARNING: It is not safe to write to the output array. Multiple elements
-    may point to the same piece of memory, so modifying one value may change
-    others.
-
     Adapted from matplotlib.mlab
-
     '''
-
-    x = np.asarray(x)
-    if x.ndim != 1:
-        raise ValueError('only 1-dimensional arrays can be used')
-
-    if shape[axis] != len(x):
-        raise ValueError('Incompatible shapes')
-
-    if len(shape) <= 1:
-        return x
-
-    strides = np.zeros(len(shape), dtype='int64')
-    strides[axis] = x.strides[0]
-
-    return np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides)
-
-
-def _apply_window(x, win, axis=-1):
-    '''
-    Apply the given window to a data array along the given axis.
-
-    Parameters
-    ---------
-    x : array_like
-        Array or sequence containing the data to be windowed.
-
-    win : array_like
-        A 1D array with length *x*.shape[*axis*]
-
-    axis : int, optional
-        Axis along which the window is applied; the default is over
-        the last axis (i.e. ``axis=-1``).
-
-    Returns
-    -------
-    wx : ndarray
-        Windowed Array
-
-    Notes
-    -----
-    Adapted from matplotlib.mlab
-
-    '''
-    x = np.asarray(x)
-    win = np.asarray(win)
-
-    if axis+1 > x.ndim:
-        raise ValueError('axis(=%s) out of bounds' % axis)
-    if win.ndim != 1:
-        raise ValueError('window must be 1-D')
-    if win.shape[0] != x.shape[axis]:
-        raise ValueError('The len(window) must be the same as the shape '
-                            'of x for the chosen axis')
-
-    if x.ndim == 1:
-        return win * x
+    # Created strided array of data segments
+    if nperseg == 1 and noverlap == 0:
+        result = x[..., np.newaxis]
     else:
-        winRep = _stride_repeat(win, x.shape, axis)
-        return winRep * x
+        step = nperseg - noverlap
+        shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
+        strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
+        result = np.lib.stride_tricks.as_strided(x, shape=shape, 
+                                                 strides=strides)
+
+    # Detrend each data segment individually
+    result = detrend_func(result)
+    
+    # Create strided array of window profiles, same shape as result
+    if result.shape[-1] == 1:
+        winrep = win
+    else:
+        win_strides = np.zeros(len(result.shape), dtype='int64')
+        win_strides[-1] = win.strides[0]
+        winrep = np.lib.stride_tricks.as_strided(win, shape=result.shape, 
+                                                 strides=win_strides)
+
+    # Apply window by multiplication
+    result = winrep * result
+
+    # Zero pad here, now that windowing is done
+    pad_shape = list(result.shape)
+    pad_shape[-1] = nfft - pad_shape[-1]
+    result = np.concatenate((result, np.zeros(pad_shape)), axis=-1)
+
+    # Perform the fft
+    result = fftpack.fft(result, n=nfft, axis=-1)
+    
+    return result
