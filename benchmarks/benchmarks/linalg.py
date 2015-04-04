@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, print_function
 
 import numpy.linalg as nl
 
+import numpy as np
 from numpy.testing import assert_
 from numpy.random import rand
 
@@ -68,3 +69,37 @@ class Bench(Benchmark):
             nl.svd(self.a)
         else:
             sl.svd(self.a)
+
+
+class Norm(Benchmark):
+    params = [
+        [(20, 20), (100, 100), (1000, 1000), (20, 1000), (1000, 20)],
+        ['contig', 'nocont'],
+        ['numpy', 'scipy']
+    ]
+    param_names = ['shape', 'contiguous', 'module']
+
+    def setup(self, shape, contig, module):
+        a = np.random.randn(*shape)
+        if contig != 'contig':
+            a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
+            assert_(not a.flags['CONTIGUOUS'])
+        self.a = a
+
+    def time_1_norm(self, size, contig, module):
+        if module == 'numpy':
+            nl.norm(self.a, ord=1)
+        else:
+            sl.norm(self.a, ord=1)
+
+    def time_inf_norm(self, size, contig, module):
+        if module == 'numpy':
+            nl.norm(self.a, ord=np.inf)
+        else:
+            sl.norm(self.a, ord=np.inf)
+
+    def time_frobenius_norm(self, size, contig, module):
+        if module == 'numpy':
+            nl.norm(self.a)
+        else:
+            sl.norm(self.a)
