@@ -205,6 +205,9 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
 
 
 def _chk_asarray(a, axis):
+    if len(np.array(a).shape) == 0:
+        a = np.atleast_1d(a)
+
     if axis is None:
         a = np.ravel(a)
         outaxis = 0
@@ -215,6 +218,11 @@ def _chk_asarray(a, axis):
 
 
 def _chk2_asarray(a, b, axis):
+    if len(np.array(a).shape) == 0:
+        a = np.atleast_1d(a)
+    if len(np.array(b).shape) == 0:
+        b = np.atleast_1d(b)
+
     if axis is None:
         a = np.ravel(a)
         b = np.ravel(b)
