@@ -205,7 +205,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
 
 
 def _chk_asarray(a, axis):
-    if len(np.array(a).shape) == 0:
+    if np.array(a).ndim == 0:
         a = np.atleast_1d(a)
 
     if axis is None:
@@ -218,9 +218,9 @@ def _chk_asarray(a, axis):
 
 
 def _chk2_asarray(a, b, axis):
-    if len(np.array(a).shape) == 0:
+    if np.array(a).ndim == 0:
         a = np.atleast_1d(a)
-    if len(np.array(b).shape) == 0:
+    if np.array(b).ndim == 0:
         b = np.atleast_1d(b)
 
     if axis is None:
@@ -2780,11 +2780,15 @@ def spearmanr(a, b=None, axis=0):
 
     """
     a, axisout = _chk_asarray(a, axis)
+    if a.size <= 1:
+        return np.nan, np.nan
     ar = np.apply_along_axis(rankdata, axisout, a)
 
     br = None
     if b is not None:
         b, axisout = _chk_asarray(b, axis)
+        if b.size <= 1:
+            return np.nan, np.nan
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
     rs = np.corrcoef(ar, br, rowvar=axisout)
@@ -2797,7 +2801,7 @@ def spearmanr(a, b=None, axis=0):
 
     prob = 2 * distributions.t.sf(np.abs(t), n-2)
     if rs.shape == (2, 2):
-        return rs[1,0], prob[1,0]
+        return rs[1, 0], prob[1, 0]
     else:
         return rs, prob
 
