@@ -2303,6 +2303,7 @@ class TestDescribe(TestCase):
         # not sure about precision with sk, skc
         assert_array_almost_equal(sk, 0.0, decimal=13)
         assert_array_almost_equal(kurt, -3.0, decimal=13)
+
     def test_describe_numbers(self):
         x = np.vstack((np.ones((3,4)), 2 * np.ones((2,4))))
         nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
