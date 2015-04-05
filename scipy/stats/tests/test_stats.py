@@ -507,8 +507,12 @@ class TestCorrSpearmanr(TestCase):
     """
     def test_scalar(self):
         y = stats.spearmanr(4.)
-        r = y[0]
-        assert(np.isnan(r))
+        assert_(np.isnan(y[0]))
+        assert_(np.isnan(y[1]))
+
+        y = stats.spearmanr(4., 2.)
+        assert_(np.isnan(y[0]))
+        assert_(np.isnan(y[1]))
 
     def test_sXX(self):
         y = stats.spearmanr(X,X)
@@ -1290,12 +1294,12 @@ class TestVariability(TestCase):
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
         y = stats.sem(self.scalar_testcase)
-        assert(np.isnan(y))
+        assert_(np.isnan(y))
         y = stats.sem(self.testcase)
         assert_approx_equal(y, 0.6454972244)
         n = len(self.testcase)
         assert_allclose(stats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
-                         stats.sem(self.testcase, ddof=2))
+                        stats.sem(self.testcase, ddof=2))
 
     def test_zmap(self):
         # not in R, so tested by using:
@@ -2294,12 +2298,12 @@ def test_ttest_1samp_new():
 
 
 class TestDescribe(TestCase):
-    def test_scalar(self):
+    def test_describe_scalar(self):
         n, mm, m, v, sk, kurt = stats.describe(4.)
         assert_equal(n, 1)
         assert_equal(mm, (4.0, 4.0))
         assert_equal(m, 4.0)
-        assert(np.isnan(v))
+        assert_(np.isnan(v))
         # not sure about precision with sk, skc
         assert_array_almost_equal(sk, 0.0, decimal=13)
         assert_array_almost_equal(kurt, -3.0, decimal=13)
