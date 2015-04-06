@@ -896,8 +896,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
                  a[0] + a[1]z  + ... + a[na] z
 
     """
-    if isscalar(a):
-        a = [a]
+    a = np.atleast_1d(a)
     if zi is None:
         return sigtools._linear_filter(b, a, x, axis)
     else:

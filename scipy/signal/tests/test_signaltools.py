@@ -666,7 +666,17 @@ class _TestLinearFilter(TestCase):
 
         # lfilter does not prepend ones 
         assert_raises(ValueError, lfilter, b, a, x, -1, np.ones(zi_size))
-    
+
+    def test_scalar_a(self):
+        # a can be a scalar.  
+        x = self.generate(6)
+        b = self.convert_dtype([1, 0, -1])
+        a = self.convert_dtype([1])
+        y_r = self.convert_dtype([0, 1, 2, 2, 2, 2])
+
+        y = lfilter(b, a[0], x)
+        assert_array_almost_equal(y, y_r)
+
     def base_bad_size_zi(self, b, a, x, axis, zi):
         b = self.convert_dtype(b)
         a = self.convert_dtype(a)
