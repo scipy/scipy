@@ -131,7 +131,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 {
     PyObject *b, *a, *X, *Vi;
     PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
-    int axis, typenum, theaxis, st;
+    int axis, typenum, theaxis, st, Vi_needs_broadcasted = 0;
     char *ara_ptr, input_flag = 0, *azero;
     intp na, nb, nal, zi_size;
     intp zf_shape[NPY_MAXDIMS];
@@ -230,8 +230,11 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             Xk = PyArray_DIM(arX, k);
             if (k == theaxis && Vik == zi_size) {
                 zf_shape[k] = zi_size;
-            } else if (k != theaxis && (Vik == Xk || Vik == 1)) {
+            } else if (k != theaxis && Vik == Xk) {
                 zf_shape[k] = Xk;
+            } else if (k != theaxis && Vik == 1) { 
+                zf_shape[k] = Xk;
+                Vi_needs_broadcasted = 1;
             } else {
                 PyObject *msg = convert_shape_to_errmsg(PyArray_NDIM(arX),
                         PyArray_DIMS(arX), PyArray_DIMS(arVi),
@@ -244,15 +247,45 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
                 goto fail;
             }
         }
-    }
+        
+        if (Vi_needs_broadcasted) {
+            /* Expand the singleton dimensions of arVi without copying by
+             * creating a new view of arVi with the expanded dimensions
+             * but the corresponding stride = 0.
+             */
+            PyArrayObject *arVi_view;
+            PyArray_Descr *view_dtype;
+            npy_intp *arVi_shape = PyArray_DIMS(arVi);
+            npy_intp *arVi_strides = PyArray_STRIDES(arVi);
+            npy_intp ndim = PyArray_NDIM(arVi);
+            npy_intp strides[NPY_MAXDIMS];
+            npy_intp k;
 
-    arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
-                                              PyArray_DIMS(arX), typenum);
-    if (arY == NULL) {
-        goto fail;
-    }
+            for (k = 0; k < ndim; ++k) {
+                if (arVi_shape[k] == 1) {
+                    strides[k] = 0;
+                } else {
+                    strides[k] = arVi_strides[k];
+                }
+            }
+            
+            /* PyArray_DESCR borrows a reference, but it will be stolen
+             * by PyArray_NewFromDescr below, so increment it.
+             */
+            view_dtype = PyArray_DESCR(arVi);
+            Py_INCREF(view_dtype);
+            
+            arVi_view = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type,
+                            view_dtype, ndim, zf_shape, strides,
+                            PyArray_BYTES(arVi), 0, NULL);
+            if (!arVi_view) {
+                goto fail;
+            }
+            /* Give our reference to arVi to arVi_view */
+            PyArray_BASE(arVi_view) = arVi;
+            arVi = arVi_view;
+        }
 
-    if (input_flag) {
         arVf = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arVi),
                                                    zf_shape,
                                                    typenum);
@@ -260,6 +293,13 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             goto fail;
         }
     }
+    
+    arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
+                                              PyArray_DIMS(arX), typenum);
+    if (arY == NULL) {
+        goto fail;
+    }
+
 
     st = RawFilter(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
     if (st) {
