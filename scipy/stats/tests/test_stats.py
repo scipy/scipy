@@ -507,12 +507,10 @@ class TestCorrSpearmanr(TestCase):
     """
     def test_scalar(self):
         y = stats.spearmanr(4.)
-        assert_(np.isnan(y[0]))
-        assert_(np.isnan(y[1]))
+        assert_(np.isnan(y).all())
 
         y = stats.spearmanr(4., 2.)
-        assert_(np.isnan(y[0]))
-        assert_(np.isnan(y[1]))
+        assert_(np.isnan(y).all())
 
     def test_sXX(self):
         y = stats.spearmanr(X,X)
