@@ -25,6 +25,7 @@ Basics
    solve - Solve a linear system of equations
    solve_banded - Solve a banded linear system
    solveh_banded - Solve a Hermitian or symmetric banded system
+   solve_circulant - Solve a circulant system
    solve_triangular - Solve a triangular matrix
    solve_toeplitz - Solve a toeplitz matrix
    det - Find the determinant of a square matrix

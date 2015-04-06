@@ -32,6 +32,9 @@ details, see ``benchmarks/README.rst``.
 `scipy.linalg` improvements
 ---------------------------
 
+The function `scipy.linalg.solve_circulant` solves a linear system with
+a circulant coefficient matrix.
+
 The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
 
 Added wrapper for potentially useful LAPACK function `*lasd4`. It computes the
