@@ -29,7 +29,7 @@ Routines for updating QR decompositions
 #    factorization. Math. Comput. 30, 772-795 (1976).
 #
 # 5. Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
-#    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377 (1990).
+#    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 3693-77 (1990).
 # 
 
 {{py: 
@@ -65,8 +65,8 @@ cdef extern from *:
     cnp.ndarray PyArray_CheckFromAny(object, void*, int, int, int, void*)
     cnp.ndarray PyArray_FromArray(cnp.ndarray, void*, int)
 
-from scipy.linalg cimport blas_pointers
-from scipy.linalg cimport lapack_pointers
+from . cimport cython_blas as blas_pointers
+from . cimport cython_lapack as lapack_pointers
 
 import numpy as np
 
@@ -120,86 +120,10 @@ cdef inline void axpy(int n, blas_t a, blas_t* x, int incx,
     {{endfor}}
 
 cdef inline blas_t nrm2(int n, blas_t* x, int incx) nogil:
-    # since dnrm2 etc are functions, we can't at present call them...
-    # this is mostly cribbed from netlib's dnrm2
-    cdef double norm, scale, ssq, absxi
-    cdef float fnorm, fscale, fssq, fabsxi
-    if blas_t is float:
-        if n < 1 or incx < 1:
-            fnorm = 0
-        elif n == 1:
-            fnorm = fabs(x[0])
-        else:
-            fscale = 0.0
-            fssq = 1.0
-    
-            for k in range(n):
-                if index1(x, &incx, k)[0] != 0:
-                    fabsxi = fabs(index1(x, &incx, k)[0])
-                    if fscale < fabsxi:
-                        fssq = 1 + fssq * (fscale/fabsxi)**2
-                        fscale = fabsxi
-                    else:
-                        fssq = fssq + (fabsxi/fscale)**2
-            fnorm = fscale*sqrt(fssq)
-        return fnorm
-    elif blas_t is double:
-        if n < 1 or incx < 1:
-            norm = 0
-        elif n == 1:
-            norm = fabs(x[0])
-        else:
-            scale = 0.0
-            ssq = 1.0
-    
-            for k in range(n):
-                if index1(x, &incx, k)[0] != 0:
-                    absxi = fabs(index1(x, &incx, k)[0])
-                    if scale < absxi:
-                        ssq = 1 + ssq * (scale/absxi)**2
-                        scale = absxi
-                    else:
-                        ssq = ssq + (absxi/scale)**2
-            norm = scale*sqrt(ssq)
-        return norm
-    elif blas_t is float_complex:
-        if n < 1 or incx < 1:
-            fnorm = 0
-        elif n == 1:
-            fnorm = hypot(x[0].real, x[0].imag)
-        else:
-            fscale = 0.0
-            fssq = 1.0
-    
-            for k in range(n):
-                if index1(x, &incx, k)[0] != 0:
-                    fabsxi = hypot(index1(x, &incx, k)[0].real, index1(x, &incx, k)[0].imag)
-                    if fscale < fabsxi:
-                        fssq = 1 + fssq * (fscale/fabsxi)**2
-                        fscale = fabsxi
-                    else:
-                        fssq = fssq + (fabsxi/fscale)**2
-            fnorm = fscale*sqrt(fssq)
-        return fnorm
-    else:
-        if n < 1 or incx < 1:
-            norm = 0
-        elif n == 1:
-            norm = hypot(x[0].real, x[0].imag)
-        else:
-            scale = 0.0
-            ssq = 1.0
-    
-            for k in range(n):
-                if index1(x, &incx, k)[0] != 0:
-                    absxi = hypot(index1(x, &incx, k)[0].real, index1(x, &incx, k)[0].imag)
-                    if scale < absxi:
-                        ssq = 1 + ssq * (scale/absxi)**2
-                        scale = absxi
-                    else:
-                        ssq = ssq + (absxi/scale)**2
-            norm = scale*sqrt(ssq)
-        return norm
+    {{for COND, CNAME, C in zip(CONDS, CNAMES, ['s', 'd', 'sc', 'dz'])}}
+    {{COND}} blas_t is {{CNAME}}:
+        return blas_pointers.{{C}}nrm2(&n, x, &incx)
+    {{endfor}}
 
 cdef inline void lartg(blas_t* a, blas_t* b, blas_t* c, blas_t* s) nogil:
     cdef blas_t g
@@ -397,7 +321,6 @@ cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u,
             blas_t_conj(m, u, &ss)
             blas_t_conj(n, s+n, &ss)
         gemv(T, n, m, -1, q, n, s+n, 1, 1, u, 1)
-        
     wpnorm = nrm2(m, u, 1) 
     
     if blas_t_less_than(wpnorm, wnorm/inv_root2): # u lies in span(q) 
@@ -1569,7 +1492,7 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
            Gram-Schmidt QR factorization. Math. Comput. 30, 772-795 (1976).
 
     .. [3] Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
-           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377
+           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369-377
            (1990).
 
     Examples
@@ -1787,7 +1710,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
            Gram-Schmidt QR factorization. Math. Comput. 30, 772-795 (1976).
 
     .. [3] Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
-           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377
+           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369-377
            (1990).
 
     Examples
@@ -2174,7 +2097,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
            Gram-Schmidt QR factorization. Math. Comput. 30, 772-795 (1976).
 
     .. [3] Reichel, L. & Gragg, W. B. Algorithm 686: FORTRAN Subroutines for
-           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369–377
+           Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 369-377
            (1990).
 
     Examples

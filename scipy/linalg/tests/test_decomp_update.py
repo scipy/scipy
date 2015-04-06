@@ -674,7 +674,7 @@ class BaseQRinsert(BaseQRdeltas):
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_economic_1_col(self):
-        a, q, r, u = self.generate('tall', 'economic',  which='col')
+        a, q, r, u = self.generate('tall', 'economic', which='col')
         for col in range(r.shape[1]):
             q1, r1 = qr_insert(q, r, u.copy(), col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
@@ -683,7 +683,7 @@ class BaseQRinsert(BaseQRdeltas):
     def test_economic_1_col_bad_update(self):
         # When the column to be added lies in the span of Q, the update is
         # not meaningful.  This is detected, and a LinAlgError is issued.
-        q = np.eye(5 ,3, dtype=self.dtype)
+        q = np.eye(5, 3, dtype=self.dtype)
         r = np.eye(3, dtype=self.dtype)
         u = np.array([1, 0, 0, 0, 0], self.dtype)
         assert_raises(linalg.LinAlgError, qr_insert, q, r, u, 0, 'col')
