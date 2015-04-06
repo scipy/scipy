@@ -1496,6 +1496,11 @@ class TestStudentTest(TestCase):
     P2_0 = 0.2254033
 
     def test_onesample(self):
+        t, p = stats.ttest_1samp(4., 3.)
+
+        assert_(np.isnan(t))
+        assert_(np.isnan(p))
+
         t, p = stats.ttest_1samp(self.X1, 0)
 
         assert_array_almost_equal(t, self.T1_0)
@@ -2056,6 +2061,11 @@ def test_ttest_rel():
     t,p = stats.ttest_rel(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal([t,p],tpr)
 
+    # test scalars
+    t, p = stats.ttest_rel(4., 3.)
+    assert_(np.isnan(t))
+    assert_(np.isnan(p))
+
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
     rvs2_3D = np.dstack([rvs2_2D,rvs2_2D,rvs2_2D])
@@ -2125,6 +2135,11 @@ def test_ttest_ind():
     args = _desc_stats(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal(stats.ttest_ind_from_stats(*args),
                               [t, p])
+
+    # test scalars
+    t, p = stats.ttest_ind(4., 3.)
+    assert_(np.isnan(t))
+    assert_(np.isnan(p))
 
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
