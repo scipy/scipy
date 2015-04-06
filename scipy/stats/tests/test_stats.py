@@ -2085,8 +2085,9 @@ def test_ttest_rel():
         assert_equal(stats.ttest_rel([0,0,0], [0,0,0]), (np.nan, np.nan))
 
         # check that nan in input array result in nan output
-        anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
+        anan = np.array([[1, np.nan], [-1, 1]])
+        assert_equal(stats.ttest_rel(anan, np.zeros((2, 2))),
+                     ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
