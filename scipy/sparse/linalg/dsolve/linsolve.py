@@ -273,9 +273,6 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         ``secondary``, ``dynamic``, ``interp``. (Default: ``basic,area``)
 
         See SuperLU documentation for details.
-    milu : str, optional
-        Which version of modified ILU to use. (Choices: ``silu``,
-        ``smilu_1``, ``smilu_2`` (default), ``smilu_3``.)
 
     Remaining other options
         Same as for `splu`
