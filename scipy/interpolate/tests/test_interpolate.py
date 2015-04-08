@@ -1050,8 +1050,8 @@ class TestBPolyCalculus(TestCase):
 
         xx = np.linspace(x[0], x[-1], 10)
 
-        assert_allclose(bp.antiderivative()(xx),
-                        pp.antiderivative()(xx), atol=1e-12, rtol=1e-12)
+        assert_allclose(bp.antiderivative(2)(xx),
+                        pp.antiderivative(2)(xx), atol=1e-12, rtol=1e-12)
 
     def test_antider_continuous(self):
         np.random.seed(1234)
@@ -1062,6 +1062,41 @@ class TestBPolyCalculus(TestCase):
         xx = bp.x[1:-1]
         assert_allclose(bp(xx - 1e-14),
                         bp(xx + 1e-14), atol=1e-12, rtol=1e-12)
+
+    def test_integrate(self):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(11))
+        c = np.random.random((4, 10))
+        bp = BPoly(c, x)
+        pp = PPoly.from_bernstein_basis(bp)
+        assert_allclose(bp.integrate(0, 1),
+                        pp.integrate(0, 1), atol=1e-12, rtol=1e-12)
+
+    def test_integrate_extrap(self):
+        c = [[1]]
+        x = [0, 1]
+        b = BPoly(c, x)
+
+        # default is extrapolate=True
+        assert_allclose(b.integrate(0, 2), 2., atol=1e-14)
+
+        # .integrate argument overrides self.extrapolate
+        b1 = BPoly(c, x, extrapolate=False)
+        assert_(np.isnan(b1.integrate(0, 2)))
+        assert_allclose(b1.integrate(0, 2, extrapolate=True), 2., atol=1e-14)
+
+    def test_antider_neg(self):
+        # .derivative(-nu) ==> .andiderivative(nu) and vice versa
+        c = [[1]]
+        x = [0, 1]
+        b = BPoly(c, x)
+
+        xx = np.linspace(0, 1, 21)
+        
+        assert_allclose(b.derivative(-1)(xx), b.antiderivative()(xx),
+                        atol=1e-12, rtol=1e-12)
+        assert_allclose(b.derivative(1)(xx), b.antiderivative(-1)(xx),
+                        atol=1e-12, rtol=1e-12)
 
 
 class TestPolyConversions(TestCase):

@@ -1048,6 +1048,7 @@ class BPoly(_PPolyBase):
     extend
     derivative
     antiderivative
+    integrate
     construct_fast
     from_power_basis
     from_derivatives
@@ -1161,7 +1162,7 @@ class BPoly(_PPolyBase):
 
         """
         if nu <= 0:
-            raise self.derivative(-nu)
+            return self.derivative(-nu)
 
         if nu > 1:
             bp = self
@@ -1184,11 +1185,37 @@ class BPoly(_PPolyBase):
         # The latter is given by the coefficient of B_{n+1, n+1}
         # *on the previous interval* (other B. polynomials are zero at the breakpoint)
         # Finally, use the fact that BPs form a partition of unity.
-        for j in range(1, x.shape[0]-1):
-            x0 = x[j]
-            c2[:, j, ...] += c2[k, j-1, ...]
+        c2[:,1:] += np.cumsum(c2[k,:], axis=0)[:-1]
 
         return self.construct_fast(c2, x, self.extrapolate)
+
+    def integrate(self, a, b, extrapolate=None):
+        """
+        Compute a definite integral over a piecewise polynomial.
+
+        Parameters
+        ----------
+        a : float
+            Lower integration bound
+        b : float
+            Upper integration bound
+        extrapolate : bool, optional
+            Whether to extrapolate to out-of-bounds points based on first
+            and last intervals, or to return NaNs.
+            Defaults to ``self.extrapolate``.
+
+        Returns
+        -------
+        array_like
+            Definite integral of the piecewise polynomial over [a, b]
+
+        """
+        # XXX: can probably use instead the fact that
+        # \int_0^{1} B_{j, n}(x) \dx = 1/(n+1)
+        ib = self.antiderivative()
+        if extrapolate is not None:
+            ib.extrapolate = extrapolate
+        return ib(b) - ib(a)
 
     def extend(self, c, x, right=True):
         k = max(self.c.shape[0], c.shape[0])
