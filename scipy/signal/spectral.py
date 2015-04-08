@@ -738,25 +738,11 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
 
     # Detrend each data segment individually
     result = detrend_func(result)
-    
-    # Create strided array of window profiles, same shape as result
-    if result.shape[-1] == 1:
-        winrep = win
-    else:
-        win_strides = np.zeros(len(result.shape), dtype='int64')
-        win_strides[-1] = win.strides[0]
-        winrep = np.lib.stride_tricks.as_strided(win, shape=result.shape, 
-                                                 strides=win_strides)
 
     # Apply window by multiplication
-    result = winrep * result
+    result = win * result
 
-    # Zero pad here, now that windowing is done
-    pad_shape = list(result.shape)
-    pad_shape[-1] = nfft - pad_shape[-1]
-    result = np.concatenate((result, np.zeros(pad_shape)), axis=-1)
-
-    # Perform the fft
-    result = fftpack.fft(result, n=nfft, axis=-1)
+    # Perform the fft. Acts on last axis by default. Zero-pads automatically
+    result = fftpack.fft(result, n=nfft)
     
     return result
