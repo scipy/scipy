@@ -1011,6 +1011,58 @@ class TestBPolyCalculus(TestCase):
         for i in range(k):
             assert_allclose(bp(xp, i), bp.derivative(i)(xp))
 
+    def test_antiderivative_simple(self):
+        # f(x) = x        for x \in [0, 1),
+        #        (x-1)/2  for x \in [1, 3]
+        #
+        # antiderivative is then
+        # F(x) = x**2 / 2            for x \in [0, 1), 
+        #        0.5*x*(x/2 - 1) + A  for x \in [1, 3]
+        # where A = 3/4 for continuity at x = 1.
+        x = [0, 1, 3]
+        c = [[0, 0], [1, 1]]
+
+        bp = BPoly(c, x)
+        bi = bp.antiderivative()
+        
+        xx = np.linspace(0, 3, 11)
+        assert_allclose(bi(xx),
+                        np.where(xx < 1, xx**2 / 2.,
+                                         0.5 * xx * (xx/2. - 1) + 3./4),
+                        atol=1e-12, rtol=1e-12)
+
+    def test_der_antider(self):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(11))
+        c = np.random.random((4, 10, 2, 3))
+        bp = BPoly(c, x)
+
+        xx = np.linspace(x[0], x[-1], 100)
+        assert_allclose(bp.antiderivative().derivative()(xx),
+                        bp(xx), atol=1e-12, rtol=1e-12)
+
+    def test_antider_ppoly(self):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(11))
+        c = np.random.random((4, 10, 2, 3))
+        bp = BPoly(c, x)
+        pp = PPoly.from_bernstein_basis(bp)
+
+        xx = np.linspace(x[0], x[-1], 10)
+
+        assert_allclose(bp.antiderivative()(xx),
+                        pp.antiderivative()(xx), atol=1e-12, rtol=1e-12)
+
+    def test_antider_continuous(self):
+        np.random.seed(1234)
+        x = np.sort(np.random.random(11))
+        c = np.random.random((4, 10))
+        bp = BPoly(c, x).antiderivative()
+
+        xx = bp.x[1:-1]
+        assert_allclose(bp(xx - 1e-14),
+                        bp(xx + 1e-14), atol=1e-12, rtol=1e-12)
+
 
 class TestPolyConversions(TestCase):
     def test_bp_from_pp(self):
