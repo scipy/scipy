@@ -224,8 +224,9 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        assert_allclose(p, np.array([0.08333333, 0.15277778, 0.22222222,
-                                     0.22222222, 0.11111111]))
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222, 
+                      0.11111111])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_onesided_odd(self):
         x = np.zeros(16)
@@ -233,8 +234,9 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        assert_allclose(p, np.array([0.15958226, 0.24193954, 0.24145223,
-                                     0.24100919, 0.12188675]))
+        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919, 
+                      0.12188675])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_twosided(self):
         x = np.zeros(16)
@@ -242,9 +244,9 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        assert_allclose(p, np.array([0.08333333, 0.07638889, 0.11111111,
-                                     0.11111111, 0.11111111, 0.11111111, 
-                                     0.11111111, 0.07638889]))
+        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111, 
+                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_spectrum(self):
         x = np.zeros(16)
@@ -252,9 +254,9 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8, scaling='spectrum')
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        assert_allclose(p, np.array([0.015625, 0.028645833333333332,
-                                     0.041666666666666664, 0.041666666666666664,
-                                     0.020833333333333332]))
+        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667, 
+                      0.02083333])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_even(self):
         x = np.zeros(16, dtype=np.int)
@@ -262,8 +264,9 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        assert_allclose(p, np.array([0.08333333, 0.15277778, 0.22222222,
-                                     0.22222222, 0.11111111]))
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222, 
+                      0.11111111])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_odd(self):
         x = np.zeros(16, dtype=np.int)
@@ -271,8 +274,9 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        assert_allclose(p, np.array([0.15958226, 0.24193954, 0.24145223,
-                                     0.24100919, 0.12188675]))
+        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919, 
+                      0.12188675])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
         x = np.zeros(16, dtype=np.int)
@@ -280,9 +284,9 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        assert_allclose(p, np.array([0.08333333, 0.07638889, 0.11111111,
-                                     0.11111111, 0.11111111, 0.11111111, 
-                                     0.11111111, 0.07638889]))
+        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111, 
+                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_complex(self):
         x = np.zeros(16, np.complex128)
@@ -290,9 +294,9 @@ class TestWelch(TestCase):
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        assert_allclose(p, np.array([0.41666667, 0.38194444, 0.55555556,
-                                     0.55555556, 0.55555556, 0.55555556, 
-                                     0.55555556, 0.38194444]))
+        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556, 
+                      0.55555556, 0.55555556, 0.55555556, 0.38194444])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_unk_scaling(self):
         assert_raises(ValueError, welch, np.zeros(4, np.complex128),
@@ -415,7 +419,7 @@ class TestWelch(TestCase):
         assert_allclose(f, np.linspace(0, 0.5, 5))
         q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111], 'f') 
-        assert_allclose(p, q)
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     def test_real_onesided_odd_32(self):
@@ -426,7 +430,7 @@ class TestWelch(TestCase):
         assert_allclose(f, np.arange(5.0)/9.0)
         q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
                       0.12188675], 'f')
-        assert_allclose(p, q, atol=1e-7)
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
@@ -439,7 +443,7 @@ class TestWelch(TestCase):
         q = np.array([0.08333333, 0.07638889, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.11111111, 
                       0.07638889], 'f')
-        assert_allclose(p, q)
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
@@ -451,7 +455,7 @@ class TestWelch(TestCase):
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552, 
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
-        assert_allclose(p, q)
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
                 'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
 
@@ -484,8 +488,9 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        assert_allclose(p, np.array([0.08333333, 0.15277778, 0.22222222,
-                                     0.22222222, 0.11111111]))
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222, 
+                      0.11111111])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_onesided_odd(self):
         x = np.zeros(16)
@@ -493,8 +498,9 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        assert_allclose(p, np.array([0.15958226, 0.24193954, 0.24145223,
-                                     0.24100919, 0.12188675]))
+        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
+                      0.12188675])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_twosided(self):
         x = np.zeros(16)
@@ -502,9 +508,9 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        assert_allclose(p, np.array([0.08333333, 0.07638889, 0.11111111,
-                                     0.11111111, 0.11111111, 0.11111111, 
-                                     0.11111111, 0.07638889]))
+        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111, 
+                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_spectrum(self):
         x = np.zeros(16)
@@ -512,9 +518,9 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8, scaling='spectrum')
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        assert_allclose(p, np.array([0.015625, 0.028645833333333332,
-                                     0.041666666666666664, 0.041666666666666664, 
-                                     0.020833333333333332]))
+        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667, 
+                      0.02083333])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_even(self):
         x = np.zeros(16, dtype=np.int)
@@ -522,8 +528,9 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        assert_allclose(p, np.array([0.08333333, 0.15277778, 0.22222222,
-                                     0.22222222, 0.11111111]))
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222, 
+                      0.11111111])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_odd(self):
         x = np.zeros(16, dtype=np.int)
@@ -531,8 +538,9 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        assert_allclose(p, np.array([0.15958226, 0.24193954, 0.24145223,
-                                     0.24100919, 0.12188675]))
+        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919, 
+                      0.12188675])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
         x = np.zeros(16, dtype=np.int)
@@ -540,9 +548,9 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        assert_allclose(p, np.array([0.08333333, 0.07638889, 0.11111111,
-                                     0.11111111, 0.11111111, 0.11111111, 
-                                     0.11111111, 0.07638889]))
+        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111, 
+                      0.11111111, 0.11111111, 0.11111111, 0.07638889])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_complex(self):
         x = np.zeros(16, np.complex128)
@@ -550,9 +558,9 @@ class TestCSD:
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        assert_allclose(p, np.array([0.41666667, 0.38194444, 0.55555556,
-                                     0.55555556, 0.55555556, 0.55555556, 
-                                     0.55555556, 0.38194444]))
+        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556, 
+                      0.55555556, 0.55555556, 0.55555556, 0.38194444])
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_unk_scaling(self):
         assert_raises(ValueError, csd, np.zeros(4, np.complex128),
@@ -686,7 +694,7 @@ class TestCSD:
         assert_allclose(f, np.linspace(0, 0.5, 5))
         q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111], 'f') 
-        assert_allclose(p, q)
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     def test_real_onesided_odd_32(self):
@@ -697,7 +705,7 @@ class TestCSD:
         assert_allclose(f, np.arange(5.0)/9.0)
         q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
                       0.12188675], 'f')
-        assert_allclose(p, q, atol=1e-7)
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
@@ -710,7 +718,7 @@ class TestCSD:
         q = np.array([0.08333333, 0.07638889, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.11111111, 
                       0.07638889], 'f')
-        assert_allclose(p, q)
+        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
     @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
