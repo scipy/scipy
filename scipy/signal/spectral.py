@@ -436,7 +436,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
     """
-    freqs, Pxx = welch(x, fs, window, nperseg, noverlap, nfft, detrend, 
+    freqs, Pxx = welch(x, fs, window, nperseg, noverlap, nfft, detrend,
                        axis=axis)
     _, Pyy = welch(y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
     _, Pxy = csd(x, y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
@@ -706,8 +706,8 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
     '''
     Calculate windowed FFT, for internal use by scipy.signal._spectral_helper
 
-    This is a helper function that does the main FFT calculation for 
-    _spectral helper. All input valdiation is performed there, and the data 
+    This is a helper function that does the main FFT calculation for
+    _spectral helper. All input valdiation is performed there, and the data
     axis is assumed to be the last axis of x. It is not designed to be called
     externally. The windows are not averaged over; the result from each window
     is returned.
@@ -733,7 +733,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
         step = nperseg - noverlap
         shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
         strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
-        result = np.lib.stride_tricks.as_strided(x, shape=shape, 
+        result = np.lib.stride_tricks.as_strided(x, shape=shape,
                                                  strides=strides)
 
     # Detrend each data segment individually
@@ -744,5 +744,5 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
 
     # Perform the fft. Acts on last axis by default. Zero-pads automatically
     result = fftpack.fft(result, n=nfft)
-    
+
     return result

@@ -224,7 +224,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222, 
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -234,7 +234,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919, 
+        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
                       0.12188675])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -244,7 +244,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111, 
+        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -254,7 +254,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8, scaling='spectrum')
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667, 
+        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
                       0.02083333])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -264,7 +264,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222, 
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -274,7 +274,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919, 
+        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
                       0.12188675])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -284,7 +284,7 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111, 
+        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -294,7 +294,7 @@ class TestWelch(TestCase):
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556, 
+        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -392,7 +392,7 @@ class TestWelch(TestCase):
     def test_window_long_or_nd(self):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
-            assert_raises(ValueError, welch, np.zeros(4), 1, 
+            assert_raises(ValueError, welch, np.zeros(4), 1,
                           np.array([1,1,1,1,1]))
             assert_raises(ValueError, welch, np.zeros(4), 1,
                           np.arange(6).reshape((2,3)))
@@ -401,7 +401,7 @@ class TestWelch(TestCase):
         x = np.zeros(64)
         x[::8] = 1
         f, p = welch(x, nperseg=16, noverlap=4)
-        q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5., 
+        q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
                       1./6.])
         assert_allclose(p, q, atol=1e-12)
 
@@ -418,7 +418,7 @@ class TestWelch(TestCase):
         f, p = welch(x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
         q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111], 'f') 
+                      0.11111111], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
@@ -441,7 +441,7 @@ class TestWelch(TestCase):
         f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.11111111, 
+                      0.11111111, 0.11111111, 0.11111111, 0.11111111,
                       0.07638889], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
@@ -453,7 +453,7 @@ class TestWelch(TestCase):
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552, 
+        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
@@ -488,7 +488,7 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222, 
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -508,7 +508,7 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111, 
+        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -518,7 +518,7 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8, scaling='spectrum')
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667, 
+        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
                       0.02083333])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -528,7 +528,7 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222, 
+        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -538,7 +538,7 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919, 
+        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
                       0.12188675])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -548,7 +548,7 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111, 
+        q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -558,7 +558,7 @@ class TestCSD:
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556, 
+        q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
@@ -665,7 +665,7 @@ class TestCSD:
     def test_window_long_or_nd(self):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
-            assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 
+            assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
                           np.array([1,1,1,1,1]))
             assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
                           np.arange(6).reshape((2,3)))
@@ -674,16 +674,16 @@ class TestCSD:
         x = np.zeros(64)
         x[::8] = 1
         f, p = csd(x, x, nperseg=16, noverlap=4)
-        q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5., 
+        q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
                       1./6.])
         assert_allclose(p, q, atol=1e-12)
 
     def test_bad_noverlap(self):
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 'hanning', 
+        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 'hanning',
                       2, 7)
 
     def test_nfft_too_short(self):
-        assert_raises(ValueError, csd, np.ones(12), np.zeros(12), nfft=3, 
+        assert_raises(ValueError, csd, np.ones(12), np.zeros(12), nfft=3,
                       nperseg=4)
 
     def test_real_onesided_even_32(self):
@@ -693,7 +693,7 @@ class TestCSD:
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, np.linspace(0, 0.5, 5))
         q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111], 'f') 
+                      0.11111111], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
@@ -716,7 +716,7 @@ class TestCSD:
         f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.11111111, 
+                      0.11111111, 0.11111111, 0.11111111, 0.11111111,
                       0.07638889], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
@@ -728,10 +728,10 @@ class TestCSD:
         x[8] = 1.0 + 2.0j
         f, p = csd(x, x, nperseg=8)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
-        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552, 
+        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
-        assert_(p.dtype == q.dtype, 
+        assert_(p.dtype == q.dtype,
                 'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
 
 
@@ -749,7 +749,7 @@ class TestCoherence:
 
     def test_phase_shifted_input(self):
         x = np.random.randn(20)
-        y = -x 
+        y = -x
 
         f = np.linspace(0, 0.5, 6)
         C = np.ones(6)
