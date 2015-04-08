@@ -542,6 +542,13 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     else:
         outdtype = np.result_type(x,np.complex64)
 
+    if x.size == 0:
+        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
+
+    if not same_data:
+        if y.size == 0:
+            return np.empty(y.shape), np.empty(y.shape), np.empty(y.shape)
+
     if x.ndim > 1:
         if axis != -1:
             x = np.rollaxis(x, axis, len(x.shape))
@@ -551,13 +558,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
             if axis < 0:
                 axis = len(np.broadcast(x,y).shape)-axis
 
-    if x.size == 0:
-        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
-
     if not same_data:
-        if y.size == 0:
-            return np.empty(y.shape), np.empty(y.shape), np.empty(y.shape)
-
         # Check if we can broadcast the outer axes together
         for a, b in zip(x.shape[-2::-1],y.shape[-2::-1]):
             if a == 1 or b == 1 or a == b:

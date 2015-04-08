@@ -142,6 +142,12 @@ class TestPeriodogram(TestCase):
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
+    def test_empty_input_other_axis(self):
+        for shape in [(3,0), (0,5,2)]:
+            f, p = periodogram(np.empty(shape), axis=1)
+            assert_array_equal(f.shape, shape)
+            assert_array_equal(p.shape, shape)
+
     def test_short_nfft(self):
         x = np.zeros(18)
         x[0] = 1
@@ -359,6 +365,12 @@ class TestWelch(TestCase):
         assert_array_equal(p.shape, (0,))
         for shape in [(0,), (3,0), (0,5,2)]:
             f, p = welch(np.empty(shape))
+            assert_array_equal(f.shape, shape)
+            assert_array_equal(p.shape, shape)
+
+    def test_empty_input_other_axis(self):
+        for shape in [(3,0), (0,5,2)]:
+            f, p = welch(np.empty(shape), axis=1)
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
@@ -622,6 +634,12 @@ class TestCSD:
             assert_array_equal(p.shape, shape)
 
             f, p = csd(np.zeros(10), np.empty(shape))
+            assert_array_equal(f.shape, shape)
+            assert_array_equal(p.shape, shape)
+
+    def test_empty_input_other_axis(self):
+        for shape in [(3,0), (0,5,2)]:
+            f, p = welch(np.empty(shape), np.empty(shape), axis=1)
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
