@@ -76,6 +76,10 @@ Functions::
    Tables*. Gaithersburg, MD: National Bureau of Standards.
    http://www.math.sfu.ca/~cbm/aands/
 
+.. [townsend.trogdon.olver-2014]
+   Townsend, A. and Trogdon, T. and Olver, S. (2014)
+   *Fast computation of Gauss quadrature nodes and
+   weights on the whole real line*. ArXiv 1410.5286.
 """
 #
 # Author:  Travis Oliphant 2000
@@ -85,19 +89,22 @@ from __future__ import division, print_function, absolute_import
 
 # Scipy imports.
 import numpy as np
-from numpy import all, any, exp, inf, pi, sqrt
+from numpy import (any, exp, inf, pi, sqrt, floor, sin, cos, around,
+                   int, hstack, arccos, arange)
 from scipy import linalg
+from scipy.special import airy
 
 # Local imports.
 from . import _ufuncs as cephes
 _gam = cephes.gamma
+from . import specfun
 
 __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
            'jacobi', 'laguerre', 'genlaguerre', 'hermite', 'hermitenorm',
            'gegenbauer', 'sh_legendre', 'sh_chebyt', 'sh_chebyu', 'sh_jacobi',
            'p_roots', 'ps_roots', 'j_roots', 'js_roots', 'l_roots', 'la_roots',
-           'he_roots', 'ts_roots', 'us_roots', 's_roots', 't_roots', 'u_roots',
-           'c_roots', 'cg_roots', 'h_roots',
+           'he_roots', 'ts_roots', 'us_roots', 's_roots',
+           't_roots', 'u_roots', 'c_roots', 'cg_roots', 'h_roots',
            'eval_legendre', 'eval_chebyt', 'eval_chebyu', 'eval_chebyc',
            'eval_chebys', 'eval_jacobi', 'eval_laguerre', 'eval_genlaguerre',
            'eval_hermite', 'eval_hermitenorm', 'eval_gegenbauer',
@@ -487,8 +494,8 @@ def laguerre(n, monic=False):
                     lambda x: eval_laguerre(n, x))
     return p
 
-
 # Hermite  1                         H_n(x)
+
 
 def h_roots(n, mu=False):
     """Gauss-Hermite (physicst's) quadrature
@@ -515,22 +522,404 @@ def h_roots(n, mu=False):
     mu : float
         Sum of the weights
 
+    Notes
+    -----
+    For small n up to 150 a modified version of the Golub-Welsch
+    algorithm is used. Nodes are computed from the eigenvalue
+    problem and improved by one step of a Newton iteration.
+    The weights are computed from the well-known analytical formula.
+
+    For n larger than 150 an optimal asymptotic algorithm is applied
+    which computes nodes and weights in a numerically stable manner.
+    The algorithm has linear runtime making computation for very
+    large n (several thousand or more) feasible.
+
     See Also
     --------
     integrate.quadrature
     integrate.fixed_quad
     numpy.polynomial.hermite.hermgauss
+
+    References
+    ----------
+    .. [townsend.trogdon.olver-2014]
+       Townsend, A. and Trogdon, T. and Olver, S. (2014)
+       *Fast computation of Gauss quadrature nodes and
+       weights on the whole real line*. ArXiv 1410.5286.
     """
     m = int(n)
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    mu0 = np.sqrt(np.pi)
-    an_func = lambda k: 0.0*k
-    bn_func = lambda k: np.sqrt(k/2.0)
-    f = cephes.eval_hermite
-    df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    if n <= 150:
+        mu0 = np.sqrt(np.pi)
+        an_func = lambda k: 0.0*k
+        bn_func = lambda k: np.sqrt(k/2.0)
+        f = cephes.eval_hermite
+        df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
+        return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    else:
+        nodes, weights = _h_roots_asy(m)
+        if mu:
+            return nodes, weights, sum(weights)
+        else:
+            return nodes, weights
+
+
+def _compute_tauk(n, k, maxit=5):
+    """Helper function for Tricomi initial guesses
+
+    For details, see formula 3.1 in lemma 3.1 in the
+    original paper.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    k : ndarray of type int
+        Index of roots :math:`\tau_k` to compute
+    maxit : int
+        Number of Newton maxit performed, the default
+        value of 5 is sufficient.
+
+    Returns
+    -------
+    tauk : ndarray
+        Roots of equation 3.1
+
+    See Also
+    --------
+    initial_nodes_a
+    h_roots_asy
+    """
+    a = n % 2 - 0.5
+    c = (4.0*floor(n/2.0) - 4.0*k + 3.0)*pi / (4.0*floor(n/2.0) + 2.0*a + 2.0)
+    f = lambda x: x - sin(x) - c
+    df = lambda x: 1.0 - cos(x)
+    xi = 0.5*pi
+    for i in range(maxit):
+        xi = xi - f(xi)/df(xi)
+    return xi
+
+
+def _initial_nodes_a(n, k):
+    """Tricomi initial guesses
+
+    Computes an initial approximation to the square of the `k`-th
+    (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
+    of order :math:`n`. The formula is the one from lemma 3.1 in the
+    original paper. The guesses are accurate except in the region
+    near :math:`\sqrt{2n + 1}`.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    k : ndarray of type int
+        Index of roots to compute
+
+    Returns
+    -------
+    xksq : ndarray
+        Square of the approximate roots
+
+    See Also
+    --------
+    initial_nodes
+    h_roots_asy
+    """
+    tauk = _compute_tauk(n, k)
+    sigk = cos(0.5*tauk)**2
+    a = n % 2 - 0.5
+    nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
+    # Initial approximation of Hermite roots (square)
+    xksq = nu*sigk - 1.0/(3.0*nu) * (5.0/(4.0*(1.0-sigk)**2) - 1.0/(1.0-sigk) - 0.25)
+    return xksq
+
+
+def _initial_nodes_b(n, k):
+    """Gatteschi initial guesses
+
+    Computes an initial approximation to the square of the `k`-th
+    (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
+    of order :math:`n`. The formula is the one from lemma 3.2 in the
+    original paper. The guesses are accurate in the region just
+    below :math:`\sqrt{2n + 1}`.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    k : ndarray of type int
+        Index of roots to compute
+
+    Returns
+    -------
+    xksq : ndarray
+        Square of the approximate root
+
+    See Also
+    --------
+    initial_nodes
+    h_roots_asy
+    """
+    a = n % 2 - 0.5
+    nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
+    # Airy roots by approximation
+    ak = specfun.airyzo(k.max(), 1)[0][::-1]
+    # Initial approximation of Hermite roots (square)
+    xksq = (nu +
+            2.0**(2.0/3.0) * ak * nu**(1.0/3.0) +
+            1.0/5.0 * 2.0**(4.0/3.0) * ak**2 * nu**(-1.0/3.0) +
+            (9.0/140.0 - 12.0/175.0 * ak**3) * nu**(-1.0) +
+            (16.0/1575.0 * ak + 92.0/7875.0 * ak**4) * 2.0**(2.0/3.0) * nu**(-5.0/3.0) -
+            (15152.0/3031875.0 * ak**5 + 1088.0/121275.0 * ak**2) * 2.0**(1.0/3.0) * nu**(-7.0/3.0))
+    return xksq
+
+
+def _initial_nodes(n):
+    """Initial guesses for the Hermite roots
+
+    Computes an initial approximation to the non-negative
+    roots :math:`x_k` of the Hermite polynomial :math:`H_n`
+    of order :math:`n`. The Tricomi and Gatteschi initial
+    guesses are used in the region where they are accurate.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+
+    Returns
+    -------
+    xk : ndarray
+        Approximate roots
+
+    See Also
+    --------
+    h_roots_asy
+    """
+    # Turnover point
+    # linear polynomial fit to error of 10, 25, 40, ..., 1000 point rules
+    fit = 0.49082003*n - 4.37859653
+    turnover = around(fit).astype(int)
+    # Compute all approximations
+    ia = arange(1, int(floor(n*0.5)+1))
+    ib = ia[::-1]
+    xasq = _initial_nodes_a(n, ia[:turnover+1])
+    xbsq = _initial_nodes_b(n, ib[turnover+1:])
+    # Combine
+    iv = sqrt(hstack([xasq, xbsq]))
+    # Central node is always zero
+    if n % 2 == 1:
+        iv = hstack([0.0, iv])
+    return iv
+
+
+def _pbcf(n, theta):
+    """Asymptotic series expansion of parabolic cylinder function
+
+    The implementation is based on sections 3.2 and 3.3 from the
+    original paper. Compared to the published version this code
+    adds one more term to the asymptotic series. The detailed
+    formulas can be found at [parabolic-asymptotics]_. The evaluation
+    is done in a transformed variable :math:`\theta := \arccos(t)`
+    where :math:`t := x / \mu` and :math:`\mu := \sqrt{2n + 1}`.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    theta : ndarray
+        Transformed position variable
+
+    Returns
+    -------
+    U : ndarray
+        Value of the parabolic cylinder function :math:`U(a, \theta)`.
+    Ud : ndarray
+        Value of the derivative :math:`U^{\prime}(a, \theta)` of
+        the parabolic cylinder function.
+
+    See Also
+    --------
+    h_roots_asy
+
+    References
+    ----------
+    .. [parabolic-asymptotics]
+       http://dlmf.nist.gov/12.10#vii
+    """
+    st = sin(theta)
+    ct = cos(theta)
+    # http://dlmf.nist.gov/12.10#vii
+    mu = 2.0*n + 1.0
+    # http://dlmf.nist.gov/12.10#E23
+    eta = 0.5*theta - 0.5*st*ct
+    # http://dlmf.nist.gov/12.10#E39
+    zeta = -(3.0*eta/2.0) ** (2.0/3.0)
+    # http://dlmf.nist.gov/12.10#E40
+    phi = (-zeta / st**2) ** (0.25)
+    # Coefficients
+    # http://dlmf.nist.gov/12.10#E43
+    a0 = 1.0
+    a1 = 0.10416666666666666667
+    a2 = 0.08355034722222222222
+    a3 = 0.12822657455632716049
+    a4 = 0.29184902646414046425
+    a5 = 0.88162726744375765242
+    b0 = 1.0
+    b1 = -0.14583333333333333333
+    b2 = -0.09874131944444444444
+    b3 = -0.14331205391589506173
+    b4 = -0.31722720267841354810
+    b5 = -0.94242914795712024914
+    # Polynomials
+    # http://dlmf.nist.gov/12.10#E9
+    # http://dlmf.nist.gov/12.10#E10
+    ctp = ct ** arange(16).reshape((-1,1))
+    u0 = 1.0
+    u1 = (1.0*ctp[3,:] - 6.0*ct) / 24.0
+    u2 = (-9.0*ctp[4,:] + 249.0*ctp[2,:] + 145.0) / 1152.0
+    u3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 28287.0*ctp[5,:] - 151995.0*ctp[3,:] - 259290.0*ct) / 414720.0
+    u4 = (72756.0*ctp[10,:] - 321339.0*ctp[8,:] - 154982.0*ctp[6,:] + 50938215.0*ctp[4,:] + 122602962.0*ctp[2,:] + 12773113.0) / 39813120.0
+    u5 = (82393456.0*ctp[15,:] - 617950920.0*ctp[13,:] + 1994971575.0*ctp[11,:] - 3630137104.0*ctp[9,:] + 4433574213.0*ctp[7,:]
+          - 37370295816.0*ctp[5,:] - 119582875013.0*ctp[3,:] - 34009066266.0*ct) / 6688604160.0
+    v0 = 1.0
+    v1 = (1.0*ctp[3,:] + 6.0*ct) / 24.0
+    v2 = (15.0*ctp[4,:] - 327.0*ctp[2,:] - 143.0) / 1152.0
+    v3 = (-4042.0*ctp[9,:] + 18189.0*ctp[7,:] - 36387.0*ctp[5,:] + 238425.0*ctp[3,:] + 259290.0*ct) / 414720.0
+    v4 = (-121260.0*ctp[10,:] + 551733.0*ctp[8,:] - 151958.0*ctp[6,:] - 57484425.0*ctp[4,:] - 132752238.0*ctp[2,:] - 12118727) / 39813120.0
+    v5 = (82393456.0*ctp[15,:] - 617950920.0*ctp[13,:] + 2025529095.0*ctp[11,:] - 3750839308.0*ctp[9,:] + 3832454253.0*ctp[7,:]
+          + 35213253348.0*ctp[5,:] + 130919230435.0*ctp[3,:] + 34009066266*ct) / 6688604160.0
+    # Airy Evaluation (Bi and Bip unused)
+    Ai, Aip, Bi, Bip = airy(mu**(4.0/6.0) * zeta)
+    # Prefactor for U
+    P = 2.0*sqrt(pi) * mu**(1.0/6.0) * phi
+    # Terms for U
+    # http://dlmf.nist.gov/12.10#E42
+    phip = phi ** arange(6, 31, 6).reshape((-1,1))
+    A0 = b0*u0
+    A1 = (b2*u0 + phip[0,:]*b1*u1 + phip[1,:]*b0*u2) / zeta**3
+    A2 = (b4*u0 + phip[0,:]*b3*u1 + phip[1,:]*b2*u2 + phip[2,:]*b1*u3 + phip[3,:]*b0*u4) / zeta**6
+    B0 = -(a1*u0 + phip[0,:]*a0*u1) / zeta**2
+    B1 = -(a3*u0 + phip[0,:]*a2*u1 + phip[1,:]*a1*u2 + phip[2,:]*a0*u3) / zeta**5
+    B2 = -(a5*u0 + phip[0,:]*a4*u1 + phip[1,:]*a3*u2 + phip[2,:]*a2*u3 + phip[3,:]*a1*u4 + phip[4,:]*a0*u5) / zeta**8
+    # U
+    # http://dlmf.nist.gov/12.10#E35
+    U = P * (Ai * (A0 + A1/mu**2.0 + A2/mu**4.0) +
+             Aip * (B0 + B1/mu**2.0 + B2/mu**4.0) / mu**(8.0/6.0))
+    # Prefactor for derivative of U
+    Pd = sqrt(2.0*pi) * mu**(2.0/6.0) / phi
+    # Terms for derivative of U
+    # http://dlmf.nist.gov/12.10#E46
+    C0 = -(b1*v0 + phip[0,:]*b0*v1) / zeta
+    C1 = -(b3*v0 + phip[0,:]*b2*v1 + phip[1,:]*b1*v2 + phip[2,:]*b0*v3) / zeta**4
+    C2 = -(b5*v0 + phip[0,:]*b4*v1 + phip[1,:]*b3*v2 + phip[2,:]*b2*v3 + phip[3,:]*b1*v4 + phip[4,:]*b0*v5) / zeta**7
+    D0 = a0*v0
+    D1 = (a2*v0 + phip[0,:]*a1*v1 + phip[1,:]*a0*v2) / zeta**3
+    D2 = (a4*v0 + phip[0,:]*a3*v1 + phip[1,:]*a2*v2 + phip[2,:]*a1*v3 + phip[3,:]*a0*v4) / zeta**6
+    # Derivative of U
+    # http://dlmf.nist.gov/12.10#E36
+    Ud = Pd * (Ai * (C0 + C1/mu**2.0 + C2/mu**4.0) / mu**(4.0/6.0) +
+               Aip * (D0 + D1/mu**2.0 + D2/mu**4.0))
+    return U, Ud
+
+
+def _newton(n, x_initial, maxit=5):
+    """Newton iteration for polishing the asymptotic approximation
+    to the zeros of the Hermite polynomials.
+
+    Parameters
+    ----------
+    n : int
+        Quadrature order
+    x_initial : ndarray
+        Initial guesses for the roots
+    maxit : int
+        Maximal number of Newton iterations.
+        The default 5 is sufficient, usually
+        only one or two steps are needed.
+
+    Returns
+    -------
+    nodes : ndarray
+        Quadrature nodes
+    weights : ndarray
+        Quadrature weights
+
+    See Also
+    --------
+    h_roots_asy
+    """
+    # Variable transformation
+    mu = sqrt(2.0*n + 1.0)
+    t = x_initial / mu
+    theta = arccos(t)
+    # Newton iteration
+    for i in range(maxit):
+        u, ud = _pbcf(n, theta)
+        dtheta = u / (sqrt(2.0) * mu * sin(theta) * ud)
+        theta = theta + dtheta
+        if max(abs(dtheta)) < 1e-14:
+            break
+    # Undo variable transformation
+    x = mu * cos(theta)
+    # Central node is always zero
+    if n % 2 == 1:
+        x[0] = 0.0
+    # Compute weights
+    w = exp(-x**2) / (2.0*ud**2)
+    return x, w
+
+
+def _h_roots_asy(n):
+    """Gauss-Hermite (physicst's) quadrature for large n
+
+    Computes the sample points and weights for Gauss-Hermite quadrature.
+    The sample points are the roots of the `n`th degree Hermite polynomial,
+    :math:`H_n(x)`.  These sample points and weights correctly integrate
+    polynomials of degree :math:`2*n - 1` or less over the interval
+    :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-x^2}`.
+    This method relies on asymptotic expansions which work best for n > 150.
+    The algorithm has linear runtime making computation for very large n
+    feasible.
+
+    Parameters
+    ----------
+    n : int
+        quadrature order
+
+    Returns
+    -------
+    nodes : ndarray
+        Quadrature nodes
+    weights : ndarray
+        Quadrature weights
+
+    See Also
+    --------
+    h_roots
+
+    References
+    ----------
+    .. [townsend.trogdon.olver-2014]
+       Townsend, A. and Trogdon, T. and Olver, S. (2014)
+       *Fast computation of Gauss quadrature nodes and
+       weights on the whole real line*. ArXiv 1410.5286.
+    """
+    iv = _initial_nodes(n)
+    nodes, weights = _newton(n, iv)
+    # Combine with negative parts
+    if n % 2 == 0:
+        nodes = hstack([-nodes[::-1], nodes])
+        weights = hstack([weights[::-1], weights])
+    else:
+        nodes = hstack([-nodes[-1:0:-1], nodes])
+        weights = hstack([weights[-1:0:-1], weights])
+    # Scale weights
+    weights *= sqrt(pi) / sum(weights)
+    return nodes, weights
 
 
 def hermite(n, monic=False):
@@ -582,6 +971,18 @@ def he_roots(n, mu=False):
     mu : float
         Sum of the weights
 
+    Notes
+    -----
+    For small n up to 150 a modified version of the Golub-Welsch
+    algorithm is used. Nodes are computed from the eigenvalue
+    problem and improved by one step of a Newton iteration.
+    The weights are computed from the well-known analytical formula.
+
+    For n larger than 150 an optimal asymptotic algorithm is used
+    which computes nodes and weights in a numerical stable manner.
+    The algorithm has linear runtime making computation for very
+    large n (several thousand or more) feasible.
+
     See Also
     --------
     integrate.quadrature
@@ -592,12 +993,22 @@ def he_roots(n, mu=False):
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
 
-    mu0 = np.sqrt(np.pi/2.0)
-    an_func = lambda k: 0.0*k
-    bn_func = lambda k: np.sqrt(k)
-    f = cephes.eval_hermitenorm
-    df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
-    return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    if n <= 150:
+        mu0 = np.sqrt(np.pi/2.0)
+        an_func = lambda k: 0.0*k
+        bn_func = lambda k: np.sqrt(k)
+        f = cephes.eval_hermitenorm
+        df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
+        return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
+    else:
+        nodes, weights = _h_roots_asy(m)
+        # Transform
+        nodes *= sqrt(2)
+        weights /= sqrt(2)
+        if mu:
+            return nodes, weights, sum(weights)
+        else:
+            return nodes, weights
 
 
 def hermitenorm(n, monic=False):

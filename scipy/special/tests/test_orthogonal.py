@@ -389,13 +389,50 @@ def test_h_roots():
     verify_gauss_quad(orth.h_roots, orth.eval_hermite, 25, atol=1e-13)
     verify_gauss_quad(orth.h_roots, orth.eval_hermite, 100, atol=1e-12)
 
+    # Golub-Welsch branch
     x, w = orth.h_roots(5, False)
     y, v, m = orth.h_roots(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
+    # Asymptotic branch (switch over at n >= 150)
+    x, w = orth.h_roots(200, False)
+    y, v, m = orth.h_roots(200, True)
+    assert_allclose(x, y, 1e-14, 1e-14)
+    assert_allclose(w, v, 1e-14, 1e-14)
+    assert_allclose(sum(v), m, 1e-14, 1e-14)
+
     assert_raises(ValueError, orth.h_roots, 0)
     assert_raises(ValueError, orth.h_roots, 3.3)
+
+def test_h_roots_asy():
+    # Recursion for Hermite functions
+    def hermite_recursion(n, nodes):
+        H = np.zeros((n, nodes.size))
+        H[0,:] = np.pi**(-0.25) * np.exp(-0.5*nodes**2)
+        if n > 1:
+            H[1,:] = sqrt(2.0) * nodes * H[0,:]
+            for k in xrange(2, n):
+                H[k,:] = sqrt(2.0/k) * nodes * H[k-1,:] - sqrt((k-1.0)/k) * H[k-2,:]
+        return H
+
+    # This tests only the nodes
+    def test(N, rtol=1e-15, atol=1e-14):
+        x, w = orth._h_roots_asy(N)
+        H = hermite_recursion(N+1, x)
+        assert_allclose(H[-1,:], np.zeros(N), rtol, atol)
+        assert_allclose(sum(w), sqrt(np.pi), rtol, atol)
+
+    test(150, atol=1e-12)
+    test(151, atol=1e-12)
+    test(300, atol=1e-12)
+    test(301, atol=1e-12)
+    test(500, atol=1e-12)
+    test(501, atol=1e-12)
+    test(999, atol=1e-12)
+    test(1000, atol=1e-12)
+    test(2000, atol=1e-12)
+    test(5000, atol=1e-12)
 
 def test_he_roots():
     verify_gauss_quad(orth.he_roots, orth.eval_hermitenorm, 5)
