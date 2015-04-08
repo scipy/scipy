@@ -542,12 +542,25 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     else:
         outdtype = np.result_type(x,np.complex64)
 
-    if x.size == 0:
-        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
-
     if not same_data:
-        if y.size == 0:
-            return np.empty(y.shape), np.empty(y.shape), np.empty(y.shape)
+        # Check if we can broadcast the outer axes together
+        xouter = list(x.shape)
+        youter = list(y.shape)
+        xouter.pop(axis)
+        youter.pop(axis)
+        try:
+            outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
+        except ValueError:
+            raise ValueError('x and y cannot be broadcast together.')
+
+    if same_data:
+        if x.size == 0:
+            return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
+    else:
+        if x.size == 0 or y.size == 0:
+            outshape = outershape + (0,)
+            emptyout = np.rollaxis(np.empty(outshape), -1, axis)
+            return emptyout, emptyout, emptyout
 
     if x.ndim > 1:
         if axis != -1:
@@ -558,15 +571,8 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
             if axis < 0:
                 axis = len(np.broadcast(x,y).shape)-axis
 
+    # Check if x and y are the same length, zero-pad if neccesary
     if not same_data:
-        # Check if we can broadcast the outer axes together
-        for a, b in zip(x.shape[-2::-1],y.shape[-2::-1]):
-            if a == 1 or b == 1 or a == b:
-                pass
-            else:
-                raise ValueError('x and y cannot be broadcast together.')
-
-        # Check if x and y are the same length, zero-pad if neccesary
         if x.shape[-1] != y.shape[-1]:
             if x.shape[-1] < y.shape[-1]:
                 pad_shape = list(x.shape)

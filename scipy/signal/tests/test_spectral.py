@@ -637,19 +637,31 @@ class TestCSD:
         assert_array_equal(p.shape, (0,))
 
         for shape in [(0,), (3,0), (0,5,2)]:
-            f, p = csd(np.empty(shape), np.zeros(10))
+            f, p = csd(np.empty(shape), np.empty(shape))
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-            f, p = csd(np.zeros(10), np.empty(shape))
-            assert_array_equal(f.shape, shape)
-            assert_array_equal(p.shape, shape)
+        f, p = csd(np.ones(10), np.empty((5,0)))
+        assert_array_equal(f.shape, (5,0))
+        assert_array_equal(p.shape, (5,0))
+
+        f, p = csd(np.empty((5,0)), np.ones(10))
+        assert_array_equal(f.shape, (5,0))
+        assert_array_equal(p.shape, (5,0))
 
     def test_empty_input_other_axis(self):
         for shape in [(3,0), (0,5,2)]:
-            f, p = welch(np.empty(shape), np.empty(shape), axis=1)
+            f, p = csd(np.empty(shape), np.empty(shape), axis=1)
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
+
+        f, p = csd(np.empty((10,10,3)), np.zeros((10,0,1)), axis=1)
+        assert_array_equal(f.shape, (10,0,3))
+        assert_array_equal(p.shape, (10,0,3))
+
+        f, p = csd(np.empty((10,0,1)), np.zeros((10,10,3)), axis=1)
+        assert_array_equal(f.shape, (10,0,3))
+        assert_array_equal(p.shape, (10,0,3))
 
     def test_short_data(self):
         x = np.zeros(8)
