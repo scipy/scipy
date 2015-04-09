@@ -38,48 +38,53 @@ LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 class TestWhiten(TestCase):
     def test_whiten(self):
-        obs = np.array([[0.98744510, 0.82766775],
-                        [0.62093317, 0.19406729],
-                        [0.87545741, 0.00735733],
-                        [0.85124403, 0.26499712],
-                        [0.45067590, 0.45464607]])
-        result = np.array([[5.08738849, 2.97091878],
-                           [3.19909255, 0.69660580],
-                           [4.51041982, 0.02640918],
-                           [4.38567074, 0.95120889],
-                           [2.32191480, 1.63195503]])
-        assert_allclose(whiten(obs), result, rtol=1e-5)
+        desired = np.array([[5.08738849, 2.97091878],
+                            [3.19909255, 0.69660580],
+                            [4.51041982, 0.02640918],
+                            [4.38567074, 0.95120889],
+                            [2.32191480, 1.63195503]])
+        for tp in np.array, np.matrix:
+            obs = tp([[0.98744510, 0.82766775],
+                      [0.62093317, 0.19406729],
+                      [0.87545741, 0.00735733],
+                      [0.85124403, 0.26499712],
+                      [0.45067590, 0.45464607]])
+            assert_allclose(whiten(obs), desired, rtol=1e-5)
 
     def test_whiten_zero_std(self):
-        obs = np.array([[0., 1., 0.74109533],
-                        [0., 1., 0.34243798],
-                        [0., 1., 0.96785929]])
-        result = np.array([[0., 1.0, 2.86666544],
-                           [0., 1.0, 1.32460034],
-                           [0., 1.0, 3.74382172]])
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            assert_allclose(whiten(obs), result, rtol=1e-5)
-            assert_equal(len(w), 1)
-            assert_(issubclass(w[-1].category, RuntimeWarning))
+        desired = np.array([[0., 1.0, 2.86666544],
+                            [0., 1.0, 1.32460034],
+                            [0., 1.0, 3.74382172]])
+        for tp in np.array, np.matrix:
+            obs = tp([[0., 1., 0.74109533],
+                      [0., 1., 0.34243798],
+                      [0., 1., 0.96785929]])
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                assert_allclose(whiten(obs), desired, rtol=1e-5)
+                assert_equal(len(w), 1)
+                assert_(issubclass(w[-1].category, RuntimeWarning))
 
 
 class TestVq(TestCase):
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        label1 = py_vq(X, initc)[0]
-        assert_array_equal(label1, LABEL1)
+        for tp in np.array, np.matrix:
+            label1 = py_vq(tp(X), tp(initc))[0]
+            assert_array_equal(label1, LABEL1)
 
     def test_py_vq2(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        label1 = py_vq2(X, initc)[0]
-        assert_array_equal(label1, LABEL1)
+        for tp in np.array, np.matrix:
+            label1 = py_vq2(tp(X), tp(initc))[0]
+            assert_array_equal(label1, LABEL1)
 
     def test_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        label1, dist = _vq.vq(X, initc)
-        assert_array_equal(label1, LABEL1)
-        tlabel1, tdist = vq(X, initc)
+        for tp in np.array, np.matrix:
+            label1, dist = _vq.vq(tp(X), tp(initc))
+            assert_array_equal(label1, LABEL1)
+            tlabel1, tdist = vq(tp(X), tp(initc))
 
     # def test_py_vq_1d(self):
     #     """Test special rank 1 vq algo, python implementation."""
@@ -155,10 +160,9 @@ class TestKMean(TestCase):
 
     def test_kmeans_simple(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        code = initc.copy()
-        code1 = kmeans(X, code, iter=1)[0]
-
-        assert_array_almost_equal(code1, CODET2)
+        for tp in np.array, np.matrix:
+            code1 = kmeans(tp(X), tp(initc), iter=1)[0]
+            assert_array_almost_equal(code1, CODET2)
 
     def test_kmeans_lost_cluster(self):
         # This will cause kmean to have a cluster with no points.
@@ -177,12 +181,12 @@ class TestKMean(TestCase):
 
     def test_kmeans2_simple(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        code = initc.copy()
-        code1 = kmeans2(X, code, iter=1)[0]
-        code2 = kmeans2(X, code, iter=2)[0]
+        for tp in np.array, np.matrix:
+            code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
+            code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
 
-        assert_array_almost_equal(code1, CODET1)
-        assert_array_almost_equal(code2, CODET2)
+            assert_array_almost_equal(code1, CODET1)
+            assert_array_almost_equal(code2, CODET2)
 
     def test_kmeans2_rank1(self):
         data = np.fromfile(DATAFILE1, sep=", ")

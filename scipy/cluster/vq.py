@@ -131,6 +131,7 @@ def whiten(obs):
            [ 1.75976538,  0.7038557 ,  7.21248917]])
 
     """
+    obs = np.asarray(obs)
     std_dev = std(obs, axis=0)
     zero_std_mask = std_dev == 0
     if zero_std_mask.any():
@@ -193,6 +194,8 @@ def vq(obs, code_book):
     (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     """
+    obs = np.asarray(obs)
+    code_book = np.asarray(code_book)
     ct = common_type(obs, code_book)
 
     # avoid copying when dtype is the same
@@ -247,6 +250,9 @@ def py_vq(obs, code_book):
     It is about 20 times slower than the C version.
 
     """
+    obs = np.asarray(obs)
+    code_book = np.asarray(code_book)
+
     # n = number of observations
     # d = number of features
     if np.ndim(obs) == 1:
@@ -341,6 +347,8 @@ def py_vq2(obs, code_book):
     features, and O = number of codes.
 
     """
+    obs = np.asarray(obs)
+    code_book = np.asarray(code_book)
     d = shape(obs)[1]
 
     # code books and observations should have same number of features
@@ -499,15 +507,26 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
            [ 0.40782893,  2.02786907]]), 0.5196582527686241)
 
     """
+    obs = np.asarray(obs)
     if int(iter) < 1:
         raise ValueError('iter must be at least 1.')
-    if type(k_or_guess) == type(array([])):
-        guess = k_or_guess
+
+    # Determine whether a count (scalar) or an initial guess (array) was passed.
+    k = None
+    guess = None
+    try:
+        k = int(k_or_guess)
+    except TypeError:
+        guess = np.asarray(k_or_guess)
+
+    if guess is not None:
         if guess.size < 1:
             raise ValueError("Asked for 0 cluster ? initial book was %s" %
                              guess)
         result = _kmeans(obs, guess, thresh=thresh)
     else:
+        if k != k_or_guess:
+            raise ValueError('if k_or_guess is a scalar, it must be an integer')
         # initialize best distance value to a large value
         best_dist = np.inf
         No = obs.shape[0]
@@ -667,6 +686,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         i'th observation is closest to.
 
     """
+    data = np.asarray(data)
     if missing not in _valid_miss_meth:
         raise ValueError("Unkown missing method: %s" % str(missing))
     # If data is rank 1, then we have 1 dimension problem.
