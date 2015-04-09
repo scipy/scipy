@@ -685,7 +685,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     if mode == 'psd' and sides == 'onesided':
         result[...,1:-1] *= 2
 
-    t = np.arange(nfft//2, len(x) - nfft//2 + 1, nfft - noverlap)/fs
+    t = np.arange(nfft/2, x.shape[-1] - nfft/2 + 1, nfft - noverlap)/float(fs)
 
     if sides != 'twosided' and not nperseg % 2:
         # get the last value correctly, it is negative otherwise
