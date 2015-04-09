@@ -10702,10 +10702,12 @@ C       2) iterate
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 10
 C       3) initial guess for j_{N,L+1}
-        IF (L.GE.1 .AND. X.LE.RJ0(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 10
+        IF (L.GE.1)THEN
+           IF (X.LE.RJ0(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 10
+           ENDIF
         END IF
         L=L+1
         RJ0(L)=X
@@ -10727,10 +10729,12 @@ C       -- Newton method for j_{N,L}'
         IF (X-X0.LT.-1) X=X0-1
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 15
-        IF (L.GE.1 .AND. X.LE.RJ1(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 15
+        IF (L.GE.1)THEN
+           IF (X.LE.RJ1(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 15
+           ENDIF
         END IF
         L=L+1
         RJ1(L)=X
@@ -10751,10 +10755,12 @@ C       -- Newton method for y_{N,L}
         IF (X-X0.LT.-1) X=X0-1
         IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 20
-        IF (L.GE.1 .AND. X.LE.RY0(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 20
+        IF (L.GE.1)THEN
+           IF (X.LE.RY0(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 20
+           END IF
         END IF
         L=L+1
         RY0(L)=X
@@ -10773,10 +10779,12 @@ C       -- Newton method for y_{N,L}'
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DYN/FYN
         IF (DABS(X-X0).GT.1.0D-11) GO TO 25
-        IF (L.GE.1 .AND. X.LE.RY1(L)+0.5) THEN
-           X=XGUESS+PI
-           XGUESS=X
-           GO TO 25
+        IF (L.GE.1) THEN
+           IF (X.LE.RY1(L)+0.5) THEN
+              X=XGUESS+PI
+              XGUESS=X
+              GO TO 25
+           END IF
         END IF
         L=L+1
         RY1(L)=X
@@ -12345,7 +12353,9 @@ C
                     GO TO 35
                  ENDIF
 30            CONTINUE
-35            IF (K.NE.1.AND.H(K).LT.H(K-1)) H(K)=H(K-1)
+35            IF (K.NE.1) THEN
+                 IF(H(K).LT.H(K-1)) H(K)=H(K-1)
+              ENDIF
 40            X1=(B(K)+H(K))/2.0D0
               CV0(K)=X1
               IF (DABS((B(K)-H(K))/X1).LT.1.0D-14) GO TO 50
