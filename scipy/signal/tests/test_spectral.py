@@ -8,7 +8,8 @@ from numpy.testing import assert_raises, assert_approx_equal, \
                           assert_array_almost_equal_nulp, dec
 from scipy import signal, fftpack
 from scipy._lib._version import NumpyVersion
-from scipy.signal import periodogram, welch, lombscargle, csd, coherence
+from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
+                          spectrogram)
 
 
 class TestPeriodogram(TestCase):
@@ -767,6 +768,20 @@ class TestCoherence:
         assert_allclose(f, f1)
         assert_allclose(C, C1)
 
+
+class TestSpectrogram:
+    def test_average_all_segments(self):
+        x = np.random.randn(1024)
+
+        fs = 1.0
+        window = ('tukey', 0.25)
+        nperseg = 16
+        noverlap = 2
+
+        f, _, P = spectrogram(x, fs, window, nperseg, noverlap)
+        fw, Pw = welch(x, fs, window, nperseg, noverlap)
+        assert_allclose(f, fw)
+        assert_allclose(np.mean(P, axis=-1), Pw)
 
 class TestLombscargle:
     def test_frequency(self):

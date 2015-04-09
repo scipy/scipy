@@ -259,6 +259,7 @@ Spectral Analysis
    welch          -- Compute a periodogram using Welch's method
    csd            -- Compute the cross spectral density, using Welch's method
    coherence      -- Compute the magnitude squared coherence, using Welch's method
+   spectrogram    -- Compute the spectrogram
    lombscargle    -- Computes the Lomb-Scargle periodogram
    vectorstrength -- Computes the vector strength
 
