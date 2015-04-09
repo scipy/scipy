@@ -363,12 +363,12 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
                                      detrend, return_onesided, scaling, axis,
                                      mode='psd')
 
-    # Last two axes of Pxy are window index, freq index. Average over windows.
+    # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
-        if Pxy.shape[-2] > 1:
-            Pxy = Pxy.mean(axis=-2)
+        if Pxy.shape[-1] > 1:
+            Pxy = Pxy.mean(axis=-1)
         else:
-            Pxy = Pxy[..., 0,:]
+            Pxy = np.squeeze(Pxy, axis=-1)
 
     return freqs, Pxy
 
@@ -534,6 +534,8 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     if not same_data and mode != 'psd':
         raise ValueError("x and y must be equal if mode is not 'psd'")
 
+    axis = int(axis)
+
     # Ensure we have np.arrays, get outdtype
     x = np.asarray(x)
     if not same_data:
@@ -558,7 +560,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
             return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
     else:
         if x.size == 0 or y.size == 0:
-            outshape = outershape + (0,)
+            outshape = outershape + (min([x.shape[axis], y.shape[axis]]),)
             emptyout = np.rollaxis(np.empty(outshape), -1, axis)
             return emptyout, emptyout, emptyout
 
@@ -567,9 +569,6 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
             x = np.rollaxis(x, axis, len(x.shape))
             if not same_data and y.ndim > 1:
                 y = np.rollaxis(y, axis, len(y.shape))
-            # Output is going to have new last axis for window index
-            if axis < 0:
-                axis = len(np.broadcast(x,y).shape)-axis
 
     # Check if x and y are the same length, zero-pad if neccesary
     if not same_data:
@@ -702,8 +701,17 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     if same_data:
         result = result.real
 
+    # Output is going to have new last axis for window index
     if axis != -1:
+        # Specify as positive axis index
+        if axis < 0:
+            axis = len(result.shape)-1-axis
+
+        # Roll frequency axis back to axis where the data came from
         result = np.rollaxis(result, -1, axis)
+    else:
+        # Make sure window/time index is last axis
+        result = np.rollaxis(result, -1, -2)
 
     return freqs, result, t
 
