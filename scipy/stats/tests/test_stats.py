@@ -1271,6 +1271,24 @@ class TestMode(TestCase):
         assert_equal(vals[0][0], Point(2))
         assert_equal(vals[1][0], 4)
 
+    def test_mode_result_attributes(self):
+        data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
+        actual = stats.mode(data1)
+        attributes = ('mode', 'count')
+        for i, attr in enumerate(attributes):
+            assert_equal(actual[i], getattr(actual, attr))
+
+    # Same as `test_describe_result_attributes` but accessing the atributes
+    # explicitly and separately by name.
+    def test_mode_result_attributes_names(self):
+        data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
+        actual = stats.mode(data1)
+        assert_equal(actual.mode, getattr(actual, 'mode'))
+        assert_equal(actual.count, getattr(actual, 'count'))
+
+    def test_mode_typename(self):
+        actual = stats.mode(np.arange(5))
+        assert_equal(str(actual)[:4], 'Mode')
 
 class TestVariability(TestCase):
 
@@ -2365,6 +2383,17 @@ class TestDescribe(TestCase):
                       'kurtosis')
         for i, attr in enumerate(attributes):
             assert_equal(actual[i], getattr(actual, attr))
+
+    # Same as `test_describe_result_attributes` but accessing the atributes
+    # explicitly and separately by name.
+    def test_describe_result_attributes_names(self):
+        actual = stats.describe(np.arange(5))
+        assert_equal(actual.nobs, getattr(actual, 'nobs'))
+        assert_equal(actual.minmax, getattr(actual, 'minmax'))
+        assert_equal(actual.mean, getattr(actual, 'mean'))
+        assert_equal(actual.variance, getattr(actual, 'variance'))
+        assert_equal(actual.skewness, getattr(actual, 'skewness'))
+        assert_equal(actual.kurtosis, getattr(actual, 'kurtosis'))
 
     def test_describe_typename(self):
         actual = stats.describe(np.arange(5))

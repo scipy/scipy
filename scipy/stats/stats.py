@@ -591,6 +591,9 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
 
+_ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+
+
 def mode(a, axis=0):
     """
     Returns an array of the modal (most common) value in the passed array.
@@ -645,7 +648,7 @@ def mode(a, axis=0):
         mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
         oldcounts = np.maximum(counts, oldcounts)
         oldmostfreq = mostfrequent
-    return mostfrequent, oldcounts
+    return _ModeResult(mostfrequent, oldcounts)
 
 
 def mask_to_limits(a, limits, inclusive):

@@ -283,7 +283,7 @@ def mode(a, axis=0):
         slices[axis] = 1
         counts = output[tuple(slices)].reshape(newshape)
         output = (modes, counts)
-    return output
+    return stats._ModeResult(*output)
 mode.__doc__ = stats.mode.__doc__
 
 
@@ -1560,10 +1560,11 @@ def describe(a, axis=0, ddof=0):
     n = a.count(axis)
     mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
     m = a.mean(axis)
-    v = a.var(axis,ddof=ddof)
+    v = a.var(axis, ddof=ddof)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
-    return n, mm, m, v, sk, kurt
+
+    return stats._DescribeResult(n, mm, m, v, sk, kurt)
 
 
 def stde_median(data, axis=None):
