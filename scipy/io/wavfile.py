@@ -87,8 +87,9 @@ def _skip_unknown_chunk(fid):
         fmt = '<i'
 
     data = fid.read(4)
-    size = struct.unpack(fmt, data)[0]
-    fid.seek(size, 1)
+    if data:
+        size = struct.unpack(fmt, data)[0]
+        fid.seek(size, 1)
 
 
 def _read_riff_chunk(fid):
