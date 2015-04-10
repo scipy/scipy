@@ -368,7 +368,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         if Pxy.shape[-1] > 1:
             Pxy = Pxy.mean(axis=-1)
         else:
-            Pxy = np.squeeze(Pxy, axis=-1)
+            Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
     return freqs, Pxy
 
