@@ -608,9 +608,11 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
 
     # Handle detrending and window functions
     if not detrend:
-        detrend_func = lambda d: d
+        def detrend_func(d):
+            return d
     elif not hasattr(detrend, '__call__'):
-        detrend_func = lambda d: signaltools.detrend(d, type=detrend, axis=-1)
+        def detrend_func(d):
+            return signaltools.detrend(d, type=detrend, axis=-1)
     elif axis != -1:
         # Wrap this function so that it receives a shape that it could
         # reasonably expect to receive.
