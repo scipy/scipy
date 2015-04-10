@@ -80,6 +80,13 @@ Functions::
    Townsend, A. and Trogdon, T. and Olver, S. (2014)
    *Fast computation of Gauss quadrature nodes and
    weights on the whole real line*. ArXiv 1410.5286.
+
+.. [townsend.trogdon.olver-2015]
+   Townsend, A. and Trogdon, T. and Olver, S. (2015)
+   *Fast computation of Gauss quadrature nodes and
+   weights on the whole real line*.
+   IMA Journal of Numerical Analysis
+   doi: 10.1093/imanum/drv002
 """
 #
 # Author:  Travis Oliphant 2000
@@ -546,6 +553,13 @@ def h_roots(n, mu=False):
        Townsend, A. and Trogdon, T. and Olver, S. (2014)
        *Fast computation of Gauss quadrature nodes and
        weights on the whole real line*. ArXiv 1410.5286.
+
+    .. [townsend.trogdon.olver-2015]
+       Townsend, A. and Trogdon, T. and Olver, S. (2015)
+       *Fast computation of Gauss quadrature nodes and
+       weights on the whole real line*.
+       IMA Journal of Numerical Analysis
+       doi: 10.1093/imanum/drv002
     """
     m = int(n)
     if n < 1 or n != m:
@@ -907,6 +921,13 @@ def _h_roots_asy(n):
        Townsend, A. and Trogdon, T. and Olver, S. (2014)
        *Fast computation of Gauss quadrature nodes and
        weights on the whole real line*. ArXiv 1410.5286.
+
+    .. [townsend.trogdon.olver-2015]
+       Townsend, A. and Trogdon, T. and Olver, S. (2015)
+       *Fast computation of Gauss quadrature nodes and
+       weights on the whole real line*.
+       IMA Journal of Numerical Analysis
+       doi: 10.1093/imanum/drv002
     """
     iv = _initial_nodes(n)
     nodes, weights = _newton(n, iv)
