@@ -1392,12 +1392,10 @@ def anderson_ksamp(samples, midrank=True):
     else:
         A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
 
-    h = (1. / arange(1, N)).sum()
     H = (1. / n).sum()
-    g = 0
-    for l in arange(1, N-1):
-        inner = np.array([1. / ((N - l) * m) for m in arange(l+1, N)])
-        g += inner.sum()
+    hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
+    h = hs_cs[-1] + 1
+    g = (hs_cs / arange(2, N)).sum()
 
     a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
     b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
