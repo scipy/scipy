@@ -666,7 +666,44 @@ class _TestLinearFilter(TestCase):
 
         # lfilter does not prepend ones 
         assert_raises(ValueError, lfilter, b, a, x, -1, np.ones(zi_size))
-    
+
+    def test_scalar_a(self):
+        # a can be a scalar.  
+        x = self.generate(6)
+        b = self.convert_dtype([1, 0, -1])
+        a = self.convert_dtype([1])
+        y_r = self.convert_dtype([0, 1, 2, 2, 2, 2])
+
+        y = lfilter(b, a[0], x)
+        assert_array_almost_equal(y, y_r)
+
+    def test_zi_some_singleton_dims(self):
+        # lfilter doesn't really broadcast (no prepending of 1's).  But does
+        # do singleton expansion if x and zi have the same ndim.  This was 
+        # broken only if a subset of the axes were singletons (gh-4681).
+        x = self.convert_dtype(np.zeros((3,2,5), 'l'))
+        b = self.convert_dtype(np.ones(5, 'l'))
+        a = self.convert_dtype(np.array([1,0,0]))
+        zi = np.ones((3,1,4), 'l')
+        zi[1,:,:] *= 2
+        zi[2,:,:] *= 3
+        zi = self.convert_dtype(zi)
+
+        zf_expected = self.convert_dtype(np.zeros((3,2,4), 'l'))
+        y_expected = np.zeros((3,2,5), 'l')
+        y_expected[:,:,:4] = [[[1]], [[2]], [[3]]]
+        y_expected = self.convert_dtype(y_expected)
+        
+        # IIR
+        y_iir, zf_iir = lfilter(b, a, x, -1, zi)
+        assert_array_almost_equal(y_iir, y_expected)
+        assert_array_almost_equal(zf_iir, zf_expected)
+
+        # FIR
+        y_fir, zf_fir = lfilter(b, a[0], x, -1, zi)
+        assert_array_almost_equal(y_fir, y_expected)
+        assert_array_almost_equal(zf_fir, zf_expected)
+     
     def base_bad_size_zi(self, b, a, x, axis, zi):
         b = self.convert_dtype(b)
         a = self.convert_dtype(a)
