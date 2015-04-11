@@ -1005,11 +1005,13 @@ class TestBPolyCalculus(TestCase):
         m, k = 5, 8   # number of intervals, order
         x = np.sort(np.random.random(m))
         c = np.random.random((k, m-1))
-        bp = BPoly(c, x)
 
-        xp = np.linspace(x[0], x[-1], 21)
-        for i in range(k):
-            assert_allclose(bp(xp, i), bp.derivative(i)(xp))
+        # test both real and complex coefficients
+        for cc in [c.copy(), c*(1. + 2.j)]:
+            bp = BPoly(cc, x)
+            xp = np.linspace(x[0], x[-1], 21)
+            for i in range(k):
+                assert_allclose(bp(xp, i), bp.derivative(i)(xp))
 
 
 class TestPolyConversions(TestCase):

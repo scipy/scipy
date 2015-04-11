@@ -6,7 +6,6 @@ local power basis.
 
 from .polyint import _Interpolator1D
 import numpy as np
-cimport numpy as cnp
 
 cimport cython
 
@@ -848,8 +847,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
              double[::1] xp,
              int nu,
              int extrapolate,
-             double_or_complex[:,::1] out,
-             cnp.dtype dt):
+             double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial in the Bernstein basis.
 
@@ -894,8 +892,11 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         raise ValueError("x and c have incompatible shapes")
 
     if nu > 0:
-        wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=dt)
-
+        if double_or_complex is double_complex:
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
+        else:
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
+        
     # evaluate
     interval = 0
 
