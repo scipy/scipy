@@ -111,8 +111,9 @@ class Benchmark(object):
             return True
 
         # the solution should still be in bounds, otherwise immediate fail.
-        if (np.any(x > np.asfarray(self.bounds)[:, 1])
-            or np.any(x < np.asfarray(self.bounds)[:, 0])):
+        if np.any(x > np.asfarray(self.bounds)[:, 1]):
+            return False
+        if np.any(x < np.asfarray(self.bounds)[:, 0]):
             return False
 
         # you found a lower global minimum.  This shouldn't happen.
@@ -158,7 +159,7 @@ class Benchmark(object):
             self.dimensions = ndim
         else:
             raise ValueError('dimensionality cannot be changed for this'
-            'problem')
+                             'problem')
 
     @property
     def bounds(self):
