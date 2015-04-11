@@ -10,7 +10,7 @@ class OddSquare(Benchmark):
     r"""
     Odd Square objective function.
 
-    This class defines the Odd Square global optimization problem. This
+    This class defines the Odd Square [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -38,6 +38,9 @@ class OddSquare(Benchmark):
 
     *Global optimum*: :math:`f(x_i) = -1.0084` for :math:`x \approx b`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO The best solution changes on dimensionality
     """
 
     def __init__(self, dimensions=2):
@@ -48,16 +51,14 @@ class OddSquare(Benchmark):
         self.custom_bounds = ([-2.0, 4.0], [-2.0, 4.0])
         self.a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]
                          * 2)
-        self.global_optimum = [[1.09263477, 1.39263477]]
+        self.global_optimum = [[1.0873320463871847, 1.3873320456818079]]
 
-        self.fglob = -1.0084
+        self.fglob = -1.00846728102
 
     def fun(self, x, *args):
         self.nfev += 1
         b = self.a[0: self.N]
         d = self.N * max((x - b) ** 2.0)
         h = sum((x - b) ** 2.0)
-        # for n = 2, optimum = [1.09263477,  1.39263477].  The best solution
-        # changes on dimensionality, but not the minimum energy
         return (-exp(-d / (2.0 * pi)) * cos(pi * d)
                 * (1.0 + 0.02 * h / (d + 0.01)))

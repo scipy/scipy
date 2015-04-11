@@ -2,7 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy import (abs, sum, sin, cos, sqrt, log, prod, where, pi, exp, arange,
-                   floor, log10)
+                   floor, log10, atleast_2d, zeros)
 from .go_benchmark import Benchmark
 
 
@@ -11,7 +11,7 @@ class Parsopoulos(Benchmark):
     r"""
     Parsopoulos objective function.
 
-    This class defines the Parsopoulos global optimization problem. This is a
+    This class defines the Parsopoulos [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -27,6 +27,10 @@ class Parsopoulos(Benchmark):
 
     In the given domain problem, function has 12 global minima all equal to
     zero.
+
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -48,7 +52,7 @@ class Pathological(Benchmark):
     r"""
     Pathological objective function.
 
-    This class defines the Pathological global optimization problem. This is a
+    This class defines the Pathological [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -64,6 +68,9 @@ class Pathological(Benchmark):
     *Global optimum*: :math:`f(x) = 0.` for :math:`x = [0, 0]` for
     :math:`i = 1, 2`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -89,7 +96,7 @@ class Paviani(Benchmark):
     r"""
     Paviani objective function.
 
-    This class defines the Paviani global optimization problem. This is a
+    This class defines the Paviani [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -104,6 +111,12 @@ class Paviani(Benchmark):
     *Global optimum*: :math:`f(x_i) = -45.7784684040686` for
     :math:`x_i = 9.350266` for :math:`i = 1, ..., 10`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: think Gavana web/code definition is wrong because final product term
+    shouldn't raise x to power 10.
     """
 
     def __init__(self, dimensions=10):
@@ -125,7 +138,7 @@ class Penalty01(Benchmark):
     r"""
     Penalty 1 objective function.
 
-    This class defines the Penalty 1 global optimization problem. This is a
+    This class defines the Penalty 1 [1]_ global optimization problem. This is a
     imultimodal minimization problem defined as follows:
 
     .. math::
@@ -160,6 +173,7 @@ class Penalty01(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = -1` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -177,13 +191,12 @@ class Penalty01(Benchmark):
 
         a, b, c = 10.0, 100.0, 4.0
 
-        u = where(x > a, b * (x - a) ** c, 0.0)
-        v = where(x < -a, b * (-x - a) ** c, 0.0)
-        w = sum(u + v)
+        xx = abs(x)
+        u = where(xx > a, b * (xx - a) ** c, 0.0)
 
         y = 1.0 + (x + 1.0) / 4.0
 
-        return (w + (pi / 30.0) * (10.0 * sin(pi * y[0]) ** 2.0
+        return (sum(u) + (pi / 30.0) * (10.0 * sin(pi * y[0]) ** 2.0
                 + sum((y[: -1] - 1.0) ** 2.0
                       * (1.0 + 10.0 * sin(pi * y[1:]) ** 2.0))
                 + (y[-1] - 1) ** 2.0))
@@ -194,7 +207,7 @@ class Penalty02(Benchmark):
     r"""
     Penalty 2 objective function.
 
-    This class defines the Penalty 2 global optimization problem. This is a
+    This class defines the Penalty 2 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -222,6 +235,7 @@ class Penalty02(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 1` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -239,12 +253,10 @@ class Penalty02(Benchmark):
 
         a, b, c = 5.0, 100.0, 4.0
 
-        u = where(x > a, b * (x - a) ** c, 0.0)
-        v = where(x < -a, b * (-x - a) ** c, 0.0)
-        w = sum(u + v)
-        # TODO: is equation correct? If it's not then a factor of 10 needs to appear
-        # before first sin**2 term.
-        return (w + 0.1 * (sin(3.0 * pi * x[0]) ** 2.0
+        xx = abs(x)
+        u = where(xx > a, b * (xx - a) ** c, 0.0)
+
+        return (sum(u) + 0.1 * (10 * sin(3.0 * pi * x[0]) ** 2.0
                 + sum((x[:-1] - 1.0) ** 2.0
                       * (1.0 + sin(3 * pi * x[1:]) ** 2.0))
                 + (x[-1] - 1) ** 2.0 * (1 + sin(2 * pi * x[-1]) ** 2.0)))
@@ -255,7 +267,7 @@ class PenHolder(Benchmark):
     r"""
     PenHolder objective function.
 
-    This class defines the PenHolder global optimization problem. This is a
+    This class defines the PenHolder [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -270,6 +282,9 @@ class PenHolder(Benchmark):
     *Global optimum*: :math:`f(x_i) = -0.9635348327265058` for
     :math:`x_i = \pm 9.646167671043401` for :math:`i = 1, 2`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -293,7 +308,7 @@ class PermFunction01(Benchmark):
     r"""
     PermFunction 1 objective function.
 
-    This class defines the PermFunction1 global optimization problem. This is
+    This class defines the PermFunction1 [1]_ global optimization problem. This is
     a multimodal minimization problem defined as follows:
 
     .. math::
@@ -308,6 +323,11 @@ class PermFunction01(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = i` for
     :math:`i = 1, ..., n`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO: line 560
     """
 
     def __init__(self, dimensions=2):
@@ -324,13 +344,10 @@ class PermFunction01(Benchmark):
         self.nfev += 1
 
         b = 0.5
-        s_out = 0.0
-        for k in range(1, self.N + 1):
-            j = arange(1, self.N + 1)
-            s_in = (j ** k + b) * ((x[j - 1] / j) ** k - 1)
-            s_out += sum(s_in ** 2)
-
-        return s_out
+        k = atleast_2d(arange(self.N) + 1).T
+        j = atleast_2d(arange(self.N) + 1)
+        s = (j ** k + b) * ((x / j) ** k - 1)
+        return sum((sum(s, axis=1) ** 2))
 
 
 class PermFunction02(Benchmark):
@@ -338,7 +355,7 @@ class PermFunction02(Benchmark):
     r"""
     PermFunction 2 objective function.
 
-    This class defines the Perm Function 2 global optimization problem. This is
+    This class defines the Perm Function 2 [1]_ global optimization problem. This is
     a multimodal minimization problem defined as follows:
 
     .. math::
@@ -354,6 +371,11 @@ class PermFunction02(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = \frac{1}{i}`
     for :math:`i = 1, ..., n`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO: line 582
     """
 
     def __init__(self, dimensions=2):
@@ -371,12 +393,10 @@ class PermFunction02(Benchmark):
         self.nfev += 1
 
         b = 10
-        outer = 0
-        j = arange(1, self.N + 1)
-        for k in range(1, self.N + 1):
-            inner = (j + b) * (x[j - 1] ** k - (1. / j) ** k)
-            outer += sum(inner ** 2)
-        return outer
+        k = atleast_2d(arange(self.N) + 1).T
+        j = atleast_2d(arange(self.N) + 1)
+        s = (j + b) * (x ** k - (1. / j) ** k)
+        return sum((sum(s, axis=1) ** 2))
 
 
 class Pinter(Benchmark):
@@ -384,7 +404,7 @@ class Pinter(Benchmark):
     r"""
     Pinter objective function.
 
-    This class defines the Pinter global optimization problem. This is a
+    This class defines the Pinter [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -410,9 +430,11 @@ class Pinter(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
-    # TODO: not sure which reference this comes from.
-    
+
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
@@ -424,29 +446,16 @@ class Pinter(Benchmark):
 
     def fun(self, x, *args):
         self.nfev += 1
-
-        f = 0.0
-
-        for i in range(self.N):
-            x_i = x[i]
-
-            if i == 0:
-                x_mi = x[-1]
-                x_pi = x[i + 1]
-            elif i == self.N - 1:
-                x_mi = x[i - 1]
-                x_pi = x[0]
-            else:
-                x_mi = x[i - 1]
-                x_pi = x[i + 1]
-
-            A = x_mi * sin(x_i) + sin(x_pi)
-            B = x_mi ** 2.0 - 2 * x_i + 3 * x_pi - cos(x_i) + 1.0
-
-            f += (i + 1.0) * x_i ** 2.0 + 20.0 * (i + 1.0) * sin(A) ** 2.0 + \
-                (i + 1.0) * log10(1.0 + (i + 1.0) * B ** 2.0)
-
-        return f
+        i = arange(self.N) + 1
+        xx = zeros(self.N + 2)
+        xx[1: - 1] = x
+        xx[0] = x[-1]
+        xx[-1] = x[0]
+        A = xx[0: -2] * sin(xx[1: - 1]) + sin(xx[2:])
+        B = xx[0: -2] ** 2 - 2 * xx[1: - 1] + 3 * xx[2:] - cos(xx[1: - 1]) + 1
+        return (sum(i * x ** 2)
+                + sum(20 * i * sin(A) ** 2)
+                + sum(i * log10(1 + i * B ** 2)))
 
 
 class Plateau(Benchmark):
@@ -454,7 +463,7 @@ class Plateau(Benchmark):
     r"""
     Plateau objective function.
 
-    This class defines the Plateau global optimization problem. This
+    This class defines the Plateau [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -469,6 +478,7 @@ class Plateau(Benchmark):
     *Global optimum*: :math:`f(x) = 30` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -491,7 +501,7 @@ class Powell(Benchmark):
     r"""
     Powell objective function.
 
-    This class defines the Powell global optimization problem. This
+    This class defines the Powell [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -506,6 +516,8 @@ class Powell(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., 4`
 
+    ..[1] Powell, M. An iterative method for finding stationary values of a
+    function of several variables Computer Journal, 1962, 5, 147-151
     """
 
     def __init__(self, dimensions=4):
@@ -541,13 +553,15 @@ class PowerSum(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 2, 2, 3]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
     """
 
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([0.0] * self.N,
-                           [float(self.N)] * self.N)
+                           [4.0] * self.N)
 
         self.global_optimum = [[1.0, 2.0, 2.0, 3.0]]
         self.fglob = 0.0
@@ -556,13 +570,9 @@ class PowerSum(Benchmark):
         self.nfev += 1
 
         b = [8.0, 18.0, 44.0, 114.0]
-        y = 0.0
 
-        for k in range(1, self.N + 1):
-            s_in = sum(x ** k)
-            y += (s_in - b[k - 1]) ** 2.0
-
-        return y
+        k = atleast_2d(arange(self.N) + 1).T
+        return sum((sum(x ** k, axis=1) - b) ** 2)
 
 
 class Price01(Benchmark):
@@ -570,7 +580,7 @@ class Price01(Benchmark):
     r"""
     Price 1 objective function.
 
-    This class defines the Price 1 global optimization problem. This
+    This class defines the Price 1 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -584,6 +594,8 @@ class Price01(Benchmark):
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`x = [5, 5]` or
     :math:`x = [5, -5]` or :math:`x = [-5, 5]` or :math:`x = [-5, -5]`.
 
+    .. [1] Price, W. A controlled random search procedure for global
+    optimisation Computer Journal, 1977, 20, 367-370
     """
 
     def __init__(self, dimensions=2):
@@ -607,7 +619,7 @@ class Price02(Benchmark):
     r"""
     Price 2 objective function.
 
-    This class defines the Price 2 global optimization problem. This is a
+    This class defines the Price 2 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -620,6 +632,8 @@ class Price02(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0.9` for :math:`x_i = [0, 0]`
 
+    .. [1] Price, W. A controlled random search procedure for global
+    optimisation Computer Journal, 1977, 20, 367-370
     """
 
     def __init__(self, dimensions=2):
@@ -641,7 +655,7 @@ class Price03(Benchmark):
     r"""
     Price 3 objective function.
 
-    This class defines the Price 3 global optimization problem. This is a
+    This class defines the Price 3 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -654,12 +668,16 @@ class Price03(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [-5, -5]`,
     :math:`x = [-5, 5]`, :math:`x = [5, -5]`, :math:`x = [5, 5]`.
 
+    .. [1] Price, W. A controlled random search procedure for global
+    optimisation Computer Journal, 1977, 20, 367-370
+
+    TODO Jamil #96 has an erroneous factor of 6 in front of the square brackets
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
         self.custom_bounds = ([0, 2], [0, 2])
 
         self.global_optimum = [[1.0, 1.0]]
@@ -677,7 +695,7 @@ class Price04(Benchmark):
     r"""
     Price 4 objective function.
 
-    This class defines the Price 4 global optimization problem. This
+    This class defines the Price 4 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -690,6 +708,8 @@ class Price04(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`,
     :math:`x = [2, 4]` and :math:`x = [1.464, -2.506]`
 
+    .. [1] Price, W. A controlled random search procedure for global
+    optimisation Computer Journal, 1977, 20, 367-370
     """
 
     def __init__(self, dimensions=2):

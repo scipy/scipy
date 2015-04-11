@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
 from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
+                   arange, pi, prod, roll, sign, sin, sqrt, sum,
+                   tan, tanh, dot, repeat, atleast_2d, tril)
+from numpy.random import uniform
 from .go_benchmark import Benchmark
 
 
@@ -13,7 +13,7 @@ class Salomon(Benchmark):
     r"""
     Salomon objective function.
 
-    This class defines the Salomon global optimization problem. This is a
+    This class defines the Salomon [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -27,6 +27,9 @@ class Salomon(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -42,8 +45,8 @@ class Salomon(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        u = sum(x ** 2)
-        return 1 - cos(2 * pi * sqrt(u)) + 0.1 * sqrt(u)
+        u = sqrt(sum(x ** 2))
+        return 1 - cos(2 * pi * u) + 0.1 * u
 
 
 class Sargan(Benchmark):
@@ -51,7 +54,7 @@ class Sargan(Benchmark):
     r"""
     Sargan objective function.
 
-    This class defines the Sargan global optimization problem. This
+    This class defines the Sargan [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -66,6 +69,9 @@ class Sargan(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -92,7 +98,7 @@ class Schaffer01(Benchmark):
     r"""
     Schaffer 1 objective function.
 
-    This class defines the Schaffer 1 global optimization problem. This
+    This class defines the Schaffer 1 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -105,6 +111,9 @@ class Schaffer01(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]` for
     :math:`i = 1, 2`
 
+    .. [1] Mishra, S. Some new test functions for global optimization and
+    performance of repulsive particle swarm method.
+    Munich Personal RePEc Archive, 2006, 2718
     """
 
     def __init__(self, dimensions=2):
@@ -120,8 +129,9 @@ class Schaffer01(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        num = sin((x[0] ** 2 + x[1] ** 2)) ** 2 - 0.5
-        den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
+        u = (x[0] ** 2 + x[1] ** 2)
+        num = sin(u) ** 2 - 0.5
+        den = (1 + 0.001 * u) ** 2
         return 0.5 + num / den
 
 
@@ -130,7 +140,7 @@ class Schaffer02(Benchmark):
     r"""
     Schaffer 2 objective function.
 
-    This class defines the Schaffer 2 global optimization problem. This
+    This class defines the Schaffer 2 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -143,6 +153,9 @@ class Schaffer02(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]` for
     :math:`i = 1, 2`
 
+    .. [1] Mishra, S. Some new test functions for global optimization and
+    performance of repulsive particle swarm method.
+    Munich Personal RePEc Archive, 2006, 2718
     """
 
     def __init__(self, dimensions=2):
@@ -168,7 +181,7 @@ class Schaffer03(Benchmark):
     r"""
     Schaffer 3 objective function.
 
-    This class defines the Schaffer 3 global optimization problem. This
+    This class defines the Schaffer 3 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -180,6 +193,9 @@ class Schaffer03(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0.00156685` for :math:`x = [0, 1.253115]`
 
+    .. [1] Mishra, S. Some new test functions for global optimization and
+    performance of repulsive particle swarm method.
+    Munich Personal RePEc Archive, 2006, 2718
     """
 
     def __init__(self, dimensions=2):
@@ -205,7 +221,7 @@ class Schaffer04(Benchmark):
     r"""
     Schaffer 4 objective function.
 
-    This class defines the Schaffer 4 global optimization problem. This
+    This class defines the Schaffer 4 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -217,6 +233,9 @@ class Schaffer04(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0.292579` for :math:`x = [0, 1.253115]`
 
+    .. [1] Mishra, S. Some new test functions for global optimization and
+    performance of repulsive particle swarm method.
+    Munich Personal RePEc Archive, 2006, 2718
     """
 
     def __init__(self, dimensions=2):
@@ -235,7 +254,6 @@ class Schaffer04(Benchmark):
         num = cos(sin(abs(x[0] ** 2 - x[1] ** 2))) ** 2 - 0.5
         den = (1 + 0.001 * (x[0] ** 2 + x[1] ** 2)) ** 2
         return 0.5 + num / den
-
 
 
 # class SchmidtVetters(Benchmark):
@@ -280,7 +298,7 @@ class Schwefel01(Benchmark):
     r"""
     Schwefel 1 objective function.
 
-    This class defines the Schwefel 1 global optimization problem. This is a
+    This class defines the Schwefel 1 [1]_ global optimization problem. This is a
     unimodal minimization problem defined as follows:
 
     .. math::
@@ -296,6 +314,9 @@ class Schwefel01(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0`
     for :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -320,7 +341,7 @@ class Schwefel02(Benchmark):
     r"""
     Schwefel 2 objective function.
 
-    This class defines the Schwefel 2 global optimization problem. This
+    This class defines the Schwefel 2 [1]_ global optimization problem. This
     is a unimodal minimization problem defined as follows:
 
     .. math::
@@ -335,6 +356,9 @@ class Schwefel02(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -350,8 +374,8 @@ class Schwefel02(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        mat = np.repeat(np.atleast_2d(x), self.N, axis=0)
-        inner = sum(np.tril(mat), axis=1)
+        mat = repeat(atleast_2d(x), self.N, axis=0)
+        inner = sum(tril(mat), axis=1)
         return sum(inner ** 2)
 
 
@@ -360,7 +384,7 @@ class Schwefel04(Benchmark):
     r"""
     Schwefel 4 objective function.
 
-    This class defines the Schwefel 4 global optimization problem. This
+    This class defines the Schwefel 4 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -375,6 +399,9 @@ class Schwefel04(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for:math:`x_i = 1` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -397,7 +424,7 @@ class Schwefel06(Benchmark):
     r"""
     Schwefel 6 objective function.
 
-    This class defines the Schwefel 6 global optimization problem. This
+    This class defines the Schwefel 6 [1]_ global optimization problem. This
     is a unimodal minimization problem defined as follows:
 
     .. math::
@@ -410,6 +437,9 @@ class Schwefel06(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 3]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -432,7 +462,7 @@ class Schwefel20(Benchmark):
     r"""
     Schwefel 20 objective function.
 
-    This class defines the Schwefel 20 global optimization problem. This
+    This class defines the Schwefel 20 [1]_ global optimization problem. This
     is a unimodal minimization problem defined as follows:
 
     .. math::
@@ -446,6 +476,11 @@ class Schwefel20(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: Jamil #122 is incorrect.  There shouldn't be a leading minus sign.
     """
 
     def __init__(self, dimensions=2):
@@ -468,7 +503,7 @@ class Schwefel21(Benchmark):
     r"""
     Schwefel 21 objective function.
 
-    This class defines the Schwefel 21 global optimization problem. This
+    This class defines the Schwefel 21 [1]_ global optimization problem. This
     is a unimodal minimization problem defined as follows:
 
     .. math::
@@ -483,6 +518,9 @@ class Schwefel21(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -505,7 +543,7 @@ class Schwefel22(Benchmark):
     r"""
     Schwefel 22 objective function.
 
-    This class defines the Schwefel 22 global optimization problem. This
+    This class defines the Schwefel 22 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -520,6 +558,9 @@ class Schwefel22(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -543,7 +584,7 @@ class Schwefel26(Benchmark):
     r"""
     Schwefel 26 objective function.
 
-    This class defines the Schwefel 26 global optimization problem. This
+    This class defines the Schwefel 26 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -557,6 +598,7 @@ class Schwefel26(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 420.968746` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -579,7 +621,7 @@ class Schwefel36(Benchmark):
     r"""
     Schwefel 36 objective function.
 
-    This class defines the Schwefel 36 global optimization problem. This
+    This class defines the Schwefel 36 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -591,6 +633,9 @@ class Schwefel36(Benchmark):
 
     *Global optimum*: :math:`f(x) = -3456` for :math:`x = [12, 12]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -612,7 +657,7 @@ class Shekel05(Benchmark):
     r"""
     Shekel 5 objective function.
 
-    This class defines the Shekel 5 global optimization problem. This
+    This class defines the Shekel 5 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -640,6 +685,13 @@ class Shekel05(Benchmark):
     *Global optimum*: :math:`f(x) = -10.15319585` for :math:`x_i = 4` for
     :math:`i = 1, ..., 4`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: this is a different global minimum compared to Jamil#130.  The
+    minimum is found by doing lots of optimisations. The solution is supposed
+    to be at [4] * N, is there any numerical overflow?
     """
 
     def __init__(self, dimensions=4):
@@ -647,8 +699,11 @@ class Shekel05(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [[4.0 for _ in range(self.N)]]
-        self.fglob = -10.15319585
+        self.global_optimum = [[4.00003715092,
+                                4.00013327435,
+                                4.00003714871,
+                                4.0001332742]]
+        self.fglob = -10.1531996791
         self.A = asarray([[4.0, 4.0, 4.0, 4.0],
                           [1.0, 1.0, 1.0, 1.0],
                           [8.0, 8.0, 8.0, 8.0],
@@ -660,8 +715,7 @@ class Shekel05(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
-                    in zip(self.A, self.C))
+        return -sum(1 / (sum((x - self.A) ** 2, axis=1) + self.C))
 
 
 class Shekel07(Benchmark):
@@ -669,7 +723,7 @@ class Shekel07(Benchmark):
     r"""
     Shekel 7 objective function.
 
-    This class defines the Shekel 7 global optimization problem. This
+    This class defines the Shekel 7 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -703,6 +757,13 @@ class Shekel07(Benchmark):
     *Global optimum*: :math:`f(x) = -10.4028188` for :math:`x_i = 4` for
     :math:`i = 1, ..., 4`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: this is a different global minimum compared to Jamil#131. This
+    minimum is obtained after running lots of minimisations!  Is there any
+    numerical overflow that causes the minimum solution to not be [4] * N?
     """
 
     def __init__(self, dimensions=4):
@@ -710,8 +771,11 @@ class Shekel07(Benchmark):
 
         self._bounds = zip([0.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [[4.0 for _ in range(self.N)]]
-        self.fglob = -10.4028188
+        self.global_optimum = [[4.00057291078,
+                                4.0006893679,
+                                3.99948971076,
+                                3.99960615785]]
+        self.fglob = -10.4029405668
         self.A = asarray([[4.0, 4.0, 4.0, 4.0],
                           [1.0, 1.0, 1.0, 1.0],
                           [8.0, 8.0, 8.0, 8.0],
@@ -725,8 +789,7 @@ class Shekel07(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
-                    in zip(self.A, self.C))
+        return -sum(1 / (sum((x - self.A) ** 2, axis=1) + self.C))
 
 
 class Shekel10(Benchmark):
@@ -773,7 +836,7 @@ class Shekel10(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
 
-    TODO Found a lower global minimum than Jamil#132...
+    TODO Found a lower global minimum than Jamil#132... Is this numerical overflow?
     """
 
     def __init__(self, dimensions=4):
@@ -802,8 +865,7 @@ class Shekel10(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return -sum(1.0 / (dot(x - a, x - a) + c) for a, c
-                    in zip(self.A, self.C))
+        return -sum(1 / (sum((x - self.A) ** 2, axis=1) + self.C))
 
 
 class Shubert01(Benchmark):
@@ -811,7 +873,7 @@ class Shubert01(Benchmark):
     r"""
     Shubert 1 objective function.
 
-    This class defines the Shubert 1 global optimization problem. This
+    This class defines the Shubert 1 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -825,6 +887,9 @@ class Shubert01(Benchmark):
     *Global optimum*: :math:`f(x) = -186.7309` for
     :math:`x = [-7.0835, 4.8580]` (and many others).
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: Jamil#133 is missing a prefactor of j before the cos function.
     """
 
     def __init__(self, dimensions=2):
@@ -840,7 +905,7 @@ class Shubert01(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        j = np.atleast_2d(arange(1, 6)).T
+        j = atleast_2d(arange(1, 6)).T
         y = j * cos((j + 1) * x + j)
         return prod(sum(y, axis=0))
 
@@ -850,7 +915,7 @@ class Shubert03(Benchmark):
     r"""
     Shubert 3 objective function.
 
-    This class defines the Shubert 3 global optimization problem. This
+    This class defines the Shubert 3 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -864,6 +929,10 @@ class Shubert03(Benchmark):
     *Global optimum*: :math:`f(x) = -24.062499` for
     :math:`x = [5.791794, 5.791794]` (and many others).
 
+     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: Jamil#134 has wrong global minimum value, and is missing a minus sign
+    before the whole thing.
     """
 
     def __init__(self, dimensions=2):
@@ -879,7 +948,7 @@ class Shubert03(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        j = np.atleast_2d(arange(1, 6)).T
+        j = atleast_2d(arange(1, 6)).T
         y = -j * sin((j + 1) * x + j)
         return sum(sum(y))
 
@@ -889,7 +958,7 @@ class Shubert04(Benchmark):
     r"""
     Shubert 4 objective function.
 
-    This class defines the Shubert 4 global optimization problem. This
+    This class defines the Shubert 4 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -903,6 +972,10 @@ class Shubert04(Benchmark):
     *Global optimum*: :math:`f(x) = -29.016015` for
     :math:`x = [-0.80032121, -7.08350592]` (and many others).
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: Jamil#135 has wrong global minimum value, and is missing a minus sign
+    before the whole thing.
     """
 
     def __init__(self, dimensions=2):
@@ -918,7 +991,7 @@ class Shubert04(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        j = np.atleast_2d(arange(1, 6)).T
+        j = atleast_2d(arange(1, 6)).T
         y = -j * cos((j + 1) * x + j)
         return sum(sum(y))
 
@@ -928,7 +1001,7 @@ class SineEnvelope(Benchmark):
     r"""
     SineEnvelope objective function.
 
-    This class defines the SineEnvelope global optimization problem. This
+    This class defines the SineEnvelope [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -944,6 +1017,9 @@ class SineEnvelope(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO: Jamil #136
     """
 
     def __init__(self, dimensions=2):
@@ -972,7 +1048,7 @@ class SixHumpCamel(Benchmark):
     r"""
     Six Hump Camel objective function.
 
-    This class defines the Six Hump Camel global optimization problem. This
+    This class defines the Six Hump Camel [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -986,6 +1062,9 @@ class SixHumpCamel(Benchmark):
     :math:`x = [0.08984201368301331 , -0.7126564032704135]` or 
     :math:`x = [-0.08984201368301331, 0.7126564032704135]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -1009,8 +1088,8 @@ class Sodp(Benchmark):
     r"""
     Sodp objective function.
 
-    This class defines the Sum Of Different Powers global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Sum Of Different Powers [1]_ global optimization
+    problem. This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -1022,6 +1101,7 @@ class Sodp(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -1045,7 +1125,7 @@ class Sphere(Benchmark):
     r"""
     Sphere objective function.
 
-    This class defines the Sphere global optimization problem. This
+    This class defines the Sphere [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -1058,6 +1138,11 @@ class Sphere(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil has stupid limits
     """
 
     def __init__(self, dimensions=2):
@@ -1079,7 +1164,7 @@ class Step(Benchmark):
     r"""
     Step objective function.
 
-    This class defines the Step global optimization problem. This
+    This class defines the Step [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -1093,6 +1178,9 @@ class Step(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0.5` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -1101,14 +1189,52 @@ class Step(Benchmark):
                            [100.0] * self.N)
         self.custom_bounds = ([-5, 5], [-5, 5])
 
-        self.global_optimum = [[0.0 for _ in range(self.N)]]
+        self.global_optimum = [[0. for _ in range(self.N)]]
         self.fglob = 0.0
         self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
 
-        return sum((floor(x + 0.5)) ** 2.0)
+        return sum(floor(abs(x)))
+
+
+class Step2(Benchmark):
+
+    r"""
+    Step objective function.
+
+    This class defines the Step 2 [1]_ global optimization problem. This
+    is a multimodal minimization problem defined as follows:
+
+    .. math::
+
+        f_{\text{Step}}(x) = \sum_{i=1}^{n} \left ( \lfloor x_i
+                             + 0.5 \rfloor \right )^2
+
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., n`.
+
+    *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0.5` for
+    :math:`i = 1, ..., n`
+
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+    """
+
+    def __init__(self, dimensions=2):
+        Benchmark.__init__(self, dimensions)
+        self._bounds = zip([-100.0] * self.N,
+                           [100.0] * self.N)
+        self.custom_bounds = ([-5, 5], [-5, 5])
+
+        self.global_optimum = [[0.5 for _ in range(self.N)]]
+        self.fglob = 0.5
+        self.change_dimensionality = True
+
+    def fun(self, x, *args):
+        self.nfev += 1
+
+        return sum((floor(x) + 0.5) ** 2.0)
 
 
 class Stochastic(Benchmark):
@@ -1116,7 +1242,7 @@ class Stochastic(Benchmark):
     r"""
     Stochastic objective function.
 
-    This class defines a Stochastic global optimization problem. This
+    This class defines the Stochastic [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -1132,6 +1258,8 @@ class Stochastic(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = [1/n]` for
     :math:`i = 1, ..., n`
+
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -1146,7 +1274,7 @@ class Stochastic(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        rnd = np.random.uniform(0.0, 1.0, size=(self.N, ))
+        rnd = uniform(0.0, 1.0, size=(self.N, ))
         i = arange(1, self.N + 1)
 
         return sum(rnd * abs(x - 1.0 / i))
@@ -1157,7 +1285,7 @@ class StretchedV(Benchmark):
     r"""
     StretchedV objective function.
 
-    This class defines the Stretched V global optimization problem. This
+    This class defines the Stretched V [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -1178,6 +1306,12 @@ class StretchedV(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0., 0.]` when
     :math:`n = 2`.
 
+    .. [1] Adorio, E. MVF - "Multivariate Test Functions Library in C for
+    Unconstrained Global Optimization", 2005
+
+    TODO All the sources disagree on the equation, in some the 1 is in the
+    brackets, in others it is outside. In Jamil#142 it's not even 1. Here
+    we go with the Adorio option.
     """
 
     def __init__(self, dimensions=2):
@@ -1193,7 +1327,7 @@ class StretchedV(Benchmark):
         self.nfev += 1
 
         t = x[1:] ** 2 + x[: -1] ** 2
-        return sum(t ** 0.25 * (sin(50.0 * t ** 0.1) + 1) ** 2)
+        return sum(t ** 0.25 * (sin(50.0 * t ** 0.1 + 1) ** 2))
 
 
 class StyblinskiTang(Benchmark):
@@ -1201,7 +1335,7 @@ class StyblinskiTang(Benchmark):
     r"""
     StyblinskiTang objective function.
 
-    This class defines the Styblinski-Tang global optimization problem. This
+    This class defines the Styblinski-Tang [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -1215,6 +1349,9 @@ class StyblinskiTang(Benchmark):
     *Global optimum*: :math:`f(x) = -39.16616570377142n` for
     :math:`x_i = -2.903534018185960` for :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):

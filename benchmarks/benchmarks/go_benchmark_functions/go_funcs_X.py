@@ -11,8 +11,8 @@ class XinSheYang01(Benchmark):
     r"""
     Xin-She Yang 1 objective function.
 
-    This class defines the Xin-She Yang 1 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Xin-She Yang 1 [1]_ global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -29,6 +29,9 @@ class XinSheYang01(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -45,7 +48,7 @@ class XinSheYang01(Benchmark):
         self.nfev += 1
 
         i = arange(1.0, self.N + 1.0)
-        return sum(np.random.random() * (abs(x) ** i))
+        return sum(np.random.random(self.N) * (abs(x) ** i))
 
 
 class XinSheYang02(Benchmark):
@@ -53,8 +56,8 @@ class XinSheYang02(Benchmark):
     r"""
     Xin-She Yang 2 objective function.
 
-    This class defines the Xin-She Yang 2 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Xin-She Yang 2 [1]_ global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -68,6 +71,9 @@ class XinSheYang02(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -91,8 +97,8 @@ class XinSheYang03(Benchmark):
     r"""
     Xin-She Yang 3 objective function.
 
-    This class defines the Xin-She Yang 3 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Xin-She Yang 3 [1]_ global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -109,6 +115,9 @@ class XinSheYang03(Benchmark):
     *Global optimum*: :math:`f(x) = -1` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -136,8 +145,8 @@ class XinSheYang04(Benchmark):
     r"""
     Xin-She Yang 4 objective function.
 
-    This class defines the Xin-She Yang 4 global optimization problem. This
-    is a multimodal minimization problem defined as follows:
+    This class defines the Xin-She Yang 4 [1]_ global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -152,6 +161,9 @@ class XinSheYang04(Benchmark):
     *Global optimum*: :math:`f(x) = -1` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -177,7 +189,7 @@ class Xor(Benchmark):
     r"""
     Xor objective function.
 
-    This class defines the Xor global optimization problem. This is a 
+    This class defines the Xor [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -200,6 +212,7 @@ class Xor(Benchmark):
     *Global optimum*: :math:`f(x) = 0.9597588` for
     :math:`\x = [1, -1, 1, -1, -1, 1, 1, -1, 0.421134]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=9):

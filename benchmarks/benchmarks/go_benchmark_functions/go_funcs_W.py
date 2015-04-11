@@ -10,7 +10,7 @@ class Watson(Benchmark):
     r"""
     Watson objective function.
 
-    This class defines the Watson global optimization problem. This is a
+    This class defines the Watson [1]_ global optimization problem. This is a
     unimodal minimization problem defined as follows:
 
     .. math::
@@ -29,6 +29,13 @@ class Watson(Benchmark):
     *Global optimum*: :math:`f(x) = 0.002288` for
     :math:`x = [-0.0158, 1.012, -0.2329, 1.260, -1.513, 0.9928]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil #161 writes equation using (j - 1).  According to code in Adorio
+    and Gavana it should be (j+1). However the equations in those papers
+    contain (j - 1) as well.  However, I've got the right global minimum!!!
     """
 
     def __init__(self, dimensions=6):
@@ -61,7 +68,7 @@ class Wavy(Benchmark):
     r"""
     Wavy objective function.
 
-    This class defines the W / Wavy global optimization problem. This is a 
+    This class defines the W / Wavy [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -77,6 +84,9 @@ class Wavy(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -99,8 +109,8 @@ class WayburnSeader01(Benchmark):
     r"""
     Wayburn and Seader 1 objective function.
 
-    This class defines the Wayburn and Seader 1 global optimization problem. This
-    is a unimodal minimization problem defined as follows:
+    This class defines the Wayburn and Seader 1 [1]_ global optimization
+    problem. This is a unimodal minimization problem defined as follows:
 
     .. math::
 
@@ -112,6 +122,9 @@ class WayburnSeader01(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [1, 2]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -134,8 +147,8 @@ class WayburnSeader02(Benchmark):
     r"""
     Wayburn and Seader 2 objective function.
 
-    This class defines the Wayburn and Seader 2 global optimization problem. This
-    is a unimodal minimization problem defined as follows:
+    This class defines the Wayburn and Seader 2 [1]_ global optimization
+    problem. This is a unimodal minimization problem defined as follows:
 
     .. math::
 
@@ -148,6 +161,9 @@ class WayburnSeader02(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0.2, 1]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -173,8 +189,8 @@ class Weierstrass(Benchmark):
     r"""
     Weierstrass objective function.
 
-    This class defines the Weierstrass global optimization problem. This is a
-    multimodal minimization problem defined as follows:
+    This class defines the Weierstrass [1]_ global optimization problem.
+    This is a multimodal minimization problem defined as follows:
 
     .. math::
 
@@ -193,15 +209,22 @@ class Weierstrass(Benchmark):
     *Global optimum*: :math:`f(x) = 4` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO line 1591.
+    TODO Jamil, Gavana have got it wrong.  The second term is not supposed to
+    be included in the outer sum. Mishra code has it right as does the
+    reference referred to in Jamil#166.
     """
-    # TODO this is hard if you are the least bit away from 0.
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = zip([-0.5] * self.N, [0.5] * self.N)
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
-        self.fglob = 4.0
+        self.fglob = 0
         self.change_dimensionality = True
 
     def fun(self, x, *args):
@@ -211,12 +234,10 @@ class Weierstrass(Benchmark):
         a, b = 0.5, 3.0
 
         k = atleast_2d(arange(kmax + 1.)).T
-
         t1 = a ** k * cos(2 * pi * b ** k * (x + 0.5))
         t2 = self.N * sum(a ** k.T * cos(pi * b ** k.T))
 
-        inner = sum(t1, axis=0) - t2
-        return sum(inner)
+        return sum(sum(t1, axis=0)) - t2
 
 
 class Whitley(Benchmark):
@@ -224,7 +245,7 @@ class Whitley(Benchmark):
     r"""
     Whitley objective function.
 
-    This class defines the Whitley global optimization problem. This
+    This class defines the Whitley [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -241,6 +262,9 @@ class Whitley(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 1` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO Jamil#167 has '+ 1' inside the cos term, when it should be outside it.
     """
 
     def __init__(self, dimensions=2):
@@ -270,7 +294,7 @@ class Wolfe(Benchmark):
     r"""
     Wolfe objective function.
 
-    This class defines the Wolfe global optimization problem. This
+    This class defines the Wolfe [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -282,6 +306,9 @@ class Wolfe(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=3):

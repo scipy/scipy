@@ -10,7 +10,7 @@ class YaoLiu04(Benchmark):
     r"""
     Yao-Liu 4 objective function.
 
-    This class defines the Yao-Liu function 4 global optimization problem. This
+    This class defines the Yao-Liu function 4 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -24,6 +24,12 @@ class YaoLiu04(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO line 1201.  Gavana code and documentation differ.
+    max(abs(x)) != abs(max(x))
     """
 
     def __init__(self, dimensions=2):
@@ -38,7 +44,7 @@ class YaoLiu04(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return abs(x.max())
+        return abs(x).max()
 
 
 class YaoLiu09(Benchmark):
@@ -46,7 +52,7 @@ class YaoLiu09(Benchmark):
     r"""
     Yao-Liu 9 objective function.
 
-    This class defines the Yao-Liu function 9 global optimization problem. This
+    This class defines the Yao-Liu [1]_ function 9 global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -60,6 +66,9 @@ class YaoLiu09(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO Yao-Liu Fast Evolutionary programming is the the original ref.
     """
 
     def __init__(self, dimensions=2):

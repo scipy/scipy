@@ -11,7 +11,7 @@ class Qing(Benchmark):
     """
     Qing objective function.
 
-    This class defines the Qing global optimization problem. This is a
+    This class defines the Qing [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -25,6 +25,9 @@ class Qing(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = \pm \sqrt(i)` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -49,7 +52,7 @@ class Quadratic(Benchmark):
     """
     Quadratic objective function.
 
-    This class defines the Quadratic global optimization problem. This
+    This class defines the Quadratic [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -64,6 +67,9 @@ class Quadratic(Benchmark):
     *Global optimum*: :math:`f(x) = -3873.72418` for
     :math:`x = [0.19388, 0.48513]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -87,7 +93,7 @@ class Quintic(Benchmark):
     """
     Quintic objective function.
 
-    This class defines the Quintic global optimization problem. This is a
+    This class defines the Quintic [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -102,6 +108,9 @@ class Quintic(Benchmark):
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = -1` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):

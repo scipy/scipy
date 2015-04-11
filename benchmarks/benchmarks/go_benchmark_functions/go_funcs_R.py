@@ -2,6 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy import abs, sum, sin, cos, asarray, arange, pi, exp, log, sqrt
+from scipy.optimize import rosen
 from .go_benchmark import Benchmark
 
 
@@ -10,7 +11,7 @@ class Rana(Benchmark):
     r"""
     Rana objective function.
 
-    This class defines the Rana global optimization problem. This is a
+    This class defines the Rana [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -28,6 +29,11 @@ class Rana(Benchmark):
     *Global optimum*: :math:`f(x_i) = -928.5478` for
     :math:`x = [-300.3376, 500]`.
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: homemade global minimum here.
     """
 
     def __init__(self, dimensions=2):
@@ -54,7 +60,7 @@ class Rastrigin(Benchmark):
     r"""
     Rastrigin objective function.
 
-    This class defines the Rastrigin global optimization problem. This is a
+    This class defines the Rastrigin [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -68,6 +74,7 @@ class Rastrigin(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -89,6 +96,7 @@ class Ratkowsky01(Benchmark):
     """
     Ratkowsky objective function.
 
+    .. [1] http://www.itl.nist.gov/div898/strd/nls/data/ratkowsky3.shtml
     """
 
     # TODO, this is a NIST regression standard dataset
@@ -117,7 +125,7 @@ class Ratkowsky02(Benchmark):
     r"""
     Ratkowsky02 objective function.
 
-    This class defines the Ratkowsky 2 global optimization problem. This is a
+    This class defines the Ratkowsky 2 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -140,9 +148,9 @@ class Ratkowsky02(Benchmark):
     *Global optimum*: :math:`f(x) = 8.0565229338` for
     :math:`x = [7.2462237576e1, 2.6180768402, 6.7359200066e-2]`
 
+    .. [1] http://www.itl.nist.gov/div898/strd/nls/data/ratkowsky2.shtml
     """
 
-    # TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
@@ -166,7 +174,7 @@ class Ripple01(Benchmark):
     r"""
     Ripple 1 objective function.
 
-    This class defines the Ripple 1 global optimization problem. This is a
+    This class defines the Ripple 1 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -181,6 +189,9 @@ class Ripple01(Benchmark):
     *Global optimum*: :math:`f(x) = -2.2` for :math:`x_i = 0.1` for
     :math:`i = 1, 2`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -203,7 +214,7 @@ class Ripple25(Benchmark):
     r"""
     Ripple 25 objective function.
 
-    This class defines the Ripple 25 global optimization problem. This is a
+    This class defines the Ripple 25 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -219,6 +230,9 @@ class Ripple25(Benchmark):
     *Global optimum*: :math:`f(x) = -2` for :math:`x_i = 0.1` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -241,7 +255,7 @@ class Rosenbrock(Benchmark):
     r"""
     Rosenbrock objective function.
 
-    This class defines the Rosenbrock global optimization problem. This is a
+    This class defines the Rosenbrock [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -256,12 +270,15 @@ class Rosenbrock(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 1` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [10.0] * self.N)
+        self._bounds = zip([-30.] * self.N, [30.0] * self.N)
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [[1 for _ in range(self.N)]]
@@ -271,7 +288,7 @@ class Rosenbrock(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
+        return rosen(x)
 
 
 class RosenbrockModified(Benchmark):
@@ -279,7 +296,7 @@ class RosenbrockModified(Benchmark):
     r"""
     Modified Rosenbrock objective function.
 
-    This class defines the Modified Rosenbrock global optimization problem. This
+    This class defines the Modified Rosenbrock [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -293,6 +310,12 @@ class RosenbrockModified(Benchmark):
     *Global optimum*: :math:`f(x) = 34.04024310` for
     :math:`x = [-0.90955374, -0.95057172]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: We have different global minimum compared to Jamil #106. This is
+    possibly because of the (1-x) term is using the wrong parameter.
     """
 
     def __init__(self, dimensions=2):
@@ -317,7 +340,7 @@ class RotatedEllipse01(Benchmark):
     r"""
     Rotated Ellipse 1 objective function.
 
-    This class defines the Rotated Ellipse 1 global optimization problem. This
+    This class defines the Rotated Ellipse 1 [1]_ global optimization problem. This
     is a unimodal minimization problem defined as follows:
 
     .. math::
@@ -328,6 +351,9 @@ class RotatedEllipse01(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -352,7 +378,7 @@ class RotatedEllipse02(Benchmark):
     r"""
     Rotated Ellipse 2 objective function.
 
-    This class defines the Rotated Ellipse 2 global optimization problem. This
+    This class defines the Rotated Ellipse 2 [1]_ global optimization problem. This
     is a unimodal minimization problem defined as follows:
 
     .. math::
@@ -363,6 +389,9 @@ class RotatedEllipse02(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):

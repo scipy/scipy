@@ -10,7 +10,7 @@ class Zacharov(Benchmark):
     r"""
     Zacharov objective function.
 
-    This class defines the Zacharov global optimization problem. This
+    This class defines the Zacharov [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -26,6 +26,9 @@ class Zacharov(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -51,7 +54,7 @@ class ZeroSum(Benchmark):
     r"""
     ZeroSum objective function.
 
-    This class defines the ZeroSum global optimization problem. This
+    This class defines the ZeroSum [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -67,6 +70,7 @@ class ZeroSum(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` where :math:`\sum_{i=1}^n x_i = 0`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -91,7 +95,7 @@ class Zettl(Benchmark):
     r"""
     Zettl objective function.
 
-    This class defines the Zettl global optimization problem. This is a
+    This class defines the Zettl [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -104,12 +108,15 @@ class Zettl(Benchmark):
 
     *Global optimum*: :math:`f(x) = -0.0037912` for :math:`x = [-0.029896, 0.0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-1.0] * self.N, [5.0] * self.N)
+        self._bounds = zip([-5.0] * self.N, [10.0] * self.N)
 
         self.global_optimum = [[-0.02989597760285287, 0.0]]
         self.fglob = -0.003791237220468656
@@ -117,7 +124,7 @@ class Zettl(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (x[0] ** 2 + x[1] ** 2 - 2 * x[0]) ** 2 + x[0] / 4
+        return (x[0] ** 2 + x[1] ** 2 - 2 * x[0]) ** 2 + 0.25 * x[0]
 
 
 class Zimmerman(Benchmark):
@@ -125,7 +132,7 @@ class Zimmerman(Benchmark):
     r"""
     Zimmerman objective function.
 
-    This class defines the Zimmerman global optimization problem. This
+    This class defines the Zimmerman [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -155,6 +162,9 @@ class Zimmerman(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [7, 2]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO implementation from Gavana
     """
 
     def __init__(self, dimensions=2):
@@ -186,7 +196,7 @@ class Zirilli(Benchmark):
     r"""
     Zettl objective function.
 
-    This class defines the Zirilli global optimization problem. This is a
+    This class defines the Zirilli [1]_ global optimization problem. This is a
     unimodal minimization problem defined as follows:
 
     .. math::
@@ -198,6 +208,9 @@ class Zirilli(Benchmark):
 
     *Global optimum*: :math:`f(x) = -0.3523` for :math:`x = [-1.0465, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):

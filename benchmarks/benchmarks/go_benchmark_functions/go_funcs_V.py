@@ -10,7 +10,7 @@ class VenterSobiezcczanskiSobieski(Benchmark):
     r"""
     Venter Sobiezcczanski-Sobieski objective function.
 
-    This class defines the Venter Sobiezcczanski-Sobieski global optimization
+    This class defines the Venter Sobiezcczanski-Sobieski [1]_ global optimization
     problem. This is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -25,6 +25,12 @@ class VenterSobiezcczanskiSobieski(Benchmark):
 
     *Global optimum*: :math:`f(x) = -400` for :math:`x = [0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil #160 hasn't written the equation very well. Normally a cos
+    squared term is written as cos^2(x) rather than cos(x)^2
     """
 
     def __init__(self, dimensions=2):
@@ -50,7 +56,7 @@ class Vincent(Benchmark):
     r"""
     Vincent objective function.
 
-    This class defines the Vincent global optimization problem. This
+    This class defines the Vincent [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -63,6 +69,7 @@ class Vincent(Benchmark):
     *Global optimum*: :math:`f(x) = -n` for :math:`x_i = 7.70628098`
     for :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):

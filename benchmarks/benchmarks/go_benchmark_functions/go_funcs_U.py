@@ -10,7 +10,7 @@ class Ursem01(Benchmark):
     r"""
     Ursem 1 objective function.
 
-    This class defines the Ursem 1 global optimization problem. This is a
+    This class defines the Ursem 1 [1]_ global optimization problem. This is a
     unimodal minimization problem defined as follows:
 
     .. math::
@@ -22,6 +22,9 @@ class Ursem01(Benchmark):
     *Global optimum*: :math:`f(x) = -4.81681406371` for
     :math:`x = [1.69714, 0.0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -35,7 +38,7 @@ class Ursem01(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (-sin(2 * x[0] - 0.5 * pi) - 3.0 * cos(x[1]) - 0.5 * x[0])
+        return -sin(2 * x[0] - 0.5 * pi) - 3.0 * cos(x[1]) - 0.5 * x[0]
 
 
 class Ursem03(Benchmark):
@@ -43,7 +46,7 @@ class Ursem03(Benchmark):
     r"""
     Ursem 3 objective function.
 
-    This class defines the Ursem 3 global optimization problem. This is a
+    This class defines the Ursem 3 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -59,6 +62,10 @@ class Ursem03(Benchmark):
 
     *Global optimum*: :math:`f(x) = -3` for :math:`x = [0, 0]`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
+
+    TODO Gavana and Jamil #157 disagree on the formulae here. Jamil squares the
+    x[1] term in the sine expression. Gavana doesn't.  Go with Gavana here.
     """
 
     def __init__(self, dimensions=2):
@@ -84,7 +91,7 @@ class Ursem04(Benchmark):
     r"""
     Ursem 4 objective function.
 
-    This class defines the Ursem 4 global optimization problem. This
+    This class defines the Ursem 4 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -97,6 +104,9 @@ class Ursem04(Benchmark):
     *Global optimum*: :math:`f(x) = -1.5` for :math:`x = [0, 0]` for
     :math:`i = 1, 2`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -119,7 +129,7 @@ class UrsemWaves(Benchmark):
     r"""
     Ursem Waves objective function.
 
-    This class defines the Ursem Waves global optimization problem. This
+    This class defines the Ursem Waves [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -132,6 +142,13 @@ class UrsemWaves(Benchmark):
 
     *Global optimum*: :math:`f(x) = -8.5536` for :math:`x = [1.2, 1.2]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil #159, has an x_2^2 - 4.5 x_2^2 in the brackets. Why wasn't this
+    rationalised to -5.5 x_2^2? This makes me wonder if the equation  is listed
+    correctly?
     """
 
     def __init__(self, dimensions=2):
@@ -148,4 +165,4 @@ class UrsemWaves(Benchmark):
         u = -0.9 * x[0] ** 2
         v = (x[1] ** 2 - 4.5 * x[1] ** 2) * x[0] * x[1]
         w = 4.7 * cos(3 * x[0] - x[1] ** 2 * (2 + x[0])) * sin(2.5 * pi * x[0])
-        return (u + v + w)
+        return u + v + w

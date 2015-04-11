@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
 from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
+                   arange, pi, sign, sin, sqrt, sum,
+                   tan, tanh, atleast_2d)
 from .go_benchmark import Benchmark
 
 
@@ -13,7 +12,7 @@ class TestTubeHolder(Benchmark):
     r"""
     TestTubeHolder objective function.
 
-    This class defines the TestTubeHolder global optimization problem. This
+    This class defines the TestTubeHolder [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -27,6 +26,13 @@ class TestTubeHolder(Benchmark):
 
     *Global optimum*: :math:`f(x) = -10.872299901558` for
     :math:`x= [-\pi/2, 0]`
+
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO Jamil#148 has got incorrect equation, missing an abs around the square
+    brackets
     """
 
     def __init__(self, dimensions=2):
@@ -48,11 +54,11 @@ class TestTubeHolder(Benchmark):
 class Thurber(Benchmark):
 
     r"""
-    Thurber objective function.
+    Thurber [1]_ objective function.
 
+    .. [1] http://www.itl.nist.gov/div898/strd/nls/data/thurber.shtml
     """
 
-    # TODO, this is a NIST regression standard dataset
     def __init__(self, dimensions=7):
         Benchmark.__init__(self, dimensions)
 
@@ -70,7 +76,7 @@ class Thurber(Benchmark):
                           1178.351, 1260.531, 1273.514, 1288.339, 1327.543,
                           1353.863, 1414.509, 1425.208, 1421.384, 1442.962,
                           1464.350, 1468.705, 1447.894, 1457.628])
-        self.b = np.asarray([-3.067, -2.981, -2.921, -2.912, -2.840, -2.797,
+        self.b = asarray([-3.067, -2.981, -2.921, -2.912, -2.840, -2.797,
                              -2.702, -2.699, -2.633, -2.481, -2.363, -2.322,
                              -1.501, -1.460, -1.274, -1.212, -1.100, -1.046,
                              -0.915, -0.714, -0.566, -0.545, -0.400, -0.309,
@@ -91,7 +97,7 @@ class Treccani(Benchmark):
     r"""
     Treccani objective function.
 
-    This class defines the Treccani global optimization problem. This is a
+    This class defines the Treccani [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -104,6 +110,10 @@ class Treccani(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [-2, 0]` or
     :math:`x = [0, 0]`.
+
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -126,7 +136,7 @@ class Trefethen(Benchmark):
     r"""
     Trefethen objective function.
 
-    This class defines the Trefethen global optimization problem. This is a
+    This class defines the Trefethen [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -144,6 +154,9 @@ class Trefethen(Benchmark):
     *Global optimum*: :math:`f(x) = -3.3068686474` for
     :math:`x = [-0.02440307923, 0.2106124261]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -171,7 +184,7 @@ class ThreeHumpCamel(Benchmark):
     r"""
     Three Hump Camel objective function.
 
-    This class defines the Three Hump Camel global optimization problem. This
+    This class defines the Three Hump Camel [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -184,6 +197,9 @@ class ThreeHumpCamel(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, 0]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -207,7 +223,7 @@ class Trid(Benchmark):
     r"""
     Trid objective function.
 
-    This class defines the Trid global optimization problem. This is a
+    This class defines the Trid [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -221,12 +237,17 @@ class Trid(Benchmark):
 
     *Global optimum*: :math:`f(x) = -50` for :math:`x = [6, 10, 12, 12, 10, 6]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO Jamil#150, starting index of second summation term should be 2.
     """
 
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [20.0] * self.N)
+        self._bounds = zip([-20.0] * self.N, [20.0] * self.N)
 
         self.global_optimum = [[6, 10, 12, 12, 10, 6]]
         self.fglob = -50.0
@@ -243,7 +264,7 @@ class Trigonometric01(Benchmark):
     r"""
     Trigonometric 1 objective function.
 
-    This class defines the Trigonometric 1 global optimization problem. This
+    This class defines the Trigonometric 1 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -259,6 +280,12 @@ class Trigonometric01(Benchmark):
     *Global optimum*: :math:`f(x) = 0` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
+
+    TODO: equaiton uncertain here.  Is it just supposed to be the cos term
+    in the inner sum, or the whole of the second line in Jamil #153.
     """
 
     def __init__(self, dimensions=2):
@@ -272,9 +299,9 @@ class Trigonometric01(Benchmark):
 
     def fun(self, x, *args):
         self.nfev += 1
-
-        i = arange(1.0, self.N + 1)
-        return sum((self.N - sum(cos(x) + i * (1 - cos(x) - sin(x)))) ** 2.0)
+        i = atleast_2d(arange(1.0, self.N + 1)).T
+        inner = cos(x) + i * (1 - cos(x) - sin(x))
+        return sum((self.N - sum(inner, axis=1)) ** 2)
 
 
 class Trigonometric02(Benchmark):
@@ -282,7 +309,7 @@ class Trigonometric02(Benchmark):
     r"""
     Trigonometric 2 objective function.
 
-    This class defines the Trigonometric 2 global optimization problem. This
+    This class defines the Trigonometric 2 [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -298,6 +325,9 @@ class Trigonometric02(Benchmark):
     *Global optimum*: :math:`f(x) = 1` for :math:`x_i = 0.9` for
     :math:`i = 1, ..., n`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):
@@ -325,7 +355,7 @@ class Tripod(Benchmark):
     r"""
     Tripod objective function.
 
-    This class defines the Tripod global optimization problem. This
+    This class defines the Tripod [1]_ global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
@@ -339,6 +369,9 @@ class Tripod(Benchmark):
 
     *Global optimum*: :math:`f(x) = 0` for :math:`x = [0, -50]`
 
+    .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
+    For Global Optimization Problems Int. Journal of Mathematical Modelling
+    and Numerical Optimisation, 2013, 4, 150-194.
     """
 
     def __init__(self, dimensions=2):

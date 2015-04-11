@@ -10,7 +10,7 @@ class NeedleEye(Benchmark):
     r"""
     NeedleEye objective function.
 
-    This class defines the Needle-Eye global optimization problem. This is a
+    This class defines the Needle-Eye [1]_ global optimization problem. This is a
     a multimodal minimization problem defined as follows:
 
     .. math::
@@ -33,6 +33,7 @@ class NeedleEye(Benchmark):
     *Global optimum*: :math:`f(x) = 1` for :math:`x_i = 0` for
     :math:`i = 1, ..., n`
 
+    .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
 
     def __init__(self, dimensions=2):
@@ -50,10 +51,10 @@ class NeedleEye(Benchmark):
         f = fp = 0.0
         eye = 0.0001
 
-        for i in range(self.N):
-            if abs(x[i]) >= eye:
+        for val in x:
+            if abs(val) >= eye:
                 fp = 1.0
-                f += 100.0 + abs(x[i])
+                f += 100.0 + abs(val)
             else:
                 f += 1.0
 
@@ -68,7 +69,7 @@ class NewFunction01(Benchmark):
     r"""
     NewFunction01 objective function.
 
-    This class defines the NewFunction01 global optimization problem. This is a
+    This class defines the NewFunction01 [1]_ global optimization problem. This is a
     multimodal minimization problem defined as follows:
 
     .. math::
@@ -82,6 +83,11 @@ class NewFunction01(Benchmark):
     *Global optimum*: :math:`f(x) = -0.18459899925` for
     :math:`x = [-8.46669057, -9.99982177]`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO line 355
     """
 
     def __init__(self, dimensions=2):
@@ -89,8 +95,8 @@ class NewFunction01(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [[-8.46669057, -9.99982177]]
-        self.fglob = -0.18459899925
+        self.global_optimum = [[-8.46668984648, -9.99980944557]]
+        self.fglob = -0.184648852475
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -118,6 +124,13 @@ class NewFunction02(Benchmark):
     *Global optimum*: :math:`f(x) = -0.19933159253` for
     :math:`x = [-9.94103375, -9.99771235]`
 
+    .. [1] Mishra, S. Global Optimization by Differential Evolution and
+    Particle Swarm Methods: Evaluation on Some Benchmark Functions.
+    Munich Personal RePEc Archive, 2006, 1005
+
+    TODO Line 368
+    TODO WARNING, minimum value is estimated from running many optimisations and
+    choosing the best.
     """
 
     def __init__(self, dimensions=2):
@@ -125,8 +138,8 @@ class NewFunction02(Benchmark):
 
         self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
 
-        self.global_optimum = [[-9.94103375, -9.99771235]]
-        self.fglob = -0.19933159253
+        self.global_optimum = [[-9.94114736324, -9.99997128772]]
+        self.fglob = -0.199409030092
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -135,44 +148,4 @@ class NewFunction02(Benchmark):
                 + 0.01 * (x[0] + x[1]))
 
 
-class NewFunction03(Benchmark):
-
-    r"""
-    NewFunction03 objective function.
-
-    This class defines the NewFunction03 global optimization problem. This is a
-    multimodal minimization problem defined as follows:
-
-    .. math::
-
-       f_{\text{NewFunction03}}(x) = 0.01 x_{1} + 0.1 x_{2} + \left\{x_{1}
-       + \sin^{2}\left[\left(\cos\left(x_{1}\right)
-       + \cos\left(x_{2}\right)\right)^{2}\right]
-       + \cos^{2}\left[\left(\sin\left(x_{1}\right)
-       + \sin\left(x_{2}\right)\right)^{2}\right]\right\}^{2}
-
-
-    with :math:`x_i \in [-10, 10]` for :math:`i = 1, 2`.
-
-    *Global optimum*: :math:`f(x) = -1.019829` for
-    :math:`x = [-1.98682, -10]`
-
-    """
-
-    def __init__(self, dimensions=2):
-        Benchmark.__init__(self, dimensions)
-
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
-
-        self.global_optimum = [[-1.98682, -10.0]]
-        self.fglob = -1.019829
-
-    def fun(self, x, *args):
-        self.nfev += 1
-
-        f1 = sin((cos(x[0]) + cos(x[1])) ** 2) ** 2
-        f2 = cos((sin(x[0]) + sin(x[1])) ** 2) ** 2
-        f = (f1 + f2 + x[0]) ** 2
-        f = f + 0.01 * x[0] + 0.1 * x[1]
-
-        return f
+#Newfunction 3 from Gavana is entered as Mishra05.
