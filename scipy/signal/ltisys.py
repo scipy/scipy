@@ -479,7 +479,7 @@ class lti(object):
 
 
 class tf(lti):
-    """Linear Time Invariant system class in state-space form.
+    """Linear Time Invariant system class in transfer function form.
 
     Parameters
     ----------
