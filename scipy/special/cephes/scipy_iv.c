@@ -67,8 +67,8 @@
  *
  */
 
-#include <stdlib.h>
 #include "mconf.h"
+#include <stdlib.h>
 extern double MAXNUM, MACHEP;
 
 static double iv_asymptotic(double v, double x);

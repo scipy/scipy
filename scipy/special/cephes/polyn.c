@@ -59,9 +59,9 @@
  *
  */
 
+#include "mconf.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "mconf.h"
 
 /* near pointer version of malloc() */
 /*

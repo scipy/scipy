@@ -54,8 +54,8 @@
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
  */
 
-#include <stdio.h>
 #include "mconf.h"
+#include <stdio.h>
 
 #include "sf_error.h"
 
