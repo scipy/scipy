@@ -2759,7 +2759,6 @@ subroutine zhegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     integer intent(out) :: info
 end subroutine zhegvx
 
-
 function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a real matrix A.
@@ -2792,8 +2791,52 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     <ftype2> dimension(MAX(m,1)),intent(cache,hide) :: work
 end function <prefix2c>lange
 
+subroutine <prefix>larfg(n, alpha, x, incx, tau)
+    integer intent(in), check(n>=1) :: n
+    <ftype> intent(in,out) :: alpha
+    <ftype> intent(in,copy,out), dimension(*), depend(n,incx), check(len(x) >= (n-2)*incx) :: x
+    integer intent(in), check(incx>0||incx<0) :: incx = 1
+    <ftype> intent(out) :: tau
+end subroutine <prefix>larfg
 
+subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work)
+    character intent(in), check(side[0]=='L'||side[0]=='R') :: side = 'L'
+    integer intent(in,hide), depend(c) :: m = shape(c,0)
+    integer intent(in,hide), depend(c) :: n = shape(c,1)
+    <ftype> dimension(*), intent(in), depend(n,m,side,incv), check(side[0]=='L'?len(v)>=(m-1)*incv+1:len(v)>=(n-1)*incv+1) :: v
+    integer intent(in), check(incv>0||incv<0) :: incv = 1
+    <ftype> intent(in) :: tau
+    <ftype> dimension(m,n), intent(in,copy,out) :: c
+    integer intent(in,hide) :: ldc = shape(c,0)
+    <ftype> dimension(*), intent(in), depend(side,m,n), check(side[0]=='L'?len(work)>=n:len(work)>=m) :: work
+end subroutine <prefix>larf
 
+subroutine <prefix>lartg(f,g,cs,sn,r)
+    <ftype> intent(in) :: f
+    <ftype> intent(in) :: g
+    <real,double precision,\0,\1> intent(out) :: cs
+    <ftype> intent(out) :: sn
+    <ftype> intent(out) :: r
+end subroutine <prefix>lartg
+
+subroutine <prefix2c>rot(n,x,offx,incx,y,offy,incy,c,s)
+    callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
+    callprotoargument int*,<ctype2c>*,int*,<ctype2c>*,int*,<float,double>*,<ctype2c>*
+    <ftype2c> dimension(*),intent(in,out,copy) :: x,y
+    <real,double precision> intent(in) :: c
+    <ftype2c> intent(in) :: s
+    integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+    integer optional, intent(in), check(incy>0||incy<0) :: incy = 1
+    integer optional, intent(in), depend(x) :: offx=0
+    integer optional, intent(in), depend(y) :: offy=0
+    check(offx>=0 && offx<len(x)) :: offx
+    check(offy>=0 && offy<len(y)) :: offy
+    integer optional, intent(in), depend(x,incx,offx,y,incy,offy) :: &
+        n = (len(x)-1-offx)/abs(incx)+1
+    check(len(x)-offx>(n-1)*abs(incx)) :: n
+    check(len(y)-offy>(n-1)*abs(incy)) :: n
+end subroutine <prefix2c>rot
+ 
 end interface
 
 end python module _flapack

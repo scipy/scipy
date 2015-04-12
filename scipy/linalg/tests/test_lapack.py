@@ -20,6 +20,7 @@ try:
 except ImportError:
     clapack = None
 from scipy.linalg.lapack import get_lapack_funcs
+from scipy.linalg.blas import get_blas_funcs
 
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
@@ -370,6 +371,103 @@ class TestDlasd4(TestCase):
         assert_allclose(SM, roots, atol=100*np.finfo(np.float64).eps,
                         rtol=100*np.finfo(np.float64).eps)
 
+
+def test_lartg():
+    for dtype in 'fdFD':
+        lartg = get_lapack_funcs('lartg', dtype=dtype)
+
+        f = np.array(3, dtype)
+        g = np.array(4, dtype)
+
+        if np.iscomplexobj(g):
+            g *= 1j
+
+        cs, sn, r = lartg(f, g)
+
+        assert_allclose(cs, 3.0/5.0)
+        assert_allclose(r, 5.0)
+
+        if np.iscomplexobj(g):
+            assert_allclose(sn, -4.0j/5.0)
+            assert_(type(r) == complex)
+            assert_(type(cs) == float)
+        else:
+            assert_allclose(sn, 4.0/5.0)
+
+def test_rot():
+    # srot, drot from blas and crot and zrot from lapack.
+
+    for dtype in 'fdFD':
+        c = 0.6
+        s = 0.8
+
+        u = np.ones(4, dtype) * 3
+        v = np.ones(4, dtype) * 4
+        atol = 10**-(np.finfo(dtype).precision-1)
+
+        if dtype in 'fd':
+            rot = get_blas_funcs('rot', dtype=dtype)
+            f = 4
+        else:
+            rot = get_lapack_funcs('rot', dtype=dtype)
+            s *= -1j
+            v *= 1j
+            f = 4j
+
+        assert_allclose(rot(u, v, c, s), [[5,5,5,5],[0,0,0,0]], atol=atol)
+        assert_allclose(rot(u, v, c, s, n=2), [[5,5,3,3],[0,0,f,f]], atol=atol)
+        assert_allclose(rot(u, v, c, s, offx=2,offy=2), [[3,3,5,5],[f,f,0,0]], atol=atol)
+        assert_allclose(rot(u, v, c, s, incx=2, offy=2, n=2), [[5,3,5,3],[f,f,0,0]], atol=atol)
+        assert_allclose(rot(u, v, c, s, offx=2, incy=2, n=2), [[3,3,5,5],[0,f,0,f]], atol=atol)
+        assert_allclose(rot(u, v, c, s, offx=2, incx=2, offy=2, incy=2, n=1), [[3,3,5,3],[f,f,0,f]], atol=atol)
+        assert_allclose(rot(u, v, c, s, incx=-2, incy=-2, n=2), [[5,3,5,3],[0,f,0,f]], atol=atol)
+    
+        a, b = rot(u, v, c, s, overwrite_x=1, overwrite_y=1)
+        assert_(a is u)
+        assert_(b is v)
+        assert_allclose(a, [5,5,5,5], atol=atol)
+        assert_allclose(b, [0,0,0,0], atol=atol)
+
+def test_larfg_larf():
+    np.random.seed(1234)
+    a0 = np.random.random((4,4))
+    a0 = a0.T.dot(a0)
+
+    a0j = np.random.random((4,4)) + 1j*np.random.random((4,4))
+    a0j = a0j.T.conj().dot(a0j)
+
+    # our test here will be to do one step of reducing a hermetian matrix to
+    # tridiagonal form using householder transforms.
+
+    for dtype in 'fdFD':
+        larfg, larf = get_lapack_funcs(['larfg', 'larf'], dtype=dtype)
+
+        if dtype in 'FD':
+            a = a0j.copy()
+        else:
+            a = a0.copy()
+
+        # generate a householder transform to clear a[2:,0]
+        alpha, x, tau = larfg(a.shape[0]-1, a[1,0], a[2:,0])
+
+        # create expected output
+        expected = np.zeros_like(a[:,0])
+        expected[0] = a[0,0]
+        expected[1] = alpha
+        
+        # assemble householder vector
+        v = np.zeros_like(a[1:,0])
+        v[0] = 1.0
+        v[1:] = x
+
+        # apply transform from the left
+        a[1:,:] = larf(v, tau.conjugate(), a[1:,:], np.zeros(a.shape[1]))
+
+        # apply transform from the right
+        a[:,1:] = larf(v, tau, a[:,1:], np.zeros(a.shape[0]), side='R')
+        
+        assert_allclose(a[:,0], expected, atol=1e-5)
+        assert_allclose(a[0,:], expected, atol=1e-5)
 
 if __name__ == "__main__":
     run_module_suite()

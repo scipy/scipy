@@ -156,6 +156,9 @@ def configuration(parent_package='',top_path=None):
                          libraries=['fwrappers'],
                          extra_info=lapack_opt)
 
+    config.add_extension('_decomp_update',
+                         sources=['_decomp_update.c'])
+
     return config
 
 

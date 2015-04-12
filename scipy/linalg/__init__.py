@@ -73,6 +73,9 @@ Decompositions
    polar - Compute the polar decomposition.
    qr - QR decomposition of a matrix
    qr_multiply - QR decomposition and multiplication by Q
+   qr_update - Rank k QR update
+   qr_delete - QR downdate on row or column deletion
+   qr_insert - QR update on row or column insertion
    rq - RQ decomposition of a matrix
    qz - QZ decomposition of a pair of matrices
    schur - Schur decomposition of a matrix
@@ -182,6 +185,7 @@ from .lapack import *
 from .special_matrices import *
 from ._solvers import *
 from ._procrustes import *
+from ._decomp_update import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
