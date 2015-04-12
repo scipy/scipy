@@ -76,6 +76,8 @@ class TestTrimmedStats(TestCase):
         assert_approx_equal(y, X.std(ddof=1), significant=self.dprec)
 
     def test_tmin(self):
+        assert_equal(stats.tmin(4), 4)
+
         x = np.arange(10)
         assert_equal(stats.tmin(x), 0)
         assert_equal(stats.tmin(x, lowerlimit=0), 0)
@@ -87,9 +89,11 @@ class TestTrimmedStats(TestCase):
         assert_equal(stats.tmin(x, axis=None), 0)
 
     def test_tmax(self):
+        assert_equal(stats.tmax(4), 4)
+
         x = np.arange(10)
         assert_equal(stats.tmax(x), 9)
-        assert_equal(stats.tmax(x, upperlimit=9),9)
+        assert_equal(stats.tmax(x, upperlimit=9), 9)
         assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), 8)
 
         x = x.reshape((5, 2))
@@ -501,6 +505,14 @@ class TestCorrSpearmanr(TestCase):
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
     """
+    def test_scalar(self):
+        y = stats.spearmanr(4., 2.)
+        assert_(np.isnan(y).all())
+
+    def test_uneven_lengths(self):
+        assert_raises(ValueError, stats.spearmanr, [1, 2, 1], [8, 9])
+        assert_raises(ValueError, stats.spearmanr, [1, 2, 1], 8)
+
     def test_sXX(self):
         y = stats.spearmanr(X,X)
         r = y[0]
@@ -1182,6 +1194,11 @@ class TestMode(TestCase):
         assert_equal(vals, np.array([]))
         assert_equal(counts, np.array([]))
 
+    def test_scalar(self):
+        vals, counts = stats.mode(4.)
+        assert_equal(vals, np.array([4.]))
+        assert_equal(counts, np.array([1]))
+
     def test_basic(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
         vals = stats.mode(data1)
@@ -1256,6 +1273,7 @@ class TestMode(TestCase):
 class TestVariability(TestCase):
 
     testcase = [1,2,3,4]
+    scalar_testcase = 4.
 
     def test_signaltonoise(self):
         # This is not in R, so used:
@@ -1274,11 +1292,13 @@ class TestVariability(TestCase):
 
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
+        y = stats.sem(self.scalar_testcase)
+        assert_(np.isnan(y))
         y = stats.sem(self.testcase)
         assert_approx_equal(y, 0.6454972244)
         n = len(self.testcase)
         assert_allclose(stats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
-                         stats.sem(self.testcase, ddof=2))
+                        stats.sem(self.testcase, ddof=2))
 
     def test_zmap(self):
         # not in R, so tested by using:
@@ -1376,56 +1396,67 @@ class TestMoments(TestCase):
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
+    scalar_testcase = 4.
     np.random.seed(1234)
     testcase_moment_accuracy = np.random.rand(42)
     testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
-        y = stats.moment(self.testcase,1)
-        assert_approx_equal(y,0.0,10)
-        y = stats.moment(self.testcase,2)
-        assert_approx_equal(y,1.25)
-        y = stats.moment(self.testcase,3)
-        assert_approx_equal(y,0.0)
-        y = stats.moment(self.testcase,4)
-        assert_approx_equal(y,2.5625)
+        y = stats.moment(self.scalar_testcase)
+        assert_approx_equal(y, 0.0)
+        y = stats.moment(self.testcase, 1)
+        assert_approx_equal(y, 0.0, 10)
+        y = stats.moment(self.testcase, 2)
+        assert_approx_equal(y, 1.25)
+        y = stats.moment(self.testcase, 3)
+        assert_approx_equal(y, 0.0)
+        y = stats.moment(self.testcase, 4)
+        assert_approx_equal(y, 2.5625)
 
     def test_variation(self):
         # variation = samplestd / mean
+        y = stats.variation(self.scalar_testcase)
+        assert_approx_equal(y, 0.0)
         y = stats.variation(self.testcase)
-        assert_approx_equal(y,0.44721359549996, 10)
+        assert_approx_equal(y, 0.44721359549996, 10)
 
     def test_skewness(self):
+        # Scalar test case
+        y = stats.skew(self.scalar_testcase)
+        assert_approx_equal(y, 0.0)
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
         y = stats.skew(self.testmathworks)
-        assert_approx_equal(y,-0.29322304336607,10)
-        y = stats.skew(self.testmathworks,bias=0)
-        assert_approx_equal(y,-0.437111105023940,10)
+        assert_approx_equal(y, -0.29322304336607, 10)
+        y = stats.skew(self.testmathworks, bias=0)
+        assert_approx_equal(y, -0.437111105023940, 10)
         y = stats.skew(self.testcase)
-        assert_approx_equal(y,0.0,10)
+        assert_approx_equal(y, 0.0, 10)
 
     def test_skewness_scalar(self):
         # `skew` must return a scalar for 1-dim input
         assert_equal(stats.skew(arange(10)), 0.0)
 
     def test_kurtosis(self):
+        # Scalar test case
+        y = stats.kurtosis(self.scalar_testcase)
+        assert_approx_equal(y, -3.0)
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
         #   fisher=0 (Pearson's defn of kurtosis for compatiability with Matlab)
-        y = stats.kurtosis(self.testmathworks,0,fisher=0,bias=1)
-        assert_approx_equal(y, 2.1658856802973,10)
+        y = stats.kurtosis(self.testmathworks, 0, fisher=0, bias=1)
+        assert_approx_equal(y, 2.1658856802973, 10)
 
         # Note that MATLAB has confusing docs for the following case
         #  kurtosis(x,0) gives an unbiased estimate of Pearson's skewness
         #  kurtosis(x)  gives a biased estimate of Fisher's skewness (Pearson-3)
         #  The MATLAB docs imply that both should give Fisher's
-        y = stats.kurtosis(self.testmathworks,fisher=0,bias=0)
-        assert_approx_equal(y, 3.663542721189047,10)
-        y = stats.kurtosis(self.testcase,0,0)
-        assert_approx_equal(y,1.64)
+        y = stats.kurtosis(self.testmathworks, fisher=0, bias=0)
+        assert_approx_equal(y, 3.663542721189047, 10)
+        y = stats.kurtosis(self.testcase, 0, 0)
+        assert_approx_equal(y, 1.64)
 
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
@@ -1464,6 +1495,11 @@ class TestStudentTest(TestCase):
     P2_0 = 0.2254033
 
     def test_onesample(self):
+        t, p = stats.ttest_1samp(4., 3.)
+
+        assert_(np.isnan(t))
+        assert_(np.isnan(p))
+
         t, p = stats.ttest_1samp(self.X1, 0)
 
         assert_array_almost_equal(t, self.T1_0)
@@ -2024,6 +2060,11 @@ def test_ttest_rel():
     t,p = stats.ttest_rel(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal([t,p],tpr)
 
+    # test scalars
+    t, p = stats.ttest_rel(4., 3.)
+    assert_(np.isnan(t))
+    assert_(np.isnan(p))
+
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
     rvs2_3D = np.dstack([rvs2_2D,rvs2_2D,rvs2_2D])
@@ -2045,8 +2086,9 @@ def test_ttest_rel():
         assert_equal(stats.ttest_rel([0,0,0], [0,0,0]), (np.nan, np.nan))
 
         # check that nan in input array result in nan output
-        anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
+        anan = np.array([[1, np.nan], [-1, 1]])
+        assert_equal(stats.ttest_rel(anan, np.zeros((2, 2))),
+                     ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
@@ -2093,6 +2135,11 @@ def test_ttest_ind():
     args = _desc_stats(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal(stats.ttest_ind_from_stats(*args),
                               [t, p])
+
+    # test scalars
+    t, p = stats.ttest_ind(4., 3.)
+    assert_(np.isnan(t))
+    assert_(np.isnan(p))
 
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
@@ -2266,6 +2313,16 @@ def test_ttest_1samp_new():
 
 
 class TestDescribe(TestCase):
+    def test_describe_scalar(self):
+        n, mm, m, v, sk, kurt = stats.describe(4.)
+        assert_equal(n, 1)
+        assert_equal(mm, (4.0, 4.0))
+        assert_equal(m, 4.0)
+        assert_(np.isnan(v))
+        # not sure about precision with sk, skc
+        assert_array_almost_equal(sk, 0.0, decimal=13)
+        assert_array_almost_equal(kurt, -3.0, decimal=13)
+
     def test_describe_numbers(self):
         x = np.vstack((np.ones((3,4)), 2 * np.ones((2,4))))
         nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
@@ -2303,6 +2360,10 @@ class TestDescribe(TestCase):
 
 
 def test_normalitytests():
+    yield (assert_raises, ValueError, stats.skewtest, 4.)
+    yield (assert_raises, ValueError, stats.kurtosistest, 4.)
+    yield (assert_raises, ValueError, stats.normaltest, 4.)
+
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)

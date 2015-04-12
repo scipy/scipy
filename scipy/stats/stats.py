@@ -211,6 +211,10 @@ def _chk_asarray(a, axis):
     else:
         a = np.asarray(a)
         outaxis = axis
+
+    if a.ndim == 0:
+        a = np.atleast_1d(a)
+
     return a, outaxis
 
 
@@ -223,6 +227,12 @@ def _chk2_asarray(a, b, axis):
         a = np.asarray(a)
         b = np.asarray(b)
         outaxis = axis
+
+    if a.ndim == 0:
+        a = np.atleast_1d(a)
+    if b.ndim == 0:
+        b = np.atleast_1d(b)
+
     return a, b, outaxis
 
 
@@ -2772,6 +2782,8 @@ def spearmanr(a, b=None, axis=0):
 
     """
     a, axisout = _chk_asarray(a, axis)
+    if a.size <= 1:
+        return np.nan, np.nan
     ar = np.apply_along_axis(rankdata, axisout, a)
 
     br = None
@@ -2789,7 +2801,7 @@ def spearmanr(a, b=None, axis=0):
 
     prob = 2 * distributions.t.sf(np.abs(t), n-2)
     if rs.shape == (2, 2):
-        return rs[1,0], prob[1,0]
+        return rs[1, 0], prob[1, 0]
     else:
         return rs, prob
 
