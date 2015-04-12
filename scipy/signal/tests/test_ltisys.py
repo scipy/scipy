@@ -45,7 +45,6 @@ class TestPlacePoles(TestCase):
         _assert_poles_close(expected,fsf.requested_poles)
         _assert_poles_close(expected,fsf.computed_poles)
         _assert_poles_close(P,fsf.requested_poles)
-
         return fsf
 
     def test_real(self):
@@ -127,7 +126,7 @@ class TestPlacePoles(TestCase):
                       0,0,0,5,0,0,0,0,9]).reshape(5,5)
         B = np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
         P = np.array([-2, -3+1j, -3-1j, -1+1j, -1-1j])
-        place_poles(A,B,P)
+        place_poles(A, B, P)
 
         # same test with an odd number of real poles > 1
         # this is another specific case of YT
@@ -148,15 +147,15 @@ class TestPlacePoles(TestCase):
         P = np.array([-0.2, -0.5, -5.0566, -8.6659])
         fsf = self._check(A, B, P)
         #rtol and nb_iter should be set to 0 as the solution is unique
-        assert_equal(fsf.rtol,0)
-        assert_equal(fsf.nb_iter,0)
+        assert_equal(fsf.rtol, 0)
+        assert_equal(fsf.nb_iter, 0)
 
         # check with complex poles too as they trigger a specific case in
         # the specific case :-)
         P = np.array((-2+1j,-2-1j,-3,-2))
         fsf = self._check(A, B, P)
-        assert_equal(fsf.rtol,0)
-        assert_equal(fsf.nb_iter,0)
+        assert_equal(fsf.rtol, 0)
+        assert_equal(fsf.nb_iter, 0)
 
         #now test with a B matrix with only one column (no optimisation)
         B = B[:,0].reshape(4,1)
@@ -165,8 +164,8 @@ class TestPlacePoles(TestCase):
 
         #rtol and nb_iter are meaningless here as we can't optimize anything,
         #check they are set to NaN as expected
-        assert_equal(fsf.rtol,np.nan)
-        assert_equal(fsf.nb_iter,np.nan)
+        assert_equal(fsf.rtol, np.nan)
+        assert_equal(fsf.nb_iter, np.nan)
 
     def test_errors(self):
         # Test input mistakes from user
@@ -218,7 +217,7 @@ class TestPlacePoles(TestCase):
             assert_(issubclass(w[-1].category, UserWarning))
             assert_("Convergence was not reached after maxiter iterations"
                     in str(w[-1].message))
-            assert_equal(fsf.nb_iter,42)
+            assert_equal(fsf.nb_iter, 42)
 
         # should fail as a complex misses its conjugate
         assert_raises(ValueError, place_poles, A, B, (-2+1j,-2-1j,-2+3j,-2))
@@ -354,7 +353,7 @@ class Test_lsim2(object):
         A = np.array([[-1.0, 0.0], [0.0, -2.0]])
         B = np.array([[1.0, 0.0], [0.0, 1.0]])
         C = np.array([1.0, 0.0])
-        D = np.zeros((1,2))
+        D = np.zeros((1, 2))
 
         t = np.linspace(0, 10.0, 101)
         with warnings.catch_warnings():
@@ -362,13 +361,13 @@ class Test_lsim2(object):
             tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
-        expected_x1 = np.exp(-2.0*tout)
+        expected_x1 = np.exp(-2.0 * tout)
         assert_almost_equal(y, expected_y)
         assert_almost_equal(x[:,0], expected_x0)
         assert_almost_equal(x[:,1], expected_x1)
 
     def test_06(self):
-        """Test use of the default values of the arguments `T` and `U`."""
+        # Test use of the default values of the arguments `T` and `U`.
         # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
         # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
         # is (1-t)*exp(-t).
@@ -384,7 +383,7 @@ class _TestImpulseFuncs(object):
     def test_01(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact impulse response is x(t) = exp(-t).
-        system = ([1.0],[1.0,1.0])
+        system = ([1.0], [1.0,1.0])
         tout, y = self.func(system)
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
@@ -394,7 +393,7 @@ class _TestImpulseFuncs(object):
 
         # First order system: x'(t) + x(t) = u(t)
         # Exact impulse response is x(t) = exp(-t).
-        system = ([1.0],[1.0,1.0])
+        system = ([1.0], [1.0,1.0])
         n = 21
         t = np.linspace(0, 2.0, n)
         tout, y = self.func(system, T=t)
@@ -408,9 +407,9 @@ class _TestImpulseFuncs(object):
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact impulse response is x(t) = 4*exp(-t).
-        system = ([1.0],[1.0,1.0])
+        system = ([1.0], [1.0,1.0])
         tout, y = self.func(system, X0=3.0)
-        expected_y = 4.0*np.exp(-tout)
+        expected_y = 4.0 * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_04(self):
@@ -418,14 +417,14 @@ class _TestImpulseFuncs(object):
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact impulse response is x(t) = 4*exp(-t).
-        system = ([1.0],[1.0,1.0])
+        system = ([1.0], [1.0,1.0])
         tout, y = self.func(system, X0=[3.0])
-        expected_y = 4.0*np.exp(-tout)
+        expected_y = 4.0 * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
     def test_05(self):
         # Simple integrator: x'(t) = u(t)
-        system = ([1.0],[1.0,0.0])
+        system = ([1.0], [1.0,0.0])
         tout, y = self.func(system)
         expected_y = np.ones_like(tout)
         assert_almost_equal(y, expected_y)
@@ -466,7 +465,7 @@ class _TestStepFuncs(object):
     def test_01(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
-        system = ([1.0],[1.0,1.0])
+        system = ([1.0], [1.0,1.0])
         tout, y = self.func(system)
         expected_y = 1.0 - np.exp(-tout)
         assert_almost_equal(y, expected_y)
@@ -476,7 +475,7 @@ class _TestStepFuncs(object):
 
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
-        system = ([1.0],[1.0,1.0])
+        system = ([1.0], [1.0,1.0])
         n = 21
         t = np.linspace(0, 2.0, n)
         tout, y = self.func(system, T=t)
@@ -490,7 +489,7 @@ class _TestStepFuncs(object):
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact step response is x(t) = 1 + 2*exp(-t).
-        system = ([1.0],[1.0,1.0])
+        system = ([1.0], [1.0,1.0])
         tout, y = self.func(system, X0=3.0)
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
@@ -500,7 +499,7 @@ class _TestStepFuncs(object):
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
         # Exact step response is x(t) = 1 + 2*exp(-t).
-        system = ([1.0],[1.0,1.0])
+        system = ([1.0], [1.0,1.0])
         tout, y = self.func(system, X0=[3.0])
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
@@ -519,7 +518,7 @@ class TestStep2(_TestStepFuncs):
     def test_05(self):
         # Simple integrator: x'(t) = u(t)
         # Exact step response is x(t) = t.
-        system = ([1.0],[1.0,0.0])
+        system = ([1.0], [1.0,0.0])
         tout, y = self.func(system, atol=1e-10, rtol=1e-8)
         expected_y = tout
         assert_almost_equal(y, expected_y)
@@ -547,10 +546,10 @@ class TestStep(_TestStepFuncs):
 
 def test_lti_instantiation():
     # Test that lti can be instantiated with sequences, scalars.  See PR-225.
-    s = lti([1], [-1])
-    s = lti(np.array([]), np.array([-1]), 1)
-    s = lti([], [-1], 1)
-    s = lti([1], [-1], 1, 3)
+    lti([1], [-1])
+    lti(np.array([]), np.array([-1]), 1)
+    lti([], [-1], 1)
+    lti([1], [-1], 1, 3)
 
 
 class Test_abcd_normalize(object):
@@ -690,7 +689,7 @@ class Test_abcd_normalize(object):
 class Test_bode(object):
 
     def test_01(self):
-        """Test bode() magnitude calculation (manual sanity check)."""
+        # Test bode() magnitude calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 1 / (s + 1),
         # cutoff: 1 rad/s, slope: -20 dB/decade
         #   H(s=0.1) ~= 0 dB
@@ -704,7 +703,7 @@ class Test_bode(object):
         assert_almost_equal(mag, expected_mag, decimal=1)
 
     def test_02(self):
-        """Test bode() phase calculation (manual sanity check)."""
+        # Test bode() phase calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 1 / (s + 1),
         #   angle(H(s=0.1)) ~= -5.7 deg
         #   angle(H(s=1)) ~= -45 deg
@@ -716,7 +715,7 @@ class Test_bode(object):
         assert_almost_equal(phase, expected_phase, decimal=1)
 
     def test_03(self):
-        """Test bode() magnitude calculation."""
+        # Test bode() magnitude calculation.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         w = [0.1, 1, 10, 100]
@@ -727,7 +726,7 @@ class Test_bode(object):
         assert_almost_equal(mag, expected_mag)
 
     def test_04(self):
-        """Test bode() phase calculation."""
+        # Test bode() phase calculation.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         w = [0.1, 1, 10, 100]
@@ -738,7 +737,7 @@ class Test_bode(object):
         assert_almost_equal(phase, expected_phase)
 
     def test_05(self):
-        """Test that bode() finds a reasonable frequency range."""
+        # Test that bode() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         n = 10
@@ -748,20 +747,20 @@ class Test_bode(object):
         assert_almost_equal(w, expected_w)
 
     def test_06(self):
-        """Test that bode() doesn't fail on a system with a pole at 0."""
+        # Test that bode() doesn't fail on a system with a pole at 0.
         # integrator, pole at zero: H(s) = 1 / s
         system = lti([1], [1, 0])
         w, mag, phase = bode(system, n=2)
         assert_equal(w[0], 0.01)  # a fail would give not-a-number
 
     def test_07(self):
-        """bode() should not fail on a system with pure imaginary poles."""
+        # bode() should not fail on a system with pure imaginary poles.
         # The test passes if bode doesn't raise an exception.
         system = lti([1], [1, 0, 100])
         w, mag, phase = bode(system, n=2)
 
     def test_08(self):
-        """Test that bode() return continuous phase, issues/2331."""
+        # Test that bode() return continuous phase, issues/2331.
         system = lti([], [-10, -30, -40, -60, -70], 1)
         w, mag, phase = system.bode(w=np.logspace(-3, 40, 100))
         assert_almost_equal(min(phase), -450, decimal=15)
@@ -781,6 +780,7 @@ class Test_bode(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BadCoefficients)
             system = lti(A, B, C, D)
+
         w, mag, phase = bode(system, n=100)
         expected_magnitude = 20 * np.log10(np.sqrt(1.0 / (1.0 + w**6)))
         assert_almost_equal(mag, expected_magnitude)
@@ -866,6 +866,7 @@ class Test_freqresp(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BadCoefficients)
             system = lti(A, B, C, D)
+
         w, H = freqresp(system, n=100)
         expected_magnitude = np.sqrt(1.0 / (1.0 + w**6))
         assert_almost_equal(np.abs(H), expected_magnitude)
