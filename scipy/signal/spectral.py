@@ -684,12 +684,16 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         pass
 
     result *= scale
-    if mode == 'psd' and sides == 'onesided':
-        result[...,1:-1] *= 2
+    if sides == 'onesided':
+        if nfft % 2:
+            result[...,1:] *= 2
+        else:
+            # Last point is unpaired Nyquist freq point, don't double
+            result[...,1:-1] *= 2
 
     t = np.arange(nfft/2, x.shape[-1] - nfft/2 + 1, nfft - noverlap)/float(fs)
 
-    if sides != 'twosided' and not nperseg % 2:
+    if sides != 'twosided' and not nfft % 2:
         # get the last value correctly, it is negative otherwise
         freqs[-1] *= -1
 

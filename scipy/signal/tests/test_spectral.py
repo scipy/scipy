@@ -30,7 +30,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(f, np.arange(8.0)/15.0)
         q = np.ones(8)
         q[0] = 0
-        q[-1] /= 2.0
         q *= 2.0/15.0
         assert_allclose(p, q, atol=1e-15)
 
@@ -69,7 +68,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(f, np.arange(8.0)/15.0)
         q = np.ones(8)
         q[0] = 0
-        q[-1] /= 2.0
         q *= 2.0/15.0
         assert_allclose(p, q, atol=1e-15)
 
@@ -189,7 +187,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(f, np.arange(8.0)/15.0)
         q = np.ones(8, 'f')
         q[0] = 0
-        q[-1] /= 2.0
         q *= 2.0/15.0
         assert_allclose(p, q, atol=1e-7)
         assert_(p.dtype == q.dtype)
@@ -234,8 +231,8 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
-                      0.12188675])
+        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
+                      0.24377353])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_twosided(self):
@@ -274,8 +271,8 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
-                      0.12188675])
+        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
+                      0.24377353])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
@@ -428,8 +425,8 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
-                      0.12188675], 'f')
+        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
+                      0.24377353], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
@@ -498,8 +495,8 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
-                      0.12188675])
+        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
+                      0.24377353])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_twosided(self):
@@ -538,8 +535,8 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
-                      0.12188675])
+        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
+                      0.24377353])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
@@ -715,8 +712,8 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958226, 0.24193954, 0.24145223, 0.24100919,
-                      0.12188675], 'f')
+        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
+                      0.24377353], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
