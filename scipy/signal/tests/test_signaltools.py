@@ -15,7 +15,8 @@ from scipy import signal
 from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-    invres, vectorstrength, signaltools, lfiltic, tf2sos, sosfilt, sosfilt_zi)
+    invres, invresz, vectorstrength, signaltools, lfiltic, tf2sos, sosfilt,
+    sosfilt_zi)
 from scipy.signal.signaltools import _filtfilt_gust
 
 
@@ -611,8 +612,8 @@ class _TestLinearFilter(TestCase):
             zi = self.convert_dtype(np.ones(zi_shape))
             zi1 = self.convert_dtype([1])
             y, zf = lfilter(b, a, x, axis, zi)
-            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0] 
-            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1] 
+            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0]
+            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1]
             y_r = np.apply_along_axis(lf0, axis, x)
             zf_r = np.apply_along_axis(lf1, axis, x)
             assert_array_almost_equal(y, y_r)
@@ -639,13 +640,13 @@ class _TestLinearFilter(TestCase):
             zi = self.convert_dtype(np.ones(zi_shape))
             zi1 = self.convert_dtype([1, 1])
             y, zf = lfilter(b, a, x, axis, zi)
-            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0] 
-            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1] 
+            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0]
+            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1]
             y_r = np.apply_along_axis(lf0, axis, x)
             zf_r = np.apply_along_axis(lf1, axis, x)
             assert_array_almost_equal(y, y_r)
             assert_array_almost_equal(zf, zf_r)
-    
+
     def test_zi_pseudobroadcast(self):
         x = self.generate((4, 5, 20))
         b,a = signal.butter(8, 0.2, output='ba')
@@ -664,11 +665,11 @@ class _TestLinearFilter(TestCase):
         assert_array_almost_equal(y_sing, y_full)
         assert_array_almost_equal(zf_full, zf_sing)
 
-        # lfilter does not prepend ones 
+        # lfilter does not prepend ones
         assert_raises(ValueError, lfilter, b, a, x, -1, np.ones(zi_size))
 
     def test_scalar_a(self):
-        # a can be a scalar.  
+        # a can be a scalar.
         x = self.generate(6)
         b = self.convert_dtype([1, 0, -1])
         a = self.convert_dtype([1])
@@ -679,7 +680,7 @@ class _TestLinearFilter(TestCase):
 
     def test_zi_some_singleton_dims(self):
         # lfilter doesn't really broadcast (no prepending of 1's).  But does
-        # do singleton expansion if x and zi have the same ndim.  This was 
+        # do singleton expansion if x and zi have the same ndim.  This was
         # broken only if a subset of the axes were singletons (gh-4681).
         x = self.convert_dtype(np.zeros((3,2,5), 'l'))
         b = self.convert_dtype(np.ones(5, 'l'))
@@ -693,7 +694,7 @@ class _TestLinearFilter(TestCase):
         y_expected = np.zeros((3,2,5), 'l')
         y_expected[:,:,:4] = [[[1]], [[2]], [[3]]]
         y_expected = self.convert_dtype(y_expected)
-        
+
         # IIR
         y_iir, zf_iir = lfilter(b, a, x, -1, zi)
         assert_array_almost_equal(y_iir, y_expected)
@@ -703,7 +704,7 @@ class _TestLinearFilter(TestCase):
         y_fir, zf_fir = lfilter(b, a[0], x, -1, zi)
         assert_array_almost_equal(y_fir, y_expected)
         assert_array_almost_equal(zf_fir, zf_expected)
-     
+
     def base_bad_size_zi(self, b, a, x, axis, zi):
         b = self.convert_dtype(b)
         a = self.convert_dtype(a)
@@ -714,7 +715,7 @@ class _TestLinearFilter(TestCase):
     def test_bad_size_zi(self):
         # rank 1
         x1 = np.arange(6)
-        self.base_bad_size_zi([1], [1], x1, -1, [1]) 
+        self.base_bad_size_zi([1], [1], x1, -1, [1])
         self.base_bad_size_zi([1, 1], [1], x1, -1, [0, 1])
         self.base_bad_size_zi([1, 1], [1], x1, -1, [[0]])
         self.base_bad_size_zi([1, 1], [1], x1, -1, [0, 1, 2])
@@ -731,7 +732,7 @@ class _TestLinearFilter(TestCase):
         self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [[0], [1]])
         self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [0, 1, 2])
         self.base_bad_size_zi([1, 1], [1, 1, 1], x1, -1, [0, 1, 2, 3])
-        
+
         # rank 2
         x2 = np.arange(12).reshape((4,3))
         # for axis=0 zi.shape should == (max(len(a),len(b))-1, 3)
@@ -743,13 +744,13 @@ class _TestLinearFilter(TestCase):
         # 3. right depth, right # elements, transposed
         # 4. right depth, too few elements
         # 5. right depth, too many elements
-        
+
         self.base_bad_size_zi([1, 1], [1], x2, 0, [0,1,2])
         self.base_bad_size_zi([1, 1], [1], x2, 0, [[[0,1,2]]])
-        self.base_bad_size_zi([1, 1], [1], x2, 0, [[0], [1], [2]]) 
+        self.base_bad_size_zi([1, 1], [1], x2, 0, [[0], [1], [2]])
         self.base_bad_size_zi([1, 1], [1], x2, 0, [[0,1]])
         self.base_bad_size_zi([1, 1], [1], x2, 0, [[0,1,2,3]])
-        
+
         self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [0,1,2,3,4,5])
         self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[[0,1,2],[3,4,5]]])
         self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[0,1],[2,3],[4,5]])
@@ -758,7 +759,7 @@ class _TestLinearFilter(TestCase):
 
         self.base_bad_size_zi([1], [1, 1], x2, 0, [0,1,2])
         self.base_bad_size_zi([1], [1, 1], x2, 0, [[[0,1,2]]])
-        self.base_bad_size_zi([1], [1, 1], x2, 0, [[0], [1], [2]]) 
+        self.base_bad_size_zi([1], [1, 1], x2, 0, [[0], [1], [2]])
         self.base_bad_size_zi([1], [1, 1], x2, 0, [[0,1]])
         self.base_bad_size_zi([1], [1, 1], x2, 0, [[0,1,2,3]])
 
@@ -776,13 +777,13 @@ class _TestLinearFilter(TestCase):
 
         # for axis=1 zi.shape should == (4, max(len(a),len(b))-1)
         self.base_bad_size_zi([1], [1], x2, 1, [0])
-        
+
         self.base_bad_size_zi([1, 1], [1], x2, 1, [0,1,2,3])
         self.base_bad_size_zi([1, 1], [1], x2, 1, [[[0],[1],[2],[3]]])
-        self.base_bad_size_zi([1, 1], [1], x2, 1, [[0, 1, 2, 3]]) 
+        self.base_bad_size_zi([1, 1], [1], x2, 1, [[0, 1, 2, 3]])
         self.base_bad_size_zi([1, 1], [1], x2, 1, [[0],[1],[2]])
         self.base_bad_size_zi([1, 1], [1], x2, 1, [[0],[1],[2],[3],[4]])
-        
+
         self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [0,1,2,3,4,5,6,7])
         self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [[[0,1],[2,3],[4,5],[6,7]]])
         self.base_bad_size_zi([1, 1, 1], [1], x2, 1, [[0,1,2,3],[4,5,6,7]])
@@ -791,7 +792,7 @@ class _TestLinearFilter(TestCase):
 
         self.base_bad_size_zi([1], [1, 1], x2, 1, [0,1,2,3])
         self.base_bad_size_zi([1], [1, 1], x2, 1, [[[0],[1],[2],[3]]])
-        self.base_bad_size_zi([1], [1, 1], x2, 1, [[0, 1, 2, 3]]) 
+        self.base_bad_size_zi([1], [1, 1], x2, 1, [[0, 1, 2, 3]])
         self.base_bad_size_zi([1], [1, 1], x2, 1, [[0],[1],[2]])
         self.base_bad_size_zi([1], [1, 1], x2, 1, [[0],[1],[2],[3],[4]])
 
@@ -1369,6 +1370,17 @@ class TestHilbert2(object):
 
 
 class TestPartialFractionExpansion(TestCase):
+    def test_invresz_one_coefficient_bug(self):
+        # Regression test for issue in gh-4646.
+        r = [1]
+        p = [2]
+        k = [0]
+        a_expected = [1.0, 0.0]
+        b_expected = [1.0, -2.0]
+        a_observed, b_observed = invresz(r, p, k)
+
+        assert_allclose(a_observed, a_expected)
+        assert_allclose(b_observed, b_expected)
 
     def test_invres_distinct_roots(self):
         # This test was inspired by github issue 2496.
