@@ -451,7 +451,9 @@ class TestVariability(TestCase):
     def test_signaltonoise(self):
         # This is not in R, so used:
         #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
-        y = mstats.signaltonoise(self.testcase)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            y = mstats.signaltonoise(self.testcase)
         assert_almost_equal(y, 2.236067977)
 
     def test_sem(self):
@@ -827,16 +829,18 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r, rm, 10)
 
     def test_signaltonoise(self):
-        for n in self.get_n():
-            x, y, xm, ym = self.generate_xy_sample(n)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for n in self.get_n():
+                x, y, xm, ym = self.generate_xy_sample(n)
 
-            r = stats.signaltonoise(x)
-            rm = stats.mstats.signaltonoise(xm)
-            assert_almost_equal(r, rm, 10)
+                r = stats.signaltonoise(x)
+                rm = stats.mstats.signaltonoise(xm)
+                assert_almost_equal(r, rm, 10)
 
-            r = stats.signaltonoise(y)
-            rm = stats.mstats.signaltonoise(ym)
-            assert_almost_equal(r, rm, 10)
+                r = stats.signaltonoise(y)
+                rm = stats.mstats.signaltonoise(ym)
+                assert_almost_equal(r, rm, 10)
 
     def test_betai(self):
         np.random.seed(12345)
