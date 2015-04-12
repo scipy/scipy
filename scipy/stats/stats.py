@@ -2789,8 +2789,6 @@ def spearmanr(a, b=None, axis=0):
     br = None
     if b is not None:
         b, axisout = _chk_asarray(b, axis)
-        if b.size <= 1:
-            return np.nan, np.nan
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
     rs = np.corrcoef(ar, br, rowvar=axisout)

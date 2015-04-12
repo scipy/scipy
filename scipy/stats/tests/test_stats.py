@@ -506,11 +506,12 @@ class TestCorrSpearmanr(TestCase):
         your program has them.
     """
     def test_scalar(self):
-        y = stats.spearmanr(4.)
-        assert_(np.isnan(y).all())
-
         y = stats.spearmanr(4., 2.)
         assert_(np.isnan(y).all())
+
+    def test_uneven_lengths(self):
+        assert_raises(ValueError, stats.spearmanr, [1, 2, 1], [8, 9])
+        assert_raises(ValueError, stats.spearmanr, [1, 2, 1], 8)
 
     def test_sXX(self):
         y = stats.spearmanr(X,X)
