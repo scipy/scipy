@@ -1961,13 +1961,26 @@ class rv_continuous(rv_generic):
     # Return the (possibly reduced) function to optimize in order to find MLE
     #  estimates for the .fit method
     def _reduce_func(self, args, kwds):
+        # First of all, convert fshapes params to fnum: eg for stats.beta,
+        # shapes='a, b'. To fix `a`, can specify either `f1` or `fa`.
+        # Convert the latter into the former.
+        if self.shapes:
+            fshapes = ['f%s' % s for s in self.shapes.replace(',', ' ').split()]
+            for j, fs in enumerate(fshapes):
+                if fs in kwds:
+                    key = 'f%d' % j
+                    if key in kwds:
+                        raise ValueError("Cannot specify both %s and %s" %
+                                         (fs, key))
+                    else:
+                        kwds.update({key: kwds[fs]})
+
         args = list(args)
         Nargs = len(args)
         fixedn = []
-        index = list(range(Nargs))
         names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = []
-        for n, key in zip(index, names):
+        for n, key in enumerate(names):
             if key in kwds:
                 fixedn.append(n)
                 args[n] = kwds[key]
@@ -1978,7 +1991,7 @@ class rv_continuous(rv_generic):
             func = self._penalized_nnlf
             restore = None
         else:
-            if len(fixedn) == len(index):
+            if len(fixedn) == Nargs:
                 raise ValueError(
                     "All parameters fixed. There is nothing to optimize.")
 
@@ -2027,6 +2040,9 @@ class rv_continuous(rv_generic):
             parameters fixed:
 
             - f0...fn : hold respective shape parameters fixed.
+              Alternatively, shape parameters to fix can be specified by name.
+              For example, if ``self.shapes == "a, b"``, ``fa`` is equivalent to
+              ``f0`` and ``fb`` is equivalent to ``f1``.
 
             - floc : hold location parameter fixed to specified value.
 
@@ -2050,6 +2066,37 @@ class rv_continuous(rv_generic):
         penalty applied for samples outside of range of the distribution. The
         returned answer is not guaranteed to be the globally optimal MLE, it
         may only be locally optimal, or the optimization may fail altogether.
+
+
+        Examples
+        --------
+
+        Generate some data to fit: draw random variates from the `beta`
+        distribution
+
+        >>> from scipy.stats import beta
+        >>> a, b = 1., 2.
+        >>> x = beta.rvs(a, b, size=1000)
+
+        Now we can fit all four parameters (``a``, ``b``, ``loc`` and ``scale``):
+
+        >>> a1, b1, loc1, scale1 = beta.fit(x)        
+
+        We can also use some prior knowledge about the dataset: let's keep 
+        ``loc`` and ``scale`` fixed:
+
+        >>> a1, b1, loc1, scale1 = beta.fit(x, floc=0, fscale=1)
+        >>> loc1, scale1
+        (0, 1)
+
+        We can also keep shape parameters fixed by using ``f``-keywords. To
+        keep the zero-th shape parameter ``a`` equal 1, use ``f0=1`` or,
+        equivalently, ``fa=1``:
+
+        >>> a1, b1, loc1, scale1 = beta.fit(x, fa=1, floc=0, fscale=1)
+        >>> a1
+        1
+
         """
         Narg = len(args)
         if Narg > self.numargs:
