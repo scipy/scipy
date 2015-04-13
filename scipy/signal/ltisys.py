@@ -527,7 +527,7 @@ class tf(lti):
 
     @num.setter
     def num(self, num):
-        self._num = num
+        self._num = atleast_1d(num)
 
         # Update dimensions
         if len(self.num.shape) > 1:
@@ -542,7 +542,7 @@ class tf(lti):
 
     @den.setter
     def den(self, den):
-        self._den = den
+        self._den = atleast_1d(den)
 
     def copy(self, system, copy=True):
         """Copy the parameters of another tf system
@@ -646,8 +646,7 @@ class zpk(lti):
 
     @zeros.setter
     def zeros(self, zeros):
-        zeros = numpy.asarray(zeros)
-        self._zeros = zeros
+        self._zeros = numpy.asarray(zeros)
 
         # Update dimensions
         if len(self.zeros.shape) > 1:
@@ -662,8 +661,7 @@ class zpk(lti):
 
     @poles.setter
     def poles(self, poles):
-        poles = numpy.asarray(poles)
-        self._poles = poles
+        self._poles = numpy.asarray(poles)
 
     @property
     def gain(self):
@@ -778,7 +776,7 @@ class ss(lti):
 
     @A.setter
     def A(self, A):
-        self._A = A
+        self._A = _atleast_2d_or_none(A)
 
     @property
     def B(self):
@@ -786,7 +784,7 @@ class ss(lti):
 
     @B.setter
     def B(self, B):
-        self._B = B
+        self._B = _atleast_2d_or_none(B)
         self.inputs = self.B.shape[-1]
 
     @property
@@ -795,7 +793,7 @@ class ss(lti):
 
     @C.setter
     def C(self, C):
-        self._C = C
+        self._C = _atleast_2d_or_none(C)
         self.outputs = self.C.shape[0]
 
     @property
@@ -804,7 +802,7 @@ class ss(lti):
 
     @D.setter
     def D(self, D):
-        self._D = D
+        self._D = _atleast_2d_or_none(D)
 
     def copy(self, system, copy=True):
         """Copy the parameters of another ss system
