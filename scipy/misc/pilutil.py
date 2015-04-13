@@ -403,17 +403,22 @@ def imresize(arr, size, interp='bilinear', mode=None):
         * float - Fraction of current size.
         * tuple - Size of the output image.
 
-    interp : str
+    interp : str, optional
         Interpolation to use for re-sizing ('nearest', 'bilinear', 'bicubic'
         or 'cubic').
 
-    mode : str
-        The PIL image mode ('P', 'L', etc.).
+    mode : str, optional
+        The PIL image mode ('P', 'L', etc.) to convert `arr` before resizing.
 
     Returns
     -------
     imresize : ndarray
         The resized array of image.
+    
+    See Also
+    --------
+    toimage : Implicitly used to convert `arr` according to `mode`.
+    scipy.ndimage.zoom : More generic implementation that does not use PIL.
 
     """
     im = toimage(arr, mode=mode)
