@@ -623,20 +623,15 @@ class TestStep2(_TestStepFuncs):
         self.func = step2
 
     def test_05(self):
+        # This test is almost the same as the one it overwrites in the base
+        # class.  The only difference is the tolerances passed to step2:
+        # the default tolerances are not accurate enough for this test
+
         # Simple integrator: x'(t) = u(t)
         # Exact step response is x(t) = t.
         system = ([1.0],[1.0,0.0])
         tout, y = self.func(system, atol=1e-10, rtol=1e-8)
         expected_y = tout
-        assert_almost_equal(y, expected_y)
-
-    def test_06(self):
-        # Second order system with a repeated root:
-        #     x''(t) + 2*x(t) + x(t) = u(t)
-        # The exact step response is 1 - (1 + t)*exp(-t).
-        system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y = self.func(system, atol=1e-10, rtol=1e-8)
-        expected_y = 1 - (1 + tout) * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
 
