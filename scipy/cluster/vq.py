@@ -84,6 +84,7 @@ from numpy.random import randint
 from numpy import (shape, zeros, sqrt, argmin, minimum, array, newaxis,
     common_type, single, double, take, std, mean)
 import numpy as np
+from scipy._lib._util import _asarray_validated
 
 from . import _vq
 
@@ -92,7 +93,7 @@ class ClusterError(Exception):
     pass
 
 
-def whiten(obs):
+def whiten(obs, check_finite=True):
     """
     Normalize a group of observations on a per feature basis.
 
@@ -113,6 +114,12 @@ def whiten(obs):
         ...        [  3.,   3.,   3.],  #o2
         ...        [  4.,   4.,   4.]]  #o3
 
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+
     Returns
     -------
     result : ndarray
@@ -131,7 +138,7 @@ def whiten(obs):
            [ 1.75976538,  0.7038557 ,  7.21248917]])
 
     """
-    obs = np.asarray(obs)
+    obs = _asarray_validated(obs, check_finite=check_finite)
     std_dev = std(obs, axis=0)
     zero_std_mask = std_dev == 0
     if zero_std_mask.any():
@@ -142,7 +149,7 @@ def whiten(obs):
     return obs / std_dev
 
 
-def vq(obs, code_book):
+def vq(obs, code_book, check_finite=True):
     """
     Assign codes from a code book to observations.
 
@@ -173,6 +180,12 @@ def vq(obs, code_book):
          ...             [  1.,   2.,   3.,   4.],  #c1
          ...             [  1.,   2.,   3.,   4.]]  #c2
 
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
+
     Returns
     -------
     code : ndarray
@@ -194,8 +207,8 @@ def vq(obs, code_book):
     (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     """
-    obs = np.asarray(obs)
-    code_book = np.asarray(code_book)
+    obs = _asarray_validated(obs, check_finite=check_finite)
+    code_book = _asarray_validated(code_book, check_finite=check_finite)
     ct = common_type(obs, code_book)
 
     # avoid copying when dtype is the same
@@ -218,7 +231,7 @@ def vq(obs, code_book):
     return results
 
 
-def py_vq(obs, code_book):
+def py_vq(obs, code_book, check_finite=True):
     """ Python version of vq algorithm.
 
     The algorithm computes the euclidian distance between each
@@ -231,6 +244,11 @@ def py_vq(obs, code_book):
     code_book : ndarray
         Code book to use. Same format than obs. Should have same number of
         features (eg columns) than obs.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
 
     Returns
     -------
@@ -250,8 +268,8 @@ def py_vq(obs, code_book):
     It is about 20 times slower than the C version.
 
     """
-    obs = np.asarray(obs)
-    code_book = np.asarray(code_book)
+    obs = _asarray_validated(obs, check_finite=check_finite)
+    code_book = _asarray_validated(code_book, check_finite=check_finite)
 
     # n = number of observations
     # d = number of features
@@ -316,7 +334,7 @@ def _py_vq_1d(obs, code_book):
     return code, sqrt(min_dist)
 
 
-def py_vq2(obs, code_book):
+def py_vq2(obs, code_book, check_finite=True):
     """2nd Python version of vq algorithm.
 
     The algorithm simply computes the euclidian distance between each
@@ -329,6 +347,11 @@ def py_vq2(obs, code_book):
     code_book : ndarray
         Code book to use. Same format than obs. Should have same number of
         features (eg columns) than obs.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
 
     Returns
     -------
@@ -347,8 +370,8 @@ def py_vq2(obs, code_book):
     features, and O = number of codes.
 
     """
-    obs = np.asarray(obs)
-    code_book = np.asarray(code_book)
+    obs = _asarray_validated(obs, check_finite=check_finite)
+    code_book = _asarray_validated(code_book, check_finite=check_finite)
     d = shape(obs)[1]
 
     # code books and observations should have same number of features
@@ -418,7 +441,7 @@ def _kmeans(obs, guess, thresh=1e-5):
     return code_book, avg_dist[-1]
 
 
-def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
+def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     """
     Performs k-means on a set of observation vectors forming k clusters.
 
@@ -457,6 +480,12 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
        Terminates the k-means algorithm if the change in
        distortion since the last k-means iteration is less than
        or equal to thresh.
+
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
 
     Returns
     -------
@@ -507,7 +536,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
            [ 0.40782893,  2.02786907]]), 0.5196582527686241)
 
     """
-    obs = np.asarray(obs)
+    obs = _asarray_validated(obs, check_finite=check_finite)
     if int(iter) < 1:
         raise ValueError('iter must be at least 1.')
 
@@ -517,7 +546,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5):
     try:
         k = int(k_or_guess)
     except TypeError:
-        guess = np.asarray(k_or_guess)
+        guess = _asarray_validated(k_or_guess, check_finite=check_finite)
 
     if guess is not None:
         if guess.size < 1:
@@ -629,7 +658,7 @@ _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
-        missing='warn'):
+        missing='warn', check_finite=True):
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 
@@ -675,6 +704,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         'warn': give a warning and continue.
 
         'raise': raise an ClusterError and terminate the algorithm.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default: True
 
     Returns
     -------
@@ -686,7 +720,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         i'th observation is closest to.
 
     """
-    data = np.asarray(data)
+    data = _asarray_validated(data, check_finite=check_finite)
     if missing not in _valid_miss_meth:
         raise ValueError("Unkown missing method: %s" % str(missing))
     # If data is rank 1, then we have 1 dimension problem.

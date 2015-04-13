@@ -65,6 +65,16 @@ class TestWhiten(TestCase):
                 assert_equal(len(w), 1)
                 assert_(issubclass(w[-1].category, RuntimeWarning))
 
+    def test_whiten_not_finite(self):
+        for tp in np.array, np.matrix:
+            for bad_value in np.nan, np.inf, -np.inf:
+                obs = tp([[0.98744510, bad_value],
+                          [0.62093317, 0.19406729],
+                          [0.87545741, 0.00735733],
+                          [0.85124403, 0.26499712],
+                          [0.45067590, 0.45464607]])
+                assert_raises(ValueError, whiten, obs)
+
 
 class TestVq(TestCase):
     def test_py_vq(self):
