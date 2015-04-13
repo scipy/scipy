@@ -619,7 +619,7 @@ def _cast_to_array_dtype(in1, in2):
     return in1
 
 
-def lsim(system, U, T, X0=None, interp=1):
+def lsim(system, U, T, X0=None, interp=True):
     """
     Simulate output of a continuous-time linear system.
 
@@ -643,8 +643,9 @@ def lsim(system, U, T, X0=None, interp=1):
         output is desired.  Must be nonnegative, increasing, and equally spaced.
     X0 : array_like, optional
         The initial conditions on the state vector (zero by default).
-    interp : {1, 0}, optional
-        Whether to use linear (1) or zero-order hold (0) interpolation.
+    interp : bool, optional
+        Whether to use linear (True, the default) or zero-order-hold (False)
+        interpolation for the input array.
 
     Returns
     -------
@@ -653,8 +654,19 @@ def lsim(system, U, T, X0=None, interp=1):
     yout : 1D ndarray
         System response.
     xout : ndarray
-        Time-evolution of the state-vector.
+        Time evolution of the state vector.
 
+    Examples
+    --------
+    Simulate a double integrator y'' = u, with a constant input u = 1
+
+    >>> from scipy import signal
+    >>> system = signal.lti([[0., 1.], [0., 0.]], [[0.], [1.]], [[1., 0.]], 0.)
+    >>> t = np.linspace(0, 5)
+    >>> u = np.ones_like(t)
+    >>> tout, y, x = signal.lsim(system, u, t)
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(t, y)
     """
     if isinstance(system, lti):
         sys = system
@@ -664,11 +676,11 @@ def lsim(system, U, T, X0=None, interp=1):
     if len(T.shape) != 1:
         raise ValueError("T must be a rank-1 array.")
 
-    A, B, C, D = (np.asarray(M) for M in (sys.A, sys.B, sys.C, sys.D))
+    A, B, C, D = map(np.asarray, (sys.A, sys.B, sys.C, sys.D))
     n_states = A.shape[0]
     n_inputs = B.shape[1]
 
-    n_steps = len(T)
+    n_steps = T.size
     if X0 is None:
         X0 = zeros(n_states, sys.A.dtype)
     xout = zeros((n_steps, n_states), sys.A.dtype)
@@ -683,7 +695,7 @@ def lsim(system, U, T, X0=None, interp=1):
 
     no_input = (U is None
                 or (isinstance(U, (int, float)) and U == 0.)
-                or np.allclose(U, 0))
+                or not np.any(U))
 
     if n_steps == 1:
         yout = squeeze(dot(xout, transpose(C)))
@@ -692,7 +704,7 @@ def lsim(system, U, T, X0=None, interp=1):
         return T, squeeze(yout), squeeze(xout)
 
     dt = T[1] - T[0]
-    if not np.allclose(T[1:] - T[:-1], dt):
+    if not np.allclose((T[1:] - T[:-1]) / dt, 1.0):
         raise ValueError("Time values must be equally spaced.")
 
     if no_input:
@@ -706,14 +718,16 @@ def lsim(system, U, T, X0=None, interp=1):
 
     # Nonzero input
     U = atleast_1d(U)
-    if len(U.shape) == 1:
-        U = U.reshape((U.shape[0], 1))
-    sU = U.shape
-    if sU[0] != n_steps:
+    if U.ndim == 1:
+        U = U[:, np.newaxis]
+
+    if U.shape[0] != n_steps:
         raise ValueError("U must have the same number of rows "
                          "as elements in T.")
-    if sU[1] != n_inputs:
+
+    if U.shape[1] != n_inputs:
         raise ValueError("System does not define that many inputs.")
+
     if not interp:
         # Zero-order hold
         # Algorithm: to integrate from time 0 to time dt, we solve
@@ -723,8 +737,8 @@ def lsim(system, U, T, X0=None, interp=1):
         # Solution is
         #   [ x(dt) ]       [ A*dt   B*dt ] [ x0 ]
         #   [ u(dt) ] = exp [  0     0    ] [ u0 ]
-        M = np.bmat([[A * dt, B * dt],
-                     [np.zeros((n_inputs, n_states + n_inputs))]])
+        M = np.vstack([np.hstack([A * dt, B * dt]),
+                       np.zeros((n_inputs, n_states + n_inputs))])
         # transpose everything because the state and input are row vectors
         expMT = linalg.expm(transpose(M))
         Ad = expMT[:n_states, :n_states]
@@ -742,19 +756,19 @@ def lsim(system, U, T, X0=None, interp=1):
         #   [ x(dt) ]       [ A*dt  B*dt  0 ] [  x0   ]
         #   [ u(dt) ] = exp [  0     0    I ] [  u0   ]
         #   [u1 - u0]       [  0     0    0 ] [u1 - u0]
-        M = np.bmat([[A * dt, B * dt, np.zeros((n_states, n_inputs))],
-                     [np.zeros((n_inputs, n_states + n_inputs)),
-                      np.identity(n_inputs)],
-                     [np.zeros((n_inputs, n_states + 2 * n_inputs))]])
+        M = np.vstack([np.hstack([A * dt, B * dt,
+                                  np.zeros((n_states, n_inputs))]),
+                       np.hstack([np.zeros((n_inputs, n_states + n_inputs)),
+                                  np.identity(n_inputs)]),
+                       np.zeros((n_inputs, n_states + 2 * n_inputs))])
         expMT = linalg.expm(transpose(M))
         Ad = expMT[:n_states, :n_states]
         Bd1 = expMT[n_states+n_inputs:, :n_states]
         Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
         for i in xrange(1, n_steps):
-            xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) +
-                       dot(U[i], Bd1))
-    yout = (squeeze(dot(xout, transpose(C))) +
-            squeeze(dot(U, transpose(D))))
+            xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
+
+    yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))
     return T, squeeze(yout), squeeze(xout)
 
 
@@ -835,7 +849,7 @@ def impulse(system, X0=None, T=None, N=None):
     else:
         T = asarray(T)
 
-    _t, h, _x = lsim(sys, 0., T, X, interp=0)
+    _, h, _ = lsim(sys, 0., T, X, interp=False)
     return T, h
 
 
@@ -964,7 +978,7 @@ def step(system, X0=None, T=None, N=None):
     else:
         T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
-    vals = lsim(sys, U, T, X0=X0, interp=0)
+    vals = lsim(sys, U, T, X0=X0, interp=False)
     return vals[0], vals[1]
 
 
