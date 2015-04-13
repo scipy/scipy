@@ -2039,7 +2039,7 @@ class gengamma_gen(rv_continuous):
         return where(cond > 0, val1**ic, val2**ic)
 
     def _munp(self, n, a, c):
-        return special.gamma(a+n*1.0/c) / special.gamma(a)
+        return special.poch(a,n*1.0/c)
 
     def _entropy(self, a, c):
         val = special.psi(a)
