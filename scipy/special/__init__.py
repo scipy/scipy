@@ -277,6 +277,7 @@ Gamma and Related Functions
    polygamma    -- Nth derivative of psi function.
    multigammaln -- Log of the multivariate gamma.
    digamma      -- Digamma function (derivative of the logarithm of gamma).
+   poch         -- The Pochhammer symbol (rising factorial).
 
 
 Error Function and Fresnel Integrals
