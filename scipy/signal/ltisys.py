@@ -319,99 +319,99 @@ class lti(object):
 
     @property
     def num(self):
-        return self.tf().num
+        return self.to_tf().num
 
     @num.setter
     def num(self, num):
-        obj = self.tf()
+        obj = self.to_tf()
         obj.num = num
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
 
     @property
     def den(self):
-        return self.tf().den
+        return self.to_tf().den
 
     @den.setter
     def den(self, den):
-        obj = self.tf()
+        obj = self.to_tf()
         obj.den = den
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
 
     @property
     def zeros(self):
-        return self.zpk().zeros
+        return self.to_zpk().zeros
 
     @zeros.setter
     def zeros(self, zeros):
-        obj = self.zpk()
+        obj = self.to_zpk()
         obj.zeros = zeros
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
 
     @property
     def poles(self):
-        return self.zpk().poles
+        return self.to_zpk().poles
 
     @poles.setter
     def poles(self, poles):
-        obj = self.zpk()
+        obj = self.to_zpk()
         obj.poles = poles
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
 
     @property
     def gain(self):
-        return self.zpk().gain
+        return self.to_zpk().gain
 
     @gain.setter
     def gain(self, gain):
-        obj = self.zpk()
+        obj = self.to_zpk()
         obj.gain = gain
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
 
     @property
     def A(self):
-        return self.ss().A
+        return self.to_ss().A
 
     @A.setter
     def A(self, A):
-        obj = self.ss()
+        obj = self.to_ss()
         obj.A = A
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
 
     @property
     def B(self):
-        return self.ss().B
+        return self.to_ss().B
 
     @B.setter
     def B(self, B):
-        obj = self.ss()
+        obj = self.to_ss()
         obj.B = B
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
 
     @property
     def C(self):
-        return self.ss().C
+        return self.to_ss().C
 
     @C.setter
     def C(self, C):
-        obj = self.ss()
+        obj = self.to_ss()
         obj.C = C
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
 
     @property
     def D(self):
-        return self.ss().D
+        return self.to_ss().D
 
     @D.setter
     def D(self, D):
-        obj = self.ss()
+        obj = self.to_ss()
         obj.D = D
         source_class = type(self)
         self.copy(source_class(obj), copy=False)
@@ -509,7 +509,7 @@ class tf(lti):
         self._den = None
 
         if len(args) == 1:  # Input is an lti system
-            self.copy(args[0].tf())
+            self.copy(args[0].to_tf())
         else:  # Input is (num, den)
             self.num, self.den = normalize(*args)
 
@@ -561,7 +561,7 @@ class tf(lti):
             self.num = self.num.copy()
             self.den = self.den.copy()
 
-    def tf(self):
+    def to_tf(self):
         """Convert system representation to transfer function.
 
         Returns
@@ -572,7 +572,7 @@ class tf(lti):
         """
         return self
 
-    def zpk(self):
+    def to_zpk(self):
         """Convert system representation to zero, pole, gain.
 
         Returns
@@ -583,7 +583,7 @@ class tf(lti):
         """
         return zpk(*tf2zpk(self.num, self.den))
 
-    def ss(self):
+    def to_ss(self):
         """Convert system representation to state space.
 
         Returns
@@ -627,7 +627,7 @@ class zpk(lti):
         self._gain = None
 
         if len(args) == 1:
-            self.copy(args[0].zpk())
+            self.copy(args[0].to_zpk())
         else:
             self.zeros, self.poles, self.gain = args
 
@@ -691,7 +691,7 @@ class zpk(lti):
             self.poles = self.poles.copy()
             self.zeros = self.zeros.copy()
 
-    def tf(self):
+    def to_tf(self):
         """Convert system representation to transfer function.
 
         Returns
@@ -702,7 +702,7 @@ class zpk(lti):
         """
         return tf(*zpk2tf(self.zeros, self.poles, self.gain))
 
-    def zpk(self):
+    def to_zpk(self):
         """Convert system representation to zero, pole, gain.
 
         Returns
@@ -713,7 +713,7 @@ class zpk(lti):
         """
         return self
 
-    def ss(self):
+    def to_ss(self):
         """Convert system representation to state space.
 
         Returns
@@ -758,7 +758,7 @@ class ss(lti):
         self._D = None
 
         if len(args) == 1:
-            self.copy(args[0].ss())
+            self.copy(args[0].to_ss())
         else:
             self.A, self.B, self.C, self.D = abcd_normalize(*args)
 
@@ -827,7 +827,7 @@ class ss(lti):
             self.C = self.C.copy()
             self.D = self.D.copy()
 
-    def tf(self, **kwargs):
+    def to_tf(self, **kwargs):
         """Convert system representation to transfer function.
 
         Parameters
@@ -843,7 +843,7 @@ class ss(lti):
         """
         return tf(*ss2tf(self._A, self._B, self._C, self._D, **kwargs))
 
-    def zpk(self, **kwargs):
+    def to_zpk(self, **kwargs):
         """Convert system representation to zero, pole, gain.
 
         Parameters
@@ -859,7 +859,7 @@ class ss(lti):
         """
         return zpk(*ss2zpk(self._A, self._B, self._C, self._D, **kwargs))
 
-    def ss(self):
+    def to_ss(self):
         """Convert system representation to state space.
 
         Returns
