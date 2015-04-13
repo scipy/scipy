@@ -23,7 +23,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=numpy
+        - NUMPYSPEC="git+git://github.com/numpy/numpy.git@master"
     - python: 3.2
       env:
         - TESTMODE=fast
