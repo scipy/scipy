@@ -44,7 +44,7 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NPY_RELAXED_STRIDES_CHECKING=1
-        - NUMPYSPEC="git+git://github.com/numpy/numpy.git@v1.9.1"
+        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.9.1"
 before_install:
   # Automated travis-ci wheel builds (disabled because intermittent issues)
   - uname -a
