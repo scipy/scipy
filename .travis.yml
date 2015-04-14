@@ -75,6 +75,8 @@ before_install:
   - popd
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
+  # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
+  - if [ "$NPY_RELAXED_STRIDES_CHECKING" = "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
   - python $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
