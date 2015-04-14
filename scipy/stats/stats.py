@@ -182,6 +182,7 @@ import scipy.linalg as linalg
 import numpy as np
 from . import futil
 from . import distributions
+from ._distn_infrastructure import _lazywhere
 
 from ._rank import rankdata, tiecorrect
 
@@ -1042,7 +1043,9 @@ def skew(a, axis=0, bias=True):
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
     zero = (m2 == 0)
-    vals = np.where(zero, 0, m3 / m2**1.5)
+    vals = _lazywhere(~zero, (m2, m3),
+                             lambda m2, m3: m3 / m2**1.5,
+                             0.)
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
         if can_correct.any():
