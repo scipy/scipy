@@ -49,6 +49,10 @@ def orthogonal_procrustes(A, B, check_finite=True):
         and check_finite is True, or if the matrix product AB contains
         an inf or nan.
 
+    Notes
+    -----
+    .. versionadded:: 0.15.0
+
     References
     ----------
     .. [1] Peter H. Schonemann, "A generalized solution of the orthogonal

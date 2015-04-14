@@ -31,6 +31,10 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     perm : ndarray
         Array of permuted row and column indices.
  
+    Notes
+    -----
+    .. versionadded:: 0.15.0
+
     References
     ----------
     E. Cuthill and J. McKee, "Reducing the Bandwidth of Sparse Symmetric Matrices",
@@ -72,6 +76,8 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     This function relies on a maximum cardinality bipartite matching 
     algorithm based on a breadth-first search (BFS) of the underlying 
     graph.
+
+    .. versionadded:: 0.15.0
 
     References
     ----------

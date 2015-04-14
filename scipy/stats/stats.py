@@ -4434,6 +4434,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     [5]_. Extensions such as Brown's method and Kost's method are not currently
     implemented.
 
+    .. versionadded:: 0.15.0
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Fisher%27s_method

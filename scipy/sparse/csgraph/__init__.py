@@ -25,6 +25,8 @@ Contents
    breadth_first_tree -- construct the breadth-first tree from a given node
    depth_first_tree -- construct a depth-first tree from a given node
    minimum_spanning_tree -- construct the minimum spanning tree of a graph
+   reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
+   maximum_bipartite_matching -- compute permutation to make diagonal zero free
 
 Graph Representations
 =====================
