@@ -610,7 +610,7 @@ cdef int thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     # here q and r will always be fortran ordered since we have to allocate them
     cdef int i, j, info
     cdef blas_t c, sn 
-    cdef blas_t rc0, rc;
+    cdef blas_t rc0, rc
     cdef blas_t* s
     cdef char* N = 'N'
     cdef char* T = 'T'
@@ -1357,8 +1357,7 @@ cdef validate_array(cnp.ndarray a, bint chkfinite):
     cdef int j
 
     for j in range(a.ndim):
-        if a.strides[j] <= 0 or \
-                (a.strides[j] / a.descr.itemsize) >= libc.limits.INT_MAX:
+        if a.strides[j] <= 0 or (a.strides[j] / a.descr.itemsize) >= libc.limits.INT_MAX:
             copy = True
         if a.shape[j] >= libc.limits.INT_MAX:
             raise ValueError('Input array too large for use with BLAS')
