@@ -61,6 +61,8 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
         M : signn
         N : signm*signn
 
+    .. versionadded:: 0.15.0
+
     References
     ----------
     .. [1] Digital Libary of Mathematical Functions 29.12
@@ -146,6 +148,8 @@ def ellip_harm_2(h2, k2, n, p, s):
 
        F^p_n(s)=(2n + 1)E^p_n(s)\int_{0}^{1/s}\frac{du}{(E^p_n(1/u))^2\sqrt{(1-u^2k^2)(1-u^2h^2)}}
 
+    .. versionadded:: 0.15.0
+
     See Also
     --------
     ellip_harm, ellip_normal
@@ -198,6 +202,10 @@ def ellip_normal(h2, k2, n, p):
     See Also
     --------
     ellip_harm, ellip_harm_2
+
+    Notes
+    -----
+    .. versionadded:: 0.15.0
 
     Examples
     --------
