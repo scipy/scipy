@@ -49,6 +49,7 @@ else:
 
 import sys
 import os
+import gc
 
 # In case we are run from the source directory, we don't want to import the
 # project from there:
@@ -61,6 +62,11 @@ import imp
 from argparse import ArgumentParser, REMAINDER
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+
+def wrapped_exit(code):
+    gc.collect()
+    sys.exit(code)
+
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
@@ -117,7 +123,7 @@ def main(argv):
     if args.lcov_html:
         # generate C code coverage output
         lcov_generate()
-        sys.exit(0)
+        wrapped_exit(0)
 
     if args.pythonpath:
         for p in reversed(args.pythonpath.split(os.pathsep)):
@@ -149,22 +155,22 @@ def main(argv):
             ns = dict(__name__='__main__',
                       __file__=extra_argv[0])
             exec_(script, ns)
-            sys.exit(0)
+            wrapped_exit(0)
         else:
             import code
             code.interact()
-            sys.exit(0)
+            wrapped_exit(0)
 
     if args.ipython:
         import IPython
         IPython.embed(user_ns={})
-        sys.exit(0)
+        wrapped_exit(0)
 
     if args.shell:
         shell = os.environ.get('SHELL', 'sh')
         print("Spawning a Unix shell...")
         os.execv(shell, [shell] + extra_argv)
-        sys.exit(1)
+        wrapped_exit(1)
 
     if args.coverage:
         dst_dir = os.path.join(ROOT_DIR, 'build', 'coverage')
@@ -190,7 +196,7 @@ def main(argv):
             cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
                    'run', '-n', '-e', '--python=same'] + bench_args
             os.execv(sys.executable, [sys.executable] + cmd)
-            sys.exit(1)
+            wrapped_exit(1)
         else:
             if len(args.bench_compare) == 1:
                 commit_a = args.bench_compare[0]
@@ -222,12 +228,12 @@ def main(argv):
                    '--current-repo', 'continuous', '-e', '-f', '1.05',
                    commit_a, commit_b] + bench_args
             os.execv(sys.executable, [sys.executable] + cmd)
-            sys.exit(1)
+            wrapped_exit(1)
 
     test_dir = os.path.join(ROOT_DIR, 'build', 'test')
 
     if args.build_only:
-        sys.exit(0)
+        wrapped_exit(0)
     elif args.submodule:
         modname = PROJECT_MODULE + '.' + args.submodule
         try:
@@ -235,7 +241,7 @@ def main(argv):
             test = sys.modules[modname].test
         except (ImportError, KeyError, AttributeError) as e:
             print("Cannot run tests for %s (%s)" % (modname, e))
-            sys.exit(2)
+            wrapped_exit(2)
     elif args.tests:
         def fix_test_path(x):
             # fix up test path
@@ -281,11 +287,11 @@ def main(argv):
         os.chdir(cwd)
 
     if isinstance(result, bool):
-        sys.exit(0 if result else 1)
+        wrapped_exit(0 if result else 1)
     elif result.wasSuccessful():
-        sys.exit(0)
+        wrapped_exit(0)
     else:
-        sys.exit(1)
+        wrapped_exit(1)
 
 
 def build_project(args):
@@ -304,7 +310,7 @@ def build_project(args):
     if not all(root_ok):
         print("To build the project, run runtests.py in "
               "git checkout or unpacked source")
-        sys.exit(1)
+        wrapped_exit(1)
 
     dst_dir = os.path.join(ROOT_DIR, 'build', 'testenv')
 
@@ -368,7 +374,7 @@ def build_project(args):
             with open(log_filename, 'r') as f:
                 print(f.read())
             print("Build failed!")
-        sys.exit(1)
+        wrapped_exit(1)
 
     from distutils.sysconfig import get_python_lib
     site_dir = get_python_lib(prefix=dst_dir, plat_specific=True)
