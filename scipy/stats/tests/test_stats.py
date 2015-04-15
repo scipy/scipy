@@ -224,10 +224,12 @@ class TestNanFunc(TestCase):
 
     def test_nanmedian_scalars(self):
         # Check nanmedian for scalar inputs. See ticket #1098.
-        assert_equal(stats.nanmedian(1), np.median(1))
-        assert_equal(stats.nanmedian(True), np.median(True))
-        assert_equal(stats.nanmedian(np.array(1)), np.median(np.array(1)))
-        assert_equal(stats.nanmedian(np.nan), np.median(np.nan))
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            assert_equal(stats.nanmedian(1), np.median(1))
+            assert_equal(stats.nanmedian(True), np.median(True))
+            assert_equal(stats.nanmedian(np.array(1)), np.median(np.array(1)))
+            assert_equal(stats.nanmedian(np.nan), np.median(np.nan))
 
 
 class TestCorrPearsonr(TestCase):
@@ -1292,8 +1294,11 @@ class TestVariability(TestCase):
 
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
-        y = stats.sem(self.scalar_testcase)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            y = stats.sem(self.scalar_testcase)
         assert_(np.isnan(y))
+
         y = stats.sem(self.testcase)
         assert_approx_equal(y, 0.6454972244)
         n = len(self.testcase)
@@ -1495,8 +1500,9 @@ class TestStudentTest(TestCase):
     P2_0 = 0.2254033
 
     def test_onesample(self):
-        t, p = stats.ttest_1samp(4., 3.)
-
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            t, p = stats.ttest_1samp(4., 3.)
         assert_(np.isnan(t))
         assert_(np.isnan(p))
 
@@ -2061,7 +2067,9 @@ def test_ttest_rel():
     assert_array_almost_equal([t,p],tpr)
 
     # test scalars
-    t, p = stats.ttest_rel(4., 3.)
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        t, p = stats.ttest_rel(4., 3.)
     assert_(np.isnan(t))
     assert_(np.isnan(p))
 
@@ -2137,7 +2145,9 @@ def test_ttest_ind():
                               [t, p])
 
     # test scalars
-    t, p = stats.ttest_ind(4., 3.)
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        t, p = stats.ttest_ind(4., 3.)
     assert_(np.isnan(t))
     assert_(np.isnan(p))
 
@@ -2314,7 +2324,9 @@ def test_ttest_1samp_new():
 
 class TestDescribe(TestCase):
     def test_describe_scalar(self):
-        n, mm, m, v, sk, kurt = stats.describe(4.)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            n, mm, m, v, sk, kurt = stats.describe(4.)
         assert_equal(n, 1)
         assert_equal(mm, (4.0, 4.0))
         assert_equal(m, 4.0)
