@@ -1357,8 +1357,9 @@ cdef validate_array(cnp.ndarray a, bint chkfinite):
     cdef int j
 
     for j in range(a.ndim):
-        if a.strides[j] <= 0 or \
-                (a.strides[j] / a.descr.itemsize) >= libc.limits.INT_MAX:
+        if a.strides[j] <= 0:
+            copy = True
+        if (a.strides[j] / a.descr.itemsize) >= libc.limits.INT_MAX:
             copy = True
         if a.shape[j] >= libc.limits.INT_MAX:
             raise ValueError('Input array too large for use with BLAS')
