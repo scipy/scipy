@@ -1561,8 +1561,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 (see Notes)
             rtol : float
                 The relative tolerance achieved on ``det(X)`` (see Notes).
-                `rtol` will be NaN if the optimisation algorithms can not
-                run, i.e when ``B.shape[1] == 1``.
+                `rtol` will be NaN if the optimisation algorithms can not run,
+                i.e when ``B.shape[1] == 1``, or 0 when the solution is unique.
             nb_iter : int
                 The number of iterations performed before converging.
                 `nb_iter` will be NaN if the optimisation algorithms can
@@ -1627,7 +1627,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     ...               [ 0.0480,  4.273,   1.343, -2.104  ]])
     >>> B = np.array([[ 0,      5.679 ],
     ...               [ 1.136,  1.136 ],
-    ...               [ 0,      0,    ], 
+    ...               [ 0,      0,    ],
     ...               [-3.146,  0     ]])
     >>> P = np.array([-0.2, -0.5, -5.0566, -8.6659])
 
@@ -1640,7 +1640,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     array([[ 0.20071427, -0.96665799,  0.24066128, -0.10279785],
            [ 0.50587268,  0.57779091,  0.51795763, -0.41991442]])
 
-    >>> fsf2 = signal.place_poles(A, B, P, method='YT')
+    >>> fsf2 = signal.place_poles(A, B, P)  # uses YT method
     >>> fsf2.computed_poles
     array([-8.6659, -5.0566, -0.5   , -0.2   ])
 
