@@ -6,6 +6,7 @@ import numpy as np
 
 try:
     import scipy.sparse.linalg
+    import scipy.sparse
 except ImportError:
     pass
 
@@ -14,7 +15,7 @@ from .common import Benchmark
 
 class BenchmarkOneNormEst(Benchmark):
     params = [
-        [2, 3, 5, 10, 30, 100, 300, 500, 1000],
+        [2, 3, 5, 10, 30, 100, 300, 500, 1000, 1e4, 1e5, 1e6],
         ['exact', 'onenormest']
     ]
     param_names = ['n', 'solver']
@@ -24,11 +25,23 @@ class BenchmarkOneNormEst(Benchmark):
         nrepeats = 100
         shape = (n, n)
 
-        # Sample the matrices.
-        self.matrices = []
-        for i in range(nrepeats):
-            M = np.random.randn(*shape)
-            self.matrices.append(M)
+        if n <= 1000:
+            # Sample the matrices.
+            self.matrices = []
+            for i in range(nrepeats):
+                M = np.random.randn(*shape)
+                self.matrices.append(M)
+        else:
+            if solver == 'exact':
+                raise NotImplementedError()
+
+            max_nnz = 100000
+            nrepeats = 1
+
+            self.matrices = []
+            for i in range(nrepeats):
+                M = scipy.sparse.rand(shape[0], shape[1], min(max_nnz/(shape[0]*shape[1]), 1e-5))
+                self.matrices.append(M)
 
     def time_onenormest(self, n, solver):
         if solver == 'exact':

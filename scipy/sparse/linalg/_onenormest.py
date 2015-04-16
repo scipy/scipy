@@ -106,6 +106,28 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
         return est
 
 
+def _blocked_elementwise(func):
+    """
+    Decorator for an elementwise function, to apply it blockwise along
+    first dimension, to avoid excessive memory usage in temporaries.
+    """
+    block_size = 2**20
+
+    def wrapper(x):
+        if x.shape[0] < block_size:
+            return func(x)
+        else:
+            y0 = func(x[:block_size])
+            y = np.zeros((x.shape[0],) + y0.shape[1:], dtype=y0.dtype)
+            y[:block_size] = y0
+            del y0
+            for j in range(block_size, x.shape[0], block_size):
+                y[j:j+block_size] = func(x[j:j+block_size])
+            return y
+    return wrapper
+
+
+@_blocked_elementwise
 def sign_round_up(X):
     """
     This should do the right thing for both real and complex matrices.
@@ -113,13 +135,30 @@ def sign_round_up(X):
     From Higham and Tisseur:
     "Everything in this section remains valid for complex matrices
     provided that sign(A) is redefined as the matrix (aij / |aij|)
-    (and sign(0) = 1) transposes are replaced by conjugate transposes.
+    (and sign(0) = 1) transposes are replaced by conjugate transposes."
 
     """
     Y = X.copy()
     Y[Y == 0] = 1
     Y /= np.abs(Y)
     return Y
+
+
+@_blocked_elementwise
+def _max_abs_axis1(X):
+    return np.max(np.abs(X), axis=1)
+
+
+def _sum_abs_axis0(X):
+    block_size = 2**20
+    r = None
+    for j in range(0, X.shape[0], block_size):
+        y = np.sum(np.abs(X[j:j+block_size]), axis=0)
+        if r is None:
+            r = y
+        else:
+            r += y
+    return r
 
 
 def elementary_vector(n, i):
@@ -224,12 +263,13 @@ def _algorithm_2_2(A, AT, t):
     ind = range(t)
     while True:
         Y = np.asarray(A_linear_operator.matmat(X))
-        g = np.sum(np.abs(Y), axis=0)
+        g = _sum_abs_axis0(Y)
         best_j = np.argmax(g)
-        g = sorted(g, reverse=True)
+        g.sort()
+        g = g[::-1]
         S = sign_round_up(Y)
         Z = np.asarray(AT_linear_operator.matmat(S))
-        h = np.max(np.abs(Z), axis=1)
+        h = _max_abs_axis1(Z)
 
         # If this algorithm runs for fewer than two iterations,
         # then its return values do not have the properties indicated
@@ -242,8 +282,8 @@ def _algorithm_2_2(A, AT, t):
         if k >= 2:
             if less_than_or_close(max(h), np.dot(Z[:, best_j], X[:, best_j])):
                 break
-        h_i_pairs = zip(h, range(n))
-        h, ind = zip(*sorted(h_i_pairs, reverse=True)[:t])
+        ind = np.argsort(h)[::-1][:t]
+        h = h[ind]
         for j in range(t):
             X[:, j] = elementary_vector(n, ind[j])
 
@@ -344,7 +384,7 @@ def _onenormest_core(A, AT, t, itmax):
     # "Choose starting matrix X with columns of unit 1-norm."
     X /= float(n)
     # "indices of used unit vectors e_j"
-    ind_hist = set()
+    ind_hist = np.zeros(0, dtype=np.intp)
     est_old = 0
     S = np.zeros((n, t), dtype=float)
     k = 1
@@ -352,7 +392,7 @@ def _onenormest_core(A, AT, t, itmax):
     while True:
         Y = np.asarray(A_linear_operator.matmat(X))
         nmults += 1
-        mags = np.sum(np.abs(Y), axis=0)
+        mags = _sum_abs_axis0(Y)
         est = np.max(mags)
         best_j = np.argmax(mags)
         if est > est_old or k == 2:
@@ -368,6 +408,7 @@ def _onenormest_core(A, AT, t, itmax):
         if k > itmax:
             break
         S = sign_round_up(Y)
+        del Y
         # (2)
         if every_col_of_X_is_parallel_to_a_col_of_Y(S, S_old):
             break
@@ -378,31 +419,37 @@ def _onenormest_core(A, AT, t, itmax):
                 while column_needs_resampling(i, S, S_old):
                     resample_column(i, S)
                     nresamples += 1
+        del S_old
         # (3)
         Z = np.asarray(AT_linear_operator.matmat(S))
         nmults += 1
-        h = np.max(np.abs(Z), axis=1)
+        h = _max_abs_axis1(Z)
+        del Z
         # (4)
         if k >= 2 and max(h) == h[ind_best]:
             break
         # "Sort h so that h_first >= ... >= h_last
         # and re-order ind correspondingly."
-        h_i_pairs = zip(h, range(n))
-        h, ind = zip(*sorted(h_i_pairs, reverse=True))
+        #
+        # Later on, we will need at most t+len(ind_hist) largest
+        # entries, so drop the rest
+        ind = np.argsort(h)[::-1][:t+len(ind_hist)].copy()
+        del h
         if t > 1:
             # (5)
             # Break if the most promising t vectors have been visited already.
-            if set(ind[:t]) <= ind_hist:
+            if np.in1d(ind[:t], ind_hist).all():
                 break
             # Put the most promising unvisited vectors at the front of the list
             # and put the visited vectors at the end of the list.
             # Preserve the order of the indices induced by the ordering of h.
-            unused_entries = [i for i in ind if i not in ind_hist]
-            used_entries = [i for i in ind if i in ind_hist]
-            ind = unused_entries + used_entries
+            seen = np.in1d(ind, ind_hist)
+            ind = np.concatenate((ind[~seen], ind[seen]))
         for j in range(t):
             X[:, j] = elementary_vector(n, ind[j])
-        ind_hist.update(ind[:t])
+
+        new_ind = ind[:t][~np.in1d(ind[:t], ind_hist)]
+        ind_hist = np.concatenate((ind_hist, new_ind))
         k += 1
     v = elementary_vector(n, ind_best)
     return est, v, w, nmults, nresamples
