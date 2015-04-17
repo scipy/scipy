@@ -520,5 +520,6 @@ def test_kaiser_derived():
     assert_raises(ValueError, signal.kaiser_derived, M + 1, beta=4.)
 
 
+
 if __name__ == "__main__":
     run_module_suite()

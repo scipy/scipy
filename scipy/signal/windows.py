@@ -1158,7 +1158,7 @@ def kaiser(M, beta, sym=True):
     return _truncate(w, needs_trunc)
 
 
-def kaiser_derived(M, beta=4.):
+def kaiser_derived(M, beta):
     """ Return a Kaiser-Bessel derived window.
 
     Parameters
@@ -1216,7 +1216,7 @@ def kaiser_derived(M, beta=4.):
 
     if M % 2:
         raise ValueError(
-            "Kaiser Bessel Derived windows are only defined for even number ",
+            "Kaiser Bessel Derived windows are only defined for even number "
             "of taps"
         )
 
