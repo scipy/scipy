@@ -1172,7 +1172,8 @@ def kaiser_derived(M, beta=4.):
     Returns
     -------
     w : ndarray
-        The window, normalized to fulfil the Princen-Bradley condition.
+        The window, with the maximum value normalized to 1. The window also
+        fulfils the Princen-Bradley condition.
 
     Notes
     -----
