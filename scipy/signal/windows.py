@@ -1214,8 +1214,6 @@ def kaiser_derived(M, beta=4.):
     """
     if M < 1:
         return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
 
     if M % 2:
         raise ValueError(
