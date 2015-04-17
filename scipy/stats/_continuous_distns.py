@@ -1761,6 +1761,15 @@ class genextreme_gen(rv_continuous):
         ku = where(abs(c) <= (eps)**0.23, 12.0/5.0, ku1-3.0)
         return m, v, sk, ku
 
+    def _fitstart(self, data):
+        # This is better than the default shape of (1,).
+        g = _skew(data)
+        if g < 0:
+            a = 0.5
+        else:
+            a = -0.5
+        return super(genextreme_gen, self)._fitstart(data, args=(a,))
+
     def _munp(self, n, c):
         k = arange(0, n+1)
         vals = 1.0/c**n * sum(
