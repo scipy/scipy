@@ -118,7 +118,8 @@ Gustav Larsson for a bug fix in convolve2d.
 Alex Griffing for expm 2009, expm_multiply, expm_frechet,
     trust region optimization methods, and sparse matrix onenormest
     implementations, plus bugfixes.
-Nils Werner for signal windowing and wavfile-writing improvements.
+Nils Werner for signal windowing (cosine and Kaiser-Bessel derived)
+    and wavfile-writing improvements.
 Kenneth L. Ho for the wrapper around the Interpolative Decomposition code.
 Juan Luis Cano for refactorings in lti, sparse docs improvements and some
     trivial fixes.

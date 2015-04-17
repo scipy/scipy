@@ -9,8 +9,9 @@ from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window']
+           'hamming', 'kaiser', 'kaiser_derived', 'gaussian',
+           'general_gaussian', 'chebwin', 'slepian', 'cosine', 'hann',
+           'exponential', 'tukey', 'get_window']
 
 
 def _len_guards(M):
@@ -1157,6 +1158,80 @@ def kaiser(M, beta, sym=True):
     return _truncate(w, needs_trunc)
 
 
+def kaiser_derived(M, beta=4.):
+    """ Return a Kaiser-Bessel derived window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    beta : float
+        Kaiser-Bessel window shape parameter.
+
+    Returns
+    -------
+    w : ndarray
+        The window, normalized to fulfil the Princen-Bradley condition.
+
+    Notes
+    -----
+    This window is only defined for an even number of taps.
+
+    .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] Wikipedia, "Kaiser window",
+           https://en.wikipedia.org/wiki/Kaiser_window
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = signal.kaiser_derived(50)
+    >>> plt.plot(window)
+    >>> plt.title("Kaiser-Bessel derived window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the kaiser bessel derived window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    >>> plt.show()
+
+    """
+    if M < 1:
+        return np.array([])
+    if M == 1:
+        return np.ones(1, 'd')
+
+    if M % 2:
+        raise ValueError(
+            "Kaiser Bessel Derived windows are only defined for even number ",
+            "of taps"
+        )
+
+    w = np.zeros(M)
+    kaiserw = kaiser(M // 2 + 1, beta)
+    csum = np.cumsum(kaiserw)
+    halfw = np.sqrt(csum[:-1] / csum[-1])
+    w[:M//2] = halfw
+    w[-M//2:] = halfw[::-1]
+
+    return w
+
+
 def gaussian(M, std, sym=True):
     r"""Return a Gaussian window.
 
@@ -1658,6 +1733,7 @@ _win_equiv_raw = {
     ('hamming', 'hamm', 'ham'): (hamming, False),
     ('hanning', 'hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
+    ('kaiser_derived', 'kd', 'kbd'): (kaiser, True),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
     ('slepian', 'slep', 'optimal', 'dpss', 'dss'): (slepian, True),

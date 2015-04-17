@@ -23,6 +23,7 @@ window_funcs = [
     ('barthann', ()),
     ('hamming', ()),
     ('kaiser', (1,)),
+    ('kaiser_derived', (1,)),
     ('gaussian', (0.5,)),
     ('general_gaussian', (1.5, 2)),
     ('chebwin', (1,)),
@@ -508,14 +509,16 @@ def test_windowfunc_basics():
                             0, atol=1e-14)
 
 
-def test_needs_params():
-    for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
-                   'general gaussian', 'general_gaussian',
-                   'general gauss', 'general_gauss', 'ggs',
-                   'slepian', 'optimal', 'slep', 'dss', 'dpss',
-                   'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
-                   'tuk']:
-        assert_raises(ValueError, signal.get_window, winstr, 7)
+def test_kaiser_derived():
+    M = 100
+    w = signal.kaiser_derived(M, beta=4.)
+
+    # Test for Princen-Bradley condition
+    assert_allclose(w[:M//2]**2 + w[-M//2:]**2, 1.)
+
+    # Assert ValueError for odd window length
+    assert_raises(ValueError, signal.kaiser_derived, M + 1, beta=4.)
+
 
 if __name__ == "__main__":
     run_module_suite()
