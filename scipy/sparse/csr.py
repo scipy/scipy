@@ -283,14 +283,22 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 # col is int or slice with step 1, row is slice with step 1.
                 return self._get_submatrix(row, col)
             elif issequence(col):
-                P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
                 # row is slice, col is sequence.
-                return self[row,:]*P
+                P = extractor(col,self.shape[1]).T        # [1:2,[1,2]]
+                sliced = self
+                if row != slice(None, None, None):
+                    sliced = sliced[row,:]
+                return sliced * P
+
         elif issequence(row):
             # [[1,2],??]
             if isintlike(col) or isinstance(col,slice):
                 P = extractor(row, self.shape[0])     # [[1,2],j] or [[1,2],1:2]
-                return (P*self)[:,col]
+                extracted = P * self
+                if col == slice(None, None, None):
+                    return extracted
+                else:
+                    return extracted[:,col]
 
         if not (issequence(col) and issequence(row)):
             # Sample elementwise
