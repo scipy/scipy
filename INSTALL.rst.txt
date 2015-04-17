@@ -42,7 +42,7 @@ __ http://sphinx-doc.org/
 
 4) If you want to build SciPy master or other unreleased version from source
    (Cython-generated C sources are included in official releases):
-   Cython__ 0.21 or newer
+   Cython__ 0.22 or newer
 
 __ http://cython.org/
 
