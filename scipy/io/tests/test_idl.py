@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from os import path
-
+from warnings import catch_warnings
 
 DATA_PATH = path.join(path.dirname(__file__), 'data')
 
@@ -414,6 +414,25 @@ def test_null_pointer():
     s = readsav(path.join(DATA_PATH, 'null_pointer.sav'), verbose=False)
     assert_identical(s.point, None)
     assert_identical(s.check, np.int16(5))
+
+
+def test_invalid_pointer():
+    """
+    Regression test for invalid pointers.
+
+    In some files in the wild, pointers can sometimes refer to a heap variable
+    that does not exist. In that case, we now gracefully fail for that variable
+    and replace the variable with None and emit a warning. Since it's difficult
+    to artificially produce such files, the file used here has been edited to
+    force the pointer reference to be invalid.
+    """
+    with catch_warnings(record=True) as w:
+        s = readsav(path.join(DATA_PATH, 'invalid_pointer.sav'), verbose=False)
+    assert len(w) == 1
+    assert str(w[0].message) == ("Variable referenced by pointer not found in "
+                                "heap: variable will be set to None")
+    assert_identical(s['a'], np.array([None, None]))
+
 
 if __name__ == "__main__":
     run_module_suite()
