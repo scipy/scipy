@@ -37,6 +37,7 @@ import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
+from inspect import getargspec
 
 
 # standard status messages of optimizers
@@ -2454,10 +2455,11 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         values on it.
     finish : callable, optional
         An optimization function that is called with the result of brute force
-        minimization as initial guess.  `finish` should take the initial guess
-        as positional argument, and take `args`, `full_output` and `disp`
-        as keyword arguments.  Use None if no "polishing" function is to be
-        used.  See Notes for more details.
+        minimization as initial guess.  `finish` should take `func` and
+        the initial guess as positional arguments, and take `args` as
+        keyword arguments.  It may additionally take `full_output`
+        and/or `disp` as keyword arguments.  Use None if no "polishing"
+        function is to be used. See Notes for more details.
     disp : bool, optional
         Set to True to print convergence messages.
 
@@ -2496,14 +2498,15 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     The `brute` function's `finish` option provides a convenient way to do
     that.  Any polishing program used must take `brute's` output as its
     initial guess as a positional argument, and take `brute's` input values
-    for `args` and `full_output` as keyword arguments, otherwise an error
-    will be raised.
+    for `args` as keyword arguments, otherwise an error will be raised.
+    It may additionally take `full_output` and/or `disp` as keyword arguments.
 
-    `brute` assumes that the `finish` function returns a tuple in the form:
-    ``(xmin, Jmin, ... , statuscode)``, where ``xmin`` is the minimizing value
-    of the argument, ``Jmin`` is the minimum value of the objective function,
-    "..." may be some other returned values (which are not used by `brute`),
-    and ``statuscode`` is the status code of the `finish` program.
+    `brute` assumes that the `finish` function returns either an
+    `OptimizeResult` object or a tuple in the form:
+    ``(xmin, Jmin, ... , statuscode)``, where ``xmin`` is the minimizing
+    value of the argument, ``Jmin`` is the minimum value of the objective
+    function, "..." may be some other returned values (which are not used
+    by `brute`), and ``statuscode`` is the status code of the `finish` program.
 
     Note that when `finish` is not None, the values returned are those
     of the `finish` program, *not* the gridpoint ones.  Consequently,
@@ -2546,8 +2549,6 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ...     return (-j*np.exp(-((x-k)**2 + (y-l)**2) / scale))
 
     >>> def f(z, *params):
-    ...     x, y = z
-    ...     a, b, c, d, e, f, g, h, i, j, k, l, scale = params
     ...     return f1(z, *params) + f2(z, *params) + f3(z, *params)
 
     Thus, the objective function may have local minima near the minimum
@@ -2606,12 +2607,35 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         grid = grid[0]
         xmin = xmin[0]
     if callable(finish):
-        vals = finish(func, xmin, args=args, full_output=1, disp=disp)
-        xmin = vals[0]
-        Jmin = vals[1]
-        if vals[-1] > 0:
+        # set up kwargs for `finish` function
+        finish_args = getargspec(finish).args
+        finish_kwargs = dict()
+        if 'full_output' in finish_args:
+            finish_kwargs['full_output'] = 1
+        if 'disp' in finish_args:
+            finish_kwargs['disp'] = disp
+        elif 'options' in finish_args:
+            # pass 'disp' as `options`
+            # (e.g. if `finish` is `minimize`)
+            finish_kwargs['options'] = {'disp': disp}
+
+        # run minimizer
+        res = finish(func, xmin, args=args, **finish_kwargs)
+
+        if isinstance(res, OptimizeResult):
+            xmin = res.x
+            Jmin = res.fun
+            success = res.success
+        else:
+            xmin = res[0]
+            Jmin = res[1]
+            success = res[-1] == 0
+        if not success:
             if disp:
-                print("Warning: Final optimization did not succeed")
+                print("Warning: Either final optimization did not succeed "
+                      "or `finish` does not return `statuscode` as its last "
+                      "argument.")
+
     if full_output:
         return xmin, Jmin, grid, Jout
     else:
@@ -2726,7 +2750,7 @@ def show_options(solver=None, method=None, disp=True):
     if solver is None:
         text = ["\n\n\n========\n", "minimize\n", "========\n"]
         text.append(show_options('minimize', disp=False))
-        text.extend(["\n\n===============\n", "minimize_scalar\n", 
+        text.extend(["\n\n===============\n", "minimize_scalar\n",
                      "===============\n"])
         text.append(show_options('minimize_scalar', disp=False))
         text.extend(["\n\n\n====\n", "root\n",
