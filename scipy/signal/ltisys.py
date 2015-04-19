@@ -30,6 +30,7 @@ import numpy
 from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
                    squeeze, diag, asarray, product, zeros, array,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
+import copy
 
 from scipy import integrate, interpolate, linalg
 from scipy._lib.six import xrange
@@ -306,7 +307,7 @@ class lti(object):
                 return super(lti, cls).__new__(ss)
             else:
                 raise ValueError('Needs 2, 3 or 4 arguments.')
-        # __new__ was called from a subclass, let it call its own __init__
+        # __new__ was called from a subclass, let it call its own functions
         return super(lti, cls).__new__(cls)
 
     def __init__(self, *args, **kwargs):
@@ -326,7 +327,7 @@ class lti(object):
         obj = self.to_tf()
         obj.num = num
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     @property
     def den(self):
@@ -337,7 +338,7 @@ class lti(object):
         obj = self.to_tf()
         obj.den = den
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     @property
     def zeros(self):
@@ -348,7 +349,7 @@ class lti(object):
         obj = self.to_zpk()
         obj.zeros = zeros
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     @property
     def poles(self):
@@ -359,7 +360,7 @@ class lti(object):
         obj = self.to_zpk()
         obj.poles = poles
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     @property
     def gain(self):
@@ -370,7 +371,7 @@ class lti(object):
         obj = self.to_zpk()
         obj.gain = gain
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     @property
     def A(self):
@@ -381,7 +382,7 @@ class lti(object):
         obj = self.to_ss()
         obj.A = A
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     @property
     def B(self):
@@ -392,7 +393,7 @@ class lti(object):
         obj = self.to_ss()
         obj.B = B
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     @property
     def C(self):
@@ -403,7 +404,7 @@ class lti(object):
         obj = self.to_ss()
         obj.C = C
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     @property
     def D(self):
@@ -414,7 +415,7 @@ class lti(object):
         obj = self.to_ss()
         obj.D = D
         source_class = type(self)
-        self.copy(source_class(obj), copy=False)
+        self.copy(source_class(obj))
 
     def impulse(self, X0=None, T=None, N=None):
         """
@@ -492,6 +493,14 @@ class tf(lti):
             * 2: (numerator, denominator)
 
     """
+    def __new__(cls, *args, **kwargs):
+        """Handle object conversion if input is an instance of lti"""
+        if len(args) == 1 and isinstance(args[0], lti):
+                return args[0].to_tf()
+
+        # No special conversion needed
+        return super(tf, cls).__new__(cls)
+
     def __init__(self, *args, **kwargs):
         """Initialize the state space LTI system
 
@@ -503,15 +512,16 @@ class tf(lti):
             * (numerator, denominator)
 
         """
+        # Conversion of lti instances is handled in __new__
+        if isinstance(args[0], lti):
+            return
+
         super(tf, self).__init__(self, *args, **kwargs)
 
         self._num = None
         self._den = None
 
-        if len(args) == 1:  # Input is an lti system
-            self.copy(args[0].to_tf())
-        else:  # Input is (num, den)
-            self.num, self.den = normalize(*args)
+        self.num, self.den = normalize(*args)
 
     def __repr__(self):
         """Return representation of the system's transfer function"""
@@ -544,22 +554,17 @@ class tf(lti):
     def den(self, den):
         self._den = atleast_1d(den)
 
-    def copy(self, system, copy=True):
+    def copy(self, system):
         """Copy the parameters of another tf system
 
         Parameters
         ----------
         system : tf
             The ss system that is to be copied
-        copy : bool, optional
-            Whether to copy arrays
 
         """
         self.num = system.num
         self.den = system.den
-        if copy:
-            self.num = self.num.copy()
-            self.den = self.den.copy()
 
     def to_tf(self):
         """Convert system representation to transfer function.
@@ -567,10 +572,10 @@ class tf(lti):
         Returns
         -------
         sys : instance of tf
-            The current object (self)
+            Copy of current system
 
         """
-        return self
+        return copy.deepcopy(self)
 
     def to_zpk(self):
         """Convert system representation to zero, pole, gain.
@@ -609,6 +614,14 @@ class zpk(lti):
             * 3: (zeros, poles, gain)
 
     """
+    def __new__(cls, *args, **kwargs):
+        """Handle object conversion if input is an instance of lti"""
+        if len(args) == 1 and isinstance(args[0], lti):
+                return args[0].to_zpk()
+
+        # No special conversion needed
+        return super(zpk, cls).__new__(cls)
+
     def __init__(self, *args, **kwargs):
         """Initialize the zero, pole, gain LTI system
 
@@ -620,16 +633,17 @@ class zpk(lti):
             * (zeros, poles, gain)
 
         """
+        # Conversion of lti instances is handled in __new__
+        if isinstance(args[0], lti):
+            return
+
         super(zpk, self).__init__(self, *args, **kwargs)
 
         self._zeros = None
         self._poles = None
         self._gain = None
 
-        if len(args) == 1:
-            self.copy(args[0].to_zpk())
-        else:
-            self.zeros, self.poles, self.gain = args
+        self.zeros, self.poles, self.gain = args
 
     def __repr__(self):
         """Return representation of the zpk systen"""
@@ -671,23 +685,18 @@ class zpk(lti):
     def gain(self, gain):
         self._gain = gain
 
-    def copy(self, system, copy=True):
+    def copy(self, system):
         """Copy the parameters of another zpk system
 
         Parameters
         ----------
         system : instance of zpk
             The zpk system that is to be copied
-        copy : bool, optional
-            Whether to copy arrays
 
         """
         self.poles = system.poles
         self.zeros = system.zeros
         self.gain = system.gain
-        if copy:
-            self.poles = self.poles.copy()
-            self.zeros = self.zeros.copy()
 
     def to_tf(self):
         """Convert system representation to transfer function.
@@ -706,10 +715,10 @@ class zpk(lti):
         Returns
         -------
         sys : instance of zpk
-            Zero, pole, gain representation of the current system
+            Copy of the current system
 
         """
-        return self
+        return copy.deepcopy(self)
 
     def to_ss(self):
         """Convert system representation to state space.
@@ -737,6 +746,14 @@ class ss(lti):
             * 4: (A, B, C, D)
 
     """
+    def __new__(cls, *args, **kwargs):
+        """Handle object conversion if input is an instance of lti"""
+        if len(args) == 1 and isinstance(args[0], lti):
+                return args[0].to_ss()
+
+        # No special conversion needed
+        return super(ss, cls).__new__(cls)
+
     def __init__(self, *args, **kwargs):
         """Initialize the state space LTI system
 
@@ -748,6 +765,10 @@ class ss(lti):
             * (A, B, C, D) state-space matrices
 
         """
+        # Conversion of lti instances is handled in __new__
+        if isinstance(args[0], lti):
+            return
+
         super(ss, self).__init__(self, *args, **kwargs)
 
         self._A = None
@@ -755,10 +776,7 @@ class ss(lti):
         self._C = None
         self._D = None
 
-        if len(args) == 1:
-            self.copy(args[0].to_ss())
-        else:
-            self.A, self.B, self.C, self.D = abcd_normalize(*args)
+        self.A, self.B, self.C, self.D = abcd_normalize(*args)
 
     def __repr__(self):
         """Return representation of the state-space systen"""
@@ -804,26 +822,19 @@ class ss(lti):
     def D(self, D):
         self._D = _atleast_2d_or_none(D)
 
-    def copy(self, system, copy=True):
+    def copy(self, system):
         """Copy the parameters of another ss system
 
         Parameters
         ----------
         system : instance of ss
             The state-space system that is to be copied
-        copy : bool, optional
-            Whether to copy arrays
 
         """
         self.A = system.A
         self.B = system.B
         self.C = system.C
         self.D = system.D
-        if copy:
-            self.A = self.A.copy()
-            self.B = self.B.copy()
-            self.C = self.C.copy()
-            self.D = self.D.copy()
 
     def to_tf(self, **kwargs):
         """Convert system representation to transfer function.
@@ -863,10 +874,10 @@ class ss(lti):
         Returns
         -------
         sys : instance of ss
-            The current object (self)
+            Copy of the current system
 
         """
-        return self
+        return copy.deepcopy(self)
 
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
