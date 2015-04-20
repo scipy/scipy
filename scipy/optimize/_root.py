@@ -11,12 +11,13 @@ __all__ = ['root']
 
 import numpy as np
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 from warnings import warn
 
 from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from .minpack import _root_hybr, leastsq
+from ._spectral import _root_df_sane
 from . import nonlin
 
 
@@ -24,8 +25,6 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):
     """
     Find a root of a vector function.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -38,15 +37,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     method : str, optional
         Type of solver.  Should be one of
 
-            - 'hybr'
-            - 'lm'
-            - 'broyden1'
-            - 'broyden2'
-            - 'anderson'
-            - 'linearmixing'
-            - 'diagbroyden'
-            - 'excitingmixing'
-            - 'krylov'
+            - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
+            - 'lm'               :ref:`(see here) <optimize.root-lm>`
+            - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
+            - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
+            - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
+            - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
+            - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
+            - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
+            - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
+            - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
 
     jac : bool or callable, optional
         If `jac` is a Boolean and is True, `fun` is assumed to return the
@@ -90,6 +90,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     sense using a modification of the Levenberg-Marquardt algorithm as
     implemented in MINPACK [1]_.
 
+    Method *df-sane* is a derivative-free spectral method. [3]_
+
     Methods *broyden1*, *broyden2*, *anderson*, *linearmixing*,
     *diagbroyden*, *excitingmixing*, *krylov* are inexact Newton methods,
     with backtracking or full line searches [2]_. Each method corresponds
@@ -114,6 +116,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         problems, but whether they will work may depend strongly on the
         problem.
 
+    .. versionadded:: 0.11.0
+
     References
     ----------
     .. [1] More, Jorge J., Burton S. Garbow, and Kenneth E. Hillstrom.
@@ -121,6 +125,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     .. [2] C. T. Kelley. 1995. Iterative Methods for Linear and Nonlinear
         Equations. Society for Industrial and Applied Mathematics.
         <http://www.siam.org/books/kelley/>
+    .. [3] W. La Cruz, J.M. Martinez, M. Raydan. Math. Comp. 75, 1429 (2006).
 
     Examples
     --------
@@ -144,6 +149,9 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> sol.x
     array([ 0.8411639,  0.1588361])
     """
+    if not isinstance(args, tuple):
+        args = (args,)
+
     meth = method.lower()
     if options is None:
         options = {}
@@ -165,6 +173,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         options = dict(options)
         if meth in ('hybr', 'lm'):
             options.setdefault('xtol', tol)
+        elif meth in ('df-sane',):
+            options.setdefault('ftol', tol)
         elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
                       'diagbroyden', 'excitingmixing', 'krylov'):
             options.setdefault('xtol', tol)
@@ -176,11 +186,13 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         sol = _root_hybr(fun, x0, args=args, jac=jac, **options)
     elif meth == 'lm':
         sol = _root_leastsq(fun, x0, args=args, jac=jac, **options)
+    elif meth == 'df-sane':
+        _warn_jac_unused(jac, method)
+        sol = _root_df_sane(fun, x0, args=args, callback=callback,
+                            **options)
     elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
                   'diagbroyden', 'excitingmixing', 'krylov'):
-        if jac is not None:
-            warn('Method %s does not use the jacobian (jac).' % method,
-                 RuntimeWarning)
+        _warn_jac_unused(jac, method)
         sol = _root_nonlin_solve(fun, x0, args=args, jac=jac,
                                  _method=meth, _callback=callback,
                                  **options)
@@ -190,10 +202,46 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     return sol
 
 
+def _warn_jac_unused(jac, method):
+    if jac is not None:
+        warn('Method %s does not use the jacobian (jac).' % (method,),
+             RuntimeWarning)
+
+
 def _root_leastsq(func, x0, args=(), jac=None,
                   col_deriv=0, xtol=1.49012e-08, ftol=1.49012e-08,
                   gtol=0.0, maxiter=0, eps=0.0, factor=100, diag=None,
                   **unknown_options):
+    """
+    Solve for least squares with Levenberg-Marquardt
+
+    Options
+    -------
+    col_deriv : bool
+        non-zero to specify that the Jacobian function computes derivatives
+        down the columns (faster, because there is no transpose operation).
+    ftol : float
+        Relative error desired in the sum of squares.
+    xtol : float
+        Relative error desired in the approximate solution.
+    gtol : float
+        Orthogonality desired between the function vector and the columns
+        of the Jacobian.
+    maxiter : int
+        The maximum number of calls to the function. If zero, then
+        100*(N+1) is the maximum where N is the number of elements in x0.
+    epsfcn : float
+        A suitable step length for the forward-difference approximation of
+        the Jacobian (for Dfun=None). If epsfcn is less than the machine
+        precision, it is assumed that the relative errors in the functions
+        are of the order of the machine precision.
+    factor : float
+        A parameter determining the initial step bound
+        (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
+    diag : sequence
+        N positive entries that serve as a scale factors for the variables.
+    """
+
     _check_unknown_options(unknown_options)
     x, cov_x, info, msg, ier = leastsq(func, x0, args=args, Dfun=jac,
                                        full_output=True,
@@ -234,7 +282,7 @@ def _root_nonlin_solve(func, x0, args=(), jac=None,
                 }[_method]
 
     if args:
-        if jac == True:
+        if jac:
             def f(x):
                 return func(x, *args)[0]
         else:
@@ -254,3 +302,338 @@ def _root_nonlin_solve(func, x0, args=(), jac=None,
     sol = OptimizeResult(x=x)
     sol.update(info)
     return sol
+
+def _root_broyden1_doc():
+    """
+    Options
+    -------
+    nit : int, optional
+        Number of iterations to make. If omitted (default), make as many
+        as required to meet tolerances.
+    disp : bool, optional
+        Print status to stdout on every iteration.
+    maxiter : int, optional
+        Maximum number of iterations to make. If more are needed to
+        meet convergence, `NoConvergence` is raised.
+    ftol : float, optional
+        Relative tolerance for the residual. If omitted, not used.
+    fatol : float, optional
+        Absolute tolerance (in max-norm) for the residual.
+        If omitted, default is 6e-6.
+    xtol : float, optional
+        Relative minimum step size. If omitted, not used.
+    xatol : float, optional
+        Absolute minimum step size, as determined from the Jacobian
+        approximation. If the step size is smaller than this, optimization
+        is terminated as successful. If omitted, not used.
+    tol_norm : function(vector) -> scalar, optional
+        Norm to use in convergence check. Default is the maximum norm.
+    line_search : {None, 'armijo' (default), 'wolfe'}, optional
+        Which type of a line search to use to determine the step size in
+        the direction given by the Jacobian approximation. Defaults to
+        'armijo'.
+    jac_options : dict, optional
+        Options for the respective Jacobian approximation.
+            alpha : float, optional
+                Initial guess for the Jacobian is (-1/alpha).
+            reduction_method : str or tuple, optional
+                Method used in ensuring that the rank of the Broyden
+                matrix stays low. Can either be a string giving the
+                name of the method, or a tuple of the form ``(method,
+                param1, param2, ...)`` that gives the name of the
+                method and values for additional parameters.
+
+                Methods available:
+                    - ``restart``: drop all matrix columns. Has no
+                        extra parameters.
+                    - ``simple``: drop oldest matrix column. Has no
+                        extra parameters.
+                    - ``svd``: keep only the most significant SVD
+                        components.
+                      Extra parameters:
+                          - ``to_retain``: number of SVD components to
+                              retain when rank reduction is done.
+                              Default is ``max_rank - 2``.
+            max_rank : int, optional
+                Maximum rank for the Broyden matrix.
+                Default is infinity (ie., no rank reduction).
+    """
+    pass
+
+def _root_broyden2_doc():
+    """
+    Options
+    -------
+    nit : int, optional
+        Number of iterations to make. If omitted (default), make as many
+        as required to meet tolerances.
+    disp : bool, optional
+        Print status to stdout on every iteration.
+    maxiter : int, optional
+        Maximum number of iterations to make. If more are needed to
+        meet convergence, `NoConvergence` is raised.
+    ftol : float, optional
+        Relative tolerance for the residual. If omitted, not used.
+    fatol : float, optional
+        Absolute tolerance (in max-norm) for the residual.
+        If omitted, default is 6e-6.
+    xtol : float, optional
+        Relative minimum step size. If omitted, not used.
+    xatol : float, optional
+        Absolute minimum step size, as determined from the Jacobian
+        approximation. If the step size is smaller than this, optimization
+        is terminated as successful. If omitted, not used.
+    tol_norm : function(vector) -> scalar, optional
+        Norm to use in convergence check. Default is the maximum norm.
+    line_search : {None, 'armijo' (default), 'wolfe'}, optional
+        Which type of a line search to use to determine the step size in
+        the direction given by the Jacobian approximation. Defaults to
+        'armijo'.
+    jac_options : dict, optional
+        Options for the respective Jacobian approximation.
+
+        alpha : float, optional
+            Initial guess for the Jacobian is (-1/alpha).
+        reduction_method : str or tuple, optional
+            Method used in ensuring that the rank of the Broyden
+            matrix stays low. Can either be a string giving the
+            name of the method, or a tuple of the form ``(method,
+            param1, param2, ...)`` that gives the name of the
+            method and values for additional parameters.
+
+            Methods available:
+                - ``restart``: drop all matrix columns. Has no
+                    extra parameters.
+                - ``simple``: drop oldest matrix column. Has no
+                    extra parameters.
+                - ``svd``: keep only the most significant SVD
+                    components.
+                  Extra parameters:
+                      - ``to_retain``: number of SVD components to
+                          retain when rank reduction is done.
+                          Default is ``max_rank - 2``.
+        max_rank : int, optional
+            Maximum rank for the Broyden matrix.
+            Default is infinity (ie., no rank reduction).
+    """
+    pass
+
+def _root_anderson_doc():
+    """
+    Options
+    -------
+    nit : int, optional
+        Number of iterations to make. If omitted (default), make as many
+        as required to meet tolerances.
+    disp : bool, optional
+        Print status to stdout on every iteration.
+    maxiter : int, optional
+        Maximum number of iterations to make. If more are needed to
+        meet convergence, `NoConvergence` is raised.
+    ftol : float, optional
+        Relative tolerance for the residual. If omitted, not used.
+    fatol : float, optional
+        Absolute tolerance (in max-norm) for the residual.
+        If omitted, default is 6e-6.
+    xtol : float, optional
+        Relative minimum step size. If omitted, not used.
+    xatol : float, optional
+        Absolute minimum step size, as determined from the Jacobian
+        approximation. If the step size is smaller than this, optimization
+        is terminated as successful. If omitted, not used.
+    tol_norm : function(vector) -> scalar, optional
+        Norm to use in convergence check. Default is the maximum norm.
+    line_search : {None, 'armijo' (default), 'wolfe'}, optional
+        Which type of a line search to use to determine the step size in
+        the direction given by the Jacobian approximation. Defaults to
+        'armijo'.
+    jac_options : dict, optional
+        Options for the respective Jacobian approximation.
+
+        alpha : float, optional
+            Initial guess for the Jacobian is (-1/alpha).
+        M : float, optional
+            Number of previous vectors to retain. Defaults to 5.
+        w0 : float, optional
+            Regularization parameter for numerical stability.
+            Compared to unity, good values of the order of 0.01.
+    """
+    pass
+
+def _root_linearmixing_doc():
+    """
+    Options
+    -------
+    nit : int, optional
+        Number of iterations to make. If omitted (default), make as many
+        as required to meet tolerances.
+    disp : bool, optional
+        Print status to stdout on every iteration.
+    maxiter : int, optional
+        Maximum number of iterations to make. If more are needed to
+        meet convergence, ``NoConvergence`` is raised.
+    ftol : float, optional
+        Relative tolerance for the residual. If omitted, not used.
+    fatol : float, optional
+        Absolute tolerance (in max-norm) for the residual.
+        If omitted, default is 6e-6.
+    xtol : float, optional
+        Relative minimum step size. If omitted, not used.
+    xatol : float, optional
+        Absolute minimum step size, as determined from the Jacobian
+        approximation. If the step size is smaller than this, optimization
+        is terminated as successful. If omitted, not used.
+    tol_norm : function(vector) -> scalar, optional
+        Norm to use in convergence check. Default is the maximum norm.
+    line_search : {None, 'armijo' (default), 'wolfe'}, optional
+        Which type of a line search to use to determine the step size in
+        the direction given by the Jacobian approximation. Defaults to
+        'armijo'.
+    jac_options : dict, optional
+        Options for the respective Jacobian approximation.
+
+        alpha : float, optional
+            initial guess for the jacobian is (-1/alpha).
+    """
+    pass
+
+def _root_diagbroyden_doc():
+    """
+    Options
+    -------
+    nit : int, optional
+        Number of iterations to make. If omitted (default), make as many
+        as required to meet tolerances.
+    disp : bool, optional
+        Print status to stdout on every iteration.
+    maxiter : int, optional
+        Maximum number of iterations to make. If more are needed to
+        meet convergence, `NoConvergence` is raised.
+    ftol : float, optional
+        Relative tolerance for the residual. If omitted, not used.
+    fatol : float, optional
+        Absolute tolerance (in max-norm) for the residual.
+        If omitted, default is 6e-6.
+    xtol : float, optional
+        Relative minimum step size. If omitted, not used.
+    xatol : float, optional
+        Absolute minimum step size, as determined from the Jacobian
+        approximation. If the step size is smaller than this, optimization
+        is terminated as successful. If omitted, not used.
+    tol_norm : function(vector) -> scalar, optional
+        Norm to use in convergence check. Default is the maximum norm.
+    line_search : {None, 'armijo' (default), 'wolfe'}, optional
+        Which type of a line search to use to determine the step size in
+        the direction given by the Jacobian approximation. Defaults to
+        'armijo'.
+    jac_options : dict, optional
+        Options for the respective Jacobian approximation.
+
+        alpha : float, optional
+            initial guess for the jacobian is (-1/alpha).
+    """
+    pass
+
+def _root_excitingmixing_doc():
+    """
+    Options
+    -------
+    nit : int, optional
+        Number of iterations to make. If omitted (default), make as many
+        as required to meet tolerances.
+    disp : bool, optional
+        Print status to stdout on every iteration.
+    maxiter : int, optional
+        Maximum number of iterations to make. If more are needed to
+        meet convergence, `NoConvergence` is raised.
+    ftol : float, optional
+        Relative tolerance for the residual. If omitted, not used.
+    fatol : float, optional
+        Absolute tolerance (in max-norm) for the residual.
+        If omitted, default is 6e-6.
+    xtol : float, optional
+        Relative minimum step size. If omitted, not used.
+    xatol : float, optional
+        Absolute minimum step size, as determined from the Jacobian
+        approximation. If the step size is smaller than this, optimization
+        is terminated as successful. If omitted, not used.
+    tol_norm : function(vector) -> scalar, optional
+        Norm to use in convergence check. Default is the maximum norm.
+    line_search : {None, 'armijo' (default), 'wolfe'}, optional
+        Which type of a line search to use to determine the step size in
+        the direction given by the Jacobian approximation. Defaults to
+        'armijo'.
+    jac_options : dict, optional
+        Options for the respective Jacobian approximation.
+
+        alpha : float, optional
+            Initial Jacobian approximation is (-1/alpha).
+        alphamax : float, optional
+            The entries of the diagonal Jacobian are kept in the range
+            ``[alpha, alphamax]``.
+    """
+    pass
+
+def _root_krylov_doc():
+    """
+    Options
+    -------
+    nit : int, optional
+        Number of iterations to make. If omitted (default), make as many
+        as required to meet tolerances.
+    disp : bool, optional
+        Print status to stdout on every iteration.
+    maxiter : int, optional
+        Maximum number of iterations to make. If more are needed to
+        meet convergence, `NoConvergence` is raised.
+    ftol : float, optional
+        Relative tolerance for the residual. If omitted, not used.
+    fatol : float, optional
+        Absolute tolerance (in max-norm) for the residual.
+        If omitted, default is 6e-6.
+    xtol : float, optional
+        Relative minimum step size. If omitted, not used.
+    xatol : float, optional
+        Absolute minimum step size, as determined from the Jacobian
+        approximation. If the step size is smaller than this, optimization
+        is terminated as successful. If omitted, not used.
+    tol_norm : function(vector) -> scalar, optional
+        Norm to use in convergence check. Default is the maximum norm.
+    line_search : {None, 'armijo' (default), 'wolfe'}, optional
+        Which type of a line search to use to determine the step size in
+        the direction given by the Jacobian approximation. Defaults to
+        'armijo'.
+    jac_options : dict, optional
+        Options for the respective Jacobian approximation.
+
+        rdiff : float, optional
+            Relative step size to use in numerical differentiation.
+        method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or function
+            Krylov method to use to approximate the Jacobian.
+            Can be a string, or a function implementing the same
+            interface as the iterative solvers in
+            `scipy.sparse.linalg`.
+
+            The default is `scipy.sparse.linalg.lgmres`.
+        inner_M : LinearOperator or InverseJacobian
+            Preconditioner for the inner Krylov iteration.
+            Note that you can use also inverse Jacobians as (adaptive)
+            preconditioners. For example,
+
+            >>> jac = BroydenFirst()
+            >>> kjac = KrylovJacobian(inner_M=jac.inverse).
+
+            If the preconditioner has a method named 'update', it will
+            be called as ``update(x, f)`` after each nonlinear step,
+            with ``x`` giving the current point, and ``f`` the current
+            function value.
+        inner_tol, inner_maxiter, ...
+            Parameters to pass on to the "inner" Krylov solver.
+            See `scipy.sparse.linalg.gmres` for details.
+        outer_k : int, optional
+            Size of the subspace kept across LGMRES nonlinear
+            iterations.
+
+            See `scipy.sparse.linalg.lgmres` for details.
+    """
+    pass

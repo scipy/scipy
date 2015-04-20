@@ -5,6 +5,7 @@
 *~
 *$
 *.bak
+.idea/*
 *.kdev4
 *.org
 .project
@@ -67,6 +68,7 @@ MANIFEST
 # distutils configuration
 site.cfg
 # other temporary files
+.coverage
 .deps
 .libs
 
@@ -103,8 +105,14 @@ doc/source/generated
 
 # Things specific to this project #
 ###################################
+benchmarks/env
+benchmarks/results
+benchmarks/scipy
+benchmarks/html
+benchmarks/scipy-benchmarks
 scipy/__config__.py
-scipy/cluster/_vq_rewrite.c
+scipy/cluster/_vq.c
+scipy/cluster/_hierarchy.c
 scipy/fftpack/_fftpackmodule.c
 scipy/fftpack/convolvemodule.c
 scipy/fftpack/src/dct.c
@@ -136,8 +144,13 @@ scipy/linalg/_fblasmodule.c
 scipy/linalg/_flapack-f2pywrappers.f
 scipy/linalg/_flapackmodule.c
 scipy/linalg/_interpolativemodule.c
+scipy/linalg/_solve_toeplitz.c
+scipy/linalg/_decomp_update.c
+scipy/linalg/_decomp_update.pyx
 scipy/linalg/cblas.pyf
 scipy/linalg/clapack.pyf
+scipy/linalg/cython_blas.c
+scipy/linalg/cython_lapack.c
 scipy/linalg/fblas.pyf
 scipy/linalg/flapack.pyf
 scipy/linalg/src/id_dist/src/*_subr_*.f
@@ -148,6 +161,7 @@ scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/signal/_spectral.c
+scipy/signal/_max_len_seq.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c
 scipy/sparse/_csparsetools.c
@@ -156,6 +170,7 @@ scipy/sparse/csgraph/_min_spanning_tree.c
 scipy/sparse/csgraph/_shortest_path.c
 scipy/sparse/csgraph/_tools.c
 scipy/sparse/csgraph/_traversal.c
+scipy/sparse/csgraph/_reordering.c
 scipy/sparse/linalg/dsolve/umfpack/_umfpack.py
 scipy/sparse/linalg/dsolve/umfpack/_umfpack_wrap.c
 scipy/sparse/linalg/eigen/arpack/_arpack-f2pywrappers.f
@@ -178,6 +193,8 @@ scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.c
 scipy/spatial/qhull.c
+scipy/special/_ellip_harm_2.c
+scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
 scipy/special/_ufuncs.c
 scipy/special/_ufuncs.h

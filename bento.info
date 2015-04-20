@@ -1,8 +1,8 @@
 Name: scipy
-Version: 0.13.0
+Version: 0.16.0.dev0
 Summary: SciPy: Scientific Library for Python
 Url: http://www.scipy.org
-DownloadUrl: http://sourceforge.net/project/showfiles.php?group_id=27747&package_id=19531
+DownloadUrl: http://sourceforge.net/projects/scipy/files/scipy/
 Description:
     SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
     science, and engineering. The SciPy library depends on NumPy, which

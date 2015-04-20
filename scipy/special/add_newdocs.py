@@ -19,6 +19,53 @@ def get(name):
 def add_newdoc(place, name, doc):
     docdict['.'.join((place, name))] = doc
 
+add_newdoc("scipy.special", "sph_harm",
+    r"""
+    sph_harm(m, n, theta, phi)
+
+    Compute spherical harmonics.
+
+    .. math:: Y^m_n(\theta,\phi) = \sqrt{\frac{2n+1}{4\pi}\frac{(n-m)!}{(n+m)!}} e^{i m \theta} P^m_n(\cos(\phi))
+
+    Parameters
+    ----------
+    m : int
+       ``|m| <= n``; the order of the harmonic.
+    n : int
+       where `n` >= 0; the degree of the harmonic.  This is often called
+       ``l`` (lower case L) in descriptions of spherical harmonics.
+    theta : float
+       [0, 2*pi]; the azimuthal (longitudinal) coordinate.
+    phi : float
+       [0, pi]; the polar (colatitudinal) coordinate.
+
+    Returns
+    -------
+    y_mn : complex float
+       The harmonic :math:`Y^m_n` sampled at `theta` and `phi`
+
+    Notes
+    -----
+    There are different conventions for the meaning of input arguments
+    `theta` and `phi`.  We take `theta` to be the azimuthal angle and
+    `phi` to be the polar angle.  It is common to see the opposite
+    convention - that is `theta` as the polar angle and `phi` as the
+    azimuthal angle.
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 14.30. http://dlmf.nist.gov/14.30
+    """)
+
+add_newdoc("scipy.special", "_ellip_harm",
+    """
+    Internal function, use `ellip_harm` instead.
+    """)
+
+add_newdoc("scipy.special", "_ellip_norm",
+    """
+    Internal function, use `ellip_norm` instead.
+    """)
 
 add_newdoc("scipy.special", "_lambertw",
     """
@@ -277,8 +324,6 @@ add_newdoc("scipy.special", "boxcox",
     Returns `nan` if ``x < 0``.
     Returns `-inf` if ``x == 0`` and ``lmbda < 0``.
 
-    .. versionadded:: 0.14.0
-
     Parameters
     ----------
     x : array_like
@@ -290,6 +335,11 @@ add_newdoc("scipy.special", "boxcox",
     -------
     y : array
         Transformed data.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.14.0
 
     Examples
     --------
@@ -313,8 +363,6 @@ add_newdoc("scipy.special", "boxcox1p",
     Returns `nan` if ``x < -1``.
     Returns `-inf` if ``x == -1`` and ``lmbda < 0``.
 
-    .. versionadded:: 0.14.0
-
     Parameters
     ----------
     x : array_like
@@ -327,12 +375,87 @@ add_newdoc("scipy.special", "boxcox1p",
     y : array
         Transformed data.
 
+    Notes
+    -----
+
+    .. versionadded:: 0.14.0
+
     Examples
     --------
-    >> boxcox1p(1e-4, [0, 0.5, 1])
+    >>> boxcox1p(1e-4, [0, 0.5, 1])
     array([  9.99950003e-05,   9.99975001e-05,   1.00000000e-04])
     >>> boxcox1p([0.01, 0.1], 0.25)
     array([ 0.00996272,  0.09645476])
+    """)
+
+add_newdoc("scipy.special", "inv_boxcox",
+    """
+    inv_boxcox(y, lmbda)
+
+    Compute the inverse of the Box-Cox transformation.
+
+    Find ``x`` such that::
+
+        y = (x**lmbda - 1) / lmbda  if lmbda != 0
+            log(x)                  if lmbda == 0
+
+    Parameters
+    ----------
+    y : array_like
+        Data to be transformed.
+    lmbda : array_like
+        Power parameter of the Box-Cox transform.
+
+    Returns
+    -------
+    x : array
+        Transformed data.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    >>> y = boxcox([1, 4, 10], 2.5)
+    >>> inv_boxcox(y, 2.5)
+    array([1., 4., 10.])
+    """)
+
+add_newdoc("scipy.special", "inv_boxcox1p",
+    """
+    inv_boxcox1p(y, lmbda)
+
+    Compute the inverse of the Box-Cox transformation.
+
+    Find ``x`` such that::
+
+        y = ((1+x)**lmbda - 1) / lmbda  if lmbda != 0
+            log(1+x)                    if lmbda == 0
+
+    Parameters
+    ----------
+    y : array_like
+        Data to be transformed.
+    lmbda : array_like
+        Power parameter of the Box-Cox transform.
+
+    Returns
+    -------
+    x : array
+        Transformed data.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    >>> y = boxcox1p([1, 4, 10], 2.5)
+    >>> inv_boxcox1p(y, 2.5)
+    array([1., 4., 10.])
     """)
 
 add_newdoc("scipy.special", "btdtr",
@@ -419,7 +542,7 @@ add_newdoc("scipy.special", "chndtr",
     chndtr(x, df, nc)
 
     Non-central chi square cumulative distribution function
-    
+
     """)
 
 add_newdoc("scipy.special", "chndtrix",
@@ -486,20 +609,57 @@ add_newdoc("scipy.special", "ellipe",
 
     Complete elliptic integral of the second kind
 
-    ::
+    This function is defined as
 
-        integral(sqrt(1-m*sin(t)**2),t=0..pi/2)
+    .. math:: E(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{1/2} dt
+
+    Parameters
+    ----------
+    m : array_like
+        Defines the parameter of the elliptic integral.
+
+    Returns
+    -------
+    E : ndarray
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near  m = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipeinc : Incomplete elliptic integral of the second kind
     """)
 
 add_newdoc("scipy.special", "ellipeinc",
     """
-    ellipeinc(phi,m)
+    ellipeinc(phi, m)
 
     Incomplete elliptic integral of the second kind
 
-    ::
+    This function is defined as
 
-        integral(sqrt(1-m*sin(t)**2),t=0..phi)
+    .. math:: E(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{1/2} dt
+
+    Parameters
+    ----------
+    phi : array_like
+        amplitude of the elliptic integral.
+
+    m : array_like
+        parameter of the elliptic integral.
+
+    Returns
+    -------
+    E : ndarray
+        Value of the elliptic integral.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near m = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
     """)
 
 add_newdoc("scipy.special", "ellipj",
@@ -532,7 +692,7 @@ add_newdoc("scipy.special", "ellipkm1",
     """
     ellipkm1(p)
 
-    The complete elliptic integral of the first kind around m=1.
+    Complete elliptic integral of the first kind around m = 1
 
     This function is defined as
 
@@ -547,13 +707,15 @@ add_newdoc("scipy.special", "ellipkm1",
 
     Returns
     -------
-    K : array_like
+    K : ndarray
         Value of the elliptic integral.
 
     See Also
     --------
-    ellipk
-
+    ellipk : Complete elliptic integral of the first kind
+    ellipkinc : Incomplete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
@@ -562,9 +724,64 @@ add_newdoc("scipy.special", "ellipkinc",
 
     Incomplete elliptic integral of the first kind
 
-    ::
+    This function is defined as
 
-        integral(1/sqrt(1-m*sin(t)**2),t=0..phi)
+    .. math:: K(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{-1/2} dt
+
+    Parameters
+    ----------
+    phi : array_like
+        amplitude of the elliptic integral
+
+    m : array_like
+        parameter of the elliptic integral
+
+    Returns
+    -------
+    K : ndarray
+        Value of the elliptic integral
+
+    Notes
+    -----
+    This function is also called ``F(phi, m)``.
+
+    See Also
+    --------
+    ellipkm1 : Complete elliptic integral of the first kind, near  m = 1
+    ellipk : Complete elliptic integral of the first kind
+    ellipe : Complete elliptic integral of the second kind
+    ellipeinc : Incomplete elliptic integral of the second kind
+
+    """)
+
+add_newdoc("scipy.special", "entr",
+    r"""
+    entr(x)
+
+    Elementwise function for computing entropy.
+
+    .. math:: \text{entr}(x) = \begin{cases} - x \log(x) & x > 0  \\ 0 & x = 0 \\ -\infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.
+
+    Returns
+    -------
+    res : ndarray
+        The value of the elementwise entropy function at the given points x.
+
+    See Also
+    --------
+    kl_div, rel_entr
+
+    Notes
+    -----
+    This function is concave.
+
+    .. versionadded:: 0.14.0
+
     """)
 
 add_newdoc("scipy.special", "erf",
@@ -625,6 +842,9 @@ add_newdoc("scipy.special", "erfi",
 
     Imaginary error function, -i erf(i z).
 
+    Notes
+    -----
+
     .. versionadded:: 0.12.0
 
     References
@@ -639,6 +859,9 @@ add_newdoc("scipy.special", "erfcx",
     erfcx(x)
 
     Scaled complementary error function, exp(x^2) erfc(x).
+
+    Notes
+    -----
 
     .. versionadded:: 0.12.0
 
@@ -804,8 +1027,6 @@ add_newdoc('scipy.special', 'expit',
     The expit function, also known as the logistic function, is defined as
     expit(x) = 1/(1+exp(-x)). It is the inverse of the logit function.
 
-    .. versionadded:: 0.10.0
-
     Parameters
     ----------
     x : ndarray
@@ -819,9 +1040,12 @@ add_newdoc('scipy.special', 'expit',
 
     Notes
     -----
-    As a ufunc logit takes a number of optional
+    As a ufunc expit takes a number of optional
     keyword arguments. For more information
     see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 0.10.0
+
     """)
 
 add_newdoc("scipy.special", "expm1",
@@ -847,7 +1071,7 @@ add_newdoc("scipy.special", "fdtr",
     fdtr(dfn, dfd, x)
 
     F cumulative distribution function
-    
+
     Returns the area from zero to x under the F density function (also
     known as Snedcor's density or the variance ratio density).  This
     is the density of X = (unum/dfn)/(uden/dfd), where unum and uden
@@ -919,7 +1143,7 @@ add_newdoc("scipy.special", "gamma",
     gamma(z)
 
     Gamma function
-    
+
     The gamma function is often referred to as the generalized
     factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
     n!`` for natural number *n*.
@@ -930,9 +1154,9 @@ add_newdoc("scipy.special", "gammainc",
     gammainc(a, x)
 
     Incomplete gamma function
-    
+
     Defined as::
-    
+
         1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)
 
     `a` must be positive and `x` must be >= 0.
@@ -1241,6 +1465,34 @@ add_newdoc("scipy.special", "hankel2e",
         Argument
     """)
 
+add_newdoc("scipy.special", "huber",
+    r"""
+    huber(delta, r)
+
+    Huber loss function.
+
+    .. math:: \text{huber}(\delta, r) = \begin{cases} \infty & \delta < 0  \\ \frac{1}{2}r^2 & 0 \le \delta, | r | \le \delta \\ \delta ( |r| - \frac{1}{2}\delta ) & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    delta : ndarray
+        Input array, indicating the quadratic vs. linear loss changepoint.
+    r : ndarray
+        Input array, possibly representing residuals.
+
+    Returns
+    -------
+    res : ndarray
+        The computed Huber loss function values.
+
+    Notes
+    -----
+    This function is convex in r.
+
+    .. versionadded:: 0.15.0
+
+    """)
+
 add_newdoc("scipy.special", "hyp1f1",
     """
     hyp1f1(a, b, x)
@@ -1388,7 +1640,7 @@ add_newdoc("scipy.special", "itairy",
     itairy(x)
 
     Integrals of Airy functios
-    
+
     Calculates the integral of Airy functions from 0 to x
 
     Returns
@@ -1419,7 +1671,7 @@ add_newdoc("scipy.special", "itj0y0",
     itj0y0(x)
 
     Integrals of Bessel functions of order 0
-    
+
     Returns simple integrals from 0 to x of the zeroth order Bessel
     functions j0 and y0.
 
@@ -1471,7 +1723,7 @@ add_newdoc("scipy.special", "ive",
     """
     ive(v,z)
 
-    Exponentially scaled modified Bessel function of the first kind 
+    Exponentially scaled modified Bessel function of the first kind
 
     Defined as::
 
@@ -1496,7 +1748,12 @@ add_newdoc("scipy.special", "jn",
     """
     jn(n, x)
 
-    Bessel function of the first kind of integer order n
+    Bessel function of the first kind of integer order n.
+
+    Notes
+    -----
+    `jn` is an alias of `jv`.
+
     """)
 
 add_newdoc("scipy.special", "jv",
@@ -1600,6 +1857,38 @@ add_newdoc("scipy.special", "kerp",
     Derivative of the Kelvin function ker
     """)
 
+add_newdoc("scipy.special", "kl_div",
+    r"""
+    kl_div(x, y)
+
+    Elementwise function for computing Kullback-Leibler divergence.
+
+    .. math:: \mathrm{kl\_div}(x, y) = \begin{cases} x \log(x / y) - x + y & x > 0, y > 0 \\ y & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        First input array.
+    y : ndarray
+        Second input array.
+
+    Returns
+    -------
+    res : ndarray
+        Output array.
+
+    See Also
+    --------
+    entr, rel_entr
+
+    Notes
+    -----
+    This function is non-negative and is jointly convex in x and y.
+
+    .. versionadded:: 0.14.0
+
+    """)
+
 add_newdoc("scipy.special", "kn",
     """
     kn(n, x)
@@ -1671,8 +1960,6 @@ add_newdoc('scipy.special', 'logit',
     Note that logit(0) = -inf, logit(1) = inf, and logit(p)
     for p<0 or p>1 yields nan.
 
-    .. versionadded:: 0.10.0
-
     Parameters
     ----------
     x : ndarray
@@ -1689,6 +1976,9 @@ add_newdoc('scipy.special', 'logit',
     As a ufunc logit takes a number of optional
     keyword arguments. For more information
     see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 0.10.0
+
     """)
 
 add_newdoc("scipy.special", "lpmv",
@@ -1713,7 +2003,7 @@ add_newdoc("scipy.special", "mathieu_a",
     mathieu_a(m,q)
 
     Characteristic value of even Mathieu functions
-    
+
     Returns the characteristic value for the even solution,
     ``ce_m(z,q)``, of Mathieu's equation.
     """)
@@ -1897,7 +2187,7 @@ add_newdoc("scipy.special", "nbdtr",
     nbdtr(k, n, p)
 
     Negative binomial cumulative distribution function
-    
+
     Returns the sum of the terms 0 through k of the negative binomial
     distribution::
 
@@ -1946,42 +2236,201 @@ add_newdoc("scipy.special", "nbdtrin",
 
 add_newdoc("scipy.special", "ncfdtr",
     """
+    ncfdtr(dfn, dfd, nc, f)
+
+    Cumulative distribution function of the non-central F distribution.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+    nc : array_like
+        Noncentrality parameter.  Should be in range (0, 1e4).
+    f : array_like
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    cdf : float or ndarray
+        The calculated CDF.  If all inputs are scalar, the return will be a
+        float.  Otherwise it will be an array.
+
+    See Also
+    --------
+    ncdfdtri : Inverse CDF (iCDF) of the non-central F distribution.
+    ncdfdtridfd : Calculate dfd, given CDF and iCDF values.
+    ncdfdtridfn : Calculate dfn, given CDF and iCDF values.
+    ncdfdtrinc : Calculate noncentrality parameter, given CDF, iCDF, dfn, dfd.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Plot the CDF of the non-central F distribution, for nc=0.  Compare with the
+    F-distribution from scipy.stats:
+
+    >>> x = np.linspace(-1, 8, num=500)
+    >>> dfn = 3
+    >>> dfd = 2
+    >>> ncf_stats = stats.f.cdf(x, dfn, dfd)
+    >>> ncf_special = special.ncfdtr(dfn, dfd, 0, x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, ncf_stats, 'b-', lw=3)
+    >>> ax.plot(x, ncf_special, 'r-')
+    >>> plt.show()
+
     """)
 
 add_newdoc("scipy.special", "ncfdtri",
     """
-    """)
+    ncfdtri(p, dfn, dfd, nc)
 
-add_newdoc("scipy.special", "ncfdtrifn",
-    """
+    Inverse cumulative distribution function of the non-central F distribution.
+
+    See `ncfdtr` for more details.
+
     """)
 
 add_newdoc("scipy.special", "ncfdtridfd",
     """
+    ncfdtridfd(p, f, dfn, nc)
+
+    Calculate degrees of freedom (denominator) for the noncentral F-distribution.
+
+    See `ncfdtr` for more details.
+
     """)
 
 add_newdoc("scipy.special", "ncfdtridfn",
     """
+    ncfdtridfn(p, f, dfd, nc)
+
+    Calculate degrees of freedom (numerator) for the noncentral F-distribution.
+
+    See `ncfdtr` for more details.
+
     """)
 
 add_newdoc("scipy.special", "ncfdtrinc",
     """
+    ncfdtrinc(p, f, dfn, dfd)
+
+    Calculate non-centrality parameter for non-central F distribution.
+
+    See `ncfdtr` for more details.
+
     """)
 
 add_newdoc("scipy.special", "nctdtr",
     """
+    nctdtr(df, nc, t)
+
+    Cumulative distribution function of the non-central t distribution.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution.  Should be in range (0, inf).
+    nc : array_like
+        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+    t : array_like
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    cdf : float or ndarray
+        The calculated CDF.  If all inputs are scalar, the return will be a
+        float.  Otherwise it will be an array.
+
+    See Also
+    --------
+    nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
+    nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
+    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Plot the CDF of the non-central t distribution, for nc=0.  Compare with the
+    t-distribution from scipy.stats:
+
+    >>> x = np.linspace(-5, 5, num=500)
+    >>> df = 3
+    >>> nct_stats = stats.t.cdf(x, df)
+    >>> nct_special = special.nctdtr(df, 0, x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, nct_stats, 'b-', lw=3)
+    >>> ax.plot(x, nct_special, 'r-')
+    >>> plt.show()
+
     """)
 
 add_newdoc("scipy.special", "nctdtridf",
     """
+    nctdtridf(p, nc, t)
+
+    Calculate degrees of freedom for non-central t distribution.
+
+    See `nctdtr` for more details.
+
+    Parameters
+    ----------
+    p : array_like
+        CDF values, in range (0, 1].
+    nc : array_like
+        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+    t : array_like
+        Quantiles, i.e. the upper limit of integration.
+
     """)
 
 add_newdoc("scipy.special", "nctdtrinc",
     """
+    nctdtrinc(df, p, t)
+
+    Calculate non-centrality parameter for non-central t distribution.
+
+    See `nctdtr` for more details.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution.  Should be in range (0, inf).
+    p : array_like
+        CDF values, in range (0, 1].
+    t : array_like
+        Quantiles, i.e. the upper limit of integration.
+
     """)
 
 add_newdoc("scipy.special", "nctdtrit",
     """
+    nctdtrit(df, nc, p)
+
+    Inverse cumulative distribution function of the non-central t distribution.
+
+    See `nctdtr` for more details.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom of the distribution.  Should be in range (0, inf).
+    nc : array_like
+        Noncentrality parameter.  Should be in range (-1e6, 1e6).
+    p : array_like
+        CDF values, in range (0, 1].
+
     """)
 
 add_newdoc("scipy.special", "ndtr",
@@ -1989,7 +2438,7 @@ add_newdoc("scipy.special", "ndtr",
     ndtr(x)
 
     Gaussian cumulative distribution function
-    
+
     Returns the area under the standard Gaussian probability
     density function, integrated from minus infinity to x::
 
@@ -1999,10 +2448,54 @@ add_newdoc("scipy.special", "ndtr",
 
 add_newdoc("scipy.special", "nrdtrimn",
     """
+    nrdtrimn(p, x, std)
+
+    Calculate mean of normal distribution given other params.
+
+    Parameters
+    ----------
+    p : array_like
+        CDF values, in range (0, 1].
+    x : array_like
+        Quantiles, i.e. the upper limit of integration.
+    std : array_like
+        Standard deviation.
+
+    Returns
+    -------
+    mn : float or ndarray
+        The mean of the normal distribution.
+
+    See Also
+    --------
+    nrdtrimn, ndtr
+
     """)
 
 add_newdoc("scipy.special", "nrdtrisd",
     """
+    nrdtrisd(p, x, mn)
+
+    Calculate standard deviation of normal distribution given other params.
+
+    Parameters
+    ----------
+    p : array_like
+        CDF values, in range (0, 1].
+    x : array_like
+        Quantiles, i.e. the upper limit of integration.
+    mn : float or ndarray
+        The mean of the normal distribution.
+
+    Returns
+    -------
+    std : array_like
+        Standard deviation.
+
+    See Also
+    --------
+    nrdtristd, ndtr
+
     """)
 
 add_newdoc("scipy.special", "log_ndtr",
@@ -2034,7 +2527,7 @@ add_newdoc("scipy.special", "obl_ang1",
 
     Oblate spheroidal angular function of the first kind and its derivative
 
-    Computes the oblate sheroidal angular function of the first kind
+    Computes the oblate spheroidal angular function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2050,9 +2543,9 @@ add_newdoc("scipy.special", "obl_ang1_cv",
     """
     obl_ang1_cv(m, n, c, cv, x)
 
-    Oblate sheroidal angular function obl_ang1 for precomputed characteristic value
+    Oblate spheroidal angular function obl_ang1 for precomputed characteristic value
 
-    Computes the oblate sheroidal angular function of the first kind
+    Computes the oblate spheroidal angular function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2081,7 +2574,7 @@ add_newdoc("scipy.special", "obl_rad1",
 
     Oblate spheroidal radial function of the first kind and its derivative
 
-    Computes the oblate sheroidal radial function of the first kind
+    Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2097,9 +2590,9 @@ add_newdoc("scipy.special", "obl_rad1_cv",
     """
     obl_rad1_cv(m,n,c,cv,x)
 
-    Oblate sheroidal radial function obl_rad1 for precomputed characteristic value
+    Oblate spheroidal radial function obl_rad1 for precomputed characteristic value
 
-    Computes the oblate sheroidal radial function of the first kind
+    Computes the oblate spheroidal radial function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2118,7 +2611,7 @@ add_newdoc("scipy.special", "obl_rad2",
 
     Oblate spheroidal radial function of the second kind and its derivative.
 
-    Computes the oblate sheroidal radial function of the second kind
+    Computes the oblate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2134,9 +2627,9 @@ add_newdoc("scipy.special", "obl_rad2_cv",
     """
     obl_rad2_cv(m,n,c,cv,x)
 
-    Oblate sheroidal radial function obl_rad2 for precomputed characteristic value
+    Oblate spheroidal radial function obl_rad2 for precomputed characteristic value
 
-    Computes the oblate sheroidal radial function of the second kind
+    Computes the oblate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2171,7 +2664,7 @@ add_newdoc("scipy.special", "pbvv",
     pbvv(v,x)
 
     Parabolic cylinder function V
-    
+
     Returns the parabolic cylinder function Vv(x) in v and the
     derivative, Vv'(x) in vp.
 
@@ -2268,7 +2761,7 @@ add_newdoc("scipy.special", "pro_ang1",
 
     Prolate spheroidal angular function of the first kind and its derivative
 
-    Computes the prolate sheroidal angular function of the first kind
+    Computes the prolate spheroidal angular function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2284,9 +2777,9 @@ add_newdoc("scipy.special", "pro_ang1_cv",
     """
     pro_ang1_cv(m,n,c,cv,x)
 
-    Prolate sheroidal angular function pro_ang1 for precomputed characteristic value
+    Prolate spheroidal angular function pro_ang1 for precomputed characteristic value
 
-    Computes the prolate sheroidal angular function of the first kind
+    Computes the prolate spheroidal angular function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2315,7 +2808,7 @@ add_newdoc("scipy.special", "pro_rad1",
 
     Prolate spheroidal radial function of the first kind and its derivative
 
-    Computes the prolate sheroidal radial function of the first kind
+    Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
@@ -2331,9 +2824,9 @@ add_newdoc("scipy.special", "pro_rad1_cv",
     """
     pro_rad1_cv(m,n,c,cv,x)
 
-    Prolate sheroidal radial function pro_rad1 for precomputed characteristic value
+    Prolate spheroidal radial function pro_rad1 for precomputed characteristic value
 
-    Computes the prolate sheroidal radial function of the first kind
+    Computes the prolate spheroidal radial function of the first kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2352,9 +2845,9 @@ add_newdoc("scipy.special", "pro_rad2",
 
     Prolate spheroidal radial function of the secon kind and its derivative
 
-    Computes the prolate sheroidal radial function of the second kind
+    Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and |x|<1.0.
+    and n>=m, spheroidal parameter c and ``|x| < 1.0``.
 
     Returns
     -------
@@ -2368,9 +2861,9 @@ add_newdoc("scipy.special", "pro_rad2_cv",
     """
     pro_rad2_cv(m,n,c,cv,x)
 
-    Prolate sheroidal radial function pro_rad2 for precomputed characteristic value
+    Prolate spheroidal radial function pro_rad2 for precomputed characteristic value
 
-    Computes the prolate sheroidal radial function of the second kind
+    Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to x) for mode parameters m>=0
     and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
@@ -2381,6 +2874,34 @@ add_newdoc("scipy.special", "pro_rad2_cv",
         Value of the function
     sp
         Value of the derivative vs x
+    """)
+
+add_newdoc("scipy.special", "pseudo_huber",
+    r"""
+    pseudo_huber(delta, r)
+
+    Pseudo-Huber loss function.
+
+    .. math:: \mathrm{pseudo\_huber}(\delta, r) = \delta^2 \left( \sqrt{ 1 + \left( \frac{r}{\delta} \right)^2 } - 1 \right)
+
+    Parameters
+    ----------
+    delta : ndarray
+        Input array, indicating the soft quadratic vs. linear loss changepoint.
+    r : ndarray
+        Input array, possibly representing residuals.
+
+    Returns
+    -------
+    res : ndarray
+        The computed Pseudo-Huber loss function values.
+
+    Notes
+    -----
+    This function is convex in :math:`r`.
+
+    .. versionadded:: 0.15.0
+
     """)
 
 add_newdoc("scipy.special", "psi",
@@ -2401,6 +2922,38 @@ add_newdoc("scipy.special", "radian",
 
     Returns the angle given in (d)egrees, (m)inutes, and (s)econds in
     radians.
+    """)
+
+add_newdoc("scipy.special", "rel_entr",
+    r"""
+    rel_entr(x, y)
+
+    Elementwise function for computing relative entropy.
+
+    .. math:: \mathrm{rel\_entr}(x, y) = \begin{cases} x \log(x / y) & x > 0, y > 0 \\ 0 & x = 0, y \ge 0 \\ \infty & \text{otherwise} \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        First input array.
+    y : ndarray
+        Second input array.
+
+    Returns
+    -------
+    res : ndarray
+        Output array.
+
+    See Also
+    --------
+    entr, kl_div
+
+    Notes
+    -----
+    This function is jointly convex in x and y.
+
+    .. versionadded:: 0.14.0
+
     """)
 
 add_newdoc("scipy.special", "rgamma",
@@ -2432,9 +2985,9 @@ add_newdoc("scipy.special", "shichi",
     Returns
     -------
     shi
-        ``integral(sinh(t)/t,t=0..x)``
+        ``integral(sinh(t)/t, t=0..x)``
     chi
-        ``eul + ln x + integral((cosh(t)-1)/t,t=0..x)``
+        ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``
         where ``eul`` is Euler's constant.
     """)
 
@@ -2447,9 +3000,9 @@ add_newdoc("scipy.special", "sici",
     Returns
     -------
     si
-        ``integral(sin(t)/t,t=0..x)``
+        ``integral(sin(t)/t, t=0..x)``
     ci
-        ``eul + ln x + integral((cos(t) - 1)/t,t=0..x)``
+        ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``
         where ``eul`` is Euler's constant.
     """)
 
@@ -2462,7 +3015,7 @@ add_newdoc("scipy.special", "sindg",
 
 add_newdoc("scipy.special", "smirnov",
     """
-    smirnov(n,e)
+    smirnov(n, e)
 
     Kolmogorov-Smirnov complementary cumulative distribution function
 
@@ -2476,11 +3029,11 @@ add_newdoc("scipy.special", "smirnov",
 
 add_newdoc("scipy.special", "smirnovi",
     """
-    smirnovi(n,y)
+    smirnovi(n, y)
 
     Inverse to smirnov
 
-    Returns ``e`` such that ``smirnov(n,e) = y``.
+    Returns ``e`` such that ``smirnov(n, e) = y``.
     """)
 
 add_newdoc("scipy.special", "spence",
@@ -2556,7 +3109,7 @@ add_newdoc("scipy.special", "wofz",
     wofz(z)
 
     Faddeeva function
-    
+
     Returns the value of the Faddeeva function for complex argument::
 
         exp(-z**2)*erfc(-i*z)
@@ -2573,8 +3126,6 @@ add_newdoc("scipy.special", "xlogy",
 
     Compute ``x*log(y)`` so that the result is 0 if `x = 0`.
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     x : array_like
@@ -2587,6 +3138,11 @@ add_newdoc("scipy.special", "xlogy",
     z : array_like
         Computed x*log(y)
 
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
+
     """)
 
 add_newdoc("scipy.special", "xlog1py",
@@ -2594,8 +3150,6 @@ add_newdoc("scipy.special", "xlog1py",
     xlog1py(x, y)
 
     Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.
-
-    .. versionadded:: 0.13.0
 
     Parameters
     ----------
@@ -2608,6 +3162,11 @@ add_newdoc("scipy.special", "xlog1py",
     -------
     z : array_like
         Computed x*log1p(y)
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     """)
 

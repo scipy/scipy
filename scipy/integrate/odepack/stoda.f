@@ -253,6 +253,8 @@ c-----------------------------------------------------------------------
  230    y(i) = yh(i,1)
       call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       nfe = nfe + 1
       if (ipup .le. 0) go to 250
@@ -262,6 +264,8 @@ c preprocessed before starting the corrector iteration.  ipup is set
 c to 0 as an indicator that this has been done.
 c-----------------------------------------------------------------------
       call pjac (neq, y, yh, nyh, ewt, acor, savf, wm, iwm, f, jac)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       ipup = 0
       rc = 1.0d0
       nslp = nst
@@ -328,6 +332,8 @@ c-----------------------------------------------------------------------
       delp = del
       call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       nfe = nfe + 1
       go to 270
@@ -605,6 +611,8 @@ c-----------------------------------------------------------------------
  645    y(i) = yh(i,1)
       call srcma (rsav, isav, 1)
       call f (neq, tn, y, savf)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       nfe = nfe + 1
       do 650 i = 1,n

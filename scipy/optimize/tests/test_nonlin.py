@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, dec, TestCase, run_module_suite
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from scipy.optimize import nonlin, root
 from numpy import matrix, diag, dot
 from numpy.linalg import inv
@@ -115,7 +115,6 @@ class TestNonlin(object):
         pass
 
     def test_problem_nonlin(self):
-        """ Tests for nonlin functions """
         for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
             for func in SOLVERS.values():
                 if func in f.KNOWN_BAD.values():
@@ -124,8 +123,19 @@ class TestNonlin(object):
                     continue
                 yield self._check_nonlin_func, f, func
 
+    def test_tol_norm_called(self):
+        # Check that supplying tol_norm keyword to nonlin_solve works
+        self._tol_norm_used = False
+
+        def local_norm_func(x):
+            self._tol_norm_used = True
+            return np.absolute(x).max()
+
+        nonlin.newton_krylov(F, F.xin, f_tol=1e-2, maxiter=200, verbose=0,
+             tol_norm=local_norm_func)
+        assert_(self._tol_norm_used)
+
     def test_problem_root(self):
-        """ Tests for root """
         for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
             for meth in SOLVERS:
                 if meth in f.KNOWN_BAD:

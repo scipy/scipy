@@ -2,8 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, run_module_suite
-from scipy.stats import \
-    binned_statistic, binned_statistic_2d, binned_statistic_dd
+from scipy.stats import (binned_statistic, binned_statistic_2d,
+                         binned_statistic_dd)
+
+from scipy._lib.six import u
 
 
 class TestBinnedStatistic(object):
@@ -126,6 +128,16 @@ class TestBinnedStatistic(object):
         stat1, binx1, biny1, bc = binned_statistic_2d(x, y, v, 'mean', bins=5)
         stat2, binx2, biny2, bc = binned_statistic_2d(x, y, v, np.mean, bins=5)
 
+        assert_array_almost_equal(stat1, stat2)
+        assert_array_almost_equal(binx1, binx2)
+        assert_array_almost_equal(biny1, biny2)
+
+    def test_2d_mean_unicode(self):
+        x = self.x
+        y = self.y
+        v = self.v
+        stat1, binx1, biny1, bc = binned_statistic_2d(x, y, v, u('mean'), bins=5)
+        stat2, binx2, biny2, bc = binned_statistic_2d(x, y, v, np.mean, bins=5)
         assert_array_almost_equal(stat1, stat2)
         assert_array_almost_equal(binx1, binx2)
         assert_array_almost_equal(biny1, biny2)

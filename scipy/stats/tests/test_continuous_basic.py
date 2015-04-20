@@ -10,7 +10,7 @@ from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, NUMPY_BELOW_1_7,
-        check_edge_support, check_named_args)
+        check_edge_support, check_named_args, check_random_state_property)
 
 from scipy.stats._distr_params import distcont
 
@@ -24,6 +24,9 @@ distributions so that we can perform further testing of class methods.
 These tests currently check only/mostly for serious errors and exceptions,
 not for numerically exact results.
 """
+
+## Note that you need to add new distributions you want tested
+## to _distr_params
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
@@ -125,6 +128,7 @@ def test_cont_basic():
                       'pareto': 1.5, 'tukeylambda': 0.3}
             x = spec_x.get(distname, 0.5)
             yield check_named_args, distfn, x, arg, locscale_defaults, meths
+            yield check_random_state_property, distfn, arg
 
             # Entropy
             skp = npt.dec.skipif
@@ -182,6 +186,7 @@ def test_cont_basic_slow():
             elif distname == 'ksone':
                 arg = (3,)
             yield check_named_args, distfn, x, arg, locscale_defaults, meths
+            yield check_random_state_property, distfn, arg
 
             # Entropy
             skp = npt.dec.skipif

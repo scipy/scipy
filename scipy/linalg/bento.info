@@ -16,10 +16,24 @@ Library:
     Extension: _flinalg
         Sources:
             src/det.f, src/lu.f
-    Extension: calc_lwork
-        Sources:
-            src/calc_lwork.f
     Extension: _interpolative
         Sources:
              interpolative.pyf,
              src/id_dist/src/*.f
+    Extension: _calc_lwork
+        Sources:
+             src/calc_lwork.f
+    Extension: _solve_toeplitz
+        Sources:
+             _solve_toeplitz.c
+    Extension: cython_blas
+        Sources:
+            cython_blas.c,
+            _blas_subroutine_wrappers.f
+    Extension: cython_lapack
+        Sources:
+            cython_lapack.c,
+            _lapack_subroutine_wrappers.f
+    Extension: _decomp_update
+        Sources:
+            _decomp_update.c

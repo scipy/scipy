@@ -103,9 +103,16 @@ def main(argv):
                         help="Show build output rather than using a log file")
     parser.add_argument("--bench", action="store_true",
                         help="Run benchmark suite instead of test suite")
+    parser.add_argument("--bench-compare", action="append", metavar="COMMIT",
+                        help=("Compare benchmark results to COMMIT. "
+                              "Note that you need to commit your changes first!"))
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     args = parser.parse_args(argv)
+
+    if args.bench_compare:
+        args.bench = True
+        args.no_build = True # ASV does the building
 
     if args.lcov_html:
         # generate C code coverage output
@@ -118,6 +125,9 @@ def main(argv):
 
     if args.gcov:
         gcov_reset_counters()
+
+    if args.debug and args.bench:
+        print("*** Benchmarks should not be run against debug version; remove -g flag ***")
 
     if not args.no_build:
         site_dir = build_project(args)
@@ -164,6 +174,56 @@ def main(argv):
         extra_argv += ['--cover-html',
                        '--cover-html-dir='+dst_dir]
 
+    if args.bench:
+        # Run ASV
+        items = extra_argv
+        if args.tests:
+            items += args.tests
+        if args.submodule:
+            items += [args.submodule]
+
+        bench_args = []
+        for a in items:
+            bench_args.extend(['--bench', a])
+
+        if not args.bench_compare:
+            cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
+                   'run', '-n', '-e', '--python=same'] + bench_args
+            os.execv(sys.executable, [sys.executable] + cmd)
+            sys.exit(1)
+        else:
+            if len(args.bench_compare) == 1:
+                commit_a = args.bench_compare[0]
+                commit_b = 'HEAD'
+            elif len(args.bench_compare) == 2:
+                commit_a, commit_b = args.bench_compare
+            else:
+                p.error("Too many commits to compare benchmarks for")
+
+            # Check for uncommitted files
+            if commit_b == 'HEAD':
+                r1 = subprocess.call(['git', 'diff-index', '--quiet', '--cached', 'HEAD'])
+                r2 = subprocess.call(['git', 'diff-files', '--quiet'])
+                if r1 != 0 or r2 != 0:
+                    print("*"*80)
+                    print("WARNING: you have uncommitted changes --- these will NOT be benchmarked!")
+                    print("*"*80)
+
+            # Fix commit ids (HEAD is local to current repo)
+            p = subprocess.Popen(['git', 'rev-parse', commit_b], stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            commit_b = out.strip()
+
+            p = subprocess.Popen(['git', 'rev-parse', commit_a], stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            commit_a = out.strip()
+
+            cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
+                   '--current-repo', 'continuous', '-e', '-f', '1.05',
+                   commit_a, commit_b] + bench_args
+            os.execv(sys.executable, [sys.executable] + cmd)
+            sys.exit(1)
+
     test_dir = os.path.join(ROOT_DIR, 'build', 'test')
 
     if args.build_only:
@@ -172,10 +232,7 @@ def main(argv):
         modname = PROJECT_MODULE + '.' + args.submodule
         try:
             __import__(modname)
-            if args.bench:
-                test = sys.modules[modname].bench
-            else:
-                test = sys.modules[modname].test
+            test = sys.modules[modname].test
         except (ImportError, KeyError, AttributeError) as e:
             print("Cannot run tests for %s (%s)" % (modname, e))
             sys.exit(2)
@@ -194,16 +251,10 @@ def main(argv):
             extra_argv = extra_argv + tests[1:]
             kw['extra_argv'] = extra_argv
             from numpy.testing import Tester
-            if args.bench:
-                return Tester(tests[0]).bench(*a, **kw)
-            else:
-                return Tester(tests[0]).test(*a, **kw)
+            return Tester(tests[0]).test(*a, **kw)
     else:
         __import__(PROJECT_MODULE)
-        if args.bench:
-            test = sys.modules[PROJECT_MODULE].bench
-        else:
-            test = sys.modules[PROJECT_MODULE].test
+        test = sys.modules[PROJECT_MODULE].test
 
     # Run the tests under build/test
     try:
@@ -221,16 +272,11 @@ def main(argv):
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
-        if args.bench:
-            result = test(args.mode,
-                          verbose=args.verbose,
-                          extra_argv=extra_argv)
-        else:
-            result = test(args.mode,
-                          verbose=args.verbose,
-                          extra_argv=extra_argv,
-                          doctests=args.doctests,
-                          coverage=args.coverage)
+        result = test(args.mode,
+                      verbose=args.verbose,
+                      extra_argv=extra_argv,
+                      doctests=args.doctests,
+                      coverage=args.coverage)
     finally:
         os.chdir(cwd)
 

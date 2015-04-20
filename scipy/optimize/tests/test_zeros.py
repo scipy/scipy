@@ -3,8 +3,8 @@ from __future__ import division, print_function, absolute_import
 
 from math import sqrt, exp, sin, cos
 
-from numpy.testing import TestCase, assert_almost_equal, assert_warns, \
-                            assert_, run_module_suite, assert_allclose
+from numpy.testing import (TestCase, assert_almost_equal, assert_warns,
+                           assert_, run_module_suite, assert_allclose)
 
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros
@@ -56,6 +56,7 @@ class TestBasic(TestCase):
         func = lambda x: x**2
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
+
 
 if __name__ == '__main__':
     run_module_suite()

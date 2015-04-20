@@ -3,9 +3,9 @@
  * See polyn.c for data structures and discussion.
  */
 
+#include "mconf.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "mconf.h"
 
 /* Highest degree of polynomial to be handled
  * by the polyn.c subroutine package.  */

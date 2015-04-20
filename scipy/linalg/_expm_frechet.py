@@ -11,8 +11,6 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     """
     Frechet derivative of the matrix exponential of A in the direction E.
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     A : (N, N) array_like
@@ -28,7 +26,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     compute_expm : bool, optional
         Whether to compute also `expm_A` in addition to `expm_frechet_AE`.
         Default is True.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -57,6 +55,8 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     It is a sophisticated implementation which should take
     only about 3/8 as much time as the naive implementation.
     The asymptotics are the same.
+
+    .. versionadded:: 0.13.0
 
     References
     ----------
@@ -286,9 +286,9 @@ def vec(M):
 
     Parameters
     ----------
-    M : 2d array-like
+    M : 2d array_like
         Input matrix
-    
+
     Returns
     -------
     v : 1d ndarray
@@ -304,11 +304,11 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
 
     Parameters
     ----------
-    A : array-like with shape (N, N)
+    A : array_like with shape (N, N)
         Matrix to be expm'd.
     method : str, optional
         Extra keyword to be passed to expm_frechet.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -354,13 +354,11 @@ def expm_cond(A, check_finite=True):
     """
     Relative condition number of the matrix exponential in the Frobenius norm.
 
-    .. versionadded:: 0.14.0
-
     Parameters
     ----------
-    A : 2d array-like
+    A : 2d array_like
         Square input matrix with shape (N, N).
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -375,6 +373,8 @@ def expm_cond(A, check_finite=True):
     -----
     A faster estimate for the condition number in the 1-norm
     has been published but is not yet implemented in scipy.
+
+    .. versionadded:: 0.14.0
 
     See also
     --------
@@ -401,4 +401,3 @@ def expm_cond(A, check_finite=True):
 
     kappa = (K_norm * A_norm) / X_norm
     return kappa
-

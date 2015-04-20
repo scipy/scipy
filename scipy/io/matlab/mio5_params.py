@@ -130,6 +130,7 @@ NP_TO_MTYPES = {
     'u1': miUINT8,
     'S1': miUINT8,
     'U1': miUTF16,
+    'b1': miUINT8,  # not standard but seems MATLAB uses this (gh-4022)
     }
 
 
@@ -149,6 +150,7 @@ NP_TO_MXTYPES = {
     'u2': mxUINT16_CLASS,
     'u1': mxUINT8_CLASS,
     'S1': mxUINT8_CLASS,
+    'b1': mxUINT8_CLASS,  # not standard but seems MATLAB uses this
     }
 
 ''' Before release v7.1 (release 14) matlab (TM) used the system

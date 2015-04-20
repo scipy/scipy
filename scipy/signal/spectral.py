@@ -10,7 +10,7 @@ from .windows import get_window
 from ._spectral import lombscargle
 import warnings
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle']
 
@@ -163,7 +163,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         Defaults to 'hanning'.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg / 2``.  Defaults to None.
     nfft : int, optional
@@ -291,6 +291,11 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
             raise ValueError('window is longer than x.')
         nperseg = win.shape[0]
 
+    # numpy 1.5.1 doesn't have result_type.
+    outdtype = (np.array([x[0]]) * np.array([1], 'f')).dtype.char.lower()
+    if win.dtype != outdtype:
+        win = win.astype(outdtype)
+
     if scaling == 'density':
         scale = 1.0 / (fs * (win*win).sum())
     elif scaling == 'spectrum':
@@ -329,7 +334,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         outshape = list(x.shape)
         if nfft % 2 == 0:  # even
             outshape[-1] = nfft // 2 + 1
-            Pxx = np.empty(outshape, x.dtype)
+            Pxx = np.empty(outshape, outdtype)
             for k, ind in enumerate(indices):
                 x_dt = detrend_func(x[..., ind:ind+nperseg])
                 xft = fftpack.rfft(x_dt*win, nfft)
@@ -348,7 +353,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
                                     / (k+1.0)
         else:  # odd
             outshape[-1] = (nfft+1) // 2
-            Pxx = np.empty(outshape, x.dtype)
+            Pxx = np.empty(outshape, outdtype)
             for k, ind in enumerate(indices):
                 x_dt = detrend_func(x[..., ind:ind+nperseg])
                 xft = fftpack.rfft(x_dt*win, nfft)

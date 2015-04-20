@@ -174,7 +174,7 @@ C
            QM(0,0)=Q0
            QM(0,1)=X*Q0-1.0D0
            QM(1,0)=-1.0D0/XQ
-           QM(1,1)=-XQ*(Q0+X/(1.0D0-X*X))
+           QM(1,1)=-LS*XQ*(Q0+X/(1.0D0-X*X))
            DO 15 I=0,1
            DO 15 J=2,N
               QM(I,J)=((2.0D0*J-1.0D0)*X*QM(I,J-1)
@@ -2359,66 +2359,81 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION XA(NT),XB(NT),XC(NT),XD(NT)
         PI=3.141592653589793D0
-        RT0=0.0D0
         RT=0.0D0
         DO 15 I=1,NT
+           RT0=0D0
            IF (KF.EQ.1) THEN
-              U=3.0*PI*(4.0*I-1)/8.0D0
+              U=3.0D0*PI*(4.0D0*I-1)/8.0D0
               U1=1/(U*U)
-              RT0=-(U*U)**(1.0/3.0)*((((-15.5902*U1+.929844)*U1
-     &            -.138889)*U1+.10416667D0)*U1+1.0D0)
            ELSE IF (KF.EQ.2) THEN
               IF (I.EQ.1) THEN
-                 RT0=-1.17371
+                 RT0=-1.17371D0
               ELSE
-                 U=3.0*PI*(4.0*I-3.0)/8.0
-                 U1=1.0D0/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((-15.5902*U1+.929844)*U1
-     &               -.138889)*U1+.10416667)*U1+1.0)
+                 U=3.0D0*PI*(4.0D0*I-3.0D0)/8.0D0
+                 U1=1/(U*U)
               ENDIF
+           ENDIF
+           IF (RT0.EQ.0) THEN
+C             DLMF 9.9.18
+              RT0=-(U*U)**(1.0D0/3.0D0)*(
+     &            + 1D0
+     &            + U1*(5D0/48D0
+     &            + U1*(-5D0/36D0
+     &            + U1*(77125D0/82944D0
+     &            + U1*(-108056875D0/6967296D0)))))
            ENDIF
 10         X=RT0
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AI/AD
            IF (KF.EQ.2) RT=RT0-BI/BD
-           IF (DABS((RT-RT0)/RT).GT.1.D-9) THEN
+           ERR=DABS((RT-RT0)/RT)
+           IF (ERR.GT.1.D-12) THEN
               RT0=RT
               GOTO 10
            ELSE
               XA(I)=RT
+              IF (ERR.GT.1D-14) CALL AIRYB(RT,AI,BI,AD,BD)
               IF (KF.EQ.1) XD(I)=AD
               IF (KF.EQ.2) XD(I)=BD
            ENDIF
 15      CONTINUE
         DO 25 I=1,NT
+           RT0=0D0
            IF (KF.EQ.1) THEN
               IF (I.EQ.1) THEN
-                 RT0=-1.01879
+                 RT0=-1.01879D0
               ELSE
-                 U=3.0*PI*(4.0*I-3.0)/8.0
+                 U=3.0D0*PI*(4.0D0*I-3.0D0)/8.0D0
                  U1=1/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((15.0168*U1-.873954)
-     &            *U1+.121528)*U1-.145833D0)*U1+1.0D0)
               ENDIF
            ELSE IF (KF.EQ.2) THEN
               IF (I.EQ.1) THEN
-                 RT0=-2.29444
+                 RT0=-2.29444D0
               ELSE
-                 U=3.0*PI*(4.0*I-1.0)/8.0
-                 U1=1.0/(U*U)
-                 RT0=-(U*U)**(1.0/3.0)*((((15.0168*U1-.873954)
-     &               *U1+.121528)*U1-.145833)*U1+1.0)
+                 U=3.0D0*PI*(4.0D0*I-1.0D0)/8.0D0
+                 U1=1/(U*U)
               ENDIF
            ENDIF
+           IF (RT0.EQ.0) THEN
+C             DLMF 9.9.19
+              RT0=-(U*U)**(1.0D0/3.0D0)*(
+     &            + 1D0
+     &            + U1*(-7D0/48D0
+     &            + U1*(+35D0/288D0
+     &            + U1*(-181223D0/207360D0
+     &            + U1*(18683371D0/1244160D0)))))
+           END IF
 20         X=RT0
            CALL AIRYB(X,AI,BI,AD,BD)
            IF (KF.EQ.1) RT=RT0-AD/(AI*X)
            IF (KF.EQ.2) RT=RT0-BD/(BI*X)
-           IF (DABS((RT-RT0)/RT).GT.1.0D-9) THEN
+           ERR=DABS((RT-RT0)/RT)
+           IF (ERR.GT.1.0D-12) THEN
               RT0=RT
               GOTO 20
            ELSE
               XB(I)=RT
+              IF (ERR.GT.1D-14) CALL AIRYB(RT,AI,BI,AD,BD)
               IF (KF.EQ.1) XC(I)=AI
               IF (KF.EQ.2) XC(I)=BI
            ENDIF
@@ -7460,7 +7475,7 @@ C                BD --- Bi'(x)
 C       =======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION CK(41),DK(41)
+        DIMENSION CK(51),DK(51)
         EPS=1.0D-15
         PI=3.141592653589793D0
         C1=0.355028053887817D0
@@ -7511,20 +7526,34 @@ C
 45         AD=C1*DF-C2*DG
            BD=SR3*(C1*DF+C2*DG)
         ELSE
+           KM=INT(24.5-XA)
+           IF (XA.LT.6.0) KM=14
+           IF (XA.GT.15.0) KM=10
+           IF (X.GT.0.0D0) THEN
+              KMAX=KM
+           ELSE
+C             Choose cutoffs so that the remainder term in asymptotic
+C             expansion is epsilon size. The X<0 branch needs to be fast
+C             in order to make AIRYZO efficient
+              IF (XA.GT.70.0) KM=3
+              IF (XA.GT.500.0) KM=2
+              IF (XA.GT.1000.0) KM=1
+              KM2=KM
+              IF (XA.GT.150.0) KM2=1
+              IF (XA.GT.3000.0) KM2=0
+              KMAX=2*KM+1
+           ENDIF
            XE=XA*XQ/1.5D0
            XR1=1.0D0/XE
            XAR=1.0D0/XQ
            XF=DSQRT(XAR)
            RP=0.5641895835477563D0
            R=1.0D0
-           DO 50 K=1,40
+           DO 50 K=1,KMAX
               R=R*(6.0D0*K-1.0D0)/216.0D0*(6.0D0*K-3.0D0)
      &          /K*(6.0D0*K-5.0D0)/(2.0D0*K-1.0D0)
               CK(K)=R
 50            DK(K)=-(6.0D0*K+1.0D0)/(6.0D0*K-1.0D0)*CK(K)
-           KM=INT(24.5-XA)
-           IF (XA.LT.6.0) KM=14
-           IF (XA.GT.15.0) KM=10
            IF (X.GT.0.0D0) THEN
               SAI=1.0D0
               SAD=1.0D0
@@ -7559,7 +7588,7 @@ C
               SSB=CK(1)*XR1
               SDB=DK(1)*XR1
               R=XR1
-              DO 70 K=1,KM
+              DO 70 K=1,KM2
                  R=-R*XR2
                  SSB=SSB+CK(2*K+1)*R
 70               SDB=SDB+DK(2*K+1)*R

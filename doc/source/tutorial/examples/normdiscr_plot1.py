@@ -39,7 +39,7 @@ normline = plt.plot(ind+width/2.0, stats.norm.pdf(ind, scale=nd_std),
 
 plt.ylabel('Frequency')
 plt.title('Frequency and Probability of normdiscrete')
-plt.xticks(ind+width, ind )
+plt.xticks(ind+width, ind)
 plt.legend((rects1[0], rects2[0]), ('true', 'sample'))
 
 plt.show()

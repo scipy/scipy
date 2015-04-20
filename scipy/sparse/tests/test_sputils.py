@@ -3,8 +3,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_equal, dec, \
-     assert_array_equal
+from numpy.testing import (TestCase, run_module_suite, assert_equal,
+                           assert_array_equal)
 from scipy.sparse import sputils
 
 
@@ -78,12 +78,6 @@ class TestSparseUtils(TestCase):
         y, j1 = sputils._compat_unique_impl(x, return_index=True)
         j2 = np.array([0, 7, 14, 21, 28, 35, 42, 49, 56, 63])
         assert_array_equal(j1, j2)
-
-    def test_compat_bincount(self):
-        x = np.arange(4)
-        y1 = sputils._compat_bincount_impl(x, minlength=10)
-        y2 = np.array([1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
-        assert_array_equal(y1, y2)
 
 
 if __name__ == "__main__":

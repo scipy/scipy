@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 
 import numpy
 from numpy import asarray_chkfinite, asarray, zeros, r_, diag
-from scipy.linalg import calc_lwork
 
 # Local imports.
 from .misc import LinAlgError, _datacopied
@@ -36,7 +35,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
         Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -93,10 +92,17 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         raise ValueError('expected matrix')
     m,n = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
-    gesdd, = get_lapack_funcs(('gesdd',), (a1,))
 
-    lwork = calc_lwork.gesdd(gesdd.typecode, m, n, compute_uv)[1]
-    u,s,v,info = gesdd(a1,compute_uv=compute_uv, lwork=lwork,
+    gesdd, gesdd_lwork = get_lapack_funcs(('gesdd', 'gesdd_lwork'), (a1,))
+
+    # compute optimal lwork
+    lwork, info = gesdd_lwork(a1.shape[0], a1.shape[1], compute_uv=compute_uv, full_matrices=full_matrices)
+    if info != 0:
+        raise ValueError('work array size computation for internal gesdd failed: %d' % info)
+    lwork = int(lwork.real)
+
+    # perform decomposition
+    u,s,v,info = gesdd(a1, compute_uv=compute_uv, lwork=lwork,
                        full_matrices=full_matrices, overwrite_a=overwrite_a)
 
     if info > 0:
@@ -121,7 +127,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
         Default is False.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -184,7 +190,7 @@ def orth(A):
 
     Parameters
     ----------
-    A : (M, N) ndarray
+    A : (M, N) array_like
         Input array
 
     Returns
@@ -198,7 +204,7 @@ def orth(A):
     svd : Singular value decomposition of a matrix
 
     """
-    u, s, vh = svd(A)
+    u, s, vh = svd(A, full_matrices=False)
     M, N = A.shape
     eps = numpy.finfo(float).eps
     tol = max(M,N) * numpy.amax(s) * eps

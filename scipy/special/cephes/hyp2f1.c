@@ -67,8 +67,8 @@
  * Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
  */
 
-#include <stdlib.h>
 #include "mconf.h"
+#include <stdlib.h>
 
 #ifdef DEC
 #define EPS 1.0e-14

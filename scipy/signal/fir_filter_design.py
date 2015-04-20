@@ -63,7 +63,7 @@ def kaiser_atten(numtaps, width):
 
     Parameters
     ----------
-    N : int
+    numtaps : int
         The number of taps in the FIR filter.
     width : float
         The desired width of the transition region between passband and
@@ -125,7 +125,7 @@ def kaiserord(ripple, width):
     if A < 8:
         # Formula for N is not valid in this range.
         raise ValueError("Requested maximum ripple attentuation %f is too "
-                            "small for the Kaiser formula." % A)
+                         "small for the Kaiser formula." % A)
     beta = kaiser_beta(A)
 
     # Kaiser's formula (as given in Oppenheim and Schafer) is for the filter
@@ -136,7 +136,7 @@ def kaiserord(ripple, width):
 
 
 def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
-                                                        scale=True, nyq=1.0):
+           scale=True, nyq=1.0):
     """
     FIR filter design using the window method.
 
@@ -160,18 +160,18 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         latter case, the frequencies in `cutoff` should be positive and
         monotonically increasing between 0 and `nyq`.  The values 0 and
         `nyq` must not be included in `cutoff`.
-    width : float or None
+    width : float or None, optional
         If `width` is not None, then assume it is the approximate width
         of the transition region (expressed in the same units as `nyq`)
         for use in Kaiser FIR filter design.  In this case, the `window`
         argument is ignored.
-    window : string or tuple of string and parameter values
+    window : string or tuple of string and parameter values, optional
         Desired window to use. See `scipy.signal.get_window` for a list
         of windows and required parameters.
-    pass_zero : bool
+    pass_zero : bool, optional
         If True, the gain at the frequency 0 (i.e. the "DC gain") is 1.
         Otherwise the DC gain is 0.
-    scale : bool
+    scale : bool, optional
         Set to True to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency.
         That frequency is either:
@@ -182,7 +182,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
           `nyq` (i.e the filter is a single band highpass filter);
           center of first passband otherwise
 
-    nyq : float
+    nyq : float, optional
         Nyquist frequency.  Each frequency in `cutoff` must be between 0
         and `nyq`.
 
@@ -264,7 +264,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     pass_nyquist = bool(cutoff.size & 1) ^ pass_zero
     if pass_nyquist and numtaps % 2 == 0:
         raise ValueError("A filter with an even number of coefficients must "
-                            "have zero response at the Nyquist rate.")
+                         "have zero response at the Nyquist rate.")
 
     # Insert 0 and/or 1 at the ends of cutoff so that the length of cutoff
     # is even, and each pair in cutoff corresponds to passband.
@@ -308,7 +308,8 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 #
 # Rewritten by Warren Weckesser, 2010.
 
-def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisymmetric=False):
+def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0,
+            antisymmetric=False):
     """
     FIR filter design using the window method.
 
@@ -342,10 +343,10 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
         Window function to use. Default is "hamming".  See
         `scipy.signal.get_window` for the complete list of possible values.
         If None, no window function is applied.
-    nyq : float
+    nyq : float, optional
         Nyquist frequency.  Each frequency in `freq` must be between 0 and
         `nyq` (inclusive).
-    antisymmetric : bool
+    antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
 
@@ -435,9 +436,11 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0, antisym
             ftype = 1
 
     if ftype == 2 and gain[-1] != 0.0:
-        raise ValueError("A Type II filter must have zero gain at the Nyquist rate.")
+        raise ValueError("A Type II filter must have zero gain at the "
+                         "Nyquist rate.")
     elif ftype == 3 and (gain[0] != 0.0 or gain[-1] != 0.0):
-        raise ValueError("A Type III filter must have zero gain at zero and Nyquist rates.")
+        raise ValueError("A Type III filter must have zero gain at zero "
+                         "and Nyquist rates.")
     elif ftype == 4 and gain[0] != 0.0:
         raise ValueError("A Type IV filter must have zero gain at zero rate.")
 

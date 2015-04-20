@@ -57,6 +57,8 @@ import numpy as np
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
 
+eps = np.finfo(np.float64).eps
+
 
 def _sym_ortho(a, b):
     """
@@ -117,19 +119,19 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperatorLinear}
+    A : {sparse matrix, ndarray, LinearOperator}
         Representation of an m-by-n matrix.  It is required that
         the linear operator can produce ``Ax`` and ``A^T x``.
     b : (m,) ndarray
         Right-hand side vector ``b``.
     damp : float
         Damping coefficient.
-    atol, btol : float
+    atol, btol : float, optional
         Stopping tolerances. If both are 1.0e-9 (say), the final
         residual norm should be accurate to about 9 digits.  (The
         final x will usually have fewer correct digits, depending on
         cond(A) and the size of damp.)
-    conlim : float
+    conlim : float, optional
         Another stopping tolerance.  lsqr terminates if an estimate of
         ``cond(A)`` exceeds `conlim`.  For compatible systems ``Ax =
         b``, `conlim` could be as large as 1.0e+12 (say).  For
@@ -137,11 +139,11 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         Maximum precision can be obtained by setting ``atol = btol =
         conlim = zero``, but the number of iterations may then be
         excessive.
-    iter_lim : int
+    iter_lim : int, optional
         Explicit limitation on number of iterations (for safety).
-    show : bool
+    show : bool, optional
         Display an iteration log.
-    calc_var : bool
+    calc_var : bool, optional
         Whether to estimate diagonals of ``(A'A + damp^2*I)^{-1}``.
 
     Returns
@@ -279,7 +281,6 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     itn = 0
     istop = 0
-    nstop = 0
     ctol = 0
     if conlim > 0:
         ctol = 1/conlim
@@ -298,8 +299,6 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     Set up the first vectors u and v for the bidiagonalization.
     These satisfy  beta*u = b,  alfa*v = A'u.
     """
-    __xm = np.zeros(m)  # a matrix for temporary holding
-    __xn = np.zeros(n)  # a matrix for temporary holding
     v = np.zeros(n)
     u = b
     x = np.zeros(n)
@@ -432,8 +431,8 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         # Now use these norms to estimate certain other quantities,
         # some of which will be small near a solution.
         test1 = rnorm / bnorm
-        test2 = arnorm / (anorm * rnorm)
-        test3 = 1 / acond
+        test2 = arnorm / (anorm * rnorm + eps)
+        test3 = 1 / (acond + eps)
         t1 = test1 / (1 + anorm * xnorm / bnorm)
         rtol = btol + atol * anorm * xnorm / bnorm
 

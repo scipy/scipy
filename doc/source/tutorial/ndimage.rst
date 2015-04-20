@@ -1674,10 +1674,10 @@ provided to these functions must match exactly that what they
 expect. Therefore we give here the prototypes of the callback
 functions. All these callback functions accept a void
 *callback_data* pointer that must be wrapped in a :ctype:`PyCObject` using
-the Python :cfunc:`PyCObject_FromVoidPtrAndDesc` function, which can also
+the Python :c:func:`PyCObject_FromVoidPtrAndDesc` function, which can also
 accept a pointer to a destructor function to free any memory
 allocated for *callback_data*. If *callback_data* is not needed,
-:cfunc:`PyCObject_FromVoidPtr` may be used instead. The callback
+:c:func:`PyCObject_FromVoidPtr` may be used instead. The callback
 functions must return an integer error status that is equal to zero
 if something went wrong, or 1 otherwise. If an error occurs, you
 should normally set the python error status with an informative

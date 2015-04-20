@@ -13,7 +13,6 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('spatial', parent_package, top_path)
 
     config.add_data_dir('tests')
-    config.add_data_dir('benchmarks')
 
     qhull_src = ['geom2.c', 'geom.c', 'global.c', 'io.c', 'libqhull.c',
                  'mem.c', 'merge.c', 'poly2.c', 'poly.c', 'qset.c',
@@ -36,7 +35,8 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('ckdtree', sources=['ckdtree.c'])  # FIXME: cython
 
     config.add_extension('_distance_wrap',
-        sources=[join('src', 'distance_wrap.c'), join('src', 'distance.c')],
+        sources=[join('src', 'distance_wrap.c')],
+        depends=[join('src', 'distance_impl.h')],
         include_dirs=[get_numpy_include_dirs()])
 
     return config

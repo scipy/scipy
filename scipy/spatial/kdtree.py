@@ -102,8 +102,8 @@ class Rectangle(object):
         ----------
         d : int
             Axis to split hyperrectangle along.
-        split :
-            Input.
+        split : float
+            Position along axis `d` to split at.
 
         """
         mid = np.copy(self.maxes)
@@ -399,18 +399,18 @@ class KDTree(object):
         ----------
         x : array_like, last dimension self.m
             An array of points to query.
-        k : integer
+        k : int, optional
             The number of nearest neighbors to return.
-        eps : nonnegative float
+        eps : nonnegative float, optional
             Return approximate nearest neighbors; the kth returned value
             is guaranteed to be no further than (1+eps) times the
             distance to the real kth nearest neighbor.
-        p : float, 1<=p<=infinity
+        p : float, 1<=p<=infinity, optional
             Which Minkowski p-norm to use.
             1 is the sum-of-absolute-values "Manhattan" distance
             2 is the usual Euclidean distance
             infinity is the maximum-coordinate-difference distance
-        distance_upper_bound : nonnegative float
+        distance_upper_bound : nonnegative float, optional
             Return only neighbors within this distance. This is used to prune
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
@@ -418,15 +418,16 @@ class KDTree(object):
 
         Returns
         -------
-        d : array of floats
+        d : float or array of floats
             The distances to the nearest neighbors.
             If x has shape tuple+(self.m,), then d has shape tuple if
-            k is one, or tuple+(k,) if k is larger than one.  Missing
-            neighbors are indicated with infinite distances.  If k is None,
+            k is one, or tuple+(k,) if k is larger than one. Missing
+            neighbors (e.g. when k > n or distance_upper_bound is
+            given) are indicated with infinite distances.  If k is None,
             then d is an object array of shape tuple, containing lists
             of distances. In either case the hits are sorted by distance
             (nearest first).
-        i : array of integers
+        i : integer or array of integers
             The locations of the neighbors in self.data. i is the same
             shape as d.
 
@@ -434,7 +435,7 @@ class KDTree(object):
         --------
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 2:8]
-        >>> tree = spatial.KDTree(zip(x.ravel(), y.ravel()))
+        >>> tree = spatial.KDTree(list(zip(x.ravel(), y.ravel())))
         >>> tree.data
         array([[0, 2],
                [0, 3],
@@ -469,6 +470,8 @@ class KDTree(object):
         >>> pts = np.array([[0, 0], [2.1, 2.9]])
         >>> tree.query(pts)
         (array([ 2.        ,  0.14142136]), array([ 0, 13]))
+        >>> tree.query(pts[0])
+        (2.0, 0)
 
         """
         x = np.asarray(x)
@@ -800,7 +803,7 @@ class KDTree(object):
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
             a single tree traversal.
-        p : float, 1<=p<=infinity
+        p : float, 1<=p<=infinity, optional
             Which Minkowski p-norm to use
 
         Returns
@@ -913,7 +916,7 @@ class KDTree(object):
         return result
 
 
-def distance_matrix(x,y,p=2,threshold=1000000):
+def distance_matrix(x, y, p=2, threshold=1000000):
     """
     Compute the distance matrix.
 

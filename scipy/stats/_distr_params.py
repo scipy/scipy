@@ -18,6 +18,7 @@ distcont = [
     ['dweibull', (2.0685080649914673,)],
     ['erlang', (10,)],
     ['expon', ()],
+    ['exponnorm', (1.5,)],
     ['exponpow', (2.697119160358469,)],
     ['exponweib', (2.8923945291034436, 1.9505288745913174)],
     ['f', (29, 18)],
@@ -35,6 +36,8 @@ distcont = [
     ['gengamma', (4.4162385429431925, 3.1193091679242761)],
     ['genhalflogistic', (0.77274727809929322,)],
     ['genlogistic', (0.41192440799679475,)],
+    ['gennorm', (1.2988442399460265,)],
+    ['halfgennorm', (0.6748054997000371,)],
     ['genpareto', (0.1,)],   # use case with finite moments
     ['gilbrat', ()],
     ['gompertz', (0.94743713075105251,)],
@@ -113,4 +116,3 @@ distdiscrete = [
     ['skellam', (15, 8)],
     ['zipf', (6.5,)]
 ]
-

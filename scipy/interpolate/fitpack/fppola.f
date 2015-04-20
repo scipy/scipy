@@ -20,7 +20,7 @@ c  ..local scalars..
      * f1,f2,f3,hui,huj,p,pi,pinv,piv,pi2,p1,p2,p3,r,ratio,si,sigma,
      * sq,store,uu,u2,u3,wi,zi,rn,one,two,three,con1,con4,con9,half,ten
       integer i,iband,iband3,iband4,ich1,ich3,ii,il,in,ipar,ipar1,irot,
-     * iter,i1,i2,i3,j,jl,jrot,j1,j2,k,l,la,lf,lh,ll,lu,lv,lwest,l1,l2,
+     * iter,i1,i2,i3,j,jrot,j1,j2,k,l,la,lf,lh,ll,lu,lv,lwest,l1,l2,
      * l3,l4,ncof,ncoff,nvv,nv4,nreg,nrint,nrr,nr1,nuu,nu4,num,num1,
      * numin,nvmin,rank,iband1
 c  ..local arrays..
@@ -374,7 +374,7 @@ c  add the contribution of the row to the sum of squares of residual
 c  right hand sides.
  360      fp = fp+zi**2
 c  find the number of the next data point in the panel.
- 370      in = nummer(in)
+          in = nummer(in)
           go to 210
  380    continue
 c  find dmax, the maximum value for the diagonal elements in the reduced
@@ -437,7 +437,7 @@ c  find for each interval the sum of squared residuals fpint for the
 c  data points having the coordinate belonging to that knot interval.
 c  calculate also coord which is the same sum, weighted by the position
 c  of the data points considered.
- 440    do 450 i=1,nrint
+        do 450 i=1,nrint
           fpint(i) = 0.
           coord(i) = 0.
  450    continue

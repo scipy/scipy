@@ -55,17 +55,3 @@ PyObject *odr(PyObject *self, PyObject *args, PyObject *kwds);
 (m)->descr->type_num, 0,0)))
 #define D(dbg) printf("we're here: %i\n", dbg)
 #define EXIST(name,obj) if (obj==NULL){printf("%s\n",name);}
-static void check_args(int n, int m, int np, int nq, 
-		       PyArrayObject *beta,
-		       PyArrayObject *y, int ldy, 
-		       PyArrayObject *x, int ldx, 
-		       PyArrayObject *we, int ldwe, int ld2we, 
-		       PyArrayObject *wd, int ldwd, int ld2wd, 
-		       PyArrayObject *ifixb, PyArrayObject *ifixx, int ldifx,
-		       int job, int ndigit, double taufac, double sstol, 
-		       double partol, int maxit,
-		       PyArrayObject *stpb, PyArrayObject *stpd, int ldstpd,
-		       PyArrayObject *sclb, PyArrayObject *scld, int ldscld,
-		       PyArrayObject *work, int lwork, 
-		       PyArrayObject *iwork, int liwork,
-		       int info);

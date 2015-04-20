@@ -112,6 +112,7 @@ Correlation Functions
    pointbiserialr
    kendalltau
    linregress
+   theilslopes
 
 Inferential Stats
 -----------------
@@ -120,6 +121,7 @@ Inferential Stats
 
    ttest_1samp
    ttest_ind
+   ttest_ind_from_stats
    ttest_rel
    chisquare
    power_divergence
@@ -129,6 +131,7 @@ Inferential Stats
    wilcoxon
    kruskal
    friedmanchisquare
+   combine_pvalues
 
 Probability Calculations
 ------------------------
@@ -136,8 +139,6 @@ Probability Calculations
    :toctree: generated/
 
    chisqprob
-   zprob
-   fprob
    betai
 
 ANOVA Functions
@@ -169,43 +170,39 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import math
+from collections import namedtuple
 
-from scipy.lib.six import xrange
-
-# friedmanchisquare patch uses python sum
-pysum = sum  # save it before it gets overwritten
+from scipy._lib.six import xrange
 
 # Scipy imports.
-from scipy.lib.six import callable, string_types
-from numpy import array, asarray, ma, zeros, sum
+from scipy._lib.six import callable, string_types
+from numpy import array, asarray, ma, zeros
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
-
 from . import futil
 from . import distributions
+from ._distn_infrastructure import _lazywhere
 
 from ._rank import rankdata, tiecorrect
 
-__all__ = ['find_repeats', 'gmean', 'hmean', 'mode',
-           'tmean', 'tvar', 'tmin', 'tmax', 'tstd', 'tsem',
-           'moment', 'variation', 'skew', 'kurtosis', 'describe',
-           'skewtest', 'kurtosistest', 'normaltest', 'jarque_bera',
-           'itemfreq', 'scoreatpercentile', 'percentileofscore',
-           'histogram', 'histogram2', 'cumfreq', 'relfreq',
-           'obrientransform', 'signaltonoise', 'sem', 'zmap', 'zscore',
-           'threshold', 'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
-           'f_oneway', 'pearsonr', 'fisher_exact',
-           'spearmanr', 'pointbiserialr', 'kendalltau', 'linregress',
-           'ttest_1samp', 'ttest_ind', 'ttest_rel', 'kstest',
+__all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
+           'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
+           'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
+           'normaltest', 'jarque_bera', 'itemfreq',
+           'scoreatpercentile', 'percentileofscore', 'histogram',
+           'histogram2', 'cumfreq', 'relfreq', 'obrientransform',
+           'signaltonoise', 'sem', 'zmap', 'zscore', 'threshold',
+           'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
+           'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
+           'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
+           'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'zprob', 'chisqprob', 'ksprob', 'fprob', 'betai',
+           'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
-           'ss', 'square_of_sums',
-           'fastsort', 'rankdata',
-           'nanmean', 'nanstd', 'nanmedian',
-           ]
+           'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
+           'nanstd', 'nanmedian', 'combine_pvalues', ]
 
 
 def _chk_asarray(a, axis):
@@ -215,6 +212,10 @@ def _chk_asarray(a, axis):
     else:
         a = np.asarray(a)
         outaxis = axis
+
+    if a.ndim == 0:
+        a = np.atleast_1d(a)
+
     return a, outaxis
 
 
@@ -227,6 +228,12 @@ def _chk2_asarray(a, b, axis):
         a = np.asarray(a)
         b = np.asarray(b)
         outaxis = axis
+
+    if a.ndim == 0:
+        a = np.atleast_1d(a)
+    if b.ndim == 0:
+        b = np.atleast_1d(b)
+
     return a, b, outaxis
 
 
@@ -249,21 +256,24 @@ def find_repeats(arr):
 
     Examples
     --------
-        >>> sp.stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-        (array([ 2. ]), array([ 4 ], dtype=int32)
+    >>> from scipy import stats
+    >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
+    (array([ 2. ]), array([ 4 ], dtype=int32)
 
-        >>> sp.stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-        (array([ 4., 5.]), array([2, 2], dtype=int32))
+    >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
+    (array([ 4., 5.]), array([2, 2], dtype=int32))
 
     """
-    v1,v2, n = futil.dfreps(arr)
-    return v1[:n],v2[:n]
+    v1, v2, n = futil.dfreps(arr)
+    return v1[:n], v2[:n]
 
 #######
-### NAN friendly functions
+#  NAN friendly functions
 ########
 
 
+@np.deprecate(message="scipy.stats.nanmean is deprecated in scipy 0.15.0 "
+                   "in favour of numpy.nanmean.")
 def nanmean(x, axis=0):
     """
     Compute the mean over the given axis ignoring nans.
@@ -272,9 +282,9 @@ def nanmean(x, axis=0):
     ----------
     x : ndarray
         Input array.
-    axis : int, optional
-        Axis along which the mean is computed. Default is 0, i.e. the
-        first axis.
+    axis : int or None, optional
+        Axis along which the mean is computed. Default is 0.
+        If None, compute over the whole array `x`.
 
     Returns
     -------
@@ -306,6 +316,9 @@ def nanmean(x, axis=0):
     return np.mean(x, axis) / factor
 
 
+@np.deprecate(message="scipy.stats.nanstd is deprecated in scipy 0.15 "
+                      "in favour of numpy.nanstd.\nNote that numpy.nanstd "
+                      "has a different signature.")
 def nanstd(x, axis=0, bias=False):
     """
     Compute the standard deviation over the given axis, ignoring nans.
@@ -401,7 +414,8 @@ def _nanmedian(arr1d):  # This only works on 1d arrays
         x = x[:-s.size]
     return np.median(x, overwrite_input=True)
 
-
+@np.deprecate(message="scipy.stats.nanmedian is deprecated in scipy 0.15 "
+                      "in favour of numpy.nanmedian.")
 def nanmedian(x, axis=0):
     """
     Compute the median along the given axis ignoring nan values.
@@ -410,9 +424,9 @@ def nanmedian(x, axis=0):
     ----------
     x : array_like
         Input array.
-    axis : int, optional
-        Axis along which the median is computed. Default is 0, i.e. the
-        first axis.
+    axis : int or None, optional
+        Axis along which the median is computed. Default is 0.
+        If None, compute over the whole array `x`.
 
     Returns
     -------
@@ -421,7 +435,7 @@ def nanmedian(x, axis=0):
 
     See Also
     --------
-    nanstd, nanmean
+    nanstd, nanmean, numpy.nanmedian
 
     Examples
     --------
@@ -452,6 +466,8 @@ def nanmedian(x, axis=0):
     x, axis = _chk_asarray(x, axis)
     if x.ndim == 0:
         return float(x.item())
+    if hasattr(np, 'nanmedian'):  # numpy 1.9 faster for some cases
+        return np.nanmedian(x, axis)
     x = np.apply_along_axis(_nanmedian, axis, x)
     if x.ndim == 0:
         x = float(x.item())
@@ -459,7 +475,7 @@ def nanmedian(x, axis=0):
 
 
 #####################################
-########  CENTRAL TENDENCY  ########
+#         CENTRAL TENDENCY          #
 #####################################
 
 
@@ -474,8 +490,9 @@ def gmean(a, axis=0, dtype=None):
     ----------
     a : array_like
         Input array or object that can be converted to an array.
-    axis : int, optional, default axis=0
-        Axis along which the geometric mean is computed.
+    axis : int or None, optional
+        Axis along which the geometric mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
     dtype : dtype, optional
         Type of the returned array and of the accumulator in which the
         elements are summed. If dtype is not specified, it defaults to the
@@ -508,7 +525,7 @@ def gmean(a, axis=0, dtype=None):
     if not isinstance(a, np.ndarray):  # if not an ndarray object attempt to convert it
         log_a = np.log(np.array(a, dtype=dtype))
     elif dtype:  # Must change the default dtype allowing array type
-        if isinstance(a,np.ma.MaskedArray):
+        if isinstance(a, np.ma.MaskedArray):
             log_a = np.log(np.ma.asarray(a, dtype=dtype))
         else:
             log_a = np.log(np.asarray(a, dtype=dtype))
@@ -527,8 +544,9 @@ def hmean(a, axis=0, dtype=None):
     ----------
     a : array_like
         Input array, masked array or object that can be converted to an array.
-    axis : int, optional, default axis=0
-        Axis along which the harmonic mean is computed.
+    axis : int or None, optional
+        Axis along which the harmonic mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
     dtype : dtype, optional
         Type of the returned array and of the accumulator in which the
         elements are summed. If `dtype` is not specified, it defaults to the
@@ -584,8 +602,9 @@ def mode(a, axis=0):
     ----------
     a : array_like
         n-dimensional array of which to find mode(s).
-    axis : int, optional
-        Axis along which to operate. Default is 0, i.e. the first axis.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
@@ -603,23 +622,26 @@ def mode(a, axis=0):
                       [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    (array([[ 3.,  1.,  0.,  0.]]), array([[ 1.,  1.,  1.,  1.]]))
+    (array([[3, 1, 0, 0]]), array([[1, 1, 1, 1]]))
 
     To get mode of whole array, specify axis=None:
 
     >>> stats.mode(a, axis=None)
-    (array([ 3.]), array([ 3.]))
+    (array([3]), array([3]))
 
     """
     a, axis = _chk_asarray(a, axis)
+    if a.size == 0:
+        return np.array([]), np.array([])
+
     scores = np.unique(np.ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
-    oldmostfreq = np.zeros(testshape)
-    oldcounts = np.zeros(testshape)
+    oldmostfreq = np.zeros(testshape, dtype=a.dtype)
+    oldcounts = np.zeros(testshape, dtype=int)
     for score in scores:
         template = (a == score)
-        counts = np.expand_dims(np.sum(template, axis),axis)
+        counts = np.expand_dims(np.sum(template, axis), axis)
         mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
         oldcounts = np.maximum(counts, oldcounts)
         oldmostfreq = mostfrequent
@@ -748,7 +770,7 @@ def tvar(a, limits=None, inclusive=(True, True)):
     a = a.astype(float).ravel()
     if limits is None:
         n = len(a)
-        return a.var()*(n/(n-1.))
+        return a.var() * n/(n-1.)
     am = mask_to_limits(a, limits, inclusive)
     return masked_var(am)
 
@@ -769,9 +791,9 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
         Values in the input array less than the given limit will be ignored.
         When lowerlimit is None, then all values are used. The default value
         is None.
-    axis : None or int, optional
-        Operate along this axis.  None means to use the flattened array and
-        the default is zero
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the whole
+        array `a`.
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
@@ -801,9 +823,9 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
         Values in the input array greater than the given limit will be ignored.
         When upperlimit is None, then all values are used. The default value
         is None.
-    axis : None or int, optional
-        Operate along this axis.  None means to use the flattened array and
-        the default is zero.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
@@ -893,7 +915,7 @@ def tsem(a, limits=None, inclusive=(True, True)):
 
 
 #####################################
-############  MOMENTS  #############
+#              MOMENTS              #
 #####################################
 
 def moment(a, moment=1, axis=0):
@@ -907,11 +929,11 @@ def moment(a, moment=1, axis=0):
     ----------
     a : array_like
        data
-    moment : int
+    moment : int, optional
        order of central moment that is returned
-    axis : int or None
-       Axis along which the central moment is computed. If None, then the data
-       array is raveled. The default axis is zero.
+    axis : int or None, optional
+       Axis along which the central moment is computed. Default is 0.
+       If None, compute over the whole array `a`.
 
     Returns
     -------
@@ -933,8 +955,28 @@ def moment(a, moment=1, axis=0):
             # the input was 1D, so return a scalar instead of a rank-0 array
             return np.float64(0.0)
     else:
-        mn = np.expand_dims(np.mean(a,axis), axis)
-        s = np.power((a-mn), moment)
+        # Exponentiation by squares: form exponent sequence
+        n_list = [moment]
+        current_n = moment
+        while current_n > 2:
+            if current_n % 2:
+                current_n = (current_n-1)/2
+            else:
+                current_n /= 2
+            n_list.append(current_n)
+
+        # Starting point for exponentiation by squares
+        a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
+        if n_list[-1] == 1:
+            s = a_zero_mean.copy()
+        else:
+            s = a_zero_mean**2
+
+        # Perform multiplications
+        for n in n_list[-2::-1]:
+            s = s**2
+            if n % 2:
+                s *= a_zero_mean
         return np.mean(s, axis)
 
 
@@ -947,8 +989,9 @@ def variation(a, axis=0):
     ----------
     a : array_like
         Input array.
-    axis : int or None
-        Axis along which to calculate the coefficient of variation.
+    axis : int or None, optional
+        Axis along which to calculate the coefficient of variation. Default
+        is 0. If None, compute over the whole array `a`.
 
     References
     ----------
@@ -958,7 +1001,7 @@ def variation(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    return a.std(axis)/a.mean(axis)
+    return a.std(axis) / a.mean(axis)
 
 
 def skew(a, axis=0, bias=True):
@@ -974,9 +1017,10 @@ def skew(a, axis=0, bias=True):
     ----------
     a : ndarray
         data
-    axis : int or None
-        axis along which skewness is calculated
-    bias : bool
+    axis : int or None, optional
+        Axis along which skewness is calculated. Default is 0.
+        If None, compute over the whole array `a`.
+    bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
 
     Returns
@@ -987,28 +1031,32 @@ def skew(a, axis=0, bias=True):
 
     References
     ----------
-    [CRCProbStat2000]_ Section 2.2.24.1
 
-    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
+       Section 2.2.24.1
 
     """
-    a, axis = _chk_asarray(a,axis)
+    a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
     zero = (m2 == 0)
-    vals = np.where(zero, 0, m3 / m2**1.5)
+    vals = _lazywhere(~zero, (m2, m3),
+                             lambda m2, m3: m3 / m2**1.5,
+                             0.)
     if not bias:
         can_correct = (n > 2) & (m2 > 0)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
-            nval = np.sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
+            nval = np.sqrt((n-1.0)*n) / (n-2.0) * m3/m2**1.5
             np.place(vals, can_correct, nval)
+
     if vals.ndim == 0:
         return vals.item()
+
     return vals
 
 
@@ -1029,12 +1077,13 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     ----------
     a : array
         data for which the kurtosis is calculated
-    axis : int or None
-        Axis along which the kurtosis is calculated
-    fisher : bool
+    axis : int or None, optional
+        Axis along which the kurtosis is calculated. Default is 0.
+        If None, compute over the whole array `a`.
+    fisher : bool, optional
         If True, Fisher's definition is used (normal ==> 0.0). If False,
         Pearson's definition is used (normal ==> 3.0).
-    bias : bool
+    bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
 
     Returns
@@ -1052,8 +1101,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    m2 = moment(a,2,axis)
-    m4 = moment(a,4,axis)
+    m2 = moment(a, 2, axis)
+    m4 = moment(a, 4, axis)
     zero = (m2 == 0)
     olderr = np.seterr(all='ignore')
     try:
@@ -1066,8 +1115,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m4 = np.extract(can_correct, m4)
-            nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2**2.0-3*(n-1)**2.0)
-            np.place(vals, can_correct, nval+3.0)
+            nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
+            np.place(vals, can_correct, nval + 3.0)
 
     if vals.ndim == 0:
         vals = vals.item()  # array scalar
@@ -1078,6 +1127,11 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
+_DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
+                                                'variance', 'skewness',
+                                                'kurtosis'))
+
+
 def describe(a, axis=0, ddof=1):
     """
     Computes several descriptive statistics of the passed array.
@@ -1086,29 +1140,30 @@ def describe(a, axis=0, ddof=1):
     ----------
     a : array_like
        Input data.
-    axis : int, optional
-       Axis along which statistics are calculated.  If axis is None, then data
-       array is raveled.  The default axis is zero.
+    axis : int or None, optional
+       Axis along which statistics are calculated. Default is 0.
+       If None, compute over the whole array `a`.
     ddof : int, optional
         Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
-    size of the data : int
-       length of data along axis
-    (min, max): tuple of ndarrays or floats
-       minimum and maximum value of data array
-    arithmetic mean : ndarray or float
-       mean of data along axis
-    unbiased variance : ndarray or float
-       variance of the data along axis, denominator is number of observations
-       minus one.
-    biased skewness : ndarray or float
-       skewness, based on moment calculations with denominator equal to the
-       number of observations, i.e. no degrees of freedom correction
-    biased kurtosis : ndarray or float
-       kurtosis (Fisher), the kurtosis is normalized so that it is zero for the
-       normal distribution. No degrees of freedom or bias correction is used.
+    nobs : int
+       Number of observations (length of data along `axis`).
+    minmax: tuple of ndarrays or floats
+       Minimum and maximum value of data array.
+    mean : ndarray or float
+       Arithmetic mean of data along axis.
+    variance : ndarray or float
+       Unbiased variance of the data along axis, denominator is number of
+       observations minus one.
+    skewness : ndarray or float
+       Biased skewness, based on moment calculations with denominator equal to
+       the number of observations, i.e. no degrees of freedom correction.
+    kurtosis : ndarray or float
+       Biased kurtosis (Fisher).  The kurtosis is normalized so that it is
+       zero for the normal distribution.  No degrees of freedom or bias
+       correction is used.
 
     See Also
     --------
@@ -1122,10 +1177,12 @@ def describe(a, axis=0, ddof=1):
     v = np.var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
-    return n, mm, m, v, sk, kurt
+
+    # Return namedtuple for clarity
+    return _DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
-########  NORMALITY TESTS  ##########
+#         NORMALITY TESTS           #
 #####################################
 
 
@@ -1140,7 +1197,10 @@ def skewtest(a, axis=0):
     Parameters
     ----------
     a : array
-    axis : int or None
+        The data to be tested
+    axis : int or None, optional
+       Axis along which statistics are calculated. Default is 0.
+       If None, compute over the whole array `a`.
 
     Returns
     -------
@@ -1165,13 +1225,13 @@ def skewtest(a, axis=0):
             "skewtest is not valid with less than 8 samples; %i samples"
             " were given." % int(n))
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
-    beta2 = (3.0 * (n * n + 27 * n - 70) * (n + 1) * (n + 3) /
-            ((n - 2.0) * (n + 5) * (n + 7) * (n + 9)))
+    beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
+             ((n-2.0) * (n+5) * (n+7) * (n+9)))
     W2 = -1 + math.sqrt(2 * (beta2 - 1))
     delta = 1 / math.sqrt(0.5 * math.log(W2))
     alpha = math.sqrt(2.0 / (W2 - 1))
     y = np.where(y == 0, 1, y)
-    Z = delta * np.log(y / alpha + np.sqrt((y / alpha) ** 2 + 1))
+    Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
     return Z, 2 * distributions.norm.sf(np.abs(Z))
 
 
@@ -1187,9 +1247,9 @@ def kurtosistest(a, axis=0):
     ----------
     a : array
         array of the sample data
-    axis : int or None
-        the axis to operate along, or None to work on the whole array.
-        The default is the first axis.
+    axis : int or None, optional
+       Axis along which to compute test. Default is 0. If None,
+       compute over the whole array `a`.
 
     Returns
     -------
@@ -1210,25 +1270,25 @@ def kurtosistest(a, axis=0):
             "kurtosistest requires at least 5 observations; %i observations"
             " were given." % int(n))
     if n < 20:
-        warnings.warn(
-            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
-            int(n))
+        warnings.warn("kurtosistest only valid for n>=20 ... continuing "
+                      "anyway, n=%i" % int(n))
     b2 = kurtosis(a, axis, fisher=False)
+
     E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))
-    x = (b2-E)/np.sqrt(varb2)
+    x = (b2-E) / np.sqrt(varb2)
     sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
-                                                       (n*(n-2)*(n-3)))
+                                                        (n*(n-2)*(n-3)))
     A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 - 2/(9.0*A)
     denom = 1 + x*np.sqrt(2/(A-4.0))
     denom = np.where(denom < 0, 99, denom)
-    term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom,1/3.0))
+    term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom, 1/3.0))
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
     Z = np.where(denom == 99, 0, Z)
     if Z.ndim == 0:
         Z = Z[()]
-    # JPNote: p-value sometimes larger than 1
+
     # zprob uses upper tail, so Z needs to be positive
     return Z, 2 * distributions.norm.sf(np.abs(Z))
 
@@ -1247,9 +1307,9 @@ def normaltest(a, axis=0):
     ----------
     a : array_like
         The array containing the data to be tested.
-    axis : int or None
-        If None, the array is treated as a single data set, regardless of
-        its shape.  Otherwise, each 1-d array along axis `axis` is tested.
+    axis : int or None, optional
+        Axis along which to compute test. Default is 0. If None,
+        compute over the whole array `a`.
 
     Returns
     -------
@@ -1272,7 +1332,7 @@ def normaltest(a, axis=0):
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
-    return k2, chisqprob(k2,2)
+    return k2, chisqprob(k2, 2)
 
 
 def jarque_bera(x):
@@ -1332,7 +1392,7 @@ def jarque_bera(x):
 
 
 #####################################
-######  FREQUENCY FUNCTIONS  #######
+#        FREQUENCY FUNCTIONS        #
 #####################################
 
 def itemfreq(a):
@@ -1352,6 +1412,7 @@ def itemfreq(a):
 
     Examples
     --------
+    >>> from scipy import stats
     >>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
     >>> stats.itemfreq(a)
     array([[ 0.,  2.],
@@ -1396,7 +1457,7 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
         Tuple of two scalars, the lower and upper limits within which to
         compute the percentile. Values of `a` outside
         this (closed) interval will be ignored.
-    interpolation : {'fraction', 'lower', 'higher'}, optional
+    interpolation_method : {'fraction', 'lower', 'higher'}, optional
         This optional parameter specifies the interpolation method to use,
         when the desired quantile lies between two data points `i` and `j`
 
@@ -1406,8 +1467,8 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
           - higher: ``j``.
 
     axis : int, optional
-        Axis along which the percentiles are computed. The default (None)
-        is to compute the median along a flattened version of the array.
+        Axis along which the percentiles are computed. Default is None. If
+        None, compute over the whole array `a`.
 
     Returns
     -------
@@ -1534,32 +1595,37 @@ def percentileofscore(a, score, kind='rank'):
     pcos : float
         Percentile-position of score (0-100) relative to `a`.
 
+    See Also
+    --------
+    numpy.percentile
+
     Examples
     --------
     Three-quarters of the given values lie below a given score:
 
-    >>> percentileofscore([1, 2, 3, 4], 3)
+    >>> from scipy import stats
+    >>> stats.percentileofscore([1, 2, 3, 4], 3)
     75.0
 
     With multiple matches, note how the scores of the two matches, 0.6
     and 0.8 respectively, are averaged:
 
-    >>> percentileofscore([1, 2, 3, 3, 4], 3)
+    >>> stats.percentileofscore([1, 2, 3, 3, 4], 3)
     70.0
 
     Only 2/5 values are strictly less than 3:
 
-    >>> percentileofscore([1, 2, 3, 3, 4], 3, kind='strict')
+    >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='strict')
     40.0
 
     But 4/5 values are less than or equal to 3:
 
-    >>> percentileofscore([1, 2, 3, 3, 4], 3, kind='weak')
+    >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='weak')
     80.0
 
     The average between the weak and the strict scores is
 
-    >>> percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
+    >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
 
     """
@@ -1567,7 +1633,7 @@ def percentileofscore(a, score, kind='rank'):
     n = len(a)
 
     if kind == 'rank':
-        if not(np.any(a == score)):
+        if not np.any(a == score):
             a = np.append(a, score)
             a_len = np.array(list(range(len(a))))
         else:
@@ -1579,15 +1645,17 @@ def percentileofscore(a, score, kind='rank'):
         return pct
 
     elif kind == 'strict':
-        return sum(a < score) / float(n) * 100
+        return np.sum(a < score) / float(n) * 100
     elif kind == 'weak':
-        return sum(a <= score) / float(n) * 100
+        return np.sum(a <= score) / float(n) * 100
     elif kind == 'mean':
-        return (sum(a < score) + sum(a <= score)) * 50 / float(n)
+        return (np.sum(a < score) + np.sum(a <= score)) * 50 / float(n)
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
 
+@np.deprecate(message=("scipy.stats.histogram2 is deprecated in scipy 0.16.0; "
+                       "use np.histogram2d instead"))
 def histogram2(a, bins):
     """
     Compute histogram using divisions in bins.
@@ -1616,7 +1684,7 @@ def histogram2(a, bins):
     # comment: probably obsoleted by numpy.histogram()
     n = np.searchsorted(np.sort(a), bins)
     n = np.concatenate([n, [len(a)]])
-    return n[1:]-n[:-1]
+    return n[1:] - n[:-1]
 
 
 def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
@@ -1632,9 +1700,9 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         The number of bins to use for the histogram. Default is 10.
     defaultlimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
-        If no value is given, a range slightly larger then the range of the
+        If no value is given, a range slightly larger than the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
-            where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
+        where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
     weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
@@ -1672,6 +1740,7 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         # Have bins extend past min and max values slightly
         s = (data_max - data_min) / (2. * (numbins - 1.))
         defaultlimits = (data_min - s, data_max + s)
+
     # use numpy's histogram method to compute bins
     hist, bin_edges = np.histogram(a, bins=numbins, range=defaultlimits,
                                    weights=weights)
@@ -1686,7 +1755,8 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     if extrapoints > 0 and printextras:
         warnings.warn("Points outside given histogram range = %s"
                       % extrapoints)
-    return (hist, defaultlimits[0], binsize, extrapoints)
+
+    return hist, defaultlimits[0], binsize, extrapoints
 
 
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -1699,7 +1769,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
         Input array.
     numbins : int, optional
         The number of bins to use for the histogram. Default is 10.
-    defaultlimits : tuple (lower, upper), optional
+    defaultreallimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
         If no value is given, a range slightly larger than the range of the
         values in `a` is used. Specifically ``(a.min() - s, a.max() + s)``,
@@ -1721,21 +1791,22 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Examples
     --------
+    >>> from scipy import stats
     >>> x = [1, 4, 2, 1, 3, 1]
-    >>> cumfreqs, lowlim, binsize, extrapoints = sp.stats.cumfreq(x, numbins=4)
+    >>> cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
     >>> cumfreqs
     array([ 3.,  4.,  5.,  6.])
     >>> cumfreqs, lowlim, binsize, extrapoints = \
-    ...     sp.stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
+    ...     stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
     >>> cumfreqs
     array([ 1.,  2.,  3.,  3.])
     >>> extrapoints
     3
 
     """
-    h,l,b,e = histogram(a, numbins, defaultreallimits, weights=weights)
-    cumhist = np.cumsum(h*1, axis=0)
-    return cumhist,l,b,e
+    h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
+    cumhist = np.cumsum(h * 1, axis=0)
+    return cumhist, l, b, e
 
 
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -1750,9 +1821,9 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
         The number of bins to use for the histogram. Default is 10.
     defaultreallimits : tuple (lower, upper), optional
         The lower and upper values for the range of the histogram.
-        If no value is given, a range slightly larger then the range of the
+        If no value is given, a range slightly larger than the range of the
         values in a is used. Specifically ``(a.min() - s, a.max() + s)``,
-            where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
+        where ``s = (1/2)(a.max() - a.min()) / (numbins - 1)``.
     weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
         value a weight of 1.0
@@ -1770,8 +1841,9 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Examples
     --------
+    >>> from scipy import stats
     >>> a = np.array([1, 4, 2, 1, 3, 1])
-    >>> relfreqs, lowlim, binsize, extrapoints = sp.stats.relfreq(a, numbins=4)
+    >>> relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
     >>> relfreqs
     array([ 0.5       ,  0.16666667,  0.16666667,  0.16666667])
     >>> np.sum(relfreqs)  # relative frequencies should add up to 1
@@ -1784,7 +1856,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
 
 #####################################
-######  VARIABILITY FUNCTIONS  #####
+#        VARIABILITY FUNCTIONS      #
 #####################################
 
 def obrientransform(*args):
@@ -1871,6 +1943,7 @@ def obrientransform(*args):
     return np.array(arrays, dtype=dt)
 
 
+@np.deprecate(message="scipy.stats.signaltonoise is deprecated in scipy 0.16.0")
 def signaltonoise(a, axis=0, ddof=0):
     """
     The signal-to-noise ratio of the input data.
@@ -1883,8 +1956,8 @@ def signaltonoise(a, axis=0, ddof=0):
     a : array_like
         An array_like object containing the sample data.
     axis : int or None, optional
-        If axis is equal to None, the array is first ravel'd. If axis is an
-        integer, this is the axis over which to operate. Default is 0.
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
     ddof : int, optional
         Degrees of freedom correction for standard deviation. Default is 0.
 
@@ -1911,9 +1984,9 @@ def sem(a, axis=0, ddof=1):
     a : array_like
         An array containing the values for which the standard error is
         returned.
-    axis : int or None, optional.
-        If axis is None, ravel `a` first. If axis is an integer, this will be
-        the axis over which to operate. Defaults to 0.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
     ddof : int, optional
         Delta degrees-of-freedom. How many degrees of freedom to adjust
         for bias in limited samples relative to the population estimate
@@ -1946,7 +2019,7 @@ def sem(a, axis=0, ddof=1):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
-    s = np.std(a,axis=axis, ddof=ddof) / np.sqrt(n)  # JP check normalization
+    s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
     return s
 
 
@@ -1960,8 +2033,8 @@ def zscore(a, axis=0, ddof=0):
     a : array_like
         An array like object containing the sample data.
     axis : int or None, optional
-        If `axis` is equal to None, the array is first raveled. If `axis` is
-        an integer, this is the axis over which to operate. Default is 0.
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
@@ -2007,7 +2080,7 @@ def zscore(a, axis=0, ddof=0):
     sstd = a.std(axis=axis, ddof=ddof)
     if axis and mns.ndim < a.ndim:
         return ((a - np.expand_dims(mns, axis=axis)) /
-                 np.expand_dims(sstd,axis=axis))
+                np.expand_dims(sstd, axis=axis))
     else:
         return (a - mns) / sstd
 
@@ -2030,7 +2103,7 @@ def zmap(scores, compare, axis=0, ddof=0):
         `scores`.
     axis : int or None, optional
         Axis over which mean and variance of `compare` are calculated.
-        Default is 0.
+        Default is 0. If None, compute over the whole array `scores`.
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
@@ -2058,13 +2131,13 @@ def zmap(scores, compare, axis=0, ddof=0):
     sstd = compare.std(axis=axis, ddof=ddof)
     if axis and mns.ndim < compare.ndim:
         return ((scores - np.expand_dims(mns, axis=axis)) /
-                 np.expand_dims(sstd,axis=axis))
+                np.expand_dims(sstd, axis=axis))
     else:
         return (scores - mns) / sstd
 
 
 #####################################
-#######  TRIMMING FUNCTIONS  #######
+#         TRIMMING FUNCTIONS        #
 #####################################
 
 def threshold(a, threshmin=None, threshmax=None, newval=0):
@@ -2172,7 +2245,7 @@ def sigmaclip(a, low=4., high=4.):
         critlower = c_mean - c_std*low
         critupper = c_mean + c_std*high
         c = c[(c > critlower) & (c < critupper)]
-        delta = size-c.size
+        delta = size - c.size
     return c, critlower, critupper
 
 
@@ -2194,9 +2267,8 @@ def trimboth(a, proportiontocut, axis=0):
     proportiontocut : float
         Proportion (in range 0-1) of total data set to trim of each end.
     axis : int or None, optional
-        Axis along which the observations are trimmed. The default is to trim
-        along axis=0. If axis is None then the array will be flattened before
-        trimming.
+        Axis along which to trim data. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
@@ -2259,9 +2331,9 @@ def trim1(a, proportiontocut, tail='right'):
     a = asarray(a)
     if tail.lower() == 'right':
         lowercut = 0
-        uppercut = len(a) - int(proportiontocut*len(a))
+        uppercut = len(a) - int(proportiontocut * len(a))
     elif tail.lower() == 'left':
-        lowercut = int(proportiontocut*len(a))
+        lowercut = int(proportiontocut * len(a))
         uppercut = len(a)
 
     return a[lowercut:uppercut]
@@ -2283,9 +2355,8 @@ def trim_mean(a, proportiontocut, axis=0):
     proportiontocut : float
         Fraction to cut off of both tails of the distribution
     axis : int or None, optional
-        Axis along which the trimmed means are computed. The default is axis=0.
-        If axis is None then the trimmed mean will be computed for the
-        flattened array.
+        Axis along which the trimmed means are computed. Default is 0.
+        If None, compute over the whole array `a`.
 
     Returns
     -------
@@ -2441,7 +2512,7 @@ def pearsonr(x, y):
     n = len(x)
     mx = x.mean()
     my = y.mean()
-    xm, ym = x-mx, y-my
+    xm, ym = x - mx, y - my
     r_num = np.add.reduce(xm * ym)
     r_den = np.sqrt(ss(xm) * ss(ym))
     r = r_num / r_den
@@ -2449,12 +2520,13 @@ def pearsonr(x, y):
     # Presumably, if abs(r) > 1, then it is only some small artifact of floating
     # point arithmetic.
     r = max(min(r, 1.0), -1.0)
-    df = n-2
+    df = n - 2
     if abs(r) == 1.0:
         prob = 0.0
     else:
-        t_squared = r*r * (df / ((1.0 - r) * (1.0 + r)))
-        prob = betai(0.5*df, 0.5, df / (df + t_squared))
+        t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
+        prob = betai(0.5*df, 0.5, df/(df+t_squared))
+
     return r, prob
 
 
@@ -2559,7 +2631,7 @@ def fisher_exact(table, alternative='two-sided'):
                 ng = guess - 1
             else:
                 ng = guess + 1
-            if pguess <= pexact and hypergeom.pmf(ng, n1 + n2, n1, n) > pexact:
+            if pguess <= pexact < hypergeom.pmf(ng, n1 + n2, n1, n):
                 break
             elif pguess < pexact:
                 maxval = guess
@@ -2613,6 +2685,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     if pvalue > 1.0:
         pvalue = 1.0
+
     return oddsratio, pvalue
 
 
@@ -2666,24 +2739,25 @@ def spearmanr(a, b=None, axis=0):
 
     References
     ----------
-    [CRCProbStat2000]_ Section  14.7
 
-    .. [CRCProbStat2000] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
+    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
+       Section  14.7
 
     Examples
     --------
-    >>> spearmanr([1,2,3,4,5],[5,6,7,8,7])
+    >>> from scipy import stats
+    >>> stats.spearmanr([1,2,3,4,5], [5,6,7,8,7])
     (0.82078268166812329, 0.088587005313543798)
     >>> np.random.seed(1234321)
-    >>> x2n=np.random.randn(100,2)
-    >>> y2n=np.random.randn(100,2)
-    >>> spearmanr(x2n)
+    >>> x2n = np.random.randn(100, 2)
+    >>> y2n = np.random.randn(100, 2)
+    >>> stats.spearmanr(x2n)
     (0.059969996999699973, 0.55338590803773591)
-    >>> spearmanr(x2n[:,0], x2n[:,1])
+    >>> stats.spearmanr(x2n[:,0], x2n[:,1])
     (0.059969996999699973, 0.55338590803773591)
-    >>> rho, pval = spearmanr(x2n,y2n)
+    >>> rho, pval = stats.spearmanr(x2n, y2n)
     >>> rho
     array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],
            [ 0.05997   ,  1.        ,  0.110003  ,  0.02534653],
@@ -2694,41 +2768,43 @@ def spearmanr(a, b=None, axis=0):
            [ 0.55338591,  0.        ,  0.27592895,  0.80234077],
            [ 0.06435364,  0.27592895,  0.        ,  0.73039992],
            [ 0.53617935,  0.80234077,  0.73039992,  0.        ]])
-    >>> rho, pval = spearmanr(x2n.T, y2n.T, axis=1)
+    >>> rho, pval = stats.spearmanr(x2n.T, y2n.T, axis=1)
     >>> rho
     array([[ 1.        ,  0.05997   ,  0.18569457,  0.06258626],
            [ 0.05997   ,  1.        ,  0.110003  ,  0.02534653],
            [ 0.18569457,  0.110003  ,  1.        ,  0.03488749],
            [ 0.06258626,  0.02534653,  0.03488749,  1.        ]])
-    >>> spearmanr(x2n, y2n, axis=None)
+    >>> stats.spearmanr(x2n, y2n, axis=None)
     (0.10816770419260482, 0.1273562188027364)
-    >>> spearmanr(x2n.ravel(), y2n.ravel())
+    >>> stats.spearmanr(x2n.ravel(), y2n.ravel())
     (0.10816770419260482, 0.1273562188027364)
 
-    >>> xint = np.random.randint(10,size=(100,2))
-    >>> spearmanr(xint)
+    >>> xint = np.random.randint(10, size=(100, 2))
+    >>> stats.spearmanr(xint)
     (0.052760927029710199, 0.60213045837062351)
 
     """
     a, axisout = _chk_asarray(a, axis)
-    ar = np.apply_along_axis(rankdata,axisout,a)
+    if a.size <= 1:
+        return np.nan, np.nan
+    ar = np.apply_along_axis(rankdata, axisout, a)
 
     br = None
     if b is not None:
         b, axisout = _chk_asarray(b, axis)
-        br = np.apply_along_axis(rankdata,axisout,b)
+        br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
-    rs = np.corrcoef(ar,br,rowvar=axisout)
+    rs = np.corrcoef(ar, br, rowvar=axisout)
 
     olderr = np.seterr(divide='ignore')  # rs can have elements equal to 1
     try:
         t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
     finally:
         np.seterr(**olderr)
-    prob = distributions.t.sf(np.abs(t),n-2)*2
 
-    if rs.shape == (2,2):
-        return rs[1,0], prob[1,0]
+    prob = 2 * distributions.t.sf(np.abs(t), n-2)
+    if rs.shape == (2, 2):
+        return rs[1, 0], prob[1, 0]
     else:
         return rs, prob
 
@@ -2792,10 +2868,10 @@ def pointbiserialr(x, y):
     # phat - phat**2 is more stable than phat*(1-phat)
     rpb = (y1m - y0m) * np.sqrt(phat - phat**2) / y.std()
 
-    df = n-2
+    df = n - 2
     # fixme: see comment about TINY in pearsonr()
     TINY = 1e-20
-    t = rpb*np.sqrt(df/((1.0-rpb+TINY)*(1.0+rpb+TINY)))
+    t = rpb * np.sqrt(df / ((1.0 - rpb + TINY)*(1.0 + rpb + TINY)))
     prob = betai(0.5*df, 0.5, df/(df+t*t))
     return rpb, prob
 
@@ -2848,18 +2924,22 @@ def kendalltau(x, y, initial_lexsort=True):
 
     Examples
     --------
+    >>> from scipy import stats
     >>> x1 = [12, 2, 1, 12, 2]
     >>> x2 = [1, 4, 7, 1, 0]
-    >>> tau, p_value = sp.stats.kendalltau(x1, x2)
+    >>> tau, p_value = stats.kendalltau(x1, x2)
     >>> tau
     -0.47140452079103173
     >>> p_value
     0.24821309157521476
 
     """
-
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
+
+    if not x.size or not y.size:
+        return (np.nan, np.nan)  # Return NaN if arrays are empty
+
     n = np.int64(len(x))
     temp = list(range(n))  # support structure used by mergesort
     # this closure recursively sorts sections of perm[] by comparing
@@ -2884,6 +2964,7 @@ def kendalltau(x, y, initial_lexsort=True):
         exchcnt += mergesort(middle, length1)
         if y[perm[middle - 1]] < y[perm[middle]]:
             return exchcnt
+
         # merging
         i = j = k = 0
         while j < length0 or k < length1:
@@ -2923,7 +3004,7 @@ def kendalltau(x, y, initial_lexsort=True):
     # compute ties in x
     first = 0
     u = 0
-    for i in xrange(1,n):
+    for i in xrange(1, n):
         if x[perm[first]] != x[perm[i]]:
             u += ((i - first) * (i - first - 1)) // 2
             first = i
@@ -2934,7 +3015,7 @@ def kendalltau(x, y, initial_lexsort=True):
     # compute ties in y after mergesort with counting
     first = 0
     v = 0
-    for i in xrange(1,n):
+    for i in xrange(1, n):
         if y[perm[first]] != y[perm[i]]:
             v += ((i - first) * (i - first - 1)) // 2
             first = i
@@ -2942,7 +3023,7 @@ def kendalltau(x, y, initial_lexsort=True):
 
     tot = (n * (n - 1)) // 2
     if tot == u or tot == v:
-        return (np.nan, np.nan)    # Special case for all ties in both ranks
+        return np.nan, np.nan    # Special case for all ties in both ranks
 
     # Prevent overflow; equal to np.sqrt((tot - u) * (tot - v))
     denom = np.exp(0.5 * (np.log(tot - u) + np.log(tot - v)))
@@ -2989,14 +3070,13 @@ def linregress(x, y=None):
     Examples
     --------
     >>> from scipy import stats
-    >>> import numpy as np
     >>> x = np.random.random(10)
     >>> y = np.random.random(10)
     >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
 
     # To get coefficient of determination (r_squared)
 
-    >>> print "r-squared:", r_value**2
+    >>> print("r-squared:", r_value**2)
     r-squared: 0.15286643777
 
     """
@@ -3008,41 +3088,158 @@ def linregress(x, y=None):
         elif x.shape[1] == 2:
             x, y = x.T
         else:
-            msg = "If only `x` is given as input, it has to be of shape (2, N) \
-            or (N, 2), provided shape was %s" % str(x.shape)
+            msg = ("If only `x` is given as input, it has to be of shape "
+                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
             raise ValueError(msg)
     else:
         x = asarray(x)
         y = asarray(y)
     n = len(x)
-    xmean = np.mean(x,None)
-    ymean = np.mean(y,None)
+    xmean = np.mean(x, None)
+    ymean = np.mean(y, None)
 
     # average sum of squares:
     ssxm, ssxym, ssyxm, ssym = np.cov(x, y, bias=1).flat
     r_num = ssxym
-    r_den = np.sqrt(ssxm*ssym)
+    r_den = np.sqrt(ssxm * ssym)
     if r_den == 0.0:
         r = 0.0
     else:
         r = r_num / r_den
         # test for numerical error propagation
-        if (r > 1.0):
+        if r > 1.0:
             r = 1.0
-        elif (r < -1.0):
+        elif r < -1.0:
             r = -1.0
 
-    df = n-2
-    t = r*np.sqrt(df/((1.0-r+TINY)*(1.0+r+TINY)))
-    prob = distributions.t.sf(np.abs(t),df)*2
+    df = n - 2
+    t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
+    prob = 2 * distributions.t.sf(np.abs(t), df)
     slope = r_num / ssxm
     intercept = ymean - slope*xmean
-    sterrest = np.sqrt((1-r*r)*ssym / ssxm / df)
+    sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
     return slope, intercept, r, prob, sterrest
 
 
+def theilslopes(y, x=None, alpha=0.95):
+    r"""
+    Computes the Theil-Sen estimator for a set of points (x, y).
+
+    `theilslopes` implements a method for robust linear regression.  It
+    computes the slope as the median of all slopes between paired values.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    alpha : float, optional
+        Confidence degree between 0 and 1. Default is 95% confidence.
+        Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
+        interpreted as "find the 90% confidence interval".
+
+    Returns
+    -------
+    medslope : float
+        Theil slope.
+    medintercept : float
+        Intercept of the Theil line, as ``median(y) - medslope*median(x)``.
+    lo_slope : float
+        Lower bound of the confidence interval on `medslope`.
+    up_slope : float
+        Upper bound of the confidence interval on `medslope`.
+
+    Notes
+    -----
+    The implementation of `theilslopes` follows [1]_. The intercept is
+    not defined in [1]_, and here it is defined as ``median(y) -
+    medslope*median(x)``, which is given in [3]_. Other definitions of
+    the intercept exist in the literature. A confidence interval for
+    the intercept is not given as this question is not addressed in
+    [1]_.
+
+    References
+    ----------
+    .. [1] P.K. Sen, "Estimates of the regression coefficient based on Kendall's tau",
+           J. Am. Stat. Assoc., Vol. 63, pp. 1379-1389, 1968.
+    .. [2] H. Theil, "A rank-invariant method of linear and polynomial
+           regression analysis I, II and III",  Nederl. Akad. Wetensch., Proc.
+           53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
+    .. [3] W.L. Conover, "Practical nonparametric statistics", 2nd ed.,
+           John Wiley and Sons, New York, pp. 493.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = np.linspace(-5, 5, num=150)
+    >>> y = x + np.random.normal(size=x.size)
+    >>> y[11:15] += 10  # add outliers
+    >>> y[-5:] -= 7
+
+    Compute the slope, intercept and 90% confidence interval.  For comparison,
+    also compute the least-squares fit with `linregress`:
+
+    >>> res = stats.theilslopes(y, x, 0.90)
+    >>> lsq_res = stats.linregress(x, y)
+
+    Plot the results. The Theil-Sen regression line is shown in red, with the
+    dashed red lines illustrating the confidence interval of the slope (note
+    that the dashed red lines are not the confidence interval of the regression
+    as the confidence interval of the intercept is not included). The green
+    line shows the least-squares fit for comparison.
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, y, 'b.')
+    >>> ax.plot(x, res[1] + res[0] * x, 'r-')
+    >>> ax.plot(x, res[1] + res[2] * x, 'r--')
+    >>> ax.plot(x, res[1] + res[3] * x, 'r--')
+    >>> ax.plot(x, lsq_res[1] + lsq_res[0] * x, 'g-')
+    >>> plt.show()
+
+    """
+    y = np.asarray(y).flatten()
+    if x is None:
+        x = np.arange(len(y), dtype=float)
+    else:
+        x = np.asarray(x, dtype=float).flatten()
+        if len(x) != len(y):
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+
+    # Compute sorted slopes only when deltax > 0
+    deltax = x[:, np.newaxis] - x
+    deltay = y[:, np.newaxis] - y
+    slopes = deltay[deltax > 0] / deltax[deltax > 0]
+    slopes.sort()
+    medslope = np.median(slopes)
+    medinter = np.median(y) - medslope * np.median(x)
+    # Now compute confidence intervals
+    if alpha > 0.5:
+        alpha = 1. - alpha
+
+    z = distributions.norm.ppf(alpha / 2.)
+    # This implements (2.6) from Sen (1968)
+    _, nxreps = find_repeats(x)
+    _, nyreps = find_repeats(y)
+    nt = len(slopes)       # N in Sen (1968)
+    ny = len(y)            # n in Sen (1968)
+    # Equation 2.6 in Sen (1968):
+    sigsq = 1/18. * (ny * (ny-1) * (2*ny+5) -
+                     np.sum(k * (k-1) * (2*k + 5) for k in nxreps) -
+                     np.sum(k * (k-1) * (2*k + 5) for k in nyreps))
+    # Find the confidence interval indices in `slopes`
+    sigma = np.sqrt(sigsq)
+    Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
+    Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
+    delta = slopes[[Rl, Ru]]
+    return medslope, medinter, delta[0], delta[1]
+
+
 #####################################
-#####  INFERENTIAL STATISTICS  #####
+#       INFERENTIAL STATISTICS      #
 #####################################
 
 def ttest_1samp(a, popmean, axis=0):
@@ -3060,9 +3257,9 @@ def ttest_1samp(a, popmean, axis=0):
     popmean : float or array_like
         expected value in null hypothesis, if array_like than it must have the
         same shape as `a` excluding the axis dimension
-    axis : int, optional, (default axis=0)
-        Axis can equal None (ravel array first), or an integer (the axis
-        over which to operate on a).
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        array `a`.
 
     Returns
     -------
@@ -3113,7 +3310,7 @@ def ttest_1samp(a, popmean, axis=0):
     return t, prob
 
 
-def _ttest_finish(df,t):
+def _ttest_finish(df, t):
     """Common code between all 3 t-test functions."""
     prob = distributions.t.sf(np.abs(t), df) * 2  # use np.abs to get upper tail
     if t.ndim == 0:
@@ -3122,29 +3319,115 @@ def _ttest_finish(df,t):
     return t, prob
 
 
-def ttest_ind(a, b, axis=0, equal_var=True):
+def _ttest_ind_from_stats(mean1, mean2, denom, df):
+
+    d = mean1 - mean2
+    t = np.divide(d, denom)
+    t, prob = _ttest_finish(df, t)
+
+    return t, prob
+
+
+def _unequal_var_ttest_denom(v1, n1, v2, n2):
+    vn1 = v1 / n1
+    vn2 = v2 / n2
+    df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+
+    # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
+    # Hence it doesn't matter what df is as long as it's not NaN.
+    df = np.where(np.isnan(df), 1, df)
+    denom = np.sqrt(vn1 + vn2)
+    return df, denom
+
+
+def _equal_var_ttest_denom(v1, n1, v2, n2):
+    df = n1 + n2 - 2
+    svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / float(df)
+    denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+    return df, denom
+
+
+def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
+                         equal_var=True):
     """
-    Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+    T-test for means of two independent samples from descriptive statistics.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    have identical average (expected) values. This test assumes that the
-    populations have identical variances.
+    have identical average (expected) values.
 
     Parameters
     ----------
-    a, b : array_like
-        The arrays must have the same shape, except in the dimension
-        corresponding to `axis` (the first, by default).
-    axis : int, optional
-        Axis can equal None (ravel array first), or an integer (the axis
-        over which to operate on a and b).
+    mean1 : array_like
+        The mean(s) of sample 1.
+    std1 : array_like
+        The standard deviation(s) of sample 1.
+    nobs1 : array_like
+        The number(s) of observations of sample 1.
+    mean2 : array_like
+        The mean(s) of sample 2
+    std2 : array_like
+        The standard deviations(s) of sample 2.
+    nobs2 : array_like
+        The number(s) of observations of sample 2.
     equal_var : bool, optional
         If True (default), perform a standard independent 2 sample test
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
 
+    Returns
+    -------
+    t : float or array
+        The calculated t-statistics
+    prob : float or array
+        The two-tailed p-value.
+
+    See also
+    --------
+    scipy.stats.ttest_ind
+
+    Notes
+    -----
+
+    .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+
+    .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+    """
+    if equal_var:
+        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
+    else:
+        df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
+                                             std2**2, nobs2)
+    return _ttest_ind_from_stats(mean1, mean2, denom, df)
+
+
+def ttest_ind(a, b, axis=0, equal_var=True):
+    """
+    Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+
+    This is a two-sided test for the null hypothesis that 2 independent samples
+    have identical average (expected) values. This test assumes that the
+    populations have identical variances by default.
+
+    Parameters
+    ----------
+    a, b : array_like
+        The arrays must have the same shape, except in the dimension
+        corresponding to `axis` (the first, by default).
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        arrays, `a`, and `b`.
+    equal_var : bool, optional
+        If True (default), perform a standard independent 2 sample test
+        that assumes equal population variances [1]_.
+        If False, perform Welch's t-test, which does not assume equal
+        population variance [2]_.
         .. versionadded:: 0.11.0
+
 
     Returns
     -------
@@ -3219,25 +3502,13 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     n1 = a.shape[axis]
     n2 = b.shape[axis]
 
-    if (equal_var):
-        df = n1 + n2 - 2
-        svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / float(df)
-        denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+    if equal_var:
+        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
     else:
-        vn1 = v1 / n1
-        vn2 = v2 / n2
-        df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
-
-        # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
-        # Hence it doesn't matter what df is as long as it's not NaN.
-        df = np.where(np.isnan(df), 1, df)
-        denom = np.sqrt(vn1 + vn2)
-
-    d = np.mean(a, axis) - np.mean(b, axis)
-    t = np.divide(d, denom)
-    t, prob = _ttest_finish(df, t)
-
-    return t, prob
+        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
+    return _ttest_ind_from_stats(np.mean(a, axis),
+                                 np.mean(b, axis),
+                                 denom, df)
 
 
 def ttest_rel(a, b, axis=0):
@@ -3251,9 +3522,9 @@ def ttest_rel(a, b, axis=0):
     ----------
     a, b : array_like
         The arrays must have the same shape.
-    axis : int, optional, (default axis=0)
-        Axis can equal None (ravel array first), or an integer (the axis
-        over which to operate on a and b).
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        arrays, `a`, and `b`.
 
     Returns
     -------
@@ -3299,7 +3570,7 @@ def ttest_rel(a, b, axis=0):
         raise ValueError('unequal length arrays')
 
     if a.size == 0 or b.size == 0:
-        return (np.nan, np.nan)
+        return np.nan, np.nan
 
     n = a.shape[axis]
     df = float(n - 1)
@@ -3431,8 +3702,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     if isinstance(cdf, string_types):
         cdf = getattr(distributions, cdf).cdf
     if callable(rvs):
-        kwds = {'size':N}
-        vals = np.sort(rvs(*args,**kwds))
+        kwds = {'size': N}
+        vals = np.sort(rvs(*args, **kwds))
     else:
         vals = np.sort(rvs)
         N = len(vals)
@@ -3443,25 +3714,25 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
         alternative = 'two-sided'
 
     if alternative in ['two-sided', 'greater']:
-        Dplus = (np.arange(1.0, N+1)/N - cdfvals).max()
+        Dplus = (np.arange(1.0, N + 1)/N - cdfvals).max()
         if alternative == 'greater':
-            return Dplus, distributions.ksone.sf(Dplus,N)
+            return Dplus, distributions.ksone.sf(Dplus, N)
 
     if alternative in ['two-sided', 'less']:
         Dmin = (cdfvals - np.arange(0.0, N)/N).max()
         if alternative == 'less':
-            return Dmin, distributions.ksone.sf(Dmin,N)
+            return Dmin, distributions.ksone.sf(Dmin, N)
 
     if alternative == 'two-sided':
-        D = np.max([Dplus,Dmin])
+        D = np.max([Dplus, Dmin])
         if mode == 'asymp':
-            return D, distributions.kstwobign.sf(D*np.sqrt(N))
+            return D, distributions.kstwobign.sf(D * np.sqrt(N))
         if mode == 'approx':
-            pval_two = distributions.kstwobign.sf(D*np.sqrt(N))
-            if N > 2666 or pval_two > 0.80 - N*0.3/1000.0:
-                return D, distributions.kstwobign.sf(D*np.sqrt(N))
+            pval_two = distributions.kstwobign.sf(D * np.sqrt(N))
+            if N > 2666 or pval_two > 0.80 - N*0.3/1000:
+                return D, distributions.kstwobign.sf(D * np.sqrt(N))
             else:
-                return D, distributions.ksone.sf(D,N)*2
+                return D, 2 * distributions.ksone.sf(D, N)
 
 
 # Map from names to lambda_ values used in power_divergence().
@@ -3600,7 +3871,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     are uniform and given by the mean of the observed frequencies.  Here we
     perform a G-test (i.e. use the log-likelihood ratio statistic):
 
-    >>> power_divergence([16, 18, 16, 14, 12, 12], method='log-likelihood')
+    >>> power_divergence([16, 18, 16, 14, 12, 12], lambda_='log-likelihood')
     (2.006573162632538, 0.84823476779463769)
 
     The expected frequencies can be given with the `f_exp` argument:
@@ -3654,7 +3925,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
             raise ValueError("invalid string for lambda_: {0!r}.  Valid strings "
-                "are {1}".format(lambda_, names))
+                             "are {1}".format(lambda_, names))
         lambda_ = _power_div_lambda_names[lambda_]
     elif lambda_ is None:
         lambda_ = 1
@@ -3826,7 +4097,7 @@ def ks_2samp(data1, data2):
 
     Parameters
     ----------
-    a, b : sequence of 1-D ndarrays
+    data1, data2 : sequence of 1-D ndarrays
         two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different
 
@@ -3880,23 +4151,21 @@ def ks_2samp(data1, data2):
     (0.07999999999999996, 0.41126949729859719)
 
     """
-    data1, data2 = map(asarray, (data1, data2))
-    n1 = data1.shape[0]
-    n2 = data2.shape[0]
-    n1 = len(data1)
-    n2 = len(data2)
     data1 = np.sort(data1)
     data2 = np.sort(data2)
-    data_all = np.concatenate([data1,data2])
-    cdf1 = np.searchsorted(data1,data_all,side='right')/(1.0*n1)
-    cdf2 = (np.searchsorted(data2,data_all,side='right'))/(1.0*n2)
-    d = np.max(np.absolute(cdf1-cdf2))
+    n1 = data1.shape[0]
+    n2 = data2.shape[0]
+    data_all = np.concatenate([data1, data2])
+    cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
+    cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
+    d = np.max(np.absolute(cdf1 - cdf2))
     # Note: d absolute not signed distance
-    en = np.sqrt(n1*n2/float(n1+n2))
+    en = np.sqrt(n1 * n2 / float(n1 + n2))
     try:
         prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
     except:
         prob = 1.0
+
     return d, prob
 
 
@@ -3935,23 +4204,24 @@ def mannwhitneyu(x, y, use_continuity=True):
     y = asarray(y)
     n1 = len(x)
     n2 = len(y)
-    ranked = rankdata(np.concatenate((x,y)))
-    rankx = ranked[0:n1]       # get the x-ranks
-    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
-    u2 = n1*n2 - u1                            # remainder is U for y
-    bigu = max(u1,u2)
-    smallu = min(u1,u2)
+    ranked = rankdata(np.concatenate((x, y)))
+    rankx = ranked[0:n1]  # get the x-ranks
+    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx, axis=0)  # calc U for x
+    u2 = n1*n2 - u1  # remainder is U for y
+    bigu = max(u1, u2)
+    smallu = min(u1, u2)
     T = tiecorrect(ranked)
     if T == 0:
         raise ValueError('All numbers are identical in amannwhitneyu')
-    sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
+    sd = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
 
     if use_continuity:
         # normal approximation for prob calc with continuity correction
-        z = abs((bigu-0.5-n1*n2/2.0) / sd)
+        z = abs((bigu - 0.5 - n1*n2/2.0) / sd)
     else:
-        z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
-    return smallu, distributions.norm.sf(z)  # (1.0 - zprob(z))
+        z = abs((bigu - n1*n2/2.0) / sd)  # normal approximation for prob calc
+
+    return smallu, distributions.norm.sf(z)
 
 
 def ranksums(x, y):
@@ -3986,15 +4256,14 @@ def ranksums(x, y):
     .. [1] http://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
 
     """
-    x,y = map(np.asarray, (x, y))
+    x, y = map(np.asarray, (x, y))
     n1 = len(x)
     n2 = len(y)
-    alldata = np.concatenate((x,y))
+    alldata = np.concatenate((x, y))
     ranked = rankdata(alldata)
     x = ranked[:n1]
-    y = ranked[n1:]
-    s = np.sum(x,axis=0)
-    expected = n1*(n1+n2+1) / 2.0
+    s = np.sum(x, axis=0)
+    expected = n1 * (n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
     prob = 2 * distributions.norm.sf(abs(z))
     return z, prob
@@ -4043,10 +4312,9 @@ def kruskal(*args):
     n = np.asarray(list(map(len, args)))
 
     alldata = np.concatenate(args)
-
     ranked = rankdata(alldata)  # Rank the data
-    T = tiecorrect(ranked)      # Correct for ties
-    if T == 0:
+    ties = tiecorrect(ranked)      # Correct for ties
+    if ties == 0:
         raise ValueError('All numbers are identical in kruskal')
 
     # Compute sum^2/n for each group and sum
@@ -4058,7 +4326,7 @@ def kruskal(*args):
     totaln = np.sum(n)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
     df = na - 1
-    h = h / float(T)
+    h /= ties
     return h, chisqprob(h, df)
 
 
@@ -4118,22 +4386,99 @@ def friedmanchisquare(*args):
     for i in range(len(data)):
         replist, repnum = find_repeats(array(data[i]))
         for t in repnum:
-            ties += t*(t*t-1)
-    c = 1 - ties / float(k*(k*k-1)*n)
+            ties += t * (t*t - 1)
+    c = 1 - ties / float(k*(k*k - 1)*n)
 
-    ssbn = pysum(pysum(data)**2)
+    ssbn = np.sum(data.sum(axis=0)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
-    return chisq, chisqprob(chisq,k-1)
+    return chisq, chisqprob(chisq, k - 1)
 
+
+def combine_pvalues(pvalues, method='fisher', weights=None):
+    """
+    Methods for combining the p-values of independent tests bearing upon the
+    same hypothesis.
+
+    Parameters
+    ----------
+    pvalues : array_like, 1-D
+        Array of p-values assumed to come from independent tests.
+    method : {'fisher', 'stouffer'}, optional
+        Name of method to use to combine p-values. The following methods are
+        available:
+        - "fisher": Fisher's method (Fisher's combined probability test),
+          the default.
+        - "stouffer": Stouffer's Z-score method.
+    weights : array_like, 1-D, optional
+        Optional array of weights used only for Stouffer's Z-score method.
+
+    Returns
+    -------
+    statistic: float
+        The statistic calculated by the specified method:
+        - "fisher": The chi-squared statistic
+        - "stouffer": The Z-score
+    pval: float
+        The combined p-value.
+
+    Notes
+    -----
+    Fisher's method (also known as Fisher's combined probability test) [1]_ uses
+    a chi-squared statistic to compute a combined p-value. The closely related
+    Stouffer's Z-score method [2]_ uses Z-scores rather than p-values. The
+    advantage of Stouffer's method is that it is straightforward to introduce
+    weights, which can make Stouffer's method more powerful than Fisher's
+    method when the p-values are from studies of different size [3]_ [4]_.
+
+    Fisher's method may be extended to combine p-values from dependent tests
+    [5]_. Extensions such as Brown's method and Kost's method are not currently
+    implemented.
+
+    .. versionadded:: 0.15.0
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Fisher%27s_method
+    .. [2] http://en.wikipedia.org/wiki/Fisher's_method#Relation_to_Stouffer.27s_Z-score_method
+    .. [3] Whitlock, M. C. "Combining probability from independent tests: the
+           weighted Z-method is superior to Fisher's approach." Journal of
+           Evolutionary Biology 18, no. 5 (2005): 1368-1373.
+    .. [4] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
+           for combining probabilities in meta-analysis." Journal of
+           Evolutionary Biology 24, no. 8 (2011): 1836-1841.
+    .. [5] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
+
+    """
+    pvalues = np.asarray(pvalues)
+    if pvalues.ndim != 1:
+        raise ValueError("pvalues is not 1-D")
+
+    if method == 'fisher':
+        Xsq = -2 * np.sum(np.log(pvalues))
+        pval = distributions.chi2.sf(Xsq, 2 * len(pvalues))
+        return (Xsq, pval)
+    elif method == 'stouffer':
+        if weights is None:
+            weights = np.ones_like(pvalues)
+        elif len(weights) != len(pvalues):
+            raise ValueError("pvalues and weights must be of the same size.")
+
+        weights = np.asarray(weights)
+        if weights.ndim != 1:
+            raise ValueError("weights is not 1-D")
+
+        Zi = distributions.norm.isf(pvalues)
+        Z = np.dot(weights, Zi) / np.linalg.norm(weights)
+        pval = distributions.norm.sf(Z)
+
+        return (Z, pval)
+    else:
+        raise ValueError(
+            "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
 
 #####################################
-####  PROBABILITY CALCULATIONS  ####
+#      PROBABILITY CALCULATIONS     #
 #####################################
-
-zprob = np.deprecate(message='zprob is deprecated in scipy 0.14, '
-        'use norm.cdf or special.ndtr instead\n',
-        old_name='zprob')(special.ndtr)
-
 
 def chisqprob(chisq, df):
     """
@@ -4154,15 +4499,7 @@ def chisqprob(chisq, df):
         distribution with degrees of freedom `df`.
 
     """
-    return special.chdtrc(df,chisq)
-
-ksprob = np.deprecate(message='ksprob is deprecated in scipy 0.14, '
-        'use stats.kstwobign.sf or special.kolmogorov instead\n',
-        old_name='ksprob')(special.kolmogorov)
-
-fprob = np.deprecate(message='fprob is deprecated in scipy 0.14, '
-        'use stats.f.sf or special.fdtrc instead\n',
-        old_name='fprob')(special.fdtrc)
+    return special.chdtrc(df, chisq)
 
 
 def betai(a, b, x):
@@ -4197,7 +4534,7 @@ def betai(a, b, x):
 
 
 #####################################
-#######  ANOVA CALCULATIONS  #######
+#         ANOVA CALCULATIONS        #
 #####################################
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
@@ -4213,6 +4550,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
         q = 1
     else:
         q = np.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
+
     n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
     d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
     return n_um / d_en
@@ -4243,7 +4581,7 @@ def f_value(ER, EF, dfR, dfF):
     F-statistic : float
 
     """
-    return ((ER-EF)/float(dfR-dfF) / (EF/float(dfF)))
+    return (ER - EF) / float(dfR - dfF) / (EF / float(dfF))
 
 
 def f_value_multivariate(ER, EF, dfnum, dfden):
@@ -4279,7 +4617,7 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 
 
 #####################################
-#######  SUPPORT FUNCTIONS  ########
+#         SUPPORT FUNCTIONS         #
 #####################################
 
 def ss(a, axis=0):
@@ -4291,8 +4629,8 @@ def ss(a, axis=0):
     a : array_like
         Input array.
     axis : int or None, optional
-        The axis along which to calculate. If None, use whole array.
-        Default is 0, i.e. along the first axis.
+        Axis along which to calculate. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
@@ -4330,8 +4668,8 @@ def square_of_sums(a, axis=0):
     a : array_like
         Input array.
     axis : int or None, optional
-        If axis is None, ravel `a` first. If `axis` is an integer, this will
-        be the axis over which to operate. Defaults to 0.
+        Axis along which to calculate. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
@@ -4353,13 +4691,14 @@ def square_of_sums(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    s = np.sum(a,axis)
+    s = np.sum(a, axis)
     if not np.isscalar(s):
-        return s.astype(float)*s
+        return s.astype(float) * s
     else:
-        return float(s)*s
+        return float(s) * s
 
 
+@np.deprecate(message="scipy.stats.fastsort is deprecated in scipy 0.16.0")
 def fastsort(a):
     """
     Sort an array and provide the argsort.

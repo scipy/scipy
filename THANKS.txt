@@ -34,7 +34,7 @@ Damian Eads for hierarchical clustering, dendrogram plotting,
 Anne Archibald for kd-trees and nearest neighbor in scipy.spatial.
 Pauli Virtanen for Sphinx documentation generation, online documentation
     framework and interpolation bugfixes.
-Josef Perktold for major improvements to scipy.stats and its test suite and 
+Josef Perktold for major improvements to scipy.stats and its test suite and
               fixes and tests to optimize.curve_fit and leastsq.
 David Morrill for getting the scoreboard test system up and running.
 Louis Luangkesorn for providing multiple tests for the stats module.
@@ -65,7 +65,7 @@ Ondrej Certik for Debian packaging.
 Paul Ivanov for porting Numeric-style C code to the new NumPy API.
 Ariel Rokem for contributions on percentileofscore fixes and tests.
 Yosef Meller for tests in the optimization module.
-Ralf Gommers for release management, code clean up and improvements 
+Ralf Gommers for release management, code clean up and improvements
     to doc-string generation.
 Bruce Southey for bug-fixes and improvements to scipy.stats.
 Ernest Adrogué for the Skellam distribution.
@@ -83,7 +83,7 @@ Jeff Armstrong for discrete state-space and linear time-invariant functionality
 Mark Wiebe for fixing type casting after changes in Numpy.
 Andrey Smirnov for improvements to FIR filter design.
 Anthony Scopatz for help with code review and merging.
-Lars Buitinck for improvements to io.arff and scipy.sparse.
+Lars Buitinck for improvements to scipy.sparse and various other modules.
 Scott Sinclair for documentation improvements and some bug fixes.
 Gael Varoquaux for cleanups in scipy.sparse.
 Skipper Seabold for a fix to special.gammainc.
@@ -92,7 +92,7 @@ Thouis (Ray) Jones for bug fixes in ndimage.
 Yaroslav Halchenko for a bug fix in ndimage.
 Thomas Robitaille for the IDL 'save' reader.
 Fazlul Shahriar for fixes to the NetCDF3 I/O.
-Chris Jordan-Squire for bug fixes, documentation improvements and 
+Chris Jordan-Squire for bug fixes, documentation improvements and
     scipy.special.logit & expit.
 Christoph Gohlke for many bug fixes and help with Windows specific issues.
 Jacob Silterra for cwt-based peak finding in scipy.signal.
@@ -128,6 +128,24 @@ Joris Vankerschaver for multivariate Gaussian functionality.
 Rob Falck for the SLSQP interface and linprog.
 Jörg Dietrich for the k-sample Anderson Darling test.
 Blake Griffith for improvements to scipy.sparse.
+Andrew Nelson for scipy.optimize.differential_evolution.
+Brian Newsom for work on ctypes multivariate integration.
+Nathan Woods for advising on multivariate integration and building unit tests.
+Brianna Laugher for bug fixes.
+Johannes Kulick for the Dirichlet distribution.
+Bastian Venthur for bug fixes.
+Alex Rothberg for stats.combine_pvalues.
+Brandon Liu for stats.combine_pvalues.
+Clark Fitzgerald for namedtuple outputs in scipy.stats.
+Florian Wilhelm for usage of RandomState in scipy.stats distributions.
+Robert T. McGibbon for Levinson-Durbin Toeplitz solver, Hessian information
+    from L-BFGS-B.
+Alex Conley for the Exponentially Modified Normal distribution.
+Abraham Escalante for contributions to scipy.stats
+Johannes Ballé for the generalized normal distribution.
+Irvin Probst (ENSTA Bretagne) for pole placement.
+Ian Henriksen for Cython wrappers for BLAS and LAPACK
+Fukumu Tsutsumi for bug fixes.
 
 
 Institutions

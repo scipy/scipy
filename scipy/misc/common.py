@@ -6,11 +6,12 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 from __future__ import division, print_function, absolute_import
 
 import numpy
+import numpy as np
 from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
-                   zeros, eye, poly1d, r_, rollaxis, sum, fromstring, isfinite,
+                   zeros, eye, poly1d, r_, sum, fromstring, isfinite,
                    squeeze, amax, reshape)
 
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 __all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
            'ascent', 'face']
@@ -28,11 +29,11 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
         Input array.
     axis : None or int or tuple of ints, optional
         Axis or axes over which the sum is taken. By default `axis` is None,
-        and all elements are summed. Tuple of ints is not accepted if NumPy 
+        and all elements are summed. Tuple of ints is not accepted if NumPy
         version is lower than 1.7.0.
 
         .. versionadded:: 0.11.0
-    keepdims: bool, optional
+    keepdims : bool, optional
         If this is set to True, the axes which are reduced are left in the
         result as dimensions with size one. With this option, the result
         will broadcast correctly against the original array.
@@ -109,9 +110,13 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
 
         if b is not None:
             b = asarray(b)
-            out = log(sum(b * exp(a - reshape(a_max, sh_keepdims)), axis=axis))
+            tmp = b * exp(a - reshape(a_max, sh_keepdims))
         else:
-            out = log(sum(exp(a - reshape(a_max, sh_keepdims)), axis=axis))
+            tmp = exp(a - reshape(a_max, sh_keepdims))
+
+        # suppress warnings about log of zero
+        with np.errstate(divide='ignore'):
+            out = log(sum(tmp, axis=axis))
 
         out += a_max
 
@@ -129,9 +134,13 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
 
         if b is not None:
             b = asarray(b)
-            out = log(sum(b * exp(a - a_max), axis=axis, keepdims=keepdims))
+            tmp = b * exp(a - a_max)
         else:
-            out = log(sum(exp(a - a_max), axis=axis, keepdims=keepdims))
+            tmp = exp(a - a_max)
+
+        # suppress warnings about log of zero
+        with np.errstate(divide='ignore'):
+            out = log(sum(tmp, axis=axis, keepdims=keepdims))
 
         if not keepdims:
             a_max = squeeze(a_max, axis=axis)

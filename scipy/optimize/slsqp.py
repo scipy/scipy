@@ -82,57 +82,57 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         Objective function.
     x0 : 1-D ndarray of float
         Initial guess for the independent variable(s).
-    eqcons : list
+    eqcons : list, optional
         A list of functions of length n such that
         eqcons[j](x,*args) == 0.0 in a successfully optimized
         problem.
-    f_eqcons : callable f(x,*args)
+    f_eqcons : callable f(x,*args), optional
         Returns a 1-D array in which each element must equal 0.0 in a
         successfully optimized problem.  If f_eqcons is specified,
         eqcons is ignored.
-    ieqcons : list
+    ieqcons : list, optional
         A list of functions of length n such that
         ieqcons[j](x,*args) >= 0.0 in a successfully optimized
         problem.
-    f_ieqcons : callable f(x,*args)
+    f_ieqcons : callable f(x,*args), optional
         Returns a 1-D ndarray in which each element must be greater or
         equal to 0.0 in a successfully optimized problem.  If
         f_ieqcons is specified, ieqcons is ignored.
-    bounds : list
+    bounds : list, optional
         A list of tuples specifying the lower and upper bound
         for each independent variable [(xl0, xu0),(xl1, xu1),...]
         Infinite values will be interpreted as large floating values.
-    fprime : callable `f(x,*args)`
+    fprime : callable `f(x,*args)`, optional
         A function that evaluates the partial derivatives of func.
-    fprime_eqcons : callable `f(x,*args)`
+    fprime_eqcons : callable `f(x,*args)`, optional
         A function of the form `f(x, *args)` that returns the m by n
         array of equality constraint normals.  If not provided,
         the normals will be approximated. The array returned by
         fprime_eqcons should be sized as ( len(eqcons), len(x0) ).
-    fprime_ieqcons : callable `f(x,*args)`
+    fprime_ieqcons : callable `f(x,*args)`, optional
         A function of the form `f(x, *args)` that returns the m by n
         array of inequality constraint normals.  If not provided,
         the normals will be approximated. The array returned by
         fprime_ieqcons should be sized as ( len(ieqcons), len(x0) ).
-    args : sequence
+    args : sequence, optional
         Additional arguments passed to func and fprime.
-    iter : int
+    iter : int, optional
         The maximum number of iterations.
-    acc : float
+    acc : float, optional
         Requested accuracy.
-    iprint : int
+    iprint : int, optional
         The verbosity of fmin_slsqp :
 
         * iprint <= 0 : Silent operation
         * iprint == 1 : Print summary upon completion (default)
         * iprint >= 2 : Print status of each iterate and summary
-    disp : int
+    disp : int, optional
         Over-rides the iprint interface (preferred).
-    full_output : bool
+    full_output : bool, optional
         If False, return only the minimizer of func (default).
         Otherwise, output final objective function and summary
         information.
-    epsilon : float
+    epsilon : float, optional
         The step size for finite-difference derivative estimates.
     callback : callable, optional
         Called after each iteration, as ``callback(x)``, where ``x`` is the
@@ -219,19 +219,18 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     Minimize a scalar function of one or more variables using Sequential
     Least SQuares Programming (SLSQP).
 
-    Options for the SLSQP algorithm are:
-        ftol : float
-            Precision goal for the value of f in the stopping criterion.
-        eps : float
-            Step size used for numerical approximation of the jacobian.
-        disp : bool
-            Set to True to print convergence messages. If False,
-            `verbosity` is ignored and set to 0.
-        maxiter : int
-            Maximum number of iterations.
+    Options
+    -------
+    ftol : float
+        Precision goal for the value of f in the stopping criterion.
+    eps : float
+        Step size used for numerical approximation of the jacobian.
+    disp : bool
+        Set to True to print convergence messages. If False,
+        `verbosity` is ignored and set to 0.
+    maxiter : int
+        Maximum number of iterations.
 
-    This function is called by the `minimize` function with
-    `method=SLSQP`. It is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
     fprime = jac
@@ -269,9 +268,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # check jacobian
         cjac = con.get('jac')
         if cjac is None:
-            # approximate jacobian function
-            def cjac(x, *args):
-                return approx_jacobian(x, con['fun'], epsilon, *args)
+            # approximate jacobian function.  The factory function is needed
+            # to keep a reference to `fun`, see gh-4240.
+            def cjac_factory(fun):
+                def cjac(x, *args):
+                    return approx_jacobian(x, fun, epsilon, *args)
+                return cjac
+            cjac = cjac_factory(con['fun'])
 
         # update constraints' dictionary
         cons[ctype] += ({'fun': con['fun'],

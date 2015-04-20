@@ -76,8 +76,8 @@ double expm1(double x)
 {
     double r, xx;
 
-    if (!npy_isfinite(x)) {
-	if (npy_isnan(x)) {
+    if (!cephes_isfinite(x)) {
+	if (cephes_isnan(x)) {
 	    return x;
 	}
 	else if (x > 0) {

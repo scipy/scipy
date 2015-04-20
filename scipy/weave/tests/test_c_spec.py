@@ -6,13 +6,13 @@ import tempfile
 import string
 import time
 
-from numpy.testing import TestCase, dec, assert_, run_module_suite
+from numpy.testing import TestCase, assert_, run_module_suite
 
-from scipy.weave import inline_tools,ext_tools,c_spec
+from scipy.weave import inline_tools, ext_tools, c_spec
 from scipy.weave.build_tools import msvc_exists, gcc_exists
 from scipy.weave.catalog import unique_file
 
-from weave_test_utils import debug_print
+from weave_test_utils import debug_print, dec
 
 
 def unique_mod(d,file_name):

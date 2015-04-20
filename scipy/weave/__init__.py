@@ -2,6 +2,10 @@
 C/C++ integration
 =================
 
+NOTE: this module is deprecated and will be removed from Scipy before
+the 1.0 release -- use the standalone weave package
+(`https://github.com/scipy/weave`_) instead.
+
         inline     -- a function for including C/C++ code within Python
         blitz      -- a function for compiling Numeric expressions to C++
         ext_tools  -- a module that helps construct C/C++ extension modules.
@@ -19,8 +23,22 @@ from __future__ import absolute_import, print_function
 
 import sys
 
+from numpy import deprecate
+
+
 if sys.version_info[0] >= 3:
     raise ImportError("scipy.weave only supports Python 2.x")
+
+
+@deprecate(old_name="scipy.weave", new_name="weave")
+def _deprecated():
+    pass
+try:
+    _deprecated()
+except DeprecationWarning as e:
+    # don't fail import if DeprecationWarnings raise error -- works around
+    # the situation with Numpy's test framework
+    pass
 
 
 from .weave_version import weave_version as __version__

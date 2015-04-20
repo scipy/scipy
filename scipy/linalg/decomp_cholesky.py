@@ -45,12 +45,12 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     ----------
     a : (M, M) array_like
         Matrix to be decomposed
-    lower : bool
+    lower : bool, optional
         Whether to compute the upper or lower triangular Cholesky
         factorization.  Default is upper-triangular.
-    overwrite_a : bool
+    overwrite_a : bool, optional
         Whether to overwrite data in `a` (may improve performance).
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -99,12 +99,12 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     ----------
     a : (M, M) array_like
         Matrix to be decomposed
-    lower : boolean
+    lower : bool, optional
         Whether to compute the upper or lower triangular Cholesky factorization
         (Default: upper-triangular)
-    overwrite_a : boolean
+    overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -114,7 +114,7 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     c : (M, M) ndarray
         Matrix whose upper or lower triangle contains the Cholesky factor
         of `a`. Other parts of the matrix contain random data.
-    lower : boolean
+    lower : bool
         Flag indicating whether the factor is in the lower or upper triangle
 
     Raises
@@ -142,7 +142,9 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
         Cholesky factorization of a, as given by cho_factor
     b : array
         Right-hand side
-    check_finite : boolean, optional
+    overwrite_b : bool, optional
+        Whether to overwrite data in b (may improve performance)
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -184,7 +186,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     Cholesky decompose a banded Hermitian positive-definite matrix
 
     The matrix a is stored in ab either in lower diagonal or upper
-    diagonal ordered form:
+    diagonal ordered form::
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
@@ -205,11 +207,11 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     ----------
     ab : (u + 1, M) array_like
         Banded matrix
-    overwrite_ab : boolean
+    overwrite_ab : bool, optional
         Discard data in ab (may enhance performance)
-    lower : boolean
+    lower : bool, optional
         Is the matrix in the lower form. (Default is upper form)
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
@@ -245,9 +247,9 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
         `lower` must be the same value that was given to cholesky_banded.
     b : array
         Right-hand side
-    overwrite_b : bool
+    overwrite_b : bool, optional
         If True, the function will overwrite the values in `b`.
-    check_finite : boolean, optional
+    check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.

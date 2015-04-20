@@ -2,7 +2,8 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (run_module_suite, assert_allclose, assert_equal,
-                           assert_almost_equal, assert_array_equal)
+                           assert_almost_equal, assert_array_equal,
+                           assert_array_almost_equal)
 
 from scipy.ndimage import convolve1d
 
@@ -134,6 +135,16 @@ def test_sg_coeffs_deriv():
         assert_allclose(coeffs1.dot(x), dx[pos], atol=1e-10)
         coeffs2 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', deriv=2)
         assert_allclose(coeffs2.dot(x), d2x[pos], atol=1e-10)
+
+
+def test_sg_coeffs_large():
+    # Test that for large values of window_length and polyorder the array of
+    # coefficients returned is symmetric. The aim is to ensure that
+    # no potential numeric overflow occurs.
+    coeffs0 = savgol_coeffs(31, 9)
+    assert_array_almost_equal(coeffs0, coeffs0[::-1])
+    coeffs1 = savgol_coeffs(31, 9, deriv=1)
+    assert_array_almost_equal(coeffs1, -coeffs1[::-1])
 
 
 #--------------------------------------------------------------------

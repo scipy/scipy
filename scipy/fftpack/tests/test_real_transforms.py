@@ -57,8 +57,7 @@ class _TestDCTBase(TestCase):
         for i in FFTWDATA_SIZES:
             x, yr = fftw_dct_ref(self.type, i, self.rdt)
             y = dct(x, type=self.type)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, self.rdt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -84,25 +83,23 @@ class _TestDCTBase(TestCase):
 
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
-        """Test correspondance with matlab (orthornomal mode)."""
+        # Test correspondance with matlab (orthornomal mode).
         for i in range(len(X)):
             x = np.array(X[i], dtype=self.rdt)
             yr = Y[i]
             y = dct(x, norm="ortho", type=2)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, self.rdt)
             assert_array_almost_equal(y, yr, decimal=self.dec)
 
 
 class _TestDCTIIIBase(_TestDCTBase):
     def test_definition_ortho(self):
-        """Test orthornomal mode."""
+        # Test orthornomal mode.
         for i in range(len(X)):
             x = np.array(X[i], dtype=self.rdt)
             y = dct(x, norm='ortho', type=2)
             xi = dct(y, norm="ortho", type=3)
-            self.assertTrue(xi.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (xi.dtype, self.rdt))
+            assert_equal(xi.dtype, self.rdt)
             assert_array_almost_equal(xi, x, decimal=self.dec)
 
 
@@ -162,8 +159,7 @@ class _TestIDCTBase(TestCase):
                 x /= 2 * (i-1)
             else:
                 x /= 2 * i
-            self.assertTrue(x.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (x.dtype, self.rdt))
+            assert_equal(x.dtype, self.rdt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -224,8 +220,7 @@ class _TestDSTBase(TestCase):
         for i in FFTWDATA_SIZES:
             xr, yr = fftw_dst_ref(self.type, i, self.rdt)
             y = dst(xr, type=self.type)
-            self.assertTrue(y.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (y.dtype, self.rdt))
+            assert_equal(y.dtype, self.rdt)
             # XXX: we divide by np.max(y) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -290,8 +285,7 @@ class _TestIDSTBase(TestCase):
                 x /= 2 * (i+1)
             else:
                 x /= 2 * i
-            self.assertTrue(x.dtype == self.rdt,
-                    "Output dtype is %s, expected %s" % (x.dtype, self.rdt))
+            assert_equal(x.dtype, self.rdt)
             # XXX: we divide by np.max(x) because the tests fail otherwise. We
             # should really use something like assert_array_approx_equal. The
             # difference is due to fftw using a better algorithm w.r.t error
@@ -343,16 +337,14 @@ class TestIDSTIIIFloat(_TestIDSTBase):
 
 
 class TestOverwrite(object):
-    """
-    Check input overwrite behavior
-    """
+    """Check input overwrite behavior """
 
     real_dtypes = [np.float32, np.float64]
 
     def _check(self, x, routine, type, fftsize, axis, norm, overwrite_x,
                should_overwrite, **kw):
         x2 = x.copy()
-        y = routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
+        routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
 
         sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
             routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
@@ -408,6 +400,7 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (16,), -1, overwritable)
             self._check_1d(idst, dtype, (16, 2), 0, overwritable)
             self._check_1d(idst, dtype, (2, 16), 1, overwritable)
+
 
 if __name__ == "__main__":
     np.testing.run_module_suite()

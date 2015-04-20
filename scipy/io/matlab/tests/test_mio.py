@@ -13,7 +13,7 @@ from glob import glob
 from io import BytesIO
 from tempfile import mkdtemp
 
-from scipy.lib.six import u, text_type, string_types
+from scipy._lib.six import u, text_type, string_types
 
 import warnings
 import shutil
@@ -28,11 +28,12 @@ from numpy import array
 import scipy.sparse as SP
 
 import scipy.io.matlab.byteordercodes as boc
-from scipy.io.matlab.miobase import matdims, MatWriteError
+from scipy.io.matlab.miobase import matdims, MatWriteError, MatReadError
 from scipy.io.matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
 from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
-                                  MatlabFunction, varmats_from_mat)
-
+                                  MatlabFunction, varmats_from_mat,
+                                  to_writeable, EmptyStructMarker)
+from scipy.io.matlab import mio5_params as mio5p
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -447,7 +448,15 @@ def test_warnings():
 
 
 def test_regression_653():
-    assert_raises(TypeError, savemat, BytesIO(), {'d':{1:2}}, format='5')
+    # Saving a dictionary with only invalid keys used to raise an error. Now we
+    # save this as an empty struct in matlab space.
+    sio = BytesIO()
+    savemat(sio, {'d':{1:2}}, format='5')
+    back = loadmat(sio)['d']
+    # Check we got an empty struct equivalent
+    assert_equal(back.shape, (1,1))
+    assert_equal(back.dtype, np.dtype(np.object))
+    assert_(back[0,0] is None)
 
 
 def test_structname_len():
@@ -680,6 +689,91 @@ def test_empty_struct():
     assert_array_equal(a2, arr)
 
 
+def test_save_empty_dict():
+    # saving empty dict also gives empty struct
+    stream = BytesIO()
+    savemat(stream, {'arr': {}})
+    d = loadmat(stream)
+    a = d['arr']
+    assert_equal(a.shape, (1,1))
+    assert_equal(a.dtype, np.dtype(np.object))
+    assert_(a[0,0] is None)
+
+
+def assert_any_equal(output, alternatives):
+    """ Assert `output` is equal to at least one element in `alternatives`
+    """
+    one_equal = False
+    for expected in alternatives:
+        if np.all(output == expected):
+            one_equal = True
+            break
+    assert_(one_equal)
+
+
+def test_to_writeable():
+    # Test to_writeable function
+    res = to_writeable(np.array([1]))  # pass through ndarrays
+    assert_equal(res.shape, (1,))
+    assert_array_equal(res, 1)
+    # Dict fields can be written in any order
+    expected1 = np.array([(1, 2)], dtype=[('a', '|O8'), ('b', '|O8')])
+    expected2 = np.array([(2, 1)], dtype=[('b', '|O8'), ('a', '|O8')])
+    alternatives = (expected1, expected2)
+    assert_any_equal(to_writeable({'a':1,'b':2}), alternatives)
+    # Fields with underscores discarded
+    assert_any_equal(to_writeable({'a':1,'b':2, '_c':3}), alternatives)
+    # Not-string fields discarded
+    assert_any_equal(to_writeable({'a':1,'b':2, 100:3}), alternatives)
+    # String fields that are valid Python identifiers discarded
+    assert_any_equal(to_writeable({'a':1,'b':2, '99':3}), alternatives)
+    # Object with field names is equivalent
+
+    class klass(object):
+        pass
+
+    c = klass
+    c.a = 1
+    c.b = 2
+    assert_any_equal(to_writeable(c), alternatives)
+    # empty list and tuple go to empty array
+    res = to_writeable([])
+    assert_equal(res.shape, (0,))
+    assert_equal(res.dtype.type, np.float64)
+    res = to_writeable(())
+    assert_equal(res.shape, (0,))
+    assert_equal(res.dtype.type, np.float64)
+    # None -> None
+    assert_(to_writeable(None) is None)
+    # String to strings
+    assert_equal(to_writeable('a string').dtype.type, np.str_)
+    # Scalars to numpy to numpy scalars
+    res = to_writeable(1)
+    assert_equal(res.shape, ())
+    assert_equal(res.dtype.type, np.array(1).dtype.type)
+    assert_array_equal(res, 1)
+    # Empty dict returns EmptyStructMarker
+    assert_(to_writeable({}) is EmptyStructMarker)
+    # Object does not have (even empty) __dict__
+    assert_(to_writeable(object()) is None)
+    # Custom object does have empty __dict__, returns EmptyStructMarker
+
+    class C(object):
+        pass
+
+    assert_(to_writeable(c()) is EmptyStructMarker)
+    # dict keys with legal characters are convertible
+    res = to_writeable({'a': 1})['a']
+    assert_equal(res.shape, (1,))
+    assert_equal(res.dtype.type, np.object_)
+    # Only fields with illegal characters, falls back to EmptyStruct
+    assert_(to_writeable({'1':1}) is EmptyStructMarker)
+    assert_(to_writeable({'_a':1}) is EmptyStructMarker)
+    # Unless there are valid fields, in which case structured array
+    assert_equal(to_writeable({'1':1, 'f': 2}),
+                 np.array([(2,)], dtype=[('f', '|O8')]))
+
+
 def test_recarray():
     # check roundtrip of structured array
     dt = [('f1', 'f8'),
@@ -837,15 +931,31 @@ def test_write_opposite_endian():
 
 
 def test_logical_array():
-    # The roundtrip test doesn't verify that we load the data up with the correct (bool) dtype
-    fp = open(pjoin(test_data_path, 'testbool_8_WIN64.mat'), 'rb')
-    rdr = MatFile5Reader(fp, mat_dtype=True)
-    d = rdr.get_variables()
-    fp.close()
-
+    # The roundtrip test doesn't verify that we load the data up with the
+    # correct (bool) dtype
+    with open(pjoin(test_data_path, 'testbool_8_WIN64.mat'), 'rb') as fobj:
+        rdr = MatFile5Reader(fobj, mat_dtype=True)
+        d = rdr.get_variables()
     x = np.array([[True], [False]], dtype=np.bool_)
     assert_array_equal(d['testbools'], x)
     assert_equal(d['testbools'].dtype, x.dtype)
+
+
+def test_logical_out_type():
+    # Confirm that bool type written as uint8, uint8 class
+    # See gh-4022
+    stream = BytesIO()
+    barr = np.array([False, True, False])
+    savemat(stream, {'barray': barr})
+    stream.seek(0)
+    reader = MatFile5Reader(stream)
+    reader.initialize_read()
+    reader.read_file_header()
+    hdr, _ = reader.read_var_header()
+    assert_equal(hdr.mclass, mio5p.mxUINT8_CLASS)
+    assert_equal(hdr.is_logical, True)
+    var = reader.read_var_array(hdr, False)
+    assert_equal(var.dtype.type, np.uint8)
 
 
 def test_mat4_3d():
@@ -1038,6 +1148,27 @@ def test_unicode_mat4():
     assert_equal(var_back['second_cat'], var['second_cat'])
 
 
+def test_logical_sparse():
+    # Test we can read logical sparse stored in mat file as bytes.
+    # See https://github.com/scipy/scipy/issues/3539.
+    # In some files saved by MATLAB, the sparse data elements (Real Part
+    # Subelement in MATLAB speak) are stored with apparent type double
+    # (miDOUBLE) but are in fact single bytes.
+    filename = pjoin(test_data_path,'logical_sparse.mat')
+    # Before fix, this would crash with:
+    # ValueError: indices and data should have the same size
+    d = loadmat(filename, struct_as_record=True)
+    log_sp = d['sp_log_5_4']
+    assert_(isinstance(log_sp, SP.csc_matrix))
+    assert_equal(log_sp.dtype.type, np.bool_)
+    assert_array_equal(log_sp.toarray(),
+                       [[True, True, True, False],
+                        [False, False, True, False],
+                        [False, False, True, False],
+                        [False, False, False, False],
+                        [False, False, False, False]])
+
+
 def test_empty_sparse():
     # Can we read empty sparse matrices?
     sio = BytesIO()
@@ -1048,6 +1179,49 @@ def test_empty_sparse():
     res = loadmat(sio)
     assert_array_equal(res['x'].shape, empty_sparse.shape)
     assert_array_equal(res['x'].todense(), 0)
+    # Do empty sparse matrices get written with max nnz 1?
+    # See https://github.com/scipy/scipy/issues/4208
+    sio.seek(0)
+    reader = MatFile5Reader(sio)
+    reader.initialize_read()
+    reader.read_file_header()
+    hdr, _ = reader.read_var_header()
+    assert_equal(hdr.nzmax, 1)
+
+
+def test_empty_mat_error():
+    # Test we get a specific warning for an empty mat file
+    sio = BytesIO()
+    assert_raises(MatReadError, loadmat, sio)
+
+
+def test_miuint32_compromise():
+    # Reader should accept miUINT32 for miINT32, but check signs
+    # mat file with miUINT32 for miINT32, but OK values
+    filename = pjoin(test_data_path,'miuint32_for_miint32.mat')
+    res = loadmat(filename)
+    assert_equal(res['an_array'], np.arange(10)[None, :])
+    # mat file with miUINT32 for miINT32, with negative value
+    filename = pjoin(test_data_path, 'bad_miuint32.mat')
+    assert_raises(ValueError, loadmat, filename)
+
+
+def test_miutf8_for_miint8_compromise():
+    # Check reader accepts ascii as miUTF8 for array names
+    filename = pjoin(test_data_path,'miutf8_array_name.mat')
+    res = loadmat(filename)
+    assert_equal(res['array_name'], [[1]])
+    # mat file with non-ascii utf8 name raises error
+    filename = pjoin(test_data_path, 'bad_miutf8_array_name.mat')
+    assert_raises(ValueError, loadmat, filename)
+
+
+def test_bad_utf8():
+    # Check that reader reads bad UTF with 'replace' option
+    filename = pjoin(test_data_path,'broken_utf8.mat')
+    res = loadmat(filename)
+    assert_equal(res['bad_string'],
+                 b'\x80 am broken'.decode('utf8', 'replace'))
 
 
 if __name__ == "__main__":

@@ -5,10 +5,12 @@ from __future__ import division, print_function, absolute_import
 __docformat__ = "restructuredtext en"
 
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
-            'hstack', 'vstack', 'bmat', 'rand', 'diags', 'block_diag']
+           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
 
 
 import numpy as np
+
+from scipy._lib.six import xrange
 
 from .sputils import upcast, get_index_dtype
 
@@ -27,17 +29,17 @@ def spdiags(data, diags, m, n, format=None):
 
     Parameters
     ----------
-    data   : array_like
+    data : array_like
         matrix diagonals stored row-wise
-    diags  : diagonals to set
+    diags : diagonals to set
         - k = 0  the main diagonal
         - k > 0  the k-th upper diagonal
         - k < 0  the k-th lower diagonal
     m, n : int
         shape of the result
-    format : format of the result (e.g. "csr")
-        By default (format=None) an appropriate sparse matrix
-        format is returned.  This choice is subject to change.
+    format : str, optional
+        Format of the result. By default (format=None) an appropriate sparse
+        matrix format is returned.  This choice is subject to change.
 
     See Also
     --------
@@ -62,14 +64,12 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
     """
     Construct a sparse matrix from diagonals.
 
-    .. versionadded:: 0.11
-
     Parameters
     ----------
     diagonals : sequence of array_like
         Sequence of arrays containing the matrix diagonals,
         corresponding to `offsets`.
-    offsets  : sequence of int
+    offsets : sequence of int
         Diagonals to set:
           - k = 0  the main diagonal
           - k > 0  the k-th upper diagonal
@@ -100,6 +100,8 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
         + np.diag(diagonals[k], offsets[k])
 
     Repeated diagonal offsets are disallowed.
+
+    .. versionadded:: 0.11
 
     Examples
     --------
@@ -192,11 +194,11 @@ def identity(n, dtype='d', format=None):
 
     Parameters
     ----------
-    n : integer
+    n : int
         Shape of the identity matrix.
-    dtype :
+    dtype : dtype, optional
         Data type of the matrix
-    format : string
+    format : str, optional
         Sparse format of the result, e.g. format="csr", etc.
 
     Examples
@@ -221,15 +223,15 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
     Parameters
     ----------
-    n : integer
+    n : int
         Number of rows in the matrix.
-    m : integer, optional
+    m : int, optional
         Number of columns. Default: n
-    k : integer, optional
+    k : int, optional
         Diagonal to place ones on. Default: 0 (main diagonal)
-    dtype :
+    dtype : dtype, optional
         Data type of the matrix
-    format : string
+    format : str, optional
         Sparse format of the result, e.g. format="csr", etc.
 
     Examples
@@ -364,7 +366,7 @@ def kronsum(A, B, format=None):
         square matrix
     B
         square matrix
-    format : string
+    format : str
         format of the result (e.g. "csr")
 
     Returns
@@ -429,10 +431,13 @@ def hstack(blocks, format=None, dtype=None):
     ----------
     blocks
         sequence of sparse matrices with compatible shapes
-    format : string
+    format : str
         sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
+    dtype : dtype, optional
+        The data-type of the output matrix.  If not given, the dtype is
+        determined from that of `blocks`.
 
     See Also
     --------
@@ -459,10 +464,13 @@ def vstack(blocks, format=None, dtype=None):
     ----------
     blocks
         sequence of sparse matrices with compatible shapes
-    format : string
+    format : str, optional
         sparse format of the result (e.g. "csr")
         by default an appropriate sparse matrix format is returned.
         This choice is subject to change.
+    dtype : dtype, optional
+        The data-type of the output matrix.  If not given, the dtype is
+        determined from that of `blocks`.
 
     See Also
     --------
@@ -495,7 +503,7 @@ def bmat(blocks, format=None, dtype=None):
         The sparse format of the result (e.g. "csr").  By default an
         appropriate sparse matrix format is returned.
         This choice is subject to change.
-    dtype : dtype specifier, optional
+    dtype : dtype, optional
         The data-type of the output matrix.  If not given, the dtype is
         determined from that of `blocks`.
 
@@ -611,11 +619,9 @@ def block_diag(mats, format=None, dtype=None):
     """
     Build a block diagonal sparse matrix from provided matrices.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
-    A, B, ... : sequence of matrices
+    mats : sequence of matrices
         Input matrices.
     format : str, optional
         The sparse format of the result (e.g. "csr").  If not given, the matrix
@@ -627,6 +633,11 @@ def block_diag(mats, format=None, dtype=None):
     Returns
     -------
     res : sparse matrix
+
+    Notes
+    -----
+
+    .. versionadded:: 0.11.0
 
     See Also
     --------
@@ -657,24 +668,51 @@ def block_diag(mats, format=None, dtype=None):
     return bmat(rows, format=format, dtype=dtype)
 
 
-def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
-    """Generate a sparse matrix of the given shape and density with uniformly
+def random(m, n, density=0.01, format='coo', dtype=None,
+           random_state=None, data_rvs=None):
+    """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
     Parameters
     ----------
     m, n : int
         shape of the matrix
-    density : real
+    density : real, optional
         density of the generated matrix: density equal to one means a full
         matrix, density of 0 means a matrix with no non-zero items.
-    format : str
+    format : str, optional
         sparse matrix format.
-    dtype : dtype
+    dtype : dtype, optional
         type of the returned matrix values.
     random_state : {numpy.random.RandomState, int}, optional
         Random number generator or random seed. If not given, the singleton
-        numpy.random will be used.
+        numpy.random will be used.  This random state will be used
+        for sampling the sparsity structure, but not necessarily for sampling
+        the values of the structurally nonzero entries of the matrix.
+    data_rvs : callable, optional
+        Samples a requested number of random values.
+        This function should take a single argument specifying the length
+        of the ndarray that it will return.  The structurally nonzero entries
+        of the sparse random matrix will be taken from the array sampled
+        by this function.  By default, uniform [0, 1) random values will be
+        sampled using the same random state as is used for sampling
+        the sparsity structure.
+
+    Examples
+    --------
+    >>> from scipy.sparse import construct
+    >>> from scipy import stats
+    >>> class CustomRandomState(object):
+        ...     def randint(self, k):
+        ...         i = np.random.randint(k)
+        ...         return i - i % 2
+    >>> rs = CustomRandomState()
+    >>> rvs = stats.poisson(25, loc=10).rvs
+    >>> S = construct.random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
+    >>> S.A
+    array([[ 36.,   0.,  33.,   0.],
+           [  0.,   0.,   0.,   0.],
+           [  0.,   0.,  36.,   0.]])
 
     Notes
     -----
@@ -701,28 +739,56 @@ greater than %d - this is not supported on this machine
     # Number of non zero values
     k = int(density * m * n)
 
-    # Generate a few more values than k so that we can get unique values
-    # afterwards.
-    # XXX: one could be smarter here
-    mlow = 5
-    fac = 1.02
-    gk = min(k + mlow, fac * k)
-
     if random_state is None:
         random_state = np.random
     elif isinstance(random_state, (int, np.integer)):
         random_state = np.random.RandomState(random_state)
+    if data_rvs is None:
+        data_rvs = random_state.rand
 
-    def _gen_unique_rand(rng, _gk):
-        ind = rng.rand(int(_gk))
-        return np.unique(np.floor(ind * mn))[:k]
-
-    ind = _gen_unique_rand(random_state, gk)
-    while ind.size < k:
-        gk *= 1.05
-        ind = _gen_unique_rand(random_state, gk)
+    # Use the algorithm from python's random.sample for k < mn/3.
+    if mn < 3*k:
+        # We should use this line, but choice is only available in numpy >= 1.7
+        # ind = random_state.choice(mn, size=k, replace=False)
+        ind = random_state.permutation(mn)[:k]
+    else:
+        ind = np.empty(k, dtype=tp)
+        selected = set()
+        for i in xrange(k):
+            j = random_state.randint(mn)
+            while j in selected:
+                j = random_state.randint(mn)
+            selected.add(j)
+            ind[i] = j
 
     j = np.floor(ind * 1. / m).astype(tp)
     i = (ind - j * m).astype(tp)
-    vals = random_state.rand(k).astype(dtype)
+    vals = data_rvs(k).astype(dtype)
     return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
+
+
+def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+    """Generate a sparse matrix of the given shape and density with uniformly
+    distributed values.
+
+    Parameters
+    ----------
+    m, n : int
+        shape of the matrix
+    density : real, optional
+        density of the generated matrix: density equal to one means a full
+        matrix, density of 0 means a matrix with no non-zero items.
+    format : str, optional
+        sparse matrix format.
+    dtype : dtype, optional
+        type of the returned matrix values.
+    random_state : {numpy.random.RandomState, int}, optional
+        Random number generator or random seed. If not given, the singleton
+        numpy.random will be used.
+
+    Notes
+    -----
+    Only float types are supported for now.
+
+    """
+    return random(m, n, density, format, dtype, random_state)

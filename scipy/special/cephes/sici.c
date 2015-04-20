@@ -627,7 +627,7 @@ double *si, *ci;
 
 
     if (x > 1.0e9) {
-	if (npy_isinf(x)) {
+	if (cephes_isinf(x)) {
 	    if (sign == -1) {
 		*si = -NPY_PI_2;
 		*ci = NPY_NAN;

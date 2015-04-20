@@ -18,7 +18,11 @@ def pre_build(context):
     context.tweak_extension("_ufuncs_cxx", features="cxx cxxshlib pyext bento",
                             use="NPYMATH")
 
-    context.waf_context.env.INCLUDES.append("c_misc")
     context.tweak_extension("_ufuncs",
                             use="sc_amos sc_c_misc sc_cephes sc_mach sc_cdf "\
-                                "sc_specfun NPYMATH CLIB")
+                                "sc_specfun NPYMATH CLIB LAPACK",
+                            includes=["c_misc"])
+
+    context.tweak_extension("_ellip_harm_2",
+                            use="sc_amos sc_c_misc sc_cephes sc_mach sc_cdf "\
+                                "sc_specfun NPYMATH CLIB LAPACK")

@@ -54,8 +54,8 @@ def process_pyx(fromfile, tofile):
     try:
         from Cython.Compiler.Version import version as cython_version
         from distutils.version import LooseVersion
-        if LooseVersion(cython_version) < LooseVersion('0.19'):
-            raise Exception('Building SciPy requires Cython >= 0.19')
+        if LooseVersion(cython_version) < LooseVersion('0.21'):
+            raise Exception('Building SciPy requires Cython >= 0.21')
 
     except ImportError:
         pass
@@ -77,7 +77,7 @@ def process_pyx(fromfile, tofile):
                                  'setuptools_main as main; sys.exit(main())'] + flags +
                                  ["-o", tofile, fromfile])
             if r != 0:
-                raise Exception('Cython failed')
+                raise Exception("Cython either isn't installed or it failed.")
     except OSError:
         raise OSError('Cython needs to be installed')
 
@@ -90,9 +90,9 @@ def process_tempita_pyx(fromfile, tofile):
     except ImportError:
         raise Exception('Building SciPy requires Tempita: '
                         'pip install --user Tempita')
-    with open(fromfile, "r") as f:
-        tmpl = f.read()
-    pyxcontent = tempita.sub(tmpl)
+    from_filename = tempita.Template.from_filename
+    template = from_filename(fromfile, encoding=sys.getdefaultencoding())
+    pyxcontent = template.substitute()
     assert fromfile.endswith('.pyx.in')
     pyxfile = fromfile[:-len('.pyx.in')] + '.pyx'
     with open(pyxfile, "w") as f:
@@ -101,8 +101,8 @@ def process_tempita_pyx(fromfile, tofile):
 
 rules = {
     # fromext : function
-    '.pyx' : process_pyx,
-    '.pyx.in' : process_tempita_pyx
+    '.pyx': process_pyx,
+    '.pyx.in': process_tempita_pyx
     }
 #
 # Hash db

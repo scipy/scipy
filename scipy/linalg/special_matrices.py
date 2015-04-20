@@ -2,13 +2,13 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import numpy as np
-from scipy.lib.six import xrange
-from scipy.lib.six import string_types
+from scipy._lib.six import xrange
+from scipy._lib.six import string_types
 
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'all_mat', 'kron', 'block_diag', 'companion',
-           'hilbert', 'invhilbert', 'pascal', 'dft']
+           'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
+           'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft']
 
 
 #-----------------------------------------------------------------------------
@@ -28,16 +28,16 @@ def tri(N, M=None, k=0, dtype=None):
 
     Parameters
     ----------
-    N : integer
+    N : int
         The size of the first dimension of the matrix.
-    M : integer or None
+    M : int or None, optional
         The size of the second dimension of the matrix. If `M` is None,
         `M = N` is assumed.
-    k : integer
+    k : int, optional
         Number of subdiagonal below which matrix is filled with ones.
         `k` = 0 is the main diagonal, `k` < 0 subdiagonal and `k` > 0
         superdiagonal.
-    dtype : dtype
+    dtype : dtype, optional
         Data type of the matrix.
 
     Returns
@@ -80,7 +80,7 @@ def tril(m, k=0):
     ----------
     m : array_like
         Matrix whose elements to return
-    k : integer
+    k : int, optional
         Diagonal above which to zero elements.
         `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
         `k` > 0 superdiagonal.
@@ -152,7 +152,7 @@ def toeplitz(c, r=None):
     c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
         will be converted to a 1-D array.
-    r : array_like
+    r : array_like, optional
         First row of the matrix. If None, ``r = conjugate(c)`` is assumed;
         in this case, if c[0] is real, the result is a Hermitian matrix.
         r[0] is ignored; the first row of the returned matrix is
@@ -256,7 +256,7 @@ def hankel(c, r=None):
     c : array_like
         First column of the matrix.  Whatever the actual shape of `c`, it
         will be converted to a 1-D array.
-    r : array_like
+    r : array_like, optional
         Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
         r[0] is ignored; the last row of the returned matrix is
         ``[c[-1], r[1:]]``.  Whatever the actual shape of `r`, it will be
@@ -312,7 +312,7 @@ def hadamard(n, dtype=int):
     ----------
     n : int
         The order of the matrix.  `n` must be a power of 2.
-    dtype : numpy dtype
+    dtype : dtype, optional
         The data type of the array to be constructed.
 
     Returns
@@ -429,11 +429,6 @@ def leslie(f, s):
     return a
 
 
-@np.deprecate
-def all_mat(*args):
-    return list(map(np.matrix, args))
-
-
 def kron(a, b):
     """
     Kronecker product.
@@ -489,7 +484,7 @@ def block_diag(*arrs):
     Parameters
     ----------
     A, B, C, ... : array_like, up to 2-D
-        Input arrays.  A 1-D array or array_like sequence of length `n`is
+        Input arrays.  A 1-D array or array_like sequence of length `n` is
         treated as a 2-D array with shape ``(1,n)``.
 
     Returns
@@ -502,6 +497,8 @@ def block_diag(*arrs):
     -----
     If all the input arrays are square, the output is known as a
     block diagonal matrix.
+
+    Empty sequences (i.e., array-likes of zero size) are ignored.
 
     Examples
     --------
@@ -531,9 +528,9 @@ def block_diag(*arrs):
     bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
     if bad_args:
         raise ValueError("arguments in the following positions have dimension "
-                            "greater than 2: %s" % bad_args)
+                         "greater than 2: %s" % bad_args)
 
-    shapes = np.array([a.shape for a in arrs])
+    shapes = np.array([a.shape if a.size > 0 else [0, 0] for a in arrs])
     out = np.zeros(np.sum(shapes, axis=0), dtype=arrs[0].dtype)
 
     r, c = 0, 0
@@ -608,6 +605,51 @@ def companion(a):
     return c
 
 
+def helmert(n, full=False):
+    """
+    Create a Helmert matrix of order `n`.
+
+    This has applications in statistics, compositional or simplicial analysis,
+    and in Aitchison geometry.
+
+    Parameters
+    ----------
+    n : int
+        The size of the array to create.
+    full : bool, optional
+        If True the (n, n) ndarray will be returned.
+        Otherwise the submatrix that does not include the first
+        row will be returned.
+        Default: False.
+
+    Returns
+    -------
+    M : ndarray
+        The Helmert matrix.
+        The shape is (n, n) or (n-1, n) depending on the `full` argument.
+
+    Examples
+    --------
+    >>> from scipy.linalg import helmert
+    >>> helmert(5, full=True)
+    array([[ 0.4472136 ,  0.4472136 ,  0.4472136 ,  0.4472136 ,  0.4472136 ],
+           [ 0.70710678, -0.70710678,  0.        ,  0.        ,  0.        ],
+           [ 0.40824829,  0.40824829, -0.81649658,  0.        ,  0.        ],
+           [ 0.28867513,  0.28867513,  0.28867513, -0.8660254 ,  0.        ],
+           [ 0.2236068 ,  0.2236068 ,  0.2236068 ,  0.2236068 , -0.89442719]])
+
+    """
+    H = np.tril(np.ones((n, n)), -1) - np.diag(np.arange(n))
+    d = np.arange(n) * np.arange(1, n+1)
+    H[0] = 1
+    d[0] = n
+    H_full = H / np.sqrt(d)[:, np.newaxis]
+    if full:
+        return H_full
+    else:
+        return H_full[1:]
+
+
 def hilbert(n):
     """
     Create a Hilbert matrix of order `n`.
@@ -659,7 +701,7 @@ def invhilbert(n, exact=False):
     ----------
     n : int
         The order of the Hilbert matrix.
-    exact : bool
+    exact : bool, optional
         If False, the data type of the array that is returned is np.float64,
         and the array is an approximation of the inverse.
         If True, the array is the exact integer inverse array.  To represent
@@ -730,8 +772,6 @@ def pascal(n, kind='symmetric', exact=True):
     The Pascal matrix is a matrix containing the binomial coefficients as
     its elements.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     n : int
@@ -742,7 +782,7 @@ def pascal(n, kind='symmetric', exact=True):
         Default is 'symmetric'.
     exact : bool, optional
         If `exact` is True, the result is either an array of type
-        numpy.uint64 (if n <= 35) or an object array of Python long integers.
+        numpy.uint64 (if n < 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
         `scipy.special.comb` with `exact=False`.  The result will be a floating
         point array, and the values in the array will not be the exact
@@ -753,10 +793,16 @@ def pascal(n, kind='symmetric', exact=True):
     p : (n, n) ndarray
         The Pascal matrix.
 
+    See Also
+    --------
+    invpascal
+
     Notes
     -----
     See http://en.wikipedia.org/wiki/Pascal_matrix for more information
     about Pascal matrices.
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------
@@ -784,7 +830,7 @@ def pascal(n, kind='symmetric', exact=True):
         raise ValueError("kind must be 'symmetric', 'lower', or 'upper'")
 
     if exact:
-        if n > 35:
+        if n >= 35:
             L_n = np.empty((n, n), dtype=object)
             L_n.fill(0)
         else:
@@ -803,6 +849,116 @@ def pascal(n, kind='symmetric', exact=True):
         p = np.dot(L_n, L_n.T)
 
     return p
+
+
+def invpascal(n, kind='symmetric', exact=True):
+    """
+    Returns the inverse of the n x n Pascal matrix.
+
+    The Pascal matrix is a matrix containing the binomial coefficients as
+    its elements.
+
+    Parameters
+    ----------
+    n : int
+        The size of the matrix to create; that is, the result is an n x n
+        matrix.
+    kind : str, optional
+        Must be one of 'symmetric', 'lower', or 'upper'.
+        Default is 'symmetric'.
+    exact : bool, optional
+        If `exact` is True, the result is either an array of type
+        `numpy.int64` (if `n` <= 35) or an object array of Python integers.
+        If `exact` is False, the coefficients in the matrix are computed using
+        `scipy.special.comb` with `exact=False`.  The result will be a floating
+        point array, and for large `n`, the values in the array will not be the
+        exact coefficients.
+
+    Returns
+    -------
+    invp : (n, n) ndarray
+        The inverse of the Pascal matrix.
+
+    See Also
+    --------
+    pascal
+
+    Notes
+    -----
+
+    .. versionadded:: 0.16.0
+
+    References
+    ----------
+    .. [1] "Pascal matrix",  http://en.wikipedia.org/wiki/Pascal_matrix
+    .. [2] Cohen, A. M., "The inverse of a Pascal matrix", Mathematical
+           Gazette, 59(408), pp. 111-112, 1975.
+
+    Examples
+    --------
+    >>> from scipy.linalg import invpascal, pascal
+    >>> invp = invpascal(5)
+    >>> invp
+    array([[  5, -10,  10,  -5,   1],
+           [-10,  30, -35,  19,  -4],
+           [ 10, -35,  46, -27,   6],
+           [ -5,  19, -27,  17,  -4],
+           [  1,  -4,   6,  -4,   1]])
+
+    >>> p = pascal(5)
+    >>> p.dot(invp)
+    array([[ 1.,  0.,  0.,  0.,  0.],
+           [ 0.,  1.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.,  0.],
+           [ 0.,  0.,  0.,  1.,  0.],
+           [ 0.,  0.,  0.,  0.,  1.]])
+
+    An example of the use of `kind` and `exact`:
+
+    >>> invpascal(5, kind='lower', exact=False)
+    array([[ 1., -0.,  0., -0.,  0.],
+           [-1.,  1., -0.,  0., -0.],
+           [ 1., -2.,  1., -0.,  0.],
+           [-1.,  3., -3.,  1., -0.],
+           [ 1., -4.,  6., -4.,  1.]])
+
+    """
+    from scipy.special import comb
+
+    if kind not in ['symmetric', 'lower', 'upper']:
+        raise ValueError("'kind' must be 'symmetric', 'lower' or 'upper'.")
+
+    if kind == 'symmetric':
+        if exact:
+            if n > 34:
+                dt = object
+            else:
+                dt = np.int64
+        else:
+            dt = np.float64
+        invp = np.empty((n, n), dtype=dt)
+        for i in range(n):
+            for j in range(0, i + 1):
+                v = 0
+                for k in range(n - i):
+                    v += comb(i + k, k, exact=exact) * comb(i + k, i + k - j,
+                                                            exact=exact)
+                invp[i, j] = (-1)**(i - j) * v
+                if i != j:
+                    invp[j, i] = invp[i, j]
+    else:
+        # For the 'lower' and 'upper' cases, we computer the inverse by
+        # changing the sign of every other diagonal of the pascal matrix.
+        invp = pascal(n, kind=kind, exact=exact)
+        if invp.dtype == np.uint64:
+            # This cast from np.uint64 to int64 OK, because if `kind` is not
+            # "symmetric", the values in invp are all much less than 2**63.
+            invp = invp.view(np.int64)
+
+        # The toeplitz matrix has alternating bands of 1 and -1.
+        invp *= toeplitz((-1)**np.arange(n)).astype(invp.dtype)
+
+    return invp
 
 
 def dft(n, scale=None):

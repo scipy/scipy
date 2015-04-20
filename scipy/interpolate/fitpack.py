@@ -25,13 +25,13 @@ from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
-    'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
+           'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
+import warnings
 import numpy as np
 from . import _fitpack
-from numpy import atleast_1d, array, ones, zeros, sqrt, ravel, transpose, \
-     dot, sin, cos, pi, arange, empty, iinfo, intc, asarray
-myasarray = atleast_1d
+from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
+                   empty, iinfo, intc, asarray)
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
@@ -49,72 +49,63 @@ def _intc_overflow(x, msg=None):
     return intc(x)
 
 
-_iermess = {0:["""\
-    The spline has a residual sum of squares fp such that abs(fp-s)/s<=0.001""",None],
-               -1:["""\
-    The spline is an interpolating spline (fp=0)""",None],
-               -2:["""\
-    The spline is weighted least-squares polynomial of degree k.
-    fp gives the upper bound fp0 for the smoothing factor s""",None],
-               1:["""\
-    The required storage space exceeds the available storage space.
-    Probable causes: data (x,y) size is too small or smoothing parameter s is too small (fp>s).""",ValueError],
-               2:["""\
-    A theoretically impossible results when finding a smoothin spline
-    with fp = s. Probably causes: s too small. (abs(fp-s)/s>0.001)""",ValueError],
-               3:["""\
-    The maximal number of iterations (20) allowed for finding smoothing
-    spline with fp=s has been reached. Probably causes: s too small.
-    (abs(fp-s)/s>0.001)""",ValueError],
-               10:["""\
-    Error on input data""",ValueError],
-               'unknown':["""\
-    An error occurred""",TypeError]}
+_iermess = {
+    0: ["The spline has a residual sum of squares fp such that "
+        "abs(fp-s)/s<=0.001", None],
+    -1: ["The spline is an interpolating spline (fp=0)", None],
+    -2: ["The spline is weighted least-squares polynomial of degree k.\n"
+         "fp gives the upper bound fp0 for the smoothing factor s", None],
+    1: ["The required storage space exceeds the available storage space.\n"
+        "Probable causes: data (x,y) size is too small or smoothing parameter"
+        "\ns is too small (fp>s).", ValueError],
+    2: ["A theoretically impossible result when finding a smoothing spline\n"
+        "with fp = s. Probable cause: s too small. (abs(fp-s)/s>0.001)",
+        ValueError],
+    3: ["The maximal number of iterations (20) allowed for finding smoothing\n"
+        "spline with fp=s has been reached. Probable cause: s too small.\n"
+        "(abs(fp-s)/s>0.001)", ValueError],
+    10: ["Error on input data", ValueError],
+    'unknown': ["An error occurred", TypeError]
+}
 
-_iermess2 = {0:["""\
-    The spline has a residual sum of squares fp such that abs(fp-s)/s<=0.001""",None],
-            -1:["""\
-    The spline is an interpolating spline (fp=0)""",None],
-            -2:["""\
-    The spline is weighted least-squares polynomial of degree kx and ky.
-    fp gives the upper bound fp0 for the smoothing factor s""",None],
-            -3:["""\
-    Warning. The coefficients of the spline have been computed as the minimal
-    norm least-squares solution of a rank deficient system.""",None],
-            1:["""\
-    The required storage space exceeds the available storage space.
-    Probably causes: nxest or nyest too small or s is too small. (fp>s)""",ValueError],
-            2:["""\
-    A theoretically impossible results when finding a smoothin spline
-    with fp = s. Probably causes: s too small or badly chosen eps.
-    (abs(fp-s)/s>0.001)""",ValueError],
-            3:["""\
-    The maximal number of iterations (20) allowed for finding smoothing
-    spline with fp=s has been reached. Probably causes: s too small.
-    (abs(fp-s)/s>0.001)""",ValueError],
-            4:["""\
-    No more knots can be added because the number of B-spline coefficients
-    already exceeds the number of data points m. Probably causes: either
-    s or m too small. (fp>s)""",ValueError],
-            5:["""\
-    No more knots can be added because the additional knot would coincide
-    with an old one. Probably cause: s too small or too large a weight
-    to an inaccurate data point. (fp>s)""",ValueError],
-            10:["""\
-    Error on input data""",ValueError],
-            11:["""\
-    rwrk2 too small, i.e. there is not enough workspace for computing
-    the minimal least-squares solution of a rank deficient system of linear
-    equations.""",ValueError],
-            'unknown':["""\
-    An error occurred""",TypeError]}
+_iermess2 = {
+    0: ["The spline has a residual sum of squares fp such that "
+        "abs(fp-s)/s<=0.001", None],
+    -1: ["The spline is an interpolating spline (fp=0)", None],
+    -2: ["The spline is weighted least-squares polynomial of degree kx and ky."
+         "\nfp gives the upper bound fp0 for the smoothing factor s", None],
+    -3: ["Warning. The coefficients of the spline have been computed as the\n"
+         "minimal norm least-squares solution of a rank deficient system.",
+         None],
+    1: ["The required storage space exceeds the available storage space.\n"
+        "Probable causes: nxest or nyest too small or s is too small. (fp>s)",
+        ValueError],
+    2: ["A theoretically impossible result when finding a smoothing spline\n"
+        "with fp = s. Probable causes: s too small or badly chosen eps.\n"
+        "(abs(fp-s)/s>0.001)", ValueError],
+    3: ["The maximal number of iterations (20) allowed for finding smoothing\n"
+        "spline with fp=s has been reached. Probable cause: s too small.\n"
+        "(abs(fp-s)/s>0.001)", ValueError],
+    4: ["No more knots can be added because the number of B-spline\n"
+        "coefficients already exceeds the number of data points m.\n"
+        "Probable causes: either s or m too small. (fp>s)", ValueError],
+    5: ["No more knots can be added because the additional knot would\n"
+        "coincide with an old one. Probable cause: s too small or too large\n"
+        "a weight to an inaccurate data point. (fp>s)", ValueError],
+    10: ["Error on input data", ValueError],
+    11: ["rwrk2 too small, i.e. there is not enough workspace for computing\n"
+         "the minimal least-squares solution of a rank deficient system of\n"
+         "linear equations.", ValueError],
+    'unknown': ["An error occurred", TypeError]
+}
 
-_parcur_cache = {'t': array([],float), 'wrk': array([],float),
-                 'iwrk':array([],intc), 'u': array([],float),'ub':0,'ue':1}
+_parcur_cache = {'t': array([], float), 'wrk': array([], float),
+                 'iwrk': array([], intc), 'u': array([], float),
+                 'ub': 0, 'ue': 1}
 
 
-def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
-            full_output=0,nest=None,per=0,quiet=1):
+def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
+            full_output=0, nest=None, per=0, quiet=1):
     """
     Find the B-spline representation of an N-dimensional curve.
 
@@ -126,7 +117,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     ----------
     x : array_like
         A list of sample vector arrays representing the curve.
-    w : array_like
+    w : array_like, optional
         Strictly positive rank-1 array of weights the same length as `x[0]`.
         The weights are used in computing the weighted least-squares spline
         fit. If the errors in the `x` values have standard-deviation given by
@@ -180,6 +171,8 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
+         This parameter is deprecated; use standard Python warning filters
+         instead.
 
     Returns
     -------
@@ -206,6 +199,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     Notes
     -----
     See `splev` for evaluation of the spline and its derivatives.
+    The number of dimensions N must be smaller than 11.
 
     References
     ----------
@@ -220,23 +214,24 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
 
     """
     if task <= 0:
-        _parcur_cache = {'t': array([],float), 'wrk': array([],float),
-                         'iwrk':array([],intc),'u': array([],float),
-                         'ub':0,'ue':1}
-    x = myasarray(x)
-    idim,m = x.shape
+        _parcur_cache = {'t': array([], float), 'wrk': array([], float),
+                         'iwrk': array([], intc), 'u': array([], float),
+                         'ub': 0, 'ue': 1}
+    x = atleast_1d(x)
+    idim, m = x.shape
     if per:
         for i in range(idim):
             if x[i][0] != x[i][-1]:
                 if quiet < 2:
-                    print('Warning: Setting x[%d][%d]=x[%d][0]' % (i,m,i))
+                    warnings.warn(RuntimeWarning('Setting x[%d][%d]=x[%d][0]' %
+                                                 (i, m, i)))
                 x[i][-1] = x[i][0]
     if not 0 < idim < 11:
         raise TypeError('0 < idim < 11 must hold')
     if w is None:
         w = ones(m, float)
     else:
-        w = myasarray(w)
+        w = atleast_1d(w)
     ipar = (u is not None)
     if ipar:
         _parcur_cache['u'] = u
@@ -249,7 +244,7 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
         else:
             _parcur_cache['ue'] = ue
     else:
-        _parcur_cache['u'] = zeros(m,float)
+        _parcur_cache['u'] = zeros(m, float)
     if not (1 <= k <= 5):
         raise TypeError('1 <= k= %d <=5 must hold' % k)
     if not (-1 <= task <= 1):
@@ -257,49 +252,52 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
     if (not len(w) == m) or (ipar == 1 and (not len(u) == m)):
         raise TypeError('Mismatch of input dimensions')
     if s is None:
-        s = m-sqrt(2*m)
+        s = m - sqrt(2*m)
     if t is None and task == -1:
         raise TypeError('Knots must be given for task=-1')
     if t is not None:
-        _parcur_cache['t'] = myasarray(t)
+        _parcur_cache['t'] = atleast_1d(t)
     n = len(_parcur_cache['t'])
-    if task == -1 and n < 2*k+2:
+    if task == -1 and n < 2*k + 2:
         raise TypeError('There must be at least 2*k+2 knots for task=-1')
     if m <= k:
         raise TypeError('m > k must hold')
     if nest is None:
-        nest = m+2*k
+        nest = m + 2*k
 
     if (task >= 0 and s == 0) or (nest < 0):
         if per:
-            nest = m+2*k
+            nest = m + 2*k
         else:
-            nest = m+k+1
-    nest = max(nest,2*k+3)
+            nest = m + k + 1
+    nest = max(nest, 2*k + 3)
     u = _parcur_cache['u']
     ub = _parcur_cache['ub']
     ue = _parcur_cache['ue']
     t = _parcur_cache['t']
     wrk = _parcur_cache['wrk']
     iwrk = _parcur_cache['iwrk']
-    t,c,o = _fitpack._parcur(ravel(transpose(x)),w,u,ub,ue,k,task,ipar,s,t,
-                             nest,wrk,iwrk,per)
+    t, c, o = _fitpack._parcur(ravel(transpose(x)), w, u, ub, ue, k,
+                               task, ipar, s, t, nest, wrk, iwrk, per)
     _parcur_cache['u'] = o['u']
     _parcur_cache['ub'] = o['ub']
     _parcur_cache['ue'] = o['ue']
     _parcur_cache['t'] = t
     _parcur_cache['wrk'] = o['wrk']
     _parcur_cache['iwrk'] = o['iwrk']
-    ier,fp,n = o['ier'],o['fp'],len(t)
+    ier = o['ier']
+    fp = o['fp']
+    n = len(t)
     u = o['u']
-    c.shape = idim,n-k-1
-    tcku = [t,list(c),k],u
+    c.shape = idim, n - k - 1
+    tcku = [t, list(c), k], u
     if ier <= 0 and not quiet:
-        print(_iermess[ier][0])
-        print("\tk=%d n=%d m=%d fp=%f s=%f" % (k,len(t),m,fp,s))
+        warnings.warn(RuntimeWarning(_iermess[ier][0] +
+                                     "\tk=%d n=%d m=%d fp=%f s=%f" %
+                                     (k, len(t), m, fp, s)))
     if ier > 0 and not full_output:
-        if ier in [1,2,3]:
-            print("Warning: "+_iermess[ier][0])
+        if ier in [1, 2, 3]:
+            warnings.warn(RuntimeWarning(_iermess[ier][0]))
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -307,18 +305,18 @@ def splprep(x,w=None,u=None,ub=None,ue=None,k=3,task=0,s=None,t=None,
                 raise _iermess['unknown'][1](_iermess['unknown'][0])
     if full_output:
         try:
-            return tcku,fp,ier,_iermess[ier][0]
+            return tcku, fp, ier, _iermess[ier][0]
         except KeyError:
-            return tcku,fp,ier,_iermess['unknown'][0]
+            return tcku, fp, ier, _iermess['unknown'][0]
     else:
         return tcku
 
-_curfit_cache = {'t': array([],float), 'wrk': array([],float),
-                 'iwrk':array([],intc)}
+_curfit_cache = {'t': array([], float), 'wrk': array([], float),
+                 'iwrk': array([], intc)}
 
 
-def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
-           full_output=0,per=0,quiet=1):
+def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
+           full_output=0, per=0, quiet=1):
     """
     Find the B-spline representation of 1-D curve.
 
@@ -329,19 +327,19 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     ----------
     x, y : array_like
         The data points defining a curve y = f(x).
-    w : array_like
+    w : array_like, optional
         Strictly positive rank-1 array of weights the same length as x and y.
         The weights are used in computing the weighted least-squares spline
         fit. If the errors in the y values have standard-deviation given by the
         vector d, then w should be 1/d. Default is ones(len(x)).
-    xb, xe : float
+    xb, xe : float, optional
         The interval to fit.  If None, these default to x[0] and x[-1]
         respectively.
-    k : int
+    k : int, optional
         The order of the spline fit. It is recommended to use cubic splines.
         Even order splines should be avoided especially with small s values.
         1 <= k <= 5
-    task : {1, 0, -1}
+    task : {1, 0, -1}, optional
         If task==0 find t and c for a given smoothing factor, s.
 
         If task==1 find t and c for another value of the smoothing factor, s.
@@ -351,7 +349,7 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         If task=-1 find the weighted least square spline for a given set of
         knots, t. These should be interior knots as knots on the ends will be
         added automatically.
-    s : float
+    s : float, optional
         A smoothing condition. The amount of smoothness is determined by
         satisfying the conditions: sum((w * (y - g))**2,axis=0) <= s where g(x)
         is the smoothed interpolation of (x,y). The user can use s to control
@@ -363,17 +361,19 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         the number of datapoints in x, y, and w. default : s=m-sqrt(2*m) if
         weights are supplied. s = 0.0 (interpolating) if no weights are
         supplied.
-    t : array_like
+    t : array_like, optional
         The knots needed for task=-1. If given then task is automatically set
         to -1.
-    full_output : bool
+    full_output : bool, optional
         If non-zero, then return optional outputs.
-    per : bool
+    per : bool, optional
         If non-zero, data points are considered periodic with period x[m-1] -
         x[0] and a smooth periodic spline approximation is returned. Values of
         y[m-1] and w[m-1] are not used.
-    quiet : bool
+    quiet : bool, optional
         Non-zero to suppress messages.
+        This parameter is deprecated; use standard Python warning filters
+        instead.
 
     Returns
     -------
@@ -407,9 +407,13 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     See splev for evaluation of the spline and its derivatives. Uses the
     FORTRAN routine curfit from FITPACK.
 
+    If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
+    i.e., there must be a subset of data points ``x[j]`` such that
+    ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
+
     References
     ----------
-    Based on algorithms described in [1], [2], [3], and [4]:
+    Based on algorithms described in [1]_, [2]_, [3]_, and [4]_:
 
     .. [1] P. Dierckx, "An algorithm for smoothing, differentiation and
        integration of experimental data using spline functions",
@@ -435,22 +439,24 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
     """
     if task <= 0:
         _curfit_cache = {}
-    x,y = map(myasarray,[x,y])
+    x, y = map(atleast_1d, [x, y])
     m = len(x)
     if w is None:
-        w = ones(m,float)
+        w = ones(m, float)
         if s is None:
             s = 0.0
     else:
-        w = myasarray(w)
+        w = atleast_1d(w)
         if s is None:
-            s = m-sqrt(2*m)
+            s = m - sqrt(2*m)
     if not len(w) == m:
-        raise TypeError('len(w)=%d is not equal to m=%d' % (len(w),m))
+        raise TypeError('len(w)=%d is not equal to m=%d' % (len(w), m))
     if (m != len(y)) or (m != len(w)):
-        raise TypeError('Lengths of the first three arguments (x,y,w) must be equal')
+        raise TypeError('Lengths of the first three arguments (x,y,w) must '
+                        'be equal')
     if not (1 <= k <= 5):
-        raise TypeError('Given degree of the spline (k=%d) is not supported. (1<=k<=5)' % k)
+        raise TypeError('Given degree of the spline (k=%d) is not supported. '
+                        '(1<=k<=5)' % k)
     if m <= k:
         raise TypeError('m > k must hold')
     if xb is None:
@@ -465,22 +471,22 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         if t is None:
             raise TypeError('Knots must be given for task=-1')
         numknots = len(t)
-        _curfit_cache['t'] = empty((numknots + 2*k+2,),float)
+        _curfit_cache['t'] = empty((numknots + 2*k + 2,), float)
         _curfit_cache['t'][k+1:-k-1] = t
         nest = len(_curfit_cache['t'])
     elif task == 0:
         if per:
-            nest = max(m+2*k,2*k+3)
+            nest = max(m + 2*k, 2*k + 3)
         else:
-            nest = max(m+k+1,2*k+3)
-        t = empty((nest,),float)
+            nest = max(m + k + 1, 2*k + 3)
+        t = empty((nest,), float)
         _curfit_cache['t'] = t
     if task <= 0:
         if per:
-            _curfit_cache['wrk'] = empty((m*(k+1)+nest*(8+5*k),),float)
+            _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(8 + 5*k),), float)
         else:
-            _curfit_cache['wrk'] = empty((m*(k+1)+nest*(7+3*k),),float)
-        _curfit_cache['iwrk'] = empty((nest,),intc)
+            _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(7 + 3*k),), float)
+        _curfit_cache['iwrk'] = empty((nest,), intc)
     try:
         t = _curfit_cache['t']
         wrk = _curfit_cache['wrk']
@@ -489,16 +495,18 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
         raise TypeError("must call with task=1 only after"
                         " call with task=0,-1")
     if not per:
-        n,c,fp,ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk, xb, xe, k, s)
+        n, c, fp, ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk,
+                                        xb, xe, k, s)
     else:
-        n,c,fp,ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
-    tck = (t[:n],c[:n],k)
+        n, c, fp, ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
+    tck = (t[:n], c[:n], k)
     if ier <= 0 and not quiet:
-        print(_iermess[ier][0])
-        print("\tk=%d n=%d m=%d fp=%f s=%f" % (k,len(t),m,fp,s))
+        _mess = (_iermess[ier][0] + "\tk=%d n=%d m=%d fp=%f s=%f" %
+                 (k, len(t), m, fp, s))
+        warnings.warn(RuntimeWarning(_mess))
     if ier > 0 and not full_output:
-        if ier in [1,2,3]:
-            print("Warning: "+_iermess[ier][0])
+        if ier in [1, 2, 3]:
+            warnings.warn(RuntimeWarning(+_iermess[ier][0]))
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -506,9 +514,9 @@ def splrep(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
                 raise _iermess['unknown'][1](_iermess['unknown'][0])
     if full_output:
         try:
-            return tck,fp,ier,_iermess[ier][0]
+            return tck, fp, ier, _iermess[ier][0]
         except KeyError:
-            return tck,fp,ier,_iermess['unknown'][0]
+            return tck, fp, ier, _iermess['unknown'][0]
     else:
         return tck
 
@@ -530,22 +538,23 @@ def splev(x, tck, der=0, ext=0):
     Parameters
     ----------
     x : array_like
-        A 1-D array of points at which to return the value of the smoothed
+        An array of points at which to return the value of the smoothed
         spline or its derivatives.  If `tck` was returned from `splprep`,
         then the parameter values, u should be given.
     tck : tuple
         A sequence of length 3 returned by `splrep` or `splprep` containing
         the knots, coefficients, and degree of the spline.
-    der : int
+    der : int, optional
         The order of derivative of the spline to compute (must be less than
         or equal to k).
-    ext : int
+    ext : int, optional
         Controls the value returned for elements of ``x`` not in the
         interval defined by the knot sequence.
 
         * if ext=0, return the extrapolated value.
         * if ext=1, return 0
         * if ext=2, raise a ValueError
+        * if ext=3, return the boundary value.
 
         The default value is 0.
 
@@ -571,23 +580,24 @@ def splev(x, tck, der=0, ext=0):
         on Numerical Analysis, Oxford University Press, 1993.
 
     """
-    t,c,k = tck
+    t, c, k = tck
     try:
         c[0][0]
         parametric = True
     except:
         parametric = False
     if parametric:
-        return list(map(lambda c, x=x, t=t, k=k, der=der: splev(x, [t,c,k], der, ext), c))
+        return list(map(lambda c, x=x, t=t, k=k, der=der:
+                        splev(x, [t, c, k], der, ext), c))
     else:
         if not (0 <= der <= k):
-            raise ValueError("0<=der=%d<=k=%d must hold" % (der,k))
-        if ext not in (0,1,2):
-            raise ValueError("ext not in (0, 1, 2)")
+            raise ValueError("0<=der=%d<=k=%d must hold" % (der, k))
+        if ext not in (0, 1, 2, 3):
+            raise ValueError("ext = %s not in (0, 1, 2, 3) " % ext)
 
         x = asarray(x)
         shape = x.shape
-        x = atleast_1d(x)
+        x = atleast_1d(x).ravel()
         y, ier = _fitpack._spl_(x, der, t, c, k, ext)
 
         if ier == 10:
@@ -600,7 +610,7 @@ def splev(x, tck, der=0, ext=0):
         return y.reshape(shape)
 
 
-def splint(a,b,tck,full_output=0):
+def splint(a, b, tck, full_output=0):
     """
     Evaluate the definite integral of a B-spline.
 
@@ -644,23 +654,24 @@ def splint(a,b,tck,full_output=0):
         on Numerical Analysis, Oxford University Press, 1993.
 
     """
-    t,c,k = tck
+    t, c, k = tck
     try:
         c[0][0]
         parametric = True
     except:
         parametric = False
     if parametric:
-        return _ntlist(list(map(lambda c,a=a,b=b,t=t,k=k:splint(a,b,[t,c,k]),c)))
+        return _ntlist(list(map(lambda c, a=a, b=b, t=t, k=k:
+                                splint(a, b, [t, c, k]), c)))
     else:
-        aint,wrk = _fitpack._splint(t,c,k,a,b)
+        aint, wrk = _fitpack._splint(t, c, k, a, b)
         if full_output:
-            return aint,wrk
+            return aint, wrk
         else:
             return aint
 
 
-def sproot(tck,mest=10):
+def sproot(tck, mest=10):
     """
     Find the roots of a cubic B-spline.
 
@@ -674,7 +685,7 @@ def sproot(tck,mest=10):
         the B-spline coefficients, and the degree of the spline.
         The number of knots must be >= 8, and the degree must be 3.
         The knots must be a montonically increasing sequence.
-    mest : int
+    mest : int, optional
         An estimate of the number of zeros (Default is 10).
 
     Returns
@@ -699,7 +710,7 @@ def sproot(tck,mest=10):
         on Numerical Analysis, Oxford University Press, 1993.
 
     """
-    t,c,k = tck
+    t, c, k = tck
     if k != 3:
         raise ValueError("sproot works only for cubic (k=3) splines")
     try:
@@ -708,22 +719,24 @@ def sproot(tck,mest=10):
     except:
         parametric = False
     if parametric:
-        return _ntlist(list(map(lambda c,t=t,k=k,mest=mest:sproot([t,c,k],mest),c)))
+        return _ntlist(list(map(lambda c, t=t, k=k, mest=mest:
+                                sproot([t, c, k], mest), c)))
     else:
         if len(t) < 8:
             raise TypeError("The number of knots %d>=8" % len(t))
-        z,ier = _fitpack._sproot(t,c,k,mest)
+        z, ier = _fitpack._sproot(t, c, k, mest)
         if ier == 10:
-            raise TypeError("Invalid input data. t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
+            raise TypeError("Invalid input data. "
+                            "t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
         if ier == 0:
             return z
         if ier == 1:
-            print("Warning: the number of zeros exceeds mest")
+            warnings.warn(RuntimeWarning("The number of zeros exceeds mest"))
             return z
         raise TypeError("Unknown error")
 
 
-def spalde(x,tck):
+def spalde(x, tck):
     """
     Evaluate all derivatives of a B-spline.
 
@@ -760,19 +773,20 @@ def spalde(x,tck):
        Numerical Analysis, Oxford University Press, 1993.
 
     """
-    t,c,k = tck
+    t, c, k = tck
     try:
         c[0][0]
         parametric = True
     except:
         parametric = False
     if parametric:
-        return _ntlist(list(map(lambda c,x=x,t=t,k=k:spalde(x,[t,c,k]),c)))
+        return _ntlist(list(map(lambda c, x=x, t=t, k=k:
+                                spalde(x, [t, c, k]), c)))
     else:
-        x = myasarray(x)
+        x = atleast_1d(x)
         if len(x) > 1:
-            return list(map(lambda x,tck=tck:spalde(x,tck),x))
-        d,ier = _fitpack._spalde(t,c,k,x[0])
+            return list(map(lambda x, tck=tck: spalde(x, tck), x))
+        d, ier = _fitpack._spalde(t, c, k, x[0])
         if ier == 0:
             return d
         if ier == 10:
@@ -782,13 +796,13 @@ def spalde(x,tck):
 # def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 #           full_output=0,nest=None,per=0,quiet=1):
 
-_surfit_cache = {'tx': array([],float),'ty': array([],float),
-                 'wrk': array([],float), 'iwrk':array([],intc)}
+_surfit_cache = {'tx': array([], float), 'ty': array([], float),
+                 'wrk': array([], float), 'iwrk': array([], intc)}
 
 
-def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
-             s=None,eps=1e-16,tx=None,ty=None,full_output=0,
-             nxest=None,nyest=None,quiet=1):
+def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
+             kx=3, ky=3, task=0, s=None, eps=1e-16, tx=None, ty=None,
+             full_output=0, nxest=None, nyest=None, quiet=1):
     """
     Find a bivariate B-spline representation of a surface.
 
@@ -837,6 +851,8 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
         ``nyest = max(ky+sqrt(m/2),2*ky+3)``.
     quiet : int, optional
         Non-zero to suppress printing of messages.
+        This parameter is deprecated; use standard Python warning filters
+        instead.
 
     Returns
     -------
@@ -873,15 +889,14 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
        Numerical Analysis, Oxford University Press, 1993.
 
     """
-    x,y,z = map(myasarray,[x,y,z])
-    x,y,z = map(ravel,[x,y,z])  # ensure 1-d arrays.
+    x, y, z = map(ravel, [x, y, z])  # ensure 1-d arrays.
     m = len(x)
     if not (m == len(y) == len(z)):
         raise TypeError('len(x)==len(y)==len(z) must hold.')
     if w is None:
-        w = ones(m,float)
+        w = ones(m, float)
     else:
-        w = myasarray(w)
+        w = atleast_1d(w)
     if not len(w) == m:
         raise TypeError('len(w)=%d is not equal to m=%d' % (len(w), m))
     if xb is None:
@@ -895,65 +910,72 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
     if not (-1 <= task <= 1):
         raise TypeError('task must be -1, 0 or 1')
     if s is None:
-        s = m-sqrt(2*m)
+        s = m - sqrt(2*m)
     if tx is None and task == -1:
         raise TypeError('Knots_x must be given for task=-1')
     if tx is not None:
-        _surfit_cache['tx'] = myasarray(tx)
+        _surfit_cache['tx'] = atleast_1d(tx)
     nx = len(_surfit_cache['tx'])
     if ty is None and task == -1:
         raise TypeError('K nots_y must be given for task=-1')
     if ty is not None:
-        _surfit_cache['ty'] = myasarray(ty)
+        _surfit_cache['ty'] = atleast_1d(ty)
     ny = len(_surfit_cache['ty'])
     if task == -1 and nx < 2*kx+2:
         raise TypeError('There must be at least 2*kx+2 knots_x for task=-1')
     if task == -1 and ny < 2*ky+2:
         raise TypeError('There must be at least 2*ky+2 knots_x for task=-1')
     if not ((1 <= kx <= 5) and (1 <= ky <= 5)):
-        raise TypeError('Given degree of the spline (kx,ky=%d,%d) is not supported. (1<=k<=5)' % (kx,ky))
-    if m < (kx+1)*(ky+1):
+        raise TypeError('Given degree of the spline (kx,ky=%d,%d) is not '
+                        'supported. (1<=k<=5)' % (kx, ky))
+    if m < (kx + 1)*(ky + 1):
         raise TypeError('m >= (kx+1)(ky+1) must hold')
     if nxest is None:
-        nxest = int(kx+sqrt(m/2))
+        nxest = int(kx + sqrt(m/2))
     if nyest is None:
-        nyest = int(ky+sqrt(m/2))
-    nxest,nyest = max(nxest,2*kx+3),max(nyest,2*ky+3)
+        nyest = int(ky + sqrt(m/2))
+    nxest, nyest = max(nxest, 2*kx + 3), max(nyest, 2*ky + 3)
     if task >= 0 and s == 0:
-        nxest = int(kx+sqrt(3*m))
-        nyest = int(ky+sqrt(3*m))
+        nxest = int(kx + sqrt(3*m))
+        nyest = int(ky + sqrt(3*m))
     if task == -1:
-        _surfit_cache['tx'] = myasarray(tx)
-        _surfit_cache['ty'] = myasarray(ty)
-    tx,ty = _surfit_cache['tx'],_surfit_cache['ty']
+        _surfit_cache['tx'] = atleast_1d(tx)
+        _surfit_cache['ty'] = atleast_1d(ty)
+    tx, ty = _surfit_cache['tx'], _surfit_cache['ty']
     wrk = _surfit_cache['wrk']
-    iwrk = _surfit_cache['iwrk']
-    u,v,km,ne = nxest-kx-1,nyest-ky-1,max(kx,ky)+1,max(nxest,nyest)
-    bx,by = kx*v+ky+1,ky*u+kx+1
-    b1,b2 = bx,bx+v-ky
+    u = nxest - kx - 1
+    v = nyest - ky - 1
+    km = max(kx, ky) + 1
+    ne = max(nxest, nyest)
+    bx, by = kx*v + ky + 1, ky*u + kx + 1
+    b1, b2 = bx, bx + v - ky
     if bx > by:
-        b1,b2 = by,by+u-kx
+        b1, b2 = by, by + u - kx
     msg = "Too many data points to interpolate"
-    lwrk1 = _intc_overflow(u*v*(2+b1+b2)+2*(u+v+km*(m+ne)+ne-kx-ky)+b2+1, msg=msg)
-    lwrk2 = _intc_overflow(u*v*(b2+1)+b2, msg=msg)
-    tx,ty,c,o = _fitpack._surfit(x,y,z,w,xb,xe,yb,ye,kx,ky,task,s,eps,
-                                   tx,ty,nxest,nyest,wrk,lwrk1,lwrk2)
+    lwrk1 = _intc_overflow(u*v*(2 + b1 + b2) +
+                           2*(u + v + km*(m + ne) + ne - kx - ky) + b2 + 1,
+                           msg=msg)
+    lwrk2 = _intc_overflow(u*v*(b2 + 1) + b2, msg=msg)
+    tx, ty, c, o = _fitpack._surfit(x, y, z, w, xb, xe, yb, ye, kx, ky,
+                                    task, s, eps, tx, ty, nxest, nyest,
+                                    wrk, lwrk1, lwrk2)
     _curfit_cache['tx'] = tx
     _curfit_cache['ty'] = ty
     _curfit_cache['wrk'] = o['wrk']
-    ier,fp = o['ier'],o['fp']
-    tck = [tx,ty,c,kx,ky]
+    ier, fp = o['ier'], o['fp']
+    tck = [tx, ty, c, kx, ky]
 
-    ierm = min(11,max(-3,ier))
+    ierm = min(11, max(-3, ier))
     if ierm <= 0 and not quiet:
-        print(_iermess2[ierm][0])
-        print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" % (kx,ky,len(tx),
-                                                           len(ty),m,fp,s))
+        _mess = (_iermess2[ierm][0] +
+                 "\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" %
+                 (kx, ky, len(tx), len(ty), m, fp, s))
+        warnings.warn(RuntimeWarning(_mess))
     if ierm > 0 and not full_output:
-        if ier in [1,2,3,4,5]:
-            print("Warning: "+_iermess2[ierm][0])
-            print("\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" % (kx,ky,len(tx),
-                                                           len(ty),m,fp,s))
+        if ier in [1, 2, 3, 4, 5]:
+            _mess = ("\n\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" %
+                     (kx, ky, len(tx), len(ty), m, fp, s))
+            warnings.warn(RuntimeWarning(_iermess2[ierm][0] + _mess))
         else:
             try:
                 raise _iermess2[ierm][1](_iermess2[ierm][0])
@@ -961,14 +983,14 @@ def bisplrep(x,y,z,w=None,xb=None,xe=None,yb=None,ye=None,kx=3,ky=3,task=0,
                 raise _iermess2['unknown'][1](_iermess2['unknown'][0])
     if full_output:
         try:
-            return tck,fp,ier,_iermess2[ierm][0]
+            return tck, fp, ier, _iermess2[ierm][0]
         except KeyError:
-            return tck,fp,ier,_iermess2['unknown'][0]
+            return tck, fp, ier, _iermess2['unknown'][0]
     else:
         return tck
 
 
-def bisplev(x,y,tck,dx=0,dy=0):
+def bisplev(x, y, tck, dx=0, dy=0):
     """
     Evaluate a bivariate B-spline and its derivatives.
 
@@ -1016,20 +1038,20 @@ def bisplev(x,y,tck,dx=0,dy=0):
        Monographs on Numerical Analysis, Oxford University Press, 1993.
 
     """
-    tx,ty,c,kx,ky = tck
+    tx, ty, c, kx, ky = tck
     if not (0 <= dx < kx):
-        raise ValueError("0 <= dx = %d < kx = %d must hold" % (dx,kx))
+        raise ValueError("0 <= dx = %d < kx = %d must hold" % (dx, kx))
     if not (0 <= dy < ky):
-        raise ValueError("0 <= dy = %d < ky = %d must hold" % (dy,ky))
-    x,y = map(myasarray,[x,y])
+        raise ValueError("0 <= dy = %d < ky = %d must hold" % (dy, ky))
+    x, y = map(atleast_1d, [x, y])
     if (len(x.shape) != 1) or (len(y.shape) != 1):
         raise ValueError("First two entries should be rank-1 arrays.")
-    z,ier = _fitpack._bispev(tx,ty,c,kx,ky,x,y,dx,dy)
+    z, ier = _fitpack._bispev(tx, ty, c, kx, ky, x, y, dx, dy)
     if ier == 10:
         raise ValueError("Invalid input data")
     if ier:
         raise TypeError("An error occurred")
-    z.shape = len(x),len(y)
+    z.shape = len(x), len(y)
     if len(z) > 1:
         return z
     if len(z[0]) > 1:
@@ -1037,7 +1059,7 @@ def bisplev(x,y,tck,dx=0,dy=0):
     return z[0][0]
 
 
-def dblint(xa,xb,ya,yb,tck):
+def dblint(xa, xb, ya, yb, tck):
     """Evaluate the integral of a spline over area [xa,xb] x [ya,yb].
 
     Parameters
@@ -1056,11 +1078,11 @@ def dblint(xa,xb,ya,yb,tck):
     integ : float
         The value of the resulting integral.
     """
-    tx,ty,c,kx,ky = tck
-    return dfitpack.dblint(tx,ty,c,kx,ky,xa,xb,ya,yb)
+    tx, ty, c, kx, ky = tck
+    return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
 
 
-def insert(x,tck,m=1,per=0):
+def insert(x, tck, m=1, per=0):
     """
     Insert knots into a B-spline.
 
@@ -1105,7 +1127,7 @@ def insert(x,tck,m=1,per=0):
         Numerical Analysis", Oxford University Press, 1993.
 
     """
-    t,c,k = tck
+    t, c, k = tck
     try:
         c[0][0]
         parametric = True
@@ -1130,8 +1152,6 @@ def splder(tck, n=1):
     """
     Compute the spline representation of the derivative of a given spline
 
-    .. versionadded:: 0.13.0
-
     Parameters
     ----------
     tck : tuple of (t, c, k)
@@ -1144,6 +1164,11 @@ def splder(tck, n=1):
     tck_der : tuple of (t2, c2, k2)
         Spline of order k2=k-n representing the derivative
         of the input spline.
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     See Also
     --------
@@ -1188,7 +1213,8 @@ def splder(tck, n=1):
                 dt = t[k+1:-1] - t[1:-k-1]
                 # Compute the new coefficients
                 c = (c[1:-1-k] - c[:-2-k]) * k / dt
-                # Pad coefficient array to same size as knots (FITPACK convention)
+                # Pad coefficient array to same size as knots (FITPACK
+                # convention)
                 c = np.r_[c, [0]*k]
                 # Adjust knots
                 t = t[1:-1]
@@ -1203,8 +1229,6 @@ def splder(tck, n=1):
 def splantider(tck, n=1):
     """
     Compute the spline for the antiderivative (integral) of a given spline.
-
-    .. versionadded:: 0.13.0
 
     Parameters
     ----------
@@ -1228,6 +1252,8 @@ def splantider(tck, n=1):
     The `splder` function is the inverse operation of this function.
     Namely, ``splder(splantider(tck))`` is identical to `tck`, modulo
     rounding error.
+
+    .. versionadded:: 0.13.0
 
     Examples
     --------

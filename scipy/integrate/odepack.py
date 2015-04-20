@@ -5,8 +5,13 @@ __all__ = ['odeint']
 
 from . import _odepack
 from copy import copy
+import warnings
+
+class ODEintWarning(Warning):
+    pass
 
 _msgs = {2: "Integration successful.",
+         1: "Nothing was done; the integration time was 0.",
          -1: "Excess work done on this call (perhaps wrong Dfun type).",
          -2: "Excess accuracy requested (tolerances too small).",
          -3: "Illegal input detected (internal error).",
@@ -147,11 +152,11 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
                              full_output, rtol, atol, tcrit, h0, hmax, hmin,
                              ixpr, mxstep, mxhnil, mxordn, mxords)
     if output[-1] < 0:
-        print(_msgs[output[-1]])
-        print("Run with full_output = 1 to get quantitative information.")
-    else:
-        if printmessg:
-            print(_msgs[output[-1]])
+        warning_msg = _msgs[output[-1]] + " Run with full_output = 1 to get quantitative information."
+        warnings.warn(warning_msg, ODEintWarning)
+    elif printmessg:
+        warning_msg = _msgs[output[-1]]
+        warnings.warn(warning_msg, ODEintWarning)
 
     if full_output:
         output[1]['message'] = _msgs[output[-1]]

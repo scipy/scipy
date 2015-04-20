@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
-     exp, cos, sin, polyval, polyint
+    exp, cos, sin, polyval, polyint
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly']
 
@@ -223,7 +223,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         raise ValueError("Fractional bandwidth (bw=%.2f) must be > 0." % bw)
     if bwr >= 0:
         raise ValueError("Reference level for bandwidth (bwr=%.2f) must "
-              "be < 0 dB" % bwr)
+                         "be < 0 dB" % bwr)
 
     # exp(-a t^2) <->  sqrt(pi/a) exp(-pi^2/a * f^2)  = g(f)
 
@@ -392,7 +392,8 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
 
     else:
         raise ValueError("method must be 'linear', 'quadratic', 'logarithmic',"
-                " or 'hyperbolic', but a value of %r was given." % method)
+                         " or 'hyperbolic', but a value of %r was given."
+                         % method)
 
     return phase
 
@@ -409,7 +410,7 @@ def sweep_poly(t, poly, phi=0):
     ----------
     t : ndarray
         Times at which to evaluate the waveform.
-    poly : 1-D array-like or instance of numpy.poly1d
+    poly : 1-D array_like or instance of numpy.poly1d
         The desired frequency expressed as a polynomial.  If `poly` is
         a list or ndarray of length n, then the elements of `poly` are
         the coefficients of the polynomial, and the instantaneous

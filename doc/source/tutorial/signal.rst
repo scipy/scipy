@@ -117,19 +117,19 @@ conditions.
 
 .. plot::
 
-   >>> from numpy import *
+   >>> import numpy as np
    >>> from scipy import signal, misc
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.lena().astype(float32)
-   >>> derfilt = array([1.0,-2,1.0],float32)
-   >>> ck = signal.cspline2d(image,8.0)
-   >>> deriv = signal.sepfir2d(ck, derfilt, [1]) + \
-   >>>         signal.sepfir2d(ck, [1], derfilt)
+   >>> image = misc.lena().astype(np.float32)
+   >>> derfilt = np.array([1.0, -2, 1.0], dtype=np.float32)
+   >>> ck = signal.cspline2d(image, 8.0)
+   >>> deriv = (signal.sepfir2d(ck, derfilt, [1]) +
+   ...          signal.sepfir2d(ck, [1], derfilt))
 
    Alternatively we could have done::
 
-       laplacian = array([[0,1,0],[1,-4,1],[0,1,0]],float32)
+       laplacian = np.array([[0,1,0], [1,-4,1], [0,1,0]], dtype=np.float32)
        deriv2 = signal.convolve2d(ck,laplacian,mode='same',boundary='symm')
 
    >>> plt.figure()
@@ -217,7 +217,7 @@ optional flag allows for specification of which part of the output signal to
 return. The default value of 'full' returns the entire signal. If the flag has
 a value of 'same' then only the middle :math:`K` values are returned starting
 at :math:`y\left[\left\lfloor \frac{M-1}{2}\right\rfloor \right]` so that the
-output has the same length as the largest input. If the flag has a value of
+output has the same length as the first input. If the flag has a value of
 'valid' then only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1`
 output values are returned where :math:`z` depends on all of the values of the
 smallest input from :math:`h\left[0\right]` to :math:`h\left[M\right].` In
@@ -447,7 +447,7 @@ As an example consider the following system:
 
 The code calculates the signal :math:`y[n]` for a given signal :math:`x[n]`;
 first for initial condiditions :math:`y[-1] = 0` (default case), then for
-:math:`y[-1] = 2` by means of :fun:`lfiltic`.
+:math:`y[-1] = 2` by means of :func:`lfiltic`.
 
 >>> import numpy as np
 >>> from scipy import signal

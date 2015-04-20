@@ -451,15 +451,15 @@ class TestVariability(TestCase):
     def test_signaltonoise(self):
         # This is not in R, so used:
         #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
-        y = mstats.signaltonoise(self.testcase)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            y = mstats.signaltonoise(self.testcase)
         assert_almost_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
-        # Note, differs from stats.sem return due to different ddof (backwards
-        # compat reasons).
         y = mstats.sem(self.testcase)
-        assert_almost_equal(y, 0.55901699437494745)
+        assert_almost_equal(y, 0.6454972244)
         n = self.testcase.count()
         assert_allclose(mstats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
                         mstats.sem(self.testcase, ddof=2))
@@ -535,6 +535,27 @@ def test_regress_simple():
     slope, intercept, r_value, p_value, sterr = mstats.linregress(x, y)
     assert_almost_equal(slope, 0.19644990055858422)
     assert_almost_equal(intercept, 10.211269918932341)
+
+
+def test_theilslopes():
+    # Test for basic slope and intercept.
+    slope, intercept, lower, upper = mstats.theilslopes([0,1,1])
+    assert_almost_equal(slope, 0.5)
+    assert_almost_equal(intercept, 0.5)
+
+    # Test for correct masking.
+    y = np.ma.array([0,1,100,1], mask=[False, False, True, False])
+    slope, intercept, lower, upper = mstats.theilslopes(y)
+    assert_almost_equal(slope, 1./3)
+    assert_almost_equal(intercept, 2./3)
+
+    # Test of confidence intervals from example in Sen (1968).
+    x = [1, 2, 3, 4, 10, 12, 18]
+    y = [9, 15, 19, 20, 45, 55, 78]
+    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
+    assert_almost_equal(slope, 4)
+    assert_almost_equal(upper, 4.38, decimal=2)
+    assert_almost_equal(lower, 3.71, decimal=2)
 
 
 def test_plotting_positions():
@@ -808,16 +829,18 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r, rm, 10)
 
     def test_signaltonoise(self):
-        for n in self.get_n():
-            x, y, xm, ym = self.generate_xy_sample(n)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            for n in self.get_n():
+                x, y, xm, ym = self.generate_xy_sample(n)
 
-            r = stats.signaltonoise(x)
-            rm = stats.mstats.signaltonoise(xm)
-            assert_almost_equal(r, rm, 10)
+                r = stats.signaltonoise(x)
+                rm = stats.mstats.signaltonoise(xm)
+                assert_almost_equal(r, rm, 10)
 
-            r = stats.signaltonoise(y)
-            rm = stats.mstats.signaltonoise(ym)
-            assert_almost_equal(r, rm, 10)
+                r = stats.signaltonoise(y)
+                rm = stats.mstats.signaltonoise(ym)
+                assert_almost_equal(r, rm, 10)
 
     def test_betai(self):
         np.random.seed(12345)
@@ -969,7 +992,7 @@ class TestCompareWithStats(TestCase):
                 x, y, xm, ym = self.generate_xy_sample(n)
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
-                assert_equal(r[0], rm[0])
+                assert_allclose(r[0], rm[0], rtol=1e-15)
                 # TODO this test is not performed as it is a known issue that
                 # mstats returns a slightly different p-value what is a bit
                 # strange is that other tests like test_maskedarray_input don't

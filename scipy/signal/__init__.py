@@ -3,8 +3,6 @@
 Signal processing (:mod:`scipy.signal`)
 =======================================
 
-.. module:: scipy.signal
-
 Convolution
 ===========
 
@@ -58,8 +56,12 @@ Filtering
 
    deconvolve    -- 1-d deconvolution using lfilter.
 
-   hilbert       -- Compute the analytic signal of a 1-d signal.
-   get_window    -- Create FIR window.
+   sosfilt       -- 1-dimensional IIR digital linear filtering using
+                 -- a second-order-sections filter representation.
+   sosfilt_zi    -- Compute an initial state zi for the sosfilt function that
+                 -- corresponds to the steady state of the step response.
+   hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
+   hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
 
    decimate      -- Downsample a signal.
    detrend       -- Remove linear and/or constant trends from data.
@@ -73,12 +75,14 @@ Filter design
 
    bilinear      -- Digital filter from an analog filter using
                     -- the bilinear transform.
+   findfreqs     -- Find array of frequencies for computing filter response.
    firwin        -- Windowed FIR filter design, with frequency response
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
    freqs         -- Analog filter frequency response.
    freqz         -- Digital filter frequency response.
+   group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
    kaiser_atten  -- Compute the attenuation of a Kaiser FIR filter, given
@@ -95,7 +99,29 @@ Filter design
    unique_roots  -- Unique roots and their multiplicities.
    residue       -- Partial fraction expansion of b(s) / a(s).
    residuez      -- Partial fraction expansion of b(z) / a(z).
-   invres        -- Inverse partial fraction expansion.
+   invres        -- Inverse partial fraction expansion for analog filter.
+   invresz       -- Inverse partial fraction expansion for digital filter.
+
+Lower-level filter design functions:
+
+.. autosummary::
+   :toctree: generated/
+
+   abcd_normalize -- Check state-space matrices and ensure they are rank-2.
+   band_stop_obj  -- Band Stop Objective Function for order minimization.
+   besselap       -- Return (z,p,k) for analog prototype of Bessel filter.
+   buttap         -- Return (z,p,k) for analog prototype of Butterworth filter.
+   cheb1ap        -- Return (z,p,k) for type I Chebyshev filter.
+   cheb2ap        -- Return (z,p,k) for type II Chebyshev filter.
+   cmplx_sort     -- Sort roots based on magnitude.
+   ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
+   lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
+   lp2bs          -- Transform a lowpass filter prototype to a bandstop filter.
+   lp2hp          -- Transform a lowpass filter prototype to a highpass filter.
+   lp2lp          -- Transform a lowpass filter prototype to a lowpass filter.
+   normalize      -- Normalize polynomial representation of a transfer function.
+
+
 
 Matlab-style IIR filter design
 ==============================
@@ -146,13 +172,18 @@ LTI Representations
    :toctree: generated/
 
    tf2zpk        -- transfer function to zero-pole-gain.
-   zpk2tf        -- zero-pole-gain to transfer function.
+   tf2sos        -- transfer function to second-order sections.
    tf2ss         -- transfer function to state-space.
-   ss2tf         -- state-pace to transfer function.
+   zpk2tf        -- zero-pole-gain to transfer function.
+   zpk2sos       -- zero-pole-gain to second-order sections.
    zpk2ss        -- zero-pole-gain to state-space.
+   ss2tf         -- state-pace to transfer function.
    ss2zpk        -- state-space to pole-zero-gain.
+   sos2zpk       -- second-order-sections to zero-pole-gain.
+   sos2tf        -- second-order-sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
-
+   place_poles   -- pole placement.
+   
 Waveforms
 =========
 
@@ -161,6 +192,7 @@ Waveforms
 
    chirp       -- Frequency swept cosine signal, with several freq functions.
    gausspulse  -- Gaussian modulated sinusoid
+   max_len_seq -- Maximum length sequence
    sawtooth    -- Periodic sawtooth
    square      -- Square wave
    sweep_poly  -- Frequency swept cosine signal; freq is arbitrary polynomial
@@ -180,6 +212,7 @@ Window functions
    boxcar            -- Boxcar window
    chebwin           -- Dolph-Chebyshev window
    cosine            -- Cosine window
+   exponential       -- Exponential window
    flattop           -- Flat top window
    gaussian          -- Gaussian window
    general_gaussian  -- Generalized Gaussian window
@@ -190,6 +223,7 @@ Window functions
    parzen            -- Parzen window
    slepian           -- Slepian window
    triang            -- Triangular window
+   tukey             -- Tukey window
 
 Wavelets
 ========
@@ -231,6 +265,7 @@ from __future__ import division, print_function, absolute_import
 
 from . import sigtools
 from .waveforms import *
+from ._max_len_seq import max_len_seq
 
 # The spline module (a C extension) provides:
 #     cspline2d, qspline2d, sepfir2d, symiirord1, symiirord2

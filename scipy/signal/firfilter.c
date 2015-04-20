@@ -216,6 +216,3 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   free(indices);
   return 0;
 }
-
-
-

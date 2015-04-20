@@ -1,12 +1,15 @@
 import numpy as np
 import scipy.stats
-from scipy.special import i0
+from scipy.special import i0, i0e
 import numpy.testing
+
+cimport cython
+from libc.math cimport cos, sin, sqrt
 cimport numpy as np
 
-cdef extern from "math.h":
-    double cos(double theta)
-    double sin(double theta)
+cdef extern from "numpy/npy_math.h":
+    double NPY_PI
+    double NPY_2_PI
 
 
 cdef double von_mises_cdf_series(double k,double x,unsigned int p):
@@ -23,39 +26,36 @@ cdef double von_mises_cdf_series(double k,double x,unsigned int p):
         R = 1./(2*n/k + R)
         V = R*(sn/n+V)
 
-    return 0.5+x/(2*np.pi) + V/np.pi
+    with cython.cdivision(True):
+        return 0.5 + x / (2 * NPY_PI) + V / NPY_PI
 
-def von_mises_cdf_normalapprox(k,x,C1):
-    b = np.sqrt(2/np.pi)*np.exp(k)/i0(k)
+cdef von_mises_cdf_normalapprox(k, x):
+    b = sqrt(NPY_2_PI) / i0e(k) # Check for negative k
     z = b*np.sin(x/2.)
-    C = 24*k
-    chi = z - z**3/((C-2*z**2-16)/3.-(z**4+7/4.*z**2+167./2)/(C+C1-z**2+3))**2
     return scipy.stats.norm.cdf(z)
 
-cimport cython
 @cython.boundscheck(False)
-def von_mises_cdf(k,x):
+def von_mises_cdf(k_obj, x_obj):
     cdef np.ndarray[double, ndim=1] temp, temp_xs, temp_ks
     cdef unsigned int i, p
-    cdef double a1, a2, a3, a4, C1, CK
+    cdef double a1, a2, a3, a4, CK
     #k,x = np.broadcast_arrays(np.asarray(k),np.asarray(x))
-    k = np.asarray(k)
-    x = np.asarray(x)
-    zerodim = k.ndim==0 and x.ndim==0
+    cdef np.ndarray k = np.asarray(k_obj)
+    cdef np.ndarray x = np.asarray(x_obj)
+    cdef bint zerodim = k.ndim==0 and x.ndim==0
 
     k = np.atleast_1d(k)
     x = np.atleast_1d(x)
-    ix = np.round(x/(2*np.pi))
-    x = x-ix*2*np.pi
+    ix = np.round(x / (2 * NPY_PI))
+    x = x - ix * (2 * NPY_PI)
 
     # These values should give 12 decimal digits
     CK=50
     a1, a2, a3, a4 = [28., 0.5, 100., 5.0]
-    C1 = 50.1
 
     bx, bk = np.broadcast_arrays(x,k)
     result = np.empty(bx.shape,dtype=np.float)
-     
+
     c_small_k = bk<CK
     temp = result[c_small_k]
     temp_xs = bx[c_small_k].astype(np.float)
@@ -68,7 +68,7 @@ def von_mises_cdf(k,x):
         elif temp[i]>1:
             temp[i]=1
     result[c_small_k] = temp
-    result[~c_small_k] = von_mises_cdf_normalapprox(bk[~c_small_k],bx[~c_small_k],C1)
+    result[~c_small_k] = von_mises_cdf_normalapprox(bk[~c_small_k],bx[~c_small_k])
 
     if not zerodim:
         return result+ix

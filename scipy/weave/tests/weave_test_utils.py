@@ -7,7 +7,24 @@ import glob
 from distutils.errors import DistutilsFileError
 import distutils.file_util
 
+from numpy.testing import dec
+
 from scipy.weave import catalog
+
+
+def slow(t):
+    """Replacement for numpy.testing.dec.slow for weave."""
+    t.slow = True
+    if ('RUN_WEAVE_TESTS' in os.environ and
+                bool(os.environ['RUN_WEAVE_TESTS'])):
+        t.__test__ = True
+    else:
+        t.__test__ = False
+
+    return t
+
+
+dec.slow = slow
 
 
 def remove_whitespace(in_str):

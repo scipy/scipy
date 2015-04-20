@@ -5,12 +5,12 @@ from __future__ import absolute_import, print_function
 import time
 import sys
 
-from numpy.testing import (TestCase, dec, assert_, assert_raises,
+from numpy.testing import (TestCase, assert_, assert_raises,
                            run_module_suite)
 
 from scipy.weave import inline_tools
 
-from weave_test_utils import debug_print
+from weave_test_utils import debug_print, dec
 
 
 class _TestSequenceBase(TestCase):

@@ -1346,7 +1346,7 @@ def histogram(input, min, max, bins, labels=None, index=None):
 
 def watershed_ift(input, markers, structure=None, output=None):
     """
-    Apply watershed from markers using an iterative forest transform algorithm.
+    Apply watershed from markers using image foresting transform algorithm.
 
     Parameters
     ----------
@@ -1360,13 +1360,19 @@ def watershed_ift(input, markers, structure=None, output=None):
         A structuring element defining the connectivity of the object can be
         provided. If None, an element is generated with a squared
         connectivity equal to one.
-    out : ndarray
+    output : ndarray, optional
         An output array can optionally be provided.  The same shape as input.
 
     Returns
     -------
     watershed_ift : ndarray
         Output.  Same shape as `input`.
+
+    References
+    ----------
+    .. [1] A.X. Falcao, J. Stolfi and R. de Alencar Lotufo, "The image
+           foresting transform: theory, algorithms, and applications",
+           Pattern Analysis and Machine Intelligence, vol. 26, pp. 19-29, 2004.
 
     """
     input = numpy.asarray(input)

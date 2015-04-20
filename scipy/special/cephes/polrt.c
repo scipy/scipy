@@ -65,6 +65,8 @@ cmplx root[];
     double mag, cofj;
     cmplx x0, x, xsav, dx, t, t1, u, ud;
 
+    xsav.r = 0;
+    xsav.i = 0;
     final = 0;
     n = m;
     if (n <= 0)

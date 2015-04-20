@@ -10,7 +10,7 @@ import numpy as np
 
 from .base import isspmatrix, _formats
 from .data import _data_matrix
-from .sputils import isshape, upcast, upcast_char, getdtype, get_index_dtype
+from .sputils import isshape, upcast_char, getdtype, get_index_dtype
 from ._sparsetools import dia_matvec
 
 
@@ -56,15 +56,15 @@ class dia_matrix(_data_matrix):
     Examples
     --------
 
-    >>> from scipy.sparse import *
-    >>> from scipy import *
-    >>> dia_matrix((3, 4), dtype=int8).toarray()
+    >>> import numpy as np
+    >>> from scipy.sparse import dia_matrix
+    >>> dia_matrix((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
 
-    >>> data = array([[1, 2, 3, 4]]).repeat(3, axis=0)
-    >>> offsets = array([0,-1,2])
+    >>> data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
+    >>> offsets = np.array([0, -1, 2])
     >>> dia_matrix((data, offsets), shape=(4, 4)).toarray()
     array([[1, 0, 3, 0],
            [1, 2, 0, 4],
@@ -184,12 +184,8 @@ class dia_matrix(_data_matrix):
     def _mul_multimatrix(self, other):
         return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
 
-    def setdiag(self, values, k=0):
+    def _setdiag(self, values, k=0):
         M, N = self.shape
-        if k <= -M or k >= N:
-            raise ValueError('k exceeds matrix dimensions')
-
-        values = np.asarray(values)
 
         if values.ndim == 0:
             # broadcast
@@ -219,8 +215,6 @@ class dia_matrix(_data_matrix):
             data[:-1,:self.data.shape[1]] = self.data
             data[-1, min_index:max_index] = values
             self.data = data
-
-    setdiag.__doc__ = _data_matrix.setdiag.__doc__
 
     def todia(self,copy=False):
         if copy:

@@ -2,11 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import LinAlgError
-from . import blas
+from .blas import get_blas_funcs
+from .lapack import get_lapack_funcs
 
 __all__ = ['LinAlgError', 'norm']
-
-_nrm2_prefix = {'f': 's', 'F': 'sc', 'D': 'dz'}
 
 
 def norm(a, ord=None):
@@ -19,7 +18,7 @@ def norm(a, ord=None):
 
     Parameters
     ----------
-    x : (M,) or (M, N) array_like
+    a : (M,) or (M, N) array_like
         Input array.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
@@ -112,14 +111,32 @@ def norm(a, ord=None):
     nan
 
     """
-    # Differs from numpy only in non-finite handling and the use of
-    # blas
+    # Differs from numpy only in non-finite handling and the use of blas.
     a = np.asarray_chkfinite(a)
-    if ord in (None, 2) and (a.ndim == 1) and (a.dtype.char in 'fdFD'):
-        # use blas for fast and stable euclidean norm
-        func_name = _nrm2_prefix.get(a.dtype.char, 'd') + 'nrm2'
-        nrm2 = getattr(blas, func_name)
-        return nrm2(a)
+    if a.dtype.char in 'fdFD':
+        if ord in (None, 2) and (a.ndim == 1):
+            # use blas for fast and stable euclidean norm
+            nrm2 = get_blas_funcs('nrm2', dtype=a.dtype)
+            return nrm2(a)
+
+        if a.ndim == 2:
+            # Use lapack for a couple fast matrix norms.
+            # For some reason the *lange frobenius norm is slow.
+            lange_args = None
+            if ord == 1:
+                if np.isfortran(a):
+                    lange_args = '1', a
+                elif np.isfortran(a.T):
+                    lange_args = 'i', a.T
+            elif ord == np.inf:
+                if np.isfortran(a):
+                    lange_args = 'i', a
+                elif np.isfortran(a.T):
+                    lange_args = '1', a.T
+            if lange_args:
+                lange = get_lapack_funcs('lange', dtype=a.dtype)
+                return lange(*lange_args)
+
     return np.linalg.norm(a, ord=ord)
 
 

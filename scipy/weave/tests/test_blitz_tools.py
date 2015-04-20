@@ -7,12 +7,12 @@ import warnings
 from numpy import (float32, float64, complex64, complex128,
                    zeros, random, array)
 
-from numpy.testing import (TestCase, dec, assert_equal,
+from numpy.testing import (TestCase, assert_equal,
                            assert_allclose, run_module_suite)
 
 from scipy.weave import blitz_tools, blitz, BlitzWarning
 from scipy.weave.ast_tools import harvest_variables
-from weave_test_utils import remove_whitespace, debug_print, TempdirBlitz
+from weave_test_utils import remove_whitespace, debug_print, TempdirBlitz, dec
 
 
 class TestAstToBlitzExpr(TestCase):

@@ -4,9 +4,11 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import threading
 
 from . import sigtools
-from scipy.lib.six import callable
+from scipy._lib.six import callable
+from scipy._lib._version import NumpyVersion
 from scipy import linalg
 from scipy.fftpack import (fft, ifft, ifftshift, fft2, ifft2, fftn,
                            ifftn, fftfreq)
@@ -16,24 +18,31 @@ from numpy import (allclose, angle, arange, argsort, array, asarray,
                    iscomplexobj, isscalar, mean, ndarray, newaxis, ones, pi,
                    poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
                    prod, product, r_, ravel, real_if_close, reshape,
-                   roots, sort, sum, take, transpose, unique, where, zeros)
+                   roots, sort, sum, take, transpose, unique, where, zeros,
+                   zeros_like)
 import numpy as np
-from scipy.misc import factorial
+from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 
+
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
-           'lfiltic', 'deconvolve', 'hilbert', 'hilbert2', 'cmplx_sort',
-           'unique_roots', 'invres', 'invresz', 'residue', 'residuez',
-           'resample', 'detrend', 'lfilter_zi', 'filtfilt', 'decimate',
-           'vectorstrength']
+           'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
+           'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
+           'residuez', 'resample', 'detrend', 'lfilter_zi', 'sosfilt_zi',
+           'filtfilt', 'decimate', 'vectorstrength']
 
 
 _modedict = {'valid': 0, 'same': 1, 'full': 2}
 
 _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
                  'symmetric': 1, 'reflect': 4}
+
+
+_rfft_mt_safe = (NumpyVersion(np.__version__) >= '1.9.0.dev-e24486e')
+
+_rfft_lock = threading.Lock()
 
 
 def _valfrommode(mode):
@@ -131,6 +140,7 @@ def correlate(in1, in2, mode='full'):
     >>> ax_corr.axhline(0.5, ls=':')
     >>> ax_corr.set_title('Cross-correlated with rectangular pulse')
     >>> ax_orig.margins(0, 0.1)
+    >>> fig.tight_layout()
     >>> fig.show()
 
     """
@@ -156,6 +166,12 @@ def correlate(in1, in2, mode='full'):
 
         z = sigtools._correlateND(in1, in2, out, val)
     else:
+        # _correlateND is far slower when in2.size > in1.size, so swap them
+        # and then undo the effect afterward
+        swapped_inputs = (mode == 'full') and (in2.size > in1.size)
+        if swapped_inputs:
+            in1, in2 = in2, in1
+
         ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
         # zero pad input
         in1zpadded = np.zeros(ps, in1.dtype)
@@ -168,6 +184,11 @@ def correlate(in1, in2, mode='full'):
             out = np.empty(in1.shape, in1.dtype)
 
         z = sigtools._correlateND(in1zpadded, in2, out, val)
+
+        # Reverse and conjugate to undo the effect of swapping inputs
+        if swapped_inputs:
+            slice_obj = [slice(None, None, -1)] * len(z.shape)
+            z = z[slice_obj].conj()
 
     return z
 
@@ -284,6 +305,7 @@ def fftconvolve(in1, in2, mode="full"):
     >>> ax_orig.set_title('White noise')
     >>> ax_mag.plot(np.arange(-len(sig)+1,len(sig)), autocorr)
     >>> ax_mag.set_title('Autocorrelation')
+    >>> fig.tight_layout()
     >>> fig.show()
 
     Gaussian blur implemented using FFT convolution.  Notice the dark borders
@@ -331,12 +353,23 @@ def fftconvolve(in1, in2, mode="full"):
     # Speed up FFT by padding to optimal size for FFTPACK
     fshape = [_next_regular(int(d)) for d in shape]
     fslice = tuple([slice(0, int(sz)) for sz in shape])
-    if not complex_result:
-        ret = irfftn(rfftn(in1, fshape) *
-                     rfftn(in2, fshape), fshape)[fslice].copy()
-        ret = ret.real
+    # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
+    # sure we only call rfftn/irfftn from one thread at a time.
+    if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
+        try:
+            ret = irfftn(rfftn(in1, fshape) *
+                         rfftn(in2, fshape), fshape)[fslice].copy()
+        finally:
+            if not _rfft_mt_safe:
+                _rfft_lock.release()
     else:
+        # If we're here, it's either because we need a complex result, or we
+        # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
+        # is already in use by another thread).  In either case, use the
+        # (threadsafe but slower) SciPy complex-FFT routines instead.
         ret = ifftn(fftn(in1, fshape) * fftn(in2, fshape))[fslice].copy()
+        if not complex_result:
+            ret = ret.real
 
     if mode == "full":
         return ret
@@ -387,6 +420,29 @@ def convolve(in1, in2, mode='full'):
     --------
     numpy.polymul : performs polynomial multiplication (same operation, but
                     also accepts poly1d objects)
+
+    Examples
+    --------
+    Smooth a square pulse using a Hann window:
+
+    >>> from scipy import signal
+    >>> sig = np.repeat([0., 1., 0.], 100)
+    >>> win = signal.hann(50)
+    >>> filtered = signal.convolve(sig, win, mode='same') / sum(win)
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, (ax_orig, ax_win, ax_filt) = plt.subplots(3, 1, sharex=True)
+    >>> ax_orig.plot(sig)
+    >>> ax_orig.set_title('Original pulse')
+    >>> ax_orig.margins(0, 0.1)
+    >>> ax_win.plot(win)
+    >>> ax_win.set_title('Filter impulse response')
+    >>> ax_win.margins(0, 0.1)
+    >>> ax_filt.plot(filtered)
+    >>> ax_filt.set_title('Filtered signal')
+    >>> ax_filt.margins(0, 0.1)
+    >>> fig.tight_layout()
+    >>> fig.show()
 
     """
     volume = asarray(in1)
@@ -793,7 +849,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         is not 1, then both `a` and `b` are normalized by ``a[0]``.
     x : array_like
         An N-dimensional input array.
-    axis : int
+    axis : int, optional
         The axis of the input data array along which to apply the
         linear filter. The filter is applied to each subarray along
         this axis.  Default is -1.
@@ -840,8 +896,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
                  a[0] + a[1]z  + ... + a[na] z
 
     """
-    if isscalar(a):
-        a = [a]
+    a = np.atleast_1d(a)
     if zi is None:
         return sigtools._linear_filter(b, a, x, axis)
     else:
@@ -892,9 +947,12 @@ def lfiltic(b, a, y, x=None):
     M = np.size(b) - 1
     K = max(M, N)
     y = asarray(y)
-    zi = zeros(K, y.dtype.char)
+    if y.dtype.kind in 'bui':
+        # ensure calculations are floating point
+        y = y.astype(np.float64)
+    zi = zeros(K, y.dtype)
     if x is None:
-        x = zeros(M, y.dtype.char)
+        x = zeros(M, y.dtype)
     else:
         x = asarray(x)
         L = np.size(x)
@@ -914,7 +972,7 @@ def lfiltic(b, a, y, x=None):
 
 
 def deconvolve(signal, divisor):
-    """Deconvolves `divisor` out of `signal`.
+    """Deconvolves ``divisor`` out of ``signal``.
 
     Returns the quotient and remainder such that
     ``signal = convolve(divisor, quotient) + remainder``
@@ -1095,7 +1153,21 @@ def hilbert2(x, N=None):
 
 
 def cmplx_sort(p):
-    "sort roots based on magnitude."
+    """Sort roots based on magnitude.
+
+    Parameters
+    ----------
+    p : array_like
+        The roots to sort, as a 1-D array.
+
+    Returns
+    -------
+    p_sorted : ndarray
+        Sorted roots.
+    indx : ndarray
+        Array of indices needed to sort the input `p`.
+
+    """
     p = asarray(p)
     if iscomplexobj(p):
         indx = argsort(abs(p))
@@ -1182,7 +1254,7 @@ def unique_roots(p, tol=1e-3, rtype='min'):
 
 def invres(r, p, k, tol=1e-3, rtype='avg'):
     """
-    Compute b(s) and a(s) from partial fraction expansion: r,p,k
+    Compute b(s) and a(s) from partial fraction expansion.
 
     If ``M = len(b)`` and ``N = len(a)``::
 
@@ -1247,7 +1319,7 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
         for m in range(mult[k]):
             t2 = temp[:]
             t2.extend([pout[k]] * (mult[k] - m - 1))
-            b = polyadd(b, r[indx] * poly(t2))
+            b = polyadd(b, r[indx] * atleast_1d(poly(t2)))
             indx += 1
     b = real_if_close(b)
     while allclose(b[0], 0, rtol=1e-14) and (b.shape[-1] > 1):
@@ -1400,7 +1472,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
 
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """
-    Compute b(z) and a(z) from partial fraction expansion: r,p,k
+    Compute b(z) and a(z) from partial fraction expansion.
 
     If ``M = len(b)`` and ``N = len(a)``::
 
@@ -1421,7 +1493,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
 
     See Also
     --------
-    residuez, unique_roots
+    residuez, unique_roots, invres
 
     """
     extra = asarray(k)
@@ -1447,7 +1519,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
         for m in range(mult[k]):
             t2 = temp[:]
             t2.extend([pout[k]] * (mult[k] - m - 1))
-            brev = polyadd(brev, (r[indx] * poly(t2))[::-1])
+            brev = polyadd(brev, (r[indx] * atleast_1d(poly(t2)))[::-1])
             indx += 1
     b = real_if_close(brev[::-1])
     return b, a
@@ -1502,13 +1574,15 @@ def resample(x, num, t=None, axis=0, window=None):
 
     The first sample of the returned vector is the same as the first
     sample of the input vector.  The spacing between samples is changed
-    from dx to:
-
-        dx * len(x) / num
+    from ``dx`` to ``dx * len(x) / num``.
 
     If `t` is not None, then it represents the old sample positions,
     and the new sample positions will be returned as well as the new
     samples.
+
+    As noted, `resample` uses FFT transformations, which can be very
+    slow if the number of input samples is large and prime, see
+    `scipy.fftpack.fft`.
 
     """
     x = asarray(x)
@@ -1517,7 +1591,9 @@ def resample(x, num, t=None, axis=0, window=None):
     if window is not None:
         if callable(window):
             W = window(fftfreq(Nx))
-        elif isinstance(window, ndarray) and window.shape == (Nx,):
+        elif isinstance(window, ndarray):
+            if window.shape != (Nx,):
+                raise ValueError('window must have the same length as data')
             W = window
         else:
             W = ifftshift(get_window(window, Nx))
@@ -1805,8 +1881,8 @@ def lfilter_zi(b, a):
 
     if a[0] != 1.0:
         # Normalize the coefficients so a[0] == 1.
-        a = a / a[0]
         b = b / a[0]
+        a = a / a[0]
 
     n = max(len(a), len(b))
 
@@ -1836,28 +1912,285 @@ def lfilter_zi(b, a):
     return zi
 
 
-def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
+def sosfilt_zi(sos):
+    """
+    Compute an initial state `zi` for the sosfilt function that corresponds
+    to the steady state of the step response.
+
+    A typical use of this function is to set the initial state so that the
+    output of the filter starts at the same value as the first element of
+    the signal to be filtered.
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        specification.
+
+    Returns
+    -------
+    zi : ndarray
+        Initial conditions suitable for use with ``sosfilt``, shape
+        ``(n_sections, 2)``.
+
+    See Also
+    --------
+    sosfilt, zpk2sos
+
+    Notes
+    -----
+    .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Filter a rectangular pulse that begins at time 0, with and without
+    the use of the `zi` argument of `scipy.signal.sosfilt`.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    >>> sos = signal.butter(9, 0.125, output='sos')
+    >>> zi = signal.sosfilt_zi(sos)
+    >>> x = (np.arange(250) < 100).astype(int)
+    >>> f1 = signal.sosfilt(sos, x)
+    >>> f2, zo = signal.sosfilt(sos, x, zi=zi)
+
+    >>> plt.plot(x, 'k--', label='x')
+    >>> plt.plot(f1, 'b', alpha=0.5, linewidth=2, label='filtered')
+    >>> plt.plot(f2, 'g', alpha=0.25, linewidth=4, label='filtered with zi')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    """
+    sos = np.asarray(sos)
+    if sos.ndim != 2 or sos.shape[1] != 6:
+        raise ValueError('sos must be shape (n_sections, 6)')
+
+    n_sections = sos.shape[0]
+    zi = np.empty((n_sections, 2))
+    scale = 1.0
+    for section in range(n_sections):
+        b = sos[section, :3]
+        a = sos[section, 3:]
+        zi[section] = scale * lfilter_zi(b, a)
+        # If H(z) = B(z)/A(z) is this section's transfer function, then
+        # b.sum()/a.sum() is H(1), the gain at omega=0.  That's the steady
+        # state value of this section's step response.
+        scale *= b.sum() / a.sum()
+
+    return zi
+
+
+def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
+    """Forward-backward IIR filter that uses Gustafsson's method.
+
+    Apply the IIR filter defined by `(b,a)` to `x` twice, first forward
+    then backward, using Gustafsson's initial conditions [1]_.
+
+    Let ``y_fb`` be the result of filtering first forward and then backward,
+    and let ``y_bf`` be the result of filtering first backward then forward.
+    Gustafsson's method is to compute initial conditions for the forward
+    pass and the backward pass such that ``y_fb == y_bf``.
+
+    Parameters
+    ----------
+    b : scalar or 1-D ndarray
+        Numerator coefficients of the filter.
+    a : scalar or 1-D ndarray
+        Denominator coefficients of the filter.
+    x : ndarray
+        Data to be filtered.
+    axis : int, optional
+        Axis of `x` to be filtered.  Default is -1.
+    irlen : int or None, optional
+        The length of the nonnegligible part of the impulse response.
+        If `irlen` is None, or if the length of the signal is less than
+        ``2 * irlen``, then no part of the impulse response is ignored.
+
+    Returns
+    -------
+    y : ndarray
+        The filtered data.
+    x0 : ndarray
+        Initial condition for the forward filter.
+    x1 : ndarray
+        Initial condition for the backward filter.
+
+    Notes
+    -----
+    Typically the return values `x0` and `x1` are not needed by the
+    caller.  The intended use of these return values is in unit tests.
+
+    References
+    ----------
+    .. [1] F. Gustaffson. Determining the initial states in forward-backward
+           filtering. Transactions on Signal Processing, 46(4):988-992, 1996.
+
+    """
+    # In the comments, "Gustafsson's paper" and [1] refer to the
+    # paper referenced in the docstring.
+
+    b = np.atleast_1d(b)
+    a = np.atleast_1d(a)
+
+    order = max(len(b), len(a)) - 1
+    if order == 0:
+        # The filter is just scalar multiplication, with no state.
+        scale = (b[0] / a[0])**2
+        y = scale * x
+        return y, np.array([]), np.array([])
+
+    if axis != -1 or axis != x.ndim - 1:
+        # Move the axis containing the data to the end.
+        x = np.swapaxes(x, axis, x.ndim - 1)
+
+    # n is the number of samples in the data to be filtered.
+    n = x.shape[-1]
+
+    if irlen is None or n <= 2*irlen:
+        m = n
+    else:
+        m = irlen
+
+    # Create Obs, the observability matrix (called O in the paper).
+    # This matrix can be interpreted as the operator that propagates
+    # an arbitrary initial state to the output, assuming the input is
+    # zero.
+    # In Gustafsson's paper, the forward and backward filters are not
+    # necessarily the same, so he has both O_f and O_b.  We use the same
+    # filter in both directions, so we only need O. The same comment
+    # applies to S below.
+    Obs = np.zeros((m, order))
+    zi = np.zeros(order)
+    zi[0] = 1
+    Obs[:, 0] = lfilter(b, a, np.zeros(m), zi=zi)[0]
+    for k in range(1, order):
+        Obs[k:, k] = Obs[:-k, 0]
+
+    # Obsr is O^R (Gustafsson's notation for row-reversed O)
+    Obsr = Obs[::-1]
+
+    # Create S.  S is the matrix that applies the filter to the reversed
+    # propagated initial conditions.  That is,
+    #     out = S.dot(zi)
+    # is the same as
+    #     tmp, _ = lfilter(b, a, zeros(), zi=zi)  # Propagate ICs.
+    #     out = lfilter(b, a, tmp[::-1])          # Reverse and filter.
+
+    # Equations (5) & (6) of [1]
+    S = lfilter(b, a, Obs[::-1], axis=0)
+
+    # Sr is S^R (row-reversed S)
+    Sr = S[::-1]
+
+    # M is [(S^R - O), (O^R - S)]
+    if m == n:
+        M = np.hstack((Sr - Obs, Obsr - S))
+    else:
+        # Matrix described in section IV of [1].
+        M = np.zeros((2*m, 2*order))
+        M[:m, :order] = Sr - Obs
+        M[m:, order:] = Obsr - S
+
+    # Naive forward-backward and backward-forward filters.
+    # These have large transients because the filters use zero initial
+    # conditions.
+    y_f = lfilter(b, a, x)
+    y_fb = lfilter(b, a, y_f[..., ::-1])[..., ::-1]
+
+    y_b = lfilter(b, a, x[..., ::-1])[..., ::-1]
+    y_bf = lfilter(b, a, y_b)
+
+    delta_y_bf_fb = y_bf - y_fb
+    if m == n:
+        delta = delta_y_bf_fb
+    else:
+        start_m = delta_y_bf_fb[..., :m]
+        end_m = delta_y_bf_fb[..., -m:]
+        delta = np.concatenate((start_m, end_m), axis=-1)
+
+    # ic_opt holds the "optimal" initial conditions.
+    # The following code computes the result shown in the formula
+    # of the paper between equations (6) and (7).
+    if delta.ndim == 1:
+        ic_opt = linalg.lstsq(M, delta)[0]
+    else:
+        # Reshape delta so it can be used as an array of multiple
+        # right-hand-sides in linalg.lstsq.
+        delta2d = delta.reshape(-1, delta.shape[-1]).T
+        ic_opt0 = linalg.lstsq(M, delta2d)[0].T
+        ic_opt = ic_opt0.reshape(delta.shape[:-1] + (M.shape[-1],))
+
+    # Now compute the filtered signal using equation (7) of [1].
+    # First, form [S^R, O^R] and call it W.
+    if m == n:
+        W = np.hstack((Sr, Obsr))
+    else:
+        W = np.zeros((2*m, 2*order))
+        W[:m, :order] = Sr
+        W[m:, order:] = Obsr
+
+    # Equation (7) of [1] says
+    #     Y_fb^opt = Y_fb^0 + W * [x_0^opt; x_{N-1}^opt]
+    # `wic` is (almost) the product on the right.
+    # W has shape (m, 2*order), and ic_opt has shape (..., 2*order),
+    # so we can't use W.dot(ic_opt).  Instead, we dot ic_opt with W.T,
+    # so wic has shape (..., m).
+    wic = ic_opt.dot(W.T)
+
+    # `wic` is "almost" the product of W and the optimal ICs in equation
+    # (7)--if we're using a truncated impulse response (m < n), `wic`
+    # contains only the adjustments required for the ends of the signal.
+    # Here we form y_opt, taking this into account if necessary.
+    y_opt = y_fb
+    if m == n:
+        y_opt += wic
+    else:
+        y_opt[..., :m] += wic[..., :m]
+        y_opt[..., -m:] += wic[..., -m:]
+
+    x0 = ic_opt[..., :order]
+    x1 = ic_opt[..., -order:]
+    if axis != -1 or axis != x.ndim - 1:
+        # Restore the data axis to its original position.
+        x0 = np.swapaxes(x0, axis, x.ndim - 1)
+        x1 = np.swapaxes(x1, axis, x.ndim - 1)
+        y_opt = np.swapaxes(y_opt, axis, x.ndim - 1)
+
+    return y_opt, x0, x1
+
+
+def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
+             irlen=None):
     """
     A forward-backward filter.
 
-    This function applies a linear filter twice, once forward
-    and once backwards.  The combined filter has linear phase.
+    This function applies a linear filter twice, once forward and once
+    backwards.  The combined filter has linear phase.
 
-    Before applying the filter, the function can pad the data along the
-    given axis in one of three ways: odd, even or constant.  The odd
-    and even extensions have the corresponding symmetry about the end point
-    of the data.  The constant extension extends the data with the values
-    at end points.  On both the forward and backwards passes, the
-    initial condition of the filter is found by using `lfilter_zi` and
-    scaling it by the end point of the extended data.
+    The function provides options for handling the edges of the signal.
+
+    When `method` is "pad", the function pads the data along the given axis
+    in one of three ways: odd, even or constant.  The odd and even extensions
+    have the corresponding symmetry about the end point of the data.  The
+    constant extension extends the data with the values at the end points. On
+    both the forward and backward passes, the initial condition of the
+    filter is found by using `lfilter_zi` and scaling it by the end point of
+    the extended data.
+
+    When `method` is "gust", Gustafsson's method [1]_ is used.  Initial
+    conditions are chosen for the forward and backward passes so that the
+    forward-backward filter gives the same result as the backward-forward
+    filter.
 
     Parameters
     ----------
     b : (N,) array_like
         The numerator coefficient vector of the filter.
     a : (N,) array_like
-        The denominator coefficient vector of the filter.  If a[0]
-        is not 1, then both a and b are normalized by a[0].
+        The denominator coefficient vector of the filter.  If ``a[0]``
+        is not 1, then both `a` and `b` are normalized by ``a[0]``.
     x : array_like
         The array of data to be filtered.
     axis : int, optional
@@ -1870,9 +2203,20 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
         is 'odd'.
     padlen : int or None, optional
         The number of elements by which to extend `x` at both ends of
-        `axis` before applying the filter. This value must be less than
-        `x.shape[axis]-1`.  `padlen=0` implies no padding.
-        The default value is 3*max(len(a),len(b)).
+        `axis` before applying the filter.  This value must be less than
+        ``x.shape[axis] - 1``.  ``padlen=0`` implies no padding.
+        The default value is ``3 * max(len(a), len(b))``.
+    method : str, optional
+        Determines the method for handling the edges of the signal, either
+        "pad" or "gust".  When `method` is "pad", the signal is padded; the
+        type of padding is determined by `padtype` and `padlen`, and `irlen`
+        is ignored.  When `method` is "gust", Gustafsson's method is used,
+        and `padtype` and `padlen` are ignored.
+    irlen : int or None, optional
+        When `method` is "gust", `irlen` specifies the length of the
+        impulse response of the filter.  If `irlen` is None, no part
+        of the impulse response is ignored.  For a long signal, specifying
+        `irlen` can significantly improve the performance of the filter.
 
     Returns
     -------
@@ -1884,8 +2228,23 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     --------
     lfilter_zi, lfilter
 
+    Notes
+    -----
+    The option to use Gustaffson's method was added in scipy version 0.16.0.
+
+    References
+    ----------
+    .. [1] F. Gustaffson, "Determining the initial states in forward-backward
+           filtering", Transactions on Signal Processing, Vol. 46, pp. 988-992,
+           1996.
+
     Examples
     --------
+    The examples will use several functions from `scipy.signal`.
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
     First we create a one second signal that is the sum of two pure sine
     waves, with frequencies 5 Hz and 250 Hz, sampled at 2000 Hz.
 
@@ -1895,10 +2254,9 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     >>> x = xlow + xhigh
 
     Now create a lowpass Butterworth filter with a cutoff of 0.125 times
-    the Nyquist rate, or 125 Hz, and apply it to x with filtfilt.  The
-    result should be approximately xlow, with no phase shift.
+    the Nyquist rate, or 125 Hz, and apply it to ``x`` with `filtfilt`.
+    The result should be approximately ``xlow``, with no phase shift.
 
-    >>> from scipy import signal
     >>> b, a = signal.butter(8, 0.125)
     >>> y = signal.filtfilt(b, a, x, padlen=150)
     >>> np.abs(y - xlow).max()
@@ -1910,18 +2268,71 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
     is reached.  In general, transient effects at the edges are
     unavoidable.
 
+    The following example demonstrates the option ``method="gust"``.
+
+    First, create a filter.
+
+    >>> b, a = signal.ellip(4, 0.01, 120, 0.125)  # Filter to be applied.
+    >>> np.random.seed(123456)
+
+    `sig` is a random input signal to be filtered.
+
+    >>> n = 60
+    >>> sig = np.random.randn(n)**3 + 3*np.random.randn(n).cumsum()
+
+    Apply `filtfilt` to `sig`, once using the Gustafsson method, and
+    once using padding, and plot the results for comparison.
+
+    >>> fgust = signal.filtfilt(b, a, sig, method="gust")
+    >>> fpad = signal.filtfilt(b, a, sig, padlen=50)
+    >>> plt.plot(sig, 'k-', label='input')
+    >>> plt.plot(fgust, 'b-', linewidth=4, label='gust')
+    >>> plt.plot(fpad, 'c-', linewidth=1.5, label='pad')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    The `irlen` argument can be used to improve the performance
+    of Gustafsson's method.
+
+    Estimate the impulse response length of the filter.
+
+    >>> z, p, k = signal.tf2zpk(b, a)
+    >>> eps = 1e-9
+    >>> r = np.max(np.abs(p))
+    >>> approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    >>> approx_impulse_len
+    137
+
+    Apply the filter to a longer signal, with and without the `irlen`
+    argument.  The difference between `y1` and `y2` is small.  For long
+    signals, using `irlen` gives a significant performance improvement.
+
+    >>> x = np.random.randn(5000)
+    >>> y1 = signal.filtfilt(b, a, x, method='gust')
+    >>> y2 = signal.filtfilt(b, a, x, method='gust', irlen=approx_impulse_len)
+    >>> print(np.max(np.abs(y1 - y2)))
+    1.80056858312e-10
+
     """
-
-    if padtype not in ['even', 'odd', 'constant', None]:
-        raise ValueError(("Unknown value '%s' given to padtype.  padtype must "
-                         "be 'even', 'odd', 'constant', or None.") %
-                         padtype)
-
-    b = np.asarray(b)
-    a = np.asarray(a)
+    b = np.atleast_1d(b)
+    a = np.atleast_1d(a)
     x = np.asarray(x)
 
+    if method not in ["pad", "gust"]:
+        raise ValueError("method must be 'pad' or 'gust'.")
+
+    if method == "gust":
+        y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
+        return y
+
+    # `method` is "pad"...
+
     ntaps = max(len(a), len(b))
+
+    if padtype not in ['even', 'odd', 'constant', None]:
+        raise ValueError(("Unknown value '%s' given to padtype.  padtype "
+                          "must be 'even', 'odd', 'constant', or None.") %
+                         padtype)
 
     if padtype is None:
         padlen = 0
@@ -1976,6 +2387,111 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None):
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
 
     return y
+
+
+def sosfilt(sos, x, axis=-1, zi=None):
+    """
+    Filter data along one dimension using cascaded second-order sections
+
+    Filter a data sequence, `x`, using a digital IIR filter defined by
+    `sos`. This is implemented by performing `lfilter` for each
+    second-order section.  See `lfilter` for details.
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``. Each row corresponds to a second-order
+        section, with the first three columns providing the numerator
+        coefficients and the last three providing the denominator
+        coefficients.
+    x : array_like
+        An N-dimensional input array.
+    axis : int, optional
+        The axis of the input data array along which to apply the
+        linear filter. The filter is applied to each subarray along
+        this axis.  Default is -1.
+    zi : array_like, optional
+        Initial conditions for the cascaded filter delays.  It is a (at
+        least 2D) vector of shape ``(n_sections, ..., 2, ...)``, where
+        ``..., 2, ...`` denotes the shape of `x`, but with ``x.shape[axis]``
+        replaced by 2.  If `zi` is None or is not given then initial rest
+        (i.e. all zeros) is assumed.
+        Note that these initial conditions are *not* the same as the initial
+        conditions given by `lfiltic` or `lfilter_zi`.
+
+    Returns
+    -------
+    y : ndarray
+        The output of the digital filter.
+    zf : ndarray, optional
+        If `zi` is None, this is not returned, otherwise, `zf` holds the
+        final filter delay values.
+
+    See Also
+    --------
+    zpk2sos, sos2zpk, sosfilt_zi
+
+    Notes
+    -----
+    The filter function is implemented as a series of second-order filters
+    with direct-form II transposed structure. It is designed to minimize
+    numerical precision errors for high-order filters.
+
+    .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Plot a 13th-order filter's impulse response using both `lfilter` and
+    `sosfilt`, showing the instability that results from trying to do a
+    13th-order filter in a single stage (the numerical error pushes some poles
+    outside of the unit circle):
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import signal
+    >>> b, a = signal.ellip(13, 0.009, 80, 0.05, output='ba')
+    >>> sos = signal.ellip(13, 0.009, 80, 0.05, output='sos')
+    >>> x = np.zeros(700)
+    >>> x[0] = 1.
+    >>> y_tf = signal.lfilter(b, a, x)
+    >>> y_sos = signal.sosfilt(sos, x)
+    >>> plt.plot(y_tf, 'r', label='TF')
+    >>> plt.plot(y_sos, 'k', label='SOS')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    """
+    x = np.asarray(x)
+
+    sos = atleast_2d(sos)
+    if sos.ndim != 2:
+        raise ValueError('sos array must be 2D')
+
+    n_sections, m = sos.shape
+    if m != 6:
+        raise ValueError('sos array must be shape (n_sections, 6)')
+
+    use_zi = zi is not None
+    if use_zi:
+        zi = np.asarray(zi)
+        x_zi_shape = list(x.shape)
+        x_zi_shape[axis] = 2
+        x_zi_shape = tuple([n_sections] + x_zi_shape)
+        if zi.shape != x_zi_shape:
+            raise ValueError('Invalid zi shape.  With axis=%r, an input with '
+                             'shape %r, and an sos array with %d sections, zi '
+                             'must have shape %r.' %
+                             (axis, x.shape, n_sections, x_zi_shape))
+        zf = zeros_like(zi)
+
+    for section in range(n_sections):
+        if use_zi:
+            x, zf[section] = lfilter(sos[section, :3], sos[section, 3:],
+                                     x, axis, zi=zi[section])
+        else:
+            x = lfilter(sos[section, :3], sos[section, 3:], x, axis)
+    out = (x, zf) if use_zi else x
+    return out
 
 
 from scipy.signal.filter_design import cheby1

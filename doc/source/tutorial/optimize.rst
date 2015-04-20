@@ -19,7 +19,7 @@ The module contains:
    functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
    Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
-2. Global (brute-force) optimization routines  (e.g., :func:`anneal`, :func:`basinhopping`)
+2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`, :func:`differential_evolution`)
 
 3. Least-squares minimization (:func:`leastsq`) and curve fitting
    (:func:`curve_fit`) algorithms
@@ -45,7 +45,7 @@ problem of minimizing the Rosenbrock function of :math:`N` variables:
 .. math::
    :nowrap:
 
-    \[ f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.\]
+    f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.
 
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
@@ -157,7 +157,7 @@ locally to a quadratic form:
 .. math::
    :nowrap:
 
-    \[ f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).\]
+    f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).
 
 where :math:`\mathbf{H}\left(\mathbf{x}_{0}\right)` is a matrix of second-derivatives (the Hessian). If the Hessian is
 positive definite then the local minimum of this function can be found
@@ -166,7 +166,7 @@ by setting the gradient of the quadratic form to zero, resulting in
 .. math::
    :nowrap:
 
-    \[ \mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.\]
+    \mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.
 
 The inverse of the Hessian is evaluated using the conjugate-gradient
 method. An example of employing this method to minimizing the
@@ -202,7 +202,7 @@ For example, the Hessian when :math:`N=5` is
 .. math::
    :nowrap:
 
-    \[ \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].\]
+    \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].
 
 The code which computes this Hessian along with the code to minimize
 the function using Newton-CG method is shown in the following example:
@@ -251,7 +251,7 @@ elements:
 .. math::
    :nowrap:
 
-    \[ \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].\]
+    \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].
 
 Code which makes use of this Hessian product to minimize the
 Rosenbrock function using :func:`minimize` follows:
@@ -302,15 +302,17 @@ As an example, let us consider the problem of maximizing the function:
 .. math::
     :nowrap:
 
-    \[ f(x, y) = 2 x y + 2 x - x^2 - 2 y^2 \]
+    f(x, y) = 2 x y + 2 x - x^2 - 2 y^2
 
 subject to an equality and an inequality constraints defined as:
 
 .. math::
     :nowrap:
 
-    \[ x^3 - y = 0 \]
-    \[ y - 1 \geq 0 \]
+    \begin{eqnarray*}
+      x^3 - y &= 0 \\
+      y - 1 &\geq 0
+    \end{eqnarray*}
 
 
 
@@ -384,7 +386,7 @@ data-point as
 .. math::
    :nowrap:
 
-    \[ e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert .\]
+    e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert
 
 An objective function to pass to any of the previous minization
 algorithms to obtain a least-squares fit is.
@@ -392,7 +394,7 @@ algorithms to obtain a least-squares fit is.
 .. math::
    :nowrap:
 
-    \[ J\left(\mathbf{p}\right)=\sum_{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).\]
+    J\left(\mathbf{p}\right)=\sum_{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).
 
 
 
@@ -411,14 +413,14 @@ measured data follow a sinusoidal pattern
 .. math::
    :nowrap:
 
-    \[ y_{i}=A\sin\left(2\pi kx_{i}+\theta\right)\]
+    y_{i}=A\sin\left(2\pi kx_{i}+\theta\right)
 
 where the parameters :math:`A,` :math:`k` , and :math:`\theta` are unknown. The residual vector is
 
 .. math::
    :nowrap:
 
-    \[ e_{i}=\left|y_{i}-A\sin\left(2\pi kx_{i}+\theta\right)\right|.\]
+    e_{i}=\left|y_{i}-A\sin\left(2\pi kx_{i}+\theta\right)\right|.
 
 By defining a function to compute the residuals and (selecting an
 appropriate starting position), the least-squares fit routine can be
@@ -543,7 +545,7 @@ neighborhood in each dimension independently with a fixed step size::
     ...     niter = 0
     ...     improved = True
     ...     stop = False
-    ...     
+    ...
     ...     while improved and not stop and niter < maxiter:
     ...         improved = False
     ...         niter += 1
@@ -562,7 +564,7 @@ neighborhood in each dimension independently with a fixed step size::
     ...             if maxfev is not None and funcalls >= maxfev:
     ...                 stop = True
     ...                 break
-    ...     
+    ...
     ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
     ...                           nfev=funcalls, success=(niter > 1))
     >>> x0 = [1.35, 0.9, 0.8, 1.1, 1.2]
@@ -580,7 +582,7 @@ This will work just as well in case of univariate optimization::
     ...     niter = 0
     ...     improved = True
     ...     stop = False
-    ...     
+    ...
     ...     while improved and not stop and niter < maxiter:
     ...         improved = False
     ...         niter += 1
@@ -596,7 +598,7 @@ This will work just as well in case of univariate optimization::
     ...         if maxfev is not None and funcalls >= maxfev:
     ...             stop = True
     ...             break
-    ...     
+    ...
     ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
     ...                           nfev=funcalls, success=(niter > 1))
     >>> res = minimize_scalar(f, bracket=(-3.5, 0), method=custmin,
@@ -646,7 +648,7 @@ equation
 .. math::
    :nowrap:
 
-    \[ x+2\cos\left(x\right)=0,\]
+    x+2\cos\left(x\right)=0,
 
 a root of which can be found as follows::
 

@@ -3,8 +3,8 @@ Unit test for SLSQP optimization.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, assert_array_almost_equal, TestCase, \
-                          assert_allclose, assert_equal, run_module_suite
+from numpy.testing import (assert_, assert_array_almost_equal, TestCase,
+                           assert_allclose, assert_equal, run_module_suite)
 import numpy as np
 
 from scipy.optimize import fmin_slsqp, minimize
@@ -99,40 +99,39 @@ class TestSLSQP(TestCase):
 
     # minimize
     def test_minimize_unbounded_approximated(self):
-        """ Minimize, method='SLSQP': unbounded, approximated jacobian. """
+        # Minimize, method='SLSQP': unbounded, approximated jacobian.
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                        method='SLSQP', options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
 
     def test_minimize_unbounded_given(self):
-        """ Minimize, method='SLSQP': unbounded, given jacobian. """
+        # Minimize, method='SLSQP': unbounded, given jacobian.
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                        jac=self.jac, method='SLSQP', options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
 
     def test_minimize_bounded_approximated(self):
-        """ Minimize, method='SLSQP': bounded, approximated jacobian. """
-        res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                       bounds=((2.5, None), (None, 0.5)),
-                       method='SLSQP', options=self.opts)
+        # Minimize, method='SLSQP': bounded, approximated jacobian.
+        with np.errstate(invalid='ignore'):
+            res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
+                           bounds=((2.5, None), (None, 0.5)),
+                           method='SLSQP', options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2.5, 0.5])
+        assert_(2.5 <= res.x[0])
+        assert_(res.x[1] <= 0.5)
 
     def test_minimize_unbounded_combined(self):
-        """ \
-        Minimize, method='SLSQP': unbounded, combined function and jacobian.
-        """
+        # Minimize, method='SLSQP': unbounded, combined function and jacobian.
         res = minimize(self.fun_and_jac, [-1.0, 1.0], args=(-1.0, ),
                        jac=True, method='SLSQP', options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
 
     def test_minimize_equality_approximated(self):
-        """ \
-        Minimize with method='SLSQP': equality constraint, approx. jacobian.
-        """
+        # Minimize with method='SLSQP': equality constraint, approx. jacobian.
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                        constraints={'type': 'eq',
                                     'fun': self.f_eqcon,
@@ -142,9 +141,7 @@ class TestSLSQP(TestCase):
         assert_allclose(res.x, [1, 1])
 
     def test_minimize_equality_given(self):
-        """ \
-        Minimize with method='SLSQP': equality constraint, given jacobian.
-        """
+        # Minimize with method='SLSQP': equality constraint, given jacobian.
         res = minimize(self.fun, [-1.0, 1.0], jac=self.jac,
                        method='SLSQP', args=(-1.0,),
                        constraints={'type': 'eq', 'fun':self.f_eqcon,
@@ -154,10 +151,8 @@ class TestSLSQP(TestCase):
         assert_allclose(res.x, [1, 1])
 
     def test_minimize_equality_given2(self):
-        """ \
-        Minimize with method='SLSQP': equality constraint, given jacobian
-        for fun and const.
-        """
+        # Minimize with method='SLSQP': equality constraint, given jacobian
+        # for fun and const.
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
                        jac=self.jac, args=(-1.0,),
                        constraints={'type': 'eq',
@@ -169,10 +164,8 @@ class TestSLSQP(TestCase):
         assert_allclose(res.x, [1, 1])
 
     def test_minimize_equality_given_cons_scalar(self):
-        """ \
-        Minimize with method='SLSQP': scalar equality constraint, given
-        jacobian for fun and const.
-        """
+        # Minimize with method='SLSQP': scalar equality constraint, given
+        # jacobian for fun and const.
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
                        jac=self.jac, args=(-1.0,),
                        constraints={'type': 'eq',
@@ -184,9 +177,7 @@ class TestSLSQP(TestCase):
         assert_allclose(res.x, [1, 1])
 
     def test_minimize_inequality_given(self):
-        """ \
-        Minimize with method='SLSQP': inequality constraint, given jacobian.
-        """
+        # Minimize with method='SLSQP': inequality constraint, given jacobian.
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
                        jac=self.jac, args=(-1.0, ),
                        constraints={'type': 'ineq',
@@ -197,9 +188,8 @@ class TestSLSQP(TestCase):
         assert_allclose(res.x, [2, 1], atol=1e-3)
 
     def test_minimize_inequality_given_vector_constraints(self):
-        """ \
-        Minimize with method='SLSQP': vector inequality constraint, given jacobian.
-        """
+        # Minimize with method='SLSQP': vector inequality constraint, given
+        # jacobian.
         res = minimize(self.fun, [-1.0, 1.0], jac=self.jac,
                        method='SLSQP', args=(-1.0,),
                        constraints={'type': 'ineq',
@@ -210,10 +200,8 @@ class TestSLSQP(TestCase):
         assert_allclose(res.x, [2, 1])
 
     def test_minimize_bound_equality_given2(self):
-        """ \
-        Minimize with method='SLSQP': bounds, eq. const., given jac. for
-        fun. and const.
-        """
+        # Minimize with method='SLSQP': bounds, eq. const., given jac. for
+        # fun. and const.
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
                        jac=self.jac, args=(-1.0, ),
                        bounds=[(-0.8, 1.), (-1, 0.8)],
@@ -224,10 +212,12 @@ class TestSLSQP(TestCase):
                        options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [0.8, 0.8], atol=1e-3)
+        assert_(-0.8 <= res.x[0] <= 1)
+        assert_(-1 <= res.x[1] <= 0.8)
 
     # fmin_slsqp
     def test_unbounded_approximated(self):
-        """ SLSQP: unbounded, approximated jacobian. """
+        # SLSQP: unbounded, approximated jacobian.
         res = fmin_slsqp(self.fun, [-1.0, 1.0], args=(-1.0, ),
                          iprint = 0, full_output = 1)
         x, fx, its, imode, smode = res
@@ -235,7 +225,7 @@ class TestSLSQP(TestCase):
         assert_array_almost_equal(x, [2, 1])
 
     def test_unbounded_given(self):
-        """ SLSQP: unbounded, given jacobian. """
+        # SLSQP: unbounded, given jacobian.
         res = fmin_slsqp(self.fun, [-1.0, 1.0], args=(-1.0, ),
                          fprime = self.jac, iprint = 0,
                          full_output = 1)
@@ -244,7 +234,7 @@ class TestSLSQP(TestCase):
         assert_array_almost_equal(x, [2, 1])
 
     def test_equality_approximated(self):
-        """ SLSQP: equality constraint, approximated jacobian. """
+        # SLSQP: equality constraint, approximated jacobian.
         res = fmin_slsqp(self.fun,[-1.0,1.0], args=(-1.0,),
                          eqcons = [self.f_eqcon],
                          iprint = 0, full_output = 1)
@@ -253,7 +243,7 @@ class TestSLSQP(TestCase):
         assert_array_almost_equal(x, [1, 1])
 
     def test_equality_given(self):
-        """ SLSQP: equality constraint, given jacobian. """
+        # SLSQP: equality constraint, given jacobian.
         res = fmin_slsqp(self.fun, [-1.0, 1.0],
                          fprime=self.jac, args=(-1.0,),
                          eqcons = [self.f_eqcon], iprint = 0,
@@ -263,7 +253,7 @@ class TestSLSQP(TestCase):
         assert_array_almost_equal(x, [1, 1])
 
     def test_equality_given2(self):
-        """ SLSQP: equality constraint, given jacobian for fun and const. """
+        # SLSQP: equality constraint, given jacobian for fun and const.
         res = fmin_slsqp(self.fun, [-1.0, 1.0],
                          fprime=self.jac, args=(-1.0,),
                          f_eqcons = self.f_eqcon,
@@ -275,7 +265,7 @@ class TestSLSQP(TestCase):
         assert_array_almost_equal(x, [1, 1])
 
     def test_inequality_given(self):
-        """ SLSQP: inequality constraint, given jacobian. """
+        # SLSQP: inequality constraint, given jacobian.
         res = fmin_slsqp(self.fun, [-1.0, 1.0],
                          fprime=self.jac, args=(-1.0, ),
                          ieqcons = [self.f_ieqcon],
@@ -285,7 +275,7 @@ class TestSLSQP(TestCase):
         assert_array_almost_equal(x, [2, 1], decimal=3)
 
     def test_bound_equality_given2(self):
-        """ SLSQP: bounds, eq. const., given jac. for fun. and const. """
+        # SLSQP: bounds, eq. const., given jac. for fun. and const.
         res = fmin_slsqp(self.fun, [-1.0, 1.0],
                          fprime=self.jac, args=(-1.0, ),
                          bounds = [(-0.8, 1.), (-1, 0.8)],
@@ -295,9 +285,11 @@ class TestSLSQP(TestCase):
         x, fx, its, imode, smode = res
         assert_(imode == 0, imode)
         assert_array_almost_equal(x, [0.8, 0.8], decimal=3)
+        assert_(-0.8 <= x[0] <= 1)
+        assert_(-1 <= x[1] <= 0.8)
 
     def test_scalar_constraints(self):
-        """ Ticket #1657 """
+        # Regression test for gh-2182
         x = fmin_slsqp(lambda z: z**2, [3.],
                        ieqcons=[lambda z: z[0] - 1],
                        iprint=0)
@@ -309,7 +301,7 @@ class TestSLSQP(TestCase):
         assert_array_almost_equal(x, [1.])
 
     def test_integer_bounds(self):
-        # this should not raise an exception
+        # This should not raise an exception
         fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
 
     def test_callback(self):
@@ -320,6 +312,7 @@ class TestSLSQP(TestCase):
         assert_(res['success'], res['message'])
         assert_(callback.been_called)
         assert_equal(callback.ncalls, res['nit'])
+
 
 if __name__ == "__main__":
     run_module_suite()

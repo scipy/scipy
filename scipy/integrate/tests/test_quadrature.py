@@ -1,11 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_allclose, assert_
 
-from scipy.integrate import quadrature, romberg, romb, newton_cotes, cumtrapz
+from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
+                             cumtrapz, quad)
+from scipy.integrate.quadrature import AccuracyWarning
 
 
 class TestQuadrature(TestCase):
@@ -14,33 +17,33 @@ class TestQuadrature(TestCase):
 
     def test_quadrature(self):
         # Typical function with two extra arguments:
-        def myfunc(x,n,z):       # Bessel function integrand
+        def myfunc(x, n, z):       # Bessel function integrand
             return cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc,0,pi,(2,1.8))
+        val, err = quadrature(myfunc, 0, pi, (2, 1.8))
         table_val = 0.30614353532540296487
         assert_almost_equal(val, table_val, decimal=7)
 
     def test_quadrature_rtol(self):
-        def myfunc(x,n,z):       # Bessel function integrand
+        def myfunc(x, n, z):       # Bessel function integrand
             return 1e90 * cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc,0,pi,(2,1.8),rtol=1e-10)
+        val, err = quadrature(myfunc, 0, pi, (2, 1.8), rtol=1e-10)
         table_val = 1e90 * 0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
     def test_quadrature_miniter(self):
         # Typical function with two extra arguments:
-        def myfunc(x,n,z):       # Bessel function integrand
+        def myfunc(x, n, z):       # Bessel function integrand
             return cos(n*x-z*sin(x))/pi
         table_val = 0.30614353532540296487
         for miniter in [5, 52]:
-            val, err = quadrature(myfunc,0,pi,(2,1.8),miniter=miniter)
+            val, err = quadrature(myfunc, 0, pi, (2, 1.8), miniter=miniter)
             assert_almost_equal(val, table_val, decimal=7)
             assert_(err < 1.0)
 
     def test_quadrature_single_args(self):
-        def myfunc(x,n):
+        def myfunc(x, n):
             return 1e90 * cos(n*x-1.8*sin(x))/pi
-        val, err = quadrature(myfunc,0,pi,args=2,rtol=1e-10)
+        val, err = quadrature(myfunc, 0, pi, args=2, rtol=1e-10)
         table_val = 1e90 * 0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
@@ -48,7 +51,7 @@ class TestQuadrature(TestCase):
         # Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
             return cos(n*x-z*sin(x))/pi
-        val = romberg(myfunc,0,pi, args=(2, 1.8))
+        val = romberg(myfunc, 0, pi, args=(2, 1.8))
         table_val = 0.30614353532540296487
         assert_almost_equal(val, table_val, decimal=7)
 
@@ -56,12 +59,27 @@ class TestQuadrature(TestCase):
         # Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
             return 1e19*cos(n*x-z*sin(x))/pi
-        val = romberg(myfunc,0,pi, args=(2, 1.8), rtol=1e-10)
+        val = romberg(myfunc, 0, pi, args=(2, 1.8), rtol=1e-10)
         table_val = 1e19*0.30614353532540296487
         assert_allclose(val, table_val, rtol=1e-10)
 
     def test_romb(self):
-        assert_equal(romb(np.arange(17)),128)
+        assert_equal(romb(np.arange(17)), 128)
+
+    def test_romb_gh_3731(self):
+        # Check that romb makes maximal use of data points
+        x = np.arange(2**4+1)
+        y = np.cos(0.2*x)
+        val = romb(y)
+        val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
+        assert_allclose(val, val2, rtol=1e-8, atol=0)
+
+        # should be equal to romb with 2**k+1 samples
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=AccuracyWarning)
+            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(),
+                           divmax=4)
+        assert_allclose(val, val3, rtol=1e-12, atol=0)
 
     def test_non_dtype(self):
         # Check that we work fine with functions returning float

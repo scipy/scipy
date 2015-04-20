@@ -36,3 +36,7 @@ Library:
     Extension: specfun
          Sources:
             specfun.pyf
+    Extension: _ellip_harm_2
+        Sources:
+            _ellip_harm_2.c,
+            sf_error.c

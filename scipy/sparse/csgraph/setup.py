@@ -1,9 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-from os.path import join
-from numpy.distutils.system_info import get_info, get_standard_file, \
-     BlasNotFoundError
-
 
 def configuration(parent_package='', top_path=None):
     import numpy
@@ -23,6 +19,10 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_min_spanning_tree',
          sources=['_min_spanning_tree.c'],
+         include_dirs=[numpy.get_include()])
+    
+    config.add_extension('_reordering',
+         sources=['_reordering.c'],
          include_dirs=[numpy.get_include()])
 
     config.add_extension('_tools',

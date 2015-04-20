@@ -9,8 +9,8 @@ from numpy.testing import (assert_, assert_equal, assert_almost_equal,
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
-from scipy.lib.six import xrange
-from scipy.lib._version import NumpyVersion
+from scipy._lib.six import xrange
+from scipy._lib._version import NumpyVersion
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
@@ -19,7 +19,7 @@ from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
 
 from scipy.interpolate import _ppoly
 
-from scipy.lib._gcutils import assert_deallocated
+from scipy._lib._gcutils import assert_deallocated
 
 
 class TestInterp2D(TestCase):
@@ -86,7 +86,7 @@ class TestInterp2D(TestCase):
     def test_interp2d_bounds(self):
         x = np.linspace(0, 1, 5)
         y = np.linspace(0, 2, 7)
-        z = x[:,None]**2 + y[None,:]
+        z = x[None, :]**2 + y[:, None]
 
         ix = np.linspace(-1, 3, 31)
         iy = np.linspace(-1, 3, 33)
@@ -665,6 +665,21 @@ class TestPPoly(TestCase):
             assert_allclose(pp(xi, dx), pp.derivative(dx)(xi),
                             err_msg="dx=%d" % (dx,))
 
+    def test_antiderivative_of_constant(self):
+        # https://github.com/scipy/scipy/issues/4216
+        p = PPoly([[1.]], [0, 1])
+        assert_equal(p.antiderivative().c, PPoly([[1], [0]], [0, 1]).c)
+        assert_equal(p.antiderivative().x, PPoly([[1], [0]], [0, 1]).x)
+
+    def test_antiderivative_regression_4355(self):
+        # https://github.com/scipy/scipy/issues/4355
+        p = PPoly([[1., 0.5]], [0, 1, 2])
+        q = p.antiderivative()
+        assert_equal(q.c, [[1, 0.5], [0, 1]])
+        assert_equal(q.x, [0, 1, 2])
+        assert_allclose(p.integrate(0, 2), 1.5)
+        assert_allclose(q(2) - q(0), 1.5)
+
     def test_antiderivative_simple(self):
         np.random.seed(1234)
         # [ p1(x) = 3*x**2 + 2*x + 1,
@@ -758,7 +773,7 @@ class TestPPoly(TestCase):
         pp = PPoly.from_spline(spl)
 
         r = pp.roots()
-        r = r[(r >= 0) & (r <= 1)]
+        r = r[(r >= 0 - 1e-15) & (r <= 1 + 1e-15)]
         assert_allclose(r, sproot(spl), atol=1e-15)
 
     def test_roots_idzero(self):
@@ -843,7 +858,8 @@ class TestPPoly(TestCase):
             for i in range(k):
                 res += c[i,None] * w**(k-1-i)
                 cres += abs(c[i,None] * w**(k-1-i))
-            res /= cres
+            with np.errstate(invalid='ignore'):
+                res /= cres
             res = res.ravel()
             res = res[~np.isnan(res)]
             assert_allclose(res, 0, atol=1e-10)
@@ -989,11 +1005,13 @@ class TestBPolyCalculus(TestCase):
         m, k = 5, 8   # number of intervals, order
         x = np.sort(np.random.random(m))
         c = np.random.random((k, m-1))
-        bp = BPoly(c, x)
 
-        xp = np.linspace(x[0], x[-1], 21)
-        for i in range(k):
-            assert_allclose(bp(xp, i), bp.derivative(i)(xp))
+        # test both real and complex coefficients
+        for cc in [c.copy(), c*(1. + 2.j)]:
+            bp = BPoly(cc, x)
+            xp = np.linspace(x[0], x[-1], 21)
+            for i in range(k):
+                assert_allclose(bp(xp, i), bp.derivative(i)(xp))
 
 
 class TestPolyConversions(TestCase):
@@ -1446,6 +1464,14 @@ class TestRegularGridInterpolator(TestCase):
         # complex values cannot
         assert_raises(ValueError, RegularGridInterpolator,
                       (x, y), values, fill_value=1+2j)
+
+    def test_fillvalue_type(self):
+        # from #3703; test that interpolator object construction succeeds
+        values = np.ones((10, 20, 30), dtype='>f4')
+        points = [np.arange(n) for n in values.shape]
+        xi = [(1, 1, 1)]
+        interpolator = RegularGridInterpolator(points, values)
+        interpolator = RegularGridInterpolator(points, values, fill_value=0.)
 
 
 class MyValue(object):

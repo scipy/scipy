@@ -9,7 +9,7 @@ __all__ = ['upcast','getdtype','isscalarlike','isintlike',
 import warnings
 import numpy as np
 
-from scipy.lib._version import NumpyVersion
+from scipy._lib._version import NumpyVersion
 
 # keep this list syncronized with sparsetools
 #supported_dtypes = ['bool', 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32',
@@ -111,14 +111,12 @@ def getdtype(dtype, a=None, default=None):
     Furthermore, 'dtype' must be in 'allowed' set.
     """
     #TODO is this really what we want?
-    canCast = True
     if dtype is None:
         try:
             newdtype = a.dtype
         except AttributeError:
             if default is not None:
                 newdtype = np.dtype(default)
-                canCast = False
             else:
                 raise TypeError("could not interpret data type")
     else:
@@ -417,23 +415,3 @@ if NumpyVersion(np.__version__) > '1.7.0-dev':
     _compat_unique = np.unique
 else:
     _compat_unique = _compat_unique_impl
-
-
-def _compat_bincount_impl(x, weights=None, minlength=None):
-    """
-    Bincount with minlength keyword added for Numpy 1.5.
-    """
-    if weights is None:
-        x = np.bincount(x)
-    else:
-        x = np.bincount(x, weights=weights)
-    if minlength is not None:
-        if x.shape[0] < minlength:
-            x = np.r_[x, np.zeros((minlength - x.shape[0],))]
-    return x
-
-
-if NumpyVersion(np.__version__) > '1.6.0-dev':
-    _compat_bincount = np.bincount
-else:
-    _compat_bincount = _compat_bincount_impl

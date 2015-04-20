@@ -10,12 +10,12 @@ import tempfile
 
 from distutils.dir_util import remove_tree
 
-from numpy.testing import TestCase, assert_, dec, run_module_suite
+from numpy.testing import TestCase, assert_, run_module_suite
 from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy.weave import catalog
 from weave_test_utils import (clear_temp_catalog, restore_temp_catalog,
-                              empty_temp_dir, cleanup_temp_dir)
+                              empty_temp_dir, cleanup_temp_dir, dec)
 
 
 skip_on_windows = dec.skipif(sys.platform == 'win32',

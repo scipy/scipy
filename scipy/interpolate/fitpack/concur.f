@@ -1,5 +1,6 @@
       subroutine concur(iopt,idim,m,u,mx,x,xx,w,ib,db,nb,ie,de,ne,k,s,
      * nest,n,t,nc,c,np,cp,fp,wrk,lwrk,iwrk,ier)
+      implicit none
 c  given the ordered set of m points x(i) in the idim-dimensional space
 c  and given also a corresponding set of strictly increasing values u(i)
 c  and the set of positive numbers w(i),i=1,2,...,m, subroutine concur
@@ -284,7 +285,7 @@ c  ..array arguments..
       real*8 cp(np)
       integer iwrk(nest)
 c  ..local scalars..
-      real*8 tol,dist
+      real*8 tol
       integer i,ib1,ie1,ja,jb,jfp,jg,jq,jz,j,k1,k2,lwest,maxit,nmin,
      * ncc,kk,mmin,nmax,mxx
 c ..function references

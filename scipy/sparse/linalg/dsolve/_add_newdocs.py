@@ -11,8 +11,6 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
     To construct these `SuperLU` objects, call the `splu` and `spilu`
     functions.
 
-    .. versionadded:: 0.14.0
-
     Attributes
     ----------
     shape
@@ -25,6 +23,11 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
     Methods
     -------
     solve
+
+    Notes
+    -----
+
+    .. versionadded:: 0.14.0
 
     Examples
     --------
@@ -82,26 +85,26 @@ add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU',
 
 add_newdoc('scipy.sparse.linalg.dsolve._superlu', 'SuperLU', ('solve',
     """
-    solve(b[, trans])
+    solve(rhs[, trans])
 
     Solves linear system of equations with one or several right-hand sides.
 
     Parameters
     ----------
-    b : ndarray, shape (n,) or (n, k)
+    rhs : ndarray, shape (n,) or (n, k)
         Right hand side(s) of equation
     trans : {'N', 'T', 'H'}, optional
         Type of system to solve::
-    
-            'N':   A   * x == b  (default)
-            'T':   A^T * x == b
-            'H':   A^H * x == b
+
+            'N':   A   * x == rhs  (default)
+            'T':   A^T * x == rhs
+            'H':   A^H * x == rhs
 
         i.e., normal, transposed, and hermitian conjugate.
 
     Returns
     -------
-    x : ndarray, shape b.shape
+    x : ndarray, shape ``rhs.shape``
         Solution vector(s)
     """))
 

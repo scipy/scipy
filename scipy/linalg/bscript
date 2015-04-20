@@ -2,7 +2,22 @@ import sys
 import os
 
 from bento.commands import hooks
-from scipy._build_utils import get_g77_abi_wrappers
+from scipy._build_utils import get_g77_abi_wrappers, get_sgemv_fix
+
+
+def _append_abi_wrappers(source):
+
+    def make_relpath(f):
+        return os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
+
+    # XXX: detect this properly
+    if sys.platform == "darwin":
+        info = {'extra_link_args': 'Accelerate'}
+    else:
+        info = {}
+    source += [make_relpath(f) for f in get_g77_abi_wrappers(info)]
+    source += [make_relpath(f) for f in get_sgemv_fix(info)]
+
 
 @hooks.pre_build
 def pre_build(context):
@@ -11,15 +26,7 @@ def pre_build(context):
 
     def fblas_builder(extension):
         source = extension.sources[:]
-
-        # XXX: detect this properly
-        if sys.platform == "darwin":
-            info = {'extra_link_args': 'Accelerate'}
-        else:
-            info = {}
-	source += [os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
-                   for f in get_g77_abi_wrappers(info)]
-
+        _append_abi_wrappers(source)
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,
@@ -35,15 +42,7 @@ def pre_build(context):
 
     def flapack_builder(extension):
         source = extension.sources[:]
-
-        # XXX: detect this properly
-        if sys.platform == "darwin":
-            info = {'extra_link_args': 'Accelerate'}
-        else:
-            info = {}
-	source += [os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
-                   for f in get_g77_abi_wrappers(info)]
-
+        _append_abi_wrappers(source)
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,
@@ -60,9 +59,29 @@ def pre_build(context):
     context.tweak_extension("_flinalg",
                             features="c fc pyext bento cshlib f2py f2py_fortran",
                             use="LAPACK CLIB")
-    context.tweak_extension("calc_lwork",
-                            features="c fc pyext bento cshlib f2py f2py_fortran",
-                            use="LAPACK CLIB")
+
     context.tweak_extension("_interpolative",
                             features="c fc pyext bento cshlib f2py",
                             use="LAPACK CLIB")
+
+    context.tweak_extension("_calc_lwork",
+                            features="c fc pyext bento cshlib f2py f2py_fortran",
+                            use="LAPACK CLIB")
+
+    def cython_blas_builder(extension):
+        source = extension.sources[:]
+        _append_abi_wrappers(source)
+        return default_builder(extension,
+                               features="c fc pyext bento cshlib f2py",
+                               source=source,
+                               use="LAPACK CLIB")
+    context.register_builder("cython_blas", cython_blas_builder)
+
+    def cython_lapack_builder(extension):
+        source = extension.sources[:]
+        _append_abi_wrappers(source)
+        return default_builder(extension,
+                               features="c fc pyext bento cshlib f2py",
+                               source=source,
+                               use="LAPACK CLIB")
+    context.register_builder("cython_lapack", cython_lapack_builder)

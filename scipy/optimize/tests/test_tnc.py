@@ -301,5 +301,6 @@ class TestTnc(TestCase):
                         err_msg="TNC failed with status: " +
                                 optimize.tnc.RCSTRINGS[rc])
 
+
 if __name__ == "__main__":
     run_module_suite()

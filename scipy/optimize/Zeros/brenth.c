@@ -1,7 +1,9 @@
-
 /* Written by Charles Harris charles.harris@sdl.usu.edu */
 
+#include <math.h>
 #include "zeros.h"
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 /*
  At the top of the loop the situation is the following:
@@ -33,21 +35,29 @@
 */
 
 double
-brenth(callback_type f, double xa, double xb, double xtol, double rtol, int iter, default_parameters *params)
+brenth(callback_type f, double xa, double xb, double xtol, double rtol,
+       int iter, default_parameters *params)
 {
     double xpre = xa, xcur = xb;
-    double xblk = 0.0, fpre, fcur, fblk = 0.0, spre = 0.0, scur = 0.0, sbis, tol;
+    double xblk = 0., fpre, fcur, fblk = 0., spre = 0., scur = 0., sbis, tol;
     double stry, dpre, dblk;
     int i;
 
     fpre = (*f)(xpre,params);
     fcur = (*f)(xcur,params);
     params->funcalls = 2;
-    if (fpre*fcur > 0) {ERROR(params,SIGNERR,0.0);}
-    if (fpre == 0) return xpre;
-    if (fcur == 0) return xcur;
+    if (fpre*fcur > 0) {
+        params->error_num = SIGNERR;
+        return 0.;
+    }
+    if (fpre == 0) {
+        return xpre;
+    }
+    if (fcur == 0) {
+        return xcur;
+    }
     params->iterations = 0;
-    for(i = 0; i < iter; i++) {
+    for (i = 0; i < iter; i++) {
         params->iterations++;
         if (fpre*fcur < 0) {
             xblk = xpre;
@@ -55,14 +65,20 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol, int iter
             spre = scur = xcur - xpre;
         }
         if (fabs(fblk) < fabs(fcur)) {
-            xpre = xcur; xcur = xblk; xblk = xpre;
-            fpre = fcur; fcur = fblk; fblk = fpre;
+            xpre = xcur;
+            xcur = xblk;
+            xblk = xpre;
+
+            fpre = fcur;
+            fcur = fblk;
+            fblk = fpre;
         }
 
         tol = xtol + rtol*fabs(xcur);
         sbis = (xblk - xcur)/2;
-        if (fcur == 0 || fabs(sbis) < tol)
+        if (fcur == 0 || fabs(sbis) < tol) {
             return xcur;
+        }
 
         if (fabs(spre) > tol && fabs(fcur) < fabs(fpre)) {
             if (xpre == xblk) {
@@ -76,28 +92,35 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol, int iter
                 stry = -fcur*(fblk - fpre)/(fblk*dpre - fpre*dblk);
             }
 
-            if (2*fabs(stry) < DMIN(fabs(spre), 3*fabs(sbis) - tol)) {
+            if (2*fabs(stry) < MIN(fabs(spre), 3*fabs(sbis) - tol)) {
                 /* accept step */
-                spre = scur; scur = stry;
+                spre = scur;
+                scur = stry;
             }
             else {
                 /* bisect */
-                spre = sbis; scur = sbis;
+                spre = sbis;
+                scur = sbis;
             }
         }
         else {
             /* bisect */
-            spre = sbis; scur = sbis;
+            spre = sbis;
+            scur = sbis;
         }
 
-        xpre = xcur; fpre = fcur;
-        if (fabs(scur) > tol)
+        xpre = xcur;
+        fpre = fcur;
+        if (fabs(scur) > tol) {
             xcur += scur;
-        else
+        }
+        else {
             xcur += (sbis > 0 ? tol : -tol);
+        }
 
         fcur = (*f)(xcur, params);
         params->funcalls++;
     }
-    ERROR(params,CONVERR,xcur);
+    params->error_num = CONVERR;
+    return xcur;
 }

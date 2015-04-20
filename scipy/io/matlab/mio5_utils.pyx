@@ -107,6 +107,7 @@ native_code = sys_is_le and '<' or '>'
 swapped_code = sys_is_le and '>' or '<'
 
 cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
+cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool)
 
 
 cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
@@ -126,7 +127,7 @@ cdef class VarHeader5:
     cdef int is_complex
     cdef readonly int is_logical
     cdef public int is_global
-    cdef size_t nzmax
+    cdef readonly size_t nzmax
 
     def set_dims(self, dims):
         """ Allow setting of dimensions from python
@@ -403,13 +404,38 @@ cdef class VarReader5:
                 self.cstream.seek(8 - mod8, 1)
         return 0
 
-    cpdef cnp.ndarray read_numeric(self, int copy=True):
+    cpdef cnp.ndarray read_numeric(self, int copy=True, size_t nnz=-1):
         ''' Read numeric data element into ndarray
 
         Reads element, then casts to ndarray.
 
-        The type of the array is given by the ``mdtype`` returned via
-        ``read_element``.
+        The type of the array is usually given by the ``mdtype`` returned via
+        ``read_element``.  Sparse logical arrays are an exception, where the
+        type of the array may be ``np.bool`` even if the ``mdtype`` claims the
+        data is of float64 type.
+
+        Parameters
+        ----------
+        copy : bool, optional
+            Whether to copy the array before returning.  If False, return array
+            backed by bytes read from file.
+        nnz : int, optional
+            Number of non-zero values when reading numeric data from sparse
+            matrices.  -1 if not reading sparse matrices, or to disable check
+            for bytes data instead of declared data type (see Notes).
+
+        Returns
+        -------
+        arr : array
+            Numeric array
+
+        Notes
+        -----
+        MATLAB apparently likes to store sparse logical matrix data as bytes
+        instead of miDOUBLE (float64) data type, even though the data element
+        still declares its type as miDOUBLE.  We can guess this has happened by
+        looking for the length of the data compared to the expected number of
+        elements, using the `nnz` input parameter.
         '''
         cdef cnp.uint32_t mdtype, byte_count
         cdef void *data_ptr
@@ -418,7 +444,11 @@ cdef class VarReader5:
         cdef object data = self.read_element(
             &mdtype, &byte_count, <void **>&data_ptr, copy)
         cdef cnp.dtype dt = <cnp.dtype>self.dtypes[mdtype]
-        el_count = byte_count // dt.itemsize
+        if dt.itemsize != 1 and nnz != -1 and byte_count == nnz:
+            el_count = <cnp.npy_intp> nnz
+            dt = BOOL_DTYPE
+        else:
+            el_count = byte_count // dt.itemsize
         cdef int flags = 0
         if copy:
             flags = cnp.NPY_WRITEABLE
@@ -444,11 +474,17 @@ cdef class VarReader5:
         Specializes ``read_element``
         '''
         cdef:
-            cnp.uint32_t mdtype, byte_count
-            void *ptr
+            cnp.uint32_t mdtype, byte_count, i
+            void* ptr
+            unsigned char* byte_ptr
             object data
         data = self.read_element(&mdtype, &byte_count, &ptr)
-        if mdtype != miINT8:
+        if mdtype == miUTF8:  # Some badly-formed .mat files have utf8 here
+            byte_ptr = <unsigned char*> ptr
+            for i in range(byte_count):
+                if byte_ptr[i] > 127:
+                    raise ValueError('Non ascii int8 string')
+        elif mdtype != miINT8:
             raise TypeError('Expecting miINT8 as data type')
         return data
 
@@ -467,15 +503,22 @@ cdef class VarReader5:
            Number of integers read
         '''
         cdef:
-            cnp.uint32_t mdtype, byte_count
-            int i
+            cnp.uint32_t mdtype, byte_count, n_ints
+            int i, check_ints=0
         self.read_element_into(&mdtype, &byte_count, <void *>int32p)
-        if mdtype != miINT32:
+        if mdtype == miUINT32:
+            check_ints = 1
+        elif mdtype != miINT32:
             raise TypeError('Expecting miINT32 as data type')
-        cdef int n_ints = byte_count // 4
+        n_ints = byte_count // 4
         if self.is_swapped:
             for i in range(n_ints):
                 int32p[i] = byteswap_u4(int32p[i])
+        if check_ints:
+            for i in range(n_ints):
+                if int32p[i] < 0:
+                    raise ValueError('Expecting miINT32, got miUINT32 with '
+                                     'negative values')
         return n_ints
 
     def read_full_tag(self):
@@ -734,11 +777,16 @@ cdef class VarReader5:
         cdef size_t M, N, nnz
         rowind = self.read_numeric()
         indptr = self.read_numeric()
+        M, N = header.dims
+        indptr = indptr[:N+1]
+        nnz = indptr[-1]
         if header.is_complex:
             # avoid array copy to save memory
             data   = self.read_numeric(False)
             data_j = self.read_numeric(False)
             data = data + (data_j * 1j)
+        elif header.is_logical:
+            data = self.read_numeric(True, nnz)
         else:
             data = self.read_numeric()
         ''' From the matlab (TM) API documentation, last found here:
@@ -753,14 +801,9 @@ cdef class VarReader5:
         stored in column order, this gives the column corresponding
         to each rowind
         '''
-        M,N = header.dims
-        indptr = indptr[:N+1]
-        nnz = indptr[-1]
-        rowind = rowind[:nnz]
-        data   = data[:nnz]
         return scipy.sparse.csc_matrix(
-            (data,rowind,indptr),
-            shape=(M,N))
+            (data[:nnz], rowind[:nnz], indptr),
+            shape=(M, N))
 
     cpdef cnp.ndarray read_char(self, VarHeader5 header):
         ''' Read char matrices from stream as arrays
@@ -821,7 +864,7 @@ cdef class VarReader5:
         else:
             raise ValueError('Type %d does not appear to be char type'
                              % mdtype)
-        uc_str = data.decode(codec)
+        uc_str = data.decode(codec, 'replace')
         # cast to array to deal with 2, 4 byte width characters
         arr = np.array(uc_str, dtype='U')
         # could take this to numpy C-API level, but probably not worth

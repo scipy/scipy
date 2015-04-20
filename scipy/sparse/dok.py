@@ -11,8 +11,8 @@ import operator
 
 import numpy as np
 
-from scipy.lib.six import zip as izip, xrange
-from scipy.lib.six import iteritems
+from scipy._lib.six import zip as izip, xrange
+from scipy._lib.six import iteritems
 
 from .base import spmatrix, isspmatrix
 from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
@@ -67,12 +67,12 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     Examples
     --------
-    >>> from scipy.sparse import *
-    >>> from scipy import *
-    >>> S = dok_matrix((5,5), dtype=float32)
+    >>> import numpy as np
+    >>> from scipy.sparse import dok_matrix
+    >>> S = dok_matrix((5, 5), dtype=np.float32)
     >>> for i in range(5):
     >>>     for j in range(5):
-    >>>         S[i,j] = i+j # Update element
+    >>>         S[i,j] = i+j    # Update element
 
     """
 
@@ -189,7 +189,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             i[i < 0] += self.shape[0]
 
         min_j = j.min()
-        if min_j < -self.shape[0] or j.max() >= self.shape[1]:
+        if min_j < -self.shape[1] or j.max() >= self.shape[1]:
             raise IndexError('index (%d) out of range -%d to %d)' %
                              (j.min(), self.shape[1], self.shape[1]-1))
         if min_j < 0:
@@ -264,7 +264,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             i[i < 0] += self.shape[0]
 
         min_j = j.min()
-        if min_j < -self.shape[0] or j.max() >= self.shape[1]:
+        if min_j < -self.shape[1] or j.max() >= self.shape[1]:
             raise IndexError('index (%d) out of range -%d to %d)' %
                              (j.min(), self.shape[1], self.shape[1]-1))
         if min_j < 0:
@@ -309,7 +309,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         elif isdense(other):
             new = self.todense() + other
         else:
-            raise TypeError("data type not understood")
+            return NotImplemented
         return new
 
     def __radd__(self, other):
@@ -336,7 +336,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         elif isdense(other):
             new = other + self.todense()
         else:
-            raise TypeError("data type not understood")
+            return NotImplemented
         return new
 
     def __neg__(self):
@@ -377,7 +377,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             # new.dtype.char = self.dtype.char
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __truediv__(self, other):
         if isscalarlike(other):
@@ -398,7 +398,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 self[key] = val / other
             return self
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  For now it returns the number
@@ -469,10 +469,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     def tocsc(self):
         """ Return a copy of this matrix in Compressed Sparse Column format"""
         return self.tocoo().tocsc()
-
-    def toarray(self, order=None, out=None):
-        """See the docstring for `spmatrix.toarray`."""
-        return self.tocoo().toarray(order=order, out=out)
 
     def resize(self, shape):
         """ Resize the matrix in-place to dimensions given by 'shape'.

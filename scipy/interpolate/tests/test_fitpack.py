@@ -4,7 +4,8 @@ import os
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
-    TestCase, assert_raises, run_module_suite, assert_almost_equal)
+    TestCase, assert_raises, run_module_suite, assert_almost_equal,
+    assert_raises, assert_array_almost_equal)
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
 from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
@@ -266,6 +267,33 @@ class TestSplev(TestCase):
         z = splev(1, tck)
         assert_equal(z.shape, ())
 
+    def test_2d_shape(self):
+        x = [1, 2, 3, 4, 5]
+        y = [4, 5, 6, 7, 8]
+        tck = splrep(x, y)
+        t = np.array([[1.0, 1.5, 2.0, 2.5],
+                      [3.0, 3.5, 4.0, 4.5]])
+        z = splev(t, tck)
+        z0 = splev(t[0], tck)
+        z1 = splev(t[1], tck)
+        assert_equal(z, np.row_stack((z0, z1)))
+
+    def test_extrapolation_modes(self):
+        # test extrapolation modes
+        #    * if ext=0, return the extrapolated value.
+        #    * if ext=1, return 0
+        #    * if ext=2, raise a ValueError
+        #    * if ext=3, return the boundary value.
+        x = [1,2,3]
+        y = [0,2,4]
+        tck = splrep(x, y, k=1)
+
+        rstl = [[-2, 6], [0, 0], None, [0, 4]]
+        for ext in (0, 1, 3):
+            assert_array_almost_equal(splev([0, 4], tck, ext=ext), rstl[ext])
+
+        assert_raises(ValueError, splev, [0, 4], tck, ext=2)
+
 
 class TestSplder(object):
     def __init__(self):
@@ -372,6 +400,31 @@ def test_dblint():
     assert_almost_equal(dblint(0.5, 1, 0, 1, tck), 0.75)
     assert_almost_equal(dblint(-100, 100, -100, 100, tck), 1)
 
+
+def test_splev_der_k():
+    # regression test for gh-2188: splev(x, tck, der=k) gives garbage or crashes
+    # for x outside of knot range
+
+    # test case from gh-2188
+    tck = (np.array([0., 0., 2.5, 2.5]),
+           np.array([-1.56679978, 2.43995873, 0., 0.]),
+           1)
+    t, c, k = tck
+    x = np.array([-3, 0, 2.5, 3])
+
+    # an explicit form of the linear spline
+    assert_allclose(splev(x, tck), c[0] + (c[1] - c[0]) * x/t[2])
+    assert_allclose(splev(x, tck, 1), (c[1]-c[0]) / t[2])
+
+    # now check a random spline vs splder
+    np.random.seed(1234)
+    x = np.sort(np.random.random(30))
+    y = np.random.random(30)
+    t, c, k = splrep(x, y)
+
+    x = [t[0] - 1., t[-1] + 1.]
+    tck2 = splder((t, c, k), k)
+    assert_allclose(splev(x, (t, c, k), k), splev(x, tck2))
 
 if __name__ == "__main__":
     run_module_suite()

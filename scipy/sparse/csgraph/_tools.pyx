@@ -41,12 +41,8 @@ def csgraph_from_masked(graph):
         raise ValueError("graph should be a square array")
 
     # construct the csr matrix using graph and mask
-    if np.ma.is_masked(graph):
-        data = graph.compressed()
-        mask = ~graph.mask
-    else:
-        data = graph.data
-        mask = np.ones(graph.shape, dtype='bool')
+    data = graph.compressed()
+    mask = ~graph.mask
 
     data = np.asarray(data, dtype=DTYPE, order='c')
 

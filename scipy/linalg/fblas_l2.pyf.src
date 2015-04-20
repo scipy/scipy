@@ -3,15 +3,16 @@
 !
 ! Author: Pearu Peterson
 ! Created: Jan-Feb 2002
-! Modified: Fabian Pedregosa, 2011
+! Modified: Fabian Pedregosa, 2011; Eric Moore, 2014
 !
 ! Implemented:
-!   gemv, hemv, symv, trmv, ger, geru, gerc
+!   gemv, hemv, symv, trmv, ger, geru, gerc, her, syr, her2, syr2
 !
 ! Not implemented:
 !   gbmv, hbmv, hpmv, sbmv, spmv, tbmv, tpmv, trsv, tbsv, tpsv,
-!   her, hpr, her2, hpr2, syr, spr, syr2, spr2
+!   hpr, hpr2, spr, spr2
 !
+
 
 subroutine <prefix>gemv(m,n,alpha,a,x,beta,y,offx,incx,offy,incy,trans,rows,cols,ly)
   ! Computes a matrix-vector product using a general matrix
@@ -140,3 +141,64 @@ subroutine <prefix6>ger<,,u,u,c,c>(m,n,alpha,x,incx,y,incy,a,lda)
   integer intent(hide), depend(m) :: lda=m
 
 end subroutine <prefix6>ger<,,u,u,c,c>
+
+
+! <ftype6=real,double precision,complex,double complex,\2,\3>
+! <ctype6=float,double,complex_float,complex_double,\2,\3>
+! <prefix6=s,d,c,z,\2,\3>
+subroutine <prefix6><sy,\0,\0,\0, he,\4>r(alpha,x,lower,incx,offx,n,a)
+  ! Performs a rank-1 update of a symmetric/hermitian matrix.
+  !
+  ! Calculate a <- alpha*x*x^T + a
+  ! Calculate a <- alpha*x*x^H + a
+  !
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,a,&n)
+    callprotoargument char*, int*, <ctype6>*, <ctype6>*, int*, <ctype6>*, int*
+
+    integer, optional, intent(in), check(lower == 0 || lower == 1) :: lower = 0
+    <ftype6> intent(in) :: alpha
+
+    <ftype6> dimension(*), depend(offx) :: x
+    check(offx >= 0 && offx < len(x)) :: x
+    integer, intent(in), optional :: offx = 0
+    integer, intent(in), optional, check(incx>0||incx<0) :: incx = 1
+
+    integer, intent(in), optional :: n = (len(x)-1-offx)/abs(incx)+1
+    check(n >= 0) :: n
+    check(n <= (len(x)-1-offx)/abs(incx)+1) :: n
+    depend(x, offx, incx) :: n
+
+    <ftype6> dimension(n,n), intent(in,copy,out), optional :: a
+    depend(x, offx, incx, n) :: a
+
+end subroutine <prefix6><sy,\0,\0,\0, he,\4>r
+
+
+subroutine <prefix><sy, \0, he, \2>r2(alpha,x,y,lower,incx,offx,incy,offy,n,a)
+  ! Performs a rank-2 update of a symmetric/hermitian matrix.
+  !
+  ! Calculate a <- alpha*x*y^T + alpha*y*x^T + a
+  ! Calculate a <- alpha*x*y^H + alpha*y*x^H + a
+  !
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,y+offy,&incy,a,&n)
+    callprotoargument char*, int*, <ctype>*, <ctype>*, int*, <ctype>*, int*, <ctype>*, int*
+
+    integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
+    <ftype> intent(in) :: alpha
+    <ftype> dimension(*), intent(in), check(offx >= 0 && offx < len(x)), depend(offx) :: x
+    <ftype> dimension(*), intent(in), check(offy >= 0 && offy < len(y)), depend(offy) :: y
+    integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
+    integer intent(in), optional :: offx = 0
+    integer intent(in), optional, check(incy>0||incy<0) :: incy = 1
+    integer intent(in), optional :: offy = 0
+
+    integer intent(in), optional :: n = ((len(x)-1-offx)/abs(incx)+1 <= (len(y)-1-offy)/abs(incy)+1 ? (len(x)-1-offx)/abs(incx)+1 : (len(y)-1-offy)/abs(incy)+1)
+    depend(x,incx,offx,y,incy,offy) :: n
+    check(n>=0) :: n
+    check(n <= (len(x)-1-offx)/abs(incx)+1) :: n
+    check(n <= (len(y)-1-offy)/abs(incy)+1) :: n
+
+    <ftype> dimension(n,n), intent(in,copy,out), optional :: a
+    depend(incx, offx, x, incy, offy, y, n) :: a
+end subroutine <prefix><sy, \0, he, \2>r2
+

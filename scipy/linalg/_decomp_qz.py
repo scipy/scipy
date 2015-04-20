@@ -8,7 +8,7 @@ from numpy import asarray_chkfinite
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
-from scipy.lib.six import callable
+from scipy._lib.six import callable
 
 __all__ = ['qz']
 
@@ -54,7 +54,7 @@ def _select_function(sort, typ):
 def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
        overwrite_b=False, check_finite=True):
     """
-    QZ decompostion for generalized eigenvalues of a pair of matrices.
+    QZ decomposition for generalized eigenvalues of a pair of matrices.
 
     The QZ, or generalized Schur, decomposition for a pair of N x N
     nonsymmetric matrices (A,B) is::
@@ -76,15 +76,13 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     A and B are complex matrices, Z' denotes the conjugate-transpose of Z.
     Q and Z are unitary matrices.
 
-    .. versionadded:: 0.11.0
-
     Parameters
     ----------
     A : (N, N) array_like
         2d array to decompose
     B : (N, N) array_like
         2d array to decompose
-    output : str {'real','complex'}
+    output : {'real', 'complex'}, optional
         Construct the real or complex QZ decomposition for real matrices.
         Default is 'real'.
     lwork : int, optional
@@ -108,7 +106,11 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
             - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
         Defaults to None (no sorting).
-    check_finite : boolean
+    overwrite_a : bool, optional
+        Whether to overwrite data in a (may improve performance)
+    overwrite_b : bool, optional
+        Whether to overwrite data in b (may improve performance)
+    check_finite : bool, optional
         If true checks the elements of `A` and `B` are finite numbers. If
         false does no checking and passes matrix through to
         underlying algorithm.
@@ -130,6 +132,8 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     Notes
     -----
     Q is transposed versus the equivalent function in Matlab.
+
+    .. versionadded:: 0.11.0
 
     Examples
     --------

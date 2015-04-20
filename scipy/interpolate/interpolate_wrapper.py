@@ -159,7 +159,7 @@ def block(x, y, new_x):
         Independent values.
     y : array_like
         Dependent values.
-    x_new : array_like
+    new_x : array_like
         The x values used to calculate the interpolated y.
 
     Returns

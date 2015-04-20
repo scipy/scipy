@@ -13,20 +13,19 @@ import scipy.optimize
 class TestRegression(TestCase):
 
     def test_newton_x0_is_0(self):
-        """Ticket #1074"""
-
+        # Regression test for gh-1601
         tgt = 1
         res = scipy.optimize.newton(lambda x: x - 1, 0)
         assert_almost_equal(res, tgt)
 
     def test_newton_integers(self):
-        """Ticket #1214"""
+        # Regression test for gh-1741
         root = scipy.optimize.newton(lambda x: x**2 - 1, x0=2,
                                     fprime=lambda x: 2*x)
         assert_almost_equal(root, 1.0)
 
     def test_lmdif_errmsg(self):
-        # this shouldn't cause a crash on Python 3
+        # This shouldn't cause a crash on Python 3
         class SomeError(Exception):
             pass
         counter = [0]
@@ -40,6 +39,7 @@ class TestRegression(TestCase):
         assert_raises(SomeError,
                       scipy.optimize.leastsq,
                       func, [1, 2, 3])
+
 
 if __name__ == "__main__":
     run_module_suite()

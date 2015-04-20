@@ -6,13 +6,139 @@ import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose)
+                           run_module_suite, assert_allclose, assert_warns)
+from numpy import array, spacing, sin, pi, sort
 
-from scipy.signal import (tf2zpk, zpk2tf, BadCoefficients, freqz, normalize,
+from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
+                          BadCoefficients, freqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
                           cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
-                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear)
+                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear, group_delay,
+                          firwin)
+from scipy.signal.filter_design import _cplxreal, _cplxpair
+
+
+class TestCplxPair(TestCase):
+
+    def test_trivial_input(self):
+        assert_equal(_cplxpair([]).size, 0)
+        assert_equal(_cplxpair(1), 1)
+
+    def test_output_order(self):
+        assert_allclose(_cplxpair([1+1j, 1-1j]), [1-1j, 1+1j])
+
+        a = [1+1j, 1+1j, 1, 1-1j, 1-1j, 2]
+        b = [1-1j, 1+1j, 1-1j, 1+1j, 1, 2]
+        assert_allclose(_cplxpair(a), b)
+
+        # points spaced around the unit circle
+        z = np.exp(2j*pi*array([4, 3, 5, 2, 6, 1, 0])/7)
+        z1 = np.copy(z)
+        np.random.shuffle(z)
+        assert_allclose(_cplxpair(z), z1)
+        np.random.shuffle(z)
+        assert_allclose(_cplxpair(z), z1)
+        np.random.shuffle(z)
+        assert_allclose(_cplxpair(z), z1)
+
+        # Should be able to pair up all the conjugates
+        x = np.random.rand(10000) + 1j * np.random.rand(10000)
+        y = x.conj()
+        z = np.random.rand(10000)
+        x = np.concatenate((x, y, z))
+        np.random.shuffle(x)
+        c = _cplxpair(x)
+
+        # Every other element of head should be conjugates:
+        assert_allclose(c[0:20000:2], np.conj(c[1:20000:2]))
+        # Real parts of head should be in sorted order:
+        assert_allclose(c[0:20000:2].real, np.sort(c[0:20000:2].real))
+        # Tail should be sorted real numbers:
+        assert_allclose(c[20000:], np.sort(c[20000:]))
+
+    def test_real_integer_input(self):
+        assert_array_equal(_cplxpair([2, 0, 1]), [0, 1, 2])
+
+    def test_tolerances(self):
+        eps = spacing(1)
+        assert_allclose(_cplxpair([1j, -1j, 1+1j*eps], tol=2*eps),
+                        [-1j, 1j, 1+1j*eps])
+
+        # sorting close to 0
+        assert_allclose(_cplxpair([-eps+1j, +eps-1j]), [-1j, +1j])
+        assert_allclose(_cplxpair([+eps+1j, -eps-1j]), [-1j, +1j])
+        assert_allclose(_cplxpair([+1j, -1j]), [-1j, +1j])
+
+    def test_unmatched_conjugates(self):
+        # 1+2j is unmatched
+        assert_raises(ValueError, _cplxpair, [1+3j, 1-3j, 1+2j])
+
+        # 1+2j and 1-3j are unmatched
+        assert_raises(ValueError, _cplxpair, [1+3j, 1-3j, 1+2j, 1-3j])
+
+        # 1+3j is unmatched
+        assert_raises(ValueError, _cplxpair, [1+3j, 1-3j, 1+3j])
+
+        # Not conjugates
+        assert_raises(ValueError, _cplxpair, [4+5j, 4+5j])
+        assert_raises(ValueError, _cplxpair, [1-7j, 1-7j])
+
+        # No pairs
+        assert_raises(ValueError, _cplxpair, [1+3j])
+        assert_raises(ValueError, _cplxpair, [1-3j])
+
+
+class TestCplxReal(TestCase):
+
+    def test_trivial_input(self):
+        assert_equal(_cplxreal([]), ([], []))
+        assert_equal(_cplxreal(1), ([], [1]))
+
+    def test_output_order(self):
+        zc, zr = _cplxreal(np.roots(array([1, 0, 0, 1])))
+        assert_allclose(np.append(zc, zr), [1/2 + 1j*sin(pi/3), -1])
+
+        eps = spacing(1)
+
+        a = [0+1j, 0-1j, eps + 1j, eps - 1j, -eps + 1j, -eps - 1j,
+             1, 4, 2, 3, 0, 0,
+             2+3j, 2-3j,
+             1-eps + 1j, 1+2j, 1-2j, 1+eps - 1j,  # sorts out of order
+             3+1j, 3+1j, 3+1j, 3-1j, 3-1j, 3-1j,
+             2-3j, 2+3j]
+        zc, zr = _cplxreal(a)
+        assert_allclose(zc, [1j, 1j, 1j, 1+1j, 1+2j, 2+3j, 2+3j, 3+1j, 3+1j,
+                             3+1j])
+        assert_allclose(zr, [0, 0, 1, 2, 3, 4])
+
+        z = array([1-eps + 1j, 1+2j, 1-2j, 1+eps - 1j, 1+eps+3j, 1-2*eps-3j,
+                   0+1j, 0-1j, 2+4j, 2-4j, 2+3j, 2-3j, 3+7j, 3-7j, 4-eps+1j,
+                   4+eps-2j, 4-1j, 4-eps+2j])
+
+        zc, zr = _cplxreal(z)
+        assert_allclose(zc, [1j, 1+1j, 1+2j, 1+3j, 2+3j, 2+4j, 3+7j, 4+1j,
+                             4+2j])
+        assert_equal(zr, [])
+
+    def test_unmatched_conjugates(self):
+        # 1+2j is unmatched
+        assert_raises(ValueError, _cplxreal, [1+3j, 1-3j, 1+2j])
+
+        # 1+2j and 1-3j are unmatched
+        assert_raises(ValueError, _cplxreal, [1+3j, 1-3j, 1+2j, 1-3j])
+
+        # 1+3j is unmatched
+        assert_raises(ValueError, _cplxreal, [1+3j, 1-3j, 1+3j])
+
+        # No pairs
+        assert_raises(ValueError, _cplxreal, [1+3j])
+        assert_raises(ValueError, _cplxreal, [1-3j])
+
+    def test_real_integer_input(self):
+        zc, zr = _cplxreal([2, 0, 1, 4])
+        assert_array_equal(zc, [])
+        assert_array_equal(zr, [0, 1, 2, 4])
 
 
 class TestTf2zpk(TestCase):
@@ -60,6 +186,209 @@ class TestZpk2Tf(TestCase):
         assert_(isinstance(b, np.ndarray))
         assert_array_equal(a, a_r)
         assert_(isinstance(a, np.ndarray))
+
+
+class TestSos2Zpk(TestCase):
+
+    def test_basic(self):
+        sos = [[1, 0, 1, 1, 0, -0.81],
+               [1, 0, 0, 1, 0, +0.49]]
+        z, p, k = sos2zpk(sos)
+        z2 = [1j, -1j, 0, 0]
+        p2 = [0.9, -0.9, 0.7j, -0.7j]
+        k2 = 1
+        assert_array_almost_equal(sort(z), sort(z2), decimal=4)
+        assert_array_almost_equal(sort(p), sort(p2), decimal=4)
+        assert_array_almost_equal(k, k2)
+
+        sos = [[1.00000, +0.61803, 1.0000, 1.00000, +0.60515, 0.95873],
+               [1.00000, -1.61803, 1.0000, 1.00000, -1.58430, 0.95873],
+               [1.00000, +1.00000, 0.0000, 1.00000, +0.97915, 0.00000]]
+        z, p, k = sos2zpk(sos)
+        z2 = [-0.3090 + 0.9511j, -0.3090 - 0.9511j, 0.8090 + 0.5878j,
+              0.8090 - 0.5878j, -1.0000 + 0.0000j, 0]
+        p2 = [-0.3026 + 0.9312j, -0.3026 - 0.9312j, 0.7922 + 0.5755j,
+              0.7922 - 0.5755j, -0.9791 + 0.0000j, 0]
+        k2 = 1
+        assert_array_almost_equal(sort(z), sort(z2), decimal=4)
+        assert_array_almost_equal(sort(p), sort(p2), decimal=4)
+
+        sos = array([[1, 2, 3, 1, 0.2, 0.3],
+                     [4, 5, 6, 1, 0.4, 0.5]])
+        z = array([-1 - 1.41421356237310j, -1 + 1.41421356237310j,
+                  -0.625 - 1.05326872164704j, -0.625 + 1.05326872164704j])
+        p = array([-0.2 - 0.678232998312527j, -0.2 + 0.678232998312527j,
+                  -0.1 - 0.538516480713450j, -0.1 + 0.538516480713450j])
+        k = 4
+        z2, p2, k2 = sos2zpk(sos)
+        assert_allclose(_cplxpair(z2), z)
+        assert_allclose(_cplxpair(p2), p)
+        assert_allclose(k2, k)
+
+
+class TestSos2Tf(TestCase):
+
+    def test_basic(self):
+        sos = [[1, 1, 1, 1, 0, -1],
+               [-2, 3, 1, 1, 10, 1]]
+        b, a = sos2tf(sos)
+        assert_array_almost_equal(b, [-2, 1, 2, 4, 1])
+        assert_array_almost_equal(a, [1, 10, 0, -10, -1])
+
+
+class TestTf2Sos(TestCase):
+
+    def test_basic(self):
+        num = [2, 16, 44, 56, 32]
+        den = [3, 3, -15, 18, -12]
+        sos = tf2sos(num, den)
+        sos2 = [[0.6667, 4.0000, 5.3333, 1.0000, +2.0000, -4.0000],
+                [1.0000, 2.0000, 2.0000, 1.0000, -1.0000, +1.0000]]
+        assert_array_almost_equal(sos, sos2, decimal=4)
+
+        b = [1, -3, 11, -27, 18]
+        a = [16, 12, 2, -4, -1]
+        sos = tf2sos(b, a)
+        sos2 = [[0.0625, -0.1875, 0.1250, 1.0000, -0.2500, -0.1250],
+                [1.0000, +0.0000, 9.0000, 1.0000, +1.0000, +0.5000]]
+        # assert_array_almost_equal(sos, sos2, decimal=4)
+
+
+class TestZpk2Sos(TestCase):
+
+    def test_basic(self):
+        for pairing in ('nearest', 'keep_odd'):
+            #
+            # Cases that match octave
+            #
+
+            z = [-1, -1]
+            p = [0.57149 + 0.29360j, 0.57149 - 0.29360j]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1, 2, 1, 1, -1.14298, 0.41280]]  # octave & MATLAB
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            z = [1j, -1j]
+            p = [0.9, -0.9, 0.7j, -0.7j]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1, 0, 1, 1, 0, +0.49],
+                    [1, 0, 0, 1, 0, -0.81]]  # octave
+            # sos2 = [[0, 0, 1, 1, -0.9, 0],
+            #         [1, 0, 1, 1, 0.9, 0]]  # MATLAB
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            z = []
+            p = [0.8, -0.5+0.25j, -0.5-0.25j]
+            k = 1.
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1., 0., 0., 1., 1., 0.3125],
+                    [1., 0., 0., 1., -0.8, 0.]]  # octave, MATLAB fails
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            z = [1., 1., 0.9j, -0.9j]
+            p = [0.99+0.01j, 0.99-0.01j, 0.1+0.9j, 0.1-0.9j]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1, 0, 0.81, 1, -0.2, 0.82],
+                    [1, -2, 1, 1, -1.98, 0.9802]]  # octave
+            # sos2 = [[1, -2, 1, 1,  -0.2, 0.82],
+            #         [1, 0, 0.81, 1, -1.98, 0.9802]]  # MATLAB
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            z = [0.9+0.1j, 0.9-0.1j, -0.9]
+            p = [0.75+0.25j, 0.75-0.25j, 0.9]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            if pairing == 'keep_odd':
+                sos2 = [[1, -1.8, 0.82, 1, -1.5, 0.625],
+                        [1, 0.9, 0, 1, -0.9, 0]]  # octave; MATLAB fails
+                assert_array_almost_equal(sos, sos2, decimal=4)
+            else:  # pairing == 'nearest'
+                sos2 = [[1, 0.9, 0, 1, -1.5, 0.625],
+                        [1, -1.8, 0.82, 1, -0.9, 0]]  # our algorithm
+                assert_array_almost_equal(sos, sos2, decimal=4)
+
+            #
+            # Cases that differ from octave:
+            #
+
+            z = [-0.3090 + 0.9511j, -0.3090 - 0.9511j, 0.8090 + 0.5878j,
+                 +0.8090 - 0.5878j, -1.0000 + 0.0000j]
+            p = [-0.3026 + 0.9312j, -0.3026 - 0.9312j, 0.7922 + 0.5755j,
+                 +0.7922 - 0.5755j, -0.9791 + 0.0000j]
+            k = 1
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            # sos2 = [[1, 0.618, 1, 1, 0.6052, 0.95870],
+            #         [1, -1.618, 1, 1, -1.5844, 0.95878],
+            #         [1, 1, 0, 1, 0.9791, 0]]  # octave, MATLAB fails
+            sos2 = [[1, 1, 0, 1, +0.97915, 0],
+                    [1, 0.61803, 1, 1, +0.60515, 0.95873],
+                    [1, -1.61803, 1, 1, -1.58430, 0.95873]]
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            z = [-1 - 1.4142j, -1 + 1.4142j,
+                 -0.625 - 1.0533j, -0.625 + 1.0533j]
+            p = [-0.2 - 0.6782j, -0.2 + 0.6782j,
+                 -0.1 - 0.5385j, -0.1 + 0.5385j]
+            k = 4
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[4, 8, 12, 1, 0.2, 0.3],
+                    [1, 1.25, 1.5, 1, 0.4, 0.5]]  # MATLAB
+            # sos2 = [[4, 8, 12, 1, 0.4, 0.5],
+            #         [1, 1.25, 1.5, 1, 0.2, 0.3]]  # octave
+            assert_allclose(sos, sos2, rtol=1e-4, atol=1e-4)
+
+            z = []
+            p = [0.2, -0.5+0.25j, -0.5-0.25j]
+            k = 1.
+            sos = zpk2sos(z, p, k, pairing=pairing)
+            sos2 = [[1., 0., 0., 1., -0.2, 0.],
+                    [1., 0., 0., 1., 1., 0.3125]]
+            # sos2 = [[1., 0., 0., 1., 1., 0.3125],
+            #         [1., 0., 0., 1., -0.2, 0]]  # octave, MATLAB fails
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            # The next two examples are adapted from Leland B. Jackson,
+            # "Digital Filters and Signal Processing (1995) p.400:
+            # http://books.google.com/books?id=VZ8uabI1pNMC&lpg=PA400&ots=gRD9pi8Jua&dq=Pole%2Fzero%20pairing%20for%20minimum%20roundoff%20noise%20in%20BSF.&pg=PA400#v=onepage&q=Pole%2Fzero%20pairing%20for%20minimum%20roundoff%20noise%20in%20BSF.&f=false
+
+            deg2rad = np.pi / 180.
+            k = 1.
+
+            # first example
+            thetas = [22.5, 45, 77.5]
+            mags = [0.8, 0.6, 0.9]
+            z = np.array([np.exp(theta * deg2rad * 1j) for theta in thetas])
+            z = np.concatenate((z, np.conj(z)))
+            p = np.array([mag * np.exp(theta * deg2rad * 1j)
+                          for theta, mag in zip(thetas, mags)])
+            p = np.concatenate((p, np.conj(p)))
+            sos = zpk2sos(z, p, k)
+            # sos2 = [[1, -0.43288, 1, 1, -0.38959, 0.81],  # octave,
+            #         [1, -1.41421, 1, 1, -0.84853, 0.36],  # MATLAB fails
+            #         [1, -1.84776, 1, 1, -1.47821, 0.64]]
+            # Note that pole-zero pairing matches, but ordering is different
+            sos2 = [[1, -1.41421, 1, 1, -0.84853, 0.36],
+                    [1, -1.84776, 1, 1, -1.47821, 0.64],
+                    [1, -0.43288, 1, 1, -0.38959, 0.81]]
+            assert_array_almost_equal(sos, sos2, decimal=4)
+
+            # second example
+            z = np.array([np.exp(theta * deg2rad * 1j)
+                          for theta in (85., 10.)])
+            z = np.concatenate((z, np.conj(z), [1, -1]))
+            sos = zpk2sos(z, p, k)
+
+            # sos2 = [[1, -0.17431, 1, 1, -0.38959, 0.81],  # octave "wrong",
+            #         [1, -1.96962, 1, 1, -0.84853, 0.36],  # MATLAB fails
+            #         [1, 0, -1, 1, -1.47821, 0.64000]]
+            # Our pole-zero pairing matches the text, Octave does not
+            sos2 = [[1, 0, -1, 1, -0.84853, 0.36],
+                    [1, -1.96962, 1, 1, -1.47821, 0.64],
+                    [1, -0.17431, 1, 1, -0.38959, 0.81]]
+            assert_array_almost_equal(sos, sos2, decimal=4)
 
 
 class TestFreqz(TestCase):
@@ -1693,6 +2022,30 @@ class TestEllip(TestCase):
         assert_allclose(a, a2, rtol=1e-4)
 
 
+def test_sos_consistency():
+    # Consistency checks of output='sos' for the specialized IIR filter
+    # design functions.
+    design_funcs = [(bessel, (0.1,)),
+                    (butter, (0.1,)),
+                    (cheby1, (45.0, 0.1)),
+                    (cheby2, (0.087, 0.1)),
+                    (ellip, (0.087, 45, 0.1))]
+    for func, args in design_funcs:
+        name = func.__name__
+
+        b, a = func(2, *args, output='ba')
+        sos = func(2, *args, output='sos')
+        assert_allclose(sos, [np.hstack((b, a))], err_msg="%s(2,...)" % name)
+
+        zpk = func(3, *args, output='zpk')
+        sos = func(3, *args, output='sos')
+        assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(3,...)" % name)
+
+        zpk = func(4, *args, output='zpk')
+        sos = func(4, *args, output='sos')
+        assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(4,...)" % name)
+
+
 class TestIIRFilter(TestCase):
 
     def test_symmetry(self):
@@ -1709,7 +2062,7 @@ class TestIIRFilter(TestCase):
                 assert_equal(k, np.real(k))
 
                 b, a = iirfilter(N, 1.1, 1, 20, 'low', analog=True,
-                                    ftype=ftype, output='ba')
+                                 ftype=ftype, output='ba')
                 assert_(issubclass(b.dtype.type, np.floating))
                 assert_(issubclass(a.dtype.type, np.floating))
 
@@ -1734,6 +2087,55 @@ class TestIIRFilter(TestCase):
         assert_raises(ValueError, iirfilter, 1, -1, btype='high')
         assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
         assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
+
+
+class TestGroupDelay(TestCase):
+    def test_identity_filter(self):
+        w, gd = group_delay((1, 1))
+        assert_array_almost_equal(w, pi * np.arange(512) / 512)
+        assert_array_almost_equal(gd, np.zeros(512))
+        w, gd = group_delay((1, 1), whole=True)
+        assert_array_almost_equal(w, 2 * pi * np.arange(512) / 512)
+        assert_array_almost_equal(gd, np.zeros(512))
+
+    def test_fir(self):
+        # Let's design linear phase FIR and check that the group delay
+        # is constant.
+        N = 100
+        b = firwin(N + 1, 0.1)
+        w, gd = group_delay((b, 1))
+        assert_allclose(gd, 0.5 * N)
+
+    def test_iir(self):
+        # Let's design Butterworth filter and test the group delay at
+        # some points against MATLAB answer.
+        b, a = butter(4, 0.1)
+        w = np.linspace(0, pi, num=10, endpoint=False)
+        w, gd = group_delay((b, a), w=w)
+        matlab_gd = np.array([8.249313898506037, 11.958947880907104,
+                              2.452325615326005, 1.048918665702008,
+                              0.611382575635897, 0.418293269460578,
+                              0.317932917836572, 0.261371844762525,
+                              0.229038045801298, 0.212185774208521])
+        assert_array_almost_equal(gd, matlab_gd)
+
+    def test_singular(self):
+        # Let's create a filter with zeros and poles on the unit circle and
+        # check if warning is raised and the group delay is set to zero at
+        # these frequencies.
+        z1 = np.exp(1j * 0.1 * pi)
+        z2 = np.exp(1j * 0.25 * pi)
+        p1 = np.exp(1j * 0.5 * pi)
+        p2 = np.exp(1j * 0.8 * pi)
+        b = np.convolve([1, -z1], [1, -z2])
+        a = np.convolve([1, -p1], [1, -p2])
+        w = np.array([0.1 * pi, 0.25 * pi, -0.5 * pi, -0.8 * pi])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            assert_warns(UserWarning, group_delay, (b, a), w=w)
+            w, gd = group_delay((b, a), w=w)
+            assert_allclose(gd, 0)
+
 
 if __name__ == "__main__":
     run_module_suite()

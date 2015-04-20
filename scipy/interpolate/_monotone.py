@@ -38,6 +38,10 @@ class PchipInterpolator(object):
     __call__
     derivative
 
+    See Also
+    --------
+    Akima1DInterpolator
+
     Notes
     -----
     The first derivatives are guaranteed to be continuous, but the second
@@ -60,7 +64,12 @@ class PchipInterpolator(object):
     """
     def __init__(self, x, y, axis=0, extrapolate=None):
         x = np.asarray(x)
+        if not np.issubdtype(x.dtype, np.inexact):
+            x = x.astype(float)
+
         y = np.asarray(y)
+        if not np.issubdtype(y.dtype, np.inexact):
+            y = y.astype(float)
 
         axis = axis % y.ndim
         
@@ -80,7 +89,7 @@ class PchipInterpolator(object):
 
         Parameters
         ----------
-        x : array-like
+        x : array_like
             Points to evaluate the interpolant at.
         der : int, optional
             Order of derivative to evaluate. Must be non-negative.
@@ -90,7 +99,7 @@ class PchipInterpolator(object):
 
         Returns
         -------
-        y : array-like
+        y : ndarray
             Interpolated values. Shape is determined by replacing
             the interpolation axis in the original array with the shape of x.
 
@@ -198,7 +207,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         parameter to select correct axis.
     x : scalar or array_like
         Of length M.
-    der : integer or list
+    der : int or list, optional
         How many derivatives to extract; None for all potentially
         nonzero derivatives (that is a number equal to the number
         of points), or a list of derivatives to extract. This number
@@ -245,13 +254,14 @@ class Akima1DInterpolator(PPoly):
     y : ndarray, shape (m, ...)
         N-D array of real values. The length of *y* along the first axis must
         be equal to the length of *x*.
-    axis : int, optional
-        Specifies the axis of *y* along which to interpolate. Interpolation
-        defaults to the last axis of *y*.
 
     Methods
     -------
     __call__
+
+    See Also
+    --------
+    PchipInterpolator
 
     Notes
     -----
@@ -322,3 +332,15 @@ class Akima1DInterpolator(PPoly):
     def extend(self):
         raise NotImplementedError("Extending a 1D Akima interpolator is not "
                 "yet implemented")
+
+    # These are inherited from PPoly, but they do not produce an Akima
+    # interpolor. Hence stub them out.
+    @classmethod    
+    def from_spline(cls, tck, extrapolate=None):
+        raise NotImplementedError("This method does not make sense for "
+                "an Akima interpolator.")
+
+    @classmethod
+    def from_bernstein_basis(cls, bp, extrapolate=None):
+        raise NotImplementedError("This method does not make sense for "
+                "an Akima interpolator.")

@@ -12,13 +12,13 @@ from scipy.special import digamma, erfc, expi, erf, expn, gamma, gammaln, iv
 DATA_DIR = 'data'
 # where to pull out boost data: assume a SVN checkout of boost (here in
 # /Users/david/src/dev/boost/trunk)
-BOOST_SRC = "/Users/david/src/dev/boost/trunk/libs/math/test"
+BOOST_SRC = "boostmath/test"
 
 CXX_COMMENT = re.compile(r'^\s+//')
 DATA_REGEX = re.compile(r'^\s+/*\{*\s*SC_')
-ITEM_REGEX = re.compile(r'SC_\(([-\d\.e]+)\)')
+ITEM_REGEX = re.compile(r'[+-]?\d*\.?\d+(?:[eE][+-]?\d+)?')
 HEADER_REGEX = re.compile(
-r'const boost::array\<boost::array\<T, (\d+)\>, (\d+)\> ([a-zA-Z_\d]+)')
+r'const boost::array\<boost::array\<.*, (\d+)\>, (\d+)\> ([a-zA-Z_\d]+)')
 
 # List of boost test data files to parse
 DATA_FILES = [
@@ -130,11 +130,13 @@ def _raw_data(line):
     for item in items:
         m = ITEM_REGEX.search(item)
         if m:
-            l.append(m.group(1))
+            q = m.group(0)
+            l.append(q)
     return l
 
 
 def parse_ipp_file(filename):
+    print(filename)
     a = open(filename, 'r')
     lines = a.readlines()
     data = {}
@@ -145,6 +147,7 @@ def parse_ipp_file(filename):
         if m:
             d = int(m.group(1))
             n = int(m.group(2))
+            print("d = {0}, n = {1}".format(d, n))
             cdata = []
             i += 1
             line = lines[i]
@@ -173,7 +176,7 @@ def dump_dataset(filename, data):
     fid = open(filename, 'w')
     try:
         for line in data:
-            fid.write("%s\n" % ",".join(line))
+            fid.write("%s\n" % " ".join(line))
     finally:
         fid.close()
 
@@ -185,6 +188,7 @@ def dump_datasets(filename):
     os.makedirs(datadir)
     datasets = parse_ipp_file(filename)
     for k, d in datasets.items():
+        print(k, len(d))
         dfilename = os.path.join(datadir, k) + '.txt'
         dump_dataset(dfilename, d)
 

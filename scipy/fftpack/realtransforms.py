@@ -200,7 +200,7 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
 
     Parameters
     ----------
-    x : array-like
+    x : array_like
         input array.
     n : int, optional
         Length of the transform.
@@ -272,8 +272,6 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return the Discrete Sine Transform of arbitrary type sequence x.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -349,6 +347,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     to a factor `2N`.  The orthonormalized DST-III is exactly the inverse of
     the orthonormalized DST-II.
 
+    .. versionadded:: 0.11.0
+
     References
     ----------
     .. [1] Wikipedia, "Discrete sine transform",
@@ -364,8 +364,6 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return the Inverse Discrete Sine Transform of an arbitrary type sequence.
-
-    .. versionadded:: 0.11.0
 
     Parameters
     ----------
@@ -399,6 +397,8 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     3, and IDST of type 3 is the DST of type 2. For the definition of these
     types, see `dst`.
 
+    .. versionadded:: 0.11.0
+
     """
     if type == 1 and norm is not None:
         raise NotImplementedError(
@@ -414,7 +414,7 @@ def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
 
     Parameters
     ----------
-    x : array-like
+    x : array_like
         input array.
     n : int, optional
         Length of the transform.

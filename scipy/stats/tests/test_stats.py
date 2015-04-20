@@ -8,6 +8,7 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import sys
 import warnings
 from collections import namedtuple
 
@@ -75,6 +76,8 @@ class TestTrimmedStats(TestCase):
         assert_approx_equal(y, X.std(ddof=1), significant=self.dprec)
 
     def test_tmin(self):
+        assert_equal(stats.tmin(4), 4)
+
         x = np.arange(10)
         assert_equal(stats.tmin(x), 0)
         assert_equal(stats.tmin(x, lowerlimit=0), 0)
@@ -86,9 +89,11 @@ class TestTrimmedStats(TestCase):
         assert_equal(stats.tmin(x, axis=None), 0)
 
     def test_tmax(self):
+        assert_equal(stats.tmax(4), 4)
+
         x = np.arange(10)
         assert_equal(stats.tmax(x), 9)
-        assert_equal(stats.tmax(x, upperlimit=9),9)
+        assert_equal(stats.tmax(x, upperlimit=9), 9)
         assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), 8)
 
         x = x.reshape((5, 2))
@@ -122,40 +127,48 @@ class TestNanFunc(TestCase):
 
     def test_nanmean_none(self):
         # Check nanmean when no values are nan.
-        m = stats.nanmean(X)
-        assert_approx_equal(m, X[4])
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmean(X)
+            assert_approx_equal(m, X[4])
 
     def test_nanmean_some(self):
         # Check nanmean when some values only are nan.
-        m = stats.nanmean(self.Xsome)
-        assert_approx_equal(m, 5.5)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmean(self.Xsome)
+            assert_approx_equal(m, 5.5)
 
     def test_nanmean_all(self):
         # Check nanmean when all values are nan.
-        olderr = np.seterr(all='ignore')
-        try:
-            m = stats.nanmean(self.Xall)
-        finally:
-            np.seterr(**olderr)
+        with warnings.catch_warnings():
+            warns = (DeprecationWarning, RuntimeWarning)
+            warnings.simplefilter('ignore', warns)
+            with np.errstate(invalid='ignore'):
+                m = stats.nanmean(self.Xall)
         assert_(np.isnan(m))
 
     def test_nanstd_none(self):
         # Check nanstd when no values are nan.
-        s = stats.nanstd(self.X)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            s = stats.nanstd(self.X)
         assert_approx_equal(s, np.std(self.X, ddof=1))
 
     def test_nanstd_some(self):
         # Check nanstd when some values only are nan.
-        s = stats.nanstd(self.Xsome)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            s = stats.nanstd(self.Xsome)
         assert_approx_equal(s, np.std(self.Xsomet, ddof=1))
 
     def test_nanstd_all(self):
         # Check nanstd when all values are nan.
-        olderr = np.seterr(all='ignore')
-        try:
-            s = stats.nanstd(self.Xall)
-        finally:
-            np.seterr(**olderr)
+        with warnings.catch_warnings():
+            warns = (DeprecationWarning, RuntimeWarning)
+            warnings.simplefilter('ignore', warns)
+            with np.errstate(invalid='ignore'):
+                s = stats.nanstd(self.Xall)
         assert_(np.isnan(s))
 
     def test_nanstd_bias_kw(self):
@@ -164,24 +177,31 @@ class TestNanFunc(TestCase):
 
     def test_nanstd_negative_axis(self):
         x = np.array([1, 2, 3])
-        assert_equal(stats.nanstd(x, -1), 1)
+        res = stats.nanstd(x, -1)
+        assert_equal(res, 1)
 
     def test_nanmedian_none(self):
         # Check nanmedian when no values are nan.
-        m = stats.nanmedian(self.X)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmedian(self.X)
         assert_approx_equal(m, np.median(self.X))
 
     def test_nanmedian_axis(self):
         # Check nanmedian with axis
         X = self.X.reshape(3,3)
-        m = stats.nanmedian(X, axis=0)
-        assert_equal(m, np.median(X, axis=0))
-        m = stats.nanmedian(X, axis=1)
-        assert_equal(m, np.median(X, axis=1))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmedian(X, axis=0)
+            assert_equal(m, np.median(X, axis=0))
+            m = stats.nanmedian(X, axis=1)
+            assert_equal(m, np.median(X, axis=1))
 
     def test_nanmedian_some(self):
         # Check nanmedian when some values only are nan.
-        m = stats.nanmedian(self.Xsome)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            m = stats.nanmedian(self.Xsome)
         assert_approx_equal(m, np.median(self.Xsomet))
 
     def test_nanmedian_all(self):
@@ -190,8 +210,8 @@ class TestNanFunc(TestCase):
             warnings.simplefilter('always')
             m = stats.nanmedian(self.Xall)
             assert_(np.isnan(m))
-            assert_equal(len(w), 1)
-            assert_(issubclass(w[0].category, RuntimeWarning))
+            assert_equal(len(w), 2)  # Deprecation & RuntimeWarning
+            assert_(issubclass(w[1].category, RuntimeWarning))
 
     def test_nanmedian_all_axis(self):
         # Check nanmedian when all values are nan.
@@ -199,15 +219,17 @@ class TestNanFunc(TestCase):
             warnings.simplefilter('always')
             m = stats.nanmedian(self.Xall.reshape(3,3), axis=1)
             assert_(np.isnan(m).all())
-            assert_equal(len(w), 3)
-            assert_(issubclass(w[0].category, RuntimeWarning))
+            assert_equal(len(w), 4)
+            assert_(issubclass(w[-1].category, RuntimeWarning))
 
     def test_nanmedian_scalars(self):
         # Check nanmedian for scalar inputs. See ticket #1098.
-        assert_equal(stats.nanmedian(1), np.median(1))
-        assert_equal(stats.nanmedian(True), np.median(True))
-        assert_equal(stats.nanmedian(np.array(1)), np.median(np.array(1)))
-        assert_equal(stats.nanmedian(np.nan), np.median(np.nan))
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            assert_equal(stats.nanmedian(1), np.median(1))
+            assert_equal(stats.nanmedian(True), np.median(True))
+            assert_equal(stats.nanmedian(np.array(1)), np.median(np.array(1)))
+            assert_equal(stats.nanmedian(np.nan), np.median(np.nan))
 
 
 class TestCorrPearsonr(TestCase):
@@ -485,6 +507,14 @@ class TestCorrSpearmanr(TestCase):
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
     """
+    def test_scalar(self):
+        y = stats.spearmanr(4., 2.)
+        assert_(np.isnan(y).all())
+
+    def test_uneven_lengths(self):
+        assert_raises(ValueError, stats.spearmanr, [1, 2, 1], [8, 9])
+        assert_raises(ValueError, stats.spearmanr, [1, 2, 1], 8)
+
     def test_sXX(self):
         y = stats.spearmanr(X,X)
         r = y[0]
@@ -608,14 +638,14 @@ class TestCorrSpearmanrTies(TestCase):
         assert_almost_equal(sr, pr)
 
 
-##    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
-##    should appear on the diagonal and the total should be 899999955.
-##    If the table cannot hold these values, forget about working with
-##    census data.  You can also tabulate HUGE against TINY.  There is no
-##    reason a tabulation program should not be able to distinguish
-##    different values regardless of their magnitude.
+#    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
+#    should appear on the diagonal and the total should be 899999955.
+#    If the table cannot hold these values, forget about working with
+#    census data.  You can also tabulate HUGE against TINY.  There is no
+#    reason a tabulation program should not be able to distinguish
+#    different values regardless of their magnitude.
 
-### I need to figure out how to do this one.
+# I need to figure out how to do this one.
 
 
 def test_kendalltau():
@@ -628,9 +658,12 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # with only ties in one or both inputs
-    assert_(np.all(np.isnan(stats.kendalltau([2,2,2], [2,2,2]))))
-    assert_(np.all(np.isnan(stats.kendalltau([2,0,2], [2,2,2]))))
-    assert_(np.all(np.isnan(stats.kendalltau([2,2,2], [2,0,2]))))
+    assert_equal(stats.kendalltau([2,2,2], [2,2,2]), (np.nan, np.nan))
+    assert_equal(stats.kendalltau([2,0,2], [2,2,2]), (np.nan, np.nan))
+    assert_equal(stats.kendalltau([2,2,2], [2,0,2]), (np.nan, np.nan))
+
+    # empty arrays provided as input
+    assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
     # check two different sort methods
     assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
@@ -671,12 +704,12 @@ class TestRegression(TestCase):
         r = y[2]
         assert_almost_equal(intercept,0.0)
         assert_almost_equal(r,1.0)
-##     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
-##     should tell you that this model is "singular" because BIG and
-##     LITTLE are linear combinations of each other.  Cryptic error
-##     messages are unacceptable here.  Singularity is the most
-##     fundamental regression error.
-### Need to figure out how to handle multiple linear regression.  Not obvious
+#     W.IV.C. Regress X on BIG and LITTLE (two predictors).  The program
+#     should tell you that this model is "singular" because BIG and
+#     LITTLE are linear combinations of each other.  Cryptic error
+#     messages are unacceptable here.  Singularity is the most
+#     fundamental regression error.
+# Need to figure out how to handle multiple linear regression.  Not obvious
 
     def test_regressZEROX(self):
         # W.IV.D. Regress ZERO on X.
@@ -743,6 +776,21 @@ class TestRegression(TestCase):
         assert_(res[2] >= -1)  # propagated numerical errors were not corrected
         assert_almost_equal(res[2], -1)  # perfect negative correlation case
         assert_(not np.isnan(res[4]))  # stderr should stay finite
+
+
+def test_theilslopes():
+    # Basic slope test.
+    slope, intercept, lower, upper = stats.theilslopes([0,1,1])
+    assert_almost_equal(slope, 0.5)
+    assert_almost_equal(intercept, 0.5)
+
+    # Test of confidence intervals.
+    x = [1, 2, 3, 4, 10, 12, 18]
+    y = [9, 15, 19, 20, 45, 55, 78]
+    slope, intercept, lower, upper = stats.theilslopes(y, x, 0.07)
+    assert_almost_equal(slope, 4)
+    assert_almost_equal(upper, 4.38, decimal=2)
+    assert_almost_equal(lower, 3.71, decimal=2)
 
 
 class TestHistogram(TestCase):
@@ -1000,14 +1048,6 @@ class TestScoreatpercentile(TestCase):
         assert_equal(stats.scoreatpercentile(x, 100), 3.5)
         assert_equal(stats.scoreatpercentile(x, 50), 1.75)
 
-    def test_2D(self):
-        x = array([[1, 1, 1],
-                   [1, 1, 1],
-                   [4, 4, 3],
-                   [1, 1, 1],
-                   [1, 1, 1]])
-        assert_array_equal(stats.scoreatpercentile(x, 50), [1, 1, 1])
-
     def test_fraction(self):
         scoreatperc = stats.scoreatpercentile
 
@@ -1089,6 +1129,18 @@ class TestScoreatpercentile(TestCase):
         r1 = [[0.75, 4.75, 8.75], [1.5, 5.5, 9.5], [3, 7, 11]]
         assert_equal(scoreatperc(x, (25, 50, 100), axis=1), r1)
 
+        x = array([[1, 1, 1],
+                   [1, 1, 1],
+                   [4, 4, 3],
+                   [1, 1, 1],
+                   [1, 1, 1]])
+        score = stats.scoreatpercentile(x, 50)
+        assert_equal(score.shape, ())
+        assert_equal(score, 1.0)
+        score = stats.scoreatpercentile(x, 50, axis=0)
+        assert_equal(score.shape, (3,))
+        assert_equal(score, [1, 1, 1])
+
     def test_exception(self):
         assert_raises(ValueError, stats.scoreatpercentile, [1, 2], 56,
             interpolation_method='foobar')
@@ -1139,16 +1191,91 @@ class TestItemfreq(object):
 
 
 class TestMode(TestCase):
+    def test_empty(self):
+        vals, counts = stats.mode([])
+        assert_equal(vals, np.array([]))
+        assert_equal(counts, np.array([]))
+
+    def test_scalar(self):
+        vals, counts = stats.mode(4.)
+        assert_equal(vals, np.array([4.]))
+        assert_equal(counts, np.array([1]))
+
     def test_basic(self):
-        data1 = [3,5,1,10,23,3,2,6,8,6,10,6]
+        data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
         vals = stats.mode(data1)
-        assert_almost_equal(vals[0][0],6)
-        assert_almost_equal(vals[1][0],3)
+        assert_equal(vals[0][0], 6)
+        assert_equal(vals[1][0], 3)
+
+    def test_axes(self):
+        data1 = [10, 10, 30, 40]
+        data2 = [10, 10, 10, 10]
+        data3 = [20, 10, 20, 20]
+        data4 = [30, 30, 30, 30]
+        data5 = [40, 30, 30, 30]
+        arr = np.array([data1, data2, data3, data4, data5])
+
+        vals = stats.mode(arr, axis=None)
+        assert_equal(vals[0], np.array([30]))
+        assert_equal(vals[1], np.array([8]))
+
+        vals = stats.mode(arr, axis=0)
+        assert_equal(vals[0], np.array([[10, 10, 30, 30]]))
+        assert_equal(vals[1], np.array([[2, 3, 3, 2]]))
+
+        vals = stats.mode(arr, axis=1)
+        assert_equal(vals[0], np.array([[10], [10], [20], [30], [30]]))
+        assert_equal(vals[1], np.array([[2], [4], [3], [4], [3]]))
+
+    def test_strings(self):
+        data1 = ['rain', 'showers', 'showers']
+        vals = stats.mode(data1)
+        assert_equal(vals[0][0], 'showers')
+        assert_equal(vals[1][0], 2)
+
+    @dec.knownfailureif(sys.version_info > (3,), 'numpy github issue 641')
+    def test_mixed_objects(self):
+        objects = [10, True, np.nan, 'hello', 10]
+        arr = np.empty((5,), dtype=object)
+        arr[:] = objects
+        vals = stats.mode(arr)
+        assert_equal(vals[0][0], 10)
+        assert_equal(vals[1][0], 2)
+
+    def test_objects(self):
+        """Python objects must be sortable (le + eq) and have ne defined
+        for np.unique to work. hash is for set.
+        """
+        class Point(object):
+            def __init__(self, x):
+                self.x = x
+
+            def __eq__(self, other):
+                return self.x == other.x
+
+            def __ne__(self, other):
+                return self.x != other.x
+
+            def __lt__(self, other):
+                return self.x < other.x
+
+            def __hash__(self):
+                return hash(self.x)
+
+        points = [Point(x) for x in [1, 2, 3, 4, 3, 2, 2, 2]]
+        arr = np.empty((8,), dtype=object)
+        arr[:] = points
+        assert len(set(points)) == 4
+        assert_equal(np.unique(arr).shape, (4,))
+        vals = stats.mode(arr)
+        assert_equal(vals[0][0], Point(2))
+        assert_equal(vals[1][0], 4)
 
 
 class TestVariability(TestCase):
 
     testcase = [1,2,3,4]
+    scalar_testcase = 4.
 
     def test_signaltonoise(self):
         # This is not in R, so used:
@@ -1156,8 +1283,10 @@ class TestVariability(TestCase):
 
         # y = stats.signaltonoise(self.shoes[0])
         # assert_approx_equal(y,4.5709967)
-        y = stats.signaltonoise(self.testcase)
-        assert_approx_equal(y,2.236067977)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            y = stats.signaltonoise(self.testcase)
+        assert_approx_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used:
@@ -1165,11 +1294,16 @@ class TestVariability(TestCase):
 
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            y = stats.sem(self.scalar_testcase)
+        assert_(np.isnan(y))
+
         y = stats.sem(self.testcase)
-        assert_approx_equal(y,0.6454972244)
+        assert_approx_equal(y, 0.6454972244)
         n = len(self.testcase)
         assert_allclose(stats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
-                         stats.sem(self.testcase, ddof=2))
+                        stats.sem(self.testcase, ddof=2))
 
     def test_zmap(self):
         # not in R, so tested by using:
@@ -1267,57 +1401,78 @@ class TestMoments(TestCase):
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
+    scalar_testcase = 4.
+    np.random.seed(1234)
+    testcase_moment_accuracy = np.random.rand(42)
     testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
-        y = stats.moment(self.testcase,1)
-        assert_approx_equal(y,0.0,10)
-        y = stats.moment(self.testcase,2)
-        assert_approx_equal(y,1.25)
-        y = stats.moment(self.testcase,3)
-        assert_approx_equal(y,0.0)
-        y = stats.moment(self.testcase,4)
-        assert_approx_equal(y,2.5625)
+        y = stats.moment(self.scalar_testcase)
+        assert_approx_equal(y, 0.0)
+        y = stats.moment(self.testcase, 1)
+        assert_approx_equal(y, 0.0, 10)
+        y = stats.moment(self.testcase, 2)
+        assert_approx_equal(y, 1.25)
+        y = stats.moment(self.testcase, 3)
+        assert_approx_equal(y, 0.0)
+        y = stats.moment(self.testcase, 4)
+        assert_approx_equal(y, 2.5625)
 
     def test_variation(self):
         # variation = samplestd / mean
+        y = stats.variation(self.scalar_testcase)
+        assert_approx_equal(y, 0.0)
         y = stats.variation(self.testcase)
-        assert_approx_equal(y,0.44721359549996, 10)
+        assert_approx_equal(y, 0.44721359549996, 10)
 
     def test_skewness(self):
+        # Scalar test case
+        y = stats.skew(self.scalar_testcase)
+        assert_approx_equal(y, 0.0)
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
         y = stats.skew(self.testmathworks)
-        assert_approx_equal(y,-0.29322304336607,10)
-        y = stats.skew(self.testmathworks,bias=0)
-        assert_approx_equal(y,-0.437111105023940,10)
+        assert_approx_equal(y, -0.29322304336607, 10)
+        y = stats.skew(self.testmathworks, bias=0)
+        assert_approx_equal(y, -0.437111105023940, 10)
         y = stats.skew(self.testcase)
-        assert_approx_equal(y,0.0,10)
+        assert_approx_equal(y, 0.0, 10)
 
     def test_skewness_scalar(self):
         # `skew` must return a scalar for 1-dim input
         assert_equal(stats.skew(arange(10)), 0.0)
 
     def test_kurtosis(self):
+        # Scalar test case
+        y = stats.kurtosis(self.scalar_testcase)
+        assert_approx_equal(y, -3.0)
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
         #   fisher=0 (Pearson's defn of kurtosis for compatiability with Matlab)
-        y = stats.kurtosis(self.testmathworks,0,fisher=0,bias=1)
-        assert_approx_equal(y, 2.1658856802973,10)
+        y = stats.kurtosis(self.testmathworks, 0, fisher=0, bias=1)
+        assert_approx_equal(y, 2.1658856802973, 10)
 
         # Note that MATLAB has confusing docs for the following case
         #  kurtosis(x,0) gives an unbiased estimate of Pearson's skewness
         #  kurtosis(x)  gives a biased estimate of Fisher's skewness (Pearson-3)
         #  The MATLAB docs imply that both should give Fisher's
-        y = stats.kurtosis(self.testmathworks,fisher=0,bias=0)
-        assert_approx_equal(y, 3.663542721189047,10)
-        y = stats.kurtosis(self.testcase,0,0)
-        assert_approx_equal(y,1.64)
+        y = stats.kurtosis(self.testmathworks, fisher=0, bias=0)
+        assert_approx_equal(y, 3.663542721189047, 10)
+        y = stats.kurtosis(self.testcase, 0, 0)
+        assert_approx_equal(y, 1.64)
 
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
+
+    def test_moment_accuracy(self):
+        # 'moment' must have a small enough error compared to the slower
+        #  but very accurate numpy.power() implementation.
+        tc_no_mean = self.testcase_moment_accuracy - \
+                     np.mean(self.testcase_moment_accuracy)
+        assert_allclose(np.power(tc_no_mean, 42).mean(),
+                            stats.moment(self.testcase_moment_accuracy, 42))
 
 
 class TestThreshold(TestCase):
@@ -1345,6 +1500,12 @@ class TestStudentTest(TestCase):
     P2_0 = 0.2254033
 
     def test_onesample(self):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            t, p = stats.ttest_1samp(4., 3.)
+        assert_(np.isnan(t))
+        assert_(np.isnan(p))
+
         t, p = stats.ttest_1samp(self.X1, 0)
 
         assert_array_almost_equal(t, self.T1_0)
@@ -1706,7 +1867,8 @@ def test_chisquare_masked_arrays():
 
     # Empty arrays:
     # A data set with length 0 returns a masked scalar.
-    chisq, p = stats.chisquare(np.ma.array([]))
+    with np.errstate(invalid='ignore'):
+        chisq, p = stats.chisquare(np.ma.array([]))
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, ())
     assert_(chisq.mask)
@@ -1721,7 +1883,8 @@ def test_chisquare_masked_arrays():
 
     # empty3.T is an array containing 3 data sets, each with length 0,
     # so an array of size (3,) is returned, with all values masked.
-    chisq, p = stats.chisquare(empty3.T)
+    with np.errstate(invalid='ignore'):
+        chisq, p = stats.chisquare(empty3.T)
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, (3,))
     assert_(np.all(chisq.mask))
@@ -1903,6 +2066,13 @@ def test_ttest_rel():
     t,p = stats.ttest_rel(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal([t,p],tpr)
 
+    # test scalars
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        t, p = stats.ttest_rel(4., 3.)
+    assert_(np.isnan(t))
+    assert_(np.isnan(p))
+
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
     rvs2_3D = np.dstack([rvs2_2D,rvs2_2D,rvs2_2D])
@@ -1924,8 +2094,9 @@ def test_ttest_rel():
         assert_equal(stats.ttest_rel([0,0,0], [0,0,0]), (np.nan, np.nan))
 
         # check that nan in input array result in nan output
-        anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
+        anan = np.array([[1, np.nan], [-1, 1]])
+        assert_equal(stats.ttest_rel(anan, np.zeros((2, 2))),
+                     ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
@@ -1933,6 +2104,16 @@ def test_ttest_rel():
     x = np.arange(24)
     assert_raises(ValueError, stats.ttest_rel, x.reshape((8, 3)),
                   x.reshape((2, 3, 4)))
+
+
+def _desc_stats(x1, x2, axis=0):
+    def _stats(x, axis=0):
+        x = np.asarray(x)
+        mu = np.mean(x, axis=axis)
+        std = np.std(x, axis=axis, ddof=1)
+        nobs = x.shape[axis]
+        return mu, std, nobs
+    return _stats(x1, axis) + _stats(x2, axis)
 
 
 def test_ttest_ind():
@@ -1948,10 +2129,27 @@ def test_ttest_ind():
 
     t,p = stats.ttest_ind(rvs1, rvs2, axis=0)
     assert_array_almost_equal([t,p],(tr,pr))
+    # test from_stats API
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(rvs1,
+                                                                      rvs2)),
+                              [t, p])
     t,p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0)
     assert_array_almost_equal([t,p],tpr)
+    args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args),
+                              [t, p])
     t,p = stats.ttest_ind(rvs1_2D, rvs2_2D, axis=1)
     assert_array_almost_equal([t,p],tpr)
+    args = _desc_stats(rvs1_2D, rvs2_2D, axis=1)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args),
+                              [t, p])
+
+    # test scalars
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        t, p = stats.ttest_ind(4., 3.)
+    assert_(np.isnan(t))
+    assert_(np.isnan(p))
 
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
@@ -1988,12 +2186,19 @@ def test_ttest_ind_with_uneq_var():
     tr = -0.68649512735572582
     t, p = stats.ttest_ind(a, b, equal_var=False)
     assert_array_almost_equal([t,p], [tr, pr])
+    # test from desc stats API
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(a, b),
+                                                         equal_var=False),
+                              [t, p])
 
     a = (1, 2, 3, 4)
     pr = 0.84354139131608286
     tr = -0.2108663315950719
     t, p = stats.ttest_ind(a, b, equal_var=False)
     assert_array_almost_equal([t,p], [tr, pr])
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(a, b),
+                                                         equal_var=False),
+                              [t, p])
 
     # regression test
     tr = 1.0912746897927283
@@ -2010,12 +2215,31 @@ def test_ttest_ind_with_uneq_var():
 
     t,p = stats.ttest_ind(rvs1, rvs2, axis=0, equal_var=False)
     assert_array_almost_equal([t,p],(tr,pr))
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(rvs1,
+                                                                      rvs2),
+                                                         equal_var=False),
+                              (t, p))
+
     t,p = stats.ttest_ind(rvs1, rvs3, axis=0, equal_var=False)
     assert_array_almost_equal([t,p], (tr_uneq_n, pr_uneq_n))
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*_desc_stats(rvs1,
+                                                                      rvs3),
+                                                         equal_var=False),
+                              (t, p))
+
     t,p = stats.ttest_ind(rvs1_2D.T, rvs2_2D.T, axis=0, equal_var=False)
     assert_array_almost_equal([t,p],tpr)
+    args = _desc_stats(rvs1_2D.T, rvs2_2D.T)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args,
+                                                         equal_var=False),
+                              (t, p))
+
     t,p = stats.ttest_ind(rvs1_2D, rvs2_2D, axis=1, equal_var=False)
     assert_array_almost_equal([t,p],tpr)
+    args = _desc_stats(rvs1_2D, rvs2_2D, axis=1)
+    assert_array_almost_equal(stats.ttest_ind_from_stats(*args,
+                                                         equal_var=False),
+                              (t, p))
 
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
@@ -2024,9 +2248,20 @@ def test_ttest_ind_with_uneq_var():
     assert_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
+    args = _desc_stats(rvs1_3D, rvs2_3D, axis=1)
+    t, p = stats.ttest_ind_from_stats(*args, equal_var=False)
+    assert_almost_equal(np.abs(t), np.abs(tr))
+    assert_array_almost_equal(np.abs(p), pr)
+    assert_equal(t.shape, (2, 3))
 
     t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
                                    axis=2, equal_var=False)
+    assert_array_almost_equal(np.abs(t), np.abs(tr))
+    assert_array_almost_equal(np.abs(p), pr)
+    assert_equal(t.shape, (3, 2))
+    args = _desc_stats(np.rollaxis(rvs1_3D, 2),
+                       np.rollaxis(rvs2_3D, 2), axis=2)
+    t, p = stats.ttest_ind_from_stats(*args, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
@@ -2087,30 +2322,60 @@ def test_ttest_1samp_new():
         np.seterr(**olderr)
 
 
-def test_describe():
-    x = np.vstack((np.ones((3,4)),2*np.ones((2,4))))
-    nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
-    mc = np.array([1.4, 1.4, 1.4, 1.4])
-    vc = np.array([0.3, 0.3, 0.3, 0.3])
-    skc = [0.40824829046386357]*4
-    kurtc = [-1.833333333333333]*4
-    n, mm, m, v, sk, kurt = stats.describe(x)
-    assert_equal(n, nc)
-    assert_equal(mm, mmc)
-    assert_equal(m, mc)
-    assert_equal(v, vc)
-    assert_array_almost_equal(sk, skc, decimal=13)  # not sure about precision
-    assert_array_almost_equal(kurt, kurtc, decimal=13)
-    n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
-    assert_equal(n, nc)
-    assert_equal(mm, mmc)
-    assert_equal(m, mc)
-    assert_equal(v, vc)
-    assert_array_almost_equal(sk, skc, decimal=13)  # not sure about precision
-    assert_array_almost_equal(kurt, kurtc, decimal=13)
+class TestDescribe(TestCase):
+    def test_describe_scalar(self):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            n, mm, m, v, sk, kurt = stats.describe(4.)
+        assert_equal(n, 1)
+        assert_equal(mm, (4.0, 4.0))
+        assert_equal(m, 4.0)
+        assert_(np.isnan(v))
+        # not sure about precision with sk, skc
+        assert_array_almost_equal(sk, 0.0, decimal=13)
+        assert_array_almost_equal(kurt, -3.0, decimal=13)
+
+    def test_describe_numbers(self):
+        x = np.vstack((np.ones((3,4)), 2 * np.ones((2,4))))
+        nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
+        mc = np.array([1.4, 1.4, 1.4, 1.4])
+        vc = np.array([0.3, 0.3, 0.3, 0.3])
+        skc = [0.40824829046386357] * 4
+        kurtc = [-1.833333333333333] * 4
+        n, mm, m, v, sk, kurt = stats.describe(x)
+        assert_equal(n, nc)
+        assert_equal(mm, mmc)
+        assert_equal(m, mc)
+        assert_equal(v, vc)
+        # not sure about precision with sk, skc
+        assert_array_almost_equal(sk, skc, decimal=13)
+        assert_array_almost_equal(kurt, kurtc, decimal=13)
+        n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
+        assert_equal(n, nc)
+        assert_equal(mm, mmc)
+        assert_equal(m, mc)
+        assert_equal(v, vc)
+        # not sure about precision with sk, skc
+        assert_array_almost_equal(sk, skc, decimal=13)
+        assert_array_almost_equal(kurt, kurtc, decimal=13)
+
+    def test_describe_result_attributes(self):
+        actual = stats.describe(np.arange(5))
+        attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness',
+                      'kurtosis')
+        for i, attr in enumerate(attributes):
+            assert_equal(actual[i], getattr(actual, attr))
+
+    def test_describe_typename(self):
+        actual = stats.describe(np.arange(5))
+        assert_equal(str(actual)[:8], 'Describe')
 
 
 def test_normalitytests():
+    yield (assert_raises, ValueError, stats.skewtest, 4.)
+    yield (assert_raises, ValueError, stats.kurtosistest, 4.)
+    yield (assert_raises, ValueError, stats.normaltest, 4.)
+
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
@@ -2739,6 +3004,31 @@ class TestKruskal(TestCase):
         assert_approx_equal(h, expected)
         assert_approx_equal(p, stats.chisqprob(h, 2))
 
+
+class TestCombinePvalues(TestCase):
+
+    def test_fisher(self):
+        # Example taken from http://en.wikipedia.org/wiki/Fisher's_exact_test#Example
+        xsq, p = stats.combine_pvalues([.01, .2, .3], method='fisher')
+        assert_approx_equal(p, 0.02156, significant=4)
+
+    def test_stouffer(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer')
+        assert_approx_equal(p, 0.01651, significant=4)
+
+    def test_stouffer2(self):
+        Z, p = stats.combine_pvalues([.5, .5, .5], method='stouffer')
+        assert_approx_equal(p, 0.5, significant=4)
+
+    def test_weighted_stouffer(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
+                                     weights=np.ones(3))
+        assert_approx_equal(p, 0.01651, significant=4)
+
+    def test_weighted_stouffer2(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
+                                     weights=np.array((1, 4, 9)))
+        assert_approx_equal(p, 0.1464, significant=4)
 
 if __name__ == "__main__":
     run_module_suite()

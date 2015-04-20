@@ -79,6 +79,9 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
     npy_intp size, jj;
     NI_Iterator ii;
     char *pi;
+    NPY_BEGIN_THREADS_DEF;
+
+    NPY_BEGIN_THREADS;
 
     /* get input data, size and iterator: */
     pi = (void *)PyArray_DATA(input);
@@ -119,12 +122,14 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
                                                      max_label, ii, Int64);
             break;
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
         NI_ITERATOR_NEXT(ii, pi);
     }
  exit:
+    NPY_END_THREADS;
     return PyErr_Occurred() ? 0 : 1;
 }
 
@@ -168,6 +173,7 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
         _v = *(Float64*)_pi;                                              \
         break;                                                            \
     default:                                                            \
+            NPY_END_THREADS;                                          \
             PyErr_SetString(PyExc_RuntimeError,                       \
                                          "data type not supported");  \
             return 0;                                                       \
@@ -208,6 +214,7 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
         _v = *(Float64*)_pi;                                              \
         break;                                                            \
     default:                                                            \
+            NPY_END_THREADS;                                          \
             PyErr_SetString(PyExc_RuntimeError,                       \
                                         "data type not supported");   \
             return 0;                                                       \
@@ -255,6 +262,7 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
             _label = *(Float64*)_pm;                                        \
             break;                                                          \
         default:                                                          \
+            NPY_END_THREADS;                                          \
             PyErr_SetString(PyExc_RuntimeError,                       \
                                         "data type not supported");   \
             return 0;                                                       \
@@ -297,6 +305,7 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
             _label = *(Float64*)_pm;                                        \
             break;                                                          \
         default:                                                          \
+            NPY_END_THREADS;                                          \
             PyErr_SetString(PyExc_RuntimeError,                       \
                                         "data type not supported");   \
             return 0;                                                       \
@@ -314,6 +323,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
     NI_Iterator ii, mi;
     npy_intp jj, size, idx = 0, label = 1, doit = 1;
     int qq;
+    NPY_BEGIN_THREADS_DEF;
 
     /* input iterator: */
     if (!NI_InitPointIterator(input, &ii))
@@ -325,6 +335,9 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
             return 0;
         pm = (void *)PyArray_DATA(labels);
     }
+
+    NPY_BEGIN_THREADS;
+
     /* input size: */
     size = 1;
     for(qq = 0; qq < input->nd; qq++)
@@ -439,6 +452,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
                                                 variance[jj] / (total[jj] - 1) : 0.0);
         }
     }
+    NPY_END_THREADS;
     return 1;
 }
 
@@ -452,6 +466,7 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
     npy_intp jj, kk, size, idx = 0, label = 1, doit = 1;
     double *sum = NULL;
     int qq;
+    NPY_BEGIN_THREADS_DEF;
 
     /* input iterator: */
     if (!NI_InitPointIterator(input, &ii))
@@ -467,11 +482,14 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
     size = 1;
     for(qq = 0; qq < input->nd; qq++)
         size *= input->dimensions[qq];
-    sum = (double*)malloc(n_results * sizeof(double));
+    sum = malloc(n_results * sizeof(double));
     if (!sum) {
         PyErr_NoMemory();
         goto exit;
     }
+
+    NPY_BEGIN_THREADS;
+
     for(jj = 0; jj < n_results; jj++) {
         sum[jj] = 0.0;
         for(kk = 0; kk < input->nd; kk++)
@@ -507,8 +525,8 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
         for(kk = 0; kk < input->nd; kk++)
             center_of_mass[jj * input->nd + kk] /= sum[jj];
  exit:
-    if (sum)
-        free(sum);
+    NPY_END_THREADS;
+    free(sum);
     return  PyErr_Occurred() == NULL;
 }
 
@@ -524,6 +542,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
     Int32 **ph = NULL;
     double bsize;
     int qq;
+    NPY_BEGIN_THREADS_DEF;
 
     /* input iterator: */
     if (!NI_InitPointIterator(input, &ii))
@@ -535,11 +554,14 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
             goto exit;
         pm = (void *)PyArray_DATA(labels);
     }
-    ph = (Int32**)malloc(n_results * sizeof(Int32*));
+    ph = malloc(n_results * sizeof(Int32*));
     if (!ph) {
         PyErr_NoMemory();
         goto exit;
     }
+
+    NPY_BEGIN_THREADS;
+
     for(jj = 0; jj < n_results; jj++) {
             ph[jj] = (Int32*)PyArray_DATA(histograms[jj]);
             for(kk = 0; kk < nbins; kk++)
@@ -564,11 +586,11 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
             doit = label != 0;
         }
         if (doit) {
-            int bin;
+            npy_intp bin;
             double val;
             NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
             if (val >= min && val < max) {
-                bin = (int)((val - min) / bsize);
+                bin = (npy_intp)((val - min) / bsize);
                 ++(ph[idx][bin]);
             }
         }
@@ -579,8 +601,8 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
         }
     }
  exit:
-    if (ph)
-        free(ph);
+    NPY_END_THREADS;
+    free(ph);
     return  PyErr_Occurred() == NULL;
 }
 
@@ -666,6 +688,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     NI_WatershedElement *temp = NULL, **first = NULL, **last = NULL;
     Bool *ps = NULL;
     NI_Iterator mi, ii, li;
+    NPY_BEGIN_THREADS_DEF;
 
     i_contiguous = PyArray_ISCONTIGUOUS(input);
     o_contiguous = PyArray_ISCONTIGUOUS(output);
@@ -680,22 +703,26 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     for(ll = 0; ll < input->nd; ll++)
         size *= input->dimensions[ll];
     /* Storage for the temporary queue data. */
-    temp = (NI_WatershedElement*)malloc(size * sizeof(NI_WatershedElement));
+    temp = malloc(size * sizeof(NI_WatershedElement));
     if (!temp) {
         PyErr_NoMemory();
         goto exit;
     }
+
+    NPY_BEGIN_THREADS;
+
     pi = (void *)PyArray_DATA(input);
     if (!NI_InitPointIterator(input, &ii))
         goto exit;
     /* Initialization and find the maximum of the input. */
     maxval = 0;
     for(jj = 0; jj < size; jj++) {
-        int ival = 0;
+        npy_intp ival = 0;
         switch(NI_NormalizeType(input->descr->type_num)) {
         CASE_GET_INPUT(ival, pi, UInt8);
         CASE_GET_INPUT(ival, pi, UInt16);
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
@@ -707,11 +734,10 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     }
     pi = (void *)PyArray_DATA(input);
     /* Allocate and initialize the storage for the queue. */
-    first = (NI_WatershedElement**)malloc((maxval + 1) *
-                                                                                sizeof(NI_WatershedElement*));
-    last = (NI_WatershedElement**)malloc((maxval + 1) *
-                                                                             sizeof(NI_WatershedElement*));
-    if (!first || !last) {
+    first = malloc((maxval + 1) * sizeof(NI_WatershedElement*));
+    last = malloc((maxval + 1) * sizeof(NI_WatershedElement*));
+    if (NI_UNLIKELY(!first || !last)) {
+        NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
     }
@@ -743,6 +769,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
         CASE_GET_LABEL(label, pm, Int32);
         CASE_GET_LABEL(label, pm, Int64);
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
@@ -758,6 +785,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
         CASE_PUT_LABEL(label, pl, Int32);
         CASE_PUT_LABEL(label, pl, Int64);
         default:
+            NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
@@ -808,8 +836,9 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     for (kk = 0; kk < ssize; kk++)
         if (ps[kk] && kk != (ssize / 2))
             ++nneigh;
-    nstrides = (npy_intp*)malloc(nneigh * sizeof(npy_intp));
-    if (!nstrides) {
+    nstrides = malloc(nneigh * sizeof(npy_intp));
+    if (NI_UNLIKELY(!nstrides)) {
+        NPY_END_THREADS;
         PyErr_NoMemory();
         goto exit;
     }
@@ -877,6 +906,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                                                  input->nd, i_contiguous, p_idx, v_idx, pi,
                                                  vval, pval, UInt16);
                         default:
+                            NPY_END_THREADS;
                             PyErr_SetString(PyExc_RuntimeError,
                                                             "data type not supported");
                             goto exit;
@@ -914,6 +944,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                             CASE_WINDEX2(v_index, strides, output->strides, input->nd,
                                                      idx, o_contiguous, label, pl, Int64);
                             default:
+                                NPY_END_THREADS;
                                 PyErr_SetString(PyExc_RuntimeError,
                                                                 "data type not supported");
                                 goto exit;
@@ -938,6 +969,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                             CASE_WINDEX3(p_index, strides, output->strides, input->nd,
                                                      idx, o_contiguous, label, pl, Int64);
                             default:
+                                NPY_END_THREADS;
                                 PyErr_SetString(PyExc_RuntimeError,
                                                                 "data type not supported");
                                 goto exit;
@@ -979,13 +1011,10 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
         }
     }
  exit:
-    if (temp)
-        free(temp);
-    if (first)
-        free(first);
-    if (last)
-        free(last);
-    if (nstrides)
-        free(nstrides);
+    NPY_END_THREADS;
+    free(temp);
+    free(first);
+    free(last);
+    free(nstrides);
     return PyErr_Occurred() ? 0 : 1;
 }

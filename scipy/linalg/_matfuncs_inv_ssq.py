@@ -37,11 +37,6 @@ class FractionalMatrixPowerError(np.linalg.LinAlgError):
     pass
 
 
-def _count_nonzero(x):
-    """np.count_nonzero not available in numpy 1.5.x"""
-    return np.sum(x != 0)
-
-
 #TODO renovate or move this class when scipy operators are more mature
 class _MatrixM1PowerOperator(LinearOperator):
     """
@@ -58,23 +53,22 @@ class _MatrixM1PowerOperator(LinearOperator):
         self.ndim = A.ndim
         self.shape = A.shape
 
-    def matvec(self, x):
+    def _matvec(self, x):
         for i in range(self._p):
             x = self._A.dot(x) - x
         return x
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
         for i in range(self._p):
             x = x.dot(self._A) - x
         return x
 
-    def matmat(self, X):
+    def _matmat(self, X):
         for i in range(self._p):
             X = self._A.dot(X) - X
         return X
 
-    @property
-    def T(self):
+    def _adjoint(self):
         return _MatrixM1PowerOperator(self._A.T, self._p)
 
 
@@ -375,7 +369,7 @@ def _inverse_squaring_helper(T0, theta):
     # this search will not terminate if any diagonal entry of T is zero.
     s0 = 0
     tmp_diag = np.diag(T)
-    if _count_nonzero(tmp_diag) != n:
+    if np.count_nonzero(tmp_diag) != n:
         raise Exception('internal inconsistency')
     while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
@@ -657,7 +651,7 @@ def _remainder_matrix_power(A, t):
     # Zeros on the diagonal of the triangular matrix are forbidden,
     # because the inverse scaling and squaring cannot deal with it.
     T_diag = np.diag(T)
-    if _count_nonzero(T_diag) != n:
+    if np.count_nonzero(T_diag) != n:
         raise FractionalMatrixPowerError(
                 'cannot use inverse scaling and squaring to find '
                 'the fractional matrix power of a singular matrix')
@@ -894,4 +888,3 @@ def _logm(A):
         X = np.empty_like(A)
         X.fill(np.nan)
         return X
-

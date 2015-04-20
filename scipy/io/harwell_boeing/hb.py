@@ -27,7 +27,7 @@ from scipy.sparse import csc_matrix
 from scipy.io.harwell_boeing._fortran_format_parser import \
         FortranFormatParser, IntFormat, ExpFormat
 
-from scipy.lib.six import string_types
+from scipy._lib.six import string_types
 
 __all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
            "HBMatrixType"]
@@ -428,7 +428,7 @@ class HBFile(object):
         ----------
         file : file-object
             StringIO work as well
-        hb_info : HBInfo
+        hb_info : HBInfo, optional
             Should be given as an argument for writing, in which case the file
             should be writable.
         """

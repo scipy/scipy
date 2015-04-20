@@ -6,6 +6,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include <numpy/noprefix.h>
+#include <numpy/npy_3kcompat.h>
 
 #if PY_VERSION_HEX >= 0x03000000
 #define PyNumber_Divide PyNumber_TrueDivide
@@ -63,6 +64,65 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
           const PyArrayObject * zf, PyArrayObject * y, int axis,
           BasicFilterFunction * filter_func);
 
+PyObject*
+convert_shape_to_errmsg(intp ndim, intp *Xshape, intp *Vishape, intp theaxis, intp val)
+{
+    intp j, expect_size;
+    PyObject *msg, *tmp, *msg1, *tmp1;
+
+    if (ndim == 1) {
+        msg = PyUString_FromFormat("Unexpected shape for zi: expected (%"   \
+                                    NPY_INTP_FMT ",), found (%" NPY_INTP_FMT \
+                                    ",).", val, Vishape[0]);
+        return msg;
+    }
+
+    msg = PyUString_FromString("Unexpected shape for zi:  expected (");
+    if (!msg) {
+        return 0;
+    }
+
+    msg1 = PyUString_FromString("), found (");
+    if (!msg1) {
+        Py_DECREF(msg);
+        return 0;
+    }
+
+    for (j = 0; j < ndim; ++j) {
+        expect_size = j != theaxis ? Xshape[j] : val;
+
+        if (j == ndim - 1) {
+            tmp = PyUString_FromFormat("%" NPY_INTP_FMT, expect_size);
+            tmp1 = PyUString_FromFormat("%" NPY_INTP_FMT, Vishape[j]);
+        } else {
+            tmp = PyUString_FromFormat("%" NPY_INTP_FMT ",", expect_size);
+            tmp1 = PyUString_FromFormat("%" NPY_INTP_FMT ",", Vishape[j]);
+        }
+        if (!tmp) {
+            Py_DECREF(msg);
+            Py_DECREF(msg1);
+            Py_XDECREF(tmp1);
+            return 0;
+        }
+        if (!tmp1) {
+            Py_DECREF(msg);
+            Py_DECREF(msg1);
+            Py_DECREF(tmp);
+            return 0;
+        }
+        PyUString_ConcatAndDel(&msg, tmp);
+        PyUString_ConcatAndDel(&msg1, tmp1);
+    }
+    tmp = PyUString_FromString(").");
+    if (!tmp) {
+        Py_DECREF(msg);
+        Py_DECREF(msg1);
+    }
+    PyUString_ConcatAndDel(&msg1, tmp);
+    PyUString_ConcatAndDel(&msg, msg1);
+    return msg;
+}
+
 /*
  * XXX: Error checking not done yet
  */
@@ -71,9 +131,10 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 {
     PyObject *b, *a, *X, *Vi;
     PyArrayObject *arY, *arb, *ara, *arX, *arVi, *arVf;
-    int axis, typenum, theaxis, st;
+    int axis, typenum, theaxis, st, Vi_needs_broadcasted = 0;
     char *ara_ptr, input_flag = 0, *azero;
-    intp na, nb, nal;
+    intp na, nb, nal, zi_size;
+    intp zf_shape[NPY_MAXDIMS];
     BasicFilterFunction *basic_filter;
 
     axis = -1;
@@ -98,42 +159,28 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
         goto fail;
     }
 
-    if (axis < -arX->nd || axis > arX->nd - 1) {
+    if (axis < -PyArray_NDIM(arX) || axis > PyArray_NDIM(arX) - 1) {
         PyErr_SetString(PyExc_ValueError, "selected axis is out of range");
         goto fail;
     }
     if (axis < 0) {
-        theaxis = arX->nd + axis;
+        theaxis = PyArray_NDIM(arX) + axis;
     } else {
         theaxis = axis;
     }
 
     if (Vi != NULL) {
         arVi = (PyArrayObject *) PyArray_FromObject(Vi, typenum,
-                                                    arX->nd, arX->nd);
+                                                    PyArray_NDIM(arX),
+                                                    PyArray_NDIM(arX));
         if (arVi == NULL)
             goto fail;
 
         input_flag = 1;
     }
 
-    arY = (PyArrayObject *) PyArray_SimpleNew(arX->nd,
-                                              arX->dimensions, typenum);
-    if (arY == NULL) {
-        goto fail;
-    }
-
-    if (input_flag) {
-        arVf = (PyArrayObject *) PyArray_SimpleNew(arVi->nd,
-                                                   arVi->dimensions,
-                                                   typenum);
-        if (arVf == NULL) {
-            goto fail;
-        }
-    }
-
-    if (arX->descr->type_num < 256) {
-        basic_filter = BasicFilterFunctions[(int) (arX->descr->type_num)];
+    if (PyArray_TYPE(arX) < 256) {
+        basic_filter = BasicFilterFunctions[(int) (PyArray_TYPE(arX))];
     }
     else {
         basic_filter = NULL;
@@ -142,7 +189,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
         PyObject *msg, *str;
         char *s;
 
-        str = PyObject_Str((PyObject*)arX->descr);
+        str = PyObject_Str((PyObject*)PyArray_DESCR(arX));
         if (str == NULL) {
             goto fail;
         }
@@ -163,7 +210,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     if (azero == NULL) {
         goto fail;
     }
-    ara_ptr = ara->data;
+    ara_ptr = PyArray_DATA(ara);
     nal = PyArray_ITEMSIZE(ara);
     st = memcmp(ara_ptr, azero, nal);
     PyDataMem_FREE(azero);
@@ -175,13 +222,91 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
 
     na = PyArray_SIZE(ara);
     nb = PyArray_SIZE(arb);
+    zi_size = (na > nb ? na : nb) - 1;
     if (input_flag) {
-        if (arVi->dimensions[theaxis] != (na > nb ? na : nb) - 1) {
-            PyErr_SetString(PyExc_ValueError,
-                            "The number of initial conditions must be max([len(a),len(b)]) - 1");
+        intp k, Vik, Xk;
+        for (k = 0; k < PyArray_NDIM(arX); ++k) {
+            Vik = PyArray_DIM(arVi, k);
+            Xk = PyArray_DIM(arX, k);
+            if (k == theaxis && Vik == zi_size) {
+                zf_shape[k] = zi_size;
+            } else if (k != theaxis && Vik == Xk) {
+                zf_shape[k] = Xk;
+            } else if (k != theaxis && Vik == 1) { 
+                zf_shape[k] = Xk;
+                Vi_needs_broadcasted = 1;
+            } else {
+                PyObject *msg = convert_shape_to_errmsg(PyArray_NDIM(arX),
+                        PyArray_DIMS(arX), PyArray_DIMS(arVi),
+                        theaxis, zi_size);
+                if (!msg) {
+                    goto fail;
+                }
+                PyErr_SetObject(PyExc_ValueError, msg);
+                Py_DECREF(msg);
+                goto fail;
+            }
+        }
+        
+        if (Vi_needs_broadcasted) {
+            /* Expand the singleton dimensions of arVi without copying by
+             * creating a new view of arVi with the expanded dimensions
+             * but the corresponding stride = 0.
+             */
+            PyArrayObject *arVi_view;
+            PyArray_Descr *view_dtype;
+            npy_intp *arVi_shape = PyArray_DIMS(arVi);
+            npy_intp *arVi_strides = PyArray_STRIDES(arVi);
+            npy_intp ndim = PyArray_NDIM(arVi);
+            npy_intp strides[NPY_MAXDIMS];
+            npy_intp k;
+
+            for (k = 0; k < ndim; ++k) {
+                if (arVi_shape[k] == 1) {
+                    strides[k] = 0;
+                } else {
+                    strides[k] = arVi_strides[k];
+                }
+            }
+            
+            /* PyArray_DESCR borrows a reference, but it will be stolen
+             * by PyArray_NewFromDescr below, so increment it.
+             */
+            view_dtype = PyArray_DESCR(arVi);
+            Py_INCREF(view_dtype);
+            
+            arVi_view = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type,
+                            view_dtype, ndim, zf_shape, strides,
+                            PyArray_BYTES(arVi), 0, NULL);
+            if (!arVi_view) {
+                goto fail;
+            }
+            /* Give our reference to arVi to arVi_view */
+#if NPY_API_VERSION >= 0x00000007
+            if (PyArray_SetBaseObject(arVi_view, arVi) == -1) {
+                Py_DECREF(arVi_view);
+                goto fail;
+            }
+#else
+            PyArray_BASE(arVi_view) = arVi;
+#endif
+            arVi = arVi_view;
+        }
+
+        arVf = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arVi),
+                                                   zf_shape,
+                                                   typenum);
+        if (arVf == NULL) {
             goto fail;
         }
     }
+    
+    arY = (PyArrayObject *) PyArray_SimpleNew(PyArray_NDIM(arX),
+                                              PyArray_DIMS(arX), typenum);
+    if (arY == NULL) {
+        goto fail;
+    }
+
 
     st = RawFilter(arb, ara, arX, arVi, arVf, arY, theaxis, basic_filter);
     if (st) {
@@ -219,7 +344,7 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
 {
     char *xzero;
     intp i, nxl;
-    PyArray_CopySwapFunc *copyswap = x->descr->f->copyswap;
+    PyArray_CopySwapFunc *copyswap = PyArray_DESCR((PyArrayObject *)x)->f->copyswap;
 
     nxl = PyArray_ITEMSIZE(x);
 
@@ -229,7 +354,9 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
 
     if (nx > 0) {
         for (i = 0; i < nx; ++i) {
-            copyswap(xzfilled + i * nxl, x->data + i * nxl, 0, NULL);
+            copyswap(xzfilled + i * nxl,
+                     PyArray_DATA((PyArrayObject *)x) + i * nxl,
+                     0, NULL);
         }
     }
     for (i = nx; i < nxzfilled; ++i) {
@@ -256,12 +383,12 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
           const PyArrayObject * zf, PyArrayObject * y, int axis,
           BasicFilterFunction * filter_func)
 {
-    PyArrayIterObject *itx, *ity, *itzi, *itzf;
+    PyArrayIterObject *itx, *ity, *itzi = NULL, *itzf = NULL;
     intp nitx, i, nxl, nzfl, j;
     intp na, nb, nal, nbl;
     intp nfilt;
     char *azfilled, *bzfilled, *zfzfilled, *yoyo;
-    PyArray_CopySwapFunc *copyswap = x->descr->f->copyswap;
+    PyArray_CopySwapFunc *copyswap = PyArray_DESCR((PyArrayObject *)x)->f->copyswap;
 
     itx = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *) x,
                                                        &axis);
@@ -294,9 +421,9 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
         }
     }
 
-    na = PyArray_SIZE(a);
+    na = PyArray_SIZE((PyArrayObject *)a);
     nal = PyArray_ITEMSIZE(a);
-    nb = PyArray_SIZE(b);
+    nb = PyArray_SIZE((PyArrayObject *)b);
     nbl = PyArray_ITEMSIZE(b);
 
     nfilt = na > nb ? na : nb;

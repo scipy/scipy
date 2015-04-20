@@ -574,8 +574,8 @@ LU_to_csc(SuperMatrix *L, SuperMatrix *U,
 #define IS_ZERO(p)                                                      \
     ((dtype == SLU_S) ? (*(float*)(p) == 0) :                           \
      ((dtype == SLU_D) ? (*(double*)(p) == 0) :                         \
-      ((dtype == SLU_C) ? (*(float*)(p) == 0 || *((float*)(p)+1) == 0) : \
-       (*(double*)(p) == 0 || *((double*)(p)+1) == 0))))
+      ((dtype == SLU_C) ? (*(float*)(p) == 0 && *((float*)(p)+1) == 0) : \
+       (*(double*)(p) == 0 && *((double*)(p)+1) == 0))))
 
     U_colptr[0] = 0;
     L_colptr[0] = 0;

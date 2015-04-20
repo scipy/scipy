@@ -1,21 +1,18 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy.lib.six import xrange
-import scipy.special
-from numpy import logical_and, asarray, pi, zeros_like, \
-     piecewise, array, arctan2, tan, zeros, arange, floor
-from numpy.core.umath import sqrt, exp, greater, less, cos, add, sin, \
-     less_equal, greater_equal
+from scipy._lib.six import xrange
+from numpy import (logical_and, asarray, pi, zeros_like,
+                   piecewise, array, arctan2, tan, zeros, arange, floor)
+from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
+                              less_equal, greater_equal)
 
 # From splinemodule.c
 from .spline import cspline2d, sepfir2d
 
-from scipy.misc import comb
+from scipy.special import comb, gamma
 
 __all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
            'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
-
-gamma = scipy.special.gamma
 
 
 def factorial(n):
@@ -102,8 +99,6 @@ def _bspline_piecefunctions(order):
         coeffs = [(1 - 2 * (k % 2)) * float(comb(order + 1, k, exact=1)) / fval
                   for k in xrange(Mk + 1)]
         shifts = [-bound - k for k in xrange(Mk + 1)]
-        #print "Adding piece number %d with coeffs %s and shifts %s" \
-        #      % (num, str(coeffs), str(shifts))
 
         def thefunc(x):
             res = 0.0
@@ -187,7 +182,7 @@ def _coeff_smooth(lam):
 
 def _hc(k, cs, rho, omega):
     return (cs / sin(omega) * (rho ** k) * sin(omega * (k + 1)) *
-                                                    greater(k, -1))
+            greater(k, -1))
 
 
 def _hs(k, cs, rho, omega):
@@ -205,7 +200,7 @@ def _cubic_smooth_coeff(signal, lamb):
     yp = zeros((K,), signal.dtype.char)
     k = arange(K)
     yp[0] = (_hc(0, cs, rho, omega) * signal[0] +
-            add.reduce(_hc(k + 1, cs, rho, omega) * signal))
+             add.reduce(_hc(k + 1, cs, rho, omega) * signal))
 
     yp[1] = (_hc(0, cs, rho, omega) * signal[0] +
              _hc(1, cs, rho, omega) * signal[1] +

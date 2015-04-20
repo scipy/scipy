@@ -109,7 +109,7 @@ subroutine <tchar=s,d,cs,zd>rot(n,x,offx,incx,y,offy,incy,c,s)
   check(offx>=0 && offx<len(x)) :: offx
   check(offy>=0 && offy<len(y)) :: offy
   integer optional, intent(in), depend(x,incx,offx,y,incy,offy) :: &
-       n = (len(x)-offx)/abs(incx)
+       n = (len(x)-1-offx)/abs(incx)+1
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 

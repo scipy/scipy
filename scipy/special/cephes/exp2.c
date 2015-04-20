@@ -131,7 +131,7 @@ double exp2(double x)
     double px, xx;
     short n;
 
-    if (npy_isnan(x))
+    if (cephes_isnan(x))
 	return (x);
     if (x > MAXL2) {
 	return (NPY_INFINITY);

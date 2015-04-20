@@ -66,11 +66,13 @@ typedef enum {
   Invalid_Ctype=-1,
   /* Acceptable returns below */
   Callable=1,
-  Valid_Ctype=2
+  Valid_Ctype=2,
+  Valid_Multivariate_Ctype=3
 } FuncType;
 
 
 /* Checks a callable object:
+   Returns Valid_Multivariate_Ctype if the Python Object is a CType Function of the type (int, double*) -> (double)
    Returns Valid_Ctype if the Python Object is a CType Function of the type (double) -> (double)
    Return  Callable if it is a Python callable (including a Ctypes function with no stored types)
    Returns Invalid_Ctype if it is a CType Function but of the incorrect type
@@ -80,7 +82,7 @@ typedef enum {
 
 static FuncType
 get_func_type(PyObject *func) {
-  PyObject *ctypes_module, *CFuncPtr, *check, *c_double;
+  PyObject *ctypes_module, *CFuncPtr, *check, *c_double, *c_int;
   int result;
   
   if (!PyCallable_Check(func)) {
@@ -114,6 +116,7 @@ get_func_type(PyObject *func) {
   }
   
   c_double = PyObject_GetAttrString(ctypes_module, "c_double");
+  c_int = PyObject_GetAttrString(ctypes_module, "c_int");
   Py_DECREF(ctypes_module);
   
   check = PyObject_GetAttrString(func, "restype");
@@ -123,16 +126,26 @@ get_func_type(PyObject *func) {
   Py_DECREF(check);
   check = PyObject_GetAttrString(func, "argtypes");
   if (!PyTuple_Check(check) || (PyTuple_GET_SIZE(check) != 1) || 
-      (PyTuple_GET_ITEM(check, 0) != c_double)) 
-    goto fail;
-  
+      (PyTuple_GET_ITEM(check, 0) != c_double)) {
+    if ((PyTuple_GET_ITEM(check, 0) == c_int) && (PyTuple_GET_ITEM(check, 1) == c_double)){   
+      /*If first param is int and second is of double type, we have valid_multivariate */
+      Py_DECREF(check);
+      Py_DECREF(c_double);
+      Py_DECREF(c_int);
+      return Valid_Multivariate_Ctype;
+    }
+    else 
+      goto fail;
+  }
   Py_DECREF(check);
   Py_DECREF(c_double);
+  Py_DECREF(c_int);
   return Valid_Ctype;
   
 fail:
   Py_DECREF(check);
   Py_XDECREF(c_double);
+  Py_XDECREF(c_int);
   PyErr_SetString(quadpack_error,
                   "quad: first argument is a ctypes function pointer with incorrect signature");
   return Invalid_Ctype;
@@ -175,7 +188,7 @@ fail:
   Py_XDECREF(c_void_p);
   Py_XDECREF(result);
   Py_XDECREF(value);
-  return NULL;    
+  return NULL;
 }
 */
 
@@ -209,7 +222,7 @@ double quad_function(double *x) {
   if (PyErr_Occurred())
     PYERR(quadpack_error, "Supplied function does not return a valid float.")
 
-  Py_DECREF(arg1);    /* arglist has the reference to Float object. */
+  Py_DECREF(arg1); /* arglist has the reference to Float object. */
   Py_DECREF(arglist);
   Py_DECREF(result);
 
@@ -251,7 +264,7 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
     return Py_BuildValue("ddi",result,abserr,ier);
 
   if ((func_type = get_func_type(fcn)) < Callable) 
-      return NULL;
+    return NULL;
 
   /* Setup iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
@@ -281,14 +294,19 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
 
     quad_restore_func(&storevar, &ier);
   }
-  else { /* func_type == VALID_CTYPE */
+  else {
       /* Can't allow another thread to run because of the global variables
          quadpack_raw_function and quad_function2 being used */
-    if (init_ctypes_func(&storevar, fcn) == NPY_FAIL)
-      goto fail;
-    DQAGSE(quad_function2, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist,
-           blist, rlist, elist, iord, &last);
-    restore_ctypes_func(&storevar);
+    if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
+      if (init_c_multivariate(&storevar, fcn, extra_args) == NPY_FAIL) goto fail;
+      DQAGSE(call_c_multivariate, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_c_multivariate(&storevar);
+    }
+    else{ /* func_type == VALID_CTYPE */
+      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
+      DQAGSE(quad_function2, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_ctypes_func(&storevar);
+    }
   }
 
   if (full_output) {
@@ -331,7 +349,7 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
   FuncType func_type;
-  QStorage storevar; 
+  QStorage storevar;
 
   if (!PyArg_ParseTuple(args, "Odi|Oiddi", &fcn, &bound, &inf, &extra_args, 
                         &full_output, &epsabs, &epsrel, &limit)) 
@@ -372,12 +390,19 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
     }
     quad_restore_func(&storevar, &ier);
   }
-  else { /* func_type == VALID_CTYPE */
+  else {
       /* Can't allow another thread to run because of the global variables
          quadpack_raw_function and quad_function2 being used */
-    if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
-    DQAGIE(quad_function2, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
-    restore_ctypes_func(&storevar);
+    if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
+      if (init_c_multivariate(&storevar, fcn, extra_args) == NPY_FAIL) goto fail;
+      DQAGIE(call_c_multivariate, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_c_multivariate(&storevar);
+    }
+    else { /* func_type == VALID_CTYPE */
+      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
+      DQAGIE(quad_function2, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_ctypes_func(&storevar);
+    }
   }
 
   if (full_output) {
@@ -425,7 +450,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
   double   *alist, *blist, *rlist, *elist;
   double   *pts, *points;
   FuncType func_type;
-  QStorage storevar;    
+  QStorage storevar;
 
   if (!PyArg_ParseTuple(args, "OddO|Oiddi", &fcn, &a, &b, &o_points, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
   limit_shape[0] = limit;
@@ -435,7 +460,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
     return Py_BuildValue("ddi",result,abserr,ier);
 
   if ((func_type = get_func_type(fcn)) < Callable)
-      return NULL;
+    return NULL;
 
   ap_points = (PyArrayObject *)PyArray_ContiguousFromObject(o_points, NPY_DOUBLE, 1, 1);
   if (ap_points == NULL) goto fail;
@@ -477,9 +502,16 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
     quad_restore_func(&storevar, &ier);
   }
   else {
-    if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
-    DQAGPE(quad_function2, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
-    restore_ctypes_func(&storevar);
+    if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
+      if (init_c_multivariate(&storevar, fcn, extra_args) == NPY_FAIL) goto fail;
+      DQAGPE(call_c_multivariate, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
+      restore_c_multivariate(&storevar);
+    }
+    else { /* func_type == VALID_CTYPE */ 
+      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
+      DQAGPE(quad_function2, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
+      restore_ctypes_func(&storevar);
+    }
   }
 
   Py_DECREF(ap_points);
@@ -534,8 +566,8 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
   double   result=0.0, abserr=0.0, omega=0.0;
   double   *chebmo;
   double   *alist, *blist, *rlist, *elist;
-  FuncType func_type;  
-  QStorage storevar;  
+  FuncType func_type;
+  QStorage storevar;
 
   if (!PyArg_ParseTuple(args, "Odddi|OiddiiiiO", &fcn, &a, &b, &omega, &integr, &extra_args, &full_output, &epsabs, &epsrel, &limit, &maxp1, &icall, &momcom, &o_chebmo)) return NULL;
   limit_shape[0] = limit;
@@ -545,7 +577,7 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
     return Py_BuildValue("ddi",result,abserr,ier);
 
   if ((func_type = get_func_type(fcn)) < Callable)
-      return NULL;
+    return NULL;
 
   if (o_chebmo != NULL) {
     ap_chebmo = (PyArrayObject *)PyArray_ContiguousFromObject(o_chebmo, NPY_DOUBLE, 2, 2);
@@ -592,9 +624,16 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
 
   }
   else {
-    if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
-    DQAWOE(quad_function2, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
-    restore_ctypes_func(&storevar);
+    if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
+      if (init_c_multivariate(&storevar, fcn, extra_args) == NPY_FAIL) goto fail;
+      DQAWOE(call_c_multivariate, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
+      restore_c_multivariate(&storevar);
+    }
+    else { /* func_type == VALID_CTYPE */
+      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
+      DQAWOE(quad_function2, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
+      restore_ctypes_func(&storevar);
+    }
   }
 
   if (full_output) {
@@ -645,8 +684,8 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
   double   *chebmo, *rslst, *erlst;
   double   result=0.0, abserr=0.0, omega=0.0;
   double   *alist, *blist, *rlist, *elist;
-  FuncType func_type;  
-  QStorage storevar;  
+  FuncType func_type;
+  QStorage storevar;
 
   if (!PyArg_ParseTuple(args, "Oddi|Oidiii", &fcn, &a, &omega, &integr, &extra_args, &full_output, &epsabs, &limlst, &limit, &maxp1)) return NULL;
   limit_shape[0] = limit;
@@ -657,7 +696,7 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
     return Py_BuildValue("ddi",result,abserr,ier);
 
   if ((func_type = get_func_type(fcn)) < Callable)
-      return NULL;
+    return NULL;
 
   sz[0] = 25;
   sz[1] = maxp1;
@@ -701,9 +740,16 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
     quad_restore_func(&storevar, &ier);
   }
   else {
-    if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
-    DQAWFE(quad_function2, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
-    restore_ctypes_func(&storevar);
+    if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
+      if (init_c_multivariate(&storevar, fcn, extra_args) == NPY_FAIL) goto fail;
+      DQAWFE(call_c_multivariate, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
+      restore_c_multivariate(&storevar);
+    }
+    else { /* func_type == VALID_CTYPE */
+      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
+      DQAWFE(quad_function2, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
+      restore_ctypes_func(&storevar);
+    }
   }
 
   Py_DECREF(ap_nnlog);
@@ -758,7 +804,7 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
   FuncType func_type;
-  QStorage storevar;  
+  QStorage storevar;
 
   if (!PyArg_ParseTuple(args, "Oddd|Oiddi", &fcn, &a, &b, &c, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
   limit_shape[0] = limit;
@@ -768,7 +814,7 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
     return Py_BuildValue("ddi",result,abserr,ier);
 
   if ((func_type = get_func_type(fcn)) < Callable)
-      return NULL;
+    return NULL;
 
   /* Setup iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
@@ -799,9 +845,16 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
 
   } 
   else {
-    if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
-    DQAWCE(quad_function2, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
-    restore_ctypes_func(&storevar);
+    if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
+      if (init_c_multivariate(&storevar, fcn, extra_args) == NPY_FAIL) goto fail;
+      DQAWCE(call_c_multivariate, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_c_multivariate(&storevar);
+    }
+    else { /* func_type == VALID_CTYPE */
+      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
+      DQAWCE(quad_function2, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_ctypes_func(&storevar);
+    }
   }
 
   if (full_output) {
@@ -846,7 +899,7 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   double   result=0.0, abserr=0.0;
   double   *alist, *blist, *rlist, *elist;
   FuncType func_type;
-  QStorage storevar;  
+  QStorage storevar;
 
   if (!PyArg_ParseTuple(args, "Odd(dd)i|Oiddi", &fcn, &a, &b, &alfa, &beta, &integr, &extra_args, &full_output, &epsabs, &epsrel, &limit)) return NULL;
   limit_shape[0] = limit;
@@ -856,7 +909,7 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
     return Py_BuildValue("ddi",result,abserr,ier);
 
   if ((func_type = get_func_type(fcn)) < Callable)
-      return NULL;
+    return NULL;
 
   /* Setup iwork and work arrays */
   ap_iord = (PyArrayObject *)PyArray_SimpleNew(1,limit_shape,NPY_INT);
@@ -886,9 +939,16 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
     quad_restore_func(&storevar, &ier);
   }
   else {
-    if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
-    DQAWSE(quad_function2, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
-    restore_ctypes_func(&storevar);
+    if (func_type != Valid_Ctype) { /* func_type == VALID_MULTIVARIATE_CTYPE */
+      if (init_c_multivariate(&storevar, fcn, extra_args) == NPY_FAIL) goto fail;
+      DQAWSE(call_c_multivariate, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_c_multivariate(&storevar);
+    }
+    else { /* func_type == VALID_CTYPE */
+      if (init_ctypes_func(&storevar, fcn) == NPY_FAIL) goto fail;
+      DQAWSE(quad_function2, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+      restore_ctypes_func(&storevar);
+    }
   }
   
   if (full_output) {
@@ -911,4 +971,3 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
   Py_XDECREF(ap_iord);
   return NULL;
 }
-

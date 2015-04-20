@@ -32,6 +32,8 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['netcdf_file']
 
 
+import warnings
+import weakref
 from operator import mul
 import mmap as mm
 
@@ -41,7 +43,7 @@ from numpy import fromstring, ndarray, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-from scipy.lib.six import integer_types
+from scipy._lib.six import integer_types, text_type, binary_type
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'
@@ -95,16 +97,18 @@ class netcdf_file(object):
     ----------
     filename : string or file-like
         string -> filename
-    mode : {'r', 'w'}, optional
-        read-write mode, default is 'r'
+    mode : {'r', 'w', 'a'}, optional
+        read-write-append mode, default is 'r'
     mmap : None or bool, optional
         Whether to mmap `filename` when reading.  Default is True
         when `filename` is a file name, False when `filename` is a
-        file-like object
+        file-like object. Note that when mmap is in use, data arrays
+        returned refer directly to the mmapped data on disk, and the
+        file cannot be closed as long as references to it exist.
     version : {1, 2}, optional
         version of netcdf to read / write, where 1 means *Classic
         format* and 2 means *64-bit offset format*.  Default is 1.  See
-        `here <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html>`_
+        `here <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html>`__
         for more info.
 
     Notes
@@ -116,7 +120,7 @@ class netcdf_file(object):
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
-    <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`_. There
+    <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`__. There
     are three main sections to a NetCDF data structure:
 
     1. Dimensions
@@ -143,6 +147,13 @@ class netcdf_file(object):
     the file, so access can be done in an efficient manner without loading
     unnecessary data into memory. It uses the ``mmap`` module to create
     Numpy arrays mapped to the data on disk, for the same purpose.
+
+    Note that when `netcdf_file` is used to open a file with mmap=True
+    (default for read-only), arrays returned by it refer to data
+    directly on the disk. The file should not be closed, and cannot be cleanly
+    closed when asked, if such arrays are alive. You may want to copy data arrays
+    obtained from mmapped Netcdf file if they are to be processed after the file
+    is closed, see the example below.
 
     Examples
     --------
@@ -174,7 +185,20 @@ class netcdf_file(object):
         (10,)
         >>> print(time[-1])
         9
+
+    NetCDF files, when opened read-only, return arrays that refer
+    directly to memory-mapped data on disk:
+
+        >>> data = time[:]
+        >>> data.base.base
+        <mmap.mmap object at 0x7fe753763180>
+
+    If the data is to be processed after the file is closed, it needs
+    to be copied to main memory:
+
+        >>> data = time[:].copy()
         >>> f.close()
+        >>> data.mean()
 
     A NetCDF file can also be used as context manager:
 
@@ -182,11 +206,12 @@ class netcdf_file(object):
         >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
         >>>     print(f.history)
         Created for a test
+
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):
         """Initialize netcdf_file from fileobj (str or file-like)."""
-        if mode not in 'rw':
-            raise ValueError("Mode must be either 'r' or 'w'.")
+        if mode not in 'rwa':
+            raise ValueError("Mode must be either 'r', 'w' or 'a'.")
 
         if hasattr(filename, 'seek'):  # file-like
             self.fp = filename
@@ -197,7 +222,8 @@ class netcdf_file(object):
                 raise ValueError('Cannot use file object for mmap')
         else:  # maybe it's a string
             self.filename = filename
-            self.fp = open(self.filename, '%sb' % mode)
+            omode = 'r+' if mode == 'a' else mode
+            self.fp = open(self.filename, '%sb' % omode)
             if mmap is None:
                 mmap = True
 
@@ -224,7 +250,7 @@ class netcdf_file(object):
 
         self._attributes = {}
 
-        if mode == 'r':
+        if mode in 'ra':
             self._read()
 
     def __setattr__(self, attr, value):
@@ -242,9 +268,23 @@ class netcdf_file(object):
             try:
                 self.flush()
             finally:
-                self._mm_buf = None
-                if self._mm is not None:
-                    self._mm.close()
+                self.variables = {}
+                if self._mm_buf is not None:
+                    ref = weakref.ref(self._mm_buf)
+                    self._mm_buf = None
+                    if ref() is None:
+                        # self._mm_buf is gc'd, and we can close the mmap
+                        self._mm.close()
+                    else:
+                        # we cannot close self._mm, since self._mm_buf is
+                        # alive and there may still be arrays referring to it
+                        warnings.warn((
+                            "Cannot close a netcdf_file opened with mmap=True, when "
+                            "netcdf_variables or arrays referring to its data still exist. "
+                            "All data arrays obtained from such files refer directly to "
+                            "data on disk, and must be copied before the file can be cleanly "
+                            "closed. (See netcdf_file docstring for more information on mmap.)"
+                        ), category=RuntimeWarning)
                 self._mm = None
                 self.fp.close()
     __del__ = close
@@ -330,7 +370,7 @@ class netcdf_file(object):
         sync : Identical function
 
         """
-        if hasattr(self, 'mode') and self.mode == 'w':
+        if hasattr(self, 'mode') and self.mode in 'wa':
             self._write()
     sync = flush
 
@@ -381,11 +421,13 @@ class netcdf_file(object):
             self.fp.write(NC_VARIABLE)
             self._pack_int(len(self.variables))
 
-            # Sort variables non-recs first, then recs. We use a DSU
-            # since some people use pupynere with Python 2.3.x.
-            deco = [(v._shape and not v.isrec, k) for (k, v) in self.variables.items()]
-            deco.sort()
-            variables = [k for (unused, k) in deco][::-1]
+            # Sort variable names non-recs first, then recs.
+            def sortkey(n):
+                v = self.variables[n]
+                if v.isrec:
+                    return (-1,)
+                return v._shape
+            variables = sorted(self.variables, key=sortkey, reverse=True)
 
             # Set the metadata for all variables.
             for name in variables:
@@ -477,23 +519,25 @@ class netcdf_file(object):
             types = [(t, NC_INT) for t in integer_types]
             types += [
                     (float, NC_FLOAT),
-                    (str, NC_CHAR),
+                    (str, NC_CHAR)
                     ]
-            try:
-                sample = values[0]
-            except TypeError:
+            # bytes index into scalars in py3k.  Check for "string" types
+            if isinstance(values, text_type) or isinstance(values, binary_type):
                 sample = values
-            except IndexError:
-                if isinstance(values, basestring):
-                    sample = values
-                else:
-                    raise
+            else:
+                try:
+                    sample = values[0]  # subscriptable?
+                except TypeError:
+                    sample = values     # scalar
+
             for class_, nc_type in types:
                 if isinstance(sample, class_):
                     break
 
         typecode, size = TYPEMAP[nc_type]
         dtype_ = '>%s' % typecode
+        # asarray() dies with bytes and '>c' in py3k.  Change to 'S'
+        dtype_ = 'S' if dtype_ == '>c' else dtype_
 
         values = asarray(values, dtype=dtype_)
 
@@ -795,7 +839,7 @@ class netcdf_variable(object):
         `netcdf_variable`.
 
         """
-        return self.data.shape and not self._shape[0]
+        return bool(self.data.shape) and not self._shape[0]
     isrec = property(isrec)
 
     def shape(self):

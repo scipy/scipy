@@ -6,11 +6,8 @@ local power basis.
 
 from .polyint import _Interpolator1D
 import numpy as np
-cimport numpy as cnp
 
 cimport cython
-
-cdef double nan = np.nan
 
 cimport libc.stdlib
 cimport libc.math
@@ -26,6 +23,9 @@ cdef extern from "blas_defs.h":
                  int *lda, double *wr, double *wi, double *vl, int *ldvl,
                  double *vr, int *ldvr, double *work, int *lwork,
                  int *info)
+
+cdef extern from "numpy/npy_math.h":
+    double nan "NPY_NAN"
 
 #------------------------------------------------------------------------------
 # Piecewise power basis polynomials
@@ -734,9 +734,9 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s,
                                        double_or_complex[:,:,::1] c,
                                        int ci, int cj) nogil:
     """
-    Evaluate polynomial in the Berstein basis in a single interval.
+    Evaluate polynomial in the Bernstein basis in a single interval.
 
-    A Berstein polynomial is defined as
+    A Bernstein polynomial is defined as
 
         .. math:: b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
 
@@ -787,10 +787,10 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
                                              int nu,
                                              double_or_complex[:,:,::1] wrk) nogil:
     """
-    Evaluate the derivative of a polynomial in the Berstein basis 
+    Evaluate the derivative of a polynomial in the Bernstein basis 
     in a single interval.
 
-    A Berstein polynomial is defined as
+    A Bernstein polynomial is defined as
 
         .. math:: b_{j, k} = comb(k, j) x^{j} (1-x)^{k-j}
 
@@ -847,8 +847,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
              double[::1] xp,
              int nu,
              int extrapolate,
-             double_or_complex[:,::1] out,
-             cnp.dtype dt):
+             double_or_complex[:,::1] out):
     """
     Evaluate a piecewise polynomial in the Bernstein basis.
 
@@ -893,8 +892,11 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         raise ValueError("x and c have incompatible shapes")
 
     if nu > 0:
-        wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=dt)
-
+        if double_or_complex is double_complex:
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
+        else:
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
+        
     # evaluate
     interval = 0
 

@@ -4,13 +4,13 @@ import os
 import copy
 
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal, run_module_suite,\
-     assert_, dec, assert_allclose, assert_array_equal, assert_raises
-from scipy.lib.six import xrange
+from numpy.testing import (assert_equal, assert_almost_equal, run_module_suite,
+                           assert_, dec, assert_allclose, assert_array_equal,
+                           assert_raises)
+from scipy._lib.six import xrange
 
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree
-from scipy.lib._version import NumpyVersion
 
 
 def sorted_tuple(x):
@@ -279,8 +279,6 @@ class TestUtilities(object):
             ok = (j != -1) | at_boundary
             assert_(ok.all(), "%s %s" % (err_msg, np.where(~ok)))
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.6.0',
-                "No einsum in numpy 1.5.x")
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
         # transforms that stump the simplex finding
@@ -299,8 +297,6 @@ class TestUtilities(object):
         self._check_barycentric_transforms(tri)
 
     @dec.slow
-    @dec.skipif(NumpyVersion(np.__version__) < '1.6.0',
-                "No einsum in numpy 1.5.x")
     def test_more_barycentric_transforms(self):
         # Triangulate some "nasty" grids
 
@@ -833,6 +829,7 @@ class TestVoronoi:
                 continue
 
             yield check, name
+
 
 if __name__ == "__main__":
     run_module_suite()
