@@ -441,7 +441,7 @@ class lti(object):
     def step2(self, X0=None, T=None, N=None, **kwargs):
         """
         Return the step response of a continuous-time system.
-        See `scipy.signal.step` for details.
+        See `scipy.signal.step2` for details.
         """
         return step2(self, X0=X0, T=T, N=N, **kwargs)
 
