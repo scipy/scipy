@@ -1239,6 +1239,26 @@ class TestFitMethod(object):
         assert_raises(ValueError, stats.beta.fit, y, f0=0, f1=1,
                                                      floc=2, fscale=3)
 
+    def test_fshapes(self):
+        # take a beta distribution, with shapes='a, b', and make sure that
+        # fa is equivalent to f0, and fb is equivalent to f1
+        a, b = 3., 4.
+        x = stats.beta.rvs(a, b, size=100, random_state=1234)
+        res_1 = stats.beta.fit(x, f0=3.)
+        res_2 = stats.beta.fit(x, fa=3.)
+        assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
+
+        res_3 = stats.beta.fit(x, f1=4.)
+        res_4 = stats.beta.fit(x, fb=4.)
+        assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
+
+        # cannot specify both positional and named args at the same time
+        assert_raises(ValueError, stats.beta.fit, x, fa=1, f0=2)
+
+        # check that attempting to fix all parameters raises a ValueError
+        assert_raises(ValueError, stats.beta.fit, x, fa=0, f1=1,
+                                                     floc=2, fscale=3)
+
 
 class TestFrozen(TestCase):
     # Test that a frozen distribution gives the same results as the original object.
