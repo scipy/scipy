@@ -327,7 +327,7 @@ class lti(object):
         obj = self.to_tf()
         obj.num = num
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     @property
     def den(self):
@@ -338,7 +338,7 @@ class lti(object):
         obj = self.to_tf()
         obj.den = den
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     @property
     def zeros(self):
@@ -349,7 +349,7 @@ class lti(object):
         obj = self.to_zpk()
         obj.zeros = zeros
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     @property
     def poles(self):
@@ -360,7 +360,7 @@ class lti(object):
         obj = self.to_zpk()
         obj.poles = poles
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     @property
     def gain(self):
@@ -371,7 +371,7 @@ class lti(object):
         obj = self.to_zpk()
         obj.gain = gain
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     @property
     def A(self):
@@ -382,7 +382,7 @@ class lti(object):
         obj = self.to_ss()
         obj.A = A
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     @property
     def B(self):
@@ -393,7 +393,7 @@ class lti(object):
         obj = self.to_ss()
         obj.B = B
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     @property
     def C(self):
@@ -404,7 +404,7 @@ class lti(object):
         obj = self.to_ss()
         obj.C = C
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     @property
     def D(self):
@@ -415,7 +415,7 @@ class lti(object):
         obj = self.to_ss()
         obj.D = D
         source_class = type(self)
-        self.copy(source_class(obj))
+        self._copy(source_class(obj))
 
     def impulse(self, X0=None, T=None, N=None):
         """
@@ -554,7 +554,7 @@ class tf(lti):
     def den(self, den):
         self._den = atleast_1d(den)
 
-    def copy(self, system):
+    def _copy(self, system):
         """Copy the parameters of another tf system
 
         Parameters
@@ -685,7 +685,7 @@ class zpk(lti):
     def gain(self, gain):
         self._gain = gain
 
-    def copy(self, system):
+    def _copy(self, system):
         """Copy the parameters of another zpk system
 
         Parameters
@@ -822,7 +822,7 @@ class ss(lti):
     def D(self, D):
         self._D = _atleast_2d_or_none(D)
 
-    def copy(self, system):
+    def _copy(self, system):
         """Copy the parameters of another ss system
 
         Parameters
