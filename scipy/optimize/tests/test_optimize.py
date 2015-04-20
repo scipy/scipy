@@ -249,6 +249,38 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0.19572515, -0.63648426, 0.35838135]],
                         atol=1e-14, rtol=1e-7)
 
+    def test_neldermead_step(self):
+        # Nelder-Mead simplex algorithm
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': False,
+                    'return_all': False, 'step': (0.1,0.1,0.1)}
+            res = optimize.minimize(self.func, self.startparams, args=(),
+                                    method='Nelder-mead', options=opts)
+            params, fopt, numiter, func_calls, warnflag = \
+                    res['x'], res['fun'], res['nit'], res['nfev'], \
+                    res['status']
+        else:
+            retval = optimize.fmin(self.func, self.startparams,
+                                        args=(), maxiter=self.maxiter,
+                                        full_output=True, disp=False, retall=False,
+                                        step=(0.1,0.1,0.1))
+
+            (params, fopt, numiter, func_calls, warnflag) = retval
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.15.0. Don't allow them to increase.
+        assert_(self.funccalls == 100, self.funccalls)
+        assert_(self.gradcalls == 0, self.gradcalls)
+
+        # Ensure that the function behaves the same; this is from Scipy 0.15.0
+        assert_allclose(self.trace[50:52],
+                        [[0.14687474, -0.5103282, 0.48252111],
+                         [0.14474003, -0.5282084, 0.48743951]],
+                        atol=1e-14, rtol=1e-7)
+
     @suppressed_stdout
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
