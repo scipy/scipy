@@ -289,8 +289,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         Orthogonality desired between the function vector and the columns of
         the Jacobian.
     maxfev : int, optional
-        The maximum number of calls to the function. If zero, then 100*(N+1) is
-        the maximum where N is the number of elements in x0.
+        The maximum number of calls to the function. If `Dfun` is provided
+        then the default `maxfev` is 100*(N+1) where N is the number of elements
+        in x0, otherwise the default `maxfev` is 200*(N+1).
     epsfcn : float, optional
         A variable used in determining a suitable step length for the forward-
         difference approximation of the Jacobian (for Dfun=None). 
