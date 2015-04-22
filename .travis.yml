@@ -66,7 +66,7 @@ before_install:
   - popd
   # End install gmpy2 dependencies
   # Speed up install by not compiling Cython
-  - travis_retry pip install --install-option="--no-cython-compile" Cython
+  - travis_retry pip install --install-option="--no-cython-compile" Cython==0.22
   - travis_retry pip install $NUMPYSPEC
   - travis_retry pip install nose mpmath argparse
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
