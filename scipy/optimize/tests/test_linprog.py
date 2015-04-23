@@ -64,6 +64,57 @@ def _assert_success(res, desired_fun=None, desired_x=None):
                         err_msg="converged to an unexpected solution")
 
 
+def test_aliasing_b_ub():
+    c = np.array([1.0])
+    A_ub = np.array([[1.0]])
+    b_ub_orig = np.array([3.0])
+    b_ub = b_ub_orig.copy()
+    bounds = (-4.0, np.inf)
+    res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds)
+    _assert_success(res, desired_fun=-4, desired_x=[-4])
+    assert_allclose(b_ub_orig, b_ub)
+
+
+def test_aliasing_b_eq():
+    c = np.array([1.0])
+    A_eq = np.array([[1.0]])
+    b_eq_orig = np.array([3.0])
+    b_eq = b_eq_orig.copy()
+    bounds = (-4.0, np.inf)
+    res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+    _assert_success(res, desired_fun=3, desired_x=[3])
+    assert_allclose(b_eq_orig, b_eq)
+
+
+def test_bounds_second_form_unbounded_below():
+    c = np.array([1.0])
+    A_eq = np.array([[1.0]])
+    b_eq = np.array([3.0])
+    bounds = (None, 10.0)
+    res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+    _assert_success(res, desired_fun=3, desired_x=[3])
+
+
+def test_bounds_second_form_unbounded_above():
+    c = np.array([1.0])
+    A_eq = np.array([[1.0]])
+    b_eq = np.array([3.0])
+    bounds = (1.0, None)
+    res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+    _assert_success(res, desired_fun=3, desired_x=[3])
+
+
+def test_non_ndarray_args():
+    c = [1.0]
+    A_ub = [[1.0]]
+    b_ub = [3.0]
+    A_eq = [[1.0]]
+    b_eq = [2.0]
+    bounds = (-1.0, 10.0)
+    res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+    _assert_success(res, desired_fun=2, desired_x=[2])
+
+
 def test_linprog_upper_bound_constraints():
     # Maximize a linear function subject to only linear upper bound constraints.
     #  http://www.dam.brown.edu/people/huiwang/classes/am121/Archive/simplex_121_c.pdf

@@ -533,8 +533,10 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         pass
     elif len(bounds) == 2 and not hasattr(bounds[0], '__len__'):
         # All bounds are the same
-        L = np.asarray(n*[bounds[0]], dtype=np.float64)
-        U = np.asarray(n*[bounds[1]], dtype=np.float64)
+        a = bounds[0] if bounds[0] is not None else -np.inf
+        b = bounds[1] if bounds[1] is not None else np.inf
+        L = np.asarray(n*[a], dtype=np.float64)
+        U = np.asarray(n*[b], dtype=np.float64)
     else:
         if len(bounds) != n:
             status = -1
@@ -607,8 +609,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 # For each row in the constraint matrices, we take the
                 # coefficient from column i in A,
                 # and subtract the product of that and L[i] to the RHS b
-                beq[:] = beq[:] - Aeq[:, i] * L[i]
-                bub[:] = bub[:] - Aub[:, i] * L[i]
+                beq = beq - Aeq[:, i] * L[i]
+                bub = bub - Aub[:, i] * L[i]
                 # We now have a nonzero initial value for the objective
                 # function as well.
                 f0 = f0 - cc[i] * L[i]
