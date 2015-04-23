@@ -264,7 +264,13 @@ def test_network_flow_limited_capacity():
             [0, p, p, 0, n],
             [0, 0, 0, p, p]]
     b_eq = [-4, 0, 0, 4]
-    res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
+    # Including the callback here ensures the solution can be
+    # calculated correctly, even when phase 1 terminated
+    # with some of the artificial variables as pivots
+    # (i.e. basis[:m] contains elements corresponding to
+    # the artificial variables)
+    res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                  callback=lambda x, **kwargs: None)
     _assert_success(res, desired_fun=14)
 
 
@@ -308,7 +314,10 @@ def test_enzo_example_b():
             [0, 1, 0, 0, 1, 0],
             [0, 0, 1, 0, 0, 1]]
     b_eq = [-0.5, 0.4, 0.3, 0.3, 0.3]
-    res = linprog(c=c, A_eq=A_eq, b_eq=b_eq)
+    # Including the callback here ensures the solution can be
+    # calculated correctly.
+    res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
+                  callback=lambda x, **kwargs: None)
     _assert_success(res, desired_fun=-1.77,
                     desired_x=[0.3, 0.2, 0.0, 0.0, 0.1, 0.3])
 
