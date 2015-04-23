@@ -505,7 +505,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     status = 0
     messages = {0: "Optimization terminated successfully.",
                 1: "Iteration limit reached.",
-                2: "Optimzation failed. Unable to find a feasible"
+                2: "Optimization failed. Unable to find a feasible"
                    " starting point.",
                 3: "Optimization failed. The problem appears to be unbounded.",
                 4: "Optimization failed. Singular matrix encountered."}
@@ -525,7 +525,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     beq = np.ravel(np.asarray(b_eq)) if b_eq is not None else np.empty([0])
     bub = np.ravel(np.asarray(b_ub)) if b_ub is not None else np.empty([0])
 
-    # Analyze the bounds and determine what modifications to me made to
+    # Analyze the bounds and determine what modifications to be made to
     # the constraints in order to accommodate them.
     L = np.zeros(n, dtype=np.float64)
     U = np.ones(n, dtype=np.float64)*np.inf
@@ -533,8 +533,10 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         pass
     elif len(bounds) == 2 and not hasattr(bounds[0], '__len__'):
         # All bounds are the same
-        L = np.asarray(n*[bounds[0]], dtype=np.float64)
-        U = np.asarray(n*[bounds[1]], dtype=np.float64)
+        a = bounds[0] if bounds[0] is not None else -np.inf
+        b = bounds[1] if bounds[1] is not None else np.inf
+        L = np.asarray(n*[a], dtype=np.float64)
+        U = np.asarray(n*[b], dtype=np.float64)
     else:
         if len(bounds) != n:
             status = -1
@@ -607,8 +609,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 # For each row in the constraint matrices, we take the
                 # coefficient from column i in A,
                 # and subtract the product of that and L[i] to the RHS b
-                beq[:] = beq[:] - Aeq[:, i] * L[i]
-                bub[:] = bub[:] - Aub[:, i] * L[i]
+                beq = beq - Aeq[:, i] * L[i]
+                bub = bub - Aub[:, i] * L[i]
                 # We now have a nonzero initial value for the objective
                 # function as well.
                 f0 = f0 - cc[i] * L[i]
@@ -700,7 +702,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         # Add the slack variables to the tableau
         np.fill_diagonal(T[meq:m, n:n+n_slack], 1)
 
-    # Further setup the tableau
+    # Further set up the tableau.
     # If a row corresponds to an equality constraint or a negative b (a lower
     # bound constraint), then an artificial variable is added for that row.
     # Also, if b is negative, first flip the signs in that constraint.
