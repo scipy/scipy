@@ -314,10 +314,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              Function evaluations: 64
              Gradient evaluations: 64
     >>> res.x
-    [ 1.  1.  1.  1.  1.]
-    >>> print res.message
+    array([ 1.  1.  1.  1.  1.])
+    >>> print(res.message)
     Optimization terminated successfully.
-    >>> res.hess
+    >>> res.hess_inv
     [[ 0.00749589  0.01255155  0.02396251  0.04750988  0.09495377]
      [ 0.01255155  0.02510441  0.04794055  0.09502834  0.18996269]
      [ 0.02396251  0.04794055  0.09631614  0.19092151  0.38165151]

@@ -1350,7 +1350,7 @@ class KrylovJacobian(Jacobian):
         preconditioners. For example,
 
         >>> jac = BroydenFirst()
-        >>> kjac = KrylovJacobian(inner_M=jac.inverse).
+        >>> kjac = KrylovJacobian(inner_M=jac.inverse)
 
         If the preconditioner has a method named 'update', it will be called
         as ``update(x, f)`` after each nonlinear step, with ``x`` giving
