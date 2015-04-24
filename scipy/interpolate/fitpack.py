@@ -429,12 +429,15 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     Examples
     --------
 
-    >>> x = linspace(0, 10, 10)
-    >>> y = sin(x)
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import splev, splrep
+    >>> x = np.linspace(0, 10, 10)
+    >>> y = np.sin(x)
     >>> tck = splrep(x, y)
-    >>> x2 = linspace(0, 10, 200)
+    >>> x2 = np.linspace(0, 10, 200)
     >>> y2 = splev(x2, tck)
-    >>> plot(x, y, 'o', x2, y2)
+    >>> plt.plot(x, y, 'o', x2, y2)
+    >>> plt.show()
 
     """
     if task <= 0:
