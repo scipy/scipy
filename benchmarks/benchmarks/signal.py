@@ -5,7 +5,7 @@ from itertools import product
 import numpy as np
 
 try:
-    from scipy.signal import convolve2d, correlate2d, lti, lsim
+    from scipy.signal import convolve2d, correlate2d, lti, lsim, lsim2
 except ImportError:
     pass
 
@@ -46,3 +46,6 @@ class LTI(Benchmark):
 
     def time_lsim(self):
         lsim(self.system, self.u, self.t)
+
+    def time_lsim2(self):
+        lsim2(self.system, self.u, self.t)
