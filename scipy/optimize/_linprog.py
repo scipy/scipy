@@ -305,7 +305,6 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
     """
     nit = nit0
     complete = False
-    solution = np.zeros(T.shape[1]-1, dtype=np.float64)
 
     if phase == 1:
         m = T.shape[0]-2
@@ -313,6 +312,37 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
         m = T.shape[0]-1
     else:
         raise ValueError("Argument 'phase' to _solve_simplex must be 1 or 2")
+
+    if phase == 2:
+        # Check if any artificial variables are still in the basis.
+        # If yes, check if any coefficients from this row and a column
+        # corresponding to one of the non-artificial variable is non-zero.
+        # If found, pivot at this term. If not, start phase 2.
+        # Do this for all artificial variables in the basis.
+        # Ref: "An Introduction to Linear Programming and Game Theory"
+        # by Paul R. Thie, Gerard E. Keough, 3rd Ed,
+        # Chapter 3.7 Redundant Systems (pag 102)
+        for pivrow in [row for row in range(basis.size)
+                       if basis[row] > T.shape[1] - 2]:
+            non_zero_row = [col for col in range(T.shape[1] - 1)
+                            if T[pivrow, col] != 0]
+            if len(non_zero_row) > 0:
+                pivcol = non_zero_row[0]
+                # variable represented by pivcol enters
+                # variable in basis[pivrow] leaves
+                basis[pivrow] = pivcol
+                pivval = T[pivrow][pivcol]
+                T[pivrow, :] = T[pivrow, :] / pivval
+                for irow in range(T.shape[0]):
+                    if irow != pivrow:
+                        T[irow, :] = T[irow, :] - T[pivrow, :]*T[irow, pivcol]
+                nit += 1
+
+    if len(basis[:m]) == 0:
+        solution = np.zeros(T.shape[1] - 1, dtype=np.float64)
+    else:
+        solution = np.zeros(max(T.shape[1] - 1, max(basis[:m]) + 1),
+                            dtype=np.float64)
 
     while not complete:
         # Find the pivot column
