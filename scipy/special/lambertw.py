@@ -73,7 +73,7 @@ def lambertw(z, k=0, tol=1e-8):
     >>> w = lambertw(1)
     >>> w
     (0.56714329040978384+0j)
-    >>> w*exp(w)
+    >>> w * np.exp(w)
     (1.0+0j)
 
     Any branch gives a valid inverse:
