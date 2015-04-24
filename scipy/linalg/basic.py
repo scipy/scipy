@@ -552,7 +552,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     Check by solving one pair of `c` and `b` vectors (cf. ``x[1, 1, :]``):
 
-    >>> solve_circulant(c[1], b[:,1])
+    >>> solve_circulant(c[1], b[1, :])
     array([ 0.856,  0.758,  1.149, -0.412,  0.831])
 
     """
