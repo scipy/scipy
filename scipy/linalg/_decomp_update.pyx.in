@@ -1726,7 +1726,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
                       
     >>> u = np.array([[  6.,  -9.,  -3.], 
     ...               [ -3.,  10.,   1.]])
-    >>> q1, r1 = linalg.qr_insert(q, r, u, 2, 'row', False)
+    >>> q1, r1 = linalg.qr_insert(q, r, u, 2, 'row')
     >>> q1
     array([[-0.25445668,  0.02246245,  0.18146236, -0.72798806,  0.60979671],
            [-0.50891336,  0.23226178, -0.82836478, -0.02837033, -0.00828114],
