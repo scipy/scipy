@@ -131,10 +131,10 @@ class gaussian_kde(object):
 
     >>> from scipy import stats
     >>> def measure(n):
-    >>>     "Measurement model, return two coupled measurements."
-    >>>     m1 = np.random.normal(size=n)
-    >>>     m2 = np.random.normal(scale=0.5, size=n)
-    >>>     return m1+m2, m1-m2
+    ...     "Measurement model, return two coupled measurements."
+    ...     m1 = np.random.normal(size=n)
+    ...     m2 = np.random.normal(scale=0.5, size=n)
+    ...     return m1+m2, m1-m2
 
     >>> m1, m2 = measure(2000)
     >>> xmin = m1.min()
@@ -153,8 +153,7 @@ class gaussian_kde(object):
     Plot the results:
 
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
-    >>> ax = fig.add_subplot(111)
+    >>> fig, ax = plt.subplots()
     >>> ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
     ...           extent=[xmin, xmax, ymin, ymax])
     >>> ax.plot(m1, m2, 'k.', markersize=2)
@@ -459,8 +458,7 @@ class gaussian_kde(object):
         >>> y3 = kde(xs)
 
         >>> import matplotlib.pyplot as plt
-        >>> fig = plt.figure()
-        >>> ax = fig.add_subplot(111)
+        >>> fig, ax = plt.subplots()
         >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo',
         ...         label='Data points (rescaled)')
         >>> ax.plot(xs, y1, label='Scott (default)')

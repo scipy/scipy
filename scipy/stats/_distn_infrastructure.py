@@ -1414,6 +1414,7 @@ class rv_continuous(rv_generic):
     --------
     To create a new Gaussian distribution, we would do the following:
 
+    >>> from scipy.stats import rv_continuous
     >>> class gaussian_gen(rv_continuous):
     ...     "Gaussian distribution"
     ...     def _pdf(self, x):
@@ -2593,10 +2594,11 @@ class rv_discrete(rv_generic):
 
     To create a new discrete distribution, we would do the following:
 
+    >>> from scipy.stats import rv_discrete
     >>> class poisson_gen(rv_discrete):
     ...     "Poisson distribution"
     ...     def _pmf(self, k, mu):
-    ...         return exp(-m) * mu**k / factorial(k)
+    ...         return exp(-mu) * mu**k / factorial(k)
 
     and create an instance::
 

@@ -616,15 +616,15 @@ def mode(a, axis=0):
     Examples
     --------
     >>> a = np.array([[6, 8, 3, 0],
-                      [3, 2, 1, 7],
-                      [8, 1, 8, 4],
-                      [5, 3, 0, 5],
-                      [4, 7, 5, 9]])
+    ...               [3, 2, 1, 7],
+    ...               [8, 1, 8, 4],
+    ...               [5, 3, 0, 5],
+    ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
     (array([[3, 1, 0, 0]]), array([[1, 1, 1, 1]]))
 
-    To get mode of whole array, specify axis=None:
+    To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
     (array([3]), array([3]))
@@ -1896,6 +1896,7 @@ def obrientransform(*args):
 
     Apply the O'Brien transform to the data.
 
+    >>> from scipy.stats import obrientransform
     >>> tx, ty = obrientransform(x, y)
 
     Use `scipy.stats.f_oneway` to apply a one-way ANOVA test to the
@@ -2054,7 +2055,7 @@ def zscore(a, axis=0, ddof=0):
     Examples
     --------
     >>> a = np.array([ 0.7972,  0.0767,  0.4383,  0.7866,  0.8091,  0.1954,
-                       0.6307, 0.6599,  0.1065,  0.0508])
+    ...                0.6307, 0.6599,  0.1065,  0.0508])
     >>> from scipy import stats
     >>> stats.zscore(a)
     array([ 1.1273, -1.247 , -0.0552,  1.0923,  1.1664, -0.8559,  0.5786,
@@ -2064,10 +2065,10 @@ def zscore(a, axis=0, ddof=0):
     to calculate the standard deviation:
 
     >>> b = np.array([[ 0.3148,  0.0478,  0.6243,  0.4608],
-                      [ 0.7149,  0.0775,  0.6072,  0.9656],
-                      [ 0.6341,  0.1403,  0.9759,  0.4064],
-                      [ 0.5918,  0.6948,  0.904 ,  0.3721],
-                      [ 0.0921,  0.2481,  0.1188,  0.1366]])
+    ...               [ 0.7149,  0.0775,  0.6072,  0.9656],
+    ...               [ 0.6341,  0.1403,  0.9759,  0.4064],
+    ...               [ 0.5918,  0.6948,  0.904 ,  0.3721],
+    ...               [ 0.0921,  0.2481,  0.1188,  0.1366]])
     >>> stats.zscore(b, axis=1, ddof=1)
     array([[-0.19264823, -1.28415119,  1.07259584,  0.40420358],
            [ 0.33048416, -1.37380874,  0.04251374,  1.00081084],
@@ -2121,6 +2122,7 @@ def zmap(scores, compare, axis=0, ddof=0):
 
     Examples
     --------
+    >>> from scipy.stats import zmap
     >>> a = [0.5, 2.0, 2.5, 3]
     >>> b = [0, 1, 2, 3, 4]
     >>> zmap(a, b)
@@ -2217,7 +2219,9 @@ def sigmaclip(a, low=4., high=4.):
 
     Examples
     --------
-    >>> a = np.concatenate((np.linspace(9.5,10.5,31), np.linspace(0,20,5)))
+    >>> from scipy.stats import sigmaclip
+    >>> a = np.concatenate((np.linspace(9.5, 10.5, 31),
+    ...                     np.linspace(0, 20, 5)))
     >>> fact = 1.5
     >>> c, low, upp = sigmaclip(a, fact, fact)
     >>> c
@@ -2229,10 +2233,10 @@ def sigmaclip(a, low=4., high=4.):
     >>> upp, c.mean() + fact*c.std(), c.max()
     (10.035355339059327, 10.035355339059327, 10.033333333333333)
 
-    >>> a = np.concatenate((np.linspace(9.5,10.5,11),
-        np.linspace(-100,-50,3)))
+    >>> a = np.concatenate((np.linspace(9.5, 10.5, 11),
+    ...                     np.linspace(-100, -50, 3)))
     >>> c, low, upp = sigmaclip(a, 1.8, 1.8)
-    >>> (c == np.linspace(9.5,10.5,11)).all()
+    >>> (c == np.linspace(9.5, 10.5, 11)).all()
     True
 
     """
@@ -2577,6 +2581,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     We use this table to find the p-value:
 
+    >>> import scipy.stats as stats
     >>> oddsratio, pvalue = stats.fisher_exact([[8, 2], [1, 5]])
     >>> pvalue
     0.0349...
@@ -3871,6 +3876,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     are uniform and given by the mean of the observed frequencies.  Here we
     perform a G-test (i.e. use the log-likelihood ratio statistic):
 
+    >>> from scipy.stats import power_divergence
     >>> power_divergence([16, 18, 16, 14, 12, 12], lambda_='log-likelihood')
     (2.006573162632538, 0.84823476779463769)
 
@@ -4038,6 +4044,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     When just `f_obs` is given, it is assumed that the expected frequencies
     are uniform and given by the mean of the observed frequencies.
 
+    >>> from scipy.stats import chisquare
     >>> chisquare([16, 18, 16, 14, 12, 12])
     (2.0, 0.84914503608460956)
 
