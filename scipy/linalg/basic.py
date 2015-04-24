@@ -63,9 +63,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     --------
     Given `a` and `b`, solve for `x`:
 
-    >>> a = np.array([[3,2,0],[1,-1,0],[0,5,1]])
-    >>> b = np.array([2,4,-1])
-    >>> x = linalg.solve(a,b)
+    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
+    >>> b = np.array([2, 4, -1])
+    >>> from scipy import linalg
+    >>> x = linalg.solve(a, b)
     >>> x
     array([ 2., -2.,  9.])
     >>> np.dot(a, x) == b
@@ -255,7 +256,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of `ab` (shape of a is (6,6), `u` =2)::
+    Example of `ab` (shape of a is (6, 6), `u` =2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -633,11 +634,12 @@ def inv(a, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> from scipy import linalg
     >>> a = np.array([[1., 2.], [3., 4.]])
-    >>> sp.linalg.inv(a)
+    >>> linalg.inv(a)
     array([[-2. ,  1. ],
            [ 1.5, -0.5]])
-    >>> np.dot(a, sp.linalg.inv(a))
+    >>> np.dot(a, linalg.inv(a))
     array([[ 1.,  0.],
            [ 0.,  1.]])
 
@@ -718,10 +720,11 @@ def det(a, overwrite_a=False, check_finite=True):
 
     Examples
     --------
-    >>> a = np.array([[1,2,3],[4,5,6],[7,8,9]])
+    >>> from scipy import linalg
+    >>> a = np.array([[1,2,3], [4,5,6], [7,8,9]])
     >>> linalg.det(a)
     0.0
-    >>> a = np.array([[0,2,3],[4,5,6],[7,8,9]])
+    >>> a = np.array([[0,2,3], [4,5,6], [7,8,9]])
     >>> linalg.det(a)
     3.0
 
@@ -874,11 +877,12 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     Examples
     --------
+    >>> from scipy import linalg
     >>> a = np.random.randn(9, 6)
     >>> B = linalg.pinv(a)
-    >>> np.allclose(a, dot(a, dot(B, a)))
+    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
     True
-    >>> np.allclose(B, dot(B, dot(a, B)))
+    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
     True
 
     """
@@ -933,11 +937,12 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     Examples
     --------
+    >>> from scipy import linalg
     >>> a = np.random.randn(9, 6)
     >>> B = linalg.pinv2(a)
-    >>> np.allclose(a, dot(a, dot(B, a)))
+    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
     True
-    >>> np.allclose(B, dot(B, dot(a, B)))
+    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
     True
 
     """
@@ -1006,7 +1011,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
 
     Examples
     --------
-    >>> import numpy as np
+    >>> from scipy.linalg import pinvh
     >>> a = np.random.randn(9, 6)
     >>> a = np.dot(a, a.T)
     >>> B = pinvh(a)
