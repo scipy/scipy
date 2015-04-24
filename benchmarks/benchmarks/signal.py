@@ -41,7 +41,7 @@ class Convolve2D(Benchmark):
 class LTI(Benchmark):
     def setup(self):
         self.system = lti(1.0, [1, 0, 1])
-        self.t = np.arange(0, 1000, 0.5)
+        self.t = np.arange(0, 100, 0.5)
         self.u = np.sin(2 * self.t)
 
     def time_lsim(self):
