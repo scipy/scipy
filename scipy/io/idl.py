@@ -596,7 +596,8 @@ def _replace_heap(variable, heap):
                 if variable.index in heap:
                     variable = heap[variable.index]
                 else:
-                    warnings.warn("Variable referenced by pointer not found in heap: variable will be set to None")
+                    warnings.warn("Variable referenced by pointer not found "
+                                  "in heap: variable will be set to None")
                     variable = None
 
         replace, new = _replace_heap(variable, heap)
