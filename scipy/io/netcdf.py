@@ -204,7 +204,7 @@ class netcdf_file(object):
 
         >>> from scipy.io import netcdf
         >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
-        >>>     print(f.history)
+        ...     print(f.history)
         Created for a test
 
     """
