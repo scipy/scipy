@@ -2557,12 +2557,12 @@ def fisher_exact(table, alternative='two-sided'):
 
     Notes
     -----
-    The calculated odds ratio is different from the one R uses. In R language,
-    this implementation returns the (more common) "unconditional Maximum
+    The calculated odds ratio is different from the one R uses. This scipy
+    implementation returns the (more common) "unconditional Maximum
     Likelihood Estimate", while R uses the "conditional Maximum Likelihood
     Estimate".
 
-    For tables with large numbers the (inexact) chi-square test implemented
+    For tables with large numbers, the (inexact) chi-square test implemented
     in the function `chi2_contingency` can also be used.
 
     Examples
@@ -2582,8 +2582,8 @@ def fisher_exact(table, alternative='two-sided'):
     0.0349...
 
     The probability that we would observe this or an even more imbalanced ratio
-    by chance is about 3.5%.  A commonly used significance level is 5%, if we
-    adopt that we can therefore conclude that our observed imbalance is
+    by chance is about 3.5%.  A commonly used significance level is 5%--if we
+    adopt that, we can therefore conclude that our observed imbalance is
     statistically significant; whales prefer the Atlantic while sharks prefer
     the Indian ocean.
 
