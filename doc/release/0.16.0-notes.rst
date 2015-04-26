@@ -15,7 +15,14 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.15.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.6, 2.7 or 3.2-3.3 and NumPy 1.5.1 or greater.
+This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
+
+Highlights of this release include:
+
+- A Cython API for BLAS/LAPACK in `scipy.linalg`
+- A new benchmark suite.  It's now straightforward to add new benchmarks, and
+  they're routinely included with performance enhancement PRs.
+- Support for the second order sections (SOS) format in `scipy.signal`.
 
 
 New features
@@ -32,23 +39,35 @@ details, see ``benchmarks/README.rst``.
 `scipy.linalg` improvements
 ---------------------------
 
+A full set of Cython wrappers for BLAS and LAPACK has been added in the
+modules `scipy.linalg.cython_blas` and `scipy.linalg.cython_lapack`.
+In Cython, these wrappers can now be cimported from their corresponding
+modules and used without linking directly against BLAS or LAPACK.
+
+The functions `scipy.linalg.qr_delete`, `scipy.linalg.qr_insert` and
+`scipy.linalg.qr_update` for updating QR decompositions were added.
+
 The function `scipy.linalg.solve_circulant` solves a linear system with
 a circulant coefficient matrix.
 
 The function `scipy.linalg.invpascal` computes the inverse of a Pascal matrix.
 
-Added wrapper for potentially useful LAPACK function `*lasd4`. It computes the
-square root of the i-th updated eigenvalue of a positive symmetric rank-one
+The function `scipy.linalg.solve_toeplitz`, a Levinson-Durbin Toeplitz solver,
+was added.
+
+Added wrapper for potentially useful LAPACK function ``*lasd4``.  It computes
+the square root of the i-th updated eigenvalue of a positive symmetric rank-one
 modification to a positive diagonal matrix. See its LAPACK documentation and
 unit tests for it to get more info.
 
 Added two extra wrappers for LAPACK least-square solvers. Namely, they are 
-*gelsd and *gelsy.
+``*gelsd`` and ``*gelsy``.
 
-A full set of Cython wrappers for BLAS and LAPACK has been added in the
-modules `scipy.linalg.cython_blas` and `scipy.linalg.cython_lapack`.
-In Cython, these wrappers can now be cimported from their corresponding
-modules and used without linking directly against BLAS or LAPACK.
+Wrappers for the LAPACK ``*lange`` functions, which calculate various matrix
+norms, were added.
+
+Wrappers for ``*gtsv`` and ``*ptsv``, which solve ``A*X = B`` for tri-diagonal
+matrix ``A``, were added.
 
 `scipy.signal` improvements
 ---------------------------
@@ -79,6 +98,15 @@ Tukey window was added as `scipy.signal.tukey`.
 The function for computing digital filter group delay was added as
 `scipy.signal.group_delay`.
 
+`scipy.sparse` improvements
+---------------------------
+
+The function `scipy.sparse.norm`, which computes sparse matrix norms, was
+added.
+
+The function `scipy.sparse.random`, which allows to draw random variates from
+an arbitrary distribution, was added.
+
 `scipy.spatial` improvements
 ----------------------------
 
@@ -93,6 +121,12 @@ The Wishart distribution and its inverse have been added, as
 
 The Exponentially Modified Normal distribution has been
 added as `scipy.stats.exponnorm`.
+
+The Generalized Normal distribution has been added as `scipy.stats.gennorm`.
+
+All distributions now contain a ``random_state`` property and allow specifying a
+specific ``numpy.random.RandomState`` random number generator when generating
+random variates.
 
 `scipy.optimize` improvements
 -----------------------------
@@ -137,6 +171,10 @@ and ``randwppf`` have been removed from `scipy.stats`.
 
 Other changes
 =============
+
+The version numbering for development builds has been updated to comply with PEP 440.
+
+Building with ``python setup.py develop`` is now supported.
 
 
 Authors
