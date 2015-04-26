@@ -14,14 +14,25 @@ the output of this script does need to be checked manually.  In some cases
 objects are left out of the refguide for a good reason (it's an alias of
 another function, or deprecated, or ...)
 
+Another use of this helper script is to check validity of code samples
+in docstrings. This is different from doctesting [we do not aim to have
+scipy docstrings doctestable!], this is just to make sure that code in
+docstrings is valid python::
+
+    $ python refguide_check.py --check_docs optimize
+
 """
+from __future__ import print_function
 
 import sys
 import re
 import copy
 import inspect
+import doctest
 
 from argparse import ArgumentParser, REMAINDER
+
+import numpy as np
 
 import scipy
 from scipy import (cluster, constants, fftpack, integrate, interpolate, io,
@@ -105,18 +116,53 @@ def report(all, funcnames, module_name):
                 print(name)
 
 
+def check_docstrings(module):
+    """Check the code in the docstrings of the module's public symbols.
+    """
+
+    class DTRunner(doctest.DocTestRunner):
+        def report_failure(self, out, test, example, got):
+            # do not complain if output does not match
+            pass
+
+    # namespace to run examples in
+    ns = {'np': np,
+          'assert_allclose': np.testing.assert_allclose,
+          'assert_equal': np.testing.assert_equal}
+
+    for name in get_all_dict(module):
+        obj = getattr(module, name)
+
+        finder = doctest.DocTestFinder()
+        tests = finder.find(obj, name, globs=ns)
+
+        print(name)
+
+        runner = DTRunner()
+        for t in tests:
+            # do not show MPL figures
+            for j, ex in enumerate(t.examples):
+                if 'show()' in ex.source:
+                    t.examples[j].source = ex.source.replace('show()', 'show')
+            runner.run(t)
+
+
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
     parser.add_argument("module_name", metavar="ARGS", default=[],
                         nargs=REMAINDER, help="Valid Scipy submodule name")
+    parser.add_argument("--check_docs", action="store_true")
     args = parser.parse_args(argv)
 
     module_name = args.module_name[0]
     module = getattr(scipy, module_name)
 
-    funcnames = find_funcnames(module)
-    all = get_all_dict(module)
-    report(all, funcnames, module_name)
+    if args.check_docs:
+        check_docstrings(module)
+    else:
+        funcnames = find_funcnames(module)
+        all = get_all_dict(module)
+        report(all, funcnames, module_name)
 
 
 if __name__ == '__main__':
