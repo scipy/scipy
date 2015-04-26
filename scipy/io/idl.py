@@ -26,6 +26,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+
 from __future__ import division, print_function, absolute_import
 
 import struct
@@ -592,7 +593,12 @@ def _replace_heap(variable, heap):
             if variable.index == 0:
                 variable = None
             else:
-                variable = heap[variable.index]
+                if variable.index in heap:
+                    variable = heap[variable.index]
+                else:
+                    warnings.warn("Variable referenced by pointer not found "
+                                  "in heap: variable will be set to None")
+                    variable = None
 
         replace, new = _replace_heap(variable, heap)
 
