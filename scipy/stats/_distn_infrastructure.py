@@ -1956,7 +1956,8 @@ class rv_continuous(rv_generic):
     def _fitstart(self, data, args=None):
         if args is None:
             args = (1.0,)*self.numargs
-        return args + self.fit_loc_scale(data, *args)
+        loc, scale = self._fit_loc_scale_support(data, *args)
+        return args + (loc, scale)
 
     # Return the (possibly reduced) function to optimize in order to find MLE
     #  estimates for the .fit method
@@ -2129,6 +2130,70 @@ class rv_continuous(rv_generic):
             vals = restore(args, vals)
         vals = tuple(vals)
         return vals
+
+    def _fit_loc_scale_support(self, data, *args):
+        """
+        Estimate loc and scale parameters from data accounting for support.
+
+        Parameters
+        ----------
+        data : array_like
+            Data to fit.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+
+        Returns
+        -------
+        Lhat : float
+            Estimated location parameter for the data.
+        Shat : float
+            Estimated scale parameter for the data.
+
+        """
+        data = np.asarray(data)
+
+        # Estimate location and scale according to the method of moments.
+        loc_hat, scale_hat = self.fit_loc_scale(data, *args)
+
+        # Compute the support according to the shape parameters.
+        self._argcheck(*args)
+        a, b = self.a, self.b
+        support_width = b - a
+
+        # If the support is empty then return the moment-based estimates.
+        if support_width <= 0:
+            return loc_hat, scale_hat
+
+        # Compute the proposed support according to the loc and scale estimates.
+        a_hat = loc_hat + a * scale_hat
+        b_hat = loc_hat + b * scale_hat
+
+        # Use the moment-based estimates if they are compatible with the data.
+        data_a = np.min(data)
+        data_b = np.max(data)
+        if a_hat < data_a and data_b < b_hat:
+            return loc_hat, scale_hat
+
+        # Otherwise find other estimates that are compatible with the data.
+        data_width = data_b - data_a
+        rel_margin = 0.1
+        margin = data_width * rel_margin
+
+        # For a finite interval, both the location and scale
+        # should have interesting values.
+        if support_width < np.inf:
+            loc_hat = (data_a - a) - margin
+            scale_hat = (data_width + 2 * margin) / support_width
+            return loc_hat, scale_hat
+
+        # For a one-sided interval, use only an interesting location parameter.
+        if a > -np.inf:
+            return (data_a - a) - margin, 1
+        elif b < np.inf:
+            return (data_b - b) + margin, 1
+        else:
+            raise RuntimeError
 
     def fit_loc_scale(self, data, *args):
         """
