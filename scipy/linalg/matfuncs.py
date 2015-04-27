@@ -593,6 +593,28 @@ def funm(A, func, disp=True):
     array([[  4.,  15.],
            [  5.,  19.]])
 
+    Notes
+    -----
+    This function implements the general algorithm based on Schur decomposition
+    (Algorithm 9.1.1. in [1]_).
+
+    If the input matrix is known to be diagonalizable, then relying on the
+    eigendecomposition is likely to be faster. For example, if your matrix is
+    Hermitian, you can do
+
+    >>> from scipy.linalg import eigh
+    >>> def funm_herm(a, func, check_finite=False):
+    ...     w, v = eigh(a, check_finite=check_finite)
+    ...     ## if you further know that your matrix is positive semidefinite,
+    ...     ## you can optionally guard against precision errors by doing
+    ...     # w = np.maximum(w, 0)
+    ...     w = func(w)
+    ...     return (v * w).dot(v.conj().T)
+
+    References
+    ----------
+    .. [1] Gene H. Golub, Charles F. van Loan, Matrix Computations 4th ed.
+
     """
     A = _asarray_square(A)
     # Perform Shur decomposition (lapack ?gees)
