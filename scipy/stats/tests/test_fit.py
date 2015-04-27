@@ -19,7 +19,6 @@ thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 failing_fits = [
         'burr',
-        'chi',
         'chi2',
         'gausshyper',
         'genexpon',
