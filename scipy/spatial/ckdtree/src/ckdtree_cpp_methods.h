@@ -137,7 +137,7 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
     */
     
     npy_intp i;
-    npy_float64 r, z;
+    npy_float64 r;
     r = 0;
     if (NPY_LIKELY(p==2.)) {
         /*
