@@ -3,9 +3,9 @@ HookFile: bscript
 Library:
     Extension: ckdtree
         Sources: 
-            ckdtree/ckdtree.cxx
-            ckdtree/src/ckdtree_query.cxx
-            ckdtree/src/ckdtree_globals.cxx
+            ckdtree/ckdtree.cxx,
+            ckdtree/src/ckdtree_query.cxx,
+            ckdtree/src/ckdtree_globals.cxx,
             ckdtree/src/ckdtree_cpp_exc.cxx
     Extension: _distance_wrap
         Sources: src/distance_wrap.c
