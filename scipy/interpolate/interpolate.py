@@ -706,10 +706,12 @@ class _PPolyBase(object):
         self._ensure_c_contiguous()
         self._evaluate(x, nu, extrapolate, out)
         out = out.reshape(x_shape + self.c.shape[2:])
-        # transpose to move the calculated values to the interpolation axis
-        l = list(range(out.ndim))
-        l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
-        return out.transpose(l)
+        if self.axis != 0:
+            # transpose to move the calculated values to the interpolation axis
+            l = list(range(out.ndim))
+            l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
+            out = out.transpose(l)
+        return out
 
 
 class PPoly(_PPolyBase):
