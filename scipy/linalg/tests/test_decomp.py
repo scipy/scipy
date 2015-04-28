@@ -900,6 +900,11 @@ class TestSVD(TestCase):
 
 class TestSVDVals(TestCase):
 
+    def test_empty(self):
+        for a in [[]], np.empty((2, 0)), np.ones((0, 3)):
+            s = svdvals(a)
+            assert_equal(s, np.empty(0))
+
     def test_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
         s = svdvals(a)

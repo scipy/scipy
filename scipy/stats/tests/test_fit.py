@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import numpy as np
-from numpy.testing import dec
+from numpy.testing import dec, assert_allclose
 
 from scipy import stats
 
@@ -13,12 +13,12 @@ from test_continuous_basic import distcont
 # verifies that the estimate and true values don't differ by too much
 
 fit_sizes = [1000, 5000]  # sample sizes to try
+
 thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 failing_fits = [
         'burr',
-        'chi',
         'chi2',
         'gausshyper',
         'genexpon',
@@ -95,6 +95,19 @@ def check_cont_fit(distname,arg):
         txt += 'estimated: %s\n' % str(est)
         txt += 'diff     : %s\n' % str(diff)
         raise AssertionError('fit not very good in %s\n' % distfn.name + txt)
+
+
+def _check_loc_scale_mle_fit(name, data, desired, atol=None):
+    d = getattr(stats, name)
+    actual = d.fit(data)[-2:]
+    assert_allclose(actual, desired, atol=atol,
+                    err_msg='poor mle fit of (loc, scale) in %s' % name)
+
+
+def test_non_default_loc_scale_mle_fit():
+    data = np.array([1.01, 1.78, 1.78, 1.78, 1.88, 1.88, 1.88, 2.00])
+    yield _check_loc_scale_mle_fit, 'uniform', data, [1.01, 0.99], 1e-3
+    yield _check_loc_scale_mle_fit, 'expon', data, [1.01, 0.73875], 1e-3
 
 
 if __name__ == "__main__":

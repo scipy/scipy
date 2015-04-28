@@ -311,3 +311,26 @@ class Getset(Benchmark):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', SparseEfficiencyWarning)
             return self._timeit(kernel, sparsity_pattern == 'different')
+
+
+class NullSlice(Benchmark):
+    params = [[0.05, 0.01]]
+    param_names = ['density']
+
+    def setup(self, density):
+        n = 100000
+        k = 1000
+        format = 'csr'
+        self.X = sparse.rand(n, k, format=format, density=density)
+
+    def time_3_rows(self, density):
+        self.X[[0, 100, 105], :]
+
+    def time_10000_rows(self, density):
+        self.X[np.arange(10000), :]
+
+    def time_3_cols(self, density):
+        self.X[:, [0, 100, 105]]
+
+    def time_100_cols(self, density):
+        self.X[:, np.arange(100)]

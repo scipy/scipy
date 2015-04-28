@@ -339,11 +339,16 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     else:
         warnflag = 2
 
-    # these two portions of the workspace are described in the mainlb
+    # These two portions of the workspace are described in the mainlb
     # subroutine in lbfgsb.f. See line 363.
     s = wa[0: m*n].reshape(m, n)
     y = wa[m*n: 2*m*n].reshape(m, n)
-    n_corrs = min(n_iterations-1, maxcor)
+
+    # See lbfgsb.f line 160 for this portion of the workspace.
+    # isave(31) = the total number of BFGS updates prior the current iteration;
+    n_bfgs_updates = isave[30]
+
+    n_corrs = min(n_bfgs_updates, maxcor)
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
     return OptimizeResult(fun=f, jac=g, nfev=n_function_evals[0],

@@ -947,5 +947,47 @@ class TestOptimizeResultAttributes(TestCase):
                 assert_(hasattr(res, attribute))
 
 
+class TestBrute:
+    # Test the "brute force" method
+    def setUp(self):
+        self.params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
+        self.rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
+        self.solution = np.array([-1.05665192, 1.80834843])
+
+    def f1(self, z, *params):
+        x, y = z
+        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+        return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
+
+    def f2(self, z, *params):
+        x, y = z
+        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+        return (-g*np.exp(-((x-h)**2 + (y-i)**2) / scale))
+
+    def f3(self, z, *params):
+        x, y = z
+        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+        return (-j*np.exp(-((x-k)**2 + (y-l)**2) / scale))
+
+    def func(self, z, *params):
+        return self.f1(z, *params) + self.f2(z, *params) + self.f3(z, *params)
+
+    def test_brute(self):
+        # test fmin
+        resbrute = optimize.brute(self.func, self.rranges, args=self.params,
+                                  full_output=True, finish=optimize.fmin)
+        assert_allclose(resbrute[0], self.solution, atol=1e-3)
+        assert_allclose(resbrute[1], self.func(self.solution, *self.params),
+                        atol=1e-3)
+
+        # test minimize
+        resbrute = optimize.brute(self.func, self.rranges, args=self.params,
+                                  disp=True, full_output=True,
+                                  finish=optimize.minimize)
+        assert_allclose(resbrute[0], self.solution, atol=1e-3)
+        assert_allclose(resbrute[1], self.func(self.solution, *self.params),
+                        atol=1e-3)
+
+
 if __name__ == "__main__":
     run_module_suite()

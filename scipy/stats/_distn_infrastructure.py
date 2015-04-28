@@ -1956,18 +1956,32 @@ class rv_continuous(rv_generic):
     def _fitstart(self, data, args=None):
         if args is None:
             args = (1.0,)*self.numargs
-        return args + self.fit_loc_scale(data, *args)
+        loc, scale = self._fit_loc_scale_support(data, *args)
+        return args + (loc, scale)
 
     # Return the (possibly reduced) function to optimize in order to find MLE
     #  estimates for the .fit method
     def _reduce_func(self, args, kwds):
+        # First of all, convert fshapes params to fnum: eg for stats.beta,
+        # shapes='a, b'. To fix `a`, can specify either `f1` or `fa`.
+        # Convert the latter into the former.
+        if self.shapes:
+            fshapes = ['f%s' % s for s in self.shapes.replace(',', ' ').split()]
+            for j, fs in enumerate(fshapes):
+                if fs in kwds:
+                    key = 'f%d' % j
+                    if key in kwds:
+                        raise ValueError("Cannot specify both %s and %s" %
+                                         (fs, key))
+                    else:
+                        kwds.update({key: kwds[fs]})
+
         args = list(args)
         Nargs = len(args)
         fixedn = []
-        index = list(range(Nargs))
         names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = []
-        for n, key in zip(index, names):
+        for n, key in enumerate(names):
             if key in kwds:
                 fixedn.append(n)
                 args[n] = kwds[key]
@@ -1978,7 +1992,7 @@ class rv_continuous(rv_generic):
             func = self._penalized_nnlf
             restore = None
         else:
-            if len(fixedn) == len(index):
+            if len(fixedn) == Nargs:
                 raise ValueError(
                     "All parameters fixed. There is nothing to optimize.")
 
@@ -2027,6 +2041,9 @@ class rv_continuous(rv_generic):
             parameters fixed:
 
             - f0...fn : hold respective shape parameters fixed.
+              Alternatively, shape parameters to fix can be specified by name.
+              For example, if ``self.shapes == "a, b"``, ``fa`` is equivalent to
+              ``f0`` and ``fb`` is equivalent to ``f1``.
 
             - floc : hold location parameter fixed to specified value.
 
@@ -2050,6 +2067,37 @@ class rv_continuous(rv_generic):
         penalty applied for samples outside of range of the distribution. The
         returned answer is not guaranteed to be the globally optimal MLE, it
         may only be locally optimal, or the optimization may fail altogether.
+
+
+        Examples
+        --------
+
+        Generate some data to fit: draw random variates from the `beta`
+        distribution
+
+        >>> from scipy.stats import beta
+        >>> a, b = 1., 2.
+        >>> x = beta.rvs(a, b, size=1000)
+
+        Now we can fit all four parameters (``a``, ``b``, ``loc`` and ``scale``):
+
+        >>> a1, b1, loc1, scale1 = beta.fit(x)        
+
+        We can also use some prior knowledge about the dataset: let's keep 
+        ``loc`` and ``scale`` fixed:
+
+        >>> a1, b1, loc1, scale1 = beta.fit(x, floc=0, fscale=1)
+        >>> loc1, scale1
+        (0, 1)
+
+        We can also keep shape parameters fixed by using ``f``-keywords. To
+        keep the zero-th shape parameter ``a`` equal 1, use ``f0=1`` or,
+        equivalently, ``fa=1``:
+
+        >>> a1, b1, loc1, scale1 = beta.fit(x, fa=1, floc=0, fscale=1)
+        >>> a1
+        1
+
         """
         Narg = len(args)
         if Narg > self.numargs:
@@ -2082,6 +2130,70 @@ class rv_continuous(rv_generic):
             vals = restore(args, vals)
         vals = tuple(vals)
         return vals
+
+    def _fit_loc_scale_support(self, data, *args):
+        """
+        Estimate loc and scale parameters from data accounting for support.
+
+        Parameters
+        ----------
+        data : array_like
+            Data to fit.
+        arg1, arg2, arg3,... : array_like
+            The shape parameter(s) for the distribution (see docstring of the
+            instance object for more information).
+
+        Returns
+        -------
+        Lhat : float
+            Estimated location parameter for the data.
+        Shat : float
+            Estimated scale parameter for the data.
+
+        """
+        data = np.asarray(data)
+
+        # Estimate location and scale according to the method of moments.
+        loc_hat, scale_hat = self.fit_loc_scale(data, *args)
+
+        # Compute the support according to the shape parameters.
+        self._argcheck(*args)
+        a, b = self.a, self.b
+        support_width = b - a
+
+        # If the support is empty then return the moment-based estimates.
+        if support_width <= 0:
+            return loc_hat, scale_hat
+
+        # Compute the proposed support according to the loc and scale estimates.
+        a_hat = loc_hat + a * scale_hat
+        b_hat = loc_hat + b * scale_hat
+
+        # Use the moment-based estimates if they are compatible with the data.
+        data_a = np.min(data)
+        data_b = np.max(data)
+        if a_hat < data_a and data_b < b_hat:
+            return loc_hat, scale_hat
+
+        # Otherwise find other estimates that are compatible with the data.
+        data_width = data_b - data_a
+        rel_margin = 0.1
+        margin = data_width * rel_margin
+
+        # For a finite interval, both the location and scale
+        # should have interesting values.
+        if support_width < np.inf:
+            loc_hat = (data_a - a) - margin
+            scale_hat = (data_width + 2 * margin) / support_width
+            return loc_hat, scale_hat
+
+        # For a one-sided interval, use only an interesting location parameter.
+        if a > -np.inf:
+            return (data_a - a) - margin, 1
+        elif b < np.inf:
+            return (data_b - b) + margin, 1
+        else:
+            raise RuntimeError
 
     def fit_loc_scale(self, data, *args):
         """

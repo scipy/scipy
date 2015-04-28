@@ -96,21 +96,21 @@ def test_vector_constraints():
     fsol = 0.8
 
     # testing fmin_cobyla
-    sol = fmin_cobyla(fun, x0, cons_list, iprint=0)
+    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5, iprint=0)
     assert_allclose(sol, xsol, atol=1e-4)
 
-    sol = fmin_cobyla(fun, x0, fmin, iprint=0)
+    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5, iprint=0)
     assert_allclose(fun(sol), 1, atol=1e-4)
 
     # testing minimize
     constraints = [{'type': 'ineq', 'fun': cons} for cons in cons_list]
-    sol = minimize(fun, x0, constraints=constraints)
+    sol = minimize(fun, x0, constraints=constraints, tol=1e-5)
     assert_allclose(sol.x, xsol, atol=1e-4)
     assert_(sol.success, sol.message)
     assert_allclose(sol.fun, fsol, atol=1e-4)
 
     constraints = {'type': 'ineq', 'fun': fmin}
-    sol = minimize(fun, x0, constraints=constraints)
+    sol = minimize(fun, x0, constraints=constraints, tol=1e-5)
     assert_allclose(sol.fun, 1, atol=1e-4)
 
 
