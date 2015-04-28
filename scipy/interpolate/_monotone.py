@@ -10,7 +10,7 @@ __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
            "Akima1DInterpolator"]
 
 
-class PchipInterpolator(object):
+class PchipInterpolator(BPoly):
     """PCHIP 1-d monotonic cubic interpolation
 
     x and y are arrays of values used to approximate some function f,
@@ -62,6 +62,8 @@ class PchipInterpolator(object):
     where h_k is the spacing between x_k and x_{k+1}.
 
     """
+    __slots__ = ('c', 'x', 'extrapolate', 'axis')
+
     def __init__(self, x, y, axis=0, extrapolate=None):
         x = np.asarray(x)
         if not np.issubdtype(x.dtype, np.inexact):
@@ -72,16 +74,17 @@ class PchipInterpolator(object):
             y = y.astype(float)
 
         axis = axis % y.ndim
-        
+        self.axis = axis
+
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         yp = np.rollaxis(y, axis)
 
         dk = self._find_derivatives(xp, yp)
         data = np.hstack((yp[:, None, ...], dk[:, None, ...]))
 
-        self._bpoly = BPoly.from_derivatives(x, data, orders=None,
+        _b = BPoly.from_derivatives(x, data, orders=None)
+        super(PchipInterpolator, self).__init__(_b.c, _b.x,
                 extrapolate=extrapolate)
-        self.axis = axis
 
     def __call__(self, x, der=0, extrapolate=None):
         """
@@ -104,7 +107,7 @@ class PchipInterpolator(object):
             the interpolation axis in the original array with the shape of x.
 
         """
-        out = self._bpoly(x, der, extrapolate)
+        out = super(PchipInterpolator, self).__call__(x, der, extrapolate)
         return self._reshaper(x, out)
 
     def derivative(self, der=1):
@@ -123,10 +126,9 @@ class PchipInterpolator(object):
         of this polynomial.
 
         """
-        t = object.__new__(self.__class__)
-        t.axis = self.axis
-        t._bpoly = self._bpoly.derivative(der)
-        return t
+        out = super(PchipInterpolator, self).derivative(der)
+        out.axis = self.axis
+        return out
 
     def roots(self):
         """
@@ -334,7 +336,7 @@ class Akima1DInterpolator(PPoly):
                 "yet implemented")
 
     # These are inherited from PPoly, but they do not produce an Akima
-    # interpolor. Hence stub them out.
+    # interpolator. Hence stub them out.
     @classmethod    
     def from_spline(cls, tck, extrapolate=None):
         raise NotImplementedError("This method does not make sense for "
