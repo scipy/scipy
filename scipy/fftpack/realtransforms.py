@@ -1,5 +1,5 @@
 """
-Real spectrum tranforms (DCT, DST, MDCT)
+Real spectrum transforms (DCT, DST, MDCT)
 """
 from __future__ import division, print_function, absolute_import
 
@@ -223,6 +223,9 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     else:
         raise NotImplementedError("Padding/truncating not yet implemented")
 
+    if np.issubdtype(tmp.dtype, np.integer):
+        tmp = tmp.astype(np.float)
+
     if tmp.dtype == np.double:
         if type == 1:
             f = _fftpack.ddct1
@@ -436,6 +439,9 @@ def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
         n = tmp.shape[axis]
     else:
         raise NotImplementedError("Padding/truncating not yet implemented")
+
+    if np.issubdtype(tmp.dtype, np.integer):
+        tmp = tmp.astype(np.float)
 
     if tmp.dtype == np.double:
         if type == 1:
