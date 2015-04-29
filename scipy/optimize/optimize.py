@@ -439,7 +439,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     nonzdelt = 0.05
     zdelt = 0.00025
     if step is not None:
-        step, _= numpy.broadcast_arrays(step,x0)
+        step, _ = numpy.broadcast_arrays(step,x0)
     for k in range(0, N):
         y = numpy.array(x0, copy=True)
         if step is not None and step[k]:
