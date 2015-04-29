@@ -68,7 +68,7 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
     'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
     'cosine', 'kstwobign', 'truncnorm', 'mielke', 'recipinvgauss', 'levy',
     'johnsonsu', 'levy_l', 'powernorm', 'wrapcauchy',
-    'johnsonsb', 'truncexpon', 'rice', 'invgauss', 'invgamma',
+    'johnsonsb', 'truncexpon', 'invgauss', 'invgamma',
     'powerlognorm']
 
 distmiss = [[dist,args] for dist,args in distcont if dist in distmissing]
