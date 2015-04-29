@@ -41,7 +41,8 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
          'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
-         'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm']
+         'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
+         'rice']
 
 
 def _assert_hasattr(a, b, msg=None):
