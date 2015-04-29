@@ -41,7 +41,8 @@ Airy functions
    airye    -- Exponentially scaled Airy functions
    ai_zeros -- [+]Zeros of Airy functions Ai(x) and Ai'(x)
    bi_zeros -- [+]Zeros of Airy functions Bi(x) and Bi'(x)
-
+   itairy   --
+   
 
 Elliptic Functions and Integrals
 --------------------------------
@@ -196,8 +197,12 @@ Raw Statistical Functions
    bdtr       -- Sum of terms 0 through k of the binomial pdf.
    bdtrc      -- Sum of terms k+1 through n of the binomial pdf.
    bdtri      -- Inverse of bdtr
+   bdtrik     --
+   bdtrin     --
    btdtr      -- Integral from 0 to x of beta pdf.
    btdtri     -- Quantiles of beta distribution
+   btdtria    --
+   btdtrib    --
    fdtr       -- Integral from 0 to x of F pdf.
    fdtrc      -- Integral from x to infinity under F pdf.
    fdtri      -- Inverse of fdtrc
@@ -209,6 +214,8 @@ Raw Statistical Functions
    nbdtr      -- Sum of terms 0 through k of the negative binomial pdf.
    nbdtrc     -- Sum of terms k+1 to infinity under negative binomial pdf.
    nbdtri     -- Inverse of nbdtr
+   nbdtrik    --
+   nbdtrin    --
    ncfdtr     -- CDF of non-central t distribution.
    ncfdtridfd -- Find degrees of freedom (denominator) of noncentral F distribution.
    ncfdtridfn -- Find degrees of freedom (numerator) of noncentral F distribution.
@@ -223,14 +230,21 @@ Raw Statistical Functions
    pdtr       -- Sum of terms 0 through k of the Poisson pdf.
    pdtrc      -- Sum of terms k+1 to infinity of the Poisson pdf.
    pdtri      -- Inverse of pdtr
+   pdtrik     --
    stdtr      -- Integral from -infinity to t of the Student-t pdf.
    stdtridf   --
    stdtrit    --
    chdtr      -- Integral from 0 to x of the Chi-square pdf.
    chdtrc     -- Integral from x to infnity of Chi-square pdf.
    chdtri     -- Inverse of chdtrc.
+   chdtriv    --
    ndtr       -- Integral from -infinity to x of standard normal pdf
+   log_ndtr   -- Logarithm of integral from -infinity to x of standard normal pdf
    ndtri      -- Inverse of ndtr (quantiles)
+   chndtr     --
+   chndtridf  --
+   chndtrinc  --
+   chndtrix   --
    smirnov    -- Kolmogorov-Smirnov complementary CDF for one-sided test statistic (Dn+ or Dn-)
    smirnovi   -- Inverse of smirnov.
    kolmogorov -- The complementary CDF of the (scaled) two-sided test statistic (Kn*) valid for large n.
