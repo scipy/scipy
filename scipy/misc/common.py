@@ -327,6 +327,11 @@ def lena():
     lena : ndarray
         Lena image
 
+    Notes
+    -----
+    Though safe for work most places, this sexualized image is drawn from
+    Playboy and makes some viewers uncomfortable.
+
     Examples
     --------
     >>> import scipy.misc
