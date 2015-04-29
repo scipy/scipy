@@ -8,7 +8,7 @@ __all__ = ['dct', 'idct', 'dst', 'idst']
 
 import numpy as np
 from scipy.fftpack import _fftpack
-from scipy.fftpack.basic import _datacopied
+from scipy.fftpack.basic import _datacopied, _fix_shape, _asfarray
 
 import atexit
 atexit.register(_fftpack.destroy_ddct1_cache)
@@ -33,13 +33,16 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3}, optional
         Type of the DCT (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis over which to compute the transform.
+        Axis along which the dct is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -146,13 +149,16 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3}, optional
         Type of the DCT (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis over which to compute the transform.
+        Axis along which the idct is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -194,6 +200,59 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     return _dct(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 
+def _get_dct_fun(type, dtype):
+    try:
+        name = {'float64':'ddct%d', 'float32':'dct%d'}[dtype.name]
+    except KeyError:
+        raise ValueError("dtype %s not supported" % dtype)
+    try:
+        f = getattr(_fftpack, name % type)
+    except AttributeError as e:
+        raise ValueError(str(e) + ". Type %d not understood" % type)
+    return f
+
+
+def _get_norm_mode(normalize):
+    try:
+        nm = {None:0, 'ortho':1}[normalize]
+    except KeyError:
+        raise ValueError("Unknown normalize mode %s" % normalize)
+    return nm
+
+
+def __fix_shape(x, n, axis, dct_or_dst):
+    tmp = _asfarray(x)
+    copy_made = _datacopied(tmp, x)
+    if n is None:
+        n = tmp.shape[axis]
+    elif n != tmp.shape[axis]:
+        tmp, copy_made2 = _fix_shape(tmp, n, axis)
+        copy_made = copy_made or copy_made2
+    if n < 1:
+        raise ValueError("Invalid number of %s data points "
+                         "(%d) specified." % (dct_or_dst, n))
+    return tmp, n, copy_made
+
+
+def _raw_dct(x0, type, n, axis, nm, overwrite_x):
+    f = _get_dct_fun(type, x0.dtype)
+    return _eval_fun(f, x0, n, axis, nm, overwrite_x)
+
+
+def _raw_dst(x0, type, n, axis, nm, overwrite_x):
+    f = _get_dst_fun(type, x0.dtype)
+    return _eval_fun(f, x0, n, axis, nm, overwrite_x)
+
+
+def _eval_fun(f, tmp, n, axis, nm, overwrite_x):
+    if axis == -1 or axis == len(tmp.shape) - 1:
+        return f(tmp, n, nm, overwrite_x)
+
+    tmp = np.swapaxes(tmp, axis, -1)
+    tmp = f(tmp, n, nm, overwrite_x)
+    return np.swapaxes(tmp, axis, -1)
+
+
 def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     """
     Return Discrete Cosine Transform of arbitrary type sequence x.
@@ -203,71 +262,31 @@ def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     x : array_like
         input array.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis along which the dct is computed. (default=-1)
+        Axis along which the dct is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
-    z : real ndarray
+    z : ndarray
 
     """
-    tmp = np.asarray(x)
-    if not np.isrealobj(tmp):
-        raise TypeError("1st argument must be real sequence")
-
-    if n is None:
-        n = tmp.shape[axis]
-    else:
-        raise NotImplementedError("Padding/truncating not yet implemented")
-
-    if tmp.dtype == np.double:
-        if type == 1:
-            f = _fftpack.ddct1
-        elif type == 2:
-            f = _fftpack.ddct2
-        elif type == 3:
-            f = _fftpack.ddct3
-        else:
-            raise ValueError("Type %d not understood" % type)
-    elif tmp.dtype == np.float32:
-        if type == 1:
-            f = _fftpack.dct1
-        elif type == 2:
-            f = _fftpack.dct2
-        elif type == 3:
-            f = _fftpack.dct3
-        else:
-            raise ValueError("Type %d not understood" % type)
-    else:
-        raise ValueError("dtype %s not supported" % tmp.dtype)
-
-    if normalize:
-        if normalize == "ortho":
-            nm = 1
-        else:
-            raise ValueError("Unknown normalize mode %s" % normalize)
-    else:
-        nm = 0
-
+    x0, n, copy_made = __fix_shape(x, n, axis, 'DCT')
     if type == 1 and n < 2:
         raise ValueError("DCT-I is not defined for size < 2")
+    overwrite_x = overwrite_x or copy_made
+    nm = _get_norm_mode(normalize)
+    if np.iscomplexobj(x0):
+        return (_raw_dct(x0.real, type, n, axis, nm, overwrite_x) + 1j *
+                _raw_dct(x0.imag, type, n, axis, nm, overwrite_x))
+    else:
+        return _raw_dct(x0, type, n, axis, nm, overwrite_x)
 
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
-
-    if axis == -1 or axis == len(tmp.shape) - 1:
-        return f(tmp, n, nm, overwrite_x)
-    #else:
-    #    raise NotImplementedError("Axis arg not yet implemented")
-
-    tmp = np.swapaxes(tmp, axis, -1)
-    tmp = f(tmp, n, nm, overwrite_x)
-    return np.swapaxes(tmp, axis, -1)
-
-
-###########
 
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     """
@@ -280,13 +299,16 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis over which to compute the transform.
+        Axis along which the dst is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -372,13 +394,16 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis over which to compute the transform.
+        Axis along which the idst is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -408,6 +433,18 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     return _dst(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 
+def _get_dst_fun(type, dtype):
+    try:
+        name = {'float64':'ddst%d', 'float32':'dst%d'}[dtype.name]
+    except KeyError:
+        raise ValueError("dtype %s not supported" % dtype)
+    try:
+        f = getattr(_fftpack, name % type)
+    except AttributeError as e:
+        raise ValueError(str(e) + ". Type %d not understood" % type)
+    return f
+
+
 def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     """
     Return Discrete Sine Transform of arbitrary type sequence x.
@@ -428,54 +465,13 @@ def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     z : real ndarray
 
     """
-    tmp = np.asarray(x)
-    if not np.isrealobj(tmp):
-        raise TypeError("1st argument must be real sequence")
-
-    if n is None:
-        n = tmp.shape[axis]
-    else:
-        raise NotImplementedError("Padding/truncating not yet implemented")
-
-    if tmp.dtype == np.double:
-        if type == 1:
-            f = _fftpack.ddst1
-        elif type == 2:
-            f = _fftpack.ddst2
-        elif type == 3:
-            f = _fftpack.ddst3
-        else:
-            raise ValueError("Type %d not understood" % type)
-    elif tmp.dtype == np.float32:
-        if type == 1:
-            f = _fftpack.dst1
-        elif type == 2:
-            f = _fftpack.dst2
-        elif type == 3:
-            f = _fftpack.dst3
-        else:
-            raise ValueError("Type %d not understood" % type)
-    else:
-        raise ValueError("dtype %s not supported" % tmp.dtype)
-
-    if normalize:
-        if normalize == "ortho":
-            nm = 1
-        else:
-            raise ValueError("Unknown normalize mode %s" % normalize)
-    else:
-        nm = 0
-
+    x0, n, copy_made = __fix_shape(x, n, axis, 'DST')
     if type == 1 and n < 2:
         raise ValueError("DST-I is not defined for size < 2")
-
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
-
-    if axis == -1 or axis == len(tmp.shape) - 1:
-        return f(tmp, n, nm, overwrite_x)
-    #else:
-    #    raise NotImplementedError("Axis arg not yet implemented")
-
-    tmp = np.swapaxes(tmp, axis, -1)
-    tmp = f(tmp, n, nm, overwrite_x)
-    return np.swapaxes(tmp, axis, -1)
+    overwrite_x = overwrite_x or copy_made
+    nm = _get_norm_mode(normalize)
+    if np.iscomplexobj(x0):
+        return (_raw_dst(x0.real, type, n, axis, nm, overwrite_x) + 1j *
+                _raw_dst(x0.imag, type, n, axis, nm, overwrite_x))
+    else:
+        return _raw_dst(x0, type, n, axis, nm, overwrite_x)
