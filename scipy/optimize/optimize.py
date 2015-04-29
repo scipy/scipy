@@ -410,6 +410,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         Maximum number of iterations to perform.
     maxfev : int
         Maximum number of function evaluations to make.
+    step : ndarray
+        Initial step size.
 
     """
     _check_unknown_options(unknown_options)
