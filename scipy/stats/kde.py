@@ -79,36 +79,17 @@ class gaussian_kde(object):
 
     Methods
     -------
-    kde.evaluate(points) : ndarray
-        Evaluate the estimated pdf on a provided set of points.
-    kde(points) : ndarray
-        Same as kde.evaluate(points)
-    kde.integrate_gaussian(mean, cov) : float
-        Multiply pdf with a specified Gaussian and integrate over the whole
-        domain.
-    kde.integrate_box_1d(low, high) : float
-        Integrate pdf (1D only) between two bounds.
-    kde.integrate_box(low_bounds, high_bounds) : float
-        Integrate pdf over a rectangular space between low_bounds and
-        high_bounds.
-    kde.integrate_kde(other_kde) : float
-        Integrate two kernel density estimates multiplied together.
-    kde.pdf(points) : ndarray
-        Alias for ``kde.evaluate(points)``.
-    kde.logpdf(points) : ndarray
-        Equivalent to ``np.log(kde.evaluate(points))``.
-    kde.resample(size=None) : ndarray
-        Randomly sample a dataset from the estimated pdf.
-    kde.set_bandwidth(bw_method='scott') : None
-        Computes the bandwidth, i.e. the coefficient that multiplies the data
-        covariance matrix to obtain the kernel covariance matrix.
-        .. versionadded:: 0.11.0
-    kde.covariance_factor : float
-        Computes the coefficient (`kde.factor`) that multiplies the data
-        covariance matrix to obtain the kernel covariance matrix.
-        The default is `scotts_factor`.  A subclass can overwrite this method
-        to provide a different method, or set it through a call to
-        `kde.set_bandwidth`.
+    evaluate
+    __call__
+    integrate_gaussian
+    integrate_box_1d
+    integrate_box
+    integrate_kde
+    pdf
+    logpdf
+    resample
+    set_bandwidth
+    covariance_factor
 
     Notes
     -----
@@ -439,6 +420,11 @@ class gaussian_kde(object):
 
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
+    covariance_factor.__doc__ = """Computes the coefficient (`kde.factor`) that
+        multiplies the data covariance matrix to obtain the kernel covariance
+        matrix. The default is `scotts_factor`.  A subclass can overwrite this
+        method to provide a different method, or set it through a call to
+        `kde.set_bandwidth`."""
 
     def set_bandwidth(self, bw_method=None):
         """Compute the estimator bandwidth with given method.
@@ -462,6 +448,7 @@ class gaussian_kde(object):
 
         Examples
         --------
+        >>> import scipy.stats as stats
         >>> x1 = np.array([-7, -5, 1, 4, 5.])
         >>> kde = stats.gaussian_kde(x1)
         >>> xs = np.linspace(-10, 10, num=50)
@@ -471,6 +458,7 @@ class gaussian_kde(object):
         >>> kde.set_bandwidth(bw_method=kde.factor / 3.)
         >>> y3 = kde(xs)
 
+        >>> import matplotlib.pyplot as plt
         >>> fig = plt.figure()
         >>> ax = fig.add_subplot(111)
         >>> ax.plot(x1, np.ones(x1.shape) / (4. * x1.size), 'bo',
