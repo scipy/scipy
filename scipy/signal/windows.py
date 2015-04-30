@@ -710,7 +710,7 @@ hanning = hann
 
 
 def tukey(M, alpha=0.5, sym=True):
-    r"""Return a Tukey window, also known as a tapered cosine window. 
+    r"""Return a Tukey window, also known as a tapered cosine window.
 
     Parameters
     ----------
@@ -719,7 +719,7 @@ def tukey(M, alpha=0.5, sym=True):
         array is returned.
     alpha : float, optional
         Shape parameter of the Tukey window, representing the faction of the
-        window inside the cosine tapered region. 
+        window inside the cosine tapered region.
         If zero, the Tukey window is equivalent to a rectangular window.
         If one, the Tukey window is equivalent to a Hann window.
     sym : bool, optional
@@ -735,8 +735,8 @@ def tukey(M, alpha=0.5, sym=True):
 
     References
     ----------
-    .. [1] Harris, Fredric J. (Jan 1978). "On the use of Windows for Harmonic 
-           Analysis with the Discrete Fourier Transform". Proceedings of the 
+    .. [1] Harris, Fredric J. (Jan 1978). "On the use of Windows for Harmonic
+           Analysis with the Discrete Fourier Transform". Proceedings of the
            IEEE 66 (1): 51-83. doi:10.1109/PROC.1978.10837
     .. [2] Wikipedia, "Window function",
            http://en.wikipedia.org/wiki/Window_function#Tukey_window
@@ -791,7 +791,7 @@ def tukey(M, alpha=0.5, sym=True):
     w2 = np.ones(n2.shape)
     w3 = 0.5 * (1 + np.cos(np.pi * (-2.0/alpha + 1 + 2.0*n3/alpha/(M-1))))
 
-    w = np.concatenate((w1,w2,w3))
+    w = np.concatenate((w1, w2, w3))
 
     if not sym and not odd:
         w = w[:-1]
@@ -1397,7 +1397,7 @@ def slepian(M, width, sym=True):
 
     # our width is the full bandwidth
     width = width / 2
-    # to match the old version 
+    # to match the old version
     width = width / 2
     m = np.arange(M, dtype='d')
     H = np.zeros((2, M))
@@ -1490,8 +1490,9 @@ def exponential(M, center=None, tau=1., sym=True):
         The default value if not given is ``center = (M-1) / 2``.  This
         parameter must take its default value for symmetric windows.
     tau : float, optional
-        Parameter defining the decay.  For ``center = 0`` use ``tau = -(M-1) / ln(x)``
-        if ``x`` is the fraction of the window remaining at the end.
+        Parameter defining the decay.  For ``center = 0`` use
+        ``tau = -(M-1) / ln(x)`` if ``x`` is the fraction of the window
+        remaining at the end.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1523,7 +1524,7 @@ def exponential(M, center=None, tau=1., sym=True):
     >>> import matplotlib.pyplot as plt
 
     >>> M = 51
-    >>> tau = 3.0 
+    >>> tau = 3.0
     >>> window = signal.exponential(M, tau=tau)
     >>> plt.plot(window)
     >>> plt.title("Exponential Window (tau=3.0)")
@@ -1567,6 +1568,44 @@ def exponential(M, center=None, tau=1., sym=True):
         w = w[:-1]
 
     return w
+
+
+_win_equiv_raw = {
+    ('barthann', 'brthan', 'bth'): (barthann, False),
+    ('bartlett', 'bart', 'brt'): (bartlett, False),
+    ('blackman', 'black', 'blk'): (blackman, False),
+    ('blackmanharris', 'blackharr', 'bkh'): (blackmanharris, False),
+    ('bohman', 'bman', 'bmn'): (bohman, False),
+    ('boxcar', 'box', 'ones',
+        'rect', 'rectangular'): (boxcar, False),
+    ('chebwin', 'cheb'): (chebwin, True),
+    ('cosine', 'halfcosine'): (cosine, False),
+    ('exponential', 'poisson'): (exponential, True),
+    ('flattop', 'flat', 'flt'): (flattop, False),
+    ('gaussian', 'gauss', 'gss'): (gaussian, True),
+    ('general gaussian', 'general_gaussian',
+        'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
+    ('hamming', 'hamm', 'ham'): (hamming, False),
+    ('hanning', 'hann', 'han'): (hann, False),
+    ('kaiser', 'ksr'): (kaiser, True),
+    ('nuttall', 'nutl', 'nut'): (nuttall, False),
+    ('parzen', 'parz', 'par'): (parzen, False),
+    ('slepian', 'slep', 'optimal', 'dpss', 'dss'): (slepian, True),
+    ('triangle', 'triang', 'tri'): (triang, False),
+    ('tukey', 'tuk'): (tukey, True),
+}
+
+# Fill dict with all valid window name strings
+_win_equiv = {}
+for k, v in _win_equiv_raw.items():
+    for key in k:
+        _win_equiv[key] = v[0]
+
+# Keep track of which windows need additional parameters
+_needs_param = set()
+for k, v in _win_equiv_raw.items():
+    if v[1]:
+        _needs_param.update(k)
 
 
 def get_window(window, Nx, fftbins=True):
@@ -1634,62 +1673,18 @@ def get_window(window, Nx, fftbins=True):
             if len(window) > 1:
                 args = window[1:]
         elif isinstance(window, string_types):
-            if window in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
-                          'general gaussian', 'general_gaussian',
-                          'general gauss', 'general_gauss', 'ggs',
-                          'slepian', 'optimal', 'slep', 'dss', 'dpss',
-                          'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
-                          'tuk']:
+            if window in _needs_param:
                 raise ValueError("The '" + window + "' window needs one or "
-                                 "more parameters  -- pass a tuple.")
+                                 "more parameters -- pass a tuple.")
             else:
                 winstr = window
         else:
             raise ValueError("%s as window type is not supported." %
                              str(type(window)))
 
-        if winstr in ['blackman', 'black', 'blk']:
-            winfunc = blackman
-        elif winstr in ['triangle', 'triang', 'tri']:
-            winfunc = triang
-        elif winstr in ['hamming', 'hamm', 'ham']:
-            winfunc = hamming
-        elif winstr in ['bartlett', 'bart', 'brt']:
-            winfunc = bartlett
-        elif winstr in ['hanning', 'hann', 'han']:
-            winfunc = hann
-        elif winstr in ['blackmanharris', 'blackharr', 'bkh']:
-            winfunc = blackmanharris
-        elif winstr in ['parzen', 'parz', 'par']:
-            winfunc = parzen
-        elif winstr in ['bohman', 'bman', 'bmn']:
-            winfunc = bohman
-        elif winstr in ['nuttall', 'nutl', 'nut']:
-            winfunc = nuttall
-        elif winstr in ['barthann', 'brthan', 'bth']:
-            winfunc = barthann
-        elif winstr in ['flattop', 'flat', 'flt']:
-            winfunc = flattop
-        elif winstr in ['kaiser', 'ksr']:
-            winfunc = kaiser
-        elif winstr in ['gaussian', 'gauss', 'gss']:
-            winfunc = gaussian
-        elif winstr in ['general gaussian', 'general_gaussian',
-                        'general gauss', 'general_gauss', 'ggs']:
-            winfunc = general_gaussian
-        elif winstr in ['boxcar', 'box', 'ones', 'rect', 'rectangular']:
-            winfunc = boxcar
-        elif winstr in ['slepian', 'slep', 'optimal', 'dpss', 'dss']:
-            winfunc = slepian
-        elif winstr in ['cosine', 'halfcosine']:
-            winfunc = cosine
-        elif winstr in ['chebwin', 'cheb']:
-            winfunc = chebwin
-        elif winstr in ['exponential', 'poisson']:
-            winfunc = exponential
-        elif winstr in ['tukey', 'tuk']:
-            winfunc = tukey
-        else:
+        try:
+            winfunc = _win_equiv[winstr]
+        except KeyError:
             raise ValueError("Unknown window type.")
 
         params = (Nx,) + args + (sym,)
