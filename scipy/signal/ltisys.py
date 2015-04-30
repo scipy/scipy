@@ -39,7 +39,7 @@ from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'tf', 'zpk', 'ss', 'lsim', 'lsim2', 'impulse', 'impulse2', 'step',
+           'TransferFunction', 'ZerosPolesGain', 'StateSpace', 'lsim', 'lsim2', 'impulse', 'impulse2', 'step',
            'step2', 'bode', 'freqresp', 'place_poles']
 
 
@@ -292,7 +292,7 @@ class lti(object):
     Notes
     -----
     `lti` instances do not exist directly. Instead `lti` creates an instance of
-    one of its subclasses: tf, zpk or ss
+    one of its subclasses: SateSpace, TransferFunction or ZerosPolesGain.
 
     """
     def __new__(cls, *args, **kwargs):
@@ -300,11 +300,11 @@ class lti(object):
         if cls is lti:
             N = len(args)
             if N == 2:
-                return super(lti, cls).__new__(tf)
+                return super(lti, cls).__new__(TransferFunction)
             elif N == 3:
-                return super(lti, cls).__new__(zpk)
+                return super(lti, cls).__new__(ZerosPolesGain)
             elif N == 4:
-                return super(lti, cls).__new__(ss)
+                return super(lti, cls).__new__(StateSpace)
             else:
                 raise ValueError('Needs 2, 3 or 4 arguments.')
         # __new__ was called from a subclass, let it call its own functions
@@ -500,17 +500,17 @@ class lti(object):
         return freqresp(self, w=w, n=n)
 
 
-class tf(lti):
+class TransferFunction(lti):
     """Linear Time Invariant system class in transfer function form.
 
     Parameters
     ----------
     args : arguments
-        The `tf` class can be instantiated with 1 or 2 arguments.
+        The `TransferFunction` class can be instantiated with 1 or 2 arguments.
         The following gives the number of elements in the tuple and the
         interpretation:
 
-            * 1: (lti system: ss, tf or zpk)
+            * 1: (lti system: SateSpace, TransferFunction or ZeroPoleGain)
             * 2: (numerator, denominator)
 
     """
@@ -520,7 +520,7 @@ class tf(lti):
                 return args[0].to_tf()
 
         # No special conversion needed
-        return super(tf, cls).__new__(cls)
+        return super(TransferFunction, cls).__new__(cls)
 
     def __init__(self, *args, **kwargs):
         """Initialize the state space LTI system
@@ -529,7 +529,8 @@ class tf(lti):
         ----------
         args : arguments
             The following arguments are possible
-            * an instance of the lti class (ss, tf, zpk)
+            * an instance of the lti class (SateSpace, TransferFunction
+              or ZerosPolesGain)
             * (numerator, denominator)
 
         """
@@ -537,7 +538,7 @@ class tf(lti):
         if isinstance(args[0], lti):
             return
 
-        super(tf, self).__init__(self, *args, **kwargs)
+        super(TransferFunction, self).__init__(self, *args, **kwargs)
 
         self._num = None
         self._den = None
@@ -576,12 +577,12 @@ class tf(lti):
         self._den = atleast_1d(den)
 
     def _copy(self, system):
-        """Copy the parameters of another tf system
+        """Copy the parameters of another TransferFunction object
 
         Parameters
         ----------
-        system : tf
-            The ss system that is to be copied
+        system : TransferFunction
+            The StateSpace system that is to be copied
 
         """
         self.num = system.num
@@ -592,46 +593,46 @@ class tf(lti):
 
         Returns
         -------
-        sys : instance of tf
+        sys : instance of TransferFunction
             Copy of current system
 
         """
         return copy.deepcopy(self)
 
     def to_zpk(self):
-        """Convert system representation to zero, pole, gain.
+        """Convert system representation to zeros, poles, gain.
 
         Returns
         -------
-        sys : instance of zpk
+        sys : instance of ZerosPolesGain
             The current object (self)
 
         """
-        return zpk(*tf2zpk(self.num, self.den))
+        return ZerosPolesGain(*tf2zpk(self.num, self.den))
 
     def to_ss(self):
         """Convert system representation to state space.
 
         Returns
         -------
-        sys : instance of ss
+        sys : instance of StateSpace
             State space model of the current system
 
         """
-        return ss(*tf2ss(self.num, self.den))
+        return StateSpace(*tf2ss(self.num, self.den))
 
 
-class zpk(lti):
+class ZerosPolesGain(lti):
     """Linear Time Invariant system class in zeros, poles, gain form.
 
     Parameters
     ----------
     args : arguments
-        The `zpk` class can be instantiated with 1 or 3 arguments.
+        The `ZerosPolesGain` class can be instantiated with 1 or 3 arguments.
         The following gives the number of elements in the tuple and the
         interpretation:
 
-            * 1: (lti system: ss, tf or zpk)
+            * 1: (lti system: SateSpace, TransferFunction or ZerosPolesGain)
             * 3: (zeros, poles, gain)
 
     """
@@ -641,7 +642,7 @@ class zpk(lti):
                 return args[0].to_zpk()
 
         # No special conversion needed
-        return super(zpk, cls).__new__(cls)
+        return super(ZerosPolesGain, cls).__new__(cls)
 
     def __init__(self, *args, **kwargs):
         """Initialize the zero, pole, gain LTI system
@@ -650,7 +651,8 @@ class zpk(lti):
         ----------
         args : arguments
             The following arguments are possible
-            * an instance of the lti class (ss, tf, zpk)
+            * an instance of the lti class (SateSpace, TransferFunction,
+              ZerosPolesGain)
             * (zeros, poles, gain)
 
         """
@@ -658,7 +660,7 @@ class zpk(lti):
         if isinstance(args[0], lti):
             return
 
-        super(zpk, self).__init__(self, *args, **kwargs)
+        super(ZerosPolesGain, self).__init__(self, *args, **kwargs)
 
         self._zeros = None
         self._poles = None
@@ -667,7 +669,7 @@ class zpk(lti):
         self.zeros, self.poles, self.gain = args
 
     def __repr__(self):
-        """Return representation of the zpk systen"""
+        """Return representation of the ZerosPolesGain systen"""
         return '{0}(\n{1},\n{2},\n{3}\n)'.format(
             self.__class__.__name__,
             repr(self.zeros),
@@ -707,12 +709,12 @@ class zpk(lti):
         self._gain = gain
 
     def _copy(self, system):
-        """Copy the parameters of another zpk system
+        """Copy the parameters of another ZerosPolesGains system
 
         Parameters
         ----------
-        system : instance of zpk
-            The zpk system that is to be copied
+        system : instance of ZerosPolesGain
+            The zeros, poles gain system that is to be copied
 
         """
         self.poles = system.poles
@@ -724,18 +726,18 @@ class zpk(lti):
 
         Returns
         -------
-        sys : instance of tf
+        sys : instance of TransferFunction
             Transfer function of the current system
 
         """
-        return tf(*zpk2tf(self.zeros, self.poles, self.gain))
+        return TransferFunction(*zpk2tf(self.zeros, self.poles, self.gain))
 
     def to_zpk(self):
-        """Convert system representation to zero, pole, gain.
+        """Convert system representation to zeros, poles, gain.
 
         Returns
         -------
-        sys : instance of zpk
+        sys : instance of ZerosPolesGain
             Copy of the current system
 
         """
@@ -746,24 +748,24 @@ class zpk(lti):
 
         Returns
         -------
-        sys : instance of ss
+        sys : instance of StateSpace
             State space model of the current system
 
         """
-        return ss(*zpk2ss(self.zeros, self.poles, self.gain))
+        return StateSpace(*zpk2ss(self.zeros, self.poles, self.gain))
 
 
-class ss(lti):
+class StateSpace(lti):
     """Linear Time Invariant system class in state-space form.
 
     Parameters
     ----------
     args : arguments
-        The `ss` class can be instantiated with 1 or 4 arguments.
+        The `StateSpace` class can be instantiated with 1 or 4 arguments.
         The following gives the number of elements in the tuple and the
         interpretation:
 
-            * 1: (lti system: ss, tf or zpk)
+            * 1: (lti system: SateSpace, TransferFunction or ZerosPolesGain)
             * 4: (A, B, C, D)
 
     """
@@ -773,7 +775,7 @@ class ss(lti):
                 return args[0].to_ss()
 
         # No special conversion needed
-        return super(ss, cls).__new__(cls)
+        return super(StateSpace, cls).__new__(cls)
 
     def __init__(self, *args, **kwargs):
         """Initialize the state space LTI system
@@ -782,7 +784,8 @@ class ss(lti):
         ----------
         args : arguments
             The following arguments are possible
-            * an instance of the lti class (ss, tf, zpk)
+            * an instance of the lti class (SateSpace, TransferFunction,
+              ZerosPolesGain)
             * (A, B, C, D) state-space matrices
 
         """
@@ -790,7 +793,7 @@ class ss(lti):
         if isinstance(args[0], lti):
             return
 
-        super(ss, self).__init__(self, *args, **kwargs)
+        super(StateSpace, self).__init__(self, *args, **kwargs)
 
         self._A = None
         self._B = None
@@ -800,7 +803,7 @@ class ss(lti):
         self.A, self.B, self.C, self.D = abcd_normalize(*args)
 
     def __repr__(self):
-        """Return representation of the state-space systen"""
+        """Return representation of the state space systen"""
         return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
             self.__class__.__name__,
             repr(self.A),
@@ -844,11 +847,11 @@ class ss(lti):
         self._D = _atleast_2d_or_none(D)
 
     def _copy(self, system):
-        """Copy the parameters of another ss system
+        """Copy the parameters of another StateSpace system
 
         Parameters
         ----------
-        system : instance of ss
+        system : instance of StateSpace
             The state-space system that is to be copied
 
         """
@@ -867,14 +870,14 @@ class ss(lti):
 
         Returns
         -------
-        sys : instance of tf
+        sys : instance of TransferFunction
             Transfer function of the current system
 
         """
-        return tf(*ss2tf(self._A, self._B, self._C, self._D, **kwargs))
+        return TransferFunction(*ss2tf(self._A, self._B, self._C, self._D, **kwargs))
 
     def to_zpk(self, **kwargs):
-        """Convert system representation to zero, pole, gain.
+        """Convert system representation to zeros, poles, gain.
 
         Parameters
         ----------
@@ -883,18 +886,18 @@ class ss(lti):
 
         Returns
         -------
-        sys : instance of zpk
+        sys : instance of ZerosPolesGain
             Zero, pole, gain representation of the current system
 
         """
-        return zpk(*ss2zpk(self._A, self._B, self._C, self._D, **kwargs))
+        return ZerosPolesGain(*ss2zpk(self._A, self._B, self._C, self._D, **kwargs))
 
     def to_ss(self):
         """Convert system representation to state space.
 
         Returns
         -------
-        sys : instance of ss
+        sys : instance of StateSpace
             Copy of the current system
 
         """
