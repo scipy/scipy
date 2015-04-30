@@ -13,6 +13,11 @@ from scipy import stats
 NUMPY_BELOW_1_7 = NumpyVersion(np.__version__) < '1.7.0'
 
 
+def check_named_results(res, attributes):
+    for i, attr in enumerate(attributes):
+        npt.assert_equal(res[i], getattr(res, attr))
+
+
 def check_normalization(distfn, args, distname):
     norm_moment = distfn.moment(0, *args)
     npt.assert_allclose(norm_moment, 1.0)
@@ -169,7 +174,7 @@ def check_random_state_property(distfn, args):
     distfn.random_state = 1234
     r1 = distfn.rvs(*args, size=8)
     npt.assert_equal(r0, r1)
-    
+
     distfn.random_state = np.random.RandomState(1234)
     r2 = distfn.rvs(*args, size=8)
     npt.assert_equal(r0, r2)

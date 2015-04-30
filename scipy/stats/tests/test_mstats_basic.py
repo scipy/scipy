@@ -12,6 +12,7 @@ from numpy.ma import masked, nomask
 
 import scipy.stats.mstats as mstats
 from scipy import stats
+from common_tests import check_named_results
 from numpy.testing import TestCase, run_module_suite
 from numpy.testing.decorators import skipif
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
@@ -421,16 +422,10 @@ class TestMoments(TestCase):
         assert_equal(mstats.mode(ma4, axis=-1), ([[2],[3],[5]], [[1],[1],[1]]))
 
         a1_res = mstats.mode(a1, axis=None)
-        assert_equal(str(a1_res)[:4], 'Mode')
 
         # test namedtuple attributes by index
         attributes = ('mode', 'count')
-        for i, attr in enumerate(attributes):
-            assert_equal(a1_res[i], getattr(a1_res, attr))
-
-        # test namedtuple attributes explicitly by name
-        assert_equal(a1_res.mode, getattr(a1_res, 'mode'))
-        assert_equal(a1_res.count, getattr(a1_res, 'count'))
+        check_named_results(a1_res, attributes)
 
 class TestPercentile(TestCase):
     def setUp(self):
@@ -932,21 +927,6 @@ class TestCompareWithStats(TestCase):
                       'kurtosis')
         for i, attr in enumerate(attributes):
             assert_equal(actual[i], getattr(actual, attr))
-
-    # Same as `test_describe_result_attributes` but accessing the atributes
-    # explicitly and separately by name.
-    def test_describe_result_attributes_names(self):
-        actual = mstats.describe(np.arange(5))
-        assert_equal(actual.nobs, getattr(actual, 'nobs'))
-        assert_equal(actual.minmax, getattr(actual, 'minmax'))
-        assert_equal(actual.mean, getattr(actual, 'mean'))
-        assert_equal(actual.variance, getattr(actual, 'variance'))
-        assert_equal(actual.skewness, getattr(actual, 'skewness'))
-        assert_equal(actual.kurtosis, getattr(actual, 'kurtosis'))
-
-    def test_describe_typename(self):
-        actual = mstats.describe(np.arange(5))
-        assert_equal(str(actual)[:8], 'Describe')
 
     def test_rankdata(self):
         for n in self.get_n():

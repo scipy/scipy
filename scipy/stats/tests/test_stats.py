@@ -22,7 +22,7 @@ from numpy import array, arange, float32, float64, power
 import numpy as np
 
 import scipy.stats as stats
-
+from common_tests import check_named_results
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -1275,20 +1275,7 @@ class TestMode(TestCase):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
         actual = stats.mode(data1)
         attributes = ('mode', 'count')
-        for i, attr in enumerate(attributes):
-            assert_equal(actual[i], getattr(actual, attr))
-
-    # Same as `test_describe_result_attributes` but accessing the atributes
-    # explicitly and separately by name.
-    def test_mode_result_attributes_names(self):
-        data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
-        actual = stats.mode(data1)
-        assert_equal(actual.mode, getattr(actual, 'mode'))
-        assert_equal(actual.count, getattr(actual, 'count'))
-
-    def test_mode_typename(self):
-        actual = stats.mode(np.arange(5))
-        assert_equal(str(actual)[:4], 'Mode')
+        check_named_results(actual, attributes)
 
 class TestVariability(TestCase):
 
@@ -2381,24 +2368,7 @@ class TestDescribe(TestCase):
         actual = stats.describe(np.arange(5))
         attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness',
                       'kurtosis')
-        for i, attr in enumerate(attributes):
-            assert_equal(actual[i], getattr(actual, attr))
-
-    # Same as `test_describe_result_attributes` but accessing the atributes
-    # explicitly and separately by name.
-    def test_describe_result_attributes_names(self):
-        actual = stats.describe(np.arange(5))
-        assert_equal(actual.nobs, getattr(actual, 'nobs'))
-        assert_equal(actual.minmax, getattr(actual, 'minmax'))
-        assert_equal(actual.mean, getattr(actual, 'mean'))
-        assert_equal(actual.variance, getattr(actual, 'variance'))
-        assert_equal(actual.skewness, getattr(actual, 'skewness'))
-        assert_equal(actual.kurtosis, getattr(actual, 'kurtosis'))
-
-    def test_describe_typename(self):
-        actual = stats.describe(np.arange(5))
-        assert_equal(str(actual)[:8], 'Describe')
-
+        check_named_results(actual, attributes)
 
 def test_normalitytests():
     yield (assert_raises, ValueError, stats.skewtest, 4.)
