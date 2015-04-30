@@ -591,8 +591,6 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
 
-
-
 def mode(a, axis=0):
     """
     Returns an array of the modal (most common) value in the passed array.
