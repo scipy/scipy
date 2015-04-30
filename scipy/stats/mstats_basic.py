@@ -44,6 +44,7 @@ from scipy._lib.six import iteritems
 
 import itertools
 import warnings
+from collections import namedtuple
 
 from . import stats
 from . import distributions
@@ -283,7 +284,9 @@ def mode(a, axis=0):
         slices[axis] = 1
         counts = output[tuple(slices)].reshape(newshape)
         output = (modes, counts)
-    return stats._ModeResult(*output)
+
+    ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+    return ModeResult(*output)
 mode.__doc__ = stats.mode.__doc__
 
 
@@ -1564,7 +1567,11 @@ def describe(a, axis=0, ddof=0):
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
 
-    return stats._DescribeResult(n, mm, m, v, sk, kurt)
+    DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
+                                                   'variance', 'skewness',
+                                                   'kurtosis'))
+
+    return DescribeResult(n, mm, m, v, sk, kurt)
 
 
 def stde_median(data, axis=None):

@@ -591,7 +591,6 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
 
-_ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
 def mode(a, axis=0):
@@ -648,7 +647,9 @@ def mode(a, axis=0):
         mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
         oldcounts = np.maximum(counts, oldcounts)
         oldmostfreq = mostfrequent
-    return _ModeResult(mostfrequent, oldcounts)
+
+    ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+    return ModeResult(mostfrequent, oldcounts)
 
 
 def mask_to_limits(a, limits, inclusive):
@@ -1130,11 +1131,6 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-_DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
-                                                'variance', 'skewness',
-                                                'kurtosis'))
-
-
 def describe(a, axis=0, ddof=1):
     """
     Computes several descriptive statistics of the passed array.
@@ -1182,7 +1178,11 @@ def describe(a, axis=0, ddof=1):
     kurt = kurtosis(a, axis)
 
     # Return namedtuple for clarity
-    return _DescribeResult(n, mm, m, v, sk, kurt)
+    DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
+                                                   'variance', 'skewness',
+                                                   'kurtosis'))
+
+    return DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
 #         NORMALITY TESTS           #
