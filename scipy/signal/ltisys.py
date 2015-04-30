@@ -39,8 +39,9 @@ from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'TransferFunction', 'ZerosPolesGain', 'StateSpace', 'lsim', 'lsim2', 'impulse', 'impulse2', 'step',
-           'step2', 'bode', 'freqresp', 'place_poles']
+           'TransferFunction', 'ZerosPolesGain', 'StateSpace', 'lsim',
+           'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
+           'freqresp', 'place_poles']
 
 
 def tf2ss(num, den):
