@@ -1290,6 +1290,14 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                     raise TypeError('The array must contain 64-bit floats.')
                 [VI] = _copy_arrays_if_base_present([VI])
             else:
+                if m <= n:
+                    # There are fewer observations than the dimension of
+                    # the observations.
+                    raise ValueError("The number of observations (%d) is too "
+                                     "small; the covariance matrix is "
+                                     "singular. For observations with %d "
+                                     "dimensions, at least %d observations "
+                                     "are required." % (m, n, n + 1))
                 V = np.atleast_2d(np.cov(X.T))
                 VI = _convert_to_double(np.linalg.inv(V).T.copy())
             # (u-v)V^(-1)(u-v)^T
@@ -2138,6 +2146,15 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                     raise TypeError('The array must contain 64-bit floats.')
                 [VI] = _copy_arrays_if_base_present([VI])
             else:
+                m = mA + mB
+                if m <= n:
+                    # There are fewer observations than the dimension of
+                    # the observations.
+                    raise ValueError("The number of observations (%d) is too "
+                                     "small; the covariance matrix is "
+                                     "singular. For observations with %d "
+                                     "dimensions, at least %d observations "
+                                     "are required." % (m, n, n + 1))
                 X = np.vstack([XA, XB])
                 V = np.atleast_2d(np.cov(X.T))
                 X = None

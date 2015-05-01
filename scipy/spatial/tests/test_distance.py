@@ -293,6 +293,10 @@ class TestCdist(TestCase):
         rt2 = np.sqrt(2)
         assert_allclose(dist, [[rt2, rt2, rt2], [2, 2*rt2, 2]])
 
+        # Too few observations
+        assert_raises(ValueError,
+                      cdist, [[0, 1]], [[2, 3]], metric='mahalanobis')
+
     def test_cdist_canberra_random(self):
         eps = 1e-07
         X1 = eo['cdist-X1'] < 0.5
@@ -714,6 +718,10 @@ class TestPdist(TestCase):
         dist = pdist(x, metric='mahalanobis')
         rt2 = np.sqrt(2)
         assert_allclose(dist, [rt2, rt2, rt2, rt2, 2, 2*rt2, 2, 2, 2*rt2, 2])
+
+        # Too few observations
+        assert_raises(ValueError,
+                      pdist, [[0, 1], [2, 3]], metric='mahalanobis')
 
     def test_pdist_hamming_random(self):
         eps = 1e-07
