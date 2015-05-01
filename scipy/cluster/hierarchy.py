@@ -704,6 +704,24 @@ class ClusterNode:
         else:
             self.count = left.count + right.count
 
+    def __lt__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist < node.dist
+
+    def __gt__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist > node.dist
+
+    def __eq__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist == node.dist
+
     def get_id(self):
         """
         The identifier of the target node.
