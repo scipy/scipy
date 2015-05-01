@@ -490,6 +490,7 @@ cdef class _Qhull:
             qh_qh.hasTriangulation = 0
 
             self._point_arrays.append(arr)
+            self.numpoints += arr.shape[0]
         finally:
             qh_qh.NOerrexit = 1
             _qhull_lock.release()
