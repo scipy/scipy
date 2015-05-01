@@ -51,9 +51,9 @@ if __name__ == "__main__":
         actual = int(m.group('num_tests'))
         if actual < expected:
             print("Too few tests: expected %s, run %s" % (expected, actual))
-            exit(1)
+            sys.exit(1)
         else:
-            exit(0)
+            sys.exit(0)
     else:
         print('Test runner validation errored: did the run really finish?')
-        exit(-1)
+        sys.exit(-1)
