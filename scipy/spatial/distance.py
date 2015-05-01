@@ -1290,7 +1290,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                     raise TypeError('The array must contain 64-bit floats.')
                 [VI] = _copy_arrays_if_base_present([VI])
             else:
-                V = np.cov(X.T)
+                V = np.atleast_2d(np.cov(X.T))
                 VI = _convert_to_double(np.linalg.inv(V).T.copy())
             # (u-v)V^(-1)(u-v)^T
             _distance_wrap.pdist_mahalanobis_wrap(_convert_to_double(X),
@@ -2139,7 +2139,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 [VI] = _copy_arrays_if_base_present([VI])
             else:
                 X = np.vstack([XA, XB])
-                V = np.cov(X.T)
+                V = np.atleast_2d(np.cov(X.T))
                 X = None
                 del X
                 VI = _convert_to_double(np.linalg.inv(V).T.copy())
