@@ -874,6 +874,18 @@ def test_2x2_linkage():
     assert_allclose(Z1, Z2)
 
 
+def test_node_compare():
+    np.random.seed(23)
+    nobs = 50
+    X = np.random.randn(nobs, 4)
+    Z = scipy.cluster.hierarchy.ward(X)
+    tree = to_tree(Z)
+    assert_(tree > tree.get_left())
+    assert_(tree.get_right() > tree.get_left())
+    assert_(tree.get_right() == tree.get_right())
+    assert_(tree.get_right() != tree.get_left())
+
+
 def test_cut_tree():
     np.random.seed(23)
     nobs = 50
@@ -898,8 +910,6 @@ def test_cut_tree():
                  cut_tree(Z, height=[5, 10]))
     assert_equal(cutree[:, np.searchsorted(heights, [10, 5])],
                  cut_tree(Z, height=[10, 5]))
-
-
 
 
 if __name__ == "__main__":
