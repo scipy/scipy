@@ -170,6 +170,8 @@ from __future__ import division, print_function, absolute_import
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import warnings
+import bisect
+from collections import deque
 
 import numpy as np
 from . import _hierarchy
@@ -854,6 +856,34 @@ class ClusterNode:
 
 _cnode_bare = ClusterNode(0)
 _cnode_type = type(ClusterNode)
+
+
+def _order_cluster_tree(Z):
+    """
+    Returns clustering nodes in bottom-up order by distance.
+
+    Parameters
+    ----------
+    Z : scipy.cluster.linkage array
+        The linkage matrix.
+
+    Returns
+    -------
+    nodes : list
+        A list of ClusterNode objects.
+    """
+    q = deque()
+    tree = to_tree(Z)
+    q.append(tree)
+    nodes = []
+
+    while q:
+        node = q.popleft()
+        if not node.is_leaf():
+            bisect.insort_left(nodes, node)
+            q.append(node.get_right())
+            q.append(node.get_left())
+    return nodes
 
 
 def to_tree(Z, rd=False):
