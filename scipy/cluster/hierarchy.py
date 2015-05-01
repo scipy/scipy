@@ -605,7 +605,7 @@ def linkage(y, method='single', metric='euclidean'):
         The linkage algorithm to use. See the ``Linkage Methods`` section below
         for full descriptions.
     metric : str or function, optional
-        The distance metric to use in the case that y is a collection of 
+        The distance metric to use in the case that y is a collection of
         observation vectors; ignored otherwise. See the ``distance.pdist``
         function for a list of valid distance metrics. A custom distance
         function can also be used. See the ``distance.pdist`` function for
@@ -703,6 +703,24 @@ class ClusterNode:
             self.count = count
         else:
             self.count = left.count + right.count
+
+    def __lt__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist < node.dist
+
+    def __gt__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist > node.dist
+
+    def __eq__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist == node.dist
 
     def get_id(self):
         """
