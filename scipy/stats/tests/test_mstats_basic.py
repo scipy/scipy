@@ -425,7 +425,7 @@ class TestMoments(TestCase):
 
         # test namedtuple attributes by index
         attributes = ('mode', 'count')
-        check_named_results(a1_res, attributes)
+        check_named_results(a1_res, attributes, ma=True)
 
 class TestPercentile(TestCase):
     def setUp(self):
@@ -925,8 +925,7 @@ class TestCompareWithStats(TestCase):
         actual = mstats.describe(np.arange(5))
         attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness',
                       'kurtosis')
-        for i, attr in enumerate(attributes):
-            assert_equal(actual[i], getattr(actual, attr))
+        check_named_results(actual, attributes, ma=True)
 
     def test_rankdata(self):
         for n in self.get_n():
