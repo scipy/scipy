@@ -886,6 +886,88 @@ def _order_cluster_tree(Z):
     return nodes
 
 
+def cut_tree(Z, n_clusters=None, height=None):
+    """
+    Given a linkage Z, return the cut tree.
+
+    Parameters
+    ----------
+    Z : scipy.cluster.linkage array
+        The linkage matrix.
+    n_clusters : float, array-like, or None
+        Number of clusters in the tree at the cut point.
+    height : float, array-like, or None
+        The height at which to cut the tree. Only possible for ultrametric
+        trees.
+
+    Returns
+    -------
+    cutree : array
+        An array indicating group membership at each agglomeration step. I.e.,
+        for a full cut tree, in the first column each data point is in its own
+        cluster. At the next step, two nodes are merged. Finally all singleton
+        and non-singleton clusters are in one group. If n_clusters or
+        height is give, the columnscorrepond to the columns of n_clusters or
+        height.
+
+    Examples
+    --------
+    >>> from scipy import cluster
+    >>> import numpy as np
+    >>> np.random.seed(23)
+    >>> X = np.random.randn(50, 4)
+    >>> Z = cluster.hierarchy.ward(X)
+    >>> cutree = cluster.hierarchy.cut_tree(Z, n_clusters=[5, 10])
+    >>> cutree[:10]
+    array([[0, 0],
+           [1, 1],
+           [2, 2],
+           [3, 3],
+           [3, 4],
+           [2, 2],
+           [0, 0],
+           [1, 5],
+           [3, 6],
+           [4, 7]])
+
+    """
+    nobs = num_obs_linkage(Z)
+    nodes = _order_cluster_tree(Z)
+
+    if height is not None and n_clusters is not None:
+        raise ValueError("At least one of either height or n_clusters "
+                         "must be None")
+    elif height is None and n_clusters is None:  # return the full cut tree
+        cols_idx = np.arange(nobs)
+    elif height is not None:
+        heights = np.array([x.dist for x in nodes])
+        cols_idx = np.searchsorted(heights, height)
+    else:
+        cols_idx = nobs - np.searchsorted(np.arange(nobs), n_clusters)
+
+    try:
+        n_cols = len(cols_idx)
+    except TypeError:  # scalar
+        n_cols = 1
+        cols_idx = np.array([cols_idx])
+
+    groups = np.zeros((n_cols, nobs), dtype=int)
+    last_group = np.arange(nobs)
+    if 0 in cols_idx:
+        groups[0] = last_group
+
+    for i, node in enumerate(nodes):
+        idx = node.pre_order()
+        this_group = last_group.copy()
+        this_group[idx] = last_group[idx].min()
+        this_group[this_group > last_group[idx].max()] -= 1
+        if i + 1 in cols_idx:
+            groups[np.where(i + 1 == cols_idx)[0]] = this_group
+        last_group = this_group
+
+    return groups.T
+
+
 def to_tree(Z, rd=False):
     """
     Converts a hierarchical clustering encoded in the matrix ``Z`` (by
