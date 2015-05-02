@@ -15,6 +15,8 @@ from __future__ import division, print_function, absolute_import
 #   Added pole placement
 # Mar 2015: Clancy Rowley
 #   Rewrote lsim
+# Mai 2015: Felix Berkenkamp
+#   Split lti class into subclasses
 #
 
 import warnings
@@ -293,11 +295,11 @@ class lti(object):
     Notes
     -----
     `lti` instances do not exist directly. Instead, `lti` creates an instance
-    of one of its subclasses: SateSpace, TransferFunction or ZerosPolesGain.
+    of one of its subclasses: StateSpace, TransferFunction or ZerosPolesGain.
 
     """
     def __new__(cls, *system):
-        """Create an instance of a the appropriate subclass."""
+        """Create an instance of the appropriate subclass."""
         if cls is lti:
             N = len(system)
             if N == 2:
