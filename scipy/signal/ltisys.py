@@ -296,10 +296,10 @@ class lti(object):
     one of its subclasses: SateSpace, TransferFunction or ZerosPolesGain.
 
     """
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *system):
         """Create an instance of a the appropriate subclass."""
         if cls is lti:
-            N = len(args)
+            N = len(system)
             if N == 2:
                 return super(lti, cls).__new__(TransferFunction)
             elif N == 3:
@@ -311,7 +311,7 @@ class lti(object):
         # __new__ was called from a subclass, let it call its own functions
         return super(lti, cls).__new__(cls)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *system):
         """Initialize the `lti` baseclass.
 
         The heavy lifting is done by the subclasses.
@@ -515,18 +515,18 @@ class TransferFunction(lti):
             * 2: (numerator, denominator)
 
     """
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *system):
         """Handle object conversion if input is an instance of lti"""
-        if len(args) == 1:
-            if isinstance(args[0], TransferFunction):
-                return copy.deepcopy(args[0])
-            if isinstance(args[0], lti):
-                return args[0].to_tf()
+        if len(system) == 1:
+            if isinstance(system[0], TransferFunction):
+                return copy.deepcopy(system[0])
+            if isinstance(system[0], lti):
+                return system[0].to_tf()
 
         # No special conversion needed
         return super(TransferFunction, cls).__new__(cls)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *system):
         """Initialize the state space LTI system
 
         Parameters
@@ -539,15 +539,15 @@ class TransferFunction(lti):
 
         """
         # Conversion of lti instances is handled in __new__
-        if isinstance(args[0], lti):
+        if isinstance(system[0], lti):
             return
 
-        super(TransferFunction, self).__init__(self, *args, **kwargs)
+        super(TransferFunction, self).__init__(self, *system)
 
         self._num = None
         self._den = None
 
-        self.num, self.den = normalize(*args)
+        self.num, self.den = normalize(*system)
 
     def __repr__(self):
         """Return representation of the system's transfer function"""
@@ -640,18 +640,18 @@ class ZerosPolesGain(lti):
             * 3: (zeros, poles, gain)
 
     """
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *system):
         """Handle object conversion if input is an instance of lti"""
-        if len(args) == 1:
-            if isinstance(args[0], ZerosPolesGain):
-                return copy.deepcopy(args[0])
-            if isinstance(args[0], lti):
-                return args[0].to_zpk()
+        if len(system) == 1:
+            if isinstance(system[0], ZerosPolesGain):
+                return copy.deepcopy(system[0])
+            if isinstance(system[0], lti):
+                return system[0].to_zpk()
 
         # No special conversion needed
         return super(ZerosPolesGain, cls).__new__(cls)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *system):
         """Initialize the zero, pole, gain LTI system
 
         Parameters
@@ -664,16 +664,16 @@ class ZerosPolesGain(lti):
 
         """
         # Conversion of lti instances is handled in __new__
-        if isinstance(args[0], lti):
+        if isinstance(system[0], lti):
             return
 
-        super(ZerosPolesGain, self).__init__(self, *args, **kwargs)
+        super(ZerosPolesGain, self).__init__(self, *system)
 
         self._zeros = None
         self._poles = None
         self._gain = None
 
-        self.zeros, self.poles, self.gain = args
+        self.zeros, self.poles, self.gain = system
 
     def __repr__(self):
         """Return representation of the ZerosPolesGain systen"""
@@ -776,18 +776,18 @@ class StateSpace(lti):
             * 4: (A, B, C, D)
 
     """
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *system):
         """Handle object conversion if input is an instance of lti"""
-        if len(args) == 1:
-            if isinstance(args[0], StateSpace):
-                return copy.deepcopy(args[0])
-            if isinstance(args[0], lti):
-                return args[0].to_ss()
+        if len(system) == 1:
+            if isinstance(system[0], StateSpace):
+                return copy.deepcopy(system[0])
+            if isinstance(system[0], lti):
+                return system[0].to_ss()
 
         # No special conversion needed
         return super(StateSpace, cls).__new__(cls)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *system):
         """Initialize the state space LTI system
 
         Parameters
@@ -800,17 +800,17 @@ class StateSpace(lti):
 
         """
         # Conversion of lti instances is handled in __new__
-        if isinstance(args[0], lti):
+        if isinstance(system[0], lti):
             return
 
-        super(StateSpace, self).__init__(self, *args, **kwargs)
+        super(StateSpace, self).__init__(self, *system)
 
         self._A = None
         self._B = None
         self._C = None
         self._D = None
 
-        self.A, self.B, self.C, self.D = abcd_normalize(*args)
+        self.A, self.B, self.C, self.D = abcd_normalize(*system)
 
     def __repr__(self):
         """Return representation of the state space systen"""
