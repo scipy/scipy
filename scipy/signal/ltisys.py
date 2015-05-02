@@ -517,7 +517,10 @@ class TransferFunction(lti):
     """
     def __new__(cls, *args, **kwargs):
         """Handle object conversion if input is an instance of lti"""
-        if len(args) == 1 and isinstance(args[0], lti):
+        if len(args) == 1:
+            if isinstance(args[0], TransferFunction):
+                return copy.deepcopy(args[0])
+            if isinstance(args[0], lti):
                 return args[0].to_tf()
 
         # No special conversion needed
@@ -595,10 +598,10 @@ class TransferFunction(lti):
         Returns
         -------
         sys : instance of TransferFunction
-            Copy of current system
+            The current system (self)
 
         """
-        return copy.deepcopy(self)
+        return self
 
     def to_zpk(self):
         """Convert system representation to zeros, poles, gain.
@@ -639,7 +642,10 @@ class ZerosPolesGain(lti):
     """
     def __new__(cls, *args, **kwargs):
         """Handle object conversion if input is an instance of lti"""
-        if len(args) == 1 and isinstance(args[0], lti):
+        if len(args) == 1:
+            if isinstance(args[0], ZerosPolesGain):
+                return copy.deepcopy(args[0])
+            if isinstance(args[0], lti):
                 return args[0].to_zpk()
 
         # No special conversion needed
@@ -739,10 +745,10 @@ class ZerosPolesGain(lti):
         Returns
         -------
         sys : instance of ZerosPolesGain
-            Copy of the current system
+            The current system (self)
 
         """
-        return copy.deepcopy(self)
+        return self
 
     def to_ss(self):
         """Convert system representation to state space.
@@ -772,7 +778,10 @@ class StateSpace(lti):
     """
     def __new__(cls, *args, **kwargs):
         """Handle object conversion if input is an instance of lti"""
-        if len(args) == 1 and isinstance(args[0], lti):
+        if len(args) == 1:
+            if isinstance(args[0], StateSpace):
+                return copy.deepcopy(args[0])
+            if isinstance(args[0], lti):
                 return args[0].to_ss()
 
         # No special conversion needed
@@ -899,10 +908,10 @@ class StateSpace(lti):
         Returns
         -------
         sys : instance of StateSpace
-            Copy of the current system
+            The current system (self)
 
         """
-        return copy.deepcopy(self)
+        return self
 
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
