@@ -279,21 +279,21 @@ class lti(object):
 
     Parameters
     ----------
-    args : arguments
+    system : lti system arguments
         The `lti` class can be instantiated with either 2, 3 or 4 arguments.
-        The following gives the number of elements in the tuple and the
-        corresponding subclass that is created:
+        The following gives the number of arguments and the corresponding
+        subclass that is created:
 
-            * 2: tf:  (numerator, denominator)
-            * 3: zpk: (zeros, poles, gain)
-            * 4: ss:  (A, B, C, D)
+            * 2: TransferFunction:  (numerator, denominator)
+            * 3: ZerosPolesGain: (zeros, poles, gain)
+            * 4: StateSpace:  (A, B, C, D)
 
         Each argument can be an array or sequence.
 
     Notes
     -----
-    `lti` instances do not exist directly. Instead `lti` creates an instance of
-    one of its subclasses: SateSpace, TransferFunction or ZerosPolesGain.
+    `lti` instances do not exist directly. Instead, `lti` creates an instance
+    of one of its subclasses: SateSpace, TransferFunction or ZerosPolesGain.
 
     """
     def __new__(cls, *system):
@@ -506,12 +506,12 @@ class TransferFunction(lti):
 
     Parameters
     ----------
-    args : arguments
+    system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2 arguments.
-        The following gives the number of elements in the tuple and the
+        The following gives the number of input arguments and their
         interpretation:
 
-            * 1: (lti system: SateSpace, TransferFunction or ZeroPoleGain)
+            * 1: (lti system: SateSpace, TransferFunction or ZerosPolesGain)
             * 2: (numerator, denominator)
 
     """
@@ -531,7 +531,7 @@ class TransferFunction(lti):
 
         Parameters
         ----------
-        args : arguments
+        system : arguments
             The following arguments are possible
             * an instance of the lti class (SateSpace, TransferFunction
               or ZerosPolesGain)
@@ -631,9 +631,9 @@ class ZerosPolesGain(lti):
 
     Parameters
     ----------
-    args : arguments
+    system : arguments
         The `ZerosPolesGain` class can be instantiated with 1 or 3 arguments.
-        The following gives the number of elements in the tuple and the
+        The following gives the number of input arguments and their
         interpretation:
 
             * 1: (lti system: SateSpace, TransferFunction or ZerosPolesGain)
@@ -652,11 +652,11 @@ class ZerosPolesGain(lti):
         return super(ZerosPolesGain, cls).__new__(cls)
 
     def __init__(self, *system):
-        """Initialize the zero, pole, gain LTI system
+        """Initialize the zeros, poles, gain LTI system
 
         Parameters
         ----------
-        args : arguments
+        systen : arguments
             The following arguments are possible
             * an instance of the lti class (SateSpace, TransferFunction,
               ZerosPolesGain)
@@ -767,9 +767,9 @@ class StateSpace(lti):
 
     Parameters
     ----------
-    args : arguments
+    system : arguments
         The `StateSpace` class can be instantiated with 1 or 4 arguments.
-        The following gives the number of elements in the tuple and the
+        The following gives the number of input arguments and their
         interpretation:
 
             * 1: (lti system: SateSpace, TransferFunction or ZerosPolesGain)
@@ -792,7 +792,7 @@ class StateSpace(lti):
 
         Parameters
         ----------
-        args : arguments
+        system : arguments
             The following arguments are possible
             * an instance of the lti class (SateSpace, TransferFunction,
               ZerosPolesGain)
