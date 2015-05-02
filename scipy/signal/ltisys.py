@@ -690,7 +690,7 @@ class ZerosPolesGain(lti):
 
     @zeros.setter
     def zeros(self, zeros):
-        self._zeros = numpy.asarray(zeros)
+        self._zeros = atleast_1d(zeros)
 
         # Update dimensions
         if len(self.zeros.shape) > 1:
@@ -705,7 +705,7 @@ class ZerosPolesGain(lti):
 
     @poles.setter
     def poles(self, poles):
-        self._poles = numpy.asarray(poles)
+        self._poles = atleast_1d(poles)
 
     @property
     def gain(self):
