@@ -5,7 +5,6 @@ Test Scipy functions versus mpmath, if available.
 from __future__ import division, print_function, absolute_import
 
 import sys
-import os
 import time
 
 from distutils.version import LooseVersion
@@ -16,6 +15,7 @@ from numpy import pi
 
 import scipy.special as sc
 from scipy._lib.six import reraise, with_metaclass
+from scipy._lib._testutils import knownfailure_overridable
 from scipy.special._testutils import FuncData, assert_func_equal
 
 try:
@@ -494,21 +494,6 @@ def assert_mpmath_equal(*a, **kw):
 
 def nonfunctional_tooslow(func):
     return dec.skipif(True, "    Test not yet functional (too slow), needs more work.")(func)
-
-
-def knownfailure_overridable(msg=None):
-    if not msg:
-        msg = "Undiagnosed issues (corner cases, wrong comparison values, or otherwise)"
-    msg = msg + " [Set environment variable SCIPY_XFAIL=1 to run this test nevertheless.]"
-
-    def deco(func):
-        try:
-            if bool(os.environ['SCIPY_XFAIL']):
-                return func
-        except (ValueError, KeyError):
-            pass
-        return dec.knownfailureif(True, msg)(func)
-    return deco
 
 
 class _SystematicMeta(type):
