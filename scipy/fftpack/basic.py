@@ -390,6 +390,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
 
     Examples
     --------
+    >>> from scipy.fftpack import fft, rfft
     >>> a = [9, -9, 1, 3]
     >>> fft(a)
     array([  4. +0.j,   8.+12.j,  16. +0.j,   8.-12.j])
@@ -583,6 +584,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
 
     Examples
     --------
+    >>> from scipy.fftpack import fftn, ifftn
     >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
     >>> np.allclose(y, fftn(ifftn(y)))
     True

@@ -143,6 +143,7 @@ def rankdata(a, method='average'):
 
     Examples
     --------
+    >>> from scipy.stats import rankdata
     >>> rankdata([0, 2, 3, 2])
     array([ 1. ,  2.5,  4. ,  2.5])
     >>> rankdata([0, 2, 3, 2], method='min')
@@ -220,6 +221,7 @@ def tiecorrect(rankvals):
 
     Examples
     --------
+    >>> from scipy.stats import tiecorrect, rankdata
     >>> tiecorrect([1, 2.5, 2.5, 4])
     0.9
     >>> ranks = rankdata([1, 3, 2, 4, 5, 7, 2, 8, 4])

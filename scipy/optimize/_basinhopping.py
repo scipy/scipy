@@ -456,7 +456,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     The following example is a one-dimensional minimization problem,  with many
     local minima superimposed on a parabola.
 
-    >>> func = lambda x: cos(14.5 * x - 0.3) + (x + 0.2) * x
+    >>> from scipy.optimize import basinhopping
+    >>> func = lambda x: np.cos(14.5 * x - 0.3) + (x + 0.2) * x
     >>> x0=[1.]
 
     Basinhopping, internally, uses a local minimization algorithm.  We will use
@@ -474,10 +475,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     will use gradient information to significantly speed up the search.
 
     >>> def func2d(x):
-    ...     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
-    ...                                                         0.2) * x[0]
+    ...     f = np.cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] +
+    ...                                                            0.2) * x[0]
     ...     df = np.zeros(2)
-    ...     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
+    ...     df[0] = -14.5 * np.sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2
     ...     df[1] = 2. * x[1] + 0.2
     ...     return f, df
 

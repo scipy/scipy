@@ -2154,6 +2154,7 @@ def median_test(*args, **kwds):
     >>> g1 = [10, 14, 14, 18, 20, 22, 24, 25, 31, 31, 32, 39, 43, 43, 48, 49]
     >>> g2 = [28, 30, 31, 33, 34, 35, 36, 40, 44, 55, 57, 61, 91, 92, 99]
     >>> g3 = [0, 3, 9, 22, 23, 25, 25, 33, 34, 34, 40, 45, 46, 48, 62, 67, 84]
+    >>> from scipy.stats import median_test
     >>> stat, p, med, tbl = median_test(g1, g2, g3)
 
     The median is

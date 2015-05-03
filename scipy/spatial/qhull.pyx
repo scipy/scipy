@@ -2203,7 +2203,7 @@ class ConvexHull(_QhullUser):
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(points[:,0], points[:,1], 'o')
     >>> for simplex in hull.simplices:
-    >>>     plt.plot(points[simplex,0], points[simplex,1], 'k-')
+    ...     plt.plot(points[simplex, 0], points[simplex, 1], 'k-')
 
     We could also have directly used the vertices of the hull, which
     for 2-D are guaranteed to be in counterclockwise order:

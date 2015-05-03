@@ -137,7 +137,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     Suppose we want to interpolate the 2-D function
 
     >>> def func(x, y):
-    >>>     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+    ...     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
 
     on a grid in [0, 1]x[0, 1]
 

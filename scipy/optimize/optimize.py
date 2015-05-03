@@ -651,9 +651,10 @@ def check_grad(func, grad, x0, *args, **kwargs):
     Examples
     --------
     >>> def func(x):
-            return x[0]**2 - 0.5 * x[1]**3
+    ...     return x[0]**2 - 0.5 * x[1]**3
     >>> def grad(x):
-            return [2 * x[0], -1.5 * x[1]**2]
+    ...     return [2 * x[0], -1.5 * x[1]**2]
+    >>> from scipy.optimize import check_grad
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08
 
@@ -1059,7 +1060,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     >>> x0 = np.asarray((0, 0))  # Initial guess.
     >>> from scipy import optimize
     >>> res1 = optimize.fmin_cg(f, x0, fprime=gradf, args=args)
-    >>> print 'res1 = ', res1
+    >>> print('res1 = ', res1)
     Optimization terminated successfully.
              Current function value: 1.617021
              Iterations: 2
@@ -2559,7 +2560,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     >>> rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
     >>> from scipy import optimize
     >>> resbrute = optimize.brute(f, rranges, args=params, full_output=True,
-                                  finish=optimize.fmin)
+    ...                           finish=optimize.fmin)
     >>> resbrute[0]  # global minimum
     array([-1.05665192,  1.80834843])
     >>> resbrute[1]  # function value at global minimum

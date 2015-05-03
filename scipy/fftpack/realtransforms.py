@@ -126,9 +126,10 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     even-symmetrical inputs.  The output is also real and even-symmetrical.
     Half of the FFT input is used to generate half of the FFT output:
 
-    >>> fft(array([4., 3., 5., 10., 5., 3.])).real
+    >>> from scipy.fftpack import fft, dct
+    >>> fft(np.array([4., 3., 5., 10., 5., 3.])).real
     array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])
-    >>> dct(array([4., 3., 5., 10.]), 1)
+    >>> dct(np.array([4., 3., 5., 10.]), 1)
     array([ 30.,  -8.,   6.,  -2.])
 
     """
@@ -186,9 +187,10 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     inputs.  The output is also real and even-symmetrical.  Half of the IFFT
     input is used to generate half of the IFFT output:
 
-    >>> ifft(array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])).real
+    >>> from scipy.fftpack import ifft, idct
+    >>> ifft(np.array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])).real
     array([  4.,   3.,   5.,  10.,   5.,   3.])
-    >>> idct(array([ 30.,  -8.,   6.,  -2.]), 1) / 6
+    >>> idct(np.array([ 30.,  -8.,   6.,  -2.]), 1) / 6
     array([  4.,   3.,   5.,  10.])
 
     """

@@ -585,6 +585,7 @@ def funm(A, func, disp=True):
 
     Examples
     --------
+    >>> from scipy.linalg import funm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> funm(a, lambda x: x*x)
     array([[  4.,  15.],

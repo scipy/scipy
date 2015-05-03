@@ -964,6 +964,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     >>> b = [6, 4]
     >>> x0_bounds = (None, None)
     >>> x1_bounds = (-3, None)
+    >>> from scipy.optimize import linprog
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds),
     ...               options={"disp": True})
     >>> print(res)

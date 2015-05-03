@@ -1349,8 +1349,10 @@ class KrylovJacobian(Jacobian):
         Note that you can use also inverse Jacobians as (adaptive)
         preconditioners. For example,
 
+        >>> from scipy.optimize.nonlin import BroydenFirst, KrylovJacobian
+        >>> from scipy.optimize.nonlin import InverseJacobian
         >>> jac = BroydenFirst()
-        >>> kjac = KrylovJacobian(inner_M=jac.inverse).
+        >>> kjac = KrylovJacobian(inner_M=InverseJacobian(jac))
 
         If the preconditioner has a method named 'update', it will be called
         as ``update(x, f)`` after each nonlinear step, with ``x`` giving

@@ -176,6 +176,7 @@ class interp2d(object):
 
     Now use the obtained interpolation function and plot the result:
 
+    >>> import matplotlib.pyplot as plt
     >>> xnew = np.arange(-5.01, 5.01, 1e-2)
     >>> ynew = np.arange(-5.01, 5.01, 1e-2)
     >>> znew = f(xnew, ynew)
@@ -1470,7 +1471,7 @@ class RegularGridInterpolator(object):
 
     >>> from scipy.interpolate import RegularGridInterpolator
     >>> def f(x,y,z):
-    >>>     return 2 * x**3 + 3 * y**2 - z
+    ...     return 2 * x**3 + 3 * y**2 - z
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
     >>> z = np.linspace(7, 9, 33)
@@ -1479,7 +1480,7 @@ class RegularGridInterpolator(object):
     ``data`` is now a 3D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
     Next, define an interpolating function from this data:
 
-    >>> my_interpolating_function = RegularGridInterpolator((x,y,z), data)
+    >>> my_interpolating_function = RegularGridInterpolator((x, y, z), data)
 
     Evaluate the interpolating function at the two points
     ``(x,y,z) = (2.1, 6.2, 8.3)`` and ``(3.3, 5.2, 7.1)``:

@@ -1500,10 +1500,10 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
     --------
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
-                      [  6.,  -9.,  -3.],
-                      [ -3.,  10.,   1.],
-                      [  6.,  -7.,   4.],
-                      [  7.,   8.,  -6.]])
+    ...               [  6.,  -9.,  -3.],
+    ...               [ -3.,  10.,   1.],
+    ...               [  6.,  -7.,   4.],
+    ...               [  7.,   8.,  -6.]])
     >>> q, r = linalg.qr(a)
 
     Given this QR decomposition, update q and r when 2 rows are removed.
@@ -1718,15 +1718,15 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
     --------
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
-                      [  6.,  -7.,   4.],
-                      [  7.,   8.,  -6.]])
+    ...               [  6.,  -7.,   4.],
+    ...               [  7.,   8.,  -6.]])
     >>> q, r = linalg.qr(a)
 
     Given this QR decomposition, update q and r when 2 rows are inserted.
                       
     >>> u = np.array([[  6.,  -9.,  -3.], 
-                      [ -3.,  10.,   1.]])
-    >>> q1, r1 = linalg.qr_insert(q, r, u, 2, 'row', False)
+    ...               [ -3.,  10.,   1.]])
+    >>> q1, r1 = linalg.qr_insert(q, r, u, 2, 'row')
     >>> q1
     array([[-0.25445668,  0.02246245,  0.18146236, -0.72798806,  0.60979671],
            [-0.50891336,  0.23226178, -0.82836478, -0.02837033, -0.00828114],
@@ -2105,10 +2105,10 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     --------
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
-                      [  6.,  -9.,  -3.],
-                      [ -3.,  10.,   1.],
-                      [  6.,  -7.,   4.],
-                      [  7.,   8.,  -6.]])
+    ...               [  6.,  -9.,  -3.],
+    ...               [ -3.,  10.,   1.],
+    ...               [  6.,  -7.,   4.],
+    ...               [  7.,   8.,  -6.]])
     >>> q, r = linalg.qr(a)
 
     Given this q, r decomposition, perform a rank 1 update.
@@ -2166,13 +2166,13 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     Similarly to the above, perform a rank 2 update.
 
     >>> u2 = np.array([[ 7., -1,],
-                       [-2.,  4.],
-                       [ 4.,  2.],
-                       [ 3., -6.],
-                       [ 5.,  3.]])
+    ...                [-2.,  4.],
+    ...                [ 4.,  2.],
+    ...                [ 3., -6.],
+    ...                [ 5.,  3.]])
     >>> v2 = np.array([[ 1., 2.],
-                       [ 3., 4.],
-                       [-5., 2]])
+    ...                [ 3., 4.],
+    ...                [-5., 2]])
     >>> q_up2, r_up2 = linalg.qr_update(q, r, u, v, False)
     >>> q_up2
     array([[-0.33626508, -0.03477253,  0.61956287, -0.64352987, -0.29618884],

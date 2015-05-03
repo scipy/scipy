@@ -129,6 +129,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         >>> def constr2(x):
         ...     return x[1]
         ...
+        >>> from scipy.optimize import fmin_cobyla
         >>> fmin_cobyla(objective, [0.0, 0.1], [constr1, constr2], rhoend=1e-7)
 
            Normal return from subroutine COBYLA
