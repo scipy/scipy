@@ -513,7 +513,7 @@ class TransferFunction(lti):
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: (lti system: SateSpace, TransferFunction or ZerosPolesGain)
+            * 1: (lti system: StateSpace, TransferFunction or ZerosPolesGain)
             * 2: (numerator, denominator)
 
     """
@@ -535,7 +535,7 @@ class TransferFunction(lti):
         ----------
         system : arguments
             The following arguments are possible
-            * an instance of the lti class (SateSpace, TransferFunction
+            * an instance of the lti class (StateSpace, TransferFunction
               or ZerosPolesGain)
             * (numerator, denominator)
 
@@ -638,7 +638,7 @@ class ZerosPolesGain(lti):
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: (lti system: SateSpace, TransferFunction or ZerosPolesGain)
+            * 1: (lti system: StateSpace, TransferFunction or ZerosPolesGain)
             * 3: (zeros, poles, gain)
 
     """
@@ -658,9 +658,9 @@ class ZerosPolesGain(lti):
 
         Parameters
         ----------
-        systen : arguments
+        system : arguments
             The following arguments are possible
-            * an instance of the lti class (SateSpace, TransferFunction,
+            * an instance of the lti class (StateSpace, TransferFunction,
               ZerosPolesGain)
             * (zeros, poles, gain)
 
@@ -678,7 +678,7 @@ class ZerosPolesGain(lti):
         self.zeros, self.poles, self.gain = system
 
     def __repr__(self):
-        """Return representation of the ZerosPolesGain systen"""
+        """Return representation of the ZerosPolesGain system"""
         return '{0}(\n{1},\n{2},\n{3}\n)'.format(
             self.__class__.__name__,
             repr(self.zeros),
@@ -718,7 +718,7 @@ class ZerosPolesGain(lti):
         self._gain = gain
 
     def _copy(self, system):
-        """Copy the parameters of another ZerosPolesGains system
+        """Copy the parameters of another ZerosPolesGain system
 
         Parameters
         ----------
@@ -774,7 +774,7 @@ class StateSpace(lti):
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: (lti system: SateSpace, TransferFunction or ZerosPolesGain)
+            * 1: (lti system: StateSpace, TransferFunction or ZerosPolesGain)
             * 4: (A, B, C, D)
 
     """
@@ -796,7 +796,7 @@ class StateSpace(lti):
         ----------
         system : arguments
             The following arguments are possible
-            * an instance of the lti class (SateSpace, TransferFunction,
+            * an instance of the lti class (StateSpace, TransferFunction,
               ZerosPolesGain)
             * (A, B, C, D) state-space matrices
 
@@ -815,7 +815,7 @@ class StateSpace(lti):
         self.A, self.B, self.C, self.D = abcd_normalize(*system)
 
     def __repr__(self):
-        """Return representation of the state space systen"""
+        """Return representation of the state space system"""
         return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
             self.__class__.__name__,
             repr(self.A),
