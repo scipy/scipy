@@ -327,6 +327,14 @@ def lena():
     lena : ndarray
         Lena image
 
+    Notes
+    -----
+    Though safe for work in most places, this sexualized image is drawn from
+    Playboy and makes some viewers uncomfortable.  It has been very widely
+    used as an example in image processing and is therefore made available
+    for compatibility.  For new code that needs an example image we recommend
+    `face` or `ascent`.
+
     Examples
     --------
     >>> import scipy.misc
