@@ -145,15 +145,18 @@ Continuous-Time Linear Systems
 .. autosummary::
    :toctree: generated/
 
-   freqresp -- frequency response of a continuous-time LTI system.
-   lti      -- linear time invariant system object.
-   lsim     -- continuous-time simulation of output to linear system.
-   lsim2    -- like lsim, but `scipy.integrate.odeint` is used.
-   impulse  -- impulse response of linear, time-invariant (LTI) system.
-   impulse2 -- like impulse, but `scipy.integrate.odeint` is used.
-   step     -- step response of continous-time LTI system.
-   step2    -- like step, but `scipy.integrate.odeint` is used.
-   bode     -- Calculate Bode magnitude and phase data.
+   freqresp         -- frequency response of a continuous-time LTI system.
+   lti              -- Linear time invariant system base class.
+   StateSpace       -- Linear time invariant system in state space form.
+   TransferFunction -- Linear time invariant system in tranfer function form.
+   ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
+   lsim             -- continuous-time simulation of output to linear system.
+   lsim2            -- like lsim, but `scipy.integrate.odeint` is used.
+   impulse          -- impulse response of linear, time-invariant (LTI) system.
+   impulse2         -- like impulse, but `scipy.integrate.odeint` is used.
+   step             -- step response of continous-time LTI system.
+   step2            -- like step, but `scipy.integrate.odeint` is used.
+   bode             -- Calculate Bode magnitude and phase data.
 
 Discrete-Time Linear Systems
 ============================
