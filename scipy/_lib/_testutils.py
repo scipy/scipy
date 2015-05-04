@@ -31,6 +31,7 @@ def knownfailure_overridable(msg=None):
 def suppressed_stdout():
     def suppressed_stdout_decorator(f):
         import nose
+
         def pwrapper(*arg, **kwargs):
             oldstdout = sys.stdout
             sys.stdout = open(os.devnull, 'w')
