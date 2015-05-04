@@ -277,7 +277,8 @@ def ss2zpk(A, B, C, D, input=0):
 
 
 class lti(object):
-    """Linear Time Invariant class which simplifies representation.
+    """
+    Linear Time Invariant system base class.
 
     Parameters
     ----------
@@ -286,16 +287,21 @@ class lti(object):
         The following gives the number of arguments and the corresponding
         subclass that is created:
 
-            * 2: TransferFunction:  (numerator, denominator)
-            * 3: ZerosPolesGain: (zeros, poles, gain)
-            * 4: StateSpace:  (A, B, C, D)
+            * 2: `TransferFunction`:  (numerator, denominator)
+            * 3: `ZerosPolesGain`: (zeros, poles, gain)
+            * 4: `StateSpace`:  (A, B, C, D)
 
-        Each argument can be an array or sequence.
+        Each argument can be an array or a sequence.
 
     Notes
     -----
     `lti` instances do not exist directly. Instead, `lti` creates an instance
-    of one of its subclasses: StateSpace, TransferFunction or ZerosPolesGain.
+    of one of its subclasses: `StateSpace`, `TransferFunction` or
+    `ZerosPolesGain`.
+
+    Changing the value of properties that are not directly part of the current
+    system representation (such as the `zeros` of a `StateSpace` system) is
+    very inefficient and may lead to numerical inaccuracies.
 
     """
     def __new__(cls, *system):
@@ -314,7 +320,8 @@ class lti(object):
         return super(lti, cls).__new__(cls)
 
     def __init__(self, *system):
-        """Initialize the `lti` baseclass.
+        """
+        Initialize the `lti` baseclass.
 
         The heavy lifting is done by the subclasses.
         """
@@ -323,6 +330,7 @@ class lti(object):
 
     @property
     def num(self):
+        """Numerator of the `TransferFunction` system."""
         return self.to_tf().num
 
     @num.setter
@@ -334,6 +342,7 @@ class lti(object):
 
     @property
     def den(self):
+        """Denominator of the `TransferFunction` system."""
         return self.to_tf().den
 
     @den.setter
@@ -345,6 +354,7 @@ class lti(object):
 
     @property
     def zeros(self):
+        """Zeros of the `ZerosPolesGain` system."""
         return self.to_zpk().zeros
 
     @zeros.setter
@@ -356,6 +366,7 @@ class lti(object):
 
     @property
     def poles(self):
+        """Poles of the `ZerosPolesGain` system."""
         return self.to_zpk().poles
 
     @poles.setter
@@ -367,6 +378,7 @@ class lti(object):
 
     @property
     def gain(self):
+        """Gain of the `ZerosPolesGain` system."""
         return self.to_zpk().gain
 
     @gain.setter
@@ -378,6 +390,7 @@ class lti(object):
 
     @property
     def A(self):
+        """A matrix of the `StateSpace` system."""
         return self.to_ss().A
 
     @A.setter
@@ -389,6 +402,7 @@ class lti(object):
 
     @property
     def B(self):
+        """B matrix of the `StateSpace` system."""
         return self.to_ss().B
 
     @B.setter
@@ -400,6 +414,7 @@ class lti(object):
 
     @property
     def C(self):
+        """C matrix of the `StateSpace` system."""
         return self.to_ss().C
 
     @C.setter
@@ -411,6 +426,7 @@ class lti(object):
 
     @property
     def D(self):
+        """D matrix of the `StateSpace` system."""
         return self.to_ss().D
 
     @D.setter
@@ -506,6 +522,11 @@ class lti(object):
 class TransferFunction(lti):
     """Linear Time Invariant system class in transfer function form.
 
+    Represents the system as the transfer function
+    :math:`H(s)=\sum_i b[i] s^i / \sum_j a[j] s^i`, where :math:`a` are
+    elements of the numerator `num` and :math:`b` are the element of the
+    denominator `den`.
+
     Parameters
     ----------
     system : arguments
@@ -513,12 +534,20 @@ class TransferFunction(lti):
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: (lti system: StateSpace, TransferFunction or ZerosPolesGain)
-            * 2: (numerator, denominator)
+            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+              `ZerosPolesGain`)
+            * 2: array_like: (numerator, denominator)
+
+    Notes
+    -----
+    Changing the value of properties that are not part of the
+    `TransferFunction` system representation (such as the `A`, `B`, `C`, `D`
+    state-space matrices) is very inefficient and may lead to numerical
+    inaccuracies.
 
     """
     def __new__(cls, *system):
-        """Handle object conversion if input is an instance of lti"""
+        """Handle object conversion if input is an instance of lti."""
         if len(system) == 1:
             if isinstance(system[0], TransferFunction):
                 return copy.deepcopy(system[0])
@@ -529,15 +558,15 @@ class TransferFunction(lti):
         return super(TransferFunction, cls).__new__(cls)
 
     def __init__(self, *system):
-        """Initialize the state space LTI system
+        """Initialize the state space LTI system.
 
         Parameters
         ----------
         system : arguments
             The following arguments are possible
-            * an instance of the lti class (StateSpace, TransferFunction
-              or ZerosPolesGain)
-            * (numerator, denominator)
+                * an instance of the lti class (`StateSpace`, `TransferFunction`
+                  or `ZerosPolesGain`)
+                * (numerator, denominator)
 
         """
         # Conversion of lti instances is handled in __new__
@@ -583,45 +612,49 @@ class TransferFunction(lti):
         self._den = atleast_1d(den)
 
     def _copy(self, system):
-        """Copy the parameters of another TransferFunction object
+        """
+        Copy the parameters of another `TransferFunction` object
 
         Parameters
         ----------
-        system : TransferFunction
-            The StateSpace system that is to be copied
+        system : `TransferFunction`
+            The `StateSpace` system that is to be copied
 
         """
         self.num = system.num
         self.den = system.den
 
     def to_tf(self):
-        """Convert system representation to transfer function.
+        """
+        Return a copy of the current `TransferFunction` system.
 
         Returns
         -------
-        sys : instance of TransferFunction
-            The current system (self)
+        sys : instance of `TransferFunction`
+            The current system (copy)
 
         """
         return self
 
     def to_zpk(self):
-        """Convert system representation to zeros, poles, gain.
+        """
+        Convert system representation to `ZerosPolesGain`.
 
         Returns
         -------
-        sys : instance of ZerosPolesGain
-            The current object (self)
+        sys : instance of `ZerosPolesGain`
+            Zeros, poles, gain representation of the current system
 
         """
         return ZerosPolesGain(*tf2zpk(self.num, self.den))
 
     def to_ss(self):
-        """Convert system representation to state space.
+        """
+        Convert system representation to `StateSpace`.
 
         Returns
         -------
-        sys : instance of StateSpace
+        sys : instance of `StateSpace`
             State space model of the current system
 
         """
@@ -629,7 +662,12 @@ class TransferFunction(lti):
 
 
 class ZerosPolesGain(lti):
-    """Linear Time Invariant system class in zeros, poles, gain form.
+    """
+    Linear Time Invariant system class in zeros, poles, gain form.
+
+    Represents the system as the transfer function
+    :math:`H(s)=k \prod_i (s - z[i]) / \prod_j (s - p[j])`, where :math:`k` is
+    the `gain`, :math:`z` are the `zeros` and :math:`p` are the `poles`.
 
     Parameters
     ----------
@@ -638,12 +676,20 @@ class ZerosPolesGain(lti):
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: (lti system: StateSpace, TransferFunction or ZerosPolesGain)
-            * 3: (zeros, poles, gain)
+            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+              `ZerosPolesGain`)
+            * 3: array_like: (zeros, poles, gain)
+
+    Notes
+    -----
+    Changing the value of properties that are not part of the
+    `ZerosPolesGain` system representation (such as the `A`, `B`, `C`, `D`
+    state-space matrices) is very inefficient and may lead to numerical
+    inaccuracies.
 
     """
     def __new__(cls, *system):
-        """Handle object conversion if input is an instance of lti"""
+        """Handle object conversion if input is an instance of `lti`"""
         if len(system) == 1:
             if isinstance(system[0], ZerosPolesGain):
                 return copy.deepcopy(system[0])
@@ -654,15 +700,16 @@ class ZerosPolesGain(lti):
         return super(ZerosPolesGain, cls).__new__(cls)
 
     def __init__(self, *system):
-        """Initialize the zeros, poles, gain LTI system
+        """
+        Initialize the zeros, poles, gain LTI system
 
         Parameters
         ----------
         system : arguments
             The following arguments are possible
-            * an instance of the lti class (StateSpace, TransferFunction,
-              ZerosPolesGain)
-            * (zeros, poles, gain)
+                * an instance of the `lti` class (`StateSpace`,
+                  `TransferFunction`, `ZerosPolesGain`)
+                * (zeros, poles, gain)
 
         """
         # Conversion of lti instances is handled in __new__
@@ -678,7 +725,7 @@ class ZerosPolesGain(lti):
         self.zeros, self.poles, self.gain = system
 
     def __repr__(self):
-        """Return representation of the ZerosPolesGain system"""
+        """Return representation of the `ZerosPolesGain` system"""
         return '{0}(\n{1},\n{2},\n{3}\n)'.format(
             self.__class__.__name__,
             repr(self.zeros),
@@ -718,11 +765,12 @@ class ZerosPolesGain(lti):
         self._gain = gain
 
     def _copy(self, system):
-        """Copy the parameters of another ZerosPolesGain system
+        """
+        Copy the parameters of another `ZerosPolesGain` system.
 
         Parameters
         ----------
-        system : instance of ZerosPolesGain
+        system : instance of `ZerosPolesGain`
             The zeros, poles gain system that is to be copied
 
         """
@@ -731,33 +779,36 @@ class ZerosPolesGain(lti):
         self.gain = system.gain
 
     def to_tf(self):
-        """Convert system representation to transfer function.
+        """
+        Convert system representation to `TransferFunction`.
 
         Returns
         -------
-        sys : instance of TransferFunction
+        sys : instance of `TransferFunction`
             Transfer function of the current system
 
         """
         return TransferFunction(*zpk2tf(self.zeros, self.poles, self.gain))
 
     def to_zpk(self):
-        """Convert system representation to zeros, poles, gain.
+        """
+        Return a copy of the current 'ZerosPolesGain' system.
 
         Returns
         -------
-        sys : instance of ZerosPolesGain
-            The current system (self)
+        sys : instance of `ZerosPolesGain`
+            The current system (copy)
 
         """
         return self
 
     def to_ss(self):
-        """Convert system representation to state space.
+        """
+        Convert system representation to `StateSpace`.
 
         Returns
         -------
-        sys : instance of StateSpace
+        sys : instance of `StateSpace`
             State space model of the current system
 
         """
@@ -765,7 +816,13 @@ class ZerosPolesGain(lti):
 
 
 class StateSpace(lti):
-    """Linear Time Invariant system class in state-space form.
+    """
+    Linear Time Invariant system class in state-space form.
+
+    Represents the system as the first order differential equation
+    :math:`\dot{x} = A x + B u`.
+
+
 
     Parameters
     ----------
@@ -774,12 +831,19 @@ class StateSpace(lti):
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: (lti system: StateSpace, TransferFunction or ZerosPolesGain)
-            * 4: (A, B, C, D)
+            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+              `ZerosPolesGain`)
+            * 4: array_like: (A, B, C, D)
+
+    Notes
+    -----
+    Changing the value of properties that are not part of the
+    `StateSpace` system representation (such as `zeros` or `poles`) is very
+    inefficient and may lead to numerical inaccuracies.
 
     """
     def __new__(cls, *system):
-        """Handle object conversion if input is an instance of lti"""
+        """Handle object conversion if input is an instance of `lti`"""
         if len(system) == 1:
             if isinstance(system[0], StateSpace):
                 return copy.deepcopy(system[0])
@@ -790,15 +854,16 @@ class StateSpace(lti):
         return super(StateSpace, cls).__new__(cls)
 
     def __init__(self, *system):
-        """Initialize the state space LTI system
+        """
+        Initialize the state space LTI system.
 
         Parameters
         ----------
         system : arguments
             The following arguments are possible
-            * an instance of the lti class (StateSpace, TransferFunction,
-              ZerosPolesGain)
-            * (A, B, C, D) state-space matrices
+                * an instance of the `lti` class (`StateSpace`,
+                  `TransferFunction`, `ZerosPolesGain`)
+                * (A, B, C, D) state-space matrices
 
         """
         # Conversion of lti instances is handled in __new__
@@ -815,7 +880,7 @@ class StateSpace(lti):
         self.A, self.B, self.C, self.D = abcd_normalize(*system)
 
     def __repr__(self):
-        """Return representation of the state space system"""
+        """Return representation of the `StateSpace` system."""
         return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
             self.__class__.__name__,
             repr(self.A),
@@ -859,11 +924,12 @@ class StateSpace(lti):
         self._D = _atleast_2d_or_none(D)
 
     def _copy(self, system):
-        """Copy the parameters of another StateSpace system
+        """
+        Copy the parameters of another `StateSpace` system.
 
         Parameters
         ----------
-        system : instance of StateSpace
+        system : instance of `StateSpace`
             The state-space system that is to be copied
 
         """
@@ -873,44 +939,49 @@ class StateSpace(lti):
         self.D = system.D
 
     def to_tf(self, **kwargs):
-        """Convert system representation to transfer function.
+        """
+        Convert system representation to `TransferFunction`.
 
         Parameters
         ----------
         kwargs : dict, optional
-            Additional keywords passed to ss2zpk
+            Additional keywords passed to `ss2zpk`
 
         Returns
         -------
-        sys : instance of TransferFunction
+        sys : instance of `TransferFunction`
             Transfer function of the current system
 
         """
-        return TransferFunction(*ss2tf(self._A, self._B, self._C, self._D, **kwargs))
+        return TransferFunction(*ss2tf(self._A, self._B, self._C, self._D,
+                                       **kwargs))
 
     def to_zpk(self, **kwargs):
-        """Convert system representation to zeros, poles, gain.
+        """
+        Convert system representation to `ZerosPolesGain`.
 
         Parameters
         ----------
         kwargs : dict, optional
-            Additional keywords passed to ss2zpk
+            Additional keywords passed to `ss2zpk`
 
         Returns
         -------
-        sys : instance of ZerosPolesGain
-            Zero, pole, gain representation of the current system
+        sys : instance of `ZerosPolesGain`
+            Zeros, poles, gain representation of the current system
 
         """
-        return ZerosPolesGain(*ss2zpk(self._A, self._B, self._C, self._D, **kwargs))
+        return ZerosPolesGain(*ss2zpk(self._A, self._B, self._C, self._D,
+                                      **kwargs))
 
     def to_ss(self):
-        """Convert system representation to state space.
+        """
+        Return a copy of the current `StateSpace` system.
 
         Returns
         -------
-        sys : instance of StateSpace
-            The current system (self)
+        sys : instance of `StateSpace`
+            The current system (copy)
 
         """
         return self
