@@ -548,11 +548,8 @@ class TransferFunction(lti):
     """
     def __new__(cls, *system):
         """Handle object conversion if input is an instance of lti."""
-        if len(system) == 1:
-            if isinstance(system[0], TransferFunction):
-                return copy.deepcopy(system[0])
-            if isinstance(system[0], lti):
-                return system[0].to_tf()
+        if len(system) == 1 and isinstance(system[0], lti):
+            return system[0].to_tf()
 
         # No special conversion needed
         return super(TransferFunction, cls).__new__(cls)
@@ -634,7 +631,7 @@ class TransferFunction(lti):
             The current system (copy)
 
         """
-        return self
+        return copy.deepcopy(self)
 
     def to_zpk(self):
         """
@@ -690,11 +687,8 @@ class ZerosPolesGain(lti):
     """
     def __new__(cls, *system):
         """Handle object conversion if input is an instance of `lti`"""
-        if len(system) == 1:
-            if isinstance(system[0], ZerosPolesGain):
-                return copy.deepcopy(system[0])
-            if isinstance(system[0], lti):
-                return system[0].to_zpk()
+        if len(system) == 1 and isinstance(system[0], lti):
+            return system[0].to_zpk()
 
         # No special conversion needed
         return super(ZerosPolesGain, cls).__new__(cls)
@@ -800,7 +794,7 @@ class ZerosPolesGain(lti):
             The current system (copy)
 
         """
-        return self
+        return copy.deepcopy(self)
 
     def to_ss(self):
         """
@@ -844,11 +838,8 @@ class StateSpace(lti):
     """
     def __new__(cls, *system):
         """Handle object conversion if input is an instance of `lti`"""
-        if len(system) == 1:
-            if isinstance(system[0], StateSpace):
-                return copy.deepcopy(system[0])
-            if isinstance(system[0], lti):
-                return system[0].to_ss()
+        if len(system) == 1 and isinstance(system[0], lti):
+            return system[0].to_ss()
 
         # No special conversion needed
         return super(StateSpace, cls).__new__(cls)
@@ -984,7 +975,7 @@ class StateSpace(lti):
             The current system (copy)
 
         """
-        return self
+        return copy.deepcopy(self)
 
 
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
