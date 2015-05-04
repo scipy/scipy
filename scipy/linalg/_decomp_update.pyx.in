@@ -2239,8 +2239,12 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     if u1.ndim != v1.ndim:
         raise ValueError('u and v must have the same number of dimensions')
     
-    if u1.ndim == 2 and u1.shape[1] != v1.shape[1]:
-        raise ValueError('Second dimension of u and v must be the same')
+    if u1.ndim == 2:
+        if u1.shape[1] != v1.shape[1]:
+            raise ValueError('Second dimension of u and v must be the same')
+        elif u1.shape[1] == 1:
+            u1 = np.squeeze(u1)
+            v1 = np.squeeze(v1)
 
     if u1.ndim == 1:
         p = 1
