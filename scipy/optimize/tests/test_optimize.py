@@ -18,6 +18,7 @@ from numpy.testing import (assert_raises, assert_allclose, assert_equal,
                            assert_, TestCase, run_module_suite, dec,
                            assert_almost_equal)
 
+from scipy._lib._testutils import suppressed_stdout
 from scipy import optimize
 
 
@@ -44,8 +45,8 @@ def test_check_grad():
     assert_(r > 1e-7)
 
 
-class TestOptimize(object):
-    """ Test case for a simple constrained entropy maximization problem
+class CheckOptimize(object):
+    """ Base test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
     """
@@ -86,22 +87,25 @@ class TestOptimize(object):
     def hessp(self, x, p):
         return np.dot(self.hess(x), p)
 
-    def test_cg(self, use_wrapper=False):
+
+class CheckOptimizeParameterized(CheckOptimize):
+
+    @suppressed_stdout()
+    def test_cg(self):
         # conjugate gradient optimization routine
-        if use_wrapper:
-            opts = {'maxiter': self.maxiter, 'disp': False,
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='CG', jac=self.grad,
                                     options=opts)
-
             params, fopt, func_calls, grad_calls, warnflag = \
                 res['x'], res['fun'], res['nfev'], res['njev'], res['status']
         else:
-            retval = optimize.fmin_cg(self.func, self.startparams, self.grad, (),
-                                      maxiter=self.maxiter,
-                                      full_output=True, disp=False, retall=False)
-
+            retval = optimize.fmin_cg(self.func, self.startparams,
+                                      self.grad, (), maxiter=self.maxiter,
+                                      full_output=True, disp=self.disp,
+                                      retall=False)
             (params, fopt, func_calls, grad_calls, warnflag) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
@@ -118,23 +122,24 @@ class TestOptimize(object):
                          [0, -5.05700028e-01, 4.95985862e-01]],
                         atol=1e-14, rtol=1e-7)
 
-    def test_bfgs(self, use_wrapper=False):
+    @suppressed_stdout()
+    def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
-        if use_wrapper:
-            opts = {'maxiter': self.maxiter, 'disp': False,
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams,
                                     jac=self.grad, method='BFGS', args=(),
                                     options=opts)
 
-            params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag = \
-                    res['x'], res['fun'], res['jac'], res['hess_inv'], \
-                    res['nfev'], res['njev'], res['status']
+            params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag = (
+                    res['x'], res['fun'], res['jac'], res['hess_inv'],
+                    res['nfev'], res['njev'], res['status'])
         else:
             retval = optimize.fmin_bfgs(self.func, self.startparams, self.grad,
                                         args=(), maxiter=self.maxiter,
-                                        full_output=True, disp=False, retall=False)
-
+                                        full_output=True, disp=self.disp,
+                                        retall=False)
             (params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
@@ -151,68 +156,40 @@ class TestOptimize(object):
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
 
-    def test_bfgs_nan(self):
-        # Test corner case where nan is fed to optimizer.  See gh-2067.
-        func = lambda x: x
-        fprime = lambda x: np.ones_like(x)
-        x0 = [np.nan]
-        with np.errstate(over='ignore', invalid='ignore'):
-            x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
-            assert_(np.isnan(func(x)))
-
-    def test_bfgs_numerical_jacobian(self):
-        # BFGS with numerical jacobian and a vector epsilon parameter.
-        # define the epsilon parameter using a random vector
-        epsilon = np.sqrt(np.finfo(float).eps) * np.random.rand(len(self.solution))
-
-        params = optimize.fmin_bfgs(self.func, self.startparams,
-                                    epsilon=epsilon, args=(),
-                                    maxiter=self.maxiter, disp=False)
-
-        assert_allclose(self.func(params), self.func(self.solution),
-                        atol=1e-6)
-
-    def test_bfgs_infinite(self, use_wrapper=False):
+    @suppressed_stdout()
+    def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
         func = lambda x: -np.e**-x
         fprime = lambda x: -func(x)
         x0 = [0]
         olderr = np.seterr(over='ignore')
         try:
-            if use_wrapper:
-                opts = {'disp': False}
+            if self.use_wrapper:
+                opts = {'disp': self.disp}
                 x = optimize.minimize(func, x0, jac=fprime, method='BFGS',
                                       args=(), options=opts)['x']
             else:
-                x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
+                x = optimize.fmin_bfgs(func, x0, fprime, disp=self.disp)
             assert_(not np.isfinite(func(x)))
         finally:
             np.seterr(**olderr)
 
-    def test_bfgs_gh_2169(self):
-        def f(x):
-            if x < 0:
-                return 1.79769313e+308
-            else:
-                return x + 1./x
-        xs = optimize.fmin_bfgs(f, [10.], disp=False)
-        assert_allclose(xs, 1.0, rtol=1e-4, atol=1e-4)
-
-    def test_powell(self, use_wrapper=False):
+    @suppressed_stdout()
+    def test_powell(self):
         # Powell (direction set) optimization routine
-        if use_wrapper:
-            opts = {'maxiter': self.maxiter, 'disp': False,
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Powell', options=opts)
-            params, fopt, direc, numiter, func_calls, warnflag = \
-                    res['x'], res['fun'], res['direc'], res['nit'], \
-                    res['nfev'], res['status']
+            params, fopt, direc, numiter, func_calls, warnflag = (
+                    res['x'], res['fun'], res['direc'], res['nit'],
+                    res['nfev'], res['status'])
         else:
             retval = optimize.fmin_powell(self.func, self.startparams,
-                                        args=(), maxiter=self.maxiter,
-                                        full_output=True, disp=False, retall=False)
-
+                                          args=(), maxiter=self.maxiter,
+                                          full_output=True, disp=self.disp,
+                                          retall=False)
             (params, fopt, direc, numiter, func_calls, warnflag) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
@@ -239,21 +216,22 @@ class TestOptimize(object):
                          [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
-    def test_neldermead(self, use_wrapper=False):
+    @suppressed_stdout()
+    def test_neldermead(self):
         # Nelder-Mead simplex algorithm
-        if use_wrapper:
-            opts = {'maxiter': self.maxiter, 'disp': False,
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Nelder-mead', options=opts)
-            params, fopt, numiter, func_calls, warnflag = \
-                    res['x'], res['fun'], res['nit'], res['nfev'], \
-                    res['status']
+            params, fopt, numiter, func_calls, warnflag = (
+                    res['x'], res['fun'], res['nit'], res['nfev'],
+                    res['status'])
         else:
             retval = optimize.fmin(self.func, self.startparams,
                                         args=(), maxiter=self.maxiter,
-                                        full_output=True, disp=False, retall=False)
-
+                                        full_output=True, disp=self.disp,
+                                        retall=False)
             (params, fopt, numiter, func_calls, warnflag) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
@@ -270,10 +248,11 @@ class TestOptimize(object):
                          [0.19572515, -0.63648426, 0.35838135]],
                         atol=1e-14, rtol=1e-7)
 
-    def test_ncg(self, use_wrapper=False):
+    @suppressed_stdout()
+    def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
-        if use_wrapper:
-            opts = {'maxiter': self.maxiter, 'disp': False,
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -281,7 +260,7 @@ class TestOptimize(object):
         else:
             retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
                                        args=(), maxiter=self.maxiter,
-                                       full_output=False, disp=False,
+                                       full_output=False, disp=self.disp,
                                        retall=False)
 
         params = retval
@@ -303,10 +282,11 @@ class TestOptimize(object):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
-    def test_ncg_hess(self, use_wrapper=False):
+    @suppressed_stdout()
+    def test_ncg_hess(self):
         # Newton conjugate gradient with Hessian
-        if use_wrapper:
-            opts = {'maxiter': self.maxiter, 'disp': False,
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -316,7 +296,7 @@ class TestOptimize(object):
             retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
                                        fhess=self.hess,
                                        args=(), maxiter=self.maxiter,
-                                       full_output=False, disp=False,
+                                       full_output=False, disp=self.disp,
                                        retall=False)
 
         params = retval
@@ -337,10 +317,11 @@ class TestOptimize(object):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
-    def test_ncg_hessp(self, use_wrapper=False):
+    @suppressed_stdout()
+    def test_ncg_hessp(self):
         # Newton conjugate gradient with Hessian times a vector p.
-        if use_wrapper:
-            opts = {'maxiter': self.maxiter, 'disp': False,
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
                     'return_all': False}
             retval = optimize.minimize(self.func, self.startparams,
                                        method='Newton-CG', jac=self.grad,
@@ -350,7 +331,7 @@ class TestOptimize(object):
             retval = optimize.fmin_ncg(self.func, self.startparams, self.grad,
                                        fhess_p=self.hessp,
                                        args=(), maxiter=self.maxiter,
-                                       full_output=False, disp=False,
+                                       full_output=False, disp=self.disp,
                                        retall=False)
 
         params = retval
@@ -370,6 +351,59 @@ class TestOptimize(object):
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
+
+
+class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
+    use_wrapper = True
+    disp = True
+
+
+class TestOptimizeWrapperNoDisp(CheckOptimizeParameterized):
+    use_wrapper = True
+    disp = False
+
+
+class TestOptimizeNoWrapperDisp(CheckOptimizeParameterized):
+    use_wrapper = False
+    disp = True
+
+
+class TestOptimizeNoWrapperNoDisp(CheckOptimizeParameterized):
+    use_wrapper = False
+    disp = False
+
+
+class TestOptimizeSimple(CheckOptimize):
+
+    def test_bfgs_nan(self):
+        # Test corner case where nan is fed to optimizer.  See gh-2067.
+        func = lambda x: x
+        fprime = lambda x: np.ones_like(x)
+        x0 = [np.nan]
+        with np.errstate(over='ignore', invalid='ignore'):
+            x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
+            assert_(np.isnan(func(x)))
+
+    def test_bfgs_numerical_jacobian(self):
+        # BFGS with numerical jacobian and a vector epsilon parameter.
+        # define the epsilon parameter using a random vector
+        epsilon = np.sqrt(np.finfo(float).eps) * np.random.rand(len(self.solution))
+
+        params = optimize.fmin_bfgs(self.func, self.startparams,
+                                    epsilon=epsilon, args=(),
+                                    maxiter=self.maxiter, disp=False)
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
+
+    def test_bfgs_gh_2169(self):
+        def f(x):
+            if x < 0:
+                return 1.79769313e+308
+            else:
+                return x + 1./x
+        xs = optimize.fmin_bfgs(f, [10.], disp=False)
+        assert_allclose(xs, 1.0, rtol=1e-4, atol=1e-4)
 
     def test_l_bfgs_b(self):
         # limited-memory bound-constrained BFGS algorithm
@@ -487,27 +521,6 @@ class TestOptimize(object):
         res = optimize.minimize(optimize.rosen, x0, method=custmin,
                                 options=dict(stepsize=0.05))
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
-
-    def test_minimize(self):
-        # Tests for the minimize wrapper.
-        self.setUp()
-        self.test_bfgs(True)
-        self.setUp()
-        self.test_bfgs_infinite(True)
-        self.setUp()
-        self.test_cg(True)
-        self.setUp()
-        self.test_ncg(True)
-        self.setUp()
-        self.test_ncg_hess(True)
-        self.setUp()
-        self.test_ncg_hessp(True)
-        self.setUp()
-        self.test_neldermead(True)
-        self.setUp()
-        self.test_powell(True)
-        self.setUp()
-        self.test_custom()
 
     def test_minimize_tol_parameter(self):
         # Check that the minimize() tol= argument does something
@@ -938,6 +951,7 @@ class TestBrute:
     def func(self, z, *params):
         return self.f1(z, *params) + self.f2(z, *params) + self.f3(z, *params)
 
+    @suppressed_stdout()
     def test_brute(self):
         # test fmin
         resbrute = optimize.brute(self.func, self.rranges, args=self.params,
