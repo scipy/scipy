@@ -537,14 +537,28 @@ class _PPolyBase(object):
     """
     Base class for piecewise polynomials.
     """
-    __slots__ = ('c', 'x', 'extrapolate')
+    __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
-    def __init__(self, c, x, extrapolate=None):
+    def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = bool(extrapolate)
+
+        if not (0 <= axis < self.c.ndim - 1):
+            raise ValueError("%s must be between 0 and %s" % (axis, c.ndim-1))
+
+        self.axis = axis
+        if axis != 0:
+            # roll the interpolation axis to be the first one in self.c
+            # More specifically, the target shape for self.c is (k, m, ...),
+            # and axis !=0 means that we have c.shape (..., k, m, ...)
+            #                                               ^
+            #                                              axis
+            # So we roll two of them.
+            self.c = np.rollaxis(self.c, axis+1)
+            self.c = np.rollaxis(self.c, axis+1)
 
         if self.x.ndim != 1:
             raise ValueError("x must be 1-dimensional")
@@ -570,7 +584,7 @@ class _PPolyBase(object):
             return np.float_
 
     @classmethod
-    def construct_fast(cls, c, x, extrapolate=None):
+    def construct_fast(cls, c, x, extrapolate=None, axis=0):
         """
         Construct the piecewise polynomial without making checks.
 
@@ -583,6 +597,7 @@ class _PPolyBase(object):
         self = object.__new__(cls)
         self.c = c
         self.x = x
+        self.axis = axis
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = extrapolate
@@ -686,12 +701,18 @@ class _PPolyBase(object):
         if extrapolate is None:
             extrapolate = self.extrapolate
         x = np.asarray(x)
-        x_shape = x.shape
+        x_shape, x_ndim = x.shape, x.ndim
         x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
         out = np.empty((len(x), prod(self.c.shape[2:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
         self._evaluate(x, nu, extrapolate, out)
-        return out.reshape(x_shape + self.c.shape[2:])
+        out = out.reshape(x_shape + self.c.shape[2:])
+        if self.axis != 0:
+            # transpose to move the calculated values to the interpolation axis
+            l = list(range(out.ndim))
+            l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
+            out = out.transpose(l)
+        return out
 
 
 class PPoly(_PPolyBase):
@@ -715,6 +736,8 @@ class PPoly(_PPolyBase):
     extrapolate : bool, optional
         Whether to extrapolate to ouf-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
+    axis : int, optional
+        Interpolation axis. Default is zero.
 
     Attributes
     ----------
@@ -796,7 +819,7 @@ class PPoly(_PPolyBase):
         c2 *= factor[(slice(None),) + (None,)*(c2.ndim-1)]
 
         # construct a compatible polynomial
-        return self.construct_fast(c2, self.x, self.extrapolate)
+        return self.construct_fast(c2, self.x, self.extrapolate, self.axis)
 
     def antiderivative(self, nu=1):
         """
@@ -841,7 +864,7 @@ class PPoly(_PPolyBase):
                               self.x, nu - 1)
 
         # construct a compatible polynomial
-        return self.construct_fast(c, self.x, self.extrapolate)
+        return self.construct_fast(c, self.x, self.extrapolate, self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """
@@ -1005,7 +1028,7 @@ class PPoly(_PPolyBase):
         if extrapolate is None:
             extrapolate = bp.extrapolate
 
-        return cls.construct_fast(c, bp.x, extrapolate)
+        return cls.construct_fast(c, bp.x, extrapolate, bp.axis)
 
 
 class BPoly(_PPolyBase):
@@ -1033,6 +1056,8 @@ class BPoly(_PPolyBase):
     extrapolate : bool, optional
         Whether to extrapolate to ouf-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
+    axis : int, optional
+        Interpolation axis. Default is zero.
 
     Attributes
     ----------
@@ -1141,7 +1166,7 @@ class BPoly(_PPolyBase):
             c2 = np.zeros((1,) + c2.shape[1:], dtype=c2.dtype)
 
         # construct a compatible polynomial
-        return self.construct_fast(c2, self.x, self.extrapolate)
+        return self.construct_fast(c2, self.x, self.extrapolate, self.axis)
 
     def extend(self, c, x, right=True):
         k = max(self.c.shape[0], c.shape[0])
@@ -1179,7 +1204,7 @@ class BPoly(_PPolyBase):
         if extrapolate is None:
             extrapolate = pp.extrapolate
 
-        return cls.construct_fast(c, pp.x, extrapolate)
+        return cls.construct_fast(c, pp.x, extrapolate, pp.axis)
 
     @classmethod
     def from_derivatives(cls, xi, yi, orders=None, extrapolate=None):
