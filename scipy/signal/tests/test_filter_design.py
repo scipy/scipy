@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose)
+                           run_module_suite, assert_allclose, assert_warns)
 from numpy import array, spacing, sin, pi, sort
 
 from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
@@ -14,7 +14,8 @@ from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
                           cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
-                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear)
+                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear, group_delay,
+                          firwin)
 from scipy.signal.filter_design import _cplxreal, _cplxpair
 
 
@@ -2086,6 +2087,55 @@ class TestIIRFilter(TestCase):
         assert_raises(ValueError, iirfilter, 1, -1, btype='high')
         assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
         assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
+
+
+class TestGroupDelay(TestCase):
+    def test_identity_filter(self):
+        w, gd = group_delay((1, 1))
+        assert_array_almost_equal(w, pi * np.arange(512) / 512)
+        assert_array_almost_equal(gd, np.zeros(512))
+        w, gd = group_delay((1, 1), whole=True)
+        assert_array_almost_equal(w, 2 * pi * np.arange(512) / 512)
+        assert_array_almost_equal(gd, np.zeros(512))
+
+    def test_fir(self):
+        # Let's design linear phase FIR and check that the group delay
+        # is constant.
+        N = 100
+        b = firwin(N + 1, 0.1)
+        w, gd = group_delay((b, 1))
+        assert_allclose(gd, 0.5 * N)
+
+    def test_iir(self):
+        # Let's design Butterworth filter and test the group delay at
+        # some points against MATLAB answer.
+        b, a = butter(4, 0.1)
+        w = np.linspace(0, pi, num=10, endpoint=False)
+        w, gd = group_delay((b, a), w=w)
+        matlab_gd = np.array([8.249313898506037, 11.958947880907104,
+                              2.452325615326005, 1.048918665702008,
+                              0.611382575635897, 0.418293269460578,
+                              0.317932917836572, 0.261371844762525,
+                              0.229038045801298, 0.212185774208521])
+        assert_array_almost_equal(gd, matlab_gd)
+
+    def test_singular(self):
+        # Let's create a filter with zeros and poles on the unit circle and
+        # check if warning is raised and the group delay is set to zero at
+        # these frequencies.
+        z1 = np.exp(1j * 0.1 * pi)
+        z2 = np.exp(1j * 0.25 * pi)
+        p1 = np.exp(1j * 0.5 * pi)
+        p2 = np.exp(1j * 0.8 * pi)
+        b = np.convolve([1, -z1], [1, -z2])
+        a = np.convolve([1, -p1], [1, -p2])
+        w = np.array([0.1 * pi, 0.25 * pi, -0.5 * pi, -0.8 * pi])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            assert_warns(UserWarning, group_delay, (b, a), w=w)
+            w, gd = group_delay((b, a), w=w)
+            assert_allclose(gd, 0)
+
 
 if __name__ == "__main__":
     run_module_suite()

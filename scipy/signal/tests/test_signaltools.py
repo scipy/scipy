@@ -460,6 +460,17 @@ class TestWiener(TestCase):
         assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
 
+class TestResample(TestCase):
+
+    def test_basic(self):
+        # Regression test for issue #3603.
+        # window.shape must equal to sig.shape[0]
+        sig = np.arange(128)
+        num = 256
+        win = signal.get_window(('kaiser', 8.0), 160)
+        assert_raises(ValueError, signal.resample, sig, num, window=win)
+
+
 class TestCSpline1DEval(TestCase):
 
     def test_basic(self):

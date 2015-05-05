@@ -13,6 +13,10 @@ _EPS = np.finfo(float).eps
 # The largest [in magnitude] usable floating value.
 _XMAX = np.finfo(float).machar.xmax
 
+# The log of the largest usable floating value; useful for knowing
+# when exp(something) will overflow
+_LOGXMAX = np.log(_XMAX)
+
 # The smallest [in magnitude] usable floating value.
 _XMIN = np.finfo(float).machar.xmin
 

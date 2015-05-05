@@ -33,8 +33,8 @@ DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 dists = ['uniform','norm','lognorm','expon','beta',
          'powerlaw','bradford','burr','fisk','cauchy','halfcauchy',
          'foldcauchy','gamma','gengamma','loggamma',
-         'alpha','anglit','arcsine','betaprime',
-         'dgamma','exponweib','exponpow','frechet_l','frechet_r',
+         'alpha','anglit','arcsine','betaprime','dgamma',
+         'exponnorm', 'exponweib','exponpow','frechet_l','frechet_r',
          'gilbrat','f','ncf','chi2','chi','nakagami','genpareto',
          'genextreme','genhalflogistic','pareto','lomax','halfnorm',
          'halflogistic','fatiguelife','foldnorm','ncx2','t','nct',
@@ -774,6 +774,40 @@ class TestExpon(TestCase):
     def test_tail(self):  # Regression test for ticket 807
         assert_equal(stats.expon.cdf(1e-18), 1e-18)
         assert_equal(stats.expon.isf(stats.expon.sf(40)), 40)
+
+        
+class TestExponNorm(TestCase):
+    def test_moments(self):
+        # Some moment test cases based on non-loc/scaled formula
+        def get_moms(lam, sig, mu):
+            # See wikipedia for these formulae
+            #  where it is listed as an exponentially modified gaussian
+            opK2 = 1.0 + 1 / (lam*sig)**2
+            exp_skew = 2 / (lam * sig)**3 * opK2**(-1.5)
+            exp_kurt = 6.0 * (1 + (lam * sig)**2)**(-2)
+            return [mu + 1/lam, sig*sig + 1.0/(lam*lam), exp_skew, exp_kurt] 
+
+        mu, sig, lam = 0, 1, 1        
+        K = 1.0 / (lam * sig)
+        sts = stats.exponnorm.stats(K, loc=mu, scale=sig, moments='mvsk')
+        assert_almost_equal(sts, get_moms(lam, sig, mu))
+        mu, sig, lam = -3, 2, 0.1
+        K = 1.0 / (lam * sig)
+        sts = stats.exponnorm.stats(K, loc=mu, scale=sig, moments='mvsk')
+        assert_almost_equal(sts, get_moms(lam, sig, mu))
+        mu, sig, lam = 0, 3, 1
+        K = 1.0 / (lam * sig)
+        sts = stats.exponnorm.stats(K, loc=mu, scale=sig, moments='mvsk')
+        assert_almost_equal(sts, get_moms(lam, sig, mu))
+        mu, sig, lam = -5, 11, 3.5
+        K = 1.0 / (lam * sig)
+        sts = stats.exponnorm.stats(K, loc=mu, scale=sig, moments='mvsk')
+        assert_almost_equal(sts, get_moms(lam, sig, mu))
+        
+    def test_extremes_x(self):
+        # Test for extreme values against overflows
+        assert_almost_equal(stats.exponnorm.pdf(-900, 1), 0.0)
+        assert_almost_equal(stats.exponnorm.pdf(+900, 1), 0.0)
 
 
 class TestGenExpon(TestCase):
@@ -1940,7 +1974,7 @@ def test_stats_shapes_argcheck():
     # anyway, so some distributions may or may not fail.
 
 
-## Test subclassing distributions w/ explicit shapes
+# Test subclassing distributions w/ explicit shapes
 
 class _distr_gen(stats.rv_continuous):
     def _pdf(self, x, a):

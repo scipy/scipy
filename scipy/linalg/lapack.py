@@ -292,6 +292,11 @@ All functions
    ssygvx
    dsygvx
 
+   slange
+   dlange
+   clange
+   zlange
+
 """
 #
 # Author: Pearu Peterson, March 2002

@@ -10,6 +10,12 @@ Benchmarking Scipy with Airspeed Velocity.
 Usage
 -----
 
+Airspeed Velocity manages building and Python virtualenvs by itself,
+unless told otherwise. Some of the benchmarking features in
+``runtests.py`` also tell ASV to use the Scipy compiled by
+``runtests.py``. To run the benchmarks, you do not need to install a
+development version of Scipy to your current Python environment.
+
 Run a benchmark against currently checked out Scipy version (don't record the
 result)::
 
@@ -21,6 +27,7 @@ Compare change in benchmark results to another branch::
 
 Run ASV commands::
 
+    cd benchmarks
     ./run.py run --skip-existing-commits --steps 10 ALL
     ./run.py publish
     ./run.py preview
@@ -30,6 +37,8 @@ maintenance jobs for you. The benchmark suite is runnable directly using the
 ``asv`` command.
 
 More on how to use ``asv`` can be found in `ASV documentation`_
+Command-line help is available as usual via ``asv --help`` and
+``asv run --help``.
 
 .. _ASV documentation: https://spacetelescope.github.io/asv/
 

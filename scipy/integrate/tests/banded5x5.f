@@ -88,8 +88,6 @@ c
       double precision t, y, f
       dimension y(n), f(n)
 
-      integer i, j, k
-
       double precision bands
       dimension bands(4,5)
       common /jac/ bands

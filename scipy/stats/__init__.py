@@ -38,6 +38,7 @@ Continuous distributions
    dweibull          -- Double Weibull
    erlang            -- Erlang
    expon             -- Exponential
+   exponnorm         -- Exponentially Modified Normal
    exponweib         -- Exponentiated Weibull
    exponpow          -- Exponential Power
    f                 -- F (Snecdor F)

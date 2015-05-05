@@ -1567,7 +1567,9 @@ def resample(x, num, t=None, axis=0, window=None):
     if window is not None:
         if callable(window):
             W = window(fftfreq(Nx))
-        elif isinstance(window, ndarray) and window.shape == (Nx,):
+        elif isinstance(window, ndarray):
+            if window.shape != (Nx,):
+                raise ValueError('window must have the same length as data')
             W = window
         else:
             W = ifftshift(get_window(window, Nx))
