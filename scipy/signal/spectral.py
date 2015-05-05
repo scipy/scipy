@@ -347,16 +347,41 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
 
-    If `noverlap` is 0, this method is equivalent to Bartlett's method [2]_.
-
     References
     ----------
     .. [1] P. Welch, "The use of the fast Fourier transform for the
            estimation of power spectra: A method based on time averaging
            over short, modified periodograms", IEEE Trans. Audio
            Electroacoust. vol. 15, pp. 70-73, 1967.
-    .. [2] M.S. Bartlett, "Periodogram Analysis and Continuous Spectra",
-           Biometrika, vol. 37, pp. 1-16, 1950.
+    .. [2] Rabiner, Lawrence R., and B. Gold. "Theory and Application of
+           Digital Signal Processing" Prentice-Hall, pp. 414-419, 1975
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    Generate two test signals with some common features.
+
+    >>> fs = 10e3
+    >>> N = 1e5
+    >>> amp = 20
+    >>> freq = 1234.0
+    >>> noise_power = 0.001 * fs / 2
+    >>> time = np.arange(N) / fs
+    >>> b, a = signal.butter(2, 0.25, 'low')
+    >>> x = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> y = signal.lfilter(b, a, x)
+    >>> x += amp*np.sin(2*np.pi*freq*time)
+    >>> y += np.random.normal(scale=0.1*np.sqrt(noise_power), size=time.shape)
+
+    Compute and plot the magnitude of the cross spectral density.
+
+    >>> f, Pxy = signal.csd(x, y, fs, nperseg=1024)
+    >>> plt.semilogy(f, np.abs(Pxy))
+    >>> plt.xlabel('frequency [Hz]')
+    >>> plt.ylabel('CSD [V**2/Hz]')
+    >>> plt.show()
     """
 
     freqs, Pxy, _ = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
@@ -435,7 +460,44 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     overlap of 50\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
+
+    References
+    ----------
+    .. [1] P. Welch, "The use of the fast Fourier transform for the
+           estimation of power spectra: A method based on time averaging
+           over short, modified periodograms", IEEE Trans. Audio
+           Electroacoust. vol. 15, pp. 70-73, 1967.
+    .. [2] Stoica, Petre, and Randolph Moses, "Spectral Analysis of Signals"
+           Prentice Hall, 2005
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    Generate two test signals with some common features.
+
+    >>> fs = 10e3
+    >>> N = 1e5
+    >>> amp = 20
+    >>> freq = 1234.0
+    >>> noise_power = 0.001 * fs / 2
+    >>> time = np.arange(N) / fs
+    >>> b, a = signal.butter(2, 0.25, 'low')
+    >>> x = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> y = signal.lfilter(b, a, x)
+    >>> x += amp*np.sin(2*np.pi*freq*time)
+    >>> y += np.random.normal(scale=0.1*np.sqrt(noise_power), size=time.shape)
+
+    Compute and plot the coherence.
+
+    >>> f, Cxy = signal.coherence(x, y, fs, nperseg=1024)
+    >>> plt.semilogy(f, Cxy)
+    >>> plt.xlabel('frequency [Hz]')
+    >>> plt.ylabel('Coherence')
+    >>> plt.show()
     """
+
     freqs, Pxx = welch(x, fs, window, nperseg, noverlap, nfft, detrend,
                        axis=axis)
     _, Pyy = welch(y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
