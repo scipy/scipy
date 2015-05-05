@@ -47,6 +47,7 @@ cimport libc.limits
 cimport libc.float
 from libc.math cimport sqrt, fabs, hypot
 from libc.string cimport memset
+cimport libc.stdio
 
 cimport numpy as cnp
 
@@ -277,7 +278,7 @@ cdef int to_lwork(blas_t a, blas_t b) nogil:
 #------------------------------------------------------------------------------
 
 cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u, blas_t* s) nogil:
-    # U should be all zeros on entry.
+    # U should be all zeros on entry., and m > 1 
     cdef blas_t unorm, snorm, wnorm, wpnorm, sigma_max, sigma_min, rc
     cdef char* T = 'T'
     cdef char* N = 'N'
@@ -527,21 +528,21 @@ cdef int thin_qr_block_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
         # p+1 long, rather than having a max of n+p.
         copy(n-j, index2(r, rs, j, j+1), rs[1], work, 1)
         blas_t_conj(p, col(u, us, j), &us[0])
-        gemv(T, p, n-j-1, 1, index2(u, us, 0, j+1), us[1], col(u, us, j), us[0],
+        gemv(T, p, n-j-1, 1, index2(u, us, 0, j+1), p, col(u, us, j), us[0],
              1, work, 1)
         blas_t_conj(p, col(u, us, j), &us[0])
         ger(p, n-j-1, -tau.conjugate(), col(u, us, j), us[0], work, 1,
-            index2(u, us, 0, j+1), us[1])
+            index2(u, us, 0, j+1), p)
         axpy(n-j-1, -tau.conjugate(), work, 1, index2(r, rs, j, j+1), rs[1])
         index2(r, rs, j, j)[0] = rjj
         
         # now apply this reflector to q 
         copy(m, col(q, qs, j), qs[0], work, 1)
-        gemv(N, m, p, 1, index2(q, qs, 0, n), qs[1], col(u, us, j), us[0],
+        gemv(N, m, p, 1, index2(q, qs, 0, n), m, col(u, us, j), us[0],
              1, work, 1)
         blas_t_conj(p, col(u, us, j), &us[0])
         ger(m, p, -tau, work, 1, col(u, us, j), us[0],
-            index2(q, qs, 0, n), qs[1])
+            index2(q, qs, 0, n), m)
         axpy(m, -tau, work, 1, col(q, qs, j), qs[0])
 
     # permute the rows of q, work columnwise, since q is fortran order
@@ -660,8 +661,8 @@ cdef int thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     
     if p_full > 0:
         # if this is true, we have ensured the u is also F contiguous.
-        gemm(TC, N, m, p_full, m, 1, q, qs[1], col(u, us, p_eco), us[1], 0,
-             col(r, rs, k+p_eco), rs[1]) 
+        gemm(TC, N, m, p_full, m, 1, q, m, col(u, us, p_eco), m, 0,
+             col(r, rs, k+p_eco), m) 
         qr_block_col_insert(m, n+p_eco+p_full, q, qs, r, rs, k+p_eco, p_full)
 
     return 0
@@ -711,9 +712,9 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
         # First zero the lower part of the new columns using a qr.  
 
         # query the workspace, 
-        info = geqrf(m-n+p, p, index2(r, rs, n-p, k), rs[1], tau, &c, -1)
-        info = ormqr(side, trans, m, m-(n-p), p, index2(r, rs, n-p, k), rs[1],
-                     tau, index2(q, qs, 0, n-p), qs[1], &s, -1)
+        info = geqrf(m-n+p, p, index2(r, rs, n-p, k), m, tau, &c, -1)
+        info = ormqr(side, trans, m, m-(n-p), p, index2(r, rs, n-p, k), m,
+                     tau, index2(q, qs, 0, n-p), m, &s, -1)
 
         # we're only doing one allocation, so use the larger
         lwork = to_lwork(c, s)
@@ -725,13 +726,13 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
         tau = work + lwork
 
         # qr
-        info = geqrf(m-n+p, p, index2(r, rs, n-p, k), rs[1], tau, work, lwork)
+        info = geqrf(m-n+p, p, index2(r, rs, n-p, k), m, tau, work, lwork)
         if info < 0: 
             return libc.stdlib.abs(info)
 
         # apply the Q from this small qr to the last (m-(n-p)) columns of q.
-        info = ormqr(side, trans, m, m-(n-p), p, index2(r, rs, n-p, k), rs[1],
-                tau, index2(q, qs, 0, n-p), qs[1], work, lwork)
+        info = ormqr(side, trans, m, m-(n-p), p, index2(r, rs, n-p, k), m,
+                tau, index2(q, qs, 0, n-p), m, work, lwork)
         if info < 0:
             return info
 
@@ -883,11 +884,11 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
         # query the workspace
         # below p_subdiag_qr will need workspace of size m, which is the
         # minimum, ormqr will also require.
-        info = geqrf(m-n, p, index2(u, us, n, 0), us[1], tau, &c, -1)
+        info = geqrf(m-n, p, index2(u, us, n, 0), m, tau, &c, -1)
         if info < 0:
             return libc.stdlib.abs(info)
-        info = ormqr(sideR, trans, m, m-n, p, index2(u, us, n, 0), us[1], tau,
-                index2(q, qs, 0, n), qs[1], &s, -1)
+        info = ormqr(sideR, trans, m, m-n, p, index2(u, us, n, 0), m, tau,
+                index2(q, qs, 0, n), m, &s, -1)
         if info < 0:
             return info
  
@@ -901,14 +902,14 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
         tau = work + lwork
 
         # qr
-        info = geqrf(m-n, p, index2(u, us, n, 0), us[1], tau, work, lwork)
+        info = geqrf(m-n, p, index2(u, us, n, 0), m, tau, work, lwork)
         if info < 0:
             libc.stdlib.free(work)
             return libc.stdlib.abs(info)
 
         # apply the Q from this small qr to the last (m-n) columns of q.
-        info = ormqr(sideR, trans, m, m-n, p, index2(u, us, n, 0), us[1], tau,
-                index2(q, qs, 0, n), qs[1], work, lwork)
+        info = ormqr(sideR, trans, m, m-n, p, index2(u, us, n, 0), m, tau,
+                index2(q, qs, 0, n), m, work, lwork)
         if info < 0:
             libc.stdlib.free(work)
             return info
@@ -944,7 +945,7 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
     # now form UV**H and add it to R.
     # This won't fill in any more of R than we have already.
     blas_t_2d_conj(p, n, v, vs)
-    trmm(sideL, uplo, trans, diag, p, n, 1, u, us[1], v, vs[1])
+    trmm(sideL, uplo, trans, diag, p, n, 1, u, m, v, p)
 
     # (should this be n, p length adds instead since these are fortan contig?)
     for j in range(p):
@@ -1113,9 +1114,9 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
     # decompose u into q's columns.
     if qisF:
         if blas_t is float or blas_t is double:
-            gemv(T, m, n, 1, q, qs[1], u, us[0], 0, s, 1)
+            gemv(T, m, n, 1, q, m, u, us[0], 0, s, 1)
         else:
-            gemv(C, m, n, 1, q, qs[1], u, us[0], 0, s, 1)
+            gemv(C, m, n, 1, q, m, u, us[0], 0, s, 1)
     else:
         if blas_t is float or blas_t is double:
             gemv(N, n, m, 1, q, n, u, us[0], 0, s, 1)
@@ -1132,7 +1133,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
     # make u be the part of u that is not in span(q)
     # i.e. u -= q.dot(s)
     if qisF:
-        gemv(N, m, n, -1, q, qs[1], s, 1, 1, u, us[0])
+        gemv(N, m, n, -1, q, m, s, 1, 1, u, us[0])
     else:
         gemv(T, n, m, -1, q, n, s, 1, 1, u, us[0])
     wnorm = nrm2(m, u, us[0])
@@ -1159,10 +1160,10 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
     # be enough.
     if qisF:
         if blas_t is float or blas_t is double:
-            gemv(T, m, n, 1, q, qs[1], u, us[0], 0, s+n, 1)
+            gemv(T, m, n, 1, q, m, u, us[0], 0, s+n, 1)
         else:
-            gemv(C, m, n, 1, q, qs[1], u, us[0], 0, s+n, 1)
-        gemv(N, m, n, -1, q, qs[1], s+n, 1, 1, u, us[0])
+            gemv(C, m, n, 1, q, m, u, us[0], 0, s+n, 1)
+        gemv(N, m, n, -1, q, m, s+n, 1, 1, u, us[0])
     else:
         if blas_t is float or blas_t is double:
             gemv(N, n, m, 1, q, n, u, us[0], 0, s+n, 1)
@@ -1222,11 +1223,14 @@ def _form_qTu(object a, object b):
 
 cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
               int k):
-    """ assuming here that q and u have compatible shapes, and are the same type
-        + Q is contiguous.  This function is preferable over simply calling
-        np.dot for two reasons: 1) this output is always in F order, 2) no
-        copies need be made if Q is complex.  Point 2 in particular makes this
-        a good bit faster for complex inputs.
+    """ assuming here that q and u have compatible shapes, and are the same
+        type + Q is contiguous.  This function is preferable over simply
+        calling np.dot for two reasons: 1) this output is always in F order, 2)
+        no copies need be made if Q is complex.  Point 2 in particular makes
+        this a good bit faster for complex inputs.
+
+        qTuvoid is assumed to be a pointer to a F contiguous array sized to
+        hold the matrix product of q.T.conj() and u.
     """
     cdef int m = q.shape[0]
     cdef int n = q.shape[1]
@@ -1246,17 +1250,17 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
         if u.ndim == 1:
             uvoid = extract(u, us)
             if typecode == cnp.NPY_FLOAT:
-                gemv(T, m, n, 1, <float*>qvoid, qs[1],
+                gemv(T, m, n, 1, <float*>qvoid, m,
                         <float*>uvoid, us[0], 0, col(<float*>qTuvoid, qTus, k), qTus[0])
             if typecode == cnp.NPY_DOUBLE:
-                gemv(T, m, n, 1, <double*>qvoid, qs[1],
+                gemv(T, m, n, 1, <double*>qvoid, m,
                         <double*>uvoid, us[0], 0, col(<double*>qTuvoid, qTus, k), qTus[0])
             if typecode == cnp.NPY_CFLOAT:
-                gemv(C, m, n, 1, <float_complex*>qvoid, qs[1],
+                gemv(C, m, n, 1, <float_complex*>qvoid, m,
                         <float_complex*>uvoid, us[0], 0,
                         col(<float_complex*>qTuvoid, qTus, k), qTus[0])
             if typecode == cnp.NPY_CDOUBLE:
-                gemv(C, m, n, 1, <double_complex*>qvoid, qs[1],
+                gemv(C, m, n, 1, <double_complex*>qvoid, m,
                         <double_complex*>uvoid, us[0], 0,
                         col(<double_complex*>qTuvoid, qTus, k), qTus[0])
         elif u.ndim == 2:
@@ -1264,50 +1268,50 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
             if cnp.PyArray_CHKFLAGS(u, cnp.NPY_F_CONTIGUOUS):
                 utrans = N
                 uvoid = extract(u, us)
-                ldu = us[1]
+                ldu = u.shape[0]
             elif cnp.PyArray_CHKFLAGS(u, cnp.NPY_C_CONTIGUOUS):
                 utrans = T
                 uvoid = extract(u, us)
-                ldu = us[0]
+                ldu = u.shape[1]
             else:
                 u = PyArray_FromArray(u, NULL, cnp.NPY_F_CONTIGUOUS)
                 utrans = N
                 uvoid = extract(u, us)
-                ldu = us[1]
+                ldu = u.shape[0]
             if typecode == cnp.NPY_FLOAT:
-                gemm(T, utrans, m, p, m, 1, <float*>qvoid, qs[1],
-                        <float*>uvoid, ldu, 0, col(<float*>qTuvoid, qTus, k), qTus[1])
+                gemm(T, utrans, m, p, m, 1, <float*>qvoid, m,
+                        <float*>uvoid, ldu, 0, col(<float*>qTuvoid, qTus, k), m)
             if typecode == cnp.NPY_DOUBLE:
-                gemm(T, utrans, m, p, m, 1, <double*>qvoid, qs[1],
-                        <double*>uvoid, ldu, 0, col(<double*>qTuvoid, qTus, k), qTus[1])
+                gemm(T, utrans, m, p, m, 1, <double*>qvoid, m,
+                        <double*>uvoid, ldu, 0, col(<double*>qTuvoid, qTus, k), m)
             if typecode == cnp.NPY_CFLOAT:
-                gemm(C, utrans, m, p, m, 1, <float_complex*>qvoid, qs[1],
+                gemm(C, utrans, m, p, m, 1, <float_complex*>qvoid, m,
                         <float_complex*>uvoid, ldu, 0,
-                        col(<float_complex*>qTuvoid, qTus, k), qTus[1])
+                        col(<float_complex*>qTuvoid, qTus, k), m)
             if typecode == cnp.NPY_CDOUBLE:
-                gemm(C, utrans, m, p, m, 1, <double_complex*>qvoid, qs[1],
+                gemm(C, utrans, m, p, m, 1, <double_complex*>qvoid, m,
                         <double_complex*>uvoid, ldu, 0,
-                        col(<double_complex*>qTuvoid, qTus, k), qTus[1])
+                        col(<double_complex*>qTuvoid, qTus, k), m)
     
     elif cnp.PyArray_CHKFLAGS(q, cnp.NPY_C_CONTIGUOUS):
         qvoid = extract(q, qs)
         if u.ndim == 1:
             uvoid = extract(u, us)
             if typecode == cnp.NPY_FLOAT:
-                gemv(N, m, n, 1, <float*>qvoid, qs[0],
+                gemv(N, m, n, 1, <float*>qvoid, n,
                         <float*>uvoid, us[0], 0, col(<float*>qTuvoid, qTus, k), qTus[0])
             if typecode == cnp.NPY_DOUBLE:
-                gemv(N, m, n, 1, <double*>qvoid, qs[0],
+                gemv(N, m, n, 1, <double*>qvoid, n,
                         <double*>uvoid, us[0], 0, col(<double*>qTuvoid, qTus, k), qTus[0])
             if typecode == cnp.NPY_CFLOAT:
                 blas_t_conj(m, <float_complex*>uvoid, us)
-                gemv(N, m, n, 1, <float_complex*>qvoid, qs[0],
+                gemv(N, m, n, 1, <float_complex*>qvoid, n, 
                         <float_complex*>uvoid, us[0], 0,
                         col(<float_complex*>qTuvoid, qTus, k), qTus[0])
                 blas_t_conj(m, col(<float_complex*>qTuvoid, qTus, k), qTus)
             if typecode == cnp.NPY_CDOUBLE:
                 blas_t_conj(m, <double_complex*>uvoid, us)
-                gemv(N, m, n, 1, <double_complex*>qvoid, qs[0],
+                gemv(N, m, n, 1, <double_complex*>qvoid, n,
                         <double_complex*>uvoid, us[0], 0,
                         col(<double_complex*>qTuvoid, qTus, k), qTus[0])
                 blas_t_conj(m, col(<double_complex*>qTuvoid, qTus, k), qTus)
@@ -1316,33 +1320,33 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
             if cnp.PyArray_CHKFLAGS(u, cnp.NPY_F_CONTIGUOUS):
                 utrans = N
                 uvoid = extract(u, us)
-                ldu = us[1]
+                ldu = u.shape[0]
             elif cnp.PyArray_CHKFLAGS(u, cnp.NPY_C_CONTIGUOUS):
                 utrans = T
                 uvoid = extract(u, us)
-                ldu = us[0]
+                ldu = u.shape[1]
             else:
                 u = PyArray_FromArray(u, NULL, cnp.NPY_F_CONTIGUOUS)
                 utrans = N
                 uvoid = extract(u, us)
-                ldu = us[1]
+                ldu = u.shape[0]
             if typecode == cnp.NPY_FLOAT:
-                gemm(N, utrans, m, p, m, 1, <float*>qvoid, qs[0],
-                        <float*>uvoid, ldu, 0, col(<float*>qTuvoid, qTus, k), qTus[1])
+                gemm(N, utrans, m, p, m, 1, <float*>qvoid, n,
+                        <float*>uvoid, ldu, 0, col(<float*>qTuvoid, qTus, k), m)
             elif typecode == cnp.NPY_DOUBLE:
-                gemm(N, utrans, m, p, m, 1, <double*>qvoid, qs[0],
-                        <double*>uvoid, ldu, 0, col(<double*>qTuvoid, qTus, k), qTus[1])
+                gemm(N, utrans, m, p, m, 1, <double*>qvoid, n,
+                        <double*>uvoid, ldu, 0, col(<double*>qTuvoid, qTus, k), m)
             elif typecode == cnp.NPY_CFLOAT:
                 blas_t_2d_conj(m, p, <float_complex*>uvoid, us)
-                gemm(N, utrans, m, p, m, 1, <float_complex*>qvoid, qs[0],
+                gemm(N, utrans, m, p, m, 1, <float_complex*>qvoid, n,
                         <float_complex*>uvoid, ldu, 0,
-                        col(<float_complex*>qTuvoid, qTus, k), qTus[1])
+                        col(<float_complex*>qTuvoid, qTus, k), m)
                 blas_t_2d_conj(m, p, col(<float_complex*>qTuvoid, qTus, k), qTus)
             elif typecode == cnp.NPY_CDOUBLE:
                 blas_t_2d_conj(m, p, <double_complex*>uvoid, us)
-                gemm(N, utrans, m, p, m, 1, <double_complex*>qvoid, qs[0],
+                gemm(N, utrans, m, p, m, 1, <double_complex*>qvoid, n,
                         <double_complex*>uvoid, ldu, 0,
-                        col(<double_complex*>qTuvoid, qTus, k), qTus[1])
+                        col(<double_complex*>qTuvoid, qTus, k), m)
                 blas_t_2d_conj(m, p, col(<double_complex*>qTuvoid, qTus, k), qTus)
         else:
             raise ValueError('Shape of u is incorrect, should be 1 <= u.ndim <= 2')
@@ -1563,6 +1567,11 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False, check_finite=True):
         if k1 + p1 > m or p1 <= 0: 
             raise ValueError("'p' is out of range")
         if economic:
+            # handle the special case of (M,1), (1,1)
+            if n == 1:
+                qnew = np.delete(q1, slice(k1, k1 + p1), 0)
+                norm = np.linalg.norm(qnew)
+                return qnew / norm, r1 * norm
             if not cnp.PyArray_ISONESEGMENT(q1):
                 q1 = PyArray_FromArray(q1, NULL, cnp.NPY_F_CONTIGUOUS)
                 qisF = True
@@ -2290,6 +2299,12 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
                         <{{CNAME}}*>vptr, vs, <{{CNAME}}*>sptr, ss)
                 {{endfor}}
     else:
+        if m == 1:
+            if p == 1:
+                r1 += q1.conj() * u1 * v1.T.conj()
+            else:
+                r1 += q1.conj() * np.dot(u1,  v1.T.conj())
+            return q1, r1
         qTu = cnp.PyArray_ZEROS(u1.ndim, u1.shape, typecode, 1)
         qTuptr = extract(qTu, qTus)
         if p == 1:
