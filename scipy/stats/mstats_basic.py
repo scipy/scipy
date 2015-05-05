@@ -400,8 +400,10 @@ def spearmanr(x, y, use_ties=True):
 
     Returns
     -------
-    spearmanr : float
-        Spearman correlation coefficient, 2-tailed p-value.
+    correlation : float
+        Spearman correlation coefficient
+    pvalue : float
+        2-tailed p-value.
 
     References
     ----------
@@ -446,7 +448,8 @@ def spearmanr(x, y, use_ties=True):
     else:
         prob = betai(0.5*df,0.5,df/(df+t*t))
 
-    return rho, prob
+    SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
+    return SpearmanrResult(rho, prob)
 
 
 def kendalltau(x, y, use_ties=True, use_missing=False):
@@ -467,9 +470,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
 
     Returns
     -------
-    tau : float
+    correlation : float
         Kendall tau
-    prob : float
+    pvalue : float
         Approximate 2-side p-value.
 
     """
@@ -481,8 +484,10 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
         y = ma.array(y, mask=m, copy=True)
         n -= m.sum()
 
+    KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
+
     if n < 2:
-        return (np.nan, np.nan)
+        return KendalltauResult(np.nan, np.nan)
 
     rx = ma.masked_equal(rankdata(x, use_missing=use_missing), 0)
     ry = ma.masked_equal(rankdata(y, use_missing=use_missing), 0)
@@ -524,7 +529,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     var_s += (v1 + v2)
     z = (C-D)/np.sqrt(var_s)
     prob = special.erfc(abs(z)/np.sqrt(2))
-    return (tau, prob)
+    return KendalltauResult(tau, prob)
 
 
 def kendalltau_seasonal(x):
@@ -614,7 +619,10 @@ def pointbiserialr(x, y):
     df = n-2
     t = rpb*ma.sqrt(df/(1.0-rpb**2))
     prob = betai(0.5*df, 0.5, df/(df+t*t))
-    return rpb, prob
+
+    PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
+                                                               'pvalue'))
+    return PointbiserialrResult(rpb, prob)
 
 if stats.pointbiserialr.__doc__:
     pointbiserialr.__doc__ = stats.pointbiserialr.__doc__ + genmissingvaldoc
@@ -655,7 +663,10 @@ def linregress(*args):
     else:
         slope, intercept, r, prob, sterrest = stats.linregress(x.data, y.data)
 
-    return slope, intercept, r, prob, sterrest
+    LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
+                                                       'rvalue', 'pvalue',
+                                                       'stderr'))
+    return LinregressResult(slope, intercept, r, prob, sterrest)
 
 if stats.linregress.__doc__:
     linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
@@ -703,15 +714,19 @@ def ttest_1samp(a, popmean, axis=0):
     svar = ((n - 1) * v) / df
     t = (x - popmean) / ma.sqrt(svar / n)
     prob = betai(0.5 * df, 0.5, df / (df + t*t))
-    return t, prob
+
+    Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+    return Ttest_1sampResult(t, prob)
 ttest_1samp.__doc__ = stats.ttest_1samp.__doc__
 ttest_onesamp = ttest_1samp
 
 
 def ttest_ind(a, b, axis=0):
     a, b, axis = _chk2_asarray(a, b, axis)
+
+    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
     if a.size == 0 or b.size == 0:
-        return (np.nan, np.nan)
+        return Ttest_indResult(np.nan, np.nan)
 
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
@@ -721,7 +736,8 @@ def ttest_ind(a, b, axis=0):
     t = (x1-x2)/ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # n-D computation here!
     t = ma.filled(t, 1)           # replace NaN t-values with 1.0
     probs = betai(0.5 * df, 0.5, df/(df + t*t)).reshape(t.shape)
-    return t, probs.squeeze()
+
+    return Ttest_indResult(t, probs.squeeze())
 ttest_ind.__doc__ = stats.ttest_ind.__doc__
 
 
@@ -730,8 +746,9 @@ def ttest_rel(a, b, axis=0):
     if len(a) != len(b):
         raise ValueError('unequal length arrays')
 
+    Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
     if a.size == 0 or b.size == 0:
-        return (np.nan, np.nan)
+        return Ttest_relResult(np.nan, np.nan)
 
     n = a.count(axis)
     df = (n-1.0)
@@ -740,7 +757,8 @@ def ttest_rel(a, b, axis=0):
     t = ma.add.reduce(d, axis) / denom
     t = ma.filled(t, 1)
     probs = betai(0.5*df,0.5,df/(df+t*t)).reshape(t.shape).squeeze()
-    return t, probs
+
+    return Ttest_relResult(t, probs)
 ttest_rel.__doc__ = stats.ttest_rel.__doc__
 
 
@@ -768,9 +786,9 @@ def mannwhitneyu(x,y, use_continuity=True):
 
     Returns
     -------
-    u : float
+    statistic : float
         The Mann-Whitney statistics
-    prob : float
+    pvalue : float
         Approximate p-value assuming a normal distribution.
 
     """
@@ -795,7 +813,10 @@ def mannwhitneyu(x,y, use_continuity=True):
         z = (U - mu) / ma.sqrt(sigsq)
 
     prob = special.erfc(abs(z)/np.sqrt(2))
-    return (u, prob)
+
+    MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
+                                                           'pvalue'))
+    return MannwhitneyuResult(u, prob)
 
 
 def kruskalwallis(*args):
@@ -814,7 +835,9 @@ def kruskalwallis(*args):
     H /= T
     df = len(output) - 1
     prob = stats.chisqprob(H,df)
-    return (H, prob)
+
+    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
+    return KruskalResult(H, prob)
 kruskal = kruskalwallis
 kruskalwallis.__doc__ = stats.kruskal.__doc__
 
@@ -1530,18 +1553,23 @@ def describe(a, axis=0, ddof=0):
 
     Returns
     -------
-    n : int
+    nobs : int
         (size of the data (discarding missing values)
-    mm : (int, int)
+
+    minmax : (int, int)
         min, max
 
-    arithmetic mean : float
+    mean : float
+        arithmetic mean
 
-    unbiased variance : float
+    variance : float
+        unbiased variance
 
-    biased skewness : float
+    skewness : float
+        biased skewness
 
-    biased kurtosis : float
+    kurtosis : float
+        biased kurtosis
 
     Examples
     --------
@@ -1623,7 +1651,9 @@ def skewtest(a, axis=0):
     alpha = ma.sqrt(2.0/(W2-1))
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
-    return Z, 2 * distributions.norm.sf(np.abs(Z))
+
+    SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
+    return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 skewtest.__doc__ = stats.skewtest.__doc__
 
 
@@ -1656,7 +1686,10 @@ def kurtosistest(a, axis=0):
 
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
-    return Z, 2 * distributions.norm.sf(np.abs(Z))
+
+    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
+                                                           'pvalue'))
+    return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
 
@@ -1665,7 +1698,9 @@ def normaltest(a, axis=0):
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
-    return k2, stats.chisqprob(k2,2)
+
+    NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
+    return NormaltestResult(k2, stats.chisqprob(k2, 2))
 normaltest.__doc__ = stats.normaltest.__doc__
 
 
@@ -1979,7 +2014,13 @@ def f_oneway(*args):
     Usage: ``f_oneway(*args)``, where ``*args`` is 2 or more arrays,
     one per treatment group.
 
-    Returns: f-value, probability
+    Returns
+    -------
+    statistic : float
+        The computed F-value of the test.
+
+    pvalue : float
+        The associated p-value from the F-distribution.
 
     """
     # Construct a single array of arguments: each row is a group
@@ -1995,7 +2036,9 @@ def f_oneway(*args):
     msw = sswg/float(dfwg)
     f = msb/msw
     prob = special.fdtrc(dfbg, dfwg, f)  # equivalent to stats.f.sf
-    return f, prob
+
+    F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
+    return F_onewayResult(f, prob)
 
 
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
@@ -2031,7 +2074,13 @@ def friedmanchisquare(*args):
 
     Masked values in one group are propagated to the other groups.
 
-    Returns: chi-square statistic, associated p-value
+    Returns
+    -------
+    statistic : float
+        the test statistic.
+
+    pvalue : float
+        the ssociated p-value.
     """
     data = argstoarray(*args).astype(float)
     k = len(data)
@@ -2053,4 +2102,7 @@ def friedmanchisquare(*args):
 
     ssbg = np.sum((ranked.sum(-1) - n*(k+1)/2.)**2)
     chisq = ssbg * 12./(n*k*(k+1)) * 1./tie_correction
-    return chisq, stats.chisqprob(chisq,k-1)
+
+    FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
+                                         ('statistic', 'pvalue'))
+    return FriedmanchisquareResult(chisq, stats.chisqprob(chisq, k-1))

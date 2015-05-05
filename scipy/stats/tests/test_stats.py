@@ -3053,7 +3053,7 @@ class TestFOneWay(TestCase):
         F, p = stats.f_oneway(a, b)
         assert_almost_equal(F, 0.77450216931805538)
 
-    def test_FOneWay_result_attributes(self):
+    def test_result_attributes(self):
         a = np.array([655, 788], dtype=np.uint16)
         b = np.array([789, 772], dtype=np.uint16)
         res = stats.f_oneway(a, b)

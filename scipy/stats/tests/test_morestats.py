@@ -13,6 +13,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
     assert_raises, assert_, assert_allclose, assert_equal, dec, assert_warns)
 
 from scipy import stats
+from common_tests import check_named_results
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -33,6 +34,16 @@ g7 = [0.990, 1.004, 0.996, 1.001, 0.998, 1.000, 1.018, 1.010, 0.996, 1.002]
 g8 = [0.998, 1.000, 1.006, 1.000, 1.002, 0.996, 0.998, 0.996, 1.002, 1.006]
 g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
+
+
+class TestBayes_mvs(TestCase):
+    def test_result_attributes(self):
+        x = np.arange(15)
+        attributes = ('estimate', 'minmax')
+        res = stats.bayes_mvs(x)
+
+        for i in res:
+            check_named_results(i, attributes)
 
 
 class TestShapiro(TestCase):
@@ -81,6 +92,13 @@ class TestAnderson(TestCase):
 
     def test_bad_arg(self):
         assert_raises(ValueError, stats.anderson, [1], dist='plate_of_shrimp')
+
+    def test_result_attributes(self):
+        rs = RandomState(1234567890)
+        x = rs.standard_exponential(size=50)
+        res = stats.anderson(x)
+        attributes = ('statistic', 'critical_values', 'significance_level')
+        check_named_results(res, attributes)
 
 
 class TestAndersonKSamp(TestCase):
@@ -199,6 +217,23 @@ class TestAndersonKSamp(TestCase):
     def test_empty_sample(self):
         assert_raises(ValueError, stats.anderson_ksamp, (np.ones(5), []))
 
+    def test_result_attributes(self):
+        # Example data from Scholz & Stephens (1987), originally
+        # published in Lehmann (1995, Nonparametrics, Statistical
+        # Methods Based on Ranks, p. 309)
+        # Pass a mixture of lists and arrays
+        t1 = [38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0]
+        t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
+        t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
+        t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='approximate p-value')
+            res = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
+
+        attributes = ('statistic', 'critical_values', 'significance_level')
+        check_named_results(res, attributes)
+
 
 class TestAnsari(TestCase):
 
@@ -232,6 +267,13 @@ class TestAnsari(TestCase):
         assert_raises(ValueError, stats.ansari, [], [1])
         assert_raises(ValueError, stats.ansari, [1], [])
 
+    def test_result_attributes(self):
+        x = [1, 2, 3, 3, 4]
+        y = [3, 2, 6, 1, 6, 1, 4, 1]
+        res = stats.ansari(x, y)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
+
 
 class TestBartlett(TestCase):
 
@@ -244,6 +286,12 @@ class TestBartlett(TestCase):
     def test_bad_arg(self):
         # Too few args raises ValueError.
         assert_raises(ValueError, stats.bartlett, [1])
+
+    def test_result_attributes(self):
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        res = stats.bartlett(*args)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
 
 class TestLevene(TestCase):
@@ -298,6 +346,12 @@ class TestLevene(TestCase):
 
     def test_too_few_args(self):
         assert_raises(ValueError, stats.levene, [1])
+
+    def test_result_attributes(self):
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        res = stats.levene(*args)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
 
 class TestBinomP(TestCase):
@@ -960,6 +1014,14 @@ def test_accuracy_wilcoxon():
     T, p = stats.wilcoxon(x, y, correction=True)
     assert_equal(T, 34)
     assert_allclose(p, 0.7240817, rtol=1e-6)
+
+
+def test_wilcoxon_result_attributes():
+    x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+    y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
+    res = stats.wilcoxon(x, y, correction=False)
+    attributes = ('statistic', 'pvalue')
+    check_named_results(res, attributes)
 
 
 def test_wilcoxon_tie():

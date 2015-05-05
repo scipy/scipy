@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 from scipy._lib.six import callable
-
+from collections import namedtuple
 
 def binned_statistic(x, values, statistic='mean',
                      bins=10, range=None):
@@ -146,7 +146,9 @@ def binned_statistic(x, values, statistic='mean',
     medians, edges, xy = binned_statistic_dd([x], values, statistic,
                                              bins, range)
 
-    return medians, edges[0], xy
+    Binned_statisticResult = namedtuple('Binned_statisticResult',
+                                        ('statistic', 'bin_edges', 'binnumber'))
+    return Binned_statisticResult(medians, edges[0], xy)
 
 
 def binned_statistic_2d(x, y, values, statistic='mean',
@@ -204,9 +206,9 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     -------
     statistic : (nx, ny) ndarray
         The values of the selected statistic in each two-dimensional bin
-    xedges : (nx + 1) ndarray
+    x_edge : (nx + 1) ndarray
         The bin edges along the first dimension.
-    yedges : (ny + 1) ndarray
+    y_edge : (ny + 1) ndarray
         The bin edges along the second dimension.
     binnumber : 1-D ndarray of ints
         This assigns to each observation an integer that represents the bin
@@ -236,7 +238,10 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     medians, edges, xy = binned_statistic_dd([x, y], values, statistic,
                                              bins, range)
 
-    return medians, edges[0], edges[1], xy
+    Binned_statistic_2dResult = namedtuple('Binned_statistic_2dResult',
+                                           ('statistic', 'x_edge', 'y_edge',
+                                            'binnumber'))
+    return Binned_statistic_2dResult(medians, edges[0], edges[1], xy)
 
 
 def binned_statistic_dd(sample, values, statistic='mean',
@@ -291,7 +296,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     -------
     statistic : ndarray, shape(nx1, nx2, nx3,...)
         The values of the selected statistic in each two-dimensional bin
-    edges : list of ndarrays
+    bin_edges : list of ndarrays
         A list of D arrays describing the (nxi + 1) bin edges for each
         dimension
     binnumber : 1-D ndarray of ints
@@ -444,4 +449,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if (result.shape != nbin - 2).any():
         raise RuntimeError('Internal Shape Error')
 
-    return result, edges, xy
+    Binned_statistic_ddResult = namedtuple('Binned_statisticddResult',
+                                           ('statistic', 'bin_edges',
+                                            'binnumber'))
+    return Binned_statistic_ddResult(result, edges, xy)

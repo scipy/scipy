@@ -1293,7 +1293,8 @@ def kurtosistest(a, axis=0):
         Z = Z[()]
 
     # zprob uses upper tail, so Z needs to be positive
-    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
+    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
+                                                           'pvalue'))
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
 
@@ -3363,8 +3364,7 @@ def _ttest_ind_from_stats(mean1, mean2, denom, df):
     t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
-    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
-    return Ttest_indResult(t, prob)
+    return (t, prob)
 
 
 def _unequal_var_ttest_denom(v1, n1, v2, n2):
@@ -3441,7 +3441,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     else:
         df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
                                              std2**2, nobs2)
-    return _ttest_ind_from_stats(mean1, mean2, denom, df)
+
+    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
+
+    res = _ttest_ind_from_stats(mean1, mean2, denom, df)
+    return Ttest_indResult(*res)
 
 
 def ttest_ind(a, b, axis=0, equal_var=True):
@@ -3533,8 +3537,11 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
+
+    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
+
     if a.size == 0 or b.size == 0:
-        return (np.nan, np.nan)
+        return Ttest_indResult(np.nan, np.nan)
 
     v1 = np.var(a, axis, ddof=1)
     v2 = np.var(b, axis, ddof=1)
@@ -3545,9 +3552,10 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-    return _ttest_ind_from_stats(np.mean(a, axis),
-                                 np.mean(b, axis),
-                                 denom, df)
+
+    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
+
+    return Ttest_indResult(*res)
 
 
 def ttest_rel(a, b, axis=0):
