@@ -777,40 +777,40 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    lapack_driver: string, optional
-        Options are 'gelsd', 'gelsy', 'gelss'. Which LAPACK driver is used to
-        solve the least-squares problem. Default is good choice. However,
-        'gelsy' can work slightly faster on many problems. 'gelss' was used
-        used historically. It is generally slow but uses less memory.
+    lapack_driver: str, optional
+        Which LAPACK driver is used to solve the least-squares problem.
+        Options are ``'gelsd'``, ``'gelsy'``, ``'gelss'``. Default
+        (``'gelsd'``) is a good choice.  However, ``'gelsy'`` can be slightly
+        faster on many problems.  ``'gelss'`` was used historically.  It is
+        generally slow but uses less memory.
+
+        .. versionadded:: 0.16.0
+
     Returns
     -------
-    if lapack_driver is 'gelsd' or 'gelss':
+    If lapack_driver is ``'gelsd'`` or ``'gelss'``:
 
     x : (N,) or (N, K) ndarray
         Least-squares solution.  Return shape matches shape of `b`.
     residues : () or (1,) or (K,) ndarray
         Sums of residues, squared 2-norm for each column in ``b - a x``.
-        If rank of matrix a is < N or > M this is an empty array.
+        If rank of matrix a is ``< N`` or ``> M``, this is an empty array.
         If b was 1-D, this is an (1,) shape array, otherwise the shape is (K,).
     rank : int
         Effective rank of matrix `a`.
     s : (min(M,N),) ndarray
         Singular values of `a`. The condition number of a is
-        ``abs(s[0]/s[-1])``.
+        ``abs(s[0] / s[-1])``.
 
-
-    if lapack_driver is 'gelsy':
+    If lapack_driver is 'gelsy':
 
     x : (N,) or (N, K) ndarray
-    Least-squares solution.  Return shape matches shape of `b`.
-
+        Least-squares solution.  Return shape matches shape of `b`.
     j : (N,) ndarray of integer
-    The or columns obtained from the column pivoting in complete orthogonal
-    factorization least-squares solver.
-
+        The or columns obtained from the column pivoting in complete orthogonal
+        factorization least-squares solver.
     rank : int
-    Effective rank of matrix `a`.
-
+        Effective rank of matrix `a`.
 
     Raises
     ------
@@ -824,13 +824,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     --------
     optimize.nnls : linear least squares with non-negativity constraint
 
-    Notes
-    -----
-    .. versionadded:: 0.16.0
-
-
     """
-
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2:
@@ -843,7 +837,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     if m != b1.shape[0]:
         raise ValueError('incompatible dimensions')
 
-    if lapack_driver not in ('gelsd','gelsy','gelss'):
+    if lapack_driver not in ('gelsd', 'gelsy', 'gelss'):
         raise ValueError('LAPACK driver "%s"is not found' % lapack_driver)
 
     lapack_func, lapack_func_lwork_query = get_lapack_funcs((lapack_driver,
@@ -869,40 +863,38 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             cond = np.finfo(lapack_func.dtype).eps * 100
 
         if lapack_driver == 'gelss':
-
             # Request of sizes
             work,info = lapack_func_lwork_query(m,n,nrhs,cond)
             lwork = np.int(np.real(work))
             if info != 0:
-                raise ValueError("internal gelss driver lwork query \
-                                    error, info is %i " % info)
+                raise ValueError("internal gelss driver lwork query "
+                                 "error, info is %i " % info)
 
-            v, x, s, rank, work, info = lapack_func(
-                a1, b1, cond, lwork, overwrite_a=overwrite_a,
-                overwrite_b=overwrite_b)
+            v, x, s, rank, work, info = lapack_func(a1, b1, cond, lwork,
+                                                    overwrite_a=overwrite_a,
+                                                    overwrite_b=overwrite_b)
 
         elif lapack_driver == 'gelsd':
             if real_data:
-
                 # Request of sizes
-                work,iwork,info = lapack_func_lwork_query(m,n,nrhs,cond)
+                work,iwork,info = lapack_func_lwork_query(m, n, nrhs, cond)
                 lwork = np.int(np.real(work))
                 iwork_size = iwork
                 if info != 0:
-                    raise ValueError("internal gelsd driver lwork query error,\
-                                        info is %i " % info)
+                    raise ValueError("internal gelsd driver lwork query error"
+                                     ", info is %i " % info)
 
                 x, s, rank, work, iwork, info = lapack_func(a1, b1, lwork,
                                             iwork_size, cond, False, False)
             else:  # complex data
                 # Request of sizes
-                work,rwork,iwork,info = lapack_func_lwork_query(m,n,nrhs,cond)
+                work,rwork,iwork,info = lapack_func_lwork_query(m, n, nrhs, cond)
                 lwork = np.int(np.real(work))
                 rwork_size = np.int(rwork)
                 iwork_size = iwork
                 if info != 0:
-                    raise ValueError("internal gelsd driver lwork query error,\
-                                            info is %i " % info)
+                    raise ValueError("internal gelsd driver lwork query error"
+                                     ", info is %i " % info)
 
                 x, s, rank, work, rwork, iwork, info = lapack_func(a1, b1,
                             lwork,rwork_size, iwork_size, cond, False, False)
@@ -910,7 +902,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             raise LinAlgError("SVD did not converge in Linear Least Squares")
         if info < 0:
             raise ValueError('illegal value in %d-th argument of internal %s'
-                                                    % (-info,lapack_driver))
+                                                    % (-info, lapack_driver))
         resids = np.asarray([], dtype=x.dtype)
         if m > n:
             x1 = x[:n]
@@ -924,25 +916,26 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             cond = np.finfo(lapack_func.dtype).eps * 100
 
         # Request of sizes
-        work,info = lapack_func_lwork_query(m,n,nrhs,cond)
+        work,info = lapack_func_lwork_query(m, n, nrhs, cond)
         lwork = np.int(np.real(work))
         if info != 0:
-            raise ValueError("internal gelsy driver lwork query error, \
-                                info is %i " % info)
+            raise ValueError("internal gelsy driver lwork query error, "
+                             "info is %i " % info)
 
         jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
 
         v,x,j,rank,work,info = lapack_func(a1, b1, jptv, cond,
-                                         lwork, False, False)
+                                           lwork, False, False)
 
         if info < 0:
-            raise ValueError('illegal value in %d-th argument of internal \
-                                gelsy' % -info)
+            raise ValueError("illegal value in %d-th argument of internal "
+                             "gelsy" % -info)
 
         if m > n:
             x1 = x[:n]
             x = x1
         return x,j,rank
+
 
 def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
