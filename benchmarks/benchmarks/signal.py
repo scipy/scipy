@@ -5,7 +5,7 @@ from itertools import product
 import numpy as np
 
 try:
-    from scipy.signal import convolve2d, correlate2d
+    from scipy.signal import convolve2d, correlate2d, lti, lsim, lsim2
 except ImportError:
     pass
 
@@ -36,3 +36,16 @@ class Convolve2D(Benchmark):
                     if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
                         continue
                 fn(a, b, mode=mode, boundary=boundary)
+
+
+class LTI(Benchmark):
+    def setup(self):
+        self.system = lti(1.0, [1, 0, 1])
+        self.t = np.arange(0, 100, 0.5)
+        self.u = np.sin(2 * self.t)
+
+    def time_lsim(self):
+        lsim(self.system, self.u, self.t)
+
+    def time_lsim2(self):
+        lsim2(self.system, self.u, self.t)
