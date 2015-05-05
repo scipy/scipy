@@ -3510,6 +3510,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
         return (np.nan, np.nan)
     if permutations is not None:
         random_state = check_random_state(random_state)
+
+
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
         t_stat, pvalues = _permutation_ttest(mat, cats,
@@ -3531,7 +3533,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
         return _ttest_ind_from_stats(np.mean(a, axis),
                                      np.mean(b, axis),
                                      denom, df)
-
 
 def _init_summation_index(cats):
     """
@@ -3625,7 +3626,6 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
                     _samp_vars[:, idx]) / df
             denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))
 
-
         t_stat[:, p] = np.ravel(np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom))
         random_state.shuffle(copy_cats)
 
@@ -3640,8 +3640,6 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
         pvalues = pvalues[0]
 
     return t_stat, pvalues
-
-
 
 def ttest_rel(a, b, axis=0):
     """
