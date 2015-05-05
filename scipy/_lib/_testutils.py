@@ -28,17 +28,15 @@ def knownfailure_overridable(msg=None):
     return deco
 
 
-def suppressed_stdout():
-    def suppressed_stdout_decorator(f):
-        import nose
+def suppressed_stdout(f):
+    import nose
 
-        def pwrapper(*arg, **kwargs):
-            oldstdout = sys.stdout
-            sys.stdout = open(os.devnull, 'w')
-            try:
-                return f(*arg, **kwargs)
-            finally:
-                sys.stdout.close()
-                sys.stdout = oldstdout
-        return nose.tools.make_decorator(f)(pwrapper)
-    return suppressed_stdout_decorator
+    def pwrapper(*arg, **kwargs):
+        oldstdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+        try:
+            return f(*arg, **kwargs)
+        finally:
+            sys.stdout.close()
+            sys.stdout = oldstdout
+    return nose.tools.make_decorator(f)(pwrapper)

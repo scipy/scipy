@@ -90,7 +90,7 @@ class CheckOptimize(object):
 
 class CheckOptimizeParameterized(CheckOptimize):
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_cg(self):
         # conjugate gradient optimization routine
         if self.use_wrapper:
@@ -122,7 +122,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0, -5.05700028e-01, 4.95985862e-01]],
                         atol=1e-14, rtol=1e-7)
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
         if self.use_wrapper:
@@ -156,7 +156,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
         func = lambda x: -np.e**-x
@@ -174,7 +174,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         finally:
             np.seterr(**olderr)
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_powell(self):
         # Powell (direction set) optimization routine
         if self.use_wrapper:
@@ -216,7 +216,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
         if self.use_wrapper:
@@ -248,7 +248,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0.19572515, -0.63648426, 0.35838135]],
                         atol=1e-14, rtol=1e-7)
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
         if self.use_wrapper:
@@ -282,7 +282,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_ncg_hess(self):
         # Newton conjugate gradient with Hessian
         if self.use_wrapper:
@@ -317,7 +317,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_ncg_hessp(self):
         # Newton conjugate gradient with Hessian times a vector p.
         if self.use_wrapper:
@@ -951,7 +951,7 @@ class TestBrute:
     def func(self, z, *params):
         return self.f1(z, *params) + self.f2(z, *params) + self.f3(z, *params)
 
-    @suppressed_stdout()
+    @suppressed_stdout
     def test_brute(self):
         # test fmin
         resbrute = optimize.brute(self.func, self.rranges, args=self.params,
