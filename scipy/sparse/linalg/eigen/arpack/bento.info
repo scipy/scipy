@@ -1,7 +1,7 @@
 HookFile: bscript
 
 Library:
-    CompiledLibrary: arpack
+    CompiledLibrary: arpack_scipy
         Sources: 
             ARPACK/SRC/*.f,
             ARPACK/UTIL/*.f,
