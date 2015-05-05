@@ -722,45 +722,43 @@ def direct_lstsq(a,b,cmplx=0):
 
 class TestLstsq(TestCase):
 
-    lapack_drivers = ('gelsd', 'gelss', 'gelsd')
+    lapack_drivers = ('gelsd', 'gelss', 'gelsy')
 
     def setUp(self):
         np.random.seed(1234)
 
     def test_simple_exact(self):
         for dtype in REAL_DTYPES:
-            a = np.array(((1,20),(-30,4)), dtype=dtype)
+            a = np.array([[1,20], [-30,4]], dtype=dtype)
             for lapack_driver in TestLstsq.lapack_drivers:
-                    for overwrite in (True,False):
+                    for overwrite in (True, False):
                         for bt in (((1,0),(0,1)), (1,0),((2,1),(-30,4))):
                             # Store values in case they are overwritten
                             # later
                             a1 = a.copy()
                             b = np.array(bt, dtype=dtype)
                             b1 = b.copy()
-                            out = lstsq(a1,b1,lapack_driver=lapack_driver,
-                                       overwrite_a=overwrite,
-                                       overwrite_b=overwrite)
+                            out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                        overwrite_a=overwrite,
+                                        overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
                             assert_(r == 2, 'unexpected efficient rank')
-                            assert_allclose(dot(a,x),b,
-                                            atol=25*np.finfo(a1.dtype).eps,
-                                            rtol=25*np.finfo(a1.dtype).eps,
+                            assert_allclose(dot(a, x), b,
+                                            atol=25 * np.finfo(a1.dtype).eps,
+                                            rtol=25 * np.finfo(a1.dtype).eps,
                                         err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet(self):
-
         for dtype in REAL_DTYPES:
-            a = np.array(((1,2),(4,5),(3,4)), dtype=dtype)
-            b = np.array((1,2,3), dtype=dtype)
+            a = np.array([[1,2], [4,5], [3,4]], dtype=dtype)
+            b = np.array([1,2,3], dtype=dtype)
             for lapack_driver in TestLstsq.lapack_drivers:
-                for overwrite in (True,False):
-                    # Store values in case they are overwritten
-                    # later
+                for overwrite in (True, False):
+                    # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    out = lstsq(a1,b1,lapack_driver=lapack_driver,
+                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                 overwrite_a=overwrite, overwrite_b=overwrite)
                     x = out[0]
                     residuals = out[1]
@@ -768,26 +766,24 @@ class TestLstsq(TestCase):
                     assert_(r == 2, 'unexpected efficient rank')
                     assert_allclose(abs((dot(a,x) - b)**2).sum(axis=0),
                                     residuals,
-                                    rtol=25*np.finfo(a1.dtype).eps,
-                                    atol=25*np.finfo(a1.dtype).eps,
+                                    rtol=25 * np.finfo(a1.dtype).eps,
+                                    atol=25 * np.finfo(a1.dtype).eps,
                                     err_msg="driver: %s" % lapack_driver)
-                    assert_allclose(x,(-0.428571428571429, 0.85714285714285),
-                                    rtol=25*np.finfo(a1.dtype).eps,
-                                    atol=25*np.finfo(a1.dtype).eps,
+                    assert_allclose(x, (-0.428571428571429, 0.85714285714285),
+                                    rtol=25 * np.finfo(a1.dtype).eps,
+                                    atol= 25 * np.finfo(a1.dtype).eps,
                                     err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet_complex(self):
-
         for dtype in COMPLEX_DTYPES:
-            a = np.array(((1+2j,2),(4,5),(3,4)), dtype=dtype)
-            b = np.array((1,2+4j,3), dtype=dtype)
+            a = np.array([[1+2j,2], [4,5], [3,4]], dtype=dtype)
+            b = np.array([1, 2+4j, 3], dtype=dtype)
             for lapack_driver in TestLstsq.lapack_drivers:
                 for overwrite in (True,False):
-                    # Store values in case they are overwritten
-                    # later
+                    # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    out = lstsq(a1,b1,lapack_driver=lapack_driver,
+                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                 overwrite_a=overwrite, overwrite_b=overwrite)
                     x = out[0]
                     residuals = out[1]
@@ -795,151 +791,144 @@ class TestLstsq(TestCase):
                     assert_(r == 2, 'unexpected efficient rank')
                     assert_allclose(abs((dot(a,x) - b)**2).sum(axis=0),
                                         residuals,
-                                        rtol=25*np.finfo(a1.dtype).eps,
-                                        atol=25*np.finfo(a1.dtype).eps,
+                                        rtol=25 * np.finfo(a1.dtype).eps,
+                                        atol=25 * np.finfo(a1.dtype).eps,
                                         err_msg="driver: %s" % lapack_driver)
-                    assert_allclose(x,(-0.4831460674157303+0.258426966292135j,
-                                        0.921348314606741+0.292134831460674j),
-                                        rtol=25*np.finfo(a1.dtype).eps,
-                                        atol=25*np.finfo(a1.dtype).eps,
+                    assert_allclose(x, (-0.4831460674157303 + 0.258426966292135j,
+                                         0.921348314606741 + 0.292134831460674j),
+                                        rtol=25 * np.finfo(a1.dtype).eps,
+                                        atol=25 * np.finfo(a1.dtype).eps,
                                         err_msg="driver: %s" % lapack_driver)
 
     def test_simple_underdet(self):
         for dtype in REAL_DTYPES:
-            a = np.array(((1,2,3),(4,5,6)), dtype=dtype)
-            b = np.array((1,2), dtype=dtype)
+            a = np.array([[1,2,3], [4,5,6]], dtype=dtype)
+            b = np.array([1,2], dtype=dtype)
             for lapack_driver in TestLstsq.lapack_drivers:
-                for overwrite in (True,False):
-                    # Store values in case they are overwritten
-                    # later
+                for overwrite in (True, False):
+                    # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    out = lstsq(a1,b1,lapack_driver=lapack_driver,
+                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                 overwrite_a=overwrite, overwrite_b=overwrite)
                     x = out[0]
                     r = out[2]
                     assert_(r == 2, 'unexpected efficient rank')
-                    assert_allclose(x,(-0.055555555555555, 0.111111111111111,
-                            0.277777777777777),
-                            rtol=25*np.finfo(a1.dtype).eps,
-                            atol=25*np.finfo(a1.dtype).eps,
+                    assert_allclose(x, (-0.055555555555555, 0.111111111111111,
+                                        0.277777777777777),
+                            rtol=25 * np.finfo(a1.dtype).eps,
+                            atol=25 * np.finfo(a1.dtype).eps,
                             err_msg="driver: %s" % lapack_driver)
 
     def test_random_exact(self):
         for dtype in REAL_DTYPES:
             for n in (20, 200):
                 for lapack_driver in TestLstsq.lapack_drivers:
-                    for overwrite in (True,False):
+                    for overwrite in (True, False):
                         a = np.asarray(random([n,n]), dtype=dtype)
                         for i in range(n):
-                            a[i,i] = 20*(.1+a[i,i])
+                            a[i,i] = 20 * (0.1 + a[i,i])
                         for i in range(4):
                             b = np.asarray(random([n,3]), dtype=dtype)
-                            # Store values in case they are overwritten
-                            # later
+                            # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
-                            out = lstsq(a1,b1,lapack_driver=lapack_driver,
-                                       overwrite_a=overwrite,
-                                       overwrite_b=overwrite)
+                            out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                        overwrite_a=overwrite,
+                                        overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
                             assert_(r == n, 'unexpected efficient rank')
                             if dtype is np.float32:
-                                assert_allclose(dot(a,x),b,
-                                          rtol=400*np.finfo(a1.dtype).eps,
-                                          atol=400*np.finfo(a1.dtype).eps,
+                                assert_allclose(dot(a, x), b,
+                                          rtol=400 * np.finfo(a1.dtype).eps,
+                                          atol=400 * np.finfo(a1.dtype).eps,
                                           err_msg="driver: %s" % lapack_driver)
                             else:
-                                assert_allclose(dot(a,x),b,
-                                          rtol=1000*np.finfo(a1.dtype).eps,
-                                          atol=1000*np.finfo(a1.dtype).eps,
+                                assert_allclose(dot(a, x), b,
+                                          rtol=1000 * np.finfo(a1.dtype).eps,
+                                          atol=1000 * np.finfo(a1.dtype).eps,
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_random_complex_exact(self):
         for dtype in COMPLEX_DTYPES:
             for n in (20, 200):
                 for lapack_driver in TestLstsq.lapack_drivers:
-                    for overwrite in (True,False):
+                    for overwrite in (True, False):
                         a = np.asarray(random([n,n]) + 1j*random([n,n]),
                                        dtype=dtype)
                         for i in range(n):
-                            a[i,i] = 20*(.1+a[i,i])
+                            a[i,i] = 20 * (0.1 + a[i,i])
                         for i in range(2):
                             b = np.asarray(random([n,3]), dtype=dtype)
-                            # Store values in case they are overwritten
-                            # later
+                            # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
-                            out = lstsq(a1,b1,lapack_driver=lapack_driver,
-                                       overwrite_a=overwrite,
-                                       overwrite_b=overwrite)
+                            out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                        overwrite_a=overwrite,
+                                        overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
                             assert_(r == n, 'unexpected efficient rank')
                             if dtype is np.complex64:
-                                assert_allclose(dot(a,x),b,
-                                          rtol=400*np.finfo(a1.dtype).eps,
-                                          atol=400*np.finfo(a1.dtype).eps,
+                                assert_allclose(dot(a, x), b,
+                                          rtol=400 * np.finfo(a1.dtype).eps,
+                                          atol=400 * np.finfo(a1.dtype).eps,
                                           err_msg="driver: %s" % lapack_driver)
                             else:
-                                assert_allclose(dot(a,x),b,
-                                          rtol=1000*np.finfo(a1.dtype).eps,
-                                          atol=1000*np.finfo(a1.dtype).eps,
+                                assert_allclose(dot(a, x), b,
+                                          rtol=1000 * np.finfo(a1.dtype).eps,
+                                          atol=1000 * np.finfo(a1.dtype).eps,
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_random_overdet(self):
-
         for dtype in REAL_DTYPES:
             for (n,m) in ((20,15), (200,2)):
                 for lapack_driver in TestLstsq.lapack_drivers:
-                    for overwrite in (True,False):
-                        a = np.asarray(random([n,m]),dtype=dtype)
-                        print(a.dtype)
+                    for overwrite in (True, False):
+                        a = np.asarray(random([n,m]) ,dtype=dtype)
                         for i in range(m):
-                            a[i,i] = 20*(.1+a[i,i])
+                            a[i,i] = 20 * (0.1 + a[i,i])
                         for i in range(4):
-                            b = np.asarray(random([n,3]),dtype=dtype)
-                            # Store values in case they are overwritten
-                            # later
+                            b = np.asarray(random([n,3]), dtype=dtype)
+                            # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
-                            out = lstsq(a1,b1,lapack_driver=lapack_driver,
-                                       overwrite_a=overwrite,
-                                       overwrite_b=overwrite)
+                            out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                        overwrite_a=overwrite,
+                                        overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
                             assert_(r == m, 'unexpected efficient rank')
-                            assert_allclose(x, direct_lstsq(a,b,cmplx=0),
-                                          rtol=25*np.finfo(a1.dtype).eps,
-                                          atol=25*np.finfo(a1.dtype).eps,
-                                          err_msg="driver: %s" % lapack_driver)
+                            assert_allclose(x, direct_lstsq(a, b, cmplx=0),
+                                            rtol=25 * np.finfo(a1.dtype).eps,
+                                            atol=25 * np.finfo(a1.dtype).eps,
+                                            err_msg="driver: %s" % lapack_driver)
 
     def test_random_complex_overdet(self):
-
         for dtype in COMPLEX_DTYPES:
             for (n,m) in ((20,15), (200,2)):
                     for lapack_driver in TestLstsq.lapack_drivers:
-                        for overwrite in (True,False):
+                        for overwrite in (True, False):
                             a = np.asarray(random([n,m]) + 1j*random([n,m]),
                                            dtype=dtype)
                             for i in range(m):
-                                a[i,i] = 20*(.1+a[i,i])
+                                a[i,i] = 20 * (0.1 + a[i,i])
                             for i in range(2):
                                 b = np.asarray(random([n,3]), dtype=dtype)
                                 # Store values in case they are overwritten
                                 # later
                                 a1 = a.copy()
                                 b1 = b.copy()
-                                out = lstsq(a1,b1,lapack_driver=lapack_driver,
-                                           overwrite_a=overwrite,
-                                           overwrite_b=overwrite)
+                                out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                            overwrite_a=overwrite,
+                                            overwrite_b=overwrite)
                                 x = out[0]
                                 r = out[2]
                                 assert_(r == m, 'unexpected efficient rank')
-                                assert_allclose(x,direct_lstsq(a,b,cmplx=1),
-                                          rtol=25*np.finfo(a1.dtype).eps,
-                                          atol=25*np.finfo(a1.dtype).eps,
+                                assert_allclose(x, direct_lstsq(a, b, cmplx=1),
+                                                rtol=25 * np.finfo(a1.dtype).eps,
+                                                atol=25 * np.finfo(a1.dtype).eps,
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_check_finite(self):
@@ -948,24 +937,24 @@ class TestLstsq(TestCase):
             for bt in (((1,0),(0,1)),(1,0),
                       ((2,1),(-30,4))):
                 for lapack_driver in TestLstsq.lapack_drivers:
-                        for overwrite in (True,False):
-                            for check_finite in (True,False):
+                        for overwrite in (True, False):
+                            for check_finite in (True, False):
                                 b = np.array(bt,dtype=dtype)
                                 # Store values in case they are overwritten
                                 # later
                                 a1 = a.copy()
                                 b1 = b.copy()
 
-                                out = lstsq(a1,b1,lapack_driver=lapack_driver,
+                                out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                             check_finite=check_finite,
                                             overwrite_a=overwrite,
                                             overwrite_b=overwrite)
                                 x = out[0]
                                 r = out[2]
                                 assert_(r == 2, 'unexpected efficient rank')
-                                assert_allclose(dot(a,x),b,
-                                          rtol=25*np.finfo(a.dtype).eps,
-                                          atol=25*np.finfo(a.dtype).eps,
+                                assert_allclose(dot(a, x), b,
+                                          rtol=25 * np.finfo(a.dtype).eps,
+                                          atol=25 * np.finfo(a.dtype).eps,
                                           err_msg="driver: %s" % lapack_driver)
 
 
