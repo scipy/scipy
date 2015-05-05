@@ -5,8 +5,8 @@ from itertools import product
 import numpy as np
 
 try:
-    from scipy.signal import convolve2d, correlate2d, lti, lsim, lsim2, welch, 
-                             csd
+    from scipy.signal import (convolve2d, correlate2d, lti, lsim, lsim2, welch,
+                              csd)
 except ImportError:
     pass
 
