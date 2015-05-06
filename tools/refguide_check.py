@@ -61,28 +61,33 @@ def find_funcnames(module):
 
 def get_all_dict(module):
     """Return a copy of the __all__ dict with irrelevant items removed."""
-    all_dict = copy.deepcopy(module.__all__)
+    if hasattr(module, "__all__"):
+        all_dict = copy.deepcopy(module.__all__)
+    else:
+        all_dict = copy.deepcopy(dir(module))
+        all_dict = [name for name in all_dict
+                    if not name.startswith("__")]
     for name in ['absolute_import', 'division', 'print_function']:
         try:
             all_dict.remove(name)
         except ValueError:
             pass
 
-    # FIXME: shouldn't modules be in the refguide, actually? if they're in __all__?
-    # somehow some modules survive the first iteration (?)
-    for _ in range(2):
-        for name in all_dict:
-            if inspect.ismodule(getattr(module, name)):
-                all_dict.remove(name)
+    # Modules are almost always private; real submodules need a separate
+    # run of refguide_check.
+    all_dict = [name for name in all_dict
+                if not inspect.ismodule(getattr(module, name))]
 
     deprecated = []
+    not_deprecated = []
     for name in all_dict:
         f = getattr(module, name)
         if callable(f) and is_deprecated(f):
-            all_dict.remove(name)
             deprecated.append(name)
-            
-    return all_dict, deprecated
+        else:
+            not_deprecated.append(name)
+
+    return not_deprecated, deprecated
 
 
 def compare(all_dict, funcnames):
@@ -183,8 +188,10 @@ def main(argv):
     parser.add_argument("--check_docs", action="store_true")
     args = parser.parse_args(argv)
 
-    module_name = args.module_name[0]
-    module = getattr(scipy, module_name)
+    module_name = args.module_name[0].split(".")
+    module = scipy
+    for n in module_name:
+        module = getattr(module, n)
 
     if args.check_docs:
         check_docstrings(module)
