@@ -897,10 +897,69 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
     """
     a = np.atleast_1d(a)
-    if zi is None:
-        return sigtools._linear_filter(b, a, x, axis)
+    if len(a) == 1:
+        # This path only supports types fdgFDGO to mirror _linear_filter below.
+        # Any of b, a, x, or zi can set the dtype, but there is no default 
+        # casting of other types; instead a NotImplementedError is raised.
+        b = np.asarray(b)
+        a = np.asarray(a)
+        if b.ndim != 1 and a.ndim != 1:
+            raise ValueError('object of too small depth for desired array')
+        x = np.asarray(x)
+        inputs = [b, a, x]
+        if zi is not None:
+            # _linear_filter does not broadcast zi, but does do expansion of singleton dims.
+            zi = np.asarray(zi)
+            if zi.ndim != x.ndim:
+                raise ValueError('object of too small depth for desired array')
+            expected_shape = list(x.shape)
+            expected_shape[axis] = b.shape[0] - 1
+            expected_shape = tuple(expected_shape)
+            # check the trivial case where zi is the right shape first
+            if zi.shape != expected_shape:
+                strides = zi.ndim * [None]
+                if axis < 0:
+                    axis += zi.ndim
+                for k in range(zi.ndim):
+                    if k == axis and zi.shape[k] == expected_shape[k]:
+                        strides[k] = zi.strides[k]
+                    elif k != axis and zi.shape[k] == expected_shape[k]:
+                        strides[k] = zi.strides[k]
+                    elif k != axis and zi.shape[k] == 1:
+                        strides[k] = 0
+                    else:
+                        raise ValueError('Unexpected shape for zi: expected '
+                                         '%s, found %s.' %
+                                         (expected_shape, zi.shape))
+                zi = np.lib.stride_tricks.as_strided(zi, expected_shape, strides)
+            inputs.append(zi)
+        dtype = np.result_type(*inputs)
+
+        if dtype.char not in 'fdgFDGO':
+            raise NotImplementedError("input type '%s' not supported" % dtype)
+
+        b = np.array(b, dtype=dtype, copy=False)
+        a = np.array(a, dtype=dtype, copy=False)
+        b /= a[0]
+        x = np.array(x, dtype=dtype, copy=False)
+
+        out_full = np.apply_along_axis(lambda y: np.convolve(b, y), axis, x)
+        ind = out_full.ndim * [slice(None)]
+        ind[axis] = slice(out_full.shape[axis] - len(b) + 1)
+        out = out_full[ind]
+        if zi is None:
+            return out
+        else:
+            ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
+            zf = out_full[ind]
+            ind[axis] = slice(zi.shape[axis])
+            out[ind] += zi
+            return out, zf
     else:
-        return sigtools._linear_filter(b, a, x, axis, zi)
+        if zi is None:
+            return sigtools._linear_filter(b, a, x, axis)
+        else:
+            return sigtools._linear_filter(b, a, x, axis, zi)
 
 
 def lfiltic(b, a, y, x=None):

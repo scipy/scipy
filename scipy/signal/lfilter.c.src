@@ -551,12 +551,19 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
                        intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
-    @type@ *ptr_Z, *ptr_b;
-    @type@ *ptr_a;
+    @type@ *ptr_Z;
+    @type@ *ptr_b = (@type@*)b;
+    @type@ *ptr_a = (@type@*)a;
     @type@ *xn, *yn;
     const @type@ a0 = *((@type@ *) a);
     intp n;
     uintp k;
+
+    /* normalize the filter coefs only once. */
+    for (n = 0; n < len_b; ++n) {
+        ptr_b[n] /= a0;
+        ptr_a[n] /= a0;
+    }
 
     for (k = 0; k < len_x; k++) {
         ptr_b = (@type@ *) b;   /* Reset a and b pointers */
@@ -565,21 +572,21 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
         yn = (@type@ *) ptr_y;
         if (len_b > 1) {
             ptr_Z = ((@type@ *) Z);
-            *yn = *ptr_Z + *ptr_b / a0 * *xn;   /* Calculate first delay (output) */
+            *yn = *ptr_Z + *ptr_b  * *xn;   /* Calculate first delay (output) */
             ptr_b++;
             ptr_a++;
             /* Fill in middle delays */
             for (n = 0; n < len_b - 2; n++) {
                 *ptr_Z =
-                    ptr_Z[1] + *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
+                    ptr_Z[1] + *xn * (*ptr_b) - *yn * (*ptr_a);
                 ptr_b++;
                 ptr_a++;
                 ptr_Z++;
             }
             /* Calculate last delay */
-            *ptr_Z = *xn * (*ptr_b / a0) - *yn * (*ptr_a / a0);
+            *ptr_Z = *xn * (*ptr_b) - *yn * (*ptr_a);
         } else {
-            *yn = *xn * (*ptr_b / a0);
+            *yn = *xn * (*ptr_b);
         }
 
         ptr_y += stride_Y;      /* Move to next input/output point */
