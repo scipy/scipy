@@ -12,7 +12,7 @@ from scipy import special
 from scipy import optimize
 from scipy import integrate
 from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
-                           inv_boxcox, inv_boxcox1p, erfc)
+                           inv_boxcox, inv_boxcox1p, erfc, chndtr, chndtrix)
 
 from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
@@ -3920,7 +3920,6 @@ class reciprocal_gen(rv_continuous):
         return 0.5*log(a*b)+log(log(b/a))
 reciprocal = reciprocal_gen(name="reciprocal")
 
-# FIXME: add _cdf, _ppf methods?
 class rice_gen(rv_continuous):
     """A Rice continuous random variable.
 
@@ -3955,6 +3954,12 @@ class rice_gen(rv_continuous):
         sz = self._size if self._size else 1
         t = b/np.sqrt(2) + self._random_state.standard_normal(size=(2, sz))
         return np.sqrt((t*t).sum(axis=0))
+
+    def _cdf(self, x, b):
+        return chndtr(np.square(x), 2, np.square(b))
+
+    def _ppf(self, q, b):
+        return np.sqrt(chndtrix(q, 2, np.square(b)))
 
     def _pdf(self, x, b):
         # We use (x**2 + b**2)/2 = ((x-b)**2)/2 + xb.
