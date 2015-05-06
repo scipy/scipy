@@ -78,8 +78,6 @@ def get_all_dict(module):
     deprecated = []
     for name in all:
         f = getattr(module, name)
-        if name in ['info', 'who']: # These print to stdout when called
-            continue
         if callable(f) and is_deprecated(f):
             all.remove(name)
             deprecated.append(name)
@@ -105,7 +103,7 @@ def is_deprecated(f):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("error")
         try:
-            f()
+            f(**{"not a kwarg":None})
         except DeprecationWarning:
             return True
         except:
