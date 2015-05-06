@@ -2150,7 +2150,7 @@ def test_ttest_perm():
                                         0.050528, 1.111482]))
 
     assert_array_almost_equal(pvalues,
-                              np.array([0.988012, 0.686314, 0.81019 ,
+                              np.array([0.988012, 0.686314, 0.81019,
                                         0.963037, 0.25974]))
 
 
