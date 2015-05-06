@@ -61,40 +61,40 @@ def find_funcnames(module):
 
 def get_all_dict(module):
     """Return a copy of the __all__ dict with irrelevant items removed."""
-    all = copy.deepcopy(module.__all__)
+    all_dict = copy.deepcopy(module.__all__)
     for name in ['absolute_import', 'division', 'print_function']:
         try:
-            all.remove(name)
+            all_dict.remove(name)
         except ValueError:
             pass
 
     # FIXME: shouldn't modules be in the refguide, actually? if they're in __all__?
     # somehow some modules survive the first iteration (?)
     for _ in range(2):
-        for name in all:
+        for name in all_dict:
             if inspect.ismodule(getattr(module, name)):
-                all.remove(name)
+                all_dict.remove(name)
 
     deprecated = []
-    for name in all:
+    for name in all_dict:
         f = getattr(module, name)
         if callable(f) and is_deprecated(f):
-            all.remove(name)
+            all_dict.remove(name)
             deprecated.append(name)
             
-    return all, deprecated
+    return all_dict, deprecated
 
 
-def compare(all, funcnames):
+def compare(all_dict, funcnames):
     """Return sets of objects only in one of __all__, refguide."""
     only_all = set()
-    for name in all:
+    for name in all_dict:
         if name not in funcnames:
             only_all.add(name)
 
     only_ref = set()
     for name in funcnames:
-        if name not in all:
+        if name not in all_dict:
             only_ref.add(name)
 
     return only_all, only_ref
@@ -110,14 +110,14 @@ def is_deprecated(f):
             pass
         return False
 
-def report(all, funcnames, deprecated, module_name):
+def report(all_dict, funcnames, deprecated, module_name):
     """Print out a report for the module"""
-    num_all = len(all)
+    num_all = len(all_dict)
     num_ref = len(funcnames)
     print("Number of non-deprecated functions in __all__: %i" % num_all)
     print("Number of functions in refguide: %i" % num_ref)
 
-    only_all, only_ref = compare(all, funcnames)
+    only_all, only_ref = compare(all_dict, funcnames)
     dep_in_ref = set(only_ref).intersection(deprecated)
     only_ref = set(only_ref).difference(deprecated)
     if len(only_all) == len(only_ref) == 0:
