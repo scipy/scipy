@@ -1028,9 +1028,9 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
 
     if X0 is None:
         X0 = zeros(sys.B.shape[0], sys.A.dtype)
@@ -1145,9 +1145,9 @@ def lsim(system, U, T, X0=None, interp=True):
     >>> plt.plot(t, y)
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     T = atleast_1d(T)
     if len(T.shape) != 1:
         raise ValueError("T must be a rank-1 array.")
@@ -1313,9 +1313,9 @@ def impulse(system, X0=None, T=None, N=None):
 
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     if X0 is None:
         X = squeeze(sys.B)
     else:
@@ -1391,9 +1391,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     B = sys.B
     if B.shape[-1] != 1:
         raise ValueError("impulse2() requires a single-input system.")
@@ -1446,9 +1446,9 @@ def step(system, X0=None, T=None, N=None):
 
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     if N is None:
         N = 100
     if T is None:
@@ -1506,9 +1506,9 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     .. versionadded:: 0.8.0
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     if N is None:
         N = 100
     if T is None:
@@ -1627,9 +1627,9 @@ def freqresp(system, w=None, n=10000):
     >>> plt.show()
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_tf()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_tf()
 
     if sys.inputs != 1 or sys.outputs != 1:
         raise ValueError("freqresp() requires a SISO (single input, single "
