@@ -1833,7 +1833,7 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
                              "inserting rows. Found %s." %
                              str(getattr(u, 'shape')))
     else:
-        raise ValueError("'u' can be at most 2-D")
+        raise ValueError("'u' must be either 1- or 2-D")
 
     u1 = validate_array(u1, check_finite)
 
@@ -1956,7 +1956,7 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
                              "inserting columns. Found %s." %
                              str(getattr(u, 'shape')))
     else:
-        raise ValueError("'u' can be at most 2-D")
+        raise ValueError("'u' must be either 1- or 2-D")
 
     if rcond is not None and economic:
         if typecode == cnp.NPY_DOUBLE or typecode == cnp.NPY_CDOUBLE:
@@ -2236,14 +2236,17 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     if cnp.PyArray_TYPE(u1) != typecode or cnp.PyArray_TYPE(v1) != typecode:
         raise ValueError('u and v must have the same type as Q and R')
 
+    if u1.ndim < 1 or u1.ndim > 2:
+        raise ValueError('u must be either 1- or 2-D.')
+
+    if v1.ndim < 1 or v1.ndim > 2:
+        raise ValueError('v must be either 1- or 2-D.')
+
     if u1.shape[0] != m: 
         raise ValueError('u.shape[0] must equal Q.shape[0]')
 
     if v1.shape[0] != n:
         raise ValueError('v.shape[0] must equal R.shape[1]')
-
-    if u1.ndim > 2 or v1.ndim > 2:
-        raise ValueError('u and v can be no more than 2-D')
 
     if u1.ndim != v1.ndim:
         raise ValueError('u and v must have the same number of dimensions')
@@ -2252,8 +2255,8 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
         if u1.shape[1] != v1.shape[1]:
             raise ValueError('Second dimension of u and v must be the same')
         elif u1.shape[1] == 1:
-            u1 = np.squeeze(u1)
-            v1 = np.squeeze(v1)
+            u1 = u1[:,0]
+            v1 = v1[:,0] 
 
     if u1.ndim == 1:
         p = 1

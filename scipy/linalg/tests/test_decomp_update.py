@@ -607,6 +607,13 @@ class BaseQRdelete(BaseQRdeltas):
         assert_raises(ValueError, qr_delete, q0, r, 0, 1, 'col')
         assert_raises(ValueError, qr_delete, q0, r, 0, 3, 'col')
 
+    def test_qr_scalar(self):
+        a, q, r = self.generate('1x1')
+        assert_raises(ValueError, qr_delete, q[0, 0], r, 0, 1, 'row')
+        assert_raises(ValueError, qr_delete, q, r[0, 0], 0, 1, 'row')
+        assert_raises(ValueError, qr_delete, q[0, 0], r, 0, 1, 'col')
+        assert_raises(ValueError, qr_delete, q, r[0, 0], 0, 1, 'col')
+
 class TestQRdelete_f(BaseQRdelete):
     dtype = np.dtype('f')
 
@@ -930,6 +937,16 @@ class BaseQRinsert(BaseQRdeltas):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
+    
+    def test_1x1_1_scalar(self):
+        a, q, r, u = self.generate('1x1', which='row')
+        assert_raises(ValueError, qr_insert, q[0, 0], r, u, 0, 'row')
+        assert_raises(ValueError, qr_insert, q, r[0, 0], u, 0, 'row')
+        assert_raises(ValueError, qr_insert, q, r, u[0], 0, 'row')
+
+        assert_raises(ValueError, qr_insert, q[0, 0], r, u, 0, 'col')
+        assert_raises(ValueError, qr_insert, q, r[0, 0], u, 0, 'col')
+        assert_raises(ValueError, qr_insert, q, r, u[0], 0, 'col')
 
     def base_non_simple_strides(self, adjust_strides, k, p, which):
         for type in ['sqr', 'tall', 'fat']:
@@ -1302,6 +1319,13 @@ class BaseQRupdate(BaseQRdeltas):
         q1, r1 = qr_update(q, r, u, v, False)
         a1 = a + np.dot(u, v.T.conj())
         check_qr(q1, r1, a1, self.rtol, self.atol)
+
+    def test_1x1_rank_1_scalar(self):
+        a, q, r, u, v = self.generate('1x1')
+        assert_raises(ValueError, qr_update, q[0, 0], r, u, v)
+        assert_raises(ValueError, qr_update, q, r[0, 0], u, v)
+        assert_raises(ValueError, qr_update, q, r, u[0], v)
+        assert_raises(ValueError, qr_update, q, r, u, v[0])
 
     def base_non_simple_strides(self, adjust_strides, mode, p, overwriteable):
         assert_sqr = False if mode == 'economic' else True
