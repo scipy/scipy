@@ -28,7 +28,7 @@ class CorrelationFunctions(Benchmark):
     ]
 
     def setup(self, mode):
-        a = np.random.rand(2,2)*10
+        a = np.random.rand(2,2) * 10
         self.a = a
 
     def time_fisher_exact(self, alternative):   
