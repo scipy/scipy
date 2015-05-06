@@ -7,7 +7,8 @@ from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, assert_raises, TestCase, run_module_suite)
 from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                                  bode, freqresp, lsim, impulse, step,
-                                 abcd_normalize, place_poles)
+                                 abcd_normalize, place_poles,
+                                 TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -640,12 +641,198 @@ class TestStep(_TestStepFuncs):
         step(([], [-1], 1+0j))
 
 
-def test_lti_instantiation():
-    # Test that lti can be instantiated with sequences, scalars.  See PR-225.
-    lti([1], [-1])
-    lti(np.array([]), np.array([-1]), 1)
-    lti([], [-1], 1)
-    lti([1], [-1], 1, 3)
+class TestLti(object):
+    """Test the lti base class"""
+    def test_lti_instantiation(self):
+        """
+        Test that lti can be instantiated with sequences, scalars.
+
+        See PR-225.
+        """
+        # TransferFunction
+        s = lti([1], [-1])
+        assert_(isinstance(s, TransferFunction))
+        assert_(isinstance(s, lti))
+
+        # ZerosPolesGain
+        s = lti(np.array([]), np.array([-1]), 1)
+        assert_(isinstance(s, ZerosPolesGain))
+        assert_(isinstance(s, lti))
+
+        # StateSpace
+        s = lti([], [-1], 1)
+        s = lti([1], [-1], 1, 3)
+        assert_(isinstance(s, StateSpace))
+        assert_(isinstance(s, lti))
+
+
+class TestStateSpace(object):
+    """Test StateSpace class"""
+
+    def test_initialization(self):
+        """Check that all initializations work"""
+        s = StateSpace(1, 1, 1, 1)
+        s = StateSpace([1], [2], [3], [4])
+        s = StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
+                       np.array([[1, 0]]), np.array([[0]]))
+
+    def _compare_systems(self, sys1, sys2):
+        """Compare the contents of two systems"""
+        assert_equal(sys1.A, sys2.A)
+        assert_equal(sys1.B, sys2.B)
+        assert_equal(sys1.C, sys2.C)
+        assert_equal(sys1.D, sys2.D)
+
+    def test_conversion(self):
+        """Check the conversion functions"""
+        s = StateSpace(1, 2, 3, 4)
+        assert_(isinstance(s.to_ss(), StateSpace))
+        assert_(isinstance(s.to_tf(), TransferFunction))
+        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+
+        # Make sure copies work
+        assert_(StateSpace(s) is not s)
+        assert_(s.to_ss() is not s)
+
+    def test_properties(self):
+        """
+        Test setters/getters for cross class properties.
+
+        This implicitly tests to_tf() and to_zpk()
+        """
+        # Getters
+        s = StateSpace(1, 1, 1, 1)
+        assert_equal(s.num, [1, 0])
+        assert_equal(s.den, [1, -1])
+        assert_equal(s.poles, [1])
+        assert_equal(s.zeros, [0])
+        assert_equal(s.gain, 1)
+
+        # transfer function setters
+        s2 = StateSpace(2, 2, 2, 2)
+        s2.num = [1, 0]
+        s2.den = [1, -1]
+        self._compare_systems(s, s2)
+
+        # zpk setters
+        s2 = StateSpace(2, 2, 2, 2)
+        s2.poles = 1
+        s2.zeros = 0
+        s2.gain = 1
+        self._compare_systems(s, s2)
+
+
+class TestTransferFunction(object):
+    """Test TransferFunction class"""
+
+    def test_initialization(self):
+        """Check that all initializations work"""
+        s = TransferFunction(1, 1)
+        s = TransferFunction([1], [2])
+        s = TransferFunction(np.array([1]), np.array([2]))
+
+    def _compare_systems(self, sys1, sys2):
+        """Compare the contents of two systems"""
+        assert_equal(sys1.num, sys2.num)
+        assert_equal(sys1.den, sys2.den)
+
+    def test_conversion(self):
+        """Check the conversion functions"""
+        s = TransferFunction([1, 0], [1, -1])
+        assert_(isinstance(s.to_ss(), StateSpace))
+        assert_(isinstance(s.to_tf(), TransferFunction))
+        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+
+        # Make sure copies work
+        assert_(TransferFunction(s) is not s)
+        assert_(s.to_tf() is not s)
+
+    def test_properties(self):
+        """
+        Test setters/getters for cross class properties.
+
+        This implicitly tests to_ss() and to_zpk()
+        """
+        # Getters
+        s = TransferFunction([1, 0], [1, -1])
+        assert_equal(s.poles, [1])
+        assert_equal(s.zeros, [0])
+        assert_equal(s.gain, 1)
+        assert_equal(s.A, 1)
+        assert_equal(s.B, 1)
+        assert_equal(s.C, 1)
+        assert_equal(s.D, 1)
+
+        # state space setters
+        s2 = TransferFunction([2, 3], [4, 5])
+        s2.A = 1
+        s2.B = 1
+        s2.C = 1
+        s2.D = 1
+        self._compare_systems(s, s2)
+
+        # zpk setters
+        s2 = TransferFunction([2, 3], [4, 5])
+        s2.poles = 1
+        s2.zeros = 0
+        s2.gain = 1
+        self._compare_systems(s, s2)
+
+
+class TestZerosPolesGain(object):
+    """Test ZerosPolesGain class"""
+
+    def test_initialization(self):
+        """Check that all initializations work"""
+        s = ZerosPolesGain(1, 1, 1)
+        s = ZerosPolesGain([1], [2], 1)
+        s = ZerosPolesGain(np.array([1]), np.array([2]), 1)
+
+    def _compare_systems(self, sys1, sys2):
+        """Compare the contents of two systems"""
+        assert_equal(sys1.poles, sys2.poles)
+        assert_equal(sys1.zeros, sys2.zeros)
+        assert_equal(sys1.gain, sys2.gain)
+
+    def test_conversion(self):
+        """Check the conversion functions"""
+        s = ZerosPolesGain(1, 2, 3)
+        assert_(isinstance(s.to_ss(), StateSpace))
+        assert_(isinstance(s.to_tf(), TransferFunction))
+        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+
+        # Make sure copies work
+        assert_(ZerosPolesGain(s) is not s)
+        assert_(s.to_zpk() is not s)
+
+    def test_properties(self):
+        """
+        Test setters/getters for cross class properties.
+
+        This implicitly tests to_ss() and to_tf()
+        """
+        # Getters
+        s = ZerosPolesGain(0, 1, 1)
+        assert_equal(s.num, [1, 0])
+        assert_equal(s.den, [1, -1])
+        assert_equal(s.A, 1)
+        assert_equal(s.B, 1)
+        assert_equal(s.C, 1)
+        assert_equal(s.D, 1)
+
+        # state space setters
+        s2 = ZerosPolesGain([2], [6], 3)
+        s2.A = 1
+        s2.B = 1
+        s2.C = 1
+        s2.D = 1
+        self._compare_systems(s, s2)
+
+        # tf setters
+        s2 = ZerosPolesGain([2], [5], 3)
+        s2.num = [1, 0]
+        s2.den = [1, -1]
+        self._compare_systems(s, s2)
 
 
 class Test_abcd_normalize(object):
