@@ -736,7 +736,9 @@ class cauchy_gen(rv_continuous):
         return log(4*pi)
 
     def _fitstart(self, data, args=None):
-        return (0, 1)
+        # Initialize ML guesses using quartiles instead of moments.
+        p25, p50, p75 = np.percentile(data, [25, 50, 75])
+        return p50, (p75 - p25)/2
 cauchy = cauchy_gen(name='cauchy')
 
 

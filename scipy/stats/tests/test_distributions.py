@@ -1793,6 +1793,16 @@ def test_regression_ticket_1530():
     assert_almost_equal(params, expected, decimal=1)
 
 
+def test_gh_pr_4806():
+    # Check starting values for Cauchy distribution fit.
+    np.random.seed(1234)
+    x = np.random.randn(42)
+    for offset in 10000.0, 1222333444.0:
+        loc, scale = stats.cauchy.fit(x + offset)
+        assert_allclose(loc, offset, atol=1.0)
+        assert_allclose(scale, 0.6, atol=1.0)
+
+
 def test_tukeylambda_stats_ticket_1545():
     # Some test for the variance and kurtosis of the Tukey Lambda distr.
     # See test_tukeylamdba_stats.py for more tests.
