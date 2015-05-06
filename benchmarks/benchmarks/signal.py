@@ -5,11 +5,28 @@ from itertools import product
 import numpy as np
 
 try:
-    from scipy.signal import convolve2d, correlate2d, lti, lsim, lsim2
+    from scipy.signal import (convolve2d, correlate2d, lti, lsim, lsim2, welch,
+                              csd)
 except ImportError:
     pass
 
 from .common import Benchmark
+
+
+class CalculateWindowedFFT(Benchmark):
+    def setup(self):
+        np.random.seed(5678)
+        # Create some long arrays for computation
+        x = np.random.randn(2**20)
+        y = np.random.randn(2**20)
+        self.x = x
+        self.y = y
+
+    def time_welch(self):
+        welch(self.x)
+    
+    def time_csd(self):
+        csd(self.x, self.y)
 
 
 class Convolve2D(Benchmark):
