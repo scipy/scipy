@@ -2018,7 +2018,6 @@ def f_oneway(*args):
     -------
     statistic : float
         The computed F-value of the test.
-
     pvalue : float
         The associated p-value from the F-distribution.
 
@@ -2078,9 +2077,8 @@ def friedmanchisquare(*args):
     -------
     statistic : float
         the test statistic.
-
     pvalue : float
-        the ssociated p-value.
+        the associated p-value.
     """
     data = argstoarray(*args).astype(float)
     k = len(data)

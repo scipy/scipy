@@ -2115,7 +2115,7 @@ def test_ks_2samp():
 
     # test for namedtuple attribute results
     attributes = ('statistic', 'pvalue')
-    res = stats.ks_2samp(data1-0.01, data2)
+    res = stats.ks_2samp(data1 - 0.01, data2)
     check_named_results(res, attributes)
 
 

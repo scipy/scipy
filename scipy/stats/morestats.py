@@ -84,13 +84,13 @@ def bayes_mvs(data, alpha=0.90):
         raise ValueError("0 < alpha < 1 is required, but alpha=%s was given."
                          % alpha)
 
-    mean = namedtuple('mean', ('estimate', 'minmax'))
-    variance = namedtuple('variance', ('estimate', 'minmax'))
-    std_dev = namedtuple('std_dev', ('estimate', 'minmax'))
+    Mean = namedtuple('Mean', ('statistic', 'minmax'))
+    Variance = namedtuple('Variance', ('statistic', 'minmax'))
+    Std_dev = namedtuple('Std_dev', ('statistic', 'minmax'))
 
-    m_res = mean(m.mean(), m.interval(alpha))
-    v_res = variance(v.mean(), v.interval(alpha))
-    s_res = std_dev(s.mean(), s.interval(alpha))
+    m_res = Mean(m.mean(), m.interval(alpha))
+    v_res = Variance(v.mean(), v.interval(alpha))
+    s_res = Std_dev(s.mean(), s.interval(alpha))
 
     return m_res, v_res, s_res
 

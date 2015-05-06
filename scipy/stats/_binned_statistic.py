@@ -146,9 +146,9 @@ def binned_statistic(x, values, statistic='mean',
     medians, edges, xy = binned_statistic_dd([x], values, statistic,
                                              bins, range)
 
-    Binned_statisticResult = namedtuple('Binned_statisticResult',
-                                        ('statistic', 'bin_edges', 'binnumber'))
-    return Binned_statisticResult(medians, edges[0], xy)
+    BinnedStatisticResult = namedtuple('BinnedStatisticResult',
+                                       ('statistic', 'bin_edges', 'binnumber'))
+    return BinnedStatisticResult(medians, edges[0], xy)
 
 
 def binned_statistic_2d(x, y, values, statistic='mean',
@@ -206,9 +206,9 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     -------
     statistic : (nx, ny) ndarray
         The values of the selected statistic in each two-dimensional bin
-    x_edge : (nx + 1) ndarray
+    x_edges : (nx + 1) ndarray
         The bin edges along the first dimension.
-    y_edge : (ny + 1) ndarray
+    y_edges : (ny + 1) ndarray
         The bin edges along the second dimension.
     binnumber : 1-D ndarray of ints
         This assigns to each observation an integer that represents the bin
@@ -238,10 +238,10 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     medians, edges, xy = binned_statistic_dd([x, y], values, statistic,
                                              bins, range)
 
-    Binned_statistic_2dResult = namedtuple('Binned_statistic_2dResult',
-                                           ('statistic', 'x_edge', 'y_edge',
-                                            'binnumber'))
-    return Binned_statistic_2dResult(medians, edges[0], edges[1], xy)
+    BinnedStatistic2dResult = namedtuple('BinnedStatistic2dResult',
+                                         ('statistic', 'x_edge', 'y_edge',
+                                          'binnumber'))
+    return BinnedStatistic2dResult(medians, edges[0], edges[1], xy)
 
 
 def binned_statistic_dd(sample, values, statistic='mean',
@@ -449,7 +449,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if (result.shape != nbin - 2).any():
         raise RuntimeError('Internal Shape Error')
 
-    Binned_statistic_ddResult = namedtuple('Binned_statisticddResult',
-                                           ('statistic', 'bin_edges',
-                                            'binnumber'))
-    return Binned_statistic_ddResult(result, edges, xy)
+    BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
+                                         ('statistic', 'bin_edges',
+                                          'binnumber'))
+    return BinnedStatisticddResult(result, edges, xy)
