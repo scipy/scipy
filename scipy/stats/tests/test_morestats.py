@@ -39,7 +39,7 @@ g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 class TestBayes_mvs(TestCase):
     def test_result_attributes(self):
         x = np.arange(15)
-        attributes = ('estimate', 'minmax')
+        attributes = ('statistic', 'minmax')
         res = stats.bayes_mvs(x)
 
         for i in res:
