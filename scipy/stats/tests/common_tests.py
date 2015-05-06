@@ -5,12 +5,21 @@ import warnings
 
 import numpy as np
 import numpy.testing as npt
+import numpy.ma.testutils as ma_npt
 
 from scipy._lib._version import NumpyVersion
 from scipy import stats
 
 
 NUMPY_BELOW_1_7 = NumpyVersion(np.__version__) < '1.7.0'
+
+
+def check_named_results(res, attributes, ma=False):
+    for i, attr in enumerate(attributes):
+        if ma:
+            ma_npt.assert_equal(res[i], getattr(res, attr))
+        else:
+            npt.assert_equal(res[i], getattr(res, attr))
 
 
 def check_normalization(distfn, args, distname):
@@ -169,7 +178,7 @@ def check_random_state_property(distfn, args):
     distfn.random_state = 1234
     r1 = distfn.rvs(*args, size=8)
     npt.assert_equal(r0, r1)
-    
+
     distfn.random_state = np.random.RandomState(1234)
     r2 = distfn.rvs(*args, size=8)
     npt.assert_equal(r0, r2)

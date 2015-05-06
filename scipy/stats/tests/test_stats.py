@@ -22,7 +22,7 @@ from numpy import array, arange, float32, float64, power
 import numpy as np
 
 import scipy.stats as stats
-
+from common_tests import check_named_results
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -620,6 +620,11 @@ class TestCorrSpearmanr(TestCase):
         r = y[0]
         assert_approx_equal(r,1.0)
 
+    def test_spearmanr_result_attributes(self):
+        res = stats.spearmanr(X, X)
+        attributes = ('correlation', 'pvalue')
+        check_named_results(res, attributes)
+
 
 class TestCorrSpearmanrTies(TestCase):
     """Some tests of tie-handling by the spearmanr function."""
@@ -656,6 +661,11 @@ def test_kendalltau():
     res = stats.kendalltau(x1, x2)
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
+
+    # test for namedtuple attribute results
+    attributes = ('correlation', 'pvalue')
+    res = stats.kendalltau(x1, x2)
+    check_named_results(res, attributes)
 
     # with only ties in one or both inputs
     assert_equal(stats.kendalltau([2,2,2], [2,2,2]), (np.nan, np.nan))
@@ -776,6 +786,16 @@ class TestRegression(TestCase):
         assert_(res[2] >= -1)  # propagated numerical errors were not corrected
         assert_almost_equal(res[2], -1)  # perfect negative correlation case
         assert_(not np.isnan(res[4]))  # stderr should stay finite
+
+    def test_linregress_result_attributes(self):
+        # Regress a line with sinusoidal noise.
+        x = np.linspace(0, 100, 100)
+        y = 0.2 * np.linspace(0, 100, 100) + 10
+        y += np.sin(np.linspace(0, 20, 100))
+
+        res = stats.linregress(x, y)
+        attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
+        check_named_results(res, attributes)
 
 
 def test_theilslopes():
@@ -927,6 +947,11 @@ class TestHistogram(TestCase):
                 assert_almost_equal(expected_results[i], given_results[i],
                                     decimal=2)
 
+    def test_histogram_result_attributes(self):
+        res = stats.histogram(self.low_range, numbins=20)
+        attributes = ('count', 'lowerlimit', 'binsize', 'extrapoints')
+        check_named_results(res, attributes)
+
 
 def test_cumfreq():
     x = [1, 4, 2, 1, 3, 1]
@@ -936,12 +961,22 @@ def test_cumfreq():
                                                       defaultreallimits=(1.5, 5))
     assert_(extrapoints == 3)
 
+    # test for namedtuple attribute results
+    attributes = ('cumcount', 'lowerlimit', 'binsize', 'extrapoints')
+    res = stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
+    check_named_results(res, attributes)
+
 
 def test_relfreq():
     a = np.array([1, 4, 2, 1, 3, 1])
     relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
     assert_array_almost_equal(relfreqs,
                               array([0.5, 0.16666667, 0.16666667, 0.16666667]))
+
+    # test for namedtuple attribute results
+    attributes = ('frequency', 'lowerlimit', 'binsize', 'extrapoints')
+    res = stats.relfreq(a, numbins=4)
+    check_named_results(res, attributes)
 
     # check array_like input is accepted
     relfreqs2, lowlim, binsize, extrapoints = stats.relfreq([1, 4, 2, 1, 3, 1],
@@ -1271,6 +1306,11 @@ class TestMode(TestCase):
         assert_equal(vals[0][0], Point(2))
         assert_equal(vals[1][0], 4)
 
+    def test_mode_result_attributes(self):
+        data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
+        actual = stats.mode(data1)
+        attributes = ('mode', 'count')
+        check_named_results(actual, attributes)
 
 class TestVariability(TestCase):
 
@@ -1510,6 +1550,10 @@ class TestStudentTest(TestCase):
 
         assert_array_almost_equal(t, self.T1_0)
         assert_array_almost_equal(p, self.P1_0)
+
+        res = stats.ttest_1samp(self.X1, 0)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
         t, p = stats.ttest_1samp(self.X2, 0)
 
@@ -1819,6 +1863,17 @@ class TestPowerDivergence(object):
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "cressie-read", case.cr)
 
+    def test_power_divergence_result_attributes(self):
+        f_obs = power_div_1d_cases[0].f_obs
+        f_exp = power_div_1d_cases[0].f_exp
+        ddof = power_div_1d_cases[0].ddof
+        axis = power_div_1d_cases[0].axis
+
+        res = stats.power_divergence(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                                     axis=axis, lambda_="pearson")
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
+
 
 def test_chisquare_masked_arrays():
     # Test masked arrays.
@@ -1979,6 +2034,11 @@ def test_friedmanchisquare():
                               (10.68, 0.0135882729582176))
     np.testing.assert_raises(ValueError, stats.friedmanchisquare,x3[0],x3[1])
 
+    # test for namedtuple attribute results
+    attributes = ('statistic', 'pvalue')
+    res = stats.friedmanchisquare(*x1)
+    check_named_results(res, attributes)
+
     # test using mstats
     assert_array_almost_equal(stats.mstats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),
                               (10.2283464566929, 0.0167215803284414))
@@ -2003,6 +2063,11 @@ def test_kstest():
     D,p = stats.kstest(x,'norm')
     assert_almost_equal(D, 0.44435602715924361, 15)
     assert_almost_equal(p, 0.038850140086788665, 8)
+
+    # test for namedtuple attribute results
+    attributes = ('statistic', 'pvalue')
+    res = stats.kstest(x, 'norm')
+    check_named_results(res, attributes)
 
     # the following tests rely on deterministicaly replicated rvs
     np.random.seed(987654321)
@@ -2048,6 +2113,11 @@ def test_ks_2samp():
                               np.linspace(1,100,110)+20-0.1)),
         np.array((0.20818181818181825, 0.017981441789762638)))
 
+    # test for namedtuple attribute results
+    attributes = ('statistic', 'pvalue')
+    res = stats.ks_2samp(data1 - 0.01, data2)
+    check_named_results(res, attributes)
+
 
 def test_ttest_rel():
     # regression test
@@ -2072,6 +2142,11 @@ def test_ttest_rel():
         t, p = stats.ttest_rel(4., 3.)
     assert_(np.isnan(t))
     assert_(np.isnan(p))
+
+    # test for namedtuple attribute results
+    attributes = ('statistic', 'pvalue')
+    res = stats.ttest_rel(rvs1, rvs2, axis=0)
+    check_named_results(res, attributes)
 
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
@@ -2241,6 +2316,11 @@ def test_ttest_ind_with_uneq_var():
                                                          equal_var=False),
                               (t, p))
 
+    # test for namedtuple attribute results
+    attributes = ('statistic', 'pvalue')
+    res = stats.ttest_ind(rvs1, rvs2, axis=0, equal_var=False)
+    check_named_results(res, attributes)
+
     # test on 3 dimensions
     rvs1_3D = np.dstack([rvs1_2D,rvs1_2D,rvs1_2D])
     rvs2_3D = np.dstack([rvs2_2D,rvs2_2D,rvs2_2D])
@@ -2363,13 +2443,7 @@ class TestDescribe(TestCase):
         actual = stats.describe(np.arange(5))
         attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness',
                       'kurtosis')
-        for i, attr in enumerate(attributes):
-            assert_equal(actual[i], getattr(actual, attr))
-
-    def test_describe_typename(self):
-        actual = stats.describe(np.arange(5))
-        assert_equal(str(actual)[:8], 'Describe')
-
+        check_named_results(actual, attributes)
 
 def test_normalitytests():
     yield (assert_raises, ValueError, stats.skewtest, 4.)
@@ -2380,9 +2454,14 @@ def test_normalitytests():
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
     x = np.array((-2,-1,0,1,2,3)*4)**2
+    attributes = ('statistic', 'pvalue')
+
     yield assert_array_almost_equal, stats.normaltest(x), (st_normal, pv_normal)
+    check_named_results(stats.normaltest(x), attributes)
     yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
+    check_named_results(stats.skewtest(x), attributes)
     yield assert_array_almost_equal, stats.kurtosistest(x), (st_kurt, pv_kurt)
+    check_named_results(stats.kurtosistest(x), attributes)
 
     # Test axis=None (equal to axis=0 for 1-D input)
     yield (assert_array_almost_equal, stats.normaltest(x, axis=None),
@@ -2391,6 +2470,13 @@ def test_normalitytests():
            (st_skew, pv_skew))
     yield (assert_array_almost_equal, stats.kurtosistest(x, axis=None),
            (st_kurt, pv_kurt))
+
+
+class TestRankSums(TestCase):
+    def test_ranksums_result_attributes(self):
+        res = stats.ranksums(np.arange(5), np.arange(25))
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
 
 class TestJarqueBera(TestCase):
@@ -2466,6 +2552,11 @@ def test_mannwhitneyu():
     assert_array_almost_equal(stats.stats.mannwhitneyu(x,y),
                     (16980.5, 2.8214327656317373e-005), decimal=12)
 
+    # test for namedtuple attribute results
+    attributes = ('statistic', 'pvalue')
+    res = stats.mannwhitneyu(x, y)
+    check_named_results(res, attributes)
+
 
 def test_pointbiserial():
     # same as mstats test except for the nan
@@ -2476,6 +2567,11 @@ def test_pointbiserial():
          2.8,2.8,2.5,2.4,2.3,2.1,1.7,1.7,1.5,1.3,1.3,1.2,1.2,1.1,
          0.8,0.7,0.6,0.5,0.2,0.2,0.1]
     assert_almost_equal(stats.pointbiserialr(x, y)[0], 0.36149, 5)
+
+    # test for namedtuple attribute results
+    attributes = ('correlation', 'pvalue')
+    res = stats.pointbiserialr(x, y)
+    check_named_results(res, attributes)
 
 
 def test_obrientransform():
@@ -2931,6 +3027,13 @@ class TestSigamClip(object):
         assert_equal(upp, c.mean() + fact*c.std())
         assert_equal(c, np.linspace(9.5,10.5,11))
 
+    def test_sigmaclip_result_attributes(self):
+        a = np.concatenate((np.linspace(9.5, 10.5, 11),
+                            np.linspace(-100, -50, 3)))
+        fact = 1.8
+        res = stats.sigmaclip(a, fact, fact)
+        attributes = ('clipped', 'lower', 'upper')
+        check_named_results(res, attributes)
 
 class TestFOneWay(TestCase):
     def test_trivial(self):
@@ -2950,6 +3053,12 @@ class TestFOneWay(TestCase):
         F, p = stats.f_oneway(a, b)
         assert_almost_equal(F, 0.77450216931805538)
 
+    def test_result_attributes(self):
+        a = np.array([655, 788], dtype=np.uint16)
+        b = np.array([789, 772], dtype=np.uint16)
+        res = stats.f_oneway(a, b)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
 class TestKruskal(TestCase):
     def test_simple(self):
@@ -3003,6 +3112,13 @@ class TestKruskal(TestCase):
         h, p = stats.kruskal(x, y, z)
         assert_approx_equal(h, expected)
         assert_approx_equal(p, stats.chisqprob(h, 2))
+
+    def test_kruskal_result_attributes(self):
+        x = [1, 3, 5, 7, 9]
+        y = [2, 4, 6, 8, 10]
+        res = stats.kruskal(x, y)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
 
 class TestCombinePvalues(TestCase):

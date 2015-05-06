@@ -608,9 +608,9 @@ def mode(a, axis=0):
 
     Returns
     -------
-    vals : ndarray
+    mode : ndarray
         Array of modal values.
-    counts : ndarray
+    count : ndarray
         Array of counts for each mode.
 
     Examples
@@ -645,7 +645,9 @@ def mode(a, axis=0):
         mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
         oldcounts = np.maximum(counts, oldcounts)
         oldmostfreq = mostfrequent
-    return mostfrequent, oldcounts
+
+    ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+    return ModeResult(mostfrequent, oldcounts)
 
 
 def mask_to_limits(a, limits, inclusive):
@@ -1127,11 +1129,6 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-_DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
-                                                'variance', 'skewness',
-                                                'kurtosis'))
-
-
 def describe(a, axis=0, ddof=1):
     """
     Computes several descriptive statistics of the passed array.
@@ -1179,7 +1176,11 @@ def describe(a, axis=0, ddof=1):
     kurt = kurtosis(a, axis)
 
     # Return namedtuple for clarity
-    return _DescribeResult(n, mm, m, v, sk, kurt)
+    DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
+                                                   'variance', 'skewness',
+                                                   'kurtosis'))
+
+    return DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
 #         NORMALITY TESTS           #
@@ -1204,9 +1205,9 @@ def skewtest(a, axis=0):
 
     Returns
     -------
-    z-score : float
+    statistic : float
         The computed z-score for this test.
-    p-value : float
+    pvalue : float
         a 2-sided p-value for the hypothesis test
 
     Notes
@@ -1232,7 +1233,9 @@ def skewtest(a, axis=0):
     alpha = math.sqrt(2.0 / (W2 - 1))
     y = np.where(y == 0, 1, y)
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
-    return Z, 2 * distributions.norm.sf(np.abs(Z))
+
+    SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
+    return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
 
 def kurtosistest(a, axis=0):
@@ -1253,9 +1256,9 @@ def kurtosistest(a, axis=0):
 
     Returns
     -------
-    z-score : float
+    statistic : float
         The computed z-score for this test.
-    p-value : float
+    pvalue : float
         The 2-sided p-value for the hypothesis test
 
     Notes
@@ -1290,7 +1293,9 @@ def kurtosistest(a, axis=0):
         Z = Z[()]
 
     # zprob uses upper tail, so Z needs to be positive
-    return Z, 2 * distributions.norm.sf(np.abs(Z))
+    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
+                                                           'pvalue'))
+    return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
 
 def normaltest(a, axis=0):
@@ -1313,10 +1318,10 @@ def normaltest(a, axis=0):
 
     Returns
     -------
-    k2 : float or array
+    statistic : float or array
         `s^2 + k^2`, where `s` is the z-score returned by `skewtest` and
         `k` is the z-score returned by `kurtosistest`.
-    p-value : float or array
+    pvalue : float or array
        A 2-sided chi squared probability for the hypothesis test.
 
     References
@@ -1332,7 +1337,9 @@ def normaltest(a, axis=0):
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
-    return k2, chisqprob(k2, 2)
+
+    NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
+    return NormaltestResult(k2, chisqprob(k2, 2))
 
 
 def jarque_bera(x):
@@ -1713,9 +1720,9 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
 
     Returns
     -------
-    histogram : ndarray
+    count : ndarray
         Number of points (or sum of weights) in each bin.
-    low_range : float
+    lowerlimit : float
         Lowest value of histogram, the lower limit of the first bin.
     binsize : float
         The size of the bins (all bins have the same size).
@@ -1756,7 +1763,9 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         warnings.warn("Points outside given histogram range = %s"
                       % extrapoints)
 
-    return hist, defaultlimits[0], binsize, extrapoints
+    HistogramResult = namedtuple('HistogramResult', ('count', 'lowerlimit',
+                                                     'binsize', 'extrapoints'))
+    return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
 
 
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -1780,9 +1789,9 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Returns
     -------
-    cumfreq : ndarray
+    cumcount : ndarray
         Binned values of cumulative frequency.
-    lowerreallimit : float
+    lowerlimit : float
         Lower real limit
     binsize : float
         Width of each bin.
@@ -1806,7 +1815,10 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
     cumhist = np.cumsum(h * 1, axis=0)
-    return cumhist, l, b, e
+
+    CumfreqResult = namedtuple('CumfreqResult', ('cumcount', 'lowerlimit',
+                                                 'binsize', 'extrapoints'))
+    return CumfreqResult(cumhist, l, b, e)
 
 
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -1830,9 +1842,9 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Returns
     -------
-    relfreq : ndarray
+    frequency : ndarray
         Binned values of relative frequency.
-    lowerreallimit : float
+    lowerlimit : float
         Lower real limit
     binsize : float
         Width of each bin.
@@ -1852,7 +1864,10 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
     h = np.array(h / float(np.array(a).shape[0]))
-    return h, l, b, e
+
+    RelfreqResult = namedtuple('RelfreqResult', ('frequency', 'lowerlimit',
+                                                 'binsize', 'extrapoints'))
+    return RelfreqResult(h, l, b, e)
 
 
 #####################################
@@ -2210,11 +2225,11 @@ def sigmaclip(a, low=4., high=4.):
 
     Returns
     -------
-    c : ndarray
+    clipped : ndarray
         Input array with clipped elements removed.
-    critlower : float
+    lower : float
         Lower threshold value use for clipping.
-    critlupper : float
+    upper : float
         Upper threshold value use for clipping.
 
     Examples
@@ -2250,7 +2265,10 @@ def sigmaclip(a, low=4., high=4.):
         critupper = c_mean + c_std*high
         c = c[(c > critlower) & (c < critupper)]
         delta = size - c.size
-    return c, critlower, critupper
+
+    SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower',
+                                                     'upper'))
+    return SigmaclipResult(c, critlower, critupper)
 
 
 def trimboth(a, proportiontocut, axis=0):
@@ -2424,9 +2442,9 @@ def f_oneway(*args):
 
     Returns
     -------
-    F-value : float
+    statistic : float
         The computed F-value of the test.
-    p-value : float
+    pvalue : float
         The associated p-value from the F-distribution.
 
     Notes
@@ -2472,7 +2490,9 @@ def f_oneway(*args):
     msw = sswn / float(dfwn)
     f = msb / msw
     prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
-    return f, prob
+
+    F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
+    return F_onewayResult(f, prob)
 
 
 def pearsonr(x, y):
@@ -2729,12 +2749,12 @@ def spearmanr(a, b=None, axis=0):
 
     Returns
     -------
-    rho : float or ndarray (2-D square)
+    correlation : float or ndarray (2-D square)
         Spearman correlation matrix or correlation coefficient (if only 2
         variables are given as parameters. Correlation matrix is square with
         length equal to total number of variables (columns or rows) in a and b
         combined.
-    p-value : float
+    pvalue : float
         The two-sided p-value for a hypothesis test whose null hypothesis is
         that two sets of data are uncorrelated, has same dimension as rho.
 
@@ -2808,10 +2828,13 @@ def spearmanr(a, b=None, axis=0):
         np.seterr(**olderr)
 
     prob = 2 * distributions.t.sf(np.abs(t), n-2)
+
+    SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
+
     if rs.shape == (2, 2):
-        return rs[1, 0], prob[1, 0]
+        return SpearmanrResult(rs[1, 0], prob[1, 0])
     else:
-        return rs, prob
+        return SpearmanrResult(rs, prob)
 
 
 def pointbiserialr(x, y):
@@ -2836,9 +2859,9 @@ def pointbiserialr(x, y):
 
     Returns
     -------
-    r : float
+    correlation : float
         R value
-    p-value : float
+    pvalue : float
         2-tailed p-value
 
     References
@@ -2878,7 +2901,10 @@ def pointbiserialr(x, y):
     TINY = 1e-20
     t = rpb * np.sqrt(df / ((1.0 - rpb + TINY)*(1.0 + rpb + TINY)))
     prob = betai(0.5*df, 0.5, df/(df+t*t))
-    return rpb, prob
+
+    PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
+                                                               'pvalue'))
+    return PointbiserialrResult(rpb, prob)
 
 
 def kendalltau(x, y, initial_lexsort=True):
@@ -2904,9 +2930,9 @@ def kendalltau(x, y, initial_lexsort=True):
 
     Returns
     -------
-    Kendall's tau : float
+    correlation : float
        The tau statistic.
-    p-value : float
+    pvalue : float
        The two-sided p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
 
@@ -2942,8 +2968,10 @@ def kendalltau(x, y, initial_lexsort=True):
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
+    KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
+
     if not x.size or not y.size:
-        return (np.nan, np.nan)  # Return NaN if arrays are empty
+        return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     n = np.int64(len(x))
     temp = list(range(n))  # support structure used by mergesort
@@ -3028,7 +3056,8 @@ def kendalltau(x, y, initial_lexsort=True):
 
     tot = (n * (n - 1)) // 2
     if tot == u or tot == v:
-        return np.nan, np.nan    # Special case for all ties in both ranks
+        # Special case for all ties in both ranks
+        return KendalltauResult(np.nan, np.nan)
 
     # Prevent overflow; equal to np.sqrt((tot - u) * (tot - v))
     denom = np.exp(0.5 * (np.log(tot - u) + np.log(tot - v)))
@@ -3040,7 +3069,7 @@ def kendalltau(x, y, initial_lexsort=True):
     z = tau / np.sqrt(svar)
     prob = special.erfc(np.abs(z) / 1.4142136)
 
-    return tau, prob
+    return KendalltauResult(tau, prob)
 
 
 def linregress(x, y=None):
@@ -3063,9 +3092,9 @@ def linregress(x, y=None):
         slope of the regression line
     intercept : float
         intercept of the regression line
-    r-value : float
+    rvalue : float
         correlation coefficient
-    p-value : float
+    pvalue : float
         two-sided p-value for a hypothesis test whose null hypothesis is
         that the slope is zero.
     stderr : float
@@ -3123,7 +3152,11 @@ def linregress(x, y=None):
     slope = r_num / ssxm
     intercept = ymean - slope*xmean
     sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
-    return slope, intercept, r, prob, sterrest
+
+    LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
+                                                       'rvalue', 'pvalue',
+                                                       'stderr'))
+    return LinregressResult(slope, intercept, r, prob, sterrest)
 
 
 def theilslopes(y, x=None, alpha=0.95):
@@ -3268,9 +3301,9 @@ def ttest_1samp(a, popmean, axis=0):
 
     Returns
     -------
-    t : float or array
+    statistic : float or array
         t-statistic
-    prob : float or array
+    pvalue : float or array
         two-tailed p-value
 
     Examples
@@ -3312,7 +3345,8 @@ def ttest_1samp(a, popmean, axis=0):
     t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
-    return t, prob
+    Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+    return Ttest_1sampResult(t, prob)
 
 
 def _ttest_finish(df, t):
@@ -3330,7 +3364,7 @@ def _ttest_ind_from_stats(mean1, mean2, denom, df):
     t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
-    return t, prob
+    return (t, prob)
 
 
 def _unequal_var_ttest_denom(v1, n1, v2, n2):
@@ -3382,9 +3416,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Returns
     -------
-    t : float or array
+    statistic : float or array
         The calculated t-statistics
-    prob : float or array
+    pvalue : float or array
         The two-tailed p-value.
 
     See also
@@ -3407,7 +3441,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     else:
         df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
                                              std2**2, nobs2)
-    return _ttest_ind_from_stats(mean1, mean2, denom, df)
+
+    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
+
+    res = _ttest_ind_from_stats(mean1, mean2, denom, df)
+    return Ttest_indResult(*res)
 
 
 def ttest_ind(a, b, axis=0, equal_var=True):
@@ -3436,9 +3474,9 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     Returns
     -------
-    t : float or array
+    statistic : float or array
         The calculated t-statistic.
-    prob : float or array
+    pvalue : float or array
         The two-tailed p-value.
 
     Notes
@@ -3499,8 +3537,11 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
+
+    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
+
     if a.size == 0 or b.size == 0:
-        return (np.nan, np.nan)
+        return Ttest_indResult(np.nan, np.nan)
 
     v1 = np.var(a, axis, ddof=1)
     v2 = np.var(b, axis, ddof=1)
@@ -3511,9 +3552,10 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
     else:
         df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-    return _ttest_ind_from_stats(np.mean(a, axis),
-                                 np.mean(b, axis),
-                                 denom, df)
+
+    res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
+
+    return Ttest_indResult(*res)
 
 
 def ttest_rel(a, b, axis=0):
@@ -3533,9 +3575,9 @@ def ttest_rel(a, b, axis=0):
 
     Returns
     -------
-    t : float or array
+    statistic : float or array
         t-statistic
-    prob : float or array
+    pvalue : float or array
         two-tailed p-value
 
     Notes
@@ -3588,7 +3630,8 @@ def ttest_rel(a, b, axis=0):
     t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t)
 
-    return t, prob
+    Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
+    return Ttest_relResult(t, prob)
 
 
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
@@ -3628,9 +3671,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
 
     Returns
     -------
-    D : float
+    statistic : float
         KS test statistic, either D, D+ or D-.
-    p-value :  float
+    pvalue :  float
         One-tailed or two-tailed p-value.
 
     Notes
@@ -3718,26 +3761,29 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     if alternative == 'two_sided':
         alternative = 'two-sided'
 
+    KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
+
     if alternative in ['two-sided', 'greater']:
         Dplus = (np.arange(1.0, N + 1)/N - cdfvals).max()
         if alternative == 'greater':
-            return Dplus, distributions.ksone.sf(Dplus, N)
+            return KstestResult(Dplus, distributions.ksone.sf(Dplus, N))
 
     if alternative in ['two-sided', 'less']:
         Dmin = (cdfvals - np.arange(0.0, N)/N).max()
         if alternative == 'less':
-            return Dmin, distributions.ksone.sf(Dmin, N)
+            return KstestResult(Dmin, distributions.ksone.sf(Dmin, N))
 
     if alternative == 'two-sided':
         D = np.max([Dplus, Dmin])
         if mode == 'asymp':
-            return D, distributions.kstwobign.sf(D * np.sqrt(N))
+            return KstestResult(D, distributions.kstwobign.sf(D * np.sqrt(N)))
         if mode == 'approx':
             pval_two = distributions.kstwobign.sf(D * np.sqrt(N))
             if N > 2666 or pval_two > 0.80 - N*0.3/1000:
-                return D, distributions.kstwobign.sf(D * np.sqrt(N))
+                return KstestResult(D,
+                                    distributions.kstwobign.sf(D * np.sqrt(N)))
             else:
-                return D, 2 * distributions.ksone.sf(D, N)
+                return KstestResult(D, 2 * distributions.ksone.sf(D, N))
 
 
 # Map from names to lambda_ values used in power_divergence().
@@ -3816,10 +3862,10 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Returns
     -------
-    stat : float or ndarray
+    statistic : float or ndarray
         The Cressie-Read power divergence test statistic.  The value is
         a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
-    p : float or ndarray
+    pvalue : float or ndarray
         The p-value of the test.  The value is a float if `ddof` and the
         return value `stat` are scalars.
 
@@ -3977,7 +4023,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     ddof = asarray(ddof)
     p = chisqprob(stat, num_obs - 1 - ddof)
 
-    return stat, p
+    Power_divergenceResult = namedtuple('Power_divergenceResult', ('statistic',
+                                                                   'pvalue'))
+    return Power_divergenceResult(stat, p)
 
 
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
@@ -4110,9 +4158,9 @@ def ks_2samp(data1, data2):
 
     Returns
     -------
-    D : float
+    statistic : float
         KS statistic
-    p-value : float
+    pvalue : float
         two-tailed p-value
 
     Notes
@@ -4173,7 +4221,8 @@ def ks_2samp(data1, data2):
     except:
         prob = 1.0
 
-    return d, prob
+    Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
+    return Ks_2sampResult(d, prob)
 
 
 def mannwhitneyu(x, y, use_continuity=True):
@@ -4190,9 +4239,9 @@ def mannwhitneyu(x, y, use_continuity=True):
 
     Returns
     -------
-    u : float
+    statistic : float
         The Mann-Whitney statistics.
-    prob : float
+    pvalue : float
         One-sided p-value assuming a asymptotic normal distribution.
 
     Notes
@@ -4228,7 +4277,9 @@ def mannwhitneyu(x, y, use_continuity=True):
     else:
         z = abs((bigu - n1*n2/2.0) / sd)  # normal approximation for prob calc
 
-    return smallu, distributions.norm.sf(z)
+    MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
+                                                           'pvalue'))
+    return MannwhitneyuResult(smallu, distributions.norm.sf(z))
 
 
 def ranksums(x, y):
@@ -4252,10 +4303,10 @@ def ranksums(x, y):
 
     Returns
     -------
-    z-statistic : float
+    statistic : float
         The test statistic under the large-sample approximation that the
         rank sum statistic is normally distributed
-    p-value : float
+    pvalue : float
         The two-sided p-value of the test
 
     References
@@ -4273,7 +4324,9 @@ def ranksums(x, y):
     expected = n1 * (n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
     prob = 2 * distributions.norm.sf(abs(z))
-    return z, prob
+
+    RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
+    return RanksumsResult(z, prob)
 
 
 def kruskal(*args):
@@ -4295,9 +4348,9 @@ def kruskal(*args):
 
     Returns
     -------
-    H-statistic : float
+    statistic : float
        The Kruskal-Wallis H statistic, corrected for ties
-    p-value : float
+    pvalue : float
        The p-value for the test using the assumption that H has a chi
        square distribution
 
@@ -4334,7 +4387,9 @@ def kruskal(*args):
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
     df = na - 1
     h /= ties
-    return h, chisqprob(h, df)
+
+    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
+    return KruskalResult(h, chisqprob(h, df))
 
 
 def friedmanchisquare(*args):
@@ -4356,9 +4411,9 @@ def friedmanchisquare(*args):
 
     Returns
     -------
-    friedman chi-square statistic : float
+    statistic : float
         the test statistic, correcting for ties
-    p-value : float
+    pvalue : float
         the associated p-value assuming that the test statistic has a chi
         squared distribution
 
@@ -4398,7 +4453,10 @@ def friedmanchisquare(*args):
 
     ssbn = np.sum(data.sum(axis=0)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
-    return chisq, chisqprob(chisq, k - 1)
+
+    FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
+                                         ('statistic', 'pvalue'))
+    return FriedmanchisquareResult(chisq, chisqprob(chisq, k - 1))
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
