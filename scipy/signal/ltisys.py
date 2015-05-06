@@ -443,13 +443,6 @@ class lti(object):
         """
         return impulse(self, X0=X0, T=T, N=N)
 
-    def impulse2(self, X0=None, T=None, N=None, **kwargs):
-        """
-        Return the impulse response of a continuous-time system.
-        See `scipy.signal.impulse2` for details.
-        """
-        return impulse2(self, X0=X0, T=T, N=N, **kwargs)
-
     def step(self, X0=None, T=None, N=None):
         """
         Return the step response of a continuous-time system.
@@ -457,26 +450,12 @@ class lti(object):
         """
         return step(self, X0=X0, T=T, N=N)
 
-    def step2(self, X0=None, T=None, N=None, **kwargs):
-        """
-        Return the step response of a continuous-time system.
-        See `scipy.signal.step2` for details.
-        """
-        return step2(self, X0=X0, T=T, N=N, **kwargs)
-
     def output(self, U, T, X0=None):
         """
         Return the response of a continuous-time system to input `U`.
         See `scipy.signal.lsim` for details.
         """
         return lsim(self, U, T, X0=X0)
-
-    def output2(self, U, T, X0=None, **kwargs):
-        """
-        Return the response of a continuous-time system to input `U`.
-        See `scipy.signal.lsim2` for details.
-        """
-        return lsim2(self, U, T, X0=X0, **kwargs)
 
     def bode(self, w=None, n=100):
         """
