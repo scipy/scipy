@@ -1768,7 +1768,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         u = _augmented_orthonormal_cols(ularge, nsmall) if ularge is not None else None
         vh = _augmented_orthonormal_rows(vhlarge, nsmall) if vhlarge is not None else None
 
-    else:
+    elif which == 'SM':
 
         s = np.sqrt(eigvals)
         if not return_singular_vectors:
@@ -1781,5 +1781,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         else:
             u = eigvec
             vh = _herm(X_matmat(u) / s) if return_singular_vectors != 'u' else None
+
+    else:
+
+        raise ValueError("which must be either 'LM' or 'SM'.")
 
     return u, s, vh

@@ -1177,36 +1177,40 @@ class TestItemfreq(object):
 
 
 class TestMode(TestCase):
+    def test_empty(self):
+        vals, counts = stats.mode([])
+        assert_equal(vals, np.array([]))
+        assert_equal(counts, np.array([]))
+
     def test_basic(self):
-        data1 = [3,5,1,10,23,3,2,6,8,6,10,6]
+        data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
         vals = stats.mode(data1)
-        assert_almost_equal(vals[0][0],6)
-        assert_almost_equal(vals[1][0],3)
+        assert_equal(vals[0][0], 6)
+        assert_equal(vals[1][0], 3)
 
     def test_axes(self):
-        data1 = [10,10,30,40]
-        data2 = [10,10,10,10]
-        data3 = [20,10,20,20]
-        data4 = [30,30,30,30]
-        data5 = [40,30,30,30]
+        data1 = [10, 10, 30, 40]
+        data2 = [10, 10, 10, 10]
+        data3 = [20, 10, 20, 20]
+        data4 = [30, 30, 30, 30]
+        data5 = [40, 30, 30, 30]
         arr = np.array([data1, data2, data3, data4, data5])
 
         vals = stats.mode(arr, axis=None)
-        assert_almost_equal(vals[0],np.array([30]))
-        assert_almost_equal(vals[1],np.array([8]))
+        assert_equal(vals[0], np.array([30]))
+        assert_equal(vals[1], np.array([8]))
 
         vals = stats.mode(arr, axis=0)
-        assert_almost_equal(vals[0],np.array([[10,10,30,30]]))
-        assert_almost_equal(vals[1],np.array([[2,3,3,2]]))
+        assert_equal(vals[0], np.array([[10, 10, 30, 30]]))
+        assert_equal(vals[1], np.array([[2, 3, 3, 2]]))
 
         vals = stats.mode(arr, axis=1)
-        assert_almost_equal(vals[0],np.array([[10],[10],[20],[30],[30]]))
-        assert_almost_equal(vals[1],np.array([[2],[4],[3],[4],[3]]))
+        assert_equal(vals[0], np.array([[10], [10], [20], [30], [30]]))
+        assert_equal(vals[1], np.array([[2], [4], [3], [4], [3]]))
 
     def test_strings(self):
         data1 = ['rain', 'showers', 'showers']
         vals = stats.mode(data1)
-        expected = ['showers']
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
@@ -1239,7 +1243,7 @@ class TestMode(TestCase):
             def __hash__(self):
                 return hash(self.x)
 
-        points = [Point(x) for x in [1,2,3,4,3,2,2,2]]
+        points = [Point(x) for x in [1, 2, 3, 4, 3, 2, 2, 2]]
         arr = np.empty((8,), dtype=object)
         arr[:] = points
         assert len(set(points)) == 4
@@ -1370,6 +1374,8 @@ class TestMoments(TestCase):
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
+    np.random.seed(1234)
+    testcase_moment_accuracy = np.random.rand(42)
     testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
     def test_moment(self):
@@ -1421,6 +1427,14 @@ class TestMoments(TestCase):
 
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
+
+    def test_moment_accuracy(self):
+        # 'moment' must have a small enough error compared to the slower
+        #  but very accurate numpy.power() implementation.
+        tc_no_mean = self.testcase_moment_accuracy - \
+                     np.mean(self.testcase_moment_accuracy)
+        assert_allclose(np.power(tc_no_mean, 42).mean(),
+                            stats.moment(self.testcase_moment_accuracy, 42))
 
 
 class TestThreshold(TestCase):
@@ -2048,8 +2062,8 @@ def _desc_stats(x1, x2, axis=0):
         nobs = x.shape[axis]
         return mu, std, nobs
     return _stats(x1, axis) + _stats(x2, axis)
-def test_ttest_perm():
 
+def test_ttest_perm():
     # Test on horizontal dimension
     N = 20
     np.random.seed(0)
@@ -2118,6 +2132,96 @@ def test_ttest_perm():
     N = 20
     a = np.vstack((np.arange((3*N)/4),np.random.random((3*N)/4)))
     b = np.vstack((np.arange(N/4) + 100,np.random.random(N/4)))
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
+                                          permutations=1000,
+                                          random_state=np.random.RandomState(seed=0))
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
+
+    # Test out different array dimensions
+    np.random.seed(0)
+    rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
+    rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
+    np_t_stats, pvalues = stats.ttest_ind(rvs1.reshape((100, 5)),
+                                          rvs5, permutations=1000)
+    assert_array_almost_equal(np_t_stats,
+                              np.array([0.012733, 0.393926, 0.208261,
+                                        0.050528, 1.111482]))
+
+    assert_array_almost_equal(pvalues,
+                              np.array([0.988012, 0.686314, 0.81019,
+                                        0.963037, 0.25974]))
+
+
+def test_ttest_ind_permutations():
+    # Test on horizontal dimension
+    N = 20
+    np.random.seed(0)
+    a = np.vstack((np.arange(3*N//4), np.random.random(3*N//4)))
+    b = np.vstack((np.arange(N//4) + 100, np.random.random(N//4)))
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
+                                          permutations=1000,
+                                          random_state=0)
+
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
+
+    # Test on vertical dimension
+    N = 20
+    np.random.seed(0)
+    a = np.vstack((np.arange((3*N)//4), np.random.random(3*N//4))).transpose()
+    b = np.vstack((np.arange(N//4) + 100, np.random.random(N//4))).transpose()
+    p_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, axis=0, equal_var=False,
+                                          permutations=1000,
+                                          random_state=0)
+
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
+
+    # Test on 1 dimensional case
+    N = 20
+    np.random.seed(0)
+    a = np.arange(3*N//4)
+    b = np.arange(N//4) + 100
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
+                                          permutations=1000,
+                                          random_state=0)
+
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, 0.000999)
+
+    # Test just arrays
+    N = 20
+    np.random.seed(0)
+    a = range(3*N//4)
+    b = range(100, N//4 + 100)
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=False,
+                                          permutations=1000,
+                                          random_state=0)
+
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, 0.000999)
+
+    # Test equal variance
+    np.random.seed(0)
+    a = np.arange(10)
+    b = np.arange(10) + 100
+    p_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True)
+    np_t_stats, pvalues = stats.ttest_ind(a, b, equal_var=True,
+                                          permutations=1000,
+                                          random_state=0)
+    assert_array_almost_equal(p_t_stats, np_t_stats, 5)
+    assert_array_almost_equal(pvalues, 0.000999)
+
+    # Test out random seed
+    N = 20
+    a = np.vstack((np.arange(3*N//4), np.random.random(3*N//4)))
+    b = np.vstack((np.arange(N//4) + 100, np.random.random(N//4)))
     p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
     np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
                                           permutations=1000,

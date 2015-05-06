@@ -82,6 +82,7 @@ Filter design
                     -- response.
    freqs         -- Analog filter frequency response.
    freqz         -- Digital filter frequency response.
+   group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
    kaiser_atten  -- Compute the attenuation of a Kaiser FIR filter, given

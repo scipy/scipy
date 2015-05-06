@@ -150,32 +150,8 @@ _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_expect, _doc_median,
                            _doc_mean, _doc_var, _doc_std, _doc_interval])
 
-# Note that the two lines for %(shapes) are searched for and replaced in
-# rv_continuous and rv_discrete - update there if the exact string changes
-_doc_default_callparams = """
-Parameters
-----------
-x : array_like
-    quantiles
-q : array_like
-    lower or upper tail probability
-%(shapes)s : array_like
-    shape parameters
-loc : array_like, optional
-    location parameter (default=0)
-scale : array_like, optional
-    scale parameter (default=1)
-size : int or tuple of ints, optional
-    shape of random variates (default computed from input arguments )
-moments : str, optional
-    composed of letters ['mvsk'] specifying which moments to compute where
-    'm' = mean, 'v' = variance, 's' = (Fisher's) skew and
-    'k' = (Fisher's) kurtosis.
-    Default is 'mv'.
-"""
-
 _doc_default_longsummary = """\
-As an instance of `rv_continuous` class, `%(name)s` object inherits from it
+As an instance of the `rv_continuous` class, `%(name)s` object inherits from it
 a collection of generic methods (see below for the full list),
 and completes them with details specific for this particular distribution.
 """
@@ -231,12 +207,19 @@ And compare the histogram:
 >>> ax.hist(r, normed=True, histtype='stepfilled', alpha=0.2)
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
+
+"""
+
+_doc_default_locscale = """\  
+The probability density above is defined in the "standardized" form. To shift
+and/or scale the distribution use the ``loc`` and ``scale`` parameters.
+Specifically, ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
+equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
+``y = (x - loc) / scale``.
 """
 
 _doc_default = ''.join([_doc_default_longsummary,
                         _doc_allmethods,
-                        _doc_default_callparams,
-                        _doc_default_frozen_note,
                         _doc_default_example])
 
 _doc_default_before_notes = ''.join([_doc_default_longsummary,
@@ -263,12 +246,12 @@ docdict = {
     'var': _doc_var,
     'median': _doc_median,
     'allmethods': _doc_allmethods,
-    'callparams': _doc_default_callparams,
     'longsummary': _doc_default_longsummary,
     'frozennote': _doc_default_frozen_note,
     'example': _doc_default_example,
     'default': _doc_default,
-    'before_notes': _doc_default_before_notes
+    'before_notes': _doc_default_before_notes,
+    'after_notes': _doc_default_locscale
 }
 
 # Reuse common content between continuous and discrete docs, change some
@@ -327,7 +310,6 @@ the given parameters fixed.
 
 Freeze the distribution and display the frozen ``pmf``:
 
-
 >>> rv = %(name)s(%(shapes)s)
 >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1,
 ...         label='frozen pmf')
@@ -344,7 +326,17 @@ Generate random numbers:
 
 >>> r = %(name)s.rvs(%(shapes)s, size=1000)
 """
+
+
+_doc_default_discrete_locscale = """\
+The probability mass function above is defined in the "standardized" form.
+To shift distribution use the ``loc`` parameter.
+Specifically, ``%(name)s.pmf(k, %(shapes)s, loc)`` is identically
+equivalent to ``%(name)s.pmf(k - loc, %(shapes)s)``.
+"""
+
 docdict_discrete['example'] = _doc_default_discrete_example
+docdict_discrete['after_notes'] = _doc_default_discrete_locscale
 
 _doc_default_before_notes = ''.join([docdict_discrete['longsummary'],
                                      docdict_discrete['allmethods']])
@@ -758,7 +750,7 @@ class rv_generic(object):
 
         if self.shapes is None:
             # remove shapes from call parameters if there are none
-            for item in ['callparams', 'default', 'before_notes']:
+            for item in ['default', 'before_notes']:
                 tempdict[item] = tempdict[item].replace(
                     "\n%(shapes)s : array_like\n    shape parameters", "")
         for i in range(2):

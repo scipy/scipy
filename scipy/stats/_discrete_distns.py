@@ -30,6 +30,8 @@ class binom_gen(rv_discrete):
 
     `binom` takes ``n`` and ``p`` as shape parameters.
 
+    %(after_notes)s
+
     %(example)s
 
     """
@@ -97,6 +99,8 @@ class bernoulli_gen(binom_gen):
 
     `bernoulli` takes ``p`` as shape parameter.
 
+    %(after_notes)s
+
     %(example)s
 
     """
@@ -143,6 +147,8 @@ class nbinom_gen(rv_discrete):
     for ``k >= 0``.
 
     `nbinom` takes ``n`` and ``p`` as shape parameters.
+
+    %(after_notes)s
 
     %(example)s
 
@@ -201,6 +207,8 @@ class geom_gen(rv_discrete):
 
     `geom` takes ``p`` as shape parameter.
 
+    %(after_notes)s
+
     %(example)s
 
     """
@@ -258,6 +266,8 @@ class hypergeom_gen(rv_discrete):
 
         pmf(k, M, n, N) = choose(n, k) * choose(M - n, N - k) / choose(M, N),
                                        for max(0, N - (M-n)) <= k <= min(n, N)
+
+    %(after_notes)s
 
     Examples
     --------
@@ -369,6 +379,8 @@ class logser_gen(rv_discrete):
 
     `logser` takes ``p`` as shape parameter.
 
+    %(after_notes)s
+
     %(example)s
 
     """
@@ -414,6 +426,8 @@ class poisson_gen(rv_discrete):
     for ``k >= 0``.
 
     `poisson` takes ``mu`` as shape parameter.
+
+    %(after_notes)s
 
     %(example)s
 
@@ -465,6 +479,8 @@ class planck_gen(rv_discrete):
     for ``k*lambda_ >= 0``.
 
     `planck` takes ``lambda_`` as shape parameter.
+
+    %(after_notes)s
 
     %(example)s
 
@@ -524,6 +540,8 @@ class boltzmann_gen(rv_discrete):
 
     `boltzmann` takes ``lambda_`` and ``N`` as shape parameters.
 
+    %(after_notes)s
+
     %(example)s
 
     """
@@ -575,6 +593,8 @@ class randint_gen(rv_discrete):
 
     Note the difference to the numpy ``random_integers`` which
     returns integers on a *closed* interval ``[low, high]``.
+
+    %(after_notes)s
 
     %(example)s
 
@@ -636,6 +656,8 @@ class zipf_gen(rv_discrete):
 
     `zipf` takes ``a`` as shape parameter.
 
+    %(after_notes)s
+
     %(example)s
 
     """
@@ -671,6 +693,8 @@ class dlaplace_gen(rv_discrete):
     for ``a > 0``.
 
     `dlaplace` takes ``a`` as shape parameter.
+
+    %(after_notes)s
 
     %(example)s
 
@@ -725,6 +749,8 @@ class skellam_gen(rv_discrete):
     For details see: http://en.wikipedia.org/wiki/Skellam_distribution
 
     `skellam` takes ``mu1`` and ``mu2`` as shape parameters.
+
+    %(after_notes)s
 
     %(example)s
 

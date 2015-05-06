@@ -57,22 +57,22 @@ MSGS = {
         MSG_ALL: "All messages"
 }
 
-INFEASIBLE = -1  # Infeasible (low > up)
-LOCALMINIMUM = 0  # Local minima reach (|pg| ~= 0)
+INFEASIBLE = -1  # Infeasible (lower bound > upper bound)
+LOCALMINIMUM = 0  # Local minimum reached (|pg| ~= 0)
 FCONVERGED = 1  # Converged (|f_n-f_(n-1)| ~= 0)
 XCONVERGED = 2  # Converged (|x_n-x_(n-1)| ~= 0)
-MAXFUN = 3  # Max. number of function evaluations reach
+MAXFUN = 3  # Max. number of function evaluations reached
 LSFAIL = 4  # Linear search failed
 CONSTANT = 5  # All lower bounds are equal to the upper bounds
 NOPROGRESS = 6  # Unable to progress
 USERABORT = 7  # User requested end of minimization
 
 RCSTRINGS = {
-        INFEASIBLE: "Infeasible (low > up)",
-        LOCALMINIMUM: "Local minima reach (|pg| ~= 0)",
+        INFEASIBLE: "Infeasible (lower bound > upper bound)",
+        LOCALMINIMUM: "Local minimum reached (|pg| ~= 0)",
         FCONVERGED: "Converged (|f_n-f_(n-1)| ~= 0)",
         XCONVERGED: "Converged (|x_n-x_(n-1)| ~= 0)",
-        MAXFUN: "Max. number of function evaluations reach",
+        MAXFUN: "Max. number of function evaluations reached",
         LSFAIL: "Linear search failed",
         CONSTANT: "All lower bounds are equal to the upper bounds",
         NOPROGRESS: "Unable to progress",
@@ -187,7 +187,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     nfeval : int
         The number of function evaluations.
     rc : int
-        Return code as defined in the RCSTRINGS dict.
+        Return code, see below
 
     See also
     --------
@@ -218,6 +218,18 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     constraint. The specific constraint removed is the one
     associated with the variable of largest index whose
     constraint is no longer active.
+
+    Return codes are defined as follows::
+
+        -1 : Infeasible (lower bound > upper bound)
+         0 : Local minimum reached (|pg| ~= 0)
+         1 : Converged (|f_n-f_(n-1)| ~= 0)
+         2 : Converged (|x_n-x_(n-1)| ~= 0)
+         3 : Max. number of function evaluations reached
+         4 : Linear search failed
+         5 : All lower bounds are equal to the upper bounds
+         6 : Unable to progress
+         7 : User requested end of minimization
 
     References
     ----------

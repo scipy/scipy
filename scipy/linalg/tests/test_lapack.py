@@ -6,7 +6,8 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_almost_equal, assert_, assert_raises, assert_allclose
+    assert_array_almost_equal, assert_, assert_raises, assert_allclose, \
+    assert_almost_equal
 
 import numpy as np
 
@@ -83,6 +84,39 @@ class TestFlapackSimple(TestCase):
 
             x, scale, info = trsyl(a1, b1, c1, isgn=-1)
             assert_array_almost_equal(np.dot(a1, x) - np.dot(x, b1), scale * c1, decimal=4)
+
+    def test_lange(self):
+        a = np.array([
+            [-149, -50,-154],
+            [537, 180, 546],
+            [-27, -9, -25]])
+
+        for dtype in 'fdFD':
+            for norm in 'Mm1OoIiFfEe':
+                a1 = a.astype(dtype)
+                if dtype.isupper():
+                    # is complex dtype
+                    a1[0,0] += 1j
+
+                lange, = get_lapack_funcs(('lange',), (a1,))
+                value = lange(norm, a1)
+
+                if norm in 'FfEe':
+                    if dtype in 'Ff':
+                        decimal = 3
+                    else:
+                        decimal = 7
+                    ref = np.sqrt(np.sum(np.square(np.abs(a1))))
+                    assert_almost_equal(value, ref, decimal)
+                else:
+                    if norm in 'Mm':
+                        ref = np.max(np.abs(a1))
+                    elif norm in '1Oo':
+                        ref = np.max(np.sum(np.abs(a1), axis=0))
+                    elif norm in 'Ii':
+                        ref = np.max(np.sum(np.abs(a1), axis=1))
+
+                    assert_equal(value, ref)
 
 
 class TestLapack(TestCase):

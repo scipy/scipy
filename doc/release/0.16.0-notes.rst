@@ -62,11 +62,23 @@ of the forward and backward passes was added to `scipy.signal.filtfilt`.
 
 An exponential (Poisson) window was added as `scipy.signal.exponential`.
 
+The function for computing digital filter group delay was added as
+`scipy.signal.group_delay`.
+
+`scipy.spatial` improvements
+----------------------------
+
+The function `scipy.spatial.procrustes` for Procrustes analysis (statistical
+shape analysis) was added.
+
 `scipy.stats` improvements
 --------------------------
 
 The Wishart distribution and its inverse have been added, as
 `scipy.stats.wishart` and `scipy.stats.invwishart`.
+
+The Exponentially Modified Normal distribution has been
+added as `scipy.stats.exponnorm`.
 
 `scipy.optimize` improvements
 -----------------------------

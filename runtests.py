@@ -200,6 +200,16 @@ def main(argv):
             else:
                 p.error("Too many commits to compare benchmarks for")
 
+            # Check for uncommitted files
+            if commit_b == 'HEAD':
+                r1 = subprocess.call(['git', 'diff-index', '--quiet', '--cached', 'HEAD'])
+                r2 = subprocess.call(['git', 'diff-files', '--quiet'])
+                if r1 != 0 or r2 != 0:
+                    print("*"*80)
+                    print("WARNING: you have uncommitted changes --- these will NOT be benchmarked!")
+                    print("*"*80)
+
+            # Fix commit ids (HEAD is local to current repo)
             p = subprocess.Popen(['git', 'rev-parse', commit_b], stdout=subprocess.PIPE)
             out, err = p.communicate()
             commit_b = out.strip()
@@ -208,14 +218,9 @@ def main(argv):
             out, err = p.communicate()
             commit_a = out.strip()
 
-            cmd = [sys.executable,
-                   os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-                   '--current-repo', 'run', '--skip-existing',
-                   '-j', '2']
-            subprocess.check_call(cmd + bench_args + [commit_b + "^!"])
-            subprocess.check_call(cmd + bench_args + [commit_a + "^!"])
             cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-                   '--current-repo', 'compare', commit_a, commit_b]
+                   '--current-repo', 'continuous', '-e', '-f', '1.05',
+                   commit_a, commit_b] + bench_args
             os.execv(sys.executable, [sys.executable] + cmd)
             sys.exit(1)
 

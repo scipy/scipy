@@ -170,18 +170,21 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import math
+import copy
 from collections import namedtuple
-
-from scipy._lib.six import xrange
-from scipy._lib._util import check_random_state
 
 # Scipy imports.
 from scipy._lib.six import callable, string_types
+import numpy as np
 from numpy import array, asarray, ma, zeros
+
+from scipy._lib.six import xrange, callable, string_types
+from scipy._lib._util import check_random_state
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
 import copy
+
 from . import futil
 from . import distributions
 
@@ -613,20 +616,23 @@ def mode(a, axis=0):
                       [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    (array([[ 3.,  1.,  0.,  0.]]), array([[ 1.,  1.,  1.,  1.]]))
+    (array([[3, 1, 0, 0]]), array([[1, 1, 1, 1]]))
 
     To get mode of whole array, specify axis=None:
 
     >>> stats.mode(a, axis=None)
-    (array([ 3.]), array([ 3.]))
+    (array([3]), array([3]))
 
     """
     a, axis = _chk_asarray(a, axis)
+    if a.size == 0:
+        return np.array([]), np.array([])
+
     scores = np.unique(np.ravel(a))       # get ALL unique values
     testshape = list(a.shape)
     testshape[axis] = 1
     oldmostfreq = np.zeros(testshape, dtype=a.dtype)
-    oldcounts = np.zeros(testshape)
+    oldcounts = np.zeros(testshape, dtype=int)
     for score in scores:
         template = (a == score)
         counts = np.expand_dims(np.sum(template, axis), axis)
@@ -943,8 +949,28 @@ def moment(a, moment=1, axis=0):
             # the input was 1D, so return a scalar instead of a rank-0 array
             return np.float64(0.0)
     else:
-        mn = np.expand_dims(np.mean(a, axis), axis)
-        s = np.power((a - mn), moment)
+        # Exponentiation by squares: form exponent sequence
+        n_list = [moment]
+        current_n = moment
+        while current_n > 2:
+            if current_n % 2:
+                current_n = (current_n-1)/2
+            else:
+                current_n /= 2
+            n_list.append(current_n)
+
+        # Starting point for exponentiation by squares
+        a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
+        if n_list[-1] == 1:
+            s = a_zero_mean.copy()
+        else:
+            s = a_zero_mean**2
+
+        # Perform multiplications
+        for n in n_list[-2::-1]:
+            s = s**2
+            if n % 2:
+                s *= a_zero_mean
         return np.mean(s, axis)
 
 
@@ -3391,11 +3417,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     permutations : int, optional
         The number of permutations that will be used to calculate p-values
         using a permutation test.  The permutation test will only be run
-        if permutations > 0.
-        .. versionadded:: 0.15.2
-    random_state : int or RandomState
-        Pseudo number generator state used for random sampling.
-        .. versionadded:: 0.15.2
+        if ``permutations > 0``.
+        .. versionadded:: 0.16.0
+    random_state : int or RandomState, optional
+        Pseudo number generator state used for random sampling (used only when
+        `permutations` is not None).
+
+        .. versionadded:: 0.16.0
+
     Returns
     -------
     t : float or array
@@ -3435,11 +3464,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
 
     Test with sample with identical means:
 
-    >>> rvs1 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> rvs2 = stats.norm.rvs(loc=5,scale=10,size=500)
-    >>> stats.ttest_ind(rvs1,rvs2)
+    >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
+    >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
+    >>> stats.ttest_ind(rvs1, rvs2)
     (0.26833823296239279, 0.78849443369564776)
-    >>> stats.ttest_ind(rvs1,rvs2, equal_var = False)
+    >>> stats.ttest_ind(rvs1, rvs2, equal_var=False)
     (0.26833823296239279, 0.78849452749500748)
 
     `ttest_ind` underestimates p for unequal variances:
@@ -3447,16 +3476,16 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     >>> rvs3 = stats.norm.rvs(loc=5, scale=20, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
     (-0.46580283298287162, 0.64145827413436174)
-    >>> stats.ttest_ind(rvs1, rvs3, equal_var = False)
+    >>> stats.ttest_ind(rvs1, rvs3, equal_var=False)
     (-0.46580283298287162, 0.64149646246569292)
 
-    When n1 != n2, the equal variance t-statistic is no longer equal to the
+    When ``n1 != n2``, the equal variance t-statistic is no longer equal to the
     unequal variance t-statistic:
 
     >>> rvs4 = stats.norm.rvs(loc=5, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs4)
     (-0.99882539442782481, 0.3182832709103896)
-    >>> stats.ttest_ind(rvs1, rvs4, equal_var = False)
+    >>> stats.ttest_ind(rvs1, rvs4, equal_var=False)
     (-0.69712570584654099, 0.48716927725402048)
 
     T-test with different means, variance, and n:
@@ -3464,17 +3493,30 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     >>> rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
     >>> stats.ttest_ind(rvs1, rvs5)
     (-1.4679669854490653, 0.14263895620529152)
-    >>> stats.ttest_ind(rvs1, rvs5, equal_var = False)
+    >>> stats.ttest_ind(rvs1, rvs5, equal_var=False)
     (-0.94365973617132992, 0.34744170334794122)
+
+    When performing a permutation test, one usually wants to use a large number
+    of permutations and use a ``RandomState`` instance to ensure complete
+    reproducibility of the result:
+
+    >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
+    ...                 random_state=np.random.RandomState(12345))
+    (-0.80402445, 0.41685831)
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
     if a.size == 0 or b.size == 0:
         return (np.nan, np.nan)
-
-    random_state = check_random_state(random_state)
-
     if permutations is not None:
+        random_state = check_random_state(random_state)
+
+        if a.ndim != b.ndim:
+            if a.ndim > b.ndim:
+                b = np.tile(np.atleast_2d(b), (a.shape[1-axis], 1)).T
+            else:
+                a = np.tile(np.atleast_2d(a), (b.shape[1-axis], 1)).T
+
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
         t_stat, pvalues = _permutation_ttest(mat, cats,
@@ -3497,7 +3539,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
                                      np.mean(b, axis),
                                      denom, df)
 
-
 def _init_summation_index(cats):
     """
     Creates a matrix filled with category permutations
@@ -3514,14 +3555,16 @@ def _init_summation_index(cats):
     return perms
 
 
-def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, random_state=None):
+def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True,
+                       random_state=None):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores
     using permutation methods
 
-    This test is an equivalent to scipy.stats.ttest_ind, except it doesn't require the
-    normality assumption since it uses a permutation test.  This function is only
-    called from ttest_ind if the p-value is calculated using a permutation test
+    This test is an equivalent to `stats.ttest_ind`, except it doesn't require
+    the normality assumption since it uses a permutation test.  This function
+    is only called from ttest_ind if the p-value is calculated using a
+    permutation test.
 
     Parameters
     ----------
@@ -3534,12 +3577,12 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
     axis : int, optional
         Axis can equal None (ravel array first), or an integer (the axis
         over which to operate on a and b).
-    permutations: int
+    permutations: int, optional
         Number of permutations used to calculate p-value
-    equal_var: bool
-        If false, a Welch's t-test is conducted.  Otherwise,
-        a ordinary t-test is conducted
-    random_state : int or RandomState
+    equal_var: bool, optional
+        If false, a Welch's t-test is conducted.  Otherwise, an ordinary t-test
+        is conducted.
+    random_state : int or RandomState, optional
         Pseudo number generator state used for random sampling.
 
     Returns
@@ -3552,7 +3595,7 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
     random_state = check_random_state(random_state)
     if axis == 0:
         mat = mat.transpose()
-    if len(mat.shape) < 2:  # Handle 1-D arrays
+    if mat.ndim < 2:  # Handle 1-D arrays
         mat = mat.reshape((1, len(mat)))
 
     r, c = mat.shape
@@ -3562,11 +3605,10 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
     copy_cats = copy.deepcopy(cats)
 
     for p in range(permutations+1):
-
         perms = _init_summation_index(copy_cats)
 
-        # Perform matrix multiplication on data matrix
-        # and calculate sums and squared sums
+        # Perform matrix multiplication on data matrix and calculate sums and
+        # squared sums
         _sums = np.dot(mat, perms)
         _sums2 = np.dot(np.multiply(mat, mat), perms)
 
@@ -3585,16 +3627,24 @@ def _permutation_ttest(mat, cats, axis=0, permutations=10000, equal_var=True, ra
                             np.divide(_samp_vars[:, idx], tot[idx]))
         else:
             df = tot[idx] + tot[idx+1] - 2
-            svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) * _samp_vars[:, idx]) / df
+            svar = ((tot[idx+1] - 1) * _samp_vars[:, idx+1] + (tot[idx] - 1) *
+                    _samp_vars[:, idx]) / df
             denom = np.sqrt(svar * (1.0 / tot[idx+1] + 1.0 / tot[idx]))
+
         t_stat[:, p] = np.ravel(np.divide(_avgs[:, idx] - _avgs[:, idx+1], denom))
         random_state.shuffle(copy_cats)
 
     # Calculate the p-values
     cmps = abs(t_stat[:, 1:].transpose()) >= abs(t_stat[:, 0])
     pvalues = (cmps.sum(axis=0) + 1.) / (permutations + 1.)
-    return t_stat[:, 0], pvalues
 
+    t_stat = t_stat[:, 0]
+    if t_stat.size == 1:
+        # Return scalars for 1-D input arrays
+        t_stat = t_stat[0]
+        pvalues = pvalues[0]
+
+    return t_stat, pvalues
 
 def ttest_rel(a, b, axis=0):
     """
