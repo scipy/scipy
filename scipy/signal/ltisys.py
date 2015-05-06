@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import
 #   Added pole placement
 # Mar 2015: Clancy Rowley
 #   Rewrote lsim
-# Mai 2015: Felix Berkenkamp
+# May 2015: Felix Berkenkamp
 #   Split lti class into subclasses
 #
 
