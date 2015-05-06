@@ -2062,8 +2062,8 @@ def _desc_stats(x1, x2, axis=0):
         nobs = x.shape[axis]
         return mu, std, nobs
     return _stats(x1, axis) + _stats(x2, axis)
-def test_ttest_perm():
 
+def test_ttest_perm():
     # Test on horizontal dimension
     N = 20
     np.random.seed(0)
@@ -2138,6 +2138,20 @@ def test_ttest_perm():
                                           random_state=np.random.RandomState(seed=0))
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
     assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
+
+    # Test out different array dimensions
+    np.random.seed(0)
+    rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
+    rvs5 = stats.norm.rvs(loc=8, scale=20, size=100)
+    np_t_stats, pvalues = stats.ttest_ind(rvs1.reshape((100, 5)),
+                                          rvs5, permutations=1000)
+    assert_array_almost_equal(np_t_stats,
+                              np.array([0.012733, 0.393926, 0.208261,
+                                        0.050528, 1.111482]))
+
+    assert_array_almost_equal(pvalues,
+                              np.array([0.988012, 0.686314, 0.81019 ,
+                                        0.963037, 0.25974]))
 
 
 def test_ttest_ind_permutations():

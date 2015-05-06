@@ -3511,6 +3511,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, permutations=None, random_state=None
     if permutations is not None:
         random_state = check_random_state(random_state)
 
+        if a.ndim != b.ndim:
+            if a.ndim > b.ndim:
+                b = np.tile(np.atleast_2d(b), (a.shape[1-axis], 1)).T
+            else:
+                a = np.tile(np.atleast_2d(a), (b.shape[1-axis], 1)).T
 
         mat = np.concatenate((a, b), axis=axis)
         cats = np.hstack((np.zeros(a.shape[axis]), np.ones(b.shape[axis])))
