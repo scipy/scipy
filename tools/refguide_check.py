@@ -29,6 +29,7 @@ import re
 import copy
 import inspect
 import doctest
+import warnings
 
 from argparse import ArgumentParser, REMAINDER
 
@@ -44,14 +45,15 @@ from scipy import (cluster, constants, fftpack, integrate, interpolate, io,
 
 def find_funcnames(module):
     funcnames = set()
-    # 3 spaces followed by function name; only function names listed in
-    # refguide are indented like this (mostly, there may be some false
+    # 3 spaces followed by function name, and maybe some spaces, some
+    # dashes, and an explanation; only function names listed in
+    # refguide are formatted like this (mostly, there may be some false
     # positives)
-    pattern = re.compile("(\s\s\s[a-z_0-9A-Z]+)")
+    pattern = re.compile("^\s\s\s([a-z_0-9A-Z]+)(\s+-+.*)?$")
     for line in module.__doc__.splitlines():
         res = re.search(pattern, line)
         if res is not None:
-            funcname = res.groups()[0].lstrip()
+            funcname = res.groups()[0]
             funcnames.add(funcname)
 
     return funcnames
@@ -59,60 +61,92 @@ def find_funcnames(module):
 
 def get_all_dict(module):
     """Return a copy of the __all__ dict with irrelevant items removed."""
-    all = copy.deepcopy(module.__all__)
+    if hasattr(module, "__all__"):
+        all_dict = copy.deepcopy(module.__all__)
+    else:
+        all_dict = copy.deepcopy(dir(module))
+        all_dict = [name for name in all_dict
+                    if not name.startswith("__")]
     for name in ['absolute_import', 'division', 'print_function']:
         try:
-            all.remove(name)
+            all_dict.remove(name)
         except ValueError:
             pass
 
-    # somehow some modules survive the first iteration (?)
-    for _ in range(2):
-        for name in all:
-            if inspect.ismodule(getattr(module, name)):
-                all.remove(name)
+    # Modules are almost always private; real submodules need a separate
+    # run of refguide_check.
+    all_dict = [name for name in all_dict
+                if not inspect.ismodule(getattr(module, name))]
 
-    return all
+    deprecated = []
+    not_deprecated = []
+    for name in all_dict:
+        f = getattr(module, name)
+        if callable(f) and is_deprecated(f):
+            deprecated.append(name)
+        else:
+            not_deprecated.append(name)
+
+    return not_deprecated, deprecated
 
 
-def compare(all, funcnames):
+def compare(all_dict, funcnames):
     """Return sets of objects only in one of __all__, refguide."""
     only_all = set()
-    for name in all:
+    for name in all_dict:
         if name not in funcnames:
             only_all.add(name)
 
     only_ref = set()
     for name in funcnames:
-        if name not in all:
+        if name not in all_dict:
             only_ref.add(name)
 
     return only_all, only_ref
 
+def is_deprecated(f):
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("error")
+        try:
+            f(**{"not a kwarg":None})
+        except DeprecationWarning:
+            return True
+        except:
+            pass
+        return False
 
-def report(all, funcnames, module_name):
+def report(all_dict, funcnames, deprecated, module_name):
     """Print out a report for the module"""
-    num_all = len(all)
+    num_all = len(all_dict)
     num_ref = len(funcnames)
-    print("Number of functions in __all__: %i" % num_all)
+    print("Number of non-deprecated functions in __all__: %i" % num_all)
     print("Number of functions in refguide: %i" % num_ref)
 
-    only_all, only_ref = compare(all, funcnames)
+    only_all, only_ref = compare(all_dict, funcnames)
+    dep_in_ref = set(only_ref).intersection(deprecated)
+    only_ref = set(only_ref).difference(deprecated)
     if len(only_all) == len(only_ref) == 0:
         print("\nAll good!")
     else:
         if len(only_all) > 0:
             print("")
-            print("Objects in %s.__all__ but not in refguide:" % module_name)
+            print("Functions in %s.__all__ but not in refguide:" % module_name)
             print("------------------------------------------")
             for name in only_all:
                 print(name)
 
         if len(only_ref) > 0:
             print("")
-            print("Objects in refguide but not in %s.__all__:" % module_name)
+            print("Objects in refguide but not functions in %s.__all__:" % module_name)
             print("------------------------------------------")
             for name in only_ref:
+                print(name)
+
+        if len(dep_in_ref) > 0:
+            print("")
+            print("Deprecated objects in refguide:")
+            print("------------------------------------------")
+            for name in deprecated:
                 print(name)
 
 
@@ -154,15 +188,17 @@ def main(argv):
     parser.add_argument("--check_docs", action="store_true")
     args = parser.parse_args(argv)
 
-    module_name = args.module_name[0]
-    module = getattr(scipy, module_name)
+    module_name = args.module_name[0].split(".")
+    module = scipy
+    for n in module_name:
+        module = getattr(module, n)
 
     if args.check_docs:
         check_docstrings(module)
     else:
         funcnames = find_funcnames(module)
-        all = get_all_dict(module)
-        report(all, funcnames, module_name)
+        all_dict, deprecated = get_all_dict(module)
+        report(all_dict, funcnames, deprecated, module_name)
 
 
 if __name__ == '__main__':
