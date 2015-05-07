@@ -255,8 +255,10 @@ Spectral Analysis
 .. autosummary::
    :toctree: generated/
 
-   periodogram    -- Computes a (modified) periodogram
+   periodogram    -- Compute a (modified) periodogram
    welch          -- Compute a periodogram using Welch's method
+   csd            -- Compute the cross spectral density, using Welch's method
+   coherence      -- Compute the magnitude squared coherence, using Welch's method
    lombscargle    -- Computes the Lomb-Scargle periodogram
    vectorstrength -- Computes the vector strength
 
