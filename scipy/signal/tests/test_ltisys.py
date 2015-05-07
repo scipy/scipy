@@ -461,6 +461,27 @@ class Test_lsim2(object):
         expected_x = (1.0 - tout) * np.exp(-tout)
         assert_almost_equal(x[:,0], expected_x)
 
+    def test_07(self):
+        """Test the simulation of a MIMO system"""
+        # Basic MIMO system. Two inputs, two outputs. Output same as input.
+        A = np.zeros((1,1))
+        B = np.zeros((1,2))
+        C = np.zeros((2,1))
+        D = np.eye(2)
+
+        t=np.arange(3)
+        u0=np.arange(3)
+        u1=2*u0
+        u=np.vstack((u0,u1)).T
+        tout, y, x = lsim2((A,B,C,D),T=t,U=u)
+        expected_y = u
+        expected_x = np.zeros((3,1))
+        assert_almost_equal(y, expected_y)
+        assert_almost_equal(x, expected_x)
+
+
+
+
 
 class _TestImpulseFuncs(object):
     # Common tests for impulse/impulse2 (= self.func)

@@ -327,9 +327,9 @@ class lti(object):
                 self.outputs = 1
         elif N == 4:       # State-space form
             self._A, self._B, self._C, self._D = abcd_normalize(*args)
-            self._update(N)
             self.inputs = self.B.shape[-1]
             self.outputs = self.C.shape[0]
+            self._update(N)
         else:
             raise ValueError("Needs 2, 3, or 4 arguments.")
 
@@ -435,10 +435,11 @@ class lti(object):
             self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
             self._A, self._B, self._C, self._D = zpk2ss(self.zeros,
                                                         self.poles, self.gain)
-        if N == 4:
-            self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
-            self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
-                                                          self.C, self.D)
+        if N== 4:
+            if self.inputs==1:
+                self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
+                self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
+                                                              self.C, self.D)
 
     def impulse(self, X0=None, T=None, N=None):
         """
@@ -592,7 +593,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
         def fprime(x, t, sys, ufunc):
             """The vector field of the linear system."""
-            return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc([t]))))
+            return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc([t])).T))
         xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
         yout = dot(sys.C, transpose(xout)) + dot(sys.D, transpose(U))
     else:
