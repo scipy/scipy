@@ -147,7 +147,7 @@ Irvin Probst (ENSTA Bretagne) for pole placement.
 Ian Henriksen for Cython wrappers for BLAS and LAPACK
 Fukumu Tsutsumi for bug fixes.
 J.J. Green for interpolation bug fixes.
-
+James Morton for permutation tests in scipy.stats
 
 Institutions
 ------------

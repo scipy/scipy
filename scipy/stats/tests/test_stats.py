@@ -2252,6 +2252,7 @@ def test_ttest_ind():
     finally:
         np.seterr(**olderr)
 
+
 def test_ttest_ind_permutations():
     # Test on horizontal dimension
     N = 20
@@ -2318,12 +2319,13 @@ def test_ttest_ind_permutations():
 
     # Test out random seed
     N = 20
+    seed = np.random.RandomState(seed=0)
     a = np.vstack((np.arange(3*N//4), np.random.random(3*N//4)))
     b = np.vstack((np.arange(N//4) + 100, np.random.random(N//4)))
     p_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False)
     np_t_stats, pvalues = stats.ttest_ind(a, b, axis=1, equal_var=False,
                                           permutations=1000,
-                                          random_state=np.random.RandomState(seed=0))
+                                          random_state=seed)
     assert_array_almost_equal(p_t_stats, np_t_stats, 5)
     assert_array_almost_equal(pvalues, array([0.000999, 0.69031]))
 
@@ -2339,6 +2341,7 @@ def test_ttest_ind_permutations():
     assert_array_almost_equal(pvalues,
                               np.array([0.988012, 0.686314, 0.81019,
                                         0.963037, 0.25974]))
+
 
 def test_ttest_ind_with_uneq_var():
     # check vs. R
