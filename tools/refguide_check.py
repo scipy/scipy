@@ -164,7 +164,8 @@ def check_docstrings(module):
           'assert_allclose': np.testing.assert_allclose,
           'assert_equal': np.testing.assert_equal}
 
-    for name in get_all_dict(module):
+    # loop over non-deprecated items
+    for name in get_all_dict(module)[0]:
         obj = getattr(module, name)
 
         finder = doctest.DocTestFinder()
