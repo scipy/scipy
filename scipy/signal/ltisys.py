@@ -1337,6 +1337,104 @@ class StateSpace(LinearTimeInvariant):
             repr(self.dt),
             )
 
+    def __mul__(self, other):
+        """
+        Post-multiply another system or a scalar
+
+        Handles multiplication of systems in the sense of a frequency domain
+        multiplication. That means, given two systems E1(s) and E2(s), their
+        multiplication, H(s) = E1(s) * E2(s), means that applying H(s) to U(s)
+        is equivalent to first applying E2(s), and then E1(s).
+
+        Notes
+        -----
+        For SISO systems the order of system application does not matter.
+        However, for MIMO systems, where the two systems are matrices, the
+        order above ensures standard Matrix multiplication rules apply.
+        """
+        if isinstance(other, StateSpace):
+            n1 = self.A.shape[0]
+            n2 = other.A.shape[0]
+
+            # Interconnection of systems
+            # x1' = A1 x1 + B1 u1
+            # y1  = C1 x1 + D1 u1
+            # x2' = A2 x2 + B2 y1
+            # y2  = C2 x2 + D2 y1
+            #
+            # Plugging in with u1 = y2 yields
+            # [x1']   [A1 B1*C2 ] [x1]   [B1*D2]
+            # [x2'] = [0  A2    ] [x2] + [B2   ] u2
+            #                    [x1]
+            #  y2   = [C1 D1*C2] [x2] + D1*D2 u2
+            a = np.vstack((np.hstack((self.A, np.dot(self.B, other.C))),
+                           np.hstack((zeros((n2, n1)), other.A))))
+            b = np.vstack((np.dot(self.B, other.D), other.B))
+            c = np.hstack((self.C, np.dot(self.D, other.C)))
+            d = np.dot(self.D, other.D)
+            return StateSpace(a, b, c, d)
+
+        # Assume that other is a scalar / matrix
+        # For post multiplication the input gets scaled
+        return StateSpace(self.A,
+                          np.dot(self.B, other),
+                          self.C,
+                          np.dot(self.D, other))
+
+    def __rmul__(self, other):
+        """Pre-multiply a scalar or matrix"""
+        # For pre-multiplication only the output gets scaled
+        return StateSpace(self.A,
+                          self.B,
+                          np.dot(other, self.C),
+                          np.dot(other, self.D))
+
+    def __neg__(self):
+        """Negate the system (equivalent to pre-multiplying by -1)."""
+        return StateSpace(self.A, self.B, -self.C, -self.D)
+
+    def __add__(self, other):
+        """
+        Add two systems
+
+        Adds two systems in the sense of frequency domain addition. That
+        means, given two systems E1(s) and E2(s), their addition,
+        H(s) = E1(s) + E2(s), means that applying H(s) to U(s)
+        is equivalent to applying E1(s) and E2(s) separately and adding up the
+        result.
+        """
+        if isinstance(other, StateSpace):
+            # Interconnection of systems
+            # x1' = A1 x1 + B1 u
+            # y1  = C1 x1 + D1 u
+            # x2' = A2 x2 + B2 u
+            # y2  = C2 x2 + D2 u
+            # y   = y1 + y2
+            #
+            # Plugging in yields
+            # [x1']   [A1 0 ] [x1]   [B1]
+            # [x2'] = [0  A2] [x2] + [B2] u
+            #                 [x1]
+            #  y    = [C1 C2] [x2] + [D1 + D2] u
+            a = linalg.block_diag(self.A, other.A)
+            b = np.vstack((self.B, other.B))
+            c = np.hstack((self.C, other.C))
+            d = self.D + other.D
+            return StateSpace(a, b, c, d)
+
+        # A scalar/matrix is really just a static system (A=0, B=0, C=0)
+        return StateSpace(self.A, self.B, self.C, self.D + other)
+
+    def __radd__(self, other):
+        """Add a scalar"""
+        return self + other
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __rsub__(self, other):
+        return other + (-self)
+
     @property
     def A(self):
         """State matrix of the `StateSpace` system."""
@@ -3490,5 +3588,5 @@ def dbode(system, w=None, n=100):
 
     mag = 20.0 * numpy.log10(abs(y))
     phase = numpy.rad2deg(numpy.unwrap(numpy.angle(y)))
-    
+
     return w / dt, mag, phase
