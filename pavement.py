@@ -98,9 +98,9 @@ try:
 
     if not setup_py.ISRELEASED:
         if GIT_REVISION == "Unknown":
-            FULLVERSION += '.dev'
+            FULLVERSION += '.dev0'
         else:
-            FULLVERSION += '.dev-' + GIT_REVISION[:7]
+            FULLVERSION += '.dev0+' + GIT_REVISION[:7]
 finally:
     sys.path.pop(0)
 
@@ -110,10 +110,10 @@ finally:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.15.0-notes.rst'
+RELEASE = 'doc/release/0.16.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.14.0'
+LOG_START = 'v0.15.0'
 LOG_END = 'master'
 
 
@@ -122,7 +122,7 @@ LOG_END = 'master'
 #-------------------------------------------------------
 
 # Default python version
-PYVER="2.6"
+PYVER="2.7"
 
 # Paver options object, holds all default dirs
 options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
@@ -143,10 +143,12 @@ options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
         bdist_wininst_simple=Bunch(python_version=PYVER),)
 
 # Where we can find BLAS/LAPACK/ATLAS on Windows/Wine
-SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\vendor\binaries\sse3'},
-           "sse2" : {'BLAS': 'None', 'LAPACK': 'None', 'ATLAS': r'C:\local\vendor\binaries\sse2'},
-           "nosse" : {'ATLAS': 'None', 'BLAS': r'C:\local\vendor\binaries\nosse',
-                      'LAPACK': r'C:\local\vendor\binaries\nosse'}}
+SITECFG = {"sse3" : {'BLAS': 'None', 'LAPACK': 'None',
+                     'ATLAS': r'C:\local\lib\atlas\sse3'},
+           "sse2" : {'BLAS': 'None', 'LAPACK': 'None',
+                     'ATLAS': r'C:\local\lib\atlas\sse2'},
+           "nosse" : {'ATLAS': 'None', 'BLAS': r'C:\local\lib\atlas\nosse',
+                      'LAPACK': r'C:\local\lib\atlas\nosse'}}
 
 # Wine config for win32 builds
 if sys.platform == "win32":
@@ -279,8 +281,6 @@ def latex():
 @task
 @needs('latex')
 def pdf():
-    sdir = options.doc.sdir
-    bdir = options.doc.bdir
     bdir_latex = options.doc.bdir_latex
     destdir_pdf = options.doc.destdir_pdf
 
@@ -410,7 +410,7 @@ def bdist_superpack(options):
         except OSError:
             # May be due to dev version having 'Unknown' in name, if git isn't
             # found.  This can be the case when compiling under Wine.
-            ix = source.find('.dev-') + 5
+            ix = source.find('.dev0+') + 5
             source = source[:ix] + 'Unknown' + source[ix+7:]
             os.rename(source, target)
 
@@ -429,8 +429,10 @@ def bdist_superpack(options):
     if not os.path.exists(options.installers.installersdir):
         os.makedirs(options.installers.installersdir)
 
-    source = os.path.join(options.superpack.builddir, superpack_name(pyver, FULLVERSION))
-    target = os.path.join(options.installers.installersdir, superpack_name(pyver, FULLVERSION))
+    source = os.path.join(options.superpack.builddir,
+                          superpack_name(pyver, FULLVERSION))
+    target = os.path.join(options.installers.installersdir,
+                          superpack_name(pyver, FULLVERSION))
     shutil.copy(source, target)
 
 @task
