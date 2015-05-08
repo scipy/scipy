@@ -780,6 +780,56 @@ class TestStateSpace(object):
         assert_equal(s.zeros, [0])
         assert_(s.dt is None)
 
+    def test_operators(self):
+        # Test +/-/* operators on systems
+        s1 = StateSpace(np.array([[-0.5, 0.7], [0.3, -0.8]]),
+                        np.array([[1], [0]]),
+                        np.array([[1, 0]]),
+                        np.array([[0]])
+                        )
+
+        s2 = StateSpace(np.array([[-0.2, -0.1], [0.4, -0.1]]),
+                        np.array([[1], [0]]),
+                        np.array([[1, 0]]),
+                        np.array([[0]])
+                        )
+
+        # Impulse response
+        t = np.linspace(0, 1, 100)
+        u = np.zeros_like(t)
+        u[0] = 1
+
+        # Test multiplication
+        assert_allclose(lsim(2 * s1, U=u, T=t)[1],
+                        2 * lsim(s1, U=u, T=t)[1])
+
+        assert_allclose(lsim(s1 * 2, U=u, T=t)[1],
+                        lsim(s1, U=2 * u, T=t)[1])
+
+        assert_allclose(lsim(s1 * s2, U=u, T=t)[1],
+                        lsim(s1, U=lsim(s2, U=u, T=t)[1], T=t)[1],
+                        atol=1e-5)
+
+        # Test addition
+        assert_allclose(lsim(s1 + 2, U=u, T=t)[1],
+                        2 * u + lsim(s1, U=u, T=t)[1])
+
+        assert_allclose(lsim(2 + s1, U=u, T=t)[1],
+                        2 * u + lsim(s1, U=u, T=t)[1])
+
+        assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
+                        lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
+
+        # Test substraction
+        assert_allclose(lsim(2 - s1, U=u, T=t)[1],
+                        2 * u - lsim(s1, U=u, T=t)[1])
+
+        assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
+                        -2 * u + lsim(s1, U=u, T=t)[1])
+
+        assert_allclose(lsim(s1 - s2, U=u, T=t)[1],
+                        lsim(s1, U=u, T=t)[1] - lsim(s2, U=u, T=t)[1])
+
 
 class TestTransferFunction(object):
     def test_initialization(self):
