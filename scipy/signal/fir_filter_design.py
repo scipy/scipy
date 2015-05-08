@@ -8,7 +8,7 @@ from scipy.special import sinc
 from . import sigtools
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
-           'firwin', 'firwin2', 'remez']
+           'firwin', 'firwin2', 'remez', 'firls']
 
 
 # Some notes on function parameters:
@@ -583,3 +583,84 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
     bands = np.asarray(bands).copy()
     return sigtools._remez(numtaps, bands, desired, weight, tnum, Hz,
                            maxiter, grid_density)
+
+
+def firls(numtaps, bands, desired, weight=None, Hz=1):
+    """
+    FIR filter design using least-squares error minimization.
+
+    Calculate the filter coefficients for the finite impulse response
+    (FIR) filter which has the best approximation to the desired
+    frequency response described by `bands` and `desired` in the
+    least squares sense.
+
+    Parameters
+    ----------
+    numtaps : int
+        The number of taps in the FIR filter.  `numtaps` must be odd.
+    bands : array_like
+        A monotonic sequence containing the band edges in Hz.
+        All elements must be non-negative and less than half the sampling
+        frequency as given by `Hz`.
+    desired : array_like
+        A sequence half the size of bands containing the desired gain
+        in each of the specified bands.
+    weight : array_like, optional
+        A relative weighting to give to each band region. The length of
+        `weight` has to be half the length of `bands`.
+    Hz : scalar, optional
+        The sampling frequency in Hz. Default is 1.
+
+    Returns
+    -------
+    out : ndarray
+        A rank-1 array containing the coefficients of the optimal
+        (in a least squares sense) filter.
+
+    Example
+    -------
+    We want to construct a filter with a passband at 0.2-0.3 Hz, and
+    stop bands at 0-0.1 Hz and 0.4-0.5 Hz. Note that this means that the
+    behavior in the frequency ranges between those bands is unspecified and
+    may overshoot.
+    >>> from scipy import signal
+    >>> bpass = signal.firls(71, [0, 0.1, 0.2, 0.3, 0.4, 0.5], [0, 1, 0])
+    >>> freq, response = signal.freqz(bpass)
+    >>> ampl = np.abs(response)
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(111)
+    >>> ax1.semilogy(freq/(2*np.pi), ampl, 'b-')  # freq in Hz
+    >>> plt.show()
+    """
+    if numtaps%2 == 0:
+        raise ValueError("numtaps must be odd.")
+    L = (numtaps-1)//2
+
+    # normalize bands and make it 2 columns
+    bands = np.asarray(bands).flatten()/Hz
+    if len(bands)%2 == 1:
+        raise ValueError("bands must contain frequency pairs.")
+    bands = bands.reshape(-1,2)
+
+    # check remaining params
+    if len(bands) != len(desired):
+        raise ValueError("desired must have one entry per band.")
+    if weight is None:
+        weight = np.ones_like(desired)
+
+    # set up the linear matrix equation to be solved, Ax = b
+    k = np.arange(L+1)[np.newaxis]
+    m = k.T
+    A,b = 0,0
+    for i, (f0,f1) in enumerate(bands):
+        Ai = f1 * (sinc(2*(m+k)*f1) + sinc(2*(m-k)*f1)) \
+           - f0 * (sinc(2*(m+k)*f0) + sinc(2*(m-k)*f0))
+        bi = desired[i] * (2*f1*sinc(2*m*f1) - 2*f0*sinc(2*m*f0))
+        A += Ai * abs(weight[i]**2)
+        b += bi * abs(weight[i]**2)
+
+    # solve and return
+    x = np.linalg.solve(A,b).squeeze()
+    h = np.hstack((x[:0:-1]/2, x[0], x[1:]/2))
+    return h
