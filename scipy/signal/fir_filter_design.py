@@ -633,13 +633,13 @@ def firls(numtaps, bands, desired, weight=None, Hz=1):
     >>> ax1.semilogy(freq/(2*np.pi), ampl, 'b-')  # freq in Hz
     >>> plt.show()
     """
-    if numtaps%2 == 0:
+    if numtaps % 2 == 0:
         raise ValueError("numtaps must be odd.")
     L = (numtaps-1)//2
 
     # normalize bands and make it 2 columns
     bands = np.asarray(bands).flatten()/Hz
-    if len(bands)%2 == 1:
+    if len(bands) % 2 == 1:
         raise ValueError("bands must contain frequency pairs.")
     bands = bands.reshape(-1,2)
 
