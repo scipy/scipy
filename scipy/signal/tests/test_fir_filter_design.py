@@ -7,7 +7,7 @@ from numpy.testing import TestCase, run_module_suite, assert_raises, \
 from scipy.special import sinc
 
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-        firwin, firwin2, freqz, remez
+        firwin, firwin2, freqz, remez, firls
 
 
 def test_kaiser_beta():
@@ -388,6 +388,47 @@ class TestRemez(TestCase):
         # check that the pass band is close to unity
         idx = (f > a) * (f < 0.5-a)
         assert_((abs(Hmag[idx] - 1) < 0.015).all(), "Pass Band Close To Unity")
+
+
+class TestFirls(TestCase):
+
+    def test_bad_args(self):
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.4], [0])
+
+    def test_firls(self):
+        N = 11  # number of taps in the filter
+        a = 0.1  # width of the transition band
+
+        # design a halfband symmetric low-pass filter
+        h = firls(11, [0, a, 0.5-a, 0.5], [1, 0])
+
+        # make sure the filter has correct # of taps
+        assert_equal(len(h), N)
+
+        # make sure it is symmetric
+        midx = (N-1)//2
+        assert_array_almost_equal(h[:midx], h[:-midx-1:-1])
+
+        # make sure the center tap is 0.5
+        assert_almost_equal(h[midx], 0.5)
+
+        # For halfband symmetric, odd coefficients (except the center)
+        # should be zero (really small)
+        hodd = np.hstack((h[1:midx:2],h[-midx+1::2]))
+        assert_array_almost_equal(hodd,0)
+
+        # now check the frequency response
+        w, H = freqz(h, 1)
+        f = w/2/np.pi
+        Hmag = abs(H)
+
+        # check that the pass band is close to unity
+        idx = (f > 0) * (f < a)
+        assert_array_almost_equal(Hmag[idx],1, decimal=3)
+
+        # check that the stop band is close to zero
+        idx = (f > 0.5-a) * (f < 0.5)
+        assert_array_almost_equal(Hmag[idx],0, decimal=3)
 
 
 if __name__ == "__main__":
