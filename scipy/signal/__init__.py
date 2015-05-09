@@ -148,7 +148,7 @@ Continuous-Time Linear Systems
    freqresp         -- frequency response of a continuous-time LTI system.
    lti              -- Linear time invariant system base class.
    StateSpace       -- Linear time invariant system in state space form.
-   TransferFunction -- Linear time invariant system in tranfer function form.
+   TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
    lsim             -- continuous-time simulation of output to linear system.
    lsim2            -- like lsim, but `scipy.integrate.odeint` is used.

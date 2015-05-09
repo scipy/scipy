@@ -282,7 +282,7 @@ class lti(object):
 
     Parameters
     ----------
-    system : lti system arguments
+    *system : arguments
         The `lti` class can be instantiated with either 2, 3 or 4 arguments.
         The following gives the number of arguments and the corresponding
         subclass that is created:
@@ -503,12 +503,12 @@ class TransferFunction(lti):
 
     Represents the system as the transfer function
     :math:`H(s)=\sum_i b[i] s^i / \sum_j a[j] s^i`, where :math:`a` are
-    elements of the numerator `num` and :math:`b` are the element of the
+    elements of the numerator `num` and :math:`b` are the elements of the
     denominator `den`.
 
     Parameters
     ----------
-    system : arguments
+    *system : arguments
         The `TransferFunction` class can be instantiated with 1 or 2 arguments.
         The following gives the number of input arguments and their
         interpretation:
@@ -534,17 +534,7 @@ class TransferFunction(lti):
         return super(TransferFunction, cls).__new__(cls)
 
     def __init__(self, *system):
-        """Initialize the state space LTI system.
-
-        Parameters
-        ----------
-        system : arguments
-            The following arguments are possible
-                * an instance of the lti class (`StateSpace`, `TransferFunction`
-                  or `ZerosPolesGain`)
-                * (numerator, denominator)
-
-        """
+        """Initialize the state space LTI system."""
         # Conversion of lti instances is handled in __new__
         if isinstance(system[0], lti):
             return
@@ -647,7 +637,7 @@ class ZerosPolesGain(lti):
 
     Parameters
     ----------
-    system : arguments
+    *system : arguments
         The `ZerosPolesGain` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
@@ -673,18 +663,7 @@ class ZerosPolesGain(lti):
         return super(ZerosPolesGain, cls).__new__(cls)
 
     def __init__(self, *system):
-        """
-        Initialize the zeros, poles, gain LTI system
-
-        Parameters
-        ----------
-        system : arguments
-            The following arguments are possible
-                * an instance of the `lti` class (`StateSpace`,
-                  `TransferFunction`, `ZerosPolesGain`)
-                * (zeros, poles, gain)
-
-        """
+        """Initialize the zeros, poles, gain LTI system."""
         # Conversion of lti instances is handled in __new__
         if isinstance(system[0], lti):
             return
@@ -795,11 +774,9 @@ class StateSpace(lti):
     Represents the system as the first order differential equation
     :math:`\dot{x} = A x + B u`.
 
-
-
     Parameters
     ----------
-    system : arguments
+    *system : arguments
         The `StateSpace` class can be instantiated with 1 or 4 arguments.
         The following gives the number of input arguments and their
         interpretation:
@@ -824,18 +801,7 @@ class StateSpace(lti):
         return super(StateSpace, cls).__new__(cls)
 
     def __init__(self, *system):
-        """
-        Initialize the state space LTI system.
-
-        Parameters
-        ----------
-        system : arguments
-            The following arguments are possible
-                * an instance of the `lti` class (`StateSpace`,
-                  `TransferFunction`, `ZerosPolesGain`)
-                * (A, B, C, D) state-space matrices
-
-        """
+        """Initialize the state space LTI system."""
         # Conversion of lti instances is handled in __new__
         if isinstance(system[0], lti):
             return
