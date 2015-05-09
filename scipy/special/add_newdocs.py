@@ -1066,6 +1066,29 @@ add_newdoc("scipy.special", "expn",
         integral(exp(-x*t) / t**n, t=1..inf).
     """)
 
+add_newdoc("scipy.special", "exprel",
+    r"""
+    exprel(x)
+
+    Relative error exponential, (exp(x)-1)/x, for use when x is near zero.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.
+
+    Returns
+    -------
+    res : ndarray
+        Output array.
+
+    See Also
+    --------
+    expm1
+
+    .. versionadded:: 0.17.0
+    """)
+
 add_newdoc("scipy.special", "fdtr",
     """
     fdtr(dfn, dfd, x)

@@ -10,7 +10,7 @@ import time
 from distutils.version import LooseVersion
 
 import numpy as np
-from numpy.testing import dec, run_module_suite
+from numpy.testing import dec, run_module_suite, assert_
 from numpy import pi
 
 import scipy.special as sc
@@ -927,6 +927,16 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
                             [Arg()])
+
+    def test_exprel(self):
+        assert_mpmath_equal(sc.exprel,
+                            lambda x: mpmath.expm1(x)/x if x != 0 else mpmath.mpf('1.0'),
+                            [Arg(a=-np.log(np.finfo(np.double).max), b=np.log(np.finfo(np.double).max))])
+        assert_mpmath_equal(sc.exprel,
+                            lambda x: mpmath.expm1(x)/x if x != 0 else mpmath.mpf('1.0'),
+                            np.array([1e-12, 1e-24, 0, 1e12, 1e24, np.inf]), rtol=1e-11)
+        assert_(np.isinf(sc.exprel(np.inf)))
+        assert_(sc.exprel(-np.inf) == 0)
 
     def test_e1_complex(self):
         # E_1 oscillates as Im[z] -> +- inf, so limit range
