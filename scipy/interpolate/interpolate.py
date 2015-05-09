@@ -1073,6 +1073,8 @@ class BPoly(_PPolyBase):
     __call__
     extend
     derivative
+    antiderivative
+    integrate
     construct_fast
     from_power_basis
     from_derivatives
@@ -1133,7 +1135,7 @@ class BPoly(_PPolyBase):
 
         """
         if nu < 0:
-            raise NotImplementedError('Antiderivative not implemented.')
+            return self.antiderivative(-nu)
 
         if nu > 1:
             bp = self
@@ -1167,6 +1169,79 @@ class BPoly(_PPolyBase):
 
         # construct a compatible polynomial
         return self.construct_fast(c2, self.x, self.extrapolate, self.axis)
+
+    def antiderivative(self, nu=1):
+        """
+        Construct a new piecewise polynomial representing the antiderivative.
+
+        Parameters
+        ----------
+        nu : int, optional
+            Order of derivative to evaluate. (Default: 1)
+            If negative, the derivative is returned.
+
+        Returns
+        -------
+        bp : BPoly
+            Piecewise polynomial of order k2 = k + nu representing the
+            antiderivative of this polynomial.
+
+        """
+        if nu <= 0:
+            return self.derivative(-nu)
+
+        if nu > 1:
+            bp = self
+            for k in range(nu):
+                bp = bp.antiderivative()
+            return bp
+
+        # Construct the indefinite integrals on individual intervals
+        c, x = self.c, self.x
+        k = c.shape[0]
+        c2 = np.zeros((k+1,) + c.shape[1:], dtype=c.dtype)
+
+        c2[1:, ...] = np.cumsum(c, axis=0) / k
+        delta = x[1:] - x[:-1]
+        c2 *= delta[(None, slice(None)) + (None,)*(c.ndim-2)]
+
+        # Now fix continuity: on the very first interval, take the integration
+        # constant to be zero; on an interval [x_j, x_{j+1}) with j>0,
+        # the integration constant is then equal to the jump of the `bp` at x_j.
+        # The latter is given by the coefficient of B_{n+1, n+1}
+        # *on the previous interval* (other B. polynomials are zero at the breakpoint)
+        # Finally, use the fact that BPs form a partition of unity.
+        c2[:,1:] += np.cumsum(c2[k,:], axis=0)[:-1]
+
+        return self.construct_fast(c2, x, self.extrapolate)
+
+    def integrate(self, a, b, extrapolate=None):
+        """
+        Compute a definite integral over a piecewise polynomial.
+
+        Parameters
+        ----------
+        a : float
+            Lower integration bound
+        b : float
+            Upper integration bound
+        extrapolate : bool, optional
+            Whether to extrapolate to out-of-bounds points based on first
+            and last intervals, or to return NaNs.
+            Defaults to ``self.extrapolate``.
+
+        Returns
+        -------
+        array_like
+            Definite integral of the piecewise polynomial over [a, b]
+
+        """
+        # XXX: can probably use instead the fact that
+        # \int_0^{1} B_{j, n}(x) \dx = 1/(n+1)
+        ib = self.antiderivative()
+        if extrapolate is not None:
+            ib.extrapolate = extrapolate
+        return ib(b) - ib(a)
 
     def extend(self, c, x, right=True):
         k = max(self.c.shape[0], c.shape[0])
