@@ -243,7 +243,7 @@ def test_boost():
         data(btdtrib, 'ibeta_inva_data_ipp-ibeta_inva_data', (0,2,1), 5, rtol=5e-9),
         data(btdtrib_comp, 'ibeta_inva_data_ipp-ibeta_inva_data', (0,2,1), 6, rtol=5e-9),
 
-        data(binom, 'binomial_data_ipp-binomial_data', (0,1), 2, rtol=1e-15),
+        data(binom, 'binomial_data_ipp-binomial_data', (0,1), 2, rtol=1e-13),
         data(binom, 'binomial_large_data_ipp-binomial_large_data', (0,1), 2, rtol=5e-13),
 
         data(bdtrik, 'binomial_quantile_ipp-binomial_quantile_data', (2,0,1), 3, rtol=5e-9),
@@ -273,10 +273,10 @@ def test_boost():
 
         data(erf, 'erf_data_ipp-erf_data', 0, 1),
         data(erf, 'erf_data_ipp-erf_data', 0j, 1, rtol=1e-13),
-        data(erfc, 'erf_data_ipp-erf_data', 0, 2),
+        data(erfc, 'erf_data_ipp-erf_data', 0, 2, rtol=6e-15),
         data(erf, 'erf_large_data_ipp-erf_large_data', 0, 1),
         data(erf, 'erf_large_data_ipp-erf_large_data', 0j, 1),
-        data(erfc, 'erf_large_data_ipp-erf_large_data', 0, 2),
+        data(erfc, 'erf_large_data_ipp-erf_large_data', 0, 2, rtol=4e-14),
         data(erf, 'erf_small_data_ipp-erf_small_data', 0, 1),
         data(erf, 'erf_small_data_ipp-erf_small_data', 0j, 1, rtol=1e-13),
         data(erfc, 'erf_small_data_ipp-erf_small_data', 0, 2),
@@ -298,7 +298,7 @@ def test_boost():
         data(gamma, 'test_gamma_data_ipp-near_2', 0, 1),
         data(gamma, 'test_gamma_data_ipp-near_m10', 0, 1),
         data(gamma, 'test_gamma_data_ipp-near_m55', 0, 1, rtol=7e-12),
-        data(gamma, 'test_gamma_data_ipp-factorials', 0, 1, rtol=1e-14),
+        data(gamma, 'test_gamma_data_ipp-factorials', 0, 1, rtol=4e-14),
         data(gamma, 'test_gamma_data_ipp-near_0', 0j, 1, rtol=2e-9),
         data(gamma, 'test_gamma_data_ipp-near_1', 0j, 1, rtol=2e-9),
         data(gamma, 'test_gamma_data_ipp-near_2', 0j, 1, rtol=2e-9),
@@ -322,12 +322,12 @@ def test_boost():
         data(gdtr_, 'igamma_int_data_ipp-igamma_int_data', (0,1), 5, rtol=2e-13),
         data(gdtr_, 'igamma_big_data_ipp-igamma_big_data', (0,1), 5, rtol=2e-9),
 
-        data(gammaincc, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=8e-5),
+        data(gammaincc, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=1e-4),
         data(gammaincc, 'igamma_med_data_ipp-igamma_med_data', (0,1), 3, rtol=2e-13),
         data(gammaincc, 'igamma_int_data_ipp-igamma_int_data', (0,1), 3, rtol=4e-14),
         data(gammaincc, 'igamma_big_data_ipp-igamma_big_data', (0,1), 3, rtol=2e-9),
 
-        data(gdtrc_, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=8e-5),
+        data(gdtrc_, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=1e-4),
         data(gdtrc_, 'igamma_med_data_ipp-igamma_med_data', (0,1), 3, rtol=2e-13),
         data(gdtrc_, 'igamma_int_data_ipp-igamma_int_data', (0,1), 3, rtol=4e-14),
         data(gdtrc_, 'igamma_big_data_ipp-igamma_big_data', (0,1), 3, rtol=2e-9),
