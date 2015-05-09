@@ -9,7 +9,7 @@
 
 # The format of the file is that of the standard library's ConfigParser module.
 #
-#   http://www.python.org/doc/current/lib/module-ConfigParser.html
+#   http://docs.python.org/3/library/configparser.html
 #
 # Each section defines settings that apply to one particular dependency. Some of
 # the settings are general and apply to nearly any section and are defined here.
@@ -24,11 +24,15 @@
 #   library_dirs
 #       List of directories to add to the library search path when compiling
 #       extensions with this dependency. Use the character given by os.pathsep
-#       to separate the items in the list. On UN*X-type systems (Linux, FreeBSD,
-#       OS X):
+#       to separate the items in the list. Note that this character is known to
+#       vary on some unix-like systems; if a colon does not work, try a comma.
+#       This also applies to include_dirs and src_dirs (see below).
+#       On UN*X-type systems (OS X, most BSD and Linux systems):
 #           library_dirs = /usr/lib:/usr/local/lib
 #       On Windows:
 #           library_dirs = c:\mingw\lib,c:\atlas\lib
+#       On some BSD and Linux systems:
+#           library_dirs = /usr/lib,/usr/local/lib
 #
 #   include_dirs
 #       List of directories to add to the header file earch path.
@@ -48,6 +52,30 @@
 #       True) to tell numpy.distutils to prefer static libraries (.a) over
 #       shared libraries (.so). It is turned off by default.
 #           search_static_first = false
+#
+# The following sections are available in Numpy versions >=1.10:
+#
+#   runtime_library_dirs/rpath
+#       List of directories that contains the libraries that should be
+#       used at runtime, thereby disregarding the LD_LIBRARY_PATH variable.
+#       See 'library_dirs' for formatting on different platforms.
+#           runtime_library_dirs = /opt/blas/lib:/opt/lapack/lib
+#       or equivalently
+#           rpath = /opt/blas/lib:/opt/lapack/lib
+#
+#   extra_compile_args
+#       Add additional arguments to the compilation of sources.
+#       Simple variable with no parsing done.
+#       Provide a single line with all complete flags.
+#           extra_compile_args = -g -ftree-vectorize
+#
+#   extra_link_args
+#       Add additional arguments to when libraries/executables
+#       are linked.
+#       Simple variable with no parsing done.
+#       Provide a single line with all complete flags.
+#           extra_link_args = -lgfortran
+#
 
 # Defaults
 # ========
@@ -55,49 +83,75 @@
 # This is a good place to add general library and include directories like
 # /usr/local/{lib,include}
 #
-#[DEFAULT]
-library_dirs = /usr/local/lib
-include_dirs = /usr/local/include
+#[ALL]
+#library_dirs = /usr/local/lib
+#include_dirs = /usr/local/include
+#
 
-# Optimized BLAS and LAPACK
-# -------------------------
-# Use the blas_opt and lapack_opt sections to give any settings that are
-# required to link against your chosen BLAS and LAPACK, including the regular
-# FORTRAN reference BLAS and also ATLAS. Some other sections still exist for
-# linking against certain optimized libraries (e.g. [atlas], [lapack_atlas]),
-# however, they are now deprecated and should not be used.
+# Atlas
+# -----
+# Atlas is an open source optimized implementation of the BLAS and Lapack
+# routines. Scipy will try to build against Atlas by default when available in
+# the system library dirs. To build Scipy against a custom installation of
+# Atlas you can add an explicit section such as the following. Here we assume
+# that Atlas was configured with ``prefix=/opt/atlas``.
 #
-# These are typical configurations for ATLAS (assuming that the library and
-# include directories have already been set in [DEFAULT]; the include directory
-# is important for the BLAS C interface):
-#
-#[blas_opt]
-#libraries = f77blas, cblas, atlas
-#
-#[lapack_opt]
-#libraries = lapack, f77blas, cblas, atlas
-#
-# If your ATLAS was compiled with pthreads, the names of the libraries might be
-# different:
-#
-#[blas_opt]
-#libraries = ptf77blas, ptcblas, atlas
-#
-#[lapack_opt]
-#libraries = lapack, ptf77blas, ptcblas, atlas
+# [atlas]
+# library_dirs = /opt/atlas/lib
+# include_dirs = /opt/atlas/include
 
-# UMFPACK
-# -------
-# The UMFPACK library is used to factor large sparse matrices. It, in turn,
-# depends on the AMD library for reordering the matrices for better performance.
-# Note that the AMD library has nothing to do with AMD (Advanced Micro Devices),
-# the CPU company.
+# OpenBLAS
+# --------
+# OpenBLAS is another open source optimized implementation of BLAS and Lapack
+# and can be seen as an alternative to Atlas. To build Scipy against OpenBLAS
+# instead of Atlas, use this section instead of the above, adjusting as needed
+# for your configuration (in the following example we installed OpenBLAS with
+# ``make install PREFIX=/opt/OpenBLAS``.
+# OpenBLAS is generically installed as a shared library, to force the OpenBLAS
+# library linked to also be used at runtime you can utilize the
+# runtime_library_dirs variable.
 #
-#   http://www.cise.ufl.edu/research/sparse/umfpack/
-#   http://www.cise.ufl.edu/research/sparse/amd/
+# **Warning**: OpenBLAS, by default, is built in multithreaded mode. Due to the
+# way Python's multiprocessing is implemented, a multithreaded OpenBLAS can
+# cause programs using both to hang as soon as a worker process is forked on
+# POSIX systems (Linux, Mac).
+# This is fixed in Openblas 0.2.9 for the pthread build, the OpenMP build using
+# GNU openmp is as of gcc-4.9 not fixed yet.
+# Python 3.4 will introduce a new feature in multiprocessing, called the
+# "forkserver", which solves this problem. For older versions, make sure
+# OpenBLAS is built using pthreads or use Python threads instead of
+# multiprocessing.
+# (This problem does not exist with multithreaded ATLAS.)
 #
-#[amd]
-#amd_libs = amd
+# http://docs.python.org/3.4/library/multiprocessing.html#contexts-and-start-methods
+# https://github.com/xianyi/OpenBLAS/issues/294
 #
-#[umfpack]
-#umfpack_libs = umfpack
+# [openblas]
+# libraries = openblas
+# library_dirs = /opt/OpenBLAS/lib
+# include_dirs = /opt/OpenBLAS/include
+# runtime_library_dirs = /opt/OpenBLAS/lib
+
+# MKL
+#----
+# MKL is Intel's very optimized yet proprietary implementation of BLAS and
+# Lapack.
+# For recent (9.0.21, for example) mkl, you need to change the names of the
+# lapack library. Assuming you installed the mkl in /opt, for a 32 bits cpu:
+# [mkl]
+# library_dirs = /opt/intel/mkl/9.1.023/lib/32/
+# lapack_libs = mkl_lapack
+#
+# For 10.*, on 32 bits machines:
+# [mkl]
+# library_dirs = /opt/intel/mkl/10.0.1.014/lib/32/
+# lapack_libs = mkl_lapack
+# mkl_libs = mkl, guide
+#
+# On win-64, the following options compiles Scipy with the MKL library
+# dynamically linked.
+# [mkl]
+# include_dirs = C:\Program Files (x86)\Intel\Composer XE 2015\mkl\include
+# library_dirs = C:\Program Files (x86)\Intel\Composer XE 2015\mkl\lib\intel64
+# mkl_libs = mkl_core_dll, mkl_intel_lp64_dll, mkl_intel_thread_dll
+# lapack_libs = mkl_lapack95_lp64
