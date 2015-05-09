@@ -14,7 +14,7 @@ from scipy._lib.six import xrange
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
-         RectBivariateSpline, interpn)
+         RectBivariateSpline, interpn, NdPPoly)
 
 from scipy.interpolate import _ppoly
 
@@ -1598,6 +1598,87 @@ class TestPpform(TestCase):
             assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
 
 
+class TestNdPPoly(object):
+    def test_simple_1d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5)
+        x = np.linspace(0, 1, 5+1)
+
+        xi = np.random.rand(200)
+
+        p = NdPPoly(c, (x,))
+        v1 = p((xi,))
+
+        v2 = _ppoly_eval_1(c[:,:,None], x, xi).ravel()
+        assert_allclose(v1, v2)
+
+    def test_simple_2d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5, 6, 7)
+        x = np.linspace(0, 1, 6+1)
+        y = np.linspace(0, 1, 7+1)**2
+
+        xi = np.random.rand(200)
+        yi = np.random.rand(200)
+
+        v1 = np.empty([len(xi), 1], dtype=c.dtype)
+        v1.fill(np.nan)
+        _ppoly.evaluate_nd(c.reshape(4*5, 6*7, 1),
+                           (x, y),
+                           np.array([4, 5], dtype=np.intc),
+                           np.c_[xi, yi],
+                           np.array([0, 0], dtype=np.intc),
+                           1,
+                           v1)
+        v1 = v1.ravel()
+        v2 = _ppoly2d_eval(c, (x, y), xi, yi)
+        assert_allclose(v1, v2)
+
+        p = NdPPoly(c, (x, y))
+        v3 = p(np.c_[xi, yi])
+        assert_allclose(v3, v2)
+
+    def test_simple_3d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5, 6, 7, 8, 9)
+        x = np.linspace(0, 1, 7+1)
+        y = np.linspace(0, 1, 8+1)**2
+        z = np.linspace(0, 1, 9+1)**3
+
+        xi = np.random.rand(200)
+        yi = np.random.rand(200)
+        zi = np.random.rand(200)
+
+        p = NdPPoly(c, (x, y, z))
+        v1 = p((xi, yi, zi))
+
+        v2 = _ppoly3d_eval(c, (x, y, z), xi, yi, zi)
+        assert_allclose(v1, v2)
+
+    def test_simple_4d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5, 6, 7, 8, 9, 10, 11)
+        x = np.linspace(0, 1, 8+1)
+        y = np.linspace(0, 1, 9+1)**2
+        z = np.linspace(0, 1, 10+1)**3
+        u = np.linspace(0, 1, 11+1)**4
+
+        xi = np.random.rand(20)
+        yi = np.random.rand(20)
+        zi = np.random.rand(20)
+        ui = np.random.rand(20)
+
+        p = NdPPoly(c, (x, y, z, u))
+        v1 = p((xi, yi, zi, ui))
+
+        v2 = _ppoly4d_eval(c, (x, y, z, u), xi, yi, zi, ui)
+        assert_allclose(v1, v2)
+
+
 def _ppoly_eval_1(c, x, xps):
     """Evaluate piecewise polynomial manually"""
     out = np.zeros((len(xps), c.shape[2]))
@@ -1635,6 +1716,111 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     res[mask] = values
     res.shape = saveshape
     return res
+
+
+def _ppoly2d_eval(c, xs, xnew, ynew):
+    """
+    Straightforward evaluation of 2D piecewise polynomial
+    """
+    out = np.empty((len(xnew),), dtype=c.dtype)
+
+    nx, ny = c.shape[:2]
+
+    for jout, (x, y) in enumerate(zip(xnew, ynew)):
+        if not ((xs[0][0] <= x <= xs[0][-1]) and
+                (xs[1][0] <= y <= xs[1][-1])):
+            out[jout] = np.nan
+            continue
+
+        j1 = np.searchsorted(xs[0], x) - 1
+        j2 = np.searchsorted(xs[1], y) - 1
+
+        s1 = x - xs[0][j1]
+        s2 = y - xs[1][j2]
+
+        val = 0
+
+        for k1 in range(c.shape[0]):
+            for k2 in range(c.shape[1]):
+                val += c[nx-k1-1,ny-k2-1,j1,j2] * s1**k1 * s2**k2
+
+        out[jout] = val
+
+    return out
+
+
+def _ppoly3d_eval(c, xs, xnew, ynew, znew):
+    """
+    Straightforward evaluation of 3D piecewise polynomial
+    """
+    out = np.empty((len(xnew),), dtype=c.dtype)
+
+    nx, ny, nz = c.shape[:3]
+
+    for jout, (x, y, z) in enumerate(zip(xnew, ynew, znew)):
+        if not ((xs[0][0] <= x <= xs[0][-1]) and
+                (xs[1][0] <= y <= xs[1][-1]) and
+                (xs[2][0] <= z <= xs[2][-1])):
+            out[jout] = np.nan
+            continue
+
+        j1 = np.searchsorted(xs[0], x) - 1
+        j2 = np.searchsorted(xs[1], y) - 1
+        j3 = np.searchsorted(xs[2], z) - 1
+
+        s1 = x - xs[0][j1]
+        s2 = y - xs[1][j2]
+        s3 = z - xs[2][j3]
+
+        val = 0
+        for k1 in range(c.shape[0]):
+            for k2 in range(c.shape[1]):
+                for k3 in range(c.shape[2]):
+                    val += (c[nx-k1-1,ny-k2-1,nz-k3-1,j1,j2,j3]
+                            * s1**k1 * s2**k2 * s3**k3)
+
+        out[jout] = val
+
+    return out
+
+
+def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew):
+    """
+    Straightforward evaluation of 4D piecewise polynomial
+    """
+    out = np.empty((len(xnew),), dtype=c.dtype)
+
+    nx, ny, nz, nu = c.shape[:4]
+
+    for jout, (x, y, z, u) in enumerate(zip(xnew, ynew, znew, unew)):
+        if not ((xs[0][0] <= x <= xs[0][-1]) and
+                (xs[1][0] <= y <= xs[1][-1]) and
+                (xs[2][0] <= z <= xs[2][-1]) and
+                (xs[3][0] <= u <= xs[3][-1])):
+            out[jout] = np.nan
+            continue
+
+        j1 = np.searchsorted(xs[0], x) - 1
+        j2 = np.searchsorted(xs[1], y) - 1
+        j3 = np.searchsorted(xs[2], z) - 1
+        j4 = np.searchsorted(xs[3], u) - 1
+
+        s1 = x - xs[0][j1]
+        s2 = y - xs[1][j2]
+        s3 = z - xs[2][j3]
+        s4 = u - xs[3][j4]
+
+        val = 0
+        for k1 in range(c.shape[0]):
+            for k2 in range(c.shape[1]):
+                for k3 in range(c.shape[2]):
+                    for k4 in range(c.shape[3]):
+                        val += (c[nx-k1-1,ny-k2-1,nz-k3-1,nu-k4-1,j1,j2,j3,j4]
+                                * s1**k1 * s2**k2 * s3**k3 * s4**k4)
+
+        out[jout] = val
+
+    return out
 
 
 class TestRegularGridInterpolator(TestCase):

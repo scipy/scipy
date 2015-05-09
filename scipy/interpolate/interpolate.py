@@ -2,6 +2,11 @@
 """
 from __future__ import division, print_function, absolute_import
 
+
+__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
+           'ppform', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
+           'RegularGridInterpolator', 'interpn']
+
 import itertools
 
 from numpy import (shape, sometrue, array, transpose, searchsorted,
@@ -25,11 +30,6 @@ from .polyint import _Interpolator1D
 from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
-
-
-__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly', 'RegularGridInterpolator',
-           'interpn']
 
 
 def reduce_sometrue(a):
@@ -1614,6 +1614,187 @@ class BPoly(_PPolyBase):
             for j in range(d+1):
                 out[a+j] += f * comb(d, j) / comb(k+d, a+j)
         return out
+
+
+class NdPPoly(object):
+    """
+    Piecewise tensor product polynomial
+
+    The value at point `xp = (x', y', z', ...)` is evaluated by first
+    computing the interval indices `i` such that::
+
+        x[0][i[0]] <= x' < x[0][i[0]+1]
+        x[1][i[1]] <= y' < x[1][i[1]+1]
+        ...
+
+    and then computing::
+
+        S = sum(c[k0-m0-1,...,kn-mn-1,i[0],...,i[n]]
+                * (xp[0] - x[0][i[0]])**m0
+                * ...
+                * (xp[n] - x[n][i[n]])**mn
+                for m0 in range(k[0]+1)
+                ...
+                for mn in range(k[n]+1))
+
+    where ``k[j]`` is the degree of the polynomial in dimension j. This
+    representation is the piecewise multivariate power basis.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k0, ..., kn, m0, ..., mn, ...)
+        Polynomial coefficients, with polynomial order `kj` and
+        `mj+1` intervals for each dimension `j`.
+    x : ndim-tuple of ndarrays, shapes (mj+1,)
+        Polynomial breakpoints for each dimension. These must be
+        sorted in increasing order.
+    extrapolate : bool, optional
+        Whether to extrapolate to ouf-of-bounds points based on first
+        and last intervals, or to return NaNs. Default: True.
+
+    Attributes
+    ----------
+    x : tuple of ndarrays
+        Breakpoints.
+    c : ndarray
+        Coefficients of the polynomials.
+
+    Methods
+    -------
+    __call__
+    construct_fast
+
+    See also
+    --------
+    PPoly : piecewise polynomials in 1D
+
+    Notes
+    -----
+    High-order polynomials in the power basis can be numerically
+    unstable.
+
+    """
+
+    def __init__(self, c, x, extrapolate=None):
+        self.x = tuple(np.ascontiguousarray(v, dtype=np.float64) for v in x)
+        self.c = np.asarray(c)
+        if extrapolate is None:
+            extrapolate = True
+        self.extrapolate = bool(extrapolate)
+
+        ndim = len(self.x)
+        if any(v.ndim != 1 for v in self.x):
+            raise ValueError("x arrays must all be 1-dimensional")
+        if any(v.size < 2 for v in self.x):
+            raise ValueError("x arrays must all contain at least 2 points")
+        if c.ndim < 2*ndim:
+            raise ValueError("c must have at least 2*len(x) dimensions")
+        if any(np.any(v[1:] - v[:-1] < 0) for v in self.x):
+            raise ValueError("x-coordinates are not in increasing order")
+        if any(a != b.size - 1 for a, b in zip(c.shape[ndim:2*ndim], self.x)):
+            raise ValueError("x and c do not agree on the number of intervals")
+
+        dtype = self._get_dtype(self.c.dtype)
+        self.c = np.ascontiguousarray(self.c, dtype=dtype)
+
+
+    @classmethod
+    def construct_fast(cls, c, x, extrapolate=None):
+        """
+        Construct the piecewise polynomial without making checks.
+
+        Takes the same parameters as the constructor. Input arguments
+        `c` and `x` must be arrays of the correct shape and type.  The
+        `c` array can only be of dtypes float and complex, and `x`
+        array must have dtype float.
+
+        """
+        self = object.__new__(cls)
+        self.c = c
+        self.x = x
+        if extrapolate is None:
+            extrapolate = True
+        self.extrapolate = extrapolate
+        return self
+
+
+    def _get_dtype(self, dtype):
+        if np.issubdtype(dtype, np.complexfloating) \
+               or np.issubdtype(self.c.dtype, np.complexfloating):
+            return np.complex_
+        else:
+            return np.float_
+
+
+    def _ensure_c_contiguous(self):
+        if not self.c.flags.c_contiguous:
+            self.c = self.c.copy()
+        if not isinstance(self.x, tuple):
+            self.x = tuple(self.x)
+
+
+    def __call__(self, x, nu=None, extrapolate=None):
+        """
+        Evaluate the piecewise polynomial or its derivative
+
+        Parameters
+        ----------
+        x : array-like
+            Points to evaluate the interpolant at.
+        nu : tuple, optional
+            Orders of derivatives to evaluate. Each must be non-negative.
+        extrapolate : bool, optional
+            Whether to extrapolate to ouf-of-bounds points based on first
+            and last intervals, or to return NaNs.
+
+        Returns
+        -------
+        y : array-like
+            Interpolated values. Shape is determined by replacing
+            the interpolation axis in the original array with the shape of x.
+
+        Notes
+        -----
+        Derivatives are evaluated piecewise for each polynomial
+        segment, even if the polynomial is not differentiable at the
+        breakpoints. The polynomial intervals are considered half-open,
+        ``[a, b)``, except for the last interval which is closed
+        ``[a, b]``.
+
+        """
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+
+        ndim = len(self.x)
+
+        x = _ndim_coords_from_arrays(x)
+        x_shape = x.shape
+        x = np.ascontiguousarray(x.reshape(-1, x.shape[-1]), dtype=np.float_)
+
+        if nu is None:
+            nu = np.zeros((ndim,), dtype=np.intc)
+        else:
+            nu = np.asarray(nu, dtype=np.intc)
+            if nu.ndim != 1 or nu.shape[0] != ndim:
+                raise ValueError("invalid number of derivative orders nu")
+
+        dim1 = prod(self.c.shape[:ndim])
+        dim2 = prod(self.c.shape[ndim:2*ndim])
+        dim3 = prod(self.c.shape[2*ndim:])
+        ks = np.array(self.c.shape[:ndim], dtype=np.intc)
+
+        out = np.empty((x.shape[0], dim3), dtype=self.c.dtype)
+        self._ensure_c_contiguous()
+
+        _ppoly.evaluate_nd(self.c.reshape(dim1, dim2, dim3),
+                           self.x,
+                           ks,
+                           x,
+                           nu,
+                           bool(extrapolate),
+                           out)
+
+        return out.reshape(x_shape[:-1] + self.c.shape[2*ndim:])
 
 
 class RegularGridInterpolator(object):
