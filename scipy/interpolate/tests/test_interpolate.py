@@ -16,6 +16,8 @@ from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
          RectBivariateSpline, interpn, NdPPoly)
 
+from scipy.special import poch
+
 from scipy.interpolate import _ppoly
 
 from scipy._lib._gcutils import assert_deallocated
@@ -1637,8 +1639,10 @@ class TestNdPPoly(object):
         assert_allclose(v1, v2)
 
         p = NdPPoly(c, (x, y))
-        v3 = p(np.c_[xi, yi])
-        assert_allclose(v3, v2)
+        for nu in (None, (0, 0), (0, 1), (1, 0), (2, 3), (9, 2)):
+            v1 = p(np.c_[xi, yi], nu=nu)
+            v2 = _ppoly2d_eval(c, (x, y), xi, yi, nu=nu)
+            assert_allclose(v1, v2, err_msg=repr(nu))
 
     def test_simple_3d(self):
         np.random.seed(1234)
@@ -1648,15 +1652,17 @@ class TestNdPPoly(object):
         y = np.linspace(0, 1, 8+1)**2
         z = np.linspace(0, 1, 9+1)**3
 
-        xi = np.random.rand(200)
-        yi = np.random.rand(200)
-        zi = np.random.rand(200)
+        xi = np.random.rand(40)
+        yi = np.random.rand(40)
+        zi = np.random.rand(40)
 
         p = NdPPoly(c, (x, y, z))
-        v1 = p((xi, yi, zi))
 
-        v2 = _ppoly3d_eval(c, (x, y, z), xi, yi, zi)
-        assert_allclose(v1, v2)
+        for nu in (None, (0, 0, 0), (0, 1, 0), (1, 0, 0), (2, 3, 0),
+                   (6, 0, 2)):
+            v1 = p((xi, yi, zi), nu=nu)
+            v2 = _ppoly3d_eval(c, (x, y, z), xi, yi, zi, nu=nu)
+            assert_allclose(v1, v2, err_msg=repr(nu))
 
     def test_simple_4d(self):
         np.random.seed(1234)
@@ -1718,10 +1724,25 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     return res
 
 
-def _ppoly2d_eval(c, xs, xnew, ynew):
+def _dpow(x, y, n):
+    """
+    d^n (x**y) / dx^n
+    """
+    if n < 0:
+        raise ValueError("invalid derivative order")
+    elif n > y:
+        return 0
+    else:
+        return poch(y - n + 1, n) * x**(y - n)
+
+
+def _ppoly2d_eval(c, xs, xnew, ynew, nu=None):
     """
     Straightforward evaluation of 2D piecewise polynomial
     """
+    if nu is None:
+        nu = (0, 0)
+
     out = np.empty((len(xnew),), dtype=c.dtype)
 
     nx, ny = c.shape[:2]
@@ -1742,17 +1763,22 @@ def _ppoly2d_eval(c, xs, xnew, ynew):
 
         for k1 in range(c.shape[0]):
             for k2 in range(c.shape[1]):
-                val += c[nx-k1-1,ny-k2-1,j1,j2] * s1**k1 * s2**k2
+                val += (c[nx-k1-1,ny-k2-1,j1,j2]
+                        * _dpow(s1, k1, nu[0])
+                        * _dpow(s2, k2, nu[1]))
 
         out[jout] = val
 
     return out
 
 
-def _ppoly3d_eval(c, xs, xnew, ynew, znew):
+def _ppoly3d_eval(c, xs, xnew, ynew, znew, nu=None):
     """
     Straightforward evaluation of 3D piecewise polynomial
     """
+    if nu is None:
+        nu = (0, 0, 0)
+
     out = np.empty((len(xnew),), dtype=c.dtype)
 
     nx, ny, nz = c.shape[:3]
@@ -1777,20 +1803,25 @@ def _ppoly3d_eval(c, xs, xnew, ynew, znew):
             for k2 in range(c.shape[1]):
                 for k3 in range(c.shape[2]):
                     val += (c[nx-k1-1,ny-k2-1,nz-k3-1,j1,j2,j3]
-                            * s1**k1 * s2**k2 * s3**k3)
+                            * _dpow(s1, k1, nu[0])
+                            * _dpow(s2, k2, nu[1])
+                            * _dpow(s3, k3, nu[2]))
 
         out[jout] = val
 
     return out
 
 
-def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew):
+def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
     """
     Straightforward evaluation of 4D piecewise polynomial
     """
+    if nu is None:
+        nu = (0, 0, 0, 0)
+
     out = np.empty((len(xnew),), dtype=c.dtype)
 
-    nx, ny, nz, nu = c.shape[:4]
+    mx, my, mz, mu = c.shape[:4]
 
     for jout, (x, y, z, u) in enumerate(zip(xnew, ynew, znew, unew)):
         if not ((xs[0][0] <= x <= xs[0][-1]) and
@@ -1815,8 +1846,11 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew):
             for k2 in range(c.shape[1]):
                 for k3 in range(c.shape[2]):
                     for k4 in range(c.shape[3]):
-                        val += (c[nx-k1-1,ny-k2-1,nz-k3-1,nu-k4-1,j1,j2,j3,j4]
-                                * s1**k1 * s2**k2 * s3**k3 * s4**k4)
+                        val += (c[mx-k1-1,my-k2-1,mz-k3-1,mu-k4-1,j1,j2,j3,j4]
+                                * _dpow(s1, k1, nu[0])
+                                * _dpow(s2, k2, nu[1])
+                                * _dpow(s3, k3, nu[2])
+                                * _dpow(s4, k4, nu[3]))
 
         out[jout] = val
 
