@@ -5,6 +5,7 @@
  *
  *    log1p(x) = log(1+x)
  *    expm1(x) = exp(x) - 1
+ *    exprel(x) = (exp(x) - 1) / x
  *    cosm1(x) = cos(x) - 1
  *
  */
@@ -94,6 +95,13 @@ double expm1(double x)
     r = x * polevl(xx, EP, 2);
     r = r / (polevl(xx, EQ, 3) - r);
     return (r + r);
+}
+
+/* exprel(x) = (exp(x) - 1) - 1 */
+
+double exprel(double x)
+{
+    return expm1(x)/x;
 }
 
 

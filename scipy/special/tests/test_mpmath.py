@@ -928,6 +928,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.e1,
                             [Arg()])
 
+    def test_exprel(self):
+        assert_mpmath_equal(sc.exprel,
+                            lambda x: mpmath.expm1(x)/x if x != 0 else mpmath.mpf('1.0'),
+                            [Arg(a=-np.log(np.finfo(np.double).max), b=np.log(np.finfo(np.double).max))])
+
     def test_e1_complex(self):
         # E_1 oscillates as Im[z] -> +- inf, so limit range
         assert_mpmath_equal(sc.exp1,

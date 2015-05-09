@@ -1485,6 +1485,8 @@ from _legacy cimport expn_unsafe as _func_expn_unsafe
 ctypedef double _proto_expn_unsafe_t(double, double) nogil
 cdef _proto_expn_unsafe_t *_proto_expn_unsafe_t_var = &_func_expn_unsafe
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_exprel "exprel"(double) nogil
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_fdtr "fdtr"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_fdtrc "fdtrc"(double, double, double) nogil
@@ -4503,6 +4505,44 @@ ufunc_expn_data[0] = &ufunc_expn_ptr[2*0]
 ufunc_expn_data[1] = &ufunc_expn_ptr[2*1]
 ufunc_expn_data[2] = &ufunc_expn_ptr[2*2]
 expn = np.PyUFunc_FromFuncAndData(ufunc_expn_loops, ufunc_expn_data, ufunc_expn_types, 3, 2, 1, 0, "expn", ufunc_expn_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_exprel_loops[2]
+cdef void *ufunc_exprel_ptr[4]
+cdef void *ufunc_exprel_data[2]
+cdef char ufunc_exprel_types[4]
+cdef char *ufunc_exprel_doc = (
+    "exprel(x)\n"
+    "\n"
+    "Relative error exponential, (exp(x)-1)/x, for use when x is near zero.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : ndarray\n"
+    "    Input array.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : ndarray\n"
+    "    Output array.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "expm1\n"
+    "\n"
+    ".. versionadded:: 0.16.0")
+ufunc_exprel_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_exprel_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_exprel_types[0] = <char>NPY_FLOAT
+ufunc_exprel_types[1] = <char>NPY_FLOAT
+ufunc_exprel_types[2] = <char>NPY_DOUBLE
+ufunc_exprel_types[3] = <char>NPY_DOUBLE
+ufunc_exprel_ptr[2*0] = <void*>_func_exprel
+ufunc_exprel_ptr[2*0+1] = <void*>(<char*>"exprel")
+ufunc_exprel_ptr[2*1] = <void*>_func_exprel
+ufunc_exprel_ptr[2*1+1] = <void*>(<char*>"exprel")
+ufunc_exprel_data[0] = &ufunc_exprel_ptr[2*0]
+ufunc_exprel_data[1] = &ufunc_exprel_ptr[2*1]
+exprel = np.PyUFunc_FromFuncAndData(ufunc_exprel_loops, ufunc_exprel_data, ufunc_exprel_types, 2, 1, 1, 0, "exprel", ufunc_exprel_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_fdtr_loops[2]
 cdef void *ufunc_fdtr_ptr[4]

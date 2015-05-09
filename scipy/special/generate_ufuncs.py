@@ -200,6 +200,7 @@ tandg -- tandg: d->d                                       -- cephes.h
 cotdg -- cotdg: d->d                                       -- cephes.h
 log1p -- log1p: d->d                                       -- cephes.h
 expm1 -- expm1: d->d                                       -- cephes.h
+exprel -- exprel: d->d                                     -- cephes.h
 cosm1 -- cosm1: d->d                                       -- cephes.h
 spence -- spence: d->d                                     -- cephes.h
 zetac -- zetac: d->d                                       -- cephes.h
