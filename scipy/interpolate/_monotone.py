@@ -37,6 +37,7 @@ class PchipInterpolator(BPoly):
     -------
     __call__
     derivative
+    antiderivative
 
     See Also
     --------
@@ -202,15 +203,18 @@ class Akima1DInterpolator(PPoly):
     x : ndarray, shape (m, )
         1-D array of monotonically increasing real values.
     y : ndarray, shape (m, ...)
-        N-D array of real values. The length of *y* along the first axis must
-        be equal to the length of *x*.
+        N-D array of real values. The length of `y` along the first axis must
+        be equal to the length of `x`.
     axis : int, optional
-        Specifies the axis of *y* along which to interpolate. Interpolation
-        defaults to the first axis of *y*.
+        Specifies the axis of `y` along which to interpolate. Interpolation
+        defaults to the first axis of `y`.
 
     Methods
     -------
     __call__
+    derivative
+    antiderivative
+    roots
 
     See Also
     --------

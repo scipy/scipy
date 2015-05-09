@@ -747,6 +747,8 @@ class PPoly(_PPolyBase):
         Coefficients of the polynomials. They are reshaped
         to a 3-dimensional array with the last dimension representing
         the trailing dimensions of the original coefficient array.
+    axis : int
+        Interpolation axis.
 
     Methods
     -------
@@ -1067,6 +1069,8 @@ class BPoly(_PPolyBase):
         Coefficients of the polynomials. They are reshaped
         to a 3-dimensional array with the last dimension representing
         the trailing dimensions of the original coefficient array.
+    axis : int
+        Interpolation axis.
 
     Methods
     -------
@@ -1213,7 +1217,7 @@ class BPoly(_PPolyBase):
         # Finally, use the fact that BPs form a partition of unity.
         c2[:,1:] += np.cumsum(c2[k,:], axis=0)[:-1]
 
-        return self.construct_fast(c2, x, self.extrapolate)
+        return self.construct_fast(c2, x, self.extrapolate, axis=self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """
