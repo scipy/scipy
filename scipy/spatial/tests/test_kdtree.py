@@ -780,16 +780,13 @@ def test_ckdtree_parallel():
     n = 5000
     k = 4
     points = np.random.randn(n, k)
-    try:
-        T = cKDTree(points)
-        T1 = T.query(points, k=5, n_jobs=64)[-1]
-        T2 = T.query(points, k=5, n_jobs=-1)[-1]
-        T3 = T.query(points, k=5)[-1]
-        assert_array_equal(T1, T2)
-        assert_array_equal(T1, T3)
-    except NotImplementedError:
-        pass
-        
+    T = cKDTree(points)
+    T1 = T.query(points, k=5, n_jobs=64)[-1]
+    T2 = T.query(points, k=5, n_jobs=-1)[-1]
+    T3 = T.query(points, k=5)[-1]
+    assert_array_equal(T1, T2)
+    assert_array_equal(T1, T3)
+
 def test_ckdtree_view():        
     # Check that the nodes can be correctly viewed from Python.
     # This test also sanity checks each node in the cKDTree, and
