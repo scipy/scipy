@@ -496,7 +496,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
 
     Compute and plot the spectrogram.
 
-    >>> t, f, Sxx = signal.spectrogram(x, fs)
+    >>> f, t, Sxx = signal.spectrogram(x, fs)
     >>> plt.pcolormesh(t, f, Sxx)
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
@@ -510,7 +510,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
                                         nfft, detrend, return_onesided, scaling,
                                         axis, mode='psd')
 
-    return time, freqs, Pxy
+    return freqs, time, Pxy
 
 
 def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
