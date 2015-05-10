@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Take the test runner log output from the stdin, looking for
 the magic line nose runner prints when the test run was successful.
