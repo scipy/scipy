@@ -79,38 +79,13 @@ dabs(const npy_float64 x)
  */
 
 
-// XXX earlier versions of GCC and Clang might work
-#ifndef __INTEL_COMPILER
-#if ((defined(__GNUC__) && (__GNUC__ > 4))\
-    || (defined(__clang__) && ((__clang_major__ >= 3) && (__clang_minor >= 4)))\
-    || defined(__APPLE__)) // FIXME: clang defines don't work for clang 3.5 in Xcode
-#define SCIPY_SIMD
-#endif
-#endif // __INTEL_COMPILER
- 
 inline npy_float64
-sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp n)
+sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
+                            npy_intp n)
 {
     npy_float64 s;
     npy_intp i;
-#ifdef SCIPY_SIMD
-    // GCC SIMD extension, will be vectorized
-    typedef npy_float64 Double4 __attribute__((vector_size(4 * sizeof(npy_float64))));
-    Double4 acc = {0, 0, 0, 0};
-    for (i = 0; i < n/4; i += 4) {
-        Double4 d = (Double4){u[i], u[i + 1], u[i + 2], u[i + 3]} - 
-            (Double4){v[i], v[i + 1], v[i + 2], v[i + 3]};
-        acc += d * d;
-    }
-    s = acc[0] + acc[1] + acc[2] + acc[3];
-    if (i < n) {
-        for(; i<n; ++i) {
-            npy_float64 d = u[i] - v[i];
-            s += d * d;
-        }
-    }
-#else
-    // manually unrolled loop, might be vectorized
+    /* manually unrolled loop, might be vectorized */
     npy_float64 acc[4] = {0, 0, 0, 0};
     for (i = 0; i < n/4; i += 4) {
         npy_float64 _u[4] = {u[i], u[i + 1], u[i + 2], u[i + 3]};
@@ -131,7 +106,6 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp
             s += d * d;
         }
     }
-#endif
     return s;
 } 
  
