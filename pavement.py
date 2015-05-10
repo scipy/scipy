@@ -110,10 +110,10 @@ finally:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.16.0-notes.rst'
+RELEASE = 'doc/release/0.17.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.15.0'
+LOG_START = 'v0.16.0'
 LOG_END = 'master'
 
 
