@@ -191,7 +191,8 @@ scipy/sparse/sparsetools/csc_impl.h
 scipy/sparse/sparsetools/csr_impl.h
 scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
-scipy/spatial/ckdtree.c
+scipy/spatial/ckdtree/ckdtree.cxx
+scipy/spatial/ckdtree/ckdtree.h
 scipy/spatial/qhull.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h

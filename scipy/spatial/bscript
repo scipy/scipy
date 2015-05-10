@@ -4,3 +4,6 @@ from bento.commands import hooks
 def pre_build(context):
     context.tweak_extension("qhull", use="LAPACK CLIB",
                             defines=['qh_QHpointer=1'])
+
+    context.tweak_extension("ckdtree", features="c cxxshlib pyext bento",
+                            includes="ckdtree/src")
