@@ -18,7 +18,7 @@ extern int number_of_processors;
 
 #include <cmath>
 
-#ifndef WIN32
+#if defined(__GNUC__)
 inline void 
 prefetch_datapoint(const npy_float64 *x, const npy_intp m) 
 {
@@ -31,10 +31,23 @@ prefetch_datapoint(const npy_float64 *x, const npy_intp m)
     }
 }
 #else
-// On Windows, except when using MinGW
+#if defined(_WIN32)
+#include <xmmininrin.h>
+inline void
+prefetch_datapoint(const npy_float64 *x, const npy_intp m)
+{
+    const int cache_line = 64;  // x86, amd64
+    char *cur = (char*)x;
+    char *end = (char*)(x+m);
+    while (cur < end) {
+        _mm_prefetch((const char*)cur,_MM_HINT_T0);
+        cur += cache_line;
+    }
+}
+#else
 #define prefetch_datapoint(x,y)
 #endif
-
+#endif
 
 /*
  * Utility functions
