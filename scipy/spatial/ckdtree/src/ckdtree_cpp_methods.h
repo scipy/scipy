@@ -86,7 +86,7 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
     npy_float64 s;
     npy_intp i;
     /* manually unrolled loop, might be vectorized */
-    npy_float64 acc[4] = {0, 0, 0, 0};
+    npy_float64 acc[4] = {0., 0., 0., 0.};
     for (i = 0; i < n/4; i += 4) {
         npy_float64 _u[4] = {u[i], u[i + 1], u[i + 2], u[i + 3]};
         npy_float64 _v[4] = {v[i], v[i + 1], v[i + 2], v[i + 3]};
