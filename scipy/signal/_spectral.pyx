@@ -77,6 +77,7 @@ def lombscargle(np.ndarray[np.float64_t, ndim=1] x,
     Examples
     --------
     >>> import scipy.signal
+    >>> import matplotlib.pyplot as plt
 
     First define some input parameters for the signal:
 
@@ -121,7 +122,7 @@ def lombscargle(np.ndarray[np.float64_t, ndim=1] x,
     >>> plt.plot(f, np.sqrt(4*(pgram/normval)))
     [<matplotlib.lines.Line2D object at 0x104b2f910>]
     >>> plt.show()
-    
+
     """
 
     # Check input sizes
