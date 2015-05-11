@@ -476,7 +476,8 @@ cdef void thin_qr_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
 
     for j in range(n):
         lartg(index2(r, rs, j, j), index1(u, us, j), &c, &s)
-        rot(n-j-1, index2(r, rs, j, j+1), rs[1], index1(u, us, j+1), us[0],
+        if j+1 < n:
+            rot(n-j-1, index2(r, rs, j, j+1), rs[1], index1(u, us, j+1), us[0],
                 c, s)
         rot(m, col(q, qs, j), qs[0], col(q, qs, n), qs[0], c, s.conjugate())
 
@@ -526,14 +527,15 @@ cdef int thin_qr_block_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
         # since we need to apply it to a stack of r atop u, and these
         # are separate.  This also permits the reflector to always be
         # p+1 long, rather than having a max of n+p.
-        copy(n-j, index2(r, rs, j, j+1), rs[1], work, 1)
-        blas_t_conj(p, col(u, us, j), &us[0])
-        gemv(T, p, n-j-1, 1, index2(u, us, 0, j+1), p, col(u, us, j), us[0],
-             1, work, 1)
-        blas_t_conj(p, col(u, us, j), &us[0])
-        ger(p, n-j-1, -tau.conjugate(), col(u, us, j), us[0], work, 1,
-            index2(u, us, 0, j+1), p)
-        axpy(n-j-1, -tau.conjugate(), work, 1, index2(r, rs, j, j+1), rs[1])
+        if j+1 < n:
+            copy(n-j-1, index2(r, rs, j, j+1), rs[1], work, 1)
+            blas_t_conj(p, col(u, us, j), &us[0])
+            gemv(T, p, n-j-1, 1, index2(u, us, 0, j+1), p, col(u, us, j), us[0],
+                1, work, 1)
+            blas_t_conj(p, col(u, us, j), &us[0])
+            ger(p, n-j-1, -tau.conjugate(), col(u, us, j), us[0], work, 1,
+                index2(u, us, 0, j+1), p)
+            axpy(n-j-1, -tau.conjugate(), work, 1, index2(r, rs, j, j+1), rs[1])
         index2(r, rs, j, j)[0] = rjj
         
         # now apply this reflector to q 
