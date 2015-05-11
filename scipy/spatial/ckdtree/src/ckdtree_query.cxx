@@ -28,6 +28,7 @@
 
 #define CKDTREE_METHODS_IMPL
 #include "ckdtree_cpp_decl.h"
+#include "ckdtree_cpp_ordered_pair.h"
 #include "ckdtree_cpp_methods.h"
 #include "ckdtree_cpp_exc.h"
 

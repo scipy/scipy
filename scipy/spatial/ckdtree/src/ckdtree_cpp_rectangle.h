@@ -10,6 +10,9 @@
 #include <cstring>
 
 
+
+extern npy_float64 infinity;
+
 // Interval arithmetic
 // ===================
 
@@ -24,17 +27,22 @@ struct Rectangle {
 
     Rectangle(const npy_intp _m, 
               const npy_float64 *_mins, 
-              const npy_float64 *_maxes) : mins_arr(m), maxes_arr(m) {
+              const npy_float64 *_maxes) : mins_arr(_m), maxes_arr(_m) {
 
-        // Copy array data      
+        // Copy array data
+        m = _m;
         mins = &mins_arr[0];
-        mins = &maxes_arr[0];        
+        maxes = &maxes_arr[0];        
         std::memcpy((void*)mins, (void*)_mins, m*sizeof(npy_float64));
         std::memcpy((void*)maxes, (void*)_maxes, m*sizeof(npy_float64));
     };    
          
-    Rectangle(const Rectangle& rect) { 
-        this->Rectangle(rect.m, rect.mins, rect.maxes); 
+    Rectangle(const Rectangle& rect) : mins_arr(rect.m), maxes_arr(rect.m) {
+        m = rect.m;
+        mins = &mins_arr[0];
+        maxes = &maxes_arr[0];        
+        std::memcpy((void*)mins, (void*)rect.mins, m*sizeof(npy_float64));
+        std::memcpy((void*)maxes, (void*)rect.maxes, m*sizeof(npy_float64));         
     };    
     
     Rectangle() : mins_arr(0), maxes_arr(0) {
@@ -43,14 +51,14 @@ struct Rectangle {
         maxes = NULL;
     };
     
- };
+};
 
 
 // 1-d pieces
 // These should only be used if p != infinity
 inline npy_float64 
 min_dist_point_interval_p(const npy_float64 *x, const Rectangle& rect,
-                          const npy_intp k, const npy_intp p)
+                          const npy_intp k, const npy_float64 p)
 {
     // Compute the minimum distance along dimension k between x and
     // a point in the hyperrectangle.
@@ -59,7 +67,7 @@ min_dist_point_interval_p(const npy_float64 *x, const Rectangle& rect,
 
 inline npy_float64 
 max_dist_point_interval_p(const npy_float64 *x, const Rectangle& rect,
-                          const npy_intp k, const npy_float64 p):
+                          const npy_intp k, const npy_float64 p)
 {
     // Compute the maximum distance along dimension k between x and
     // a point in the hyperrectangle.
@@ -196,13 +204,14 @@ struct RectRectDistanceTracker {
     npy_float64 upper_bound;
     npy_float64 min_distance;
     npy_float64 max_distance;
+    
+    npy_float64 infinity;
 
     npy_intp stack_size;
     npy_intp stack_max_size;
     std::vector<RR_stack_item> stack_arr;
     RR_stack_item *stack;
 
-      
     void _resize_stack(const npy_intp new_max_size) {
         stack_arr.resize(new_max_size);
         stack = &stack_arr[0];
@@ -210,9 +219,11 @@ struct RectRectDistanceTracker {
     };
     
     RectRectDistanceTracker(const Rectangle& _rect1, const Rectangle& _rect2,
-                 const npy_float64 _p, const npy_float64 _eps, 
+                 const npy_float64 _p, const npy_float64 eps, 
                  const npy_float64 _upper_bound)
         : rect1(_rect1), rect2(_rect2), stack_arr(8) {
+    
+        infinity = ::infinity;
     
         if (rect1.m != rect2.m) {
             const char *msg = "rect1 and rect2 have different dimensions";
@@ -222,7 +233,7 @@ struct RectRectDistanceTracker {
         p = _p;
         
         // internally we represent all distances as distance ** p
-        if ((p != ::infinity) && (_upper_bound != ::infinity)) 
+        if ((p != infinity) && (_upper_bound != infinity)) 
             upper_bound = std::pow(_upper_bound,p);
         else
             upper_bound = _upper_bound;
@@ -230,7 +241,7 @@ struct RectRectDistanceTracker {
         // fiddle approximation factor
         if (eps == 0.)
             epsfac = 1.;
-        else if (p == ::infinity) 
+        else if (p == infinity) 
             epsfac = 1. / (1. + eps);
         else
             epsfac = 1. / std::pow((1. + eps), p);
@@ -240,14 +251,14 @@ struct RectRectDistanceTracker {
         stack_size = 0;
 
         // Compute initial min and max distances
-        if (p == ::infinity) {
+        if (p == infinity) {
             min_distance = min_dist_rect_rect_p_inf(rect1, rect2);
             max_distance = max_dist_rect_rect_p_inf(rect1, rect2);
         }
         else {
             min_distance = 0.;
             max_distance = 0.;
-            for(npy_intp i=0; i<rect1.m; ++i) 
+            for(npy_intp i=0; i<rect1.m; ++i) {
                 min_distance 
                     += min_dist_interval_interval_p(rect1, rect2, i, p);
                 max_distance 
@@ -270,7 +281,7 @@ struct RectRectDistanceTracker {
         if (stack_size == stack_max_size)
             _resize_stack(stack_max_size * 2);
             
-        RR_stack_item *item = &self.stack[self.stack_size];
+        RR_stack_item *item = &stack[stack_size];
         ++stack_size;
         item->which = which;
         item->split_dim = split_dim;
@@ -280,7 +291,7 @@ struct RectRectDistanceTracker {
         item->max_along_dim = rect->maxes[split_dim];
 
         // Update min/max distances
-        if (self.p != ::infinity) {
+        if (p != infinity) {
             min_distance 
                 -= min_dist_interval_interval_p(rect1, rect2, split_dim, p);
             max_distance 
@@ -292,7 +303,7 @@ struct RectRectDistanceTracker {
         else
             rect->mins[split_dim] = split_val;
 
-        if (p != ::infinity) {
+        if (p != infinity) {
             min_distance 
                 += min_dist_interval_interval_p(rect1, rect2, split_dim, p);
             max_distance 
@@ -314,7 +325,7 @@ struct RectRectDistanceTracker {
         push(which, GREATER, node->split_dim, node->split);
     };
     
-    inline void pop(self) {
+    inline void pop() {
         // Pop from stack
         --stack_size;
         
@@ -383,12 +394,14 @@ struct RP_stack_item {
 struct PointRectDistanceTracker {
 
     Rectangle   rect;
-    npy_float64 *pt;
+    const npy_float64 *pt;
     npy_float64 p; 
     npy_float64 epsfac; 
     npy_float64 upper_bound;
     npy_float64 min_distance;
     npy_float64 max_distance;
+    
+    npy_float64 infinity;
 
     npy_intp stack_size;
     npy_intp stack_max_size;
@@ -403,23 +416,25 @@ struct PointRectDistanceTracker {
     
     PointRectDistanceTracker(const npy_float64 *_pt, const Rectangle& _rect,
               const npy_float64 _p, const npy_float64 eps, 
-              const npy_float64 upper_bound)
+              const npy_float64 _upper_bound)
         : rect(_rect), stack_arr(8) {
+
+        infinity = ::infinity;
 
         pt = _pt;
         rect = _rect;
         p = _p;
         
         // internally we represent all distances as distance ** p
-        if ((p != ::infinity) && (_upper_bound != ::infinity))
+        if ((p != infinity) && (_upper_bound != infinity))
             upper_bound = std::pow(_upper_bound,p);
-        else:
+        else
             upper_bound = _upper_bound;
 
         // fiddle approximation factor
         if (eps == 0.)
             epsfac = 1;
-        else if (p == ::infinity)
+        else if (p == infinity)
             epsfac = 1. / (1. + eps);
         else
             epsfac = 1. / std::pow((1. + eps),p);
@@ -430,7 +445,7 @@ struct PointRectDistanceTracker {
         stack_size = 0;
 
         // Compute initial min and max distances
-        if (p == ::infinity) {
+        if (p == infinity) {
             min_distance = min_dist_point_rect_p_inf(pt, rect);
             max_distance = max_dist_point_rect_p_inf(pt, rect);
         }
@@ -459,7 +474,7 @@ struct PointRectDistanceTracker {
         item->min_along_dim = rect.mins[split_dim];
         item->max_along_dim = rect.maxes[split_dim];
             
-        if (p != ::infinity) {
+        if (p != infinity) {
             min_distance -= min_dist_point_interval_p(pt, rect, split_dim, p);
             max_distance -= max_dist_point_interval_p(pt, rect, split_dim, p);
         }
@@ -469,7 +484,7 @@ struct PointRectDistanceTracker {
         else
             rect.mins[split_dim] = split_val;
 
-        if (p != ::infinity) {
+        if (p != infinity) {
             min_distance += min_dist_point_interval_p(pt, rect, split_dim, p);
             max_distance += max_dist_point_interval_p(pt, rect, split_dim, p);
         }
@@ -505,12 +520,6 @@ struct PointRectDistanceTracker {
     };
 
 };
-
-
-
-
-
-
 
 
 #endif

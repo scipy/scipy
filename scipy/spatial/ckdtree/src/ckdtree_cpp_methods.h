@@ -17,6 +17,8 @@ extern int number_of_processors;
 #endif
 
 #include <cmath>
+#include <vector>
+#include "ckdtree_cpp_ordered_pair.h"
 
 #if defined(__GNUC__)
 
@@ -180,24 +182,27 @@ query_knn(const ckdtree     *self,
           const npy_float64  p, 
           const npy_float64  distance_upper_bound);
           
-
-
-// TODO: correct signatures
-
 CKDTREE_EXTERN PyObject*
-query_pairs(const ckdtree *self);
+query_pairs(const ckdtree *self, 
+            const npy_float64 r, 
+            const npy_float64 p, 
+            const npy_float64 eps,
+            std::vector<ordered_pair> *results);
+            
 
-CKDTREE_EXTERN PyObject*
-count_neighbors(const ckdtree *self, const ckdtree *other);
+// TODO: correct signatures below
 
-CKDTREE_EXTERN PyObject*
-query_ball_point(const ckdtree *self);
+// CKDTREE_EXTERN PyObject*
+// count_neighbors(const ckdtree *self, const ckdtree *other);
 
-CKDTREE_EXTERN PyObject*
-query_ball_tree(const ckdtree *self, const ckdtree *other);
+// CKDTREE_EXTERN PyObject*
+// query_ball_point(const ckdtree *self);
 
-CKDTREE_EXTERN PyObject*
-sparse_distances(const ckdtree *self);
+// CKDTREE_EXTERN PyObject*
+// query_ball_tree(const ckdtree *self, const ckdtree *other);
+
+// CKDTREE_EXTERN PyObject*
+// sparse_distances(const ckdtree *self);
           
 #endif
 
