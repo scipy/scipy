@@ -9,7 +9,7 @@ import numpy
 import numpy as np
 from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
                    zeros, eye, poly1d, r_, sum, fromstring, isfinite,
-                   squeeze, amax, reshape, sign)
+                   squeeze, amax, reshape, sign, broadcast_arrays)
 
 from scipy._lib._version import NumpyVersion
 
@@ -91,7 +91,12 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     9.9170178533034647
     """
     a = asarray(a)
-
+    if b is not None:
+        a, b = broadcast_arrays(a,b)
+        if np.any(b==0):
+            a = a + 0. # promote to at least float
+            a[b==0] = -np.inf
+    
     # keepdims is available in numpy.sum and numpy.amax since NumPy 1.7.0
     #
     # Because SciPy supports versions earlier than 1.7.0, we have to handle
@@ -119,7 +124,6 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             a_max = 0
 
         if b is not None:
-            b = asarray(b)
             tmp = b * exp(a - reshape(a_max, sh_keepdims))
         else:
             tmp = exp(a - reshape(a_max, sh_keepdims))

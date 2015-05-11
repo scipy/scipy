@@ -147,6 +147,20 @@ def test_logsumexp_shape():
 
     assert_equal(r.shape, (1,3))
 
+def test_logsumexp_b_zero():
+    a = [1,10000]
+    b = [1,0]
+
+    assert_almost_equal(logsumexp(a, b=b), 1)
+
+def test_logsumexp_b_shape():
+    a = np.zeros((4,1,2,1))
+    b = np.ones((3,1,5))
+
+    logsumexp(a, b=b)
+
+
+    
 def test_face():
     assert_equal(face().shape, (768, 1024, 3))
 
