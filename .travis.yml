@@ -73,12 +73,13 @@ before_install:
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
   - python -V
   - popd
+  - set -o pipefail
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" = "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
   - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE  |& tee runtests.log
-  - python tools/validate_runtests_log.py $TESTMODE < runtests.log
+  - tools/validate_runtests_log.py $TESTMODE < runtests.log
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
