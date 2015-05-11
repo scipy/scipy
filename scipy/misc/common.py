@@ -9,7 +9,7 @@ import numpy
 import numpy as np
 from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
                    zeros, eye, poly1d, r_, sum, fromstring, isfinite,
-                   squeeze, amax, reshape)
+                   squeeze, amax, reshape, sign)
 
 from scipy._lib._version import NumpyVersion
 
@@ -20,7 +20,7 @@ __all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
 _NUMPY_170 = (NumpyVersion(numpy.__version__) >= NumpyVersion('1.7.0'))
 
 
-def logsumexp(a, axis=None, b=None, keepdims=False):
+def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """Compute the log of the sum of exponentials of input elements.
 
     Parameters
@@ -41,17 +41,27 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
         .. versionadded:: 0.15.0
     b : array-like, optional
         Scaling factor for exp(`a`) must be of the same shape as `a` or
-        broadcastable to `a`.
+        broadcastable to `a`. These values may be negative in order to
+        implement subtraction.
 
         .. versionadded:: 0.12.0
+    return_sign : bool, optional
+        If this is set to True, the result will be a pair containing sign
+        information; if False, results that are negative will be returned
+        as NaN.
 
+        .. versionadded:: 0.16.0
     Returns
     -------
     res : ndarray
         The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
         more stable way. If `b` is given then ``np.log(np.sum(b*np.exp(a)))``
         is returned.
-
+    sgn : ndarray
+        If return_sign is True, this will be an array of floating-point
+        numbers matching res and +1, 0, or -1 depending on the sign
+        of the result. If False, only one result is returned.
+        
     See Also
     --------
     numpy.logaddexp, numpy.logaddexp2
@@ -116,13 +126,19 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
 
         # suppress warnings about log of zero
         with np.errstate(divide='ignore'):
-            out = log(sum(tmp, axis=axis))
+            s = sum(tmp, axis=axis)
+            if return_sign:
+                sgn = sign(s)
+                s *= sgn # /= makes more sense but we need zero -> zero
+            out = log(s)
 
         out += a_max
 
         if keepdims:
             # Put back the reduced axes with size one
             out = reshape(out, sh_keepdims)
+            if return_sign:
+                sgn = reshape(sgn, sh_keepdims)
     else:
         # This is a more elegant implementation, requiring NumPy >= 1.7.0
         a_max = amax(a, axis=axis, keepdims=True)
@@ -140,14 +156,20 @@ def logsumexp(a, axis=None, b=None, keepdims=False):
 
         # suppress warnings about log of zero
         with np.errstate(divide='ignore'):
-            out = log(sum(tmp, axis=axis, keepdims=keepdims))
+            s = sum(tmp, axis=axis, keepdims=keepdims)
+            if return_sign:
+                sgn = sign(s)
+                s *= sgn # /= makes more sense but we need zero -> zero
+            out = log(s)
 
         if not keepdims:
             a_max = squeeze(a_max, axis=axis)
-
         out += a_max
 
-    return out
+    if return_sign:
+        return out, sgn
+    else:
+        return out
 
 
 def central_diff_weights(Np, ndiv=1):

@@ -112,6 +112,40 @@ def test_logsumexp_b():
     assert_array_almost_equal(np.exp(logsumexp(logX, b=B, axis=1)),
                                 (B * X).sum(axis=1))
 
+def test_logsumexp_sign():
+    a = [1,1,1]
+    b = [1,-1,-1]
+
+    r, s = logsumexp(a, b=b, return_sign=True)
+    assert_almost_equal(r,1)
+    assert s==-1
+
+def test_logsumexp_sign_zero():
+    a = [1,1]
+    b = [1,-1]
+
+    r, s = logsumexp(a, b=b, return_sign=True)
+    assert not np.isfinite(r)
+    assert not np.isnan(r)
+    assert r<0
+    assert s==0
+
+def test_logsumexp_sign_shape():
+    a = np.ones((1,2,3,4))
+    b = np.ones_like(a)
+
+    r, s = logsumexp(a, axis=(1,3), b=b, return_sign=True)
+
+    assert_equal(r.shape, s.shape)
+    assert_equal(r.shape, (1,3))
+
+def test_logsumexp_shape():
+    a = np.ones((1,2,3,4))
+    b = np.ones_like(a)
+
+    r = logsumexp(a, axis=(1,3), b=b)
+
+    assert_equal(r.shape, (1,3))
 
 def test_face():
     assert_equal(face().shape, (768, 1024, 3))
