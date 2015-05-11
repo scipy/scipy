@@ -19,35 +19,44 @@ extern int number_of_processors;
 #include <cmath>
 
 #if defined(__GNUC__)
-inline void 
-prefetch_datapoint(const npy_float64 *x, const npy_intp m) 
-{
-    const int cache_line = 64;  // x86, amd64
-    char *cur = (char*)x;
-    char *end = (char*)(x+m);
-    while (cur < end) { 
-        __builtin_prefetch((void*)cur);
-        cur += cache_line;
+
+    inline void 
+    prefetch_datapoint(const npy_float64 *x, const npy_intp m) 
+    {
+        const int cache_line = 64;  // x86, amd64
+        char *cur = (char*)x;
+        char *end = (char*)(x+m);
+        while (cur < end) { 
+            __builtin_prefetch((void*)cur);
+            cur += cache_line;
+        }
     }
-}
+
 #else
+
 #if defined(_WIN32)
-#include <xmmininrin.h>
-inline void
-prefetch_datapoint(const npy_float64 *x, const npy_intp m)
-{
-    const int cache_line = 64;  // x86, amd64
-    char *cur = (char*)x;
-    char *end = (char*)(x+m);
-    while (cur < end) {
-        _mm_prefetch((const char*)cur,_MM_HINT_T0);
-        cur += cache_line;
+
+    #include <xmmininrin.h>
+
+    inline void
+    prefetch_datapoint(const npy_float64 *x, const npy_intp m)
+    {
+        const int cache_line = 64;  // x86, amd64
+        char *cur = (char*)x;
+        char *end = (char*)(x+m);
+        while (cur < end) {
+            _mm_prefetch((const char*)cur,_MM_HINT_T0);
+            cur += cache_line;
+        }
     }
-}
+
 #else
-#define prefetch_datapoint(x,y)
-#endif
-#endif
+
+    #define prefetch_datapoint(x,y)
+
+#endif // _WIN32
+#endif // __GNUC__
+
 
 /*
  * Utility functions
@@ -78,14 +87,12 @@ dabs(const npy_float64 x)
  * ===================
  */
 
-
 inline npy_float64
-sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
-                            npy_intp n)
+sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp n)
 {
     npy_float64 s;
     npy_intp i;
-    /* manually unrolled loop, might be vectorized */
+    // manually unrolled loop, might be vectorized
     npy_float64 acc[4] = {0., 0., 0., 0.};
     for (i = 0; i < n/4; i += 4) {
         npy_float64 _u[4] = {u[i], u[i + 1], u[i + 2], u[i + 3]};
@@ -108,7 +115,7 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
     }
     return s;
 } 
- 
+
  
 inline npy_float64 
 _distance_p(const npy_float64 *x, const npy_float64 *y,
@@ -124,7 +131,7 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
     */
     
     npy_intp i;
-    npy_float64 r;
+    npy_float64 r, z;
     r = 0;
     if (NPY_LIKELY(p==2.)) {
         /*
@@ -174,7 +181,23 @@ query_knn(const ckdtree     *self,
           const npy_float64  distance_upper_bound);
           
 
-// Other query methods can follow here when they are implemented
+
+// TODO: correct signatures
+
+CKDTREE_EXTERN PyObject*
+query_pairs(const ckdtree *self);
+
+CKDTREE_EXTERN PyObject*
+count_neighbors(const ckdtree *self, const ckdtree *other);
+
+CKDTREE_EXTERN PyObject*
+query_ball_point(const ckdtree *self);
+
+CKDTREE_EXTERN PyObject*
+query_ball_tree(const ckdtree *self, const ckdtree *other);
+
+CKDTREE_EXTERN PyObject*
+sparse_distances(const ckdtree *self);
           
 #endif
 

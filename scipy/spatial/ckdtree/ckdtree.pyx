@@ -150,7 +150,6 @@ cdef class coo_entries:
             self.i_data = <np.intp_t *>np.PyArray_DATA(self.i)
             self.j_data = <np.intp_t *>np.PyArray_DATA(self.j)
             self.v_data = <np.float64_t*>np.PyArray_DATA(self.v)
-
         k = self.n
         self.i_data[k] = i
         self.j_data[k] = j
@@ -572,10 +571,8 @@ cdef class PointRectDistanceTracker(object):
         item.max_along_dim = self.rect.maxes[split_dim]
             
         if self.p != infinity:
-            self.min_distance -= min_dist_point_interval_p(self.pt, self.rect,
-                                                           split_dim, self.p)
-            self.max_distance -= max_dist_point_interval_p(self.pt, self.rect,
-                                                           split_dim, self.p)
+            self.min_distance -= min_dist_point_interval_p(self.pt, self.rect, split_dim, self.p)
+            self.max_distance -= max_dist_point_interval_p(self.pt, self.rect, split_dim, self.p)
 
         if direction == LESS:
             self.rect.maxes[split_dim] = split_val
@@ -583,10 +580,8 @@ cdef class PointRectDistanceTracker(object):
             self.rect.mins[split_dim] = split_val
 
         if self.p != infinity:
-            self.min_distance += min_dist_point_interval_p(self.pt, self.rect,
-                                                           split_dim, self.p)
-            self.max_distance += max_dist_point_interval_p(self.pt, self.rect,
-                                                           split_dim, self.p)
+            self.min_distance += min_dist_point_interval_p(self.pt, self.rect, split_dim, self.p)
+            self.max_distance += max_dist_point_interval_p(self.pt, self.rect, split_dim, self.p)
         else:
             self.min_distance = min_dist_point_rect_p_inf(self.pt, self.rect)
             self.max_distance = max_dist_point_rect_p_inf(self.pt, self.rect)
@@ -624,7 +619,7 @@ cdef inline void index_swap(np.intp_t *arr, np.intp_t i1, np.intp_t i2):
     cdef np.intp_t tmp = arr[i1]
     arr[i1] = arr[i2]
     arr[i2] = tmp
-
+    
 cdef int partition_node_indices(np.float64_t *data,
                                 np.intp_t *node_indices,
                                 np.intp_t split_dim,
@@ -635,15 +630,11 @@ cdef int partition_node_indices(np.float64_t *data,
     
     Upon return, the values in node_indices will be rearranged such that
     (assuming numpy-style indexing):
-
         data[node_indices[0:split_index], split_dim]
           <= data[node_indices[split_index], split_dim]
-
     and
-
         data[node_indices[split_index], split_dim]
           <= data[node_indices[split_index:n_points], split_dim]
-
     The algorithm is essentially a partial in-place quicksort around a
     set pivot.
     
@@ -661,13 +652,11 @@ cdef int partition_node_indices(np.float64_t *data,
         the routine ``find_node_split_dim``
     split_index : int
         the index within node_indices around which to split the points.
-
     Returns
     -------
     status : int
         integer exit status.  On return, the contents of node_indices are
         modified as noted above.
-
     """
     cdef np.intp_t left, right, midindex, i
     cdef np.float_t d1, d2
@@ -700,38 +689,44 @@ cdef int partition_node_indices(np.float64_t *data,
 cdef class cKDTreeNode:
     """
     class cKDTreeNode
-
-    This class exposes a Python view of a node in the cKDTree object.
     
-    All attributes are read-only.
+    This class exposes a Python view of a node in the cKDTree object. All
+    attributes are read-only.
     
     Attributes
     ----------
+    
     level : int
         The depth of the node. 0 is the level of the root node.
+        
     split_dim : int
         The dimension along which this node is split. If this value is -1  
         the node is a leafnode in the kd-tree. Leafnodes are not split further
         and scanned by brute force.
+        
     split : float
         The value used to separate split this node. Points with value >= split
         in the split_dim dimension are sorted to the 'greater' subnode 
         whereas those with value < split are sorted to the 'lesser' subnode.
+        
     children : int
         The number of data points sorted to this node.
+    
     data_points : ndarray of float64
         An array with the data points sorted to this node.
+    
     indices : ndarray of intp
         An array with the indices of the data points sorted to this node. The
         indices refer to the position in the data set used to construct the
         kd-tree.
+    
     lesser : cKDTreeNode or None
         Subnode with the 'lesser' data points. This attribute is None for
         leafnodes.
+        
     greater : cKDTreeNode or None
         Subnode with the 'greater' data points. This attribute is None for
         leafnodes.
-
     """
     cdef:
         readonly np.intp_t    level
@@ -810,8 +805,7 @@ cdef extern from "ckdtree_cpp_methods.h":
                       
 cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     """
-    cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
-            balanced_tree=True)
+    cKDTree(data, int leafsize=10)
 
     kd-tree for quick nearest-neighbor lookup
 
@@ -840,13 +834,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     Parameters
     ----------
-    data : array_like, shape (n,m)
+    data : array-like, shape (n,m)
         The n data points of dimension m to be indexed. This array is 
         not copied unless this is necessary to produce a contiguous 
         array of doubles, and so modifying this data will result in 
         bogus results. The data are also copied if the kd-tree is built
         with copy_data=True.
-    leafsize : positive int, optional
+    leafsize : positive integer, optional
         The number of points at which the algorithm switches over to
         brute-force. Default: 16.
     compact_nodes : bool, optional    
@@ -860,8 +854,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         If True, the median is used to split the hyperrectangles instead of 
         the midpoint. This usually gives a more compact tree and 
         faster queries at the expense of longer build time. Default: True.
-
     """
+
     cdef:
         vector[ckdtreenode]      *tree_buffer
         ckdtreenode              *ctree 
@@ -893,7 +887,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.leafsize = leafsize
         if self.leafsize<1:
             raise ValueError("leafsize must be at least 1")
-
         self.maxes = np.ascontiguousarray(np.amax(self.data,axis=0), dtype=np.float64)
         self.mins = np.ascontiguousarray(np.amin(self.data,axis=0), dtype=np.float64)
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
@@ -957,6 +950,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                        np.float64_t *maxes, np.float64_t *mins, int _median)\
                        except -1:
         cdef:
+            
             ckdtreenode new_node
             np.intp_t   node_index
             np.intp_t   _less, _greater
@@ -1004,7 +998,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             if _median:
                 # split on median to create a balanced tree
                 # adopted from scikit-learn
-                i = (end_idx-start_idx) // 2
+                i = (end_idx-start_idx)//2                                
                 partition_node_indices(self.raw_data,
                                 self.raw_indices + start_idx,
                                 d,
@@ -1020,46 +1014,46 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 split = (maxval+minval)/2
     
             p = start_idx
-            q = end_idx - 1
-            while p <= q:
-                if self.raw_data[self.raw_indices[p]*self.m+d] < split:
-                    p += 1
-                elif self.raw_data[self.raw_indices[q]*self.m+d] >= split:
-                    q -= 1
+            q = end_idx-1
+            while p<=q:
+                if self.raw_data[self.raw_indices[p]*self.m+d]<split:
+                    p+=1
+                elif self.raw_data[self.raw_indices[q]*self.m+d]>=split:
+                    q-=1
                 else:
                     t = self.raw_indices[p]
                     self.raw_indices[p] = self.raw_indices[q]
                     self.raw_indices[q] = t
-                    p += 1
-                    q -= 1
+                    p+=1
+                    q-=1
 
             # slide midpoint if necessary
-            if p == start_idx:
+            if p==start_idx:
                 # no points less than split
                 j = start_idx
                 split = self.raw_data[self.raw_indices[j]*self.m+d]
                 for i in range(start_idx+1, end_idx):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] < split:
+                    if self.raw_data[self.raw_indices[i]*self.m+d]<split:
                         j = i
                         split = self.raw_data[self.raw_indices[j]*self.m+d]
                 t = self.raw_indices[start_idx]
                 self.raw_indices[start_idx] = self.raw_indices[j]
                 self.raw_indices[j] = t
-                p = start_idx + 1
+                p = start_idx+1
                 q = start_idx
-            elif p == end_idx:
+            elif p==end_idx:
                 # no points greater than split
-                j = end_idx - 1
+                j = end_idx-1
                 split = self.raw_data[self.raw_indices[j]*self.m+d]
                 for i in range(start_idx, end_idx-1):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] > split:
+                    if self.raw_data[self.raw_indices[i]*self.m+d]>split:
                         j = i
                         split = self.raw_data[self.raw_indices[j]*self.m+d]
                 t = self.raw_indices[end_idx-1]
                 self.raw_indices[end_idx-1] = self.raw_indices[j]
                 self.raw_indices[j] = t
-                p = end_idx - 1
-                q = end_idx - 2
+                p = end_idx-1
+                q = end_idx-2  
 
             try:
                 mids = <np.float64_t*> PyMem_Malloc(sizeof(np.float64_t)*self.m)
@@ -1069,12 +1063,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 for i in range(self.m):
                     mids[i] = maxes[i]
                 mids[d] = split
-                _less = self.__build(start_idx, p, mids, mins, _median)
+                _less = self.__build(start_idx,p,mids,mins,_median)
                 
                 for i in range(self.m):
                     mids[i] = mins[i]
                 mids[d] = split
-                _greater = self.__build(p, end_idx, maxes, mids, _median)
+                _greater = self.__build(p,end_idx,maxes,mids,_median)
                 
                 root = tree_buffer_root(self.tree_buffer)
                 # recompute n because std::vector can
@@ -1137,7 +1131,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             for i in range(self.m):
                 maxes[i] = tmp_data_point[i]
                 mins[i] = tmp_data_point[i]
-            for j in range(start_idx+1, end_idx):
+            for j in range(start_idx+1,end_idx):
                 tmp_data_point = self.raw_data + self.raw_indices[j]*self.m
                 for i in range(self.m):
                     tmp = tmp_data_point[i]
@@ -1147,10 +1141,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             for i in range(self.m):
                 if maxes[i]-mins[i] > size:
                     d = i
-                    size = maxes[i] - mins[i]
+                    size = maxes[i]-mins[i]
             maxval = maxes[d]
             minval = mins[d]
-            if maxval == minval:
+            if maxval==minval:
                 # all points are identical; warn user?
                 # return leafnode
                 n.split_dim = -1
@@ -1164,7 +1158,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             if _median:  
                 # split on median to create a balanced tree
                 # adopted from scikit-learn
-                i = (end_idx-start_idx) // 2
+                i = (end_idx-start_idx)//2                                
                 partition_node_indices(self.raw_data,
                                 self.raw_indices + start_idx,
                                 d,
@@ -1176,52 +1170,52 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
              
             else:
                 # split with sliding midpoint rule
-                split = (maxval+minval) / 2
+                split = (maxval+minval)/2
     
             p = start_idx
-            q = end_idx - 1
+            q = end_idx-1
             while p<=q:
-                if self.raw_data[self.raw_indices[p]*self.m+d] < split:
-                    p += 1
-                elif self.raw_data[self.raw_indices[q]*self.m+d] >= split:
-                    q -= 1
+                if self.raw_data[self.raw_indices[p]*self.m+d]<split:
+                    p+=1
+                elif self.raw_data[self.raw_indices[q]*self.m+d]>=split:
+                    q-=1
                 else:
                     t = self.raw_indices[p]
                     self.raw_indices[p] = self.raw_indices[q]
                     self.raw_indices[q] = t
-                    p += 1
-                    q -= 1
+                    p+=1
+                    q-=1
     
             # slide midpoint if necessary
-            if p == start_idx:
+            if p==start_idx:
                 # no points less than split
                 j = start_idx
                 split = self.raw_data[self.raw_indices[j]*self.m+d]
                 for i in range(start_idx+1, end_idx):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] < split:
+                    if self.raw_data[self.raw_indices[i]*self.m+d]<split:
                         j = i
                         split = self.raw_data[self.raw_indices[j]*self.m+d]
                 t = self.raw_indices[start_idx]
                 self.raw_indices[start_idx] = self.raw_indices[j]
                 self.raw_indices[j] = t
-                p = start_idx + 1
+                p = start_idx+1
                 q = start_idx
-            elif p == end_idx:
+            elif p==end_idx:
                 # no points greater than split
-                j = end_idx - 1
+                j = end_idx-1
                 split = self.raw_data[self.raw_indices[j]*self.m+d]
                 for i in range(start_idx, end_idx-1):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] > split:
+                    if self.raw_data[self.raw_indices[i]*self.m+d]>split:
                         j = i
                         split = self.raw_data[self.raw_indices[j]*self.m+d]
                 t = self.raw_indices[end_idx-1]
                 self.raw_indices[end_idx-1] = self.raw_indices[j]
                 self.raw_indices[j] = t
-                p = end_idx - 1
-                q = end_idx - 2
+                p = end_idx-1
+                q = end_idx-2  
 
-            _less = self.__build_compact(start_idx, p, mins, maxes, _median)
-            _greater = self.__build_compact(p, end_idx, mins, maxes, _median)
+            _less = self.__build_compact(start_idx,p,mins,maxes,_median)
+            _greater = self.__build_compact(p,end_idx,mins,maxes,_median)
                         
             root = tree_buffer_root(self.tree_buffer)
             # recompute n because std::vector can reallocate
@@ -1246,9 +1240,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=infinity,
               np.intp_t n_jobs=1):
-        """
-        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, n_jobs=1)
-
+        """query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, n_jobs=1)
+        
         Query the kd-tree for nearest neighbors
 
         Parameters
@@ -1322,7 +1315,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             # static scheduling without load balancing is good enough
             CHUNK = n//n_jobs if n//n_jobs else n
                              
-            def _thread_func(self, _dd, _ii, _xx, _j, n, CHUNK, p, k, eps, dub):
+            def _thread_func(self,_dd,_ii,_xx,_j,n,CHUNK,p,k,eps,dub):
                 cdef np.intp_t j = _j
                 cdef np.ndarray[np.intp_t,ndim=2] ii = _ii
                 cdef np.ndarray[np.float64_t,ndim=2] dd = _dd
@@ -1336,9 +1329,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             
             # There might be n_jobs+1 threads spawned here, but only n_jobs of 
             # them will do significant work.
-            threads = [threading.Thread(target=_thread_func,
-                                        args=(self, dd, ii, xx, j, n, CHUNK, p,
-                                              k, eps, distance_upper_bound))
+            threads = [threading.Thread(target=_thread_func, 
+                        args=(self,dd,ii,xx,j,n,CHUNK,p,k,eps,distance_upper_bound))
                              for j in range(1+(n//CHUNK))]
             # Set the daemon flag so the process can be aborted, 
             # start all threads and wait for completion.
@@ -1352,7 +1344,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 n, k, eps, p, distance_upper_bound)
                 
         if single:
-            if k == 1:
+            if k==1:
                 if sizeof(long) < sizeof(np.intp_t):
                     # ... e.g. Windows 64
                     if ii[0,0] <= <np.intp_t>LONG_MAX:
@@ -1463,8 +1455,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     def query_ball_point(cKDTree self, object x, np.float64_t r,
                          np.float64_t p=2., np.float64_t eps=0):
-        """
-        query_ball_point(self, x, r, p=2., eps=0)
+        """query_ball_point(self, x, r, p, eps)
         
         Find all points within distance r of point(s) x.
 
@@ -1509,7 +1500,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         
         x = np.asarray(x, dtype=np.float64)
         if x.shape[-1] != self.m:
-            raise ValueError("Searching for a %d-dimensional point in a "
+            raise ValueError("Searching for a %d-dimensional point in a " \
                              "%d-dimensional KDTree" % (int(x.shape[-1]), int(self.m)))
         if len(x.shape) == 1:
             xx = np.ascontiguousarray(x, dtype=np.float64)
@@ -1547,16 +1538,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         list_append(results_i, other.raw_indices[j])
             else:
                 
-                self.__query_ball_tree_traverse_no_checking(other, results,
-                                                            node1, node2.less)
-                self.__query_ball_tree_traverse_no_checking(other, results,
-                                                            node1, node2.greater)
+                self.__query_ball_tree_traverse_no_checking(other, results, node1, node2.less)
+                self.__query_ball_tree_traverse_no_checking(other, results, node1, node2.greater)
         else:
             
-            self.__query_ball_tree_traverse_no_checking(other, results,
-                                                        node1.less, node2)
-            self.__query_ball_tree_traverse_no_checking(other, results,
-                                                        node1.greater, node2)
+            self.__query_ball_tree_traverse_no_checking(other, results, node1.less, node2)
+            self.__query_ball_tree_traverse_no_checking(other, results, node1.greater, node2)
 
         return 0
 
@@ -1652,8 +1639,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     def query_ball_tree(cKDTree self, cKDTree other,
                         np.float64_t r, np.float64_t p=2., np.float64_t eps=0):
-        """
-        query_ball_tree(self, other, r, p=2., eps=0)
+        """query_ball_tree(self, other, r, p, eps)
 
         Find all pairs of points whose distance is at most r
 
@@ -1682,8 +1668,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         # Make sure trees are compatible
         if self.m != other.m:
-            raise ValueError("Trees passed to query_ball_tree have different "
-                             "dimensionality")
+            raise ValueError("Trees passed to query_ball_tree have different dimensionality")
 
         # Track node-to-node min/max distances
         tracker = RectRectDistanceTracker(
@@ -1845,8 +1830,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
                     np.float64_t eps=0):
-        """
-        query_pairs(self, r, p=2., eps=0)
+        """query_pairs(self, r, p, eps)
 
         Find all pairs of points whose distance is at most r.
 
@@ -1998,8 +1982,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     @cython.boundscheck(False)
     def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.):
-        """
-        count_neighbors(self, other, r, p=2.)
+        """count_neighbors(self, other, r, p)
 
         Count how many nearby pairs can be formed.
 
@@ -2034,15 +2017,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         # Make sure trees are compatible
         if self.m != other.m:
-            raise ValueError("Trees passed to count_neighbors have different "
-                             "dimensionality")
+            raise ValueError("Trees passed to count_neighbors have different dimensionality")
 
         # Make a copy of r array to ensure it's contiguous and to modify it
         # below
         r_ndim = len(np.shape(r))
         if r_ndim > 1:
-            raise ValueError("r must be either a single value or a "
-                             "one-dimensional array of values")
+            raise ValueError("r must be either a single value or a one-dimensional array of values")
         real_r = np.array(r, ndmin=1, dtype=np.float64, copy=True)
         n_queries = real_r.shape[0]
 
@@ -2053,9 +2034,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                     real_r[i] = real_r[i] ** p
 
         # Track node-to-node min/max distances
-        tracker = RectRectDistanceTracker(Rectangle(self.mins, self.maxes),
-                                          Rectangle(other.mins, other.maxes),
-                                          p, 0.0, 0.0)
+        tracker = RectRectDistanceTracker(
+            Rectangle(self.mins, self.maxes),
+            Rectangle(other.mins, other.maxes),
+            p, 0.0, 0.0)
         
         # Go!
         results = np.zeros(n_queries, dtype=np.intp)
@@ -2171,12 +2153,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 
         return 0
             
-
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
                                np.float64_t p=2.):
-        """
-        sparse_distance_matrix(self, other, max_distance, p=2.)
+        """sparse_distance_matrix(self, other, max_distance, p=2.0)
 
         Compute a sparse distance matrix
 
@@ -2203,8 +2183,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         # Make sure trees are compatible
         if self.m != other.m:
-            raise ValueError("Trees passed to sparse_distance_matrix have "
-                             "different dimensionality")
+            raise ValueError("Trees passed to sparse_distance_matrix have different dimensionality")
 
         # Calculate mins and maxes to outer box
         tracker = RectRectDistanceTracker(

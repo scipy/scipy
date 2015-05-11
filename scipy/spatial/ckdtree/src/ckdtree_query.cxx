@@ -260,6 +260,9 @@ __query_single_point(const ckdtree *self,
     for(;;) {
         if (inf->node->split_dim == -1) {
         
+            //npy_intp start_idx = node->start_idx;
+            //npy_intp end_idx = node->end_idx;
+        
             node = inf->node;
 
             // brute-force
