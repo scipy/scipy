@@ -947,7 +947,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	PyDataMem_FREE(zptr);
 	zptr = PyArray_Zero(ap1);
 	if (zptr == NULL) goto fail;
-	ap1_ptr = PyArray_DATA(ap1) + offset1*is1;
+	ap1_ptr = (char *)PyArray_DATA(ap1) + offset1*is1;
 	for (k=0; k < PyArray_NDIM(ap1); k++) {
             a_ind[k] = mode_dep[k];
             check_ind[k] = PyArray_DIMS(ap1)[k] - PyArray_DIMS(ap2)[k] - mode_dep[k] - 1;
