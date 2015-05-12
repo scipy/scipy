@@ -619,19 +619,21 @@ class MMFile (object):
             # write shape spec
             stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
 
-            fmt = '%%.%dg' % precision
-
             if field == self.FIELD_PATTERN:
                 IJV = vstack((coo.row, coo.col)).T
+                data_columns = 0
             elif field in [self.FIELD_INTEGER, self.FIELD_REAL]:
                 IJV = vstack((coo.row, coo.col, coo.data)).T
+                data_columns = 1
             elif field == self.FIELD_COMPLEX:
                 IJV = vstack((coo.row, coo.col, coo.data.real, coo.data.imag)).T
+                data_columns = 2
             else:
                 raise TypeError('Unknown field type %s' % field)
 
             IJV[:,:2] += 1  # change base 0 -> base 1
 
+            fmt = ('%i',)*2 + ('%%.%dg' % precision,)*data_columns
             savetxt(stream, IJV, fmt=fmt)
 
 
