@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_almost_equal,
-                           assert_array_almost_equal, assert_equal)
+                           assert_array_almost_equal, assert_equal, assert_)
 
 from scipy.misc import pade, logsumexp, face, ascent
 
@@ -118,17 +118,17 @@ def test_logsumexp_sign():
 
     r, s = logsumexp(a, b=b, return_sign=True)
     assert_almost_equal(r,1)
-    assert s==-1
+    assert_equal(s,-1)
 
 def test_logsumexp_sign_zero():
     a = [1,1]
     b = [1,-1]
 
     r, s = logsumexp(a, b=b, return_sign=True)
-    assert not np.isfinite(r)
-    assert not np.isnan(r)
-    assert r<0
-    assert s==0
+    assert_(not np.isfinite(r))
+    assert_(not np.isnan(r))
+    assert_(r<0)
+    assert_equal(s,0)
 
 def test_logsumexp_sign_shape():
     a = np.ones((1,2,3,4))
