@@ -89,6 +89,12 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     9.9170178533034665
     >>> np.log(np.sum(b*np.exp(a)))
     9.9170178533034647
+
+    Returning a sign flag
+
+    >>> logsumexp([1,2],b=[1,-1])
+    (1.5413248546129181, -1)
+
     """
     a = asarray(a)
     if b is not None:
