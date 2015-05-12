@@ -39,6 +39,7 @@ def _sqrtm_triu(T, blocksize=64):
     -------
     sqrtm : (N, N) ndarray
         Value of the sqrt function at `T`
+        
 
     References
     ----------
@@ -110,7 +111,7 @@ def _sqrtm_triu(T, blocksize=64):
     return R
 
 
-def sqrtm(A, disp=True, blocksize=64):
+def sqrtm(A, disp=True, blocksize=64, ignoreerror=False):
     """
     Matrix square root.
 
@@ -124,6 +125,10 @@ def sqrtm(A, disp=True, blocksize=64):
     blocksize : integer, optional
         If the blocksize is not degenerate with respect to the
         size of the input array, then use a blocked algorithm. (Default: 64)
+    ignoreerror : bool, optional
+        Ignore the LinAlgError raised if matrix square root can not be found.
+        (Default: False)
+        
 
     Returns
     -------
@@ -134,6 +139,11 @@ def sqrtm(A, disp=True, blocksize=64):
         (if disp == False)
 
         Frobenius norm of the estimated error, ||err||_F / ||A||_F
+        
+    Raises
+    ------
+    LinAlgError 
+        If square root can not be found, and ignoreerror is false.
 
     References
     ----------
@@ -180,8 +190,10 @@ def sqrtm(A, disp=True, blocksize=64):
         nzeig = np.any(np.diag(T) == 0)
         if nzeig:
             print("Matrix is singular and may not have a square root.")
-        elif failflag:
+        if failflag:
             print("Failed to find a square root.")
+            if not ignoreerror:
+                raise np.linalg.LinAlgError("Square root not found")
         return X
     else:
         try:
