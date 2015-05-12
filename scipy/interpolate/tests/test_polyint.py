@@ -430,19 +430,19 @@ class CheckPiecewise(TestCase):
             warnings.filterwarnings('ignore', category=DeprecationWarning)
             P = PiecewisePolynomial(self.xi,self.yi)
 
-        assert_almost_equal(P(self.test_xs),
-                            piecewise_polynomial_interpolate(self.xi, self.yi,
-                                                             self.test_xs))
-        assert_almost_equal(P.derivative(self.test_xs,2),
-                            piecewise_polynomial_interpolate(self.xi,
-                                                             self.yi,
-                                                             self.test_xs,
-                                                             der=2))
-        assert_almost_equal(P.derivatives(self.test_xs,2),
-                            piecewise_polynomial_interpolate(self.xi,
-                                                             self.yi,
-                                                             self.test_xs,
-                                                             der=[0,1]))
+            assert_almost_equal(P(self.test_xs),
+                                piecewise_polynomial_interpolate(
+                                    self.xi, self.yi, self.test_xs))
+            assert_almost_equal(P.derivative(self.test_xs,2),
+                                piecewise_polynomial_interpolate(self.xi,
+                                                                 self.yi,
+                                                                 self.test_xs,
+                                                                 der=2))
+            assert_almost_equal(P.derivatives(self.test_xs,2),
+                                piecewise_polynomial_interpolate(self.xi,
+                                                                 self.yi,
+                                                                 self.test_xs,
+                                                                 der=[0,1]))
 
 
 class TestPCHIP(TestCase):
