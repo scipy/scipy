@@ -32,7 +32,7 @@ prefetch_datapoint(const npy_float64 *x, const npy_intp m)
 }
 #else
 #if defined(_WIN32)
-#include <xmmininrin.h>
+#include <xmmintrin.h>
 inline void
 prefetch_datapoint(const npy_float64 *x, const npy_intp m)
 {
