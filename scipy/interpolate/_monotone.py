@@ -4,6 +4,7 @@ import numpy as np
 
 from . import BPoly, PPoly
 from .polyint import _isscalar
+from scipy._lib import _asarray_validated
 
 
 __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
@@ -64,13 +65,8 @@ class PchipInterpolator(BPoly):
 
     """
     def __init__(self, x, y, axis=0, extrapolate=None):
-        x = np.asarray(x)
-        if not np.issubdtype(x.dtype, np.inexact):
-            x = x.astype(float)
-
-        y = np.asarray(y)
-        if not np.issubdtype(y.dtype, np.inexact):
-            y = y.astype(float)
+        x = _asarray_validated(x, check_finite=False, as_inexact=True)
+        y = _asarray_validated(y, check_finite=False, as_inexact=True)
 
         axis = axis % y.ndim
 
