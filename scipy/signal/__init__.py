@@ -266,6 +266,18 @@ Spectral Analysis
    lombscargle    -- Computes the Lomb-Scargle periodogram
    vectorstrength -- Computes the vector strength
 
+Cepstral Analysis
+=================
+
+.. autosummary::
+   :toctree: generated/
+   
+   complex_cepstrum         -- Compute the complex cepstrum of a real sequence.
+   real_cepstrum            -- Compute the real cepstrum of a real sequence.
+   inverse_complex_cepstrum -- Compute the inverse complex cepstrum of a real sequence.
+   minimum_phase            -- Compute the minimum phase reconstruction of a real sequence.
+   
+
 """
 from __future__ import division, print_function, absolute_import
 
@@ -289,6 +301,7 @@ from ._savitzky_golay import savgol_coeffs, savgol_filter
 from .spectral import *
 from .wavelets import *
 from ._peak_finding import *
+from .cepstrum import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
