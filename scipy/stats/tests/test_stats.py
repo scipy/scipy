@@ -172,12 +172,16 @@ class TestNanFunc(TestCase):
         assert_(np.isnan(s))
 
     def test_nanstd_bias_kw(self):
-        s = stats.nanstd(self.X, bias=True)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            s = stats.nanstd(self.X, bias=True)
         assert_approx_equal(s, np.std(self.X, ddof=0))
 
     def test_nanstd_negative_axis(self):
         x = np.array([1, 2, 3])
-        res = stats.nanstd(x, -1)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            res = stats.nanstd(x, -1)
         assert_equal(res, 1)
 
     def test_nanmedian_none(self):
@@ -226,6 +230,7 @@ class TestNanFunc(TestCase):
         # Check nanmedian for scalar inputs. See ticket #1098.
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=RuntimeWarning)
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
             assert_equal(stats.nanmedian(1), np.median(1))
             assert_equal(stats.nanmedian(True), np.median(True))
             assert_equal(stats.nanmedian(np.array(1)), np.median(np.array(1)))
@@ -1899,7 +1904,6 @@ def test_chisquare_masked_arrays():
     mat.assert_array_almost_equal(p,
                                   stats.chisqprob(expected_chisq,
                                                   mobs.T.count(axis=1) - 1))
-
     g, p = stats.power_divergence(mobs.T, axis=1, lambda_="log-likelihood")
     mat.assert_array_almost_equal(g, expected_g, decimal=15)
     mat.assert_array_almost_equal(p, stats.chisqprob(expected_g,
@@ -1923,7 +1927,8 @@ def test_chisquare_masked_arrays():
     # Empty arrays:
     # A data set with length 0 returns a masked scalar.
     with np.errstate(invalid='ignore'):
-        chisq, p = stats.chisquare(np.ma.array([]))
+        with warnings.catch_warnings(record=True):
+            chisq, p = stats.chisquare(np.ma.array([]))
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, ())
     assert_(chisq.mask)
@@ -1939,7 +1944,8 @@ def test_chisquare_masked_arrays():
     # empty3.T is an array containing 3 data sets, each with length 0,
     # so an array of size (3,) is returned, with all values masked.
     with np.errstate(invalid='ignore'):
-        chisq, p = stats.chisquare(empty3.T)
+        with warnings.catch_warnings(record=True):
+            chisq, p = stats.chisquare(empty3.T)
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, (3,))
     assert_(np.all(chisq.mask))
