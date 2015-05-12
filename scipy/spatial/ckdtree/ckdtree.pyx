@@ -907,6 +907,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         if _median:
             self._median_workspace = np.zeros(self.n)
         
+        self.tree_buffer = NULL
         self.tree_buffer = new vector[ckdtreenode]()
         
         if not compact_nodes:
@@ -949,7 +950,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         
 
     def __deallocate__(cKDTree self):
-        del self.tree_vector
+        if self.tree_buffer != NULL:
+            del self.tree_buffer
 
 
     @cython.cdivision(True)
