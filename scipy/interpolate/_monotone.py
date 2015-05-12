@@ -4,7 +4,7 @@ import numpy as np
 
 from . import BPoly, PPoly
 from .polyint import _isscalar
-from scipy._lib import _asarray_validated
+from scipy._lib._util import _asarray_validated
 
 
 __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",

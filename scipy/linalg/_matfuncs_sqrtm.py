@@ -10,7 +10,7 @@ __all__ = ['sqrtm']
 
 import numpy as np
 
-from scipy._lib import _asarray_validated
+from scipy._lib._util import _asarray_validated
 
 
 # Local imports
