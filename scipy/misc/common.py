@@ -48,7 +48,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     return_sign : bool, optional
         If this is set to True, the result will be a pair containing sign
         information; if False, results that are negative will be returned
-        as NaN.
+        as NaN. Default is False (no sign information).
 
         .. versionadded:: 0.16.0
     Returns
@@ -92,16 +92,16 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     Returning a sign flag
 
-    >>> logsumexp([1,2],b=[1,-1])
-    (1.5413248546129181, -1)
+    >>> logsumexp([1,2],b=[1,-1],return_sign=True)
+    (1.5413248546129181, -1.0)
 
     """
     a = asarray(a)
     if b is not None:
         a, b = broadcast_arrays(a,b)
-        if np.any(b==0):
-            a = a + 0. # promote to at least float
-            a[b==0] = -np.inf
+        if np.any(b == 0):
+            a = a + 0.  # promote to at least float
+            a[b == 0] = -np.inf
     
     # keepdims is available in numpy.sum and numpy.amax since NumPy 1.7.0
     #
@@ -139,7 +139,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             s = sum(tmp, axis=axis)
             if return_sign:
                 sgn = sign(s)
-                s *= sgn # /= makes more sense but we need zero -> zero
+                s *= sgn  # /= makes more sense but we need zero -> zero
             out = log(s)
 
         out += a_max
@@ -169,7 +169,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             s = sum(tmp, axis=axis, keepdims=keepdims)
             if return_sign:
                 sgn = sign(s)
-                s *= sgn # /= makes more sense but we need zero -> zero
+                s *= sgn  # /= makes more sense but we need zero -> zero
             out = log(s)
 
         if not keepdims:

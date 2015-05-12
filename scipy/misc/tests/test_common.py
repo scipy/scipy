@@ -127,17 +127,23 @@ def test_logsumexp_sign_zero():
     r, s = logsumexp(a, b=b, return_sign=True)
     assert_(not np.isfinite(r))
     assert_(not np.isnan(r))
-    assert_(r<0)
+    assert_(r < 0)
     assert_equal(s,0)
 
 def test_logsumexp_sign_shape():
     a = np.ones((1,2,3,4))
     b = np.ones_like(a)
 
-    r, s = logsumexp(a, axis=(1,3), b=b, return_sign=True)
+    r, s = logsumexp(a, axis=2, b=b, return_sign=True)
 
     assert_equal(r.shape, s.shape)
-    assert_equal(r.shape, (1,3))
+    assert_equal(r.shape, (1,2,4))
+
+    if NumpyVersion(np.__version__) >= NumpyVersion('1.7.0'):
+        r, s = logsumexp(a, axis=(1,3), b=b, return_sign=True)
+
+        assert_equal(r.shape, s.shape)
+        assert_equal(r.shape, (1,3))
 
 def test_logsumexp_shape():
     a = np.ones((1,2,3,4))
@@ -146,6 +152,10 @@ def test_logsumexp_shape():
     r = logsumexp(a, axis=(1,3), b=b)
 
     assert_equal(r.shape, (1,3))
+    if NumpyVersion(np.__version__) >= NumpyVersion('1.7.0'):
+        r = logsumexp(a, axis=(1,3), b=b)
+
+        assert_equal(r.shape, (1,3))
 
 def test_logsumexp_b_zero():
     a = [1,10000]
@@ -160,7 +170,6 @@ def test_logsumexp_b_shape():
     logsumexp(a, b=b)
 
 
-    
 def test_face():
     assert_equal(face().shape, (768, 1024, 3))
 
