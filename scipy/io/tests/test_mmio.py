@@ -224,8 +224,6 @@ class TestMMIOSparseCSR(TestMMIOArray):
         assert_array_almost_equal(a.todense(),b.todense())
 
 
-
-
 _general_example = '''\
 %%MatrixMarket matrix coordinate real general
 %=================================================================================

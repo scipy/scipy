@@ -291,12 +291,14 @@ class MMFile (object):
         # define iterator over symmetric pair entries
         if isinstance(a,spmatrix):
             dok = a.todok()
+            
             def symm_iterator():
                 for ((i, j), aij) in dok.items():
                     if i > j:
                         aji = dok[j, i]
                         yield (aij, aji)
         else:
+            
             def symm_iterator():
                 for j in range(n):
                     for i in range(j+1,n):
