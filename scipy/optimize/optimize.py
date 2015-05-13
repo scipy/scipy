@@ -288,7 +288,7 @@ def wrap_function(function, args):
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0, callback=None):
+         full_output=0, disp=1, retall=0, callback=None, step=None):
     """
     Minimize a function using the downhill simplex algorithm.
 
@@ -320,6 +320,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Set to True to print convergence messages.
     retall : bool, optional
         Set to True to return list of solutions at each iteration.
+    step : ndarray, optional
+        Initial step size.
 
     Returns
     -------
@@ -372,7 +374,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'maxiter': maxiter,
             'maxfev': maxfun,
             'disp': disp,
-            'return_all': retall}
+            'return_all': retall,
+            'step': step}
 
     res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
@@ -389,7 +392,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
-                         disp=False, return_all=False,
+                         disp=False, return_all=False, step=None,
                          **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -407,6 +410,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         Maximum number of iterations to perform.
     maxfev : int
         Maximum number of function evaluations to make.
+    step : ndarray
+        Initial step size.
 
     """
     _check_unknown_options(unknown_options)
@@ -435,9 +440,13 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fsim[0] = func(x0)
     nonzdelt = 0.05
     zdelt = 0.00025
+    if step is not None:
+        step, _ = numpy.broadcast_arrays(step,x0)
     for k in range(0, N):
         y = numpy.array(x0, copy=True)
-        if y[k] != 0:
+        if step is not None and step[k]:
+            y[k] += step[k]
+        elif y[k] != 0:
             y[k] = (1 + nonzdelt)*y[k]
         else:
             y[k] = zdelt
