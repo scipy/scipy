@@ -115,7 +115,7 @@ def test_dirichlet_fit():
     alpha = [3, 0.5, 1]
     X = stats.dirichlet.rvs(alpha, size=5000)
     for x0 in None, [1.0, 2.0, 3.0]:
-        a, loc, scale  = stats.dirichlet.fit(X, x0=x0)
+        a, loc, scale = stats.dirichlet.fit(X, x0=x0)
         assert_allclose(a, alpha, atol=1e-1)
         assert_equal(loc, 0)
         assert_equal(scale, 1)
