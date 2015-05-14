@@ -9,6 +9,7 @@ from scipy.misc import doccer
 from scipy.special import gammaln, psi, multigammaln
 from scipy._lib._util import check_random_state, _asarray_validated
 from scipy.optimize import minimize
+from scipy.optimize import fmin_l_bfgs_b
 
 
 __all__ = ['multivariate_normal', 'dirichlet', 'wishart', 'invwishart']
@@ -978,20 +979,23 @@ class dirichlet_gen(multi_rv_generic):
                 raise ValueError('the shape of the initial parameter vector '
                                  'guess is incompatible with the shape of '
                                  'the data')
-        # compute the sufficient statistics
+            if np.any(np.less(x0, 0)):
+                raise ValueError('the initial guess must be positive')
+        # Compute the sufficient statistics
         log_p_hat = np.log(X).mean(axis=0)
 
-        def func(alpha):
-            scaled_ll = (alpha-1).dot(log_p_hat) - _lnB(alpha)
-            return -scaled_ll
+        # Use log of alpha for max likelihood estimation.
+        x0 = np.log(x0)
 
-        def fprime(alpha):
-            scaled_score = psi(np.sum(alpha)) - psi(alpha) + log_p_hat
-            return -scaled_score
+        def func(log_alpha):
+            a = np.exp(log_alpha)
+            scaled_ll = np.expm1(log_alpha).dot(log_p_hat) - _lnB(a)
+            scaled_score = a * (psi(np.sum(a)) - psi(a) + log_p_hat)
+            return -scaled_ll, -scaled_score
 
-        bounds = [(0, None)]*k
-        result = minimize(func, x0, jac=fprime, bounds=bounds)
-        a = result.x
+        log_a, f, d = fmin_l_bfgs_b(func, x0)
+        a = np.exp(log_a)
+
         return a, np.zeros_like(a), np.ones_like(a)
 
 
