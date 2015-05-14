@@ -909,8 +909,7 @@ class dirichlet_gen(multi_rv_generic):
         lnB = _lnB(alpha)
         K = alpha.shape[0]
 
-        out = lnB + (alpha0 - K) * scipy.special.psi(alpha0) - np.sum(
-            (alpha - 1) * scipy.special.psi(alpha))
+        out = lnB + (alpha0 - K) * psi(alpha0) - np.sum((alpha - 1) * psi(alpha))
         return _squeeze_output(out)
 
     def rvs(self, alpha, size=1, random_state=None):
@@ -934,6 +933,24 @@ class dirichlet_gen(multi_rv_generic):
         alpha = _dirichlet_check_parameters(alpha)
         random_state = self._get_random_state(random_state)
         return random_state.dirichlet(alpha, size=size)
+
+    def fit(self, data):
+        # NOTE this does not deal with location or scale or fixed parameters
+        X = np.asarray(data)
+        if X.ndim != 2:
+            raise NotImplementedError('expected a sequence of observations')
+        n, k = X.shape
+        # compute the sufficient statistics
+        log_p_hat = np.log(X).mean(axis=0)
+
+        def func(alpha):
+            s = alpha.sum()
+            neg_ll = -n*(_lnB(alpha) + (alpha-1).dot(log_p_hat))
+            score = n*(psi(s) - psi(alpha) + log_p_hat)
+            return neg_ll, score
+        result = minimize(func, np.ones(k), jac=True)
+        print(result)
+        return result.x
 
 
 dirichlet = dirichlet_gen()
