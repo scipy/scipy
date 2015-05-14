@@ -475,7 +475,7 @@ def linkage(y, method='single', metric='euclidean'):
     in the distance matrix. The behavior of this function is very
     similar to the MATLAB linkage function.
 
-    A 4 by :math:`(n-1)` matrix ``Z`` is returned. At the
+    An :math:`(n-1)` by 4  matrix ``Z`` is returned. At the
     :math:`i`-th iteration, clusters with indices ``Z[i, 0]`` and
     ``Z[i, 1]`` are combined to form cluster :math:`n + i`. A
     cluster with an index less than :math:`n` corresponds to one of
