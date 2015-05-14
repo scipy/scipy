@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import numpy as np
-from numpy.testing import dec, assert_allclose
+from numpy.testing import dec, assert_allclose, assert_equal
 
 from scipy import stats
 
@@ -108,6 +108,16 @@ def test_non_default_loc_scale_mle_fit():
     data = np.array([1.01, 1.78, 1.78, 1.78, 1.88, 1.88, 1.88, 2.00])
     yield _check_loc_scale_mle_fit, 'uniform', data, [1.01, 0.99], 1e-3
     yield _check_loc_scale_mle_fit, 'expon', data, [1.01, 0.73875], 1e-3
+
+
+def test_dirichlet_fit():
+    np.random.seed(1234)
+    alpha = [3, 0.5, 1]
+    X = stats.dirichlet.rvs(alpha, size=5000)
+    a, loc, scale  = stats.dirichlet.fit(X)
+    assert_allclose(a, alpha, atol=1e-1)
+    assert_equal(loc, 0)
+    assert_equal(scale, 1)
 
 
 if __name__ == "__main__":

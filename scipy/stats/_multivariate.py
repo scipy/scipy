@@ -7,7 +7,8 @@ import numpy as np
 import scipy.linalg
 from scipy.misc import doccer
 from scipy.special import gammaln, psi, multigammaln
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _asarray_validated
+from scipy.optimize import minimize
 
 
 __all__ = ['multivariate_normal', 'dirichlet', 'wishart', 'invwishart']
@@ -934,23 +935,64 @@ class dirichlet_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
         return random_state.dirichlet(alpha, size=size)
 
-    def fit(self, data):
-        # NOTE this does not deal with location or scale or fixed parameters
-        X = np.asarray(data)
+    def fit(self, data, x0=None):
+        """
+        Estimate the Dirichlet distribution parameter values.
+
+        Parameters
+        ----------
+        data : 2d array-like
+            A sequence of multivariate observations.
+        x0 : 1d array-like, optional
+            Initial guess of the parameter vector alpha.
+
+        Returns
+        -------
+        shape, loc, scale : tuple of 1d arrays
+            The shape is the alpha vector maximum likelihood estimate.
+            The loc and scale are hard-coded as the zero-vector
+            and the one-vector respectively.
+
+        References
+        ----------
+        .. [1] Jonathan Huang, "Maximum Likelihood Estimation of Dirichlet
+           Distribution Parameters"
+           http://jonathan-huang.org/research/dirichlet/dirichlet.pdf
+
+        Notes
+        -----
+        This fit is computed by maximizing a log likelihood function.
+
+        .. versionadded:: 0.17.0
+
+        """
+        X = _asarray_validated(data)
         if X.ndim != 2:
             raise NotImplementedError('expected a sequence of observations')
         n, k = X.shape
+        if x0 is None:
+            x0 = np.ones(k)
+        else:
+            x0 = _asarray_validated(x0)
+            if x0.shape[0] != k:
+                raise ValueError('the shape of the initial parameter vector '
+                                 'guess is incompatible with the shape of '
+                                 'the data')
         # compute the sufficient statistics
         log_p_hat = np.log(X).mean(axis=0)
 
         def func(alpha):
-            s = alpha.sum()
-            neg_ll = -n*(_lnB(alpha) + (alpha-1).dot(log_p_hat))
-            score = n*(psi(s) - psi(alpha) + log_p_hat)
-            return neg_ll, score
-        result = minimize(func, np.ones(k), jac=True)
-        print(result)
-        return result.x
+            scaled_ll = (alpha-1).dot(log_p_hat) - _lnB(alpha)
+            return -scaled_ll
+
+        def fprime(alpha):
+            scaled_score = psi(np.sum(alpha)) - psi(alpha) + log_p_hat
+            return -scaled_score
+
+        bounds = [(0, None)]*k
+        result = minimize(func, x0, jac=fprime, bounds=bounds)
+        a = result.x
+        return a, np.zeros_like(a), np.ones_like(a)
 
 
 dirichlet = dirichlet_gen()
