@@ -8,7 +8,6 @@ import scipy.linalg
 from scipy.misc import doccer
 from scipy.special import gammaln, psi, multigammaln
 from scipy._lib._util import check_random_state, _asarray_validated
-from scipy.optimize import minimize
 from scipy.optimize import fmin_l_bfgs_b
 
 
