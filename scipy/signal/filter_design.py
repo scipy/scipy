@@ -20,7 +20,8 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'band_stop_obj', 'buttord', 'cheb1ord', 'cheb2ord', 'ellipord',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'filter_dict', 'band_dict', 'BadCoefficients',
-           'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay']
+           'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
+           'eqtflength']
 
 
 class BadCoefficients(UserWarning):
