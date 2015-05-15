@@ -23,7 +23,6 @@ window_funcs = [
     ('barthann', ()),
     ('hamming', ()),
     ('kaiser', (1,)),
-    ('kaiser_derived', (1,)),
     ('gaussian', (0.5,)),
     ('general_gaussian', (1.5, 2)),
     ('chebwin', (1,)),
@@ -512,12 +511,17 @@ def test_windowfunc_basics():
 def test_kaiser_derived():
     M = 100
     w = signal.kaiser_derived(M, beta=4.)
+    w2 = signal.get_window(('kaiser_derived', 4.), M, fftbins=False)
+    assert_allclose(w, w2)
 
     # Test for Princen-Bradley condition
     assert_allclose(w[:M//2]**2 + w[-M//2:]**2, 1.)
 
     # Assert ValueError for odd window length
     assert_raises(ValueError, signal.kaiser_derived, M + 1, beta=4.)
+
+    # Assert ValueError for odd window length
+    assert_raises(ValueError, signal.kaiser_derived, M, beta=4., sym=False)
 
 
 if __name__ == "__main__":

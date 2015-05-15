@@ -1158,7 +1158,7 @@ def kaiser(M, beta, sym=True):
     return _truncate(w, needs_trunc)
 
 
-def kaiser_derived(M, beta):
+def kaiser_derived(M, beta, sym=True):
     """ Return a Kaiser-Bessel derived window.
 
     Parameters
@@ -1168,6 +1168,12 @@ def kaiser_derived(M, beta):
         array is returned.
     beta : float
         Kaiser-Bessel window shape parameter.
+    sym : bool, optional
+        This parameter only exists to comply with the interface offered by
+        the other window functions and to be callable by `get_window`.
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        Will raise `ValueError` otherwise.
 
     Returns
     -------
@@ -1215,6 +1221,12 @@ def kaiser_derived(M, beta):
     >>> plt.show()
 
     """
+    if not sym:
+        raise ValueError(
+            "Kaiser Bessel Derived windows are only defined for symmetric "
+            "shapes"
+        )
+
     if M < 1:
         return np.array([])
 
@@ -1735,7 +1747,7 @@ _win_equiv_raw = {
     ('hamming', 'hamm', 'ham'): (hamming, False),
     ('hanning', 'hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
-    ('kaiser_derived', 'kd', 'kbd'): (kaiser, True),
+    ('kaiser_derived', 'kd', 'kbd'): (kaiser_derived, True),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
     ('slepian', 'slep', 'optimal', 'dpss', 'dss'): (slepian, True),
