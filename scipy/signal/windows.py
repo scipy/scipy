@@ -1178,6 +1178,10 @@ def kaiser_derived(M, beta):
     -----
     This window is only defined for an even number of taps.
 
+    It is designed to be suitable for use with the modified discrete cosine
+    transform (MDCT) and is mainly used in audio signal processing and
+    audio coding.
+
     .. versionadded:: 0.16.0
 
     References
@@ -1782,7 +1786,8 @@ def get_window(window, Nx, fftbins=True):
         `barthann`, `kaiser` (needs beta), `gaussian` (needs standard
         deviation), `general_gaussian` (needs power, width), `slepian`
         (needs width), `chebwin` (needs attenuation), `exponential`
-        (needs decay scale), `tukey` (needs taper fraction)
+        (needs decay scale), `tukey` (needs taper fraction),
+        `kaiser_derived` (needs beta)
 
     If the window requires no parameters, then `window` can be a string.
 
