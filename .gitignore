@@ -208,3 +208,4 @@ scipy/stats/mvnmodule.c
 scipy/stats/statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/version.py
+scipy/special/_exprel.c

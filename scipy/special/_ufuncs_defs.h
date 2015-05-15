@@ -61,7 +61,6 @@ npy_double expit(npy_double);
 npy_longdouble expitl(npy_longdouble);
 npy_double expm1(npy_double);
 npy_double expn(npy_int, npy_double);
-npy_double exprel(npy_double);
 npy_double fdtr(npy_double, npy_double, npy_double);
 npy_double fdtrc(npy_double, npy_double, npy_double);
 npy_double fdtri(npy_double, npy_double, npy_double);

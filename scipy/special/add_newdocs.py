@@ -1086,7 +1086,7 @@ add_newdoc("scipy.special", "exprel",
     --------
     expm1
 
-    .. versionadded:: 0.16.0
+    .. versionadded:: 0.17.0
     """)
 
 add_newdoc("scipy.special", "fdtr",

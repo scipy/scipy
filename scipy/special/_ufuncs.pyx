@@ -1484,8 +1484,9 @@ cdef extern from "_ufuncs_defs.h":
 from _legacy cimport expn_unsafe as _func_expn_unsafe
 ctypedef double _proto_expn_unsafe_t(double, double) nogil
 cdef _proto_expn_unsafe_t *_proto_expn_unsafe_t_var = &_func_expn_unsafe
-cdef extern from "_ufuncs_defs.h":
-    cdef double _func_exprel "exprel"(double) nogil
+from _exprel cimport exprel as _func_exprel
+ctypedef double _proto_exprel_t(double) nogil
+cdef _proto_exprel_t *_proto_exprel_t_var = &_func_exprel
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_fdtr "fdtr"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -4529,7 +4530,7 @@ cdef char *ufunc_exprel_doc = (
     "--------\n"
     "expm1\n"
     "\n"
-    ".. versionadded:: 0.16.0")
+    ".. versionadded:: 0.17.0")
 ufunc_exprel_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_exprel_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_exprel_types[0] = <char>NPY_FLOAT

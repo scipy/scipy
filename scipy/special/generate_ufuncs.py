@@ -200,7 +200,6 @@ tandg -- tandg: d->d                                       -- cephes.h
 cotdg -- cotdg: d->d                                       -- cephes.h
 log1p -- log1p: d->d                                       -- cephes.h
 expm1 -- expm1: d->d                                       -- cephes.h
-exprel -- exprel: d->d                                     -- cephes.h
 cosm1 -- cosm1: d->d                                       -- cephes.h
 spence -- spence: d->d                                     -- cephes.h
 zetac -- zetac: d->d                                       -- cephes.h
@@ -302,6 +301,7 @@ kl_div -- kl_div: dd->d                                    -- _convex_analysis.p
 rel_entr -- rel_entr: dd->d                                -- _convex_analysis.pxd
 huber -- huber: dd->d                                      -- _convex_analysis.pxd
 pseudo_huber -- pseudo_huber: dd->d                        -- _convex_analysis.pxd
+exprel -- exprel: d->d                                     -- _exprel.pxd
 """
 
 #---------------------------------------------------------------------------------
