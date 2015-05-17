@@ -355,7 +355,7 @@ zfill(const PyArrayObject * x, intp nx, char *xzfilled, intp nxzfilled)
     if (nx > 0) {
         for (i = 0; i < nx; ++i) {
             copyswap(xzfilled + i * nxl,
-                     PyArray_DATA((PyArrayObject *)x) + i * nxl,
+                     (char *)PyArray_DATA((PyArrayObject *)x) + i * nxl,
                      0, NULL);
         }
     }
