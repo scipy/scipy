@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, assert_raises, TestCase, run_module_suite)
 from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
-                                 bode, freqresp, lsim, impulse, step,
+                                 ltid, bode, freqresp, lsim, impulse, step,
                                  abcd_normalize, place_poles,
                                  TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal.filter_design import BadCoefficients
@@ -730,17 +730,20 @@ class TestLti(object):
         s = lti([1], [-1])
         assert_(isinstance(s, TransferFunction))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, ltid))
 
         # ZerosPolesGain
         s = lti(np.array([]), np.array([-1]), 1)
         assert_(isinstance(s, ZerosPolesGain))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, ltid))
 
         # StateSpace
         s = lti([], [-1], 1)
         s = lti([1], [-1], 1, 3)
         assert_(isinstance(s, StateSpace))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, ltid))
 
 
 class TestStateSpace(object):
