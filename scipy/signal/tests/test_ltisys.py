@@ -1048,8 +1048,8 @@ class Test_bode(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BadCoefficients)
             system = lti(A, B, C, D)
-
             w, mag, phase = bode(system, n=100)
+
         expected_magnitude = 20 * np.log10(np.sqrt(1.0 / (1.0 + w**6)))
         assert_almost_equal(mag, expected_magnitude)
 
