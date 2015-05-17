@@ -8,15 +8,14 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal, assert_allclose,\
- assert_
+from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
+                           assert_, run_module_suite)
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
-from scipy.integrate import quad, IntegrationWarning
-from numpy import array, sqrt, pi
-from scipy.special._testutils import FuncData
+from scipy.integrate import IntegrationWarning
+from numpy import sqrt, pi
 
-    
+
 def test_ellip_potential():
     def change_coefficient(lambda1, mu, nu, h2, k2):
         x = sqrt(lambda1**2*mu**2*nu**2/(h2*k2))
@@ -163,7 +162,7 @@ def test_ellip_norm():
         for p in range(1, 2*n+2):
             points.append((h2, k2, n*np.ones(h2.size), p*np.ones(h2.size)))
     points = np.array(points)
-    with warnings.catch_warnings(record=True):  # occerrence of roundoff ...
+    with warnings.catch_warnings(record=True):  # occurrence of roundoff ...
         assert_func_equal(ellip_normal, ellip_normal_known, points, rtol=1e-12)
 
 
@@ -269,3 +268,7 @@ def test_ellip_harm():
                 points.append((h2[i], k2[i], n, p, s[i]))
     points = np.array(points)
     assert_func_equal(ellip_harm, ellip_harm_known, points, rtol=1e-12)
+
+
+if __name__ == "__main__":
+    run_module_suite()
