@@ -1599,8 +1599,8 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     tol2 = 2.0 * tol1
 
     if disp > 2:
-        print (" ")
-        print (header)
+        print(" ")
+        print(header)
         print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
 
     while (numpy.abs(xf - xm) > (tol2 - 0.5 * (b - a))):
