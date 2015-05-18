@@ -73,7 +73,7 @@ from scipy._lib.six import callable, string_types
 from scipy._lib.six import xrange
 
 from . import _distance_wrap
-from ..linalg import norm, pinvh, svd
+from ..linalg import norm, pinvh, svd, get_blas_funcs
 import collections
 
 
@@ -127,9 +127,9 @@ def _validate_vector(u, dtype=None):
 
 
 def _gram_form_edm_operator(G):
+    # NOTE: This could be rewritten using LAPACK syr2k.
     d = np.diag(G)
-    D = d[:, None] + d[None, :] - 2*G
-    return D
+    return d[:, None] + d[None, :] - 2 * G
 
 
 def _psd_pseudo_reciprocal(x, tol=1e-14):
@@ -146,7 +146,8 @@ def _hat_matrix(X, tol=1e-14):
     # Compute X * (X.T * X).I * X.T using the SVD,
     # where .T is the transpose, .I is the Moore-Penrose pseudo-inverse,
     # and * is matrix multiplication.
-    H = _hat_matrix_helper(X, tol=tol)
+    # NOTE: This could be rewritten using LAPACK syrk.
+    H = _hat_matrix_helper(X, tol)
     return H.dot(H.T)
 
 
@@ -1325,7 +1326,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 # Compute the distances without using an explicit nxn matrix.
                 ddof = 1
                 X = X - np.mean(X, axis=0)
-                D = _gram_form_edm_operator(_hat_matrix(X))
+                H = _hat_matrix(X)
+                D = _gram_form_edm_operator(H)
                 dm = np.sqrt(squareform(D) * (m - ddof))
         elif mstr == 'canberra':
             _distance_wrap.pdist_canberra_wrap(_convert_to_double(X), dm)
@@ -2162,21 +2164,32 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             XB -= XB.mean(axis=1)[:, np.newaxis]
             _cosine_cdist(XA, XB, dm)
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
-            if VI is not None:
-                VI = _convert_to_double(np.asarray(VI, order='c'))
-                if type(VI) != np.ndarray:
-                    raise TypeError('VI must be a numpy array.')
-                if VI.dtype != np.double:
-                    raise TypeError('The array must contain 64-bit floats.')
-                [VI] = _copy_arrays_if_base_present([VI])
+            if VI is not None or V is not None:
+                if VI is not None:
+                    VI = _convert_to_double(np.asarray(VI, order='c'))
+                    if type(VI) != np.ndarray:
+                        raise TypeError('VI must be a numpy array.')
+                    if VI.dtype != np.double:
+                        raise TypeError('The array must contain 64-bit floats.')
+                    [VI] = _copy_arrays_if_base_present([VI])
+                else:
+                    X = np.vstack([XA, XB])
+                    V = np.atleast_2d(np.cov(X.T))
+                    VI = _convert_to_double(np.linalg.inv(V).T.copy())
+                _distance_wrap.cdist_mahalanobis_wrap(_convert_to_double(XA),
+                                                      _convert_to_double(XB),
+                                                      VI, dm)
             else:
                 # Compute the distances without using an explicit nxn matrix.
                 ddof = 1
                 X = np.vstack([XA, XB])
                 X = X - np.mean(X, axis=0)
                 XW = _hat_matrix_helper(X)
-                d = np.square(np.linalg.norm(XW, axis=1))
-                D = d[:mA, None] + d[None, mA:] - 2 * XW[:mA].dot(XW[mA:].T)
+                d = (XW * XW).sum(axis=1)
+                D = XW[:mA].dot(XW[mA:].T)
+                D *= -2
+                D += d[:mA, None]
+                D += d[None, mA:]
                 dm = np.sqrt(D * (mA + mB - ddof))
         elif mstr == 'canberra':
             _distance_wrap.cdist_canberra_wrap(_convert_to_double(XA),

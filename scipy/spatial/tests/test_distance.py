@@ -713,6 +713,8 @@ class TestPdist(TestCase):
         assert_allclose(dist1, dist2, rtol=1e-14)
 
     def test_pdist_mahalanobis(self):
+        np.random.seed(1234)
+
         # 1-dimensional observations
         x = np.array([2.0, 2.0, 3.0, 5.0]).reshape(-1, 1)
         dist = pdist(x, metric='mahalanobis')
@@ -725,8 +727,11 @@ class TestPdist(TestCase):
         rt2 = np.sqrt(2)
         assert_allclose(dist, [rt2, rt2, rt2, rt2, 2, 2*rt2, 2, 2, 2*rt2, 2])
 
+        # smoke test
+        x = np.random.randn(10, 2)
+        pdist(x, metric='mahalanobis')
+
         # It is OK to have a relatively small number of observations.
-        np.random.seed(1234)
         for x in (
                 [[1], [2]],
                 [[0, 1], [2, 3]],
