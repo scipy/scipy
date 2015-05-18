@@ -189,11 +189,16 @@ query_pairs(const ckdtree *self,
             const npy_float64 eps,
             std::vector<ordered_pair> *results);
             
-
+CKDTREE_EXTERN PyObject*
+count_neighbors(const ckdtree *self,
+                const ckdtree *other,
+                npy_intp n_queries,
+                npy_float64 *real_r,
+                npy_intp *results,
+                npy_intp *idx, 
+                const npy_float64 p);
+                
 // TODO: correct signatures below
-
-// CKDTREE_EXTERN PyObject*
-// count_neighbors(const ckdtree *self, const ckdtree *other);
 
 // CKDTREE_EXTERN PyObject*
 // query_ball_point(const ckdtree *self);
