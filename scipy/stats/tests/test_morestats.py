@@ -240,7 +240,8 @@ class TestAnsari(TestCase):
     def test_small(self):
         x = [1,2,3,3,4]
         y = [3,2,6,1,6,1,4,1]
-        W, pval = stats.ansari(x,y)
+        with warnings.catch_warnings(record=True):  # Ties preclude use ...
+            W, pval = stats.ansari(x,y)
         assert_almost_equal(W,23.5,11)
         assert_almost_equal(pval,0.13499256881897437,11)
 
@@ -270,7 +271,8 @@ class TestAnsari(TestCase):
     def test_result_attributes(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        res = stats.ansari(x, y)
+        with warnings.catch_warnings(record=True):  # Ties preclude use ...
+            res = stats.ansari(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 

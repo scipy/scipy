@@ -205,12 +205,13 @@ class TestGetWindow(object):
 def test_windowfunc_basics():
     for window_name, params in window_funcs:
         window = getattr(signal, window_name)
-        w1 = window(7, *params, sym=True)
-        w2 = window(7, *params, sym=False)
-        assert_array_almost_equal(w1, w2)
-        # just check the below runs
-        window(6, *params, sym=True)
-        window(6, *params, sym=False)
+        with warnings.catch_warnings(record=True):  # window is not suitable...
+            w1 = window(7, *params, sym=True)
+            w2 = window(7, *params, sym=False)
+            assert_array_almost_equal(w1, w2)
+            # just check the below runs
+            window(6, *params, sym=True)
+            window(6, *params, sym=False)
 
 
 def test_needs_params():
