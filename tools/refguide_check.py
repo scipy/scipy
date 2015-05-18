@@ -28,8 +28,9 @@ import sys
 import re
 import copy
 import inspect
-import doctest
 import warnings
+import doctest
+from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
 
 from argparse import ArgumentParser, REMAINDER
 
@@ -150,36 +151,147 @@ def report(all_dict, funcnames, deprecated, module_name):
                 print(name)
 
 
-def check_docstrings(module):
-    """Check the code in the docstrings of the module's public symbols.
+def check_docstrings(module, verbose):
+    """Check code in docstrings of the module's public symbols.
     """
+    # these names are known to fail doctesting and we like to keep it that way
+    # e.g. sometimes pseudocode is acceptable etc
+    skiplist = set(['quad', 'UnivariateSpline', 'levy_stable'])
 
-    class DTRunner(doctest.DocTestRunner):
-        def report_failure(self, out, test, example, got):
-            # do not complain if output does not match
-            pass
-
-    # namespace to run examples in
+    # the namespace to run examples in
     ns = {'np': np,
           'assert_allclose': np.testing.assert_allclose,
-          'assert_equal': np.testing.assert_equal}
+          'assert_equal': np.testing.assert_equal,
+          # recognize numpy repr's
+          'array': np.array,
+          'int64': np.int64,
+          'uint64': np.uint64,
+          'int8': np.int8,
+          'int32': np.int32,
+          'float64': np.float64,
+          'dtype': np.dtype,
+          'nan': np.nan, 'NaN': np.nan,
+          'inf': np.inf, 'Inf': np.inf,}
+
+    # if MPL is available, use display-less backend
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        have_MPL = True
+    except ImportError:
+        have_MPL = False
+
+
+    class DTRunner(doctest.DocTestRunner):
+        stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
+                     'set_title', 'imshow', 'plt.show', 'ax.axis', 'plt.plot(',
+                     '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim'}
+        rndm_markers = {'# random', '# Random', '#random', '#Random'}
+
+        def report_failure(self, out, test, example, got):
+            if (any(word in example.source for word in self.stopwords) or
+                any(word in example.want for word in self.rndm_markers)):
+                # do not complain if output does not match
+                pass
+            else:
+                return doctest.DocTestRunner.report_failure(self, out, test,
+                                                            example, got)
+
+    class Checker(doctest.OutputChecker):
+        obj_pattern = re.compile('at 0x[0-9a-fA-F]+>')
+        vanilla = doctest.OutputChecker()
+
+        def __init__(self, parse_namedtuples=True, atol=1e-8, rtol=1e-2):
+            self.parse_namedtuples = parse_namedtuples
+            self.atol, self.rtol = atol, rtol
+
+        def check_output(self, want, got, optionflags):
+
+            # cut it short if they are equal
+            if want == got:
+                return True
+
+            # skip function/object addresses
+            if self.obj_pattern.search(got):
+                return True
+
+            # ignore comments (e.g. signal.freqresp)
+            if want.lstrip().startswith("#"):
+                return True
+
+            # try the standard doctest
+            try:
+                if self.vanilla.check_output(want, got, optionflags):
+                    return True
+            except Exception:
+                pass
+
+            # OK then, convert strings to objects
+            try:
+                a_want = eval(want, ns)
+                a_got = eval(got, ns)
+            except:
+                if not self.parse_namedtuples:
+                    return False
+                # suppose that "want"  is a tuple, and "got" is smth like
+                # MoodResult(statistic=10, pvalue=0.1).
+                # Then convert the latter to the tuple (10, 0.1), 
+                # and then compare the tuples.
+                try:
+                    num = len(a_want)
+                    regex = ('[\w\d_]+\(' +
+                             ', '.join(['[\w\d_]+=(.+)']*num) +
+                             '\)')
+                    grp = re.findall(regex, got.replace('\n', ' '))
+                    if len(grp) > 1:  # no more than one for now
+                        return False
+                    # fold it back to a tuple
+                    got_again = '(' + ', '.join(grp[0]) + ')'
+                    return self.check_output(want, got_again, optionflags)
+                except Exception:
+                    return False
+
+            # ... and defer to numpy
+            try:
+                return self._do_check(a_want, a_got)
+            except Exception:
+                # heterog tuple, eg (1, np.array([1., 2.]))
+               try: 
+                    return all(self._do_check(w, g) for w, g in zip(a_want, a_got))
+               except TypeError:
+                    return False
+
+        def _do_check(self, want, got):
+            # This should be done exactly as written to correctly handle all of
+            # numpy-comparable objects, strings, and heterogenous tuples
+            try:
+                if want == got:
+                    return True
+            except Exception:
+                pass
+            return np.allclose(want, got, atol=self.atol, rtol=self.rtol)
 
     # loop over non-deprecated items
     for name in get_all_dict(module)[0]:
         obj = getattr(module, name)
 
+        if name in skiplist:
+            continue
+
+        if verbose:
+            print(name)
+
         finder = doctest.DocTestFinder()
         tests = finder.find(obj, name, globs=ns)
+        flags = NORMALIZE_WHITESPACE | ELLIPSIS | IGNORE_EXCEPTION_DETAIL
 
-        print(name)
-
-        runner = DTRunner()
+        runner = DTRunner(checker=Checker(), optionflags=flags)
         for t in tests:
-            # do not show MPL figures
-            for j, ex in enumerate(t.examples):
-                if 'show()' in ex.source:
-                    t.examples[j].source = ex.source.replace('show()', 'show')
             runner.run(t)
+
+        if have_MPL:
+            plt.close('all')
 
 
 def main(argv):
@@ -187,6 +299,7 @@ def main(argv):
     parser.add_argument("module_name", metavar="ARGS", default=[],
                         nargs=REMAINDER, help="Valid Scipy submodule name")
     parser.add_argument("--check_docs", action="store_true")
+    parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
 
     module_name = args.module_name[0].split(".")
@@ -195,7 +308,7 @@ def main(argv):
         module = getattr(module, n)
 
     if args.check_docs:
-        check_docstrings(module)
+        check_docstrings(module, args.verbose)
     else:
         funcnames = find_funcnames(module)
         all_dict, deprecated = get_all_dict(module)
