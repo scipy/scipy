@@ -293,9 +293,15 @@ class TestCdist(TestCase):
         rt2 = np.sqrt(2)
         assert_allclose(dist, [[rt2, rt2, rt2], [2, 2*rt2, 2]])
 
-        # Too few observations
-        assert_raises(ValueError,
-                      cdist, [[0, 1]], [[2, 3]], metric='mahalanobis')
+        # It is OK to have a relatively small number of observations.
+        np.random.seed(1234)
+        for XA, XB in (
+                ([[1]], [[2]]),
+                ([[0, 1]], [[2, 3]]),
+                (np.random.randn(1, 4), np.random.randn(1, 4)),
+                ):
+            dist = cdist(XA, XB, metric='mahalanobis')
+            assert_allclose(dist, np.sqrt(2))
 
     def test_cdist_canberra_random(self):
         eps = 1e-07
@@ -719,9 +725,15 @@ class TestPdist(TestCase):
         rt2 = np.sqrt(2)
         assert_allclose(dist, [rt2, rt2, rt2, rt2, 2, 2*rt2, 2, 2, 2*rt2, 2])
 
-        # Too few observations
-        assert_raises(ValueError,
-                      pdist, [[0, 1], [2, 3]], metric='mahalanobis')
+        # It is OK to have a relatively small number of observations.
+        np.random.seed(1234)
+        for x in (
+                [[1], [2]],
+                [[0, 1], [2, 3]],
+                np.random.randn(2, 4),
+                ):
+            dist = pdist(x, metric='mahalanobis')
+            assert_allclose(dist, np.sqrt(2))
 
     def test_pdist_hamming_random(self):
         eps = 1e-07
