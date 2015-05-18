@@ -58,8 +58,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         The default is 'best1bin'.
     maxiter : int, optional
         The maximum number of times the entire population is evolved.
-        The maximum number of function evaluations is:
-        ``maxiter * popsize * len(x)``
+        The maximum number of function evaluations (with no polishing) is:
+        ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals.
@@ -239,8 +239,8 @@ class DifferentialEvolutionSolver(object):
 
     maxiter : int, optional
         The maximum number of times the entire population is evolved. The
-        maximum number of function evaluations is:
-        ``maxiter * popsize * len(x)``
+        maximum number of function evaluations (with no polishing) is:
+        ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals.
