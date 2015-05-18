@@ -1042,14 +1042,14 @@ class Test_bode(object):
         # frequency response.
         a = np.array([1.0, 2.0, 2.0, 1.0])
         A = linalg.companion(a).T
-        B = np.array([[0.0],[0.0],[1.0]])
+        B = np.array([[0.0], [0.0], [1.0]])
         C = np.array([[1.0, 0.0, 0.0]])
         D = np.array([[0.0]])
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BadCoefficients)
             system = lti(A, B, C, D)
+            w, mag, phase = bode(system, n=100)
 
-        w, mag, phase = bode(system, n=100)
         expected_magnitude = 20 * np.log10(np.sqrt(1.0 / (1.0 + w**6)))
         assert_almost_equal(mag, expected_magnitude)
 
@@ -1134,8 +1134,7 @@ class Test_freqresp(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", BadCoefficients)
             system = lti(A, B, C, D)
-
-        w, H = freqresp(system, n=100)
+            w, H = freqresp(system, n=100)
         expected_magnitude = np.sqrt(1.0 / (1.0 + w**6))
         assert_almost_equal(np.abs(H), expected_magnitude)
 

@@ -948,7 +948,7 @@ class TestBrute:
 
         # test minimize
         resbrute = optimize.brute(self.func, self.rranges, args=self.params,
-                                  disp=True, full_output=True,
+                                  full_output=True,
                                   finish=optimize.minimize)
         assert_allclose(resbrute[0], self.solution, atol=1e-3)
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),

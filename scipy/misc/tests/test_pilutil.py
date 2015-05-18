@@ -4,6 +4,7 @@ import os.path
 import tempfile
 import shutil
 import numpy as np
+import warnings
 
 from numpy.testing import (assert_, assert_equal, dec, decorate_methods,
                            TestCase, run_module_suite, assert_allclose)
@@ -68,16 +69,19 @@ class TestPILUtil(TestCase):
         assert_equal(misc.bytescale(np.array([3, 3, 3]), low=4), [4, 4, 4])
 
     def test_imsave(self):
-        img = misc.imread(os.path.join(datapath, 'data', 'icon.png'))
+        with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+            img = misc.imread(os.path.join(datapath, 'data', 'icon.png'))
         tmpdir = tempfile.mkdtemp()
         try:
             fn1 = os.path.join(tmpdir, 'test.png')
             fn2 = os.path.join(tmpdir, 'testimg')
-            misc.imsave(fn1, img)
-            misc.imsave(fn2, img, 'PNG')
+            with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+                misc.imsave(fn1, img)
+                misc.imsave(fn2, img, 'PNG')
 
-            data1 = misc.imread(fn1)
-            data2 = misc.imread(fn2)
+            with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+                data1 = misc.imread(fn1)
+                data2 = misc.imread(fn2)
 
             assert_allclose(data1, img)
             assert_allclose(data2, img)
