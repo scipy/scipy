@@ -152,3 +152,9 @@ class Distance(Benchmark):
 
     def time_cdist(self, shape, metric):
         cdist(self.XA, self.XB, metric=metric)
+
+    def peakmem_pdist(self, shape, metric):
+        pdist(self.XA, metric=metric)
+
+    def peakmem_cdist(self, shape, metric):
+        cdist(self.XA, self.XB, metric=metric)

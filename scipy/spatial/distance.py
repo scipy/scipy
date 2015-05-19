@@ -1323,7 +1323,6 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 _distance_wrap.pdist_mahalanobis_wrap(_convert_to_double(X),
                                                       VI, dm)
             else:
-                # Compute the distances without using an explicit nxn matrix.
                 ddof = 1
                 X = X - np.mean(X, axis=0)
                 H = _hat_matrix(X)
@@ -2180,16 +2179,12 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                                                       _convert_to_double(XB),
                                                       VI, dm)
             else:
-                # Compute the distances without using an explicit nxn matrix.
                 ddof = 1
                 X = np.vstack([XA, XB])
                 X = X - np.mean(X, axis=0)
                 XW = _hat_matrix_helper(X)
                 d = (XW * XW).sum(axis=1)
-                D = XW[:mA].dot(XW[mA:].T)
-                D *= -2
-                D += d[:mA, None]
-                D += d[None, mA:]
+                D = d[:mA, None] + d[None, mA:] - 2*XW[:mA].dot(XW[mA:].T)
                 dm = np.sqrt(D * (mA + mB - ddof))
         elif mstr == 'canberra':
             _distance_wrap.cdist_canberra_wrap(_convert_to_double(XA),
