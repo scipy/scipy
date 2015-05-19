@@ -645,7 +645,7 @@ def hann(M, sym=True):
     .. math::  w(n) = 0.5 - 0.5 \cos\left(\frac{2\pi{n}}{M-1}\right)
                \qquad 0 \leq n \leq M-1
 
-    The window was named for Julius van Hann, an Austrian meteorologist. It is
+    The window was named for Julius von Hann, an Austrian meteorologist. It is
     also known as the Cosine Bell. It is sometimes erroneously referred to as
     the "Hanning" window, from the use of "hann" as a verb in the original
     paper and confusion with the very similar Hamming window.
