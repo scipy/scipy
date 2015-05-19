@@ -32,6 +32,7 @@ infinity = np.inf
 number_of_processors = cpu_count()
 
 from libcpp.vector cimport vector
+from libc cimport string
 
 __all__ = ['cKDTree']
 
@@ -60,6 +61,13 @@ cdef extern from "ckdtree_cpp_decl.h":
 # Pickle helper functions
 # ======================
 
+cdef extern from "ckdtree_cpp_ordered_pair.h":
+
+    struct ordered_pair:
+        np.intp_t i
+        np.intp_t j
+
+
 def new_object(obj):
     return obj.__new__(obj)
  
@@ -67,6 +75,7 @@ cdef extern from "ckdtree_cpp_utils.h":
     object pickle_tree_buffer(vector[ckdtreenode] *buf)    
     object unpickle_tree_buffer(vector[ckdtreenode] *buf, object src)
     ckdtreenode *tree_buffer_root(vector[ckdtreenode] *buf)
+    ordered_pair *ordered_pair_vector_buf(vector[ordered_pair] *buf)
     void *tree_buffer_pointer(vector[ckdtreenode] *buf)
     
 
@@ -790,6 +799,8 @@ cdef class cKDTreeNode:
 # Main cKDTree class
 # ==================
 
+
+
 cdef extern from "ckdtree_cpp_methods.h":
 
     # External query methods in C++. These will internally
@@ -803,7 +814,21 @@ cdef extern from "ckdtree_cpp_methods.h":
                      const np.intp_t    k, 
                      const np.float64_t eps, 
                      const np.float64_t p, 
-                     const np.float64_t distance_upper_bound)         
+                     const np.float64_t distance_upper_bound) 
+                     
+    object query_pairs(const ckdtree *self, 
+                       const np.float64_t r, 
+                       const np.float64_t p, 
+                       const np.float64_t eps,
+                       vector[ordered_pair] *results)
+                       
+    object count_neighbors(const ckdtree *self,
+                           const ckdtree *other,
+                           np.intp_t     n_queries,
+                           np.float64_t  *real_r,
+                           np.intp_t     *results,
+                           np.intp_t     *idx,
+                           const np.float64_t p)
                      
                       
 cdef public class cKDTree [object ckdtree, type ckdtree_type]:
@@ -1701,150 +1726,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # -----------
     # query_pairs
     # -----------
-    cdef int __query_pairs_traverse_no_checking(cKDTree self,
-                                                set results,
-                                                ckdtreenode *node1,
-                                                ckdtreenode *node2) except -1:
-        cdef ckdtreenode *lnode1
-        cdef ckdtreenode *lnode2
-        cdef list results_i
-        cdef np.intp_t i, j, min_j
-        
-        if node1.split_dim == -1:  # leaf node
-            lnode1 = node1
-            
-            if node2.split_dim == -1:  # leaf node
-                lnode2 = node2
-
-                for i in range(lnode1.start_idx, lnode1.end_idx):
-                    # Special care here to avoid duplicate pairs
-                    if node1 == node2:
-                        min_j = i + 1
-                    else:
-                        min_j = lnode2.start_idx
-                        
-                    for j in range(min_j, lnode2.end_idx):
-                        set_add_ordered_pair(results,
-                                             self.raw_indices[i],
-                                             self.raw_indices[j])
-                            
-            else:
-                self.__query_pairs_traverse_no_checking(results, node1, node2.less)
-                self.__query_pairs_traverse_no_checking(results, node1, node2.greater)
-        else:
-            if node1 == node2:
-                # Avoid traversing (node1.less, node2.greater) and
-                # (node1.greater, node2.less) (it's the same node pair twice
-                # over, which is the source of the complication in the
-                # original KDTree.query_pairs)
-                self.__query_pairs_traverse_no_checking(results, node1.less, node2.less)
-                self.__query_pairs_traverse_no_checking(results, node1.less, node2.greater)
-                self.__query_pairs_traverse_no_checking(results, node1.greater, node2.greater)
-            else:
-                self.__query_pairs_traverse_no_checking(results, node1.less, node2)
-                self.__query_pairs_traverse_no_checking(results, node1.greater, node2)
-
-        return 0
-
-    @cython.cdivision(True)
-    cdef int __query_pairs_traverse_checking(cKDTree self,
-                                             set results,
-                                             ckdtreenode *node1,
-                                             ckdtreenode *node2,
-                                             RectRectDistanceTracker tracker) except -1:
-        cdef ckdtreenode *lnode1
-        cdef ckdtreenode *lnode2
-        cdef list results_i
-        cdef np.float64_t d
-        cdef np.intp_t i, j, min_j
-
-        if tracker.min_distance > tracker.upper_bound * tracker.epsfac:
-            return 0
-        elif tracker.max_distance < tracker.upper_bound / tracker.epsfac:
-            self.__query_pairs_traverse_no_checking(results, node1, node2)
-        elif node1.split_dim == -1:  # 1 is leaf node
-            lnode1 = node1
-            
-            if node2.split_dim == -1:  # 1 & 2 are leaves
-                lnode2 = node2
-                
-                # brute-force
-                for i in range(lnode1.start_idx, lnode1.end_idx):
-                    
-                    # Special care here to avoid duplicate pairs
-                    if node1 == node2:
-                        min_j = i + 1
-                    else:
-                        min_j = lnode2.start_idx
-                        
-                    for j in range(min_j, lnode2.end_idx):
-                        d = _distance_p(
-                            self.raw_data + self.raw_indices[i] * self.m,
-                            self.raw_data + self.raw_indices[j] * self.m,
-                            tracker.p, self.m, tracker.upper_bound)
-                        if d <= tracker.upper_bound:
-                            set_add_ordered_pair(results,
-                                                 self.raw_indices[i],
-                                                 self.raw_indices[j])
-                            
-            else:  # 1 is a leaf node, 2 is inner node
-                tracker.push_less_of(2, node2)
-                self.__query_pairs_traverse_checking(
-                    results, node1, node2.less, tracker)
-                tracker.pop()
-                    
-                tracker.push_greater_of(2, node2)
-                self.__query_pairs_traverse_checking(
-                    results, node1, node2.greater, tracker)
-                tracker.pop()
-                
-        else:  # 1 is an inner node
-            if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                tracker.push_less_of(1, node1)
-                self.__query_pairs_traverse_checking(
-                    results, node1.less, node2, tracker)
-                tracker.pop()
-                
-                tracker.push_greater_of(1, node1)
-                self.__query_pairs_traverse_checking(
-                    results, node1.greater, node2, tracker)
-                tracker.pop()
-                
-            else: # 1 and 2 are inner nodes
-                tracker.push_less_of(1, node1)
-                tracker.push_less_of(2, node2)
-                self.__query_pairs_traverse_checking(
-                    results, node1.less, node2.less, tracker)
-                tracker.pop()
-                    
-                tracker.push_greater_of(2, node2)
-                self.__query_pairs_traverse_checking(
-                    results, node1.less, node2.greater, tracker)
-                tracker.pop()
-                tracker.pop()
-                    
-                tracker.push_greater_of(1, node1)
-                if node1 != node2:
-                    # Avoid traversing (node1.less, node2.greater) and
-                    # (node1.greater, node2.less) (it's the same node pair
-                    # twice over, which is the source of the complication in
-                    # the original KDTree.query_pairs)
-                    tracker.push_less_of(2, node2)
-                    self.__query_pairs_traverse_checking(
-                        results, node1.greater, node2.less, tracker)
-                    tracker.pop()
-                    
-                tracker.push_greater_of(2, node2)
-                self.__query_pairs_traverse_checking(
-                    results, node1.greater, node2.greater, tracker)
-                tracker.pop()
-                tracker.pop()
-                
-        return 0
-            
-
+    
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
-                    np.float64_t eps=0):
+                    np.float64_t eps=0, object output_type=set):
         """
         query_pairs(self, r, p=2., eps=0)
 
@@ -1862,139 +1746,63 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
+        output_type : type, optional
+            Choose the output container, set or ndarray. Default: set
 
         Returns
         -------
-        results : set
+        results : set or ndarray
             Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
-            positions are close.
+            positions are close. If output_type is ndarray, an ndarry is 
+            returned instead of a set.
 
         """
+                 
+        cdef vector[ordered_pair] *vres
+        cdef set results
+        cdef np.intp_t i, n
+        cdef ordered_pair *pair
+        cdef np.ndarray array_res
         
-        tracker = RectRectDistanceTracker(
-            Rectangle(self.mins, self.maxes),
-            Rectangle(self.mins, self.maxes),
-            p, eps, r)
+        if output_type not in (set, np.ndarray):
+            raise ValueError("output type must be set or ndarray")
         
+        vres = NULL
         results = set()
-        self.__query_pairs_traverse_checking(
-            results, self.ctree, self.ctree, tracker)
+        try:
+            vres = new vector[ordered_pair]()
+            query_pairs(<ckdtree*> self, r, p, eps, vres)
+            n = vres.size()
+            pair = ordered_pair_vector_buf(vres)
+            
+            if output_type == set:
+                if sizeof(long) < sizeof(np.intp_t):
+                    # Needed for Python 2.x on Win64
+                    for i in range(n):
+                        results.add((int(pair.i), int(pair.j)))
+                        pair += 1 
+                else:
+                    # other platforms
+                    for i in range(n):
+                        results.add((pair.i, pair.j))
+                        pair += 1
+            else:
+                array_res = np.zeros((n,2), dtype=np.intp)
+                string.memcpy(np.PyArray_DATA(array_res), <void*> pair, 
+                                  n*2*sizeof(np.intp_t))
+        finally:
+            if vres != NULL:
+                del vres
         
-        return results
+        if output_type == set:
+            return results
+        else:           
+            return array_res
 
 
     # ---------------
     # count_neighbors
     # ---------------
-    cdef int __count_neighbors_traverse(cKDTree self,
-                                        cKDTree other,
-                                        np.intp_t     n_queries,
-                                        np.float64_t  *r,
-                                        np.intp_t     *results,
-                                        np.intp_t     *idx,
-                                        ckdtreenode   *node1,
-                                        ckdtreenode   *node2,
-                                        RectRectDistanceTracker tracker) except -1:
-        cdef ckdtreenode *lnode1
-        cdef ckdtreenode *lnode2
-        cdef np.float64_t d
-        cdef np.intp_t *old_idx
-        cdef np.intp_t old_n_queries, l, i, j
-
-        # Speed through pairs of nodes all of whose children are close
-        # and see if any work remains to be done
-        old_idx = idx
-        cdef np.ndarray[np.intp_t, ndim=1] inner_idx
-        inner_idx = np.empty((n_queries,), dtype=np.intp)
-        idx = &inner_idx[0]
-
-        old_n_queries = n_queries
-        n_queries = 0
-        for i in range(old_n_queries):
-            if tracker.max_distance < r[old_idx[i]]:
-                results[old_idx[i]] += node1.children * node2.children
-            elif tracker.min_distance <= r[old_idx[i]]:
-                idx[n_queries] = old_idx[i]
-                n_queries += 1
-
-        if n_queries > 0:
-            # OK, need to probe a bit deeper
-            if node1.split_dim == -1:  # 1 is leaf node
-                lnode1 = node1
-                if node2.split_dim == -1:  # 1 & 2 are leaves
-                    lnode2 = node2
-                    
-                    # brute-force
-                    for i in range(lnode1.start_idx, lnode1.end_idx):
-                        for j in range(lnode2.start_idx, lnode2.end_idx):
-                            d = _distance_p(
-                                self.raw_data + self.raw_indices[i] * self.m,
-                                other.raw_data + other.raw_indices[j] * other.m,
-                                tracker.p, self.m, tracker.max_distance)
-                            # I think it's usually cheaper to test d against all r's
-                            # than to generate a distance array, sort it, then
-                            # search for all r's via binary search
-                            for l in range(n_queries):
-                                if d <= r[idx[l]]:
-                                    results[idx[l]] += 1
-                                
-                else:  # 1 is a leaf node, 2 is inner node
-                    tracker.push_less_of(2, node2)
-                    self.__count_neighbors_traverse(
-                        other, n_queries, r, results, idx,
-                        node1, node2.less, tracker)
-                    tracker.pop()
-
-                    tracker.push_greater_of(2, node2)
-                    self.__count_neighbors_traverse(
-                        other, n_queries, r, results, idx,
-                        node1, node2.greater, tracker)
-                    tracker.pop()
-                
-            else:  # 1 is an inner node
-                if node2.split_dim == -1:  # 1 is an inner node, 2 is a leaf node
-                    tracker.push_less_of(1, node1)
-                    self.__count_neighbors_traverse(
-                        other, n_queries, r, results, idx,
-                        node1.less, node2, tracker)
-                    tracker.pop()
-                    
-                    tracker.push_greater_of(1, node1)
-                    self.__count_neighbors_traverse(
-                        other, n_queries, r, results, idx,
-                        node1.greater, node2, tracker)
-                    tracker.pop()
-                    
-                else: # 1 and 2 are inner nodes
-                    tracker.push_less_of(1, node1)
-                    tracker.push_less_of(2, node2)
-                    self.__count_neighbors_traverse(
-                        other, n_queries, r, results, idx,
-                        node1.less, node2.less, tracker)
-                    tracker.pop()
-                        
-                    tracker.push_greater_of(2, node2)
-                    self.__count_neighbors_traverse(
-                        other, n_queries, r, results, idx,
-                        node1.less, node2.greater, tracker)
-                    tracker.pop()
-                    tracker.pop()
-                        
-                    tracker.push_greater_of(1, node1)
-                    tracker.push_less_of(2, node2)
-                    self.__count_neighbors_traverse(
-                        other, n_queries, r, results, idx,
-                        node1.greater, node2.less, tracker)
-                    tracker.pop()
-                        
-                    tracker.push_greater_of(2, node2)
-                    self.__count_neighbors_traverse(
-                        other, n_queries, r, results, idx,
-                        node1.greater, node2.greater, tracker)
-                    tracker.pop()
-                    tracker.pop()
-                    
-        return 0
 
     @cython.boundscheck(False)
     def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.):
@@ -2017,7 +1825,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
             a single tree traversal.
-        p : float, 1<=p<=infinity
+        p : float, optional 
+            1<=p<=infinity, default 2.0
             Which Minkowski p-norm to use
 
         Returns
@@ -2052,18 +1861,11 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 if real_r[i] != infinity:
                     real_r[i] = real_r[i] ** p
 
-        # Track node-to-node min/max distances
-        tracker = RectRectDistanceTracker(Rectangle(self.mins, self.maxes),
-                                          Rectangle(other.mins, other.maxes),
-                                          p, 0.0, 0.0)
-        
-        # Go!
         results = np.zeros(n_queries, dtype=np.intp)
         idx = np.arange(n_queries, dtype=np.intp)
-        self.__count_neighbors_traverse(other, n_queries,
-                                        &real_r[0], &results[0], &idx[0],
-                                        self.ctree, other.ctree,
-                                        tracker)
+        
+        count_neighbors(<ckdtree*> self, <ckdtree*> other, n_queries,
+                        &real_r[0], &results[0], &idx[0], p)
         
         if r_ndim == 0:
             if results[0] <= <np.intp_t> LONG_MAX:
