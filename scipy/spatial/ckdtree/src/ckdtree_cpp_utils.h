@@ -40,6 +40,15 @@ ordered_pair_vector_buf(std::vector<ordered_pair> *buf)
     return &tmp[0];
 }
 
+inline npy_intp *
+npy_intp_vector_buf(std::vector<npy_intp> *buf)
+{
+    std::vector<npy_intp> &tmp = *buf;
+    return &tmp[0];
+}
+
+
+
 
 static PyObject *
 pickle_tree_buffer(std::vector<ckdtreenode> *buf)

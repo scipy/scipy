@@ -10,6 +10,8 @@
 #include <cstring>
 
 
+#include <iostream>
+
 
 extern npy_float64 infinity;
 
@@ -422,7 +424,6 @@ struct PointRectDistanceTracker {
         infinity = ::infinity;
 
         pt = _pt;
-        rect = _rect;
         p = _p;
         
         // internally we represent all distances as distance ** p
@@ -491,7 +492,7 @@ struct PointRectDistanceTracker {
         else {
             min_distance = min_dist_point_rect_p_inf(pt, rect);
             max_distance = max_dist_point_rect_p_inf(pt, rect);
-        }    
+        } 
     };
     
     inline void push_less_of(const ckdtreenode* node) {

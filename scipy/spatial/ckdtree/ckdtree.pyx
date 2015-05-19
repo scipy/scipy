@@ -12,6 +12,7 @@ import scipy.sparse
 cimport numpy as np
     
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+from cpython cimport PyList_New
 
 cimport cython
 
@@ -77,7 +78,8 @@ cdef extern from "ckdtree_cpp_utils.h":
     ckdtreenode *tree_buffer_root(vector[ckdtreenode] *buf)
     ordered_pair *ordered_pair_vector_buf(vector[ordered_pair] *buf)
     void *tree_buffer_pointer(vector[ckdtreenode] *buf)
-    
+    np.intp_t *npy_intp_vector_buf(vector[np.intp_t] *buf)
+     
 
 # Notes on int and 64-bit cleanliness
 # ===================================
@@ -829,6 +831,13 @@ cdef extern from "ckdtree_cpp_methods.h":
                            np.intp_t     *results,
                            np.intp_t     *idx,
                            const np.float64_t p)
+                           
+    object query_ball_point(const ckdtree *self,
+                            const np.float64_t *x,
+                            const np.float64_t r,
+                            const np.float64_t p,
+                            const np.float64_t eps,
+                            vector[np.intp_t] *results)
                      
                       
 cdef public class cKDTree [object ckdtree, type ckdtree_type]:
@@ -1417,74 +1426,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # ----------------
     # query_ball_point
     # ----------------
-    cdef int __query_ball_point_traverse_no_checking(cKDTree self,
-                                                     list results,
-                                                     ckdtreenode *node) except -1:
-        cdef ckdtreenode *lnode
-        cdef np.intp_t i
-
-        if node.split_dim == -1:  # leaf node
-            lnode = node
-            for i in range(lnode.start_idx, lnode.end_idx):
-                list_append(results, self.raw_indices[i])
-        else:
-            self.__query_ball_point_traverse_no_checking(results, node.less)
-            self.__query_ball_point_traverse_no_checking(results, node.greater)
-
-        return 0
-
-
-    @cython.cdivision(True)
-    cdef int __query_ball_point_traverse_checking(cKDTree self,
-                                                  list results,
-                                                  ckdtreenode *node,
-                                                  PointRectDistanceTracker tracker) except -1:
-        cdef ckdtreenode *lnode
-        cdef np.float64_t d
-        cdef np.intp_t i
-
-        if tracker.min_distance > tracker.upper_bound * tracker.epsfac:
-            return 0
-        elif tracker.max_distance < tracker.upper_bound / tracker.epsfac:
-            self.__query_ball_point_traverse_no_checking(results, node)
-        elif node.split_dim == -1:  # leaf node
-            lnode = <ckdtreenode*>node
-            # brute-force
-            for i in range(lnode.start_idx, lnode.end_idx):
-                d = _distance_p(
-                    self.raw_data + self.raw_indices[i] * self.m,
-                    tracker.pt, tracker.p, self.m, tracker.upper_bound)
-                if d <= tracker.upper_bound:
-                    list_append(results, self.raw_indices[i])
-        else:
-            tracker.push_less_of(node)
-            self.__query_ball_point_traverse_checking(
-                results, node.less, tracker)
-            tracker.pop()
-            
-            tracker.push_greater_of(node)
-            self.__query_ball_point_traverse_checking(
-                results, node.greater, tracker)
-            tracker.pop()
-            
-        return 0
-
-
-    cdef list __query_ball_point(cKDTree self,
-                                 np.float64_t *x,
-                                 np.float64_t r,
-                                 np.float64_t p,
-                                 np.float64_t eps):
-
-        tracker = PointRectDistanceTracker()
-        tracker.init(x, Rectangle(self.mins, self.maxes),
-                     p, eps, r)
-        
-        results = []
-        self.__query_ball_point_traverse_checking(
-            results, self.ctree, tracker)
-        return results
-
 
     def query_ball_point(cKDTree self, object x, np.float64_t r,
                          np.float64_t p=2., np.float64_t eps=0):
@@ -1530,22 +1471,53 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         [4, 8, 9, 12]
 
         """
-        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] xx
+        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] xx        
+        cdef vector[np.intp_t] *vres             
+        cdef np.intp_t *cur
+        cdef list tmp
+        cdef np.intp_t i, n
         
-        x = np.asarray(x, dtype=np.float64)
-        if x.shape[-1] != self.m:
-            raise ValueError("Searching for a %d-dimensional point in a "
-                             "%d-dimensional KDTree" % (int(x.shape[-1]), int(self.m)))
-        if len(x.shape) == 1:
-            xx = np.ascontiguousarray(x, dtype=np.float64)
-            return self.__query_ball_point(&xx[0], r, p, eps)
-        else:
-            retshape = x.shape[:-1]
-            result = np.empty(retshape, dtype=object)
-            for c in np.ndindex(retshape):
-                xx = np.ascontiguousarray(x[c], dtype=np.float64)
-                result[c] = self.__query_ball_point(&xx[0], r, p, eps)
-            return result
+        vres = NULL
+        try:
+               
+            x = np.asarray(x, dtype=np.float64)
+            if x.shape[-1] != self.m:
+                raise ValueError("Searching for a %d-dimensional point in a "
+                                 "%d-dimensional KDTree" % 
+                                     (int(x.shape[-1]), int(self.m)))
+            if len(x.shape) == 1:
+                vres = new vector[np.intp_t]()
+                xx = np.ascontiguousarray(x, dtype=np.float64)
+                query_ball_point(<ckdtree*> self, &xx[0], r, p, eps, vres)
+                n = <Py_ssize_t> vres.size()
+                tmp = n * [None]
+                cur = npy_intp_vector_buf(vres)
+                for i in range(n):
+                    tmp[i] = cur[0]
+                    cur += 1
+                result = tmp
+            else:
+                retshape = x.shape[:-1]
+                result = np.empty(retshape, dtype=object)
+                vres = new vector[np.intp_t]()
+                for c in np.ndindex(retshape):
+                    xx = np.ascontiguousarray(x[c], dtype=np.float64)
+                    vres.resize(0)
+                    query_ball_point(<ckdtree*> self, &xx[0], r, p, eps, vres)
+                    n = <Py_ssize_t> vres.size()
+                    tmp = n * [None]
+                    cur = npy_intp_vector_buf(vres)
+                    for i in range(n):
+                        tmp[i] = cur[0]
+                        cur += 1
+                    result[c] = tmp
+        
+        finally:
+            if vres != NULL: 
+                del vres
+                
+        return result   
+            
 
     # ---------------
     # query_ball_tree

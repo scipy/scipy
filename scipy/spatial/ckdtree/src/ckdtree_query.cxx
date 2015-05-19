@@ -174,7 +174,7 @@ struct nodeinfo_pool {
 
 // k-nearest neighbor search for a single point x
 static void 
-__query_single_point(const ckdtree *self, 
+query_single_point(const ckdtree *self, 
                      npy_float64   *result_distances, 
                      npy_intp      *result_indices, 
                      const npy_float64  *x, 
@@ -432,7 +432,7 @@ query_knn(const ckdtree      *self,
                 npy_float64 *dd_row = dd + (i*k);
                 npy_intp *ii_row = ii + (i*k);
                 const npy_float64 *xx_row = xx + (i*m);                
-                __query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
             }    
         } 
         catch(...) {

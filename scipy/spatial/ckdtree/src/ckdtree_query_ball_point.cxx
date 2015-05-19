@@ -17,104 +17,116 @@
 #include "ckdtree_cpp_decl.h"
 #include "ckdtree_cpp_methods.h"
 #include "ckdtree_cpp_exc.h"
-#include "ckdtree_cpp_rectangle"
-
-// TODO: port this to C++
-
-cdef int __query_ball_point_traverse_no_checking(cKDTree self,
-                                                     list results,
-                                                     ckdtreenode *node) except -1:
-        cdef ckdtreenode *lnode
-        cdef np.intp_t i
-
-        if node.split_dim == -1:  # leaf node
-            lnode = node
-            for i in range(lnode.start_idx, lnode.end_idx):
-                list_append(results, self.raw_indices[i])
-        else:
-            self.__query_ball_point_traverse_no_checking(results, node.less)
-            self.__query_ball_point_traverse_no_checking(results, node.greater)
-
-        return 0
+#include "ckdtree_cpp_rectangle.h"
 
 
-    @cython.cdivision(True)
-    cdef int __query_ball_point_traverse_checking(cKDTree self,
-                                                  list results,
-                                                  ckdtreenode *node,
-                                                  PointRectDistanceTracker tracker) except -1:
-        cdef ckdtreenode *lnode
-        cdef np.float64_t d
-        cdef np.intp_t i
+static void
+query_ball_point_traverse_no_checking(const ckdtree *self,
+                                        std::vector<npy_intp> *results,
+                                        const ckdtreenode *node)
+{                                                    
+    const ckdtreenode *lnode;
+    npy_intp i;
+    
+    if (node->split_dim == -1) {  /* leaf node */
+        lnode = node;
+        for (i = lnode->start_idx; i < lnode->end_idx; ++i)
+            results->push_back(self->raw_indices[i]);
+    }
+    else {
+        query_ball_point_traverse_no_checking(self, results, node->less);
+        query_ball_point_traverse_no_checking(self, results, node->greater);
+    }
+}
 
-        if tracker.min_distance > tracker.upper_bound * tracker.epsfac:
-            return 0
-        elif tracker.max_distance < tracker.upper_bound / tracker.epsfac:
-            self.__query_ball_point_traverse_no_checking(results, node)
-        elif node.split_dim == -1:  # leaf node
-            lnode = <ckdtreenode*>node
-            # brute-force
-            for i in range(lnode.start_idx, lnode.end_idx):
-                d = _distance_p(
-                    self.raw_data + self.raw_indices[i] * self.m,
-                    tracker.pt, tracker.p, self.m, tracker.upper_bound)
-                if d <= tracker.upper_bound:
-                    list_append(results, self.raw_indices[i])
-        else:
-            tracker.push_less_of(node)
-            self.__query_ball_point_traverse_checking(
-                results, node.less, tracker)
-            tracker.pop()
+
+static void 
+query_ball_point_traverse_checking(const ckdtree *self,
+                                     std::vector<npy_intp> *results,
+                                     const ckdtreenode *node,
+                                     PointRectDistanceTracker *tracker)
+{
+    const ckdtreenode *lnode;
+    npy_float64 d;
+    npy_intp i;
+
+    if (tracker->min_distance > tracker->upper_bound * tracker->epsfac)
+        return;
+    else if (tracker->max_distance < tracker->upper_bound / tracker->epsfac)
+        query_ball_point_traverse_no_checking(self, results, node);
+    else if (node->split_dim == -1)  { /* leaf node */
+        
+        /* brute-force */
+                
+        const npy_float64 *raw_data = self->raw_data;
+        const npy_intp *raw_indices = self->raw_indices;
+        const npy_intp m = self->m;
+        
+        lnode = node;
             
-            tracker.push_greater_of(node)
-            self.__query_ball_point_traverse_checking(
-                results, node.greater, tracker)
-            tracker.pop()
+        prefetch_datapoint(raw_data+raw_indices[lnode->start_idx]*m, m);
+        if (lnode->start_idx < lnode->end_idx)
+            prefetch_datapoint(raw_data+raw_indices[lnode->start_idx+1]*m, m);
+                
+        for (i = lnode->start_idx; i < lnode->end_idx; ++i) {
             
-        return 0
-
-
-    cdef list __query_ball_point(cKDTree self,
-                                 np.float64_t *x,
-                                 np.float64_t r,
-                                 np.float64_t p,
-                                 np.float64_t eps):
-
-        tracker = PointRectDistanceTracker()
-        tracker.init(x, Rectangle(self.mins, self.maxes),
-                     p, eps, r)
+            if (i < lnode->end_idx-2)
+                prefetch_datapoint(raw_data+raw_indices[i+2]*m, m);
+           
+            d = _distance_p(
+                raw_data + raw_indices[i] * m,
+                tracker->pt, tracker->p, m, tracker->upper_bound);
+                
+            if (d <= tracker->upper_bound) {
+                results->push_back((npy_intp) raw_indices[i]);
+            }
+        }
+    }
+    else {
+    
+        tracker->push_less_of(node);
+        query_ball_point_traverse_checking(
+            self, results, node->less, tracker);
+        tracker->pop();
         
-        results = []
-        self.__query_ball_point_traverse_checking(
-            results, self.ctree, tracker)
-        return results
-        
-        
+        tracker->push_greater_of(node);
+        query_ball_point_traverse_checking(
+            self, results, node->greater, tracker);
+        tracker->pop();
+    }    
+}
+
         
 extern "C" PyObject*
-query_ball_point(const ckdtree *self ...)
+query_ball_point(const ckdtree *self,
+                 const npy_float64 *x,
+                 const npy_float64 r,
+                 const npy_float64 p,
+                 const npy_float64 eps,
+                 std::vector<npy_intp> *results)
 {
 
-    // release the GIL
+    /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
     {
         try {
-             
-             // TODO: Add C++ code to start the query
-             
+            Rectangle rect(self->m, self->raw_mins, self->raw_maxes);             
+            PointRectDistanceTracker tracker(x, rect, p, eps, r);
+            query_ball_point_traverse_checking(
+                self, results, self->ctree, &tracker);             
         } 
         catch(...) {
             translate_cpp_exception_with_gil();
         }
     }  
-    // reacquire the GIL
+    /* reacquire the GIL */
     NPY_END_ALLOW_THREADS
 
     if (PyErr_Occurred()) 
-        // true if a C++ exception was translated
+        /* true if a C++ exception was translated */
         return NULL;
     else {
-        // return None if there were no errors
+        /* return None if there were no errors */
         Py_RETURN_NONE;
     }
 }        

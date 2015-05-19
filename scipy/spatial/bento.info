@@ -8,7 +8,8 @@ Library:
             ckdtree/src/ckdtree_globals.cxx,
             ckdtree/src/ckdtree_cpp_exc.cxx,
             ckdtree/src/ckdtree_query_pairs.cxx,
-            ckdtree/src/ckdtree_count_neighbors.cxx
+            ckdtree/src/ckdtree_count_neighbors.cxx,
+            ckdtree/src/ckdtree_query_ball_point.cxx
     Extension: _distance_wrap
         Sources: src/distance_wrap.c
     Extension: qhull

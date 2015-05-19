@@ -54,7 +54,7 @@ prefetch_datapoint(const npy_float64 *x, const npy_intp m)
 
 #else
 
-    #define prefetch_datapoint(x,y)
+#define prefetch_datapoint(x,y)
 
 #endif // _WIN32
 #endif // __GNUC__
@@ -197,11 +197,16 @@ count_neighbors(const ckdtree *self,
                 npy_intp *results,
                 npy_intp *idx, 
                 const npy_float64 p);
+                               
+CKDTREE_EXTERN PyObject*
+query_ball_point(const ckdtree *self,
+                 const npy_float64 *x,
+                 const npy_float64 r,
+                 const npy_float64 p,
+                 const npy_float64 eps,
+                 std::vector<npy_intp> *results);
                 
 // TODO: correct signatures below
-
-// CKDTREE_EXTERN PyObject*
-// query_ball_point(const ckdtree *self);
 
 // CKDTREE_EXTERN PyObject*
 // query_ball_tree(const ckdtree *self, const ckdtree *other);
