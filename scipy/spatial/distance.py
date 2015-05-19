@@ -1327,7 +1327,10 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 X = X - np.mean(X, axis=0)
                 H = _hat_matrix(X)
                 D = _gram_form_edm_operator(H)
-                dm = np.sqrt(squareform(D) * (m - ddof))
+                # The D matrix is mathematically symmetric by construction
+                # but not necessarily numerically symmetric.
+                checks = False
+                dm = np.sqrt(squareform(D, checks=checks) * (m - ddof))
         elif mstr == 'canberra':
             _distance_wrap.pdist_canberra_wrap(_convert_to_double(X), dm)
         elif mstr == 'braycurtis':
