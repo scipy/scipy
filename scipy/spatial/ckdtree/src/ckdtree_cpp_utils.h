@@ -2,8 +2,10 @@
 #include <cstring>
 #include <Python.h>
 
+#include "ckdtree_cpp_ordered_pair.h"
 #include "ckdtree_cpp_decl.h"
 #include "ckdtree_cpp_exc.h"
+
 
 #if PY_MAJOR_VERSION < 3
     #define ckdtree_PyBytes_FromStringAndSize(v,len) PyString_FromStringAndSize(v,len)
@@ -28,6 +30,13 @@ inline ckdtreenode*
 tree_buffer_root(std::vector<ckdtreenode> *buf)
 {
     std::vector<ckdtreenode> &tmp = *buf;
+    return &tmp[0];
+}
+
+inline ordered_pair *
+ordered_pair_vector_buf(std::vector<ordered_pair> *buf)
+{
+    std::vector<ordered_pair> &tmp = *buf;
     return &tmp[0];
 }
 

@@ -28,6 +28,7 @@
 
 #define CKDTREE_METHODS_IMPL
 #include "ckdtree_cpp_decl.h"
+#include "ckdtree_cpp_ordered_pair.h"
 #include "ckdtree_cpp_methods.h"
 #include "ckdtree_cpp_exc.h"
 
@@ -259,6 +260,9 @@ __query_single_point(const ckdtree *self,
 
     for(;;) {
         if (inf->node->split_dim == -1) {
+        
+            //npy_intp start_idx = node->start_idx;
+            //npy_intp end_idx = node->end_idx;
         
             node = inf->node;
 

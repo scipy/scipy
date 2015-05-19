@@ -33,15 +33,21 @@ def configuration(parent_package='', top_path=None):
                          sources=['qhull.c'] + qhull_src,
                          **cfg)
     # cKDTree
-    ckdtree_src = ['ckdtree_query.cxx',
+    ckdtree_src = ['ckdtree_query.cxx', 
                    'ckdtree_globals.cxx',
-                   'ckdtree_cpp_exc.cxx']
+                   'ckdtree_cpp_exc.cxx',
+                   'ckdtree_query_pairs.cxx',
+                   'ckdtree_count_neighbors.cxx']
+                   
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
     
-    ckdtree_headers = ['ckdtree_decl.h', 
-                       'ckdtree_exc.h', 
-                       'ckdtree_methods.h',
-                       'ckdtree_utils.h']
+    ckdtree_headers = ['ckdtree_cpp_decl.h', 
+                       'ckdtree_cpp_exc.h', 
+                       'ckdtree_cpp_methods.h',
+                       'ckdtree_cpp_utils.h',
+                       'ckdtree_cpp_rectangle.h',
+                       'ckdtree_cpp_ordered_pair.h']
+                       
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
     
     ckdtree_dep = ['ckdtree.cxx'] + ckdtree_headers + ckdtree_src
