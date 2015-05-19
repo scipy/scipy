@@ -35,7 +35,7 @@ all fields of science and technology. The values became available on 2 June
 2011 and replaced the 2006 CODATA set. They are based on all of the data
 available through 31 December 2010. The 2010 adjustment was carried out under
 the auspices of the CODATA Task Group on Fundamental Constants. See References
-for an introduction to the constants for nonexperts.
+for an introduction to the constants for non-experts.
 
 References
 ----------
@@ -49,9 +49,9 @@ http://physics.nist.gov/cuu/Constants/
 """
 from __future__ import division, print_function, absolute_import
 
-
 import warnings
 from math import pi, sqrt
+
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
 
@@ -809,13 +809,14 @@ def parse_constants(d):
     constants = {}
     for line in d.split('\n'):
         name = line[:55].rstrip()
-        val = line[55:77].replace(' ','').replace('...','')
+        val = line[55:77].replace(' ', '').replace('...', '')
         val = float(val)
-        uncert = line[77:99].replace(' ','').replace('(exact)', '0')
+        uncert = line[77:99].replace(' ', '').replace('(exact)', '0')
         uncert = float(uncert)
         units = line[99:].rstrip()
         constants[name] = (val, units, uncert)
     return constants
+
 
 _physical_constants_2002 = parse_constants(txt2002)
 _physical_constants_2006 = parse_constants(txt2006)
@@ -972,7 +973,7 @@ def find(sub=None, disp=False):
         result = list(_current_constants.keys())
     else:
         result = [key for key in _current_constants
-                 if sub.lower() in key.lower()]
+                  if sub.lower() in key.lower()]
 
     result.sort()
     if disp:
@@ -984,17 +985,17 @@ def find(sub=None, disp=False):
 
 # Table is lacking some digits for exact values: calculate from definition
 c = value('speed of light in vacuum')
-mu0 = 4e-7*pi
-epsilon0 = 1/(mu0*c*c)
+mu0 = 4e-7 * pi
+epsilon0 = 1 / (mu0 * c * c)
 
 exact_values = {
-'mag. constant': (mu0, 'N A^-2', 0.0),
-'electric constant': (epsilon0, 'F m^-1', 0.0),
-'characteristic impedance of vacuum': (sqrt(mu0/epsilon0), 'ohm', 0.0),
-'atomic unit of permittivity': (4*epsilon0*pi, 'F m^-1', 0.0),
-'joule-kilogram relationship': (1/(c*c), 'kg', 0.0),
-'kilogram-joule relationship': (c*c, 'J', 0.0),
-'hertz-inverse meter relationship': (1/c, 'm^-1', 0.0)
+    'mag. constant': (mu0, 'N A^-2', 0.0),
+    'electric constant': (epsilon0, 'F m^-1', 0.0),
+    'characteristic impedance of vacuum': (sqrt(mu0 / epsilon0), 'ohm', 0.0),
+    'atomic unit of permittivity': (4 * epsilon0 * pi, 'F m^-1', 0.0),
+    'joule-kilogram relationship': (1 / (c * c), 'kg', 0.0),
+    'kilogram-joule relationship': (c * c, 'J', 0.0),
+    'hertz-inverse meter relationship': (1 / c, 'm^-1', 0.0)
 }
 
 # sanity check

@@ -159,6 +159,8 @@ which work for masked arrays.
    normaltest        --
    skew              -- Skewness
    skewtest          --
+   kstat             --
+   kstatvar          --
    tmean             -- Truncated arithmetic mean
    tvar              -- Truncated variance
    tmin              --
@@ -194,6 +196,7 @@ which work for masked arrays.
    obrientransform
    signaltonoise
    bayes_mvs
+   mvsdist
    sem
    zmap
    zscore
@@ -260,6 +263,16 @@ which work for masked arrays.
 
    entropy
 
+Circular statistical functions
+==============================
+
+.. autosummary::
+   :toctree: generated/
+
+   circmean
+   circvar
+   circstd
+   
 Contingency table functions
 ===========================
 

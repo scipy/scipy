@@ -2772,7 +2772,7 @@ function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
     integer intent(hide),depend(a) :: lda = shape(a,0)
     integer intent(hide),depend(a) :: n = shape(a,1)
     <ftype2> dimension(m,n),intent(in) :: a
-    <ftype2> dimension(MAX(m,1)),intent(cache,hide) :: work
+    <ftype2> dimension(m+1),intent(cache,hide) :: work
 end function <prefix2>lange
 
 function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
@@ -2788,7 +2788,7 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     integer intent(hide),depend(a) :: lda = shape(a,0)
     integer intent(hide),depend(a) :: n = shape(a,1)
     <ftype2c> dimension(m,n),intent(in) :: a
-    <ftype2> dimension(MAX(m,1)),intent(cache,hide) :: work
+    <ftype2> dimension(m+1),intent(cache,hide) :: work
 end function <prefix2c>lange
 
 subroutine <prefix>larfg(n, alpha, x, incx, tau)

@@ -13,6 +13,10 @@ from __future__ import division, print_function, absolute_import
 #   Rewrote abcd_normalize.
 # Jan 2015: Irvin Probst irvin DOT probst AT ensta-bretagne DOT fr
 #   Added pole placement
+# Mar 2015: Clancy Rowley
+#   Rewrote lsim
+# May 2015: Felix Berkenkamp
+#   Split lti class into subclasses
 #
 
 import warnings
@@ -28,6 +32,7 @@ import numpy
 from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
                    squeeze, diag, asarray, product, zeros, array,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
+import copy
 
 from scipy import integrate, interpolate, linalg
 from scipy._lib.six import xrange
@@ -36,7 +41,8 @@ from .filter_design import tf2zpk, zpk2tf, normalize, freqs
 
 
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
-           'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
+           'TransferFunction', 'ZerosPolesGain', 'StateSpace', 'lsim',
+           'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
            'freqresp', 'place_poles']
 
 
@@ -271,172 +277,164 @@ def ss2zpk(A, B, C, D, input=0):
 
 
 class lti(object):
-    """Linear Time Invariant class which simplifies representation.
+    """
+    Linear Time Invariant system base class.
 
     Parameters
     ----------
-    args : arguments
+    *system : arguments
         The `lti` class can be instantiated with either 2, 3 or 4 arguments.
-        The following gives the number of elements in the tuple and the
-        interpretation:
+        The following gives the number of arguments and the corresponding
+        subclass that is created:
 
-            * 2: (numerator, denominator)
-            * 3: (zeros, poles, gain)
-            * 4: (A, B, C, D)
+            * 2: `TransferFunction`:  (numerator, denominator)
+            * 3: `ZerosPolesGain`: (zeros, poles, gain)
+            * 4: `StateSpace`:  (A, B, C, D)
 
-        Each argument can be an array or sequence.
+        Each argument can be an array or a sequence.
 
     Notes
     -----
-    `lti` instances have all types of representations available; for example
-    after creating an instance s with ``(zeros, poles, gain)`` the transfer
-    function representation (numerator, denominator) can be accessed as
-    ``s.num`` and ``s.den``.
+    `lti` instances do not exist directly. Instead, `lti` creates an instance
+    of one of its subclasses: `StateSpace`, `TransferFunction` or
+    `ZerosPolesGain`.
+
+    Changing the value of properties that are not directly part of the current
+    system representation (such as the `zeros` of a `StateSpace` system) is
+    very inefficient and may lead to numerical inaccuracies.
 
     """
-    def __init__(self, *args, **kwords):
-        """
-        Initialize the LTI system using either:
-
-            - (numerator, denominator)
-            - (zeros, poles, gain)
-            - (A, B, C, D) : state-space.
-
-        """
-        N = len(args)
-        if N == 2:  # Numerator denominator transfer function input
-            self._num, self._den = normalize(*args)
-            self._update(N)
-            self.inputs = 1
-            if len(self.num.shape) > 1:
-                self.outputs = self.num.shape[0]
+    def __new__(cls, *system):
+        """Create an instance of the appropriate subclass."""
+        if cls is lti:
+            N = len(system)
+            if N == 2:
+                return super(lti, cls).__new__(TransferFunction)
+            elif N == 3:
+                return super(lti, cls).__new__(ZerosPolesGain)
+            elif N == 4:
+                return super(lti, cls).__new__(StateSpace)
             else:
-                self.outputs = 1
-        elif N == 3:      # Zero-pole-gain form
-            self._zeros, self._poles, self._gain = args
-            self._update(N)
-            # make sure we have numpy arrays
-            self.zeros = numpy.asarray(self.zeros)
-            self.poles = numpy.asarray(self.poles)
-            self.inputs = 1
-            if len(self.zeros.shape) > 1:
-                self.outputs = self.zeros.shape[0]
-            else:
-                self.outputs = 1
-        elif N == 4:       # State-space form
-            self._A, self._B, self._C, self._D = abcd_normalize(*args)
-            self._update(N)
-            self.inputs = self.B.shape[-1]
-            self.outputs = self.C.shape[0]
-        else:
-            raise ValueError("Needs 2, 3, or 4 arguments.")
+                raise ValueError('Needs 2, 3 or 4 arguments.')
+        # __new__ was called from a subclass, let it call its own functions
+        return super(lti, cls).__new__(cls)
 
-    def __repr__(self):
+    def __init__(self, *system):
         """
-        Canonical representation using state-space to preserve numerical
-        precision and any MIMO information
+        Initialize the `lti` baseclass.
+
+        The heavy lifting is done by the subclasses.
         """
-        return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
-            self.__class__.__name__,
-            repr(self.A),
-            repr(self.B),
-            repr(self.C),
-            repr(self.D),
-            )
+        self.inputs = None
+        self.outputs = None
 
     @property
     def num(self):
-        return self._num
+        """Numerator of the `TransferFunction` system."""
+        return self.to_tf().num
 
     @num.setter
-    def num(self, value):
-        self._num = value
-        self._update(2)
+    def num(self, num):
+        obj = self.to_tf()
+        obj.num = num
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     @property
     def den(self):
-        return self._den
+        """Denominator of the `TransferFunction` system."""
+        return self.to_tf().den
 
     @den.setter
-    def den(self, value):
-        self._den = value
-        self._update(2)
+    def den(self, den):
+        obj = self.to_tf()
+        obj.den = den
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     @property
     def zeros(self):
-        return self._zeros
+        """Zeros of the `ZerosPolesGain` system."""
+        return self.to_zpk().zeros
 
     @zeros.setter
-    def zeros(self, value):
-        self._zeros = value
-        self._update(3)
+    def zeros(self, zeros):
+        obj = self.to_zpk()
+        obj.zeros = zeros
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     @property
     def poles(self):
-        return self._poles
+        """Poles of the `ZerosPolesGain` system."""
+        return self.to_zpk().poles
 
     @poles.setter
-    def poles(self, value):
-        self._poles = value
-        self._update(3)
+    def poles(self, poles):
+        obj = self.to_zpk()
+        obj.poles = poles
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     @property
     def gain(self):
-        return self._gain
+        """Gain of the `ZerosPolesGain` system."""
+        return self.to_zpk().gain
 
     @gain.setter
-    def gain(self, value):
-        self._gain = value
-        self._update(3)
+    def gain(self, gain):
+        obj = self.to_zpk()
+        obj.gain = gain
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     @property
     def A(self):
-        return self._A
+        """A matrix of the `StateSpace` system."""
+        return self.to_ss().A
 
     @A.setter
-    def A(self, value):
-        self._A = value
-        self._update(4)
+    def A(self, A):
+        obj = self.to_ss()
+        obj.A = A
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     @property
     def B(self):
-        return self._B
+        """B matrix of the `StateSpace` system."""
+        return self.to_ss().B
 
     @B.setter
-    def B(self, value):
-        self._B = value
-        self._update(4)
+    def B(self, B):
+        obj = self.to_ss()
+        obj.B = B
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     @property
     def C(self):
-        return self._C
+        """C matrix of the `StateSpace` system."""
+        return self.to_ss().C
 
     @C.setter
-    def C(self, value):
-        self._C = value
-        self._update(4)
+    def C(self, C):
+        obj = self.to_ss()
+        obj.C = C
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     @property
     def D(self):
-        return self._D
+        """D matrix of the `StateSpace` system."""
+        return self.to_ss().D
 
     @D.setter
-    def D(self, value):
-        self._D = value
-        self._update(4)
-
-    def _update(self, N):
-        if N == 2:
-            self._zeros, self._poles, self._gain = tf2zpk(self.num, self.den)
-            self._A, self._B, self._C, self._D = tf2ss(self.num, self.den)
-        if N == 3:
-            self._num, self._den = zpk2tf(self.zeros, self.poles, self.gain)
-            self._A, self._B, self._C, self._D = zpk2ss(self.zeros,
-                                                        self.poles, self.gain)
-        if N == 4:
-            self._num, self._den = ss2tf(self.A, self.B, self.C, self.D)
-            self._zeros, self._poles, self._gain = ss2zpk(self.A, self.B,
-                                                          self.C, self.D)
+    def D(self, D):
+        obj = self.to_ss()
+        obj.D = D
+        source_class = type(self)
+        self._copy(source_class(obj))
 
     def impulse(self, X0=None, T=None, N=None):
         """
@@ -500,6 +498,431 @@ class lti(object):
         return freqresp(self, w=w, n=n)
 
 
+class TransferFunction(lti):
+    """Linear Time Invariant system class in transfer function form.
+
+    Represents the system as the transfer function
+    :math:`H(s)=\sum_i b[i] s^i / \sum_j a[j] s^i`, where :math:`a` are
+    elements of the numerator `num` and :math:`b` are the elements of the
+    denominator `den`.
+
+    Parameters
+    ----------
+    *system : arguments
+        The `TransferFunction` class can be instantiated with 1 or 2 arguments.
+        The following gives the number of input arguments and their
+        interpretation:
+
+            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+              `ZerosPolesGain`)
+            * 2: array_like: (numerator, denominator)
+
+    Notes
+    -----
+    Changing the value of properties that are not part of the
+    `TransferFunction` system representation (such as the `A`, `B`, `C`, `D`
+    state-space matrices) is very inefficient and may lead to numerical
+    inaccuracies.
+
+    """
+    def __new__(cls, *system):
+        """Handle object conversion if input is an instance of lti."""
+        if len(system) == 1 and isinstance(system[0], lti):
+            return system[0].to_tf()
+
+        # No special conversion needed
+        return super(TransferFunction, cls).__new__(cls)
+
+    def __init__(self, *system):
+        """Initialize the state space LTI system."""
+        # Conversion of lti instances is handled in __new__
+        if isinstance(system[0], lti):
+            return
+
+        super(TransferFunction, self).__init__(self, *system)
+
+        self._num = None
+        self._den = None
+
+        self.num, self.den = normalize(*system)
+
+    def __repr__(self):
+        """Return representation of the system's transfer function"""
+        return '{0}(\n{1},\n{2}\n)'.format(
+            self.__class__.__name__,
+            repr(self.num),
+            repr(self.den),
+            )
+
+    @property
+    def num(self):
+        return self._num
+
+    @num.setter
+    def num(self, num):
+        self._num = atleast_1d(num)
+
+        # Update dimensions
+        if len(self.num.shape) > 1:
+            self.outputs, self.inputs = self.num.shape
+        else:
+            self.outputs = 1
+            self.inputs = 1
+
+    @property
+    def den(self):
+        return self._den
+
+    @den.setter
+    def den(self, den):
+        self._den = atleast_1d(den)
+
+    def _copy(self, system):
+        """
+        Copy the parameters of another `TransferFunction` object
+
+        Parameters
+        ----------
+        system : `TransferFunction`
+            The `StateSpace` system that is to be copied
+
+        """
+        self.num = system.num
+        self.den = system.den
+
+    def to_tf(self):
+        """
+        Return a copy of the current `TransferFunction` system.
+
+        Returns
+        -------
+        sys : instance of `TransferFunction`
+            The current system (copy)
+
+        """
+        return copy.deepcopy(self)
+
+    def to_zpk(self):
+        """
+        Convert system representation to `ZerosPolesGain`.
+
+        Returns
+        -------
+        sys : instance of `ZerosPolesGain`
+            Zeros, poles, gain representation of the current system
+
+        """
+        return ZerosPolesGain(*tf2zpk(self.num, self.den))
+
+    def to_ss(self):
+        """
+        Convert system representation to `StateSpace`.
+
+        Returns
+        -------
+        sys : instance of `StateSpace`
+            State space model of the current system
+
+        """
+        return StateSpace(*tf2ss(self.num, self.den))
+
+
+class ZerosPolesGain(lti):
+    """
+    Linear Time Invariant system class in zeros, poles, gain form.
+
+    Represents the system as the transfer function
+    :math:`H(s)=k \prod_i (s - z[i]) / \prod_j (s - p[j])`, where :math:`k` is
+    the `gain`, :math:`z` are the `zeros` and :math:`p` are the `poles`.
+
+    Parameters
+    ----------
+    *system : arguments
+        The `ZerosPolesGain` class can be instantiated with 1 or 3 arguments.
+        The following gives the number of input arguments and their
+        interpretation:
+
+            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+              `ZerosPolesGain`)
+            * 3: array_like: (zeros, poles, gain)
+
+    Notes
+    -----
+    Changing the value of properties that are not part of the
+    `ZerosPolesGain` system representation (such as the `A`, `B`, `C`, `D`
+    state-space matrices) is very inefficient and may lead to numerical
+    inaccuracies.
+
+    """
+    def __new__(cls, *system):
+        """Handle object conversion if input is an instance of `lti`"""
+        if len(system) == 1 and isinstance(system[0], lti):
+            return system[0].to_zpk()
+
+        # No special conversion needed
+        return super(ZerosPolesGain, cls).__new__(cls)
+
+    def __init__(self, *system):
+        """Initialize the zeros, poles, gain LTI system."""
+        # Conversion of lti instances is handled in __new__
+        if isinstance(system[0], lti):
+            return
+
+        super(ZerosPolesGain, self).__init__(self, *system)
+
+        self._zeros = None
+        self._poles = None
+        self._gain = None
+
+        self.zeros, self.poles, self.gain = system
+
+    def __repr__(self):
+        """Return representation of the `ZerosPolesGain` system"""
+        return '{0}(\n{1},\n{2},\n{3}\n)'.format(
+            self.__class__.__name__,
+            repr(self.zeros),
+            repr(self.poles),
+            repr(self.gain),
+            )
+
+    @property
+    def zeros(self):
+        return self._zeros
+
+    @zeros.setter
+    def zeros(self, zeros):
+        self._zeros = atleast_1d(zeros)
+
+        # Update dimensions
+        if len(self.zeros.shape) > 1:
+            self.outputs, self.inputs = self.zeros.shape
+        else:
+            self.outputs = 1
+            self.inputs = 1
+
+    @property
+    def poles(self):
+        return self._poles
+
+    @poles.setter
+    def poles(self, poles):
+        self._poles = atleast_1d(poles)
+
+    @property
+    def gain(self):
+        return self._gain
+
+    @gain.setter
+    def gain(self, gain):
+        self._gain = gain
+
+    def _copy(self, system):
+        """
+        Copy the parameters of another `ZerosPolesGain` system.
+
+        Parameters
+        ----------
+        system : instance of `ZerosPolesGain`
+            The zeros, poles gain system that is to be copied
+
+        """
+        self.poles = system.poles
+        self.zeros = system.zeros
+        self.gain = system.gain
+
+    def to_tf(self):
+        """
+        Convert system representation to `TransferFunction`.
+
+        Returns
+        -------
+        sys : instance of `TransferFunction`
+            Transfer function of the current system
+
+        """
+        return TransferFunction(*zpk2tf(self.zeros, self.poles, self.gain))
+
+    def to_zpk(self):
+        """
+        Return a copy of the current 'ZerosPolesGain' system.
+
+        Returns
+        -------
+        sys : instance of `ZerosPolesGain`
+            The current system (copy)
+
+        """
+        return copy.deepcopy(self)
+
+    def to_ss(self):
+        """
+        Convert system representation to `StateSpace`.
+
+        Returns
+        -------
+        sys : instance of `StateSpace`
+            State space model of the current system
+
+        """
+        return StateSpace(*zpk2ss(self.zeros, self.poles, self.gain))
+
+
+class StateSpace(lti):
+    """
+    Linear Time Invariant system class in state-space form.
+
+    Represents the system as the first order differential equation
+    :math:`\dot{x} = A x + B u`.
+
+    Parameters
+    ----------
+    *system : arguments
+        The `StateSpace` class can be instantiated with 1 or 4 arguments.
+        The following gives the number of input arguments and their
+        interpretation:
+
+            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+              `ZerosPolesGain`)
+            * 4: array_like: (A, B, C, D)
+
+    Notes
+    -----
+    Changing the value of properties that are not part of the
+    `StateSpace` system representation (such as `zeros` or `poles`) is very
+    inefficient and may lead to numerical inaccuracies.
+
+    """
+    def __new__(cls, *system):
+        """Handle object conversion if input is an instance of `lti`"""
+        if len(system) == 1 and isinstance(system[0], lti):
+            return system[0].to_ss()
+
+        # No special conversion needed
+        return super(StateSpace, cls).__new__(cls)
+
+    def __init__(self, *system):
+        """Initialize the state space LTI system."""
+        # Conversion of lti instances is handled in __new__
+        if isinstance(system[0], lti):
+            return
+
+        super(StateSpace, self).__init__(self, *system)
+
+        self._A = None
+        self._B = None
+        self._C = None
+        self._D = None
+
+        self.A, self.B, self.C, self.D = abcd_normalize(*system)
+
+    def __repr__(self):
+        """Return representation of the `StateSpace` system."""
+        return '{0}(\n{1},\n{2},\n{3},\n{4}\n)'.format(
+            self.__class__.__name__,
+            repr(self.A),
+            repr(self.B),
+            repr(self.C),
+            repr(self.D),
+            )
+
+    @property
+    def A(self):
+        return self._A
+
+    @A.setter
+    def A(self, A):
+        self._A = _atleast_2d_or_none(A)
+
+    @property
+    def B(self):
+        return self._B
+
+    @B.setter
+    def B(self, B):
+        self._B = _atleast_2d_or_none(B)
+        self.inputs = self.B.shape[-1]
+
+    @property
+    def C(self):
+        return self._C
+
+    @C.setter
+    def C(self, C):
+        self._C = _atleast_2d_or_none(C)
+        self.outputs = self.C.shape[0]
+
+    @property
+    def D(self):
+        return self._D
+
+    @D.setter
+    def D(self, D):
+        self._D = _atleast_2d_or_none(D)
+
+    def _copy(self, system):
+        """
+        Copy the parameters of another `StateSpace` system.
+
+        Parameters
+        ----------
+        system : instance of `StateSpace`
+            The state-space system that is to be copied
+
+        """
+        self.A = system.A
+        self.B = system.B
+        self.C = system.C
+        self.D = system.D
+
+    def to_tf(self, **kwargs):
+        """
+        Convert system representation to `TransferFunction`.
+
+        Parameters
+        ----------
+        kwargs : dict, optional
+            Additional keywords passed to `ss2zpk`
+
+        Returns
+        -------
+        sys : instance of `TransferFunction`
+            Transfer function of the current system
+
+        """
+        return TransferFunction(*ss2tf(self._A, self._B, self._C, self._D,
+                                       **kwargs))
+
+    def to_zpk(self, **kwargs):
+        """
+        Convert system representation to `ZerosPolesGain`.
+
+        Parameters
+        ----------
+        kwargs : dict, optional
+            Additional keywords passed to `ss2zpk`
+
+        Returns
+        -------
+        sys : instance of `ZerosPolesGain`
+            Zeros, poles, gain representation of the current system
+
+        """
+        return ZerosPolesGain(*ss2zpk(self._A, self._B, self._C, self._D,
+                                      **kwargs))
+
+    def to_ss(self):
+        """
+        Return a copy of the current `StateSpace` system.
+
+        Returns
+        -------
+        sys : instance of `StateSpace`
+            The current system (copy)
+
+        """
+        return copy.deepcopy(self)
+
+
 def lsim2(system, U=None, T=None, X0=None, **kwargs):
     """
     Simulate output of a continuous-time linear system, by using
@@ -550,9 +973,9 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
 
     if X0 is None:
         X0 = zeros(sys.B.shape[0], sys.A.dtype)
@@ -617,7 +1040,7 @@ def _cast_to_array_dtype(in1, in2):
     return in1
 
 
-def lsim(system, U, T, X0=None, interp=1):
+def lsim(system, U, T, X0=None, interp=True):
     """
     Simulate output of a continuous-time linear system.
 
@@ -635,14 +1058,15 @@ def lsim(system, U, T, X0=None, interp=1):
         An input array describing the input at each time `T`
         (interpolation is assumed between given times).  If there are
         multiple inputs, then each column of the rank-2 array
-        represents an input.
+        represents an input.  If U = 0 or None, a zero input is used.
     T : array_like
         The time steps at which the input is defined and at which the
-        output is desired.
+        output is desired.  Must be nonnegative, increasing, and equally spaced.
     X0 : array_like, optional
         The initial conditions on the state vector (zero by default).
-    interp : {1, 0}, optional
-        Whether to use linear (1) or zero-order hold (0) interpolation.
+    interp : bool, optional
+        Whether to use linear (True, the default) or zero-order-hold (False)
+        interpolation for the input array.
 
     Returns
     -------
@@ -651,65 +1075,123 @@ def lsim(system, U, T, X0=None, interp=1):
     yout : 1D ndarray
         System response.
     xout : ndarray
-        Time-evolution of the state-vector.
+        Time evolution of the state vector.
 
+    Examples
+    --------
+    Simulate a double integrator y'' = u, with a constant input u = 1
+
+    >>> from scipy import signal
+    >>> system = signal.lti([[0., 1.], [0., 0.]], [[0.], [1.]], [[1., 0.]], 0.)
+    >>> t = np.linspace(0, 5)
+    >>> u = np.ones_like(t)
+    >>> tout, y, x = signal.lsim(system, u, t)
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(t, y)
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
-    U = atleast_1d(U)
+        sys = lti(*system).to_ss()
     T = atleast_1d(T)
-    if len(U.shape) == 1:
-        U = U.reshape((U.shape[0], 1))
-    sU = U.shape
     if len(T.shape) != 1:
         raise ValueError("T must be a rank-1 array.")
-    if sU[0] != len(T):
+
+    A, B, C, D = map(np.asarray, (sys.A, sys.B, sys.C, sys.D))
+    n_states = A.shape[0]
+    n_inputs = B.shape[1]
+
+    n_steps = T.size
+    if X0 is None:
+        X0 = zeros(n_states, sys.A.dtype)
+    xout = zeros((n_steps, n_states), sys.A.dtype)
+
+    if T[0] == 0:
+        xout[0] = X0
+    elif T[0] > 0:
+        # step forward to initial time, with zero input
+        xout[0] = dot(X0, linalg.expm(transpose(A) * T[0]))
+    else:
+        raise ValueError("Initial time must be nonnegative")
+
+    no_input = (U is None
+                or (isinstance(U, (int, float)) and U == 0.)
+                or not np.any(U))
+
+    if n_steps == 1:
+        yout = squeeze(dot(xout, transpose(C)))
+        if not no_input:
+            yout += squeeze(dot(U, transpose(D)))
+        return T, squeeze(yout), squeeze(xout)
+
+    dt = T[1] - T[0]
+    if not np.allclose((T[1:] - T[:-1]) / dt, 1.0):
+        warnings.warn("Non-uniform timesteps are deprecated. Results may be "
+                      "slow and/or inaccurate.", DeprecationWarning)
+        return lsim2(system, U, T, X0)
+
+    if no_input:
+        # Zero input: just use matrix exponential
+        # take transpose because state is a row vector
+        expAT_dt = linalg.expm(transpose(A) * dt)
+        for i in xrange(1, n_steps):
+            xout[i] = dot(xout[i-1], expAT_dt)
+        yout = squeeze(dot(xout, transpose(C)))
+        return T, squeeze(yout), squeeze(xout)
+
+    # Nonzero input
+    U = atleast_1d(U)
+    if U.ndim == 1:
+        U = U[:, np.newaxis]
+
+    if U.shape[0] != n_steps:
         raise ValueError("U must have the same number of rows "
                          "as elements in T.")
-    if sU[1] != sys.inputs:
+
+    if U.shape[1] != n_inputs:
         raise ValueError("System does not define that many inputs.")
 
-    if X0 is None:
-        X0 = zeros(sys.B.shape[0], sys.A.dtype)
+    if not interp:
+        # Zero-order hold
+        # Algorithm: to integrate from time 0 to time dt, we solve
+        #   xdot = A x + B u,  x(0) = x0
+        #   udot = 0,          u(0) = u0.
+        #
+        # Solution is
+        #   [ x(dt) ]       [ A*dt   B*dt ] [ x0 ]
+        #   [ u(dt) ] = exp [  0     0    ] [ u0 ]
+        M = np.vstack([np.hstack([A * dt, B * dt]),
+                       np.zeros((n_inputs, n_states + n_inputs))])
+        # transpose everything because the state and input are row vectors
+        expMT = linalg.expm(transpose(M))
+        Ad = expMT[:n_states, :n_states]
+        Bd = expMT[n_states:, :n_states]
+        for i in xrange(1, n_steps):
+            xout[i] = dot(xout[i-1], Ad) + dot(U[i-1], Bd)
+    else:
+        # Linear interpolation between steps
+        # Algorithm: to integrate from time 0 to time dt, with linear
+        # interpolation between inputs u(0) = u0 and u(dt) = u1, we solve
+        #   xdot = A x + B u,        x(0) = x0
+        #   udot = (u1 - u0) / dt,   u(0) = u0.
+        #
+        # Solution is
+        #   [ x(dt) ]       [ A*dt  B*dt  0 ] [  x0   ]
+        #   [ u(dt) ] = exp [  0     0    I ] [  u0   ]
+        #   [u1 - u0]       [  0     0    0 ] [u1 - u0]
+        M = np.vstack([np.hstack([A * dt, B * dt,
+                                  np.zeros((n_states, n_inputs))]),
+                       np.hstack([np.zeros((n_inputs, n_states + n_inputs)),
+                                  np.identity(n_inputs)]),
+                       np.zeros((n_inputs, n_states + 2 * n_inputs))])
+        expMT = linalg.expm(transpose(M))
+        Ad = expMT[:n_states, :n_states]
+        Bd1 = expMT[n_states+n_inputs:, :n_states]
+        Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
+        for i in xrange(1, n_steps):
+            xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
 
-    xout = zeros((len(T), sys.B.shape[0]), sys.A.dtype)
-    xout[0] = X0
-    A = sys.A
-    AT, BT = transpose(sys.A), transpose(sys.B)
-    dt = T[1] - T[0]
-    lam, v = linalg.eig(A)
-    vt = transpose(v)
-    vti = linalg.inv(vt)
-    GT = dot(dot(vti, diag(numpy.exp(dt * lam))), vt)
-    GT = _cast_to_array_dtype(GT, xout)
-
-    ATm1 = linalg.inv(AT)
-    ATm2 = dot(ATm1, ATm1)
-    I = eye(A.shape[0], dtype=A.dtype)
-    GTmI = GT - I
-    F1T = dot(dot(BT, GTmI), ATm1)
-    if interp:
-        F2T = dot(BT, dot(GTmI, ATm2) / dt - ATm1)
-
-    for k in xrange(1, len(T)):
-        dt1 = T[k] - T[k - 1]
-        if dt1 != dt:
-            dt = dt1
-            GT = dot(dot(vti, diag(numpy.exp(dt * lam))), vt)
-            GT = _cast_to_array_dtype(GT, xout)
-            GTmI = GT - I
-            F1T = dot(dot(BT, GTmI), ATm1)
-            if interp:
-                F2T = dot(BT, dot(GTmI, ATm2) / dt - ATm1)
-
-        xout[k] = dot(xout[k - 1], GT) + dot(U[k - 1], F1T)
-        if interp:
-            xout[k] = xout[k] + dot((U[k] - U[k - 1]), F2T)
-
-    yout = (squeeze(dot(U, transpose(sys.D))) +
-            squeeze(dot(xout, transpose(sys.C))))
+    yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))
     return T, squeeze(yout), squeeze(xout)
 
 
@@ -776,13 +1258,13 @@ def impulse(system, X0=None, T=None, N=None):
 
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     if X0 is None:
-        B = sys.B
+        X = squeeze(sys.B)
     else:
-        B = sys.B + X0
+        X = squeeze(sys.B + X0)
     if N is None:
         N = 100
     if T is None:
@@ -790,16 +1272,7 @@ def impulse(system, X0=None, T=None, N=None):
     else:
         T = asarray(T)
 
-    h = zeros(T.shape, sys.A.dtype)
-    s, v = linalg.eig(sys.A)
-    vi = linalg.inv(v)
-    C = sys.C
-    for k in range(len(h)):
-        es = diag(numpy.exp(s * T[k]))
-        eA = dot(dot(v, es), vi)
-        eA = _cast_to_array_dtype(eA, h)
-        h[k] = squeeze(dot(dot(C, eA), B))
-
+    _, h, _ = lsim(sys, 0., T, X, interp=False)
     return T, h
 
 
@@ -863,9 +1336,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     B = sys.B
     if B.shape[-1] != 1:
         raise ValueError("impulse2() requires a single-input system.")
@@ -918,9 +1391,9 @@ def step(system, X0=None, T=None, N=None):
 
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     if N is None:
         N = 100
     if T is None:
@@ -928,7 +1401,7 @@ def step(system, X0=None, T=None, N=None):
     else:
         T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
-    vals = lsim(sys, U, T, X0=X0)
+    vals = lsim(sys, U, T, X0=X0, interp=False)
     return vals[0], vals[1]
 
 
@@ -978,9 +1451,9 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     .. versionadded:: 0.8.0
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_ss()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_ss()
     if N is None:
         N = 100
     if T is None:
@@ -1099,9 +1572,9 @@ def freqresp(system, w=None, n=10000):
     >>> plt.show()
     """
     if isinstance(system, lti):
-        sys = system
+        sys = system.to_tf()
     else:
-        sys = lti(*system)
+        sys = lti(*system).to_tf()
 
     if sys.inputs != 1 or sys.outputs != 1:
         raise ValueError("freqresp() requires a SISO (single input, single "

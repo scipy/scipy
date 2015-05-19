@@ -143,6 +143,7 @@ def sqrtm(A, disp=True, blocksize=64):
 
     Examples
     --------
+    >>> from scipy.linalg import sqrtm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> r = sqrtm(a)
     >>> r

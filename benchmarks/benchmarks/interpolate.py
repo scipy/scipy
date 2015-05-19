@@ -1,12 +1,18 @@
 from __future__ import division, absolute_import, print_function
-from .common import run_monitored, set_mem_rlimit
+
+import numpy as np
+
+from .common import run_monitored, set_mem_rlimit, Benchmark
 
 try:
     from scipy.stats import spearmanr
 except ImportError:
     pass
 
-from .common import Benchmark
+try:
+    from scipy.interpolate import PPoly
+except ImportError:
+    pass
 
 
 class Leaks(Benchmark):
@@ -49,3 +55,19 @@ class Leaks(Benchmark):
             print("PROBABLY NO MEMORY LEAK")
 
         return max(peak_mems) / min(peak_mems)
+
+
+class BenchPPoly(Benchmark):
+
+    def setup(self):
+        np.random.seed(1234)
+        m, k = 55, 3
+        x = np.sort(np.random.random(m+1))
+        c = np.random.random((3, m))
+        self.pp = PPoly(c, x)
+
+        npts = 100
+        self.xp = np.linspace(0, 1, npts)
+
+    def time_evaluation(self):
+        self.pp(self.xp)

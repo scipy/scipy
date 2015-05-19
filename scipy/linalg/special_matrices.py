@@ -999,10 +999,11 @@ def dft(n, scale=None):
 
     Examples
     --------
+    >>> from scipy.linalg import dft
     >>> np.set_printoptions(precision=5, suppress=True)
     >>> x = np.array([1, 2, 3, 0, 3, 2, 1, 0])
     >>> m = dft(8)
-    >>> m.dot(x)   # Comute the DFT of x
+    >>> m.dot(x)   # Compute the DFT of x
     array([ 12.+0.j,  -2.-2.j,   0.-4.j,  -2.+2.j,   4.+0.j,  -2.-2.j,
             -0.+4.j,  -2.+2.j])
 

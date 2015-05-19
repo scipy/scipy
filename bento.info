@@ -1,5 +1,5 @@
 Name: scipy
-Version: 0.16.0.dev0
+Version: 0.17.0.dev0
 Summary: SciPy: Scientific Library for Python
 Url: http://www.scipy.org
 DownloadUrl: http://sourceforge.net/projects/scipy/files/scipy/
@@ -50,7 +50,9 @@ DataFiles: tests
         spatial/tests/data/*.txt,
         special/tests/data/*.npz,
         weave/scxx/*.h,
-        weave/scxx/*.cpp
+        weave/scxx/*.cpp,
+        linalg/cython_blas.pxd,
+        linalg/cython_lapack.pxd
 
 Recurse: scipy
 

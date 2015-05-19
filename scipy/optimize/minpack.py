@@ -669,7 +669,7 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     --------
     >>> from scipy import optimize
     >>> def func(x, c1, c2):
-    ....    return np.sqrt(c1/(x+c2))
+    ...    return np.sqrt(c1/(x+c2))
     >>> c1 = np.array([10,12.])
     >>> c2 = np.array([3, 5.])
     >>> optimize.fixed_point(func, [1.2, 1.3], args=(c1,c2))

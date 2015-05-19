@@ -5,16 +5,15 @@ from bento.commands import hooks
 from scipy._build_utils import get_g77_abi_wrappers, get_sgemv_fix
 
 
-def _append_abi_wrappers(source):
-
+def _append_abi_wrappers(source, env):
     def make_relpath(f):
         return os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
 
-    # XXX: detect this properly
-    if sys.platform == "darwin":
-        info = {'extra_link_args': 'Accelerate'}
-    else:
-        info = {}
+    info = {}
+    #FIXME: (Accelerate not detected now, should be:
+    #if "Accelerate" in env.FRAMEWORK_CBLAS:
+    if sys.platform == 'darwin':
+        info['extra_link_args'] = ['Accelerate']
     source += [make_relpath(f) for f in get_g77_abi_wrappers(info)]
     source += [make_relpath(f) for f in get_sgemv_fix(info)]
 
@@ -26,7 +25,7 @@ def pre_build(context):
 
     def fblas_builder(extension):
         source = extension.sources[:]
-        _append_abi_wrappers(source)
+        _append_abi_wrappers(source, bld.env)
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,
@@ -42,7 +41,7 @@ def pre_build(context):
 
     def flapack_builder(extension):
         source = extension.sources[:]
-        _append_abi_wrappers(source)
+        _append_abi_wrappers(source, bld.env)
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,
@@ -70,7 +69,7 @@ def pre_build(context):
 
     def cython_blas_builder(extension):
         source = extension.sources[:]
-        _append_abi_wrappers(source)
+        _append_abi_wrappers(source, bld.env)
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,
@@ -79,7 +78,7 @@ def pre_build(context):
 
     def cython_lapack_builder(extension):
         source = extension.sources[:]
-        _append_abi_wrappers(source)
+        _append_abi_wrappers(source, bld.env)
         return default_builder(extension,
                                features="c fc pyext bento cshlib f2py",
                                source=source,

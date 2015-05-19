@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import warnings
+from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, sum, around, unique, asarray,
@@ -78,11 +79,20 @@ def bayes_mvs(data, alpha=0.90):
     standard-deviation from data", http://hdl.handle.net/1877/438, 2006.
 
     """
-    res = mvsdist(data)
+    m, v, s = mvsdist(data)
     if alpha >= 1 or alpha <= 0:
         raise ValueError("0 < alpha < 1 is required, but alpha=%s was given."
                          % alpha)
-    return tuple((x.mean(), x.interval(alpha)) for x in res)
+
+    Mean = namedtuple('Mean', ('statistic', 'minmax'))
+    Variance = namedtuple('Variance', ('statistic', 'minmax'))
+    Std_dev = namedtuple('Std_dev', ('statistic', 'minmax'))
+
+    m_res = Mean(m.mean(), m.interval(alpha))
+    v_res = Variance(v.mean(), v.interval(alpha))
+    s_res = Std_dev(s.mean(), s.interval(alpha))
+
+    return m_res, v_res, s_res
 
 
 def mvsdist(data):
@@ -1111,11 +1121,11 @@ def anderson(x, dist='norm'):
 
     Returns
     -------
-    A2 : float
+    statistic : float
         The Anderson-Darling test statistic
-    critical : list
+    critical_values : list
         The critical values for this distribution
-    sig : list
+    significance_level : list
         The significance levels for the corresponding critical values
         in percents.  The function returns critical values for a
         differing set of significance levels depending on the
@@ -1196,7 +1206,11 @@ def anderson(x, dist='norm'):
 
     i = arange(1, N + 1)
     A2 = -N - sum((2*i - 1.0) / N * (log(z) + log(1 - z[::-1])), axis=0)
-    return A2, critical, sig
+
+    AndersonResult = namedtuple('AndersonResult', ('statistic',
+                                                   'critical_values',
+                                                   'significance_level'))
+    return AndersonResult(A2, critical, sig)
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
@@ -1301,11 +1315,11 @@ def anderson_ksamp(samples, midrank=True):
 
     Returns
     -------
-    A2 : float
+    statistic : float
         Normalized k-sample Anderson-Darling test statistic.
-    critical : array
+    critical_values : array
         The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
-    p : float
+    significance_level : float
         An approximate significance level at which the null hypothesis for the
         provided samples can be rejected.
 
@@ -1416,7 +1430,11 @@ def anderson_ksamp(samples, midrank=True):
         warnings.warn("approximate p-value will be computed by extrapolation")
 
     p = math.exp(np.polyval(pf, A2))
-    return A2, critical, p
+
+    Anderson_ksampResult = namedtuple('Anderson_ksampResult',
+                                      ('statistic', 'critical_values',
+                                       'significance_level'))
+    return Anderson_ksampResult(A2, critical, p)
 
 
 def ansari(x, y):
@@ -1434,9 +1452,9 @@ def ansari(x, y):
 
     Returns
     -------
-    AB : float
+    statistic : float
         The Ansari-Bradley test statistic
-    p-value : float
+    pvalue : float
         The p-value of the hypothesis test
 
     See Also
@@ -1463,6 +1481,9 @@ def ansari(x, y):
         raise ValueError("Not enough other observations.")
     if n < 1:
         raise ValueError("Not enough test observations.")
+
+    AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
+
     N = m + n
     xy = r_[x, y]  # combine
     rank = stats.rankdata(xy)
@@ -1489,7 +1510,7 @@ def ansari(x, y):
                 pval = 2.0 * sum(a1[find:], axis=0) / total
             else:
                 pval = 2.0 * sum(a1[find+1:], axis=0) / total
-        return AB, min(1.0, pval)
+        return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
     if N % 2:  # N odd
@@ -1508,7 +1529,7 @@ def ansari(x, y):
 
     z = (AB - mnAB) / sqrt(varAB)
     pval = distributions.norm.sf(abs(z)) * 2.0
-    return AB, pval
+    return AnsariResult(AB, pval)
 
 
 def bartlett(*args):
@@ -1527,9 +1548,9 @@ def bartlett(*args):
 
     Returns
     -------
-    T : float
+    statistic : float
         The test statistic.
-    p-value : float
+    pvalue : float
         The p-value of the test.
 
     References
@@ -1555,7 +1576,9 @@ def bartlett(*args):
                                      1.0/(Ntot - k))
     T = numer / denom
     pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
-    return T, pval
+
+    BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
+    return BartlettResult(T, pval)
 
 
 def levene(*args, **kwds):
@@ -1581,9 +1604,9 @@ def levene(*args, **kwds):
 
     Returns
     -------
-    W : float
+    statistic : float
         The test statistic.
-    p-value : float
+    pvalue : float
         The p-value for the test.
 
     Notes
@@ -1665,7 +1688,9 @@ def levene(*args, **kwds):
 
     W = numer / denom
     pval = distributions.f.sf(W, k-1, Ntot-k)  # 1 - cdf
-    return W, pval
+
+    LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
+    return LeveneResult(W, pval)
 
 
 @setastest(False)
@@ -1996,10 +2021,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
 
     Returns
     -------
-    T : float
+    statistic : float
         The sum of the ranks of the differences above or below zero, whichever
         is smaller.
-    p-value : float
+    pvalue : float
         The two-sided p-value for the test.
 
     Notes
@@ -2058,7 +2083,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     correction = 0.5 * int(bool(correction)) * np.sign(T - mn)
     z = (T - mn - correction) / se
     prob = 2. * distributions.norm.sf(abs(z))
-    return T, prob
+
+    WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
+    return WilcoxonResult(T, prob)
 
 
 @setastest(False)
@@ -2154,6 +2181,7 @@ def median_test(*args, **kwds):
     >>> g1 = [10, 14, 14, 18, 20, 22, 24, 25, 31, 31, 32, 39, 43, 43, 48, 49]
     >>> g2 = [28, 30, 31, 33, 34, 35, 36, 40, 44, 55, 57, 61, 91, 92, 99]
     >>> g3 = [0, 3, 9, 22, 23, 25, 25, 33, 34, 34, 40, 45, 46, 48, 62, 67, 84]
+    >>> from scipy.stats import median_test
     >>> stat, p, med, tbl = median_test(g1, g2, g3)
 
     The median is

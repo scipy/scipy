@@ -785,6 +785,8 @@ class TestVoronoi:
                                 restart=True)
 
             # -- Check that the incremental mode agrees with upfront mode
+            assert_equal(len(obj.point_region), len(obj2.point_region))
+            assert_equal(len(obj.point_region), len(obj3.point_region))
 
             # The vertices may be in different order or duplicated in
             # the incremental map

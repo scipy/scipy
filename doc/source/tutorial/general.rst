@@ -16,7 +16,7 @@ The additional benefit of basing SciPy on Python is that this also makes a
 powerful programming language available for use in developing
 sophisticated programs and specialized applications. Scientific
 applications using SciPy benefit from the development of
-additional modules in numerous niche's of the software landscape by
+additional modules in numerous niches of the software landscape by
 developers across the world. Everything from parallel programming to
 web and data-base subroutines and classes have been made available to
 the Python programmer. All of this power is available in addition to

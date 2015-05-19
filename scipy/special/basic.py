@@ -1191,13 +1191,14 @@ def comb(N, k, exact=False, repetition=False):
 
     Examples
     --------
+    >>> from scipy.special import comb
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
-    >>> sc.comb(n, k, exact=False)
+    >>> comb(n, k, exact=False)
     array([ 120.,  210.])
-    >>> sc.comb(10, 3, exact=True)
+    >>> comb(10, 3, exact=True)
     120L
-    >>> sc.comb(10, 3, exact=True, repetition=True)
+    >>> comb(10, 3, exact=True, repetition=True)
     220L
 
     """
@@ -1251,6 +1252,7 @@ def perm(N, k, exact=False):
 
     Examples
     --------
+    >>> from scipy.special import perm
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
     >>> perm(n, k)
@@ -1304,10 +1306,11 @@ def factorial(n,exact=False):
 
     Examples
     --------
+    >>> from scipy.special import factorial
     >>> arr = np.array([3,4,5])
-    >>> sc.factorial(arr, exact=False)
+    >>> factorial(arr, exact=False)
     array([   6.,   24.,  120.])
-    >>> sc.factorial(5, exact=True)
+    >>> factorial(5, exact=True)
     120L
 
     """
@@ -1352,6 +1355,7 @@ def factorial2(n, exact=False):
 
     Examples
     --------
+    >>> from scipy.special import factorial2
     >>> factorial2(7, exact=False)
     array(105.00000000000001)
     >>> factorial2(7, exact=True)
@@ -1408,9 +1412,10 @@ def factorialk(n, k, exact=True):
 
     Examples
     --------
-    >>> sc.factorialk(5, 1, exact=True)
+    >>> from scipy.special import factorialk
+    >>> factorialk(5, 1, exact=True)
     120L
-    >>> sc.factorialk(5, 3, exact=True)
+    >>> factorialk(5, 3, exact=True)
     10L
 
     """

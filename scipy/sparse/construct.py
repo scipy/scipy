@@ -48,8 +48,8 @@ def spdiags(data, diags, m, n, format=None):
 
     Examples
     --------
-    >>> data = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-    >>> diags = array([0, -1, 2])
+    >>> data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+    >>> diags = np.array([0, -1, 2])
     >>> spdiags(data, diags, 4, 4).toarray()
     array([[1, 0, 3, 0],
            [1, 2, 0, 4],
@@ -290,15 +290,15 @@ def kron(A, B, format=None):
     Examples
     --------
     >>> from scipy import sparse
-    >>> A = sparse.csr_matrix(array([[0, 2], [5, 0]]))
-    >>> B = sparse.csr_matrix(array([[1, 2], [3, 4]]))
-    >>> kron(A, B).toarray()
+    >>> A = sparse.csr_matrix(np.array([[0, 2], [5, 0]]))
+    >>> B = sparse.csr_matrix(np.array([[1, 2], [3, 4]]))
+    >>> sparse.kron(A, B).toarray()
     array([[ 0,  0,  2,  4],
            [ 0,  0,  6,  8],
            [ 5, 10,  0,  0],
            [15, 20,  0,  0]])
 
-    >>> kron(A, [[1, 2], [3, 4]]).toarray()
+    >>> sparse.kron(A, [[1, 2], [3, 4]]).toarray()
     array([[ 0,  0,  2,  4],
            [ 0,  0,  6,  8],
            [ 5, 10,  0,  0],
@@ -703,9 +703,9 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     >>> from scipy.sparse import construct
     >>> from scipy import stats
     >>> class CustomRandomState(object):
-        ...     def randint(self, k):
-        ...         i = np.random.randint(k)
-        ...         return i - i % 2
+    ...     def randint(self, k):
+    ...         i = np.random.randint(k)
+    ...         return i - i % 2
     >>> rs = CustomRandomState()
     >>> rvs = stats.poisson(25, loc=10).rvs
     >>> S = construct.random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)

@@ -41,7 +41,8 @@ dists = ['uniform','norm','lognorm','expon','beta',
          'weibull_min','weibull_max','dweibull','maxwell','rayleigh',
          'genlogistic', 'logistic','gumbel_l','gumbel_r','gompertz',
          'hypsecant', 'laplace', 'reciprocal','triang','tukeylambda',
-         'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm']
+         'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
+         'rice']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -1791,6 +1792,16 @@ def test_regression_ticket_1530():
     params = stats.cauchy.fit(rvs)
     expected = (0.045, 1.142)
     assert_almost_equal(params, expected, decimal=1)
+
+
+def test_gh_pr_4806():
+    # Check starting values for Cauchy distribution fit.
+    np.random.seed(1234)
+    x = np.random.randn(42)
+    for offset in 10000.0, 1222333444.0:
+        loc, scale = stats.cauchy.fit(x + offset)
+        assert_allclose(loc, offset, atol=1.0)
+        assert_allclose(scale, 0.6, atol=1.0)
 
 
 def test_tukeylambda_stats_ticket_1545():

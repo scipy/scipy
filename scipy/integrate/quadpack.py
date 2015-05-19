@@ -678,7 +678,7 @@ def nquad(func, ranges, args=None, opts=None):
     >>> def opts3(t0, t1):
     ...     return {}
     >>> integrate.nquad(func2, [lim0, lim1, lim2, lim3], args=(0,0),
-                        opts=[opts0, opts1, opts2, opts3])
+    ...                 opts=[opts0, opts1, opts2, opts3])
     (25.066666666666666, 2.7829590483937256e-13)
 
     """
