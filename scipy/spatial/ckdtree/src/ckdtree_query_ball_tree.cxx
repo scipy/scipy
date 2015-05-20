@@ -63,7 +63,7 @@ query_ball_tree_traverse_no_checking(const ckdtree *self,
 static void
 query_ball_tree_traverse_checking(const ckdtree *self,
                                     const ckdtree *other,
-                                    std::vector<npy_intp> **results
+                                    std::vector<npy_intp> **results,
                                     const ckdtreenode *node1,
                                     const ckdtreenode *node2,
                                     RectRectDistanceTracker *tracker)
@@ -130,27 +130,7 @@ query_ball_tree_traverse_checking(const ckdtree *self,
                         results_i->push_back(other->raw_indices[j]);
                 }
             }
-            
-            
-            /*
-            // brute-force
-            for (i = lnode1->start_idx; i < lnode1->end_idx; ++i) {
-                
-                results_i = results[self->raw_indices[i]];
-                
-                for (j = lnode2->start_idx; j < lnode2->end_idx; ++j) {
-                
-                    d = _distance_p(
-                        self->raw_data + self->raw_indices[i] * self->m,
-                        other->raw_data + other->raw_indices[j] * other->m,
-                        tracker->p, self->m, tracker->upper_bound);
-                
-                    if (d <= tracker->upper_bound)
-                        results_i->push_back(other->raw_indices[j]);
-                }
-            }
-            */
-            
+                       
         }                
         else { /* 1 is a leaf node, 2 is inner node */
 
@@ -211,30 +191,37 @@ query_ball_tree_traverse_checking(const ckdtree *self,
 extern "C" PyObject*
 query_ball_tree(const ckdtree *self,
                 const ckdtree *other,
+                const npy_float64 r,
+                const npy_float64 p,
+                const npy_float64 eps,
                 std::vector<npy_intp> **results)
 {
 
-    // release the GIL
+    /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
     {
         try {
-             
-             // TODO: Add C++ code to start the query
+            Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
+            Rectangle r2(other->m, other->raw_mins, other->raw_maxes);
+            
+            RectRectDistanceTracker tracker(r1, r2, p, eps, r);
+            
+            query_ball_tree_traverse_checking(
+                self, other, results, self->ctree, other->ctree, &tracker);
              
         } 
         catch(...) {
             translate_cpp_exception_with_gil();
         }
     }  
-    // reacquire the GIL
+    /* reacquire the GIL */
     NPY_END_ALLOW_THREADS
 
     if (PyErr_Occurred()) 
-        // true if a C++ exception was translated
+        /* true if a C++ exception was translated */
         return NULL;
     else {
-        // return None if there were no errors
+        /* return None if there were no errors */
         Py_RETURN_NONE;
     }
 }        
-        

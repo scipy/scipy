@@ -38,7 +38,8 @@ def configuration(parent_package='', top_path=None):
                    'ckdtree_cpp_exc.cxx',
                    'ckdtree_query_pairs.cxx',
                    'ckdtree_count_neighbors.cxx',
-                   'ckdtree_query_ball_point.cxx']
+                   'ckdtree_query_ball_point.cxx'
+                   'ckdtree_query_ball_tree.cxx']
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
     
     ckdtree_headers = ['ckdtree_cpp_decl.h', 

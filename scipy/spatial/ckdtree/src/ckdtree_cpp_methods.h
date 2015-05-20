@@ -205,6 +205,15 @@ query_ball_point(const ckdtree *self,
                  const npy_float64 p,
                  const npy_float64 eps,
                  std::vector<npy_intp> *results);
+                 
+CKDTREE_EXTERN PyObject*                
+query_ball_tree(const ckdtree *self,
+                const ckdtree *other,
+                const npy_float64 r,
+                const npy_float64 p,
+                const npy_float64 eps,
+                std::vector<npy_intp> **results);                
+                
                 
 // TODO: correct signatures below
 
