@@ -1153,7 +1153,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # -----------
     
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
-                    np.float64_t eps=0, object output_type='set'):
+                    np.float64_t eps=0, output_type='set'):
         """
         query_pairs(self, r, p=2., eps=0)
 
@@ -1190,7 +1190,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             ordered_pair *pair
             np.ndarray array_res
         
-        if output_type not in ('set', 'np.ndarray'):
+        if output_type not in ('set', 'ndarray'):
             raise ValueError("output type must be set or ndarray")
         
         vres = NULL
@@ -1201,7 +1201,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             n = vres.size()
             pair = ordered_pair_vector_buf(vres)
             
-            if output_type == set:
+            if output_type == 'set':
                 if sizeof(long) < sizeof(np.intp_t):
                     # Needed for Python 2.x on Win64
                     for i in range(n):
@@ -1220,7 +1220,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             if vres != NULL:
                 del vres
         
-        if output_type == set:
+        if output_type == 'set':
             return results
         else:           
             return array_res
@@ -1391,6 +1391,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                     j = pvj[k]
                     v = pvv[k]
                     res_dict[(i,j)] = v
+                result = res_dict
                 
             else:
                 n = <np.intp_t> (res_i.size())

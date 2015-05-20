@@ -612,10 +612,13 @@ class test_sparse_distance_matrix_compiled:
         data2 = np.random.randn(n,m)
         self.T1 = cKDTree(data1,leafsize=2)
         self.T2 = cKDTree(data2,leafsize=2)
-
         self.ref_T1 = KDTree(data1, leafsize=2)
         self.ref_T2 = KDTree(data2, leafsize=2)
         self.r = 0.5
+        self.n = n
+        self.m = m
+        self.data1 = data1
+        self.data2 = data2
 
     def test_consistency_with_neighbors(self):
         M = self.T1.sparse_distance_matrix(self.T2, self.r)
@@ -637,6 +640,40 @@ class test_sparse_distance_matrix_compiled:
         M2 = self.ref_T1.sparse_distance_matrix(self.ref_T2, self.r)
 
         assert_array_almost_equal(M1.todense(), M2.todense(), decimal=14)
+    
+    def test_ckdtree_return_types(self):
+        # brute-force reference
+        ref = np.zeros((self.n,self.n))
+        for i in range(self.n):
+           for j in range(self.n):
+               v = self.data1[i,:] - self.data2[j,:]
+               ref[i,j] = np.dot(v,v)
+        ref = np.sqrt(ref)    
+        ref[ref > self.r] = 0.
+        # test return type 'dict'
+        dist = np.zeros((self.n,self.n))
+        r = self.T1.sparse_distance_matrix(self.T2, self.r, output_type='dict')
+        for i,j in r.keys():
+            dist[i,j] = r[(i,j)]
+        assert_array_almost_equal(ref, dist, decimal=14)
+        # test return type 'recarray'
+        dist = np.zeros((self.n,self.n))
+        r = self.T1.sparse_distance_matrix(self.T2, self.r, 
+                output_type='recarray')
+        for k in range(r.shape[0]):
+            i = r['i'][k]
+            j = r['j'][k]
+            v = r['v'][k]
+            dist[i,j] = v
+        assert_array_almost_equal(ref, dist, decimal=14)
+        # test return type 'dok_matrix'
+        r = self.T1.sparse_distance_matrix(self.T2, self.r, 
+                output_type='dok_matrix')
+        assert_array_almost_equal(ref, r.todense(), decimal=14)
+        # test return type 'coo_matrix'
+        r = self.T1.sparse_distance_matrix(self.T2, self.r, 
+                output_type='coo_matrix')
+        assert_array_almost_equal(ref, r.todense(), decimal=14)
 
 
 def test_distance_matrix():
@@ -674,7 +711,6 @@ def check_onetree_query(T,d):
                 s.add((i,j))
 
     assert_(s == T.query_pairs(d))
-
 
 def test_onetree_query():
     np.random.seed(0)
@@ -722,6 +758,40 @@ def test_query_pairs_single_node_compiled():
     assert_equal(tree.query_pairs(0.5), set())
 
 
+def test_ckdtree_query_pairs():
+    np.random.seed(0)
+    n = 50
+    k = 2
+    r = 0.1
+    r2 = r**2
+    points = np.random.randn(n,k)
+    T = cKDTree(points)
+    # brute force reference
+    brute = set()
+    count = 0
+    for i in range(n):
+        for j in range(i+1,n):
+            v = points[i,:] - points[j,:]
+            if np.dot(v,v) <= r2:
+                brute.add((i,j))
+    l0 = sorted(brute)
+    # test default return type
+    s = T.query_pairs(r)
+    l1 = sorted(s)    
+    assert_array_equal(l0,l1)
+    # test return type 'set'
+    s = T.query_pairs(r, output_type='set')
+    l1 = sorted(s)    
+    assert_array_equal(l0,l1)
+    # test return type 'ndarray'
+    s = set()
+    arr = T.query_pairs(r, output_type='ndarray')
+    for i in range(arr.shape[0]):
+        s.add((int(arr[i,0]),int(arr[i,1])))
+    l2 = sorted(s)
+    assert_array_equal(l0,l2)
+    
+    
 def test_ball_point_ints():
     # Regression test for #1373.
     x, y = np.mgrid[0:4, 0:4]
