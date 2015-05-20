@@ -645,9 +645,9 @@ class test_sparse_distance_matrix_compiled:
         # brute-force reference
         ref = np.zeros((self.n,self.n))
         for i in range(self.n):
-           for j in range(self.n):
-               v = self.data1[i,:] - self.data2[j,:]
-               ref[i,j] = np.dot(v,v)
+            for j in range(self.n):
+                v = self.data1[i,:] - self.data2[j,:]
+                ref[i,j] = np.dot(v,v)
         ref = np.sqrt(ref)    
         ref[ref > self.r] = 0.
         # test return type 'dict'
@@ -659,7 +659,7 @@ class test_sparse_distance_matrix_compiled:
         # test return type 'recarray'
         dist = np.zeros((self.n,self.n))
         r = self.T1.sparse_distance_matrix(self.T2, self.r, 
-                output_type='recarray')
+            output_type='recarray')
         for k in range(r.shape[0]):
             i = r['i'][k]
             j = r['j'][k]
@@ -668,11 +668,11 @@ class test_sparse_distance_matrix_compiled:
         assert_array_almost_equal(ref, dist, decimal=14)
         # test return type 'dok_matrix'
         r = self.T1.sparse_distance_matrix(self.T2, self.r, 
-                output_type='dok_matrix')
+            output_type='dok_matrix')
         assert_array_almost_equal(ref, r.todense(), decimal=14)
         # test return type 'coo_matrix'
         r = self.T1.sparse_distance_matrix(self.T2, self.r, 
-                output_type='coo_matrix')
+            output_type='coo_matrix')
         assert_array_almost_equal(ref, r.todense(), decimal=14)
 
 
@@ -768,7 +768,6 @@ def test_ckdtree_query_pairs():
     T = cKDTree(points)
     # brute force reference
     brute = set()
-    count = 0
     for i in range(n):
         for j in range(i+1,n):
             v = points[i,:] - points[j,:]
