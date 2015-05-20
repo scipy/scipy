@@ -379,7 +379,26 @@ def test_random_ball_vectorized_compiled():
     r = T.query_ball_point(np.random.randn(2,3,m),1)
     assert_equal(r.shape,(2,3))
     assert_(isinstance(r[0,0],list))
-
+    
+    
+def test_query_ball_point_multithreading():
+    np.random.seed(0)
+    n = 5000
+    k = 2
+    points = np.random.randn(n,k)
+    T = cKDTree(points)
+    l1 = T.query_ball_point(points,0.003,n_jobs=1)
+    l2 = T.query_ball_point(points,0.003,n_jobs=64)
+    l3 = T.query_ball_point(points,0.003,n_jobs=-1)
+    
+    for i in range(n):
+        if l1[i] or l2[i]:
+            assert_array_equal(l1[i],l2[i])
+        
+    for i in range(n):
+        if l1[i] or l3[i]:
+            assert_array_equal(l1[i],l3[i])
+         
 
 class two_trees_consistency:
 
