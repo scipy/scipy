@@ -837,7 +837,8 @@ cdef extern from "ckdtree_cpp_methods.h":
                             const np.float64_t r,
                             const np.float64_t p,
                             const np.float64_t eps,
-                            vector[np.intp_t] *results)
+                            const np.intp_t n_queries,
+                            vector[np.intp_t] **results)
 
     object query_ball_tree(const ckdtree *self,
                            const ckdtree *other,
@@ -1435,7 +1436,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # ----------------
 
     def query_ball_point(cKDTree self, object x, np.float64_t r,
-                         np.float64_t p=2., np.float64_t eps=0):
+                         np.float64_t p=2., np.float64_t eps=0, n_jobs=1):
         """
         query_ball_point(self, x, r, p=2., eps=0)
         
@@ -1454,6 +1455,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             nearest points are further than ``r / (1 + eps)``, and branches are
             added in bulk if their furthest points are nearer than
             ``r * (1 + eps)``.
+        n_jobs : int, optional
+            Number of jobs to schedule for parallel processing. If -1 is given
+            all processors are used. Default: 1.
 
         Returns
         -------
@@ -1478,13 +1482,18 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         [4, 8, 9, 12]
 
         """
-        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] xx        
-        cdef vector[np.intp_t] *vres             
+        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] xx
+        cdef np.ndarray[np.float64_t, ndim=2, mode="c"] vxx
+        cdef vector[np.intp_t] *vres
+        cdef vector[np.intp_t] **vvres
+        cdef np.uintp_t vvres_uintp
         cdef np.intp_t *cur
         cdef list tmp
-        cdef np.intp_t i, n
+        cdef np.intp_t i, j, n, m
         
         vres = NULL
+        vvres = NULL
+        
         try:
                
             x = np.asarray(x, dtype=np.float64)
@@ -1495,33 +1504,94 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             if len(x.shape) == 1:
                 vres = new vector[np.intp_t]()
                 xx = np.ascontiguousarray(x, dtype=np.float64)
-                query_ball_point(<ckdtree*> self, &xx[0], r, p, eps, vres)
-                n = <Py_ssize_t> vres.size()
+                query_ball_point(<ckdtree*> self, &xx[0], r, p, eps, 1, &vres)
+                n = <np.intp_t> vres.size()
                 tmp = n * [None]
                 cur = npy_intp_vector_buf(vres)
                 for i in range(n):
                     tmp[i] = cur[0]
                     cur += 1
                 result = tmp
+            
             else:
                 retshape = x.shape[:-1]
+                
+                # allocate an array of std::vector<npy_intp>
+                n = np.prod(retshape)
+                vvres = (<vector[np.intp_t] **> 
+                    PyMem_Malloc(n * sizeof(intvector_ptr_t)))
+                if vvres == NULL:
+                    raise MemoryError()
+                
+                memset(<void*> vvres, 0, n * sizeof(intvector_ptr_t))      
+            
+                for i in range(n):
+                    vvres[i] = new vector[np.intp_t]()
+                
                 result = np.empty(retshape, dtype=object)
-                vres = new vector[np.intp_t]()
+                
+                vxx = np.zeros((n,self.m), dtype=np.float64)
+                i = 0
                 for c in np.ndindex(retshape):
-                    xx = np.ascontiguousarray(x[c], dtype=np.float64)
-                    vres.resize(0)
-                    query_ball_point(<ckdtree*> self, &xx[0], r, p, eps, vres)
-                    n = <Py_ssize_t> vres.size()
-                    tmp = n * [None]
-                    cur = npy_intp_vector_buf(vres)
-                    for i in range(n):
-                        tmp[i] = cur[0]
+                    vxx[i,:] = x[c]
+                    i += 1
+                    
+                # multithreading logic is similar to cKDTree.query
+                                        
+                if (n_jobs == -1): 
+                    n_jobs = number_of_processors
+        
+                if n_jobs > 1:
+                
+                    CHUNK = n//n_jobs if n//n_jobs else n
+                             
+                    def _thread_func(self, _j, _vxx, r, p, eps, _vvres, CHUNK): 
+                        cdef np.intp_t j = _j
+                        cdef np.ndarray[np.float64_t,ndim=2] vxx = _vxx
+                        cdef vector[np.intp_t] **vvres                   
+                        cdef np.intp_t start = j*CHUNK
+                        cdef np.intp_t stop = start + CHUNK
+                        stop = n if stop > n else stop
+                        vvres = (<vector[np.intp_t] **> 
+                                  (<void*> (<np.uintp_t> _vvres)))                                    
+                        if start < n:
+                            query_ball_point(<ckdtree*>self, &vxx[start,0], 
+                                r, p, eps, stop-start, vvres+start)
+                                
+                    vvres_uintp = <np.uintp_t> (<void*> vvres)
+                    threads = [threading.Thread(target=_thread_func,
+                               args=(self, j, vxx, r, p, eps,vvres_uintp,CHUNK))
+                                  for j in range(1+(n//CHUNK))]
+                    for t in threads:
+                        t.daemon = True
+                        t.start()
+                    for t in threads: 
+                        t.join()
+                                                                
+                else:
+                    query_ball_point(<ckdtree*>self, &vxx[0,0], r, p, eps, 
+                        n, vvres)
+                
+                i = 0
+                for c in np.ndindex(retshape):
+                    m = <np.intp_t> (vvres[i].size())
+                    tmp = m * [None]
+                    cur = npy_intp_vector_buf(vvres[i])
+                    for j in range(m):
+                        tmp[j] = cur[0]
                         cur += 1
-                    result[c] = tmp
+                    result[c] = sorted(tmp)
+                    i += 1
         
         finally:
             if vres != NULL: 
                 del vres
+                
+            if vvres != NULL:
+                for i in range(n):
+                    if vvres[i] != NULL:
+                        del vvres[i]     
+                PyMem_Free(vvres)
                 
         return result   
             
@@ -1599,7 +1669,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 for j in range(m):
                     tmp[j] = cur[0]
                     cur += 1
-                results[i] = tmp       
+                results[i] = sorted(tmp)       
                                   
         finally:
             if vvres != NULL:

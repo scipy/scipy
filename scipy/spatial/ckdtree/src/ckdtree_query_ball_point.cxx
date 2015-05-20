@@ -103,17 +103,20 @@ query_ball_point(const ckdtree *self,
                  const npy_float64 r,
                  const npy_float64 p,
                  const npy_float64 eps,
-                 std::vector<npy_intp> *results)
+                 const npy_intp n_queries,
+                 std::vector<npy_intp> **results)
 {
-
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
     {
         try {
-            Rectangle rect(self->m, self->raw_mins, self->raw_maxes);             
-            PointRectDistanceTracker tracker(x, rect, p, eps, r);
-            query_ball_point_traverse_checking(
-                self, results, self->ctree, &tracker);             
+            for (npy_intp i=0; i < n_queries; ++i) {
+                const npy_intp m = self->m;
+                Rectangle rect(m, self->raw_mins, self->raw_maxes);             
+                PointRectDistanceTracker tracker(x + i*m, rect, p, eps, r);
+                query_ball_point_traverse_checking(
+                    self, results[i], self->ctree, &tracker);
+            }
         } 
         catch(...) {
             translate_cpp_exception_with_gil();
@@ -130,4 +133,3 @@ query_ball_point(const ckdtree *self,
         Py_RETURN_NONE;
     }
 }        
-        
