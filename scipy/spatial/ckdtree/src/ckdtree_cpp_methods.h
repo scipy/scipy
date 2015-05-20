@@ -169,8 +169,9 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
     return r;
 } 
 
-// k-nearest neighbor query
-          
+
+/* Query methods in C++ for better speed and GIL release */
+
 CKDTREE_EXTERN PyObject*
 query_knn(const ckdtree     *self, 
           npy_float64       *dd, 
@@ -214,15 +215,17 @@ query_ball_tree(const ckdtree *self,
                 const npy_float64 p,
                 const npy_float64 eps,
                 std::vector<npy_intp> **results);                
-                
-                
-// TODO: correct signatures below
 
-// CKDTREE_EXTERN PyObject*
-// query_ball_tree(const ckdtree *self, const ckdtree *other);
+CKDTREE_EXTERN PyObject*                 
+sparse_distance_matrix(const ckdtree *self,
+                       const ckdtree *other,
+                       const npy_float64 p,
+                       const npy_float64 max_distance,
+                       std::vector<npy_intp> *results_i,
+                       std::vector<npy_intp> *results_j,
+                       std::vector<npy_float64> *results_v);
 
-// CKDTREE_EXTERN PyObject*
-// sparse_distances(const ckdtree *self);
-          
+                  
 #endif
+
 

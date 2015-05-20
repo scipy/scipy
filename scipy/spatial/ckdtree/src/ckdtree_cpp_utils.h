@@ -50,6 +50,12 @@ npy_intp_vector_buf(std::vector<npy_intp> *buf)
     return &tmp[0];
 }
 
+inline npy_float64 *
+npy_float64_vector_buf(std::vector<npy_float64> *buf)
+{
+    std::vector<npy_float64> &tmp = *buf;
+    return &tmp[0];
+}
 
 static PyObject *
 pickle_tree_buffer(std::vector<ckdtreenode> *buf)
