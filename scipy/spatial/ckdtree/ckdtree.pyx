@@ -1153,7 +1153,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # -----------
     
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
-                    np.float64_t eps=0, object output_type=set):
+                    np.float64_t eps=0, object output_type='set'):
         """
         query_pairs(self, r, p=2., eps=0)
 
@@ -1171,14 +1171,14 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             if their nearest points are further than ``r/(1+eps)``, and
             branches are added in bulk if their furthest points are nearer
             than ``r * (1+eps)``.  `eps` has to be non-negative.
-        output_type : type, optional
-            Choose the output container, set or ndarray. Default: set
+        output_type : string, optional
+            Choose the output container, 'set' or 'ndarray'. Default: 'set'
 
         Returns
         -------
         results : set or ndarray
             Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
-            positions are close. If output_type is ndarray, an ndarry is 
+            positions are close. If output_type is 'ndarray', an ndarry is 
             returned instead of a set.
 
         """
@@ -1190,7 +1190,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             ordered_pair *pair
             np.ndarray array_res
         
-        if output_type not in (set, np.ndarray):
+        if output_type not in ('set', 'np.ndarray'):
             raise ValueError("output type must be set or ndarray")
         
         vres = NULL
