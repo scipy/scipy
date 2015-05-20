@@ -65,15 +65,13 @@ count_neighbors_traverse(const ckdtree      *self,
             lnode1 = node1;
             if (node2->split_dim == -1) {  /* 1 & 2 are leaves */
                 lnode2 = node2;
-                
-                
-                
+                                
                 const npy_float64 *self_raw_data = self->raw_data;
                 const npy_intp *self_raw_indices = self->raw_indices;
-                const npy_float64 *other_raw_data = self->raw_data;
-                const npy_intp *other_raw_indices = self->raw_indices;
+                const npy_float64 *other_raw_data = other->raw_data;
+                const npy_intp *other_raw_indices = other->raw_indices;
                 const npy_intp m = self->m;
-            
+                
                 prefetch_datapoint(self_raw_data 
                     + self_raw_indices[lnode1->start_idx]*m, m);
                 
@@ -83,7 +81,7 @@ count_neighbors_traverse(const ckdtree      *self,
                                         
                 /* brute-force */
                 for (i = lnode1->start_idx; i < lnode1->end_idx; ++i) {
-                
+                    
                     if (i < lnode1->end_idx-2)
                         prefetch_datapoint(self_raw_data
                            +  self_raw_indices[i+2]*m, m);
@@ -94,24 +92,24 @@ count_neighbors_traverse(const ckdtree      *self,
                     if (lnode2->start_idx < lnode2->end_idx)
                         prefetch_datapoint(other_raw_data 
                             + other_raw_indices[lnode2->start_idx+1]*m, m);
-                                                                    
+                  
                     for (j = lnode2->start_idx; j < lnode2->end_idx; ++j) {
-                    
+                     
                         if (j < lnode2->end_idx-2)
                             prefetch_datapoint(other_raw_data
                                 + other_raw_indices[j+2]*m, m);
-                    
+                 
                         d = _distance_p(
                             self_raw_data + self_raw_indices[i] * m,
                             other_raw_data + other_raw_indices[j] * m,
-                            tracker->p, self->m, tracker->max_distance);
+                            tracker->p, m, tracker->max_distance);
                         /*
                          * I think it's usually cheaper to test d against all 
                          * r's than to generate a distance array, sort it, then
                          * search for all r's via binary search
                          */
                         for (l=0; l<n_queries; ++l) {
-                            if (d <= r[idx[l]]) ++(results[idx[l]]);
+                            if (d <= r[idx[l]]) results[idx[l]] += 1;
                         }
                     }
                 }
@@ -195,7 +193,7 @@ count_neighbors(const ckdtree *self,
         try {
             
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
-            Rectangle r2(self->m, self->raw_mins, self->raw_maxes);
+            Rectangle r2(other->m, other->raw_mins, other->raw_maxes);
             
             RectRectDistanceTracker tracker(r1, r2, p, 0.0, 0.0);
             
