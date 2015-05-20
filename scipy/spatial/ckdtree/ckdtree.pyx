@@ -22,7 +22,7 @@ import threading
 cdef extern from "limits.h":
     long LONG_MAX
     
-cdef extern from "ckdtree_cpp_methods.h":
+cdef extern from "query_methods.h":
     int number_of_processors
     np.float64_t infinity
     np.float64_t dmax(np.float64_t x, np.float64_t y)
@@ -46,7 +46,7 @@ cdef extern from *:
     struct ckdtree:
         pass
        
-cdef extern from "ckdtree_cpp_decl.h":
+cdef extern from "ckdtree_decl.h":
     struct ckdtreenode:
         np.intp_t split_dim
         np.intp_t children
@@ -62,7 +62,7 @@ cdef extern from "ckdtree_cpp_decl.h":
 # C++ helper functions
 # ====================
 
-cdef extern from "ckdtree_cpp_ordered_pair.h":
+cdef extern from "ordered_pair.h":
 
     struct ordered_pair:
         np.intp_t i
@@ -71,7 +71,7 @@ cdef extern from "ckdtree_cpp_ordered_pair.h":
 def new_object(obj):
     return obj.__new__(obj)
  
-cdef extern from "ckdtree_cpp_utils.h": 
+cdef extern from "cpp_utils.h": 
     object pickle_tree_buffer(vector[ckdtreenode] *buf)    
     object unpickle_tree_buffer(vector[ckdtreenode] *buf, object src)
     ckdtreenode *tree_buffer_root(vector[ckdtreenode] *buf)
@@ -256,7 +256,7 @@ cdef class cKDTreeNode:
 # Main cKDTree class
 # ==================
 
-cdef extern from "ckdtree_cpp_methods.h":
+cdef extern from "query_methods.h":
 
     # External query methods in C++. These will internally
     # release the GIL to avoid locking up the interpreter.

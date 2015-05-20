@@ -27,10 +27,10 @@
 #include <ios>
 
 #define CKDTREE_METHODS_IMPL
-#include "ckdtree_cpp_decl.h"
-#include "ckdtree_cpp_ordered_pair.h"
-#include "ckdtree_cpp_methods.h"
-#include "ckdtree_cpp_exc.h"
+#include "ckdtree_decl.h"
+#include "ordered_pair.h"
+#include "query_methods.h"
+#include "cpp_exc.h"
 
 /*
  * Priority queue

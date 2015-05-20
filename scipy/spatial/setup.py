@@ -32,24 +32,27 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('qhull',
                          sources=['qhull.c'] + qhull_src,
                          **cfg)
-    # cKDTree
-    ckdtree_src = ['ckdtree_query.cxx',
-                   'ckdtree_globals.cxx',
-                   'ckdtree_cpp_exc.cxx',
-                   'ckdtree_query_pairs.cxx',
-                   'ckdtree_count_neighbors.cxx',
-                   'ckdtree_query_ball_point.cxx'
-                   'ckdtree_query_ball_tree.cxx']
+    # cKDTree    
+    ckdtree_src = ['query.cxx', 
+                   'globals.cxx',
+                   'cpp_exc.cxx',
+                   'query_pairs.cxx',
+                   'count_neighbors.cxx',
+                   'query_ball_point.cxx',
+                   'query_ball_tree.cxx',
+                   'sparse_distances.cxx']
+                   
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
     
-    ckdtree_headers = ['ckdtree_cpp_decl.h', 
-                       'ckdtree_cpp_exc.h', 
-                       'ckdtree_cpp_methods.h',
-                       'ckdtree_cpp_utils.h',
-                       'ckdtree_cpp_rectangle.h',
-                       'ckdtree_cpp_ordered_pair.h']
+    ckdtree_headers = ['ckdtree_decl.h', 
+                       'cpp_exc.h', 
+                       'query_methods.h',
+                       'cpp_utils.h',
+                       'rectangle.h',
+                       'ordered_pair.h']
+                       
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
-    
+        
     ckdtree_dep = ['ckdtree.cxx'] + ckdtree_headers + ckdtree_src
     config.add_extension('ckdtree',
                          sources=[join('ckdtree', 'ckdtree.cxx')] + ckdtree_src,

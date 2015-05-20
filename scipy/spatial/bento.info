@@ -4,13 +4,14 @@ Library:
     Extension: ckdtree
         Sources: 
             ckdtree/ckdtree.cxx,
-            ckdtree/src/ckdtree_query.cxx,
-            ckdtree/src/ckdtree_globals.cxx,
-            ckdtree/src/ckdtree_cpp_exc.cxx,
-            ckdtree/src/ckdtree_query_pairs.cxx,
-            ckdtree/src/ckdtree_count_neighbors.cxx,
-            ckdtree/src/ckdtree_query_ball_point.cxx,
-            ckdtree/src/ckdtree_query_ball_tree.cxx
+            ckdtree/src/query.cxx,
+            ckdtree/src/globals.cxx,
+            ckdtree/src/cpp_exc.cxx,
+            ckdtree/src/query_pairs.cxx,
+            ckdtree/src/count_neighbors.cxx,
+            ckdtree/src/query_ball_point.cxx,
+            ckdtree/src/query_ball_tree.cxx,
+            ckdtree/src/sparse_distances.cxx
     Extension: _distance_wrap
         Sources: src/distance_wrap.c
     Extension: qhull

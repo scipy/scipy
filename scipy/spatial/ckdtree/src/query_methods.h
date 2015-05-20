@@ -18,7 +18,7 @@ extern int number_of_processors;
 
 #include <cmath>
 #include <vector>
-#include "ckdtree_cpp_ordered_pair.h"
+#include "ordered_pair.h"
 
 #if defined(__GNUC__)
 

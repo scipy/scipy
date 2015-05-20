@@ -2,9 +2,9 @@
 #include <cstring>
 #include <Python.h>
 
-#include "ckdtree_cpp_ordered_pair.h"
-#include "ckdtree_cpp_decl.h"
-#include "ckdtree_cpp_exc.h"
+#include "ordered_pair.h"
+#include "ckdtree_decl.h"
+#include "cpp_exc.h"
 
 
 #if PY_MAJOR_VERSION < 3
