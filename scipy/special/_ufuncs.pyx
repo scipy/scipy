@@ -169,50 +169,6 @@ cdef void loop_D_dD__As_dD_D(char **args, np.npy_intp *dims, np.npy_intp *steps,
         op0 += steps[2]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_iidd__As_llff_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *ip3 = args[3]
-    cdef char *op0 = args[4]
-    cdef double complex ov0
-    for i in range(n):
-        if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
-            ov0 = (<double complex(*)(int, int, double, double) nogil>func)(<int>(<long*>ip0)[0], <int>(<long*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0])
-        else:
-            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
-            ov0 = <double complex>NPY_NAN
-        (<float complex *>op0)[0] = <float complex>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        ip2 += steps[2]
-        ip3 += steps[3]
-        op0 += steps[4]
-    sf_error.check_fpe(func_name)
-
-cdef void loop_D_dddd__As_dddd_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *ip3 = args[3]
-    cdef char *op0 = args[4]
-    cdef double complex ov0
-    for i in range(n):
-        ov0 = (<double complex(*)(double, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
-        (<double complex *>op0)[0] = <double complex>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        ip2 += steps[2]
-        ip3 += steps[3]
-        op0 += steps[4]
-    sf_error.check_fpe(func_name)
-
 cdef void loop_i_d_dd_As_d_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
@@ -231,22 +187,6 @@ cdef void loop_i_d_dd_As_d_dd(char **args, np.npy_intp *dims, np.npy_intp *steps
         op1 += steps[2]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *op0 = args[2]
-    cdef double complex ov0
-    for i in range(n):
-        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<double complex*>ip0)[0], <double complex>(<double complex*>ip1)[0])
-        (<double complex *>op0)[0] = <double complex>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        op0 += steps[2]
-    sf_error.check_fpe(func_name)
-
 cdef void loop_D_D__As_D_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
@@ -261,7 +201,7 @@ cdef void loop_D_D__As_D_D(char **args, np.npy_intp *dims, np.npy_intp *steps, v
         op0 += steps[1]
     sf_error.check_fpe(func_name)
 
-cdef void loop_d_dddi_d_As_fffl_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_iidd__As_lldd_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
@@ -270,24 +210,19 @@ cdef void loop_d_dddi_d_As_fffl_ff(char **args, np.npy_intp *dims, np.npy_intp *
     cdef char *ip2 = args[2]
     cdef char *ip3 = args[3]
     cdef char *op0 = args[4]
-    cdef char *op1 = args[5]
-    cdef double ov0
-    cdef double ov1
+    cdef double complex ov0
     for i in range(n):
-        if <int>(<long*>ip3)[0] == (<long*>ip3)[0]:
-            ov0 = (<double(*)(double, double, double, int, double *) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <int>(<long*>ip3)[0], &ov1)
+        if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
+            ov0 = (<double complex(*)(int, int, double, double) nogil>func)(<int>(<long*>ip0)[0], <int>(<long*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
         else:
             sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
-            ov0 = <double>NPY_NAN
-            ov1 = <double>NPY_NAN
-        (<float *>op0)[0] = <float>ov0
-        (<float *>op1)[0] = <float>ov1
+            ov0 = <double complex>NPY_NAN
+        (<double complex *>op0)[0] = <double complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         ip2 += steps[2]
         ip3 += steps[3]
         op0 += steps[4]
-        op1 += steps[5]
     sf_error.check_fpe(func_name)
 
 cdef void loop_i_D_DD_As_F_FF(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -529,44 +464,24 @@ cdef void loop_D_ddD__As_ddD_D(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_Dld__As_Flf_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_dddD__As_dddD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
     cdef char *ip1 = args[1]
     cdef char *ip2 = args[2]
-    cdef char *op0 = args[3]
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
     cdef double complex ov0
     for i in range(n):
-        ov0 = (<double complex(*)(double complex, long, double) nogil>func)(<double complex>(<float complex*>ip0)[0], <long>(<long*>ip1)[0], <double>(<float*>ip2)[0])
-        (<float complex *>op0)[0] = <float complex>ov0
+        ov0 = (<double complex(*)(double, double, double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double complex>(<double complex*>ip3)[0])
+        (<double complex *>op0)[0] = <double complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         ip2 += steps[2]
-        op0 += steps[3]
-    sf_error.check_fpe(func_name)
-
-cdef void loop_i_ddd_dd_As_ddd_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *op0 = args[3]
-    cdef char *op1 = args[4]
-    cdef double ov0
-    cdef double ov1
-    for i in range(n):
-        (<int(*)(double, double, double, double *, double *) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], &ov0, &ov1)
-        (<double *>op0)[0] = <double>ov0
-        (<double *>op1)[0] = <double>ov1
-        ip0 += steps[0]
-        ip1 += steps[1]
-        ip2 += steps[2]
-        op0 += steps[3]
-        op1 += steps[4]
+        ip3 += steps[3]
+        op0 += steps[4]
     sf_error.check_fpe(func_name)
 
 cdef void loop_i_d_dddd_As_d_dddd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -593,24 +508,6 @@ cdef void loop_i_d_dddd_As_d_dddd(char **args, np.npy_intp *dims, np.npy_intp *s
         op1 += steps[2]
         op2 += steps[3]
         op3 += steps[4]
-    sf_error.check_fpe(func_name)
-
-cdef void loop_i_d_dd_As_f_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *op0 = args[1]
-    cdef char *op1 = args[2]
-    cdef double ov0
-    cdef double ov1
-    for i in range(n):
-        (<int(*)(double, double *, double *) nogil>func)(<double>(<float*>ip0)[0], &ov0, &ov1)
-        (<float *>op0)[0] = <float>ov0
-        (<float *>op1)[0] = <float>ov1
-        ip0 += steps[0]
-        op0 += steps[1]
-        op1 += steps[2]
     sf_error.check_fpe(func_name)
 
 cdef void loop_i_ddddd_dd_As_fffff_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -679,24 +576,26 @@ cdef void loop_i_d_DDDD_As_d_DDDD(char **args, np.npy_intp *dims, np.npy_intp *s
         op3 += steps[4]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_dddD__As_dddD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_i_ddd_dd_As_ddd_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
     cdef char *ip1 = args[1]
     cdef char *ip2 = args[2]
-    cdef char *ip3 = args[3]
-    cdef char *op0 = args[4]
-    cdef double complex ov0
+    cdef char *op0 = args[3]
+    cdef char *op1 = args[4]
+    cdef double ov0
+    cdef double ov1
     for i in range(n):
-        ov0 = (<double complex(*)(double, double, double, double complex) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double complex>(<double complex*>ip3)[0])
-        (<double complex *>op0)[0] = <double complex>ov0
+        (<int(*)(double, double, double, double *, double *) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], &ov0, &ov1)
+        (<double *>op0)[0] = <double>ov0
+        (<double *>op1)[0] = <double>ov1
         ip0 += steps[0]
         ip1 += steps[1]
         ip2 += steps[2]
-        ip3 += steps[3]
-        op0 += steps[4]
+        op0 += steps[3]
+        op1 += steps[4]
     sf_error.check_fpe(func_name)
 
 cdef void loop_D_dddd__As_ffff_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -737,31 +636,20 @@ cdef void loop_D_Dld__As_Dld_D(char **args, np.npy_intp *dims, np.npy_intp *step
         op0 += steps[3]
     sf_error.check_fpe(func_name)
 
-cdef void loop_d_ddi_d_As_ffl_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
     cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *op0 = args[3]
-    cdef char *op1 = args[4]
-    cdef double ov0
-    cdef double ov1
+    cdef char *op0 = args[2]
+    cdef double complex ov0
     for i in range(n):
-        if <int>(<long*>ip2)[0] == (<long*>ip2)[0]:
-            ov0 = (<double(*)(double, double, int, double *) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <int>(<long*>ip2)[0], &ov1)
-        else:
-            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
-            ov0 = <double>NPY_NAN
-            ov1 = <double>NPY_NAN
-        (<float *>op0)[0] = <float>ov0
-        (<float *>op1)[0] = <float>ov1
+        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<double complex*>ip0)[0], <double complex>(<double complex*>ip1)[0])
+        (<double complex *>op0)[0] = <double complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
-        ip2 += steps[2]
-        op0 += steps[3]
-        op1 += steps[4]
+        op0 += steps[2]
     sf_error.check_fpe(func_name)
 
 cdef void loop_i_dd_dd_As_ff_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -804,26 +692,6 @@ cdef void loop_D_dddD__As_fffF_F(char **args, np.npy_intp *dims, np.npy_intp *st
         op0 += steps[4]
     sf_error.check_fpe(func_name)
 
-cdef void loop_d_id__As_lf_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *op0 = args[2]
-    cdef double ov0
-    for i in range(n):
-        if <int>(<long*>ip0)[0] == (<long*>ip0)[0]:
-            ov0 = (<double(*)(int, double) nogil>func)(<int>(<long*>ip0)[0], <double>(<float*>ip1)[0])
-        else:
-            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
-            ov0 = <double>NPY_NAN
-        (<float *>op0)[0] = <float>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        op0 += steps[2]
-    sf_error.check_fpe(func_name)
-
 cdef void loop_d_dddd__As_dddd_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
@@ -844,28 +712,20 @@ cdef void loop_d_dddd__As_dddd_d(char **args, np.npy_intp *dims, np.npy_intp *st
         op0 += steps[4]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_iidd__As_lldd_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_DD__As_FF_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
     cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *ip3 = args[3]
-    cdef char *op0 = args[4]
+    cdef char *op0 = args[2]
     cdef double complex ov0
     for i in range(n):
-        if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
-            ov0 = (<double complex(*)(int, int, double, double) nogil>func)(<int>(<long*>ip0)[0], <int>(<long*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
-        else:
-            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
-            ov0 = <double complex>NPY_NAN
-        (<double complex *>op0)[0] = <double complex>ov0
+        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<float complex*>ip0)[0], <double complex>(<float complex*>ip1)[0])
+        (<float complex *>op0)[0] = <float complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
-        ip2 += steps[2]
-        ip3 += steps[3]
-        op0 += steps[4]
+        op0 += steps[2]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_iid__As_lld_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -888,22 +748,6 @@ cdef void loop_d_iid__As_lld_d(char **args, np.npy_intp *dims, np.npy_intp *step
         ip1 += steps[1]
         ip2 += steps[2]
         op0 += steps[3]
-    sf_error.check_fpe(func_name)
-
-cdef void loop_D_DD__As_FF_F(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *op0 = args[2]
-    cdef double complex ov0
-    for i in range(n):
-        ov0 = (<double complex(*)(double complex, double complex) nogil>func)(<double complex>(<float complex*>ip0)[0], <double complex>(<float complex*>ip1)[0])
-        (<float complex *>op0)[0] = <float complex>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        op0 += steps[2]
     sf_error.check_fpe(func_name)
 
 cdef void loop_i_d_DD_As_d_DD(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -976,26 +820,24 @@ cdef void loop_d_dddd_d_As_ffff_ff(char **args, np.npy_intp *dims, np.npy_intp *
         op1 += steps[5]
     sf_error.check_fpe(func_name)
 
-cdef void loop_d_iid__As_llf_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_dddd__As_dddd_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
     cdef char *ip1 = args[1]
     cdef char *ip2 = args[2]
-    cdef char *op0 = args[3]
-    cdef double ov0
+    cdef char *ip3 = args[3]
+    cdef char *op0 = args[4]
+    cdef double complex ov0
     for i in range(n):
-        if <int>(<long*>ip0)[0] == (<long*>ip0)[0] and <int>(<long*>ip1)[0] == (<long*>ip1)[0]:
-            ov0 = (<double(*)(int, int, double) nogil>func)(<int>(<long*>ip0)[0], <int>(<long*>ip1)[0], <double>(<float*>ip2)[0])
-        else:
-            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
-            ov0 = <double>NPY_NAN
-        (<float *>op0)[0] = <float>ov0
+        ov0 = (<double complex(*)(double, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0])
+        (<double complex *>op0)[0] = <double complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         ip2 += steps[2]
-        op0 += steps[3]
+        ip3 += steps[3]
+        op0 += steps[4]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_ddddddd__As_ddddddd_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -1086,26 +928,6 @@ cdef void loop_i_d_dddd_As_f_ffff(char **args, np.npy_intp *dims, np.npy_intp *s
         op1 += steps[2]
         op2 += steps[3]
         op3 += steps[4]
-    sf_error.check_fpe(func_name)
-
-cdef void loop_d_lddd__As_lfff_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *ip3 = args[3]
-    cdef char *op0 = args[4]
-    cdef double ov0
-    for i in range(n):
-        ov0 = (<double(*)(long, double, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0], <double>(<float*>ip3)[0])
-        (<float *>op0)[0] = <float>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        ip2 += steps[2]
-        ip3 += steps[3]
-        op0 += steps[4]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_ddddddd__As_fffffff_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -1250,50 +1072,22 @@ cdef void loop_D_dD__As_fF_F(char **args, np.npy_intp *dims, np.npy_intp *steps,
         op0 += steps[2]
     sf_error.check_fpe(func_name)
 
-cdef void loop_d_ddiiddd__As_ffllfff_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_i_d_dd_As_f_ff(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *ip3 = args[3]
-    cdef char *ip4 = args[4]
-    cdef char *ip5 = args[5]
-    cdef char *ip6 = args[6]
-    cdef char *op0 = args[7]
+    cdef char *op0 = args[1]
+    cdef char *op1 = args[2]
     cdef double ov0
+    cdef double ov1
     for i in range(n):
-        if <int>(<long*>ip2)[0] == (<long*>ip2)[0] and <int>(<long*>ip3)[0] == (<long*>ip3)[0]:
-            ov0 = (<double(*)(double, double, int, int, double, double, double) nogil>func)(<double>(<float*>ip0)[0], <double>(<float*>ip1)[0], <int>(<long*>ip2)[0], <int>(<long*>ip3)[0], <double>(<float*>ip4)[0], <double>(<float*>ip5)[0], <double>(<float*>ip6)[0])
-        else:
-            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
-            ov0 = <double>NPY_NAN
+        (<int(*)(double, double *, double *) nogil>func)(<double>(<float*>ip0)[0], &ov0, &ov1)
         (<float *>op0)[0] = <float>ov0
+        (<float *>op1)[0] = <float>ov1
         ip0 += steps[0]
-        ip1 += steps[1]
-        ip2 += steps[2]
-        ip3 += steps[3]
-        ip4 += steps[4]
-        ip5 += steps[5]
-        ip6 += steps[6]
-        op0 += steps[7]
-    sf_error.check_fpe(func_name)
-
-cdef void loop_d_ld__As_lf_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *op0 = args[2]
-    cdef double ov0
-    for i in range(n):
-        ov0 = (<double(*)(long, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0])
-        (<float *>op0)[0] = <float>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        op0 += steps[2]
+        op0 += steps[1]
+        op1 += steps[2]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_id__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -1406,24 +1200,6 @@ cdef void loop_g_g__As_g_g(char **args, np.npy_intp *dims, np.npy_intp *steps, v
         (<long double *>op0)[0] = <long double>ov0
         ip0 += steps[0]
         op0 += steps[1]
-    sf_error.check_fpe(func_name)
-
-cdef void loop_d_ldd__As_lff_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *op0 = args[3]
-    cdef double ov0
-    for i in range(n):
-        ov0 = (<double(*)(long, double, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<float*>ip1)[0], <double>(<float*>ip2)[0])
-        (<float *>op0)[0] = <float>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        ip2 += steps[2]
-        op0 += steps[3]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_ld__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -2082,90 +1858,70 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_zeta "zeta"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_zetac "zetac"(double) nogil
-cdef np.PyUFuncGenericFunction ufunc__ellip_harm_loops[4]
-cdef void *ufunc__ellip_harm_ptr[8]
-cdef void *ufunc__ellip_harm_data[4]
-cdef char ufunc__ellip_harm_types[32]
+cdef np.PyUFuncGenericFunction ufunc__ellip_harm_loops[3]
+cdef void *ufunc__ellip_harm_ptr[6]
+cdef void *ufunc__ellip_harm_data[3]
+cdef char ufunc__ellip_harm_types[24]
 cdef char *ufunc__ellip_harm_doc = (
     "Internal function, use `ellip_harm` instead.")
-ufunc__ellip_harm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddiiddd__As_ffllfff_f
-ufunc__ellip_harm_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddddddd__As_fffffff_f
-ufunc__ellip_harm_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddiiddd__As_ddllddd_d
-ufunc__ellip_harm_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddddddd__As_ddddddd_d
+ufunc__ellip_harm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddddddd__As_fffffff_f
+ufunc__ellip_harm_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddiiddd__As_ddllddd_d
+ufunc__ellip_harm_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddddddd__As_ddddddd_d
 ufunc__ellip_harm_types[0] = <char>NPY_FLOAT
 ufunc__ellip_harm_types[1] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[2] = <char>NPY_LONG
-ufunc__ellip_harm_types[3] = <char>NPY_LONG
+ufunc__ellip_harm_types[2] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[3] = <char>NPY_FLOAT
 ufunc__ellip_harm_types[4] = <char>NPY_FLOAT
 ufunc__ellip_harm_types[5] = <char>NPY_FLOAT
 ufunc__ellip_harm_types[6] = <char>NPY_FLOAT
 ufunc__ellip_harm_types[7] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[8] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[9] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[10] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[11] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[12] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[13] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[14] = <char>NPY_FLOAT
-ufunc__ellip_harm_types[15] = <char>NPY_FLOAT
+ufunc__ellip_harm_types[8] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[9] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[10] = <char>NPY_LONG
+ufunc__ellip_harm_types[11] = <char>NPY_LONG
+ufunc__ellip_harm_types[12] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[13] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[14] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[15] = <char>NPY_DOUBLE
 ufunc__ellip_harm_types[16] = <char>NPY_DOUBLE
 ufunc__ellip_harm_types[17] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[18] = <char>NPY_LONG
-ufunc__ellip_harm_types[19] = <char>NPY_LONG
+ufunc__ellip_harm_types[18] = <char>NPY_DOUBLE
+ufunc__ellip_harm_types[19] = <char>NPY_DOUBLE
 ufunc__ellip_harm_types[20] = <char>NPY_DOUBLE
 ufunc__ellip_harm_types[21] = <char>NPY_DOUBLE
 ufunc__ellip_harm_types[22] = <char>NPY_DOUBLE
 ufunc__ellip_harm_types[23] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[24] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[25] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[26] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[27] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[28] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[29] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[30] = <char>NPY_DOUBLE
-ufunc__ellip_harm_types[31] = <char>NPY_DOUBLE
-ufunc__ellip_harm_ptr[2*0] = <void*>_func_ellip_harmonic
+ufunc__ellip_harm_ptr[2*0] = <void*>_func_ellip_harmonic_unsafe
 ufunc__ellip_harm_ptr[2*0+1] = <void*>(<char*>"_ellip_harm")
-ufunc__ellip_harm_ptr[2*1] = <void*>_func_ellip_harmonic_unsafe
+ufunc__ellip_harm_ptr[2*1] = <void*>_func_ellip_harmonic
 ufunc__ellip_harm_ptr[2*1+1] = <void*>(<char*>"_ellip_harm")
-ufunc__ellip_harm_ptr[2*2] = <void*>_func_ellip_harmonic
+ufunc__ellip_harm_ptr[2*2] = <void*>_func_ellip_harmonic_unsafe
 ufunc__ellip_harm_ptr[2*2+1] = <void*>(<char*>"_ellip_harm")
-ufunc__ellip_harm_ptr[2*3] = <void*>_func_ellip_harmonic_unsafe
-ufunc__ellip_harm_ptr[2*3+1] = <void*>(<char*>"_ellip_harm")
 ufunc__ellip_harm_data[0] = &ufunc__ellip_harm_ptr[2*0]
 ufunc__ellip_harm_data[1] = &ufunc__ellip_harm_ptr[2*1]
 ufunc__ellip_harm_data[2] = &ufunc__ellip_harm_ptr[2*2]
-ufunc__ellip_harm_data[3] = &ufunc__ellip_harm_ptr[2*3]
-_ellip_harm = np.PyUFunc_FromFuncAndData(ufunc__ellip_harm_loops, ufunc__ellip_harm_data, ufunc__ellip_harm_types, 4, 7, 1, 0, "_ellip_harm", ufunc__ellip_harm_doc, 0)
+_ellip_harm = np.PyUFunc_FromFuncAndData(ufunc__ellip_harm_loops, ufunc__ellip_harm_data, ufunc__ellip_harm_types, 3, 7, 1, 0, "_ellip_harm", ufunc__ellip_harm_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc__lambertw_loops[2]
-cdef void *ufunc__lambertw_ptr[4]
-cdef void *ufunc__lambertw_data[2]
-cdef char ufunc__lambertw_types[8]
+cdef np.PyUFuncGenericFunction ufunc__lambertw_loops[1]
+cdef void *ufunc__lambertw_ptr[2]
+cdef void *ufunc__lambertw_data[1]
+cdef char ufunc__lambertw_types[4]
 cdef char *ufunc__lambertw_doc = (
     "Internal function, use `lambertw` instead.")
-ufunc__lambertw_loops[0] = <np.PyUFuncGenericFunction>loop_D_Dld__As_Flf_F
-ufunc__lambertw_loops[1] = <np.PyUFuncGenericFunction>loop_D_Dld__As_Dld_D
-ufunc__lambertw_types[0] = <char>NPY_CFLOAT
+ufunc__lambertw_loops[0] = <np.PyUFuncGenericFunction>loop_D_Dld__As_Dld_D
+ufunc__lambertw_types[0] = <char>NPY_CDOUBLE
 ufunc__lambertw_types[1] = <char>NPY_LONG
-ufunc__lambertw_types[2] = <char>NPY_FLOAT
-ufunc__lambertw_types[3] = <char>NPY_CFLOAT
-ufunc__lambertw_types[4] = <char>NPY_CDOUBLE
-ufunc__lambertw_types[5] = <char>NPY_LONG
-ufunc__lambertw_types[6] = <char>NPY_DOUBLE
-ufunc__lambertw_types[7] = <char>NPY_CDOUBLE
+ufunc__lambertw_types[2] = <char>NPY_DOUBLE
+ufunc__lambertw_types[3] = <char>NPY_CDOUBLE
 ufunc__lambertw_ptr[2*0] = <void*>_func_lambertw_scalar
 ufunc__lambertw_ptr[2*0+1] = <void*>(<char*>"_lambertw")
-ufunc__lambertw_ptr[2*1] = <void*>_func_lambertw_scalar
-ufunc__lambertw_ptr[2*1+1] = <void*>(<char*>"_lambertw")
 ufunc__lambertw_data[0] = &ufunc__lambertw_ptr[2*0]
-ufunc__lambertw_data[1] = &ufunc__lambertw_ptr[2*1]
-_lambertw = np.PyUFunc_FromFuncAndData(ufunc__lambertw_loops, ufunc__lambertw_data, ufunc__lambertw_types, 2, 3, 1, 0, "_lambertw", ufunc__lambertw_doc, 0)
+_lambertw = np.PyUFunc_FromFuncAndData(ufunc__lambertw_loops, ufunc__lambertw_data, ufunc__lambertw_types, 1, 3, 1, 0, "_lambertw", ufunc__lambertw_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc__struve_asymp_large_z_loops[2]
-cdef void *ufunc__struve_asymp_large_z_ptr[4]
-cdef void *ufunc__struve_asymp_large_z_data[2]
-cdef char ufunc__struve_asymp_large_z_types[10]
+cdef np.PyUFuncGenericFunction ufunc__struve_asymp_large_z_loops[1]
+cdef void *ufunc__struve_asymp_large_z_ptr[2]
+cdef void *ufunc__struve_asymp_large_z_data[1]
+cdef char ufunc__struve_asymp_large_z_types[5]
 cdef char *ufunc__struve_asymp_large_z_doc = (
     "_struve_asymp_large_z(v, z, is_h)\n"
     "\n"
@@ -2176,30 +1932,21 @@ cdef char *ufunc__struve_asymp_large_z_doc = (
     "Returns\n"
     "-------\n"
     "v, err")
-ufunc__struve_asymp_large_z_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
-ufunc__struve_asymp_large_z_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
-ufunc__struve_asymp_large_z_types[0] = <char>NPY_FLOAT
-ufunc__struve_asymp_large_z_types[1] = <char>NPY_FLOAT
+ufunc__struve_asymp_large_z_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
+ufunc__struve_asymp_large_z_types[0] = <char>NPY_DOUBLE
+ufunc__struve_asymp_large_z_types[1] = <char>NPY_DOUBLE
 ufunc__struve_asymp_large_z_types[2] = <char>NPY_LONG
-ufunc__struve_asymp_large_z_types[3] = <char>NPY_FLOAT
-ufunc__struve_asymp_large_z_types[4] = <char>NPY_FLOAT
-ufunc__struve_asymp_large_z_types[5] = <char>NPY_DOUBLE
-ufunc__struve_asymp_large_z_types[6] = <char>NPY_DOUBLE
-ufunc__struve_asymp_large_z_types[7] = <char>NPY_LONG
-ufunc__struve_asymp_large_z_types[8] = <char>NPY_DOUBLE
-ufunc__struve_asymp_large_z_types[9] = <char>NPY_DOUBLE
+ufunc__struve_asymp_large_z_types[3] = <char>NPY_DOUBLE
+ufunc__struve_asymp_large_z_types[4] = <char>NPY_DOUBLE
 ufunc__struve_asymp_large_z_ptr[2*0] = <void*>_func_struve_asymp_large_z
 ufunc__struve_asymp_large_z_ptr[2*0+1] = <void*>(<char*>"_struve_asymp_large_z")
-ufunc__struve_asymp_large_z_ptr[2*1] = <void*>_func_struve_asymp_large_z
-ufunc__struve_asymp_large_z_ptr[2*1+1] = <void*>(<char*>"_struve_asymp_large_z")
 ufunc__struve_asymp_large_z_data[0] = &ufunc__struve_asymp_large_z_ptr[2*0]
-ufunc__struve_asymp_large_z_data[1] = &ufunc__struve_asymp_large_z_ptr[2*1]
-_struve_asymp_large_z = np.PyUFunc_FromFuncAndData(ufunc__struve_asymp_large_z_loops, ufunc__struve_asymp_large_z_data, ufunc__struve_asymp_large_z_types, 2, 3, 2, 0, "_struve_asymp_large_z", ufunc__struve_asymp_large_z_doc, 0)
+_struve_asymp_large_z = np.PyUFunc_FromFuncAndData(ufunc__struve_asymp_large_z_loops, ufunc__struve_asymp_large_z_data, ufunc__struve_asymp_large_z_types, 1, 3, 2, 0, "_struve_asymp_large_z", ufunc__struve_asymp_large_z_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc__struve_bessel_series_loops[2]
-cdef void *ufunc__struve_bessel_series_ptr[4]
-cdef void *ufunc__struve_bessel_series_data[2]
-cdef char ufunc__struve_bessel_series_types[10]
+cdef np.PyUFuncGenericFunction ufunc__struve_bessel_series_loops[1]
+cdef void *ufunc__struve_bessel_series_ptr[2]
+cdef void *ufunc__struve_bessel_series_data[1]
+cdef char ufunc__struve_bessel_series_types[5]
 cdef char *ufunc__struve_bessel_series_doc = (
     "_struve_bessel_series(v, z, is_h)\n"
     "\n"
@@ -2210,30 +1957,21 @@ cdef char *ufunc__struve_bessel_series_doc = (
     "Returns\n"
     "-------\n"
     "v, err")
-ufunc__struve_bessel_series_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
-ufunc__struve_bessel_series_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
-ufunc__struve_bessel_series_types[0] = <char>NPY_FLOAT
-ufunc__struve_bessel_series_types[1] = <char>NPY_FLOAT
+ufunc__struve_bessel_series_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
+ufunc__struve_bessel_series_types[0] = <char>NPY_DOUBLE
+ufunc__struve_bessel_series_types[1] = <char>NPY_DOUBLE
 ufunc__struve_bessel_series_types[2] = <char>NPY_LONG
-ufunc__struve_bessel_series_types[3] = <char>NPY_FLOAT
-ufunc__struve_bessel_series_types[4] = <char>NPY_FLOAT
-ufunc__struve_bessel_series_types[5] = <char>NPY_DOUBLE
-ufunc__struve_bessel_series_types[6] = <char>NPY_DOUBLE
-ufunc__struve_bessel_series_types[7] = <char>NPY_LONG
-ufunc__struve_bessel_series_types[8] = <char>NPY_DOUBLE
-ufunc__struve_bessel_series_types[9] = <char>NPY_DOUBLE
+ufunc__struve_bessel_series_types[3] = <char>NPY_DOUBLE
+ufunc__struve_bessel_series_types[4] = <char>NPY_DOUBLE
 ufunc__struve_bessel_series_ptr[2*0] = <void*>_func_struve_bessel_series
 ufunc__struve_bessel_series_ptr[2*0+1] = <void*>(<char*>"_struve_bessel_series")
-ufunc__struve_bessel_series_ptr[2*1] = <void*>_func_struve_bessel_series
-ufunc__struve_bessel_series_ptr[2*1+1] = <void*>(<char*>"_struve_bessel_series")
 ufunc__struve_bessel_series_data[0] = &ufunc__struve_bessel_series_ptr[2*0]
-ufunc__struve_bessel_series_data[1] = &ufunc__struve_bessel_series_ptr[2*1]
-_struve_bessel_series = np.PyUFunc_FromFuncAndData(ufunc__struve_bessel_series_loops, ufunc__struve_bessel_series_data, ufunc__struve_bessel_series_types, 2, 3, 2, 0, "_struve_bessel_series", ufunc__struve_bessel_series_doc, 0)
+_struve_bessel_series = np.PyUFunc_FromFuncAndData(ufunc__struve_bessel_series_loops, ufunc__struve_bessel_series_data, ufunc__struve_bessel_series_types, 1, 3, 2, 0, "_struve_bessel_series", ufunc__struve_bessel_series_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc__struve_power_series_loops[2]
-cdef void *ufunc__struve_power_series_ptr[4]
-cdef void *ufunc__struve_power_series_data[2]
-cdef char ufunc__struve_power_series_types[10]
+cdef np.PyUFuncGenericFunction ufunc__struve_power_series_loops[1]
+cdef void *ufunc__struve_power_series_ptr[2]
+cdef void *ufunc__struve_power_series_data[1]
+cdef char ufunc__struve_power_series_types[5]
 cdef char *ufunc__struve_power_series_doc = (
     "_struve_power_series(v, z, is_h)\n"
     "\n"
@@ -2244,25 +1982,16 @@ cdef char *ufunc__struve_power_series_doc = (
     "Returns\n"
     "-------\n"
     "v, err")
-ufunc__struve_power_series_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ffl_ff
-ufunc__struve_power_series_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
-ufunc__struve_power_series_types[0] = <char>NPY_FLOAT
-ufunc__struve_power_series_types[1] = <char>NPY_FLOAT
+ufunc__struve_power_series_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddi_d_As_ddl_dd
+ufunc__struve_power_series_types[0] = <char>NPY_DOUBLE
+ufunc__struve_power_series_types[1] = <char>NPY_DOUBLE
 ufunc__struve_power_series_types[2] = <char>NPY_LONG
-ufunc__struve_power_series_types[3] = <char>NPY_FLOAT
-ufunc__struve_power_series_types[4] = <char>NPY_FLOAT
-ufunc__struve_power_series_types[5] = <char>NPY_DOUBLE
-ufunc__struve_power_series_types[6] = <char>NPY_DOUBLE
-ufunc__struve_power_series_types[7] = <char>NPY_LONG
-ufunc__struve_power_series_types[8] = <char>NPY_DOUBLE
-ufunc__struve_power_series_types[9] = <char>NPY_DOUBLE
+ufunc__struve_power_series_types[3] = <char>NPY_DOUBLE
+ufunc__struve_power_series_types[4] = <char>NPY_DOUBLE
 ufunc__struve_power_series_ptr[2*0] = <void*>_func_struve_power_series
 ufunc__struve_power_series_ptr[2*0+1] = <void*>(<char*>"_struve_power_series")
-ufunc__struve_power_series_ptr[2*1] = <void*>_func_struve_power_series
-ufunc__struve_power_series_ptr[2*1+1] = <void*>(<char*>"_struve_power_series")
 ufunc__struve_power_series_data[0] = &ufunc__struve_power_series_ptr[2*0]
-ufunc__struve_power_series_data[1] = &ufunc__struve_power_series_ptr[2*1]
-_struve_power_series = np.PyUFunc_FromFuncAndData(ufunc__struve_power_series_loops, ufunc__struve_power_series_data, ufunc__struve_power_series_types, 2, 3, 2, 0, "_struve_power_series", ufunc__struve_power_series_doc, 0)
+_struve_power_series = np.PyUFunc_FromFuncAndData(ufunc__struve_power_series_loops, ufunc__struve_power_series_data, ufunc__struve_power_series_types, 1, 3, 2, 0, "_struve_power_series", ufunc__struve_power_series_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_airy_loops[4]
 cdef void *ufunc_airy_ptr[8]
@@ -2387,10 +2116,10 @@ ufunc_airye_data[2] = &ufunc_airye_ptr[2*2]
 ufunc_airye_data[3] = &ufunc_airye_ptr[2*3]
 airye = np.PyUFunc_FromFuncAndData(ufunc_airye_loops, ufunc_airye_data, ufunc_airye_types, 4, 1, 4, 0, "airye", ufunc_airye_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_bdtr_loops[4]
-cdef void *ufunc_bdtr_ptr[8]
-cdef void *ufunc_bdtr_data[4]
-cdef char ufunc_bdtr_types[16]
+cdef np.PyUFuncGenericFunction ufunc_bdtr_loops[3]
+cdef void *ufunc_bdtr_ptr[6]
+cdef void *ufunc_bdtr_data[3]
+cdef char ufunc_bdtr_types[12]
 cdef char *ufunc_bdtr_doc = (
     "bdtr(k, n, p)\n"
     "\n"
@@ -2413,44 +2142,36 @@ cdef char *ufunc_bdtr_doc = (
     "-------\n"
     "y : float\n"
     "    Sum of terms")
-ufunc_bdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
-ufunc_bdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
-ufunc_bdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_bdtr_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_bdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
+ufunc_bdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_bdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_bdtr_types[0] = <char>NPY_LONG
 ufunc_bdtr_types[1] = <char>NPY_LONG
-ufunc_bdtr_types[2] = <char>NPY_FLOAT
-ufunc_bdtr_types[3] = <char>NPY_FLOAT
-ufunc_bdtr_types[4] = <char>NPY_LONG
-ufunc_bdtr_types[5] = <char>NPY_LONG
-ufunc_bdtr_types[6] = <char>NPY_DOUBLE
-ufunc_bdtr_types[7] = <char>NPY_DOUBLE
-ufunc_bdtr_types[8] = <char>NPY_FLOAT
-ufunc_bdtr_types[9] = <char>NPY_FLOAT
-ufunc_bdtr_types[10] = <char>NPY_FLOAT
-ufunc_bdtr_types[11] = <char>NPY_FLOAT
-ufunc_bdtr_types[12] = <char>NPY_DOUBLE
-ufunc_bdtr_types[13] = <char>NPY_DOUBLE
-ufunc_bdtr_types[14] = <char>NPY_DOUBLE
-ufunc_bdtr_types[15] = <char>NPY_DOUBLE
+ufunc_bdtr_types[2] = <char>NPY_DOUBLE
+ufunc_bdtr_types[3] = <char>NPY_DOUBLE
+ufunc_bdtr_types[4] = <char>NPY_FLOAT
+ufunc_bdtr_types[5] = <char>NPY_FLOAT
+ufunc_bdtr_types[6] = <char>NPY_FLOAT
+ufunc_bdtr_types[7] = <char>NPY_FLOAT
+ufunc_bdtr_types[8] = <char>NPY_DOUBLE
+ufunc_bdtr_types[9] = <char>NPY_DOUBLE
+ufunc_bdtr_types[10] = <char>NPY_DOUBLE
+ufunc_bdtr_types[11] = <char>NPY_DOUBLE
 ufunc_bdtr_ptr[2*0] = <void*>_func_bdtr
 ufunc_bdtr_ptr[2*0+1] = <void*>(<char*>"bdtr")
-ufunc_bdtr_ptr[2*1] = <void*>_func_bdtr
+ufunc_bdtr_ptr[2*1] = <void*>_func_bdtr_unsafe
 ufunc_bdtr_ptr[2*1+1] = <void*>(<char*>"bdtr")
 ufunc_bdtr_ptr[2*2] = <void*>_func_bdtr_unsafe
 ufunc_bdtr_ptr[2*2+1] = <void*>(<char*>"bdtr")
-ufunc_bdtr_ptr[2*3] = <void*>_func_bdtr_unsafe
-ufunc_bdtr_ptr[2*3+1] = <void*>(<char*>"bdtr")
 ufunc_bdtr_data[0] = &ufunc_bdtr_ptr[2*0]
 ufunc_bdtr_data[1] = &ufunc_bdtr_ptr[2*1]
 ufunc_bdtr_data[2] = &ufunc_bdtr_ptr[2*2]
-ufunc_bdtr_data[3] = &ufunc_bdtr_ptr[2*3]
-bdtr = np.PyUFunc_FromFuncAndData(ufunc_bdtr_loops, ufunc_bdtr_data, ufunc_bdtr_types, 4, 3, 1, 0, "bdtr", ufunc_bdtr_doc, 0)
+bdtr = np.PyUFunc_FromFuncAndData(ufunc_bdtr_loops, ufunc_bdtr_data, ufunc_bdtr_types, 3, 3, 1, 0, "bdtr", ufunc_bdtr_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_bdtrc_loops[4]
-cdef void *ufunc_bdtrc_ptr[8]
-cdef void *ufunc_bdtrc_data[4]
-cdef char ufunc_bdtrc_types[16]
+cdef np.PyUFuncGenericFunction ufunc_bdtrc_loops[3]
+cdef void *ufunc_bdtrc_ptr[6]
+cdef void *ufunc_bdtrc_data[3]
+cdef char ufunc_bdtrc_types[12]
 cdef char *ufunc_bdtrc_doc = (
     "bdtrc(k, n, p)\n"
     "\n"
@@ -2473,44 +2194,36 @@ cdef char *ufunc_bdtrc_doc = (
     "-------\n"
     "y : float\n"
     "    Sum of terms")
-ufunc_bdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
-ufunc_bdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
-ufunc_bdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_bdtrc_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_bdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
+ufunc_bdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_bdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_bdtrc_types[0] = <char>NPY_LONG
 ufunc_bdtrc_types[1] = <char>NPY_LONG
-ufunc_bdtrc_types[2] = <char>NPY_FLOAT
-ufunc_bdtrc_types[3] = <char>NPY_FLOAT
-ufunc_bdtrc_types[4] = <char>NPY_LONG
-ufunc_bdtrc_types[5] = <char>NPY_LONG
-ufunc_bdtrc_types[6] = <char>NPY_DOUBLE
-ufunc_bdtrc_types[7] = <char>NPY_DOUBLE
-ufunc_bdtrc_types[8] = <char>NPY_FLOAT
-ufunc_bdtrc_types[9] = <char>NPY_FLOAT
-ufunc_bdtrc_types[10] = <char>NPY_FLOAT
-ufunc_bdtrc_types[11] = <char>NPY_FLOAT
-ufunc_bdtrc_types[12] = <char>NPY_DOUBLE
-ufunc_bdtrc_types[13] = <char>NPY_DOUBLE
-ufunc_bdtrc_types[14] = <char>NPY_DOUBLE
-ufunc_bdtrc_types[15] = <char>NPY_DOUBLE
+ufunc_bdtrc_types[2] = <char>NPY_DOUBLE
+ufunc_bdtrc_types[3] = <char>NPY_DOUBLE
+ufunc_bdtrc_types[4] = <char>NPY_FLOAT
+ufunc_bdtrc_types[5] = <char>NPY_FLOAT
+ufunc_bdtrc_types[6] = <char>NPY_FLOAT
+ufunc_bdtrc_types[7] = <char>NPY_FLOAT
+ufunc_bdtrc_types[8] = <char>NPY_DOUBLE
+ufunc_bdtrc_types[9] = <char>NPY_DOUBLE
+ufunc_bdtrc_types[10] = <char>NPY_DOUBLE
+ufunc_bdtrc_types[11] = <char>NPY_DOUBLE
 ufunc_bdtrc_ptr[2*0] = <void*>_func_bdtrc
 ufunc_bdtrc_ptr[2*0+1] = <void*>(<char*>"bdtrc")
-ufunc_bdtrc_ptr[2*1] = <void*>_func_bdtrc
+ufunc_bdtrc_ptr[2*1] = <void*>_func_bdtrc_unsafe
 ufunc_bdtrc_ptr[2*1+1] = <void*>(<char*>"bdtrc")
 ufunc_bdtrc_ptr[2*2] = <void*>_func_bdtrc_unsafe
 ufunc_bdtrc_ptr[2*2+1] = <void*>(<char*>"bdtrc")
-ufunc_bdtrc_ptr[2*3] = <void*>_func_bdtrc_unsafe
-ufunc_bdtrc_ptr[2*3+1] = <void*>(<char*>"bdtrc")
 ufunc_bdtrc_data[0] = &ufunc_bdtrc_ptr[2*0]
 ufunc_bdtrc_data[1] = &ufunc_bdtrc_ptr[2*1]
 ufunc_bdtrc_data[2] = &ufunc_bdtrc_ptr[2*2]
-ufunc_bdtrc_data[3] = &ufunc_bdtrc_ptr[2*3]
-bdtrc = np.PyUFunc_FromFuncAndData(ufunc_bdtrc_loops, ufunc_bdtrc_data, ufunc_bdtrc_types, 4, 3, 1, 0, "bdtrc", ufunc_bdtrc_doc, 0)
+bdtrc = np.PyUFunc_FromFuncAndData(ufunc_bdtrc_loops, ufunc_bdtrc_data, ufunc_bdtrc_types, 3, 3, 1, 0, "bdtrc", ufunc_bdtrc_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_bdtri_loops[4]
-cdef void *ufunc_bdtri_ptr[8]
-cdef void *ufunc_bdtri_data[4]
-cdef char ufunc_bdtri_types[16]
+cdef np.PyUFuncGenericFunction ufunc_bdtri_loops[3]
+cdef void *ufunc_bdtri_ptr[6]
+cdef void *ufunc_bdtri_data[3]
+cdef char ufunc_bdtri_types[12]
 cdef char *ufunc_bdtri_doc = (
     "bdtri(k, n, y)\n"
     "\n"
@@ -2518,39 +2231,31 @@ cdef char *ufunc_bdtri_doc = (
     "\n"
     "Finds probability `p` such that for the cumulative binomial\n"
     "probability ``bdtr(k, n, p) == y``.")
-ufunc_bdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
-ufunc_bdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
-ufunc_bdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_bdtri_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_bdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
+ufunc_bdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_bdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_bdtri_types[0] = <char>NPY_LONG
 ufunc_bdtri_types[1] = <char>NPY_LONG
-ufunc_bdtri_types[2] = <char>NPY_FLOAT
-ufunc_bdtri_types[3] = <char>NPY_FLOAT
-ufunc_bdtri_types[4] = <char>NPY_LONG
-ufunc_bdtri_types[5] = <char>NPY_LONG
-ufunc_bdtri_types[6] = <char>NPY_DOUBLE
-ufunc_bdtri_types[7] = <char>NPY_DOUBLE
-ufunc_bdtri_types[8] = <char>NPY_FLOAT
-ufunc_bdtri_types[9] = <char>NPY_FLOAT
-ufunc_bdtri_types[10] = <char>NPY_FLOAT
-ufunc_bdtri_types[11] = <char>NPY_FLOAT
-ufunc_bdtri_types[12] = <char>NPY_DOUBLE
-ufunc_bdtri_types[13] = <char>NPY_DOUBLE
-ufunc_bdtri_types[14] = <char>NPY_DOUBLE
-ufunc_bdtri_types[15] = <char>NPY_DOUBLE
+ufunc_bdtri_types[2] = <char>NPY_DOUBLE
+ufunc_bdtri_types[3] = <char>NPY_DOUBLE
+ufunc_bdtri_types[4] = <char>NPY_FLOAT
+ufunc_bdtri_types[5] = <char>NPY_FLOAT
+ufunc_bdtri_types[6] = <char>NPY_FLOAT
+ufunc_bdtri_types[7] = <char>NPY_FLOAT
+ufunc_bdtri_types[8] = <char>NPY_DOUBLE
+ufunc_bdtri_types[9] = <char>NPY_DOUBLE
+ufunc_bdtri_types[10] = <char>NPY_DOUBLE
+ufunc_bdtri_types[11] = <char>NPY_DOUBLE
 ufunc_bdtri_ptr[2*0] = <void*>_func_bdtri
 ufunc_bdtri_ptr[2*0+1] = <void*>(<char*>"bdtri")
-ufunc_bdtri_ptr[2*1] = <void*>_func_bdtri
+ufunc_bdtri_ptr[2*1] = <void*>_func_bdtri_unsafe
 ufunc_bdtri_ptr[2*1+1] = <void*>(<char*>"bdtri")
 ufunc_bdtri_ptr[2*2] = <void*>_func_bdtri_unsafe
 ufunc_bdtri_ptr[2*2+1] = <void*>(<char*>"bdtri")
-ufunc_bdtri_ptr[2*3] = <void*>_func_bdtri_unsafe
-ufunc_bdtri_ptr[2*3+1] = <void*>(<char*>"bdtri")
 ufunc_bdtri_data[0] = &ufunc_bdtri_ptr[2*0]
 ufunc_bdtri_data[1] = &ufunc_bdtri_ptr[2*1]
 ufunc_bdtri_data[2] = &ufunc_bdtri_ptr[2*2]
-ufunc_bdtri_data[3] = &ufunc_bdtri_ptr[2*3]
-bdtri = np.PyUFunc_FromFuncAndData(ufunc_bdtri_loops, ufunc_bdtri_data, ufunc_bdtri_types, 4, 3, 1, 0, "bdtri", ufunc_bdtri_doc, 0)
+bdtri = np.PyUFunc_FromFuncAndData(ufunc_bdtri_loops, ufunc_bdtri_data, ufunc_bdtri_types, 3, 3, 1, 0, "bdtri", ufunc_bdtri_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_bdtrik_loops[2]
 cdef void *ufunc_bdtrik_ptr[4]
@@ -3918,114 +3623,100 @@ ufunc_erfi_data[2] = &ufunc_erfi_ptr[2*2]
 ufunc_erfi_data[3] = &ufunc_erfi_ptr[2*3]
 erfi = np.PyUFunc_FromFuncAndData(ufunc_erfi_loops, ufunc_erfi_data, ufunc_erfi_types, 4, 1, 1, 0, "erfi", ufunc_erfi_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_chebyc_loops[6]
-cdef void *ufunc_eval_chebyc_ptr[12]
-cdef void *ufunc_eval_chebyc_data[6]
-cdef char ufunc_eval_chebyc_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_chebyc_loops[5]
+cdef void *ufunc_eval_chebyc_ptr[10]
+cdef void *ufunc_eval_chebyc_data[5]
+cdef char ufunc_eval_chebyc_types[15]
 cdef char *ufunc_eval_chebyc_doc = (
     "eval_chebyc(n, x, out=None)\n"
     "\n"
     "Evaluate Chebyshev C polynomial at a point.")
-ufunc_eval_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_chebyc_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_chebyc_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_chebyc_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_chebyc_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_chebyc_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_chebyc_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_chebyc_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_chebyc_types[0] = <char>NPY_LONG
-ufunc_eval_chebyc_types[1] = <char>NPY_FLOAT
-ufunc_eval_chebyc_types[2] = <char>NPY_FLOAT
-ufunc_eval_chebyc_types[3] = <char>NPY_LONG
-ufunc_eval_chebyc_types[4] = <char>NPY_DOUBLE
-ufunc_eval_chebyc_types[5] = <char>NPY_DOUBLE
+ufunc_eval_chebyc_types[1] = <char>NPY_DOUBLE
+ufunc_eval_chebyc_types[2] = <char>NPY_DOUBLE
+ufunc_eval_chebyc_types[3] = <char>NPY_FLOAT
+ufunc_eval_chebyc_types[4] = <char>NPY_FLOAT
+ufunc_eval_chebyc_types[5] = <char>NPY_FLOAT
 ufunc_eval_chebyc_types[6] = <char>NPY_FLOAT
-ufunc_eval_chebyc_types[7] = <char>NPY_FLOAT
-ufunc_eval_chebyc_types[8] = <char>NPY_FLOAT
-ufunc_eval_chebyc_types[9] = <char>NPY_FLOAT
-ufunc_eval_chebyc_types[10] = <char>NPY_CFLOAT
-ufunc_eval_chebyc_types[11] = <char>NPY_CFLOAT
+ufunc_eval_chebyc_types[7] = <char>NPY_CFLOAT
+ufunc_eval_chebyc_types[8] = <char>NPY_CFLOAT
+ufunc_eval_chebyc_types[9] = <char>NPY_DOUBLE
+ufunc_eval_chebyc_types[10] = <char>NPY_DOUBLE
+ufunc_eval_chebyc_types[11] = <char>NPY_DOUBLE
 ufunc_eval_chebyc_types[12] = <char>NPY_DOUBLE
-ufunc_eval_chebyc_types[13] = <char>NPY_DOUBLE
-ufunc_eval_chebyc_types[14] = <char>NPY_DOUBLE
-ufunc_eval_chebyc_types[15] = <char>NPY_DOUBLE
-ufunc_eval_chebyc_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_chebyc_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_chebyc_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_chebyc_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_chebyc_ptr[2*0] = <void*>_func_eval_chebyc_l
 ufunc_eval_chebyc_ptr[2*0+1] = <void*>(<char*>"eval_chebyc")
-ufunc_eval_chebyc_ptr[2*1] = <void*>_func_eval_chebyc_l
+ufunc_eval_chebyc_ptr[2*1] = <void*>_func_eval_chebyc[double]
 ufunc_eval_chebyc_ptr[2*1+1] = <void*>(<char*>"eval_chebyc")
-ufunc_eval_chebyc_ptr[2*2] = <void*>_func_eval_chebyc[double]
+ufunc_eval_chebyc_ptr[2*2] = <void*>_func_eval_chebyc[double_complex]
 ufunc_eval_chebyc_ptr[2*2+1] = <void*>(<char*>"eval_chebyc")
-ufunc_eval_chebyc_ptr[2*3] = <void*>_func_eval_chebyc[double_complex]
+ufunc_eval_chebyc_ptr[2*3] = <void*>_func_eval_chebyc[double]
 ufunc_eval_chebyc_ptr[2*3+1] = <void*>(<char*>"eval_chebyc")
-ufunc_eval_chebyc_ptr[2*4] = <void*>_func_eval_chebyc[double]
+ufunc_eval_chebyc_ptr[2*4] = <void*>_func_eval_chebyc[double_complex]
 ufunc_eval_chebyc_ptr[2*4+1] = <void*>(<char*>"eval_chebyc")
-ufunc_eval_chebyc_ptr[2*5] = <void*>_func_eval_chebyc[double_complex]
-ufunc_eval_chebyc_ptr[2*5+1] = <void*>(<char*>"eval_chebyc")
 ufunc_eval_chebyc_data[0] = &ufunc_eval_chebyc_ptr[2*0]
 ufunc_eval_chebyc_data[1] = &ufunc_eval_chebyc_ptr[2*1]
 ufunc_eval_chebyc_data[2] = &ufunc_eval_chebyc_ptr[2*2]
 ufunc_eval_chebyc_data[3] = &ufunc_eval_chebyc_ptr[2*3]
 ufunc_eval_chebyc_data[4] = &ufunc_eval_chebyc_ptr[2*4]
-ufunc_eval_chebyc_data[5] = &ufunc_eval_chebyc_ptr[2*5]
-eval_chebyc = np.PyUFunc_FromFuncAndData(ufunc_eval_chebyc_loops, ufunc_eval_chebyc_data, ufunc_eval_chebyc_types, 6, 2, 1, 0, "eval_chebyc", ufunc_eval_chebyc_doc, 0)
+eval_chebyc = np.PyUFunc_FromFuncAndData(ufunc_eval_chebyc_loops, ufunc_eval_chebyc_data, ufunc_eval_chebyc_types, 5, 2, 1, 0, "eval_chebyc", ufunc_eval_chebyc_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_chebys_loops[6]
-cdef void *ufunc_eval_chebys_ptr[12]
-cdef void *ufunc_eval_chebys_data[6]
-cdef char ufunc_eval_chebys_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_chebys_loops[5]
+cdef void *ufunc_eval_chebys_ptr[10]
+cdef void *ufunc_eval_chebys_data[5]
+cdef char ufunc_eval_chebys_types[15]
 cdef char *ufunc_eval_chebys_doc = (
     "eval_chebys(n, x, out=None)\n"
     "\n"
     "Evaluate Chebyshev S polynomial at a point.")
-ufunc_eval_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_chebys_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_chebys_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_chebys_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_chebys_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_chebys_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_chebys_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_chebys_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_chebys_types[0] = <char>NPY_LONG
-ufunc_eval_chebys_types[1] = <char>NPY_FLOAT
-ufunc_eval_chebys_types[2] = <char>NPY_FLOAT
-ufunc_eval_chebys_types[3] = <char>NPY_LONG
-ufunc_eval_chebys_types[4] = <char>NPY_DOUBLE
-ufunc_eval_chebys_types[5] = <char>NPY_DOUBLE
+ufunc_eval_chebys_types[1] = <char>NPY_DOUBLE
+ufunc_eval_chebys_types[2] = <char>NPY_DOUBLE
+ufunc_eval_chebys_types[3] = <char>NPY_FLOAT
+ufunc_eval_chebys_types[4] = <char>NPY_FLOAT
+ufunc_eval_chebys_types[5] = <char>NPY_FLOAT
 ufunc_eval_chebys_types[6] = <char>NPY_FLOAT
-ufunc_eval_chebys_types[7] = <char>NPY_FLOAT
-ufunc_eval_chebys_types[8] = <char>NPY_FLOAT
-ufunc_eval_chebys_types[9] = <char>NPY_FLOAT
-ufunc_eval_chebys_types[10] = <char>NPY_CFLOAT
-ufunc_eval_chebys_types[11] = <char>NPY_CFLOAT
+ufunc_eval_chebys_types[7] = <char>NPY_CFLOAT
+ufunc_eval_chebys_types[8] = <char>NPY_CFLOAT
+ufunc_eval_chebys_types[9] = <char>NPY_DOUBLE
+ufunc_eval_chebys_types[10] = <char>NPY_DOUBLE
+ufunc_eval_chebys_types[11] = <char>NPY_DOUBLE
 ufunc_eval_chebys_types[12] = <char>NPY_DOUBLE
-ufunc_eval_chebys_types[13] = <char>NPY_DOUBLE
-ufunc_eval_chebys_types[14] = <char>NPY_DOUBLE
-ufunc_eval_chebys_types[15] = <char>NPY_DOUBLE
-ufunc_eval_chebys_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_chebys_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_chebys_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_chebys_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_chebys_ptr[2*0] = <void*>_func_eval_chebys_l
 ufunc_eval_chebys_ptr[2*0+1] = <void*>(<char*>"eval_chebys")
-ufunc_eval_chebys_ptr[2*1] = <void*>_func_eval_chebys_l
+ufunc_eval_chebys_ptr[2*1] = <void*>_func_eval_chebys[double]
 ufunc_eval_chebys_ptr[2*1+1] = <void*>(<char*>"eval_chebys")
-ufunc_eval_chebys_ptr[2*2] = <void*>_func_eval_chebys[double]
+ufunc_eval_chebys_ptr[2*2] = <void*>_func_eval_chebys[double_complex]
 ufunc_eval_chebys_ptr[2*2+1] = <void*>(<char*>"eval_chebys")
-ufunc_eval_chebys_ptr[2*3] = <void*>_func_eval_chebys[double_complex]
+ufunc_eval_chebys_ptr[2*3] = <void*>_func_eval_chebys[double]
 ufunc_eval_chebys_ptr[2*3+1] = <void*>(<char*>"eval_chebys")
-ufunc_eval_chebys_ptr[2*4] = <void*>_func_eval_chebys[double]
+ufunc_eval_chebys_ptr[2*4] = <void*>_func_eval_chebys[double_complex]
 ufunc_eval_chebys_ptr[2*4+1] = <void*>(<char*>"eval_chebys")
-ufunc_eval_chebys_ptr[2*5] = <void*>_func_eval_chebys[double_complex]
-ufunc_eval_chebys_ptr[2*5+1] = <void*>(<char*>"eval_chebys")
 ufunc_eval_chebys_data[0] = &ufunc_eval_chebys_ptr[2*0]
 ufunc_eval_chebys_data[1] = &ufunc_eval_chebys_ptr[2*1]
 ufunc_eval_chebys_data[2] = &ufunc_eval_chebys_ptr[2*2]
 ufunc_eval_chebys_data[3] = &ufunc_eval_chebys_ptr[2*3]
 ufunc_eval_chebys_data[4] = &ufunc_eval_chebys_ptr[2*4]
-ufunc_eval_chebys_data[5] = &ufunc_eval_chebys_ptr[2*5]
-eval_chebys = np.PyUFunc_FromFuncAndData(ufunc_eval_chebys_loops, ufunc_eval_chebys_data, ufunc_eval_chebys_types, 6, 2, 1, 0, "eval_chebys", ufunc_eval_chebys_doc, 0)
+eval_chebys = np.PyUFunc_FromFuncAndData(ufunc_eval_chebys_loops, ufunc_eval_chebys_data, ufunc_eval_chebys_types, 5, 2, 1, 0, "eval_chebys", ufunc_eval_chebys_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_chebyt_loops[6]
-cdef void *ufunc_eval_chebyt_ptr[12]
-cdef void *ufunc_eval_chebyt_data[6]
-cdef char ufunc_eval_chebyt_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_chebyt_loops[5]
+cdef void *ufunc_eval_chebyt_ptr[10]
+cdef void *ufunc_eval_chebyt_data[5]
+cdef char ufunc_eval_chebyt_types[15]
 cdef char *ufunc_eval_chebyt_doc = (
     "eval_chebyt(n, x, out=None)\n"
     "\n"
@@ -4033,653 +3724,556 @@ cdef char *ufunc_eval_chebyt_doc = (
     "\n"
     "This routine is numerically stable for `x` in ``[-1, 1]`` at least\n"
     "up to order ``10000``.")
-ufunc_eval_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_chebyt_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_chebyt_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_chebyt_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_chebyt_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_chebyt_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_chebyt_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_chebyt_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_chebyt_types[0] = <char>NPY_LONG
-ufunc_eval_chebyt_types[1] = <char>NPY_FLOAT
-ufunc_eval_chebyt_types[2] = <char>NPY_FLOAT
-ufunc_eval_chebyt_types[3] = <char>NPY_LONG
-ufunc_eval_chebyt_types[4] = <char>NPY_DOUBLE
-ufunc_eval_chebyt_types[5] = <char>NPY_DOUBLE
+ufunc_eval_chebyt_types[1] = <char>NPY_DOUBLE
+ufunc_eval_chebyt_types[2] = <char>NPY_DOUBLE
+ufunc_eval_chebyt_types[3] = <char>NPY_FLOAT
+ufunc_eval_chebyt_types[4] = <char>NPY_FLOAT
+ufunc_eval_chebyt_types[5] = <char>NPY_FLOAT
 ufunc_eval_chebyt_types[6] = <char>NPY_FLOAT
-ufunc_eval_chebyt_types[7] = <char>NPY_FLOAT
-ufunc_eval_chebyt_types[8] = <char>NPY_FLOAT
-ufunc_eval_chebyt_types[9] = <char>NPY_FLOAT
-ufunc_eval_chebyt_types[10] = <char>NPY_CFLOAT
-ufunc_eval_chebyt_types[11] = <char>NPY_CFLOAT
+ufunc_eval_chebyt_types[7] = <char>NPY_CFLOAT
+ufunc_eval_chebyt_types[8] = <char>NPY_CFLOAT
+ufunc_eval_chebyt_types[9] = <char>NPY_DOUBLE
+ufunc_eval_chebyt_types[10] = <char>NPY_DOUBLE
+ufunc_eval_chebyt_types[11] = <char>NPY_DOUBLE
 ufunc_eval_chebyt_types[12] = <char>NPY_DOUBLE
-ufunc_eval_chebyt_types[13] = <char>NPY_DOUBLE
-ufunc_eval_chebyt_types[14] = <char>NPY_DOUBLE
-ufunc_eval_chebyt_types[15] = <char>NPY_DOUBLE
-ufunc_eval_chebyt_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_chebyt_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_chebyt_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_chebyt_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_chebyt_ptr[2*0] = <void*>_func_eval_chebyt_l
 ufunc_eval_chebyt_ptr[2*0+1] = <void*>(<char*>"eval_chebyt")
-ufunc_eval_chebyt_ptr[2*1] = <void*>_func_eval_chebyt_l
+ufunc_eval_chebyt_ptr[2*1] = <void*>_func_eval_chebyt[double]
 ufunc_eval_chebyt_ptr[2*1+1] = <void*>(<char*>"eval_chebyt")
-ufunc_eval_chebyt_ptr[2*2] = <void*>_func_eval_chebyt[double]
+ufunc_eval_chebyt_ptr[2*2] = <void*>_func_eval_chebyt[double_complex]
 ufunc_eval_chebyt_ptr[2*2+1] = <void*>(<char*>"eval_chebyt")
-ufunc_eval_chebyt_ptr[2*3] = <void*>_func_eval_chebyt[double_complex]
+ufunc_eval_chebyt_ptr[2*3] = <void*>_func_eval_chebyt[double]
 ufunc_eval_chebyt_ptr[2*3+1] = <void*>(<char*>"eval_chebyt")
-ufunc_eval_chebyt_ptr[2*4] = <void*>_func_eval_chebyt[double]
+ufunc_eval_chebyt_ptr[2*4] = <void*>_func_eval_chebyt[double_complex]
 ufunc_eval_chebyt_ptr[2*4+1] = <void*>(<char*>"eval_chebyt")
-ufunc_eval_chebyt_ptr[2*5] = <void*>_func_eval_chebyt[double_complex]
-ufunc_eval_chebyt_ptr[2*5+1] = <void*>(<char*>"eval_chebyt")
 ufunc_eval_chebyt_data[0] = &ufunc_eval_chebyt_ptr[2*0]
 ufunc_eval_chebyt_data[1] = &ufunc_eval_chebyt_ptr[2*1]
 ufunc_eval_chebyt_data[2] = &ufunc_eval_chebyt_ptr[2*2]
 ufunc_eval_chebyt_data[3] = &ufunc_eval_chebyt_ptr[2*3]
 ufunc_eval_chebyt_data[4] = &ufunc_eval_chebyt_ptr[2*4]
-ufunc_eval_chebyt_data[5] = &ufunc_eval_chebyt_ptr[2*5]
-eval_chebyt = np.PyUFunc_FromFuncAndData(ufunc_eval_chebyt_loops, ufunc_eval_chebyt_data, ufunc_eval_chebyt_types, 6, 2, 1, 0, "eval_chebyt", ufunc_eval_chebyt_doc, 0)
+eval_chebyt = np.PyUFunc_FromFuncAndData(ufunc_eval_chebyt_loops, ufunc_eval_chebyt_data, ufunc_eval_chebyt_types, 5, 2, 1, 0, "eval_chebyt", ufunc_eval_chebyt_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_chebyu_loops[6]
-cdef void *ufunc_eval_chebyu_ptr[12]
-cdef void *ufunc_eval_chebyu_data[6]
-cdef char ufunc_eval_chebyu_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_chebyu_loops[5]
+cdef void *ufunc_eval_chebyu_ptr[10]
+cdef void *ufunc_eval_chebyu_data[5]
+cdef char ufunc_eval_chebyu_types[15]
 cdef char *ufunc_eval_chebyu_doc = (
     "eval_chebyu(n, x, out=None)\n"
     "\n"
     "Evaluate Chebyshev U polynomial at a point.")
-ufunc_eval_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_chebyu_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_chebyu_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_chebyu_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_chebyu_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_chebyu_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_chebyu_types[0] = <char>NPY_LONG
-ufunc_eval_chebyu_types[1] = <char>NPY_FLOAT
-ufunc_eval_chebyu_types[2] = <char>NPY_FLOAT
-ufunc_eval_chebyu_types[3] = <char>NPY_LONG
-ufunc_eval_chebyu_types[4] = <char>NPY_DOUBLE
-ufunc_eval_chebyu_types[5] = <char>NPY_DOUBLE
+ufunc_eval_chebyu_types[1] = <char>NPY_DOUBLE
+ufunc_eval_chebyu_types[2] = <char>NPY_DOUBLE
+ufunc_eval_chebyu_types[3] = <char>NPY_FLOAT
+ufunc_eval_chebyu_types[4] = <char>NPY_FLOAT
+ufunc_eval_chebyu_types[5] = <char>NPY_FLOAT
 ufunc_eval_chebyu_types[6] = <char>NPY_FLOAT
-ufunc_eval_chebyu_types[7] = <char>NPY_FLOAT
-ufunc_eval_chebyu_types[8] = <char>NPY_FLOAT
-ufunc_eval_chebyu_types[9] = <char>NPY_FLOAT
-ufunc_eval_chebyu_types[10] = <char>NPY_CFLOAT
-ufunc_eval_chebyu_types[11] = <char>NPY_CFLOAT
+ufunc_eval_chebyu_types[7] = <char>NPY_CFLOAT
+ufunc_eval_chebyu_types[8] = <char>NPY_CFLOAT
+ufunc_eval_chebyu_types[9] = <char>NPY_DOUBLE
+ufunc_eval_chebyu_types[10] = <char>NPY_DOUBLE
+ufunc_eval_chebyu_types[11] = <char>NPY_DOUBLE
 ufunc_eval_chebyu_types[12] = <char>NPY_DOUBLE
-ufunc_eval_chebyu_types[13] = <char>NPY_DOUBLE
-ufunc_eval_chebyu_types[14] = <char>NPY_DOUBLE
-ufunc_eval_chebyu_types[15] = <char>NPY_DOUBLE
-ufunc_eval_chebyu_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_chebyu_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_chebyu_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_chebyu_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_chebyu_ptr[2*0] = <void*>_func_eval_chebyu_l
 ufunc_eval_chebyu_ptr[2*0+1] = <void*>(<char*>"eval_chebyu")
-ufunc_eval_chebyu_ptr[2*1] = <void*>_func_eval_chebyu_l
+ufunc_eval_chebyu_ptr[2*1] = <void*>_func_eval_chebyu[double]
 ufunc_eval_chebyu_ptr[2*1+1] = <void*>(<char*>"eval_chebyu")
-ufunc_eval_chebyu_ptr[2*2] = <void*>_func_eval_chebyu[double]
+ufunc_eval_chebyu_ptr[2*2] = <void*>_func_eval_chebyu[double_complex]
 ufunc_eval_chebyu_ptr[2*2+1] = <void*>(<char*>"eval_chebyu")
-ufunc_eval_chebyu_ptr[2*3] = <void*>_func_eval_chebyu[double_complex]
+ufunc_eval_chebyu_ptr[2*3] = <void*>_func_eval_chebyu[double]
 ufunc_eval_chebyu_ptr[2*3+1] = <void*>(<char*>"eval_chebyu")
-ufunc_eval_chebyu_ptr[2*4] = <void*>_func_eval_chebyu[double]
+ufunc_eval_chebyu_ptr[2*4] = <void*>_func_eval_chebyu[double_complex]
 ufunc_eval_chebyu_ptr[2*4+1] = <void*>(<char*>"eval_chebyu")
-ufunc_eval_chebyu_ptr[2*5] = <void*>_func_eval_chebyu[double_complex]
-ufunc_eval_chebyu_ptr[2*5+1] = <void*>(<char*>"eval_chebyu")
 ufunc_eval_chebyu_data[0] = &ufunc_eval_chebyu_ptr[2*0]
 ufunc_eval_chebyu_data[1] = &ufunc_eval_chebyu_ptr[2*1]
 ufunc_eval_chebyu_data[2] = &ufunc_eval_chebyu_ptr[2*2]
 ufunc_eval_chebyu_data[3] = &ufunc_eval_chebyu_ptr[2*3]
 ufunc_eval_chebyu_data[4] = &ufunc_eval_chebyu_ptr[2*4]
-ufunc_eval_chebyu_data[5] = &ufunc_eval_chebyu_ptr[2*5]
-eval_chebyu = np.PyUFunc_FromFuncAndData(ufunc_eval_chebyu_loops, ufunc_eval_chebyu_data, ufunc_eval_chebyu_types, 6, 2, 1, 0, "eval_chebyu", ufunc_eval_chebyu_doc, 0)
+eval_chebyu = np.PyUFunc_FromFuncAndData(ufunc_eval_chebyu_loops, ufunc_eval_chebyu_data, ufunc_eval_chebyu_types, 5, 2, 1, 0, "eval_chebyu", ufunc_eval_chebyu_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_gegenbauer_loops[6]
-cdef void *ufunc_eval_gegenbauer_ptr[12]
-cdef void *ufunc_eval_gegenbauer_data[6]
-cdef char ufunc_eval_gegenbauer_types[24]
+cdef np.PyUFuncGenericFunction ufunc_eval_gegenbauer_loops[5]
+cdef void *ufunc_eval_gegenbauer_ptr[10]
+cdef void *ufunc_eval_gegenbauer_data[5]
+cdef char ufunc_eval_gegenbauer_types[20]
 cdef char *ufunc_eval_gegenbauer_doc = (
     "eval_gegenbauer(n, alpha, x, out=None)\n"
     "\n"
     "Evaluate Gegenbauer polynomial at a point.")
-ufunc_eval_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_lff_f
-ufunc_eval_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
-ufunc_eval_gegenbauer_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_eval_gegenbauer_loops[3] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
-ufunc_eval_gegenbauer_loops[4] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
-ufunc_eval_gegenbauer_loops[5] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ddD_D
+ufunc_eval_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
+ufunc_eval_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_eval_gegenbauer_loops[2] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
+ufunc_eval_gegenbauer_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_eval_gegenbauer_loops[4] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ddD_D
 ufunc_eval_gegenbauer_types[0] = <char>NPY_LONG
-ufunc_eval_gegenbauer_types[1] = <char>NPY_FLOAT
-ufunc_eval_gegenbauer_types[2] = <char>NPY_FLOAT
-ufunc_eval_gegenbauer_types[3] = <char>NPY_FLOAT
-ufunc_eval_gegenbauer_types[4] = <char>NPY_LONG
-ufunc_eval_gegenbauer_types[5] = <char>NPY_DOUBLE
-ufunc_eval_gegenbauer_types[6] = <char>NPY_DOUBLE
-ufunc_eval_gegenbauer_types[7] = <char>NPY_DOUBLE
+ufunc_eval_gegenbauer_types[1] = <char>NPY_DOUBLE
+ufunc_eval_gegenbauer_types[2] = <char>NPY_DOUBLE
+ufunc_eval_gegenbauer_types[3] = <char>NPY_DOUBLE
+ufunc_eval_gegenbauer_types[4] = <char>NPY_FLOAT
+ufunc_eval_gegenbauer_types[5] = <char>NPY_FLOAT
+ufunc_eval_gegenbauer_types[6] = <char>NPY_FLOAT
+ufunc_eval_gegenbauer_types[7] = <char>NPY_FLOAT
 ufunc_eval_gegenbauer_types[8] = <char>NPY_FLOAT
 ufunc_eval_gegenbauer_types[9] = <char>NPY_FLOAT
-ufunc_eval_gegenbauer_types[10] = <char>NPY_FLOAT
-ufunc_eval_gegenbauer_types[11] = <char>NPY_FLOAT
-ufunc_eval_gegenbauer_types[12] = <char>NPY_FLOAT
-ufunc_eval_gegenbauer_types[13] = <char>NPY_FLOAT
-ufunc_eval_gegenbauer_types[14] = <char>NPY_CFLOAT
-ufunc_eval_gegenbauer_types[15] = <char>NPY_CFLOAT
+ufunc_eval_gegenbauer_types[10] = <char>NPY_CFLOAT
+ufunc_eval_gegenbauer_types[11] = <char>NPY_CFLOAT
+ufunc_eval_gegenbauer_types[12] = <char>NPY_DOUBLE
+ufunc_eval_gegenbauer_types[13] = <char>NPY_DOUBLE
+ufunc_eval_gegenbauer_types[14] = <char>NPY_DOUBLE
+ufunc_eval_gegenbauer_types[15] = <char>NPY_DOUBLE
 ufunc_eval_gegenbauer_types[16] = <char>NPY_DOUBLE
 ufunc_eval_gegenbauer_types[17] = <char>NPY_DOUBLE
-ufunc_eval_gegenbauer_types[18] = <char>NPY_DOUBLE
-ufunc_eval_gegenbauer_types[19] = <char>NPY_DOUBLE
-ufunc_eval_gegenbauer_types[20] = <char>NPY_DOUBLE
-ufunc_eval_gegenbauer_types[21] = <char>NPY_DOUBLE
-ufunc_eval_gegenbauer_types[22] = <char>NPY_CDOUBLE
-ufunc_eval_gegenbauer_types[23] = <char>NPY_CDOUBLE
+ufunc_eval_gegenbauer_types[18] = <char>NPY_CDOUBLE
+ufunc_eval_gegenbauer_types[19] = <char>NPY_CDOUBLE
 ufunc_eval_gegenbauer_ptr[2*0] = <void*>_func_eval_gegenbauer_l
 ufunc_eval_gegenbauer_ptr[2*0+1] = <void*>(<char*>"eval_gegenbauer")
-ufunc_eval_gegenbauer_ptr[2*1] = <void*>_func_eval_gegenbauer_l
+ufunc_eval_gegenbauer_ptr[2*1] = <void*>_func_eval_gegenbauer[double]
 ufunc_eval_gegenbauer_ptr[2*1+1] = <void*>(<char*>"eval_gegenbauer")
-ufunc_eval_gegenbauer_ptr[2*2] = <void*>_func_eval_gegenbauer[double]
+ufunc_eval_gegenbauer_ptr[2*2] = <void*>_func_eval_gegenbauer[double_complex]
 ufunc_eval_gegenbauer_ptr[2*2+1] = <void*>(<char*>"eval_gegenbauer")
-ufunc_eval_gegenbauer_ptr[2*3] = <void*>_func_eval_gegenbauer[double_complex]
+ufunc_eval_gegenbauer_ptr[2*3] = <void*>_func_eval_gegenbauer[double]
 ufunc_eval_gegenbauer_ptr[2*3+1] = <void*>(<char*>"eval_gegenbauer")
-ufunc_eval_gegenbauer_ptr[2*4] = <void*>_func_eval_gegenbauer[double]
+ufunc_eval_gegenbauer_ptr[2*4] = <void*>_func_eval_gegenbauer[double_complex]
 ufunc_eval_gegenbauer_ptr[2*4+1] = <void*>(<char*>"eval_gegenbauer")
-ufunc_eval_gegenbauer_ptr[2*5] = <void*>_func_eval_gegenbauer[double_complex]
-ufunc_eval_gegenbauer_ptr[2*5+1] = <void*>(<char*>"eval_gegenbauer")
 ufunc_eval_gegenbauer_data[0] = &ufunc_eval_gegenbauer_ptr[2*0]
 ufunc_eval_gegenbauer_data[1] = &ufunc_eval_gegenbauer_ptr[2*1]
 ufunc_eval_gegenbauer_data[2] = &ufunc_eval_gegenbauer_ptr[2*2]
 ufunc_eval_gegenbauer_data[3] = &ufunc_eval_gegenbauer_ptr[2*3]
 ufunc_eval_gegenbauer_data[4] = &ufunc_eval_gegenbauer_ptr[2*4]
-ufunc_eval_gegenbauer_data[5] = &ufunc_eval_gegenbauer_ptr[2*5]
-eval_gegenbauer = np.PyUFunc_FromFuncAndData(ufunc_eval_gegenbauer_loops, ufunc_eval_gegenbauer_data, ufunc_eval_gegenbauer_types, 6, 3, 1, 0, "eval_gegenbauer", ufunc_eval_gegenbauer_doc, 0)
+eval_gegenbauer = np.PyUFunc_FromFuncAndData(ufunc_eval_gegenbauer_loops, ufunc_eval_gegenbauer_data, ufunc_eval_gegenbauer_types, 5, 3, 1, 0, "eval_gegenbauer", ufunc_eval_gegenbauer_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_genlaguerre_loops[6]
-cdef void *ufunc_eval_genlaguerre_ptr[12]
-cdef void *ufunc_eval_genlaguerre_data[6]
-cdef char ufunc_eval_genlaguerre_types[24]
+cdef np.PyUFuncGenericFunction ufunc_eval_genlaguerre_loops[5]
+cdef void *ufunc_eval_genlaguerre_ptr[10]
+cdef void *ufunc_eval_genlaguerre_data[5]
+cdef char ufunc_eval_genlaguerre_types[20]
 cdef char *ufunc_eval_genlaguerre_doc = (
     "eval_genlaguerre(n, alpha, x, out=None)\n"
     "\n"
     "Evaluate generalized Laguerre polynomial at a point.")
-ufunc_eval_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_lff_f
-ufunc_eval_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
-ufunc_eval_genlaguerre_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_eval_genlaguerre_loops[3] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
-ufunc_eval_genlaguerre_loops[4] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
-ufunc_eval_genlaguerre_loops[5] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ddD_D
+ufunc_eval_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
+ufunc_eval_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_eval_genlaguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
+ufunc_eval_genlaguerre_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_eval_genlaguerre_loops[4] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ddD_D
 ufunc_eval_genlaguerre_types[0] = <char>NPY_LONG
-ufunc_eval_genlaguerre_types[1] = <char>NPY_FLOAT
-ufunc_eval_genlaguerre_types[2] = <char>NPY_FLOAT
-ufunc_eval_genlaguerre_types[3] = <char>NPY_FLOAT
-ufunc_eval_genlaguerre_types[4] = <char>NPY_LONG
-ufunc_eval_genlaguerre_types[5] = <char>NPY_DOUBLE
-ufunc_eval_genlaguerre_types[6] = <char>NPY_DOUBLE
-ufunc_eval_genlaguerre_types[7] = <char>NPY_DOUBLE
+ufunc_eval_genlaguerre_types[1] = <char>NPY_DOUBLE
+ufunc_eval_genlaguerre_types[2] = <char>NPY_DOUBLE
+ufunc_eval_genlaguerre_types[3] = <char>NPY_DOUBLE
+ufunc_eval_genlaguerre_types[4] = <char>NPY_FLOAT
+ufunc_eval_genlaguerre_types[5] = <char>NPY_FLOAT
+ufunc_eval_genlaguerre_types[6] = <char>NPY_FLOAT
+ufunc_eval_genlaguerre_types[7] = <char>NPY_FLOAT
 ufunc_eval_genlaguerre_types[8] = <char>NPY_FLOAT
 ufunc_eval_genlaguerre_types[9] = <char>NPY_FLOAT
-ufunc_eval_genlaguerre_types[10] = <char>NPY_FLOAT
-ufunc_eval_genlaguerre_types[11] = <char>NPY_FLOAT
-ufunc_eval_genlaguerre_types[12] = <char>NPY_FLOAT
-ufunc_eval_genlaguerre_types[13] = <char>NPY_FLOAT
-ufunc_eval_genlaguerre_types[14] = <char>NPY_CFLOAT
-ufunc_eval_genlaguerre_types[15] = <char>NPY_CFLOAT
+ufunc_eval_genlaguerre_types[10] = <char>NPY_CFLOAT
+ufunc_eval_genlaguerre_types[11] = <char>NPY_CFLOAT
+ufunc_eval_genlaguerre_types[12] = <char>NPY_DOUBLE
+ufunc_eval_genlaguerre_types[13] = <char>NPY_DOUBLE
+ufunc_eval_genlaguerre_types[14] = <char>NPY_DOUBLE
+ufunc_eval_genlaguerre_types[15] = <char>NPY_DOUBLE
 ufunc_eval_genlaguerre_types[16] = <char>NPY_DOUBLE
 ufunc_eval_genlaguerre_types[17] = <char>NPY_DOUBLE
-ufunc_eval_genlaguerre_types[18] = <char>NPY_DOUBLE
-ufunc_eval_genlaguerre_types[19] = <char>NPY_DOUBLE
-ufunc_eval_genlaguerre_types[20] = <char>NPY_DOUBLE
-ufunc_eval_genlaguerre_types[21] = <char>NPY_DOUBLE
-ufunc_eval_genlaguerre_types[22] = <char>NPY_CDOUBLE
-ufunc_eval_genlaguerre_types[23] = <char>NPY_CDOUBLE
+ufunc_eval_genlaguerre_types[18] = <char>NPY_CDOUBLE
+ufunc_eval_genlaguerre_types[19] = <char>NPY_CDOUBLE
 ufunc_eval_genlaguerre_ptr[2*0] = <void*>_func_eval_genlaguerre_l
 ufunc_eval_genlaguerre_ptr[2*0+1] = <void*>(<char*>"eval_genlaguerre")
-ufunc_eval_genlaguerre_ptr[2*1] = <void*>_func_eval_genlaguerre_l
+ufunc_eval_genlaguerre_ptr[2*1] = <void*>_func_eval_genlaguerre[double]
 ufunc_eval_genlaguerre_ptr[2*1+1] = <void*>(<char*>"eval_genlaguerre")
-ufunc_eval_genlaguerre_ptr[2*2] = <void*>_func_eval_genlaguerre[double]
+ufunc_eval_genlaguerre_ptr[2*2] = <void*>_func_eval_genlaguerre[double_complex]
 ufunc_eval_genlaguerre_ptr[2*2+1] = <void*>(<char*>"eval_genlaguerre")
-ufunc_eval_genlaguerre_ptr[2*3] = <void*>_func_eval_genlaguerre[double_complex]
+ufunc_eval_genlaguerre_ptr[2*3] = <void*>_func_eval_genlaguerre[double]
 ufunc_eval_genlaguerre_ptr[2*3+1] = <void*>(<char*>"eval_genlaguerre")
-ufunc_eval_genlaguerre_ptr[2*4] = <void*>_func_eval_genlaguerre[double]
+ufunc_eval_genlaguerre_ptr[2*4] = <void*>_func_eval_genlaguerre[double_complex]
 ufunc_eval_genlaguerre_ptr[2*4+1] = <void*>(<char*>"eval_genlaguerre")
-ufunc_eval_genlaguerre_ptr[2*5] = <void*>_func_eval_genlaguerre[double_complex]
-ufunc_eval_genlaguerre_ptr[2*5+1] = <void*>(<char*>"eval_genlaguerre")
 ufunc_eval_genlaguerre_data[0] = &ufunc_eval_genlaguerre_ptr[2*0]
 ufunc_eval_genlaguerre_data[1] = &ufunc_eval_genlaguerre_ptr[2*1]
 ufunc_eval_genlaguerre_data[2] = &ufunc_eval_genlaguerre_ptr[2*2]
 ufunc_eval_genlaguerre_data[3] = &ufunc_eval_genlaguerre_ptr[2*3]
 ufunc_eval_genlaguerre_data[4] = &ufunc_eval_genlaguerre_ptr[2*4]
-ufunc_eval_genlaguerre_data[5] = &ufunc_eval_genlaguerre_ptr[2*5]
-eval_genlaguerre = np.PyUFunc_FromFuncAndData(ufunc_eval_genlaguerre_loops, ufunc_eval_genlaguerre_data, ufunc_eval_genlaguerre_types, 6, 3, 1, 0, "eval_genlaguerre", ufunc_eval_genlaguerre_doc, 0)
+eval_genlaguerre = np.PyUFunc_FromFuncAndData(ufunc_eval_genlaguerre_loops, ufunc_eval_genlaguerre_data, ufunc_eval_genlaguerre_types, 5, 3, 1, 0, "eval_genlaguerre", ufunc_eval_genlaguerre_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_hermite_loops[2]
-cdef void *ufunc_eval_hermite_ptr[4]
-cdef void *ufunc_eval_hermite_data[2]
-cdef char ufunc_eval_hermite_types[6]
+cdef np.PyUFuncGenericFunction ufunc_eval_hermite_loops[1]
+cdef void *ufunc_eval_hermite_ptr[2]
+cdef void *ufunc_eval_hermite_data[1]
+cdef char ufunc_eval_hermite_types[3]
 cdef char *ufunc_eval_hermite_doc = (
     "eval_hermite(n, x, out=None)\n"
     "\n"
     "Evaluate Hermite polynomial at a point.")
-ufunc_eval_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_hermite_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermite_types[0] = <char>NPY_LONG
-ufunc_eval_hermite_types[1] = <char>NPY_FLOAT
-ufunc_eval_hermite_types[2] = <char>NPY_FLOAT
-ufunc_eval_hermite_types[3] = <char>NPY_LONG
-ufunc_eval_hermite_types[4] = <char>NPY_DOUBLE
-ufunc_eval_hermite_types[5] = <char>NPY_DOUBLE
+ufunc_eval_hermite_types[1] = <char>NPY_DOUBLE
+ufunc_eval_hermite_types[2] = <char>NPY_DOUBLE
 ufunc_eval_hermite_ptr[2*0] = <void*>_func_eval_hermite
 ufunc_eval_hermite_ptr[2*0+1] = <void*>(<char*>"eval_hermite")
-ufunc_eval_hermite_ptr[2*1] = <void*>_func_eval_hermite
-ufunc_eval_hermite_ptr[2*1+1] = <void*>(<char*>"eval_hermite")
 ufunc_eval_hermite_data[0] = &ufunc_eval_hermite_ptr[2*0]
-ufunc_eval_hermite_data[1] = &ufunc_eval_hermite_ptr[2*1]
-eval_hermite = np.PyUFunc_FromFuncAndData(ufunc_eval_hermite_loops, ufunc_eval_hermite_data, ufunc_eval_hermite_types, 2, 2, 1, 0, "eval_hermite", ufunc_eval_hermite_doc, 0)
+eval_hermite = np.PyUFunc_FromFuncAndData(ufunc_eval_hermite_loops, ufunc_eval_hermite_data, ufunc_eval_hermite_types, 1, 2, 1, 0, "eval_hermite", ufunc_eval_hermite_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_hermitenorm_loops[2]
-cdef void *ufunc_eval_hermitenorm_ptr[4]
-cdef void *ufunc_eval_hermitenorm_data[2]
-cdef char ufunc_eval_hermitenorm_types[6]
+cdef np.PyUFuncGenericFunction ufunc_eval_hermitenorm_loops[1]
+cdef void *ufunc_eval_hermitenorm_ptr[2]
+cdef void *ufunc_eval_hermitenorm_data[1]
+cdef char ufunc_eval_hermitenorm_types[3]
 cdef char *ufunc_eval_hermitenorm_doc = (
     "eval_hermitenorm(n, x, out=None)\n"
     "\n"
     "Evaluate normalized Hermite polynomial at a point.")
-ufunc_eval_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_hermitenorm_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermitenorm_types[0] = <char>NPY_LONG
-ufunc_eval_hermitenorm_types[1] = <char>NPY_FLOAT
-ufunc_eval_hermitenorm_types[2] = <char>NPY_FLOAT
-ufunc_eval_hermitenorm_types[3] = <char>NPY_LONG
-ufunc_eval_hermitenorm_types[4] = <char>NPY_DOUBLE
-ufunc_eval_hermitenorm_types[5] = <char>NPY_DOUBLE
+ufunc_eval_hermitenorm_types[1] = <char>NPY_DOUBLE
+ufunc_eval_hermitenorm_types[2] = <char>NPY_DOUBLE
 ufunc_eval_hermitenorm_ptr[2*0] = <void*>_func_eval_hermitenorm
 ufunc_eval_hermitenorm_ptr[2*0+1] = <void*>(<char*>"eval_hermitenorm")
-ufunc_eval_hermitenorm_ptr[2*1] = <void*>_func_eval_hermitenorm
-ufunc_eval_hermitenorm_ptr[2*1+1] = <void*>(<char*>"eval_hermitenorm")
 ufunc_eval_hermitenorm_data[0] = &ufunc_eval_hermitenorm_ptr[2*0]
-ufunc_eval_hermitenorm_data[1] = &ufunc_eval_hermitenorm_ptr[2*1]
-eval_hermitenorm = np.PyUFunc_FromFuncAndData(ufunc_eval_hermitenorm_loops, ufunc_eval_hermitenorm_data, ufunc_eval_hermitenorm_types, 2, 2, 1, 0, "eval_hermitenorm", ufunc_eval_hermitenorm_doc, 0)
+eval_hermitenorm = np.PyUFunc_FromFuncAndData(ufunc_eval_hermitenorm_loops, ufunc_eval_hermitenorm_data, ufunc_eval_hermitenorm_types, 1, 2, 1, 0, "eval_hermitenorm", ufunc_eval_hermitenorm_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_jacobi_loops[6]
-cdef void *ufunc_eval_jacobi_ptr[12]
-cdef void *ufunc_eval_jacobi_data[6]
-cdef char ufunc_eval_jacobi_types[30]
+cdef np.PyUFuncGenericFunction ufunc_eval_jacobi_loops[5]
+cdef void *ufunc_eval_jacobi_ptr[10]
+cdef void *ufunc_eval_jacobi_data[5]
+cdef char ufunc_eval_jacobi_types[25]
 cdef char *ufunc_eval_jacobi_doc = (
     "eval_jacobi(n, alpha, beta, x, out=None)\n"
     "\n"
     "Evaluate Jacobi polynomial at a point.")
-ufunc_eval_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lfff_f
-ufunc_eval_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
-ufunc_eval_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
-ufunc_eval_jacobi_loops[3] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
-ufunc_eval_jacobi_loops[4] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
-ufunc_eval_jacobi_loops[5] = <np.PyUFuncGenericFunction>loop_D_dddD__As_dddD_D
+ufunc_eval_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
+ufunc_eval_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
+ufunc_eval_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
+ufunc_eval_jacobi_loops[3] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
+ufunc_eval_jacobi_loops[4] = <np.PyUFuncGenericFunction>loop_D_dddD__As_dddD_D
 ufunc_eval_jacobi_types[0] = <char>NPY_LONG
-ufunc_eval_jacobi_types[1] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[2] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[3] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[4] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[5] = <char>NPY_LONG
-ufunc_eval_jacobi_types[6] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[7] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[8] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[9] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[1] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[2] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[3] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[4] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[5] = <char>NPY_FLOAT
+ufunc_eval_jacobi_types[6] = <char>NPY_FLOAT
+ufunc_eval_jacobi_types[7] = <char>NPY_FLOAT
+ufunc_eval_jacobi_types[8] = <char>NPY_FLOAT
+ufunc_eval_jacobi_types[9] = <char>NPY_FLOAT
 ufunc_eval_jacobi_types[10] = <char>NPY_FLOAT
 ufunc_eval_jacobi_types[11] = <char>NPY_FLOAT
 ufunc_eval_jacobi_types[12] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[13] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[14] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[15] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[16] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[17] = <char>NPY_FLOAT
-ufunc_eval_jacobi_types[18] = <char>NPY_CFLOAT
-ufunc_eval_jacobi_types[19] = <char>NPY_CFLOAT
+ufunc_eval_jacobi_types[13] = <char>NPY_CFLOAT
+ufunc_eval_jacobi_types[14] = <char>NPY_CFLOAT
+ufunc_eval_jacobi_types[15] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[16] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[17] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[18] = <char>NPY_DOUBLE
+ufunc_eval_jacobi_types[19] = <char>NPY_DOUBLE
 ufunc_eval_jacobi_types[20] = <char>NPY_DOUBLE
 ufunc_eval_jacobi_types[21] = <char>NPY_DOUBLE
 ufunc_eval_jacobi_types[22] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[23] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[24] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[25] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[26] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[27] = <char>NPY_DOUBLE
-ufunc_eval_jacobi_types[28] = <char>NPY_CDOUBLE
-ufunc_eval_jacobi_types[29] = <char>NPY_CDOUBLE
+ufunc_eval_jacobi_types[23] = <char>NPY_CDOUBLE
+ufunc_eval_jacobi_types[24] = <char>NPY_CDOUBLE
 ufunc_eval_jacobi_ptr[2*0] = <void*>_func_eval_jacobi_l
 ufunc_eval_jacobi_ptr[2*0+1] = <void*>(<char*>"eval_jacobi")
-ufunc_eval_jacobi_ptr[2*1] = <void*>_func_eval_jacobi_l
+ufunc_eval_jacobi_ptr[2*1] = <void*>_func_eval_jacobi[double]
 ufunc_eval_jacobi_ptr[2*1+1] = <void*>(<char*>"eval_jacobi")
-ufunc_eval_jacobi_ptr[2*2] = <void*>_func_eval_jacobi[double]
+ufunc_eval_jacobi_ptr[2*2] = <void*>_func_eval_jacobi[double_complex]
 ufunc_eval_jacobi_ptr[2*2+1] = <void*>(<char*>"eval_jacobi")
-ufunc_eval_jacobi_ptr[2*3] = <void*>_func_eval_jacobi[double_complex]
+ufunc_eval_jacobi_ptr[2*3] = <void*>_func_eval_jacobi[double]
 ufunc_eval_jacobi_ptr[2*3+1] = <void*>(<char*>"eval_jacobi")
-ufunc_eval_jacobi_ptr[2*4] = <void*>_func_eval_jacobi[double]
+ufunc_eval_jacobi_ptr[2*4] = <void*>_func_eval_jacobi[double_complex]
 ufunc_eval_jacobi_ptr[2*4+1] = <void*>(<char*>"eval_jacobi")
-ufunc_eval_jacobi_ptr[2*5] = <void*>_func_eval_jacobi[double_complex]
-ufunc_eval_jacobi_ptr[2*5+1] = <void*>(<char*>"eval_jacobi")
 ufunc_eval_jacobi_data[0] = &ufunc_eval_jacobi_ptr[2*0]
 ufunc_eval_jacobi_data[1] = &ufunc_eval_jacobi_ptr[2*1]
 ufunc_eval_jacobi_data[2] = &ufunc_eval_jacobi_ptr[2*2]
 ufunc_eval_jacobi_data[3] = &ufunc_eval_jacobi_ptr[2*3]
 ufunc_eval_jacobi_data[4] = &ufunc_eval_jacobi_ptr[2*4]
-ufunc_eval_jacobi_data[5] = &ufunc_eval_jacobi_ptr[2*5]
-eval_jacobi = np.PyUFunc_FromFuncAndData(ufunc_eval_jacobi_loops, ufunc_eval_jacobi_data, ufunc_eval_jacobi_types, 6, 4, 1, 0, "eval_jacobi", ufunc_eval_jacobi_doc, 0)
+eval_jacobi = np.PyUFunc_FromFuncAndData(ufunc_eval_jacobi_loops, ufunc_eval_jacobi_data, ufunc_eval_jacobi_types, 5, 4, 1, 0, "eval_jacobi", ufunc_eval_jacobi_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_laguerre_loops[6]
-cdef void *ufunc_eval_laguerre_ptr[12]
-cdef void *ufunc_eval_laguerre_data[6]
-cdef char ufunc_eval_laguerre_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_laguerre_loops[5]
+cdef void *ufunc_eval_laguerre_ptr[10]
+cdef void *ufunc_eval_laguerre_data[5]
+cdef char ufunc_eval_laguerre_types[15]
 cdef char *ufunc_eval_laguerre_doc = (
     "eval_laguerre(n, x, out=None)\n"
     "\n"
     "Evaluate Laguerre polynomial at a point.")
-ufunc_eval_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_laguerre_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_laguerre_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_laguerre_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_laguerre_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_laguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_laguerre_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_laguerre_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_laguerre_types[0] = <char>NPY_LONG
-ufunc_eval_laguerre_types[1] = <char>NPY_FLOAT
-ufunc_eval_laguerre_types[2] = <char>NPY_FLOAT
-ufunc_eval_laguerre_types[3] = <char>NPY_LONG
-ufunc_eval_laguerre_types[4] = <char>NPY_DOUBLE
-ufunc_eval_laguerre_types[5] = <char>NPY_DOUBLE
+ufunc_eval_laguerre_types[1] = <char>NPY_DOUBLE
+ufunc_eval_laguerre_types[2] = <char>NPY_DOUBLE
+ufunc_eval_laguerre_types[3] = <char>NPY_FLOAT
+ufunc_eval_laguerre_types[4] = <char>NPY_FLOAT
+ufunc_eval_laguerre_types[5] = <char>NPY_FLOAT
 ufunc_eval_laguerre_types[6] = <char>NPY_FLOAT
-ufunc_eval_laguerre_types[7] = <char>NPY_FLOAT
-ufunc_eval_laguerre_types[8] = <char>NPY_FLOAT
-ufunc_eval_laguerre_types[9] = <char>NPY_FLOAT
-ufunc_eval_laguerre_types[10] = <char>NPY_CFLOAT
-ufunc_eval_laguerre_types[11] = <char>NPY_CFLOAT
+ufunc_eval_laguerre_types[7] = <char>NPY_CFLOAT
+ufunc_eval_laguerre_types[8] = <char>NPY_CFLOAT
+ufunc_eval_laguerre_types[9] = <char>NPY_DOUBLE
+ufunc_eval_laguerre_types[10] = <char>NPY_DOUBLE
+ufunc_eval_laguerre_types[11] = <char>NPY_DOUBLE
 ufunc_eval_laguerre_types[12] = <char>NPY_DOUBLE
-ufunc_eval_laguerre_types[13] = <char>NPY_DOUBLE
-ufunc_eval_laguerre_types[14] = <char>NPY_DOUBLE
-ufunc_eval_laguerre_types[15] = <char>NPY_DOUBLE
-ufunc_eval_laguerre_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_laguerre_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_laguerre_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_laguerre_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_laguerre_ptr[2*0] = <void*>_func_eval_laguerre_l
 ufunc_eval_laguerre_ptr[2*0+1] = <void*>(<char*>"eval_laguerre")
-ufunc_eval_laguerre_ptr[2*1] = <void*>_func_eval_laguerre_l
+ufunc_eval_laguerre_ptr[2*1] = <void*>_func_eval_laguerre[double]
 ufunc_eval_laguerre_ptr[2*1+1] = <void*>(<char*>"eval_laguerre")
-ufunc_eval_laguerre_ptr[2*2] = <void*>_func_eval_laguerre[double]
+ufunc_eval_laguerre_ptr[2*2] = <void*>_func_eval_laguerre[double_complex]
 ufunc_eval_laguerre_ptr[2*2+1] = <void*>(<char*>"eval_laguerre")
-ufunc_eval_laguerre_ptr[2*3] = <void*>_func_eval_laguerre[double_complex]
+ufunc_eval_laguerre_ptr[2*3] = <void*>_func_eval_laguerre[double]
 ufunc_eval_laguerre_ptr[2*3+1] = <void*>(<char*>"eval_laguerre")
-ufunc_eval_laguerre_ptr[2*4] = <void*>_func_eval_laguerre[double]
+ufunc_eval_laguerre_ptr[2*4] = <void*>_func_eval_laguerre[double_complex]
 ufunc_eval_laguerre_ptr[2*4+1] = <void*>(<char*>"eval_laguerre")
-ufunc_eval_laguerre_ptr[2*5] = <void*>_func_eval_laguerre[double_complex]
-ufunc_eval_laguerre_ptr[2*5+1] = <void*>(<char*>"eval_laguerre")
 ufunc_eval_laguerre_data[0] = &ufunc_eval_laguerre_ptr[2*0]
 ufunc_eval_laguerre_data[1] = &ufunc_eval_laguerre_ptr[2*1]
 ufunc_eval_laguerre_data[2] = &ufunc_eval_laguerre_ptr[2*2]
 ufunc_eval_laguerre_data[3] = &ufunc_eval_laguerre_ptr[2*3]
 ufunc_eval_laguerre_data[4] = &ufunc_eval_laguerre_ptr[2*4]
-ufunc_eval_laguerre_data[5] = &ufunc_eval_laguerre_ptr[2*5]
-eval_laguerre = np.PyUFunc_FromFuncAndData(ufunc_eval_laguerre_loops, ufunc_eval_laguerre_data, ufunc_eval_laguerre_types, 6, 2, 1, 0, "eval_laguerre", ufunc_eval_laguerre_doc, 0)
+eval_laguerre = np.PyUFunc_FromFuncAndData(ufunc_eval_laguerre_loops, ufunc_eval_laguerre_data, ufunc_eval_laguerre_types, 5, 2, 1, 0, "eval_laguerre", ufunc_eval_laguerre_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_legendre_loops[6]
-cdef void *ufunc_eval_legendre_ptr[12]
-cdef void *ufunc_eval_legendre_data[6]
-cdef char ufunc_eval_legendre_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_legendre_loops[5]
+cdef void *ufunc_eval_legendre_ptr[10]
+cdef void *ufunc_eval_legendre_data[5]
+cdef char ufunc_eval_legendre_types[15]
 cdef char *ufunc_eval_legendre_doc = (
     "eval_legendre(n, x, out=None)\n"
     "\n"
     "Evaluate Legendre polynomial at a point.")
-ufunc_eval_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_legendre_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_legendre_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_legendre_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_legendre_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_legendre_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_legendre_types[0] = <char>NPY_LONG
-ufunc_eval_legendre_types[1] = <char>NPY_FLOAT
-ufunc_eval_legendre_types[2] = <char>NPY_FLOAT
-ufunc_eval_legendre_types[3] = <char>NPY_LONG
-ufunc_eval_legendre_types[4] = <char>NPY_DOUBLE
-ufunc_eval_legendre_types[5] = <char>NPY_DOUBLE
+ufunc_eval_legendre_types[1] = <char>NPY_DOUBLE
+ufunc_eval_legendre_types[2] = <char>NPY_DOUBLE
+ufunc_eval_legendre_types[3] = <char>NPY_FLOAT
+ufunc_eval_legendre_types[4] = <char>NPY_FLOAT
+ufunc_eval_legendre_types[5] = <char>NPY_FLOAT
 ufunc_eval_legendre_types[6] = <char>NPY_FLOAT
-ufunc_eval_legendre_types[7] = <char>NPY_FLOAT
-ufunc_eval_legendre_types[8] = <char>NPY_FLOAT
-ufunc_eval_legendre_types[9] = <char>NPY_FLOAT
-ufunc_eval_legendre_types[10] = <char>NPY_CFLOAT
-ufunc_eval_legendre_types[11] = <char>NPY_CFLOAT
+ufunc_eval_legendre_types[7] = <char>NPY_CFLOAT
+ufunc_eval_legendre_types[8] = <char>NPY_CFLOAT
+ufunc_eval_legendre_types[9] = <char>NPY_DOUBLE
+ufunc_eval_legendre_types[10] = <char>NPY_DOUBLE
+ufunc_eval_legendre_types[11] = <char>NPY_DOUBLE
 ufunc_eval_legendre_types[12] = <char>NPY_DOUBLE
-ufunc_eval_legendre_types[13] = <char>NPY_DOUBLE
-ufunc_eval_legendre_types[14] = <char>NPY_DOUBLE
-ufunc_eval_legendre_types[15] = <char>NPY_DOUBLE
-ufunc_eval_legendre_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_legendre_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_legendre_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_legendre_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_legendre_ptr[2*0] = <void*>_func_eval_legendre_l
 ufunc_eval_legendre_ptr[2*0+1] = <void*>(<char*>"eval_legendre")
-ufunc_eval_legendre_ptr[2*1] = <void*>_func_eval_legendre_l
+ufunc_eval_legendre_ptr[2*1] = <void*>_func_eval_legendre[double]
 ufunc_eval_legendre_ptr[2*1+1] = <void*>(<char*>"eval_legendre")
-ufunc_eval_legendre_ptr[2*2] = <void*>_func_eval_legendre[double]
+ufunc_eval_legendre_ptr[2*2] = <void*>_func_eval_legendre[double_complex]
 ufunc_eval_legendre_ptr[2*2+1] = <void*>(<char*>"eval_legendre")
-ufunc_eval_legendre_ptr[2*3] = <void*>_func_eval_legendre[double_complex]
+ufunc_eval_legendre_ptr[2*3] = <void*>_func_eval_legendre[double]
 ufunc_eval_legendre_ptr[2*3+1] = <void*>(<char*>"eval_legendre")
-ufunc_eval_legendre_ptr[2*4] = <void*>_func_eval_legendre[double]
+ufunc_eval_legendre_ptr[2*4] = <void*>_func_eval_legendre[double_complex]
 ufunc_eval_legendre_ptr[2*4+1] = <void*>(<char*>"eval_legendre")
-ufunc_eval_legendre_ptr[2*5] = <void*>_func_eval_legendre[double_complex]
-ufunc_eval_legendre_ptr[2*5+1] = <void*>(<char*>"eval_legendre")
 ufunc_eval_legendre_data[0] = &ufunc_eval_legendre_ptr[2*0]
 ufunc_eval_legendre_data[1] = &ufunc_eval_legendre_ptr[2*1]
 ufunc_eval_legendre_data[2] = &ufunc_eval_legendre_ptr[2*2]
 ufunc_eval_legendre_data[3] = &ufunc_eval_legendre_ptr[2*3]
 ufunc_eval_legendre_data[4] = &ufunc_eval_legendre_ptr[2*4]
-ufunc_eval_legendre_data[5] = &ufunc_eval_legendre_ptr[2*5]
-eval_legendre = np.PyUFunc_FromFuncAndData(ufunc_eval_legendre_loops, ufunc_eval_legendre_data, ufunc_eval_legendre_types, 6, 2, 1, 0, "eval_legendre", ufunc_eval_legendre_doc, 0)
+eval_legendre = np.PyUFunc_FromFuncAndData(ufunc_eval_legendre_loops, ufunc_eval_legendre_data, ufunc_eval_legendre_types, 5, 2, 1, 0, "eval_legendre", ufunc_eval_legendre_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_sh_chebyt_loops[6]
-cdef void *ufunc_eval_sh_chebyt_ptr[12]
-cdef void *ufunc_eval_sh_chebyt_data[6]
-cdef char ufunc_eval_sh_chebyt_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_sh_chebyt_loops[5]
+cdef void *ufunc_eval_sh_chebyt_ptr[10]
+cdef void *ufunc_eval_sh_chebyt_data[5]
+cdef char ufunc_eval_sh_chebyt_types[15]
 cdef char *ufunc_eval_sh_chebyt_doc = (
     "eval_sh_chebyt(n, x, out=None)\n"
     "\n"
     "Evaluate shifted Chebyshev T polynomial at a point.")
-ufunc_eval_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_sh_chebyt_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_sh_chebyt_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_sh_chebyt_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_sh_chebyt_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_sh_chebyt_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_sh_chebyt_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_sh_chebyt_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_sh_chebyt_types[0] = <char>NPY_LONG
-ufunc_eval_sh_chebyt_types[1] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyt_types[2] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyt_types[3] = <char>NPY_LONG
-ufunc_eval_sh_chebyt_types[4] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyt_types[5] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyt_types[1] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyt_types[2] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyt_types[3] = <char>NPY_FLOAT
+ufunc_eval_sh_chebyt_types[4] = <char>NPY_FLOAT
+ufunc_eval_sh_chebyt_types[5] = <char>NPY_FLOAT
 ufunc_eval_sh_chebyt_types[6] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyt_types[7] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyt_types[8] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyt_types[9] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyt_types[10] = <char>NPY_CFLOAT
-ufunc_eval_sh_chebyt_types[11] = <char>NPY_CFLOAT
+ufunc_eval_sh_chebyt_types[7] = <char>NPY_CFLOAT
+ufunc_eval_sh_chebyt_types[8] = <char>NPY_CFLOAT
+ufunc_eval_sh_chebyt_types[9] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyt_types[10] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyt_types[11] = <char>NPY_DOUBLE
 ufunc_eval_sh_chebyt_types[12] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyt_types[13] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyt_types[14] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyt_types[15] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyt_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_sh_chebyt_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_sh_chebyt_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_sh_chebyt_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_sh_chebyt_ptr[2*0] = <void*>_func_eval_sh_chebyt_l
 ufunc_eval_sh_chebyt_ptr[2*0+1] = <void*>(<char*>"eval_sh_chebyt")
-ufunc_eval_sh_chebyt_ptr[2*1] = <void*>_func_eval_sh_chebyt_l
+ufunc_eval_sh_chebyt_ptr[2*1] = <void*>_func_eval_sh_chebyt[double]
 ufunc_eval_sh_chebyt_ptr[2*1+1] = <void*>(<char*>"eval_sh_chebyt")
-ufunc_eval_sh_chebyt_ptr[2*2] = <void*>_func_eval_sh_chebyt[double]
+ufunc_eval_sh_chebyt_ptr[2*2] = <void*>_func_eval_sh_chebyt[double_complex]
 ufunc_eval_sh_chebyt_ptr[2*2+1] = <void*>(<char*>"eval_sh_chebyt")
-ufunc_eval_sh_chebyt_ptr[2*3] = <void*>_func_eval_sh_chebyt[double_complex]
+ufunc_eval_sh_chebyt_ptr[2*3] = <void*>_func_eval_sh_chebyt[double]
 ufunc_eval_sh_chebyt_ptr[2*3+1] = <void*>(<char*>"eval_sh_chebyt")
-ufunc_eval_sh_chebyt_ptr[2*4] = <void*>_func_eval_sh_chebyt[double]
+ufunc_eval_sh_chebyt_ptr[2*4] = <void*>_func_eval_sh_chebyt[double_complex]
 ufunc_eval_sh_chebyt_ptr[2*4+1] = <void*>(<char*>"eval_sh_chebyt")
-ufunc_eval_sh_chebyt_ptr[2*5] = <void*>_func_eval_sh_chebyt[double_complex]
-ufunc_eval_sh_chebyt_ptr[2*5+1] = <void*>(<char*>"eval_sh_chebyt")
 ufunc_eval_sh_chebyt_data[0] = &ufunc_eval_sh_chebyt_ptr[2*0]
 ufunc_eval_sh_chebyt_data[1] = &ufunc_eval_sh_chebyt_ptr[2*1]
 ufunc_eval_sh_chebyt_data[2] = &ufunc_eval_sh_chebyt_ptr[2*2]
 ufunc_eval_sh_chebyt_data[3] = &ufunc_eval_sh_chebyt_ptr[2*3]
 ufunc_eval_sh_chebyt_data[4] = &ufunc_eval_sh_chebyt_ptr[2*4]
-ufunc_eval_sh_chebyt_data[5] = &ufunc_eval_sh_chebyt_ptr[2*5]
-eval_sh_chebyt = np.PyUFunc_FromFuncAndData(ufunc_eval_sh_chebyt_loops, ufunc_eval_sh_chebyt_data, ufunc_eval_sh_chebyt_types, 6, 2, 1, 0, "eval_sh_chebyt", ufunc_eval_sh_chebyt_doc, 0)
+eval_sh_chebyt = np.PyUFunc_FromFuncAndData(ufunc_eval_sh_chebyt_loops, ufunc_eval_sh_chebyt_data, ufunc_eval_sh_chebyt_types, 5, 2, 1, 0, "eval_sh_chebyt", ufunc_eval_sh_chebyt_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_sh_chebyu_loops[6]
-cdef void *ufunc_eval_sh_chebyu_ptr[12]
-cdef void *ufunc_eval_sh_chebyu_data[6]
-cdef char ufunc_eval_sh_chebyu_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_sh_chebyu_loops[5]
+cdef void *ufunc_eval_sh_chebyu_ptr[10]
+cdef void *ufunc_eval_sh_chebyu_data[5]
+cdef char ufunc_eval_sh_chebyu_types[15]
 cdef char *ufunc_eval_sh_chebyu_doc = (
     "eval_sh_chebyu(n, x, out=None)\n"
     "\n"
     "Evaluate shifted Chebyshev U polynomial at a point.")
-ufunc_eval_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_sh_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_sh_chebyu_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_sh_chebyu_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_sh_chebyu_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_sh_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_sh_chebyu_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_sh_chebyu_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_sh_chebyu_types[0] = <char>NPY_LONG
-ufunc_eval_sh_chebyu_types[1] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyu_types[2] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyu_types[3] = <char>NPY_LONG
-ufunc_eval_sh_chebyu_types[4] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyu_types[5] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyu_types[1] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyu_types[2] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyu_types[3] = <char>NPY_FLOAT
+ufunc_eval_sh_chebyu_types[4] = <char>NPY_FLOAT
+ufunc_eval_sh_chebyu_types[5] = <char>NPY_FLOAT
 ufunc_eval_sh_chebyu_types[6] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyu_types[7] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyu_types[8] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyu_types[9] = <char>NPY_FLOAT
-ufunc_eval_sh_chebyu_types[10] = <char>NPY_CFLOAT
-ufunc_eval_sh_chebyu_types[11] = <char>NPY_CFLOAT
+ufunc_eval_sh_chebyu_types[7] = <char>NPY_CFLOAT
+ufunc_eval_sh_chebyu_types[8] = <char>NPY_CFLOAT
+ufunc_eval_sh_chebyu_types[9] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyu_types[10] = <char>NPY_DOUBLE
+ufunc_eval_sh_chebyu_types[11] = <char>NPY_DOUBLE
 ufunc_eval_sh_chebyu_types[12] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyu_types[13] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyu_types[14] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyu_types[15] = <char>NPY_DOUBLE
-ufunc_eval_sh_chebyu_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_sh_chebyu_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_sh_chebyu_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_sh_chebyu_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_sh_chebyu_ptr[2*0] = <void*>_func_eval_sh_chebyu_l
 ufunc_eval_sh_chebyu_ptr[2*0+1] = <void*>(<char*>"eval_sh_chebyu")
-ufunc_eval_sh_chebyu_ptr[2*1] = <void*>_func_eval_sh_chebyu_l
+ufunc_eval_sh_chebyu_ptr[2*1] = <void*>_func_eval_sh_chebyu[double]
 ufunc_eval_sh_chebyu_ptr[2*1+1] = <void*>(<char*>"eval_sh_chebyu")
-ufunc_eval_sh_chebyu_ptr[2*2] = <void*>_func_eval_sh_chebyu[double]
+ufunc_eval_sh_chebyu_ptr[2*2] = <void*>_func_eval_sh_chebyu[double_complex]
 ufunc_eval_sh_chebyu_ptr[2*2+1] = <void*>(<char*>"eval_sh_chebyu")
-ufunc_eval_sh_chebyu_ptr[2*3] = <void*>_func_eval_sh_chebyu[double_complex]
+ufunc_eval_sh_chebyu_ptr[2*3] = <void*>_func_eval_sh_chebyu[double]
 ufunc_eval_sh_chebyu_ptr[2*3+1] = <void*>(<char*>"eval_sh_chebyu")
-ufunc_eval_sh_chebyu_ptr[2*4] = <void*>_func_eval_sh_chebyu[double]
+ufunc_eval_sh_chebyu_ptr[2*4] = <void*>_func_eval_sh_chebyu[double_complex]
 ufunc_eval_sh_chebyu_ptr[2*4+1] = <void*>(<char*>"eval_sh_chebyu")
-ufunc_eval_sh_chebyu_ptr[2*5] = <void*>_func_eval_sh_chebyu[double_complex]
-ufunc_eval_sh_chebyu_ptr[2*5+1] = <void*>(<char*>"eval_sh_chebyu")
 ufunc_eval_sh_chebyu_data[0] = &ufunc_eval_sh_chebyu_ptr[2*0]
 ufunc_eval_sh_chebyu_data[1] = &ufunc_eval_sh_chebyu_ptr[2*1]
 ufunc_eval_sh_chebyu_data[2] = &ufunc_eval_sh_chebyu_ptr[2*2]
 ufunc_eval_sh_chebyu_data[3] = &ufunc_eval_sh_chebyu_ptr[2*3]
 ufunc_eval_sh_chebyu_data[4] = &ufunc_eval_sh_chebyu_ptr[2*4]
-ufunc_eval_sh_chebyu_data[5] = &ufunc_eval_sh_chebyu_ptr[2*5]
-eval_sh_chebyu = np.PyUFunc_FromFuncAndData(ufunc_eval_sh_chebyu_loops, ufunc_eval_sh_chebyu_data, ufunc_eval_sh_chebyu_types, 6, 2, 1, 0, "eval_sh_chebyu", ufunc_eval_sh_chebyu_doc, 0)
+eval_sh_chebyu = np.PyUFunc_FromFuncAndData(ufunc_eval_sh_chebyu_loops, ufunc_eval_sh_chebyu_data, ufunc_eval_sh_chebyu_types, 5, 2, 1, 0, "eval_sh_chebyu", ufunc_eval_sh_chebyu_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_sh_jacobi_loops[6]
-cdef void *ufunc_eval_sh_jacobi_ptr[12]
-cdef void *ufunc_eval_sh_jacobi_data[6]
-cdef char ufunc_eval_sh_jacobi_types[30]
+cdef np.PyUFuncGenericFunction ufunc_eval_sh_jacobi_loops[5]
+cdef void *ufunc_eval_sh_jacobi_ptr[10]
+cdef void *ufunc_eval_sh_jacobi_data[5]
+cdef char ufunc_eval_sh_jacobi_types[25]
 cdef char *ufunc_eval_sh_jacobi_doc = (
     "eval_sh_jacobi(n, p, q, x, out=None)\n"
     "\n"
     "Evaluate shifted Jacobi polynomial at a point.")
-ufunc_eval_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lfff_f
-ufunc_eval_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
-ufunc_eval_sh_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
-ufunc_eval_sh_jacobi_loops[3] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
-ufunc_eval_sh_jacobi_loops[4] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
-ufunc_eval_sh_jacobi_loops[5] = <np.PyUFuncGenericFunction>loop_D_dddD__As_dddD_D
+ufunc_eval_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
+ufunc_eval_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
+ufunc_eval_sh_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
+ufunc_eval_sh_jacobi_loops[3] = <np.PyUFuncGenericFunction>loop_d_dddd__As_dddd_d
+ufunc_eval_sh_jacobi_loops[4] = <np.PyUFuncGenericFunction>loop_D_dddD__As_dddD_D
 ufunc_eval_sh_jacobi_types[0] = <char>NPY_LONG
-ufunc_eval_sh_jacobi_types[1] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[2] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[3] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[4] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[5] = <char>NPY_LONG
-ufunc_eval_sh_jacobi_types[6] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[7] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[8] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[9] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[1] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[2] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[3] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[4] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[5] = <char>NPY_FLOAT
+ufunc_eval_sh_jacobi_types[6] = <char>NPY_FLOAT
+ufunc_eval_sh_jacobi_types[7] = <char>NPY_FLOAT
+ufunc_eval_sh_jacobi_types[8] = <char>NPY_FLOAT
+ufunc_eval_sh_jacobi_types[9] = <char>NPY_FLOAT
 ufunc_eval_sh_jacobi_types[10] = <char>NPY_FLOAT
 ufunc_eval_sh_jacobi_types[11] = <char>NPY_FLOAT
 ufunc_eval_sh_jacobi_types[12] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[13] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[14] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[15] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[16] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[17] = <char>NPY_FLOAT
-ufunc_eval_sh_jacobi_types[18] = <char>NPY_CFLOAT
-ufunc_eval_sh_jacobi_types[19] = <char>NPY_CFLOAT
+ufunc_eval_sh_jacobi_types[13] = <char>NPY_CFLOAT
+ufunc_eval_sh_jacobi_types[14] = <char>NPY_CFLOAT
+ufunc_eval_sh_jacobi_types[15] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[16] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[17] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[18] = <char>NPY_DOUBLE
+ufunc_eval_sh_jacobi_types[19] = <char>NPY_DOUBLE
 ufunc_eval_sh_jacobi_types[20] = <char>NPY_DOUBLE
 ufunc_eval_sh_jacobi_types[21] = <char>NPY_DOUBLE
 ufunc_eval_sh_jacobi_types[22] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[23] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[24] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[25] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[26] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[27] = <char>NPY_DOUBLE
-ufunc_eval_sh_jacobi_types[28] = <char>NPY_CDOUBLE
-ufunc_eval_sh_jacobi_types[29] = <char>NPY_CDOUBLE
+ufunc_eval_sh_jacobi_types[23] = <char>NPY_CDOUBLE
+ufunc_eval_sh_jacobi_types[24] = <char>NPY_CDOUBLE
 ufunc_eval_sh_jacobi_ptr[2*0] = <void*>_func_eval_sh_jacobi_l
 ufunc_eval_sh_jacobi_ptr[2*0+1] = <void*>(<char*>"eval_sh_jacobi")
-ufunc_eval_sh_jacobi_ptr[2*1] = <void*>_func_eval_sh_jacobi_l
+ufunc_eval_sh_jacobi_ptr[2*1] = <void*>_func_eval_sh_jacobi[double]
 ufunc_eval_sh_jacobi_ptr[2*1+1] = <void*>(<char*>"eval_sh_jacobi")
-ufunc_eval_sh_jacobi_ptr[2*2] = <void*>_func_eval_sh_jacobi[double]
+ufunc_eval_sh_jacobi_ptr[2*2] = <void*>_func_eval_sh_jacobi[double_complex]
 ufunc_eval_sh_jacobi_ptr[2*2+1] = <void*>(<char*>"eval_sh_jacobi")
-ufunc_eval_sh_jacobi_ptr[2*3] = <void*>_func_eval_sh_jacobi[double_complex]
+ufunc_eval_sh_jacobi_ptr[2*3] = <void*>_func_eval_sh_jacobi[double]
 ufunc_eval_sh_jacobi_ptr[2*3+1] = <void*>(<char*>"eval_sh_jacobi")
-ufunc_eval_sh_jacobi_ptr[2*4] = <void*>_func_eval_sh_jacobi[double]
+ufunc_eval_sh_jacobi_ptr[2*4] = <void*>_func_eval_sh_jacobi[double_complex]
 ufunc_eval_sh_jacobi_ptr[2*4+1] = <void*>(<char*>"eval_sh_jacobi")
-ufunc_eval_sh_jacobi_ptr[2*5] = <void*>_func_eval_sh_jacobi[double_complex]
-ufunc_eval_sh_jacobi_ptr[2*5+1] = <void*>(<char*>"eval_sh_jacobi")
 ufunc_eval_sh_jacobi_data[0] = &ufunc_eval_sh_jacobi_ptr[2*0]
 ufunc_eval_sh_jacobi_data[1] = &ufunc_eval_sh_jacobi_ptr[2*1]
 ufunc_eval_sh_jacobi_data[2] = &ufunc_eval_sh_jacobi_ptr[2*2]
 ufunc_eval_sh_jacobi_data[3] = &ufunc_eval_sh_jacobi_ptr[2*3]
 ufunc_eval_sh_jacobi_data[4] = &ufunc_eval_sh_jacobi_ptr[2*4]
-ufunc_eval_sh_jacobi_data[5] = &ufunc_eval_sh_jacobi_ptr[2*5]
-eval_sh_jacobi = np.PyUFunc_FromFuncAndData(ufunc_eval_sh_jacobi_loops, ufunc_eval_sh_jacobi_data, ufunc_eval_sh_jacobi_types, 6, 4, 1, 0, "eval_sh_jacobi", ufunc_eval_sh_jacobi_doc, 0)
+eval_sh_jacobi = np.PyUFunc_FromFuncAndData(ufunc_eval_sh_jacobi_loops, ufunc_eval_sh_jacobi_data, ufunc_eval_sh_jacobi_types, 5, 4, 1, 0, "eval_sh_jacobi", ufunc_eval_sh_jacobi_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_eval_sh_legendre_loops[6]
-cdef void *ufunc_eval_sh_legendre_ptr[12]
-cdef void *ufunc_eval_sh_legendre_data[6]
-cdef char ufunc_eval_sh_legendre_types[18]
+cdef np.PyUFuncGenericFunction ufunc_eval_sh_legendre_loops[5]
+cdef void *ufunc_eval_sh_legendre_ptr[10]
+cdef void *ufunc_eval_sh_legendre_data[5]
+cdef char ufunc_eval_sh_legendre_types[15]
 cdef char *ufunc_eval_sh_legendre_doc = (
     "eval_sh_legendre(n, x, out=None)\n"
     "\n"
     "Evaluate shifted Legendre polynomial at a point.")
-ufunc_eval_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_lf_f
-ufunc_eval_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
-ufunc_eval_sh_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_eval_sh_legendre_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
-ufunc_eval_sh_legendre_loops[4] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_eval_sh_legendre_loops[5] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_eval_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
+ufunc_eval_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_eval_sh_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_eval_sh_legendre_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_eval_sh_legendre_loops[4] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
 ufunc_eval_sh_legendre_types[0] = <char>NPY_LONG
-ufunc_eval_sh_legendre_types[1] = <char>NPY_FLOAT
-ufunc_eval_sh_legendre_types[2] = <char>NPY_FLOAT
-ufunc_eval_sh_legendre_types[3] = <char>NPY_LONG
-ufunc_eval_sh_legendre_types[4] = <char>NPY_DOUBLE
-ufunc_eval_sh_legendre_types[5] = <char>NPY_DOUBLE
+ufunc_eval_sh_legendre_types[1] = <char>NPY_DOUBLE
+ufunc_eval_sh_legendre_types[2] = <char>NPY_DOUBLE
+ufunc_eval_sh_legendre_types[3] = <char>NPY_FLOAT
+ufunc_eval_sh_legendre_types[4] = <char>NPY_FLOAT
+ufunc_eval_sh_legendre_types[5] = <char>NPY_FLOAT
 ufunc_eval_sh_legendre_types[6] = <char>NPY_FLOAT
-ufunc_eval_sh_legendre_types[7] = <char>NPY_FLOAT
-ufunc_eval_sh_legendre_types[8] = <char>NPY_FLOAT
-ufunc_eval_sh_legendre_types[9] = <char>NPY_FLOAT
-ufunc_eval_sh_legendre_types[10] = <char>NPY_CFLOAT
-ufunc_eval_sh_legendre_types[11] = <char>NPY_CFLOAT
+ufunc_eval_sh_legendre_types[7] = <char>NPY_CFLOAT
+ufunc_eval_sh_legendre_types[8] = <char>NPY_CFLOAT
+ufunc_eval_sh_legendre_types[9] = <char>NPY_DOUBLE
+ufunc_eval_sh_legendre_types[10] = <char>NPY_DOUBLE
+ufunc_eval_sh_legendre_types[11] = <char>NPY_DOUBLE
 ufunc_eval_sh_legendre_types[12] = <char>NPY_DOUBLE
-ufunc_eval_sh_legendre_types[13] = <char>NPY_DOUBLE
-ufunc_eval_sh_legendre_types[14] = <char>NPY_DOUBLE
-ufunc_eval_sh_legendre_types[15] = <char>NPY_DOUBLE
-ufunc_eval_sh_legendre_types[16] = <char>NPY_CDOUBLE
-ufunc_eval_sh_legendre_types[17] = <char>NPY_CDOUBLE
+ufunc_eval_sh_legendre_types[13] = <char>NPY_CDOUBLE
+ufunc_eval_sh_legendre_types[14] = <char>NPY_CDOUBLE
 ufunc_eval_sh_legendre_ptr[2*0] = <void*>_func_eval_sh_legendre_l
 ufunc_eval_sh_legendre_ptr[2*0+1] = <void*>(<char*>"eval_sh_legendre")
-ufunc_eval_sh_legendre_ptr[2*1] = <void*>_func_eval_sh_legendre_l
+ufunc_eval_sh_legendre_ptr[2*1] = <void*>_func_eval_sh_legendre[double]
 ufunc_eval_sh_legendre_ptr[2*1+1] = <void*>(<char*>"eval_sh_legendre")
-ufunc_eval_sh_legendre_ptr[2*2] = <void*>_func_eval_sh_legendre[double]
+ufunc_eval_sh_legendre_ptr[2*2] = <void*>_func_eval_sh_legendre[double_complex]
 ufunc_eval_sh_legendre_ptr[2*2+1] = <void*>(<char*>"eval_sh_legendre")
-ufunc_eval_sh_legendre_ptr[2*3] = <void*>_func_eval_sh_legendre[double_complex]
+ufunc_eval_sh_legendre_ptr[2*3] = <void*>_func_eval_sh_legendre[double]
 ufunc_eval_sh_legendre_ptr[2*3+1] = <void*>(<char*>"eval_sh_legendre")
-ufunc_eval_sh_legendre_ptr[2*4] = <void*>_func_eval_sh_legendre[double]
+ufunc_eval_sh_legendre_ptr[2*4] = <void*>_func_eval_sh_legendre[double_complex]
 ufunc_eval_sh_legendre_ptr[2*4+1] = <void*>(<char*>"eval_sh_legendre")
-ufunc_eval_sh_legendre_ptr[2*5] = <void*>_func_eval_sh_legendre[double_complex]
-ufunc_eval_sh_legendre_ptr[2*5+1] = <void*>(<char*>"eval_sh_legendre")
 ufunc_eval_sh_legendre_data[0] = &ufunc_eval_sh_legendre_ptr[2*0]
 ufunc_eval_sh_legendre_data[1] = &ufunc_eval_sh_legendre_ptr[2*1]
 ufunc_eval_sh_legendre_data[2] = &ufunc_eval_sh_legendre_ptr[2*2]
 ufunc_eval_sh_legendre_data[3] = &ufunc_eval_sh_legendre_ptr[2*3]
 ufunc_eval_sh_legendre_data[4] = &ufunc_eval_sh_legendre_ptr[2*4]
-ufunc_eval_sh_legendre_data[5] = &ufunc_eval_sh_legendre_ptr[2*5]
-eval_sh_legendre = np.PyUFunc_FromFuncAndData(ufunc_eval_sh_legendre_loops, ufunc_eval_sh_legendre_data, ufunc_eval_sh_legendre_types, 6, 2, 1, 0, "eval_sh_legendre", ufunc_eval_sh_legendre_doc, 0)
+eval_sh_legendre = np.PyUFunc_FromFuncAndData(ufunc_eval_sh_legendre_loops, ufunc_eval_sh_legendre_data, ufunc_eval_sh_legendre_types, 5, 2, 1, 0, "eval_sh_legendre", ufunc_eval_sh_legendre_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_exp1_loops[4]
 cdef void *ufunc_exp1_ptr[8]
@@ -4875,10 +4469,10 @@ ufunc_expm1_data[0] = &ufunc_expm1_ptr[2*0]
 ufunc_expm1_data[1] = &ufunc_expm1_ptr[2*1]
 expm1 = np.PyUFunc_FromFuncAndData(ufunc_expm1_loops, ufunc_expm1_data, ufunc_expm1_types, 2, 1, 1, 0, "expm1", ufunc_expm1_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_expn_loops[4]
-cdef void *ufunc_expn_ptr[8]
-cdef void *ufunc_expn_data[4]
-cdef char ufunc_expn_types[12]
+cdef np.PyUFuncGenericFunction ufunc_expn_loops[3]
+cdef void *ufunc_expn_ptr[6]
+cdef void *ufunc_expn_data[3]
+cdef char ufunc_expn_types[9]
 cdef char *ufunc_expn_doc = (
     "expn(n, x)\n"
     "\n"
@@ -4887,35 +4481,28 @@ cdef char *ufunc_expn_doc = (
     "Returns the exponential integral for integer n and non-negative x and n::\n"
     "\n"
     "    integral(exp(-x*t) / t**n, t=1..inf).")
-ufunc_expn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
-ufunc_expn_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
-ufunc_expn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_expn_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_expn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_expn_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_expn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_expn_types[0] = <char>NPY_LONG
-ufunc_expn_types[1] = <char>NPY_FLOAT
-ufunc_expn_types[2] = <char>NPY_FLOAT
-ufunc_expn_types[3] = <char>NPY_LONG
-ufunc_expn_types[4] = <char>NPY_DOUBLE
-ufunc_expn_types[5] = <char>NPY_DOUBLE
-ufunc_expn_types[6] = <char>NPY_FLOAT
-ufunc_expn_types[7] = <char>NPY_FLOAT
-ufunc_expn_types[8] = <char>NPY_FLOAT
-ufunc_expn_types[9] = <char>NPY_DOUBLE
-ufunc_expn_types[10] = <char>NPY_DOUBLE
-ufunc_expn_types[11] = <char>NPY_DOUBLE
+ufunc_expn_types[1] = <char>NPY_DOUBLE
+ufunc_expn_types[2] = <char>NPY_DOUBLE
+ufunc_expn_types[3] = <char>NPY_FLOAT
+ufunc_expn_types[4] = <char>NPY_FLOAT
+ufunc_expn_types[5] = <char>NPY_FLOAT
+ufunc_expn_types[6] = <char>NPY_DOUBLE
+ufunc_expn_types[7] = <char>NPY_DOUBLE
+ufunc_expn_types[8] = <char>NPY_DOUBLE
 ufunc_expn_ptr[2*0] = <void*>_func_expn
 ufunc_expn_ptr[2*0+1] = <void*>(<char*>"expn")
-ufunc_expn_ptr[2*1] = <void*>_func_expn
+ufunc_expn_ptr[2*1] = <void*>_func_expn_unsafe
 ufunc_expn_ptr[2*1+1] = <void*>(<char*>"expn")
 ufunc_expn_ptr[2*2] = <void*>_func_expn_unsafe
 ufunc_expn_ptr[2*2+1] = <void*>(<char*>"expn")
-ufunc_expn_ptr[2*3] = <void*>_func_expn_unsafe
-ufunc_expn_ptr[2*3+1] = <void*>(<char*>"expn")
 ufunc_expn_data[0] = &ufunc_expn_ptr[2*0]
 ufunc_expn_data[1] = &ufunc_expn_ptr[2*1]
 ufunc_expn_data[2] = &ufunc_expn_ptr[2*2]
-ufunc_expn_data[3] = &ufunc_expn_ptr[2*3]
-expn = np.PyUFunc_FromFuncAndData(ufunc_expn_loops, ufunc_expn_data, ufunc_expn_types, 4, 2, 1, 0, "expn", ufunc_expn_doc, 0)
+expn = np.PyUFunc_FromFuncAndData(ufunc_expn_loops, ufunc_expn_data, ufunc_expn_types, 3, 2, 1, 0, "expn", ufunc_expn_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_fdtr_loops[2]
 cdef void *ufunc_fdtr_ptr[4]
@@ -5834,10 +5421,10 @@ ufunc_hyp1f2_data[0] = &ufunc_hyp1f2_ptr[2*0]
 ufunc_hyp1f2_data[1] = &ufunc_hyp1f2_ptr[2*1]
 hyp1f2 = np.PyUFunc_FromFuncAndData(ufunc_hyp1f2_loops, ufunc_hyp1f2_data, ufunc_hyp1f2_types, 2, 4, 2, 0, "hyp1f2", ufunc_hyp1f2_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_hyp2f0_loops[4]
-cdef void *ufunc_hyp2f0_ptr[8]
-cdef void *ufunc_hyp2f0_data[4]
-cdef char ufunc_hyp2f0_types[24]
+cdef np.PyUFuncGenericFunction ufunc_hyp2f0_loops[3]
+cdef void *ufunc_hyp2f0_ptr[6]
+cdef void *ufunc_hyp2f0_data[3]
+cdef char ufunc_hyp2f0_types[18]
 cdef char *ufunc_hyp2f0_doc = (
     "hyp2f0(a, b, x, type)\n"
     "\n"
@@ -5852,47 +5439,37 @@ cdef char *ufunc_hyp2f0_doc = (
     "    Value of the function\n"
     "err\n"
     "    Error estimate")
-ufunc_hyp2f0_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddi_d_As_fffl_ff
-ufunc_hyp2f0_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
-ufunc_hyp2f0_loops[2] = <np.PyUFuncGenericFunction>loop_d_dddi_d_As_dddl_dd
-ufunc_hyp2f0_loops[3] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
+ufunc_hyp2f0_loops[0] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_ffff_ff
+ufunc_hyp2f0_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddi_d_As_dddl_dd
+ufunc_hyp2f0_loops[2] = <np.PyUFuncGenericFunction>loop_d_dddd_d_As_dddd_dd
 ufunc_hyp2f0_types[0] = <char>NPY_FLOAT
 ufunc_hyp2f0_types[1] = <char>NPY_FLOAT
 ufunc_hyp2f0_types[2] = <char>NPY_FLOAT
-ufunc_hyp2f0_types[3] = <char>NPY_LONG
+ufunc_hyp2f0_types[3] = <char>NPY_FLOAT
 ufunc_hyp2f0_types[4] = <char>NPY_FLOAT
 ufunc_hyp2f0_types[5] = <char>NPY_FLOAT
-ufunc_hyp2f0_types[6] = <char>NPY_FLOAT
-ufunc_hyp2f0_types[7] = <char>NPY_FLOAT
-ufunc_hyp2f0_types[8] = <char>NPY_FLOAT
-ufunc_hyp2f0_types[9] = <char>NPY_FLOAT
-ufunc_hyp2f0_types[10] = <char>NPY_FLOAT
-ufunc_hyp2f0_types[11] = <char>NPY_FLOAT
+ufunc_hyp2f0_types[6] = <char>NPY_DOUBLE
+ufunc_hyp2f0_types[7] = <char>NPY_DOUBLE
+ufunc_hyp2f0_types[8] = <char>NPY_DOUBLE
+ufunc_hyp2f0_types[9] = <char>NPY_LONG
+ufunc_hyp2f0_types[10] = <char>NPY_DOUBLE
+ufunc_hyp2f0_types[11] = <char>NPY_DOUBLE
 ufunc_hyp2f0_types[12] = <char>NPY_DOUBLE
 ufunc_hyp2f0_types[13] = <char>NPY_DOUBLE
 ufunc_hyp2f0_types[14] = <char>NPY_DOUBLE
-ufunc_hyp2f0_types[15] = <char>NPY_LONG
+ufunc_hyp2f0_types[15] = <char>NPY_DOUBLE
 ufunc_hyp2f0_types[16] = <char>NPY_DOUBLE
 ufunc_hyp2f0_types[17] = <char>NPY_DOUBLE
-ufunc_hyp2f0_types[18] = <char>NPY_DOUBLE
-ufunc_hyp2f0_types[19] = <char>NPY_DOUBLE
-ufunc_hyp2f0_types[20] = <char>NPY_DOUBLE
-ufunc_hyp2f0_types[21] = <char>NPY_DOUBLE
-ufunc_hyp2f0_types[22] = <char>NPY_DOUBLE
-ufunc_hyp2f0_types[23] = <char>NPY_DOUBLE
-ufunc_hyp2f0_ptr[2*0] = <void*>_func_hyp2f0
+ufunc_hyp2f0_ptr[2*0] = <void*>_func_hyp2f0_unsafe
 ufunc_hyp2f0_ptr[2*0+1] = <void*>(<char*>"hyp2f0")
-ufunc_hyp2f0_ptr[2*1] = <void*>_func_hyp2f0_unsafe
+ufunc_hyp2f0_ptr[2*1] = <void*>_func_hyp2f0
 ufunc_hyp2f0_ptr[2*1+1] = <void*>(<char*>"hyp2f0")
-ufunc_hyp2f0_ptr[2*2] = <void*>_func_hyp2f0
+ufunc_hyp2f0_ptr[2*2] = <void*>_func_hyp2f0_unsafe
 ufunc_hyp2f0_ptr[2*2+1] = <void*>(<char*>"hyp2f0")
-ufunc_hyp2f0_ptr[2*3] = <void*>_func_hyp2f0_unsafe
-ufunc_hyp2f0_ptr[2*3+1] = <void*>(<char*>"hyp2f0")
 ufunc_hyp2f0_data[0] = &ufunc_hyp2f0_ptr[2*0]
 ufunc_hyp2f0_data[1] = &ufunc_hyp2f0_ptr[2*1]
 ufunc_hyp2f0_data[2] = &ufunc_hyp2f0_ptr[2*2]
-ufunc_hyp2f0_data[3] = &ufunc_hyp2f0_ptr[2*3]
-hyp2f0 = np.PyUFunc_FromFuncAndData(ufunc_hyp2f0_loops, ufunc_hyp2f0_data, ufunc_hyp2f0_types, 4, 4, 2, 0, "hyp2f0", ufunc_hyp2f0_doc, 0)
+hyp2f0 = np.PyUFunc_FromFuncAndData(ufunc_hyp2f0_loops, ufunc_hyp2f0_data, ufunc_hyp2f0_types, 3, 4, 2, 0, "hyp2f0", ufunc_hyp2f0_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_hyp2f1_loops[4]
 cdef void *ufunc_hyp2f1_ptr[8]
@@ -6889,10 +6466,7 @@ cdef char *ufunc_kl_div_doc = (
     "\n"
     "Elementwise function for computing Kullback-Leibler divergence.\n"
     "\n"
-    ".. math:: \\mathrm{kl\\_div}(x, y) = \\begin{cases} x \\log(x / y) - x + y & x > 0, y > 0 \\\\\n"
-    "                                                 y & x = 0, y \\ge 0 \\\\\n"
-    "                                                 \\infty & \\text{otherwise}\n"
-    "                                    \\end{cases}\n"
+    ".. math:: \\mathrm{kl\\_div}(x, y) = \\begin{cases} x \\log(x / y) - x + y & x > 0, y > 0 \\\\ y & x = 0, y \\ge 0 \\\\ \\infty & \\text{otherwise} \\end{cases}\n"
     "\n"
     "Parameters\n"
     "----------\n"
@@ -6931,45 +6505,38 @@ ufunc_kl_div_data[0] = &ufunc_kl_div_ptr[2*0]
 ufunc_kl_div_data[1] = &ufunc_kl_div_ptr[2*1]
 kl_div = np.PyUFunc_FromFuncAndData(ufunc_kl_div_loops, ufunc_kl_div_data, ufunc_kl_div_types, 2, 2, 1, 0, "kl_div", ufunc_kl_div_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_kn_loops[4]
-cdef void *ufunc_kn_ptr[8]
-cdef void *ufunc_kn_data[4]
-cdef char ufunc_kn_types[12]
+cdef np.PyUFuncGenericFunction ufunc_kn_loops[3]
+cdef void *ufunc_kn_ptr[6]
+cdef void *ufunc_kn_data[3]
+cdef char ufunc_kn_types[9]
 cdef char *ufunc_kn_doc = (
     "kn(n, x)\n"
     "\n"
     "Modified Bessel function of the second kind of integer order n\n"
     "\n"
     "These are also sometimes called functions of the third kind.")
-ufunc_kn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
-ufunc_kn_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
-ufunc_kn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_kn_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_kn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_kn_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_kn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_kn_types[0] = <char>NPY_LONG
-ufunc_kn_types[1] = <char>NPY_FLOAT
-ufunc_kn_types[2] = <char>NPY_FLOAT
-ufunc_kn_types[3] = <char>NPY_LONG
-ufunc_kn_types[4] = <char>NPY_DOUBLE
-ufunc_kn_types[5] = <char>NPY_DOUBLE
-ufunc_kn_types[6] = <char>NPY_FLOAT
-ufunc_kn_types[7] = <char>NPY_FLOAT
-ufunc_kn_types[8] = <char>NPY_FLOAT
-ufunc_kn_types[9] = <char>NPY_DOUBLE
-ufunc_kn_types[10] = <char>NPY_DOUBLE
-ufunc_kn_types[11] = <char>NPY_DOUBLE
+ufunc_kn_types[1] = <char>NPY_DOUBLE
+ufunc_kn_types[2] = <char>NPY_DOUBLE
+ufunc_kn_types[3] = <char>NPY_FLOAT
+ufunc_kn_types[4] = <char>NPY_FLOAT
+ufunc_kn_types[5] = <char>NPY_FLOAT
+ufunc_kn_types[6] = <char>NPY_DOUBLE
+ufunc_kn_types[7] = <char>NPY_DOUBLE
+ufunc_kn_types[8] = <char>NPY_DOUBLE
 ufunc_kn_ptr[2*0] = <void*>_func_cbesk_wrap_real_int
 ufunc_kn_ptr[2*0+1] = <void*>(<char*>"kn")
-ufunc_kn_ptr[2*1] = <void*>_func_cbesk_wrap_real_int
+ufunc_kn_ptr[2*1] = <void*>_func_kn_unsafe
 ufunc_kn_ptr[2*1+1] = <void*>(<char*>"kn")
 ufunc_kn_ptr[2*2] = <void*>_func_kn_unsafe
 ufunc_kn_ptr[2*2+1] = <void*>(<char*>"kn")
-ufunc_kn_ptr[2*3] = <void*>_func_kn_unsafe
-ufunc_kn_ptr[2*3+1] = <void*>(<char*>"kn")
 ufunc_kn_data[0] = &ufunc_kn_ptr[2*0]
 ufunc_kn_data[1] = &ufunc_kn_ptr[2*1]
 ufunc_kn_data[2] = &ufunc_kn_ptr[2*2]
-ufunc_kn_data[3] = &ufunc_kn_ptr[2*3]
-kn = np.PyUFunc_FromFuncAndData(ufunc_kn_loops, ufunc_kn_data, ufunc_kn_types, 4, 2, 1, 0, "kn", ufunc_kn_doc, 0)
+kn = np.PyUFunc_FromFuncAndData(ufunc_kn_loops, ufunc_kn_data, ufunc_kn_types, 3, 2, 1, 0, "kn", ufunc_kn_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_kolmogi_loops[2]
 cdef void *ufunc_kolmogi_ptr[4]
@@ -7638,10 +7205,10 @@ ufunc_modstruve_data[0] = &ufunc_modstruve_ptr[2*0]
 ufunc_modstruve_data[1] = &ufunc_modstruve_ptr[2*1]
 modstruve = np.PyUFunc_FromFuncAndData(ufunc_modstruve_loops, ufunc_modstruve_data, ufunc_modstruve_types, 2, 2, 1, 0, "modstruve", ufunc_modstruve_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_nbdtr_loops[4]
-cdef void *ufunc_nbdtr_ptr[8]
-cdef void *ufunc_nbdtr_data[4]
-cdef char ufunc_nbdtr_types[16]
+cdef np.PyUFuncGenericFunction ufunc_nbdtr_loops[3]
+cdef void *ufunc_nbdtr_ptr[6]
+cdef void *ufunc_nbdtr_data[3]
+cdef char ufunc_nbdtr_types[12]
 cdef char *ufunc_nbdtr_doc = (
     "nbdtr(k, n, p)\n"
     "\n"
@@ -7654,44 +7221,36 @@ cdef char *ufunc_nbdtr_doc = (
     "\n"
     "In a sequence of Bernoulli trials this is the probability that k\n"
     "or fewer failures precede the nth success.")
-ufunc_nbdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
-ufunc_nbdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
-ufunc_nbdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_nbdtr_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_nbdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
+ufunc_nbdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_nbdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nbdtr_types[0] = <char>NPY_LONG
 ufunc_nbdtr_types[1] = <char>NPY_LONG
-ufunc_nbdtr_types[2] = <char>NPY_FLOAT
-ufunc_nbdtr_types[3] = <char>NPY_FLOAT
-ufunc_nbdtr_types[4] = <char>NPY_LONG
-ufunc_nbdtr_types[5] = <char>NPY_LONG
-ufunc_nbdtr_types[6] = <char>NPY_DOUBLE
-ufunc_nbdtr_types[7] = <char>NPY_DOUBLE
-ufunc_nbdtr_types[8] = <char>NPY_FLOAT
-ufunc_nbdtr_types[9] = <char>NPY_FLOAT
-ufunc_nbdtr_types[10] = <char>NPY_FLOAT
-ufunc_nbdtr_types[11] = <char>NPY_FLOAT
-ufunc_nbdtr_types[12] = <char>NPY_DOUBLE
-ufunc_nbdtr_types[13] = <char>NPY_DOUBLE
-ufunc_nbdtr_types[14] = <char>NPY_DOUBLE
-ufunc_nbdtr_types[15] = <char>NPY_DOUBLE
+ufunc_nbdtr_types[2] = <char>NPY_DOUBLE
+ufunc_nbdtr_types[3] = <char>NPY_DOUBLE
+ufunc_nbdtr_types[4] = <char>NPY_FLOAT
+ufunc_nbdtr_types[5] = <char>NPY_FLOAT
+ufunc_nbdtr_types[6] = <char>NPY_FLOAT
+ufunc_nbdtr_types[7] = <char>NPY_FLOAT
+ufunc_nbdtr_types[8] = <char>NPY_DOUBLE
+ufunc_nbdtr_types[9] = <char>NPY_DOUBLE
+ufunc_nbdtr_types[10] = <char>NPY_DOUBLE
+ufunc_nbdtr_types[11] = <char>NPY_DOUBLE
 ufunc_nbdtr_ptr[2*0] = <void*>_func_nbdtr
 ufunc_nbdtr_ptr[2*0+1] = <void*>(<char*>"nbdtr")
-ufunc_nbdtr_ptr[2*1] = <void*>_func_nbdtr
+ufunc_nbdtr_ptr[2*1] = <void*>_func_nbdtr_unsafe
 ufunc_nbdtr_ptr[2*1+1] = <void*>(<char*>"nbdtr")
 ufunc_nbdtr_ptr[2*2] = <void*>_func_nbdtr_unsafe
 ufunc_nbdtr_ptr[2*2+1] = <void*>(<char*>"nbdtr")
-ufunc_nbdtr_ptr[2*3] = <void*>_func_nbdtr_unsafe
-ufunc_nbdtr_ptr[2*3+1] = <void*>(<char*>"nbdtr")
 ufunc_nbdtr_data[0] = &ufunc_nbdtr_ptr[2*0]
 ufunc_nbdtr_data[1] = &ufunc_nbdtr_ptr[2*1]
 ufunc_nbdtr_data[2] = &ufunc_nbdtr_ptr[2*2]
-ufunc_nbdtr_data[3] = &ufunc_nbdtr_ptr[2*3]
-nbdtr = np.PyUFunc_FromFuncAndData(ufunc_nbdtr_loops, ufunc_nbdtr_data, ufunc_nbdtr_types, 4, 3, 1, 0, "nbdtr", ufunc_nbdtr_doc, 0)
+nbdtr = np.PyUFunc_FromFuncAndData(ufunc_nbdtr_loops, ufunc_nbdtr_data, ufunc_nbdtr_types, 3, 3, 1, 0, "nbdtr", ufunc_nbdtr_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_nbdtrc_loops[4]
-cdef void *ufunc_nbdtrc_ptr[8]
-cdef void *ufunc_nbdtrc_data[4]
-cdef char ufunc_nbdtrc_types[16]
+cdef np.PyUFuncGenericFunction ufunc_nbdtrc_loops[3]
+cdef void *ufunc_nbdtrc_ptr[6]
+cdef void *ufunc_nbdtrc_data[3]
+cdef char ufunc_nbdtrc_types[12]
 cdef char *ufunc_nbdtrc_doc = (
     "nbdtrc(k,n,p)\n"
     "\n"
@@ -7699,83 +7258,67 @@ cdef char *ufunc_nbdtrc_doc = (
     "\n"
     "Returns the sum of the terms k+1 to infinity of the negative\n"
     "binomial distribution.")
-ufunc_nbdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
-ufunc_nbdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
-ufunc_nbdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_nbdtrc_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_nbdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
+ufunc_nbdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_nbdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nbdtrc_types[0] = <char>NPY_LONG
 ufunc_nbdtrc_types[1] = <char>NPY_LONG
-ufunc_nbdtrc_types[2] = <char>NPY_FLOAT
-ufunc_nbdtrc_types[3] = <char>NPY_FLOAT
-ufunc_nbdtrc_types[4] = <char>NPY_LONG
-ufunc_nbdtrc_types[5] = <char>NPY_LONG
-ufunc_nbdtrc_types[6] = <char>NPY_DOUBLE
-ufunc_nbdtrc_types[7] = <char>NPY_DOUBLE
-ufunc_nbdtrc_types[8] = <char>NPY_FLOAT
-ufunc_nbdtrc_types[9] = <char>NPY_FLOAT
-ufunc_nbdtrc_types[10] = <char>NPY_FLOAT
-ufunc_nbdtrc_types[11] = <char>NPY_FLOAT
-ufunc_nbdtrc_types[12] = <char>NPY_DOUBLE
-ufunc_nbdtrc_types[13] = <char>NPY_DOUBLE
-ufunc_nbdtrc_types[14] = <char>NPY_DOUBLE
-ufunc_nbdtrc_types[15] = <char>NPY_DOUBLE
+ufunc_nbdtrc_types[2] = <char>NPY_DOUBLE
+ufunc_nbdtrc_types[3] = <char>NPY_DOUBLE
+ufunc_nbdtrc_types[4] = <char>NPY_FLOAT
+ufunc_nbdtrc_types[5] = <char>NPY_FLOAT
+ufunc_nbdtrc_types[6] = <char>NPY_FLOAT
+ufunc_nbdtrc_types[7] = <char>NPY_FLOAT
+ufunc_nbdtrc_types[8] = <char>NPY_DOUBLE
+ufunc_nbdtrc_types[9] = <char>NPY_DOUBLE
+ufunc_nbdtrc_types[10] = <char>NPY_DOUBLE
+ufunc_nbdtrc_types[11] = <char>NPY_DOUBLE
 ufunc_nbdtrc_ptr[2*0] = <void*>_func_nbdtrc
 ufunc_nbdtrc_ptr[2*0+1] = <void*>(<char*>"nbdtrc")
-ufunc_nbdtrc_ptr[2*1] = <void*>_func_nbdtrc
+ufunc_nbdtrc_ptr[2*1] = <void*>_func_nbdtrc_unsafe
 ufunc_nbdtrc_ptr[2*1+1] = <void*>(<char*>"nbdtrc")
 ufunc_nbdtrc_ptr[2*2] = <void*>_func_nbdtrc_unsafe
 ufunc_nbdtrc_ptr[2*2+1] = <void*>(<char*>"nbdtrc")
-ufunc_nbdtrc_ptr[2*3] = <void*>_func_nbdtrc_unsafe
-ufunc_nbdtrc_ptr[2*3+1] = <void*>(<char*>"nbdtrc")
 ufunc_nbdtrc_data[0] = &ufunc_nbdtrc_ptr[2*0]
 ufunc_nbdtrc_data[1] = &ufunc_nbdtrc_ptr[2*1]
 ufunc_nbdtrc_data[2] = &ufunc_nbdtrc_ptr[2*2]
-ufunc_nbdtrc_data[3] = &ufunc_nbdtrc_ptr[2*3]
-nbdtrc = np.PyUFunc_FromFuncAndData(ufunc_nbdtrc_loops, ufunc_nbdtrc_data, ufunc_nbdtrc_types, 4, 3, 1, 0, "nbdtrc", ufunc_nbdtrc_doc, 0)
+nbdtrc = np.PyUFunc_FromFuncAndData(ufunc_nbdtrc_loops, ufunc_nbdtrc_data, ufunc_nbdtrc_types, 3, 3, 1, 0, "nbdtrc", ufunc_nbdtrc_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_nbdtri_loops[4]
-cdef void *ufunc_nbdtri_ptr[8]
-cdef void *ufunc_nbdtri_data[4]
-cdef char ufunc_nbdtri_types[16]
+cdef np.PyUFuncGenericFunction ufunc_nbdtri_loops[3]
+cdef void *ufunc_nbdtri_ptr[6]
+cdef void *ufunc_nbdtri_data[3]
+cdef char ufunc_nbdtri_types[12]
 cdef char *ufunc_nbdtri_doc = (
     "nbdtri(k, n, y)\n"
     "\n"
     "Inverse of nbdtr vs p\n"
     "\n"
     "Finds the argument p such that ``nbdtr(k,n,p) = y``.")
-ufunc_nbdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_llf_f
-ufunc_nbdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
-ufunc_nbdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_nbdtri_loops[3] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_nbdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_iid__As_lld_d
+ufunc_nbdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_nbdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_nbdtri_types[0] = <char>NPY_LONG
 ufunc_nbdtri_types[1] = <char>NPY_LONG
-ufunc_nbdtri_types[2] = <char>NPY_FLOAT
-ufunc_nbdtri_types[3] = <char>NPY_FLOAT
-ufunc_nbdtri_types[4] = <char>NPY_LONG
-ufunc_nbdtri_types[5] = <char>NPY_LONG
-ufunc_nbdtri_types[6] = <char>NPY_DOUBLE
-ufunc_nbdtri_types[7] = <char>NPY_DOUBLE
-ufunc_nbdtri_types[8] = <char>NPY_FLOAT
-ufunc_nbdtri_types[9] = <char>NPY_FLOAT
-ufunc_nbdtri_types[10] = <char>NPY_FLOAT
-ufunc_nbdtri_types[11] = <char>NPY_FLOAT
-ufunc_nbdtri_types[12] = <char>NPY_DOUBLE
-ufunc_nbdtri_types[13] = <char>NPY_DOUBLE
-ufunc_nbdtri_types[14] = <char>NPY_DOUBLE
-ufunc_nbdtri_types[15] = <char>NPY_DOUBLE
+ufunc_nbdtri_types[2] = <char>NPY_DOUBLE
+ufunc_nbdtri_types[3] = <char>NPY_DOUBLE
+ufunc_nbdtri_types[4] = <char>NPY_FLOAT
+ufunc_nbdtri_types[5] = <char>NPY_FLOAT
+ufunc_nbdtri_types[6] = <char>NPY_FLOAT
+ufunc_nbdtri_types[7] = <char>NPY_FLOAT
+ufunc_nbdtri_types[8] = <char>NPY_DOUBLE
+ufunc_nbdtri_types[9] = <char>NPY_DOUBLE
+ufunc_nbdtri_types[10] = <char>NPY_DOUBLE
+ufunc_nbdtri_types[11] = <char>NPY_DOUBLE
 ufunc_nbdtri_ptr[2*0] = <void*>_func_nbdtri
 ufunc_nbdtri_ptr[2*0+1] = <void*>(<char*>"nbdtri")
-ufunc_nbdtri_ptr[2*1] = <void*>_func_nbdtri
+ufunc_nbdtri_ptr[2*1] = <void*>_func_nbdtri_unsafe
 ufunc_nbdtri_ptr[2*1+1] = <void*>(<char*>"nbdtri")
 ufunc_nbdtri_ptr[2*2] = <void*>_func_nbdtri_unsafe
 ufunc_nbdtri_ptr[2*2+1] = <void*>(<char*>"nbdtri")
-ufunc_nbdtri_ptr[2*3] = <void*>_func_nbdtri_unsafe
-ufunc_nbdtri_ptr[2*3+1] = <void*>(<char*>"nbdtri")
 ufunc_nbdtri_data[0] = &ufunc_nbdtri_ptr[2*0]
 ufunc_nbdtri_data[1] = &ufunc_nbdtri_ptr[2*1]
 ufunc_nbdtri_data[2] = &ufunc_nbdtri_ptr[2*2]
-ufunc_nbdtri_data[3] = &ufunc_nbdtri_ptr[2*3]
-nbdtri = np.PyUFunc_FromFuncAndData(ufunc_nbdtri_loops, ufunc_nbdtri_data, ufunc_nbdtri_types, 4, 3, 1, 0, "nbdtri", ufunc_nbdtri_doc, 0)
+nbdtri = np.PyUFunc_FromFuncAndData(ufunc_nbdtri_loops, ufunc_nbdtri_data, ufunc_nbdtri_types, 3, 3, 1, 0, "nbdtri", ufunc_nbdtri_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_nbdtrik_loops[2]
 cdef void *ufunc_nbdtrik_ptr[4]
@@ -8741,10 +8284,10 @@ ufunc_pbwa_data[0] = &ufunc_pbwa_ptr[2*0]
 ufunc_pbwa_data[1] = &ufunc_pbwa_ptr[2*1]
 pbwa = np.PyUFunc_FromFuncAndData(ufunc_pbwa_loops, ufunc_pbwa_data, ufunc_pbwa_types, 2, 2, 2, 0, "pbwa", ufunc_pbwa_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_pdtr_loops[4]
-cdef void *ufunc_pdtr_ptr[8]
-cdef void *ufunc_pdtr_data[4]
-cdef char ufunc_pdtr_types[12]
+cdef np.PyUFuncGenericFunction ufunc_pdtr_loops[3]
+cdef void *ufunc_pdtr_ptr[6]
+cdef void *ufunc_pdtr_data[3]
+cdef char ufunc_pdtr_types[9]
 cdef char *ufunc_pdtr_doc = (
     "pdtr(k, m)\n"
     "\n"
@@ -8753,40 +8296,33 @@ cdef char *ufunc_pdtr_doc = (
     "Returns the sum of the first k terms of the Poisson distribution:\n"
     "sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).  Arguments\n"
     "must both be positive and k an integer.")
-ufunc_pdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
-ufunc_pdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
-ufunc_pdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_pdtr_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_pdtr_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_pdtr_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_pdtr_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_pdtr_types[0] = <char>NPY_LONG
-ufunc_pdtr_types[1] = <char>NPY_FLOAT
-ufunc_pdtr_types[2] = <char>NPY_FLOAT
-ufunc_pdtr_types[3] = <char>NPY_LONG
-ufunc_pdtr_types[4] = <char>NPY_DOUBLE
-ufunc_pdtr_types[5] = <char>NPY_DOUBLE
-ufunc_pdtr_types[6] = <char>NPY_FLOAT
-ufunc_pdtr_types[7] = <char>NPY_FLOAT
-ufunc_pdtr_types[8] = <char>NPY_FLOAT
-ufunc_pdtr_types[9] = <char>NPY_DOUBLE
-ufunc_pdtr_types[10] = <char>NPY_DOUBLE
-ufunc_pdtr_types[11] = <char>NPY_DOUBLE
+ufunc_pdtr_types[1] = <char>NPY_DOUBLE
+ufunc_pdtr_types[2] = <char>NPY_DOUBLE
+ufunc_pdtr_types[3] = <char>NPY_FLOAT
+ufunc_pdtr_types[4] = <char>NPY_FLOAT
+ufunc_pdtr_types[5] = <char>NPY_FLOAT
+ufunc_pdtr_types[6] = <char>NPY_DOUBLE
+ufunc_pdtr_types[7] = <char>NPY_DOUBLE
+ufunc_pdtr_types[8] = <char>NPY_DOUBLE
 ufunc_pdtr_ptr[2*0] = <void*>_func_pdtr
 ufunc_pdtr_ptr[2*0+1] = <void*>(<char*>"pdtr")
-ufunc_pdtr_ptr[2*1] = <void*>_func_pdtr
+ufunc_pdtr_ptr[2*1] = <void*>_func_pdtr_unsafe
 ufunc_pdtr_ptr[2*1+1] = <void*>(<char*>"pdtr")
 ufunc_pdtr_ptr[2*2] = <void*>_func_pdtr_unsafe
 ufunc_pdtr_ptr[2*2+1] = <void*>(<char*>"pdtr")
-ufunc_pdtr_ptr[2*3] = <void*>_func_pdtr_unsafe
-ufunc_pdtr_ptr[2*3+1] = <void*>(<char*>"pdtr")
 ufunc_pdtr_data[0] = &ufunc_pdtr_ptr[2*0]
 ufunc_pdtr_data[1] = &ufunc_pdtr_ptr[2*1]
 ufunc_pdtr_data[2] = &ufunc_pdtr_ptr[2*2]
-ufunc_pdtr_data[3] = &ufunc_pdtr_ptr[2*3]
-pdtr = np.PyUFunc_FromFuncAndData(ufunc_pdtr_loops, ufunc_pdtr_data, ufunc_pdtr_types, 4, 2, 1, 0, "pdtr", ufunc_pdtr_doc, 0)
+pdtr = np.PyUFunc_FromFuncAndData(ufunc_pdtr_loops, ufunc_pdtr_data, ufunc_pdtr_types, 3, 2, 1, 0, "pdtr", ufunc_pdtr_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_pdtrc_loops[4]
-cdef void *ufunc_pdtrc_ptr[8]
-cdef void *ufunc_pdtrc_data[4]
-cdef char ufunc_pdtrc_types[12]
+cdef np.PyUFuncGenericFunction ufunc_pdtrc_loops[3]
+cdef void *ufunc_pdtrc_ptr[6]
+cdef void *ufunc_pdtrc_data[3]
+cdef char ufunc_pdtrc_types[9]
 cdef char *ufunc_pdtrc_doc = (
     "pdtrc(k, m)\n"
     "\n"
@@ -8795,40 +8331,33 @@ cdef char *ufunc_pdtrc_doc = (
     "Returns the sum of the terms from k+1 to infinity of the Poisson\n"
     "distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(\n"
     "k+1, m).  Arguments must both be positive and k an integer.")
-ufunc_pdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
-ufunc_pdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
-ufunc_pdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_pdtrc_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_pdtrc_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_pdtrc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_pdtrc_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_pdtrc_types[0] = <char>NPY_LONG
-ufunc_pdtrc_types[1] = <char>NPY_FLOAT
-ufunc_pdtrc_types[2] = <char>NPY_FLOAT
-ufunc_pdtrc_types[3] = <char>NPY_LONG
-ufunc_pdtrc_types[4] = <char>NPY_DOUBLE
-ufunc_pdtrc_types[5] = <char>NPY_DOUBLE
-ufunc_pdtrc_types[6] = <char>NPY_FLOAT
-ufunc_pdtrc_types[7] = <char>NPY_FLOAT
-ufunc_pdtrc_types[8] = <char>NPY_FLOAT
-ufunc_pdtrc_types[9] = <char>NPY_DOUBLE
-ufunc_pdtrc_types[10] = <char>NPY_DOUBLE
-ufunc_pdtrc_types[11] = <char>NPY_DOUBLE
+ufunc_pdtrc_types[1] = <char>NPY_DOUBLE
+ufunc_pdtrc_types[2] = <char>NPY_DOUBLE
+ufunc_pdtrc_types[3] = <char>NPY_FLOAT
+ufunc_pdtrc_types[4] = <char>NPY_FLOAT
+ufunc_pdtrc_types[5] = <char>NPY_FLOAT
+ufunc_pdtrc_types[6] = <char>NPY_DOUBLE
+ufunc_pdtrc_types[7] = <char>NPY_DOUBLE
+ufunc_pdtrc_types[8] = <char>NPY_DOUBLE
 ufunc_pdtrc_ptr[2*0] = <void*>_func_pdtrc
 ufunc_pdtrc_ptr[2*0+1] = <void*>(<char*>"pdtrc")
-ufunc_pdtrc_ptr[2*1] = <void*>_func_pdtrc
+ufunc_pdtrc_ptr[2*1] = <void*>_func_pdtrc_unsafe
 ufunc_pdtrc_ptr[2*1+1] = <void*>(<char*>"pdtrc")
 ufunc_pdtrc_ptr[2*2] = <void*>_func_pdtrc_unsafe
 ufunc_pdtrc_ptr[2*2+1] = <void*>(<char*>"pdtrc")
-ufunc_pdtrc_ptr[2*3] = <void*>_func_pdtrc_unsafe
-ufunc_pdtrc_ptr[2*3+1] = <void*>(<char*>"pdtrc")
 ufunc_pdtrc_data[0] = &ufunc_pdtrc_ptr[2*0]
 ufunc_pdtrc_data[1] = &ufunc_pdtrc_ptr[2*1]
 ufunc_pdtrc_data[2] = &ufunc_pdtrc_ptr[2*2]
-ufunc_pdtrc_data[3] = &ufunc_pdtrc_ptr[2*3]
-pdtrc = np.PyUFunc_FromFuncAndData(ufunc_pdtrc_loops, ufunc_pdtrc_data, ufunc_pdtrc_types, 4, 2, 1, 0, "pdtrc", ufunc_pdtrc_doc, 0)
+pdtrc = np.PyUFunc_FromFuncAndData(ufunc_pdtrc_loops, ufunc_pdtrc_data, ufunc_pdtrc_types, 3, 2, 1, 0, "pdtrc", ufunc_pdtrc_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_pdtri_loops[4]
-cdef void *ufunc_pdtri_ptr[8]
-cdef void *ufunc_pdtri_data[4]
-cdef char ufunc_pdtri_types[12]
+cdef np.PyUFuncGenericFunction ufunc_pdtri_loops[3]
+cdef void *ufunc_pdtri_ptr[6]
+cdef void *ufunc_pdtri_data[3]
+cdef char ufunc_pdtri_types[9]
 cdef char *ufunc_pdtri_doc = (
     "pdtri(k,y)\n"
     "\n"
@@ -8838,35 +8367,28 @@ cdef char *ufunc_pdtri_doc = (
     "the Poisson density is equal to the given probability y:\n"
     "calculated by gammaincinv(k+1, y).  k must be a nonnegative\n"
     "integer and y between 0 and 1.")
-ufunc_pdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
-ufunc_pdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
-ufunc_pdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_pdtri_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_pdtri_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_pdtri_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_pdtri_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_pdtri_types[0] = <char>NPY_LONG
-ufunc_pdtri_types[1] = <char>NPY_FLOAT
-ufunc_pdtri_types[2] = <char>NPY_FLOAT
-ufunc_pdtri_types[3] = <char>NPY_LONG
-ufunc_pdtri_types[4] = <char>NPY_DOUBLE
-ufunc_pdtri_types[5] = <char>NPY_DOUBLE
-ufunc_pdtri_types[6] = <char>NPY_FLOAT
-ufunc_pdtri_types[7] = <char>NPY_FLOAT
-ufunc_pdtri_types[8] = <char>NPY_FLOAT
-ufunc_pdtri_types[9] = <char>NPY_DOUBLE
-ufunc_pdtri_types[10] = <char>NPY_DOUBLE
-ufunc_pdtri_types[11] = <char>NPY_DOUBLE
+ufunc_pdtri_types[1] = <char>NPY_DOUBLE
+ufunc_pdtri_types[2] = <char>NPY_DOUBLE
+ufunc_pdtri_types[3] = <char>NPY_FLOAT
+ufunc_pdtri_types[4] = <char>NPY_FLOAT
+ufunc_pdtri_types[5] = <char>NPY_FLOAT
+ufunc_pdtri_types[6] = <char>NPY_DOUBLE
+ufunc_pdtri_types[7] = <char>NPY_DOUBLE
+ufunc_pdtri_types[8] = <char>NPY_DOUBLE
 ufunc_pdtri_ptr[2*0] = <void*>_func_pdtri
 ufunc_pdtri_ptr[2*0+1] = <void*>(<char*>"pdtri")
-ufunc_pdtri_ptr[2*1] = <void*>_func_pdtri
+ufunc_pdtri_ptr[2*1] = <void*>_func_pdtri_unsafe
 ufunc_pdtri_ptr[2*1+1] = <void*>(<char*>"pdtri")
 ufunc_pdtri_ptr[2*2] = <void*>_func_pdtri_unsafe
 ufunc_pdtri_ptr[2*2+1] = <void*>(<char*>"pdtri")
-ufunc_pdtri_ptr[2*3] = <void*>_func_pdtri_unsafe
-ufunc_pdtri_ptr[2*3+1] = <void*>(<char*>"pdtri")
 ufunc_pdtri_data[0] = &ufunc_pdtri_ptr[2*0]
 ufunc_pdtri_data[1] = &ufunc_pdtri_ptr[2*1]
 ufunc_pdtri_data[2] = &ufunc_pdtri_ptr[2*2]
-ufunc_pdtri_data[3] = &ufunc_pdtri_ptr[2*3]
-pdtri = np.PyUFunc_FromFuncAndData(ufunc_pdtri_loops, ufunc_pdtri_data, ufunc_pdtri_types, 4, 2, 1, 0, "pdtri", ufunc_pdtri_doc, 0)
+pdtri = np.PyUFunc_FromFuncAndData(ufunc_pdtri_loops, ufunc_pdtri_data, ufunc_pdtri_types, 3, 2, 1, 0, "pdtri", ufunc_pdtri_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_pdtrik_loops[2]
 cdef void *ufunc_pdtrik_ptr[4]
@@ -9516,10 +9038,10 @@ ufunc_sindg_data[0] = &ufunc_sindg_ptr[2*0]
 ufunc_sindg_data[1] = &ufunc_sindg_ptr[2*1]
 sindg = np.PyUFunc_FromFuncAndData(ufunc_sindg_loops, ufunc_sindg_data, ufunc_sindg_types, 2, 1, 1, 0, "sindg", ufunc_sindg_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_smirnov_loops[4]
-cdef void *ufunc_smirnov_ptr[8]
-cdef void *ufunc_smirnov_data[4]
-cdef char ufunc_smirnov_types[12]
+cdef np.PyUFuncGenericFunction ufunc_smirnov_loops[3]
+cdef void *ufunc_smirnov_ptr[6]
+cdef void *ufunc_smirnov_data[3]
+cdef char ufunc_smirnov_types[9]
 cdef char *ufunc_smirnov_doc = (
     "smirnov(n, e)\n"
     "\n"
@@ -9531,75 +9053,61 @@ cdef char *ufunc_smirnov_doc = (
     "is equal to the probability that the maximum difference between a\n"
     "theoretical distribution and an empirical one based on n samples\n"
     "is greater than e.")
-ufunc_smirnov_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
-ufunc_smirnov_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
-ufunc_smirnov_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_smirnov_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_smirnov_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_smirnov_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_smirnov_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_smirnov_types[0] = <char>NPY_LONG
-ufunc_smirnov_types[1] = <char>NPY_FLOAT
-ufunc_smirnov_types[2] = <char>NPY_FLOAT
-ufunc_smirnov_types[3] = <char>NPY_LONG
-ufunc_smirnov_types[4] = <char>NPY_DOUBLE
-ufunc_smirnov_types[5] = <char>NPY_DOUBLE
-ufunc_smirnov_types[6] = <char>NPY_FLOAT
-ufunc_smirnov_types[7] = <char>NPY_FLOAT
-ufunc_smirnov_types[8] = <char>NPY_FLOAT
-ufunc_smirnov_types[9] = <char>NPY_DOUBLE
-ufunc_smirnov_types[10] = <char>NPY_DOUBLE
-ufunc_smirnov_types[11] = <char>NPY_DOUBLE
+ufunc_smirnov_types[1] = <char>NPY_DOUBLE
+ufunc_smirnov_types[2] = <char>NPY_DOUBLE
+ufunc_smirnov_types[3] = <char>NPY_FLOAT
+ufunc_smirnov_types[4] = <char>NPY_FLOAT
+ufunc_smirnov_types[5] = <char>NPY_FLOAT
+ufunc_smirnov_types[6] = <char>NPY_DOUBLE
+ufunc_smirnov_types[7] = <char>NPY_DOUBLE
+ufunc_smirnov_types[8] = <char>NPY_DOUBLE
 ufunc_smirnov_ptr[2*0] = <void*>_func_smirnov
 ufunc_smirnov_ptr[2*0+1] = <void*>(<char*>"smirnov")
-ufunc_smirnov_ptr[2*1] = <void*>_func_smirnov
+ufunc_smirnov_ptr[2*1] = <void*>_func_smirnov_unsafe
 ufunc_smirnov_ptr[2*1+1] = <void*>(<char*>"smirnov")
 ufunc_smirnov_ptr[2*2] = <void*>_func_smirnov_unsafe
 ufunc_smirnov_ptr[2*2+1] = <void*>(<char*>"smirnov")
-ufunc_smirnov_ptr[2*3] = <void*>_func_smirnov_unsafe
-ufunc_smirnov_ptr[2*3+1] = <void*>(<char*>"smirnov")
 ufunc_smirnov_data[0] = &ufunc_smirnov_ptr[2*0]
 ufunc_smirnov_data[1] = &ufunc_smirnov_ptr[2*1]
 ufunc_smirnov_data[2] = &ufunc_smirnov_ptr[2*2]
-ufunc_smirnov_data[3] = &ufunc_smirnov_ptr[2*3]
-smirnov = np.PyUFunc_FromFuncAndData(ufunc_smirnov_loops, ufunc_smirnov_data, ufunc_smirnov_types, 4, 2, 1, 0, "smirnov", ufunc_smirnov_doc, 0)
+smirnov = np.PyUFunc_FromFuncAndData(ufunc_smirnov_loops, ufunc_smirnov_data, ufunc_smirnov_types, 3, 2, 1, 0, "smirnov", ufunc_smirnov_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_smirnovi_loops[4]
-cdef void *ufunc_smirnovi_ptr[8]
-cdef void *ufunc_smirnovi_data[4]
-cdef char ufunc_smirnovi_types[12]
+cdef np.PyUFuncGenericFunction ufunc_smirnovi_loops[3]
+cdef void *ufunc_smirnovi_ptr[6]
+cdef void *ufunc_smirnovi_data[3]
+cdef char ufunc_smirnovi_types[9]
 cdef char *ufunc_smirnovi_doc = (
     "smirnovi(n, y)\n"
     "\n"
     "Inverse to smirnov\n"
     "\n"
     "Returns ``e`` such that ``smirnov(n, e) = y``.")
-ufunc_smirnovi_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
-ufunc_smirnovi_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
-ufunc_smirnovi_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_smirnovi_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_smirnovi_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_smirnovi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_smirnovi_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_smirnovi_types[0] = <char>NPY_LONG
-ufunc_smirnovi_types[1] = <char>NPY_FLOAT
-ufunc_smirnovi_types[2] = <char>NPY_FLOAT
-ufunc_smirnovi_types[3] = <char>NPY_LONG
-ufunc_smirnovi_types[4] = <char>NPY_DOUBLE
-ufunc_smirnovi_types[5] = <char>NPY_DOUBLE
-ufunc_smirnovi_types[6] = <char>NPY_FLOAT
-ufunc_smirnovi_types[7] = <char>NPY_FLOAT
-ufunc_smirnovi_types[8] = <char>NPY_FLOAT
-ufunc_smirnovi_types[9] = <char>NPY_DOUBLE
-ufunc_smirnovi_types[10] = <char>NPY_DOUBLE
-ufunc_smirnovi_types[11] = <char>NPY_DOUBLE
+ufunc_smirnovi_types[1] = <char>NPY_DOUBLE
+ufunc_smirnovi_types[2] = <char>NPY_DOUBLE
+ufunc_smirnovi_types[3] = <char>NPY_FLOAT
+ufunc_smirnovi_types[4] = <char>NPY_FLOAT
+ufunc_smirnovi_types[5] = <char>NPY_FLOAT
+ufunc_smirnovi_types[6] = <char>NPY_DOUBLE
+ufunc_smirnovi_types[7] = <char>NPY_DOUBLE
+ufunc_smirnovi_types[8] = <char>NPY_DOUBLE
 ufunc_smirnovi_ptr[2*0] = <void*>_func_smirnovi
 ufunc_smirnovi_ptr[2*0+1] = <void*>(<char*>"smirnovi")
-ufunc_smirnovi_ptr[2*1] = <void*>_func_smirnovi
+ufunc_smirnovi_ptr[2*1] = <void*>_func_smirnovi_unsafe
 ufunc_smirnovi_ptr[2*1+1] = <void*>(<char*>"smirnovi")
 ufunc_smirnovi_ptr[2*2] = <void*>_func_smirnovi_unsafe
 ufunc_smirnovi_ptr[2*2+1] = <void*>(<char*>"smirnovi")
-ufunc_smirnovi_ptr[2*3] = <void*>_func_smirnovi_unsafe
-ufunc_smirnovi_ptr[2*3+1] = <void*>(<char*>"smirnovi")
 ufunc_smirnovi_data[0] = &ufunc_smirnovi_ptr[2*0]
 ufunc_smirnovi_data[1] = &ufunc_smirnovi_ptr[2*1]
 ufunc_smirnovi_data[2] = &ufunc_smirnovi_ptr[2*2]
-ufunc_smirnovi_data[3] = &ufunc_smirnovi_ptr[2*3]
-smirnovi = np.PyUFunc_FromFuncAndData(ufunc_smirnovi_loops, ufunc_smirnovi_data, ufunc_smirnovi_types, 4, 2, 1, 0, "smirnovi", ufunc_smirnovi_doc, 0)
+smirnovi = np.PyUFunc_FromFuncAndData(ufunc_smirnovi_loops, ufunc_smirnovi_data, ufunc_smirnovi_types, 3, 2, 1, 0, "smirnovi", ufunc_smirnovi_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_spence_loops[2]
 cdef void *ufunc_spence_ptr[4]
@@ -9627,10 +9135,10 @@ ufunc_spence_data[0] = &ufunc_spence_ptr[2*0]
 ufunc_spence_data[1] = &ufunc_spence_ptr[2*1]
 spence = np.PyUFunc_FromFuncAndData(ufunc_spence_loops, ufunc_spence_data, ufunc_spence_types, 2, 1, 1, 0, "spence", ufunc_spence_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_sph_harm_loops[4]
-cdef void *ufunc_sph_harm_ptr[8]
-cdef void *ufunc_sph_harm_data[4]
-cdef char ufunc_sph_harm_types[20]
+cdef np.PyUFuncGenericFunction ufunc_sph_harm_loops[3]
+cdef void *ufunc_sph_harm_ptr[6]
+cdef void *ufunc_sph_harm_data[3]
+cdef char ufunc_sph_harm_types[15]
 cdef char *ufunc_sph_harm_doc = (
     "sph_harm(m, n, theta, phi)\n"
     "\n"
@@ -9666,43 +9174,34 @@ cdef char *ufunc_sph_harm_doc = (
     "References\n"
     "----------\n"
     ".. [1] Digital Library of Mathematical Functions, 14.30. http://dlmf.nist.gov/14.30")
-ufunc_sph_harm_loops[0] = <np.PyUFuncGenericFunction>loop_D_iidd__As_llff_F
-ufunc_sph_harm_loops[1] = <np.PyUFuncGenericFunction>loop_D_iidd__As_lldd_D
-ufunc_sph_harm_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddd__As_ffff_F
-ufunc_sph_harm_loops[3] = <np.PyUFuncGenericFunction>loop_D_dddd__As_dddd_D
+ufunc_sph_harm_loops[0] = <np.PyUFuncGenericFunction>loop_D_iidd__As_lldd_D
+ufunc_sph_harm_loops[1] = <np.PyUFuncGenericFunction>loop_D_dddd__As_ffff_F
+ufunc_sph_harm_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddd__As_dddd_D
 ufunc_sph_harm_types[0] = <char>NPY_LONG
 ufunc_sph_harm_types[1] = <char>NPY_LONG
-ufunc_sph_harm_types[2] = <char>NPY_FLOAT
-ufunc_sph_harm_types[3] = <char>NPY_FLOAT
-ufunc_sph_harm_types[4] = <char>NPY_CFLOAT
-ufunc_sph_harm_types[5] = <char>NPY_LONG
-ufunc_sph_harm_types[6] = <char>NPY_LONG
-ufunc_sph_harm_types[7] = <char>NPY_DOUBLE
-ufunc_sph_harm_types[8] = <char>NPY_DOUBLE
-ufunc_sph_harm_types[9] = <char>NPY_CDOUBLE
-ufunc_sph_harm_types[10] = <char>NPY_FLOAT
-ufunc_sph_harm_types[11] = <char>NPY_FLOAT
-ufunc_sph_harm_types[12] = <char>NPY_FLOAT
-ufunc_sph_harm_types[13] = <char>NPY_FLOAT
-ufunc_sph_harm_types[14] = <char>NPY_CFLOAT
-ufunc_sph_harm_types[15] = <char>NPY_DOUBLE
-ufunc_sph_harm_types[16] = <char>NPY_DOUBLE
-ufunc_sph_harm_types[17] = <char>NPY_DOUBLE
-ufunc_sph_harm_types[18] = <char>NPY_DOUBLE
-ufunc_sph_harm_types[19] = <char>NPY_CDOUBLE
+ufunc_sph_harm_types[2] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[3] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[4] = <char>NPY_CDOUBLE
+ufunc_sph_harm_types[5] = <char>NPY_FLOAT
+ufunc_sph_harm_types[6] = <char>NPY_FLOAT
+ufunc_sph_harm_types[7] = <char>NPY_FLOAT
+ufunc_sph_harm_types[8] = <char>NPY_FLOAT
+ufunc_sph_harm_types[9] = <char>NPY_CFLOAT
+ufunc_sph_harm_types[10] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[11] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[12] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[13] = <char>NPY_DOUBLE
+ufunc_sph_harm_types[14] = <char>NPY_CDOUBLE
 ufunc_sph_harm_ptr[2*0] = <void*>_func_sph_harmonic
 ufunc_sph_harm_ptr[2*0+1] = <void*>(<char*>"sph_harm")
-ufunc_sph_harm_ptr[2*1] = <void*>_func_sph_harmonic
+ufunc_sph_harm_ptr[2*1] = <void*>_func_sph_harmonic_unsafe
 ufunc_sph_harm_ptr[2*1+1] = <void*>(<char*>"sph_harm")
 ufunc_sph_harm_ptr[2*2] = <void*>_func_sph_harmonic_unsafe
 ufunc_sph_harm_ptr[2*2+1] = <void*>(<char*>"sph_harm")
-ufunc_sph_harm_ptr[2*3] = <void*>_func_sph_harmonic_unsafe
-ufunc_sph_harm_ptr[2*3+1] = <void*>(<char*>"sph_harm")
 ufunc_sph_harm_data[0] = &ufunc_sph_harm_ptr[2*0]
 ufunc_sph_harm_data[1] = &ufunc_sph_harm_ptr[2*1]
 ufunc_sph_harm_data[2] = &ufunc_sph_harm_ptr[2*2]
-ufunc_sph_harm_data[3] = &ufunc_sph_harm_ptr[2*3]
-sph_harm = np.PyUFunc_FromFuncAndData(ufunc_sph_harm_loops, ufunc_sph_harm_data, ufunc_sph_harm_types, 4, 4, 1, 0, "sph_harm", ufunc_sph_harm_doc, 0)
+sph_harm = np.PyUFunc_FromFuncAndData(ufunc_sph_harm_loops, ufunc_sph_harm_data, ufunc_sph_harm_types, 3, 4, 1, 0, "sph_harm", ufunc_sph_harm_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_stdtr_loops[2]
 cdef void *ufunc_stdtr_ptr[4]
@@ -10034,10 +9533,10 @@ ufunc_y1_data[0] = &ufunc_y1_ptr[2*0]
 ufunc_y1_data[1] = &ufunc_y1_ptr[2*1]
 y1 = np.PyUFunc_FromFuncAndData(ufunc_y1_loops, ufunc_y1_data, ufunc_y1_types, 2, 1, 1, 0, "y1", ufunc_y1_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_yn_loops[4]
-cdef void *ufunc_yn_ptr[8]
-cdef void *ufunc_yn_data[4]
-cdef char ufunc_yn_types[12]
+cdef np.PyUFuncGenericFunction ufunc_yn_loops[3]
+cdef void *ufunc_yn_ptr[6]
+cdef void *ufunc_yn_data[3]
+cdef char ufunc_yn_types[9]
 cdef char *ufunc_yn_doc = (
     "yn(n,x)\n"
     "\n"
@@ -10045,35 +9544,28 @@ cdef char *ufunc_yn_doc = (
     "\n"
     "Returns the Bessel function of the second kind of integer order n\n"
     "at x.")
-ufunc_yn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_lf_f
-ufunc_yn_loops[1] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
-ufunc_yn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_yn_loops[3] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_yn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_yn_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_yn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_yn_types[0] = <char>NPY_LONG
-ufunc_yn_types[1] = <char>NPY_FLOAT
-ufunc_yn_types[2] = <char>NPY_FLOAT
-ufunc_yn_types[3] = <char>NPY_LONG
-ufunc_yn_types[4] = <char>NPY_DOUBLE
-ufunc_yn_types[5] = <char>NPY_DOUBLE
-ufunc_yn_types[6] = <char>NPY_FLOAT
-ufunc_yn_types[7] = <char>NPY_FLOAT
-ufunc_yn_types[8] = <char>NPY_FLOAT
-ufunc_yn_types[9] = <char>NPY_DOUBLE
-ufunc_yn_types[10] = <char>NPY_DOUBLE
-ufunc_yn_types[11] = <char>NPY_DOUBLE
+ufunc_yn_types[1] = <char>NPY_DOUBLE
+ufunc_yn_types[2] = <char>NPY_DOUBLE
+ufunc_yn_types[3] = <char>NPY_FLOAT
+ufunc_yn_types[4] = <char>NPY_FLOAT
+ufunc_yn_types[5] = <char>NPY_FLOAT
+ufunc_yn_types[6] = <char>NPY_DOUBLE
+ufunc_yn_types[7] = <char>NPY_DOUBLE
+ufunc_yn_types[8] = <char>NPY_DOUBLE
 ufunc_yn_ptr[2*0] = <void*>_func_yn
 ufunc_yn_ptr[2*0+1] = <void*>(<char*>"yn")
-ufunc_yn_ptr[2*1] = <void*>_func_yn
+ufunc_yn_ptr[2*1] = <void*>_func_yn_unsafe
 ufunc_yn_ptr[2*1+1] = <void*>(<char*>"yn")
 ufunc_yn_ptr[2*2] = <void*>_func_yn_unsafe
 ufunc_yn_ptr[2*2+1] = <void*>(<char*>"yn")
-ufunc_yn_ptr[2*3] = <void*>_func_yn_unsafe
-ufunc_yn_ptr[2*3+1] = <void*>(<char*>"yn")
 ufunc_yn_data[0] = &ufunc_yn_ptr[2*0]
 ufunc_yn_data[1] = &ufunc_yn_ptr[2*1]
 ufunc_yn_data[2] = &ufunc_yn_ptr[2*2]
-ufunc_yn_data[3] = &ufunc_yn_ptr[2*3]
-yn = np.PyUFunc_FromFuncAndData(ufunc_yn_loops, ufunc_yn_data, ufunc_yn_types, 4, 2, 1, 0, "yn", ufunc_yn_doc, 0)
+yn = np.PyUFunc_FromFuncAndData(ufunc_yn_loops, ufunc_yn_data, ufunc_yn_types, 3, 2, 1, 0, "yn", ufunc_yn_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_yv_loops[4]
 cdef void *ufunc_yv_ptr[8]
