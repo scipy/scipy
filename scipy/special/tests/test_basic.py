@@ -2918,6 +2918,17 @@ def test_sph_harm():
            exp(0+4.*pi/8.*1j)*sin(pi/6.)**4.)
 
 
+def test_sph_harm_ufunc_loop_selection():
+    # see https://github.com/scipy/scipy/issues/4895
+    dt = np.dtype(np.complex128)
+    assert_equal(special.sph_harm(0, 0, 0, 0).dtype, dt)
+    assert_equal(special.sph_harm([0], 0, 0, 0).dtype, dt)
+    assert_equal(special.sph_harm(0, [0], 0, 0).dtype, dt)
+    assert_equal(special.sph_harm(0, 0, [0], 0).dtype, dt)
+    assert_equal(special.sph_harm(0, 0, 0, [0]).dtype, dt)
+    assert_equal(special.sph_harm([0], [0], [0], [0]).dtype, dt)
+
+
 class TestSpherical(TestCase):
     def test_sph_harm(self):
         # see test_sph_harm function
