@@ -380,6 +380,15 @@ class TestBinomP(TestCase):
     def test_bad_p(self):
         assert_raises(ValueError, stats.binom_test, [50, 50], p=2.0)
 
+    def test_alternatives(self):
+        res = stats.binom_test(51, 235, p=1./6, alternative='less')
+        assert_almost_equal(res, 0.982022657605858)
+
+        res = stats.binom_test(51, 235, p=1./6, alternative='greater')
+        assert_almost_equal(res, 0.02654424571169085)
+
+        res = stats.binom_test(51, 235, p=1./6, alternative='two-sided')
+        assert_almost_equal(res, 0.0437479701823997)
 
 class TestFindRepeats(TestCase):
 

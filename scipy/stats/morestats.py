@@ -1694,7 +1694,7 @@ def levene(*args, **kwds):
 
 
 @setastest(False)
-def binom_test(x, n=None, p=0.5):
+def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
 
@@ -1739,6 +1739,19 @@ def binom_test(x, n=None, p=0.5):
     if (p > 1.0) or (p < 0.0):
         raise ValueError("p must be in range [0,1]")
 
+    if alternative not in ('two-sided', 'less', 'greater'):
+        raise ValueError("alternative not recognized\n"
+                         "should be 'two-sided', 'less' or 'greater'")
+
+    if alternative == 'less':
+        pval = distributions.binom.cdf(x, n, p)
+        return pval
+
+    if alternative == 'greater':
+        pval = distributions.binom.sf(x-1, n, p)
+        return pval
+
+    # if alternative was neither 'less' nor 'greater', then it's 'two-sided'
     d = distributions.binom.pmf(x, n, p)
     rerr = 1 + 1e-7
     if x == p * n:
