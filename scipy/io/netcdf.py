@@ -39,7 +39,7 @@ import mmap as mm
 
 import numpy as np
 from numpy.compat import asbytes, asstr
-from numpy import fromstring, ndarray, dtype, empty, array, asarray
+from numpy import fromstring, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
