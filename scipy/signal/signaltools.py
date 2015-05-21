@@ -15,7 +15,7 @@ from scipy.fftpack import (fft, ifft, ifftshift, fft2, ifft2, fftn,
 from numpy.fft import rfftn, irfftn
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
-                   iscomplexobj, isscalar, mean, ndarray, newaxis, ones, pi,
+                   iscomplexobj, mean, ndarray, newaxis, ones, pi,
                    poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
                    prod, product, r_, ravel, real_if_close, reshape,
                    roots, sort, sum, take, transpose, unique, where, zeros,

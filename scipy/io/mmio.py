@@ -513,7 +513,6 @@ class MMFile (object):
             if len(a.shape) != 2:
                 raise ValueError('Expected 2 dimensional array')
             rows,cols = a.shape
-            entries = rows*cols
 
             if field is not None:
 
@@ -532,7 +531,6 @@ class MMFile (object):
                 raise ValueError('unknown matrix type: %s' % type(a))
             rep = 'coordinate'
             rows, cols = a.shape
-            entries = a.getnnz()
 
         typecode = a.dtype.char
 
