@@ -30,7 +30,7 @@ from scipy.linalg import qr as s_qr
 
 import numpy
 from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
-                   squeeze, diag, asarray, product, zeros, array,
+                   squeeze, asarray, product, zeros, array,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
 import copy
 
