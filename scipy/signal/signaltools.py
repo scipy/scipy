@@ -867,6 +867,15 @@ def lfilter(b, a, x, axis=-1, zi=None):
         If `zi` is None, this is not returned, otherwise, `zf` holds the
         final filter delay values.
 
+    See Also
+    --------
+    lfiltic : Construct initial conditions for `lfilter`.
+    lfilter_zi : Compute initial state (steady state of step response) for
+                 `lfilter`.
+    filtfilt : A forward-backward filter, to obtain a filter with linear phase.
+    savgol_filter : A Savitzky-Golay filter.
+    sosfilt: Filter data using cascaded second-order sections.
+
     Notes
     -----
     The filter function is implemented as a direct II transposed structure.
@@ -895,11 +904,51 @@ def lfilter(b, a, x, axis=-1, zi=None):
                              -1               -na
                  a[0] + a[1]z  + ... + a[na] z
 
+    Examples
+    --------
+    Generate a noisy signal to be filtered:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> t = np.linspace(-1, 1, 201)
+    >>> x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) + 0.1*np.sin(2*np.pi*1.25*t + 1)
+    ...      + 0.18*np.cos(2*np.pi*3.85*t))
+    >>> xn = x + np.random.randn(len(t)) * 0.08
+
+    Create an order 3 lowpass butterworth filter:
+
+    >>> b, a = signal.butter(3, 0.05)
+
+    Apply the filter to xn.  Use lfilter_zi to choose the initial condition of
+    the filter:
+
+    >>> zi = signal.lfilter_zi(b, a)
+    >>> z, _ = signal.lfilter(b, a, xn, zi=zi*xn[0])
+
+    Apply the filter again, to have a result filtered at an order the same as
+    filtfilt:
+
+    >>> z2, _ = signal.lfilter(b, a, z, zi=zi*z[0])
+
+    Use filtfilt to apply the filter:
+
+    >>> y = signal.filtfilt(b, a, xn)
+
+    Plot the original signal and the various filtered versions:
+
+    >>> plt.figure
+    >>> plt.plot(t, xn, 'b', alpha=0.75)
+    >>> plt.plot(t, z, 'r--', t, z2, 'r', t, y, 'k')
+    >>> plt.legend(('noisy signal', 'lfilter, once', 'lfilter, twice',
+    ...             'filtfilt'), loc='best')
+    >>> plt.grid(True)
+    >>> plt.show()
+
     """
     a = np.atleast_1d(a)
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
-        # Any of b, a, x, or zi can set the dtype, but there is no default 
+        # Any of b, a, x, or zi can set the dtype, but there is no default
         # casting of other types; instead a NotImplementedError is raised.
         b = np.asarray(b)
         a = np.asarray(a)
@@ -999,7 +1048,7 @@ def lfiltic(b, a, y, x=None):
 
     See Also
     --------
-    lfilter
+    lfilter, lfilter_zi
 
     """
     N = np.size(a) - 1
@@ -1124,7 +1173,7 @@ def hilbert(x, N=None, axis=-1):
     ---------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
-        
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import hilbert, chirp
@@ -1134,15 +1183,15 @@ def hilbert(x, N=None, axis=-1):
     >>> samples = int(fs*duration)
     >>> t = np.arange(samples) / fs
 
-    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and 
+    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and
     apply an amplitude modulation.
-    
-    >>> signal = chirp(t, 20.0, t[-1], 100.0)    
+
+    >>> signal = chirp(t, 20.0, t[-1], 100.0)
     >>> signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
 
-    The amplitude envelope is given by magnitude of the analytic signal. The 
-    instantaneous frequency can be obtained by differentiating the instantaneous 
-    phase in respect to time. The instantaneous phase corresponds to the phase 
+    The amplitude envelope is given by magnitude of the analytic signal. The
+    instantaneous frequency can be obtained by differentiating the instantaneous
+    phase in respect to time. The instantaneous phase corresponds to the phase
     angle of the analytic signal.
 
     >>> analytic_signal = hilbert(signal)
@@ -1166,7 +1215,7 @@ def hilbert(x, N=None, axis=-1):
     .. [1] Wikipedia, "Analytic signal".
            http://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing, 
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing,
            Third Edition, 2009. Chapter 12. ISBN 13: 978-1292-02572-8
 
     """
@@ -1905,6 +1954,10 @@ def lfilter_zi(b, a):
     zi : 1-D ndarray
         The initial state for the filter.
 
+    See Also
+    --------
+    lfilter, lfiltic, filtfilt
+
     Notes
     -----
     A linear filter with order m has a state space representation (A, B, C, D),
@@ -2329,7 +2382,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     See Also
     --------
-    lfilter_zi, lfilter
+    lfilter_zi, lfilter, lfiltic, savgol_filter, sosfilt
 
     Notes
     -----
