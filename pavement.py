@@ -410,7 +410,7 @@ def bdist_superpack(options):
         except OSError:
             # May be due to dev version having 'Unknown' in name, if git isn't
             # found.  This can be the case when compiling under Wine.
-            ix = source.find('.dev0+') + 5
+            ix = source.find('.dev0+') + 6
             source = source[:ix] + 'Unknown' + source[ix+7:]
             os.rename(source, target)
 
