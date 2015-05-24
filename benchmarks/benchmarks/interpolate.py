@@ -10,7 +10,7 @@ except ImportError:
     pass
 
 try:
-    from scipy.interpolate import PPoly
+    import scipy.interpolate as interpolate
 except ImportError:
     pass
 
@@ -64,10 +64,84 @@ class BenchPPoly(Benchmark):
         m, k = 55, 3
         x = np.sort(np.random.random(m+1))
         c = np.random.random((3, m))
-        self.pp = PPoly(c, x)
+        self.pp = interpolate.PPoly(c, x)
 
         npts = 100
         self.xp = np.linspace(0, 1, npts)
 
     def time_evaluation(self):
         self.pp(self.xp)
+
+
+class GridData(Benchmark):
+    param_names = ['n_grids', 'method']
+    params = [
+        [10j, 100j, 1000j],
+        ['nearest', 'linear', 'cubic']
+    ]
+    
+    def setup(self, n_grids, method):
+        self.func = lambda x, y: x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+        self.grid_x, self.grid_y = np.mgrid[0:1:n_grids, 0:1:n_grids]
+        self.points = np.random.rand(1000, 2)
+        self.values = self.func(self.points[:,0], self.points[:,1])
+
+    def time_evaluation(self, n_grids, method):
+        interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y), method=method)
+
+
+class Interpolate1d(Benchmark):
+    param_names = ['n_samples', 'method']
+    params = [
+        [10, 50, 100],
+        ['linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic'],
+    ]
+
+    def setup(self, n_samples, method):
+        self.x = np.arange(n_samples)
+        self.y = np.exp(-self.x/3.0)
+
+    def time_interpolate(self, n_samples, method):
+        interpolate.interp1d(self.x, self.y, kind=method)
+
+
+class Interpolate2d(Benchmark):
+    param_names = ['n_samples', 'method']
+    params = [
+        [10, 50, 100],
+        ['linear', 'cubic', 'quintic'],
+    ]
+
+    def setup(self, n_samples, method):
+        r_samples = n_samples / 2.
+        self.x = np.arange(-r_samples, r_samples, 0.25)
+        self.y = np.arange(-r_samples, r_samples, 0.25)
+        self.xx, self.yy = np.meshgrid(self.x, self.y)
+        self.z = np.sin(self.xx**2+self.yy**2)
+
+    def time_interpolate(self, n_samples, method):
+        interpolate.interp2d(self.x, self.y, self.z, kind=method)
+
+
+class Rbf(Benchmark):
+    param_names = ['n_samples', 'function']
+    params = [
+        [10, 50, 100],
+        ['multiquadric', 'inverse', 'gaussian', 'linear', 'cubic', 'quintic', 'thin_plate']
+    ]
+
+    def setup(self, n_samples, function):
+        self.x = np.arange(n_samples)
+        self.y = np.exp(-self.x / 3.0)
+        r_samples = n_samples / 2.
+        self.X = np.arange(-r_samples, r_samples, 0.25)
+        self.Y = np.arange(-r_samples, r_samples, 0.25)
+        self.z = np.sin(self.X**2+self.Y**2)
+
+    def time_rbf_1d(self, n_samples, function):
+        interpolate.Rbf(self.x, self.y, function=function)
+
+    def time_rbf_2d(self, n_samples, function):
+        interpolate.Rbf(self.X, self.Y, self.z, function=function)
+
+
