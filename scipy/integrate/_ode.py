@@ -93,6 +93,7 @@ from numpy import asarray, array, zeros, int32, isscalar, real, imag, vstack
 from . import vode as _vode
 from . import _dop
 from . import lsoda as _lsoda
+from scipy.optimize import brentq
 
 
 #------------------------------------------------------------------------------
@@ -585,6 +586,29 @@ class complex_ode(ode):
         else:
             raise TypeError("selected integrator does not support solouta,"
                             + "choose another one")
+
+
+class event_ode(ode):
+    def set_event_function(self, event_function):
+        """Set a function that takes `t` and `y` and returns a real number."""
+        self.event_function = event_function
+    def event_value(self):
+        """Calculates `event_function` at the current `t` and `y`."""
+        return self.event_function(self.t, self.y)
+    def set_event_target(self, event_target):
+        """The value at which the event is considered triggered."""
+        self.event_target = event_target
+    def find_event_in_interval(self, t_low, t_high, y_low, y_high):
+        """Given an interval in which the event is triggered, find the exact time."""
+        def f(t):
+            self.set_initial_value(y_low, t_low)
+            self.integrate(t)
+            if not self.successful():
+                raise RuntimeError("The integrator failed")
+            return self.event_value() - self.event_target
+        t0 = brentq(f, t_low, t_high, disp=True)
+        self.set_initial_value(y_high, t_high)
+        return t0
 
 
 #------------------------------------------------------------------------------
