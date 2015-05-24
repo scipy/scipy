@@ -52,7 +52,7 @@ MAJOR = 0
 MINOR = 16
 MICRO = 0
 ISRELEASED = True
-VERSION = '%d.%d.%db1' % (MAJOR, MINOR, MICRO)
+VERSION = '%d.%d.%db2' % (MAJOR, MINOR, MICRO)
 
 
 # Return the git revision as a string
