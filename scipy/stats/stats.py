@@ -650,7 +650,7 @@ def mode(a, axis=0):
     return ModeResult(mostfrequent, oldcounts)
 
 
-def mask_to_limits(a, limits, inclusive):
+def _mask_to_limits(a, limits, inclusive):
     """Mask an array for values outside of given limits.
 
     This is primarily a utility function.
@@ -725,15 +725,8 @@ def tmean(a, limits=None, inclusive=(True, True)):
     if limits is None:
         return np.mean(a, None)
 
-    am = mask_to_limits(a.ravel(), limits, inclusive)
+    am = _mask_to_limits(a.ravel(), limits, inclusive)
     return am.mean()
-
-
-def masked_var(am):
-    m = am.mean()
-    s = ma.add.reduce((am - m)**2)
-    n = am.count() - 1.0
-    return s / n
 
 
 def tvar(a, limits=None, inclusive=(True, True)):
@@ -773,8 +766,8 @@ def tvar(a, limits=None, inclusive=(True, True)):
     if limits is None:
         n = len(a)
         return a.var() * n/(n-1.)
-    am = mask_to_limits(a, limits, inclusive)
-    return masked_var(am)
+    am = _mask_to_limits(a, limits, inclusive)
+    return np.ma.var(am, ddof=1)
 
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
@@ -806,7 +799,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
 
     """
     a, axis = _chk_asarray(a, axis)
-    am = mask_to_limits(a, (lowerlimit, None), (inclusive, False))
+    am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
 
 
@@ -838,7 +831,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
 
     """
     a, axis = _chk_asarray(a, axis)
-    am = mask_to_limits(a, (None, upperlimit), (False, inclusive))
+    am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
 
 
@@ -911,8 +904,8 @@ def tsem(a, limits=None, inclusive=(True, True)):
     if limits is None:
         return a.std(ddof=1) / np.sqrt(a.size)
 
-    am = mask_to_limits(a, limits, inclusive)
-    sd = np.sqrt(masked_var(am))
+    am = _mask_to_limits(a, limits, inclusive)
+    sd = np.sqrt(np.ma.var(am, ddof=1))
     return sd / np.sqrt(am.count())
 
 
