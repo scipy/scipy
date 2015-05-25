@@ -107,7 +107,7 @@ class LSQBenchmarkProblem(object):
             then False is returned.
         """
         if (self.lb is not None and np.any(x < self.lb) or
-            self.ub is not None and np.any(x > self.ub)):
+                self.ub is not None and np.any(x > self.ub)):
             return False
 
         f = np.sum(self.fun(x) ** 2)

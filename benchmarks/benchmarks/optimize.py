@@ -8,12 +8,9 @@ import numpy as np
 try:
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
+    from scipy.optimize import leastsq
 except ImportError:
     pass
-
-from scipy.optimize import leastsq
-
-
 
 from . import test_functions as funcs
 from .common import Benchmark
@@ -242,6 +239,7 @@ class BenchSmoothUnbounded(Benchmark):
 
 
 class BenchLeastSquares(Benchmark):
+    """Class for benchmarking nonlinear least squares solvers."""
     problems = extract_lsq_problems()
     params = [
         list(problems.keys()),
