@@ -11,8 +11,13 @@ try:
 except ImportError:
     pass
 
+from scipy.optimize import leastsq
+
+
+
 from . import test_functions as funcs
 from .common import Benchmark
+from .lsq_problems import extract_lsq_problems
 
 
 class _BenchOptimizers(Benchmark):
@@ -30,7 +35,7 @@ class _BenchOptimizers(Benchmark):
         additional keywords passed to the minimizer.  e.g. tol, maxiter
     """
     def __init__(self, function_name, fun, der=None, hess=None,
-                  **minimizer_kwargs):
+                 **minimizer_kwargs):
         self.function_name = function_name
         self.fun = fun
         self.der = der
@@ -234,3 +239,41 @@ class BenchSmoothUnbounded(Benchmark):
         for i in range(10):
             b.bench_run(np.random.uniform(-2,2,natoms*3), methods=methods)
         return b
+
+
+class BenchLeastSquares(Benchmark):
+    problems = extract_lsq_problems()
+    params = [
+        list(problems.keys()),
+        ["average time", "nfev", "success"]
+    ]
+    param_names = [
+        "problem", "result type"
+    ]
+
+    def track_all(self, problem_name, result_type):
+        problem = self.problems[problem_name]
+
+        if problem.lb is not None or problem.ub is not None:
+            raise NotImplementedError
+
+        ftol = 1e-5
+
+        if result_type == 'average time':
+            n_runs = 10
+            t0 = time.time()
+            for _ in range(n_runs):
+                leastsq(problem.fun, problem.x0, Dfun=problem.jac, ftol=ftol,
+                        full_output=True)
+            return (time.time() - t0) / n_runs
+
+        x, cov_x, info, message, ier = leastsq(
+            problem.fun, problem.x0, Dfun=problem.jac,
+            ftol=ftol, full_output=True
+        )
+        if result_type == 'nfev':
+            return info['nfev']
+        elif result_type == 'success':
+            return int(problem.check_answer(x, ftol))
+        else:
+            raise NotImplementedError
