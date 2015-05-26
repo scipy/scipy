@@ -695,7 +695,6 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     /* if the mode is 'constant' we need some temps later: */
     if (mode == NI_EXTEND_CONSTANT) {
         zeros = malloc(rank * sizeof(npy_intp*));
-        zeros = (npy_intp**)malloc(rank * sizeof(npy_intp*));
         if (NI_UNLIKELY(!zeros)) {
             NPY_END_THREADS;
             PyErr_NoMemory();
