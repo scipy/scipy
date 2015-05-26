@@ -695,7 +695,7 @@ def _mask_to_limits(a, limits, inclusive):
     return am
 
 
-def tmean(a, limits=None, inclusive=(True, True)):
+def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     Compute the trimmed mean.
 
@@ -726,10 +726,10 @@ def tmean(a, limits=None, inclusive=(True, True)):
         return np.mean(a, None)
 
     am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean()
+    return am.mean(axis=axis)
 
 
-def tvar(a, limits=None, inclusive=(True, True)):
+def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed variance
 
@@ -767,7 +767,7 @@ def tvar(a, limits=None, inclusive=(True, True)):
         n = len(a)
         return a.var() * n/(n-1.)
     am = _mask_to_limits(a, limits, inclusive)
-    return np.ma.var(am, ddof=1)
+    return np.ma.var(am, ddof=ddof, axis=axis)
 
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
@@ -835,7 +835,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     return ma.maximum.reduce(am, axis)
 
 
-def tstd(a, limits=None, inclusive=(True, True)):
+def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed sample standard deviation
 
@@ -866,10 +866,10 @@ def tstd(a, limits=None, inclusive=(True, True)):
     correction factor ``n / (n - 1)``.
 
     """
-    return np.sqrt(tvar(a, limits, inclusive))
+    return np.sqrt(tvar(a, limits, inclusive, axis, ddof))
 
 
-def tsem(a, limits=None, inclusive=(True, True)):
+def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed standard error of the mean.
 
@@ -902,10 +902,10 @@ def tsem(a, limits=None, inclusive=(True, True)):
     """
     a = np.asarray(a).ravel()
     if limits is None:
-        return a.std(ddof=1) / np.sqrt(a.size)
+        return a.std(ddof=ddof) / np.sqrt(a.size)
 
     am = _mask_to_limits(a, limits, inclusive)
-    sd = np.sqrt(np.ma.var(am, ddof=1))
+    sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
     return sd / np.sqrt(am.count())
 
 
