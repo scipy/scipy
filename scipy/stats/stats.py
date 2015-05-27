@@ -2470,12 +2470,12 @@ def f_oneway(*args):
     na = len(args)    # ANOVA on 'na' groups, each in it's own array
     alldata = np.concatenate(args)
     bign = len(alldata)
-    sstot = ss(alldata) - (square_of_sums(alldata) / float(bign))
+    sstot = _sum_of_squares(alldata) - (_square_of_sums(alldata) / float(bign))
     ssbn = 0
     for a in args:
-        ssbn += square_of_sums(a) / float(len(a))
+        ssbn += _square_of_sums(a) / float(len(a))
 
-    ssbn -= (square_of_sums(alldata) / float(bign))
+    ssbn -= (_square_of_sums(alldata) / float(bign))
     sswn = sstot - ssbn
     dfbn = na - 1
     dfwn = bign - na
@@ -2531,7 +2531,7 @@ def pearsonr(x, y):
     my = y.mean()
     xm, ym = x - mx, y - my
     r_num = np.add.reduce(xm * ym)
-    r_den = np.sqrt(ss(xm) * ss(ym))
+    r_den = np.sqrt(_sum_of_squares(xm) * _sum_of_squares(ym))
     r = r_num / r_den
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of floating
@@ -4374,7 +4374,7 @@ def kruskal(*args):
     j = np.insert(np.cumsum(n), 0, 0)
     ssbn = 0
     for i in range(na):
-        ssbn += square_of_sums(ranked[j[i]:j[i+1]]) / float(n[i])
+        ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / float(n[i])
 
     totaln = np.sum(n)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
@@ -4680,6 +4680,10 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 
 @np.deprecate(message="scipy.stats.ss is deprecated in scipy 0.17.0")
 def ss(a, axis=0):
+    return _sum_of_squares(a, axis)
+
+
+def _sum_of_squares(a, axis=0):
     """
     Squares each element of the input array, and returns the sum(s) of that.
 
@@ -4693,26 +4697,13 @@ def ss(a, axis=0):
 
     Returns
     -------
-    ss : ndarray
+    sum_of_squares : ndarray
         The sum along the given axis for (a**2).
 
     See also
     --------
-    square_of_sums : The square(s) of the sum(s) (the opposite of `ss`).
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> a = np.array([1., 2., 5.])
-    >>> stats.ss(a)
-    30.0
-
-    And calculating along an axis:
-
-    >>> b = np.array([[1., 2., 5.], [2., 5., 6.]])
-    >>> stats.ss(b, axis=1)
-    array([ 30., 65.])
-
+    _square_of_sums : The square(s) of the sum(s) (the opposite of
+    `_sum_of_squares`).
     """
     a, axis = _chk_asarray(a, axis)
     return np.sum(a*a, axis)
@@ -4721,6 +4712,10 @@ def ss(a, axis=0):
 @np.deprecate(message="scipy.stats.square_of_sums is deprecated "
               "in scipy 0.17.0")
 def square_of_sums(a, axis=0):
+    return _square_of_sums(a, axis)
+
+
+def _square_of_sums(a, axis=0):
     """
     Sums elements of the input array, and returns the square(s) of that sum.
 
@@ -4739,17 +4734,7 @@ def square_of_sums(a, axis=0):
 
     See also
     --------
-    ss : The sum of squares (the opposite of `square_of_sums`).
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> a = np.arange(20).reshape(5,4)
-    >>> stats.square_of_sums(a)
-    array([ 1600.,  2025.,  2500.,  3025.])
-    >>> stats.square_of_sums(a, axis=None)
-    36100.0
-
+    _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
     """
     a, axis = _chk_asarray(a, axis)
     s = np.sum(a, axis)
