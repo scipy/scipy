@@ -25,6 +25,12 @@ New features
 Deprecated features
 ===================
 
+``scipy.stats.ss`` is deprecated. This is a support function, not meant to 
+be exposed to the user. Also, the name is unclear. See issue #663 for details.
+
+``scipy.stats.square_of_sums`` is deprecated. This too is a support function 
+not meant to be exposed to the user. See issues #665 and #663 for details.
+
 
 Backwards incompatible changes
 ==============================
