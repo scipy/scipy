@@ -18,6 +18,7 @@ import numpy as np
 
 import scipy.misc
 from scipy.linalg.basic import solve, solve_triangular
+from scipy.special import betaln, gammaln
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
@@ -89,7 +90,7 @@ def _onenorm_matrix_power_nnm(A, p):
     M = A.T
     for i in range(p):
         v = M.dot(v)
-    return max(v)
+    return v.max()
 
 
 def _onenorm(A):
@@ -798,25 +799,30 @@ def _ell(A, m):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
 
-    p = 2*m + 1
-
-    # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
-    # They are coefficients of terms of a generating function series expansion.
-    choose_2p_p = scipy.misc.comb(2*p, p, exact=True)
-    abs_c_recip = float(choose_2p_p * math.factorial(2*p + 1))
-
-    # This is explained after Eq. (1.2) of the 2009 expm paper.
-    # It is the "unit roundoff" of IEEE double precision arithmetic.
-    u = 2**-53
-
+    #TODO use cached abs(A) and cached matrix vector products.
     # Compute the one-norm of matrix power p of abs(A).
-    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), p)
+    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), 2*m + 1)
 
     # Treat zero norm as a special case.
     if not A_abs_onenorm:
         return 0
 
-    alpha = A_abs_onenorm / (_onenorm(A) * abs_c_recip)
-    log2_alpha_div_u = np.log2(alpha/u)
-    value = int(np.ceil(log2_alpha_div_u / (2 * m)))
+    # This is the log of the absolute value of the first
+    # structurally nonzero coefficient in the Maclaurin series
+    # of log(pade(m, x) / exp(x)) where pade(m, x) is the mth order pade
+    # approximation of exp(x).  Everything else being equal,
+    # if the approximation is good then the log ratio will be small
+    # with the first structurally nonzero coefficient near zero.
+    # In that case the log of the absolute value of the coefficient will be
+    # negative or small.
+    # Some explanation is given near equation (3.1) in the 2009 paper,
+    # and between equations (2.1) and (2.6) of the 2005 paper.
+    log_abs_c = betaln(m+1, m+1) - gammaln(2*m + 1)
+
+    # This notation is explained after Eq. (1.2) of the 2009 paper.
+    log2_u = -53
+
+    log2_abs_c = log_abs_c / np.log(2)
+    log2_alpha = log2_abs_c + np.log2(A_abs_onenorm) - np.log2(_onenorm(A))
+    value = int(np.ceil((log2_alpha - log2_u) / (2*m)))
     return max(value, 0)
