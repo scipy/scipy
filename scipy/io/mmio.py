@@ -288,17 +288,22 @@ class MMFile (object):
         isskew = 1
         isherm = a.dtype.char in 'FD'
         
-        # define iterator over symmetric pair entries
         if isinstance(a,spmatrix):
-            dok = a.todok()
+            # check if number of nonzero entrys of lower and upper triangle matrix are equal
+            (row, col) = a.nonzero()
+            if (row < col).sum() != (row > col).sum():
+                return MMFile.SYMMETRY_GENERAL
+            
+            # define iterator over symmetric pair entries
+            a = a.todok()
             
             def symm_iterator():
-                for ((i, j), aij) in dok.items():
+                for ((i, j), aij) in a.items():
                     if i > j:
-                        aji = dok[j, i]
+                        aji = a[j, i]
                         yield (aij, aji)
-        else:
-            
+        else:            
+            # define iterator over symmetric pair entries
             def symm_iterator():
                 for j in range(n):
                     for i in range(j+1,n):
