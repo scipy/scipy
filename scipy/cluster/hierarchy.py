@@ -1667,20 +1667,11 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_xticklabels([])
         else:
             ax.set_xticks(ivticks)
-            ax.set_xticklabels(ivl)
-        ax.xaxis.set_ticks_position('bottom')
+            ax.set_xticklabels(ivl,
+                               rotation=(leaf_rotation or float(_get_tick_rotation(len(ivl)))),
+                               size=(leaf_font_size or float(_get_tick_text_size(len(ivl)))))
 
-        lbls = ax.get_xticklabels()
-        if leaf_rotation:
-            map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
-        else:
-            leaf_rot = float(_get_tick_rotation(len(ivl)))
-            map(lambda lbl: lbl.set_rotation(leaf_rot), lbls)
-        if leaf_font_size:
-            map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
-        else:
-            leaf_fs = float(_get_tick_text_size(len(ivl)))
-            map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
+        ax.xaxis.set_ticks_position('bottom')
 
         # Make the tick marks invisible because they cover up the links
         for line in ax.get_xticklines():
@@ -1695,20 +1686,9 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_xticklabels([])
         else:
             ax.set_xticks(ivticks)
-            ax.set_xticklabels(ivl)
-
-        lbls = ax.get_xticklabels()
-        if leaf_rotation:
-            map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
-        else:
-            leaf_rot = float(_get_tick_rotation(p))
-            map(lambda lbl: lbl.set_rotation(leaf_rot), lbls)
-
-        if leaf_font_size:
-            map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
-        else:
-            leaf_fs = float(_get_tick_text_size(p))
-            map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
+            ax.set_xticklabels(ivl,
+                               rotation=(leaf_rotation or float(_get_tick_rotation(p))),
+                               size=(leaf_font_size or float(_get_tick_text_size(p))))
 
         ax.xaxis.set_ticks_position('top')
         # Make the tick marks invisible because they cover up the links
@@ -1724,13 +1704,14 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_yticklabels([])
         else:
             ax.set_yticks(ivticks)
-            ax.set_yticklabels(ivl)
-
-        lbls = ax.get_yticklabels()
-        if leaf_rotation:
-            map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
-        if leaf_font_size:
-            map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
+            if leaf_rotation and leaf_font_size:
+               ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font_size)
+            elif leaf_rotation:
+               ax.set_yticklabels(ivl, rotation=leaf_rotation)
+            elif leaf_font_size:
+               ax.set_yticklabels(ivl, size=leaf_font_size)
+            else:
+               ax.set_yticklabels(ivl)
 
         ax.yaxis.set_ticks_position('left')
         # Make the tick marks invisible because they cover up the
@@ -1747,13 +1728,14 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_yticklabels([])
         else:
             ax.set_yticks(ivticks)
-            ax.set_yticklabels(ivl)
-
-        lbls = ax.get_yticklabels()
-        if leaf_rotation:
-            map(lambda lbl: lbl.set_rotation(leaf_rotation), lbls)
-        if leaf_font_size:
-            map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
+            if leaf_rotation and leaf_font_size:
+               ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font_size)
+            elif leaf_rotation:
+               ax.set_yticklabels(ivl, rotation=leaf_rotation)
+            elif leaf_font_size:
+               ax.set_yticklabels(ivl, size=leaf_font_size)
+            else:
+               ax.set_yticklabels(ivl)
 
         ax.yaxis.set_ticks_position('right')
         # Make the tick marks invisible because they cover up the links
