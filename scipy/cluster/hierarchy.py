@@ -1667,15 +1667,14 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_xticklabels([])
         else:
             ax.set_xticks(ivticks)
+            ax.xaxis.set_ticks_position('bottom')
+
+            # Make the tick marks invisible because they cover up the links
+            for line in ax.get_xticklines():
+                line.set_visible(False)
             ax.set_xticklabels(ivl,
                                rotation=(leaf_rotation or float(_get_tick_rotation(len(ivl)))),
                                size=(leaf_font_size or float(_get_tick_text_size(len(ivl)))))
-
-        ax.xaxis.set_ticks_position('bottom')
-
-        # Make the tick marks invisible because they cover up the links
-        for line in ax.get_xticklines():
-            line.set_visible(False)
     elif orientation == 'bottom':
         ax.set_ylim([dvw, 0])
         ax.set_xlim([0, ivw])
@@ -1686,14 +1685,14 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_xticklabels([])
         else:
             ax.set_xticks(ivticks)
-            ax.set_xticklabels(ivl,
-                               rotation=(leaf_rotation or float(_get_tick_rotation(p))),
-                               size=(leaf_font_size or float(_get_tick_text_size(p))))
+            ax.xaxis.set_ticks_position('top')
 
-        ax.xaxis.set_ticks_position('top')
-        # Make the tick marks invisible because they cover up the links
-        for line in ax.get_xticklines():
-            line.set_visible(False)
+            # Make the tick marks invisible because they cover up the links
+            for line in ax.get_xticklines():
+                line.set_visible(False)
+            ax.set_xticklabels(ivl,
+                               rotation=(leaf_rotation or float(_get_tick_rotation(len(ivl)))),
+                               size=(leaf_font_size or float(_get_tick_text_size(len(ivl)))))
     elif orientation == 'left':
         ax.set_xlim([0, dvw])
         ax.set_ylim([0, ivw])
@@ -1704,20 +1703,15 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_yticklabels([])
         else:
             ax.set_yticks(ivticks)
-            if leaf_rotation and leaf_font_size:
-               ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font_size)
-            elif leaf_rotation:
-               ax.set_yticklabels(ivl, rotation=leaf_rotation)
-            elif leaf_font_size:
-               ax.set_yticklabels(ivl, size=leaf_font_size)
-            else:
-               ax.set_yticklabels(ivl)
+            ax.yaxis.set_ticks_position('left')
+            # Make the tick marks invisible because they cover up the
+            # links
+            for line in ax.get_yticklines():
+                line.set_visible(False)
 
-        ax.yaxis.set_ticks_position('left')
-        # Make the tick marks invisible because they cover up the
-        # links
-        for line in ax.get_yticklines():
-            line.set_visible(False)
+            ax.set_yticklabels(ivl,
+                               rotation=(leaf_rotation or float(_get_tick_rotation(len(ivl)))),
+                               size=(leaf_font_size or float(_get_tick_text_size(len(ivl)))))
     elif orientation == 'right':
         ax.set_xlim([dvw, 0])
         ax.set_ylim([0, ivw])
@@ -1728,19 +1722,14 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_yticklabels([])
         else:
             ax.set_yticks(ivticks)
-            if leaf_rotation and leaf_font_size:
-               ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font_size)
-            elif leaf_rotation:
-               ax.set_yticklabels(ivl, rotation=leaf_rotation)
-            elif leaf_font_size:
-               ax.set_yticklabels(ivl, size=leaf_font_size)
-            else:
-               ax.set_yticklabels(ivl)
+            ax.yaxis.set_ticks_position('right')
+            # Make the tick marks invisible because they cover up the links
+            for line in ax.get_yticklines():
+                line.set_visible(False)
 
-        ax.yaxis.set_ticks_position('right')
-        # Make the tick marks invisible because they cover up the links
-        for line in ax.get_yticklines():
-            line.set_visible(False)
+            ax.set_yticklabels(ivl,
+                               rotation=(leaf_rotation or float(_get_tick_rotation(len(ivl)))),
+                               size=(leaf_font_size or float(_get_tick_text_size(len(ivl)))))
 
     # Let's use collections instead. This way there is a separate legend
     # item for each tree grouping, rather than stupidly one for each line
