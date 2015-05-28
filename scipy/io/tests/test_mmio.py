@@ -28,6 +28,22 @@ class TestMMIOArray(TestCase):
         b = mmread(fn)
         assert_array_almost_equal(a,b)
 
+    def test_simple_upper_triangle(self):
+        a = [[0,1],[0,0]]
+        fn = self.fn
+        mmwrite(fn,a)
+        assert_equal(mminfo(fn),(2,2,4,'array','integer','general'))
+        b = mmread(fn)
+        assert_array_almost_equal(a,b)
+
+    def test_simple_lower_triangle(self):
+        a = [[0,0],[1,0]]
+        fn = self.fn
+        mmwrite(fn,a)
+        assert_equal(mminfo(fn),(2,2,4,'array','integer','general'))
+        b = mmread(fn)
+        assert_array_almost_equal(a,b)
+
     def test_simple_rectangular(self):
         a = [[1,2,3],[4,5,6]]
         fn = self.fn
@@ -127,6 +143,24 @@ class TestMMIOSparseCSR(TestMMIOArray):
         fn = self.fn
         mmwrite(fn,a)
         assert_equal(mminfo(fn),(2,2,4,'coordinate','integer','general'))
+        b = mmread(fn)
+        assert_array_almost_equal(a.todense(),b.todense())
+
+    def test_simple_upper_triangle(self):
+        a = [[0,1],[0,0]]
+        a = scipy.sparse.csr_matrix(a)
+        fn = self.fn
+        mmwrite(fn,a)
+        assert_equal(mminfo(fn),(2,2,1,'coordinate','integer','general'))
+        b = mmread(fn)
+        assert_array_almost_equal(a.todense(),b.todense())
+
+    def test_simple_lower_triangle(self):
+        a = [[0,0],[1,0]]
+        a = scipy.sparse.csr_matrix(a)
+        fn = self.fn
+        mmwrite(fn,a)
+        assert_equal(mminfo(fn),(2,2,1,'coordinate','integer','general'))
         b = mmread(fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
