@@ -91,3 +91,13 @@ def test_values():
 def test_ufunc():
     assert_array_almost_equal(
         lambertw(r_[0., e, 1.]), r_[0., 1., 0.567143290409783873])
+
+
+def test_lambertw_ufunc_loop_selection():
+    # see https://github.com/scipy/scipy/issues/4895
+    dt = np.dtype(np.complex128)
+    assert_equal(lambertw(0, 0, 0).dtype, dt)
+    assert_equal(lambertw([0], 0, 0).dtype, dt)
+    assert_equal(lambertw(0, [0], 0).dtype, dt)
+    assert_equal(lambertw(0, 0, [0]).dtype, dt)
+    assert_equal(lambertw([0], [0], [0]).dtype, dt)
