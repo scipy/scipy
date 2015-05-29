@@ -198,6 +198,7 @@ def logm(A, disp=True):
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
     F = scipy.linalg._matfuncs_inv_ssq._logm(A)
+    F = _maybe_real(A, F)
     errtol = 1000*eps
     #TODO use a better error approximation
     errest = norm(expm(F)-A,1) / norm(A,1)
