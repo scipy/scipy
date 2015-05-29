@@ -1714,9 +1714,9 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             leaf_font = float(_get_tick_text_size(len(ivl))) if (leaf_font_size is None) else leaf_font_size
             
             if leaf_rotation is not None:
-               ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font)
+                ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font)
             else:
-               ax.set_yticklabels(ivl, size=leaf_font)
+                ax.set_yticklabels(ivl, size=leaf_font)
 
     elif orientation == 'right':
         ax.set_xlim([dvw, 0])
@@ -1736,9 +1736,9 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             leaf_font = float(_get_tick_text_size(len(ivl))) if (leaf_font_size is None) else leaf_font_size
             
             if leaf_rotation is not None:
-               ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font)
+                ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font)
             else:
-               ax.set_yticklabels(ivl, size=leaf_font)
+                ax.set_yticklabels(ivl, size=leaf_font)
 
     # Let's use collections instead. This way there is a separate legend
     # item for each tree grouping, rather than stupidly one for each line
