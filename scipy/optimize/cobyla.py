@@ -30,7 +30,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     """
     Minimize a function using the Constrained Optimization BY Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
-    implentation of the algorithm.
+    implementation of the algorithm.
 
     Parameters
     ----------
