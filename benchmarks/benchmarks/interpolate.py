@@ -163,8 +163,9 @@ class UnivariateSpline(Benchmark):
 
 class BivariateSpline(Benchmark):
     """
-    Created on Thu Nov 26 22:00:20 2009
     Author: josef-pktd and scipy mailinglist example
+    'http://scipy-user.10969.n7.nabble.com/BivariateSpline-examples\
+    -and-my-crashing-python-td14801.html'
     """
     param_names = ['n_samples']
     params = [
@@ -193,3 +194,27 @@ class BivariateSpline(Benchmark):
 
     def time_lsq_bivariate_spline(self, n_samples):
         interpolate.LSQBivariateSpline(self.x, self.y, self.z, self.xknots.flat, self.yknots.flat)
+
+
+class Interpolate(Benchmark):
+    """
+    Linear Interpolate in scipy and numpy
+    """
+    param_names = ['n_samples', 'module']
+    params = [
+        [10, 50, 100],
+        ['numpy', 'scipy']
+    ]
+
+    def setup(self, n_samples, module):
+        self.x = np.arange(n_samples)
+        self.y = np.exp(-self.x/3.0)
+        self.z = np.random.normal(size=self.x.shape)
+
+    def time_interpolate(self, n_samples, module):
+        if module == 'scipy':
+            interpolate.interp1d(self.x, self.y, kind="linear")
+        else:
+            np.interp(self.z, self.x, self.y)
+
+
