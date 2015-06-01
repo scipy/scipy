@@ -5,6 +5,7 @@ import operator
 import sys
 import warnings
 import numbers
+import inspect
 
 import numpy as np
 
@@ -73,7 +74,7 @@ class DeprecatedImport(object):
 def check_random_state(seed):
     """Turn seed into a np.random.RandomState instance
 
-    If seed is None (or np.random), return the RandomState singleton used 
+    If seed is None (or np.random), return the RandomState singleton used
     by np.random.
     If seed is an int, return a new RandomState instance seeded with seed.
     If seed is already a RandomState instance, return it.
@@ -140,3 +141,36 @@ def _asarray_validated(a, check_finite=True,
             raise ValueError('object arrays are not supported')
     return a
 
+
+def inspect_args(func):
+    """
+    Args/defaults from inspect.getargspec (py2k) or inspect.signature (py3k).
+
+    `inspect.signature` does not exist in Python 2.x, and `inspect.getargspec`
+    is deprecated in Python 3.x.  This function is a simple wrapper around both
+    that returns only the parameters and defaults lists (typically all that is
+    needed within Scipy).
+
+    Parameters
+    ----------
+    func : callable
+        The function to inspect.
+
+    Returns
+    -------
+    args : sequence of str
+        The argument names.  For Python 2.x, a list of strings.  For Python
+        3.x, an OrderedDict.
+    defaults : list
+        A list of defaults for keyword arguments.
+
+    """
+    if sys.version_info[0] >= 3:
+        sig = inspect.signature(func)
+        args = sig.parameters
+        tmp_defaults = [d.default for d in sig.parameters.values()]
+        defaults = [d for d in tmp_defaults if d is not inspect._empty]
+    else:
+        args, _, _, defaults = inspect.getargspec(func)
+
+    return args, defaults

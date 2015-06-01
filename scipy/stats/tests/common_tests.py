@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
 import inspect
 import warnings
 
@@ -8,6 +9,7 @@ import numpy.testing as npt
 import numpy.ma.testutils as ma_npt
 
 from scipy._lib._version import NumpyVersion
+from scipy._lib._util import inspect_args
 from scipy import stats
 
 
@@ -126,10 +128,17 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
     ## Check calling w/ named arguments.
 
     # check consistency of shapes, numargs and _parse signature
-    signature = inspect.getargspec(distfn._parse_args)
-    npt.assert_(signature.varargs is None)
-    npt.assert_(signature.keywords is None)
-    npt.assert_(signature.defaults == defaults)
+    npt.assert_(defaults == inspect_args(distfn._parse_args)[1])
+    if sys.version_info >= 3:
+        signature = inspect.getargspec(distfn._parse_args)
+        npt.assert_(signature.varargs is None)
+        npt.assert_(signature.keywords is None)
+    else:
+        sig = inspect.signature(distfn._parse_args)
+        npt.assert_(not any([a.kind is a.VAR_POSITIONAL for a in
+                             sig.parameters.values()]))
+        npt.assert_(not any([a.kind is a.VAR_KEYWORD for a in
+                             sig.parameters.values()]))
 
     shape_argnames = signature.args[1:-len(defaults)]  # self, a, b, loc=0, scale=1
     if distfn.shapes:

@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
 import warnings
 from . import _minpack
 
@@ -294,9 +295,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         in x0, otherwise the default `maxfev` is 200*(N+1).
     epsfcn : float, optional
         A variable used in determining a suitable step length for the forward-
-        difference approximation of the Jacobian (for Dfun=None). 
+        difference approximation of the Jacobian (for Dfun=None).
         Normally the actual step length will be sqrt(epsfcn)*x
-        If epsfcn is less than the machine precision, it is assumed that the 
+        If epsfcn is less than the machine precision, it is assumed that the
         relative errors are of the order of the machine precision.
     factor : float, optional
         A parameter determining the initial step bound
@@ -542,8 +543,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
-        import inspect
-        args, varargs, varkw, defaults = inspect.getargspec(f)
+        from scipy._lib._util import inspect_args
+        args, _ = inspect_args(f)
         if len(args) < 2:
             msg = "Unable to determine number of fit parameters."
             raise ValueError(msg)
