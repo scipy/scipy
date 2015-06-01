@@ -659,9 +659,12 @@ def write_release_task(options, filename='NOTES.txt'):
     target = paver.path.path(filename)
     if target.exists():
         target.remove()
-    source.copy(target)
-    ftarget = open(str(target), 'a')
-    ftarget.writelines("""
+
+    tmp_target = paver.path.path(filename + '.tmp')
+    source.copy(tmp_target)
+
+    with open(str(tmp_target), 'a') as ftarget:
+        ftarget.writelines("""
 Checksums
 =========
 
@@ -669,13 +672,23 @@ MD5
 ~~~
 
 """)
-    ftarget.writelines(['%s\n' % c for c in compute_md5(idirs)])
-    ftarget.writelines("""
+        ftarget.writelines(['%s\n' % c for c in compute_md5(idirs)])
+        ftarget.writelines("""
 SHA256
 ~~~~~~
 
 """)
-    ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
+        ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
+
+    # Sign release
+    cmd = ['gpg', '--clearsign', '--armor']
+    if hasattr(options, 'gpg_key'):
+        cmd += ['--default-key', options.gpg_key]
+    cmd += ['--output', str(target), str(tmp_target)]
+    subprocess.check_call(cmd)
+    print("signed %s" % (target,))
+    tmp_target.remove()
+
 
 def write_log_task(filename='Changelog'):
     st = subprocess.Popen(
@@ -688,6 +701,7 @@ def write_log_task(filename='Changelog'):
     a.close()
 
 @task
+@cmdopts([('gpg_key=', 'g', 'GPG key to use for signing')])
 def write_release(options):
     write_release_task(options)
 
@@ -696,6 +710,7 @@ def write_log():
     write_log_task()
 
 @task
+@cmdopts([('gpg_key=', 'g', 'GPG key to use for signing')])
 def write_release_and_log(options):
     write_release_task(options, os.path.join(options.installers.releasedir, 'README'))
     write_log_task(os.path.join(options.installers.releasedir, 'Changelog'))
