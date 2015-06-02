@@ -4222,6 +4222,7 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact=None,
                  alternative='two-sided'):
     """
     Computes the Mann-Whitney rank test on samples x and y.
+
     Parameters
     ----------
     x, y : array_like
@@ -4231,23 +4232,40 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact=None,
             account. Default is True.
     use_exact : bool, optional
             Whether an exact test should be performed on the data.
-            Default is to run an exact test when the number of possible
-            sequences for inputs of length x, y is under 100,000.
+            See notes for default behavior.
+
     Returns
     -------
     u : float
         The Mann-Whitney U statistic.
     prob : float
         Two-sided p-value.
+
     Notes
     -----
-    Use only when the number of observation in each sample is > 20 and
-    you have 2 independent samples of ranks. Mann-Whitney U is
-    significant at the alpha level if the u-obtained is less than or equal
-    to the critical value of U.
-    This test corrects for ties and by default uses a continuity correction.
-    The reported p-value is for a two-sided hypothesis, to get the one-sided
+    Exact tests should be used for smaller sample sizes. Concretely, as
+    len(x) and len(y) increase to and beyond 8, the distribution of U differs
+    negligibly from the normal distribution[1]. The default behavior of this
+    test is to calculate the number of possible sequences for inputs of
+    length(x) and length(y), and to do an exact calculation if the number of
+    possible combinations is <100000. The default behavior may be overridden
+    with the use_exact flag.
+
+    This test corrects for ties and by default uses a continuity correction
+    when approximating the U statistic distribution.
+
+    The reported p-value is for a two-sided hypothesis. To get the one-sided
     p-value set alternative to 'greater' or 'less' (default is 'two-sided').
+
+    The reported U statistic mirrors the behavior of the wilcoxon.test
+    procedure of the R stats package v3.2.0, always reporting min(u1, u2),
+    even in one-sided tests.
+
+    References
+    ----------
+    .. [1] HB Mann and DR Whitney (1947). "On a Test of Whether one of Two
+            Random Variables is Stochastically Larger than the Other".
+            Annals of Mathematical Statistics. doi:10.1214/aoms/1177730491
     """
     x = asarray(x)
     y = asarray(y)
