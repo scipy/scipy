@@ -2557,14 +2557,40 @@ class TestMannWhitneyU(TestCase):
             1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
             1.])
 
-    def test_mannwhitneyu(self):
-        # p-value verified with matlab and R to 5 significant digits
-        assert_array_almost_equal(stats.stats.mannwhitneyu(self.x,self.y),
-                        (16980.5, 2.8214327656317373e-005), decimal=12)
+        self.a = np.array([0, 1, 4, 3, 2])
+
+        self.b = np.array([3.1, 4.1, 5, 6])
+
+    # p-values and statistic compared against wilcox.test from R stats
+    def test_two_tailed_exact(self):
+        assert_array_almost_equal(stats.stats.mannwhitneyu(self.a, self.b),
+                        (1, 0.031746031746031744), decimal=12)
+
+    def test_less_exact(self):
+        res = stats.stats.mannwhitneyu(self.a, self.b, alternative='less')
+        assert_array_almost_equal(res, (1, 0.015873015873015872), decimal=12)
+
+    def test_greater_exact(self):
+        res = stats.stats.mannwhitneyu(self.a, self.b, alternative='greater')
+        assert_array_almost_equal(res, (1, 0.99206349206349209), decimal=12)
+
+    def test_two_tailed_approx(self):
+        assert_array_almost_equal(stats.stats.mannwhitneyu(self.x, self.y),
+                        (16980.5, 5.6428655312664487e-005), decimal=12)
+
+    def test_less_approx(self):
+        res = stats.stats.mannwhitneyu(self.x, self.y, alternative='less')
+        assert_array_almost_equal(res, (16980.5, 2.8214327656332243e-05),
+                                  decimal=12)
+
+    def test_greater_approx(self):
+        res = stats.stats.mannwhitneyu(self.x, self.y, alternative='greater')
+        assert_array_almost_equal(res, (16980.5, 0.9999719954296038),
+                                  decimal=12)
 
     def test_named_tuple(self):
         # test for namedtuple attribute results
-        attributes = ('statistic', 'pvalue')
+        attributes = ('u', 'p')
         res = stats.mannwhitneyu(self.x, self.y)
         check_named_results(res, attributes)
 
