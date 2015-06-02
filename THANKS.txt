@@ -147,6 +147,7 @@ Irvin Probst (ENSTA Bretagne) for pole placement.
 Ian Henriksen for Cython wrappers for BLAS and LAPACK
 Fukumu Tsutsumi for bug fixes.
 J.J. Green for interpolation bug fixes.
+Alex Wagner for improving the Mann-Whitney-Wilcoxon test (stats.mannwhitneyu).
 
 
 Institutions

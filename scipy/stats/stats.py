@@ -4261,6 +4261,8 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact=None,
     procedure of the R stats package v3.2.0, always reporting min(u1, u2),
     even in one-sided tests.
 
+    .. versionadded:: 0.17.0
+
     References
     ----------
     .. [1] HB Mann and DR Whitney (1947). "On a Test of Whether one of Two
