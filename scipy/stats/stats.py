@@ -4218,10 +4218,9 @@ def ks_2samp(data1, data2):
     return Ks_2sampResult(d, prob)
 
 
-def mannwhitneyu(x, y, use_continuity=True):
+def mannwhitneyu(x, y, use_continuity=True, use_exact=None, alpha=0.05):
     """
     Computes the Mann-Whitney rank test on samples x and y.
-
     Parameters
     ----------
     x, y : array_like
@@ -4229,50 +4228,73 @@ def mannwhitneyu(x, y, use_continuity=True):
     use_continuity : bool, optional
             Whether a continuity correction (1/2.) should be taken into
             account. Default is True.
-
+    use_exact : bool, optional
+            Whether an exact test should be performed on the data.
+            Default is to run an exact test when the number of possible
+            sequences for inputs of length x, y is under 100,000.
     Returns
     -------
-    statistic : float
-        The Mann-Whitney statistics.
-    pvalue : float
-        One-sided p-value assuming a asymptotic normal distribution.
-
+    u : float
+        The Mann-Whitney U statistic.
+    prob : float
+        Two-sided p-value.
     Notes
     -----
     Use only when the number of observation in each sample is > 20 and
     you have 2 independent samples of ranks. Mann-Whitney U is
-    significant if the u-obtained is LESS THAN or equal to the critical
-    value of U.
-
+    significant at the alpha level if the u-obtained is less than or equal
+    to the critical value of U.
     This test corrects for ties and by default uses a continuity correction.
-    The reported p-value is for a one-sided hypothesis, to get the two-sided
-    p-value multiply the returned p-value by 2.
-
+    The reported p-value is for a two-sided hypothesis, to get the one-sided
+    p-value set alternative to 'greater' or 'less' (default is 'two-sided').
     """
     x = asarray(x)
     y = asarray(y)
     n1 = len(x)
     n2 = len(y)
-    ranked = rankdata(np.concatenate((x, y)))
-    rankx = ranked[0:n1]  # get the x-ranks
-    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx, axis=0)  # calc U for x
-    u2 = n1*n2 - u1  # remainder is U for y
-    bigu = max(u1, u2)
-    smallu = min(u1, u2)
-    T = tiecorrect(ranked)
-    if T == 0:
-        raise ValueError('All numbers are identical in amannwhitneyu')
-    sd = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
-
-    if use_continuity:
-        # normal approximation for prob calc with continuity correction
-        z = abs((bigu - 0.5 - n1*n2/2.0) / sd)
+    if use_exact is None:
+        use_exact = (n1 < 10 or n2 < 10) and n1 + n2 < 100000 \
+            and math.factorial(n1 + n2)/math.factorial(n1)/math.factorial(n2) < 100000
+    ranked = rankdata(np.concatenate((x,y)))
+    rankx = ranked[0:n1]       # get the x-ranks
+    if use_exact:
+        a = list(range(n1, n1+n2))
+        u = [0]
+        while sum(a) != sum(range(n2)):   # When in leftmost position, a == list(range(n2))
+            # Do the shift operation
+            i = 0
+            while a[i] == i:
+                i += 1
+            a[i] -= 1
+            j = i - 1
+            while j >= 0:
+                a[j] = a[i] - (i - j)
+                j -= 1
+            # count(a < a1) = U2
+            u1 = 0
+            u2 = 0
+            for i, x in enumerate(a):
+                u1 += n1 - x + i + 1
+            u2 = n1*n2 - u1
+            # store min U value to array
+            u.append(min(u1, u2))
     else:
-        z = abs((bigu - n1*n2/2.0) / sd)  # normal approximation for prob calc
+        u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
+        u2 = n1*n2 - u1                            # remainder is U for y
+        bigu = max(u1,u2)
+        smallu = min(u1,u2)
+        T = tiecorrect(ranked)
+        if T == 0:
+            raise ValueError('All numbers are identical in mannwhitneyu')
 
-    MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
-                                                           'pvalue'))
-    return MannwhitneyuResult(smallu, distributions.norm.sf(z))
+        sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
+
+        if use_continuity:
+            # normal approximation for prob calc with continuity correction
+            z = abs((bigu-0.5-n1*n2/2.0) / sd)
+        else:
+            z = abs((bigu-n1*n2/2.0) / sd)  # normal approximation for prob calc
+        return smallu, distributions.norm.sf(z)  # (1.0 - zprob(z))
 
 
 def ranksums(x, y):
