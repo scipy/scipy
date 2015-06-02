@@ -301,6 +301,7 @@ kl_div -- kl_div: dd->d                                    -- _convex_analysis.p
 rel_entr -- rel_entr: dd->d                                -- _convex_analysis.pxd
 huber -- huber: dd->d                                      -- _convex_analysis.pxd
 pseudo_huber -- pseudo_huber: dd->d                        -- _convex_analysis.pxd
+exprel -- exprel: d->d                                     -- _exprel.pxd
 """
 
 #---------------------------------------------------------------------------------
