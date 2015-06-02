@@ -4238,8 +4238,8 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact=None,
     -------
     u : float
         The Mann-Whitney U statistic.
-    prob : float
-        Two-sided p-value.
+    p : float
+        p-value.
 
     Notes
     -----
