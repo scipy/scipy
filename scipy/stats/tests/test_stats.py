@@ -2524,10 +2524,10 @@ def test_kurtosistest_too_few_samples():
     x = np.arange(4.0)
     assert_raises(ValueError, stats.kurtosistest, x)
 
-class TestWilcoxon(TestCase):
+class TestMWW(TestCase):
 
     def __init__(self, *args, **kwargs):
-        super(TestWilcoxon, self).__init__(*args, **kwargs)
+        super(TestMWW, self).__init__(*args, **kwargs)
         self.x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -2567,39 +2567,39 @@ class TestWilcoxon(TestCase):
 
     # p-values and statistic compared against wilcox.test from R stats
     def test_two_tailed_exact(self):
-        res = stats.stats.wilcoxon(self.a, self.b)
+        res = stats.stats.mww(self.a, self.b)
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (1, 0.031746031746031744), decimal=12)
         assert_string_equal(res.alternative, self.alt_two)
 
     def test_less_exact(self):
-        res = stats.stats.wilcoxon(self.a, self.b, alternative='less')
+        res = stats.stats.mww(self.a, self.b, alternative='less')
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (1, 0.015873015873015872), decimal=12)
         assert_string_equal(res.alternative, self.alt_less)
 
     def test_greater_exact(self):
-        res = stats.stats.wilcoxon(self.a, self.b, alternative='greater')
+        res = stats.stats.mww(self.a, self.b, alternative='greater')
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (1, 0.99206349206349209), decimal=12)
         assert_string_equal(res.alternative, self.alt_greater)
 
     def test_two_tailed_approx(self):
-        res = stats.stats.wilcoxon(self.x, self.y)
+        res = stats.stats.mww(self.x, self.y)
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16980.5, 5.6428655312664487e-005),
                                   decimal=12)
         assert_string_equal(res.alternative, self.alt_two)
 
     def test_less_approx(self):
-        res = stats.stats.wilcoxon(self.x, self.y, alternative='less')
+        res = stats.stats.mww(self.x, self.y, alternative='less')
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16980.5, 2.8214327656332243e-05),
                                   decimal=12)
         assert_string_equal(res.alternative, self.alt_less)
 
     def test_greater_approx(self):
-        res = stats.stats.wilcoxon(self.x, self.y, alternative='greater')
+        res = stats.stats.mww(self.x, self.y, alternative='greater')
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16980.5, 0.9999719954296038),
                                   decimal=12)

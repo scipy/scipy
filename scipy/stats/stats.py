@@ -199,7 +199,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'wilcoxon',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'chisqprob', 'betai',
+           'chisqprob', 'betai', 'mww',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
            'nanstd', 'nanmedian', 'combine_pvalues', ]
@@ -4224,7 +4224,7 @@ def ks_2samp(data1, data2):
     Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
     return Ks_2sampResult(d, prob)
 
-@np.deprecate(new_name="wilcoxon")
+@np.deprecate(new_name="mww")
 def mannwhitneyu(x, y, use_continuity=True):
     """
     Computes the Mann-Whitney rank test on samples x and y.
@@ -4278,7 +4278,7 @@ def mannwhitneyu(x, y, use_continuity=True):
 
 
 # TODO: add paired=False, do a signed-rank test if paired=True or y is not provided. See morestats.wilcoxon
-def wilcoxon(x, y, correction=True, exact='auto',
+def mww(x, y, correction=True, exact='auto',
              alternative='two-sided'):
     """
     Computes two-sample unpaired Mann-Whitney-Wilcoxon tests.
@@ -4428,7 +4428,7 @@ def wilcoxon(x, y, correction=True, exact='auto',
     s = Bunch(statistic=u, pvalue=p, alternative=alt)
     return s
 
-@np.deprecate(new_name='wilcoxon')
+@np.deprecate(new_name='mww')
 def ranksums(x, y):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.
