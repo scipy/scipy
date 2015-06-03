@@ -176,7 +176,7 @@ from scipy._lib.six import xrange
 
 # Scipy imports.
 from scipy._lib.six import callable, string_types
-from numpy import array, asarray, ma, zeros
+from numpy import array, asarray, ma, zeros, compress
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
@@ -4277,22 +4277,29 @@ def mannwhitneyu(x, y, use_continuity=True):
     return MannwhitneyuResult(smallu, distributions.norm.sf(z))
 
 
-# TODO: add paired=False, do a signed-rank test if paired=True or y is not provided.
-def wilcoxon(x, y, use_continuity=True, use_exact='auto',
-                 alternative='two-sided'):
+# TODO: add paired=False, do a signed-rank test if paired=True or y is not provided. See morestats.wilcoxon
+def wilcoxon(x, y, correction=True, exact='auto',
+             alternative='two-sided'):
     """
     Computes two-sample unpaired Mann-Whitney-Wilcoxon tests.
 
     Parameters
     ----------
-    x, y : array_like
-        Array of samples, should be one-dimensional.
-    use_continuity : bool, optional
-            Whether a continuity correction (1/2.) should be taken into
-            account. Default is True.
-    use_exact : bool, optional
-            Whether an exact test should be performed on the data.
-            See notes for default behavior.
+    x : array_like
+        The first set of measurements.
+    y : array_like
+        The second set of measurements.
+    correction : bool, optional
+        If True, apply continuity correction by adjusting the Wilcoxon rank
+        statistic by 0.5 towards the mean value when computing the z-statistic.
+        Default is False.
+    exact : bool, optional
+        Whether an exact test should be performed on the data. See notes for
+        default behavior.
+    alternative : string, optional
+        Whether a two-tailed or one-tailed test should be performed on the
+        supplied vectors. Arguments are 'two-tailed', 'less', and 'greater'.
+        Default is 'two-tailed'.
 
     Returns
     -------
@@ -4304,7 +4311,7 @@ def wilcoxon(x, y, use_continuity=True, use_exact='auto',
         exact : bool
             Indicates if an exact pvalue was calculated.
         alternative : string
-            Describes the alternative hypothesis
+            Describes the alternative hypothesis.
 
     Notes
     -----
@@ -4333,13 +4340,14 @@ def wilcoxon(x, y, use_continuity=True, use_exact='auto',
     .. [1] HB Mann and DR Whitney (1947). "On a Test of Whether one of Two
             Random Variables is Stochastically Larger than the Other".
             Annals of Mathematical Statistics. doi:10.1214/aoms/1177730491
+    .. [2] http://en.wikipedia.org/wiki/Mann–Whitney_U_test
     """
     x = asarray(x)
     y = asarray(y)
     n1 = len(x)
     n2 = len(y)
-    if use_exact == 'auto':
-        use_exact = (n1 < 10 or n2 < 10) and n1 + n2 < 100000 \
+    if exact == 'auto':
+        exact = (n1 < 10 or n2 < 10) and n1 + n2 < 100000 \
             and -np.log(n1 + n2 + 1) - special.betaln(n1 + 1, n2 + 1) < np.log(100000)
     ranked = rankdata(np.concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
@@ -4349,7 +4357,7 @@ def wilcoxon(x, y, use_continuity=True, use_exact='auto',
     if alternative not in ('two-sided', 'less', 'greater'):
         raise AttributeError("Alternative should be one of: "
                              "'two-sided', 'less', or 'greater'")
-    if use_exact:
+    if exact:
         a = list(range(n1, n1+n2))
         u = [0]
         while sum(a) != sum(range(n2)):   # When in leftmost position, a == list(range(n2))
@@ -4400,7 +4408,7 @@ def wilcoxon(x, y, use_continuity=True, use_exact='auto',
 
         sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
 
-        if use_continuity:
+        if correction:
             # normal approximation for prob calc with continuity correction
             z = (bigu-0.5-n1*n2/2.0) / sd
         else:
