@@ -587,6 +587,9 @@ def _expm(A, use_exact_onenorm):
     # Core of expm, separated to allow testing exact and approximate
     # algorithms.
 
+    # This is for caching.
+    ell_helper = _EllHelper(A)
+
     # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
     if isinstance(A, (list, tuple)):
         A = np.asarray(A)
@@ -606,22 +609,22 @@ def _expm(A, use_exact_onenorm):
 
     # Try Pade order 3.
     eta_1 = max(h.d4_loose, h.d6_loose)
-    if eta_1 < 1.495585217958292e-002 and _ell(h.A, 3) == 0:
+    if eta_1 < 1.495585217958292e-002 and ell_helper.ell(3) == 0:
         U, V = h.pade3()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade order 5.
     eta_2 = max(h.d4_tight, h.d6_loose)
-    if eta_2 < 2.539398330063230e-001 and _ell(h.A, 5) == 0:
+    if eta_2 < 2.539398330063230e-001 and ell_helper.ell(5) == 0:
         U, V = h.pade5()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade orders 7 and 9.
     eta_3 = max(h.d6_tight, h.d8_loose)
-    if eta_3 < 9.504178996162932e-001 and _ell(h.A, 7) == 0:
+    if eta_3 < 9.504178996162932e-001 and ell_helper.ell(7) == 0:
         U, V = h.pade7()
         return _solve_P_Q(U, V, structure=structure)
-    if eta_3 < 2.097847961257068e+000 and _ell(h.A, 9) == 0:
+    if eta_3 < 2.097847961257068e+000 and ell_helper.ell(9) == 0:
         U, V = h.pade9()
         return _solve_P_Q(U, V, structure=structure)
 
@@ -779,7 +782,60 @@ def _fragment_2_1(X, T, s):
     return X
 
 
-def _ell(A, m):
+class _EllHelper(object):
+    # Track abs(A) and matrix-vector products like
+    # np.linalg.matrix_power(np.absolute(A), p).dot(np.ones(n, 1)).
+    def __init__(self, A):
+        if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+            raise ValueError('expected A to be like a square matrix')
+        self.A = A
+        self.n = A.shape[1]
+        self._A_abs = None
+        self._A_onenorm = None
+        self._products = {}
+        self._norms = {}
+
+    @property
+    def onenorm(self):
+        if self._A_onenorm is None:
+            self._A_onenorm = _onenorm(self.A)
+        return self._A_onenorm
+
+    @property
+    def A_abs(self):
+        if self._A_abs is None:
+            self._A_abs = np.absolute(self.A)
+        return self._A_abs
+
+    def product(self, p):
+        # Lazy np.linalg.matrix_power(np.absolute(A), p).dot(np.ones(n)).
+        if p in self._products:
+            return self._products[p]
+        if not self._products:
+            self._products[0] = np.ones((self.n, 1), dtype=float)
+        # Get the largest existing index less than p.
+        # Linear search should be OK.
+        n = max(x for x in self._products if x < p)
+        v = self._products[n]
+        for k in range(n+1, p+1):
+            v = self.A_abs.dot(v)
+            self._products[k] = v
+        return v
+
+    def onenorm_power_abs(self, p):
+        # One-norm of matrix power of entrywise absolute value matrix.
+        if p in self._norms:
+            return self._norms[p]
+        v = self.product(p)
+        a = v.max()
+        self._norms[p] = a
+        return a
+
+    def ell(self, m):
+        return _ell(None, m, self.onenorm, self.onenorm_power_abs(2*m + 1))
+
+
+def _ell(A, m, A_onenorm=None, A_onenorm_power_abs=None):
     """
     A helper function for expm_2009.
 
@@ -789,6 +845,10 @@ def _ell(A, m):
         A linear operator whose norm of power we care about.
     m : int
         The power of the linear operator
+    A_onenorm : foo
+        foo
+    A_onenorm_power_abs : foo
+        foo
 
     Returns
     -------
@@ -796,16 +856,18 @@ def _ell(A, m):
         A value related to a bound.
 
     """
-    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected A to be like a square matrix')
-
-    #TODO use cached abs(A) and cached matrix vector products.
-    # Compute the one-norm of matrix power p of abs(A).
-    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), 2*m + 1)
+    if A_onenorm_power_abs is None:
+        A_onenorm_power_abs = _onenorm_matrix_power_nnm(np.absolute(A), 2*m + 1)
 
     # Treat zero norm as a special case.
-    if not A_abs_onenorm:
+    # TODO check that this is appropriate
+    # Returning zero means a low-order pade approximation is more likely
+    # to be used.
+    if not A_onenorm_power_abs:
         return 0
+
+    if A_onenorm is None:
+        A_onenorm = _onenorm(A)
 
     # This is the log of the absolute value of the first
     # structurally nonzero coefficient in the Maclaurin series
@@ -823,6 +885,6 @@ def _ell(A, m):
     log2_u = -53
 
     log2_abs_c = log_abs_c / np.log(2)
-    log2_alpha = log2_abs_c + np.log2(A_abs_onenorm) - np.log2(_onenorm(A))
-    value = int(np.ceil((log2_alpha - log2_u) / (2*m)))
+    log2_norm_ratio = np.log2(A_onenorm_power_abs) - np.log2(A_onenorm)
+    value = int(np.ceil((log2_abs_c + log2_norm_ratio - log2_u) / (2*m)))
     return max(value, 0)
