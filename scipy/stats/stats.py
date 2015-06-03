@@ -4218,7 +4218,7 @@ def ks_2samp(data1, data2):
     return Ks_2sampResult(d, prob)
 
 
-def mannwhitneyu(x, y, use_continuity=True, use_exact=None,
+def mannwhitneyu(x, y, use_continuity=True, use_exact='auto',
                  alternative='two-sided'):
     """
     Computes the Mann-Whitney rank test on samples x and y.
@@ -4274,7 +4274,7 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact=None,
     n1 = len(x)
     n2 = len(y)
     Stats = namedtuple('Stats', ['u', 'p'])
-    if use_exact is None:
+    if use_exact == 'auto':
         use_exact = (n1 < 10 or n2 < 10) and n1 + n2 < 100000 \
             and math.factorial(n1 + n2)/math.factorial(n1)/math.factorial(n2) < 100000
     ranked = rankdata(np.concatenate((x,y)))
