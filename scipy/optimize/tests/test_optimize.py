@@ -722,14 +722,11 @@ class TestOptimizeScalar(TestCase):
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.minimize_scalar(self.fun, method='Brent')
-        assert(x.success)
+        assert_(x.success)
 
-        try:
-            x = optimize.minimize_scalar(self.fun, method='Brent',
-                                         options=dict(maxiter=3))
-        except:
-            self.fail("exception raised")
-        assert(not x.success)
+        x = optimize.minimize_scalar(self.fun, method='Brent',
+                                     options=dict(maxiter=3))
+        assert_(not x.success)
 
         x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
                                     args=(1.5, ), method='Brent').x
