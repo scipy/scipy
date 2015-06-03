@@ -4340,7 +4340,7 @@ def wilcoxon(x, y, correction=True, exact='auto',
     .. [1] HB Mann and DR Whitney (1947). "On a Test of Whether one of Two
             Random Variables is Stochastically Larger than the Other".
             Annals of Mathematical Statistics. doi:10.1214/aoms/1177730491
-    .. [2] http://en.wikipedia.org/wiki/Mann–Whitney_U_test
+    .. [2] http://en.wikipedia.org/wiki/Mann-Whitney_U_test
     """
     x = asarray(x)
     y = asarray(y)
