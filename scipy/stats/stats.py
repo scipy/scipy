@@ -4340,7 +4340,7 @@ def wilcoxon(x, y, use_continuity=True, use_exact='auto',
     n2 = len(y)
     if use_exact == 'auto':
         use_exact = (n1 < 10 or n2 < 10) and n1 + n2 < 100000 \
-            and -np.log(n1 + n2 + 1) - special.betaln(n1 + 1, n2 + 1) < 100
+            and -np.log(n1 + n2 + 1) - special.betaln(n1 + 1, n2 + 1) < np.log(100000)
     ranked = rankdata(np.concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
     T = tiecorrect(ranked)
