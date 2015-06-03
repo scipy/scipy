@@ -16,7 +16,7 @@ from numpy.testing import (TestCase, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_raises, run_module_suite, assert_allclose,
-                           dec)
+                           assert_string_equal, dec)
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
@@ -2524,10 +2524,10 @@ def test_kurtosistest_too_few_samples():
     x = np.arange(4.0)
     assert_raises(ValueError, stats.kurtosistest, x)
 
-class TestMannWhitneyU(TestCase):
+class TestWilcoxon(TestCase):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(TestWilcoxon, self).__init__(*args, **kwargs)
         self.x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -2561,38 +2561,49 @@ class TestMannWhitneyU(TestCase):
 
         self.b = np.array([3.1, 4.1, 5, 6])
 
+        self.alt_two = 'x and y are sampled from different populations'
+        self.alt_less = 'x is sampled from a population of smaller values than y'
+        self.alt_greater = 'x is sampled from a population of larger values than y'
+
     # p-values and statistic compared against wilcox.test from R stats
     def test_two_tailed_exact(self):
-        assert_array_almost_equal(stats.stats.mannwhitneyu(self.a, self.b),
-                        (1, 0.031746031746031744), decimal=12)
+        res = stats.stats.wilcoxon(self.a, self.b)
+        ra = [res.statistic, res.pvalue]
+        assert_array_almost_equal(ra, (1, 0.031746031746031744), decimal=12)
+        assert_string_equal(res.alternative, self.alt_two)
 
     def test_less_exact(self):
-        res = stats.stats.mannwhitneyu(self.a, self.b, alternative='less')
-        assert_array_almost_equal(res, (1, 0.015873015873015872), decimal=12)
+        res = stats.stats.wilcoxon(self.a, self.b, alternative='less')
+        ra = [res.statistic, res.pvalue]
+        assert_array_almost_equal(ra, (1, 0.015873015873015872), decimal=12)
+        assert_string_equal(res.alternative, self.alt_less)
 
     def test_greater_exact(self):
-        res = stats.stats.mannwhitneyu(self.a, self.b, alternative='greater')
-        assert_array_almost_equal(res, (1, 0.99206349206349209), decimal=12)
+        res = stats.stats.wilcoxon(self.a, self.b, alternative='greater')
+        ra = [res.statistic, res.pvalue]
+        assert_array_almost_equal(ra, (1, 0.99206349206349209), decimal=12)
+        assert_string_equal(res.alternative, self.alt_greater)
 
     def test_two_tailed_approx(self):
-        assert_array_almost_equal(stats.stats.mannwhitneyu(self.x, self.y),
-                        (16980.5, 5.6428655312664487e-005), decimal=12)
+        res = stats.stats.wilcoxon(self.x, self.y)
+        ra = [res.statistic, res.pvalue]
+        assert_array_almost_equal(ra, (16980.5, 5.6428655312664487e-005),
+                                  decimal=12)
+        assert_string_equal(res.alternative, self.alt_two)
 
     def test_less_approx(self):
-        res = stats.stats.mannwhitneyu(self.x, self.y, alternative='less')
-        assert_array_almost_equal(res, (16980.5, 2.8214327656332243e-05),
+        res = stats.stats.wilcoxon(self.x, self.y, alternative='less')
+        ra = [res.statistic, res.pvalue]
+        assert_array_almost_equal(ra, (16980.5, 2.8214327656332243e-05),
                                   decimal=12)
+        assert_string_equal(res.alternative, self.alt_less)
 
     def test_greater_approx(self):
-        res = stats.stats.mannwhitneyu(self.x, self.y, alternative='greater')
-        assert_array_almost_equal(res, (16980.5, 0.9999719954296038),
+        res = stats.stats.wilcoxon(self.x, self.y, alternative='greater')
+        ra = [res.statistic, res.pvalue]
+        assert_array_almost_equal(ra, (16980.5, 0.9999719954296038),
                                   decimal=12)
-
-    def test_named_tuple(self):
-        # test for namedtuple attribute results
-        attributes = ('u', 'p')
-        res = stats.mannwhitneyu(self.x, self.y)
-        check_named_results(res, attributes)
+        assert_string_equal(res.alternative, self.alt_greater)
 
 
 def test_pointbiserial():

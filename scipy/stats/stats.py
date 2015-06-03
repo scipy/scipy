@@ -197,12 +197,19 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
-           'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
+           'chisquare', 'power_divergence', 'ks_2samp', 'wilcoxon',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
            'nanstd', 'nanmedian', 'combine_pvalues', ]
+
+
+# This class will be used by place_poles to return its results
+# see http://code.activestate.com/recipes/52308/
+class Bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
 
 
 def _chk_asarray(a, axis):
@@ -4217,11 +4224,64 @@ def ks_2samp(data1, data2):
     Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
     return Ks_2sampResult(d, prob)
 
-
-def mannwhitneyu(x, y, use_continuity=True, use_exact='auto',
-                 alternative='two-sided'):
+@np.deprecate(new_name="wilcoxon")
+def mannwhitneyu(x, y, use_continuity=True):
     """
     Computes the Mann-Whitney rank test on samples x and y.
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    use_continuity : bool, optional
+            Whether a continuity correction (1/2.) should be taken into
+            account. Default is True.
+    Returns
+    -------
+    statistic : float
+        The Mann-Whitney statistics.
+    pvalue : float
+        One-sided p-value assuming a asymptotic normal distribution.
+    Notes
+    -----
+    Use only when the number of observation in each sample is > 20 and
+    you have 2 independent samples of ranks. Mann-Whitney U is
+    significant if the u-obtained is LESS THAN or equal to the critical
+    value of U.
+    This test corrects for ties and by default uses a continuity correction.
+    The reported p-value is for a one-sided hypothesis, to get the two-sided
+    p-value multiply the returned p-value by 2.
+    """
+    x = asarray(x)
+    y = asarray(y)
+    n1 = len(x)
+    n2 = len(y)
+    ranked = rankdata(np.concatenate((x, y)))
+    rankx = ranked[0:n1]  # get the x-ranks
+    u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx, axis=0)  # calc U for x
+    u2 = n1*n2 - u1  # remainder is U for y
+    bigu = max(u1, u2)
+    smallu = min(u1, u2)
+    T = tiecorrect(ranked)
+    if T == 0:
+        raise ValueError('All numbers are identical in amannwhitneyu')
+    sd = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
+
+    if use_continuity:
+        # normal approximation for prob calc with continuity correction
+        z = abs((bigu - 0.5 - n1*n2/2.0) / sd)
+    else:
+        z = abs((bigu - n1*n2/2.0) / sd)  # normal approximation for prob calc
+
+    MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
+                                                           'pvalue'))
+    return MannwhitneyuResult(smallu, distributions.norm.sf(z))
+
+
+# TODO: add paired=False, do a signed-rank test if paired=True or y is not provided.
+def wilcoxon(x, y, use_continuity=True, use_exact='auto',
+                 alternative='two-sided'):
+    """
+    Computes two-sample unpaired Mann-Whitney-Wilcoxon tests.
 
     Parameters
     ----------
@@ -4236,10 +4296,15 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact='auto',
 
     Returns
     -------
-    u : float
-        The Mann-Whitney U statistic.
-    p : float
-        p-value.
+    Bunch object with following attributes:
+        statistic : float
+            The test statistic.
+        pvalue : float
+            The pvalue of the test.
+        exact : bool
+            Indicates if an exact pvalue was calculated.
+        alternative : string
+            Describes the alternative hypothesis
 
     Notes
     -----
@@ -4257,9 +4322,9 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact='auto',
     The reported p-value is for a two-sided hypothesis. To get the one-sided
     p-value set alternative to 'greater' or 'less' (default is 'two-sided').
 
-    The reported U statistic mirrors the behavior of the wilcoxon.test
-    procedure of the R stats package v3.2.0, always reporting min(u1, u2),
-    even in one-sided tests.
+    For Mann-Whitney-Wilcoxon tests, the reported U statistic mirrors the
+    behavior of the wilcoxon.test procedure of the R stats package v3.2.0,
+    always reporting min(u1, u2), even in one-sided tests.
 
     .. versionadded:: 0.17.0
 
@@ -4273,15 +4338,17 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact='auto',
     y = asarray(y)
     n1 = len(x)
     n2 = len(y)
-    Stats = namedtuple('Stats', ['u', 'p'])
     if use_exact == 'auto':
         use_exact = (n1 < 10 or n2 < 10) and n1 + n2 < 100000 \
-            and math.factorial(n1 + n2)/math.factorial(n1)/math.factorial(n2) < 100000
+            and -np.log(n1 + n2 + 1) - special.betaln(n1 + 1, n2 + 1) < 100
     ranked = rankdata(np.concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
     T = tiecorrect(ranked)
     if T == 0:
         raise ValueError('All numbers are identical in mannwhitneyu')
+    if alternative not in ('two-sided', 'less', 'greater'):
+        raise AttributeError("Alternative should be one of: "
+                             "'two-sided', 'less', or 'greater'")
     if use_exact:
         a = list(range(n1, n1+n2))
         u = [0]
@@ -4314,11 +4381,8 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact='auto',
             smallu = min(u1, u2)
         elif alternative == 'greater':
             smallu = u1
-        elif alternative == 'less':
-            smallu = u2
         else:
-            raise AttributeError("Alternative should be one of: "
-                                 "'two-sided', 'less', or 'greater'")
+            smallu = u2
         p = sum(u <= smallu) / len(u)
         u = min(u1, u2)
     else:
@@ -4330,12 +4394,9 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact='auto',
         elif alternative == 'greater':
             bigu = u2
             smallu = u1
-        elif alternative == 'less':
+        else:
             bigu = u1
             smallu = u2
-        else:
-            raise AttributeError("Alternative should be one of: "
-                                 "'two-sided', 'less', or 'greater'")
 
         sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
 
@@ -4345,15 +4406,21 @@ def mannwhitneyu(x, y, use_continuity=True, use_exact='auto',
         else:
             z = (bigu-n1*n2/2.0) / sd  # normal approximation for prob calc
         if alternative == 'two-sided':
-            p = 2 * distributions.norm.sf(abs(z)) # (1.0 - zprob(z))
+            p = 2 * distributions.norm.sf(abs(z))
             u = smallu
         else:
             p = distributions.norm.sf(z)
             u = min(u1, u2)
-    s = Stats(u=u, p=p)
+    if alternative == 'two-sided':
+        alt = 'x and y are sampled from different populations'
+    elif alternative == 'less':
+        alt = 'x is sampled from a population of smaller values than y'
+    else:
+        alt = 'x is sampled from a population of larger values than y'
+    s = Bunch(statistic=u, pvalue=p, alternative=alt)
     return s
 
-
+@np.deprecate(new_name='wilcoxon')
 def ranksums(x, y):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.
