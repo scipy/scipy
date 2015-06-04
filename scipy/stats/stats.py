@@ -4329,9 +4329,10 @@ def mww(x, y, correction=True, exact='auto',
     The reported p-value is for a two-sided hypothesis. To get the one-sided
     p-value set alternative to 'greater' or 'less' (default is 'two-sided').
 
-    For Mann-Whitney-Wilcoxon tests, the reported U statistic mirrors the
-    behavior of the wilcoxon.test procedure of the R stats package v3.2.0,
-    always reporting min(u1, u2), even in one-sided tests.
+    For Mann-Whitney-Wilcoxon tests, the reported U statistic is the U used to
+    test the hypothesis. The u1 and u2 statistics are returned as well,
+    corresponding to x and y, respectively.
+
 
     .. versionadded:: 0.17.0
 
@@ -4383,7 +4384,7 @@ def mww(x, y, correction=True, exact='auto',
         u1 = 0
         u = np.array(u)
         for i, x in enumerate(sorted(rankx)):
-            u1 += n1 - x + i
+            u1 += x - 1 - i
         u2 = n1 * n2 - u1
         if alternative == 'two-sided':
             smallu = min(u1, u2)
@@ -4392,9 +4393,9 @@ def mww(x, y, correction=True, exact='auto',
         else:
             smallu = u2
         p = sum(u <= smallu) / len(u)
-        u = min(u1, u2)
+        u = smallu
     else:
-        u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx,axis=0)  # calc U for x
+        u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx, axis=0)  # calc U for x
         u2 = n1*n2 - u1                            # remainder is U for y
         if alternative == 'two-sided':
             bigu = max(u1, u2)
@@ -4407,25 +4408,20 @@ def mww(x, y, correction=True, exact='auto',
             smallu = u2
 
         sd = np.sqrt(T*n1*n2*(n1+n2+1)/12.0)
-
-        if correction:
-            # normal approximation for prob calc with continuity correction
-            z = (bigu-0.5-n1*n2/2.0) / sd
-        else:
-            z = (bigu-n1*n2/2.0) / sd  # normal approximation for prob calc
+        c = -0.5 if correction else 0
+        z = (bigu+c-n1*n2/2.0) / sd
         if alternative == 'two-sided':
             p = 2 * distributions.norm.sf(abs(z))
-            u = smallu
         else:
             p = distributions.norm.sf(z)
-            u = min(u1, u2)
+        u = smallu
     if alternative == 'two-sided':
         alt = 'x and y are sampled from different populations'
     elif alternative == 'less':
         alt = 'x is sampled from a population of smaller values than y'
     else:
         alt = 'x is sampled from a population of larger values than y'
-    s = Bunch(statistic=u, pvalue=p, alternative=alt)
+    s = Bunch(statistic=u, pvalue=p, alternative=alt, u1=u1, u2=u2)
     return s
 
 @np.deprecate(new_name='mww')

@@ -2557,9 +2557,21 @@ class TestMWW(TestCase):
             1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
             1.])
 
-        self.a = np.array([0, 1, 4, 3, 2])
+        self.a = np.array([210.052110, 110.190630, 307.918612])
 
-        self.b = np.array([3.1, 4.1, 5, 6])
+        self.b = np.array([436.08811482466416,
+                           416.37397329768191,
+                           179.96975939463582,
+                           197.8118754228619,
+                           34.038757281225756,
+                           138.54220550921517,
+                           128.7769351470246,
+                           265.92721427951852,
+                           275.6617533155341,
+                           592.34083395416258,
+                           448.73177590617018,
+                           300.61495185038905,
+                           187.97508449019588])
 
         self.alt_two = 'x and y are sampled from different populations'
         self.alt_less = 'x is sampled from a population of smaller values than y'
@@ -2569,25 +2581,31 @@ class TestMWW(TestCase):
     def test_two_tailed_exact(self):
         res = stats.stats.mww(self.a, self.b)
         ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (1, 0.031746031746031744), decimal=12)
+        assert_array_almost_equal(ra, (16, 0.703571428571428625), decimal=12)
         assert_string_equal(res.alternative, self.alt_two)
 
     def test_less_exact(self):
         res = stats.stats.mww(self.a, self.b, alternative='less')
         ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (1, 0.015873015873015872), decimal=12)
+        assert_array_almost_equal(ra, (23, 0.694642857142857117), decimal=12)
         assert_string_equal(res.alternative, self.alt_less)
 
     def test_greater_exact(self):
         res = stats.stats.mww(self.a, self.b, alternative='greater')
         ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (1, 0.99206349206349209), decimal=12)
+        assert_array_almost_equal(ra, (16, 0.351785714285714313), decimal=12)
         assert_string_equal(res.alternative, self.alt_greater)
+
+    def test_two_tailed_inverse_exact(self):
+        res = stats.stats.mww(self.b, self.a)
+        ra = [res.statistic, res.pvalue]
+        assert_array_almost_equal(ra, (16, 0.703571428571428625), decimal=12)
+        assert_string_equal(res.alternative, self.alt_two)
 
     def test_two_tailed_approx(self):
         res = stats.stats.mww(self.x, self.y)
         ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (16980.5, 5.6428655312664487e-005),
+        assert_array_almost_equal(ra, (16980.5, 5.64286553126644867e-05),
                                   decimal=12)
         assert_string_equal(res.alternative, self.alt_two)
 
@@ -2601,10 +2619,16 @@ class TestMWW(TestCase):
     def test_greater_approx(self):
         res = stats.stats.mww(self.x, self.y, alternative='greater')
         ra = [res.statistic, res.pvalue]
-        assert_array_almost_equal(ra, (16980.5, 0.9999719954296038),
+        assert_array_almost_equal(ra, (21571.5, 0.9999719954296038),
                                   decimal=12)
         assert_string_equal(res.alternative, self.alt_greater)
 
+    def test_two_tailed_inverse_approx(self):
+        res = stats.stats.mww(self.y, self.x)
+        ra = [res.statistic, res.pvalue]
+        assert_array_almost_equal(ra, (16980.5, 5.64286553126644867e-05),
+                                  decimal=12)
+        assert_string_equal(res.alternative, self.alt_two)
 
 def test_pointbiserial():
     # same as mstats test except for the nan
