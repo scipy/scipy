@@ -1936,7 +1936,8 @@ def _minimize_scalar_brent(func, brack=None, args=(),
     brent.set_bracket(brack)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
-    return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev)
+    return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev,
+                          success=nit < maxiter)
 
 
 def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
