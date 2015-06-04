@@ -31,6 +31,13 @@ be exposed to the user. Also, the name is unclear. See issue #663 for details.
 ``scipy.stats.square_of_sums`` is deprecated. This too is a support function 
 not meant to be exposed to the user. See issues #665 and #663 for details.
 
+``scipy.stats.ranksums`` is deprecated. This function has been subsumed by the
+mww function. See PR #4933 for details.
+
+``scipy.stats.mannwhitneyu`` is deprecated. The p-values returned by this
+function were effectively 1/2 the p-value of a two-sided test, but reported
+as a "one-sided" test. This function has been subsumed by mww and the reported
+p-value corrected. See PR #4933.
 
 Backwards incompatible changes
 ==============================

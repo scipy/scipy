@@ -4312,6 +4312,10 @@ def mww(x, y, correction=True, exact='auto',
             Indicates if an exact pvalue was calculated.
         alternative : string
             Describes the alternative hypothesis.
+        u1 : float
+            The U-value corresponding to the set of measurements in x
+        u2 : float
+            The U-value corresponding to the set of measurements in y
 
     Notes
     -----
