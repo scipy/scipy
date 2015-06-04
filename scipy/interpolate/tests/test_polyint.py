@@ -79,6 +79,12 @@ def test_deriv_shapes():
     def pchip_deriv2(x, y, axis=0):
         return pchip(x, y, axis).derivative(2)
 
+    def pchip_antideriv(x, y, axis=0):
+        return pchip(x, y, axis).derivative()
+
+    def pchip_antideriv2(x, y, axis=0):
+        return pchip(x, y, axis).derivative(2)
+
     def pchip_deriv_inplace(x, y, axis=0):
         class P(PchipInterpolator):
             def __call__(self, x):
@@ -93,7 +99,7 @@ def test_deriv_shapes():
         return Akima1DInterpolator(x, y, axis).antiderivative()
 
     for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
-               akima_deriv, akima_antideriv]:
+               pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):

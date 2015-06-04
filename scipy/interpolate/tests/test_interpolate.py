@@ -537,6 +537,13 @@ class TestPPolyCommon(TestCase):
                 targ_shape = c_s[:axis] + xp.shape + c_s[2+axis:]
                 assert_equal(res.shape, targ_shape)
 
+                # deriv/antideriv does not drop the axis
+                for p1 in [cls(c, x, axis=axis).derivative(),
+                           cls(c, x, axis=axis).derivative(2),
+                           cls(c, x, axis=axis).antiderivative(),
+                           cls(c, x, axis=axis).antiderivative(2)]:
+                    assert_equal(p1.axis, p.axis)
+
         # c array needs two axes for the coefficients and intervals, so
         # 0 <= axis < c.ndim-1; raise otherwise
         for axis in (-1, 4, 5, 6):
