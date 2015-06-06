@@ -715,10 +715,25 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to compute test. Default is None.
 
     Returns
     -------
     tmean : float
+
+    See also
+    --------
+    trim_mean : returns mean after trimming a proportion from both tails.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tmean(x)
+    9.5
+    >>> stats.tmean(x, (3,17))
+    10.0
 
     """
     a = asarray(a)
@@ -749,6 +764,11 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -759,6 +779,15 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     -----
     `tvar` computes the unbiased sample variance, i.e. it uses a correction
     factor ``n / (n - 1)``.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tvar(x)
+    35.0
+    >>> stats.tvar(x, (3,17))
+    20.0
 
     """
     a = asarray(a)
@@ -787,15 +816,34 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
         When lowerlimit is None, then all values are used. The default value
         is None.
     axis : int or None, optional
-        Axis along which to operate. Default is 0. If None, compute over the whole
-        array `a`.
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
 
     Returns
     -------
-    tmin : float
+    tmin : masked_array
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tmin(x)
+    masked_array(data = 0,
+                 mask = False,
+           fill_value = 999999)
+
+    >>> stats.tmin(x, 13)
+    masked_array(data = 13,
+                 mask = False,
+           fill_value = 999999)
+
+    >>> stats.tmin(x, 13, inclusive=False)
+    masked_array(data = 14,
+                 mask = False,
+           fill_value = 999999)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -827,7 +875,26 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
 
     Returns
     -------
-    tmax : float
+    tmax : masked_array
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tmax(x)
+    masked_array(data = 19,
+                 mask = False,
+           fill_value = 999999)
+
+    >>> stats.tmax(x, 13)
+    masked_array(data = 13,
+                 mask = False,
+           fill_value = 999999)
+
+    >>> stats.tmax(x, 13, inclusive=False)
+    masked_array(data = 12,
+                 mask = False,
+           fill_value = 999999)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -855,6 +922,11 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -864,6 +936,15 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     -----
     `tstd` computes the unbiased sample standard deviation, i.e. it uses a
     correction factor ``n / (n - 1)``.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tstd(x)
+    5.9160797830996161
+    >>> stats.tstd(x, (3,17))
+    4.4721359549995796
 
     """
     return np.sqrt(tvar(a, limits, inclusive, axis, ddof))
@@ -889,6 +970,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -898,6 +984,15 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     -----
     `tsem` uses unbiased sample standard deviation, i.e. it uses a
     correction factor ``n / (n - 1)``.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tsem(x)
+    1.3228756555322954
+    >>> stats.tsem(x, (3,17))
+    1.1547005383792515
 
     """
     a = np.asarray(a).ravel()
@@ -2381,6 +2476,7 @@ def trim_mean(a, proportiontocut, axis=0):
     See Also
     --------
     trimboth
+    tmean : compute the trimmed mean ignoring values outside given `limits`.
 
     Examples
     --------
