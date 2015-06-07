@@ -241,6 +241,8 @@ def find_repeats(arr):
     """
     Find repeats and repeat counts.
 
+    ndarray input is flattened.
+
     Parameters
     ----------
     arr : array_like
@@ -248,11 +250,10 @@ def find_repeats(arr):
 
     Returns
     -------
-    find_repeats : tuple
-        Returns a tuple of two 1-D ndarrays.  The first ndarray are the repeats
-        as sorted, unique values that are repeated in `arr`.  The second
-        ndarray are the counts mapped one-to-one of the repeated values
-        in the first ndarray.
+    values : a tuple of the unique values from the input that are repeated
+
+    times : a tuple that tells how many times the corresponding 'values' are
+    repeated
 
     Examples
     --------
@@ -264,8 +265,13 @@ def find_repeats(arr):
     (array([ 4., 5.]), array([2, 2], dtype=int32))
 
     """
+    RepeatedResults = namedtuple('RepeatedResults', ('values', 'times'))
+
+    if np.asarray(arr).size == 0:
+        return RepeatedResults([], [])
+
     v1, v2, n = futil.dfreps(arr)
-    return v1[:n], v2[:n]
+    return RepeatedResults(v1[:n], v2[:n])
 
 #######
 #  NAN friendly functions
