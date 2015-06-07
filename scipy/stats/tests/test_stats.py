@@ -2971,7 +2971,7 @@ class TestTrim(object):
                np.arange(24).reshape(4,6).T, 4/6.)
 
         # empty input
-        assert_raises(ValueError, stats.trimboth, [], 4/6.)
+        assert_equal(stats.trimboth([], 4/6.), [])
 
     def test_trim_mean(self):
         # don't use pre-sorted arrays
@@ -3008,8 +3008,8 @@ class TestTrim(object):
         assert_raises(ValueError, stats.trim_mean, a, 0.6)
 
         # empty input
-        assert_raises(ValueError, stats.trim_mean, [], 0.0)
-        assert_raises(ValueError, stats.trim_mean, [], 0.6)
+        assert_equal(stats.trim_mean([], 0.0), np.nan)
+        assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
 class TestSigamClip(object):

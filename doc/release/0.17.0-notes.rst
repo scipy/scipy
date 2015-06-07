@@ -29,6 +29,9 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+The functions ``trim1`` and ``trimboth`` now sort elements before trimming.
+This is backwards incompatible but it made no sense to trim unsorted input.
+
 
 Other changes
 =============
