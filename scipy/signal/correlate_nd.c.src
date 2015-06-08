@@ -151,7 +151,7 @@ static int _imp_correlate_nd_c@fsuf@(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
         PyArrayIterObject *itz)
 {
-    int i, j;
+    npy_intp i, j;
     @type@ racc, iacc;
     @type@ *ptr1, *ptr2;
 
@@ -186,7 +186,7 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
         PyArrayNeighborhoodIterObject *curneighx, PyArrayIterObject *ity,
         PyArrayIterObject *itz)
 {
-    int i, j;
+    npy_intp i, j;
     PyObject *tmp, *tmp2;
     char *zero;
     PyArray_CopySwapFunc *copyswap = PyArray_DESCR(curx->ao)->f->copyswap;
