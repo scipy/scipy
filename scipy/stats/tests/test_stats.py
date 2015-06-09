@@ -2958,6 +2958,7 @@ class TestTrim(object):
         # empty input
         assert_equal(stats.trim1([], 0.1), [])
         assert_equal(stats.trim1([], 3/11., tail='left'), [])
+        assert_equal(stats.trim1([], 4/6.), [])
 
     def test_trimboth(self):
         a = np.arange(11)
@@ -2971,6 +2972,8 @@ class TestTrim(object):
                np.arange(24).reshape(4,6).T, 4/6.)
 
         # empty input
+        assert_equal(stats.trimboth([], 0.1), [])
+        assert_equal(stats.trimboth([], 3/11.), [])
         assert_equal(stats.trimboth([], 4/6.), [])
 
     def test_trim_mean(self):

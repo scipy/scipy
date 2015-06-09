@@ -2424,7 +2424,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     Slices off a proportion from ONE end of the passed array distribution.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' or 'rightmost'
-    10% of scores. The input is sorted before slicing. Slices off LESS if
+    10% of scores. The input is sorted before slicing. Slices off less if
     proportion results in a non-integer slice index (i.e., conservatively
     slices off `proportiontocut` ).
 
@@ -2470,7 +2470,7 @@ def trim_mean(a, proportiontocut, axis=0):
     Return mean of array after trimming distribution from both tails.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' and 'rightmost' 10% of
-    scores. The input is sorted before slicing. Slices off LESS if proportion
+    scores. The input is sorted before slicing. Slices off less if proportion
     results in a non-integer slice index (i.e., conservatively slices off
     `proportiontocut` ).
 
@@ -2519,9 +2519,10 @@ def trim_mean(a, proportiontocut, axis=0):
         return np.nan
 
     if axis is None:
-        nobs = a.size
-    else:
-        nobs = a.shape[axis]
+        a = a.ravel()
+        axis = 0
+
+    nobs = a.shape[axis]
     lowercut = int(proportiontocut * nobs)
     uppercut = nobs - lowercut - 1
     if (lowercut > uppercut):
