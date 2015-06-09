@@ -1260,6 +1260,18 @@ class TestFitMethod(object):
         assert_raises(ValueError, stats.beta.fit, x, fa=0, f1=1,
                                                      floc=2, fscale=3)
 
+        # check that specifying floc, fscale and fshapes works for
+        # beta and gamma which override the generic fit method
+        res_5 = stats.beta.fit(x, fa=3., floc=0, fscale=1)
+        aa, bb, ll, ss = res_5
+        assert_equal([aa, ll, ss], [3., 0, 1])
+
+        # gamma distribution
+        a = 3.
+        data = stats.gamma.rvs(a, size=100)
+        aa, ll, ss = stats.gamma.fit(data, fa=a)
+        assert_equal(aa, a)
+
 
 class TestFrozen(TestCase):
     # Test that a frozen distribution gives the same results as the original object.

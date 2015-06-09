@@ -419,8 +419,8 @@ class beta_gen(rv_continuous):
         # Override rv_continuous.fit, so we can more efficiently handle the
         # case where floc and fscale are given.
 
-        f0 = kwds.get('f0', None)
-        f1 = kwds.get('f1', None)
+        f0 = kwds.get('f0', None) or kwds.get('fa', None)
+        f1 = kwds.get('f1', None) or kwds.get('fb', None)
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
@@ -1885,7 +1885,7 @@ class gamma_gen(rv_continuous):
 
     @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
-        f0 = kwds.get('f0', None)
+        f0 = kwds.get('f0', None) or kwds.get('fa', None)
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
