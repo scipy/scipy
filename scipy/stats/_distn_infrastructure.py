@@ -1967,15 +1967,15 @@ class rv_continuous(rv_generic):
         # shapes='a, b'. To fix `a`, can specify either `f1` or `fa`.
         # Convert the latter into the former.
         if self.shapes:
-            fshapes = ['f%s' % s for s in self.shapes.replace(',', ' ').split()]
-            for j, fs in enumerate(fshapes):
-                if fs in kwds:
+            shapes = self.shapes.replace(',', ' ').split()
+            for j, s in enumerate(shapes):
+                val = kwds.pop('f' + s, None) or kwds.pop('fix_' + s, None)
+                if val is not None:
                     key = 'f%d' % j
                     if key in kwds:
-                        raise ValueError("Cannot specify both %s and %s" %
-                                         (fs, key))
+                        raise ValueError("Duplicate entry for %s." % key)
                     else:
-                        kwds[key] = kwds.pop(fs)
+                        kwds[key] = val
 
         args = list(args)
         Nargs = len(args)

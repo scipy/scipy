@@ -1249,8 +1249,14 @@ class TestFitMethod(object):
         res_2 = stats.beta.fit(x, fa=3.)
         assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
 
+        res_2 = stats.beta.fit(x, fix_a=3.)
+        assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
+
         res_3 = stats.beta.fit(x, f1=4.)
         res_4 = stats.beta.fit(x, fb=4.)
+        assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
+
+        res_4 = stats.beta.fit(x, fix_b=4.)
         assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
 
         # cannot specify both positional and named args at the same time
