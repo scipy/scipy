@@ -1272,6 +1272,13 @@ class TestFitMethod(object):
         aa, ll, ss = stats.gamma.fit(data, fa=a)
         assert_equal(aa, a)
 
+    def test_extra_params(self):
+        # unknown parameters should raise rather than be silently ignored
+        dist = stats.exponnorm
+        data = dist.rvs(K=2, size=100)
+        dct = dict(enikibeniki=-101)
+        assert_raises(TypeError, dist.fit, data, **dct)
+
 
 class TestFrozen(TestCase):
     # Test that a frozen distribution gives the same results as the original object.
