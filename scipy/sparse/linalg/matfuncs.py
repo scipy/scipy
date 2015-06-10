@@ -633,7 +633,10 @@ def _expm(A, use_exact_onenorm):
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
     s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
-    s = s + _ell(2**-s * h.A, 13)
+    if s:
+        s = s + _ell(2**-s * h.A, 13)
+    else:
+        s = ell_helper.ell(13)
     U, V = h.pade13_scaled(s)
     X = _solve_P_Q(U, V, structure=structure)
     if structure == UPPER_TRIANGULAR:
@@ -785,54 +788,32 @@ def _fragment_2_1(X, T, s):
 class _EllHelper(object):
     # Track abs(A) and matrix-vector products like
     # np.linalg.matrix_power(np.absolute(A), p).dot(np.ones(n, 1)).
+    # Requires an ell 'access pattern' with constant A and
+    # strictly increasing values of m.
     def __init__(self, A):
         if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
             raise ValueError('expected A to be like a square matrix')
         self.A = A
         self.n = A.shape[1]
-        self._A_abs = None
-        self._A_onenorm = None
-        self._products = {}
-        self._norms = {}
-
-    @property
-    def onenorm(self):
-        if self._A_onenorm is None:
-            self._A_onenorm = _onenorm(self.A)
-        return self._A_onenorm
-
-    @property
-    def A_abs(self):
-        if self._A_abs is None:
-            self._A_abs = np.absolute(self.A)
-        return self._A_abs
-
-    def product(self, p):
-        # Lazy np.linalg.matrix_power(np.absolute(A), p).dot(np.ones(n)).
-        if p in self._products:
-            return self._products[p]
-        if not self._products:
-            self._products[0] = np.ones((self.n, 1), dtype=float)
-        # Get the largest existing index less than p.
-        # Linear search should be OK.
-        n = max(x for x in self._products if x < p)
-        v = self._products[n]
-        for k in range(n+1, p+1):
-            v = self.A_abs.dot(v)
-            self._products[k] = v
-        return v
+        self.A_abs = np.absolute(A)
+        self.A_onenorm = _onenorm(A)
+        self.p_prev = 0
+        self.v_prev = np.ones((self.n, 1), dtype=float)
 
     def onenorm_power_abs(self, p):
         # One-norm of matrix power of entrywise absolute value matrix.
-        if p in self._norms:
-            return self._norms[p]
-        v = self.product(p)
-        a = v.max()
-        self._norms[p] = a
-        return a
+        # np.linalg.matrix_power(np.absolute(A), p).dot(np.ones(n)).
+        gap = p - self.p_prev
+        if gap < 1:
+            raise ValueError('expected strictly increasing p, but observed '
+                             '%s followed by %s' % (self.p_prev, p))
+        for i in range(gap):
+            self.p_prev += 1
+            self.v_prev = self.A_abs.dot(self.v_prev)
+        return self.v_prev.max()
 
     def ell(self, m):
-        return _ell(None, m, self.onenorm, self.onenorm_power_abs(2*m + 1))
+        return _ell(None, m, self.A_onenorm, self.onenorm_power_abs(2*m + 1))
 
 
 def _ell(A, m, A_onenorm=None, A_onenorm_power_abs=None):
@@ -845,10 +826,11 @@ def _ell(A, m, A_onenorm=None, A_onenorm_power_abs=None):
         A linear operator whose norm of power we care about.
     m : int
         The power of the linear operator
-    A_onenorm : foo
-        foo
-    A_onenorm_power_abs : foo
-        foo
+    A_onenorm : float, optional
+        1-norm of A
+    A_onenorm_power_abs : float, optional
+        1-norm of the 2*m + 1 matrix power of the matrix of absolute values
+        of entries of A.
 
     Returns
     -------
