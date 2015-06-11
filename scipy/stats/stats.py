@@ -250,10 +250,17 @@ def find_repeats(arr):
 
     Returns
     -------
-    values : a tuple of the unique values from the input that are repeated
+    values : tuple
+        The unique values from the input that are repeated.
 
-    times : a tuple that tells how many times the corresponding 'values' are
-    repeated
+    times : tuple
+        Number of times the corresponding 'value' is repeated.
+
+    Notes
+    -----
+    In numpy >= 1.9 `numpy.unique` provides the same functionality. Consider
+    using that as `find_repeats` will possibly be deprecated in favor of it
+    in the future.
 
     Examples
     --------
