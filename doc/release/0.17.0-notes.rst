@@ -29,8 +29,10 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
-The functions ``trim1`` and ``trimboth`` now sort elements before trimming.
-This is backwards incompatible but it made no sense to trim unsorted input.
+The functions ``trim1`` and ``trimboth`` now partially (for numpy >= 1.8.0) or
+fully (for numpy < 1.8.0) sort elements before trimming. This to make sure 
+the trimmed elements are the lowest or highest depending on the case. 
+Slicing without at least partial sorting was random hacking.
 
 
 Other changes

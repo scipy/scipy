@@ -2365,7 +2365,8 @@ def trimboth(a, proportiontocut, axis=0):
 
     Slices off the passed proportion of items from both ends of the passed
     array (i.e., with `proportiontocut` = 0.1, slices leftmost 10% **and**
-    rightmost 10% of scores).  The input is sorted before being sliced.
+    rightmost 10% of scores). The input is partially sorted before slicing to
+    ensure the trimming of the lowest and highest values.
     Slices off less if proportion results in a non-integer slice index (i.e.,
     conservatively slices off`proportiontocut`).
 
@@ -2382,7 +2383,8 @@ def trimboth(a, proportiontocut, axis=0):
     Returns
     -------
     out : ndarray
-        Trimmed version of array `a`.
+        Trimmed version of array `a`. The order of this output is not guaranteed
+        to be sorted.
 
     See Also
     --------
@@ -2412,7 +2414,12 @@ def trimboth(a, proportiontocut, axis=0):
     if (lowercut >= uppercut):
         raise ValueError("Proportion too big.")
 
-    atmp = np.sort(a, axis)
+    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
+    # in those cases we use np.sort
+    try:
+        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    except AttributeError:
+        atmp = np.sort(a, axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
@@ -2424,9 +2431,10 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     Slices off a proportion from ONE end of the passed array distribution.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' or 'rightmost'
-    10% of scores. The input is sorted before slicing. Slices off less if
-    proportion results in a non-integer slice index (i.e., conservatively
-    slices off `proportiontocut` ).
+    10% of scores. The input is partially sorted before slicing to ensure the
+    trimming of the lowest or highest values (depending on the tail).
+    Slices off less if proportion results in a non-integer slice index
+    (i.e., conservatively slices off `proportiontocut` ).
 
     Parameters
     ----------
@@ -2443,7 +2451,8 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     Returns
     -------
     trim1 : ndarray
-        Trimmed version of array `a`
+        Trimmed version of array `a`. The order of this output is not guaranteed
+        to be sorted.
 
     """
     a = np.asarray(a)
@@ -2452,6 +2461,11 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         axis = 0
 
     nobs = a.shape[axis]
+
+    # avoid possible corner case
+    if proportiontocut >= 1:
+        return []
+
     if tail.lower() == 'right':
         lowercut = 0
         uppercut = nobs - int(proportiontocut * nobs)
@@ -2460,7 +2474,12 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         lowercut = int(proportiontocut * nobs)
         uppercut = nobs
 
-    atmp = np.sort(a, axis)
+    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
+    # in those cases we use np.sort
+    try:
+        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    except AttributeError:
+        atmp = np.sort(a, axis)
 
     return atmp[lowercut:uppercut]
 

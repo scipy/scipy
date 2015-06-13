@@ -1104,7 +1104,7 @@ class TestCompareWithStats(TestCase):
         a = np.arange(20)
         b = stats.trimboth(a, 0.1)
         bm = stats.mstats.trimboth(a, 0.1)
-        assert_allclose(b, bm.data[~bm.mask])
+        assert_allclose(np.sort(b), bm.data[~bm.mask])
 
     def test_tsem(self):
         for n in self.get_n():
