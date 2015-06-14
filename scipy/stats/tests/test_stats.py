@@ -2525,43 +2525,129 @@ def test_kurtosistest_too_few_samples():
     assert_raises(ValueError, stats.kurtosistest, x)
 
 
-def test_mannwhitneyu():
-    x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1.,
-        2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 1.])
+class TestMannWhitneyU(TestCase):
+    X = [19.8958398126694, 19.5452691647182, 19.0577309166425, 21.716543054589,
+         20.3269502208702, 20.0009273294025, 19.3440043632957, 20.4216806548105,
+         19.0649894736528, 18.7808043120398, 19.3680942943298, 19.4848044069953,
+         20.7514611265663, 19.0894948874598, 19.4975522356628, 18.9971170734274,
+         20.3239606288208, 20.6921298083835, 19.0724259532507, 18.9825187935021,
+         19.5144462609601, 19.8256857844223, 20.5174677102032, 21.1122407995892,
+         17.9490854922535, 18.2847521114727, 20.1072217648826, 18.6439891962179,
+         20.4970638083542, 19.5567594734914]
 
-    y = np.array([1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1.,
-        1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
-        1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 2., 1., 1., 1., 1., 1., 2., 2., 1., 1., 2., 1., 1., 2.,
-        1., 2., 1., 1., 1., 1., 2., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1.,
-        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-        1., 2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
-        1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
-        1.])
-    # p-value verified with matlab and R to 5 significant digits
-    assert_array_almost_equal(stats.stats.mannwhitneyu(x,y),
-                    (16980.5, 2.8214327656317373e-005), decimal=12)
+    Y = [19.2790668029091, 16.993808441865, 18.5416338448258, 17.2634018833575,
+         19.1577183624616, 18.5119655377495, 18.6068455037221, 18.8358343362655,
+         19.0366413269742, 18.1135025515417, 19.2201873866958, 17.8344909022841,
+         18.2894380745856, 18.6661374133922, 19.9688601693252, 16.0672254617636,
+         19.00596360572, 19.201561539032, 19.0487501090183, 19.0847908674356]
 
-    # test for namedtuple attribute results
-    attributes = ('statistic', 'pvalue')
-    res = stats.mannwhitneyu(x, y)
-    check_named_results(res, attributes)
+    significant = 14
+
+    def test_mannwhitneyu_less(self):
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='less')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='greater')
+
+        assert_equal(p1, p2)
+        assert_equal(u1, 498)
+        assert_equal(u2, 102)
+        assert_approx_equal(p1, 0.999957683256589, significant=self.significant)
+
+    def test_mannwhitneyu_greater(self):
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='greater')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='less')
+
+        assert_equal(p1, p2)
+        assert_equal(u1, 498)
+        assert_equal(u2, 102)
+        assert_approx_equal(p1, 4.5941632666275e-05,
+                            significant=self.significant)
+
+    def test_mannwhitneyu_two_sided(self):
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='two-sided')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X)  # two-sided is default
+
+        assert_equal(p1, p2)
+        assert_equal(u1, 498)
+        assert_equal(u2, 102)
+        assert_approx_equal(p1, 9.188326533255e-05,
+                            significant=self.significant)
+
+    def test_mannwhitneyu_no_correct_less(self):
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False, alternative='less')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
+                                    alternative='greater')
+
+        assert_equal(p1, p2)
+        assert_equal(u1, 498)
+        assert_equal(u2, 102)
+        assert_approx_equal(p1, 0.999955905990004, significant=self.significant)
+
+    def test_mannwhitneyu_no_correct_greater(self):
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
+                                    alternative='greater')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False, alternative='less')
+
+        assert_equal(p1, p2)
+        assert_equal(u1, 498)
+        assert_equal(u2, 102)
+        assert_approx_equal(p1, 4.40940099958089e-05,
+                            significant=self.significant)
+
+    def test_mannwhitneyu_no_correct_two_sided(self):
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
+                                    alternative='two-sided')
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,)
+
+        assert_equal(p1, p2)
+        assert_equal(u1, 498)
+        assert_equal(u2, 102)
+        assert_approx_equal(p1, 8.81880199916178e-05,
+                            significant=self.significant)
+
+    def test_mannwhitneyu_ones(self):
+        x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1., 2.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1.])
+
+        y = np.array([1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
+                      2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1.,
+                      1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2.,
+                      2., 1., 1., 2., 1., 1., 2., 1., 2., 1., 1., 1., 1., 2.,
+                      2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                      2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
+                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1.,
+                      1., 1., 1., 1.])
+
+        # p-value verified with matlab and R to 5 significant digits
+        assert_array_almost_equal(stats.stats.mannwhitneyu(x, y,
+                                                           alternative='less'),
+                                  (16980.5, 2.8214327656317373e-005),
+                                  decimal=12)
+
+    def test_mannwhitneyu_result_attribuets(self):
+        # test for namedtuple attribute results
+        attributes = ('statistic', 'pvalue')
+        res = stats.mannwhitneyu(self.X, self.Y)
+        check_named_results(res, attributes)
 
 
 def test_pointbiserial():
