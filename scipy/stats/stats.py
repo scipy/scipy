@@ -2365,8 +2365,8 @@ def trimboth(a, proportiontocut, axis=0):
 
     Slices off the passed proportion of items from both ends of the passed
     array (i.e., with `proportiontocut` = 0.1, slices leftmost 10% **and**
-    rightmost 10% of scores). The input is partially sorted before slicing to
-    ensure the trimming of the lowest and highest values.
+    rightmost 10% of scores). The trimmed values are the lowest and
+    highest ones.
     Slices off less if proportion results in a non-integer slice index (i.e.,
     conservatively slices off`proportiontocut`).
 
@@ -2383,8 +2383,8 @@ def trimboth(a, proportiontocut, axis=0):
     Returns
     -------
     out : ndarray
-        Trimmed version of array `a`. The order of this output is not guaranteed
-        to be sorted.
+        Trimmed version of array `a`. The order of the trimmed content
+        is undefined.
 
     See Also
     --------
@@ -2431,8 +2431,8 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     Slices off a proportion from ONE end of the passed array distribution.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' or 'rightmost'
-    10% of scores. The input is partially sorted before slicing to ensure the
-    trimming of the lowest or highest values (depending on the tail).
+    10% of scores. The lowest or highest values are trimmed (depending on
+    the tail).
     Slices off less if proportion results in a non-integer slice index
     (i.e., conservatively slices off `proportiontocut` ).
 
@@ -2451,8 +2451,8 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     Returns
     -------
     trim1 : ndarray
-        Trimmed version of array `a`. The order of this output is not guaranteed
-        to be sorted.
+        Trimmed version of array `a`. The order of the trimmed content is
+        undefined.
 
     """
     a = np.asarray(a)
@@ -2543,19 +2543,20 @@ def trim_mean(a, proportiontocut, axis=0):
 
     nobs = a.shape[axis]
     lowercut = int(proportiontocut * nobs)
-    uppercut = nobs - lowercut - 1
+    uppercut = nobs - lowercut
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
     # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
     # in those cases we use np.sort
     try:
-        atmp = np.partition(a, (lowercut, uppercut), axis)
+        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
     except AttributeError:
         atmp = np.sort(a, axis)
 
-    newa = trimboth(atmp, proportiontocut, axis=axis)
-    return np.mean(newa, axis=axis)
+    sl = [slice(None)] * atmp.ndim
+    sl[axis] = slice(lowercut, uppercut)
+    return np.mean(atmp[sl], axis=axis)
 
 
 def f_oneway(*args):

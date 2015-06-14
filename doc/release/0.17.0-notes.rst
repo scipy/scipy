@@ -29,10 +29,10 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
-The functions ``trim1`` and ``trimboth`` now partially (for numpy >= 1.8.0) or
-fully (for numpy < 1.8.0) sort elements before trimming. This to make sure 
-the trimmed elements are the lowest or highest depending on the case. 
-Slicing without at least partial sorting was random hacking.
+The functions ``stats.trim1`` and ``stats.trimboth`` now make sure the 
+elements trimmed are the lowest and/or highest, depending on the case.
+Slicing without at least partial sorting was previously done, but didn't
+make sense for unsorted input.
 
 
 Other changes
