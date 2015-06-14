@@ -250,7 +250,7 @@ add_newdoc("scipy.special", "besselpoly",
     r"""
     besselpoly(a, lmb, nu)
 
-    Weighed integral of a Bessel function.
+    Weighted integral of a Bessel function.
 
     .. math::
 
