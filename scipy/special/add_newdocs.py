@@ -1611,7 +1611,7 @@ add_newdoc("scipy.special", "i1e",
     """
     i1e(x)
 
-    Exponentially scaled modified Bessel function of order 0.
+    Exponentially scaled modified Bessel function of order 1.
 
     Defined as::
 
