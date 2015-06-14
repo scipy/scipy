@@ -2043,8 +2043,9 @@ class rv_continuous(rv_generic):
 
             - f0...fn : hold respective shape parameters fixed.
               Alternatively, shape parameters to fix can be specified by name.
-              For example, if ``self.shapes == "a, b"``, ``fa`` is equivalent to
-              ``f0`` and ``fb`` is equivalent to ``f1``.
+              For example, if ``self.shapes == "a, b"``, ``fa``and ``fix_a``
+              are equivalent to ``f0``, and ``fb`` and ``fix_b`` are
+              equivalent to ``f1``.
 
             - floc : hold location parameter fixed to specified value.
 
