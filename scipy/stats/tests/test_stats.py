@@ -2527,7 +2527,7 @@ def test_kurtosistest_too_few_samples():
 class TestMannWhitneyU(TestCase):
 
     def __init__(self, *args, **kwargs):
-        super(Testmann_whitney_u(), self).__init__(*args, **kwargs)
+        super(TestMannWhitneyU, self).__init__(*args, **kwargs)
         self.x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,

@@ -4284,9 +4284,9 @@ def mann_whitney_u(x, y, correction=True, exact='auto', alternative='two-sided')
 
     Parameters
     ----------
-    x : array_like
+    x : array_like, 1-D
         The first set of measurements.
-    y : array_like
+    y : array_like, 1-D
         The second set of measurements.
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
@@ -4351,6 +4351,8 @@ def mann_whitney_u(x, y, correction=True, exact='auto', alternative='two-sided')
     """
     x = asarray(x)
     y = asarray(y)
+    if len(np.shape(x)) > 1 or len(np.shape(y)) > 1:
+        raise ValueError('Expected 1-d arrays.')
     n1 = len(x)
     n2 = len(y)
     if exact == 'auto':
