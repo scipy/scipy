@@ -825,7 +825,8 @@ class netcdf_variable(object):
         # Store user defined attributes in a separate dict,
         # so we can save them to file later.
         try:
-            self._attributes[attr] = value
+            if not attr == "data":
+                self._attributes[attr] = value
         except AttributeError:
             pass
         self.__dict__[attr] = value
