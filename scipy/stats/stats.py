@@ -204,9 +204,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
            'nanstd', 'nanmedian', 'combine_pvalues', ]
 
-
-# This class will be used by place_poles to return its results
 # see http://code.activestate.com/recipes/52308/
+
 class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
@@ -4277,9 +4276,9 @@ def mannwhitneyu(x, y, use_continuity=True):
     return MannwhitneyuResult(smallu, distributions.norm.sf(z))
 
 
-# TODO: add paired=False, do a signed-rank test if paired=True or y is not provided. See morestats.wilcoxon
-def mww(x, y, correction=True, exact='auto',
-             alternative='two-sided'):
+# TODO: add paired=False, do a signed-rank test if paired=True or y is
+#       not provided. See morestats.wilcoxon
+def mww(x, y, correction=True, exact='auto', alternative='two-sided'):
     """
     Computes two-sample unpaired Mann-Whitney-Wilcoxon tests.
 
@@ -4292,11 +4291,11 @@ def mww(x, y, correction=True, exact='auto',
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the z-statistic.
-        Default is False.
-    exact : bool, optional
+        Default is True.
+    exact : {True, False, 'auto'}, optional
         Whether an exact test should be performed on the data. See notes for
         default behavior.
-    alternative : string, optional
+    alternative : str, optional
         Whether a two-tailed or one-tailed test should be performed on the
         supplied vectors. Arguments are 'two-tailed', 'less', and 'greater'.
         Default is 'two-tailed'.
@@ -4310,7 +4309,7 @@ def mww(x, y, correction=True, exact='auto',
             The pvalue of the test.
         exact : bool
             Indicates if an exact pvalue was calculated.
-        alternative : string
+        alternative : str
             Describes the alternative hypothesis.
         u1 : float
             The U-value corresponding to the set of measurements in x
@@ -4321,11 +4320,14 @@ def mww(x, y, correction=True, exact='auto',
     -----
     Exact tests should be used for smaller sample sizes. Concretely, as
     len(x) and len(y) increase to and beyond 8, the distribution of U differs
-    negligibly from the normal distribution[1]. The default behavior of this
+    negligibly from the normal distribution[1]_. The default behavior of this
     test is to calculate the number of possible sequences for inputs of
     length(x) and length(y), and to do an exact calculation if the number of
     possible combinations is <100000. The default behavior may be overridden
     with the use_exact flag.
+
+    If an exact test is not performed, the U-distribution is approximated as a
+    normal distribution.
 
     This test corrects for ties and by default uses a continuity correction
     when approximating the U statistic distribution.
@@ -4342,9 +4344,9 @@ def mww(x, y, correction=True, exact='auto',
 
     References
     ----------
-    .. [1] HB Mann and DR Whitney (1947). "On a Test of Whether one of Two
-            Random Variables is Stochastically Larger than the Other".
-            Annals of Mathematical Statistics. doi:10.1214/aoms/1177730491
+    .. [1] H.B. Mann and D.R. Whitney, "On a test of whether one of two random
+           variables is stochastically larger than the other", The Annals of
+           Mathematical Statistics, Vol. 18, pp. 50-60, 1947.
     .. [2] http://en.wikipedia.org/wiki/Mann-Whitney_U_test
     """
     x = asarray(x)
@@ -4387,8 +4389,9 @@ def mww(x, y, correction=True, exact='auto',
                 u.append(u1)
         u1 = 0
         u = np.array(u)
-        for i, x in enumerate(sorted(rankx)):
-            u1 += x - 1 - i
+        # for i, x in enumerate(sorted(rankx)):
+        #     u1 += x - 1 - i
+        u1 = rankx.sum() - n1*(n1+1)/2
         u2 = n1 * n2 - u1
         if alternative == 'two-sided':
             smallu = min(u1, u2)
@@ -4399,7 +4402,7 @@ def mww(x, y, correction=True, exact='auto',
         p = sum(u <= smallu) / len(u)
         u = smallu
     else:
-        u1 = n1*n2 + (n1*(n1+1))/2.0 - np.sum(rankx, axis=0)  # calc U for x
+        u1 = n1*n2 + n1*(n1+1)/2.0 - np.sum(rankx, axis=0)  # calc U for x
         u2 = n1*n2 - u1                            # remainder is U for y
         if alternative == 'two-sided':
             bigu = max(u1, u2)
