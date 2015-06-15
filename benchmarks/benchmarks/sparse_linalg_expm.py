@@ -61,7 +61,7 @@ class ExpmMultiply(Benchmark):
 
 class Expm(Benchmark):
     params = [
-        [30, 100, 300],
+        [6, 30, 100, 300],
         ['sparse', 'dense']
     ]
     param_names = ['n', 'format']
