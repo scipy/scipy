@@ -248,10 +248,10 @@ def find_repeats(arr):
 
     Returns
     -------
-    values : tuple
+    values : ndarray
         The unique values from the (flattened) input that are repeated.
 
-    counts : tuple
+    counts : ndarray
         Number of times the corresponding 'value' is repeated.
 
     Notes
