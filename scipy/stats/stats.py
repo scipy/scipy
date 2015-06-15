@@ -199,7 +199,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'chisqprob', 'betai', 'mww',
+           'chisqprob', 'betai', 'mann_whitney_u',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
            'nanstd', 'nanmedian', 'combine_pvalues', ]
@@ -4223,7 +4223,7 @@ def ks_2samp(data1, data2):
     Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
     return Ks_2sampResult(d, prob)
 
-@np.deprecate(new_name="mww")
+@np.deprecate(new_name="mann_whitney_u")
 def mannwhitneyu(x, y, use_continuity=True):
     """
     Computes the Mann-Whitney rank test on samples x and y.
@@ -4278,7 +4278,7 @@ def mannwhitneyu(x, y, use_continuity=True):
 
 # TODO: add paired=False, do a signed-rank test if paired=True or y is
 #       not provided. See morestats.wilcoxon
-def mww(x, y, correction=True, exact='auto', alternative='two-sided'):
+def mann_whitney_u(x, y, correction=True, exact='auto', alternative='two-sided'):
     """
     Computes two-sample unpaired Mann-Whitney-Wilcoxon tests.
 
@@ -4354,13 +4354,13 @@ def mww(x, y, correction=True, exact='auto', alternative='two-sided'):
     n1 = len(x)
     n2 = len(y)
     if exact == 'auto':
-        exact = (n1 < 10 or n2 < 10) and n1 + n2 < 100000 \
-            and -np.log(n1 + n2 + 1) - special.betaln(n1 + 1, n2 + 1) < np.log(100000)
+        exact = ((n1 < 10 or n2 < 10) and n1 + n2 < 100000
+                 and -np.log(n1 + n2 + 1) - special.betaln(n1 + 1, n2 + 1) < np.log(100000))
     ranked = rankdata(np.concatenate((x,y)))
     rankx = ranked[0:n1]       # get the x-ranks
     T = tiecorrect(ranked)
     if T == 0:
-        raise ValueError('All numbers are identical in mannwhitneyu')
+        raise ValueError('All numbers are identical')
     if alternative not in ('two-sided', 'less', 'greater'):
         raise AttributeError("Alternative should be one of: "
                              "'two-sided', 'less', or 'greater'")
@@ -4431,7 +4431,7 @@ def mww(x, y, correction=True, exact='auto', alternative='two-sided'):
     s = Bunch(statistic=u, pvalue=p, alternative=alt, u1=u1, u2=u2)
     return s
 
-@np.deprecate(new_name='mww')
+@np.deprecate(new_name='mann_whitney_u')
 def ranksums(x, y):
     """
     Compute the Wilcoxon rank-sum statistic for two samples.

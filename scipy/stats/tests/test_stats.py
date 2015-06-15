@@ -2524,10 +2524,10 @@ def test_kurtosistest_too_few_samples():
     x = np.arange(4.0)
     assert_raises(ValueError, stats.kurtosistest, x)
 
-class TestMWW(TestCase):
+class TestMannWhitneyU(TestCase):
 
     def __init__(self, *args, **kwargs):
-        super(TestMWW, self).__init__(*args, **kwargs)
+        super(Testmann_whitney_u(), self).__init__(*args, **kwargs)
         self.x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1.,
             1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
@@ -2579,52 +2579,52 @@ class TestMWW(TestCase):
 
     # p-values and statistic compared against wilcox.test from R stats
     def test_two_tailed_exact(self):
-        res = stats.stats.mww(self.a, self.b)
+        res = stats.stats.mann_whitney_u(self.a, self.b)
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16, 0.703571428571428625), decimal=12)
         assert_string_equal(res.alternative, self.alt_two)
 
     def test_less_exact(self):
-        res = stats.stats.mww(self.a, self.b, alternative='less')
+        res = stats.stats.mann_whitney_u(self.a, self.b, alternative='less')
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (23, 0.694642857142857117), decimal=12)
         assert_string_equal(res.alternative, self.alt_less)
 
     def test_greater_exact(self):
-        res = stats.stats.mww(self.a, self.b, alternative='greater')
+        res = stats.stats.mann_whitney_u(self.a, self.b, alternative='greater')
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16, 0.351785714285714313), decimal=12)
         assert_string_equal(res.alternative, self.alt_greater)
 
     def test_two_tailed_inverse_exact(self):
-        res = stats.stats.mww(self.b, self.a)
+        res = stats.stats.mann_whitney_u(self.b, self.a)
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16, 0.703571428571428625), decimal=12)
         assert_string_equal(res.alternative, self.alt_two)
 
     def test_two_tailed_approx(self):
-        res = stats.stats.mww(self.x, self.y)
+        res = stats.stats.mann_whitney_u(self.x, self.y)
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16980.5, 5.64286553126644867e-05),
                                   decimal=12)
         assert_string_equal(res.alternative, self.alt_two)
 
     def test_less_approx(self):
-        res = stats.stats.mww(self.x, self.y, alternative='less')
+        res = stats.stats.mann_whitney_u(self.x, self.y, alternative='less')
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16980.5, 2.8214327656332243e-05),
                                   decimal=12)
         assert_string_equal(res.alternative, self.alt_less)
 
     def test_greater_approx(self):
-        res = stats.stats.mww(self.x, self.y, alternative='greater')
+        res = stats.stats.mann_whitney_u(self.x, self.y, alternative='greater')
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (21571.5, 0.9999719954296038),
                                   decimal=12)
         assert_string_equal(res.alternative, self.alt_greater)
 
     def test_two_tailed_inverse_approx(self):
-        res = stats.stats.mww(self.y, self.x)
+        res = stats.stats.mann_whitney_u(self.y, self.x)
         ra = [res.statistic, res.pvalue]
         assert_array_almost_equal(ra, (16980.5, 5.64286553126644867e-05),
                                   decimal=12)
