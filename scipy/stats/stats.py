@@ -1163,7 +1163,6 @@ def describe(a, axis=0, ddof=1, bias=True):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy import stats
     >>> a = np.arange(10)
     >>> stats.describe(a)

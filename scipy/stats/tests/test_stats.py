@@ -2417,7 +2417,6 @@ class TestDescribe(TestCase):
         assert_equal(mm, (4.0, 4.0))
         assert_equal(m, 4.0)
         assert_(np.isnan(v))
-        # not sure about precision with sk, skc
         assert_array_almost_equal(sk, 0.0, decimal=13)
         assert_array_almost_equal(kurt, -3.0, decimal=13)
 
@@ -2433,7 +2432,6 @@ class TestDescribe(TestCase):
         assert_equal(mm, mmc)
         assert_equal(m, mc)
         assert_equal(v, vc)
-        # not sure about precision with sk, skc
         assert_array_almost_equal(sk, skc, decimal=13)
         assert_array_almost_equal(kurt, kurtc, decimal=13)
         n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
@@ -2441,7 +2439,6 @@ class TestDescribe(TestCase):
         assert_equal(mm, mmc)
         assert_equal(m, mc)
         assert_equal(v, vc)
-        # not sure about precision with sk, skc
         assert_array_almost_equal(sk, skc, decimal=13)
         assert_array_almost_equal(kurt, kurtc, decimal=13)
 
@@ -2460,10 +2457,9 @@ class TestDescribe(TestCase):
         kurtc = [-1.833333333333333] * 4
         n, mm, m, v, sk, kurt = stats.describe(x, ddof=0)
         assert_equal(n, nc)
-        assert_equal(mm, mmc)
-        assert_equal(m, mc)
-        assert_equal(v, vc)
-        # not sure about precision with sk, skc
+        assert_allclose(mm, mmc)
+        assert_allclose(m, mc)
+        assert_allclose(v, vc)
         assert_array_almost_equal(sk, skc, decimal=13)
         assert_array_almost_equal(kurt, kurtc, decimal=13)
 
@@ -2473,7 +2469,7 @@ class TestDescribe(TestCase):
         # expected values
         e_nobs, e_minmax = (20, (1.0, 2.0))
         e_mean = 1.3999999999999999
-        e_var =  0.25263157894736848
+        e_var = 0.25263157894736848
         e_skew = 0.4082482904638634
         e_kurt = -1.8333333333333333
 
@@ -2481,12 +2477,15 @@ class TestDescribe(TestCase):
         a = stats.describe(x, axis=None)
 
         assert_equal(a.nobs, e_nobs)
-        assert_equal(a.minmax, e_minmax)
-        assert_equal(a.mean, e_mean)
-        assert_equal(a.variance, e_var)
-        # not sure about precision with sk, skc
+        assert_almost_equal(a.minmax, e_minmax)
+        assert_almost_equal(a.mean, e_mean)
+        assert_almost_equal(a.variance, e_var)
         assert_array_almost_equal(a.skewness, e_skew, decimal=13)
         assert_array_almost_equal(a.kurtosis, e_kurt, decimal=13)
+
+    def test_describe_empty(self):
+        assert_raises(ValueError, stats.describe, [])
+
 
 def test_normalitytests():
     yield (assert_raises, ValueError, stats.skewtest, 4.)
