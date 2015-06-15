@@ -254,9 +254,9 @@ add_newdoc("scipy.special", "besselpoly",
 
     .. math::
 
-       \int_0^1 x^\lambda J_v(\nu, 2 a x) \, dx
+       \int_0^1 x^\lambda J_\nu(2 a x) \, dx
 
-    where :math:`J_v` is a Bessel function and :math:`\lambda=lmb`,
+    where :math:`J_\nu` is a Bessel function and :math:`\lambda=lmb`,
     :math:`\nu=nu`.
 
     """)
