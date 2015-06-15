@@ -2451,6 +2451,43 @@ class TestDescribe(TestCase):
                       'kurtosis')
         check_named_results(actual, attributes)
 
+    def test_describe_ddof(self):
+        x = np.vstack((np.ones((3, 4)), 2 * np.ones((2, 4))))
+        nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
+        mc = np.array([1.4, 1.4, 1.4, 1.4])
+        vc = np.array([0.24, 0.24, 0.24, 0.24])
+        skc = [0.40824829046386357] * 4
+        kurtc = [-1.833333333333333] * 4
+        n, mm, m, v, sk, kurt = stats.describe(x, ddof=0)
+        assert_equal(n, nc)
+        assert_equal(mm, mmc)
+        assert_equal(m, mc)
+        assert_equal(v, vc)
+        # not sure about precision with sk, skc
+        assert_array_almost_equal(sk, skc, decimal=13)
+        assert_array_almost_equal(kurt, kurtc, decimal=13)
+
+    def test_describe_axis_none(self):
+        x = np.vstack((np.ones((3, 4)), 2 * np.ones((2, 4))))
+
+        # expected values
+        e_nobs, e_minmax = (20, (1.0, 2.0))
+        e_mean = 1.3999999999999999
+        e_var =  0.25263157894736848
+        e_skew = 0.4082482904638634
+        e_kurt = -1.8333333333333333
+
+        # actual values
+        a = stats.describe(x, axis=None)
+
+        assert_equal(a.nobs, e_nobs)
+        assert_equal(a.minmax, e_minmax)
+        assert_equal(a.mean, e_mean)
+        assert_equal(a.variance, e_var)
+        # not sure about precision with sk, skc
+        assert_array_almost_equal(a.skewness, e_skew, decimal=13)
+        assert_array_almost_equal(a.kurtosis, e_kurt, decimal=13)
+
 def test_normalitytests():
     yield (assert_raises, ValueError, stats.skewtest, 4.)
     yield (assert_raises, ValueError, stats.kurtosistest, 4.)
