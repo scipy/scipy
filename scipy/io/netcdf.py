@@ -931,7 +931,12 @@ class netcdf_variable(object):
                 recs = rec_index + 1
             if recs > len(self.data):
                 shape = (recs,) + self._shape[1:]
-                self.data.resize(shape)
+                # Resize in-place does not always work since 
+                # the array might not be single-segment                              
+                try:
+                    self.data.resize(shape)
+                except ValueError:
+                    self.data = np.resize(self.data, shape).astype(self.data.dtype)
         self.data[index] = data
 
 
