@@ -137,16 +137,13 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 except TypeError:
                     raise TypeError('invalid input format')
 
-                self.row = np.array(ij[0], copy=copy)
-                self.col = np.array(ij[1], copy=copy)
-                self.data = np.array(obj, copy=copy)
-
+                row, col = ij
                 if shape is None:
-                    if len(self.row) == 0 or len(self.col) == 0:
+                    if len(row) == 0 or len(col) == 0:
                         raise ValueError('cannot infer dimensions from zero '
                                          'sized index arrays')
-                    M = self.row.max() + 1
-                    N = self.col.max() + 1
+                    M = max(row) + 1
+                    N = max(col) + 1
                     self.shape = (M, N)
                 else:
                     # Use 2 steps to ensure shape has length 2.
@@ -154,8 +151,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     self.shape = (M, N)
 
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
-                self.row = self.row.astype(idx_dtype)
-                self.col = self.col.astype(idx_dtype)
+                self.row = np.array(row, copy=copy, dtype=idx_dtype)
+                self.col = np.array(col, copy=copy, dtype=idx_dtype)
+                self.data = np.array(obj, copy=copy)
                 self.has_canonical_format = False
 
         elif arg1 is None:
