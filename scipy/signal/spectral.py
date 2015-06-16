@@ -838,7 +838,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     if sides == 'twosided':
         num_freqs = nfft
     elif sides == 'onesided':
-        if nperseg % 2:
+        if nfft % 2:
             num_freqs = (nfft + 1)//2
         else:
             num_freqs = nfft//2 + 1
