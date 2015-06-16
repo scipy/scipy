@@ -457,6 +457,24 @@ class TestWelch(TestCase):
         assert_(p.dtype == q.dtype,
                 'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
 
+    def test_padded_freqs(self):
+        x = np.zeros(12)
+
+        nfft = 24
+        f = fftpack.fftfreq(nfft, 1.0)[:nfft//2+1]
+        f[-1] *= -1
+        fodd, _ = welch(x, nperseg=5, nfft=nfft)
+        feven, _ = welch(x, nperseg=6, nfft=nfft)
+        assert_allclose(f, fodd)
+        assert_allclose(f, feven)
+
+        nfft = 25
+        f = fftpack.fftfreq(nfft, 1.0)[:(nfft + 1)//2]
+        fodd, _ = welch(x, nperseg=5, nfft=nfft)
+        feven, _ = welch(x, nperseg=6, nfft=nfft)
+        assert_allclose(f, fodd)
+        assert_allclose(f, feven)
+
 class TestCSD:
     def test_pad_shorter_x(self):
         x = np.zeros(8)
@@ -744,6 +762,24 @@ class TestCSD:
         assert_(p.dtype == q.dtype,
                 'dtype mismatch, %s, %s' % (p.dtype, q.dtype))
 
+    def test_padded_freqs(self):
+        x = np.zeros(12)
+        y = np.ones(12)
+
+        nfft = 24
+        f = fftpack.fftfreq(nfft, 1.0)[:nfft//2+1]
+        f[-1] *= -1
+        fodd, _ = csd(x, y, nperseg=5, nfft=nfft)
+        feven, _ = csd(x, y, nperseg=6, nfft=nfft)
+        assert_allclose(f, fodd)
+        assert_allclose(f, feven)
+
+        nfft = 25
+        f = fftpack.fftfreq(nfft, 1.0)[:(nfft + 1)//2]
+        fodd, _ = csd(x, y, nperseg=5, nfft=nfft)
+        feven, _ = csd(x, y, nperseg=6, nfft=nfft)
+        assert_allclose(f, fodd)
+        assert_allclose(f, feven)
 
 class TestCoherence:
     def test_identical_input(self):
