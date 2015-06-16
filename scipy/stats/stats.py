@@ -824,31 +824,29 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
 
     Returns
     -------
-    tmin : masked_array
+    tmin : float, int or ndarray
 
     Examples
     --------
     >>> from scipy import stats
     >>> x = np.arange(20)
     >>> stats.tmin(x)
-    masked_array(data = 0,
-                 mask = False,
-           fill_value = 999999)
+    0
 
     >>> stats.tmin(x, 13)
-    masked_array(data = 13,
-                 mask = False,
-           fill_value = 999999)
+    13
 
     >>> stats.tmin(x, 13, inclusive=False)
-    masked_array(data = 14,
-                 mask = False,
-           fill_value = 999999)
+    14
 
     """
     a, axis = _chk_asarray(a, axis)
     am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
-    return ma.minimum.reduce(am, axis)
+
+    res = ma.minimum.reduce(am, axis).data
+    if res.ndim == 0:
+        return res[()]
+    return res
 
 
 def tmax(a, upperlimit=None, axis=0, inclusive=True):
@@ -875,31 +873,28 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
 
     Returns
     -------
-    tmax : masked_array
+    tmax : float, int or ndarray
 
     Examples
     --------
     >>> from scipy import stats
     >>> x = np.arange(20)
     >>> stats.tmax(x)
-    masked_array(data = 19,
-                 mask = False,
-           fill_value = 999999)
+    19
 
     >>> stats.tmax(x, 13)
-    masked_array(data = 13,
-                 mask = False,
-           fill_value = 999999)
+    13
 
     >>> stats.tmax(x, 13, inclusive=False)
-    masked_array(data = 12,
-                 mask = False,
-           fill_value = 999999)
+    12
 
     """
     a, axis = _chk_asarray(a, axis)
     am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
-    return ma.maximum.reduce(am, axis)
+    res = ma.maximum.reduce(am, axis).data
+    if res.ndim == 0:
+        return res[()]
+    return res
 
 
 def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
