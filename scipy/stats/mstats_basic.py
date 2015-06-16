@@ -2040,6 +2040,7 @@ def f_oneway(*args):
     return F_onewayResult(f, prob)
 
 
+@np.deprecate(message="mstats.f_value_wilks_lambda deprecated in scipy 0.17.0")
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     """Calculation of Wilks lambda F-statistic for multivariate data, per
     Maxwell & Delaney p.657.
