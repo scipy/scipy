@@ -1967,15 +1967,15 @@ class rv_continuous(rv_generic):
         # shapes='a, b'. To fix `a`, can specify either `f1` or `fa`.
         # Convert the latter into the former.
         if self.shapes:
-            fshapes = ['f%s' % s for s in self.shapes.replace(',', ' ').split()]
-            for j, fs in enumerate(fshapes):
-                if fs in kwds:
+            shapes = self.shapes.replace(',', ' ').split()
+            for j, s in enumerate(shapes):
+                val = kwds.pop('f' + s, None) or kwds.pop('fix_' + s, None)
+                if val is not None:
                     key = 'f%d' % j
                     if key in kwds:
-                        raise ValueError("Cannot specify both %s and %s" %
-                                         (fs, key))
+                        raise ValueError("Duplicate entry for %s." % key)
                     else:
-                        kwds.update({key: kwds[fs]})
+                        kwds[key] = val
 
         args = list(args)
         Nargs = len(args)
@@ -1985,7 +1985,7 @@ class rv_continuous(rv_generic):
         for n, key in enumerate(names):
             if key in kwds:
                 fixedn.append(n)
-                args[n] = kwds[key]
+                args[n] = kwds.pop(key)
             else:
                 x0.append(args[n])
 
@@ -2043,8 +2043,9 @@ class rv_continuous(rv_generic):
 
             - f0...fn : hold respective shape parameters fixed.
               Alternatively, shape parameters to fix can be specified by name.
-              For example, if ``self.shapes == "a, b"``, ``fa`` is equivalent to
-              ``f0`` and ``fb`` is equivalent to ``f1``.
+              For example, if ``self.shapes == "a, b"``, ``fa``and ``fix_a``
+              are equivalent to ``f0``, and ``fb`` and ``fix_b`` are
+              equivalent to ``f1``.
 
             - floc : hold location parameter fixed to specified value.
 
@@ -2110,12 +2111,12 @@ class rv_continuous(rv_generic):
             # get distribution specific starting locations
             start = self._fitstart(data)
             args += start[Narg:-2]
-        loc = kwds.get('loc', start[-2])
-        scale = kwds.get('scale', start[-1])
+        loc = kwds.pop('loc', start[-2])
+        scale = kwds.pop('scale', start[-1])
         args += (loc, scale)
         x0, func, restore, args = self._reduce_func(args, kwds)
 
-        optimizer = kwds.get('optimizer', optimize.fmin)
+        optimizer = kwds.pop('optimizer', optimize.fmin)
         # convert string to function in scipy.optimize
         if not callable(optimizer) and isinstance(optimizer, string_types):
             if not optimizer.startswith('fmin_'):
@@ -2126,6 +2127,11 @@ class rv_continuous(rv_generic):
                 optimizer = getattr(optimize, optimizer)
             except AttributeError:
                 raise ValueError("%s is not a valid optimizer" % optimizer)
+
+        # by now kwds must be empty, since everybody took what they needed
+        if kwds:
+            raise TypeError("Unknown arguments: %s." % kwds)
+
         vals = optimizer(func, x0, args=(ravel(data),), disp=0)
         if restore is not None:
             vals = restore(args, vals)

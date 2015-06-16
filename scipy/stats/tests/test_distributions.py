@@ -1249,8 +1249,14 @@ class TestFitMethod(object):
         res_2 = stats.beta.fit(x, fa=3.)
         assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
 
+        res_2 = stats.beta.fit(x, fix_a=3.)
+        assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
+
         res_3 = stats.beta.fit(x, f1=4.)
         res_4 = stats.beta.fit(x, fb=4.)
+        assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
+
+        res_4 = stats.beta.fit(x, fix_b=4.)
         assert_allclose(res_3, res_4, atol=1e-12, rtol=1e-12)
 
         # cannot specify both positional and named args at the same time
@@ -1259,6 +1265,25 @@ class TestFitMethod(object):
         # check that attempting to fix all parameters raises a ValueError
         assert_raises(ValueError, stats.beta.fit, x, fa=0, f1=1,
                                                      floc=2, fscale=3)
+
+        # check that specifying floc, fscale and fshapes works for
+        # beta and gamma which override the generic fit method
+        res_5 = stats.beta.fit(x, fa=3., floc=0, fscale=1)
+        aa, bb, ll, ss = res_5
+        assert_equal([aa, ll, ss], [3., 0, 1])
+
+        # gamma distribution
+        a = 3.
+        data = stats.gamma.rvs(a, size=100)
+        aa, ll, ss = stats.gamma.fit(data, fa=a)
+        assert_equal(aa, a)
+
+    def test_extra_params(self):
+        # unknown parameters should raise rather than be silently ignored
+        dist = stats.exponnorm
+        data = dist.rvs(K=2, size=100)
+        dct = dict(enikibeniki=-101)
+        assert_raises(TypeError, dist.fit, data, **dct)
 
 
 class TestFrozen(TestCase):
