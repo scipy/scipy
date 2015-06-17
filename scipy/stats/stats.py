@@ -1851,12 +1851,16 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     """
     a = np.ravel(a)
     if defaultlimits is None:
-        # no range given, so use values in `a`
-        data_min = a.min()
-        data_max = a.max()
-        # Have bins extend past min and max values slightly
-        s = (data_max - data_min) / (2. * (numbins - 1.))
-        defaultlimits = (data_min - s, data_max + s)
+        if a.size == 0:
+            # handle empty arrays. Undetermined range, so use 0-1.
+            defaultlimits = (0, 1)
+        else:
+            # no range given, so use values in `a`
+            data_min = a.min()
+            data_max = a.max()
+            # Have bins extend past min and max values slightly
+            s = (data_max - data_min) / (2. * (numbins - 1.))
+            defaultlimits = (data_min - s, data_max + s)
 
     # use numpy's histogram method to compute bins
     hist, bin_edges = np.histogram(a, bins=numbins, range=defaultlimits,
@@ -1881,6 +1885,9 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     Returns a cumulative frequency histogram, using the histogram function.
+
+    A cumulative histogram is a mapping that counts the cumulative number of
+    observations in all of the bins up to the specified bin.
 
     Parameters
     ----------
@@ -1910,17 +1917,27 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Examples
     --------
+    >>> import pylab as pl
     >>> from scipy import stats
     >>> x = [1, 4, 2, 1, 3, 1]
-    >>> cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
-    >>> cumfreqs
-    array([ 3.,  4.,  5.,  6.])
     >>> cumfreqs, lowlim, binsize, extrapoints = \
     ...     stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
     >>> cumfreqs
     array([ 1.,  2.,  3.,  3.])
     >>> extrapoints
     3
+
+    Generate histogram of cumulative frequencies
+    >>> cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x)
+    >>> cumfreqs
+    array([ 3.,  3.,  3.,  4.,  4.,  4.,  5.,  5.,  5.,  6. ])
+
+    Plot cumulative frequencies
+    >>> a = np.arange(1, 11)
+    >>> pl.plot(a, cumfreqs)
+    >>> pl.plot(a, cumfreqs, 'bo')
+
+    >>> pl.show()
 
     """
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
@@ -1934,6 +1951,9 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     Returns a relative frequency histogram, using the histogram function.
+
+    A relative frequency  histogram is a mapping of the number of
+    observations in each of the bins relative to the total of observations.
 
     Parameters
     ----------
@@ -1963,17 +1983,33 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Examples
     --------
+    >>> import pylab as pl
     >>> from scipy import stats
-    >>> a = np.array([1, 4, 2, 1, 3, 1])
+    >>> a = np.array([2, 4, 1, 2, 3, 2])
     >>> relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
     >>> relfreqs
     array([ 0.5       ,  0.16666667,  0.16666667,  0.16666667])
     >>> np.sum(relfreqs)  # relative frequencies should add up to 1
     0.99999999999999989
 
+    Generate histogram of relative frequencies
+    >>> relreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=5)
+    >>> relreqs
+    array([ 0.16666667., 0.5, 0.16666667, 0.16666667, 0. ])
+
+    Plot relative frequencies
+    >>> a = np.arange(1, 6)
+    >>> pl.plot(a, relfreqs)
+    >>> pl.plot(a, relfreqs, 'bo')
+    >>> pl.ylim(0, 1)
+    >>> pl.xlim(0, 6)
+
+    >>> pl.show()
+
     """
+    a = np.asanyarray(a)
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
-    h = np.array(h / float(np.array(a).shape[0]))
+    h = h / float(a.shape[0])
 
     RelfreqResult = namedtuple('RelfreqResult', ('frequency', 'lowerlimit',
                                                  'binsize', 'extrapoints'))
