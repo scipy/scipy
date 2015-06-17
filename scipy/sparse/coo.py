@@ -142,8 +142,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     if len(row) == 0 or len(col) == 0:
                         raise ValueError('cannot infer dimensions from zero '
                                          'sized index arrays')
-                    M = max(row) + 1
-                    N = max(col) + 1
+                    M = np.max(row) + 1
+                    N = np.max(col) + 1
                     self.shape = (M, N)
                 else:
                     # Use 2 steps to ensure shape has length 2.
