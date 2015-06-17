@@ -494,7 +494,12 @@ class netcdf_file(object):
             # Handle rec vars with shape[0] < nrecs.
             if self._recs > len(var.data):
                 shape = (self._recs,) + var.data.shape[1:]
-                var.data.resize(shape)
+                # Resize in-place does not always work since 
+                # the array might not be single-segment                              
+                try:
+                    var.data.resize(shape)
+                except ValueError:
+                    var.data = np.resize(var.data, shape).astype(var.data.dtype)
 
             pos0 = pos = self.fp.tell()
             for rec in var.data:
