@@ -42,7 +42,7 @@ if __name__ == "__main__":
     # OK (SKIP=X, KNOWNFAIL=Y) or FAILED (errors=X, failures=Y)
     r = re.compile("Ran (?P<num_tests>\d+) tests in (?P<time>\d+\S+)")
 
-    status = False
+    status, found_it = False, False
     while True:
         line = sys.stdin.readline()
         if not line:
