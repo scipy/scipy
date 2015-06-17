@@ -1522,14 +1522,16 @@ class TestMoments(TestCase):
 
 class TestThreshold(TestCase):
     def test_basic(self):
-        a = [-1,2,3,4,5,-1,-2]
-        assert_array_equal(stats.threshold(a),a)
-        assert_array_equal(stats.threshold(a,3,None,0),
-                           [0,0,3,4,5,0,0])
-        assert_array_equal(stats.threshold(a,None,3,0),
-                           [-1,2,3,0,0,-1,-2])
-        assert_array_equal(stats.threshold(a,2,4,0),
-                           [0,2,3,4,0,0,0])
+        a = [-1, 2, 3, 4, 5, -1, -2]
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=DeprecationWarning)
+            assert_array_equal(stats.threshold(a), a)
+            assert_array_equal(stats.threshold(a, 3, None, 0),
+                               [0, 0, 3, 4, 5, 0, 0])
+            assert_array_equal(stats.threshold(a, None, 3, 0),
+                               [-1, 2, 3, 0, 0, -1, -2])
+            assert_array_equal(stats.threshold(a, 2, 4, 0),
+                               [0, 2, 3, 4, 0, 0, 0])
 
 
 class TestStudentTest(TestCase):

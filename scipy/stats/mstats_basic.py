@@ -905,6 +905,7 @@ def ks_twosamp_old(data1, data2):
     return stats.ks_2samp(data1,data2)
 
 
+@np.deprecate(message="mstats.threshold is deprecated in scipy 0.17.0")
 def threshold(a, threshmin=None, threshmax=None, newval=0):
     """
     Clip array to a given value.
