@@ -19,7 +19,7 @@ from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
 from numpy.compat import asbytes, asstr
 from scipy._lib.six import string_types
-from scipy.sparse import spmatrix, coo_matrix
+from scipy.sparse import spmatrix, coo_matrix, isspmatrix
 
 __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
@@ -292,7 +292,7 @@ class MMFile (object):
         isskew = True
         isherm = a.dtype.char in 'FD'
         
-        if scipy.sparse.isspmatrix(a):
+        if isspmatrix(a):
             # check if number of nonzero entrys of lower and upper triangle matrix are equal
             (row, col) = a.nonzero()
             if (row < col).sum() != (row > col).sum():
@@ -558,7 +558,7 @@ class MMFile (object):
                         a = a.astype('D')
 
         else:
-            if not scipy.sparse.isspmatrix(a):
+            if not isspmatrix(a):
                 raise ValueError('unknown matrix type: %s' % type(a))
             rep = 'coordinate'
             rows, cols = a.shape
