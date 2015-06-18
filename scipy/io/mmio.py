@@ -284,8 +284,8 @@ class MMFile (object):
         m,n = a.shape
         if m != n:
             return MMFile.SYMMETRY_GENERAL
-        issymm = 1
-        isskew = 1
+        issymm = True
+        isskew = True
         isherm = a.dtype.char in 'FD'
         
         if isinstance(a,spmatrix):
@@ -313,11 +313,11 @@ class MMFile (object):
         # check for symmetry
         for (aij, aji) in symm_iterator():
             if issymm and aij != aji:
-                issymm = 0
+                issymm = False
             if isskew and aij != -aji:
-                isskew = 0
+                isskew = False
             if isherm and aij != conj(aji):
-                isherm = 0
+                isherm = False
             if not (issymm or isskew or isherm):
                 break
         
