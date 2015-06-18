@@ -1,5 +1,7 @@
 """
   Matrix Market I/O in Python.
+  See http://math.nist.gov/MatrixMarket/formats.html 
+  for information about the Matrix Market format.
 """
 #
 # Author: Pearu Peterson <pearu@cens.ioc.ee>
