@@ -531,7 +531,8 @@ def block_diag(*arrs):
                          "greater than 2: %s" % bad_args)
 
     shapes = np.array([a.shape if a.size > 0 else [0, 0] for a in arrs])
-    out = np.zeros(np.sum(shapes, axis=0), dtype=arrs[0].dtype)
+    out_dtype = np.find_common_type([arr.dtype for arr in arrs], [])
+    out = np.zeros(np.sum(shapes, axis=0), dtype=out_dtype)
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(shapes):
