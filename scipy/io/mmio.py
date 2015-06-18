@@ -95,6 +95,8 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Number of digits to display for real or complex values.
     symmetry : None or str, optional
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
+        If symmetry is None the symmetry type of 'a' is determined by its
+        values.
     """
     MMFile().write(target, a, comment, field, precision, symmetry)
 
