@@ -2407,13 +2407,13 @@ cdef char ufunc_besselpoly_types[8]
 cdef char *ufunc_besselpoly_doc = (
     "besselpoly(a, lmb, nu)\n"
     "\n"
-    "Weighed integral of a Bessel function.\n"
+    "Weighted integral of a Bessel function.\n"
     "\n"
     ".. math::\n"
     "\n"
-    "   \\int_0^1 x^\\lambda J_v(\\nu, 2 a x) \\, dx\n"
+    "   \\int_0^1 x^\\lambda J_\\nu(2 a x) \\, dx\n"
     "\n"
-    "where :math:`J_v` is a Bessel function and :math:`\\lambda=lmb`,\n"
+    "where :math:`J_\\nu` is a Bessel function and :math:`\\lambda=lmb`,\n"
     ":math:`\\nu=nu`.")
 ufunc_besselpoly_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_besselpoly_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
@@ -5698,7 +5698,7 @@ cdef char ufunc_i1e_types[4]
 cdef char *ufunc_i1e_doc = (
     "i1e(x)\n"
     "\n"
-    "Exponentially scaled modified Bessel function of order 0.\n"
+    "Exponentially scaled modified Bessel function of order 1.\n"
     "\n"
     "Defined as::\n"
     "\n"
