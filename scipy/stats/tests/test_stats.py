@@ -2457,9 +2457,9 @@ class TestDescribe(TestCase):
         kurtc = [-1.833333333333333] * 4
         n, mm, m, v, sk, kurt = stats.describe(x, ddof=0)
         assert_equal(n, nc)
-        assert_allclose(mm, mmc)
-        assert_allclose(m, mc)
-        assert_allclose(v, vc)
+        assert_allclose(mm, mmc, rtol=1e-15)
+        assert_allclose(m, mc, rtol=1e-15)
+        assert_allclose(v, vc, rtol=1e-15)
         assert_array_almost_equal(sk, skc, decimal=13)
         assert_array_almost_equal(kurt, kurtc, decimal=13)
 
