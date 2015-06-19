@@ -69,6 +69,10 @@ release.  Therefore we will have a longer-lived maintenance branch of the last
 It's not clear how much functionality can be Cythonized without making the .so
 files too large.  This needs measuring.
 
+More of the currently wrapped libraries should export Cython-importable versions that can be used without linking.
+
+Cython's old syntax for using numpy arrays should be removed and replaced with Cython memoryviews.
+
 Bento will be officially supported as the second build tool besides distutils.
 At the moment it still has an experimental, use-at-your-own-risk status, but
 that has to change. 
@@ -79,6 +83,7 @@ platform or Python version.  At least needed are a Windows, Linux and OS X
 build, coverage of the lowest and highest Python and Numpy versions that are
 supported, a Bento build and a PEP8 checker.
 
+NumPy and SciPy should both build from source on windows with a (possibly modified) MinGW or MinGW-w64 toolchain and be compatible with Python installations compiled with either the same MinGW or with MSVC.
 
 Modules
 -------
@@ -128,6 +133,10 @@ interpolate
 Needed:
 
   - Transparant B-splines and their usage in the interpolation routines is needed.
+  - Integration and differentiation and arithmetic routines for splines
+  - Transparent tensor-product splines.
+  - NURBS support.
+  - Mesh refinement and coarsening of B-splines and corresponding tensor products.
   - Both fitpack and fitpack2 interfaces will be kept.
   - splmake should go; is different spline representation --> need exactly one
   - interp1d/interp2d are somewhat ugly but widely used, so we keep them.
@@ -160,6 +169,8 @@ Needed:
   - cblas, clapack are deprecated, will go away
   - wrap more lapack functions
   - one too many funcs for LU decomposition, remove one
+  - Add type-generic wrappers in the Cython BLAS and LAPACK
+  - Make many of the linear algebra routines into gufuncs
 
 
 misc
@@ -267,7 +278,7 @@ This module is in good shape.
 
 sparse.linalg
 `````````````
-Arpack is in good shape.
+    - Wrappers for PROPACK for faster sparse SVD computation.
 
 isolve:
 
