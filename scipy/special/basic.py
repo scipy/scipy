@@ -137,7 +137,7 @@ def jnjnp_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -157,7 +157,7 @@ def jnyn_zeros(n,nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -172,36 +172,102 @@ def jnyn_zeros(n,nt):
 
 def jn_zeros(n,nt):
     """Compute nt zeros of the Bessel function Jn(x).
+
+    Parameters
+    ----------
+    n : int
+        Order of Bessel function
+    nt : int
+        Number of zeros to return
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     return jnyn_zeros(n,nt)[0]
 
 
 def jnp_zeros(n,nt):
-    """Compute nt zeros of the Bessel function Jn'(x).
+    """Compute nt zeros of the Bessel function derivative Jn'(x).
+
+    Parameters
+    ----------
+    n : int
+        Order of Bessel function
+    nt : int
+        Number of zeros to return
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     return jnyn_zeros(n,nt)[1]
 
 
 def yn_zeros(n,nt):
     """Compute nt zeros of the Bessel function Yn(x).
+
+    Parameters
+    ----------
+    n : int
+        Order of Bessel function
+    nt : int
+        Number of zeros to return
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     return jnyn_zeros(n,nt)[2]
 
 
 def ynp_zeros(n,nt):
-    """Compute nt zeros of the Bessel function Yn'(x).
+    """Compute nt zeros of the Bessel function derivative Yn'(x).
+
+    Parameters
+    ----------
+    n : int
+        Order of Bessel function
+    nt : int
+        Number of zeros to return
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     return jnyn_zeros(n,nt)[3]
 
 
 def y0_zeros(nt,complex=0):
-    """Returns nt (complex or real) zeros of Y0(z), z0, and the value
-    of Y0'(z0) = -Y1(z0) at each zero.
+    """Compute nt zeros of Bessel function Y0(z) and the value of 
+    Y0'(z0) = -Y1(z0) at each zero.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to return
+    complex : int, default 0
+        Set to 0 to return only the real zeros; set to 1 to return only the
+        complex zeros with negative real part and positive imaginary part.
+        Note that the complex conjugates of the latter are also zeros of the
+        function, but are not returned by this routine.
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -213,13 +279,23 @@ def y0_zeros(nt,complex=0):
 
 
 def y1_zeros(nt,complex=0):
-    """Returns nt (complex or real) zeros of Y1(z), z1, and the value
-    of Y1'(z1) = Y0(z1) at each zero.
+    """Compute nt zeros of Bessel function Y1(z) and the value of 
+    Y1'(z1) = Y0(z1) at each zero.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to return
+    complex : int, default 0
+        Set to 0 to return only the real zeros; set to 1 to return only the
+        complex zeros with negative real part and positive imaginary part.
+        Note that the complex conjugates of the latter are also zeros of the
+        function, but are not returned by this routine.
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -231,13 +307,23 @@ def y1_zeros(nt,complex=0):
 
 
 def y1p_zeros(nt,complex=0):
-    """Returns nt (complex or real) zeros of Y1'(z), z1', and the value
-    of Y1(z1') at each zero.
+    """Compute nt zeros of Bessel function derivative Y1'(z) and the value of
+    Y1(z1) at each zero.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to return
+    complex : int, default 0
+        Set to 0 to return only the real zeros; set to 1 to return only the
+        complex zeros with negative real part and positive imaginary part.
+        Note that the complex conjugates of the latter are also zeros of the
+        function, but are not returned by this routine.
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -266,7 +352,23 @@ bessel_diff_formula = np.deprecate(_bessel_diff_formula,
 
 
 def jvp(v,z,n=1):
-    """Return the nth derivative of Jv(z) with respect to z.
+    """Return the nth derivative of Bessel function Jv(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Bessel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -278,7 +380,23 @@ def jvp(v,z,n=1):
 
 
 def yvp(v,z,n=1):
-    """Return the nth derivative of Yv(z) with respect to z.
+    """Return the nth derivative of Bessel function Yv(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Bessel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -290,7 +408,23 @@ def yvp(v,z,n=1):
 
 
 def kvp(v,z,n=1):
-    """Return the nth derivative of Kv(z) with respect to z.
+    """Return the nth derivative of modified Bessel function Kv(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Bessel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 6.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -301,7 +435,23 @@ def kvp(v,z,n=1):
 
 
 def ivp(v,z,n=1):
-    """Return the nth derivative of Iv(z) with respect to z.
+    """Return the nth derivative of modified Bessel function Iv(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Bessel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 6.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -312,7 +462,23 @@ def ivp(v,z,n=1):
 
 
 def h1vp(v,z,n=1):
-    """Return the nth derivative of H1v(z) with respect to z.
+    """Return the nth derivative of Hankel function H1v(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Hankel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -324,7 +490,23 @@ def h1vp(v,z,n=1):
 
 
 def h2vp(v,z,n=1):
-    """Return the nth derivative of H2v(z) with respect to z.
+    """Return the nth derivative of Hankel function H2v(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Hankel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -339,10 +521,17 @@ def sph_jn(n,z):
     """Compute the spherical Bessel function jn(z) and its derivative for
     all orders up to and including n.
 
+    Parameters
+    ----------
+    n : int
+        Maximum order of jn to compute
+    z : complex
+        Argument at which to evaluate
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 8.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -365,10 +554,17 @@ def sph_yn(n,z):
     """Compute the spherical Bessel function yn(z) and its derivative for
     all orders up to and including n.
 
+    Parameters
+    ----------
+    n : int
+        Maximum order of yn to compute
+    z : complex
+        Argument at which to evaluate
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 8.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -391,10 +587,17 @@ def sph_jnyn(n,z):
     """Compute the spherical Bessel functions, jn(z) and yn(z) and their
     derivatives for all orders up to and including n.
 
+    Parameters
+    ----------
+    n : int
+        Maximum order of jn and yn to compute
+    z : complex
+        Argument at which to evaluate
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 8.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -418,10 +621,17 @@ def sph_in(n,z):
     """Compute the spherical Bessel function in(z) and its derivative for
     all orders up to and including n.
 
+    Parameters
+    ----------
+    n : int
+        Maximum order of in to compute
+    z : complex
+        Argument at which to evaluate
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 8.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -444,10 +654,17 @@ def sph_kn(n,z):
     """Compute the spherical Bessel function kn(z) and its derivative for
     all orders up to and including n.
 
+    Parameters
+    ----------
+    n : int
+        Maximum order of kn to compute
+    z : complex
+        Argument at which to evaluate
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 8.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -470,10 +687,17 @@ def sph_inkn(n,z):
     """Compute the spherical Bessel functions, in(z) and kn(z) and their
     derivatives for all orders up to and including n.
 
+    Parameters
+    ----------
+    n : int
+        Maximum order of in and kn to compute
+    z : complex
+        Argument at which to evaluate
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996, chapter 8.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -497,10 +721,17 @@ def riccati_jn(n,x):
     """Compute the Ricatti-Bessel function of the first kind and its
     derivative for all orders up to and including n.
 
+    Parameters
+    ----------
+    n : int
+        Maximum order of function to compute
+    x : float
+        Argument at which to evaluate
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -520,10 +751,17 @@ def riccati_yn(n,x):
     """Compute the Ricatti-Bessel function of the second kind and its
     derivative for all orders up to and including n.
 
+    Parameters
+    ----------
+    n : int
+        Maximum order of function to compute
+    x : float
+        Argument at which to evaluate
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -559,7 +797,7 @@ def erf_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -574,7 +812,7 @@ def fresnelc_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -589,7 +827,7 @@ def fresnels_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -605,7 +843,7 @@ def fresnel_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -705,7 +943,7 @@ def mathieu_even_coef(m,q):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -740,7 +978,7 @@ def mathieu_odd_coef(m,q):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -814,7 +1052,7 @@ def lpmn(m,n,z):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
     .. [2] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/14.3
@@ -901,7 +1139,7 @@ def clpmn(m, n, z, type=3):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
     .. [2] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/14.21
@@ -944,7 +1182,7 @@ def lqmn(m,n,z):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -974,7 +1212,7 @@ def bernoulli(n):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -994,7 +1232,7 @@ def euler(n):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1017,7 +1255,7 @@ def lpn(n,z):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1045,7 +1283,7 @@ def lqn(n,z):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1137,7 +1375,7 @@ def lmbda(v,x):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1278,7 +1516,7 @@ def ber_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1293,7 +1531,7 @@ def bei_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1308,7 +1546,7 @@ def ker_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1331,7 +1569,7 @@ def berp_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1346,7 +1584,7 @@ def beip_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1361,7 +1599,7 @@ def kerp_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1376,7 +1614,7 @@ def keip_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1394,7 +1632,7 @@ def kelvin_zeros(nt):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1418,7 +1656,7 @@ def pro_cv_seq(m,n,c):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
@@ -1440,7 +1678,7 @@ def obl_cv_seq(m,n,c):
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 13.
+           Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
 
     """
