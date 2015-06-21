@@ -195,3 +195,29 @@ def check_random_state_property(distfn, args):
 
     # finally, restore the random_state
     distfn.random_state = rndm
+
+
+def check_meth_dtype(distfn, arg, meths):
+    q0 = [0.25, 0.5, 0.75]
+    x0 = distfn.ppf(q0, *arg)
+    x_cast = [x0.astype(tp) for tp in
+                        (np.int_, np.float16, np.float32, np.float64)]
+
+    for x in x_cast:
+        # casting may have clipped the values, exclude those
+        distfn._argcheck(*arg)
+        x = x[(distfn.a < x)  & (x < distfn.b)]
+        for meth in meths:
+            val = meth(x, *arg)
+            npt.assert_(val.dtype == np.float_)
+
+
+def check_ppf_dtype(distfn, arg):
+    q0 = np.asarray([0.25, 0.5, 0.75])
+    q_cast = [q0.astype(tp) for tp in (np.float16, np.float32, np.float64)]
+    for q in q_cast:
+        for meth in [distfn.ppf, distfn.isf]:
+            val = meth(q, *arg)
+            npt.assert_(val.dtype == np.float_)
+    
+

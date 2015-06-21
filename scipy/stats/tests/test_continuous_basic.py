@@ -11,7 +11,8 @@ from scipy.special import betainc
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, NUMPY_BELOW_1_7,
-        check_edge_support, check_named_args, check_random_state_property)
+        check_edge_support, check_named_args, check_random_state_property,
+        check_meth_dtype, check_ppf_dtype)
 
 from scipy.stats._distr_params import distcont
 
@@ -79,6 +80,19 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # distslow are sorted by speed (very slow to slow)
 
 
+fails_cmplx = ['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma', 
+    'dweibull', 'erlang', 'expon', 'exponnorm', 'exponpow', 'exponweib', 'f',
+    'fatiguelife', 'foldnorm', 'frechet_l', 'frechet_r', 'gamma', 'gausshyper',
+    'genexpon', 'genextreme', 'gengamma', 'genlogistic', 'gennorm', 'genpareto',
+    'gilbrat', 'gompertz', 'halfcauchy', 'halfgennorm', 'halflogistic',
+    'halfnorm', 'invgamma', 'invgauss', 'johnsonsb', 'johnsonsu', 'ksone',
+    'kstwobign', 'levy_l', 'loggamma', 'logistic', 'lognorm', 'lomax',
+    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norm', 'pearson3',
+    'powerlognorm', 'powernorm', 'rayleigh', 'recipinvgauss', 'rice', 't',
+    'truncexpon', 'truncnorm', 'tukeylambda', 'vonmises', 'vonmises_line',
+    'wald', 'weibull_min']
+
+
 # NB: not needed anymore?
 def _silence_fp_errors(func):
     # warning: don't apply to test_ functions as is, then those will be skipped
@@ -142,6 +156,9 @@ def test_cont_basic():
 
             yield check_edge_support, distfn, arg
 
+            yield check_meth_dtype, distfn, arg, meths
+            yield check_ppf_dtype, distfn, arg
+
             knf = npt.dec.knownfailureif
             yield knf(distname == 'truncnorm')(check_ppf_private), distfn, \
                       arg, distname
@@ -200,6 +217,9 @@ def test_cont_basic_slow():
                 yield check_private_entropy, distfn, arg, stats.rv_continuous
 
             yield check_edge_support, distfn, arg
+
+            yield check_meth_dtype, distfn, arg, meths
+            yield check_ppf_dtype, distfn, arg
 
 
 @npt.dec.slow
