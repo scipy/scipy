@@ -248,11 +248,16 @@ def find_repeats(arr):
 
     Returns
     -------
-    find_repeats : tuple
-        Returns a tuple of two 1-D ndarrays.  The first ndarray are the repeats
-        as sorted, unique values that are repeated in `arr`.  The second
-        ndarray are the counts mapped one-to-one of the repeated values
-        in the first ndarray.
+    values : ndarray
+        The unique values from the (flattened) input that are repeated.
+
+    counts : ndarray
+        Number of times the corresponding 'value' is repeated.
+
+    Notes
+    -----
+    In numpy >= 1.9 `numpy.unique` provides similar functionality. The main
+    difference is that `find_repeats` only returns repeated values.
 
     Examples
     --------
@@ -264,8 +269,13 @@ def find_repeats(arr):
     (array([ 4., 5.]), array([2, 2], dtype=int32))
 
     """
+    RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
+
+    if np.asarray(arr).size == 0:
+        return RepeatedResults([], [])
+
     v1, v2, n = futil.dfreps(arr)
-    return v1[:n], v2[:n]
+    return RepeatedResults(v1[:n], v2[:n])
 
 #######
 #  NAN friendly functions
