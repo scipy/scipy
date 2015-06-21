@@ -1222,7 +1222,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-def describe(a, axis=0, ddof=1):
+def describe(a, axis=0, ddof=1, bias=True):
     """
     Computes several descriptive statistics of the passed array.
 
@@ -1234,7 +1234,10 @@ def describe(a, axis=0, ddof=1):
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
     ddof : int, optional
-        Delta degrees of freedom.  Default is 1.
+        Delta degrees of freedom (only for variance).  Default is 1.
+    bias : bool, optional
+        If False, then the skewness and kurtosis calculations are corrected for
+        statistical bias.
 
     Returns
     -------
@@ -1248,19 +1251,33 @@ def describe(a, axis=0, ddof=1):
        Unbiased variance of the data along axis, denominator is number of
        observations minus one.
     skewness : ndarray or float
-       Biased skewness, based on moment calculations with denominator equal to
+       Skewness, based on moment calculations with denominator equal to
        the number of observations, i.e. no degrees of freedom correction.
     kurtosis : ndarray or float
-       Biased kurtosis (Fisher).  The kurtosis is normalized so that it is
-       zero for the normal distribution.  No degrees of freedom or bias
-       correction is used.
+       Kurtosis (Fisher).  The kurtosis is normalized so that it is
+       zero for the normal distribution.  No degrees of freedom are used.
 
     See Also
     --------
     skew, kurtosis
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.arange(10)
+    >>> stats.describe(a)
+    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.16666666666666
+                   61, skewness=0.0, kurtosis=-1.2242424242424244)
+    >>> b = [[1, 2], [3, 4]]
+    >>> stats.describe(b)
+    DescribeResult(nobs=2, minmax=(array([1, 2]), array([3, 4])), mean=array([
+                   2., 3.]), variance=array([2., 2.]), skewness=array([0., 0.]),
+                   kurtosis=array([-2., -2.]))
+
     """
     a, axis = _chk_asarray(a, axis)
+    if a.size == 0:
+        raise ValueError("The input must not be empty.")
     n = a.shape[axis]
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
