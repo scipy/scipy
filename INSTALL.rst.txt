@@ -31,7 +31,7 @@ SciPy requires the following software installed for your platform:
 
 __ http://www.python.org
 
-2) NumPy__ 1.5.0 or newer (note: SciPy trunk at times requires latest NumPy
+2) NumPy__ 1.6.2 or newer (note: SciPy trunk at times requires latest NumPy
    trunk).
 
 __ http://www.numpy.org/
