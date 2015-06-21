@@ -80,7 +80,7 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # distslow are sorted by speed (very slow to slow)
 
 
-fails_cmplx = ['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma', 
+fails_cmplx = set(['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma', 
     'dweibull', 'erlang', 'expon', 'exponnorm', 'exponpow', 'exponweib', 'f',
     'fatiguelife', 'foldnorm', 'frechet_l', 'frechet_r', 'gamma', 'gausshyper',
     'genexpon', 'genextreme', 'gengamma', 'genlogistic', 'gennorm', 'genpareto',
@@ -90,7 +90,7 @@ fails_cmplx = ['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma',
     'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norm', 'pearson3',
     'powerlognorm', 'powernorm', 'rayleigh', 'recipinvgauss', 'rice', 't',
     'truncexpon', 'truncnorm', 'tukeylambda', 'vonmises', 'vonmises_line',
-    'wald', 'weibull_min']
+    'wald', 'weibull_min'])
 
 
 # NB: not needed anymore?
