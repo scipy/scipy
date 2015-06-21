@@ -12,7 +12,7 @@ from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, NUMPY_BELOW_1_7,
         check_edge_support, check_named_args, check_random_state_property,
-        check_meth_dtype, check_ppf_dtype)
+        check_meth_dtype, check_ppf_dtype, check_cmplx_deriv)
 
 from scipy.stats._distr_params import distcont
 
@@ -158,6 +158,7 @@ def test_cont_basic():
 
             yield check_meth_dtype, distfn, arg, meths
             yield check_ppf_dtype, distfn, arg
+            yield skp(distname in fails_cmplx)(check_cmplx_deriv), distfn, arg
 
             knf = npt.dec.knownfailureif
             yield knf(distname == 'truncnorm')(check_ppf_private), distfn, \
@@ -220,7 +221,7 @@ def test_cont_basic_slow():
 
             yield check_meth_dtype, distfn, arg, meths
             yield check_ppf_dtype, distfn, arg
-
+            yield skp(distname in fails_cmplx)(check_cmplx_deriv), distfn, arg
 
 @npt.dec.slow
 def test_moments():
