@@ -31,6 +31,11 @@ be exposed to the user. Also, the name is unclear. See issue #663 for details.
 ``scipy.stats.square_of_sums`` is deprecated. This too is a support function 
 not meant to be exposed to the user. See issues #665 and #663 for details.
 
+``scipy.stats.f_value``, ``scipy.stats.f_value_multivariate``,
+``scipy.stats.f_value_wilks_lambda``, and ``scipy.mstats.f_value_wilks_lambda`` 
+are deprecated. These are related to ANOVA, for which ``scipy.stats`` provides 
+quite limited functionality and these functions are not very useful standalone.
+See issues #660 and #650 for details.
 
 Backwards incompatible changes
 ==============================

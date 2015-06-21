@@ -4748,6 +4748,7 @@ def betai(a, b, x):
 #         ANOVA CALCULATIONS        #
 #####################################
 
+@np.deprecate(message="stats.f_value_wilks_lambda deprecated in scipy 0.17.0")
 def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     """Calculation of Wilks lambda F-statistic for multivarite data, per
     Maxwell & Delaney p.657.
@@ -4767,6 +4768,7 @@ def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
     return n_um / d_en
 
 
+@np.deprecate(message="stats.f_value deprecated in scipy 0.17.0")
 def f_value(ER, EF, dfR, dfF):
     """
     Returns an F-statistic for a restricted vs. unrestricted model.
@@ -4795,6 +4797,7 @@ def f_value(ER, EF, dfR, dfF):
     return (ER - EF) / float(dfR - dfF) / (EF / float(dfF))
 
 
+@np.deprecate(message="stats.f_value_multivariate deprecated in scipy 0.17.0")
 def f_value_multivariate(ER, EF, dfnum, dfden):
     """
     Returns a multivariate F-statistic.
