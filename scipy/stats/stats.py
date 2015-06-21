@@ -705,7 +705,7 @@ def _mask_to_limits(a, limits, inclusive):
     return am
 
 
-def tmean(a, limits=None, inclusive=(True, True)):
+def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     Compute the trimmed mean.
 
@@ -725,10 +725,25 @@ def tmean(a, limits=None, inclusive=(True, True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to compute test. Default is None.
 
     Returns
     -------
     tmean : float
+
+    See also
+    --------
+    trim_mean : returns mean after trimming a proportion from both tails.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tmean(x)
+    9.5
+    >>> stats.tmean(x, (3,17))
+    10.0
 
     """
     a = asarray(a)
@@ -736,10 +751,10 @@ def tmean(a, limits=None, inclusive=(True, True)):
         return np.mean(a, None)
 
     am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean()
+    return am.mean(axis=axis)
 
 
-def tvar(a, limits=None, inclusive=(True, True)):
+def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed variance
 
@@ -759,6 +774,11 @@ def tvar(a, limits=None, inclusive=(True, True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -770,6 +790,15 @@ def tvar(a, limits=None, inclusive=(True, True)):
     `tvar` computes the unbiased sample variance, i.e. it uses a correction
     factor ``n / (n - 1)``.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tvar(x)
+    35.0
+    >>> stats.tvar(x, (3,17))
+    20.0
+
     """
     a = asarray(a)
     a = a.astype(float).ravel()
@@ -777,7 +806,7 @@ def tvar(a, limits=None, inclusive=(True, True)):
         n = len(a)
         return a.var() * n/(n-1.)
     am = _mask_to_limits(a, limits, inclusive)
-    return np.ma.var(am, ddof=1)
+    return np.ma.var(am, ddof=ddof, axis=axis)
 
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
@@ -797,20 +826,37 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
         When lowerlimit is None, then all values are used. The default value
         is None.
     axis : int or None, optional
-        Axis along which to operate. Default is 0. If None, compute over the whole
-        array `a`.
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
 
     Returns
     -------
-    tmin : float
+    tmin : float, int or ndarray
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tmin(x)
+    0
+
+    >>> stats.tmin(x, 13)
+    13
+
+    >>> stats.tmin(x, 13, inclusive=False)
+    14
 
     """
     a, axis = _chk_asarray(a, axis)
     am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
-    return ma.minimum.reduce(am, axis)
+
+    res = ma.minimum.reduce(am, axis).data
+    if res.ndim == 0:
+        return res[()]
+    return res
 
 
 def tmax(a, upperlimit=None, axis=0, inclusive=True):
@@ -837,15 +883,31 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
 
     Returns
     -------
-    tmax : float
+    tmax : float, int or ndarray
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tmax(x)
+    19
+
+    >>> stats.tmax(x, 13)
+    13
+
+    >>> stats.tmax(x, 13, inclusive=False)
+    12
 
     """
     a, axis = _chk_asarray(a, axis)
     am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
-    return ma.maximum.reduce(am, axis)
+    res = ma.maximum.reduce(am, axis).data
+    if res.ndim == 0:
+        return res[()]
+    return res
 
 
-def tstd(a, limits=None, inclusive=(True, True)):
+def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed sample standard deviation
 
@@ -865,6 +927,11 @@ def tstd(a, limits=None, inclusive=(True, True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -875,11 +942,20 @@ def tstd(a, limits=None, inclusive=(True, True)):
     `tstd` computes the unbiased sample standard deviation, i.e. it uses a
     correction factor ``n / (n - 1)``.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tstd(x)
+    5.9160797830996161
+    >>> stats.tstd(x, (3,17))
+    4.4721359549995796
+
     """
-    return np.sqrt(tvar(a, limits, inclusive))
+    return np.sqrt(tvar(a, limits, inclusive, axis, ddof))
 
 
-def tsem(a, limits=None, inclusive=(True, True)):
+def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed standard error of the mean.
 
@@ -899,6 +975,11 @@ def tsem(a, limits=None, inclusive=(True, True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
+    ddof : int, optional
+        Delta degrees of freedom.  Default is 1.
 
     Returns
     -------
@@ -909,13 +990,22 @@ def tsem(a, limits=None, inclusive=(True, True)):
     `tsem` uses unbiased sample standard deviation, i.e. it uses a
     correction factor ``n / (n - 1)``.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = np.arange(20)
+    >>> stats.tsem(x)
+    1.3228756555322954
+    >>> stats.tsem(x, (3,17))
+    1.1547005383792515
+
     """
     a = np.asarray(a).ravel()
     if limits is None:
-        return a.std(ddof=1) / np.sqrt(a.size)
+        return a.std(ddof=ddof) / np.sqrt(a.size)
 
     am = _mask_to_limits(a, limits, inclusive)
-    sd = np.sqrt(np.ma.var(am, ddof=1))
+    sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
     return sd / np.sqrt(am.count())
 
 
@@ -2280,10 +2370,10 @@ def trimboth(a, proportiontocut, axis=0):
 
     Slices off the passed proportion of items from both ends of the passed
     array (i.e., with `proportiontocut` = 0.1, slices leftmost 10% **and**
-    rightmost 10% of scores).  You must pre-sort the array if you want
-    'proper' trimming.  Slices off less if proportion results in a
-    non-integer slice index (i.e., conservatively slices off
-    `proportiontocut`).
+    rightmost 10% of scores). The trimmed values are the lowest and
+    highest ones.
+    Slices off less if proportion results in a non-integer slice index (i.e.,
+    conservatively slices off`proportiontocut`).
 
     Parameters
     ----------
@@ -2298,7 +2388,8 @@ def trimboth(a, proportiontocut, axis=0):
     Returns
     -------
     out : ndarray
-        Trimmed version of array `a`.
+        Trimmed version of array `a`. The order of the trimmed content
+        is undefined.
 
     See Also
     --------
@@ -2314,6 +2405,10 @@ def trimboth(a, proportiontocut, axis=0):
 
     """
     a = np.asarray(a)
+
+    if a.size == 0:
+        return a
+
     if axis is None:
         a = a.ravel()
         axis = 0
@@ -2324,19 +2419,27 @@ def trimboth(a, proportiontocut, axis=0):
     if (lowercut >= uppercut):
         raise ValueError("Proportion too big.")
 
-    sl = [slice(None)] * a.ndim
+    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
+    # in those cases we use np.sort
+    try:
+        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    except AttributeError:
+        atmp = np.sort(a, axis)
+
+    sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
-    return a[sl]
+    return atmp[sl]
 
 
-def trim1(a, proportiontocut, tail='right'):
+def trim1(a, proportiontocut, tail='right', axis=0):
     """
-    Slices off a proportion of items from ONE end of the passed array
-    distribution.
+    Slices off a proportion from ONE end of the passed array distribution.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' or 'rightmost'
-    10% of scores.  Slices off LESS if proportion results in a non-integer
-    slice index (i.e., conservatively slices off `proportiontocut` ).
+    10% of scores. The lowest or highest values are trimmed (depending on
+    the tail).
+    Slices off less if proportion results in a non-integer slice index
+    (i.e., conservatively slices off `proportiontocut` ).
 
     Parameters
     ----------
@@ -2346,32 +2449,54 @@ def trim1(a, proportiontocut, tail='right'):
         Fraction to cut off of 'left' or 'right' of distribution
     tail : {'left', 'right'}, optional
         Defaults to 'right'.
+    axis : int or None, optional
+        Axis along which to trim data. Default is 0. If None, compute over
+        the whole array `a`.
 
     Returns
     -------
     trim1 : ndarray
-        Trimmed version of array `a`
+        Trimmed version of array `a`. The order of the trimmed content is
+        undefined.
 
     """
-    a = asarray(a)
+    a = np.asarray(a)
+    if axis is None:
+        a = a.ravel()
+        axis = 0
+
+    nobs = a.shape[axis]
+
+    # avoid possible corner case
+    if proportiontocut >= 1:
+        return []
+
     if tail.lower() == 'right':
         lowercut = 0
-        uppercut = len(a) - int(proportiontocut * len(a))
-    elif tail.lower() == 'left':
-        lowercut = int(proportiontocut * len(a))
-        uppercut = len(a)
+        uppercut = nobs - int(proportiontocut * nobs)
 
-    return a[lowercut:uppercut]
+    elif tail.lower() == 'left':
+        lowercut = int(proportiontocut * nobs)
+        uppercut = nobs
+
+    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
+    # in those cases we use np.sort
+    try:
+        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    except AttributeError:
+        atmp = np.sort(a, axis)
+
+    return atmp[lowercut:uppercut]
 
 
 def trim_mean(a, proportiontocut, axis=0):
     """
-    Return mean of array after trimming distribution from both lower and upper
-    tails.
+    Return mean of array after trimming distribution from both tails.
 
     If `proportiontocut` = 0.1, slices off 'leftmost' and 'rightmost' 10% of
-    scores. Slices off LESS if proportion results in a non-integer slice
-    index (i.e., conservatively slices off `proportiontocut` ).
+    scores. The input is sorted before slicing. Slices off less if proportion
+    results in a non-integer slice index (i.e., conservatively slices off
+    `proportiontocut` ).
 
     Parameters
     ----------
@@ -2391,6 +2516,7 @@ def trim_mean(a, proportiontocut, axis=0):
     See Also
     --------
     trimboth
+    tmean : compute the trimmed mean ignoring values outside given `limits`.
 
     Examples
     --------
@@ -2412,22 +2538,30 @@ def trim_mean(a, proportiontocut, axis=0):
 
     """
     a = np.asarray(a)
+
+    if a.size == 0:
+        return np.nan
+
     if axis is None:
-        nobs = a.size
-    else:
-        nobs = a.shape[axis]
+        a = a.ravel()
+        axis = 0
+
+    nobs = a.shape[axis]
     lowercut = int(proportiontocut * nobs)
-    uppercut = nobs - lowercut - 1
+    uppercut = nobs - lowercut
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
+    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
+    # in those cases we use np.sort
     try:
-        atmp = np.partition(a, (lowercut, uppercut), axis)
+        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
     except AttributeError:
         atmp = np.sort(a, axis)
 
-    newa = trimboth(atmp, proportiontocut, axis=axis)
-    return np.mean(newa, axis=axis)
+    sl = [slice(None)] * atmp.ndim
+    sl[axis] = slice(lowercut, uppercut)
+    return np.mean(atmp[sl], axis=axis)
 
 
 def f_oneway(*args):

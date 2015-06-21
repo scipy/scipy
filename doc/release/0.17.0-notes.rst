@@ -35,6 +35,11 @@ not meant to be exposed to the user. See issues #665 and #663 for details.
 Backwards incompatible changes
 ==============================
 
+The functions ``stats.trim1`` and ``stats.trimboth`` now make sure the 
+elements trimmed are the lowest and/or highest, depending on the case.
+Slicing without at least partial sorting was previously done, but didn't
+make sense for unsorted input.
+
 
 Other changes
 =============

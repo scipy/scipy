@@ -3052,21 +3052,37 @@ class TestTrim(object):
     # test trim functions
     def test_trim1(self):
         a = np.arange(11)
-        assert_equal(stats.trim1(a, 0.1), np.arange(10))
-        assert_equal(stats.trim1(a, 0.2), np.arange(9))
-        assert_equal(stats.trim1(a, 0.2, tail='left'), np.arange(2,11))
-        assert_equal(stats.trim1(a, 3/11., tail='left'), np.arange(3,11))
+        assert_equal(np.sort(stats.trim1(a, 0.1)), np.arange(10))
+        assert_equal(np.sort(stats.trim1(a, 0.2)), np.arange(9))
+        assert_equal(np.sort(stats.trim1(a, 0.2, tail='left')),
+                     np.arange(2, 11))
+        assert_equal(np.sort(stats.trim1(a, 3/11., tail='left')),
+                     np.arange(3, 11))
+        assert_equal(stats.trim1(a, 1.0), [])
+        assert_equal(stats.trim1(a, 1.0, tail='left'), [])
+
+        # empty input
+        assert_equal(stats.trim1([], 0.1), [])
+        assert_equal(stats.trim1([], 3/11., tail='left'), [])
+        assert_equal(stats.trim1([], 4/6.), [])
 
     def test_trimboth(self):
         a = np.arange(11)
-        assert_equal(stats.trimboth(a, 3/11.), np.arange(3,8))
-        assert_equal(stats.trimboth(a, 0.2), np.array([2, 3, 4, 5, 6, 7, 8]))
-        assert_equal(stats.trimboth(np.arange(24).reshape(6,4), 0.2),
-                     np.arange(4,20).reshape(4,4))
-        assert_equal(stats.trimboth(np.arange(24).reshape(4,6).T, 2/6.),
-               np.array([[2, 8, 14, 20],[3, 9, 15, 21]]))
+        assert_equal(np.sort(stats.trimboth(a, 3/11.)), np.arange(3, 8))
+        assert_equal(np.sort(stats.trimboth(a, 0.2)),
+                     np.array([2, 3, 4, 5, 6, 7, 8]))
+        assert_equal(np.sort(stats.trimboth(np.arange(24).reshape(6, 4), 0.2)),
+                     np.arange(4, 20).reshape(4, 4))
+        assert_equal(np.sort(stats.trimboth(np.arange(24).reshape(4, 6).T,
+                                            2/6.)),
+                     np.array([[2, 8, 14, 20], [3, 9, 15, 21]]))
         assert_raises(ValueError, stats.trimboth,
-               np.arange(24).reshape(4,6).T, 4/6.)
+                      np.arange(24).reshape(4, 6).T, 4/6.)
+
+        # empty input
+        assert_equal(stats.trimboth([], 0.1), [])
+        assert_equal(stats.trimboth([], 3/11.), [])
+        assert_equal(stats.trimboth([], 4/6.), [])
 
     def test_trim_mean(self):
         # don't use pre-sorted arrays
@@ -3101,6 +3117,10 @@ class TestTrim(object):
         assert_equal(res1, res2)
 
         assert_raises(ValueError, stats.trim_mean, a, 0.6)
+
+        # empty input
+        assert_equal(stats.trim_mean([], 0.0), np.nan)
+        assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
 class TestSigamClip(object):
