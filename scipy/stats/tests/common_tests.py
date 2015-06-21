@@ -220,7 +220,7 @@ def check_ppf_dtype(distfn, arg):
         for meth in [distfn.ppf, distfn.isf]:
             val = meth(q, *arg)
             npt.assert_(val.dtype == np.float_)
-    
+
 
 def check_cmplx_deriv(distfn, arg):
     # Distributions allow complex arguments.
@@ -229,7 +229,7 @@ def check_cmplx_deriv(distfn, arg):
         h = 1e-9
         return (f(x + h*1j, *arg)/h).imag
 
-    x0 = distfn.ppf([0.25, 0.5, 0.75], *arg)
+    x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
     x_cast = [x0.astype(tp) for tp in
                         (np.int_, np.float16, np.float32, np.float64)]
 

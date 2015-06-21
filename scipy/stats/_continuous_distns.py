@@ -4424,7 +4424,7 @@ class wrapcauchy_gen(rv_continuous):
         return (1.0-c*c)/(2*pi*(1+c*c-2*c*cos(x)))
 
     def _cdf(self, x, c):
-        output = 0.0*x
+        output = np.zeros(x.shape, dtype=x.dtype)
         val = (1.0+c)/(1.0-c)
         c1 = x < pi
         c2 = 1-c1
