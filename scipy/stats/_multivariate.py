@@ -7,7 +7,8 @@ import numpy as np
 import scipy.linalg
 from scipy.misc import doccer
 from scipy.special import gammaln, psi, multigammaln
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _asarray_validated
+from scipy.optimize import fmin_l_bfgs_b
 
 
 __all__ = ['multivariate_normal', 'dirichlet', 'wishart', 'invwishart']
@@ -663,10 +664,9 @@ def _dirichlet_check_input(alpha, x):
     x = np.asarray(x)
 
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
-        raise ValueError("Vector 'x' must have one entry less then the" +
-                         " parameter vector 'a', but alpha.shape = " +
-                         "%s and " % alpha.shape +
-                         "x.shape = %s." % x.shape)
+        raise ValueError("Vector 'x' must have one entry less then the "
+                         "parameter vector 'a', but alpha.shape = %s "
+                         "and x.shape = %s." % (alpha.shape, x.shape))
 
     if x.shape[0] != alpha.shape[0]:
         xk = np.array([1 - np.sum(x, 0)])
@@ -909,8 +909,7 @@ class dirichlet_gen(multi_rv_generic):
         lnB = _lnB(alpha)
         K = alpha.shape[0]
 
-        out = lnB + (alpha0 - K) * scipy.special.psi(alpha0) - np.sum(
-            (alpha - 1) * scipy.special.psi(alpha))
+        out = lnB + (alpha0 - K) * psi(alpha0) - np.sum((alpha - 1) * psi(alpha))
         return _squeeze_output(out)
 
     def rvs(self, alpha, size=1, random_state=None):
@@ -934,6 +933,61 @@ class dirichlet_gen(multi_rv_generic):
         alpha = _dirichlet_check_parameters(alpha)
         random_state = self._get_random_state(random_state)
         return random_state.dirichlet(alpha, size=size)
+
+    def fit(self, data, x0=None):
+        """
+        Estimate the Dirichlet distribution parameter values.
+
+        Parameters
+        ----------
+        data : 2d array-like
+            A sequence of multivariate observations.
+        x0 : 1d array-like, optional
+            Initial guess of the parameter vector alpha.
+
+        Returns
+        -------
+        alpha_hat: 1d array
+            Maximum likelihood estimate of concentration parameters.
+
+        References
+        ----------
+        .. [1] Jonathan Huang, "Maximum Likelihood Estimation of Dirichlet
+           Distribution Parameters"
+           http://jonathan-huang.org/research/dirichlet/dirichlet.pdf
+
+        Notes
+        -----
+        This fit is computed by maximizing a log likelihood function.
+
+        .. versionadded:: 0.17.0
+
+        """
+        data = _asarray_validated(data)
+        n, k_minus_1 = data.shape
+        k = k_minus_1 + 1
+        if x0 is None:
+            x0 = np.ones(k)
+        else:
+            x0 = _dirichlet_check_parameters(x0)
+        X = _dirichlet_check_input(x0, data)
+        assert_equal(X.shape, (n, k))
+        # Compute the sufficient statistics
+        log_p_hat = np.log(X).mean(axis=0)
+
+        # Use log of alpha for max likelihood estimation.
+        x0 = np.log(x0)
+
+        def func(log_alpha):
+            a = np.exp(log_alpha)
+            scaled_ll = np.expm1(log_alpha).dot(log_p_hat) - _lnB(a)
+            scaled_score = a * (psi(np.sum(a)) - psi(a) + log_p_hat)
+            return -scaled_ll, -scaled_score
+
+        log_a, f, d = fmin_l_bfgs_b(func, x0)
+        a = np.exp(log_a)
+
+        return a
 
 
 dirichlet = dirichlet_gen()

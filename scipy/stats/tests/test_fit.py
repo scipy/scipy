@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import numpy as np
-from numpy.testing import dec, assert_allclose
+from numpy.testing import dec, assert_allclose, assert_equal
 
 from scipy import stats
 
@@ -108,6 +108,29 @@ def test_non_default_loc_scale_mle_fit():
     data = np.array([1.01, 1.78, 1.78, 1.78, 1.88, 1.88, 1.88, 2.00])
     yield _check_loc_scale_mle_fit, 'uniform', data, [1.01, 0.99], 1e-3
     yield _check_loc_scale_mle_fit, 'expon', data, [1.01, 0.73875], 1e-3
+
+
+def test_dirichlet_fit():
+    np.random.seed(1234)
+    alpha = [3, 0.5, 1]
+    X = stats.dirichlet.rvs(alpha, size=5000)
+    # The scipy dirichlet expects slightly different data than numpy dirichlet.
+    stats.dirichlet.pdf(alpha)
+    #X = X[:, :-1]
+    """
+    for x0 in None, [1.0, 2.0, 3.0]:
+        if x0 is not None:
+            p_initial = stats.dirichlet.pdf(X, x0)
+            ll_initial = stats.dirichlet.logpdf(X, x0)
+            assert_allclose(np.exp(ll_initial), p_initial)
+        result = stats.dirichlet.fit(X, x0=x0)
+        assert_allclose(result, alpha, atol=1e-1)
+        p_final = stats.dirichlet.pdf(X, result)
+        ll_final = stats.dirichlet.logpdf(X, result)
+        assert_allclose(np.exp(ll_final), p_final)
+        assert_array_less(ll_initial, ll_final)
+        assert_array_less(p_initial, p_final)
+    """
 
 
 if __name__ == "__main__":
