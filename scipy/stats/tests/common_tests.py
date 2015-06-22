@@ -207,7 +207,7 @@ def check_meth_dtype(distfn, arg, meths):
     for x in x_cast:
         # casting may have clipped the values, exclude those
         distfn._argcheck(*arg)
-        x = x[(distfn.a < x)  & (x < distfn.b)]
+        x = x[(distfn.a < x) & (x < distfn.b)]
         for meth in meths:
             val = meth(x, *arg)
             npt.assert_(val.dtype == np.float_)
@@ -226,7 +226,7 @@ def check_cmplx_deriv(distfn, arg):
     # Distributions allow complex arguments.
     def deriv(f, x, *arg):
         x = np.asarray(x)
-        h = 1e-9
+        h = 1e-10
         return (f(x + h*1j, *arg)/h).imag
 
     x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
@@ -236,7 +236,7 @@ def check_cmplx_deriv(distfn, arg):
     for x in x_cast:
         # casting may have clipped the values, exclude those
         distfn._argcheck(*arg)
-        x = x[(distfn.a < x)  & (x < distfn.b)]
+        x = x[(distfn.a < x) & (x < distfn.b)]
 
         pdf, cdf, sf = distfn.pdf(x, *arg), distfn.cdf(x, *arg), distfn.sf(x, *arg)
         assert_allclose(deriv(distfn.cdf, x, *arg), pdf)
