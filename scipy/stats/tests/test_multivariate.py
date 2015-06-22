@@ -345,6 +345,7 @@ class TestMultivariateNormal(TestCase):
 
 
 class TestDirichlet(TestCase):
+
     def test_frozen_dirichlet(self):
         np.random.seed(2846)
 
@@ -362,6 +363,14 @@ class TestDirichlet(TestCase):
             x /= np.sum(x)
             assert_equal(d.pdf(x[:-1]), dirichlet.pdf(x[:-1], alpha))
             assert_equal(d.logpdf(x[:-1]), dirichlet.logpdf(x[:-1], alpha))
+
+    def test_numpy_rvs_shape_compatibility(self):
+        np.random.seed(2846)
+        alpha = np.array([1.0, 2.0, 3.0])
+        x = np.random.dirichlet(alpha, size=7)
+        assert_equal(x.shape, (7, 3))
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_simple_values(self):
         alpha = np.array([1, 1])
