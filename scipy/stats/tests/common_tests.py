@@ -239,12 +239,13 @@ def check_cmplx_deriv(distfn, arg):
         x = x[(distfn.a < x) & (x < distfn.b)]
 
         pdf, cdf, sf = distfn.pdf(x, *arg), distfn.cdf(x, *arg), distfn.sf(x, *arg)
-        assert_allclose(deriv(distfn.cdf, x, *arg), pdf)
-        assert_allclose(deriv(distfn.logcdf, x, *arg), pdf/cdf)
+        assert_allclose(deriv(distfn.cdf, x, *arg), pdf, rtol=1e-5)
+        assert_allclose(deriv(distfn.logcdf, x, *arg), pdf/cdf, rtol=1e-5)
 
-        assert_allclose(deriv(distfn.sf, x, *arg), -pdf)
-        assert_allclose(deriv(distfn.logsf, x, *arg), -pdf/sf)
+        assert_allclose(deriv(distfn.sf, x, *arg), -pdf, rtol=1e-5)
+        assert_allclose(deriv(distfn.logsf, x, *arg), -pdf/sf, rtol=1e-5)
 
         assert_allclose(deriv(distfn.logpdf, x, *arg), 
-                        deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg))
+                        deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg),
+                        rtol=1e-5)
 
