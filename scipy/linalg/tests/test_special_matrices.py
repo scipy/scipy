@@ -244,6 +244,11 @@ class TestBlockDiag:
         x = block_diag([[True]])
         assert_equal(x.dtype, bool)
 
+    def test_mixed_dtypes(self):
+        actual = block_diag([[1]], [[1j]])
+        desired = np.array([[1, 0], [0, 1j]])
+        assert_array_equal(actual, desired)
+
     def test_scalar_and_1d_args(self):
         a = block_diag(1)
         assert_equal(a.shape, (1,1))
