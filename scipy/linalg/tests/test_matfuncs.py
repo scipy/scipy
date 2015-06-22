@@ -338,29 +338,31 @@ class TestSqrtM(TestCase):
 
     def test_strict_upper_triangular(self):
         # This matrix has no square root.
-        A = np.array([
-            [0, 3, 0, 0],
-            [0, 0, 3, 0],
-            [0, 0, 0, 3],
-            [0, 0, 0, 0]], dtype=float)
-        A_sqrtm, info = sqrtm(A, disp=False)
-        assert_(np.isnan(A_sqrtm).all())
+        for dt in int, float:
+            A = np.array([
+                [0, 3, 0, 0],
+                [0, 0, 3, 0],
+                [0, 0, 0, 3],
+                [0, 0, 0, 0]], dtype=dt)
+            A_sqrtm, info = sqrtm(A, disp=False)
+            assert_(np.isnan(A_sqrtm).all())
 
     def test_weird_matrix(self):
         # The square root of matrix B exists.
-        A = np.array([
-            [0, 0, 1],
-            [0, 0, 0],
-            [0, 1, 0]], dtype=float)
-        B = np.array([
-            [0, 1, 0],
-            [0, 0, 0],
-            [0, 0, 0]], dtype=float)
-        assert_array_equal(B, A.dot(A))
+        for dt in int, float:
+            A = np.array([
+                [0, 0, 1],
+                [0, 0, 0],
+                [0, 1, 0]], dtype=dt)
+            B = np.array([
+                [0, 1, 0],
+                [0, 0, 0],
+                [0, 0, 0]], dtype=dt)
+            assert_array_equal(B, A.dot(A))
 
-        # But scipy sqrtm is not clever enough to find it.
-        B_sqrtm, info = sqrtm(B, disp=False)
-        assert_(np.isnan(B_sqrtm).all())
+            # But scipy sqrtm is not clever enough to find it.
+            B_sqrtm, info = sqrtm(B, disp=False)
+            assert_(np.isnan(B_sqrtm).all())
 
     def test_disp(self):
         from io import StringIO

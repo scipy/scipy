@@ -6,13 +6,9 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.sparse import issparse
 
-from numpy.core import (
-    array, asarray, zeros, empty, empty_like, transpose, intc, single, double,
-    csingle, cdouble, inexact, complexfloating, newaxis, ravel, all, Inf, dot,
-    add, multiply, sqrt, maximum, fastCopyAndTranspose, sum, isfinite, size,
-    finfo, errstate, geterrobj, longdouble, rollaxis, amin, amax, product, abs,
-    broadcast
-    )
+from numpy.core import Inf, sqrt, abs
+
+__all__ = ['norm']
 
 
 def norm(x, ord=None):

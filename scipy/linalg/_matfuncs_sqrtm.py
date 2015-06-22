@@ -10,6 +10,8 @@ __all__ = ['sqrtm']
 
 import numpy as np
 
+from scipy._lib._util import _asarray_validated
+
 
 # Local imports
 from .misc import norm
@@ -154,7 +156,7 @@ def sqrtm(A, disp=True, blocksize=64):
            [ 1.,  4.]])
 
     """
-    A = np.asarray(A)
+    A = _asarray_validated(A, check_finite=True, as_inexact=True)
     if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
     if blocksize < 1:

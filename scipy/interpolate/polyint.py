@@ -6,6 +6,7 @@ import numpy as np
 from scipy.special import factorial
 
 from scipy._lib.six import xrange
+from scipy._lib._util import _asarray_validated
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",
@@ -87,10 +88,7 @@ class _Interpolator1D(object):
 
     def _prepare_x(self, x):
         """Reshape input x array to 1-D"""
-        x = np.asarray(x)
-        if not np.issubdtype(x.dtype, np.inexact):
-            # Cast integers etc to floats
-            x = x.astype(float)
+        x = _asarray_validated(x, check_finite=False, as_inexact=True)
         x_shape = x.shape
         return x.ravel(), x_shape
 

@@ -90,7 +90,8 @@ def check_random_state(seed):
 
 
 def _asarray_validated(a, check_finite=True,
-                       sparse_ok=False, objects_ok=False, mask_ok=False):
+                       sparse_ok=False, objects_ok=False, mask_ok=False,
+                       as_inexact=False):
     """
     Helper function for scipy argument validation.
 
@@ -114,6 +115,8 @@ def _asarray_validated(a, check_finite=True,
         True if arrays with dype('O') are allowed.
     mask_ok : bool, optional
         True if masked arrays are allowed.
+    as_inexact : bool, optional
+        True to convert the input array to a np.inexact dtype.
 
     Returns
     -------
@@ -131,12 +134,17 @@ def _asarray_validated(a, check_finite=True,
     if not mask_ok:
         if np.ma.isMaskedArray(a):
             raise ValueError('masked arrays are not supported')
-    if check_finite:
-        a = np.asarray_chkfinite(a)
-    else:
-        a = np.asarray(a)
+    toarray = np.asarray_chkfinite if check_finite else np.asarray
+    a = toarray(a)
     if not objects_ok:
         if a.dtype is np.dtype('O'):
             raise ValueError('object arrays are not supported')
+    if as_inexact:
+        if not np.issubdtype(a.dtype, np.inexact):
+            try:
+                a = toarray(a, dtype=np.float_)
+            except TypeError:
+                # for compatibility with numpy 1.6
+                a = toarray(a).astype(np.float_)
     return a
 
