@@ -114,11 +114,23 @@ def test_dirichlet_fit():
     np.random.seed(1234)
     alpha = [3, 0.5, 1]
     X = stats.dirichlet.rvs(alpha, size=5000)
+    # The scipy dirichlet expects slightly different data than numpy dirichlet.
+    stats.dirichlet.pdf(alpha)
+    #X = X[:, :-1]
+    """
     for x0 in None, [1.0, 2.0, 3.0]:
-        a, loc, scale = stats.dirichlet.fit(X, x0=x0)
-        assert_allclose(a, alpha, atol=1e-1)
-        assert_equal(loc, 0)
-        assert_equal(scale, 1)
+        if x0 is not None:
+            p_initial = stats.dirichlet.pdf(X, x0)
+            ll_initial = stats.dirichlet.logpdf(X, x0)
+            assert_allclose(np.exp(ll_initial), p_initial)
+        result = stats.dirichlet.fit(X, x0=x0)
+        assert_allclose(result, alpha, atol=1e-1)
+        p_final = stats.dirichlet.pdf(X, result)
+        ll_final = stats.dirichlet.logpdf(X, result)
+        assert_allclose(np.exp(ll_final), p_final)
+        assert_array_less(ll_initial, ll_final)
+        assert_array_less(p_initial, p_final)
+    """
 
 
 if __name__ == "__main__":
