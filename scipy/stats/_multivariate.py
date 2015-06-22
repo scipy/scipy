@@ -662,7 +662,8 @@ def _dirichlet_check_input(alpha, x):
     x = np.asarray(x)
 
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
-        raise ValueError("Vector 'x' must have one entry less than the "
+        raise ValueError("Vector 'x' must have either the same number "
+                         "of entries as, or one entry fewer than, "
                          "parameter vector 'a', but alpha.shape = %s "
                          "and x.shape = %s." % (alpha.shape, x.shape))
 
