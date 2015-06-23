@@ -284,7 +284,7 @@ cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = <blas_t>sqrt(2)
+    cdef blas_t inv_root2 = <blas_t>(1.0/sqrt(2.0))
 
     # u starts out as the jth basis vector.
     u[j] = 1
@@ -324,7 +324,7 @@ cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u,
         gemv(T, n, m, -1, q, n, s+n, 1, 1, u, 1)
     wpnorm = nrm2(m, u, 1) 
     
-    if blas_t_less_than(wpnorm, wnorm/inv_root2): # u lies in span(q) 
+    if blas_t_less_than(wpnorm, wnorm*inv_root2): # u lies in span(q) 
         scal(m, 0, u, 1)
         axpy(n, 1, s, 1, s+n, 1)
         s[n] = 0
@@ -343,8 +343,8 @@ cdef int thin_qr_row_delete(int m, int n, blas_t* q, int* qs, bint qisF,
     cdef blas_t* s
     cdef blas_t* u
     cdef blas_t* s1
-    cdef int us[1]
-    cdef int ss[1]
+    cdef int us[2]
+    cdef int ss[2]
     cdef blas_t c, sn, min_row_norm, row_norm
 
     u = <blas_t*>libc.stdlib.malloc(usize)
@@ -375,10 +375,11 @@ cdef int thin_qr_row_delete(int m, int n, blas_t* q, int* qs, bint qisF,
                     min_row_norm = row_norm
                     argmin_row_norm = j
             memset(u, 0, m*sizeof(blas_t))
-            if not reorthx(m, n, q, qs, qisF, argmin_row_norm, u, s+n+1):
+            if not reorthx(m, n, q, qs, qisF, argmin_row_norm, u, s):
                 # failed, quit.
                 libc.stdlib.free(u)
                 return 0
+            s[n] = 0
 
         memset(s+2*n, 0, n*sizeof(blas_t))
 
@@ -1107,7 +1108,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
     cdef char* N = 'N'
     cdef char* C = 'C'
     cdef int ss = 1
-    cdef blas_t inv_root2 = <blas_t>sqrt(2)
+    cdef blas_t inv_root2 = <blas_t>(1.0/sqrt(2.0))
 
     # normalize u
     unorm = nrm2(m, u, us[0])
@@ -1178,7 +1179,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
         
     wpnorm = nrm2(m, u, us[0]) 
     
-    if blas_t_less_than(wpnorm, wnorm/inv_root2): # u lies in span(q) 
+    if blas_t_less_than(wpnorm, wnorm*inv_root2): # u lies in span(q) 
         scal(m, 0, u, us[0])
         axpy(n, 1, s, 1, s+n, 1)
         scal(n, unorm, s, 1)
