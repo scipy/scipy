@@ -345,7 +345,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     if not directed:
         data2 = csgraph[indices, pind]
-        if isspmatrix(data):
+        if isspmatrix(data2):
             data2 = data2.todense()
         data2 = data2.getA1()
         data[data == 0] = np.inf
