@@ -339,17 +339,15 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     # Fix issue #4018:
     # If `pind` and `indices` are empty arrays, `data` is a sparse matrix
     # (it is a numpy.matrix otherwise); handle this case separately.
-    try:
-        data = data.getA1()
-    except:
-        data = data.todense().getA1()
+    if isspmatrix(data):
+        data = data.todense()
+    data = data.getA1()
 
-    if directed is False:
+    if not directed:
         data2 = csgraph[indices, pind]
-        try:
-            data2 = data2.getA1()
-        except:
-            data2 = data2.todense().getA1()
+        if isspmatrix(data):
+            data2 = data2.todense()
+        data2 = data2.getA1()
         data[data == 0] = np.inf
         data2[data2 == 0] = np.inf
         data = np.minimum(data, data2)
