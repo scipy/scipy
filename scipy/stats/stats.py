@@ -2897,7 +2897,7 @@ def spearmanr(a, b=None, axis=0):
         dimension.
     axis : int or None, optional
         If axis=0 (default), then each column represents a variable, with
-        observations in the rows. If axis=0, the relationship is transposed:
+        observations in the rows. If axis=1, the relationship is transposed:
         each row represents a variable, while the columns contain observations.
         If axis=None, then both arrays will be raveled.
 
