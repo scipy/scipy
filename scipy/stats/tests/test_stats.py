@@ -1487,6 +1487,13 @@ class TestMoments(TestCase):
         y = stats.variation(self.testcase)
         assert_approx_equal(y, 0.44721359549996, 10)
 
+        axis_test = np.arange(1, 5).reshape(2, 2)
+        y = stats.variation(axis_test, axis=0)
+        assert_allclose(y, [0.5, 0.33333333])
+
+        y = stats.variation(axis_test, axis=1)
+        assert_allclose(y, [0.33333333, 0.14285714])
+
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)

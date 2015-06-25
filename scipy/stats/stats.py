@@ -1077,8 +1077,11 @@ def moment(a, moment=1, axis=0):
 
 def variation(a, axis=0):
     """
-    Computes the coefficient of variation, the ratio of the biased standard
-    deviation to the mean.
+    Computes the ratio of the biased standard deviation to the mean.
+
+    The coefficient of variation is a standardized measure of dispersion of a
+    probablility distribution or frequency distribution. It is defined as the
+    ratio of the standard deviation to the mean.
 
     Parameters
     ----------
@@ -1088,14 +1091,36 @@ def variation(a, axis=0):
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
 
+    Returns
+    -------
+    variation : float or array
+        Coefficient ot variation as defined by `s / m` where `s` is the
+        standard deviation and `m` is the mean.
+
+    Notes
+    -----
+    Calculating the coefficient of variation only makes sense for non-symmetric
+    distributions.
+
     References
     ----------
     .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
        Probability and Statistics Tables and Formulae. Chapman & Hall: New
        York. 2000.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.linspace(stats.erlang.ppf(0.01, 1), 100)
+    >>> stats.variation(a)
+    0.58889670528253069
+
     """
     a, axis = _chk_asarray(a, axis)
+
+    if a.size == 0:
+        return np.nan
+
     return a.std(axis) / a.mean(axis)
 
 
