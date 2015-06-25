@@ -295,6 +295,10 @@ class TestBartlett(TestCase):
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_empty_arg(self):
+        args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
+        assert_equal((np.nan, np.nan), stats.bartlett(*args))
+
 
 class TestLevene(TestCase):
 
@@ -442,6 +446,10 @@ class TestFligner(TestCase):
     def test_bad_num_args(self):
         # Too few args raises ValueError.
         assert_raises(ValueError, stats.fligner, [1])
+
+    def test_empty_arg(self):
+        x = np.arange(5)
+        assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
 
 class TestMood(TestCase):
