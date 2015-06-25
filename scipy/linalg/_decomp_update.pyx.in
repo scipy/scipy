@@ -551,8 +551,8 @@ cdef int thin_qr_block_row_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     # permute the rows of q, work columnwise, since q is fortran order
     if k != m-p:
         for j in range(n):
-            copy(m-k-p, index2(q, qs, k, j), qs[0], work, 1)
-            copy(p, index2(q, qs, m-p, j), qs[0], index2(q, qs, k, j), qs[0])
+            copy(m-k, index2(q, qs, k, j), qs[0], work, 1)
+            copy(p, work+(m-k-p), 1, index2(q, qs, k, j), qs[0])
             copy(m-k-p, work, 1, index2(q, qs, k+p, j), qs[0])
 
     libc.stdlib.free(work)
@@ -601,8 +601,8 @@ cdef int qr_block_row_insert(int m, int n, blas_t* q, int* qs,
     # permute the rows., work columnwise, since q is fortran order
     if k != m-p:
         for j in range(m):
-            copy(m-k-p, index2(q, qs, k, j), qs[0], work, 1)
-            copy(p, index2(q, qs, m-p, j), qs[0], index2(q, qs, k, j), qs[0])
+            copy(m-k, index2(q, qs, k, j), qs[0], work, 1)
+            copy(p, work+(m-k-p), 1, index2(q, qs, k, j), qs[0])
             copy(m-k-p, work, 1, index2(q, qs, k+p, j), qs[0])
 
     libc.stdlib.free(work)
