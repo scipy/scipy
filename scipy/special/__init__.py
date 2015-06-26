@@ -253,7 +253,9 @@ Raw Statistical Functions
    logit      --
    expit      --
    boxcox     -- Compute the Box-Cox transformation.
-   boxcox1p   -- Compute the Box-Cox transformation.
+   boxcox1p   -- Compute the Box-Cox transformation of 1 + x.
+   inv_boxcox -- Compute the inverse of the Box-Cox tranformation.
+   inv_boxcox1p -- Compute the inverse of the Box-Cox transformation of 1 + x.
 
 
 Information Theory Functions
