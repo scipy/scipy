@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite, assert_equal, assert_almost_equal
+from numpy.testing import run_module_suite, assert_equal, assert_almost_equal, assert_allclose
 from scipy.special import boxcox, boxcox1p, inv_boxcox, inv_boxcox1p
 
 
@@ -26,6 +26,12 @@ def test_boxcox_basic():
     lam = np.array([0.5, 1, 2])
     y = boxcox(0, lam)
     yield assert_almost_equal, y, -1.0 / lam
+
+def test_boxcox_underflow():
+    x = 1 + 1e-15
+    lmbda = 1e-306
+    y = boxcox(x, lmbda)
+    assert_allclose(y, np.log(x), rtol=1e-14)
 
 
 def test_boxcox_nonfinite():
@@ -59,6 +65,13 @@ def test_boxcox1p_basic():
     lam = np.array([0.5, 1, 2])
     y = boxcox1p(-1, lam)
     yield assert_almost_equal, y, -1.0 / lam
+
+
+def test_boxcox1p_underflow():
+    x = np.array([1e-15, 1e-306])
+    lmbda = np.array([1e-306, 1e-18])
+    y = boxcox1p(x, lmbda)
+    assert_allclose(y, np.log1p(x), rtol=1e-14)
 
 
 def test_boxcox1p_nonfinite():
