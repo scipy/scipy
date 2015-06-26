@@ -1556,7 +1556,7 @@ def bartlett(*args):
     See Also
     --------
     fligner : A non-parametric test for the equality of k variances
-    levene : A parametric test for equality of k variances
+    levene : A robust parametric test for equality of k variances
 
     Notes
     -----
@@ -1836,7 +1836,7 @@ def fligner(*args, **kwds):
     See Also
     --------
     bartlett : A parametric test for equality of k variances in normal samples
-    levene : A parametric test for equality of k variances
+    levene : A robust parametric test for equality of k variances
 
     Notes
     -----
