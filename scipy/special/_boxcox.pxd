@@ -37,5 +37,7 @@ cdef inline double inv_boxcox(double x, double lmbda) nogil:
 cdef inline double inv_boxcox1p(double x, double lmbda) nogil:
     if lmbda == 0:
         return expm1(x)
+    elif fabs(lmbda * x) < 1e-154:
+        return x
     else:
         return expm1(log1p(lmbda * x) / lmbda)
