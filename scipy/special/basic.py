@@ -43,7 +43,7 @@ warnings.simplefilter("always", category=SpecialFunctionWarning)
 
 
 def diric(x, n):
-    """Return the periodic sinc function, also called the Dirichlet function.
+    """Periodic sinc function, also called the Dirichlet function.
 
     The Dirichlet function is defined as::
 
@@ -114,8 +114,14 @@ def diric(x, n):
 
 
 def jnjnp_zeros(nt):
-    """Compute nt (<=1200) zeros of the Bessel functions Jn and Jn'
-    and arange them in order of their magnitudes.
+    """Compute nt zeros of Bessel functions Jn and Jn'.
+
+    Results are arranged in order of the magnitudes of the zeros.
+
+    Parameters
+    ----------
+    nt : int
+        Number (<=1200) of zeros to compute
 
     Returns
     -------
@@ -133,6 +139,13 @@ def jnjnp_zeros(nt):
     See Also
     --------
     jn_zeros, jnp_zeros : to get separated arrays of zeros.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt > 1200):
         raise ValueError("Number must be integer <= 1200.")
@@ -142,10 +155,26 @@ def jnjnp_zeros(nt):
 
 
 def jnyn_zeros(n,nt):
-    """Compute nt zeros of the Bessel functions Jn(x), Jn'(x), Yn(x), and
-    Yn'(x), respectively. Returns 4 arrays of length nt.
+    """Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
+
+    Returns 4 arrays of length nt, corresponding to the first nt zeros of
+    Jn(x), Jn'(x), Yn(x), and Yn'(x), respectively.
+
+    Parameters
+    ----------
+    n : int
+        Order of the Bessel functions
+    nt : int
+        Number (<=1200) of zeros to compute
 
     See jn_zeros, jnp_zeros, yn_zeros, ynp_zeros to get separate arrays.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(nt) and isscalar(n)):
         raise ValueError("Arguments must be scalars.")
@@ -157,32 +186,113 @@ def jnyn_zeros(n,nt):
 
 
 def jn_zeros(n,nt):
-    """Compute nt zeros of the Bessel function Jn(x).
+    """Compute nt zeros of Bessel function Jn(x).
+
+    Parameters
+    ----------
+    n : int
+        Order of Bessel function
+    nt : int
+        Number of zeros to return
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     return jnyn_zeros(n,nt)[0]
 
 
 def jnp_zeros(n,nt):
-    """Compute nt zeros of the Bessel function Jn'(x).
+    """Compute nt zeros of Bessel function derivative Jn'(x).
+
+    Parameters
+    ----------
+    n : int
+        Order of Bessel function
+    nt : int
+        Number of zeros to return
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     return jnyn_zeros(n,nt)[1]
 
 
 def yn_zeros(n,nt):
-    """Compute nt zeros of the Bessel function Yn(x).
+    """Compute nt zeros of Bessel function Yn(x).
+
+    Parameters
+    ----------
+    n : int
+        Order of Bessel function
+    nt : int
+        Number of zeros to return
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     return jnyn_zeros(n,nt)[2]
 
 
 def ynp_zeros(n,nt):
-    """Compute nt zeros of the Bessel function Yn'(x).
+    """Compute nt zeros of Bessel function derivative Yn'(x).
+
+    Parameters
+    ----------
+    n : int
+        Order of Bessel function
+    nt : int
+        Number of zeros to return
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     return jnyn_zeros(n,nt)[3]
 
 
 def y0_zeros(nt,complex=0):
-    """Returns nt (complex or real) zeros of Y0(z), z0, and the value
-    of Y0'(z0) = -Y1(z0) at each zero.
+    """Compute nt zeros of Bessel function Y0(z), and derivative at each zero.
+
+    The derivatives are given by Y0'(z0) = -Y1(z0) at each zero z0.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to return
+    complex : int, default 0
+        Set to 0 to return only the real zeros; set to 1 to return only the
+        complex zeros with negative real part and positive imaginary part.
+        Note that the complex conjugates of the latter are also zeros of the
+        function, but are not returned by this routine.
+
+    Returns
+    -------
+    z0n : ndarray
+        Location of nth zero of Y0(z)
+    y0pz0n : ndarray
+        Value of derivative Y0'(z0) for nth zero
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -192,8 +302,33 @@ def y0_zeros(nt,complex=0):
 
 
 def y1_zeros(nt,complex=0):
-    """Returns nt (complex or real) zeros of Y1(z), z1, and the value
-    of Y1'(z1) = Y0(z1) at each zero.
+    """Compute nt zeros of Bessel function Y1(z), and derivative at each zero.
+
+    The derivatives are given by Y1'(z1) = Y0(z1) at each zero z1.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to return
+    complex : int, default 0
+        Set to 0 to return only the real zeros; set to 1 to return only the
+        complex zeros with negative real part and positive imaginary part.
+        Note that the complex conjugates of the latter are also zeros of the
+        function, but are not returned by this routine.
+
+    Returns
+    -------
+    z1n : ndarray
+        Location of nth zero of Y1(z)
+    y1pz1n : ndarray
+        Value of derivative Y1'(z1) for nth zero
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -203,8 +338,33 @@ def y1_zeros(nt,complex=0):
 
 
 def y1p_zeros(nt,complex=0):
-    """Returns nt (complex or real) zeros of Y1'(z), z1', and the value
-    of Y1(z1') at each zero.
+    """Compute nt zeros of Bessel derivative Y1'(z), and value at each zero.
+
+    The values are given by Y1(z1) at each z1 where Y1'(z1)=0.
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to return
+    complex : int, default 0
+        Set to 0 to return only the real zeros; set to 1 to return only the
+        complex zeros with negative real part and positive imaginary part.
+        Note that the complex conjugates of the latter are also zeros of the
+        function, but are not returned by this routine.
+
+    Returns
+    -------
+    z1pn : ndarray
+        Location of nth zero of Y1'(z)
+    y1z1pn : ndarray
+        Value of derivative Y1(z1) for nth zero
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
@@ -231,7 +391,23 @@ bessel_diff_formula = np.deprecate(_bessel_diff_formula,
 
 
 def jvp(v,z,n=1):
-    """Return the nth derivative of Jv(z) with respect to z.
+    """Compute nth derivative of Bessel function Jv(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Bessel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -243,7 +419,23 @@ def jvp(v,z,n=1):
 
 
 def yvp(v,z,n=1):
-    """Return the nth derivative of Yv(z) with respect to z.
+    """Compute nth derivative of Bessel function Yv(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Bessel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -255,7 +447,23 @@ def yvp(v,z,n=1):
 
 
 def kvp(v,z,n=1):
-    """Return the nth derivative of Kv(z) with respect to z.
+    """Compute nth derivative of modified Bessel function Kv(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Bessel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 6.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -266,7 +474,23 @@ def kvp(v,z,n=1):
 
 
 def ivp(v,z,n=1):
-    """Return the nth derivative of Iv(z) with respect to z.
+    """Compute nth derivative of modified Bessel function Iv(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Bessel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 6.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -277,7 +501,23 @@ def ivp(v,z,n=1):
 
 
 def h1vp(v,z,n=1):
-    """Return the nth derivative of H1v(z) with respect to z.
+    """Compute nth derivative of Hankel function H1v(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Hankel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -289,7 +529,23 @@ def h1vp(v,z,n=1):
 
 
 def h2vp(v,z,n=1):
-    """Return the nth derivative of H2v(z) with respect to z.
+    """Compute nth derivative of Hankel function H2v(z) with respect to z.
+
+    Parameters
+    ----------
+    v : float
+        Order of Hankel function
+    z : complex
+        Argument at which to evaluate the derivative
+    n : int, default 1
+        Order of derivative
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 5.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isinstance(n,int) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -301,8 +557,31 @@ def h2vp(v,z,n=1):
 
 
 def sph_jn(n,z):
-    """Compute the spherical Bessel function jn(z) and its derivative for
-    all orders up to and including n.
+    """Compute spherical Bessel function jn(z) and derivative.
+
+    This function computes the value and first derivative of jn(z) for all
+    orders up to and including n.
+
+    Parameters
+    ----------
+    n : int
+        Maximum order of jn to compute
+    z : complex
+        Argument at which to evaluate
+
+    Returns
+    -------
+    jn : ndarray
+        Value of j0(z), ..., jn(z)
+    jnp : ndarray
+        First derivative j0'(z), ..., jn'(z)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 8.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -320,8 +599,31 @@ def sph_jn(n,z):
 
 
 def sph_yn(n,z):
-    """Compute the spherical Bessel function yn(z) and its derivative for
-    all orders up to and including n.
+    """Compute spherical Bessel function yn(z) and derivative.
+
+    This function computes the value and first derivative of yn(z) for all
+    orders up to and including n.
+
+    Parameters
+    ----------
+    n : int
+        Maximum order of yn to compute
+    z : complex
+        Argument at which to evaluate
+
+    Returns
+    -------
+    yn : ndarray
+        Value of y0(z), ..., yn(z)
+    ynp : ndarray
+        First derivative y0'(z), ..., yn'(z)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 8.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -339,8 +641,35 @@ def sph_yn(n,z):
 
 
 def sph_jnyn(n,z):
-    """Compute the spherical Bessel functions, jn(z) and yn(z) and their
-    derivatives for all orders up to and including n.
+    """Compute spherical Bessel functions jn(z) and yn(z) and derivatives.
+
+    This function computes the value and first derivative of jn(z) and yn(z)
+    for all orders up to and including n.
+
+    Parameters
+    ----------
+    n : int
+        Maximum order of jn and yn to compute
+    z : complex
+        Argument at which to evaluate
+
+    Returns
+    -------
+    jn : ndarray
+        Value of j0(z), ..., jn(z)
+    jnp : ndarray
+        First derivative j0'(z), ..., jn'(z)
+    yn : ndarray
+        Value of y0(z), ..., yn(z)
+    ynp : ndarray
+        First derivative y0'(z), ..., yn'(z)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 8.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -359,8 +688,31 @@ def sph_jnyn(n,z):
 
 
 def sph_in(n,z):
-    """Compute the spherical Bessel function in(z) and its derivative for
-    all orders up to and including n.
+    """Compute spherical Bessel function in(z) and derivative.
+
+    This function computes the value and first derivative of in(z) for all
+    orders up to and including n.
+
+    Parameters
+    ----------
+    n : int
+        Maximum order of in to compute
+    z : complex
+        Argument at which to evaluate
+
+    Returns
+    -------
+    in : ndarray
+        Value of i0(z), ..., in(z)
+    inp : ndarray
+        First derivative i0'(z), ..., in'(z)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 8.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -378,8 +730,31 @@ def sph_in(n,z):
 
 
 def sph_kn(n,z):
-    """Compute the spherical Bessel function kn(z) and its derivative for
-    all orders up to and including n.
+    """Compute spherical Bessel function kn(z) and derivative.
+
+    This function computes the value and first derivative of kn(z) for all
+    orders up to and including n.
+
+    Parameters
+    ----------
+    n : int
+        Maximum order of kn to compute
+    z : complex
+        Argument at which to evaluate
+
+    Returns
+    -------
+    kn : ndarray
+        Value of k0(z), ..., kn(z)
+    knp : ndarray
+        First derivative k0'(z), ..., kn'(z)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 8.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -397,8 +772,35 @@ def sph_kn(n,z):
 
 
 def sph_inkn(n,z):
-    """Compute the spherical Bessel functions, in(z) and kn(z) and their
-    derivatives for all orders up to and including n.
+    """Compute spherical Bessel functions in(z), kn(z), and derivatives.
+
+    This function computes the value and first derivative of in(z) and kn(z)
+    for all orders up to and including n.
+
+    Parameters
+    ----------
+    n : int
+        Maximum order of in and kn to compute
+    z : complex
+        Argument at which to evaluate
+
+    Returns
+    -------
+    in : ndarray
+        Value of i0(z), ..., in(z)
+    inp : ndarray
+        First derivative i0'(z), ..., in'(z)
+    kn : ndarray
+        Value of k0(z), ..., kn(z)
+    knp : ndarray
+        First derivative k0'(z), ..., kn'(z)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 8.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -417,8 +819,31 @@ def sph_inkn(n,z):
 
 
 def riccati_jn(n,x):
-    """Compute the Ricatti-Bessel function of the first kind and its
-    derivative for all orders up to and including n.
+    """Compute Ricatti-Bessel function of the first kind and derivative.
+
+    This function computes the value and first derivative of the function for
+    all orders up to and including n.
+
+    Parameters
+    ----------
+    n : int
+        Maximum order of function to compute
+    x : float
+        Argument at which to evaluate
+
+    Returns
+    -------
+    jn : ndarray
+        Value of j0(x), ..., jn(x)
+    jnp : ndarray
+        First derivative j0'(x), ..., jn'(x)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -433,8 +858,31 @@ def riccati_jn(n,x):
 
 
 def riccati_yn(n,x):
-    """Compute the Ricatti-Bessel function of the second kind and its
-    derivative for all orders up to and including n.
+    """Compute Ricatti-Bessel function of the second kind and derivative.
+
+    This function computes the value and first derivative of the function for
+    all orders up to and including n.
+
+    Parameters
+    ----------
+    n : int
+        Maximum order of function to compute
+    x : float
+        Argument at which to evaluate
+
+    Returns
+    -------
+    yn : ndarray
+        Value of y0(x), ..., yn(x)
+    ynp : ndarray
+        First derivative y0'(x), ..., yn'(x)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -449,21 +897,26 @@ def riccati_yn(n,x):
 
 
 def erfinv(y):
-    """
-    Inverse function for erf
+    """Inverse function for erf.
     """
     return ndtri((y+1)/2.0)/sqrt(2)
 
 
 def erfcinv(y):
-    """
-    Inverse function for erfc
+    """Inverse function for erfc.
     """
     return -ndtri(0.5*y)/sqrt(2)
 
 
 def erf_zeros(nt):
-    """Compute nt complex zeros of the error function erf(z).
+    """Compute nt complex zeros of error function erf(z).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
@@ -471,7 +924,14 @@ def erf_zeros(nt):
 
 
 def fresnelc_zeros(nt):
-    """Compute nt complex zeros of the cosine Fresnel integral C(z).
+    """Compute nt complex zeros of cosine Fresnel integral C(z).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
@@ -479,7 +939,14 @@ def fresnelc_zeros(nt):
 
 
 def fresnels_zeros(nt):
-    """Compute nt complex zeros of the sine Fresnel integral S(z).
+    """Compute nt complex zeros of sine Fresnel integral S(z).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
@@ -487,8 +954,14 @@ def fresnels_zeros(nt):
 
 
 def fresnel_zeros(nt):
-    """Compute nt complex zeros of the sine and cosine Fresnel integrals
-    S(z) and C(z).
+    """Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
@@ -532,7 +1005,7 @@ def hyp0f1(v, z):
 
 
 def assoc_laguerre(x, n, k=0.0):
-    """Returns the n-th order generalized (associated) Laguerre polynomial.
+    """Compute nth-order generalized (associated) Laguerre polynomial.
 
     The polynomial :math:`L^(alpha)_n(x)` is orthogonal over ``[0, inf)``,
     with weighting function ``exp(-x) * x**alpha`` with ``alpha > -1``.
@@ -549,8 +1022,9 @@ digamma = psi
 
 
 def polygamma(n, x):
-    """Polygamma function which is the nth derivative of the digamma (psi)
-    function.
+    """Polygamma function n.
+
+    This is the nth derivative of the digamma (psi) function.
 
     Parameters
     ----------
@@ -580,8 +1054,39 @@ def polygamma(n, x):
 
 
 def mathieu_even_coef(m,q):
-    """Compute expansion coefficients for even Mathieu functions and
-    modified Mathieu functions.
+    r"""Fourier coefficients for even Mathieu and modified Mathieu functions.
+
+    The Fourier series of the even solutions of the Mathieu differential
+    equation are of the form
+
+    .. math:: \mathrm{ce}_{2n}(z, q) = \sum_{k=0}^{\infty} A_{(2n)}^{(2k)} \cos 2kz
+
+    .. math:: \mathrm{ce}_{2n+1}(z, q) = \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
+
+    This function returns the coefficients :math:`A_{(2n)}^{(2k)}` for even
+    input m=2n, and the coefficients :math:`A_{(2n+1)}^{(2k+1)}` for odd input
+    m=2n+1.
+
+    Parameters
+    ----------
+    m : int
+        Order of Mathieu functions.  Must be non-negative.
+    q : float (>=0)
+        Parameter of Mathieu functions.  Must be non-negative.
+
+    Returns
+    -------
+    Ak : ndarray
+        Even or odd Fourier coefficients, corresponding to even or odd m.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/28.4#i
+
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
@@ -608,8 +1113,37 @@ def mathieu_even_coef(m,q):
 
 
 def mathieu_odd_coef(m,q):
-    """Compute expansion coefficients for even Mathieu functions and
-    modified Mathieu functions.
+    r"""Fourier coefficients for even Mathieu and modified Mathieu functions.
+
+    The Fourier series of the odd solutions of the Mathieu differential
+    equation are of the form
+
+    .. math:: \mathrm{se}_{2n+1}(z, q) = \sum_{k=0}^{\infty} B_{(2n+1)}^{(2k+1)} \sin (2k+1)z
+
+    .. math:: \mathrm{se}_{2n+2}(z, q) = \sum_{k=0}^{\infty} B_{(2n+2)}^{(2k+2)} \sin (2k+2)z
+
+    This function returns the coefficients :math:`B_{(2n+2)}^{(2k+2)}` for even
+    input m=2n+2, and the coefficients :math:`B_{(2n+1)}^{(2k+1)}` for odd input
+    m=2n+1.
+
+    Parameters
+    ----------
+    m : int
+        Order of Mathieu functions.  Must be non-negative.
+    q : float (>=0)
+        Parameter of Mathieu functions.  Must be non-negative.
+
+    Returns
+    -------
+    Bk : ndarray
+        Even or odd Fourier coefficients, corresponding to even or odd m.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(m) and isscalar(q)):
         raise ValueError("m and q must be scalars.")
@@ -636,16 +1170,12 @@ def mathieu_odd_coef(m,q):
 
 
 def lpmn(m,n,z):
-    """Associated Legendre function of the first kind, Pmn(z)
+    """Associated Legendre function of the first kind, Pmn(z).
 
-    Computes the associated Legendre function of the first kind
-    of order m and degree n,::
-
-        Pmn(z) = P_n^m(z)
-
-    and its derivative, ``Pmn'(z)``.  Returns two arrays of size
-    ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for all
-    orders from ``0..m`` and degrees from ``0..n``.
+    Computes the associated Legendre function of the first kind of order m and
+    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
+    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
+    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
 
     This function takes a real argument ``z``. For complex arguments ``z``
     use clpmn instead.
@@ -680,7 +1210,10 @@ def lpmn(m,n,z):
 
     References
     ----------
-    .. [1] NIST Digital Library of Mathematical Functions
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/14.3
 
     """
@@ -713,16 +1246,12 @@ def lpmn(m,n,z):
 
 
 def clpmn(m, n, z, type=3):
-    """Associated Legendre function of the first kind, Pmn(z)
+    """Associated Legendre function of the first kind, Pmn(z).
 
-    Computes the (associated) Legendre function of the first kind
-    of order m and degree n,::
-
-        Pmn(z) = P_n^m(z)
-
-    and its derivative, ``Pmn'(z)``.  Returns two arrays of size
-    ``(m+1, n+1)`` containing ``Pmn(z)`` and ``Pmn'(z)`` for all
-    orders from ``0..m`` and degrees from ``0..n``.
+    Computes the associated Legendre function of the first kind of order m and
+    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
+    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
+    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
 
     Parameters
     ----------
@@ -764,7 +1293,10 @@ def clpmn(m, n, z, type=3):
 
     References
     ----------
-    .. [1] NIST Digital Library of Mathematical Functions
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/14.21
 
     """
@@ -795,12 +1327,37 @@ def clpmn(m, n, z, type=3):
 
 
 def lqmn(m,n,z):
-    """Associated Legendre functions of the second kind, Qmn(z) and its
-    derivative, ``Qmn'(z)`` of order m and degree n.  Returns two
-    arrays of size ``(m+1, n+1)`` containing ``Qmn(z)`` and ``Qmn'(z)`` for
-    all orders from ``0..m`` and degrees from ``0..n``.
+    """Associated Legendre function of the second kind, Qmn(z).
 
-    z can be complex.
+    Computes the associated Legendre function of the second kind of order m and
+    degree n, ``Qmn(z)`` = :math:`Q_n^m(z)`, and its derivative, ``Qmn'(z)``.
+    Returns two arrays of size ``(m+1, n+1)`` containing ``Qmn(z)`` and
+    ``Qmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
+
+    Parameters
+    ----------
+    m : int
+       ``|m| <= n``; the order of the Legendre function.
+    n : int
+       where ``n >= 0``; the degree of the Legendre function.  Often
+       called ``l`` (lower case L) in descriptions of the associated
+       Legendre function
+    z : complex
+        Input value.
+
+    Returns
+    -------
+    Qmn_z : (m+1, n+1) array
+       Values for all orders 0..m and degrees 0..n
+    Qmn_d_z : (m+1, n+1) array
+       Derivatives for all orders 0..m and degrees 0..n
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(m) or (m < 0):
         raise ValueError("m must be a non-negative integer.")
@@ -823,7 +1380,14 @@ def lqmn(m,n,z):
 
 
 def bernoulli(n):
-    """Return an array of the Bernoulli numbers B0..Bn
+    """Bernoulli numbers B0..Bn (inclusive).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -836,7 +1400,14 @@ def bernoulli(n):
 
 
 def euler(n):
-    """Return an array of the Euler numbers E0..En (inclusive)
+    """Euler numbers E0..En (inclusive).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
@@ -849,10 +1420,19 @@ def euler(n):
 
 
 def lpn(n,z):
-    """Compute sequence of Legendre functions of the first kind (polynomials),
+    """Legendre functions of the first kind, Pn(z).
+
+    Compute sequence of Legendre functions of the first kind (polynomials),
     Pn(z) and derivatives for all degrees from 0 to n (inclusive).
 
-    See also special.legendre  for polynomial class.
+    See also special.legendre for polynomial class.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -872,8 +1452,17 @@ def lpn(n,z):
 
 
 def lqn(n,z):
-    """Compute sequence of Legendre functions of the second kind,
-    Qn(z) and derivatives for all degrees from 0 to n (inclusive).
+    """Legendre functions of the second kind, Qn(z).
+
+    Compute sequence of Legendre functions of the second kind, Qn(z) and
+    derivatives for all degrees from 0 to n (inclusive).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -891,15 +1480,34 @@ def lqn(n,z):
 
 
 def ai_zeros(nt):
-    """Compute the zeros of Airy Functions Ai(x) and Ai'(x), a and a'
-    respectively, and the associated values of Ai(a') and Ai'(a).
+    """Compute nt zeros of Airy function Ai(x) and derivative, and corresponding values.
+
+    Computes the first nt zeros, a, of the Airy function Ai(x); first nt zeros,
+    a', of the derivative of the Airy function Ai'(x); the corresponding values
+    Ai(a'); and the corresponding values Ai'(a).
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
 
     Returns
     -------
-    a[l-1]   -- the lth zero of Ai(x)
-    ap[l-1]  -- the lth zero of Ai'(x)
-    ai[l-1]  -- Ai(ap[l-1])
-    aip[l-1] -- Ai'(a[l-1])
+    a : ndarray
+        First nt zeros of Ai(x)
+    ap : ndarray
+        First nt zeros of Ai'(x)
+    ai : ndarray
+        Values of Ai(x) evaluated at first nt zeros of Ai'(x)
+    aip : ndarray
+        Values of Ai'(x) evaluated at first nt zeros of Ai(x)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     kf = 1
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -908,15 +1516,34 @@ def ai_zeros(nt):
 
 
 def bi_zeros(nt):
-    """Compute the zeros of Airy Functions Bi(x) and Bi'(x), b and b'
-    respectively, and the associated values of Ai(b') and Ai'(b).
+    """Compute nt zeros of Airy function Bi(x) and derivative, and corresponding values.
+
+    Computes the first nt zeros, b, of the Airy function Bi(x); first nt zeros,
+    b', of the derivative of the Airy function Bi'(x); the corresponding values
+    Bi(b'); and the corresponding values Bi'(b).
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
 
     Returns
     -------
-    b[l-1]   -- the lth zero of Bi(x)
-    bp[l-1]  -- the lth zero of Bi'(x)
-    bi[l-1]  -- Bi(bp[l-1])
-    bip[l-1] -- Bi'(b[l-1])
+    b : ndarray
+        First nt zeros of Bi(x)
+    bp : ndarray
+        First nt zeros of Bi'(x)
+    bi : ndarray
+        Values of Bi(x) evaluated at first nt zeros of Bi'(x)
+    bip : ndarray
+        Values of Bi'(x) evaluated at first nt zeros of Bi(x)
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     kf = 2
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -925,8 +1552,28 @@ def bi_zeros(nt):
 
 
 def lmbda(v,x):
-    """Compute sequence of lambda functions with arbitrary order v
-    and their derivatives.  Lv0(x)..Lv(x) are computed with v0=v-int(v).
+    """Jahnke-Emden Lambda function, Lambdav(x).
+
+    Parameters
+    ----------
+    v : float
+        Order of the Lambda function
+    x : float
+        Value at which to evaluate the function and derivatives
+
+    Returns
+    -------
+    vl : ndarray
+        Values of Lambda_vi(x), for vi=v-int(v), vi=1+v-int(v), ..., vi=v.
+    dl : ndarray
+        Derivatives Lambda_vi'(x), for vi=v-int(v), vi=1+v-int(v), ..., vi=v.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -947,8 +1594,28 @@ def lmbda(v,x):
 
 
 def pbdv_seq(v,x):
-    """Compute sequence of parabolic cylinder functions Dv(x) and
-    their derivatives for Dv0(x)..Dv(x) with v0=v-int(v).
+    """Parabolic cylinder functions Dv(x) and derivatives.
+
+    Parameters
+    ----------
+    v : float
+        Order of the parabolic cylinder function
+    x : float
+        Value at which to evaluate the function and derivatives
+
+    Returns
+    -------
+    dv : ndarray
+        Values of D_vi(x), for vi=v-int(v), vi=1+v-int(v), ..., vi=v.
+    dp : ndarray
+        Derivatives D_vi'(x), for vi=v-int(v), vi=1+v-int(v), ..., vi=v.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 13.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -964,8 +1631,28 @@ def pbdv_seq(v,x):
 
 
 def pbvv_seq(v,x):
-    """Compute sequence of parabolic cylinder functions Dv(x) and
-    their derivatives for Dv0(x)..Dv(x) with v0=v-int(v).
+    """Parabolic cylinder functions Vv(x) and derivatives.
+
+    Parameters
+    ----------
+    v : float
+        Order of the parabolic cylinder function
+    x : float
+        Value at which to evaluate the function and derivatives
+
+    Returns
+    -------
+    dv : ndarray
+        Values of V_vi(x), for vi=v-int(v), vi=1+v-int(v), ..., vi=v.
+    dp : ndarray
+        Derivatives V_vi'(x), for vi=v-int(v), vi=1+v-int(v), ..., vi=v.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 13.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -981,8 +1668,28 @@ def pbvv_seq(v,x):
 
 
 def pbdn_seq(n,z):
-    """Compute sequence of parabolic cylinder functions Dn(z) and
-    their derivatives for D0(z)..Dn(z).
+    """Parabolic cylinder functions Dn(z) and derivatives.
+
+    Parameters
+    ----------
+    n : int
+        Order of the parabolic cylinder function
+    z : complex
+        Value at which to evaluate the function and derivatives
+
+    Returns
+    -------
+    dv : ndarray
+        Values of D_i(z), for i=0, ..., i=n.
+    dp : ndarray
+        Derivatives D_i'(z), for i=0, ..., i=n.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996, chapter 13.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
@@ -997,7 +1704,14 @@ def pbdn_seq(n,z):
 
 
 def ber_zeros(nt):
-    """Compute nt zeros of the Kelvin function ber x
+    """Compute nt zeros of the Kelvin function ber(x).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1005,7 +1719,14 @@ def ber_zeros(nt):
 
 
 def bei_zeros(nt):
-    """Compute nt zeros of the Kelvin function bei x
+    """Compute nt zeros of the Kelvin function bei(x).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1013,7 +1734,14 @@ def bei_zeros(nt):
 
 
 def ker_zeros(nt):
-    """Compute nt zeros of the Kelvin function ker x
+    """Compute nt zeros of the Kelvin function ker(x).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1021,7 +1749,7 @@ def ker_zeros(nt):
 
 
 def kei_zeros(nt):
-    """Compute nt zeros of the Kelvin function kei x
+    """Compute nt zeros of the Kelvin function kei(x).
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1029,7 +1757,14 @@ def kei_zeros(nt):
 
 
 def berp_zeros(nt):
-    """Compute nt zeros of the Kelvin function ber' x
+    """Compute nt zeros of the Kelvin function ber'(x).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1037,7 +1772,14 @@ def berp_zeros(nt):
 
 
 def beip_zeros(nt):
-    """Compute nt zeros of the Kelvin function bei' x
+    """Compute nt zeros of the Kelvin function bei'(x).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1045,7 +1787,14 @@ def beip_zeros(nt):
 
 
 def kerp_zeros(nt):
-    """Compute nt zeros of the Kelvin function ker' x
+    """Compute nt zeros of the Kelvin function ker'(x).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1053,7 +1802,14 @@ def kerp_zeros(nt):
 
 
 def keip_zeros(nt):
-    """Compute nt zeros of the Kelvin function kei' x
+    """Compute nt zeros of the Kelvin function kei'(x).
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1061,10 +1817,17 @@ def keip_zeros(nt):
 
 
 def kelvin_zeros(nt):
-    """Compute nt zeros of all the Kelvin functions returned in a
-    length 8 tuple of arrays of length nt.
-    The tuple containse the arrays of zeros of
-    (ber, bei, ker, kei, ber', bei', ker', kei')
+    """Compute nt zeros of all Kelvin functions.
+
+    Returned in a length-8 tuple of arrays of length nt.  The tuple contains
+    the arrays of zeros of (ber, bei, ker, kei, ber', bei', ker', kei').
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
@@ -1079,9 +1842,18 @@ def kelvin_zeros(nt):
 
 
 def pro_cv_seq(m,n,c):
-    """Compute a sequence of characteristic values for the prolate
+    """Characteristic values for prolate spheroidal wave functions.
+
+    Compute a sequence of characteristic values for the prolate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):
         raise ValueError("Arguments must be scalars.")
@@ -1094,9 +1866,18 @@ def pro_cv_seq(m,n,c):
 
 
 def obl_cv_seq(m,n,c):
-    """Compute a sequence of characteristic values for the oblate
+    """Characteristic values for oblate spheroidal wave functions.
+
+    Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
+
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):
         raise ValueError("Arguments must be scalars.")
@@ -1109,8 +1890,7 @@ def obl_cv_seq(m,n,c):
 
 
 def ellipk(m):
-    """
-    Complete elliptic integral of the first kind
+    """Complete elliptic integral of the first kind.
 
     This function is defined as
 
@@ -1143,7 +1923,7 @@ def ellipk(m):
 
 
 def agm(a,b):
-    """Arithmetic, Geometric Mean
+    """Arithmetic, Geometric Mean.
 
     Start with a_0=a and b_0=b and iteratively compute
 
@@ -1161,8 +1941,7 @@ def agm(a,b):
 
 
 def comb(N, k, exact=False, repetition=False):
-    """
-    The number of combinations of N things taken k at a time.
+    """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
 
@@ -1225,8 +2004,7 @@ def comb(N, k, exact=False, repetition=False):
 
 
 def perm(N, k, exact=False):
-    """
-    Permutations of N things taken k at a time, i.e., k-permutations of N.
+    """Permutations of N things taken k at a time, i.e., k-permutations of N.
 
     It's also known as "partial permutations".
 
@@ -1280,8 +2058,7 @@ def perm(N, k, exact=False):
 
 
 def factorial(n,exact=False):
-    """
-    The factorial function, n! = special.gamma(n+1).
+    """The factorial function, n! = special.gamma(n+1).
 
     If exact is 0, then floating point precision is used, otherwise
     exact long integer is computed.
@@ -1328,11 +2105,10 @@ def factorial(n,exact=False):
 
 
 def factorial2(n, exact=False):
-    """
-    Double factorial.
+    """Double factorial.
 
-    This is the factorial with every second value skipped, i.e.,
-    ``7!! = 7 * 5 * 3 * 1``.  It can be approximated numerically as::
+    This is the factorial with every second value skipped.  E.g., ``7!! = 7 * 5
+    * 3 * 1``.  It can be approximated numerically as::
 
       n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
           = 2**(n/2) * (n/2)!                           n even
@@ -1386,9 +2162,17 @@ def factorial2(n, exact=False):
 
 
 def factorialk(n, k, exact=True):
-    """
-    n(!!...!)  = multifactorial of order k
-    k times
+    """Multifactorial of n of order k, n(!!...!).
+
+    This is the multifactorial of n skipping k values.  For example,
+
+      factorialk(17, 4) = 17!!!! = 17 * 13 * 9 * 5 * 1
+
+    In particular, for any integer ``n``, we have
+
+      factorialk(n, 1) = factorial(n)
+
+      factorialk(n, 2) = factorial2(n)
 
     Parameters
     ----------
@@ -1403,7 +2187,7 @@ def factorialk(n, k, exact=True):
     Returns
     -------
     val : int
-        Multi factorial of `n`.
+        Multifactorial of `n`.
 
     Raises
     ------
