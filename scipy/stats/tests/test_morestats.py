@@ -742,9 +742,11 @@ def test_ppcc_max_bad_arg():
     data = [1]
     assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
+
+def test_ppcc_max_basic():
     np.random.seed(1234567)
     x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
-    assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=16)
+    assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=5)
 
 
 class TestBoxcox_llf(TestCase):
