@@ -1480,6 +1480,10 @@ class TestMoments(TestCase):
         y = stats.moment(self.testcase, 4)
         assert_approx_equal(y, 2.5625)
 
+        # test empty input
+        y = stats.moment([])
+        assert_equal(y, np.nan)
+
     def test_variation(self):
         # variation = samplestd / mean
         y = stats.variation(self.scalar_testcase)

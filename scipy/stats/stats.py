@@ -1017,8 +1017,11 @@ def moment(a, moment=1, axis=0):
     """
     Calculates the nth moment about the mean for a sample.
 
-    Generally used to calculate coefficients of skewness and
-    kurtosis.
+    A moment is a specific quantitative measure of the shape of a set of points.
+    If the points represent probability density, then the zeroth moment is the
+    total probability (i. e. one), the first moment is the mean, the second
+    moment is the variance, the third moment is the skewness and the fourth
+    moment divided by the square of the variance is the kurtosis.
 
     Parameters
     ----------
@@ -1037,8 +1040,32 @@ def moment(a, moment=1, axis=0):
        is None. The denominator for the moment calculation is the number of
        observations, no degrees of freedom correction is done.
 
+    See also
+    --------
+    kurtosis, skew, describe
+
+    Notes
+    -----
+    [1]_ The n-th moment of a real-valued continuous function f(x) of a real
+    variable about a value c is:
+        \mu _{n} = \int_{-\infty }^{\infty }(x - c)^n  f(x) dx
+
+    This function uses exponentiation by squares [2]_ for efficiency.
+
+    The moment is often used to calculate coefficients of skewness and
+    kurtosis due to its close relationship with them.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Moment_(mathematics)
+
+    .. [2] http://eli.thegreenplace.net/2009/03/21/efficient-integer-exponentiation-algorithms
     """
     a, axis = _chk_asarray(a, axis)
+
+    if a.size == 0:
+        return np.nan
+
     if moment == 1:
         # By definition the first moment about the mean is 0.
         shape = list(a.shape)
