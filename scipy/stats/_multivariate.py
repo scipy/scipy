@@ -776,6 +776,10 @@ class dirichlet_gen(multi_rv_generic):
     concentration parameters and :math:`K` is the dimension of the space
     where :math:`x` takes values.
 
+    Note that the dirichlet interface is somewhat inconsistent.
+    The array returned by the rvs function is transposed
+    with respect to the format expected by the pdf and logpdf.
+
     """
 
     def __init__(self, seed=None):
