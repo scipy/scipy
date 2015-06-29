@@ -16,15 +16,19 @@ class JLpool(object):
     
     Example 1: joblib pool
 
-    >>> from JLpool import JLpool
+    >>> from scipy.optimize.pools.JLpool import JLpool
     >>> from scipy.optimize import rosen
     >>> import differential_evolution as de
     >>> bounds = [(0,2), (0, 2), (0,2)]
+    >>> def objfunc(params):
+    >>>     for it in xrange(10000000):
+    >>>         it**2
+    >>>     return rosen(params)
     >>> #if n_jobs is not specified -- sprawns cpu_count() processes by default
-    >>> pool = JLpool()
+    >>> pool = JLpool(n_jobs=3)
     >>> 
     >>> #run DE 
-    >>> result = de(rosen, bounds, pool=pool, aggressive=True, disp=True)
+    >>> result = de(objfunc, bounds, pool=pool, maxiter=10, disp=True)
     '''
     
     def __init__(self, *args, **kwargs):

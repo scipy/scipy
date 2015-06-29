@@ -44,12 +44,18 @@ class MPIpool(object):
         as the cpus get done.
         
     Example 1: MPI
-    run this with mpirun -np 2 python testmpi.py
+    run this with mpirun -np 4 python testmpi.py
     
-    >>> from MPIpool import MPIpool
+    >>> from scipy.optimize.pools.MPIpool import MPIpool
     >>> from scipy.optimize import rosen
     >>> import differential_evolution as de
     >>> bounds = [(0,2), (0, 2), (0,2)]
+    >>>    
+    >>> def objfunc(params):
+    >>>     for it in xrange(10000000):
+    >>>         it**2
+    >>>     return rosen(params)
+    >>>    
     >>> pool = MPIpool()
     >>> 
     >>> #the DE is ran only at master MPI process
@@ -59,7 +65,7 @@ class MPIpool(object):
     >>>     sys.exit(0)
     >>> 
     >>> #run DE by the master
-    >>> result = de(rosen, bounds, pool=pool, aggressive=True, disp=True)
+    >>> result = de(objfunc, bounds, maxiter=10, pool=pool, disp=True)
     >>> pool.close()  
     """
     
