@@ -223,14 +223,14 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
     Parameters
     ----------
-    n : int
+    m : int
         Number of rows in the matrix.
-    m : int, optional
-        Number of columns. Default: n
+    n : int, optional
+        Number of columns. Default: `m`.
     k : int, optional
-        Diagonal to place ones on. Default: 0 (main diagonal)
+        Diagonal to place ones on. Default: 0 (main diagonal).
     dtype : dtype, optional
-        Data type of the matrix
+        Data type of the matrix.
     format : str, optional
         Sparse format of the result, e.g. format="csr", etc.
 
