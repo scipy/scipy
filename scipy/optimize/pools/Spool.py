@@ -9,8 +9,8 @@ class Spool(object):
     
     '''
 
-    def map(self, func, task):
-        return func(task)
+    def map(self, func, task, args=()):
+        return func(task, *args)
         
     def poolsize(self):
         return 1

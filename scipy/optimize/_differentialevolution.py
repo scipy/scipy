@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
+from scipy.optimize.pools.Spool import Spool
 import numbers
 
 __all__ = ['differential_evolution']
@@ -17,7 +18,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
-                           init='latinhypercube'):
+                           init='latinhypercube', pool=None):
     """Finds the global minimum of a multivariate function.
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
@@ -198,7 +199,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          seed=seed, polish=polish,
                                          callback=callback,
                                          disp=disp,
-                                         init=init)
+                                         init=init, pool=pool)
     return solver.solve()
 
 
@@ -309,8 +310,13 @@ class DifferentialEvolutionSolver(object):
                  strategy='best1bin', maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True,
-                 init='latinhypercube'):
-
+                 init='latinhypercube', pool=None):
+        
+        if pool is None:
+            self.pool = Spool()
+        else:
+            self.pool = pool
+        
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
         elif strategy in self._exponential:
@@ -451,8 +457,7 @@ class DifferentialEvolutionSolver(object):
         # calculate energies to start with
         for index, candidate in enumerate(self.population):
             parameters = self._scale_parameters(candidate)
-            self.population_energies[index] = self.func(parameters,
-                                                        *self.args)
+            self.population_energies[index] = self.pool.map(self.func, parameters, *self.args)
             nfev += 1
 
             if nfev > self.maxfun:
@@ -493,7 +498,7 @@ class DifferentialEvolutionSolver(object):
                 self._ensure_constraint(trial)
                 parameters = self._scale_parameters(trial)
 
-                energy = self.func(parameters, *self.args)
+                energy = self.pool.map(self.func, parameters, *self.args)
                 nfev += 1
 
                 if energy < self.population_energies[candidate]:
