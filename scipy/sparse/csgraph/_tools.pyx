@@ -29,7 +29,7 @@ def csgraph_from_masked(graph):
     Returns
     -------
     csgraph : csr_matrix
-        Compressed sparse representation of graph, 
+        Compressed sparse representation of graph,
     """
     # check that graph is a square matrix
     graph = np.ma.asarray(graph)
@@ -97,14 +97,14 @@ def csgraph_masked_from_dense(graph,
 
     # check whether null_value is infinity or NaN
     if null_value is not None:
-        null_value = DTYPE(null_value)        
+        null_value = DTYPE(null_value)
         if np.isnan(null_value):
             nan_null = True
             null_value = None
         elif np.isinf(null_value):
             infinity_null = True
             null_value = None
-    
+
     # flag all the null edges
     if null_value is None:
         mask = np.zeros(graph.shape, dtype='bool')
@@ -147,7 +147,7 @@ def csgraph_from_dense(graph,
     Returns
     -------
     csgraph : csr_matrix
-        Compressed sparse representation of graph, 
+        Compressed sparse representation of graph,
     """
     return csgraph_from_masked(csgraph_masked_from_dense(graph,
                                                          null_value,
@@ -334,16 +334,23 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     pind = predecessors[indices]
     indptr = pind.searchsorted(np.arange(N + 1)).astype(ITYPE)
 
-    if directed == True:
-        data = csgraph[pind, indices]
-    else:
-        data1 = csgraph[pind, indices]
-        data2 = csgraph[indices, pind]
-        data1[data1 == 0] = np.inf
-        data2[data2 == 0] = np.inf
-        data = np.minimum(data1, data2)
+    data = csgraph[pind, indices]
 
-    data = np.asarray(data).ravel()
+    # Fix issue #4018:
+    # If `pind` and `indices` are empty arrays, `data` is a sparse matrix
+    # (it is a numpy.matrix otherwise); handle this case separately.
+    if isspmatrix(data):
+        data = data.todense()
+    data = data.getA1()
+
+    if not directed:
+        data2 = csgraph[indices, pind]
+        if isspmatrix(data2):
+            data2 = data2.todense()
+        data2 = data2.getA1()
+        data[data == 0] = np.inf
+        data2[data2 == 0] = np.inf
+        data = np.minimum(data, data2)
 
     return csr_matrix((data, indices, indptr), shape=(N, N))
 
@@ -402,7 +409,7 @@ def construct_dist_matrix(graph,
     dist_matrix = np.zeros(graph.shape, dtype=DTYPE)
     _construct_dist_matrix(graph, predecessors, dist_matrix,
                            directed, null_value)
-    
+
     return dist_matrix
 
 
