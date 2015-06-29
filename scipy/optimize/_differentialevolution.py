@@ -312,10 +312,16 @@ class DifferentialEvolutionSolver(object):
                  maxfun=None, callback=None, disp=False, polish=True,
                  init='latinhypercube', pool=None):
         
+        # use aggressive mutation strategy (or quasi-aggressive in case of parallel)
+        # original algorythm was aggressive
+        self.aggressive = True
+        
         if pool is None:
             self.pool = Spool()
         else:
             self.pool = pool
+            
+        print("Starting %g workers in parallel." % self.pool.poolsize())
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -455,23 +461,20 @@ class DifferentialEvolutionSolver(object):
         status_message = _status_message['success']
 
         # calculate energies to start with
-        for index, candidate in enumerate(self.population):
-            parameters = self._scale_parameters(candidate)
-            self.population_energies[index] = self.pool.map(self.func, parameters, *self.args)
+        params = []
+        for candidate in self.population:
+            params.append(self._scale_parameters(candidate), *(self.args))
             nfev += 1
 
-            if nfev > self.maxfun:
-                warning_flag = True
-                status_message = _status_message['maxfev']
-                break
-
+        self.population_energies = self.pool.map(self.func, params)
+        
         minval = np.argmin(self.population_energies)
 
         # put the lowest energy into the best solution position.
         lowest_energy = self.population_energies[minval]
         self.population_energies[minval] = self.population_energies[0]
         self.population_energies[0] = lowest_energy
-
+        # and exchange places of previous and new best solutions
         self.population[[0, minval], :] = self.population[[minval, 0], :]
 
         if warning_flag:
@@ -485,40 +488,73 @@ class DifferentialEvolutionSolver(object):
 
         # do the optimisation.
         for nit in range(1, self.maxiter + 1):
+        
             if self.dither is not None:
                 self.scale = self.random_number_generator.rand(
-                ) * (self.dither[1] - self.dither[0]) + self.dither[0]
-            for candidate in range(np.size(self.population, 0)):
-                if nfev > self.maxfun:
-                    warning_flag = True
-                    status_message = _status_message['maxfev']
-                    break
+                    ) * (self.dither[1] - self.dither[0]) + self.dither[0]
 
-                trial = self._mutate(candidate)
-                self._ensure_constraint(trial)
-                parameters = self._scale_parameters(trial)
+            # brake the population to subpopulation depending on the size of the pool
+            # determine number of sub-populations 'nsp', or number of 
+            # parallel evaluations, which is 'nsp + 1'
+            # and the length of the reminder 'lenrem'
+            nsp, lenrem = divmod(np.size(self.population, 0), self.pool.poolsize())
+            
+            itsp = 0
+            # iterate among sub-populations
+            # when self.pool.poolsize() == 1 the mutation is aggressive
+            # when self.pool.poolsize() > 1 the mutation is quasi-aggressive
+            while itsp <= nsp:
+                # determine the length of the subpopulation
+                lensp = self.pool.poolsize() if (itsp < nsp) else lenrem
 
-                energy = self.pool.map(self.func, parameters, *self.args)
-                nfev += 1
+                # initialize list for all members (parameters) of the current subpopulation
+                spparams = []
+                # mutate parameters for the sub-population
+                for candidate in xrange(lensp):
+                    trial = self._mutate(candidate + self.pool.poolsize()*itsp)
+                    self._ensure_constraint(trial)
+                    spparams.append(self._scale_parameters(trial), *(self.args))
+                    nfev += 1
+                    
+                # in parallel case the self.func must return a list of energies
+                # for the whole subpopulation
+                spenergies = self.pool.map(self.func, spparams)
 
-                if energy < self.population_energies[candidate]:
-                    self.population[candidate] = trial
-                    self.population_energies[candidate] = energy
+                # update population and their energies if subpopulation members are 
+                # better by iteration among all members (or jobs) of the subpopulation
+                for itjob in xrange(lensp):
+                    energy = spenergies[itjob]
+                    if energy < self.population_energies[itjob + self.pool.poolsize()*itsp]:
+                        self.population[itjob + self.pool.poolsize()*itsp] =\
+                            self._unscale_parameters(spparams[itjob])
+                        self.population_energies[itjob + self.pool.poolsize()*itsp] = energy
+                        
+                        # update global best if there is a better in the current sub-population
+                        # and strategy is aggressive
+                        if self.aggressive:
+                            if energy < self.population_energies[0]:
+                                self.population_energies[0] = energy
+                                self.population[0] =\
+                                    self._unscale_parameters(spparams[itjob])
+                                if self.disp:
+                                    print(" Best updated: f(x)= %g"
+                                          % (self.population_energies[0]))
+                                    print(self._scale_parameters(self.population[0]))
 
-                    if energy < self.population_energies[0]:
-                        self.population_energies[0] = energy
-                        self.population[0] = trial
+                                # exchange places between old and new global best    
+                                self.population[[0, itjob + self.pool.poolsize()*itsp], :] =\
+                                    self.population[[itjob + self.pool.poolsize()*itsp, 0], :]
+                itsp += 1
+            
 
-            # stop when the fractional s.d. of the population is less than tol
-            # of the mean energy
-            convergence = (np.std(self.population_energies) /
-                           np.abs(np.mean(self.population_energies) +
-                                  _MACHEPS))
 
+                                  
+            # report on the results of the current generation
             if self.disp:
                 print("differential_evolution step %d: f(x)= %g"
                       % (nit,
                          self.population_energies[0]))
+                print(self._scale_parameters(self.population[0]))
 
             if (self.callback and
                     self.callback(self._scale_parameters(self.population[0]),
@@ -528,6 +564,12 @@ class DifferentialEvolutionSolver(object):
                 status_message = ('callback function requested stop early '
                                   'by returning True')
                 break
+
+            # stop when the fractional s.d. of the population is less than tol
+            # of the mean energy
+            convergence = (np.std(self.population_energies) /
+                           np.abs(np.mean(self.population_energies) +
+                                  _MACHEPS))
 
             if convergence < self.tol or warning_flag:
                 break

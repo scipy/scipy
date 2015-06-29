@@ -38,15 +38,14 @@ class JLpool(object):
         self.nworkers = None
         if 'n_jobs' in kwargs:
             n_jobs = kwargs.pop('n_jobs')
-            if isinstance(n_jobs, int):
-                self.nworkers = n_jobs
+            self.nworkers = n_jobs
         else:
             self.nworkers = cpu_count()
-        
+            
 
     def map(self, func, tasks):
         dfunc = delayed(func)
-        return Parallel(*(self.args), **(self.kwargs))(dfunc(a) for a in tasks)
+        return Parallel(n_jobs=self.nworkers, *(self.args), **(self.kwargs))(dfunc(a) for a in tasks)
         
     def poolsize(self):
         return self.nworkers
