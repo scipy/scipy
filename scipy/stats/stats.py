@@ -237,6 +237,28 @@ def _chk2_asarray(a, b, axis):
     return a, b, outaxis
 
 
+def _contains_nan(a, nan_policy='propagate'):
+    if nan_policy not in ('propagate', 'raise', 'omit'):
+        raise ValueError("nan_policy must be either 'propagate', 'raise', or "
+                         "'ignore'")
+    try:
+        # Calling np.sum to avoid creating a huge array into memory
+        # e.g. np.isnan(a).any()
+        contains_nan = np.isnan(np.sum(a))
+    except TypeError:
+        # If the check cannot be properly performed we fallback to omiting
+        # nan values and raising a warning.
+        contains_nan = False
+        nan_policy = 'omit'
+        warnings.warn("The input array could not be properly checked for nan "
+                      "values. nan values will be ignored.", RuntimeWarning)
+
+    if contains_nan and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    return (contains_nan, nan_policy)
+
+
 def find_repeats(arr):
     """
     Find repeats and repeat counts.
@@ -601,7 +623,7 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
 
-def mode(a, axis=0):
+def mode(a, axis=0, nan_policy='propagate'):
     """
     Returns an array of the modal (most common) value in the passed array.
 
@@ -615,6 +637,10 @@ def mode(a, axis=0):
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -643,6 +669,13 @@ def mode(a, axis=0):
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return np.array([]), np.array([])
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+
+    if contains_nan and nan_policy == 'propagate':
+        return ModeResult(np.nan, np.nan)
 
     scores = np.unique(np.ravel(a))       # get ALL unique values
     testshape = list(a.shape)
@@ -809,7 +842,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return np.ma.var(am, ddof=ddof, axis=axis)
 
 
-def tmin(a, lowerlimit=None, axis=0, inclusive=True):
+def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     Compute the trimmed minimum
 
@@ -831,6 +864,10 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the lower limit
         are included.  The default value is True.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -853,13 +890,18 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     a, axis = _chk_asarray(a, axis)
     am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
 
+    contains_nan, nan_policy = _contains_nan(am, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        am = ma.masked_invalid(am)
+
     res = ma.minimum.reduce(am, axis).data
     if res.ndim == 0:
         return res[()]
     return res
 
 
-def tmax(a, upperlimit=None, axis=0, inclusive=True):
+def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     Compute the trimmed maximum
 
@@ -880,6 +922,10 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     inclusive : {True, False}, optional
         This flag determines whether values exactly equal to the upper limit
         are included.  The default value is True.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -901,6 +947,12 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     """
     a, axis = _chk_asarray(a, axis)
     am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
+
+    contains_nan, nan_policy = _contains_nan(am, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        am = ma.masked_invalid(am)
+
     res = ma.maximum.reduce(am, axis).data
     if res.ndim == 0:
         return res[()]
@@ -1013,8 +1065,8 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #              MOMENTS              #
 #####################################
 
-def moment(a, moment=1, axis=0):
-    r"""
+def moment(a, moment=1, axis=0, nan_policy='propagate'):
+    """
     Calculates the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of points.
@@ -1031,6 +1083,10 @@ def moment(a, moment=1, axis=0):
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
        If None, compute over the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1059,6 +1115,15 @@ def moment(a, moment=1, axis=0):
     .. [1] http://eli.thegreenplace.net/2009/03/21/efficient-integer-exponentiation-algorithms
     """
     a, axis = _chk_asarray(a, axis)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan
 
     if a.size == 0:
         # empty array, return nan(s) with shape matching `moment`
@@ -1125,7 +1190,7 @@ def _moment(a, moment, axis):
         return np.mean(s, axis)
 
 
-def variation(a, axis=0):
+def variation(a, axis=0, nan_policy='propagate'):
     """
     Computes the coefficient of variation, the ratio of the biased standard
     deviation to the mean.
@@ -1137,6 +1202,10 @@ def variation(a, axis=0):
     axis : int or None, optional
         Axis along which to calculate the coefficient of variation. Default
         is 0. If None, compute over the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     References
     ----------
@@ -1146,10 +1215,20 @@ def variation(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan
+
     return a.std(axis) / a.mean(axis)
 
 
-def skew(a, axis=0, bias=True):
+def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     Computes the skewness of a data set.
 
@@ -1167,6 +1246,10 @@ def skew(a, axis=0, bias=True):
         If None, compute over the whole array `a`.
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1185,6 +1268,16 @@ def skew(a, axis=0, bias=True):
     """
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan
+
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
     zero = (m2 == 0)
@@ -1205,7 +1298,7 @@ def skew(a, axis=0, bias=True):
     return vals
 
 
-def kurtosis(a, axis=0, fisher=True, bias=True):
+def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """
     Computes the kurtosis (Fisher or Pearson) of a dataset.
 
@@ -1230,6 +1323,10 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         Pearson's definition is used (normal ==> 3.0).
     bias : bool, optional
         If False, then the calculations are corrected for statistical bias.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1245,6 +1342,16 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     """
     a, axis = _chk_asarray(a, axis)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan
+
     n = a.shape[axis]
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
@@ -1272,7 +1379,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-def describe(a, axis=0, ddof=1, bias=True):
+def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """
     Computes several descriptive statistics of the passed array.
 
@@ -1288,6 +1395,10 @@ def describe(a, axis=0, ddof=1, bias=True):
     bias : bool, optional
         If False, then the skewness and kurtosis calculations are corrected for
         statistical bias.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1321,11 +1432,27 @@ def describe(a, axis=0, ddof=1, bias=True):
     >>> b = [[1, 2], [3, 4]]
     >>> stats.describe(b)
     DescribeResult(nobs=2, minmax=(array([1, 2]), array([3, 4])),
-                   mean=array([ 2., 3.]), variance=array([ 2., 2.]), 
+                   mean=array([ 2., 3.]), variance=array([ 2., 2.]),
                    skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
 
     """
     a, axis = _chk_asarray(a, axis)
+
+    # Return namedtuple for clarity
+    DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
+                                                   'variance', 'skewness',
+                                                   'kurtosis'))
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        res = np.zeros(6) * np.nan
+        return DescribeResult(*res)
+
     if a.size == 0:
         raise ValueError("The input must not be empty.")
     n = a.shape[axis]
@@ -1335,11 +1462,6 @@ def describe(a, axis=0, ddof=1, bias=True):
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
 
-    # Return namedtuple for clarity
-    DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
-                                                   'variance', 'skewness',
-                                                   'kurtosis'))
-
     return DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
@@ -1347,7 +1469,7 @@ def describe(a, axis=0, ddof=1, bias=True):
 #####################################
 
 
-def skewtest(a, axis=0):
+def skewtest(a, axis=0, nan_policy='propagate'):
     """
     Tests whether the skew is different from the normal distribution.
 
@@ -1362,6 +1484,10 @@ def skewtest(a, axis=0):
     axis : int or None, optional
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1376,6 +1502,18 @@ def skewtest(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+
+    SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return SkewtestResult(np.nan, np.nan)
+
     if axis is None:
         a = np.ravel(a)
         axis = 0
@@ -1394,11 +1532,10 @@ def skewtest(a, axis=0):
     y = np.where(y == 0, 1, y)
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
 
-    SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
 
-def kurtosistest(a, axis=0):
+def kurtosistest(a, axis=0, nan_policy='propagate'):
     """
     Tests whether a dataset has normal kurtosis
 
@@ -1413,6 +1550,10 @@ def kurtosistest(a, axis=0):
     axis : int or None, optional
        Axis along which to compute test. Default is 0. If None,
        compute over the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1427,6 +1568,18 @@ def kurtosistest(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+
+    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
+                                                           'pvalue'))
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return KurtosistestResult(np.nan, np.nan)
+
     n = float(a.shape[axis])
     if n < 5:
         raise ValueError(
@@ -1453,12 +1606,10 @@ def kurtosistest(a, axis=0):
         Z = Z[()]
 
     # zprob uses upper tail, so Z needs to be positive
-    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
-                                                           'pvalue'))
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
 
-def normaltest(a, axis=0):
+def normaltest(a, axis=0, nan_policy='propagate'):
     """
     Tests whether a sample differs from a normal distribution.
 
@@ -1475,6 +1626,10 @@ def normaltest(a, axis=0):
     axis : int or None, optional
         Axis along which to compute test. Default is 0. If None,
         compute over the whole array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1494,11 +1649,22 @@ def normaltest(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+
+    NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return NormaltestResult(np.nan, np.nan)
+
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
 
-    NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
@@ -2210,7 +2376,7 @@ def signaltonoise(a, axis=0, ddof=0):
     return np.where(sd == 0, 0, m/sd)
 
 
-def sem(a, axis=0, ddof=1):
+def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """
     Calculates the standard error of the mean (or standard error of
     measurement) of the values in the input array.
@@ -2227,6 +2393,10 @@ def sem(a, axis=0, ddof=1):
         Delta degrees-of-freedom. How many degrees of freedom to adjust
         for bias in limited samples relative to the population estimate
         of variance. Defaults to 1.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -2254,6 +2424,16 @@ def sem(a, axis=0, ddof=1):
 
     """
     a, axis = _chk_asarray(a, axis)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan
+
     n = a.shape[axis]
     s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
     return s
@@ -2979,7 +3159,7 @@ def fisher_exact(table, alternative='two-sided'):
     return oddsratio, pvalue
 
 
-def spearmanr(a, b=None, axis=0):
+def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -3011,6 +3191,10 @@ def spearmanr(a, b=None, axis=0):
         observations in the rows. If axis=1, the relationship is transposed:
         each row represents a variable, while the columns contain observations.
         If axis=None, then both arrays will be raveled.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3075,13 +3259,35 @@ def spearmanr(a, b=None, axis=0):
 
     """
     a, axisout = _chk_asarray(a, axis)
+
+    SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return SpearmanrResult(np.nan, np.nan)
+
     if a.size <= 1:
-        return np.nan, np.nan
+        return SpearmanrResult(np.nan, np.nan)
     ar = np.apply_along_axis(rankdata, axisout, a)
 
     br = None
     if b is not None:
         b, axisout = _chk_asarray(b, axis)
+
+        contains_nan, nan_policy = _contains_nan(b, nan_policy)
+
+        # TODO: implement the delegation to mstats when nan_policy == 'omit'
+        # if contains_nan and nan_policy == 'omit':
+        #     b = ma.masked_invalid(b)
+
+        if contains_nan and nan_policy == 'propagate':
+            return SpearmanrResult(np.nan, np.nan)
+
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
     rs = np.corrcoef(ar, br, rowvar=axisout)
@@ -3093,8 +3299,6 @@ def spearmanr(a, b=None, axis=0):
         np.seterr(**olderr)
 
     prob = 2 * distributions.t.sf(np.abs(t), n-2)
-
-    SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
     if rs.shape == (2, 2):
         return SpearmanrResult(rs[1, 0], prob[1, 0])
@@ -3547,7 +3751,7 @@ def theilslopes(y, x=None, alpha=0.95):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
-def ttest_1samp(a, popmean, axis=0):
+def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     """
     Calculates the T-test for the mean of ONE group of scores.
 
@@ -3565,6 +3769,10 @@ def ttest_1samp(a, popmean, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         array `a`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3602,6 +3810,17 @@ def ttest_1samp(a, popmean, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
+
+    Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return Ttest_1sampResult(np.nan, np.nan)
+
     n = a.shape[axis]
     df = n - 1
 
@@ -3612,7 +3831,6 @@ def ttest_1samp(a, popmean, axis=0):
     t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
-    Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
     return Ttest_1sampResult(t, prob)
 
 
@@ -3710,12 +3928,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                                              std2**2, nobs2)
 
     Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
-
     res = _ttest_ind_from_stats(mean1, mean2, denom, df)
     return Ttest_indResult(*res)
 
 
-def ttest_ind(a, b, axis=0, equal_var=True):
+def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -3737,6 +3954,10 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
         .. versionadded:: 0.11.0
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
 
     Returns
@@ -3807,6 +4028,17 @@ def ttest_ind(a, b, axis=0, equal_var=True):
 
     Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
+    # check both a and b
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    contains_nan, nan_policy = _contains_nan(b, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return Ttest_indResult(np.nan, np.nan)
+
     if a.size == 0 or b.size == 0:
         return Ttest_indResult(np.nan, np.nan)
 
@@ -3825,7 +4057,7 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     return Ttest_indResult(*res)
 
 
-def ttest_rel(a, b, axis=0):
+def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     """
     Calculates the T-test on TWO RELATED samples of scores, a and b.
 
@@ -3839,6 +4071,10 @@ def ttest_rel(a, b, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         arrays, `a`, and `b`.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3880,6 +4116,20 @@ def ttest_rel(a, b, axis=0):
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
+
+    Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
+
+    # check both a and b
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    contains_nan, nan_policy = _contains_nan(b, nan_policy)
+
+    # TODO: implement the delegation to mstats when nan_policy == 'omit'
+    # if contains_nan and nan_policy == 'omit':
+    #     a = ma.masked_invalid(a)
+
+    if contains_nan and nan_policy == 'propagate':
+        return Ttest_relResult(np.nan, np.nan)
+
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
 
@@ -3897,7 +4147,6 @@ def ttest_rel(a, b, axis=0):
     t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t)
 
-    Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
     return Ttest_relResult(t, prob)
 
 
