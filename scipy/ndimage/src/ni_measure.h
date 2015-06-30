@@ -39,7 +39,6 @@ typedef struct {
     int start[NI_MAXDIM], end[NI_MAXDIM];
 } NI_ObjectRegion;
 
-int NI_FindObjects(PyArrayObject*, npy_intp, npy_intp*);
 
 int NI_CenterOfMass(PyArrayObject*, PyArrayObject*, npy_intp, npy_intp,
                     npy_intp*, npy_intp, double*);

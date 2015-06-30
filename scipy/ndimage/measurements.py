@@ -35,6 +35,7 @@ import numpy as np
 from . import _ni_support
 from . import _ni_label
 from . import _nd_image
+from . import _ni_measure
 from . import morphology
 
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
@@ -267,7 +268,7 @@ def find_objects(input, max_label=0):
     if max_label < 1:
         max_label = input.max()
 
-    return _nd_image.find_objects(input, max_label)
+    return _ni_measure._findObjects(input, max_label)
 
 
 def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_positions=False):
