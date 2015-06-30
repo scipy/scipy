@@ -2891,13 +2891,13 @@ def spearmanr(a, b=None, axis=0):
     ----------
     a, b : 1D or 2D array_like, b is optional
         One or two 1-D or 2-D arrays containing multiple variables and
-        observations. Each column of `a` and `b` represents a variable, and
-        each row entry a single observation of those variables. See also
-        `axis`. Both arrays need to have the same length in the `axis`
-        dimension.
+        observations. When these are 1-D, each represents a vector of
+        observations of a single variable. For the behavior in the 2-D case,
+        see under ``axis``, below.
+        Both arrays need to have the same length in the ``axis`` dimension.
     axis : int or None, optional
         If axis=0 (default), then each column represents a variable, with
-        observations in the rows. If axis=0, the relationship is transposed:
+        observations in the rows. If axis=1, the relationship is transposed:
         each row represents a variable, while the columns contain observations.
         If axis=None, then both arrays will be raveled.
 
