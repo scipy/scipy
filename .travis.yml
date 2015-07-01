@@ -70,7 +70,7 @@ before_install:
   - travis_retry pip install $NUMPYSPEC
   - travis_retry pip install nose mpmath argparse
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
-  - if [ "${TESTMODE}" == "full" ]; then pip install coverage coveralls; fi
+  - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
   - python -V
   - popd
   - set -o pipefail
@@ -84,5 +84,3 @@ notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
   email: false
-after_success:
-    - if [ "${TESTMODE}" == "full" ]; then pushd build/testenv/lib/python*/site-packages/ && cp ../../../../test/.coverage . && coveralls && popd; fi
