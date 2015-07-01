@@ -53,7 +53,7 @@ def levinson(dz[::1] a, dz[::1] b):
     else:
         dtype = complex128
 
-    cdef npy_intp n, m, j, nmj, k, m2
+    cdef npy_intp n, m, j, nmj, k, m2, m_j_1
     n = b.shape[0]
     cdef dz x_num, g_num, h_num, x_den, g_den
     cdef dz gj, gk, hj, hk, c1, c2
@@ -91,7 +91,8 @@ def levinson(dz[::1] a, dz[::1] b):
 
         # Compute x
         for j in range(m):
-            x[j] = x[j] - x[m] * g[m-j-1]
+            m_j_1 = m - j - 1
+            x[j] = x[j] - x[m] * g[m_j_1]
         if m == n-1:
             return asarray(x), asarray(reflection_coeff)
 
