@@ -1577,6 +1577,10 @@ def bartlett(*args):
            Report #99-03, Center for Likelihood Studies, Pennsylvania State
            University.
 
+    .. [4] Bartlett, M. S. (1937). Properties of Sufficiency and Statistical
+           Tests. Proceedings of the Royal Society of London. Series A,
+           Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
+
     """
     BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
