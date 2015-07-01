@@ -433,6 +433,21 @@ class TestHypergeom(TestCase):
         hg = stats.hypergeom(1, 1, 1)
         h = hg.entropy()
         assert_equal(h, 0.0)
+        
+    def test_logsf(self):
+        # Test logsf for very large numbers. See issue #4982
+        # Results compare with those from R (v3.2.0):
+        # phyper(k, n, M-n, N, lower.tail=FALSE, log.p=TRUE)
+        # -2239.771
+        
+        k = 1e4
+        M = 1e7
+        n = 1e6
+        N = 5e4
+        
+        result = stats.hypergeom.logsf(k, M, n, N)
+        exspected = -2239.771   # From R
+        assert_almost_equal(result, exspected, decimal=3)
 
 
 class TestLoggamma(TestCase):
