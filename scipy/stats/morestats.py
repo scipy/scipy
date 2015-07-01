@@ -1553,6 +1553,18 @@ def bartlett(*args):
     pvalue : float
         The p-value of the test.
 
+    See Also
+    --------
+    fligner : A non-parametric test for the equality of k variances
+    levene : A robust parametric test for equality of k variances
+
+    Notes
+    -----
+    Conover et al. (1981) examine many of the existing parametric and
+    nonparametric tests by extensive simulations and they conclude that the
+    tests proposed by Fligner and Killeen (1976) and Levene (1960) appear to be
+    superior in terms of robustness of departures from normality and power [3]_.
+
     References
     ----------
     .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
@@ -1560,7 +1572,23 @@ def bartlett(*args):
     .. [2]  Snedecor, George W. and Cochran, William G. (1989), Statistical
               Methods, Eighth Edition, Iowa State University Press.
 
+    .. [3] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
+           Hypothesis Testing based on Quadratic Inference Function. Technical
+           Report #99-03, Center for Likelihood Studies, Pennsylvania State
+           University.
+
+    .. [4] Bartlett, M. S. (1937). Properties of Sufficiency and Statistical
+           Tests. Proceedings of the Royal Society of London. Series A,
+           Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
+
     """
+    BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
+
+    # Handle empty input
+    for a in args:
+        if np.asanyarray(a).size == 0:
+            return BartlettResult(np.nan, np.nan)
+
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
@@ -1577,7 +1605,6 @@ def bartlett(*args):
     T = numer / denom
     pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
 
-    BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
     return BartlettResult(T, pval)
 
 
@@ -1785,12 +1812,11 @@ def _apply_func(x, g, func):
 
 def fligner(*args, **kwds):
     """
-    Perform Fligner's test for equal variances.
+    Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
-    are from populations with equal variances.  Fligner's test is
-    non-parametric in contrast to Bartlett's test `bartlett` and
-    Levene's test `levene`.
+    are from populations with equal variances.  Fligner-Killeen's test is
+    distribution free when populations are identical [2]_.
 
     Parameters
     ----------
@@ -1806,16 +1832,26 @@ def fligner(*args, **kwds):
 
     Returns
     -------
-    Xsq : float
+    statistic : float
         The test statistic.
-    p-value : float
+    pvalue : float
         The p-value for the hypothesis test.
+
+    See Also
+    --------
+    bartlett : A parametric test for equality of k variances in normal samples
+    levene : A robust parametric test for equality of k variances
 
     Notes
     -----
     As with Levene's test there are three variants of Fligner's test that
     differ by the measure of central tendency used in the test.  See `levene`
     for more information.
+
+    Conover et al. (1981) examine many of the existing parametric and
+    nonparametric tests by extensive simulations and they conclude that the
+    tests proposed by Fligner and Killeen (1976) and Levene (1960) appear to be
+    superior in terms of robustness of departures from normality and power [3]_.
 
     References
     ----------
@@ -1825,7 +1861,24 @@ def fligner(*args, **kwds):
            tests for scale. 'Journal of the American Statistical Association.'
            71(353), 210-213.
 
+    .. [3] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
+           Hypothesis Testing based on Quadratic Inference Function. Technical
+           Report #99-03, Center for Likelihood Studies, Pennsylvania State
+           University.
+
+    .. [4] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
+           comparative study of tests for homogeneity of variances, with
+           applications to the outer continental shelf biding data.
+           Technometrics, 23(4), 351-361.
+
     """
+    FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
+
+    # Handle empty input
+    for a in args:
+        if np.asanyarray(a).size == 0:
+            return FlignerResult(np.nan, np.nan)
+
     # Handle keyword arguments.
     center = 'median'
     proportiontocut = 0.05
@@ -1874,7 +1927,7 @@ def fligner(*args, **kwds):
     varsq = np.var(a, axis=0, ddof=1)
     Xsq = sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
     pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
-    return Xsq, pval
+    return FlignerResult(Xsq, pval)
 
 
 def mood(x, y, axis=0):
