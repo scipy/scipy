@@ -438,7 +438,7 @@ class TestHypergeom(TestCase):
         # Test logsf for very large numbers. See issue #4982
         # Results compare with those from R (v3.2.0):
         # phyper(k, n, M-n, N, lower.tail=FALSE, log.p=TRUE)
-        #-2239.771
+        # -2239.771
         
         k = 1e4
         M = 1e7
