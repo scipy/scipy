@@ -1437,7 +1437,7 @@ def anderson_ksamp(samples, midrank=True):
     return Anderson_ksampResult(A2, critical, p)
 
 
-def ansari(x, y):
+def ansari(x, y, exact='auto', alternative='two-sided'):
     """
     Perform the Ansari-Bradley test for equal scale parameters
 
@@ -1449,6 +1449,11 @@ def ansari(x, y):
     ----------
     x, y : array_like
         arrays of sample data
+    exact : {True, False, 'auto'}, optional
+        Defines whether to use exact test. Default is 'auto'. See Notes for
+        more details.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
 
     Returns
     -------
@@ -1464,9 +1469,8 @@ def ansari(x, y):
 
     Notes
     -----
-    The p-value given is exact when the sample sizes are both less than
-    55 and there are no ties, otherwise a normal approximation for the
-    p-value is used.
+    Exact test should be used when the sample sizes are both less than 55 and
+    there are no ties, otherwise a normal approximation for the p-value is used.
 
     References
     ----------
@@ -1474,6 +1478,10 @@ def ansari(x, y):
            methods.  3rd ed. Chapman and Hall/CRC. 2001.  Section 5.8.2.
 
     """
+    if alternative not in ('two-sided', 'less', 'greater'):
+        raise ValueError("alternative not recognized\n"
+                         "should be 'two-sided', 'less' or 'greater'")
+
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -1491,9 +1499,13 @@ def ansari(x, y):
     AB = sum(symrank[:n], axis=0)
     uxy = unique(xy)
     repeats = (len(uxy) != len(xy))
-    exact = ((m < 55) and (n < 55) and not repeats)
+
+    if exact == 'auto':
+        exact = ((m < 55) and (n < 55) and not repeats)
+
     if repeats and (m < 55 or n < 55):
         warnings.warn("Ties preclude use of exact statistic.")
+
     if exact:
         astart, a1, ifault = statlib.gscale(n, m)
         ind = AB - astart
@@ -1501,15 +1513,19 @@ def ansari(x, y):
         if ind < len(a1)/2.0:
             cind = int(ceil(ind))
             if ind == cind:
-                pval = 2.0 * sum(a1[:cind+1], axis=0) / total
+                pval = sum(a1[:cind+1], axis=0) / total
             else:
-                pval = 2.0 * sum(a1[:cind], axis=0) / total
+                pval = sum(a1[:cind], axis=0) / total
         else:
             find = int(floor(ind))
             if ind == floor(ind):
-                pval = 2.0 * sum(a1[find:], axis=0) / total
+                pval = sum(a1[find:], axis=0) / total
             else:
-                pval = 2.0 * sum(a1[find+1:], axis=0) / total
+                pval = sum(a1[find+1:], axis=0) / total
+
+        if alternative == 'two-sided':
+            pval = pval * 2
+
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -1528,7 +1544,10 @@ def ansari(x, y):
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
 
     z = (AB - mnAB) / sqrt(varAB)
-    pval = distributions.norm.sf(abs(z)) * 2.0
+    pval = distributions.norm.sf(abs(z))
+
+    if alternative == 'two-sided':
+        pval = pval * 2.0
     return AnsariResult(AB, pval)
 
 
