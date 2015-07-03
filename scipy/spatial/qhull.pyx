@@ -124,6 +124,8 @@ cdef extern from "qhull/src/libqhull.h":
         realT max_outside
         realT MINoutside
         realT DISTround
+        realT totvol
+        realT totarea
         jmp_buf errexit
         setT *other_points
         unsigned int visit_id
@@ -178,6 +180,9 @@ cdef extern from "qhull/src/io.h":
 
 cdef extern from "qhull/src/geom.h":
     pointT *qh_facetcenter(setT *vertices) nogil
+
+cdef extern from "qhull/src/geom.h":
+    double qh_getarea(facetT *facetlist) nogil
 
 cdef extern from "qhull/src/poly.h":
     void qh_check_maxout() nogil
@@ -331,6 +336,22 @@ cdef class _Qhull:
                 raise QhullError("Qhull error")
         finally:
             _qhull_lock.release()
+
+    @cython.final
+    def volume_area(self):
+        cdef double volume
+        cdef double area
+
+        _qhull_lock.acquire()
+        try:
+            self._activate()
+            qh_getarea(qh_qh.facet_list)
+            volume = qh_qh.totvol
+            area = qh_qh.totarea
+        finally:
+            _qhull_lock.release()
+
+        return volume, area
 
     @cython.final
     def close(self):
@@ -2241,6 +2262,8 @@ class ConvexHull(_QhullUser):
 
         self.simplices, self.neighbors, self.equations, self.coplanar = \
                        qhull.get_simplex_facet_array()
+
+        self.volume, self.area = qhull.volume_area()
 
         if qhull.ndim == 2:
             self._vertices = qhull.get_extremes_2d()
