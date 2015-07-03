@@ -1,9 +1,11 @@
-Roadmap to Scipy 1.0
-====================
+Scipy Roadmap
+=============
 
-This roadmap provides a high-level view on what is needed per scipy
-submodule in terms of new functionality, bug fixes, etc. before we can release
-a ``1.0`` version of Scipy.  Things not mentioned in this roadmap are
+Most of this roadmap is intended to provide a high-level view on what is
+needed per scipy submodule in terms of new functionality, bug fixes, etc.
+before we can release a ``1.0`` version of Scipy.  Furthermore it contains
+ideas for major new features - those are marked as such, and are not needed
+for Scipy to become 1.0.  Things not mentioned in this roadmap are
 not necessarily unimportant or out of scope, however we (the Scipy developers)
 want to provide to our users and contributors a clear picture of where Scipy is
 going and where help is needed most urgently.
@@ -66,24 +68,29 @@ Scipy 1.0 will likely contain more backwards-incompatible changes than a minor
 release.  Therefore we will have a longer-lived maintenance branch of the last
 0.X release.
 
-It's not clear how much functionality can be Cythonized without making the .so
-files too large.  This needs measuring.
+Regarding Cython code:
 
-More of the currently wrapped libraries should export Cython-importable versions that can be used without linking.
+  - It's not clear how much functionality can be Cythonized without making the
+    .so files too large.  This needs measuring.
+  - Cython's old syntax for using numpy arrays should be removed and replaced
+    with Cython memoryviews.
+  - New feature idea: more of the currently wrapped libraries should export
+    Cython-importable versions that can be used without linking.
 
-Cython's old syntax for using numpy arrays should be removed and replaced with Cython memoryviews.
+Regarding build environments:
 
-Bento will be officially supported as the second build tool besides distutils.
-At the moment it still has an experimental, use-at-your-own-risk status, but
-that has to change. 
+  - NumPy and SciPy should both build from source on Windows with a (possibly
+    modified) MinGW or MinGW-w64 toolchain and be compatible with Python
+    installations compiled with either the same MinGW or with MSVC.
+  - Bento will be officially supported as the second build tool besides
+    distutils.  At the moment it still has an experimental,
+    use-at-your-own-risk status, but that has to change.
 
 A more complete continuous integration setup is needed; at the moment we often
 find out right before a release that there are issues on some less-often used
-platform or Python version.  At least needed are a Windows, Linux and OS X
-build, coverage of the lowest and highest Python and Numpy versions that are
-supported, a Bento build and a PEP8 checker.
-
-NumPy and SciPy should both build from source on windows with a (possibly modified) MinGW or MinGW-w64 toolchain and be compatible with Python installations compiled with either the same MinGW or with MSVC.
+platform or Python version.  At least needed are Windows (MSVC and MinGW),
+Linux and OS X builds, coverage of the lowest and highest Python and Numpy
+versions that are supported, a Bento build and a PEP8/PyFlakes checker.
 
 Modules
 -------
@@ -132,16 +139,19 @@ interpolate
 ```````````
 Needed:
 
-  - Transparant B-splines and their usage in the interpolation routines is needed.
-  - Integration and differentiation and arithmetic routines for splines
-  - Transparent tensor-product splines.
-  - NURBS support.
-  - Mesh refinement and coarsening of B-splines and corresponding tensor products.
   - Both fitpack and fitpack2 interfaces will be kept.
   - splmake should go; is different spline representation --> need exactly one
   - interp1d/interp2d are somewhat ugly but widely used, so we keep them.
   - Regular grid interpolation routines needed
 
+
+Ideas for new features:
+
+  - Transparant B-splines and their usage in the interpolation routines is needed.
+  - Integration and differentiation and arithmetic routines for splines
+  - Transparent tensor-product splines.
+  - NURBS support.
+  - Mesh refinement and coarsening of B-splines and corresponding tensor products.
 
 io
 --
@@ -155,11 +165,6 @@ Other sub-modules (matlab, netcdf, idl, harwell-boeing, arff, matrix market)
 are in good shape.
 
 
-lib
----
-``scipy.lib`` contains nothing public anymore, so rename to ``scipy._lib``.
-
-
 linalg
 ``````
 Needed:
@@ -169,6 +174,9 @@ Needed:
   - cblas, clapack are deprecated, will go away
   - wrap more lapack functions
   - one too many funcs for LU decomposition, remove one
+
+Ideas for new features:
+
   - Add type-generic wrappers in the Cython BLAS and LAPACK
   - Make many of the linear algebra routines into gufuncs
 
@@ -184,7 +192,7 @@ moved to other modules:
   - info, who : these are in numpy
   - derivative, central_diff_weight : remove, replace with more extensive
     functionality for numerical differentiation - likely in a new module
-    ``scipy.diff``, as discussed in https://github.com/scipy/scipy/issues/2035
+    ``scipy.diff`` (see below)
 
 
 ndimage
@@ -251,8 +259,10 @@ things are done in `interpolate`), and eliminate any duplication.
 performance of ltisys (less internal transformations between different
 representations).
 
-*Wavelets*: add proper wavelets, including discrete wavelet transform.  What's
-there now doesn't make much sense.
+*Wavelets*: what's there now doesn't make much sense.  Continous wavelets
+only at the moment - decide whether to completely rewrite or remove them.
+Discrete wavelet transforms should be added, see the "new modules" section
+below.
 
 
 sparse
@@ -278,21 +288,24 @@ This module is in good shape.
 
 sparse.linalg
 `````````````
-    - Wrappers for PROPACK for faster sparse SVD computation.
+Arpack is in good shape.
 
 isolve:
 
     - callback keyword is inconsistent 
     - tol keyword is broken, should be relative tol
     - Fortran code not re-entrant (but we don't solve, maybe re-use from
-        PyKrilov)
+      PyKrilov)
 
 dsolve:
 
-    - remove umfpack wrapper due to license reasons
     - add sparse Cholesky or incomplete Cholesky
     - look at CHOLMOD
 
+
+Ideas for new features:
+
+    - Wrappers for PROPACK for faster sparse SVD computation.
 
 spatial
 ```````
@@ -342,3 +355,23 @@ packaged as a separate package "weave", which users that still rely on the
 functionality provided by ``scipy.weave`` should use.
 
 Also note that this is the only module that was not ported to Python 3.
+
+
+New modules under discussion
+----------------------------
+
+diff
+````
+Currently Scipy doesn't provide much support for numerical differentiation.
+A new ``scipy.diff`` module for that is discussed in
+https://github.com/scipy/scipy/issues/2035.  There's also a fairly detailed
+GSoC proposal to build on, see LINK.
+
+
+transforms
+``````````
+Scipy needs support for discrete wavelet transforms (DWT).  Those are under
+development in LINK, and will likely be integrated in Scipy in the near future.
+In order to make space for other types of transform (there's a PR for a
+Hankel transform for example), it may be a good idea to name the module in
+which DWT code is put ``scipy.transforms``.
