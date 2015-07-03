@@ -631,6 +631,15 @@ class TestConvexHull:
         angle = np.arctan2(y - y.mean(), x - x.mean())
         assert_(np.all(np.diff(np.unwrap(angle)) > 0))
 
+    def test_volume_area(self):
+        # Basic check that we get back the correct volume and area for a cube
+        points = np.array([(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+                           (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)])
+        tri = qhull.ConvexHull(points)
+
+        assert_allclose(tri.volume, 1., rtol=1e-14)
+        assert_allclose(tri.area, 6., rtol=1e-14)
+
 
 class TestVoronoi:
     def test_masked_array_fails(self):
