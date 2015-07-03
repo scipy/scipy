@@ -2194,6 +2194,10 @@ class ConvexHull(_QhullUser):
         triangulation due to numerical precision issues.
 
         If option "Qc" is not specified, this list is not computed.
+    area : float
+        Area of the convex hull
+    volume : float
+        Volume of the convex hull
 
     Raises
     ------

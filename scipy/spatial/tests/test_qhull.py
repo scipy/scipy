@@ -230,15 +230,6 @@ class TestUtilities(object):
 
         assert_equal(tri.convex_hull, [[3, 2], [1, 2], [1, 0], [3, 0]])
 
-    def test_volume_area(self):
-        #Basic check that we get back the correct volume and area for a cube
-        points = np.array([(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
-                           (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)])
-        tri = qhull.ConvexHull(points)
-
-        assert_equal(tri.volume, 1., "Volume of cube is incorrect")
-        assert_equal(tri.area, 6., "Area of cube is incorrect")
-
     def _check_barycentric_transforms(self, tri, err_msg="",
                                       unit_cube=False,
                                       unit_cube_tol=0):
@@ -639,6 +630,15 @@ class TestConvexHull:
         x, y = hull.points[hull.vertices].T
         angle = np.arctan2(y - y.mean(), x - x.mean())
         assert_(np.all(np.diff(np.unwrap(angle)) > 0))
+
+    def test_volume_area(self):
+        # Basic check that we get back the correct volume and area for a cube
+        points = np.array([(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+                           (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)])
+        tri = qhull.ConvexHull(points)
+
+        assert_allclose(tri.volume, 1., rtol=1e-14)
+        assert_allclose(tri.area, 6., rtol=1e-14)
 
 
 class TestVoronoi:
