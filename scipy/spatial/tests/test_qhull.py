@@ -230,6 +230,37 @@ class TestUtilities(object):
 
         assert_equal(tri.convex_hull, [[3, 2], [1, 2], [1, 0], [3, 0]])
 
+    def test_volume_area(self):
+        #Basic check that we get back the correct volume and area for a cube
+        points = np.array([(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+                           (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)])
+        hull = qhull.ConvexHull(points)
+
+        assert_allclose(hull.volume, 1., rtol=1e-14,
+                        err_msg="Volume of cube is incorrect")
+        assert_allclose(hull.area, 6., rtol=1e-14,
+                        err_msg="Area of cube is incorrect")
+
+    def test_random_volume_area(self):
+        #Test that the results for a random 10-point convex are
+        #coherent with the output of qconvex Qt s FA
+        points = np.array([(0.362568364506, 0.472712355305, 0.347003084477),
+                           (0.733731893414, 0.634480295684, 0.950513180209),
+                           (0.511239955611, 0.876839441267, 0.418047827863),
+                           (0.0765906233393, 0.527373281342, 0.6509863541),
+                           (0.146694972056, 0.596725793348, 0.894860986685),
+                           (0.513808585741, 0.069576205858, 0.530890338876),
+                           (0.512343805118, 0.663537132612, 0.037689295973),
+                           (0.47282965018, 0.462176697655, 0.14061843691),
+                           (0.240584597123, 0.778660020591, 0.722913476339),
+                           (0.951271745935, 0.967000673944, 0.890661319684)])
+
+        hull = qhull.ConvexHull(points)
+        assert_allclose(hull.volume, 0.14562013, rtol=1e-07,
+                        err_msg="Volume of random polyhedron is incorrect")
+        assert_allclose(hull.area, 1.6670425, rtol=1e-07,
+                        err_msg="Area of random polyhedron is incorrect")
+
     def _check_barycentric_transforms(self, tri, err_msg="",
                                       unit_cube=False,
                                       unit_cube_tol=0):
