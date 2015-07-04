@@ -25,6 +25,9 @@ New features
 Deprecated features
 ===================
 
+``scipy.stats.threshold`` and ``scipy.mstats.threshold`` are being deprecated
+in favor of ``np.clip``. See issue #617 for details.
+
 ``scipy.stats.ss`` is deprecated. This is a support function, not meant to 
 be exposed to the user. Also, the name is unclear. See issue #663 for details.
 
