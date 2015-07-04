@@ -966,19 +966,6 @@ class TestCompareWithStats(TestCase):
                 rm = stats.mstats.signaltonoise(ym)
                 assert_almost_equal(r, rm, 10)
 
-    def test_betai(self):
-        np.random.seed(12345)
-        for i in range(10):
-            a = np.random.rand() * 5.
-            b = np.random.rand() * 200.
-            assert_equal(stats.betai(a, b, 0.), 0.)
-            assert_equal(stats.betai(a, b, 1.), 1.)
-            assert_equal(stats.mstats.betai(a, b, 0.), 0.)
-            assert_equal(stats.mstats.betai(a, b, 1.), 1.)
-            x = np.random.rand()
-            assert_almost_equal(stats.betai(a, b, x),
-                                stats.mstats.betai(a, b, x), decimal=13)
-
     def test_zscore(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)

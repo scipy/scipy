@@ -138,9 +138,6 @@ Probability Calculations
 .. autosummary::
    :toctree: generated/
 
-   chisqprob
-   betai
-
 ANOVA Functions
 ---------------
 .. autosummary::
@@ -199,7 +196,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
            'nanstd', 'nanmedian', 'combine_pvalues', ]
@@ -1449,7 +1445,7 @@ def normaltest(a, axis=0):
     k2 = s*s + k*k
 
     NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
-    return NormaltestResult(k2, chisqprob(k2, 2))
+    return NormaltestResult(k2, special.chdtrc(2, k2))
 
 
 def jarque_bera(x):
@@ -2703,7 +2699,9 @@ def pearsonr(x, y):
         prob = 0.0
     else:
         t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
-        prob = betai(0.5*df, 0.5, df/(df+t_squared))
+        tmp = df/(df+t_squared)
+        tmp = np.where(tmp < 1.0, tmp, 1.0)
+        prob = special.betainc(0.5*df, 0.5, tmp)
 
     return r, prob
 
@@ -3054,7 +3052,9 @@ def pointbiserialr(x, y):
     # fixme: see comment about TINY in pearsonr()
     TINY = 1e-20
     t = rpb * np.sqrt(df / ((1.0 - rpb + TINY)*(1.0 + rpb + TINY)))
-    prob = betai(0.5*df, 0.5, df/(df+t*t))
+    tmp = df/(df+t*t)
+    tmp = np.where(tmp < 1.0, tmp, 1.0)
+    prob = special.betainc(0.5*df, 0.5, tmp)
 
     PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
                                                                'pvalue'))
@@ -4175,7 +4175,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     num_obs = _count(terms, axis=axis)
     ddof = asarray(ddof)
-    p = chisqprob(stat, num_obs - 1 - ddof)
+    p = special.chdtrc(num_obs - 1 - ddof, stat)
 
     Power_divergenceResult = namedtuple('Power_divergenceResult', ('statistic',
                                                                    'pvalue'))
@@ -4552,7 +4552,7 @@ def kruskal(*args):
     h /= ties
 
     KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
-    return KruskalResult(h, chisqprob(h, df))
+    return KruskalResult(h, special.chdtrc(df, h))
 
 
 def friedmanchisquare(*args):
@@ -4619,7 +4619,7 @@ def friedmanchisquare(*args):
 
     FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                          ('statistic', 'pvalue'))
-    return FriedmanchisquareResult(chisq, chisqprob(chisq, k - 1))
+    return FriedmanchisquareResult(chisq, special.chdtrc(k - 1, chisq))
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
@@ -4708,6 +4708,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 #      PROBABILITY CALCULATIONS     #
 #####################################
 
+@np.deprecate(message="stats.chisqprob is deprecated in scipy 0.17.0")
 def chisqprob(chisq, df):
     """
     Probability value (1-tail) for the Chi^2 probability distribution.
@@ -4730,6 +4731,7 @@ def chisqprob(chisq, df):
     return special.chdtrc(df, chisq)
 
 
+@np.deprecate(message="stats.betai is deprecated in scipy 0.17.0")
 def betai(a, b, x):
     """
     Returns the incomplete beta function.
