@@ -877,6 +877,20 @@ class TestHistogram(TestCase):
                 assert_almost_equal(expected_results[i], given_results[i],
                                     decimal=2)
 
+    def test_empty(self):
+        res = stats.histogram([])
+
+        # expected values
+        e_count = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
+        e_lowerlimit = 0
+        e_binsize = 0.1
+        e_extrapoints = 0
+
+        assert_allclose(res.count, e_count, rtol=1e-15)
+        assert_equal(res.lowerlimit, e_lowerlimit)
+        assert_almost_equal(res.binsize, e_binsize)
+        assert_equal(res.extrapoints, e_extrapoints)
+
     def test_weighting(self):
         # Tests that weights give expected histograms
 

@@ -1851,12 +1851,16 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
     """
     a = np.ravel(a)
     if defaultlimits is None:
-        # no range given, so use values in `a`
-        data_min = a.min()
-        data_max = a.max()
-        # Have bins extend past min and max values slightly
-        s = (data_max - data_min) / (2. * (numbins - 1.))
-        defaultlimits = (data_min - s, data_max + s)
+        if a.size == 0:
+            # handle empty arrays. Undetermined range, so use 0-1.
+            defaultlimits = (0, 1)
+        else:
+            # no range given, so use values in `a`
+            data_min = a.min()
+            data_max = a.max()
+            # Have bins extend past min and max values slightly
+            s = (data_max - data_min) / (2. * (numbins - 1.))
+            defaultlimits = (data_min - s, data_max + s)
 
     # use numpy's histogram method to compute bins
     hist, bin_edges = np.histogram(a, bins=numbins, range=defaultlimits,
@@ -1881,6 +1885,9 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     Returns a cumulative frequency histogram, using the histogram function.
+
+    A cumulative histogram is a mapping that counts the cumulative number of
+    observations in all of the bins up to the specified bin.
 
     Parameters
     ----------
@@ -1910,17 +1917,41 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Examples
     --------
+    >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
     >>> x = [1, 4, 2, 1, 3, 1]
-    >>> cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
-    >>> cumfreqs
-    array([ 3.,  4.,  5.,  6.])
-    >>> cumfreqs, lowlim, binsize, extrapoints = \
-    ...     stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
-    >>> cumfreqs
+    >>> res = stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
+    >>> res.cumcount
     array([ 1.,  2.,  3.,  3.])
-    >>> extrapoints
+    >>> res.extrapoints
     3
+
+    Create a normal distribution with 1000 random values
+
+    >>> rng = np.random.RandomState(seed=12345)
+    >>> samples = stats.norm.rvs(size=1000, random_state=rng)
+
+    Calculate cumulative frequencies
+
+    >>> res = stats.cumfreq(samples, numbins=25)
+
+    Calculate space of values for x
+
+    >>> x = res.lowerlimit + np.linspace(0, res.binsize*res.cumcount.size,
+    ...                                  res.cumcount.size)
+
+    Plot histogram and cumulative histogram
+
+    >>> fig = plt.figure(figsize=(10, 4))
+    >>> ax1 = fig.add_subplot(1, 2, 1)
+    >>> ax2 = fig.add_subplot(1, 2, 2)
+    >>> ax1.hist(samples, bins=25)
+    >>> ax1.set_title('Histogram')
+    >>> ax2.bar(x, res.cumcount, width=res.binsize)
+    >>> ax2.set_title('Cumulative histogram')
+    >>> ax2.set_xlim([x.min(), x.max()])
+
+    >>> plt.show()
 
     """
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
@@ -1934,6 +1965,9 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     Returns a relative frequency histogram, using the histogram function.
+
+    A relative frequency  histogram is a mapping of the number of
+    observations in each of the bins relative to the total of observations.
 
     Parameters
     ----------
@@ -1963,17 +1997,43 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     Examples
     --------
+    >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
-    >>> a = np.array([1, 4, 2, 1, 3, 1])
-    >>> relfreqs, lowlim, binsize, extrapoints = stats.relfreq(a, numbins=4)
-    >>> relfreqs
-    array([ 0.5       ,  0.16666667,  0.16666667,  0.16666667])
-    >>> np.sum(relfreqs)  # relative frequencies should add up to 1
-    0.99999999999999989
+    >>> a = np.array([2, 4, 1, 2, 3, 2])
+    >>> res = stats.relfreq(a, numbins=4)
+    >>> res.frequency
+    array([ 0.16666667, 0.5       , 0.16666667,  0.16666667])
+    >>> np.sum(res.frequency)  # relative frequencies should add up to 1
+    1.0
+
+    Create a normal distribution with 1000 random values
+
+    >>> rng = np.random.RandomState(seed=12345)
+    >>> samples = stats.norm.rvs(size=1000, random_state=rng)
+
+    Calculate relative frequencies
+
+    >>> res = stats.relfreq(samples, numbins=25)
+
+    Calculate space of values for x
+
+    >>> x = res.lowerlimit + np.linspace(0, res.binsize*res.frequency.size,
+    ...                                  res.frequency.size)
+
+    Plot relative frequency histogram
+
+    >>> fig = plt.figure(figsize=(5, 4))
+    >>> ax = fig.add_subplot(1, 1, 1)
+    >>> ax.bar(x, res.frequency, width=res.binsize)
+    >>> ax.set_title('Relative frequency histogram')
+    >>> ax.set_xlim([x.min(), x.max()])
+
+    >>> plt.show()
 
     """
+    a = np.asanyarray(a)
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
-    h = np.array(h / float(np.array(a).shape[0]))
+    h = h / float(a.shape[0])
 
     RelfreqResult = namedtuple('RelfreqResult', ('frequency', 'lowerlimit',
                                                  'binsize', 'extrapoints'))
