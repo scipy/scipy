@@ -384,7 +384,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     >>> plt.show()
     """
 
-    freqs, Pxy, _ = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
+    freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
                                      detrend, return_onesided, scaling, axis,
                                      mode='psd')
 
@@ -506,7 +506,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     if noverlap is None:
         noverlap = nperseg // 8
 
-    freqs, Pxy, time = _spectral_helper(x, x, fs, window, nperseg, noverlap,
+    freqs, time, Pxy = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided, scaling,
                                         axis, mode='psd')
 
@@ -870,7 +870,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
             # Last point is unpaired Nyquist freq point, don't double
             result[...,1:-1] *= 2
 
-    t = np.arange(nfft/2, x.shape[-1] - nfft/2 + 1, nfft - noverlap)/float(fs)
+    t = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1, nperseg - noverlap)/float(fs)
 
     if sides != 'twosided' and not nfft % 2:
         # get the last value correctly, it is negative otherwise
@@ -883,7 +883,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     result = result.astype(outdtype)
 
     # All imaginary parts are zero anyways
-    if same_data:
+    if same_data and mode != 'complex':
         result = result.real
 
     # Output is going to have new last axis for window index
@@ -898,7 +898,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         # Make sure window/time index is last axis
         result = np.rollaxis(result, -1, -2)
 
-    return freqs, result, t
+    return freqs, t, result
 
 
 def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
