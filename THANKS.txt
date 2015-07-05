@@ -148,6 +148,7 @@ Ian Henriksen for Cython wrappers for BLAS and LAPACK
 Fukumu Tsutsumi for bug fixes.
 J.J. Green for interpolation bug fixes.
 François Magimel for documentation improvements.
+Josh Levy-Kramer for the log survival function of the hypergeometric distribution
 
 
 Institutions

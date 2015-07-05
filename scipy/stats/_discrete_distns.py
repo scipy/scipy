@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 
 from scipy import special
 from scipy.special import entr, gammaln as gamln
+from scipy.misc import logsumexp
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
@@ -359,6 +360,17 @@ class hypergeom_gen(rv_discrete):
             # than integrate.quad.
             k2 = np.arange(quant + 1, draw + 1)
             res.append(np.sum(self._pmf(k2, tot, good, draw)))
+        return np.asarray(res)
+        
+    def _logsf(self, k, M, n, N):
+        """
+        More precise calculation than log(sf)
+        """
+        res = []
+        for quant, tot, good, draw in zip(k, M, n, N):
+            # Integration over probability mass function using logsumexp
+            k2 = np.arange(quant + 1, draw + 1)
+            res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
         return np.asarray(res)
 hypergeom = hypergeom_gen(name='hypergeom')
 
