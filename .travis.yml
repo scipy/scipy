@@ -14,16 +14,6 @@ matrix:
       script:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
         - pep8 scipy benchmarks/benchmarks
-      after_success:
-        # run the doctests
-        - sudo apt-get update -qq
-        - sudo apt-get install -qq libatlas-dev libatlas-base-dev liblapack-dev gfortran
-        - sudo apt-get build-dep -qq python-matplotlib
-        - travis_retry pip install --install-option="--no-cython-compile" Cython==0.22
-        - travis_retry pip install $NUMPYSPEC
-        - travis_retry pip install nose argparse
-        - travis_retry pip install matplotlib
-        - python runtests.py --refguide-check
     - python: 3.4
       env:
         - TESTMODE=fast
@@ -52,6 +42,7 @@ matrix:
     - python: 2.7
       env:
         - TESTMODE=fast
+        - REFGUIDE_CHECK=1
         - COVERAGE=
         - NPY_RELAXED_STRIDES_CHECKING=1
         - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.9.1"
@@ -81,6 +72,11 @@ before_install:
   - travis_retry pip install nose mpmath argparse
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
+  - |
+    if [ "${REFGUIDE_CHECK}" == "1" ]; then
+        sudo apt-get build-dep -qq python-matplotlib
+        travis_retry pip install matplotlib
+    fi
   - python -V
   - popd
   - set -o pipefail
@@ -95,5 +91,4 @@ notifications:
   # let's wait to see what people think before turning that on.
   email: false
 after_success:
-    - if [ "${TESTMODE}" == "full" ]; then pushd build/testenv/lib/python*/site-packages/ && cp ../../../../test/.coverage . && coveralls && popd; fi
-
+  - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py --refguide-check; fi
