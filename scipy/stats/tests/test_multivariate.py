@@ -345,6 +345,7 @@ class TestMultivariateNormal(TestCase):
 
 
 class TestDirichlet(TestCase):
+
     def test_frozen_dirichlet(self):
         np.random.seed(2846)
 
@@ -362,6 +363,86 @@ class TestDirichlet(TestCase):
             x /= np.sum(x)
             assert_equal(d.pdf(x[:-1]), dirichlet.pdf(x[:-1], alpha))
             assert_equal(d.logpdf(x[:-1]), dirichlet.logpdf(x[:-1], alpha))
+
+    def test_numpy_rvs_shape_compatibility(self):
+        np.random.seed(2846)
+        alpha = np.array([1.0, 2.0, 3.0])
+        x = np.random.dirichlet(alpha, size=7)
+        assert_equal(x.shape, (7, 3))
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+        dirichlet.pdf(x.T, alpha)
+        dirichlet.pdf(x.T[:-1], alpha)
+        dirichlet.logpdf(x.T, alpha)
+        dirichlet.logpdf(x.T[:-1], alpha)
+
+    def test_alpha_with_zeros(self):
+        np.random.seed(2846)
+        alpha = [1.0, 0.0, 3.0]
+        x = np.random.dirichlet(alpha, size=7).T
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_alpha_with_negative_entries(self):
+        np.random.seed(2846)
+        alpha = [1.0, -2.0, 3.0]
+        x = np.random.dirichlet(alpha, size=7).T
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_data_with_zeros(self):
+        alpha = np.array([1.0, 2.0, 3.0, 4.0])
+        x = np.array([0.1, 0.0, 0.2, 0.7])
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_data_with_negative_entries(self):
+        alpha = np.array([1.0, 2.0, 3.0, 4.0])
+        x = np.array([0.1, -0.1, 0.3, 0.7])
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_data_with_too_large_entries(self):
+        alpha = np.array([1.0, 2.0, 3.0, 4.0])
+        x = np.array([0.1, 1.1, 0.3, 0.7])
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_data_too_deep_c(self):
+        alpha = np.array([1.0, 2.0, 3.0])
+        x = np.ones((2, 7, 7)) / 14
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_alpha_too_deep(self):
+        alpha = np.array([[1.0, 2.0], [3.0, 4.0]])
+        x = np.ones((2, 2, 7)) / 4
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_alpha_correct_depth(self):
+        alpha = np.array([1.0, 2.0, 3.0])
+        x = np.ones((3, 7)) / 3
+        dirichlet.pdf(x, alpha)
+        dirichlet.logpdf(x, alpha)
+
+    def test_non_simplex_data(self):
+        alpha = np.array([1.0, 2.0, 3.0])
+        x = np.ones((3, 7)) / 2
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_data_vector_too_short(self):
+        alpha = np.array([1.0, 2.0, 3.0, 4.0])
+        x = np.ones((2, 7)) / 2
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
+
+    def test_data_vector_too_long(self):
+        alpha = np.array([1.0, 2.0, 3.0, 4.0])
+        x = np.ones((5, 7)) / 5
+        assert_raises(ValueError, dirichlet.pdf, x, alpha)
+        assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_simple_values(self):
         alpha = np.array([1, 1])
