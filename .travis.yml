@@ -23,25 +23,7 @@ matrix:
         - travis_retry pip install $NUMPYSPEC
         - travis_retry pip install nose argparse
         - travis_retry pip install matplotlib
-        - python runtests.py --doctests-only -s linalg
-        - python runtests.py --doctests-only -s cluster
-        - python runtests.py --doctests-only -s cluster.vq
-        - python runtests.py --doctests-only -s cluster.hierarchy
-        - python runtests.py --doctests-only -s fftpack
-        - python runtests.py --doctests-only -s interpolate
-        - python runtests.py --doctests-only -s integrate
-        - python runtests.py --doctests-only -s io
-        - python runtests.py --doctests-only -s misc
-        - python runtests.py --doctests-only -s ndimage
-        - python runtests.py --doctests-only -s odr
-        - python runtests.py --doctests-only -s optimize
-        - python runtests.py --doctests-only -s signal
-        - python runtests.py --doctests-only -s spatial
-        - python runtests.py --doctests-only -s sparse
-        - python runtests.py --doctests-only -s sparse.csgraph
-        - python runtests.py --doctests-only -s sparse.linalg
-        - python runtests.py --doctests-only -s stats
-        - python runtests.py --doctests-only -s stats.mstats
+        - python runtests.py --refguide-check
     - python: 3.4
       env:
         - TESTMODE=fast
