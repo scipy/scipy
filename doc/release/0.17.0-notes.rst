@@ -37,6 +37,17 @@ are deprecated. These are related to ANOVA, for which ``scipy.stats`` provides
 quite limited functionality and these functions are not very useful standalone.
 See issues #660 and #650 for details.
 
+``scipy.stats.chisqprob`` is deprecated. This is a delegator function and it is
+deprecated in favor of the convention, which is to call the distribution from 
+``scipy.stats.distribution`` or calling ``scipy.special.chdtrc`` directly.
+See issues #2741 and #641 for details.
+
+
+``scipy.stats.betai`` is deprecated. This is delegator function and it is 
+deprecated in favor of the convention, which is to call the distribution from 
+``scipy.stats.distribution`` or calling ``scipy.special.betainc`` directly. 
+See issues #2741 and #642 for details.
+
 Backwards incompatible changes
 ==============================
 
