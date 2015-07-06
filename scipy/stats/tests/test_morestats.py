@@ -737,16 +737,36 @@ class TestPpccPlot(TestCase):
         assert_allclose(ppcc, np.zeros(80, dtype=float))
 
 
-def test_ppcc_max_bad_arg():
-    # Raise ValueError when given an invalid distribution.
-    data = [1]
-    assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
+class TestPpccMax(TestCase):
+    def test_ppcc_max_bad_arg(self):
+        # Raise ValueError when given an invalid distribution.
+        data = [1]
+        assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
 
+    def test_ppcc_max_basic(self):
+        np.random.seed(1234567)
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
+        # it is accurate up to 16 decimals
+        assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=5)
 
-def test_ppcc_max_basic():
-    np.random.seed(1234567)
-    x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
-    assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=5)
+    def test_dist(self):
+        np.random.seed(1234567)
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+
+        # Test that we can specify distributions both by name and as objects.
+        max1 = stats.ppcc_max(x, dist='tukeylambda')
+        max2 = stats.ppcc_max(x, dist=stats.tukeylambda)
+        assert_almost_equal(max1, -0.71215366521264145, decimal=5)
+        assert_almost_equal(max2, -0.71215366521264145, decimal=5)
+
+        # Test that 'tukeylambda' is the default dist
+        max3 = stats.ppcc_max(x)
+        assert_almost_equal(max3, -0.71215366521264145, decimal=5)
+
+    def test_brack(self):
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        assert_raises(ValueError, stats.ppcc_max, x, brack=(0.0, 1.0, 0.5))
 
 
 class TestBoxcox_llf(TestCase):
