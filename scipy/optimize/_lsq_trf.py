@@ -7,8 +7,8 @@ from numpy.linalg import norm
 from scipy.linalg import svd
 
 from .optimize import OptimizeResult
-from ._lsq_bounds  import (step_size_to_bound, make_strictly_feasible,
-                           find_active_constraints, scaling_vector)
+from ._lsq_bounds import (step_size_to_bound, make_strictly_feasible,
+                          find_active_constraints, scaling_vector)
 from ._lsq_trust_region import intersect_trust_region, solve_lsq_trust_region
 
 
