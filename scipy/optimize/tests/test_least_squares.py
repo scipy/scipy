@@ -1,15 +1,10 @@
-import warnings
-
 import numpy as np
 from numpy.testing import (run_module_suite, assert_, assert_allclose,
-                           assert_warns, TestCase, assert_raises, assert_equal,
-                           assert_almost_equal)
+                           assert_warns, TestCase, assert_raises,
+                           assert_equal, assert_almost_equal)
 
 from scipy.optimize import least_squares
 from scipy.optimize._minpack import error as MinpackError
-
-
-warnings.simplefilter('ignore')
 
 
 def fun_trivial(x, a=0):
@@ -133,14 +128,15 @@ class BaseMixin(object):
         assert_raises(TypeError, least_squares, fun_trivial, 2.0,
                       method=self.method, options={'max_nfev': 100})
 
-    def test_tolerance_thresholds(self):
-        warnings.simplefilter('always', UserWarning)  # For numpy 1.6.2
-        assert_warns(UserWarning, least_squares, fun_trivial, 2.0,
-                     ftol=0.0, method=self.method)
-        res = least_squares(fun_trivial, 2.0, ftol=1e-20, xtol=-1.0, gtol=0.0,
-                            method=self.method)
-        assert_allclose(res.x, 0, atol=1e-4)
-        warnings.simplefilter('ignore')
+    # Removed because numpy 1.6.2 testing utils doesn't handle repeating
+    # warnings correctly.
+
+    # def test_tolerance_thresholds(self):
+    #     assert_warns(UserWarning, least_squares, fun_trivial, 2.0,
+    #                  ftol=0.0, method=self.method)
+    #     res = least_squares(fun_trivial, 2.0, ftol=1e-20, xtol=-1.0,
+    #                         gtol=0.0, method=self.method)
+    #     assert_allclose(res.x, 0, atol=1e-4)
 
     def test_full_result(self):
         res = least_squares(fun_trivial, 2.0, method=self.method)
