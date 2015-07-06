@@ -7,7 +7,7 @@ import numpy.testing as npt
 
 from scipy import integrate
 from scipy import stats
-from scipy.special import chdtrc, betainc
+from scipy.special import chdtrc
 from common_tests import (check_normalization, check_moment, check_mean_expect,
         check_var_expect, check_skew_expect, check_kurt_expect,
         check_entropy, check_private_entropy, NUMPY_BELOW_1_7,
@@ -244,9 +244,7 @@ def check_sample_mean(sm,v,n, popmean):
     df = n-1
     svar = ((n-1)*v) / float(df)    # looks redundant
     t = (sm-popmean) / np.sqrt(svar*(1.0/n))
-    tmp = df/(df + t * t)
-    tmp = np.where(tmp < 1.0, tmp, 1.0)
-    prob = betainc(0.5*df, 0.5, tmp)
+    prob = stats.betai(0.5*df, 0.5, df/(df + t*t))
 
     # return t,prob
     npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m, sm=%f,%f' %
@@ -259,7 +257,7 @@ def check_sample_var(sv,n, popvar):
     chi2 = (n-1)*popvar/float(popvar)
     pval = chdtrc(df, chi2) * 2
     npt.assert_(pval > 0.01, 'var fail, t, pval = %f, %f, v, sv=%f, %f' %
-            (chi2,pval,popvar,sv))
+                (chi2, pval, popvar, sv))
 
 
 def check_cdf_ppf(distfn,arg,msg):

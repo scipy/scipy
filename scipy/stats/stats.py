@@ -138,6 +138,9 @@ Probability Calculations
 .. autosummary::
    :toctree: generated/
 
+    chisqprob
+    betai
+
 ANOVA Functions
 ---------------
 .. autosummary::
@@ -196,6 +199,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
+           'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
            'nanstd', 'nanmedian', 'combine_pvalues', ]
@@ -2699,9 +2703,7 @@ def pearsonr(x, y):
         prob = 0.0
     else:
         t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
-        tmp = df/(df+t_squared)
-        tmp = np.where(tmp < 1.0, tmp, 1.0)
-        prob = special.betainc(0.5*df, 0.5, tmp)
+        prob = betai(0.5*df, 0.5, df/(df+t_squared))
 
     return r, prob
 
@@ -3052,9 +3054,7 @@ def pointbiserialr(x, y):
     # fixme: see comment about TINY in pearsonr()
     TINY = 1e-20
     t = rpb * np.sqrt(df / ((1.0 - rpb + TINY)*(1.0 + rpb + TINY)))
-    tmp = df/(df+t*t)
-    tmp = np.where(tmp < 1.0, tmp, 1.0)
-    prob = special.betainc(0.5*df, 0.5, tmp)
+    prob = betai(0.5*df, 0.5, df/(df + t*t))
 
     PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
                                                                'pvalue'))
@@ -4708,7 +4708,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 #      PROBABILITY CALCULATIONS     #
 #####################################
 
-@np.deprecate(message="stats.chisqprob is deprecated in scipy 0.17.0")
+
+@np.deprecate(message="stats.chisqprob is deprecated in scipy 0.17.0; "
+              "use special.chdtrc instead.")
 def chisqprob(chisq, df):
     """
     Probability value (1-tail) for the Chi^2 probability distribution.
@@ -4731,7 +4733,8 @@ def chisqprob(chisq, df):
     return special.chdtrc(df, chisq)
 
 
-@np.deprecate(message="stats.betai is deprecated in scipy 0.17.0")
+@np.deprecate(message="stats.betai is deprecated in scipy 0.17.0; "
+              "use special.betainc instead")
 def betai(a, b, x):
     """
     Returns the incomplete beta function.
@@ -4758,6 +4761,10 @@ def betai(a, b, x):
         Incomplete beta function.
 
     """
+    return _betai(a, b, x)
+
+
+def _betai(a, b, x):
     x = np.asarray(x)
     x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
     return special.betainc(a, b, x)

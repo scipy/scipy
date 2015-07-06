@@ -16,6 +16,7 @@ is a relatively new package, some API changes are still possible.
    :toctree: generated/
 
    argstoarray
+   betai
    chisquare
    count_tied_groups
    describe

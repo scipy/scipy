@@ -12,6 +12,7 @@ from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['argstoarray',
+           'betai',
            'chisquare','count_tied_groups',
            'describe',
            'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
@@ -289,12 +290,17 @@ def mode(a, axis=0):
 mode.__doc__ = stats.mode.__doc__
 
 
-@np.deprecate(message="mstats.betai is deprecated in scipy 0.17.0")
+@np.deprecate(message="mstats.betai is deprecated in scipy 0.17.0; "
+              "use special.betainc instead.")
 def betai(a, b, x):
+    return _betai(a, b, x)
+betai.__doc__ = stats.betai.__doc__
+
+
+def _betai(a, b, x):
     x = np.asanyarray(x)
     x = ma.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
     return special.betainc(a, b, x)
-betai.__doc__ = stats.betai.__doc__
 
 
 def msign(x):
@@ -362,9 +368,7 @@ def pearsonr(x,y):
         prob = 0.
     else:
         t_squared = (df / ((1.0 - r) * (1.0 + r))) * r * r
-        tmp = df / (df + t_squared)
-        tmp = np.where(tmp < 1.0, tmp, 1.0)
-        prob = special.betainc(0.5*df, 0.5, tmp)
+        prob = betai(0.5*df, 0.5, df/(df + t_squared))
 
     return r, prob
 
@@ -448,9 +452,7 @@ def spearmanr(x, y, use_ties=True):
     if t is masked:
         prob = 0.
     else:
-        tmp = df/(df + t * t)
-        tmp = np.where(tmp < 1.0, tmp, 1.0)
-        prob = special.betainc(0.5*df, 0.5, tmp)
+        prob = betai(0.5*df, 0.5, df/(df + t * t))
 
     SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
     return SpearmanrResult(rho, prob)
@@ -622,9 +624,7 @@ def pointbiserialr(x, y):
 
     df = n-2
     t = rpb*ma.sqrt(df/(1.0-rpb**2))
-    tmp = df/(df + t * t)
-    tmp = np.where(tmp < 1.0, tmp, 1.0)
-    prob = special.betainc(0.5*df, 0.5, tmp)
+    prob = betai(0.5*df, 0.5, df/(df+t*t))
 
     PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
                                                                'pvalue'))
@@ -719,9 +719,7 @@ def ttest_1samp(a, popmean, axis=0):
     df = n - 1.
     svar = ((n - 1) * v) / df
     t = (x - popmean) / ma.sqrt(svar / n)
-    tmp = df/(df + t * t)
-    tmp = np.where(tmp < 1.0, tmp, 1.0)
-    prob = special.betainc(0.5*df, 0.5, tmp)
+    prob = betai(0.5*df, 0.5, df/(df + t*t))
 
     Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
     return Ttest_1sampResult(t, prob)
@@ -743,9 +741,7 @@ def ttest_ind(a, b, axis=0):
     svar = ((n1-1)*v1+(n2-1)*v2) / df
     t = (x1-x2)/ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # n-D computation here!
     t = ma.filled(t, 1)           # replace NaN t-values with 1.0
-    tmp = df/(df + t * t)
-    tmp = np.where(tmp < 1.0, tmp, 1.0)
-    probs = special.betainc(0.5*df, 0.5, tmp).reshape(t.shape)
+    probs = betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
 
     return Ttest_indResult(t, probs.squeeze())
 ttest_ind.__doc__ = stats.ttest_ind.__doc__
@@ -766,9 +762,7 @@ def ttest_rel(a, b, axis=0):
     denom = ma.sqrt((n*ma.add.reduce(d*d,axis) - ma.add.reduce(d,axis)**2) / df)
     t = ma.add.reduce(d, axis) / denom
     t = ma.filled(t, 1)
-    tmp = df/(df + t * t)
-    tmp = np.where(tmp < 1.0, tmp, 1.0)
-    probs = special.betainc(0.5*df, 0.5, tmp).reshape(t.shape).squeeze()
+    probs = betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
 
     return Ttest_relResult(t, probs)
 ttest_rel.__doc__ = stats.ttest_rel.__doc__
