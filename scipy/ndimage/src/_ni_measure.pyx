@@ -42,6 +42,7 @@ cdef extern from "numpy/arrayobject.h" nogil:
 
 # Only integer values are allowed.
 ctypedef fused data_t:
+    np.npy_bool
     np.int8_t
     np.int16_t
     np.int32_t
@@ -55,9 +56,8 @@ ctypedef fused data_t:
 # Function Specializers and asociate function for using fused type
 #####################################################################
 
-ctypedef void (*func_p)(void *data, np.flatiter iti, PyArrayIterObject *iti, 
-                        np.ndarray input, np.intp_t max_label, int *regions,
-                        int rank) nogil
+ctypedef void (*func_p)(void *data, np.flatiter iti, np.ndarray input, np.intp_t max_label, 
+               int *regions, int rank) nogil
 
 def get_funcs(np.ndarray[data_t] input):
     return (<Py_intptr_t> findObjectsPoint[data_t])
@@ -85,9 +85,8 @@ cdef data_t get_misaligned_from_iter(data_t *data, np.flatiter iter, np.ndarray 
 # Update Regions According to Input Data Type
 ######################################################################
 
-cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, PyArrayIterObject *iti, 
-                                np.ndarray input, np.intp_t max_label, int *regions,
-                                int rank):
+cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, np.ndarray input, 
+            np.intp_t max_label, int *regions, int rank):
     cdef int kk =0
     cdef np.intp_t cc
     
@@ -106,13 +105,13 @@ cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, PyArrayIterObject *
             s_index *= 2 * rank
             if regions[s_index] < 0:
                 for kk in range(rank):
-                    cc = iti.coordinates[kk]
+                    cc = (<PyArrayIterObject *>_iti).coordinates[kk]
                     regions[s_index + kk] = cc
                     regions[s_index + kk + rank] = cc + 1
 
             else:
                 for kk in range(rank):
-                    cc = iti.coordinates[kk]
+                    cc = (<PyArrayIterObject *>_iti).coordinates[kk]
                     if cc < regions[s_index + kk]:
                         regions[s_index + kk] = cc
                     if cc + 1 > regions[s_index + kk + rank]:
@@ -175,7 +174,7 @@ cpdef _findObjects(np.ndarray input, np.intp_t max_label):
 
             # Iteration over array:
             while np.PyArray_ITER_NOTDONE(_iti):
-                findObjectsPoint(np.PyArray_ITER_DATA(_iti), _iti, iti, input, 
+                findObjectsPoint(np.PyArray_ITER_DATA(_iti), _iti, input, 
                                 max_label, regions, rank)
                 np.PyArray_ITER_NEXT(_iti)
 
