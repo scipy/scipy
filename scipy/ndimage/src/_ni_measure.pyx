@@ -56,7 +56,7 @@ ctypedef fused data_t:
 #####################################################################
 
 ctypedef void (*func_p)(void *data, np.flatiter iti, PyArrayIterObject *iti, 
-                        np.ndarray input, np.intp_t max_label, np.intp_t* regions, 
+                        np.ndarray input, np.intp_t max_label, int *regions,
                         int rank) nogil
 
 def get_funcs(np.ndarray[data_t] input):
@@ -86,7 +86,7 @@ cdef data_t get_misaligned_from_iter(data_t *data, np.flatiter iter, np.ndarray 
 ######################################################################
 
 cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, PyArrayIterObject *iti, 
-                                np.ndarray input, np.intp_t max_label, np.intp_t* regions,
+                                np.ndarray input, np.intp_t max_label, int *regions,
                                 int rank):
     cdef int kk =0
     cdef np.intp_t cc
@@ -99,8 +99,7 @@ cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, PyArrayIterObject *
         deref_p = get_from_iter
 
     # only integer or boolean values are allowed, since s_index is being used in indexing
-    # cdef np.uintp_t s_index = deref_p(data, _iti, input) - 1
-    cdef np.intp_t s_index = <np.intp_t>((<data_t *>np.PyArray_ITER_DATA(_iti))[0])
+    cdef np.intp_t s_index = <np.intp_t> deref_p(data, _iti, input) - 1
 
     if s_index >=0  and s_index < max_label:
         if rank > 0:
@@ -116,7 +115,7 @@ cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, PyArrayIterObject *
                     cc = iti.coordinates[kk]
                     if cc < regions[s_index + kk]:
                         regions[s_index + kk] = cc
-                    if cc +1 > regions[s_index + kk + rank]:
+                    if cc + 1 > regions[s_index + kk + rank]:
                         regions[s_index + kk + rank] = cc + 1
         else:
             regions[s_index] = 1
@@ -133,7 +132,7 @@ cpdef _findObjects(np.ndarray input, np.intp_t max_label):
 
         int ii, rank, size_regions
         int start, jj, idx, end
-        np.intp_t *regions = NULL
+        int *regions = NULL
 
         np.flatiter _iti
         PyArrayIterObject *iti
@@ -161,7 +160,7 @@ cpdef _findObjects(np.ndarray input, np.intp_t max_label):
         else:
             size_regions = max_label
         
-        regions = <np.intp_t *> PyDataMem_NEW(size_regions * sizeof(np.intp_t))
+        regions = <int *> PyDataMem_NEW(size_regions * sizeof(int))
         if regions == NULL:
             raise MemoryError()
 
@@ -203,5 +202,6 @@ cpdef _findObjects(np.ndarray input, np.intp_t max_label):
     except:
         # clean up and re-raise
         PyDataMem_FREE(regions)
+        raise
 
     return result
