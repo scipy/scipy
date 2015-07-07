@@ -130,54 +130,57 @@ def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
     """Minimize the sum of squares of nonlinear functions subject to bounds on
     independent variables.
 
-    Let f(x) maps from R^n to R^m, the function finds a local minimum of
-    F(x) = ||f(x)||**2 = sum(f_i(x)**2, i = 1, ..., m),
-    subject to bound constraints lb <= x <= ub
+    Let f(x) maps from R^n to R^m, this function finds a local minimum of::
+
+        F(x) = ||f(x)||**2 = sum(f_i(x)**2, i = 1, ..., m),
+        subject to bound constraints lb <= x <= ub
+
+    Partial derivatives of f with respect to x form m-by-n matrix called
+    Jacobian, where an element (i, j) equals a partial derivative of f[i]
+    with respect to x[j].
 
     Parameters
     ----------
     fun : callable
         Function which computes a vector of residuals. The argument x passed
         to this function is ndarray of shape (n,) (never a scalar, even
-        if n=1). It must return 1-d array-like of shape (m,) or a scalar.
+        if n=1). It must return 1-d array_like of shape (m,) or a scalar.
     x0 : array_like of shape (n,) or float
-        Initial guess on the independent variables. If float, for internal
-        usage it will be converted to 1-d array.
+        Initial guess on independent variables. If float, for internal usage
+        it will be converted to 1-d array.
     jac : '2-point', '3-point' or callable, optional
-        Method of computing partial derivatives of f with respect to x,
-        which form m-by-n array called the Jacobian matrix. If set to '2-point'
-        or '3-point', the Jacobian matrix is estimated by the corresponding
-        finite difference scheme. The '3-point' scheme is more accurate,
-        but requires twice as much operations compared to '2-point' (default).
-        If callable then it should return a reasonable approximation of the
-        Jacobian as array_like with at most 2 dimensions (transformed by
-        np.atleast_2d in 'trf' and 'dogbox' methods). In 'lm' method: callable
-        must return 2-d ndarray, if you set ``col_deriv=1`` in `options` then
-        a callable must return transposed Jacobian.
+        Method of computing the Jacobian matrix. If set to '2-point' or
+        '3-point', the Jacobian matrix is estimated by the corresponding
+        finite difference scheme. The scheme '3-point' is more accurate, but
+        requires twice as much operations compared to '2-point' (default).
+        If callable then it should return a reasonable approximation of
+        Jacobian as array_like with shape (m, n) (although np.atleast_2d
+        is applied in 'trf' and 'dogbox' methods). In 'lm' method: callable
+        must return 2-d ndarray, if you set ``col_deriv=1`` in `options`
+        then a callable must return transposed Jacobian.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
-        Each bound must match the size of `x0` or be a scalar, in the latter
-        case the bound will be the same for all variables. Use ``np.inf``
-        with an appropriate sign to disable bounds on all or some of the
-        variables.
+        Each array must match the size of `x0` or be a scalar, in the latter
+        case a bound will be the same for all variables. Use ``np.inf`` with
+        an appropriate sign to disable bounds on all or some of the variables.
     method : {'trf', 'dogbox', 'lm'}, optional
-        Determines the algorithm to perform optimization. Default is 'trf.
+        Determines the method to perform optimization. Default is 'trf'.
         See Notes and algorithm options to get information about each
-        algorithm.
+        method.
     ftol : float, optional
         Tolerance for termination by the change of the objective value.
         Default is square root of machine epsilon. See the exact meaning in
-        documentation for a particular method.
+        documentation for a selected `method`.
     xtol : float, optional
         Tolerance for termination by the change of the independent variables.
         Default is square root of machine epsilon. See the exact meaning in
-        documentation for a particular method.
+        documentation for a selected `method`.
     gtol : float, optional
         Tolerance for termination by the norm of gradient. Default is
         square root of machine epsilon. In presence of bounds more correctly
-        to call it first-order optimality threshold, as raw gradient
+        to call it first-order optimality threshold, as a raw gradient
         itself doesn't measure optimality. See the exact meaning in
-        documentation for a particular method.
+        documentation for a selected `method`.
     max_nfev : None or int, optional
         Maximum number of function evaluations before the termination.
         If None (default) each algorithm uses its own default value.
@@ -199,15 +202,15 @@ def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
         Determines the step size for finite difference Jacobian approximation.
         The actual step is computed as ``x * diff_step``. If None (default),
         `diff_step` is assigned to a conventional "optimal" power of machine
-        epsilon depending on finite difference approximation method [NR]_.
+        epsilon depending on a finite difference approximation method [NR]_.
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)`` and the same for
         `jac`. Method 'lm' can't handle `kwargs`.
     options : dict, optional
-        Additional options passed to a chosen algorithm. Empty by default.
-        The calling sequence is ``method(..., **options)``. Look for relative
-        options in documentation for a particular method.
+        Additional options passed to a chosen method. Empty by default.
+        The calling sequence is ``method(..., **options)``. Look for relevant
+        options in documentation for a selected method.
 
     Returns
     -------
@@ -224,14 +227,15 @@ def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
         First-order optimality measure. In unconstrained problems it is always
         the uniform norm of the gradient. In constrained problems this is the
         quantity which was compared with `gtol` during iterations, refer
-        to method options.
+        to options of a selected method.
     active_mask : ndarray of int, shape (n,)
         Each component shows whether the corresponding constraint is active:
              0 - a constraint is not active.
             -1 - a lower bound is active.
              1 - an upper bound is active.
-        Might be somewhat arbitrary as the algorithm does strictly feasible
-        iterates, thus `active_mask` is determined with tolerance threshold.
+        Might be somewhat arbitrary for 'trf' method as it does strictly
+        feasible iterates and `active_mask` is determined with tolerance
+        threshold.
     nfev : int
         Number of function evaluations done. Methods 'trf' and 'dogbox' don't
         count function calls for numerical Jacobian approximation, opposed to
@@ -251,11 +255,11 @@ def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
         Verbal description of the termination reason.
     success : int
         True if one of the convergence criteria is satisfied.
-    x_covariance : ndarray, shape (m, m)
+    x_covariance : ndarray, shape (n, n)
         Estimate of `x` covariance assuming that residuals are uncorrelated
         and have unity variance. It is computed as inverse of J.T*J where J
-        is Jacobian matrix. If 'trf' or 'dogbox' method is used or the inverse
-        doesn't exist this field is set to None.
+        is Jacobian matrix. If 'trf' or 'dogbox' method are used or the
+        inverse doesn't exist this field is set to None.
 
     Notes
     -----
