@@ -89,6 +89,13 @@ def dlsim(system, u, t=None, x0=None):
     A, B, C, D, dt = _system_to_statespace(system)
     u = np.asarray(u)
 
+    # Check for the statespace realization
+    # Case of system y=u
+    if A.shape[0] == 0:
+        A = np.asarray([0])
+        B = np.asarray([0])
+        C = np.asarray([0])
+
     if u.ndim == 1:
         u = np.atleast_2d(u).T
 
@@ -106,7 +113,7 @@ def dlsim(system, u, t=None, x0=None):
 
     # Check initial condition
     if x0 is None:
-        xout[0, :] = np.zeros((A.shape[1],))
+        xout[0, :] = np.zeros((A.shape[0],))
     else:
         xout[0, :] = np.asarray(x0)
 
