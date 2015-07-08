@@ -47,6 +47,12 @@ from scipy._lib._version import NumpyVersion
 from scipy._lib.decorator import decorator
 
 import nose
+try:
+    from nose.tools import assert_in
+except ImportError:
+    def assert_in(member, collection, msg=None):
+        assert_(member in collection, msg=msg if msg is not None else "%r not found in %r" % (member, collection))
+
 
 # Check for __numpy_ufunc__
 class _UFuncCheck(object):
@@ -2937,14 +2943,20 @@ class _TestGetNnzAxis(object):
         bool_dat = dat.astype(bool).A
         datsp = self.spmatrix(dat)
 
+        accepted_return_dtypes = (np.int32, np.int64)
+
         assert_array_equal(bool_dat.sum(axis=None), datsp.getnnz(axis=None))
         assert_array_equal(bool_dat.sum(), datsp.getnnz())
         assert_array_equal(bool_dat.sum(axis=0), datsp.getnnz(axis=0))
+        assert_in(datsp.getnnz(axis=0).dtype, accepted_return_dtypes)
         assert_array_equal(bool_dat.sum(axis=1), datsp.getnnz(axis=1))
+        assert_in(datsp.getnnz(axis=1).dtype, accepted_return_dtypes)
         if NumpyVersion(np.__version__) >= '1.7.0':
             # np.matrix.sum with negative axis arg doesn't work for < 1.7
             assert_array_equal(bool_dat.sum(axis=-2), datsp.getnnz(axis=-2))
+            assert_in(datsp.getnnz(axis=-2).dtype, accepted_return_dtypes)
             assert_array_equal(bool_dat.sum(axis=-1), datsp.getnnz(axis=-1))
+            assert_in(datsp.getnnz(axis=-1).dtype, accepted_return_dtypes)
 
         assert_raises(ValueError, datsp.getnnz, axis=2)
 
