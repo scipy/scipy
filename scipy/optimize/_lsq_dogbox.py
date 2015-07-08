@@ -215,6 +215,7 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
             if predicted_reduction <= 0:
                 step_free, on_bound_free, tr_hit = constrained_cauchy_step(
                     x_free, cauchy_step, tr_bounds, l_free, u_free)
+                Js = J_free.dot(step_free)
                 predicted_reduction = -np.dot(Js, Js) - 2 * np.dot(Js, f)
 
             step.fill(0.0)
