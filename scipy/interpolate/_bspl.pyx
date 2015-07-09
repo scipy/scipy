@@ -9,9 +9,10 @@ cimport numpy as cnp
 cimport cython
 
 cdef extern from "src/__fitpack.h":
-    void _deBoor_D(double *t, double x, int k, int ell, int m, double *result)
+    void _deBoor_D(double *t, double x, int k, int ell, int m, double *result) nogil
 
-cdef double nan = np.nan
+cdef extern from "numpy/npy_math.h":
+    double nan "NPY_NAN"
 
 ctypedef double complex double_complex
 
@@ -30,7 +31,7 @@ cdef inline int find_interval(double[::1] t,
                        int k,
                        double xval,
                        int prev_l,
-                       int extrapolate) nogil:
+                       bint extrapolate) nogil:
     """
     Find an interval such that t[interval] <= xval < t[interval+1].
 
@@ -67,11 +68,8 @@ cdef inline int find_interval(double[::1] t,
         # nan
         return -1
 
-    if (xval < tb) or (xval > te):
-        if extrapolate:
-            pass
-        else:
-            return -1
+    if ((xval < tb) or (xval > te)) and not extrapolate:
+        return -1
 
     l = prev_l if k < prev_l < n else k
 
@@ -93,8 +91,8 @@ def evaluate_spline(double[::1] t,
              double_or_complex[:, ::1] c,
              int k,
              double[::1] xp,
-             int der,
-             int extrapolate,
+             int nu,
+             bint extrapolate,
              double_or_complex[:, ::1] out):
     """
     Evaluate a spline in the B-spline basis.
@@ -107,7 +105,7 @@ def evaluate_spline(double[::1] t,
         B-spline coefficients
     xp : ndarray, shape (s,)
         Points to evaluate the spline at.
-    der : int
+    nu : int
         Order of derivative to evaluate.
     extrapolate : int, optional
         Whether to extrapolate to ouf-of-bounds points, or to return NaNs.
@@ -128,35 +126,36 @@ def evaluate_spline(double[::1] t,
         raise ValueError("out and c have incompatible shapes")
 
     # check derivative order
-    if der < 0:
-        raise NotImplementedError("Cannot do derivative order %s." % der)
+    if nu < 0:
+        raise NotImplementedError("Cannot do derivative order %s." % nu)
 
     n = c.shape[0]
     cdef double[::1] work = np.empty(2*k+2, dtype=np.float_)
 
     # evaluate
-    interval = k
-    for ip in range(xp.shape[0]):
-        xval = xp[ip]
+    with nogil:
+        interval = k
+        for ip in range(xp.shape[0]):
+            xval = xp[ip]
 
-        # Find correct interval
-        interval = find_interval(t, k, xval, interval, extrapolate)
+            # Find correct interval
+            interval = find_interval(t, k, xval, interval, extrapolate)
 
-        if interval < 0:
-            # xval was nan etc
+            if interval < 0:
+                # xval was nan etc
+                for jp in range(c.shape[1]):
+                    out[ip, jp] = nan
+                continue
+
+            # Evaluate (k+1) b-splines which are non-zero on the interval.
+            # on return, first k+1 elemets of work are B_{m-k},..., B_{m}
+            _deBoor_D(&t[0], xval, k, interval, nu, &work[0])
+
+            # Form linear combinations
             for jp in range(c.shape[1]):
-                out[ip, jp] = nan
-            continue
-
-        # Evaluate (k+1) b-splines which are non-zero on the interval.
-        # on return, first k+1 elemets of work are B_{m-k},..., B_{m}
-        _deBoor_D(&t[0], xval, k, interval, der, &work[0])
-
-        # Form linear combinations
-        for jp in range(c.shape[1]):
-            out[ip, jp] = 0.
-            for a in range(k+1):
-                out[ip, jp] = out[ip, jp] + c[interval + a - k, jp] * work[a]
+                out[ip, jp] = 0.
+                for a in range(k+1):
+                    out[ip, jp] = out[ip, jp] + c[interval + a - k, jp] * work[a]
 
 
 def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
@@ -200,7 +199,7 @@ def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
     ...          'r-', lw=5, alpha=0.5)
     >>> c = ['b', 'g', 'c', 'k']
 
-    Now we use slide an interval ``t[m]..t[m+1]`` along the base interval 
+    Now we use slide an interval ``t[m]..t[m+1]`` along the base interval
     ``a..b`` and use `evaluate_all_bspl` to compute the restriction of
     the B-spline of interest to this interval:
 
@@ -208,12 +207,11 @@ def evaluate_all_bspl(double[::1] t, int k, double xval, int m, int nu=0):
     ...    x1, x2 = t[2*k - i], t[2*k - i + 1]
     ...    xx = np.linspace(x1 - 0.5, x2 + 0.5)
     ...    yy = [evaluate_all_bspl(t, k, x, 2*k - i)[i] for x in xx]
-    ...
     ...    plt.plot(xx, yy, c[i] + '--', lw=3, label=str(i))
     ...
-    ... plt.grid(True)
-    ... plt.legend()
-    ... plt.show()
+    >>> plt.grid(True)
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     bbb = np.empty(2*k+2, dtype=np.float_)
@@ -231,8 +229,8 @@ def _colloc(double[::1] x, double[::1] t, int k, double[::1, :] ab, int offset=0
     so that row ``j`` contains all the B-splines which are non-zero
     at ``x_j``.
 
-    The matrix is constructed in the LAPACK banded storage. 
-    Basically, for an N-by-N matrix A with ku upper diagonals and 
+    The matrix is constructed in the LAPACK banded storage.
+    Basically, for an N-by-N matrix A with ku upper diagonals and
     kl lower diagonals, the shape of the array Ab is (2*kl + ku +1, N),
     where the last kl+ku+1 rows of Ab contain the diagonals of A, and
     the first kl rows of Ab are not referenced.
@@ -267,24 +265,29 @@ def _colloc(double[::1] x, double[::1] t, int k, double[::1, :] ab, int offset=0
     cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
 
     # collocation matrix
-    left = k
-    for j in range(x.shape[0]):
-        xval = x[j]
-        # find interval
-        left = find_interval(t, k, xval, left, extrapolate=False)
+    with nogil:
+        left = k
+        for j in range(x.shape[0]):
+            xval = x[j]
+            # find interval
+            left = find_interval(t, k, xval, left, extrapolate=False)
 
-        # fill a row
-        _deBoor_D(&t[0], xval, k, left, 0, &wrk[0])
-        # for a full matrix it would be ``A[j + offset, left-k:left+1] = bb``
-        # in the banded storage, need to spread the row over
-        for a in range(k+1):
-            clmn = left - k + a
-            ab[kl + ku + j + offset - clmn, clmn] = wrk[a]
+            # fill a row
+            _deBoor_D(&t[0], xval, k, left, 0, &wrk[0])
+            # for a full matrix it would be ``A[j + offset, left-k:left+1] = bb``
+            # in the banded storage, need to spread the row over
+            for a in range(k+1):
+                clmn = left - k + a
+                ab[kl + ku + j + offset - clmn, clmn] = wrk[a]
 
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def _handle_lhs_derivatives(double[::1]t, int k, double xval,
-                            cnp.ndarray ab,
-                            kl, ku, deriv_ords, int offset=0):
+                            double[::1, :] ab,
+                            int kl, int ku,
+                            cnp.int_t[::1] deriv_ords,
+                            int offset=0):
     """ Fill in the entries of the collocation matrix corresponding to known
     derivatives at xval.
 
@@ -299,7 +302,7 @@ def _handle_lhs_derivatives(double[::1]t, int k, double xval,
         B-spline order
     xval : float
         The value at which to evaluate the derivatives at.
-    ab : ndarray, shape(2*kl + ku + 1, nt)
+    ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
         B-spline collocation matrix.
         This argument is modified *in-place*.
     kl : integer
@@ -312,32 +315,32 @@ def _handle_lhs_derivatives(double[::1]t, int k, double xval,
         Skip this many rows of the matrix ab.
 
     """
-    cdef int left, nu, a, clmn, row
-
-    cdef double[::1] wrk = np.empty(2*k+2, dtype=np.float_)
+    cdef:
+        int left, nu, a, clmn, row
+        double[::1] wrk = np.empty(2*k+2, dtype=np.float_)
 
     # derivatives @ xval
-    left = find_interval(t, k, xval, k, extrapolate=False)
-    for row in range(deriv_ords.size):
-        nu = deriv_ords[row]
-        _deBoor_D(&t[0], xval, k, left, nu, &wrk[0])
-        # if A were a full matrix, it would be just
-        # ``A[row + offset, left-k:left+1] = bb``.
-        for a in range(k+1):
-            clmn = left - k + a
-            ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
-
+    with nogil:
+        left = find_interval(t, k, xval, k, extrapolate=False)
+        for row in range(deriv_ords.shape[0]):
+            nu = deriv_ords[row]
+            _deBoor_D(&t[0], xval, k, left, nu, &wrk[0])
+            # if A were a full matrix, it would be just
+            # ``A[row + offset, left-k:left+1] = bb``.
+            for a in range(k+1):
+                clmn = left - k + a
+                ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _norm_eq_lsq(double[::1] x,
-                double[::1] t,
-                int k,
-                cnp.ndarray y,
-                double[::1] w,
-                double[::1, :] ab,
-                double_or_complex[::1, :] rhs):
+                 double[::1] t,
+                 int k,
+                 double_or_complex[:, ::1] y,
+                 double[::1] w,
+                 double[::1, :] ab,
+                 double_or_complex[::1, :] rhs):
     """Construct the normal equations for the B-spline LSQ problem.
 
     The observation equations are ``A @ c = y``, and the normal equations are
@@ -351,7 +354,7 @@ def _norm_eq_lsq(double[::1] x,
     The normal eq matrix has at most `2k+1` bands and is constructed in the
     LAPACK symmetrix banded storage: ``A[i, j] == ab[i-j, j]`` with `i >= j`.
     See the doctsring for `scipy.linalg.cholesky_banded` for more info.
-    
+
     This routine is not supposed to be called directly, and
     does no error checking.
 
@@ -383,28 +386,28 @@ def _norm_eq_lsq(double[::1] x,
         double xval, wval
         double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
 
-    left = k
-    for j in range(x.shape[0]):
-        xval = x[j]
-        wval = w[j] * w[j]
-        # find interval
-        left = find_interval(t, k, xval, left, extrapolate=False)
-            
-        # non-zero B-splines at xval
-        _deBoor_D(&t[0], xval, k, left, 0, &wrk[0])
+    with nogil:
+        left = k
+        for j in range(x.shape[0]):
+            xval = x[j]
+            wval = w[j] * w[j]
+            # find interval
+            left = find_interval(t, k, xval, left, extrapolate=False)
 
-        # non-zero values of A.T @ A: banded storage w/ lower=True
-        # The colloq matrix in full storage would be
-        #   A[j, left-k:left+1] = wrk,
-        # Here we work out A.T @ A *in the banded storage* w/lower=True
-        # see the docstring of `scipy.linalg.cholesky_banded`.
-        for r in range(k+1):
-            row = left - k + r
-            for s in range(r+1):
-                clmn = left - k + s
-                ab[r-s, clmn] += wrk[r] * wrk[s] * wval
-                
-            # ... and A.T @ y
-            for ci in range(rhs.shape[1]):
-                rhs[row, ci] = rhs[row, ci] + wrk[r] * y[j, ci] * wval    # XXX: y is not typed
+            # non-zero B-splines at xval
+            _deBoor_D(&t[0], xval, k, left, 0, &wrk[0])
 
+            # non-zero values of A.T @ A: banded storage w/ lower=True
+            # The colloq matrix in full storage would be
+            #   A[j, left-k:left+1] = wrk,
+            # Here we work out A.T @ A *in the banded storage* w/lower=True
+            # see the docstring of `scipy.linalg.cholesky_banded`.
+            for r in range(k+1):
+                row = left - k + r
+                for s in range(r+1):
+                    clmn = left - k + s
+                    ab[r-s, clmn] += wrk[r] * wrk[s] * wval
+
+                # ... and A.T @ y
+                for ci in range(rhs.shape[1]):
+                    rhs[row, ci] = rhs[row, ci] + wrk[r] * y[j, ci] * wval

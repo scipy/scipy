@@ -147,7 +147,7 @@ class TestBSpline(TestCase):
                             b([tm + 1e-10, tp - 1e-10], extrap), atol=1e-9)
 
     def test_continuity(self):
-        # assert continuity @ internal knots
+        # assert continuity at internal knots
         b, t, c, k = _make_random_spline()
         assert_allclose(b(t[k+1:-k-1] - 1e-10), b(t[k+1:-k-1] + 1e-10),
                 atol=1e-9)
@@ -443,13 +443,13 @@ class TestInterp(TestCase):
     def test_quadratic_deriv(self):
         der = [(1, 8.)]  # order, value: f'(x) = 8.
 
-        # derivative @ right-hand edge
+        # derivative at right-hand edge
         tck = make_interp_spline(self.xx, self.yy, k=2, deriv_r=der)
         b = BSpline(*tck)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14)
 
-        # derivative @ left-hand edge
+        # derivative at left-hand edge
         tck = make_interp_spline(self.xx, self.yy, k=2, deriv_l=der)
         b = BSpline(*tck)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
@@ -458,7 +458,7 @@ class TestInterp(TestCase):
     def test_cubic_deriv(self):
         k = 3
 
-        # first derivatives @ left & right edges:
+        # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.)], [(1, 4.)]
         tck = make_interp_spline(self.xx, self.yy, k,
                 deriv_l=der_l, deriv_r=der_r)
@@ -467,7 +467,7 @@ class TestInterp(TestCase):
         assert_allclose([b(self.xx[0], 1), b(self.xx[-1], 1)],
                         [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
 
-        # 'natural' cubic spline, zero out 2nd derivatives @ the boundaries
+        # 'natural' cubic spline, zero out 2nd derivatives at the boundaries
         der_l, der_r = [(2, 0)], [(2, 0)]
         tck = make_interp_spline(self.xx, self.yy, k,
                 deriv_l=der_l, deriv_r=der_r)
@@ -490,10 +490,12 @@ class TestInterp(TestCase):
 
     @knownfailureif(True, 'unstable')
     def test_cubic_deriv_unstable(self):
-        # 1st and 2nd derivative @ x[0], no derivative information @ x[-1]
+        # 1st and 2nd derivative at x[0], no derivative information at x[-1]
         # The problem is not that it fails [who would use this anyway],
         # the problem is that it fails *silently*, and I've no idea
         # how to detect this sort of instability.
+        # In this particular case: it's OK for len(t) < 20, goes haywire
+        # at larger `len(t)`.
         k = 3
         t = _augknt(self.xx, k)
 
@@ -504,8 +506,8 @@ class TestInterp(TestCase):
 
     def test_knots_not_data_sites(self):
         # Knots need not coincide with the data sites.
-        # use a quadratic spline, knots are @ data averages,
-        # two additional constraints are zero 2nd derivs @ edges
+        # use a quadratic spline, knots are at data averages,
+        # two additional constraints are zero 2nd derivs at edges
         k, n = 2, 8
         t = np.r_[(self.xx[0],)*(k+1),
                   (self.xx[1:] + self.xx[:-1]) / 2.,
@@ -523,7 +525,7 @@ class TestInterp(TestCase):
         xx = self.xx
         yy = self.yy + 1.j*self.yy
 
-        # first derivatives @ left & right edges:
+        # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.j)], [(1, 4.+2.j)]
         tck = make_interp_spline(xx, yy, k,
                 deriv_l=der_l, deriv_r=der_r)
@@ -634,10 +636,10 @@ def make_interp_per_full_matr(x, y, t, k):
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
     assert nt - n == k - 1
 
-    # LHS: the collocation matrix + derivatives @edges
+    # LHS: the collocation matrix + derivatives at edges
     A = np.zeros((nt, nt), dtype=np.float_)
 
-    # derivatives @ x[0]:
+    # derivatives at x[0]:
     offset = 0
 
     if x[0] == t[k]:

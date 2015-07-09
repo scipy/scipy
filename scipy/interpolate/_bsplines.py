@@ -59,8 +59,6 @@ class BSpline(object):
 
     .. math::
 
-        S(x) = \sum_{j=0}^{n-1} c_{j} B_{j, k; t}(x)
-
         B_{i, 0}(x) = 1, \textrm{if $t_i \le x < t_{i+1}$, otherwise $0$,}
 
         B_{i, k}(x) = \frac{x - t_i}{t_{i+k} - t_i} B_{i, k-1}(x)
@@ -288,7 +286,7 @@ class BSpline(object):
 
         """
         if not self.t.flags.c_contiguous:
-            self.x = self.x.copy()
+            self.t = self.t.copy()
         if not self.c.flags.c_contiguous:
             self.c = self.c.copy()
 
@@ -589,7 +587,7 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     if nt - n != nleft + nright:
         raise ValueError("number of derivatives at boundaries.")
 
-    # set up the LHS: the collocation matrix + derivatives @boundaries
+    # set up the LHS: the collocation matrix + derivatives at boundaries
     kl = ku = k
     ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float_, order='F')
     _bspl._colloc(x, t, k, ab, offset=nleft)
