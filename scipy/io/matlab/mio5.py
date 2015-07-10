@@ -421,6 +421,11 @@ def to_writeable(source):
     '''
     if isinstance(source, np.ndarray):
         return source
+    # Objects that have an array representation
+    if hasattr(source,'__array__'):
+        ret = source.__array__()
+        if ret is not None:
+              return ret
     if source is None:
         return None
     # Objects that implement mappings
