@@ -120,9 +120,10 @@ class BSpline(object):
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()
     >>> xx = np.linspace(1.5, 4.5, 50)
-    >>> ax.plot(xx, [bspline(x, t, c ,k) for x in xx], 'r-', lw=3)
-    >>> ax.plot(xx, spl(xx), 'b-', lw=4, alpha=0.7)
+    >>> ax.plot(xx, [bspline(x, t, c ,k) for x in xx], 'r-', lw=3, label='naive')
+    >>> ax.plot(xx, spl(xx), 'b-', lw=4, alpha=0.7, label='BSpline')
     >>> ax.grid(True)
+    >>> ax.legend(loc='best')
     >>> plt.show()
 
 
@@ -228,7 +229,7 @@ class BSpline(object):
         >>> b = BSpline.basis_element(t[1:])
         >>> def f(x):
         ...     return np.where(x < 1, x*x, (2. - x)**2)
-        >>>
+
         >>> import matplotlib.pyplot as plt
         >>> fig, ax = plt.subplots()
         >>> x = np.linspace(0, 2, 51)
@@ -253,7 +254,7 @@ class BSpline(object):
         x : array_like
             points to evaluate the spline at.
         nu: int, optional
-            derivative to evaluate (default = 0).
+            derivative to evaluate (default is 0).
         extrapolate : bool, optional
             whether to extrapolate based on the first and last intervals
             or return nans. Default is `self.extrapolate`.
@@ -306,7 +307,7 @@ class BSpline(object):
 
         See Also
         --------
-        splder, splatinder
+        splder, splantider
 
         """
         c = self.c
@@ -372,14 +373,22 @@ class BSpline(object):
         >>> b.integrate(0, 1)
         array(0.5)
 
-
         If the integration limits are outside of the base interval, the result
         is controlled by the `extrapolate` parameter
 
         >>> b.integrate(-1, 1)
         array(0.0)
         >>> b.integrate(-1, 1, extrapolate=False)
-        array(1.0)
+        array(0.5)
+
+        >>> import matplotlib.pyplot as plt
+        >>> fig, ax = plt.subplots()
+        >>> ax.grid(True)
+        >>> ax.axvline(0, c='r', lw=5, alpha=0.5)  # base interval
+        >>> ax.axvline(2, c='r', lw=5, alpha=0.5)
+        >>> xx = [-1, 1, 2]
+        >>> ax.plot(xx, b(xx))
+        >>> plt.show()
 
         """
         if extrapolate is None:
@@ -460,7 +469,7 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
         the number of derivatives at the edges. Specifically, ``nt - n`` must
         equal ``len(deriv_l) + len(deriv_r)``.
     deriv_l : iterable of pairs (int, float) or None
-        Derivatives known at ``x[0]``: (order, value)
+        Derivatives known at ``x[0]``: (order, value).
         Default is None.
     deriv_r : iterable of pairs (int, float) or None
         Derivatives known at ``x[-1]``.
@@ -488,10 +497,10 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     ...     jj = 2.*np.arange(N) + 1
     ...     x = np.cos(np.pi * jj / 2 / N)[::-1]
     ...     return x
-    >>>
+
     >>> x = cheb_nodes(20)
     >>> y = np.sqrt(1 - x**2)
-    >>>
+
     >>> from scipy.interpolate import BSpline, make_interp_spline
     >>> tck = make_interp_spline(x, y)
     >>> b = BSpline(*tck)
@@ -514,11 +523,18 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     >>> np.allclose([b_n(x0, 2), b_n(x1, 2)], [0, 0])
     True
 
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y, 'ro')
+    >>> ax.plot(x, b_n(x), 'b-')
+    >>> plt.show()
+
     See Also
     --------
     BSpline : base class representing the B-spline objects
     make_lsq_spline : a similar factory function for spline fitting
     UnivariateSpline : a wrapper over FITPACK spline fitting routines
+    splrep : a wrapper over FITPACK spline fitting routines
 
     """
     # special-case k=0 right away
@@ -709,11 +725,24 @@ def make_lsq_spline(x, y, t, k=3, w=None, check_finite=True):
     >>> plt.legend(loc='best')
     >>> plt.show()
 
+    **NaN handling**: If the input arrays contain ``nan`` values, the result is
+    not useful since the underlying spline fitting routines cannot deal with
+    ``nan``. A workaround is to use zero weights for not-a-number data points:
+
+    >>> y[8] = np.nan
+    >>> w = np.isnan(y)
+    >>> y[w] = 0.
+    >>> tck = make_lsq_spline(x, y, t, w=~w)
+
+    Notice the need to replace a ``nan`` by a numerical value (precise value
+    does not matter as long as the corresponding weight is zero.)
+
     See Also
     --------
     BSpline : base class representing the B-spline objects
     make_interp_spline : a similar factory function for interpolating splines
     LSQUnivariateSpline : a FITPACK-based spline fitting routine
+    splrep : a FITPACK-based fitting routine
 
     """
     x = _as_float_array(x, check_finite)
