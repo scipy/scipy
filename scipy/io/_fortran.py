@@ -56,7 +56,7 @@ class FortranFile(object):
 
     >>> from scipy.io import FortranFile
     >>> f = FortranFile('test.unf', 'w')
-    >>> f.write_record(np.array([1,2,3,4,5],dtype=np.int32))
+    >>> f.write_record(np.array([1,2,3,4,5], dtype=np.int32))
     >>> f.write_record(np.linspace(0,1,20).reshape((5,-1)))
     >>> f.close()
 
@@ -139,22 +139,20 @@ class FortranFile(object):
 
         For records that contain several variables or mixed types (as opposed
         to single scalar or array types), it is possible to specify a dtype
-        with mixed types:
+        with mixed types::
 
-        >>> record = f.read_record([('a', '<f4'), ('b', '<i4')])
-        >>> record['a']  # access the variable 'a'
-        5.6
+            record = f.read_record([('a', '<f4'), ('b', '<i4')])
+            record['a']  # access the variable 'a'
 
         and if any of the variables are arrays, the shape can be specified as
-        the third item in the relevant tuple:
+        the third item in the relevant tuple::
 
-        >>> record = f.read_record([('a', '<f4'), ('b', '<i4', (3,3))])
+            record = f.read_record([('a', '<f4'), ('b', '<i4', (3,3))])
 
-        Numpy also supports a short syntax for this kind of type:
+        Numpy also supports a short syntax for this kind of type::
 
-        >>> record = f.read_record('<f4,(3,3)<i4')
-        >>> record['f0']  # variables are called f0, f1, ...
-        5.6
+            record = f.read_record('<f4,(3,3)<i4')
+            record['f0']  # variables are called f0, f1, ...
 
 
         See Also
