@@ -1015,19 +1015,18 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 def moment(a, moment=1, axis=0):
     """
-    Calculates the nth moment about the mean for a sample.
+    Calculates the nth central moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of points.
-    If the points represent probability density, then the zeroth moment is the
-    total probability (i. e. one), the first moment is the mean, the second
-    moment is the variance, the third moment is the skewness and the fourth
-    moment divided by the square of the variance is the kurtosis.
+    It is often used to calculate coefficients of skewness and kurtosis due
+    to its close relationship with them.
+
 
     Parameters
     ----------
     a : array_like
        data
-    moment : int, optional
+    moment : int or array_like of ints, optional
        order of central moment that is returned
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
@@ -1048,12 +1047,11 @@ def moment(a, moment=1, axis=0):
     -----
     [1]_ The n-th moment of a real-valued continuous function f(x) of a real
     variable about a value c is:
-        \mu _{n} = \int_{-\infty }^{\infty }(x - c)^n  f(x) dx
+    .. math::
+
+    m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - \bar{x})^k
 
     This function uses exponentiation by squares [2]_ for efficiency.
-
-    The moment is often used to calculate coefficients of skewness and
-    kurtosis due to its close relationship with them.
 
     References
     ----------
@@ -1064,9 +1062,35 @@ def moment(a, moment=1, axis=0):
     a, axis = _chk_asarray(a, axis)
 
     if a.size == 0:
-        return np.nan
+        # empty array, return nan(s) with shape matching `moment`
+        if np.isscalar(moment):
+            return np.nan
+        else:
+            return np.ones(np.asarray(moment).shape, dtype=np.float64) * np.nan
 
-    if moment == 1:
+    # for array_like moment input, return a value for each.
+    if not np.isscalar(moment):
+        mmnt = [_moment(a, i, axis) for i in moment]
+        return np.array(mmnt)
+    else:
+        return _moment(a, moment, axis)
+
+def _moment(a, moment, axis):
+    if not issubclass(type(moment), int):
+        raise ValueError("All moment parameters must be integers")
+
+    if moment == 0:
+        # When moment equals 0, the result is 1, by definition.
+        shape = list(a.shape)
+        del shape[axis]
+        if shape:
+            # return an actual array of the appropriate shape
+            return np.zeros(shape, dtype=float) * 1.0
+        else:
+            # the input was 1D, so return a scalar instead of a rank-0 array
+            return np.float64(1.0)
+
+    elif moment == 1:
         # By definition the first moment about the mean is 0.
         shape = list(a.shape)
         del shape[axis]

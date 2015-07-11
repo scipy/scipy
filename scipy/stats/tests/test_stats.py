@@ -1471,6 +1471,8 @@ class TestMoments(TestCase):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
         y = stats.moment(self.scalar_testcase)
         assert_approx_equal(y, 0.0)
+        y = stats.moment(self.testcase, 0)
+        assert_approx_equal(y, 1.0)
         y = stats.moment(self.testcase, 1)
         assert_approx_equal(y, 0.0, 10)
         y = stats.moment(self.testcase, 2)
@@ -1479,6 +1481,12 @@ class TestMoments(TestCase):
         assert_approx_equal(y, 0.0)
         y = stats.moment(self.testcase, 4)
         assert_approx_equal(y, 2.5625)
+
+        y = stats.moment(self.testcase, [1, 2, 3, 4])
+        assert_approx_equal(y[0], 0.0, 10)
+        assert_approx_equal(y[1], 1.25)
+        assert_approx_equal(y[2], 0.0)
+        assert_approx_equal(y[3], 2.5625)
 
         # test empty input
         y = stats.moment([])
