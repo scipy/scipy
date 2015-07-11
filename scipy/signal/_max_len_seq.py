@@ -4,8 +4,8 @@
 """Tools for MLS generation"""
 
 import numpy as np
-cimport numpy as np
-cimport cython
+
+from ._max_len_seq_inner import _max_len_seq_inner
 
 __all__ = ['max_len_seq']
 
@@ -19,9 +19,6 @@ _mls_taps = {2: [1], 3: [2], 4: [3], 5: [3], 6: [5], 7: [6], 8: [7, 6, 1],
              27: [26, 25, 22], 28: [25], 29: [27], 30: [29, 28, 7],
              31: [28], 32: [31, 30, 10]}
 
-@cython.cdivision(True)  # faster modulo
-@cython.boundscheck(False)  # designed to stay within bounds
-@cython.wraparound(False)  # we don't use negative indexing
 def max_len_seq(nbits, state=None, length=None, taps=None):
     """
     max_len_seq(nbits, state=None, length=None, taps=None)
@@ -58,7 +55,7 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
     -----
     The algorithm for MLS generation is generically described in:
 
-        http://en.wikipedia.org/wiki/Maximum_length_sequence
+        https://en.wikipedia.org/wiki/Maximum_length_sequence
 
     The default values for taps are specifically taken from the first
     option listed for each value of ``nbits`` in:
@@ -99,25 +96,6 @@ def max_len_seq(nbits, state=None, length=None, taps=None):
     if np.all(state == 0):
         raise ValueError('state must not be all zeros')
 
-    # Here we compute MLS using a shift register, indexed using a ring buffer
-    # technique (faster than using something like np.roll to shift)
-    cdef np.ndarray[Py_ssize_t, ndim=1, mode='c'] c_taps = taps
-    cdef np.ndarray[np.int8_t, ndim=1, mode='c'] c_state = state
-    cdef Py_ssize_t c_nbits = nbits
-    cdef Py_ssize_t n_out = length
-    cdef Py_ssize_t n_taps = taps.size
-    cdef Py_ssize_t idx = 0
-    cdef Py_ssize_t fidx = 0
-    cdef np.int8_t feedback
-    cdef np.ndarray[np.int8_t, ndim=1, mode='c'] seq = \
-        np.empty(n_out, dtype=np.int8, order='c')
-    for ii in range(n_out):
-        feedback = c_state[idx]
-        seq[ii] = feedback
-        for ti in range(n_taps):
-            feedback ^= c_state[(c_taps[ti] + idx) % c_nbits]
-        c_state[idx] = feedback
-        idx = (idx + 1) % c_nbits
-    # state must be rolled s.t. next run, when idx==0, it's in the right place
-    state = np.roll(state, -idx, axis=0)
+    seq = np.empty(length, dtype=np.int8, order='c')
+    state = _max_len_seq_inner(taps, state, nbits, length, seq)
     return seq, state
