@@ -101,6 +101,7 @@ Filter design
    residuez      -- Partial fraction expansion of b(z) / a(z).
    invres        -- Inverse partial fraction expansion for analog filter.
    invresz       -- Inverse partial fraction expansion for digital filter.
+   BadCoefficients  -- Warning on badly conditioned filter coefficients
 
 Lower-level filter design functions:
 
@@ -221,6 +222,7 @@ Window functions
    general_gaussian  -- Generalized Gaussian window
    hamming           -- Hamming window
    hann              -- Hann window
+   hanning           -- Hann window
    kaiser            -- Kaiser window
    nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
    parzen            -- Parzen window

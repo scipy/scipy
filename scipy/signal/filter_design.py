@@ -24,6 +24,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
 
 
 class BadCoefficients(UserWarning):
+    """Warning about badly conditioned filter coefficients"""
     pass
 
 abs = absolute
