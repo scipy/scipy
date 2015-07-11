@@ -82,8 +82,8 @@ def dlsim(system, u, t=None, x0=None):
     >>> t_in = [0.0, 1.0, 2.0, 3.0]
     >>> u = np.asarray([0.0, 0.0, 1.0, 1.0])
     >>> t_out, y = signal.dlsim(tf, u, t=t_in)
-    >>> y
-    array([ 0.,  0.,  0.,  1.])
+    >>> y.T
+    array([[ 0.,  0.,  0.,  1.]])
 
     """
     A, B, C, D, dt = _system_to_statespace(system)

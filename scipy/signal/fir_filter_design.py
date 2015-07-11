@@ -208,31 +208,42 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     Low-pass from 0 to f::
 
     >>> from scipy import signal
+    >>> numtaps = 3
+    >>> f = 0.1
     >>> signal.firwin(numtaps, f)
+    array([ 0.06799017,  0.86401967,  0.06799017])
 
     Use a specific window function::
 
     >>> signal.firwin(numtaps, f, window='nuttall')
+    array([  3.56607041e-04,   9.99286786e-01,   3.56607041e-04])
 
     High-pass ('stop' from 0 to f)::
 
     >>> signal.firwin(numtaps, f, pass_zero=False)
+    array([-0.00859313,  0.98281375, -0.00859313])
 
     Band-pass::
 
+    >>> f1, f2 = 0.1, 0.2
     >>> signal.firwin(numtaps, [f1, f2], pass_zero=False)
+    array([ 0.06301614,  0.88770441,  0.06301614])
 
     Band-stop::
 
     >>> signal.firwin(numtaps, [f1, f2])
+    array([-0.00801395,  1.0160279 , -0.00801395])
 
     Multi-band (passbands are [0, f1], [f2, f3] and [f4, 1])::
 
+    >>> f3, f4 = 0.3, 0.4
     >>> signal.firwin(numtaps, [f1, f2, f3, f4])
+    array([-0.01376344,  1.02752689, -0.01376344])
 
     Multi-band (passbands are [f1, f2] and [f3,f4])::
 
     >>> signal.firwin(numtaps, [f1, f2, f3, f4], pass_zero=False)
+    array([ 0.04890915,  0.91284326,  0.04890915])
 
     """
 
