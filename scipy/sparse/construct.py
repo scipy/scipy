@@ -48,6 +48,7 @@ def spdiags(data, diags, m, n, format=None):
 
     Examples
     --------
+    >>> from scipy.sparse import spdiags
     >>> data = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
     >>> diags = np.array([0, -1, 2])
     >>> spdiags(data, diags, 4, 4).toarray()
@@ -105,6 +106,7 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
 
     Examples
     --------
+    >>> from scipy.sparse import diags
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
     >>> diags(diagonals, [0, -1, 2]).toarray()
     array([[1, 0, 1, 0],
@@ -203,6 +205,7 @@ def identity(n, dtype='d', format=None):
 
     Examples
     --------
+    >>> from scipy.sparse import identity
     >>> identity(3).toarray()
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
@@ -645,6 +648,7 @@ def block_diag(mats, format=None, dtype=None):
 
     Examples
     --------
+    >>> from scipy.sparse import coo_matrix, block_diag
     >>> A = coo_matrix([[1, 2], [3, 4]])
     >>> B = coo_matrix([[5], [6]])
     >>> C = coo_matrix([[7]])
@@ -700,7 +704,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
 
     Examples
     --------
-    >>> from scipy.sparse import construct
+    >>> from scipy.sparse import random
     >>> from scipy import stats
     >>> class CustomRandomState(object):
     ...     def randint(self, k):
@@ -708,9 +712,9 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     ...         return i - i % 2
     >>> rs = CustomRandomState()
     >>> rvs = stats.poisson(25, loc=10).rvs
-    >>> S = construct.random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
+    >>> S = random(3, 4, density=0.25, random_state=rs, data_rvs=rvs)
     >>> S.A
-    array([[ 36.,   0.,  33.,   0.],
+    array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
