@@ -1,5 +1,4 @@
-"""
-========================================
+"""========================================
 Interpolation (:mod:`scipy.interpolate`)
 ========================================
 
@@ -84,6 +83,7 @@ Functional interface to FITPACK functions:
    spalde
    splder
    splantider
+   insert
 
 
 2-D Splines
@@ -138,6 +138,19 @@ Additional tools
    `scipy.signal.cspline1d_eval`,
    `scipy.signal.qspline2d`,
    `scipy.signal.cspline2d`.
+
+Functions existing for backward compatibility (should not be used in
+new code):
+
+.. autosummary::
+   :toctree: generated/
+
+   ppform
+   spleval
+   spline
+   splmake
+   spltopp
+   pchip
 
 """
 from __future__ import division, print_function, absolute_import
