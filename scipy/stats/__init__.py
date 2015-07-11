@@ -74,6 +74,9 @@ Continuous distributions
    ksone             -- Kolmogorov-Smirnov one-sided (no stats)
    kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
    laplace           -- Laplace
+   levy              -- Levy
+   levy_l
+   levy_stable
    logistic          -- Logistic
    loggamma          -- Log-Gamma
    loglaplace        -- Log-Laplace (Log Double Exponential)
@@ -104,6 +107,7 @@ Continuous distributions
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
    vonmises          -- Von-Mises (Circular)
+   vonmises_line     -- Von-Mises (Line)
    wald              -- Wald
    weibull_min       -- Minimum Weibull (see Frechet)
    weibull_max       -- Maximum Weibull (see Frechet)
@@ -171,17 +175,19 @@ which work for masked arrays.
    nanstd            -- Standard deviation, ignoring NaN values
    nanmedian         -- Median, ignoring NaN values
    variation         -- Coefficient of variation
+   find_repeats
+   trim_mean
 
 .. autosummary::
    :toctree: generated/
 
-   cumfreq           _
-   histogram2        _
-   histogram         _
-   itemfreq          _
-   percentileofscore _
-   scoreatpercentile _
-   relfreq           _
+   cumfreq
+   histogram2
+   histogram
+   itemfreq
+   percentileofscore
+   scoreatpercentile
+   relfreq
 
 .. autosummary::
    :toctree: generated/
@@ -219,6 +225,7 @@ which work for masked arrays.
    kendalltau
    linregress
    theilslopes
+   f_value
 
 .. autosummary::
    :toctree: generated/
@@ -239,6 +246,9 @@ which work for masked arrays.
    kruskal
    friedmanchisquare
    combine_pvalues
+   ss
+   square_of_sums
+   jarque_bera
 
 .. autosummary::
    :toctree: generated/
@@ -262,6 +272,12 @@ which work for masked arrays.
    boxcox_llf
 
    entropy
+
+.. autosummary::
+   :toctree: generated/
+
+   chisqprob
+   betai
 
 Circular statistical functions
 ==============================
