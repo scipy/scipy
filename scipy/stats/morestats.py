@@ -497,7 +497,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     brack : tuple, optional
         Triple (a,b,c) where (a<b<c). If bracket consists of two numbers (a, c)
         then they are assumed to be a starting interval for a downhill bracket
-        search (see `scipy.optimize.bracket`).
+        search (see `scipy.optimize.brent`).
     dist : str or stats.distributions instance, optional
         Distribution or distribution function name.  Objects that look enough
         like a stats.distributions instance (i.e. they have a ``ppf`` method)
@@ -512,6 +512,12 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     See also
     --------
     ppcc_plot, probplot, boxcox
+
+    Notes
+    -----
+    The brack keyword serves as a starting point which is useful in corner
+    cases. One can use a plot to obtain a rough visual estimate of the location
+    for the maximum to start the search near it.
 
     References
     ----------

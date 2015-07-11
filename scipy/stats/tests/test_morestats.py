@@ -765,8 +765,20 @@ class TestPpccMax(TestCase):
         assert_almost_equal(max3, -0.71215366521264145, decimal=5)
 
     def test_brack(self):
+        np.random.seed(1234567)
         x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
         assert_raises(ValueError, stats.ppcc_max, x, brack=(0.0, 1.0, 0.5))
+
+        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
+        # it is accurate up to 16 decimals
+        assert_almost_equal(stats.ppcc_max(x, brack=(0, 1)),
+                            -0.71215366521264145, decimal=5)
+
+        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
+        # it is accurate up to 16 decimals
+        assert_almost_equal(stats.ppcc_max(x, brack=(-2, 2)),
+                            -0.71215366521264145, decimal=5)
+
 
 
 class TestBoxcox_llf(TestCase):
