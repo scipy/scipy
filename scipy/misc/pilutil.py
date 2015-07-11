@@ -58,9 +58,10 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
 
     Examples
     --------
+    >>> from scipy.misc import bytescale
     >>> img = array([[ 91.06794177,   3.39058326,  84.4221549 ],
-                     [ 73.88003259,  80.91433048,   4.88878881],
-                     [ 51.53875334,  34.45808177,  27.5873488 ]])
+    ...              [ 73.88003259,  80.91433048,   4.88878881],
+    ...              [ 51.53875334,  34.45808177,  27.5873488 ]])
     >>> bytescale(img)
     array([[255,   0, 236],
            [205, 225,   4],
@@ -148,10 +149,11 @@ def imsave(name, arr, format=None):
     --------
     Construct an array of gradient intensity values and save to file:
 
+    >>> from scipy.misc import imsave
     >>> x = np.zeros((255, 255))
     >>> x = np.zeros((255, 255), dtype=np.uint8)
     >>> x[:] = np.arange(255)
-    >>> imsave('/tmp/gradient.png', x)
+    >>> imsave('gradient.png', x)
 
     Construct an array with three colour bands (R, G, B) and store to file:
 
@@ -159,7 +161,7 @@ def imsave(name, arr, format=None):
     >>> rgb[..., 0] = np.arange(255)
     >>> rgb[..., 1] = 55
     >>> rgb[..., 2] = 1 - np.arange(255)
-    >>> imsave('/tmp/rgb_gradient.png', rgb)
+    >>> imsave('rgb_gradient.png', rgb)
 
     """
     im = toimage(arr)
@@ -368,7 +370,7 @@ def imshow(arr):
     --------
     >>> a = np.tile(np.arange(255), (255,1))
     >>> from scipy import misc
-    >>> misc.pilutil.imshow(a)
+    >>> misc.imshow(a)
 
     """
     im = toimage(arr)

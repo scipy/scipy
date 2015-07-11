@@ -246,9 +246,9 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
 
     Examples
     --------
+    >>> from scipy.misc import derivative
     >>> def f(x):
     ...     return x**3 + x**2
-    ...
     >>> derivative(f, 1.0, dx=1e-6)
     4.9999999999217337
 
@@ -376,7 +376,7 @@ def lena():
     >>> lena.max()
     245
     >>> lena.dtype
-    dtype('int32')
+    dtype('int64')
 
     >>> import matplotlib.pyplot as plt
     >>> plt.gray()
@@ -455,7 +455,7 @@ def face(gray=False):
     >>> face.shape
     (768, 1024, 3)
     >>> face.max()
-    230
+    255
     >>> face.dtype
     dtype('uint8')
 

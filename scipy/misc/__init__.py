@@ -35,6 +35,7 @@ systems that don't have PIL installed.
    logsumexp - Compute the log of the sum of exponentials of input elements
    pade - Pade approximation to function as the ratio of two polynomials
    toimage - Takes a numpy array and returns a PIL image
+   source - Print function source code
    who - Print the Numpy arrays in the given dictionary
 
 """
