@@ -17,6 +17,7 @@ Local Optimization
    minimize - Unified interface for minimizers of multivariate functions
    minimize_scalar - Unified interface for minimizers of univariate functions
    OptimizeResult - The optimization result returned by some optimizers
+   OptimizeWarning - The optimization encountered problems
 
 The `minimize` function supports the following methods:
 
@@ -192,6 +193,7 @@ Simplex Algorithm:
    :toctree: generated/
 
    linprog -- Linear programming using the simplex algorithm
+   linprog_verbose_callback -- Sample callback function for linprog
 
 The `linprog` function supports the following methods:
 
