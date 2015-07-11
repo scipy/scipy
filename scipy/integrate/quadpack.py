@@ -18,6 +18,9 @@ error = _quadpack.error
 
 
 class IntegrationWarning(UserWarning):
+    """
+    Warning on issues during integration.
+    """
     pass
 
 
