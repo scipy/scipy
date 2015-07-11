@@ -6,6 +6,11 @@ import numpy as np
 from scipy._lib.six import callable
 from collections import namedtuple
 
+__all__ = ['binned_statistic',
+           'binned_statistic_2d',
+           'binned_statistic_dd']
+
+
 def binned_statistic(x, values, statistic='mean',
                      bins=10, range=None):
     """
