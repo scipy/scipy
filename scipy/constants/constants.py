@@ -194,8 +194,8 @@ def C2K(C):
 
     Examples
     --------
-    >>> from scipy.constants.constants import C2K
-    >>> C2K(_np.array([-40, 40.0]))
+    >>> from scipy.constants import C2K
+    >>> C2K(np.array([-40, 40.0]))
     array([ 233.15,  313.15])
 
     """
@@ -223,8 +223,8 @@ def K2C(K):
 
     Examples
     --------
-    >>> from scipy.constants.constants import K2C
-    >>> K2C(_np.array([233.15, 313.15]))
+    >>> from scipy.constants import K2C
+    >>> K2C(np.array([233.15, 313.15]))
     array([-40.,  40.])
 
     """
@@ -251,8 +251,8 @@ def F2C(F):
 
     Examples
     --------
-    >>> from scipy.constants.constants import F2C
-    >>> F2C(_np.array([-40, 40.0]))
+    >>> from scipy.constants import F2C
+    >>> F2C(np.array([-40, 40.0]))
     array([-40.        ,   4.44444444])
 
     """
@@ -279,8 +279,8 @@ def C2F(C):
 
     Examples
     --------
-    >>> from scipy.constants.constants import C2F
-    >>> C2F(_np.array([-40, 40.0]))
+    >>> from scipy.constants import C2F
+    >>> C2F(np.array([-40, 40.0]))
     array([ -40.,  104.])
 
     """
@@ -309,8 +309,8 @@ def F2K(F):
 
     Examples
     --------
-    >>> from scipy.constants.constants import F2K
-    >>> F2K(_np.array([-40, 104]))
+    >>> from scipy.constants import F2K
+    >>> F2K(np.array([-40, 104]))
     array([ 233.15,  313.15])
 
     """
@@ -339,8 +339,8 @@ def K2F(K):
 
     Examples
     --------
-    >>> from scipy.constants.constants import K2F
-    >>> K2F(_np.array([233.15,  313.15]))
+    >>> from scipy.constants import K2F
+    >>> K2F(np.array([233.15,  313.15]))
     array([ -40.,  104.])
 
     """
@@ -370,8 +370,8 @@ def lambda2nu(lambda_):
 
     Examples
     --------
-    >>> from scipy.constants.constants import lambda2nu
-    >>> lambda2nu(_np.array((1, speed_of_light)))
+    >>> from scipy.constants import lambda2nu, speed_of_light
+    >>> lambda2nu(np.array((1, speed_of_light)))
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
@@ -399,8 +399,8 @@ def nu2lambda(nu):
 
     Examples
     --------
-    >>> from scipy.constants.constants import nu2lambda
-    >>> nu2lambda(_np.array((1, speed_of_light)))
+    >>> from scipy.constants import nu2lambda, speed_of_light
+    >>> nu2lambda(np.array((1, speed_of_light)))
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
