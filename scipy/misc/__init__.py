@@ -42,7 +42,8 @@ systems that don't have PIL installed.
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['who', 'source', 'info', 'doccer']
+__all__ = ['who', 'source', 'info', 'doccer',
+           'comb', 'factorial', 'factorial2', 'factorialk']
 
 from . import doccer
 from .common import *
