@@ -64,14 +64,14 @@ def norm(a, ord=None):
     Examples
     --------
     >>> from scipy.linalg import norm
-    >>> a = np.arange(9) - 4
+    >>> a = np.arange(9) - 4.0
     >>> a
-    array([-4, -3, -2, -1,  0,  1,  2,  3,  4])
+    array([-4., -3., -2., -1.,  0.,  1.,  2.,  3.,  4.])
     >>> b = a.reshape((3, 3))
     >>> b
-    array([[-4, -3, -2],
-           [-1,  0,  1],
-           [ 2,  3,  4]])
+    array([[-4., -3., -2.],
+           [-1.,  0.,  1.],
+           [ 2.,  3.,  4.]])
 
     >>> norm(a)
     7.745966692414834
@@ -102,13 +102,13 @@ def norm(a, ord=None):
     7.3484692283495345
 
     >>> norm(a, -2)
-    nan
+    0
     >>> norm(b, -2)
     1.8570331885190563e-016
     >>> norm(a, 3)
     5.8480354764257312
     >>> norm(a, -3)
-    nan
+    0
 
     """
     # Differs from numpy only in non-finite handling and the use of blas.
