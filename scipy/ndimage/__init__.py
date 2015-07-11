@@ -9,10 +9,8 @@ This package contains various functions for multi-dimensional image
 processing.
 
 
-Filters :mod:`scipy.ndimage.filters`
-====================================
-
-.. module:: scipy.ndimage.filters
+Filters
+=======
 
 .. autosummary::
    :toctree: generated/
@@ -42,10 +40,8 @@ Filters :mod:`scipy.ndimage.filters`
    uniform_filter - Multi-dimensional uniform filter
    uniform_filter1d - 1-D uniform filter along the given axis
 
-Fourier filters :mod:`scipy.ndimage.fourier`
-============================================
-
-.. module:: scipy.ndimage.fourier
+Fourier filters
+===============
 
 .. autosummary::
    :toctree: generated/
@@ -55,10 +51,8 @@ Fourier filters :mod:`scipy.ndimage.fourier`
    fourier_shift
    fourier_uniform
 
-Interpolation :mod:`scipy.ndimage.interpolation`
-================================================
-
-.. module:: scipy.ndimage.interpolation
+Interpolation
+=============
 
 .. autosummary::
    :toctree: generated/
@@ -72,10 +66,8 @@ Interpolation :mod:`scipy.ndimage.interpolation`
    spline_filter1d
    zoom - Zoom an array
 
-Measurements :mod:`scipy.ndimage.measurements`
-==============================================
-
-.. module:: scipy.ndimage.measurements
+Measurements
+============
 
 .. autosummary::
    :toctree: generated/
@@ -89,6 +81,7 @@ Measurements :mod:`scipy.ndimage.measurements`
    maximum
    maximum_position
    mean - Mean of the values of an array at labels
+   median
    minimum
    minimum_position
    standard_deviation - Standard deviation of an n-D image array
@@ -96,10 +89,8 @@ Measurements :mod:`scipy.ndimage.measurements`
    variance - Variance of the values of an n-D image array
    watershed_ift
 
-Morphology :mod:`scipy.ndimage.morphology`
-==========================================
-
-.. module:: scipy.ndimage.morphology
+Morphology
+==========
 
 .. autosummary::
    :toctree: generated/
@@ -127,8 +118,6 @@ Morphology :mod:`scipy.ndimage.morphology`
 
 Utility
 =======
-
-.. currentmodule:: scipy.ndimage
 
 .. autosummary::
    :toctree: generated/
