@@ -368,7 +368,7 @@ def pearsonr(x,y):
         prob = 0.
     else:
         t_squared = (df / ((1.0 - r) * (1.0 + r))) * r * r
-        prob = betai(0.5*df, 0.5, df/(df + t_squared))
+        prob = _betai(0.5*df, 0.5, df/(df + t_squared))
 
     return r, prob
 
@@ -452,7 +452,7 @@ def spearmanr(x, y, use_ties=True):
     if t is masked:
         prob = 0.
     else:
-        prob = betai(0.5*df, 0.5, df/(df + t * t))
+        prob = _betai(0.5*df, 0.5, df/(df + t * t))
 
     SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
     return SpearmanrResult(rho, prob)
@@ -624,7 +624,7 @@ def pointbiserialr(x, y):
 
     df = n-2
     t = rpb*ma.sqrt(df/(1.0-rpb**2))
-    prob = betai(0.5*df, 0.5, df/(df+t*t))
+    prob = _betai(0.5*df, 0.5, df/(df+t*t))
 
     PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
                                                                'pvalue'))
@@ -719,7 +719,7 @@ def ttest_1samp(a, popmean, axis=0):
     df = n - 1.
     svar = ((n - 1) * v) / df
     t = (x - popmean) / ma.sqrt(svar / n)
-    prob = betai(0.5*df, 0.5, df/(df + t*t))
+    prob = _betai(0.5*df, 0.5, df/(df + t*t))
 
     Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
     return Ttest_1sampResult(t, prob)
@@ -741,7 +741,7 @@ def ttest_ind(a, b, axis=0):
     svar = ((n1-1)*v1+(n2-1)*v2) / df
     t = (x1-x2)/ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # n-D computation here!
     t = ma.filled(t, 1)           # replace NaN t-values with 1.0
-    probs = betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
+    probs = _betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
 
     return Ttest_indResult(t, probs.squeeze())
 ttest_ind.__doc__ = stats.ttest_ind.__doc__
@@ -762,7 +762,7 @@ def ttest_rel(a, b, axis=0):
     denom = ma.sqrt((n*ma.add.reduce(d*d,axis) - ma.add.reduce(d,axis)**2) / df)
     t = ma.add.reduce(d, axis) / denom
     t = ma.filled(t, 1)
-    probs = betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
+    probs = _betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
 
     return Ttest_relResult(t, probs)
 ttest_rel.__doc__ = stats.ttest_rel.__doc__
@@ -840,7 +840,7 @@ def kruskalwallis(*args):
 
     H /= T
     df = len(output) - 1
-    prob = special.chdtrc(df, H)
+    prob = stats.distributions.chi2.sf(H, df)
 
     KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
     return KruskalResult(H, prob)
@@ -1706,7 +1706,7 @@ def normaltest(a, axis=0):
     k2 = s*s + k*k
 
     NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
-    return NormaltestResult(k2, special.chdtrc(2, k2))
+    return NormaltestResult(k2, stats.distributions.chi2.sf(k2, 2))
 normaltest.__doc__ = stats.normaltest.__doc__
 
 
@@ -2110,4 +2110,5 @@ def friedmanchisquare(*args):
 
     FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                          ('statistic', 'pvalue'))
-    return FriedmanchisquareResult(chisq, special.chdtrc(k-1, chisq))
+    return FriedmanchisquareResult(chisq,
+                                   stats.distributions.chi2.sf(chisq, k-1))

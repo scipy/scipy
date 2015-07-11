@@ -138,8 +138,8 @@ Probability Calculations
 .. autosummary::
    :toctree: generated/
 
-    chisqprob
-    betai
+   chisqprob
+   betai
 
 ANOVA Functions
 ---------------
@@ -1449,7 +1449,7 @@ def normaltest(a, axis=0):
     k2 = s*s + k*k
 
     NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
-    return NormaltestResult(k2, special.chdtrc(2, k2))
+    return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
 def jarque_bera(x):
@@ -2703,7 +2703,7 @@ def pearsonr(x, y):
         prob = 0.0
     else:
         t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
-        prob = betai(0.5*df, 0.5, df/(df+t_squared))
+        prob = _betai(0.5*df, 0.5, df/(df+t_squared))
 
     return r, prob
 
@@ -3054,7 +3054,7 @@ def pointbiserialr(x, y):
     # fixme: see comment about TINY in pearsonr()
     TINY = 1e-20
     t = rpb * np.sqrt(df / ((1.0 - rpb + TINY)*(1.0 + rpb + TINY)))
-    prob = betai(0.5*df, 0.5, df/(df + t*t))
+    prob = _betai(0.5*df, 0.5, df/(df + t*t))
 
     PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
                                                                'pvalue'))
@@ -4175,7 +4175,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     num_obs = _count(terms, axis=axis)
     ddof = asarray(ddof)
-    p = special.chdtrc(num_obs - 1 - ddof, stat)
+    p = distributions.chi2.sf(stat, num_obs - 1 - ddof)
 
     Power_divergenceResult = namedtuple('Power_divergenceResult', ('statistic',
                                                                    'pvalue'))
@@ -4552,7 +4552,7 @@ def kruskal(*args):
     h /= ties
 
     KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
-    return KruskalResult(h, special.chdtrc(df, h))
+    return KruskalResult(h, distributions.chi2.sf(h, df))
 
 
 def friedmanchisquare(*args):
@@ -4619,7 +4619,7 @@ def friedmanchisquare(*args):
 
     FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                          ('statistic', 'pvalue'))
-    return FriedmanchisquareResult(chisq, special.chdtrc(k - 1, chisq))
+    return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
@@ -4710,7 +4710,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
 
 @np.deprecate(message="stats.chisqprob is deprecated in scipy 0.17.0; "
-              "use special.chdtrc instead.")
+              "use stats.distributions.chi2.sf instead.")
 def chisqprob(chisq, df):
     """
     Probability value (1-tail) for the Chi^2 probability distribution.
@@ -4730,7 +4730,7 @@ def chisqprob(chisq, df):
         distribution with degrees of freedom `df`.
 
     """
-    return special.chdtrc(df, chisq)
+    return distributions.chi2.sf(chisq, df)
 
 
 @np.deprecate(message="stats.betai is deprecated in scipy 0.17.0; "
