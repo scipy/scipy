@@ -39,38 +39,64 @@ from argparse import ArgumentParser, REMAINDER
 
 import numpy as np
 
-
 BASE_MODULE = "scipy"
 
 PUBLIC_SUBMODULES = [
-    'linalg',
     'cluster',
-    'cluster.vq',
     'cluster.hierarchy',
+    'cluster.vq',
+    'constants',
     'fftpack',
-    'interpolate',
+    'fftpack.convolve',
     'integrate',
+    'interpolate',
     'io',
+    'io.arff',
+    'io.wavfile',
+    'linalg',
+    'linalg.blas',
+    'linalg.lapack',
+    'linalg.interpolative',
     'misc',
     'ndimage',
     'odr',
     'optimize',
     'signal',
-    'spatial',
     'sparse',
     'sparse.csgraph',
     'sparse.linalg',
+    'spatial',
+    'spatial.distance',
+    'special',
     'stats',
     'stats.mstats',
 ]
 
+# Docs for these modules are included in the parent module
+OTHER_MODULE_DOCS = {
+    'fftpack.convolve': 'fftpack',
+    'io.wavfile': 'io',
+    'io.arff': 'io',
+}
+
 # these names are known to fail doctesting and we like to keep it that way
 # e.g. sometimes pseudocode is acceptable etc
 DOCTEST_SKIPLIST = set([
-    'scipy.integrate.quad',
-    'scipy.interpolate.UnivariateSpline',
-    'scipy.stats.levy_stable'
+    'scipy.stats.kstwobign', # inaccurate cdf or ppf
+    'scipy.stats.levy_stable',
+    'scipy.special.sinc', # comes from numpy
+    'scipy.misc.who', # comes from numpy
 ])
+
+# these names are not required to be present in ALL despite being in
+# autosummary:: listing
+REFGUIDE_ALL_SKIPLIST = [
+    r'scipy\.sparse\.csgraph',
+    r'scipy\.sparse\.linalg',
+    r'scipy\.spatial\.distance',
+    r'scipy\.linalg\.blas\.[sdczi].*',
+    r'scipy\.linalg\.lapack\.[sdczi].*',
+]
 
 
 def short_path(path, cwd=None):
@@ -88,20 +114,42 @@ def short_path(path, cwd=None):
     return relpath
 
 
-def find_funcnames(module):
-    funcnames = set()
-    # 3 spaces followed by function name, and maybe some spaces, some
-    # dashes, and an explanation; only function names listed in
-    # refguide are formatted like this (mostly, there may be some false
-    # positives)
-    pattern = re.compile("^\s\s\s([a-z_0-9A-Z]+)(\s+-+.*)?$")
-    for line in module.__doc__.splitlines():
-        res = re.search(pattern, line)
-        if res is not None:
-            funcname = res.groups()[0]
-            funcnames.add(funcname)
+def find_names(module, names_dict):
+    # Refguide entries:
+    #
+    # - 3 spaces followed by function name, and maybe some spaces, some
+    #   dashes, and an explanation; only function names listed in
+    #   refguide are formatted like this (mostly, there may be some false
+    #   positives)
+    #
+    # - special directives, such as data and function
+    #
+    # - (scipy.constants only): quoted list
+    #
+    patterns = [
+        r"^\s\s\s([a-z_0-9A-Z]+)(\s+-+.*)?$",
+        r"^\.\. (?:data|function)::\s*([a-z_0-9A-Z]+)\s*$"
+    ]
 
-    return funcnames
+    if module.__name__ == 'scipy.constants':
+        patterns += ["^``([a-z_0-9A-Z]+)``"]
+
+    patterns = [re.compile(pattern) for pattern in patterns]
+    module_name = module.__name__
+
+    for line in module.__doc__.splitlines():
+        res = re.search(r"^\s*\.\. (?:currentmodule|module):: ([a-z0-9A-Z_.]+)\s*$", line)
+        if res:
+            module_name = res.group(1)
+            continue
+
+        for pattern in patterns:
+            res = re.match(pattern, line)
+            if res is not None:
+                name = res.group(1)
+                entry = '.'.join([module_name, name])
+                names_dict.setdefault(module_name, set()).add(name)
+                break
 
 
 def get_all_dict(module):
@@ -111,7 +159,7 @@ def get_all_dict(module):
     else:
         all_dict = copy.deepcopy(dir(module))
         all_dict = [name for name in all_dict
-                    if not name.startswith("__")]
+                    if not name.startswith("_")]
     for name in ['absolute_import', 'division', 'print_function']:
         try:
             all_dict.remove(name)
@@ -132,22 +180,31 @@ def get_all_dict(module):
         else:
             not_deprecated.append(name)
 
-    return not_deprecated, deprecated
+    others = set(dir(module)).difference(set(deprecated)).difference(set(not_deprecated))
+
+    return not_deprecated, deprecated, others
 
 
-def compare(all_dict, funcnames):
-    """Return sets of objects only in one of __all__, refguide."""
+def compare(all_dict, others, names, module_name):
+    """Return sets of objects only in __all__, refguide, or completely missing."""
     only_all = set()
     for name in all_dict:
-        if name not in funcnames:
+        if name not in names:
             only_all.add(name)
 
     only_ref = set()
-    for name in funcnames:
+    missing = set()
+    for name in names:
         if name not in all_dict:
-            only_ref.add(name)
+            for pat in REFGUIDE_ALL_SKIPLIST:
+                if re.match(pat, module_name + '.' + name):
+                    if name not in others:
+                        missing.add(name)
+                    break
+            else:
+                only_ref.add(name)
 
-    return only_all, only_ref
+    return only_all, only_ref, missing
 
 def is_deprecated(f):
     with warnings.catch_warnings(record=True) as w:
@@ -160,7 +217,7 @@ def is_deprecated(f):
             pass
         return False
 
-def report(all_dict, funcnames, deprecated, module_name):
+def report(all_dict, names, deprecated, others, module_name):
     """Print out a report for the module"""
 
     print("\n\n" + "=" * len(module_name))
@@ -168,33 +225,43 @@ def report(all_dict, funcnames, deprecated, module_name):
     print("=" * len(module_name) + "\n")
 
     num_all = len(all_dict)
-    num_ref = len(funcnames)
+    num_ref = len(names)
     print("Non-deprecated objects in __all__: %i" % num_all)
     print("Objects in refguide: %i" % num_ref)
 
-    only_all, only_ref = compare(all_dict, funcnames)
+    only_all, only_ref, missing = compare(all_dict, others, names, module_name)
     dep_in_ref = set(only_ref).intersection(deprecated)
     only_ref = set(only_ref).difference(deprecated)
-    if len(only_all) == len(only_ref) == 0:
+
+    if len(dep_in_ref) > 0:
+        print("")
+        print("Deprecated objects in refguide::\n")
+        for name in sorted(deprecated):
+            print("    " + name)
+
+    if len(only_all) == len(only_ref) == len(missing) == 0:
         print("\nNo missing or extraneous items!")
+        return True
     else:
         if len(only_all) > 0:
             print("")
-            print("Objects in %s.__all__ but not in refguide::\n" % module_name)
-            for name in only_all:
+            print("ERROR: objects in %s.__all__ but not in refguide::\n" % module_name)
+            for name in sorted(only_all):
                 print("    " + name)
 
         if len(only_ref) > 0:
             print("")
-            print("Objects in refguide but not in %s.__all__::\n" % module_name)
-            for name in only_ref:
+            print("ERROR: objects in refguide but not in %s.__all__::\n" % module_name)
+            for name in sorted(only_ref):
                 print("    " + name)
 
-        if len(dep_in_ref) > 0:
+        if len(missing) > 0:
             print("")
-            print("Deprecated objects in refguide::\n")
-            for name in deprecated:
+            print("ERROR: missing objects::\n")
+            for name in sorted(missing):
                 print("    " + name)
+
+        return False
 
 
 def check_docstrings(module, verbose):
@@ -228,14 +295,11 @@ def check_docstrings(module, verbose):
 
 
     def format_item_header(name):
-        return "\n\n" + name + "\n" + "-" * len(name)
+        msg = "ERROR: " + name
+        return "\n\n" + msg + "\n" + "-" * len(msg)
 
 
     class DTRunner(doctest.DocTestRunner):
-        stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
-                     'set_title', 'imshow', 'plt.show', 'ax.axis', 'plt.plot(',
-                     '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim'}
-        rndm_markers = {'# random', '# Random', '#random', '#Random'}
         DIVIDER = "\n"
 
         def __init__(self, item_name, checker=None, verbose=None, optionflags=0):
@@ -250,6 +314,10 @@ def check_docstrings(module, verbose):
                     out("\n")
                 self._item_name = None
 
+        def report_start(self, out, test, example):
+            self._checker._source = example.source
+            return doctest.DocTestRunner.report_start(self, out, test, example)
+
         def report_success(self, out, test, example, got):
             if self._verbose:
                 self._report_item_name(out, new_line=True)
@@ -261,27 +329,33 @@ def check_docstrings(module, verbose):
                 self, out, test, example, exc_info)
 
         def report_failure(self, out, test, example, got):
-            if (any(word in example.source for word in self.stopwords) or
-                any(word in example.want for word in self.rndm_markers)):
-                # do not complain if output does not match
-                pass
-            else:
-                self._report_item_name(out)
-                return doctest.DocTestRunner.report_failure(self, out, test,
-                                                            example, got)
+            self._report_item_name(out)
+            return doctest.DocTestRunner.report_failure(self, out, test,
+                                                        example, got)
 
     class Checker(doctest.OutputChecker):
         obj_pattern = re.compile('at 0x[0-9a-fA-F]+>')
         vanilla = doctest.OutputChecker()
+        rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
+        stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
+                     'set_title', 'imshow', 'plt.show', 'ax.axis', 'plt.plot(',
+                     '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim'}
 
         def __init__(self, parse_namedtuples=True, atol=1e-8, rtol=1e-2):
             self.parse_namedtuples = parse_namedtuples
             self.atol, self.rtol = atol, rtol
 
         def check_output(self, want, got, optionflags):
-
             # cut it short if they are equal
             if want == got:
+                return True
+
+            # skip stopwords in source
+            if any(word in self._source for word in self.stopwords):
+                return True
+
+            # skip random stuff
+            if any(word in want for word in self.rndm_markers):
                 return True
 
             # skip function/object addresses
@@ -383,6 +457,9 @@ def check_docstrings(module, verbose):
         try:
             os.chdir(tmpdir)
 
+            # try to ensure random seed is NOT reproducible
+            np.random.seed(None)
+
             for t in tests:
                 t.filename = short_path(t.filename, cwd)
                 fails, successes = runner.run(t)
@@ -401,6 +478,8 @@ def check_docstrings(module, verbose):
         # Print at least a success message if no other output was produced
         print("\nAll doctests pass!")
 
+    return all_success
+
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
@@ -410,17 +489,45 @@ def main(argv):
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
 
-    for submodule_name in args.module_names:
+    modules = []
+    names_dict = {}
+
+    os.environ['SCIPY_PIL_IMAGE_VIEWER'] = 'true'
+
+    module_names = list(args.module_names)
+    for name in list(module_names):
+        if name in OTHER_MODULE_DOCS:
+            name = OTHER_MODULE_DOCS[name]
+            if name not in module_names:
+                module_names.append(name)
+
+    for submodule_name in module_names:
         module_name = BASE_MODULE + '.' + submodule_name
         __import__(module_name)
         module = sys.modules[module_name]
 
-        funcnames = find_funcnames(module)
-        all_dict, deprecated = get_all_dict(module)
-        report(all_dict, funcnames, deprecated, module_name)
+        if submodule_name not in OTHER_MODULE_DOCS:
+            find_names(module, names_dict)
+
+        if submodule_name in args.module_names:
+            modules.append(module)
+
+    success = True
+
+    for module in modules:
+        all_dict, deprecated, others = get_all_dict(module)
+        ok = report(all_dict, names_dict.get(module.__name__, set()),
+                    deprecated, others, module.__name__)
+        success = success and ok
 
         if args.doctests:
-            check_docstrings(module, args.verbose)
+            ok = check_docstrings(module, args.verbose)
+            success = success and ok
+
+    if success:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 
 if __name__ == '__main__':
