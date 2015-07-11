@@ -70,6 +70,26 @@ is a relatively new package, some API changes are still possible.
    winsorize
    zmap
    zscore
+   compare_medians_ms
+   gmean
+   hdmedian
+   hdquantiles
+   hdquantiles_sd
+   hmean
+   idealfourths
+   kruskal
+   ks_2samp
+   median_cihs
+   meppf
+   mjci
+   mquantiles_cimj
+   rsh
+   sen_seasonal_slopes
+   trimmed_mean
+   trimmed_mean_ci
+   trimmed_std
+   trimmed_var
+   ttest_1samp
 
 """
 from __future__ import division, print_function, absolute_import
