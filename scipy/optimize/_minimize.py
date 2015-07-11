@@ -299,9 +299,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     A simple application of the *Nelder-Mead* method is:
 
     >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-    >>> res = minimize(rosen, x0, method='Nelder-Mead')
+    >>> res = minimize(rosen, x0, method='Nelder-Mead', tol=1e-6)
     >>> res.x
-    [ 1.  1.  1.  1.  1.]
+    array([ 1.,  1.,  1.,  1.,  1.])
 
     Now using the *BFGS* algorithm, using the first derivative and a few
     options:
@@ -314,15 +314,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              Function evaluations: 64
              Gradient evaluations: 64
     >>> res.x
-    array([ 1.  1.  1.  1.  1.])
+    array([ 1.,  1.,  1.,  1.,  1.])
     >>> print(res.message)
     Optimization terminated successfully.
     >>> res.hess_inv
-    [[ 0.00749589  0.01255155  0.02396251  0.04750988  0.09495377]
-     [ 0.01255155  0.02510441  0.04794055  0.09502834  0.18996269]
-     [ 0.02396251  0.04794055  0.09631614  0.19092151  0.38165151]
-     [ 0.04750988  0.09502834  0.19092151  0.38341252  0.7664427 ]
-     [ 0.09495377  0.18996269  0.38165151  0.7664427   1.53713523]]
+    array([[ 0.00749589,  0.01255155,  0.02396251,  0.04750988,  0.09495377],  # may vary
+           [ 0.01255155,  0.02510441,  0.04794055,  0.09502834,  0.18996269],
+           [ 0.02396251,  0.04794055,  0.09631614,  0.19092151,  0.38165151],
+           [ 0.04750988,  0.09502834,  0.19092151,  0.38341252,  0.7664427 ],
+           [ 0.09495377,  0.18996269,  0.38165151,  0.7664427,   1.53713523]])
 
 
     Next, consider a minimization problem with several constraints (namely

@@ -131,11 +131,6 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
         ...
         >>> from scipy.optimize import fmin_cobyla
         >>> fmin_cobyla(objective, [0.0, 0.1], [constr1, constr2], rhoend=1e-7)
-
-           Normal return from subroutine COBYLA
-
-           NFVALS =   64   F =-5.000000E-01    MAXCV = 1.998401E-14
-           X =-7.071069E-01   7.071067E-01
         array([-0.70710685,  0.70710671])
 
     The exact solution is (-sqrt(2)/2, sqrt(2)/2).
