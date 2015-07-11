@@ -177,7 +177,8 @@ def main(argv):
                        '--cover-html-dir='+dst_dir]
 
     if args.refguide_check:
-        cmd = [os.path.join('tools', 'refguide_check.py'), '--doctests']
+        cmd = [os.path.join(ROOT_DIR, 'tools', 'refguide_check.py'),
+               '--doctests']
         if args.submodule:
             cmd += [args.submodule]
         os.execv(sys.executable, [sys.executable] + cmd)
