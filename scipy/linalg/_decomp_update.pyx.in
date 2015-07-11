@@ -32,6 +32,8 @@ Routines for updating QR decompositions
 #    Updating the QR Decomposition. ACM Trans. Math. Softw. 16, 3693-77 (1990).
 # 
 
+__all__ = ['qr_delete', 'qr_insert', 'qr_update']
+
 {{py: 
 
 TCODES = ['cnp.NPY_FLOAT', 'cnp.NPY_DOUBLE', 'cnp.NPY_CFLOAT', 'cnp.NPY_CDOUBLE']
