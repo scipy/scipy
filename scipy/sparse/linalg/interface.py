@@ -120,7 +120,7 @@ class LinearOperator(object):
     ...
     >>> A = LinearOperator((2,2), matvec=mv)
     >>> A
-    <2x2 LinearOperator with unspecified dtype>
+    <2x2 _CustomLinearOperator with dtype=float64>
     >>> A.matvec(np.ones(2))
     array([ 2.,  3.])
     >>> A * np.ones(2)
@@ -648,10 +648,10 @@ def aslinearoperator(A):
 
     Examples
     --------
-    >>> from scipy import matrix
-    >>> M = matrix( [[1,2,3],[4,5,6]], dtype='int32' )
-    >>> aslinearoperator( M )
-    <2x3 LinearOperator with dtype=int32>
+    >>> from scipy.sparse.linalg import aslinearoperator
+    >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
+    >>> aslinearoperator(M)
+    <2x3 MatrixLinearOperator with dtype=int32>
 
     """
     if isinstance(A, LinearOperator):
