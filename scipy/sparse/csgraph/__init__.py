@@ -27,6 +27,18 @@ Contents
    minimum_spanning_tree -- construct the minimum spanning tree of a graph
    reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
    maximum_bipartite_matching -- compute permutation to make diagonal zero free
+   NegativeCycleError
+
+.. autosummary::
+   :toctree: generated/
+
+   construct_dist_matrix
+   csgraph_from_dense
+   csgraph_from_masked
+   csgraph_masked_from_dense
+   csgraph_to_dense
+   csgraph_to_masked
+   reconstruct_path
 
 Graph Representations
 =====================
