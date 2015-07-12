@@ -1,10 +1,30 @@
 from __future__ import division
 
+from warnings import warn
+
 import numpy as np
 from numpy.linalg import lstsq, norm
-from scipy.optimize import OptimizeResult
 
+from . import OptimizeResult
+from ..sparse import issparse
+from ..sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from ._lsq_bounds import step_size_to_bound, in_bounds
+
+
+def lsmr_linear_operator(Jop, active_set):
+    m, n = Jop.shape
+
+    def matvec(x):
+        x_free = x.copy()
+        x_free[active_set] = 0
+        return Jop.matvec(x)
+
+    def rmatvec(x):
+        r = Jop.rmatvec(x)
+        r[active_set] = 0
+        return r
+
+    return LinearOperator((m, n), matvec=matvec, rmatvec=rmatvec, dtype=float)
 
 
 def find_intersection(x, tr_bounds, lb, ub):
@@ -102,7 +122,8 @@ def constrained_cauchy_step(x, cauchy_step, tr_bounds, l, u):
     return step_size * cauchy_step, bound_hits, tr_hit
 
 
-def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
+def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
+           tr_solver, tr_options):
     """Minimize the sum of squares of nonlinear functions subject to bounds on
     independent variables by dogleg method applied to a rectangular trust
     region.
@@ -138,10 +159,15 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
 
     J = jac(x0, f)
     njev = 1
-
-    if f.shape[0] != J.shape[0]:
-        raise RuntimeError("Inconsistent dimensions between the returns of "
-                           "`fun` and `jac` on the first iteration.")
+    if tr_solver is None:
+        if issparse(J):
+            tr_solver = 'lsmr'
+        else:
+            tr_solver = 'exact'
+    elif tr_solver == 'exact' and issparse(J):
+        warn("Sparse Jacobian will be converted to dense for tr_solver=exact, "
+             "consider using 'lsmr' solver or return dense Jacobian.")
+        J = J.toarray()
 
     if scaling == 'jac':
         scale = np.sum(J**2, axis=0)**0.5
@@ -174,13 +200,7 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
         active_set = on_bound * g < 0
         free_set = ~active_set
 
-        J_free = J[:, free_set]
         g_free = g[free_set]
-        x_free = x[free_set]
-        l_free = lb[free_set]
-        u_free = ub[free_set]
-        scale_free = scale[free_set]
-
         if np.all(active_set):
             g_norm = 0.0
             termination_status = 1
@@ -195,9 +215,22 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
                 active_mask=on_bound, nfev=nfev, njev=njev,
                 status=termination_status, x_covariance=None)
 
+        x_free = x[free_set]
+        l_free = lb[free_set]
+        u_free = ub[free_set]
+        scale_free = scale[free_set]
+
         # Compute (Gauss-)Newton and Cauchy steps
-        newton_step = lstsq(J_free, -f)[0]
-        Jg = J_free.dot(g_free)
+        if tr_solver == 'exact':
+            J_free = J[:, free_set]
+            newton_step = lstsq(J_free, -f)[0]
+            Jg = J_free.dot(g_free)
+        elif tr_solver == 'lsmr':
+            Jop = aslinearoperator(J)
+            lsmr_op = lsmr_linear_operator(Jop, active_set)
+            newton_step = -lsmr(lsmr_op, f, **tr_options)[0][free_set]
+            g[active_set] = 0
+            Jg = Jop.matvec(g)
         cauchy_step = -np.dot(g_free, g_free) / np.dot(Jg, Jg) * g_free
 
         actual_reduction = -1.0
@@ -207,7 +240,14 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
             step_free, on_bound_free, tr_hit = dogleg_step(
                 x_free, cauchy_step, newton_step, tr_bounds, l_free, u_free)
 
-            Js = J_free.dot(step_free)
+            step.fill(0.0)
+            step[free_set] = step_free
+
+            if tr_solver == 'exact':
+                Js = J_free.dot(step_free)
+            elif tr_solver == 'lsmr':
+                Js = Jop.matvec(step)
+
             predicted_reduction = -np.dot(Js, Js) - 2 * np.dot(Js, f)
 
             # In (nearly) rank deficient case Newton (and thus dogleg) step
@@ -215,13 +255,18 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
             if predicted_reduction <= 0:
                 step_free, on_bound_free, tr_hit = constrained_cauchy_step(
                     x_free, cauchy_step, tr_bounds, l_free, u_free)
-                Js = J_free.dot(step_free)
+
+                step.fill(0.0)
+                step[free_set] = step_free
+
+                if tr_solver == 'exact':
+                    Js = J_free.dot(step_free)
+                elif tr_solver == 'lsmr':
+                    Js = Jop.matvec(step)
+
                 predicted_reduction = -np.dot(Js, Js) - 2 * np.dot(Js, f)
 
-            step.fill(0.0)
-            step[free_set] = step_free
             x_new = x + step
-
             f_new = fun(x_new)
             nfev += 1
 
@@ -268,6 +313,8 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
 
             J = jac(x, f)
             njev += 1
+            if tr_solver == 'exact' and issparse(J):
+                J = J.toarray()
 
     return OptimizeResult(
         x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,

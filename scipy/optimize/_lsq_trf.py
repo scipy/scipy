@@ -2,14 +2,33 @@
 
 from __future__ import division
 
+from warnings import warn
+
 import numpy as np
 from numpy.linalg import norm
-from scipy.linalg import svd
+from scipy.linalg import svd, qr
+from scipy.sparse import issparse
+from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
 
 from .optimize import OptimizeResult
 from ._lsq_bounds import (step_size_to_bound, make_strictly_feasible,
                           find_active_constraints, scaling_vector)
-from ._lsq_trust_region import intersect_trust_region, solve_lsq_trust_region
+from ._lsq_trust_region import (
+    intersect_trust_region, solve_lsq_trust_region, solve_trust_region_2d)
+
+
+def lsq_linear_operator(Jop, diag_root):
+    m, n = Jop.shape
+
+    def matvec(x):
+        return np.hstack((Jop.matvec(x), diag_root * x))
+
+    def rmatvec(x):
+        x1 = x[:m]
+        x2 = x[m:]
+        return Jop.rmatvec(x1) + diag_root * x2
+
+    return LinearOperator((m + n, n), matvec=matvec, rmatvec=rmatvec)
 
 
 def minimize_quadratic(a, b, l, u):
@@ -170,7 +189,8 @@ def find_gradient_step(x, J_h, diag_h, g_h, d, Delta, l, u, theta):
     return -g_stride * g_h
 
 
-def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
+def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
+        tr_solver, tr_options):
     """Minimize the sum of squares of nonlinear functions subject to bounds on
     independent variables by Trust Region Reflective algorithm.
 
@@ -205,10 +225,15 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
 
     J = jac(x, f)
     njev = 1
-
-    if f.shape[0] != J.shape[0]:
-        raise RuntimeError("Inconsistent dimensions between the returns of "
-                           "`fun` and `jac` on the first iteration.")
+    if tr_solver is None:
+        if issparse(J):
+            tr_solver = 'lsmr'
+        else:
+            tr_solver = 'exact'
+    elif tr_solver == 'exact' and issparse(J):
+        warn("Sparse Jacobian will be converted to dense for tr_solver=exact, "
+             "consider using 'lsmr' solver or return dense Jacobian.")
+        J = J.toarray()
 
     g = J.T.dot(f)
     m, n = J.shape
@@ -224,8 +249,9 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
     if Delta == 0:
         Delta = 1.0
 
-    J_augmented = np.empty((m + n, n))
     f_augmented = np.zeros((m + n))
+    if tr_solver == 'exact':
+        J_augmented = np.empty((m + n, n))
 
     obj_value = np.dot(f, f)
     alpha = 0.0  # "Levenberg-Marquardt" parameter
@@ -257,20 +283,31 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
                 active_mask=active_mask, nfev=nfev, njev=njev,
                 status=termination_status, x_covariance=None)
 
-        # Jacobian in "hat" space.
-        J_h = J * d
+        # Right multiply J by diag(d), After this transformation Jacobian
+        # is in hat-space.
+        if issparse(J):
+            J.data *= d.take(J.indices, mode='clip')  # scikit-learn recipe.
+        else:
+            J *= d
 
-        # J_augmented is used to solve a trust-region subproblem with
-        # diagonal term diag_h.
-        J_augmented[:m] = J_h
-        J_augmented[m:] = np.diag(diag_h**0.5)
         f_augmented[:m] = f
+        if tr_solver == 'exact':
+            J_augmented[:m] = J
+            J_augmented[m:] = np.diag(diag_h**0.5)
+            U, s, V = svd(J_augmented, full_matrices=False)
+            V = V.T
+            uf = U.T.dot(f_augmented)
+        elif tr_solver == 'lsmr':
+            Jop = aslinearoperator(J)
+            lsmr_op = lsq_linear_operator(Jop, diag_h**0.5)
+            gn_h = lsmr(lsmr_op, f_augmented, **tr_options)[0]
+            S = np.vstack((g_h, gn_h)).T
+            S, _ = qr(S, mode='economic')
+            JS = J.dot(S)
+            B_S = np.dot(JS.T, JS) + np.dot(S.T * diag_h, S)
+            g_S = S.T.dot(g_h)
 
-        U, s, V = svd(J_augmented, full_matrices=False)
-        V = V.T
-        uf = U.T.dot(f_augmented)
-
-        # theta controls step back size from the bounds.
+        # theta controls step back step ratio from the bounds.
         theta = max(0.995, 1 - g_norm)
         actual_reduction = -1
 
@@ -278,8 +315,12 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
         # c - minimizer along the scaled gradient, _h means the variable
         # is computed in "hat" space.
         while actual_reduction <= 0 and nfev < max_nfev:
-            p_h, alpha, n_iter = solve_lsq_trust_region(
-                n, m, uf, s, V, Delta, initial_alpha=alpha)
+            if tr_solver == 'exact':
+                p_h, alpha, n_iter = solve_lsq_trust_region(
+                    n, m, uf, s, V, Delta, initial_alpha=alpha)
+            elif tr_solver == 'lsmr':
+                p_S, _ = solve_trust_region_2d(B_S, g_S, Delta)
+                p_h = S.dot(p_S)
             p = d * p_h
 
             to_bound, _ = step_size_to_bound(x, p, lb, ub)
@@ -288,17 +329,17 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
                 p_h *= min(theta * to_bound, 1)
                 steps_h = np.atleast_2d(p_h)
             else:  # Otherwise consider a reflected and gradient steps.
-                p_h, r_h = find_reflected_step(x, J_h, diag_h, g_h, p, p_h,
-                                               d, Delta, lb, ub, theta)
-                c_h = find_gradient_step(x, J_h, diag_h, g_h,
-                                         d, Delta, lb, ub, theta)
+                p_h, r_h = find_reflected_step(
+                    x, J, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
+                c_h = find_gradient_step(
+                    x, J, diag_h, g_h, d, Delta, lb, ub, theta)
                 steps_h = np.array([p_h, r_h, c_h])
 
-            qp_values = evaluate_quadratic_function(J_h, diag_h, g_h, steps_h)
+            qp_values = evaluate_quadratic_function(J, diag_h, g_h, steps_h)
             min_index = np.argmin(qp_values)
             step_h = steps_h[min_index]
 
-            # qp-values are negative, also need to double it
+            # qp_values are negative, also need to double it.
             predicted_reduction = -2 * qp_values[min_index]
 
             step = d * step_h
@@ -347,6 +388,12 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
 
             J = jac(x, f)
             njev += 1
+            if tr_solver == 'exact' and issparse(J):
+                J = J.toarray()
+        elif nfev == max_nfev:  # Recompute J if algorithm is terminating.
+            J = jac(x, f)
+            if tr_solver == 'exact' and issparse(J):  # For consistency.
+                J = J.toarray()
 
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
     return OptimizeResult(

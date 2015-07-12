@@ -7,7 +7,8 @@ from numpy.linalg import norm
 
 from .minpack import leastsq
 from .optimize import OptimizeResult
-from ._numdiff import approx_derivative
+from ._numdiff import approx_derivative, group_columns
+from ..sparse import issparse, csr_matrix, csc_matrix
 
 from ._lsq_bounds import in_bounds, prepare_bounds
 from ._lsq_trf import trf
@@ -123,10 +124,11 @@ def check_scaling(scaling, x0):
     return scaling
 
 
-def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
-                  method='trf', ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5,
-                  max_nfev=None, scaling=1.0, diff_step=None,
-                  args=(), kwargs={}, options={}):
+def least_squares(
+        fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
+        ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, max_nfev=None,
+        scaling=1.0, diff_step=None, tr_solver=None, tr_options={},
+        jac_sparsity=None, args=(), kwargs={}, options={}):
     """Minimize the sum of squares of nonlinear functions subject to bounds on
     independent variables.
 
@@ -203,6 +205,32 @@ def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
         The actual step is computed as ``x * diff_step``. If None (default),
         `diff_step` is assigned to a conventional "optimal" power of machine
         epsilon depending on a finite difference approximation method [NR]_.
+    tr_solver : {None, 'exact', 'lsmr'}, optional
+        Method for solving trust-region subproblems, relevant only for 'trf'
+        and 'dogbox' methods.
+
+            * 'exact' is suitable for problems with dense Jacobian matrices.
+              It requires work comparable to a single SVD of Jacobian per
+              iteration.
+            * 'lsmr' is suitable for problems with sparse and large Jacobian
+              matrices. It uses iterative ``scipy.sparse.linalg.lsmr``
+              procedure for finding a linear least-squares solution and
+              requires only matrix-vector product evaluations.
+
+        If None (default) the solver is chosen based on type of Jacobian
+        returned on the first iteration.
+    tr_options : dict, optional
+        Keyword options passed to trust-region solver. Currently only
+        ``tr_solver='lsmr'`` supports options, which are described in
+        documentation of ``scipy.sparse.linalg.lsmr``.
+    jac_sparsity : {None, array_like, sparse matrix}, optional
+        Defines Jacobian sparsity structure for finite differencing (relevant
+        when `jac` is '2-point' or '3-point'). Provide this parameter to
+        greatly speed up finite difference Jacobian estimation, if it's
+        significantly sparse [Curtis]_. Should be array_like or sparse matrix
+        with shape (m, n). A zero element means that a corresponding element
+        in Jacobian is identically zero. Forces `tr_solver` to `lsmr` if it
+        wasn't set. If None (default) then dense differencing will be used.
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)`` and the same for
@@ -301,7 +329,10 @@ def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
     References
     ----------
     .. [NR] William H. Press et. al. "Numerical Recipes. The Art of Scientific
-            Computing. 3rd edition", sec. 5.7
+            Computing. 3rd edition", Sec. 5.7.
+    .. [Curtis] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
+                sparse Jacobian matrices", Journal of the Institute of
+                Mathematics and its Applications, 13 (1974), pp. 117-120.
     .. [JJMore] More, J. J., "The Levenberg-Marquardt Algorithm: Implementation
                 and Theory," Numerical Analysis, ed. G. A. Watson, Lecture Notes
                 in Mathematics 630, Springer Verlag, pp. 105-116, 1977.
@@ -318,6 +349,9 @@ def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
     """
     if method not in ['trf', 'dogbox', 'lm']:
         raise ValueError("`method` must be 'trf', 'dogbox' or 'lm'.")
+
+    if tr_solver not in [None, 'exact', 'lsmr']:
+        raise ValueError("'tr_solver' must be None, 'exact' or 'lsmr'.")
 
     if len(bounds) != 2:
         raise ValueError("`bounds` must contain 2 elements.")
@@ -365,28 +399,42 @@ def least_squares(fun, x0, jac='2-point', bounds=(-np.inf, np.inf),
         return f
 
     if jac in ['2-point', '3-point']:
+        if jac_sparsity is not None:
+            structure = csc_matrix(jac_sparsity)
+            groups = group_columns(structure)
+            sparsity = (structure, groups)
+        else:
+            sparsity = None
+
         def jac_wrapped(x, f):
             J = approx_derivative(
-                fun, x, rel_step=diff_step, method=jac, f0=f,
-                bounds=bounds, args=args, kwargs=kwargs)
-            J = np.atleast_2d(J)
-            if J.ndim > 2:
-                raise RuntimeError("`jac` must return at most 2-d array_like.")
+                fun, x, rel_step=diff_step, method=jac, f0=f, bounds=bounds,
+                args=args, kwargs=kwargs, sparsity=sparsity)
+            if not issparse(J):
+                J = np.atleast_2d(J)
             return J
     else:
         def jac_wrapped(x, f):
-            J = np.atleast_2d(jac(x, *args, **kwargs))
-            if J.ndim > 2:
-                raise RuntimeError("`jac` must return at most 2-d array_like.")
+            J = jac(x, *args, **kwargs)
+            if issparse(J):
+                J = csr_matrix(J)
+            else:
+                J = np.atleast_2d(J)
+                if J.ndim != 2:
+                    raise RuntimeError("`jac` must return at most 2-d "
+                                       "array_like or sparse matrix.")
+            if f.shape[0] != J.shape[0]:
+                raise RuntimeError("Inconsistent dimensions between the "
+                                   "returns of `fun` and `jac`.")
             return J
 
     if method == 'trf':
-        result = trf(fun_wrapped, jac_wrapped, x0, lb, ub,
-                     ftol, xtol, gtol, max_nfev, scaling, **options)
+        result = trf(fun_wrapped, jac_wrapped, x0, lb, ub, ftol, xtol, gtol,
+                     max_nfev, scaling, tr_solver, tr_options, **options)
 
     elif method == 'dogbox':
-        result = dogbox(fun_wrapped, jac_wrapped, x0, lb, ub,
-                        ftol, xtol, gtol, max_nfev, scaling, **options)
+        result = dogbox(fun_wrapped, jac_wrapped, x0, lb, ub, ftol, xtol, gtol,
+                        max_nfev, scaling, tr_solver, tr_options, **options)
 
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0
