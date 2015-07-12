@@ -32,12 +32,23 @@ import inspect
 import warnings
 import doctest
 import tempfile
+import io
+import docutils.core
+from docutils.parsers.rst import directives
 import shutil
 from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
-
 from argparse import ArgumentParser, REMAINDER
-
 import numpy as np
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
+from numpydoc.docscrape_sphinx import get_doc_object
+# Remove sphinx directives that don't run without Sphinx environment
+directives._directives.pop('versionadded', None)
+directives._directives.pop('moduleauthor', None)
+directives._directives.pop('sectionauthor', None)
+directives._directives.pop('codeauthor', None)
+directives._directives.pop('toctree', None)
+
 
 BASE_MODULE = "scipy"
 
@@ -264,6 +275,108 @@ def report(all_dict, names, deprecated, others, module_name):
         return False
 
 
+def validate_rst_syntax(text, name):
+    if text is None:
+        print("ERROR: %s: no documentation" % (name,))
+        return False
+
+    ok_unknown_items = set([
+        'mod', 'currentmodule', 'autosummary', 'data',
+        'obj', 'versionadded', 'module', 'class',
+        'ref', 'func', 'toctree', 'moduleauthor',
+        'sectionauthor', 'codeauthor',
+    ])
+
+    # Run through docutils
+    error_stream = io.StringIO()
+
+    def resolve(name, is_label=False):
+        return ("http://foo", name)
+
+    token = '<RST-VALIDATE-SYNTAX-CHECK>'
+
+    docutils.core.publish_doctree(
+        text, token,
+        settings_overrides = dict(halt_level=5,
+                                  traceback=True,
+                                  default_reference_context='title-reference',
+                                  default_role='emphasis',
+                                  link_base='',
+                                  resolve_name=resolve,
+                                  stylesheet_path='',
+                                  raw_enabled=0,
+                                  file_insertion_enabled=0,
+                                  warning_stream=error_stream))
+
+    # Print errors, disregarding unimportant ones
+    error_msg = error_stream.getvalue()
+    errors = error_msg.split(token)
+    has_errors = False
+
+    for error in errors:
+        lines = error.splitlines()
+        if not lines:
+            continue
+
+        m = re.match(r'.*Unknown (?:interpreted text role|directive type) "(.*)".*$', lines[0])
+        if m:
+            if m.group(1) in ok_unknown_items:
+                continue
+
+        print(name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip())
+        has_errors = True
+
+    if has_errors:
+        print("    " + "-"*72)
+        for lineno, line in enumerate(text.splitlines()):
+            print("    %-4d    %s" % (lineno, line))
+        print("    " + "-"*72 + "\n")
+
+    return not has_errors
+
+
+def check_rest(module, names):
+    """
+    Check reStructuredText formatting of docstrings
+    """
+
+    skip_types = (dict, str, unicode, float, int)
+    success = True
+
+    if module.__name__[6:] not in OTHER_MODULE_DOCS:
+        success = validate_rst_syntax(inspect.getdoc(module),
+                                      module.__name__)
+
+    for name in names:
+        full_name = module.__name__ + '.' + name
+        obj = getattr(module, name, None)
+
+        if obj is None:
+            print("ERROR: %s has no docstring" % (full_name,))
+            success = False
+            continue
+        elif isinstance(obj, skip_types):
+            continue
+
+        if inspect.ismodule(obj):
+            text = inspect.getdoc(obj)
+        else:
+            text = str(get_doc_object(obj))
+
+        try:
+            src_file = short_path(inspect.getsourcefile(obj))
+        except TypeError:
+            src_file = None
+
+        if src_file:
+            full_name = src_file + ':' + full_name
+
+        if not validate_rst_syntax(text, full_name):
+            success = False
+
+    return success
+
+
 def check_docstrings(module, verbose):
     """Check code in docstrings of the module's public symbols.
     """
@@ -382,7 +495,7 @@ def check_docstrings(module, verbose):
                     return False
                 # suppose that "want"  is a tuple, and "got" is smth like
                 # MoodResult(statistic=10, pvalue=0.1).
-                # Then convert the latter to the tuple (10, 0.1), 
+                # Then convert the latter to the tuple (10, 0.1),
                 # and then compare the tuples.
                 try:
                     num = len(a_want)
@@ -403,7 +516,7 @@ def check_docstrings(module, verbose):
                 return self._do_check(a_want, a_got)
             except Exception:
                 # heterog tuple, eg (1, np.array([1., 2.]))
-               try: 
+               try:
                     return all(self._do_check(w, g) for w, g in zip(a_want, a_got))
                except TypeError:
                     return False
@@ -516,8 +629,11 @@ def main(argv):
 
     for module in modules:
         all_dict, deprecated, others = get_all_dict(module)
-        ok = report(all_dict, names_dict.get(module.__name__, set()),
-                    deprecated, others, module.__name__)
+        names = names_dict.get(module.__name__, set())
+        ok = report(all_dict, names, deprecated, others, module.__name__)
+        success = success and ok
+
+        ok = check_rest(module, set(names).difference(deprecated))
         success = success and ok
 
         if args.doctests:
