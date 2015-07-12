@@ -305,7 +305,7 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
             predicted_reduction = -2 * qp_values[min_index]
 
             step = d * step_h
-            x_new = make_strictly_feasible(x + step, lb, ub)
+            x_new = make_strictly_feasible(x + step, lb, ub, rstep=0)
 
             f_new = fun(x_new)
             nfev += 1
