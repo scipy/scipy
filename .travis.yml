@@ -102,7 +102,7 @@ before_install:
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
-        travis_retry pip install matplotlib
+        travis_retry pip install matplotlib Sphinx
     fi
   - python -V
   - popd
