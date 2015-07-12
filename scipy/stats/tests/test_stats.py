@@ -22,6 +22,7 @@ from numpy import array, arange, float32, float64, power
 import numpy as np
 
 import scipy.stats as stats
+from scipy import special
 from common_tests import check_named_results
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -1777,7 +1778,8 @@ class TestPowerDivergence(object):
             assert_allclose(stat, expected_stat)
 
         ddof = np.asarray(ddof)
-        expected_p = stats.chisqprob(expected_stat, num_obs - 1 - ddof)
+        expected_p = stats.distributions.chi2.sf(expected_stat,
+                                                 num_obs - 1 - ddof)
         assert_allclose(p, expected_p)
 
     def test_basic(self):
@@ -1921,25 +1923,26 @@ def test_chisquare_masked_arrays():
     expected_g = np.array([2*(2*8*np.log(0.5) + 32*np.log(2.0)),
                            2*(3*np.log(0.75) + 5*np.log(1.25))])
 
+    chi2 = stats.distributions.chi2
+
     chisq, p = stats.chisquare(mobs)
     mat.assert_array_equal(chisq, expected_chisq)
-    mat.assert_array_almost_equal(p, stats.chisqprob(expected_chisq,
-                                                     mobs.count(axis=0) - 1))
+    mat.assert_array_almost_equal(p, chi2.sf(expected_chisq,
+                                             mobs.count(axis=0) - 1))
 
     g, p = stats.power_divergence(mobs, lambda_='log-likelihood')
     mat.assert_array_almost_equal(g, expected_g, decimal=15)
-    mat.assert_array_almost_equal(p, stats.chisqprob(expected_g,
-                                                     mobs.count(axis=0) - 1))
+    mat.assert_array_almost_equal(p, chi2.sf(expected_g,
+                                             mobs.count(axis=0) - 1))
 
     chisq, p = stats.chisquare(mobs.T, axis=1)
     mat.assert_array_equal(chisq, expected_chisq)
-    mat.assert_array_almost_equal(p,
-                                  stats.chisqprob(expected_chisq,
-                                                  mobs.T.count(axis=1) - 1))
+    mat.assert_array_almost_equal(p, chi2.sf(expected_chisq,
+                                             mobs.T.count(axis=1) - 1))
     g, p = stats.power_divergence(mobs.T, axis=1, lambda_="log-likelihood")
     mat.assert_array_almost_equal(g, expected_g, decimal=15)
-    mat.assert_array_almost_equal(p, stats.chisqprob(expected_g,
-                                                     mobs.count(axis=0) - 1))
+    mat.assert_array_almost_equal(p, chi2.sf(expected_g,
+                                             mobs.count(axis=0) - 1))
 
     obs1 = np.ma.array([3, 5, 6, 99, 10], mask=[0, 0, 0, 1, 0])
     exp1 = np.ma.array([2, 4, 8, 10, 99], mask=[0, 0, 0, 0, 1])
@@ -1954,7 +1957,7 @@ def test_chisquare_masked_arrays():
     assert_(isinstance(chisq, np.float64))
     assert_(isinstance(p, np.float64))
     assert_equal(chisq, 1.0)
-    assert_almost_equal(p, stats.chisqprob(1.0, 2))
+    assert_almost_equal(p, stats.distributions.chi2.sf(1.0, 2))
 
     # Empty arrays:
     # A data set with length 0 returns a masked scalar.
@@ -3246,20 +3249,20 @@ class TestKruskal(TestCase):
         y = [2]
         h, p = stats.kruskal(x, y)
         assert_equal(h, 1.0)
-        assert_approx_equal(p, stats.chisqprob(h, 1))
+        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
         h, p = stats.kruskal(np.array(x), np.array(y))
         assert_equal(h, 1.0)
-        assert_approx_equal(p, stats.chisqprob(h, 1))
+        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
 
     def test_basic(self):
         x = [1, 3, 5, 7, 9]
         y = [2, 4, 6, 8, 10]
         h, p = stats.kruskal(x, y)
         assert_approx_equal(h, 3./11, significant=10)
-        assert_approx_equal(p, stats.chisqprob(3./11, 1))
+        assert_approx_equal(p, stats.distributions.chi2.sf(3./11, 1))
         h, p = stats.kruskal(np.array(x), np.array(y))
         assert_approx_equal(h, 3./11, significant=10)
-        assert_approx_equal(p, stats.chisqprob(3./11, 1))
+        assert_approx_equal(p, stats.distributions.chi2.sf(3./11, 1))
 
     def test_simple_tie(self):
         x = [1]
@@ -3291,7 +3294,7 @@ class TestKruskal(TestCase):
         expected = h_uncorr / corr  # 7.0
         h, p = stats.kruskal(x, y, z)
         assert_approx_equal(h, expected)
-        assert_approx_equal(p, stats.chisqprob(h, 2))
+        assert_approx_equal(p, stats.distributions.chi2.sf(h, 2))
 
     def test_kruskal_result_attributes(self):
         x = [1, 3, 5, 7, 9]

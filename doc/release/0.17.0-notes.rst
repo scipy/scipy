@@ -40,6 +40,12 @@ are deprecated. These are related to ANOVA, for which ``scipy.stats`` provides
 quite limited functionality and these functions are not very useful standalone.
 See issues #660 and #650 for details.
 
+``scipy.stats.chisqprob`` is deprecated. This is an alias. ``stats.chi2.sf`` 
+should be used instead. 
+
+``scipy.stats.betai`` is deprecated. This is an alias for ``special.betainc`` 
+which should be used instead.
+
 Backwards incompatible changes
 ==============================
 

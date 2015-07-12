@@ -971,13 +971,16 @@ class TestCompareWithStats(TestCase):
         for i in range(10):
             a = np.random.rand() * 5.
             b = np.random.rand() * 200.
-            assert_equal(stats.betai(a, b, 0.), 0.)
-            assert_equal(stats.betai(a, b, 1.), 1.)
-            assert_equal(stats.mstats.betai(a, b, 0.), 0.)
-            assert_equal(stats.mstats.betai(a, b, 1.), 1.)
-            x = np.random.rand()
-            assert_almost_equal(stats.betai(a, b, x),
-                                stats.mstats.betai(a, b, x), decimal=13)
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', category=DeprecationWarning)
+                assert_equal(stats.betai(a, b, 0.), 0.)
+                assert_equal(stats.betai(a, b, 1.), 1.)
+                assert_equal(stats.mstats.betai(a, b, 0.), 0.)
+                assert_equal(stats.mstats.betai(a, b, 1.), 1.)
+                x = np.random.rand()
+                assert_almost_equal(stats.betai(a, b, x),
+                                    stats.mstats.betai(a, b, x), decimal=13)
 
     def test_zscore(self):
         for n in self.get_n():
