@@ -10,15 +10,16 @@ from scipy.linalg import cho_factor, cho_solve, LinAlgError
 
 
 def intersect_trust_region(x, s, Delta):
-    """Find the intersection of a line with a spherical trust region.
+    """Find the intersection of a line with a spherical bound of a trust
+    region.
 
-    The function just solves the quadratic equation with respect to t
+    This function just solves the quadratic equation with respect to t
     ||(x + s*t)||**2 = Delta**2.
 
     Returns
     -------
     t_neg, t_pos : tuple of float
-        The negative and positive roots.
+        Negative and positive roots.
 
     Raises
     ------
@@ -35,10 +36,13 @@ def intersect_trust_region(x, s, Delta):
     if c > 0:
         raise ValueError("`x` is not within the trust region.")
 
-    delta = np.sqrt(b*b - a*c)
-    q = -(b + copysign(delta, b))
+    d = np.sqrt(b*b - a*c)  # Root from one forth of the discriminant.
+
+    # Computations below avoid loss of significance, see "Numerical Recipes".
+    q = -(b + copysign(d, b))
     t1 = q / a
     t2 = c / q
+
     if t1 < t2:
         return t1, t2
     else:
@@ -60,7 +64,7 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
     MINPACK approach.
 
     This function implements a method described by J. J. More [1]_, but it
-    relies on SVD of Jacobian. Before running this function we compute:
+    relies on SVD of Jacobian. Before running this function compute:
     ``U, s, VT = svd(J, full_matrices=False)``.
 
     Parameters
@@ -82,19 +86,19 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
         iteration.
     rtol : float, optional
         Stopping tolerance for the root-finding procedure. Namely, the
-        solution p must satisfy ``abs(norm(p) - Delta) < rtol * Delta``.
+        solution p will satisfy ``abs(norm(p) - Delta) < rtol * Delta``.
     max_iter : int, optional
         Maximum allowed number of iterations for the root-finding procedure.
 
     Returns
     -------
-    p : array, shape (n,)
-        The solution of a trust-region problem
+    p : ndarray, shape (n,)
+        Found solution of a trust-region problem.
     alpha : float
         Positive value such that (J.T*J + alpha*I)*p = -J.T*f.
         Sometimes called Levenberg-Marquardt parameter.
     n_iter : int
-        The number of iterations made by root-finding procedure. Zero means
+        Number of iterations made by root-finding procedure. Zero means
         that Gauss-Newton step was selected as the solution.
 
     References
@@ -147,14 +151,15 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
             break
 
     p = -V.dot(suf / (s**2 + alpha))
-    if phi > 0:
-        p *= Delta / norm(p)
+    p *= Delta / norm(p)
 
     return p, alpha, it + 1
 
 
 def solve_trust_region_2d(B, g, Delta):
     """Solve a 2-dimensional general trust-region problem.
+
+    The solution is found
 
     Parameters
     ----------
@@ -181,9 +186,9 @@ def solve_trust_region_2d(B, g, Delta):
     except LinAlgError:
         pass
 
-    a = B[0, 0] * Delta ** 2
-    b = B[0, 1] * Delta ** 2
-    c = B[1, 1] * Delta ** 2
+    a = B[0, 0] * Delta**2
+    b = B[0, 1] * Delta**2
+    c = B[1, 1] * Delta**2
 
     d = g[0] * Delta
     f = g[1] * Delta

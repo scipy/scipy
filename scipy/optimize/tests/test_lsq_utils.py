@@ -1,9 +1,12 @@
 import numpy as np
-from numpy.testing import run_module_suite, assert_, assert_equal
+from numpy.testing import (run_module_suite, assert_, assert_equal,
+                           assert_allclose, assert_raises)
 
 from scipy.optimize._lsq_bounds import (
     prepare_bounds, in_bounds, step_size_to_bound, find_active_constraints,
     make_strictly_feasible, scaling_vector)
+from scipy.optimize._lsq_trust_region import intersect_trust_region
+
 
 
 class TestBounds(object):
@@ -126,6 +129,35 @@ class TestBounds(object):
         v, dv = scaling_vector(x, g, lb, ub)
         assert_equal(v, [1.0, 7.0, 5.0, 1.0])
         assert_equal(dv, [0.0, 1.0, -1.0, 0.0])
+
+
+class TestTrustRegion(object):
+    def test_intersect(self):
+        Delta = 1.0
+
+        x = np.zeros(3)
+        s = np.array([1.0, 0.0, 0.0])
+        t_neg, t_pos = intersect_trust_region(x, s, Delta)
+        assert_equal(t_neg, -1)
+        assert_equal(t_pos, 1)
+
+        s = np.array([-1.0, 1.0, -1.0])
+        t_neg, t_pos = intersect_trust_region(x, s, Delta)
+        assert_allclose(t_neg, -3**-0.5)
+        assert_allclose(t_pos, 3**-0.5)
+
+        x = np.array([0.5, -0.5, 0])
+        s = np.array([0, 0, 1.0])
+        t_neg, t_pos = intersect_trust_region(x, s, Delta)
+        assert_allclose(t_neg, -2**-0.5)
+        assert_allclose(t_pos, 2**-0.5)
+
+        x = np.ones(3)
+        assert_raises(ValueError, intersect_trust_region, x, s, Delta)
+
+        x = np.zeros(3)
+        s = np.zeros(3)
+        assert_raises(ValueError, intersect_trust_region, x, s, Delta)
 
 
 if __name__ == '__main__':
