@@ -4697,6 +4697,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     method : {'fisher', 'stouffer'}, optional
         Name of method to use to combine p-values. The following methods are
         available:
+
         - "fisher": Fisher's method (Fisher's combined probability test),
           the default.
         - "stouffer": Stouffer's Z-score method.

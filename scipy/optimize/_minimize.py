@@ -38,19 +38,17 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              callback=None, options=None):
     """Minimization of scalar function of one or more variables.
     
-    In general, the optimization problems are of the form:
+    In general, the optimization problems are of the form::
     
-    minimize f(x)
-    
-    subject to:
-    
-        ``g_i(x) >= 0``, i = 1,...,m
-        ``h_j(x)  = 0``, j = 1,...,p
-    
-    Where x is a vector of one or more variables.
+        minimize f(x) subject to
+
+        g_i(x) >= 0,  i = 1,...,m
+        h_j(x)  = 0,  j = 1,...,p
+
+    where x is a vector of one or more variables.
     ``g_i(x)`` are the inequality constraints.
     ``h_j(x)`` are the equality constrains.
-    
+
     Optionally, the lower and upper bounds for each element in x can also be specified 
     using the `bounds` argument.
 
@@ -107,6 +105,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     constraints : dict or sequence of dict, optional
         Constraints definition (only for COBYLA and SLSQP).
         Each constraint is defined in a dictionary with fields:
+
             type : str
                 Constraint type: 'eq' for equality, 'ineq' for inequality.
             fun : callable
@@ -115,6 +114,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 The Jacobian of `fun` (only for SLSQP).
             args : sequence, optional
                 Extra arguments to be passed to the function and Jacobian.
+
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
         Note that COBYLA only supports inequality constraints.
@@ -124,10 +124,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
+
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool
                 Set to True to print convergence messages.
+
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the

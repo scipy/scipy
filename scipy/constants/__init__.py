@@ -11,11 +11,11 @@ Physical and mathematical constants and units.
 Mathematical constants
 ======================
 
-===============  =================================================================
-``pi``           Pi
-``golden``       Golden ratio
-``golden_ratio`` Golden ratio
-===============  =================================================================
+================  =================================================================
+``pi``            Pi
+``golden``        Golden ratio
+``golden_ratio``  Golden ratio
+================  =================================================================
 
 
 Physical constants
@@ -236,13 +236,13 @@ Volume
 Speed
 -----
 
-=================    ==========================================================
-``kmh``              kilometers per hour in meters per second
-``mph``              miles per hour in meters per second
-``mach``             one Mach (approx., at 15 C, 1 atm) in meters per second
-``speed_of_sound``   one Mach (approx., at 15 C, 1 atm) in meters per second
-``knot``             one knot in meters per second
-=================    ==========================================================
+==================    ==========================================================
+``kmh``               kilometers per hour in meters per second
+``mph``               miles per hour in meters per second
+``mach``              one Mach (approx., at 15 C, 1 atm) in meters per second
+``speed_of_sound``    one Mach (approx., at 15 C, 1 atm) in meters per second
+``knot``              one knot in meters per second
+==================    ==========================================================
 
 
 Temperature
