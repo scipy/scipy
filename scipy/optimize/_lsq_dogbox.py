@@ -36,44 +36,47 @@ def find_intersection(x, tr_bounds, lb, ub):
     return lb_total, ub_total, orig_l, orig_u, tr_l, tr_u
 
 
-def dogleg_step(x, cauchy_step, newton_step, tr_bounds, l, u):
-    """Find dogleg step in rectangular constraints.
+def dogleg_step(x, cauchy_step, newton_step, tr_bounds, lb, ub):
+    """Find dogleg step in rectangular region.
 
     Returns
     -------
     step : ndarray, shape (n,)
         Computed dogleg step.
     bound_hits : ndarray of int, shape (n,)
-        Each component shows whether a corresponding variable reaches the
+        Each component shows whether a corresponding variable hits the
         initial bound after the step is taken:
-             0 - a variable doesn't reach the bound.
-            -1 - `l` is reached.
-             1 - `u` is reached.
+
+            *  0 - a variable doesn't hit the bound.
+            * -1 - lower bound is hit.
+            *  1 - upper bound is hit.
     tr_hit : bool
-        Whether the step reaches the boundary of the trust-region.
+        Whether the step hit the boundary of the trust-region.
     """
     lb_total, ub_total, orig_l, orig_u, tr_l, tr_u = find_intersection(
-        x, tr_bounds, l, u
+        x, tr_bounds, lb, ub
     )
-
     bound_hits = np.zeros_like(x, dtype=int)
 
     if in_bounds(newton_step, lb_total, ub_total):
         return newton_step, bound_hits, False
 
     if not in_bounds(cauchy_step, lb_total, ub_total):
-        alpha, _ = step_size_to_bound(
+        step_size, _ = step_size_to_bound(
             np.zeros_like(cauchy_step), cauchy_step, lb_total, ub_total)
-        cauchy_step = alpha * cauchy_step
+        cauchy_step = step_size * cauchy_step  # Don't want to modify inplace.
+        # The classical dogleg algorithm would stop here, but in a rectangular
+        # region it makes sense to try to improve constrained cauchy step.
+        # Thus the code after this "if" is always executed.
 
     step_diff = newton_step - cauchy_step
-    alpha, hits = step_size_to_bound(cauchy_step, step_diff,
-                                     lb_total, ub_total)
+    step_size, hits = step_size_to_bound(cauchy_step, step_diff,
+                                         lb_total, ub_total)
     bound_hits[(hits < 0) & orig_l] = -1
     bound_hits[(hits > 0) & orig_u] = 1
     tr_hit = np.any((hits < 0) & tr_l | (hits > 0) & tr_u)
 
-    return cauchy_step + alpha * step_diff, bound_hits, tr_hit
+    return cauchy_step + step_size * step_diff, bound_hits, tr_hit
 
 
 def constrained_cauchy_step(x, cauchy_step, tr_bounds, l, u):
@@ -85,17 +88,18 @@ def constrained_cauchy_step(x, cauchy_step, tr_bounds, l, u):
         x, tr_bounds, l, u
     )
     bound_hits = np.zeros_like(x, dtype=int)
+
     if in_bounds(cauchy_step, lb_total, ub_total):
         return cauchy_step, bound_hits, False
 
-    beta, hits = step_size_to_bound(
+    step_size, hits = step_size_to_bound(
         np.zeros_like(cauchy_step), cauchy_step, lb_total, ub_total)
 
     bound_hits[(hits < 0) & orig_l] = -1
     bound_hits[(hits > 0) & orig_u] = 1
     tr_hit = np.any((hits < 0) & tr_l | (hits > 0) & tr_u)
 
-    return beta * cauchy_step, bound_hits, tr_hit
+    return step_size * cauchy_step, bound_hits, tr_hit
 
 
 def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
