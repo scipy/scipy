@@ -73,7 +73,7 @@ class _data_matrix(spmatrix):
 
     def count_nonzero(self):
         if self.has_canonical_format:
-          return np.count_nonzero(self.data)
+            return np.count_nonzero(self.data)
         return spmatrix.count_nonzero(self)
 
     def power(self, n, dtype=None):
