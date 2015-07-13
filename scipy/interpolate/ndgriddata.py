@@ -197,6 +197,8 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         idx = np.argsort(points)
         points = points[idx]
         values = values[idx]
+        if method == 'nearest':
+            fill_value = 'extrapolate'
         ip = interp1d(points, values, kind=method, axis=0, bounds_error=False,
                       fill_value=fill_value)
         return ip(xi)
