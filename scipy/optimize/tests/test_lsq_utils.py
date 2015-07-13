@@ -8,7 +8,6 @@ from scipy.optimize._lsq_bounds import (
 from scipy.optimize._lsq_trust_region import intersect_trust_region
 
 
-
 class TestBounds(object):
     def test_prepare_bounds(self):
         bounds = (

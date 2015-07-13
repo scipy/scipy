@@ -159,7 +159,8 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
 def solve_trust_region_2d(B, g, Delta):
     """Solve a 2-dimensional general trust-region problem.
 
-    The solution is found
+    The problem is reformulated as a 4-th order algebraic equation,
+    the solution of which is found by numpy.roots.
 
     Parameters
     ----------

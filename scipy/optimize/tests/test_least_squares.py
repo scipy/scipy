@@ -51,6 +51,15 @@ def jac_rosenbrock_bad_dim(x):
     ])
 
 
+# When x 1-d array, return is 2-d array.
+def fun_wrong_dimensions(x):
+    return np.array([x, x**2, x**3])
+
+
+def jac_wrong_dimensions(x, a=0.0):
+    return np.atleast_3d(jac_trivial(x, a=a))
+
+
 class BroydenTridiagonal(object):
     def __init__(self, n=100, sparse=True):
         np.random.seed(0)
@@ -98,19 +107,6 @@ class BroydenTridiagonal(object):
         return J
 
 
-# When x 1-d array, return is 2-d array..
-def fun_wrong_dimensions(x):
-    return np.array([x, x**2, x**3])
-
-
-def jac_wrong_dimensions(x, a=0.0):
-    return np.atleast_3d(jac_trivial(x, a=a))
-
-#
-# Parametrize basic smoke tests across methods
-#
-
-
 class BaseMixin(object):
     def test_basic(self):
         # Test that the basic calling sequence works.
@@ -128,7 +124,6 @@ class BaseMixin(object):
                 res = least_squares(fun_trivial, 2.0, jac, args=(a,),
                                     method=self.method)
                 assert_allclose(res.x, a, rtol=1e-4)
-                assert_allclose(res.fun, fun_trivial(res.x, a))
 
             assert_raises(TypeError, least_squares, fun_trivial, 2.0,
                           args=(3, 4,), method=self.method)
@@ -141,7 +136,6 @@ class BaseMixin(object):
                 res = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
                                     method=self.method)
                 assert_allclose(res.x, a, rtol=1e-4)
-                assert_allclose(res.fun, fun_trivial(res.x, a))
                 assert_raises(TypeError, least_squares, fun_trivial, 2.0,
                               kwargs={'kaboom': 3}, method=self.method)
 
@@ -199,7 +193,7 @@ class BaseMixin(object):
         assert_almost_equal(res.obj_value, 25)
         assert_almost_equal(res.fun, np.array([5]))
         assert_almost_equal(res.jac, np.array([[0.0]]), decimal=2)
-        # 'lm' works weired on this problem
+        # 'lm' works weird on this problem, thus only 3 digits.
         assert_almost_equal(res.optimality, 0, decimal=3)
         assert_equal(res.active_mask, np.array([0]))
         if self.method == 'lm':
@@ -212,6 +206,7 @@ class BaseMixin(object):
             assert_(res.njev < 10)
         assert_(res.status > 0)
         assert_(res.success)
+        assert_(res.x_covariance is None)
 
     def test_rosenbrock(self):
         x0 = [-2, 1]
@@ -271,7 +266,7 @@ class BoundsMixin(object):
     def test_inconsistent_shape(self):
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       bounds=(1.0, [2.0, 3.0]), method=self.method)
-        # 1-D array can't be broadcasted
+        # 1-D array wont't be broadcasted
         assert_raises(ValueError, least_squares, fun_rosenbrock, [1.0, 2.0],
                       bounds=([0.0], [3.0, 4.0]), method=self.method)
 
@@ -339,8 +334,8 @@ class SparseMixin(object):
                 res_dense = least_squares(
                     dense.fun, dense.x0, jac=sparse.jac,
                     method=self.method, tr_solver=tr_solver)
-            # Not exactly equal only because of floating point issues.
             assert_equal(res_sparse.nfev, res_dense.nfev)
+            # Not exactly equal only because of floating point issues.
             assert_allclose(res_sparse.x, res_dense.x, atol=1e-20)
             assert_allclose(res_sparse.obj_value, 0, atol=1e-20)
             assert_allclose(res_dense.obj_value, 0, atol=1e-20)
@@ -437,14 +432,11 @@ class TestLM(TestCase, BaseMixin):
         assert_allclose(res.obj_value, 0)
         assert_allclose(res.x, x_opt)
 
-#
-# One-off tests which do not need parameterization or are method-specific
-#
+
 def test_basic():
     # test that 'method' arg is really optional
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
-    assert_allclose(res.fun, fun_trivial(res.x))
 
 
 if __name__ == "__main__":

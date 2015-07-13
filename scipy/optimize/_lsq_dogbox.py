@@ -295,6 +295,7 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 termination_status = 2
             elif xtol_satisfied:
                 termination_status = 3
+
             if termination_status is not None:
                 break
 
