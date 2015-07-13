@@ -135,15 +135,15 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
 
         phi, phi_prime = _phi_and_derivative(alpha, suf, s, Delta)
 
-        if np.abs(phi) < rtol * Delta:
-            break
-
         if phi < 0:
             alpha_upper = alpha
 
         ratio = phi / phi_prime
         alpha_lower = max(alpha_lower, alpha - ratio)
         alpha -= (phi + Delta) * ratio / Delta
+
+        if np.abs(phi) < rtol * Delta:
+            break
 
     p = -V.dot(suf / (s**2 + alpha))
     if phi > 0:
