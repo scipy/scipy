@@ -151,7 +151,7 @@ S_IIR_forback1 (float c0, float z1, float *x, float *y,
 	xptr += stridex;
 	k++;
     } while((err > precision) && (k < N));
-    if (k >= N){
+    if (k >= N) {
         /* sum did not converge */
         free(yp);
         return -3;
