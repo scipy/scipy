@@ -200,6 +200,9 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError('axis out of bounds')
     nnz = property(fget=getnnz)
 
+    def count_nonzero(self):
+        return sum(np.count_nonzero(rowvals) for rowvals in self.data)
+
     def __str__(self):
         val = ''
         for i, row in enumerate(self.rows):

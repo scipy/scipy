@@ -152,6 +152,15 @@ class dia_matrix(_data_matrix):
                (self.shape + (self.dtype.type, nnz, self.data.shape[0],
                  _formats[format][1],))
 
+    def count_nonzero(self):
+        num_rows, num_cols = self.shape
+        offset_inds = np.arange(self.data.shape[1])
+        row = offset_inds - self.offsets[:,None]
+        mask = (row >= 0)
+        mask &= (row < num_rows)
+        mask &= (offset_inds < num_cols)
+        return np.count_nonzero(self.data[mask])
+
     def getnnz(self):
         """number of nonzero values
 

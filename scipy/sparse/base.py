@@ -129,6 +129,19 @@ class spmatrix(object):
     def getmaxprint(self):
         return self.maxprint
 
+    def count_nonzero(self):
+        """Number of non-zero entries, equivalent to
+
+        np.count_nonzero(a.toarray())
+
+        Unlike getnnz and the nnz property, which return the number of stored
+        entries (the length of the data attribute), this method counts the
+        actual number of non-zero entries in data.
+        """
+        # Subclasses may implement more efficient versions of this method,
+        # but this acts as a generic fallback in case they do not.
+        return np.count_nonzero(self.toarray())
+
     def getformat(self):
         return getattr(self, 'format', 'und')
 

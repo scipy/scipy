@@ -116,6 +116,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return dict.__len__(self)
     nnz = property(fget=getnnz)
 
+    def count_nonzero(self):
+        return sum(x != 0 for x in self.values())
+
     def __len__(self):
         return dict.__len__(self)
 
