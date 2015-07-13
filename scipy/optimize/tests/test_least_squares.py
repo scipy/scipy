@@ -31,6 +31,10 @@ def jac_rosenbrock(x):
     ])
 
 
+def jac_rosenbrock_transposed(x):
+    return jac_rosenbrock(x).T
+
+
 def jac_rosenbrock_bad_dim(x):
     return np.array([
         [-20 * x[0], 10],
@@ -291,6 +295,13 @@ class TestLM(BaseMixin, TestCase):
         assert_raises(TypeError, least_squares, fun_trivial,
                       2.0, options={'epsfcn': 1e-10}, method='lm')
 
+    def test_colderiv(self):
+        x0 = [-2, 1]
+        x_opt = [1, 1]
+        res = least_squares(fun_rosenbrock, x0, jac_rosenbrock_transposed,
+                            method='lm', options={'col_deriv': True})
+        assert_allclose(res.obj_value, 0)
+        assert_allclose(res.x, x_opt)
 
 #
 # One-off tests which do not need parameterization or are method-specific
