@@ -140,13 +140,12 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
                            "`fun` and `jac` on the first iteration.")
 
     if scaling == 'jac':
-        J_norm = np.sum(J**2, axis=0)**0.5
-        J_norm[J_norm == 0] = 1
-        scale = 1 / J_norm
+        scale = np.sum(J**2, axis=0)**0.5
+        scale[scale == 0] = 1
     else:
-        scale = 1 / scaling
+        scale = scaling
 
-    Delta = norm(x0 / scale, ord=np.inf)
+    Delta = norm(x0 * scale, ord=np.inf)
     if Delta == 0:
         Delta = 1.0
 
@@ -164,10 +163,7 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
     termination_status = None
     while nfev < max_nfev:
         if scaling == 'jac':
-            # Where is norm(..., axis=0) in numpy 1.6.2?
-            J_norm = np.sum(J**2, axis=0)**0.5
-            with np.errstate(divide='ignore'):
-                scale = np.minimum(scale, 1 / J_norm)
+            scale = np.maximum(scale, np.sum(J**2, axis=0)**0.5)
 
         g = J.T.dot(f)
 
@@ -202,7 +198,7 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
 
         actual_reduction = -1.0
         while actual_reduction <= 0 and nfev < max_nfev:
-            tr_bounds = Delta * scale_free
+            tr_bounds = Delta / scale_free
 
             step_free, on_bound_free, tr_hit = dogleg_step(
                 x_free, cauchy_step, newton_step, tr_bounds, l_free, u_free)
@@ -242,7 +238,7 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
             ftol_satisfied = (abs(actual_reduction) < ftol * obj_value and
                               ratio > 0.25)
             xtol_satisfied = Delta < xtol * max(EPS**0.5,
-                                                norm(x / scale, ord=np.inf))
+                                                norm(x * scale, ord=np.inf))
 
             if ftol_satisfied and xtol_satisfied:
                 termination_status = 4

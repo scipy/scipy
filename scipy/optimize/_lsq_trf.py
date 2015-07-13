@@ -214,14 +214,13 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
     m, n = J.shape
 
     if scaling == 'jac':
-        J_norm = np.sum(J**2, axis=0)**0.5
-        J_norm[J_norm == 0] = 1
-        scale = 1 / J_norm
+        scale = np.sum(J**2, axis=0)**0.5
+        scale[scale == 0] = 1
     else:
-        scale = 1 / scaling
+        scale = scaling
 
     v, jv = scaling_vector(x, g, lb, ub)
-    Delta = norm(x0 / (scale * v**0.5))
+    Delta = norm(x0 * scale / v**0.5)
     if Delta == 0:
         Delta = 1.0
 
@@ -237,17 +236,15 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling):
     termination_status = None
     while nfev < max_nfev:
         if scaling == 'jac':
-            J_norm = np.sum(J**2, axis=0)**0.5
-            with np.errstate(divide='ignore'):
-                scale = np.minimum(scale, 1 / J_norm)
+            scale = np.maximum(scale, np.sum(J**2, axis=0)**0.5)
 
         g = J.T.dot(f)
 
         # Compute Coleman-Li scaling parameters and "hat" variables.
         v, jv = scaling_vector(x, g, lb, ub)
-        d = v**0.5 * scale
+        d = v**0.5 / scale
         g_h = d * g
-        diag_h = g * jv * scale**2
+        diag_h = g * jv / scale**2
 
         g_norm = norm(g * v, ord=np.inf)
         if g_norm < gtol:
