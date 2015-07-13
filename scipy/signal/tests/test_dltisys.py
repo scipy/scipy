@@ -66,7 +66,7 @@ class TestDLTI(TestCase):
                                   23.0370370370370]).transpose()
 
         # Assume use of the first column of the control input built earlier
-        tout, yout = dlsim((num, den, 0.5), u[:, 0], t_in)
+        tout, yout = dlsim((num, den, dt), u[:, 0], t_in)
 
         assert_array_almost_equal(yout, yout_truth)
         assert_array_almost_equal(t_in, tout)
@@ -89,6 +89,18 @@ class TestDLTI(TestCase):
 
         assert_array_almost_equal(yout, yout_truth)
         assert_array_almost_equal(t_in, tout)
+
+        # System characterized by no dynamics.
+        # The function tf2ss function gives A=[], B=[], C=[], D=[1]
+        # The output must follow the input
+        num = np.asarray([1.0])
+        den = np.asarray([1.0])
+
+        # Assume use of the first column of the control input built earlier
+        t_out, y_out = dlsim((num, den, dt), u[:, 0], t_in)
+        assert_array_almost_equal(y_out, u[:,0])
+        assert_array_almost_equal(t_in, t_out)
+
 
     def test_dstep(self):
 
