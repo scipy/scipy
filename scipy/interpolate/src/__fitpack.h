@@ -1243,7 +1243,7 @@ _bsplmat(PyObject *dummy, PyObject *args) {
     /* Not-equally spaced */
     x_i = (PyArrayObject *)PyArray_FROMANY(x_i_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
     if (x_i == NULL) {
-        return NULL;
+        goto fail;
     }
     /*
      * create dummy knot array with new knots inserted at the end
@@ -1441,7 +1441,7 @@ _bspldismat(PyObject *dummy, PyObject *args)
     /* Not-equally spaced */
     x_i = (PyArrayObject *)PyArray_FROMANY(x_i_py, NPY_DOUBLE, 1, 1, NPY_ALIGNED);
     if (x_i == NULL) {
-        return NULL;
+        goto fail;
     }
     /*
      * create dummy knot array with new knots inserted at the end

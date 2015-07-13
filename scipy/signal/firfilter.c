@@ -138,10 +138,17 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   if (outsize == FULL) {Os[0] = Ns[0]+Nwin[0]-1; Os[1] = Ns[1]+Nwin[1]-1;}
   else if (outsize == SAME) {Os[0] = Ns[0]; Os[1] = Ns[1];}
   else if (outsize == VALID) {Os[0] = Ns[0]-Nwin[0]+1; Os[1] = Ns[1]-Nwin[1]+1;}
-  else return -1;  /* Invalid output flag */  
+  else{
+    /* Invalid output flag */
+    free(indices);
+    return -1;
+  }  
   
-  if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR)) 
-    return -2;   /* Invalid boundary flag */
+  if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR)){
+    /* Invalid boundary flag */
+    free(indices);
+    return -2;
+  }
 
   /* Speed this up by not doing any if statements in the for loop.  Need 3*3*2=18 different
      loops executed for different conditions */
