@@ -53,5 +53,17 @@
     "html_dir": "html",
 
     // The number of characters to retain in the commit hashes.
-    "hash_length": 8
+    "hash_length": 8,
+
+    // The commits after which the regression search in `asv publish`
+    // should start looking for regressions. Dictionary whose keys are
+    // regexps matching to benchmark names, and values corresponding to
+    // the commit (exclusive) after which to start looking for
+    // regressions.  The default is to start from the first commit
+    // with results. If the commit is `null`, regression detection is
+    // skipped for the matching benchmark.
+
+    "regressions_first_commits": {
+       "io_matlab\\.StructArr\\..*": "67c089a6",  //  structarrs weren't properly implemented before this
+    }
 }
