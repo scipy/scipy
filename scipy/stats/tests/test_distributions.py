@@ -624,6 +624,10 @@ class TestGenpareto(TestCase):
             assert_allclose(stats.genpareto.cdf(stats.genpareto.ppf(q, c), c),
                     q, atol=1e-15)
 
+    def test_logsf(self):
+        logp = stats.genpareto.logsf(1e10, .01, 0, 1)
+        assert_allclose(logp, -1842.0680753952365)
+
 
 class TestPearson3(TestCase):
     def test_rvs(self):
