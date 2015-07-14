@@ -1622,6 +1622,11 @@ class genpareto_gen(rv_continuous):
     def _sf(self, x, c):
         return inv_boxcox(-x, -c)
 
+    def _logsf(self, x, c):
+        return _lazywhere((x == x) & (c != 0), (x, c),
+            lambda x, c: -special.log1p(c*x) / c,
+            -x)
+
     def _ppf(self, q, c):
         return -boxcox1p(-q, -c)
 
