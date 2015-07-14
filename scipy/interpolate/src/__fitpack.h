@@ -156,7 +156,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     }
     kwrk = mx + my;
     lwa = lwrk + kwrk;
-    if ((wa = (double *)malloc(lwa*sizeof(double))) == NULL) {
+    if ((wa = malloc(lwa*sizeof(double))) == NULL) {
         PyErr_NoMemory();
         goto fail;
     }
@@ -171,9 +171,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
                 iwrk, &kwrk, &ier);
     }
 
-    if (wa) {
-        free(wa);
-    }
+    free(wa);
     Py_DECREF(ap_x);
     Py_DECREF(ap_y);
     Py_DECREF(ap_c);
@@ -182,9 +180,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     return Py_BuildValue("Ni",PyArray_Return(ap_z),ier);
 
 fail:
-    if (wa) {
-        free(wa);
-    }
+    free(wa);
     Py_XDECREF(ap_x);
     Py_XDECREF(ap_y);
     Py_XDECREF(ap_z);
@@ -241,7 +237,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     lcest = (nxest - kx - 1)*(nyest - ky - 1);
     kwrk = m + (nxest - 2*kx - 1)*(nyest - 2*ky - 1);
     lwa = 2*nmax + lcest + lwrk1 + lwrk2 + kwrk;
-    if ((wa = (double *)malloc(lwa*sizeof(double))) == NULL) {
+    if ((wa = malloc(lwa*sizeof(double))) == NULL) {
         PyErr_NoMemory();
         goto fail;
     }
@@ -278,16 +274,14 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     i = 0;
     while ((ier > 10) && (i++ < 5)) {
         lwrk2 = ier;
-        if ((wrk2 = (double *)malloc(lwrk2*sizeof(double))) == NULL) {
+        if ((wrk2 = malloc(lwrk2*sizeof(double))) == NULL) {
             PyErr_NoMemory();
             goto fail;
         }
         SURFIT(&iopt, &m, x, y, z, w, &xb, &xe, &yb, &ye, &kx, &ky,
                 &s, &nxest, &nyest, &nmax, &eps, &nx, tx, &ny, ty,
                 c, &fp, wrk1, &lwrk1, wrk2, &lwrk2, iwrk, &kwrk, &ier);
-        if (wrk2) {
-            free(wrk2);
-        }
+        free(wrk2);
     }
     if (ier == 10) {
         PyErr_SetString(PyExc_ValueError, "Invalid inputs.");
@@ -329,9 +323,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     memcpy(ap_c->data, c, lc*sizeof(double));
     memcpy(ap_wrk->data, wrk1, lc*sizeof(double));
     /*memcpy(ap_iwrk->data,iwrk,n*sizeof(int));*/
-    if (wa) {
-        free(wa);
-    }
+    free(wa);
     Py_DECREF(ap_x);
     Py_DECREF(ap_y);
     Py_DECREF(ap_z);
@@ -342,9 +334,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
             "ier",ier,"fp",fp);
 
 fail:
-    if (wa) {
-        free(wa);
-    }
+    free(wa);
     Py_XDECREF(ap_x);
     Py_XDECREF(ap_y);
     Py_XDECREF(ap_z);
@@ -404,7 +394,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
     }
     nc = idim*nest;
     lwa = nc + 2*nest + lwrk;
-    if ((wa = (double *)malloc(lwa*sizeof(double))) == NULL) {
+    if ((wa = malloc(lwa*sizeof(double))) == NULL) {
         PyErr_NoMemory();
         goto fail;
     }
@@ -459,9 +449,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
         memcpy((double *)ap_c->data + i*(n - k - 1), c + i*n, (n - k - 1)*sizeof(double));
     memcpy(ap_wrk->data, wrk, n*sizeof(double));
     memcpy(ap_iwrk->data, iwrk, n*sizeof(int));
-    if (wa) {
-        free(wa);
-    }
+    free(wa);
     Py_DECREF(ap_x);
     Py_DECREF(ap_w);
     return Py_BuildValue("NN{s:N,s:d,s:d,s:N,s:N,s:i,s:d}", PyArray_Return(ap_t),
@@ -469,9 +457,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
             "wrk", PyArray_Return(ap_wrk), "iwrk", PyArray_Return(ap_iwrk),
             "ier", ier, "fp",fp);
 fail:
-    if (wa) {
-        free(wa);
-    }
+    free(wa);
     Py_XDECREF(ap_x);
     Py_XDECREF(ap_u);
     Py_XDECREF(ap_w);
@@ -521,7 +507,7 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
         lwrk = m*(k + 1) + nest*(7 + 3*k);
     }
     lwa = 3*nest + lwrk;
-    if ((wa = (double *)malloc(lwa*sizeof(double))) == NULL) {
+    if ((wa = malloc(lwa*sizeof(double))) == NULL) {
         PyErr_NoMemory();
         goto fail;
     }
@@ -579,9 +565,7 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
     memcpy(ap_c->data, c, lc*sizeof(double));
     memcpy(ap_wrk->data, wrk, n*sizeof(double));
     memcpy(ap_iwrk->data, iwrk, n*sizeof(int));
-    if (wa) {
-        free(wa);
-    }
+    free(wa);
     Py_DECREF(ap_x);
     Py_DECREF(ap_y);
     Py_DECREF(ap_w);
@@ -590,9 +574,7 @@ fitpack_curfit(PyObject *dummy, PyObject *args)
             "iwrk", PyArray_Return(ap_iwrk), "ier", ier, "fp", fp);
 
 fail:
-    if (wa) {
-        free(wa);
-    }
+    free(wa);
     Py_XDECREF(ap_x);
     Py_XDECREF(ap_y);
     Py_XDECREF(ap_w);
@@ -632,7 +614,7 @@ fitpack_spl_(PyObject *dummy, PyObject *args)
         goto fail;
     }
     y = (double *)ap_y->data;
-    if ((wrk = (double *)malloc(n*sizeof(double))) == NULL) {
+    if ((wrk = malloc(n*sizeof(double))) == NULL) {
         PyErr_NoMemory();
         goto fail;
     }
@@ -642,18 +624,14 @@ fitpack_spl_(PyObject *dummy, PyObject *args)
     else {
         SPLEV(t, &n, c, &k, x, y, &m, &e, &ier);
     }
-    if (wrk) {
-        free(wrk);
-    }
+    free(wrk);
     Py_DECREF(ap_x);
     Py_DECREF(ap_c);
     Py_DECREF(ap_t);
     return Py_BuildValue("Ni", PyArray_Return(ap_y), ier);
 
 fail:
-    if (wrk) {
-        free(wrk);
-    }
+    free(wrk);
     Py_XDECREF(ap_x);
     Py_XDECREF(ap_c);
     Py_XDECREF(ap_t);
@@ -721,7 +699,7 @@ fitpack_sproot(PyObject *dummy, PyObject *args)
     t = (double *)ap_t->data;
     c = (double *)ap_c->data;
     n = ap_t->dimensions[0];
-    if ((z = (double *)malloc(mest*sizeof(double))) == NULL) {
+    if ((z = malloc(mest*sizeof(double))) == NULL) {
         PyErr_NoMemory();
         goto fail;
     }
@@ -736,17 +714,13 @@ fitpack_sproot(PyObject *dummy, PyObject *args)
         goto fail;
     }
     memcpy(ap_z->data,z,m*sizeof(double));
-    if (z) {
-        free(z);
-    }
+    free(z);
     Py_DECREF(ap_c);
     Py_DECREF(ap_t);
     return Py_BuildValue("Ni", PyArray_Return(ap_z), ier);
 
 fail:
-    if (z) {
-        free(z);
-    }
+    free(z);
     Py_XDECREF(ap_c);
     Py_XDECREF(ap_t);
     return NULL;
@@ -1031,7 +1005,7 @@ _bspleval(PyObject *dummy, PyObject *args)
      * create dummy knot array with new knots inserted at the end
      * selected as mirror symmetric versions of the old knots
      */
-    t = (double *)malloc(sizeof(double)*(N + 2*kk - 1));
+    t = malloc(sizeof(double)*(N + 2*kk - 1));
     if (t == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1051,7 +1025,7 @@ _bspleval(PyObject *dummy, PyObject *args)
      * Create work array to hold computed non-zero values for
      * the spline for a value of x.
      */
-    h = (double *)malloc(sizeof(double)*(2*kk+1));
+    h = malloc(sizeof(double)*(2*kk+1));
     if (h == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1116,12 +1090,8 @@ fail:
     Py_XDECREF(coef);
     Py_XDECREF(x_i);
     Py_XDECREF(yy);
-    if (t != NULL) {
-        free(t);
-    }
-    if (h != NULL) {
-        free(h);
-    }
+    free(t);
+    free(h);
     return NULL;
 }
 
@@ -1199,7 +1169,7 @@ _bsplmat(PyObject *dummy, PyObject *args) {
         goto fail;
     }
 
-    t = (double *)malloc(sizeof(double)*(N + 2*k - 1));
+    t = malloc(sizeof(double)*(N + 2*k - 1));
     if (t == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1209,7 +1179,7 @@ _bsplmat(PyObject *dummy, PyObject *args) {
      * Create work array to hold computed non-zero values for
      * the spline for a value of x.
      */
-    h = (double *)malloc(sizeof(double)*(2*k + 1));
+    h = malloc(sizeof(double)*(2*k + 1));
     if (h == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1289,12 +1259,8 @@ finish:
 fail:
     Py_XDECREF(x_i);
     Py_XDECREF(BB);
-    if (t != NULL) {
-        free(t);
-    }
-    if (h != NULL) {
-        free(h);
-    }
+    free(t);
+    free(h);
     return NULL;
 }
 
@@ -1375,7 +1341,7 @@ _bspldismat(PyObject *dummy, PyObject *args)
     if (BB == NULL) {
         goto fail;
     }
-    t = (double *)malloc(sizeof(double)*(N+2*k-1));
+    t = malloc(sizeof(double)*(N+2*k-1));
     if (t == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1385,7 +1351,7 @@ _bspldismat(PyObject *dummy, PyObject *args)
      * Create work array to hold computed non-zero values for
      * the spline for a value of x.
      */
-    h = (double *)malloc(sizeof(double)*(2*k + 1));
+    h = malloc(sizeof(double)*(2*k + 1));
     if (h == NULL) {
         PyErr_NoMemory();
         goto fail;
@@ -1506,11 +1472,7 @@ finish:
 fail:
     Py_XDECREF(x_i);
     Py_XDECREF(BB);
-    if (t != NULL) {
-        free(t);
-    }
-    if (h != NULL) {
-        free(h);
-    }
+    free(t);
+    free(h);
     return NULL;
 }
