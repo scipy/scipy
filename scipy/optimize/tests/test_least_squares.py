@@ -411,8 +411,18 @@ class SparseMixin(object):
         p = BroydenTridiagonal(mode='linear_op')
         res = least_squares(p.fun, p.x0, p.jac, method=self.method)
         assert_allclose(res.obj_value, 0.0, atol=1e-20)
-        assert_raises(ValueError, least_squares, p.fun, p.x0, p.x0,
+        assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
                       method=self.method, tr_solver='exact')
+
+    def test_scaling(self):
+        p = BroydenTridiagonal()
+        res = least_squares(p.fun, p.x0, p.jac, method=self.method,
+                            scaling='jac')
+        assert_allclose(res.obj_value, 0.0, atol=1e-20)
+
+        p = BroydenTridiagonal(mode='linear_op')
+        assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
+                      method=self.method, scaling='jac')
 
 
 class TestDogbox(TestCase, BaseMixin, BoundsMixin, SparseMixin):

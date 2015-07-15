@@ -174,8 +174,15 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             raise ValueError("tr_solver='exact' can't be used when `jac` "
                              "returns LinearOperator.")
 
+    if isinstance(J, LinearOperator) and scaling == 'jac':
+        raise ValueError("scaling='jac' can't be used when `jac` "
+                         "returns LinearOperator.")
+
     if scaling == 'jac':
-        scale = np.sum(J**2, axis=0)**0.5
+        if issparse(J):
+            scale = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
+        else:
+            scale = np.sum(J**2, axis=0)**0.5
         scale[scale == 0] = 1
     else:
         scale = scaling
@@ -198,7 +205,11 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     termination_status = None
     while nfev < max_nfev:
         if scaling == 'jac':
-            scale = np.maximum(scale, np.sum(J**2, axis=0)**0.5)
+            if issparse(J):
+                new_scale = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
+            else:
+                new_scale = np.sum(J**2, axis=0)**0.5
+            scale = np.maximum(scale, new_scale)
 
         if isinstance(J, LinearOperator):
             g = J.rmatvec(f)
