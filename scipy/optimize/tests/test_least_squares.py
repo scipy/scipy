@@ -8,7 +8,6 @@ from numpy.testing import (run_module_suite, assert_, assert_allclose,
 
 from scipy.optimize import least_squares
 from scipy.optimize._lsq_bounds import make_strictly_feasible
-from scipy.optimize._minpack import error as MinpackError
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 
@@ -38,10 +37,6 @@ def jac_rosenbrock(x):
         [-20 * x[0], 10],
         [-1, 0]
     ])
-
-
-def jac_rosenbrock_transposed(x):
-    return jac_rosenbrock(x).T
 
 
 def jac_rosenbrock_bad_dim(x):
@@ -130,14 +125,9 @@ class BaseMixin(object):
                                     method=self.method)
                 assert_allclose(res.x, a, rtol=1e-4)
 
-            assert_raises(TypeError, least_squares, fun_trivial, 2.0,
-                          args=(3, 4,), method=self.method)
-        
-            # Test that kwargs works for everything except 'lm'.
-            if self.method == 'lm':
-                assert_raises(ValueError, least_squares, fun_trivial, 2.0,
-                              kwargs={'a': a}, method=self.method)
-            else:
+                assert_raises(TypeError, least_squares, fun_trivial, 2.0,
+                              args=(3, 4,), method=self.method)
+
                 res = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
                                     method=self.method)
                 assert_allclose(res.x, a, rtol=1e-4)
@@ -172,9 +162,9 @@ class BaseMixin(object):
     def test_diff_step(self):
         # res1 and res2 should be equivalent.
         # res2 and res3 should be different.
-        res1 = least_squares(fun_trivial, 2.0, diff_step=1e-2,
+        res1 = least_squares(fun_trivial, 2.0, diff_step=1e-1,
                              method=self.method)
-        res2 = least_squares(fun_trivial, 2.0, diff_step=-1e-2,
+        res2 = least_squares(fun_trivial, 2.0, diff_step=-1e-1,
                              method=self.method)
         res3 = least_squares(fun_trivial, 2.0,
                              diff_step=None, method=self.method)
@@ -211,7 +201,6 @@ class BaseMixin(object):
             assert_(res.njev < 10)
         assert_(res.status > 0)
         assert_(res.success)
-        assert_(res.x_covariance is None)
 
     def test_rosenbrock(self):
         x0 = [-2, 1]
@@ -225,28 +214,16 @@ class BaseMixin(object):
                     assert_allclose(res.x, x_opt)
 
     def test_fun_wrong_dimensions(self):
-        if self.method == 'lm':
-            error = MinpackError
-        else:
-            error = RuntimeError
-        assert_raises(error, least_squares, fun_wrong_dimensions,
+        assert_raises(RuntimeError, least_squares, fun_wrong_dimensions,
                       2.0, method=self.method)
 
     def test_jac_wrong_dimensions(self):
-        if self.method == 'lm':
-            error = MinpackError
-        else:
-            error = RuntimeError
-        assert_raises(error, least_squares, fun_trivial,
+        assert_raises(RuntimeError, least_squares, fun_trivial,
                       2.0, jac_wrong_dimensions, method=self.method)
 
     def test_fun_and_jac_inconsistent_dimensions(self):
         x0 = [1, 2]
-        if self.method == 'lm':
-            error = TypeError
-        else:
-            error = RuntimeError
-        assert_raises(error, least_squares, fun_rosenbrock, x0,
+        assert_raises(RuntimeError, least_squares, fun_rosenbrock, x0,
                       jac_rosenbrock_bad_dim, method=self.method)
 
     def test_x0_multidimensional(self):
@@ -263,7 +240,7 @@ class BoundsMixin(object):
     def test_infeasible(self):
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       bounds=(3., 4), method=self.method)
-                                                 
+
     def test_wrong_number(self):
         assert_raises(ValueError, least_squares, fun_trivial, 2.,
                       bounds=(1., 2, 3), method=self.method)
@@ -447,19 +424,10 @@ class TestLM(TestCase, BaseMixin):
         assert_raises(ValueError, least_squares, fun_trivial,
                       2.0, bounds=(-3.0, 3.0), method='lm')
 
-    def test_repeated_options_errors(self):
-        assert_raises(TypeError, least_squares, fun_trivial,
-                      2.0, options={'diag': 1.0}, method='lm')
-        assert_raises(TypeError, least_squares, fun_trivial,
-                      2.0, options={'epsfcn': 1e-10}, method='lm')
-
-    def test_col_deriv(self):
-        x0 = [-2, 1]
-        x_opt = [1, 1]
-        res = least_squares(fun_rosenbrock, x0, jac_rosenbrock_transposed,
-                            method='lm', options={'col_deriv': True})
-        assert_allclose(res.obj_value, 0)
-        assert_allclose(res.x, x_opt)
+    def test_LinearOperator_not_supported(self):
+        p = BroydenTridiagonal(mode="linear_op")
+        assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
+                      method='lm')
 
 
 def test_basic():

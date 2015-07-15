@@ -5,7 +5,7 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import norm
 
-from .minpack import leastsq
+from . import _minpack
 from .optimize import OptimizeResult
 from ._numdiff import approx_derivative, group_columns
 from ..sparse import issparse, csr_matrix, csc_matrix
@@ -16,6 +16,7 @@ from ._lsq_trf import trf
 from ._lsq_dogbox import dogbox
 
 __all__ = ['least_squares']
+
 
 EPS = np.finfo(float).eps
 
@@ -57,37 +58,38 @@ FROM_MINPACK_TO_COMMON = {
 }
 
 
-def call_leastsq(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling,
-                 diff_step, args, options):
-    if jac == '3-point':
-        warn("jac='3-point' works equivalently to '2-point' "
-             "for 'lm' method.")
-
-    if jac in ['2-point', '3-point']:
-        jac = None
-
-    if max_nfev is None:
-        max_nfev = 0
+def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
+    n = x0.size
 
     if diff_step is None:
-        epsfcn = None
+        epsfcn = np.finfo(float).eps
     else:
         epsfcn = diff_step**2
 
-    if scaling == 'jac':
-        scaling = None
+    full_output = True
+    col_deriv = False
+    factor = 1.0
 
-    x, cov_x, info, message, status = leastsq(
-        fun, x0, args=args, Dfun=jac, full_output=True, ftol=ftol, xtol=xtol,
-        gtol=gtol, maxfev=max_nfev, epsfcn=epsfcn, diag=scaling, **options)
+    if jac is None:
+        if max_nfev is None:
+            # n squared to account for Jacobian evaluations.
+            max_nfev = 100 * n**2
+        x, info, status = _minpack._lmdif(
+            fun, x0, (), full_output, ftol, xtol, gtol,
+            max_nfev, epsfcn, factor, scaling)
+    else:
+        if max_nfev is None:
+            max_nfev = 100 * n
+        x, info, status = _minpack._lmder(
+            fun, jac, x0, (), full_output, col_deriv,
+            ftol, xtol, gtol, max_nfev, factor, scaling)
 
     f = info['fvec']
 
     if callable(jac):
-        J = jac(x, *args)
+        J = jac(x)
     else:
-        J = approx_derivative(fun, x, args=args)
-    J = np.atleast_2d(J)
+        J = np.atleast_2d(approx_derivative(fun, x))
 
     obj_value = np.dot(f, f)
     g = J.T.dot(f)
@@ -101,8 +103,7 @@ def call_leastsq(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling,
 
     return OptimizeResult(
         x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
-        active_mask=active_mask, nfev=nfev, njev=njev, status=status,
-        message=message, success=status > 0, x_covariance=cov_x)
+        active_mask=active_mask, nfev=nfev, njev=njev, status=status)
 
 
 def check_scaling(scaling, x0):
@@ -129,8 +130,8 @@ def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, scaling=1.0,
         diff_step=None, tr_solver=None, tr_options={}, jac_sparsity=None,
-        max_nfev=None, args=(), kwargs={}, options={}):
-    """Minimize the sum of squares of nonlinear functions subject to bound
+        max_nfev=None, args=(), kwargs={}):
+    """Minimize the sum of squares of nonlinear functions, subject to bound
     constraints on independent variables.
 
     Let f(x) maps from R^n to R^m, this function finds a local minimum of::
@@ -159,10 +160,8 @@ def least_squares(
         finite difference scheme. The scheme '3-point' is more accurate, but
         requires twice as much operations compared to '2-point' (default).
         If callable, then it should return a reasonable approximation of
-        Jacobian as array_like with shape (m, n) (np.atleast_2d is applied in
-        'trf' and 'dogbox' methods). Only for 'lm' method: callable must
-        return 2-d ndarray, if you set ``col_deriv=1`` in `options` then a
-        callable must return transposed Jacobian.
+        Jacobian as array_like (np.atleast_2d is applied), sparse matrix or
+        LinearOperator, all with shape  (m, n).
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must match the size of `x0` or be a scalar, in the latter
@@ -200,7 +199,7 @@ def least_squares(
         If None (default) each algorithm uses its own default value.
     scaling : array_like or 'jac', optional
         Applies variables scaling to potentially improve algorithm convergence.
-        Default is 1.0 which means no scaling. Scaling should be used to
+        Default is 1.0, which means no scaling. Scaling should be used to
         equalize the influence of each variable on the objective function.
         Alternatively you can think of `scaling` as diagonal elements of
         a matrix which determines the shape of a trust region. Use smaller
@@ -241,22 +240,17 @@ def least_squares(
                Jacobian [Byrd]_ (eq. 3.4).
 
     jac_sparsity : {None, array_like, sparse matrix}, optional
-        Defines Jacobian sparsity structure for finite differencing (relevant
-        when `jac` is '2-point' or '3-point'). Provide this parameter to
-        greatly speed up finite difference Jacobian estimation, if it has only
-        few non-zeros in *each* row [Curtis]_. Should be array_like or sparse
-        matrix with shape (m, n). A zero element means that a corresponding
-        element in Jacobian is identically zero.  Forces `tr_solver` to 'lsmr'
-        if it wasn't set. If None (default) then dense differencing will be
-        used.
+        Defines Jacobian sparsity structure for finite differencing. Provide
+        this parameter to greatly speed up finite difference Jacobian
+        estimation, if it has only few non-zeros in *each* row [Curtis]_.
+        Should be array_like or sparse matrix with shape (m, n). A zero element
+        means that a corresponding element in Jacobian is identically zero.
+        Forces `tr_solver` to 'lsmr' if it wasn't set. If None (default) then
+        dense differencing will be used. Has no effect for ``method='lm'``.
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)`` and the same for
-        `jac`. Method 'lm' can't handle `kwargs`.
-    options : dict, optional
-        Additional options passed to a chosen method. Empty by default.
-        The calling sequence is ``method(..., **options)``. Look for relevant
-        options in documentation for a selected method.
+        `jac`.
 
     Returns
     -------
@@ -306,11 +300,6 @@ def least_squares(
         Verbal description of the termination reason.
     success : int
         True if one of the convergence criteria is satisfied.
-    x_covariance : ndarray with shape (n, n) or None
-        Estimate of x covariance assuming that residuals are uncorrelated
-        and have unity variance. It is computed as the inverse of J.T*J where
-        J is Jacobian matrix. If 'trf' or 'dogbox' method are used or the
-        inverse doesn't exist this field is set to None.
 
     Notes
     -----
@@ -397,12 +386,8 @@ def least_squares(
         raise ValueError("Each lower bound mush be strictly less than each "
                          "upper bound.")
 
-    if method == 'lm':
-        if not np.all((lb == -np.inf) & (ub == np.inf)):
-            raise ValueError("Method 'lm' doesn't support bounds.")
-
-        if len(kwargs) > 0:
-            raise ValueError("Method 'lm' doesn't support kwargs.")
+    if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
+        raise ValueError("Method 'lm' doesn't support bounds.")
 
     if jac not in ['2-point', '3-point'] and not callable(jac):
         raise ValueError("`jac` must be '2-point', '3-point' or callable.")
@@ -410,11 +395,6 @@ def least_squares(
     scaling = check_scaling(scaling, x0)
 
     ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol)
-
-    # Handle 'lm' separately
-    if method == 'lm':
-        return call_leastsq(fun, x0, jac, ftol, xtol, gtol, max_nfev,
-                            scaling, diff_step, args, options)
 
     if not in_bounds(x0, lb, ub):
         raise ValueError("`x0` is infeasible.")
@@ -424,9 +404,13 @@ def least_squares(
 
     if jac in ['2-point', '3-point']:
         if jac_sparsity is not None:
-            structure = csc_matrix(jac_sparsity)
-            groups = group_columns(structure)
-            sparsity = (structure, groups)
+            if method == 'lm':
+                warn("`jac_sparsity` is ignored for method='lm', dense "
+                     "differencing will be used.")
+            else:
+                structure = csc_matrix(jac_sparsity)
+                groups = group_columns(structure)
+                sparsity = (structure, groups)
         else:
             sparsity = None
 
@@ -446,11 +430,16 @@ def least_squares(
 
             return J
     else:
-        def jac_wrapped(x, _):
+        def jac_wrapped(x, _=None):
             J = jac(x, *args, **kwargs)
 
             if issparse(J):
-                if tr_solver == 'exact':
+                if method == 'lm':
+                    warn("Jacobian is converted to dense for "
+                         "method='lm', consider using a different `method` "
+                         "or return dense Jacobian.")
+                    J = J.toarray()
+                elif tr_solver == 'exact':
                     warn("Jacobian is converted to dense for "
                          "tr_solver='exact', consider using 'lsmr' "
                          "trust-region solver or return dense Jacobian.")
@@ -475,31 +464,47 @@ def least_squares(
         raise RuntimeError("Inconsistent dimensions between the "
                            "returns of `fun` and `jac`.")
 
+    if isinstance(J0, LinearOperator):
+        if method == 'lm':
+            raise ValueError("method='lm' can't be used when `jac` "
+                             "returns LinearOperator.")
+
+        if tr_solver == 'exact':
+            raise ValueError("tr_solver='exact' can't be used when `jac` "
+                             "returns LinearOperator.")
+
+        if scaling == 'jac':
+            raise ValueError("scaling='jac' can't be used when `jac` "
+                             "return LinearOperator.")
+
     if tr_solver is None:
         if isinstance(J0, np.ndarray):
             tr_solver = 'exact'
         else:
             tr_solver = 'lsmr'
 
-    if isinstance(J0, LinearOperator):
-        if tr_solver == 'exact':
-            raise ValueError("tr_solver='exact' can't be used when `jac` "
-                             "returns LinearOperator.")
+    if method == 'lm':
+        if jac == '2-point':
+            jac_wrapped = None
+        elif jac == '3-point':
+            jac_wrapped = None
+            warn("jac='3-point' works equivalently to '2-point' "
+                 "for 'lm' method.")
+
         if scaling == 'jac':
-            raise ValueError("scaling='jac' can't be used when `jac` "
-                             "return LinearOperator.")
+            scaling = None
+
+        result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
+                              max_nfev, scaling, diff_step)
 
     if method == 'trf':
-        result = trf(
-            fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol, gtol,
-            max_nfev, scaling, tr_solver, tr_options, **options)
+        result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
+                     gtol, max_nfev, scaling, tr_solver, tr_options)
 
     elif method == 'dogbox':
-        result = dogbox(
-            fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol, gtol,
-            max_nfev, scaling, tr_solver, tr_options, **options)
+        result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
+                        xtol, gtol, max_nfev, scaling, tr_solver, tr_options)
 
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0
-    result.x_covariance = None
     return result
