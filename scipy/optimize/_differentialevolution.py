@@ -63,6 +63,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         The maximum number of times the entire population is evolved.
         The maximum number of function evaluations (with no polishing) is:
         ``(maxiter + 1) * popsize * len(x)``
+        Default is 1000.
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals. Default is 15.
@@ -236,7 +237,7 @@ class DifferentialEvolutionSolver(object):
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
-                 maxfun=None, callback=None, disp=False, polish=True,
+                 callback=None, disp=False, polish=True,
                  init='latinhypercube', pool=None):
         
         # use aggressive mutation strategy (or quasi-aggressive in case of parallel)
@@ -247,8 +248,8 @@ class DifferentialEvolutionSolver(object):
             self.pool = Spool()
         else:
             self.pool = pool
-            
-        print("Starting %g workers in parallel." % self.pool.poolsize())
+            print("Starting %g workers in parallel." % self.pool.poolsize())
+        
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -293,8 +294,7 @@ class DifferentialEvolutionSolver(object):
                              ' in x')
 
         self.maxiter = maxiter or 1000
-        self.maxfun = (maxfun or ((self.maxiter + 1) * popsize *
-                                  np.size(self.limits, 1)))
+
 
         # population is scaled to between [0, 1].
         # We have to scale between parameter <-> population
