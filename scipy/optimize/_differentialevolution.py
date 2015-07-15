@@ -16,7 +16,7 @@ _MACHEPS = np.finfo(np.float64).eps
 
 
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
-                           maxiter=None, popsize=15, tol=0.01,
+                           maxiter=None, popmul=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', pool=None):
@@ -62,11 +62,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     maxiter : int, optional
         The maximum number of times the entire population is evolved.
         The maximum number of function evaluations (with no polishing) is:
-        ``(maxiter + 1) * popsize * len(x)``
+        ``(maxiter + 1) * popmul * len(x)``
         Default is 1000.
-    popsize : int, optional
-        A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals. Default is 15.
+    popmul : int, optional
+        A multiplier for setting the total population size. The population has
+        ``popmul * len(x)`` individuals. Default is `popmul = 15`.
     tol : float, optional
         When the mean of the population energies, multiplied by tol,
         divided by the standard deviation of the population energies
@@ -161,7 +161,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     its fitness is assessed. If the trial is better than the original candidate
     then it takes its place. If it is also better than the best overall
     candidate it also replaces that.
-    To improve your chances of finding a global minimum use higher `popsize`
+    To improve your chances of finding a global minimum use higher `popmul`
     values, with higher `mutation` and (dithering), but lower `recombination`
     values. This has the effect of widening the search radius, but slowing
     convergence.
@@ -204,7 +204,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     solver = DifferentialEvolutionSolver(func, bounds, args=args,
                                          strategy=strategy, maxiter=maxiter,
-                                         popsize=popsize, tol=tol,
+                                         popmul=popmul, tol=tol,
                                          mutation=mutation,
                                          recombination=recombination,
                                          seed=seed, polish=polish,
@@ -235,7 +235,7 @@ class DifferentialEvolutionSolver(object):
                     'rand2exp': '_rand2'}
 
     def __init__(self, func, bounds, args=(),
-                 strategy='best1bin', maxiter=None, popsize=15,
+                 strategy='best1bin', maxiter=None, popmul=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  callback=None, disp=False, polish=True,
                  init='latinhypercube', pool=None):
@@ -308,7 +308,7 @@ class DifferentialEvolutionSolver(object):
 
         #default initialization is a latin hypercube design, but there
         #are other population initializations possible.
-        self.population = np.zeros((popsize * parameter_count,
+        self.population = np.zeros((popmul * parameter_count,
                                     parameter_count))
         if init == 'latinhypercube':
             self.init_population_lhs()
@@ -319,7 +319,7 @@ class DifferentialEvolutionSolver(object):
                              "of 'latinhypercube' or 'random'")
 
         self.population_energies = np.ones(
-            popsize * parameter_count) * np.inf
+            popmul * parameter_count) * np.inf
 
         self.disp = disp
 
