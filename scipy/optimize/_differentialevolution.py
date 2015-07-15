@@ -18,7 +18,7 @@ _MACHEPS = np.finfo(np.float64).eps
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popmul=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
-                           callback=None, disp=False, polish=True,
+                           callback=None, disp=False, polish=False,
                            init='latinhypercube', pool=None):
     """Finds the global minimum of a multivariate function.
     Differential Evolution is stochastic in nature (does not use gradient
@@ -110,9 +110,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         The callback is used for monitoring the convergence of the individuals
         and for custom stopping criteria.
     polish : bool, optional
-        If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
+        If True, then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
-        can improve the minimization slightly.
+        can improve the minimization. Default is `False`.
     init : string, optional
         Specify how the population initialization is performed. Should be
         one of:
@@ -239,7 +239,7 @@ class DifferentialEvolutionSolver(object):
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=None, popmul=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
-                 callback=None, disp=False, polish=True,
+                 callback=None, disp=False, polish=False,
                  init='latinhypercube', pool=None):
         
         # use aggressive mutation strategy (or quasi-aggressive in case of parallel)
