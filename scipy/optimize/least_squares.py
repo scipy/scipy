@@ -219,20 +219,26 @@ def least_squares(
         Method for solving trust-region subproblems, relevant only for 'trf'
         and 'dogbox' methods.
 
-            * 'exact' is suitable for problems with dense Jacobian matrices.
-              It requires work comparable to a single SVD of Jacobian per
-              iteration.
+            * 'exact' is suitable for not very large problems, which have
+              dense Jacobian matrices. It requires work comparable to a single
+              SVD of Jacobian per iteration.
             * 'lsmr' is suitable for problems with sparse and large Jacobian
               matrices. It uses iterative ``scipy.sparse.linalg.lsmr``
-              procedure for finding a linear least-squares solution and
+              procedure for finding a solution of linear least squares and
               requires only matrix-vector product evaluations.
 
         If None (default) the solver is chosen based on type of Jacobian
         returned on the first iteration.
     tr_options : dict, optional
-        Keyword options passed to trust-region solver. Currently only
-        ``tr_solver='lsmr'`` supports options, which are described in
-        documentation of ``scipy.sparse.linalg.lsmr``.
+        Keyword options passed to trust-region solver.
+
+            * `'tr_solver='exact'` : `tr_options` are ignored.
+            * ``tr_solver='lsmr'`` : options for ``scipy.sparse.linalg.lsmr``.
+               Additionally  ``method='trf'`` supports 'regularize' option
+               (bool, default True) - add regularization term to the normal
+               equation, which improves convergence with rank-deficient
+               Jacobian [Byrd]_ (eq. 3.4).
+
     jac_sparsity : {None, array_like, sparse matrix}, optional
         Defines Jacobian sparsity structure for finite differencing (relevant
         when `jac` is '2-point' or '3-point'). Provide this parameter to
@@ -346,6 +352,10 @@ def least_squares(
     ----------
     .. [NR] William H. Press et. al. "Numerical Recipes. The Art of Scientific
             Computing. 3rd edition", Sec. 5.7.
+    .. [Byrd] R. H. Byrd, R. B. Schnabel and G. A. Shultz, "Approximate
+              solution of the trust region problem by minimization over
+              two-dimensional subspaces", Math. Programming, 40 (1988),
+              pp. 247-263.
     .. [Curtis] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
                 sparse Jacobian matrices", Journal of the Institute of
                 Mathematics and its Applications, 13 (1974), pp. 117-120.

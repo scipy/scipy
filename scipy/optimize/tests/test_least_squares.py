@@ -340,7 +340,7 @@ class SparseMixin(object):
             assert_allclose(res_sparse.obj_value, 0, atol=1e-20)
             assert_allclose(res_dense.obj_value, 0, atol=1e-20)
 
-    def test_lsmr_options(self):
+    def test_tr_options(self):
         p = BroydenTridiagonal(sparse=True)
         res = least_squares(p.fun, p.x0, p.jac, method=self.method,
                             tr_options={'btol': 1e-10})
@@ -409,6 +409,13 @@ class TestDogbox(TestCase, BaseMixin, BoundsMixin, SparseMixin):
 
 class TestTRF(TestCase, BaseMixin, BoundsMixin, SparseMixin):
     method = 'trf'
+
+    def test_lsmr_regularization(self):
+        p = BroydenTridiagonal()
+        for regularize in [True, False]:
+            res = least_squares(p.fun, p.x0, p.jac, method='trf',
+                                tr_options={'regularize': regularize})
+            assert_allclose(res.obj_value, 0, atol=1e-20)
 
 
 class TestLM(TestCase, BaseMixin):

@@ -176,15 +176,18 @@ def find_reflected_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, l, u, theta):
         return p_h, r_h
 
 
-def find_gradient_step(x, J_h, diag_h, g_h, d, Delta, lb, ub, theta):
-    """Find a minimizer of a quadratic model along the scaled gradient."""
+def find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta):
+    """Find a minimizer of a quadratic model along the scaled gradient.
+
+    a, b - coefficients of a quadratic model along g_h, should be
+    precomputed.
+    """
     to_bound, _ = step_size_to_bound(x, -g_h * d, lb, ub)
     to_bound *= theta
 
     to_tr = Delta / norm(g_h)
     g_stride = min(to_bound, to_tr)
 
-    a, b = build_1d_quadratic_function(J_h, diag_h, g_h, -g_h)
     g_stride, _ = minimize_quadratic(a, b, 0.0, g_stride)
 
     return -g_stride * g_h
@@ -254,6 +257,9 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     if tr_solver == 'exact':
         J_augmented = np.empty((m + n, n))
         alpha = 0.0  # "Levenberg-Marquardt" parameter
+    elif tr_solver == 'lsmr':
+        reg_term = 0.0
+        regularize = tr_options.pop("regularize", True)
 
     obj_value = np.dot(f, f)
 
@@ -299,8 +305,14 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             V = V.T
             uf = U.T.dot(f_augmented)
         elif tr_solver == 'lsmr':
+            if regularize:
+                a, b = build_1d_quadratic_function(J, diag_h, g_h, -g_h)
+                to_tr = Delta / norm(g_h)
+                _, g_value = minimize_quadratic(a, b, 0, to_tr)
+                reg_term = -g_value / Delta**2
+
             Jop = aslinearoperator(J)
-            lsmr_op = lsq_linear_operator(Jop, diag_h**0.5)
+            lsmr_op = lsq_linear_operator(Jop, (diag_h + reg_term)**0.5)
             gn_h = lsmr(lsmr_op, f_augmented, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
             S, _ = qr(S, mode='economic')
@@ -332,8 +344,12 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             else:  # Otherwise consider a reflected and gradient steps.
                 p_h, r_h = find_reflected_step(
                     x, J, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
-                c_h = find_gradient_step(
-                    x, J, diag_h, g_h, d, Delta, lb, ub, theta)
+
+                if tr_solver == 'exact' or not regularize:
+                    a, b = build_1d_quadratic_function(J, diag_h, g_h, -g_h)
+                # else: a, b were already computed.
+
+                c_h = find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta)
                 steps_h = np.array([p_h, r_h, c_h])
 
             qp_values = evaluate_quadratic_function(J, diag_h, g_h, steps_h)
