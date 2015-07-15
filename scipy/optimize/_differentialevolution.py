@@ -101,12 +101,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Display status messages.
-    callback : callable, `callback(xk, convergence=val)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
-        value of the population convergence.  When ``val`` is greater than one
-        the function halts. If callback returns `True`, then the minimization
-        is halted (any polishing is still carried out).
+    callback : callable, `callback(xx, ff, nit)`, optional
+        A function to follow the progress of the minimization. ``xx`` is
+        the list of the current population individuals. ``ff`` is the list of
+        population energies, where ``ff[0]`` is the best inividual.
+        If callback returns `True`, then the minimization
+        is halted (any polishing is still carried out). 
+        The callback is used for monitoring the convergence of the individuals
+        and for custom stopping criteria.
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -484,8 +486,9 @@ class DifferentialEvolutionSolver(object):
                 print(self._scale_parameters(self.population[0]))
 
             if (self.callback and
-                    self.callback(self._scale_parameters(self.population[0]),
-                                  convergence=self.tol / convergence) is True):
+                    self.callback(xx=self._scale_parameters(self.population),
+                                  ff=self.population_energies,
+                                  nit=nit) is True):
 
                 warning_flag = True
                 status_message = ('callback function requested stop early '
