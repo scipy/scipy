@@ -340,7 +340,7 @@ class BSpline(object):
         # pad the c array if needed
         ct = len(self.t) - len(c)
         if ct > 0:
-            c = np.r_[c, [0]*ct]
+            c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = fitpack.splantider((self.t, c, self.k), nu)
         return self._construct_fast(*tck, extrapolate=self.extrapolate)
 

@@ -255,7 +255,7 @@ class TestBSpline(TestCase):
         b = BSpline.basis_element([0, 1, 1, 2])
         assert_(np.isnan(b(np.nan)))
 
-    def test_derivative(self):
+    def test_derivative_method(self):
         b, t, c, k = _make_random_spline(k=5)
         b0 = BSpline(t, c, k)
         xx = np.linspace(t[k], t[-k-1], 20)
@@ -263,9 +263,16 @@ class TestBSpline(TestCase):
             b = b.derivative()
             assert_allclose(b0(xx, j), b(xx), atol=1e-12, rtol=1e-12)
 
-    def test_antiderivative(self):
+    def test_antiderivative_method(self):
         b, t, c, k = _make_random_spline()
         xx = np.linspace(t[k], t[-k-1], 20)
+        assert_allclose(b.antiderivative().derivative()(xx),
+                        b(xx), atol=1e-14, rtol=1e-14)
+
+        # repeat with n-D array for c
+        c = np.c_[c, c, c]
+        c = np.dstack((c, c))
+        b = BSpline(t, c, k)
         assert_allclose(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
 
