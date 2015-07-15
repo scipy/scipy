@@ -1,6 +1,7 @@
 """
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
+Parallel version by Pavel Ponomarev 2015
 """
 from __future__ import division, print_function, absolute_import
 import numpy as np
@@ -23,7 +24,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
     space, but often requires larger numbers of function evaluations than
-    conventional gradient based techniques.
+    conventional gradient based techniques. Suitable to find the minimum of 
+    non-differentiable, non-linear and noizy functions.
 
     The algorithm is due to Storn and Price [1]_.
 
@@ -43,7 +45,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Any additional fixed parameters needed to
         completely specify the objective function.
     strategy : str, optional
-        The differential evolution strategy to use. Should be one of:
+        The mutation strategy to use. Should be one of:
 
             - 'best1bin'
             - 'best1exp'
@@ -63,12 +65,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``popsize * len(x)`` individuals. Default is 15.
     tol : float, optional
         When the mean of the population energies, multiplied by tol,
         divided by the standard deviation of the population energies
         is greater than 1 the solving process terminates:
         ``convergence = mean(pop) * tol / stdev(pop) > 1``
+        Default value is 'tol = 0.01'
     mutation : float or tuple(float, float), optional
         The mutation constant.
         If specified as a float it should be in the range [0, 2].
@@ -78,6 +81,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``U[min, max)``. Dithering can help speed convergence significantly.
         Increasing the mutation constant increases the search radius, but will
         slow down convergence.
+    pool : iterable, optional
+        Optional iterable object which is used for parallelization. It can be
+        any object with a map method that follows the same calling sequence as
+        the built-in map function. There are two helper classes -- MPIpool and 
+        JLpool that provide 'mpi4py'-based paralelization and 'joblib'-based
+        parallelization alternatives.
     recombination : float, optional
         The recombination constant, should be in the range [0, 1]. Increasing
         this value allows a larger number of mutants to progress into the next
@@ -90,7 +99,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         `np.random.RandomState` instance is used.
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
-        Display status messages
+        Display status messages.
     callback : callable, `callback(xk, convergence=val)`, optional
         A function to follow the progress of the minimization. ``xk`` is
         the current value of ``x0``. ``val`` represents the fractional
@@ -126,9 +135,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     Notes
     -----
     Differential evolution is a stochastic population based method that is
-    useful for global optimization problems. At each pass through the population
-    the algorithm mutates each candidate solution by mixing with other candidate
-    solutions to create a trial candidate. There are several strategies [2]_ for
+    useful for constrained, parameter bound, nonlinear, disconinuous
+    global optimization problems. At each pass through the population
+    the algorithm mutates each candidate by mixing its parameters with other
+    candidates to create a trial candidate. There are several strategies [2]_ for
     creating trial candidates, which suit some problems more than others. The
     'best1bin' strategy is a good starting point for many systems. In this
     strategy two members of the population are randomly chosen. Their difference
@@ -146,7 +156,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     'best1bin') - a random number in [0, 1) is generated.  If this number is
     less than the `recombination` constant then the parameter is loaded from
     `b'`, otherwise it is loaded from the original candidate.  The final
-    parameter is always loaded from `b'`.  Once the trial candidate is built
+    parameter is always loaded from `b'`. Once the trial candidate is built
     its fitness is assessed. If the trial is better than the original candidate
     then it takes its place. If it is also better than the best overall
     candidate it also replaces that.
