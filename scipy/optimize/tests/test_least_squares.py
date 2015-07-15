@@ -10,6 +10,7 @@ from scipy.optimize import least_squares
 from scipy.optimize._lsq_bounds import make_strictly_feasible
 from scipy.optimize._minpack import error as MinpackError
 from scipy.sparse import issparse, lil_matrix
+from scipy.sparse.linalg import aslinearoperator
 
 
 def fun_trivial(x, a=0):
@@ -61,7 +62,7 @@ def jac_wrong_dimensions(x, a=0.0):
 
 
 class BroydenTridiagonal(object):
-    def __init__(self, n=100, sparse=True):
+    def __init__(self, n=100, mode='sparse'):
         np.random.seed(0)
 
         self.n = n
@@ -76,7 +77,7 @@ class BroydenTridiagonal(object):
         self.x0 += 0.1 * np.random.randn(n)
         self.x0 = make_strictly_feasible(self.x0, self.lb, self.ub)
 
-        if sparse:
+        if mode == 'sparse':
             self.sparsity = lil_matrix((n, n), dtype=int)
             i = np.arange(n)
             self.sparsity[i, i] = 1
@@ -86,9 +87,13 @@ class BroydenTridiagonal(object):
             self.sparsity[i, i + 1] = 1
 
             self.jac = self._jac
-        else:
+        elif mode == 'linear_op':
+            self.jac = lambda x: aslinearoperator(self._jac(x))
+        elif mode == 'dense':
             self.sparsity = None
             self.jac = lambda x: self._jac(x).toarray()
+        else:
+            assert False
 
     def fun(self, x):
         f = (3 - x) * x + 1
@@ -323,8 +328,8 @@ class BoundsMixin(object):
 
 class SparseMixin(object):
     def test_equivalence(self):
-        sparse = BroydenTridiagonal(sparse=True)
-        dense = BroydenTridiagonal(sparse=False)
+        sparse = BroydenTridiagonal(mode='sparse')
+        dense = BroydenTridiagonal(mode='dense')
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             for tr_solver in ['exact', 'lsmr']:
@@ -341,7 +346,7 @@ class SparseMixin(object):
             assert_allclose(res_dense.obj_value, 0, atol=1e-20)
 
     def test_tr_options(self):
-        p = BroydenTridiagonal(sparse=True)
+        p = BroydenTridiagonal()
         res = least_squares(p.fun, p.x0, p.jac, method=self.method,
                             tr_options={'btol': 1e-10})
         assert_allclose(res.obj_value, 0, atol=1e-20)
@@ -354,8 +359,8 @@ class SparseMixin(object):
                       tr_solver='lsmr', tr_options={'tol': 1e-10})
 
     def test_solver_selection(self):
-        sparse = BroydenTridiagonal(sparse=True)
-        dense = BroydenTridiagonal(sparse=False)
+        sparse = BroydenTridiagonal(mode='sparse')
+        dense = BroydenTridiagonal(mode='dense')
         res_sparse = least_squares(sparse.fun, sparse.x0, jac=sparse.jac,
                                    method=self.method)
         res_dense = least_squares(dense.fun, dense.x0, jac=dense.jac,
@@ -366,7 +371,7 @@ class SparseMixin(object):
         assert_(isinstance(res_dense.jac, np.ndarray))
 
     def test_numerical_jac(self):
-        p = BroydenTridiagonal(sparse=True)
+        p = BroydenTridiagonal()
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
             for tr_solver, jac in product(['exact', 'lsmr'],
@@ -382,7 +387,7 @@ class SparseMixin(object):
                 assert_allclose(res_sparse.obj_value, 0, atol=1e-20)
 
     def test_with_bounds(self):
-        p = BroydenTridiagonal(sparse=True)
+        p = BroydenTridiagonal()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             for jac, tr_solver, jac_sparsity in product(
@@ -401,6 +406,13 @@ class SparseMixin(object):
                 assert_allclose(res_1.optimality, 0, atol=1e-10)
                 assert_allclose(res_2.optimality, 0, atol=1e-10)
                 assert_allclose(res_3.optimality, 0, atol=1e-10)
+
+    def test_linear_operator(self):
+        p = BroydenTridiagonal(mode='linear_op')
+        res = least_squares(p.fun, p.x0, p.jac, method=self.method)
+        assert_allclose(res.obj_value, 0.0, atol=1e-20)
+        assert_raises(ValueError, least_squares, p.fun, p.x0, p.x0,
+                      method=self.method, tr_solver='exact')
 
 
 class TestDogbox(TestCase, BaseMixin, BoundsMixin, SparseMixin):
@@ -431,7 +443,7 @@ class TestLM(TestCase, BaseMixin):
         assert_raises(TypeError, least_squares, fun_trivial,
                       2.0, options={'epsfcn': 1e-10}, method='lm')
 
-    def test_colderiv(self):
+    def test_col_deriv(self):
         x0 = [-2, 1]
         x_opt = [1, 1]
         res = least_squares(fun_rosenbrock, x0, jac_rosenbrock_transposed,
@@ -448,4 +460,3 @@ def test_basic():
 
 if __name__ == "__main__":
     run_module_suite()
-

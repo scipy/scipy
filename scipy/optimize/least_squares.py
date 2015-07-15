@@ -9,6 +9,7 @@ from .minpack import leastsq
 from .optimize import OptimizeResult
 from ._numdiff import approx_derivative, group_columns
 from ..sparse import issparse, csr_matrix, csc_matrix
+from ..sparse.linalg import LinearOperator
 
 from ._lsq_bounds import in_bounds, prepare_bounds
 from ._lsq_trf import trf
@@ -444,7 +445,7 @@ def least_squares(
             J = jac(x, *args, **kwargs)
             if issparse(J):
                 J = csr_matrix(J)
-            else:
+            elif not isinstance(J, LinearOperator):
                 J = np.atleast_2d(J)
                 if J.ndim != 2:
                     raise RuntimeError("`jac` must return at most 2-d "

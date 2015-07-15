@@ -31,6 +31,16 @@ def lsq_linear_operator(Jop, diag_root):
     return LinearOperator((m + n, n), matvec=matvec, rmatvec=rmatvec)
 
 
+def post_multiplied_operator(Jop, d):
+    def matvec(x):
+        return Jop.matvec(x * d)
+
+    def rmatvec(x):
+        return d * Jop.rmatvec(x)
+
+    return LinearOperator(Jop.shape, matvec=matvec, rmatvec=rmatvec)
+
+
 def minimize_quadratic(a, b, lb, ub):
     """Minimize a 1-d quadratic function subject to bounds.
 
@@ -118,7 +128,14 @@ def evaluate_quadratic_function(J, diag, g, steps):
     values : ndarray, shape (k,)
         Array containing k values of the function.
     """
-    Js = J.dot(steps.T)
+    if isinstance(J, LinearOperator):
+        Js = np.empty((steps.shape[0], J.shape[0]))
+        for i, s in enumerate(steps):
+            Js[i] = J.matvec(s)
+        Js = Js.T
+    else:
+        Js = J.dot(steps.T)
+
     return 0.5 * (np.sum(Js**2, axis=0) +
                   np.sum(diag * steps**2, axis=1)) + np.dot(steps, g)
 
@@ -229,17 +246,27 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
     J = jac(x, f)
     njev = 1
+
     if tr_solver is None:
-        if issparse(J):
+        if issparse(J) or isinstance(J, LinearOperator):
             tr_solver = 'lsmr'
         else:
             tr_solver = 'exact'
-    elif tr_solver == 'exact' and issparse(J):
-        warn("Sparse Jacobian will be converted to dense for tr_solver=exact, "
-             "consider using 'lsmr' solver or return dense Jacobian.")
-        J = J.toarray()
+    elif tr_solver == 'exact':
+        if issparse(J):
+            warn("Sparse Jacobian will be converted to dense for"
+                 "tr_solver=exact, consider using 'lsmr' solver or return "
+                 "dense Jacobian.")
+            J = J.toarray()
+        elif isinstance(J, LinearOperator):
+            raise ValueError("Method 'exact' can't be used when `jac` returns "
+                             "LinearOperator.")
 
-    g = J.T.dot(f)
+    if isinstance(J, LinearOperator):
+        g = J.rmatvec(f)
+    else:
+        g = J.T.dot(f)
+
     m, n = J.shape
 
     if scaling == 'jac':
@@ -271,7 +298,10 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         if scaling == 'jac':
             scale = np.maximum(scale, np.sum(J**2, axis=0)**0.5)
 
-        g = J.T.dot(f)
+        if isinstance(J, LinearOperator):
+            g = J.rmatvec(f)
+        else:
+            g = J.T.dot(f)
 
         # Compute Coleman-Li scaling parameters and "hat" variables.
         v, jv = scaling_vector(x, g, lb, ub)
@@ -294,6 +324,8 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         # is in hat-space.
         if issparse(J):
             J.data *= d.take(J.indices, mode='clip')  # scikit-learn recipe.
+        elif isinstance(J, LinearOperator):
+            J = post_multiplied_operator(J, d)
         else:
             J *= d
 
@@ -316,7 +348,10 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             gn_h = lsmr(lsmr_op, f_augmented, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
             S, _ = qr(S, mode='economic')
-            JS = J.dot(S)
+            if isinstance(J, LinearOperator):
+                JS = np.vstack((J.matvec(S[:, 0]), J.matvec(S[:, 1]))).T
+            else:
+                JS = J.dot(S)
             B_S = np.dot(JS.T, JS) + np.dot(S.T * diag_h, S)
             g_S = S.T.dot(g_h)
 

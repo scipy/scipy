@@ -160,14 +160,19 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     J = jac(x0, f)
     njev = 1
     if tr_solver is None:
-        if issparse(J):
+        if issparse(J) or isinstance(J, LinearOperator):
             tr_solver = 'lsmr'
         else:
             tr_solver = 'exact'
-    elif tr_solver == 'exact' and issparse(J):
-        warn("Sparse Jacobian will be converted to dense for tr_solver=exact, "
-             "consider using 'lsmr' solver or return dense Jacobian.")
-        J = J.toarray()
+    elif tr_solver == 'exact':
+        if issparse(J):
+            warn("Sparse Jacobian will be converted to dense for"
+                 "tr_solver=exact, consider using 'lsmr' solver or return "
+                 "dense Jacobian.")
+            J = J.toarray()
+        elif isinstance(J, LinearOperator):
+            raise ValueError("tr_solver='exact' can't be used when `jac` "
+                             "returns LinearOperator.")
 
     if scaling == 'jac':
         scale = np.sum(J**2, axis=0)**0.5
@@ -195,7 +200,10 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         if scaling == 'jac':
             scale = np.maximum(scale, np.sum(J**2, axis=0)**0.5)
 
-        g = J.T.dot(f)
+        if isinstance(J, LinearOperator):
+            g = J.rmatvec(f)
+        else:
+            g = J.T.dot(f)
 
         active_set = on_bound * g < 0
         free_set = ~active_set
