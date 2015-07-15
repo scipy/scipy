@@ -210,7 +210,7 @@ def find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta):
     return -g_stride * g_h
 
 
-def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
+def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         tr_solver, tr_options):
     """Minimize the sum of squares of nonlinear functions subject to bounds on
     independent variables by Trust Region Reflective algorithm.
@@ -241,37 +241,17 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     # Start with strictly feasible guess.
     x = make_strictly_feasible(x0, lb, ub, rstep=1e-10)
 
-    f = fun(x)
+    f = f0
     nfev = 1
 
-    J = jac(x, f)
+    J = J0
     njev = 1
-
-    if tr_solver is None:
-        if issparse(J) or isinstance(J, LinearOperator):
-            tr_solver = 'lsmr'
-        else:
-            tr_solver = 'exact'
-    elif tr_solver == 'exact':
-        if issparse(J):
-            warn("Sparse Jacobian will be converted to dense for"
-                 "tr_solver=exact, consider using 'lsmr' solver or return "
-                 "dense Jacobian.")
-            J = J.toarray()
-        elif isinstance(J, LinearOperator):
-            raise ValueError("Method 'exact' can't be used when `jac` returns "
-                             "LinearOperator.")
-
-    if isinstance(J, LinearOperator) and scaling == 'jac':
-        raise ValueError("scaling='jac' can't be used when `jac` "
-                         "returns LinearOperator.")
+    m, n = J.shape
 
     if isinstance(J, LinearOperator):
         g = J.rmatvec(f)
     else:
         g = J.T.dot(f)
-
-    m, n = J.shape
 
     if scaling == 'jac':
         if issparse(J):
@@ -329,7 +309,7 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             return OptimizeResult(
                 x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
                 active_mask=active_mask, nfev=nfev, njev=njev,
-                status=termination_status, x_covariance=None)
+                status=termination_status)
 
         # Right multiply J by diag(d), After this transformation Jacobian
         # is in hat-space.
@@ -452,15 +432,11 @@ def trf(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             J = jac(x, f)
             njev += 1
-            if tr_solver == 'exact' and issparse(J):
-                J = J.toarray()
         elif nfev == max_nfev:  # Recompute J if algorithm is terminating.
             J = jac(x, f)
-            if tr_solver == 'exact' and issparse(J):  # For consistency.
-                J = J.toarray()
+            # Don't increase njev, because it's the implementation detail.
 
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
     return OptimizeResult(
         x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
-        active_mask=active_mask, nfev=nfev, njev=njev, status=0,
-        x_covariance=None)
+        active_mask=active_mask, nfev=nfev, njev=njev, status=0)

@@ -122,7 +122,7 @@ def constrained_cauchy_step(x, cauchy_step, tr_bounds, l, u):
     return step_size * cauchy_step, bound_hits, tr_hit
 
 
-def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
+def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
            tr_solver, tr_options):
     """Minimize the sum of squares of nonlinear functions subject to bounds on
     independent variables by dogleg method applied to a rectangular trust
@@ -154,29 +154,11 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     """
     EPS = np.finfo(float).eps
 
-    f = fun(x0)
+    f = f0
     nfev = 1
 
-    J = jac(x0, f)
+    J = J0
     njev = 1
-    if tr_solver is None:
-        if issparse(J) or isinstance(J, LinearOperator):
-            tr_solver = 'lsmr'
-        else:
-            tr_solver = 'exact'
-    elif tr_solver == 'exact':
-        if issparse(J):
-            warn("Sparse Jacobian will be converted to dense for"
-                 "tr_solver=exact, consider using 'lsmr' solver or return "
-                 "dense Jacobian.")
-            J = J.toarray()
-        elif isinstance(J, LinearOperator):
-            raise ValueError("tr_solver='exact' can't be used when `jac` "
-                             "returns LinearOperator.")
-
-    if isinstance(J, LinearOperator) and scaling == 'jac':
-        raise ValueError("scaling='jac' can't be used when `jac` "
-                         "returns LinearOperator.")
 
     if scaling == 'jac':
         if issparse(J):
@@ -232,7 +214,7 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             return OptimizeResult(
                 x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
                 active_mask=on_bound, nfev=nfev, njev=njev,
-                status=termination_status, x_covariance=None)
+                status=termination_status)
 
         x_free = x[free_set]
         l_free = lb[free_set]
@@ -333,10 +315,7 @@ def dogbox(fun, jac, x0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             J = jac(x, f)
             njev += 1
-            if tr_solver == 'exact' and issparse(J):
-                J = J.toarray()
 
     return OptimizeResult(
         x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
-        active_mask=on_bound, nfev=nfev, njev=njev, status=0,
-        x_covariance=None)
+        active_mask=on_bound, nfev=nfev, njev=njev, status=0)

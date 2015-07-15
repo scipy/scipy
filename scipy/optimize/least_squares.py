@@ -420,10 +420,7 @@ def least_squares(
         raise ValueError("`x0` is infeasible.")
 
     def fun_wrapped(x):
-        f = np.atleast_1d(fun(x, *args, **kwargs))
-        if f.ndim > 1:
-            raise RuntimeError("`fun` must return at most 1-d array_like.")
-        return f
+        return np.atleast_1d(fun(x, *args, **kwargs))
 
     if jac in ['2-point', '3-point']:
         if jac_sparsity is not None:
@@ -437,32 +434,72 @@ def least_squares(
             J = approx_derivative(
                 fun, x, rel_step=diff_step, method=jac, f0=f, bounds=bounds,
                 args=args, kwargs=kwargs, sparsity=sparsity)
-            if not issparse(J):
+
+            if issparse(J) and tr_solver == 'exact':
+                warn("Jacobian is converted to dense for tr_solver='exact' "
+                     "even though `jac_sparsity` is provided. Consider using "
+                     "'lsmr' trust-region solver or set `jac_sparsity` to "
+                     "None.")
+                J = J.toarray()
+            elif not issparse(J):
                 J = np.atleast_2d(J)
+
             return J
     else:
-        def jac_wrapped(x, f):
+        def jac_wrapped(x, _):
             J = jac(x, *args, **kwargs)
+
             if issparse(J):
-                J = csr_matrix(J)
+                if tr_solver == 'exact':
+                    warn("Jacobian is converted to dense for "
+                         "tr_solver='exact', consider using 'lsmr' "
+                         "trust-region solver or return dense Jacobian.")
+                    J = J.toarray()
+                else:
+                    J = csr_matrix(J)
             elif not isinstance(J, LinearOperator):
                 J = np.atleast_2d(J)
-                if J.ndim != 2:
-                    raise RuntimeError("`jac` must return at most 2-d "
-                                       "array_like or sparse matrix.")
-            if f.shape[0] != J.shape[0]:
-                raise RuntimeError("Inconsistent dimensions between the "
-                                   "returns of `fun` and `jac`.")
+
             return J
 
+    f0 = fun_wrapped(x0)
+    if f0.ndim != 1:
+        raise RuntimeError("`fun` must return at most 1-d array_like.")
+
+    J0 = jac_wrapped(x0, f0)
+    if len(J0.shape) != 2:
+        raise RuntimeError("`jac` must return at most 2-d array_like, "
+                           "sparse matrix or LinearOperator.")
+
+    if f0.shape[0] != J0.shape[0]:
+        raise RuntimeError("Inconsistent dimensions between the "
+                           "returns of `fun` and `jac`.")
+
+    if tr_solver is None:
+        if isinstance(J0, np.ndarray):
+            tr_solver = 'exact'
+        else:
+            tr_solver = 'lsmr'
+
+    if isinstance(J0, LinearOperator):
+        if tr_solver == 'exact':
+            raise ValueError("tr_solver='exact' can't be used when `jac` "
+                             "returns LinearOperator.")
+        if scaling == 'jac':
+            raise ValueError("scaling='jac' can't be used when `jac` "
+                             "return LinearOperator.")
+
     if method == 'trf':
-        result = trf(fun_wrapped, jac_wrapped, x0, lb, ub, ftol, xtol, gtol,
-                     max_nfev, scaling, tr_solver, tr_options, **options)
+        result = trf(
+            fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol, gtol,
+            max_nfev, scaling, tr_solver, tr_options, **options)
 
     elif method == 'dogbox':
-        result = dogbox(fun_wrapped, jac_wrapped, x0, lb, ub, ftol, xtol, gtol,
-                        max_nfev, scaling, tr_solver, tr_options, **options)
+        result = dogbox(
+            fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol, gtol,
+            max_nfev, scaling, tr_solver, tr_options, **options)
 
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0
+    result.x_covariance = None
     return result
