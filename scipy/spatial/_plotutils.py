@@ -104,8 +104,8 @@ def convex_hull_plot_2d(hull, ax=None):
     for simplex in hull.simplices:
         line_segments.append([(x, y) for x, y in hull.points[simplex]])
     ax.add_collection(LineCollection(line_segments,
-                                     colors = 'k',
-                                     linestyle = 'solid'))
+                                     colors='k',
+                                     linestyle='solid'))
     _adjust_bounds(ax, hull.points)
 
     return ax.figure
@@ -155,8 +155,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
             line_segments.append([(x, y) for x, y in vor.vertices[simplex]])
 
     ax.add_collection(LineCollection(line_segments,
-                                     colors = 'k',
-                                     linestyle = 'solid'))
+                                     colors='k',
+                                     linestyle='solid'))
     ptp_bound = vor.points.ptp(axis=0)
 
     line_segments = []
@@ -178,8 +178,8 @@ def voronoi_plot_2d(vor, ax=None, **kw):
                                   (far_point[0], far_point[1])])
 
     ax.add_collection(LineCollection(line_segments,
-                                     colors = 'k',
-                                     linestyle = 'dashed'))
+                                     colors='k',
+                                     linestyle='dashed'))
     _adjust_bounds(ax, vor.points)
 
     return ax.figure
