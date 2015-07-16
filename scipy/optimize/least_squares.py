@@ -499,7 +499,7 @@ def least_squares(
 
     if method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
-                     gtol, max_nfev, scaling, tr_solver, tr_options)
+                     gtol, max_nfev, scaling, tr_solver, tr_options.copy())
 
     elif method == 'dogbox':
         result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,

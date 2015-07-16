@@ -270,7 +270,6 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     f_augmented = np.zeros((m + n))
     if tr_solver == 'exact':
         J_augmented = np.empty((m + n, n))
-        alpha = 0.0  # "Levenberg-Marquardt" parameter
     elif tr_solver == 'lsmr':
         reg_term = 0.0
         regularize = tr_options.pop("regularize", True)
@@ -279,6 +278,8 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
     if max_nfev is None:
         max_nfev = x0.size * 100
+
+    alpha = 0.0  # "Levenberg-Marquardt" parameter
 
     termination_status = None
     while nfev < max_nfev:
