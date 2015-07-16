@@ -287,8 +287,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             ftol_satisfied = (abs(actual_reduction) < ftol * obj_value and
                               ratio > 0.25)
-            xtol_satisfied = Delta < xtol * max(EPS**0.5,
-                                                norm(x * scale, ord=np.inf))
+            xtol_satisfied = norm(step) < xtol * (xtol + norm(x))
 
             if ftol_satisfied and xtol_satisfied:
                 termination_status = 4
