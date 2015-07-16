@@ -320,9 +320,6 @@ class csr_matrix(_cs_matrix, IndexMixin):
         csr_sample_values(self.shape[0], self.shape[1],
                           self.indptr, self.indices, self.data,
                           num_samples, row.ravel(), col.ravel(), val)
-        if row.ndim == 1:
-            # row and col are 1d
-            return np.asmatrix(val)
         return self.__class__(val.reshape(row.shape))
 
     def getrow(self, i):
