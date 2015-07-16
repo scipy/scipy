@@ -83,7 +83,9 @@ Equation (Local) Minimizers
 
 .. autosummary::
    :toctree: generated/
+   
    leastsq - Minimize the sum of squares of M equations in N unknowns
+   least_squares - Feature-rich least-squares minimization.
    nnls - Linear least-squares problem with non-negativity constraint
 
 Global Optimization

@@ -73,7 +73,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     if jac is None:
         if max_nfev is None:
             # n squared to account for Jacobian evaluations.
-            max_nfev = 100 * n**2
+            max_nfev = 100 * n * (n + 1)
         x, info, status = _minpack._lmdif(
             fun, x0, (), full_output, ftol, xtol, gtol,
             max_nfev, epsfcn, factor, scaling)
@@ -136,8 +136,7 @@ def least_squares(
 
     Let f(x) maps from R^n to R^m, this function finds a local minimum of::
 
-        F(x) = ||f(x)||**2 = sum(f_i(x)**2, i = 1, ..., m),
-        s. t. lb <= x <= ub,
+        F(x) = ||f(x)||**2 = sum(f_i(x)**2, i = 1, ..., m), lb <= x <= ub
 
     f(x) is called vector of residuals or simply residuals.
 
@@ -151,7 +150,7 @@ def least_squares(
         Function which computes a vector of residuals. The argument x passed
         to this function is ndarray of shape (n,) (never a scalar, even
         if n=1). It must return 1-d array_like of shape (m,) or a scalar.
-    x0 : array_like of shape (n,) or float
+    x0 : array_like with shape (n,) or float
         Initial guess on independent variables. If float, for internal usage
         it will be converted to 1-d array.
     jac : '2-point', '3-point' or callable, optional
@@ -169,7 +168,6 @@ def least_squares(
         an appropriate sign to disable bounds on all or some variables.
     method : {'trf', 'dogbox', 'lm'}, optional
         Algorithm to perform optimization.
-
             * 'trf' - Trust Region Reflective algorithm, particularly suitable
               for large sparse problems with bounds. Generally robust method.
             * 'dogbox' - dogleg algorithm with rectangular trust regions,
@@ -178,25 +176,41 @@ def least_squares(
             * 'lm' - Levenberg-Marquardt algorithm as implemented in MINPACK.
               Doesn't handle bounds and sparse Jacobians, but usually most
               efficient for small unconstrained problems.
-
-        Default is 'trf'. See Notes and algorithm options for more information.
+        Default is 'trf'. See Notes for more information.
     ftol : float, optional
         Tolerance for termination by the change of the objective value.
-        Default is square root of machine epsilon. See the exact meaning in
-        documentation for a selected `method`.
+        Default is square root of machine epsilon. The optimization process is
+        stopped when ``dF < ftol * F``, and there was adequate agreement
+        between a local quadratic model and the true model in the last step.
     xtol : float, optional
         Tolerance for termination by the change of the independent variables.
-        Default is square root of machine epsilon. See the exact meaning in
-        documentation for a selected `method`.
+        Default is square root of machine epsilon. The exact condition checked
+        depends on a `method` used:
+            * For 'trf' and 'dogbox' : ``norm(dx) < xtol * (xtol + norm(x))``
+            * For 'lm': ``Delta < xtol * norm(scaled_x)``, where Delta is a
+              trust-region radius and scaled_x is a scaled value of x
+              according to `scaling` parameter (see below).
     gtol : float, optional
         Tolerance for termination by the norm of gradient. Default is
-        square root of machine epsilon. In presence of bounds more correctly
-        to call it first-order optimality threshold, as a raw gradient
-        itself doesn't measure optimality. See the exact meaning in
-        documentation for a selected `method`.
+        square root of machine epsilon. The exact condition depends
+        on a `method` used:
+
+            * For 'trf' : ``norm(g_scaled, ord=np.inf) < gtol``, where
+              g_scaled is properly scaled gradient to account for the
+              presence of bounds [STIR]_.
+            * Fot 'dogbox' : ``norm(g_free, ord=np.inf) < gtol``, where
+              g_free is the gradient with respect to the variables which
+              aren't in the optimal state on the boundary.
+            * For 'lm' : the maximum cosine of angles between columns of
+              Jacobian and the residual vector is less than `gtol`, or the
+              residual vector is zero.
     max_nfev : None or int, optional
         Maximum number of function evaluations before the termination.
-        If None (default) each algorithm uses its own default value.
+        If None (default), the value is chosen automatically:
+            * For 'trf' and 'dogbox' : 100 * n.
+            * For 'lm':  100 * n if `jac` is callable and 100 * n * (n + 1)
+              otherwise (because 'lm' counts function calls in Jacobian
+              estimation).
     scaling : array_like or 'jac', optional
         Applies variables scaling to potentially improve algorithm convergence.
         Default is 1.0, which means no scaling. Scaling should be used to
@@ -218,7 +232,6 @@ def least_squares(
     tr_solver : {None, 'exact', 'lsmr'}, optional
         Method for solving trust-region subproblems, relevant only for 'trf'
         and 'dogbox' methods.
-
             * 'exact' is suitable for not very large problems, which have
               dense Jacobian matrices. It requires work comparable to a single
               SVD of Jacobian per iteration.
@@ -226,19 +239,16 @@ def least_squares(
               matrices. It uses iterative ``scipy.sparse.linalg.lsmr``
               procedure for finding a solution of linear least squares and
               requires only matrix-vector product evaluations.
-
         If None (default) the solver is chosen based on type of Jacobian
         returned on the first iteration.
     tr_options : dict, optional
         Keyword options passed to trust-region solver.
-
-            * `'tr_solver='exact'` : `tr_options` are ignored.
+            * ``tr_solver='exact'`` : `tr_options` are ignored.
             * ``tr_solver='lsmr'`` : options for ``scipy.sparse.linalg.lsmr``.
-               Additionally  ``method='trf'`` supports 'regularize' option
-               (bool, default True) - add regularization term to the normal
-               equation, which improves convergence with rank-deficient
-               Jacobian [Byrd]_ (eq. 3.4).
-
+              Additionally  ``method='trf'`` supports 'regularize' option
+              (bool, default True) - add regularization term to the normal
+              equation, which improves convergence with rank-deficient
+              Jacobian [Byrd]_ (eq. 3.4).
     jac_sparsity : {None, array_like, sparse matrix}, optional
         Defines Jacobian sparsity structure for finite differencing. Provide
         this parameter to greatly speed up finite difference Jacobian
@@ -261,21 +271,19 @@ def least_squares(
         Sum of squares at the solution.
     fun : ndarray, shape (m,)
         Vector of residuals at the solution.
-    jac : ndarray, shape (m, n)
-        Jacobian matrix at the solution.
+    jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
+        Jacobian matrix at the solution. The type is the same as was used by
+        the algorithm.
     optimality : float
         First-order optimality measure. In unconstrained problems it is always
         the uniform norm of the gradient. In constrained problems this is the
-        quantity which was compared with `gtol` during iterations, refer
-        to options of a selected method.
+        quantity which was compared with `gtol` during iterations.
     active_mask : ndarray of int, shape (n,)
         Each component shows whether a corresponding constraint is active
         (a variable is on the bound):
-
             *  0 - a constraint is not active.
             * -1 - a lower bound is active.
             *  1 - an upper bound is active.
-
         Might be somewhat arbitrary for 'trf' method as it does strictly
         feasible iterates and `active_mask` is determined with tolerance
         threshold.
@@ -288,14 +296,12 @@ def least_squares(
         approximation is used in 'lm' method, it is set to None.
     status : int
         Reason for algorithm termination:
-
-            * -1 - improper input parameters status returned from `leastsq`.
+            * -1 - improper input parameters status returned from MINPACK.
             *  0 - the maximum number of function evaluations is exceeded.
             *  1 - `gtol` termination condition is satisfied.
             *  2 - `ftol` termination condition is satisfied.
             *  3 - `xtol` convergence test is satisfied.
             *  4 - Both `ftol` and `xtol` termination conditions are satisfied.
-
     message : string
         Verbal description of the termination reason.
     success : int
@@ -309,13 +315,13 @@ def least_squares(
     The implementation is based on paper [JJMore]_, it is very robust and
     efficient with a lot of smart tricks. It should be your first choice
     for unconstrained problems. Note that it doesn't support bounds. Also
-    it doesn't work when n < m.
+    it doesn't work when m < n.
 
     Method 'trf' (Trust Region Reflective) is motivated by the process of
     solving a system of equations, which constitutes the first-order optimality
     condition for a bound-constrained minimization problem as formulated in
     [STIR]_. The algorithm iteratively solves trust-region subproblems
-    augmented by special diagonal quadratic term with trust-region shape
+    augmented by special diagonal quadratic term and with trust-region shape
     determined by the distance from the bounds and the direction of the
     gradient. This enhancements help not to take steps directly into bounds
     and explore the whole variable space. To improve convergence speed the
@@ -332,14 +338,17 @@ def least_squares(
     rectangular trust regions as opposed to conventional elliptical [Voglis]_.
     The intersection of a current trust region and initial bounds is again
     rectangular, so on each iteration a quadratic minimization problem subject
-    to bounds is solved. Powell's dogleg method [NumOpt]_ is applied to solve
-    these subproblems. The algorithm is likely to exhibit slow convergence
-    when the rank of Jacobian is less than the number of variables.
-    The algorithm often outperform 'trf' in bounded problems with small number
-    of variables.
+    to bounds is solved approximately by Powell's dogleg method [NumOpt]_.
+    The algorithm is likely to exhibit slow convergence when the rank of
+    Jacobian is less than the number of variables. The algorithm often
+    outperform 'trf' in bounded problems with small number of variables.
 
     References
     ----------
+    .. [STIR] Branch, M.A., T.F. Coleman, and Y. Li, "A Subspace, Interior,
+          and Conjugate Gradient Method for Large-Scale Bound-Constrained
+          Minimization Problems," SIAM Journal on Scientific Computing,
+          Vol. 21, Number 1, pp 1-23, 1999.
     .. [NR] William H. Press et. al. "Numerical Recipes. The Art of Scientific
             Computing. 3rd edition", Sec. 5.7.
     .. [Byrd] R. H. Byrd, R. B. Schnabel and G. A. Shultz, "Approximate
@@ -352,10 +361,6 @@ def least_squares(
     .. [JJMore] More, J. J., "The Levenberg-Marquardt Algorithm: Implementation
                 and Theory," Numerical Analysis, ed. G. A. Watson, Lecture Notes
                 in Mathematics 630, Springer Verlag, pp. 105-116, 1977.
-    .. [STIR] Branch, M.A., T.F. Coleman, and Y. Li, "A Subspace, Interior,
-              and Conjugate Gradient Method for Large-Scale Bound-Constrained
-              Minimization Problems," SIAM Journal on Scientific Computing,
-              Vol. 21, Number 1, pp 1-23, 1999.
     .. [Voglis] C. Voglis and I. E. Lagaris, "A Rectangular Trust Region
                 Dogleg Approach for Unconstrained and Bound Constrained
                 Nonlinear Optimization", WSEAS International Conference on
