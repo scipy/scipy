@@ -1482,11 +1482,16 @@ class TestMoments(TestCase):
         y = stats.moment(self.testcase, 4)
         assert_approx_equal(y, 2.5625)
 
+        # check array_like input for moment
         y = stats.moment(self.testcase, [1, 2, 3, 4])
-        assert_approx_equal(y[0], 0.0, 10)
-        assert_approx_equal(y[1], 1.25)
-        assert_approx_equal(y[2], 0.0)
-        assert_approx_equal(y[3], 2.5625)
+        assert_allclose(y, [0, 1.25, 0, 2.5625])
+
+        # check moment input consists only of integers
+        y = stats.moment(self.testcase, 0.0)
+        assert_approx_equal(y, 1.0)
+        assert_raises(ValueError, stats.moment, self.testcase, 1.2)
+        y = stats.moment(self.testcase, [1.0, 2, 3, 4.0])
+        assert_allclose(y, [0, 1.25, 0, 2.5625])
 
         # test empty input
         y = stats.moment([])

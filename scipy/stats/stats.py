@@ -1045,19 +1045,18 @@ def moment(a, moment=1, axis=0):
 
     Notes
     -----
-    [1]_ The n-th moment of a real-valued continuous function f(x) of a real
-    variable about a value c is:
+    [1]_ The k-th central moment of a data sample is:
+
     .. math::
 
-    m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - \bar{x})^k
+        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - \bar{x})^k
 
-    This function uses exponentiation by squares [2]_ for efficiency.
+    Where n is the number of samples and x-bar is the mean. This function uses
+    exponentiation by squares [1]_ for efficiency.
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Moment_(mathematics)
-
-    .. [2] http://eli.thegreenplace.net/2009/03/21/efficient-integer-exponentiation-algorithms
+    .. [1] http://eli.thegreenplace.net/2009/03/21/efficient-integer-exponentiation-algorithms
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1076,7 +1075,7 @@ def moment(a, moment=1, axis=0):
         return _moment(a, moment, axis)
 
 def _moment(a, moment, axis):
-    if not issubclass(type(moment), int):
+    if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
     if moment == 0:
@@ -1085,10 +1084,10 @@ def _moment(a, moment, axis):
         del shape[axis]
         if shape:
             # return an actual array of the appropriate shape
-            return np.zeros(shape, dtype=float) * 1.0
+            return np.ones(shape, dtype=float)
         else:
             # the input was 1D, so return a scalar instead of a rank-0 array
-            return np.float64(1.0)
+            return 1.0
 
     elif moment == 1:
         # By definition the first moment about the mean is 0.
