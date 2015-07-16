@@ -397,7 +397,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """
         # Scalar multiplication.
         if isscalarlike(other):
-            return self.__mul__(other)
+            return self._mul_scalar(other)
         # Sparse matrix or vector.
         if isspmatrix(other):
             if self.shape == other.shape:
@@ -441,11 +441,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 ret = self.tocoo()
                 ret.data = np.multiply(ret.data, other[ret.row, ret.col]
                                        ).view(np.ndarray).ravel()
-                # Current tests expect dense output.
-                return ret.todense()
+                return ret
             # Single element.
             elif other.size == 1:
-                return self.__mul__(other.flat[0])
+                return self._mul_scalar(other.flat[0])
         # Anything else.
         return np.multiply(self.todense(), other)
 

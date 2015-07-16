@@ -1079,7 +1079,7 @@ class _TestCommon:
         Asp = self.spmatrix(A)
         Bsp = self.spmatrix(B)
         assert_almost_equal(Asp.multiply(Bsp).todense(), A*B)  # sparse/sparse
-        assert_almost_equal(Asp.multiply(B), A*B)  # sparse/dense
+        assert_almost_equal(Asp.multiply(B).todense(), A*B)  # sparse/dense
 
         # complex/complex
         C = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
@@ -1087,11 +1087,11 @@ class _TestCommon:
         Csp = self.spmatrix(C)
         Dsp = self.spmatrix(D)
         assert_almost_equal(Csp.multiply(Dsp).todense(), C*D)  # sparse/sparse
-        assert_almost_equal(Csp.multiply(D), C*D)  # sparse/dense
+        assert_almost_equal(Csp.multiply(D).todense(), C*D)  # sparse/dense
 
         # real/complex
         assert_almost_equal(Asp.multiply(Dsp).todense(), A*D)  # sparse/sparse
-        assert_almost_equal(Asp.multiply(D), A*D)  # sparse/dense
+        assert_almost_equal(Asp.multiply(D).todense(), A*D)  # sparse/dense
 
     def test_elementwise_multiply_broadcast(self):
         A = array([4])
