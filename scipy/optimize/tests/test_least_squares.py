@@ -47,6 +47,10 @@ def jac_rosenbrock_bad_dim(x):
     ])
 
 
+def fun_rosenbrock_cropped(x):
+    return fun_rosenbrock(x)[0]
+
+
 # When x 1-d array, return is 2-d array.
 def fun_wrong_dimensions(x):
     return np.array([x, x**2, x**3])
@@ -427,6 +431,11 @@ class TestLM(TestCase, BaseMixin):
     def test_LinearOperator_not_supported(self):
         p = BroydenTridiagonal(mode="linear_op")
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
+                      method='lm')
+
+    def test_m_less_n_not_supported(self):
+        x0 = [-2, 1]
+        assert_raises(ValueError, least_squares, fun_rosenbrock_cropped, x0,
                       method='lm')
 
 

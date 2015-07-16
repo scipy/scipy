@@ -460,6 +460,10 @@ def least_squares(
     if f0.ndim != 1:
         raise RuntimeError("`fun` must return at most 1-d array_like.")
 
+    if method == 'lm' and f0.size < x0.size:
+        raise ValueError("Method 'lm' doesn't work when the number of "
+                         "variables is less than the number of residuals.")
+
     J0 = jac_wrapped(x0, f0)
     if len(J0.shape) != 2:
         raise RuntimeError("`jac` must return at most 2-d array_like, "
