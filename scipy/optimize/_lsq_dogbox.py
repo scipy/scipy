@@ -1,6 +1,8 @@
-from __future__ import division
+"""
+dogleg algorithm with rectangular trust regions for least-squares minimization.
+"""
 
-from warnings import warn
+from __future__ import division
 
 import numpy as np
 from numpy.linalg import lstsq, norm
@@ -124,36 +126,6 @@ def constrained_cauchy_step(x, cauchy_step, tr_bounds, l, u):
 
 def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
            tr_solver, tr_options):
-    """Minimize the sum of squares of nonlinear functions subject to bounds on
-    independent variables by dogleg method applied to a rectangular trust
-    region.
-
-    Options
-    -------
-    ftol : float
-        The optimization process is stopped when ``dF < ftol * F`` and
-        dF_actual / dF_predicted > 0.25, where F is the objective function
-        value (the sum of squares), dF_actual is its change in the last
-        iteration, dF_predicted is predicted change from a local quadratic
-        model.
-    xtol : float
-        The optimization process is stopped when
-        ``Delta < xtol * max(EPS**0.5, norm(scaled_x))``, where Delta is a
-        trust-region radius, scaled_x is a scaled value of x according
-        to `scaling` parameter, EPS is machine epsilon.
-    gtol : float
-        The optimization process is stopped when
-        ``norm(g_free, ord=np.inf) < gtol``, where g_free is the gradient
-        with respect to the variables which aren't in the optimal state
-        on the boundary. If all variables reach optimum on the boundary,
-        then g_free is effectively assigned to zero and the algorithm
-        terminates.
-    max_nfev : None or int
-        Maximum number of function evaluations before the termination.
-        If None (default), it is assigned to 100 * n.
-    """
-    EPS = np.finfo(float).eps
-
     f = f0
     nfev = 1
 

@@ -2,8 +2,6 @@
 
 from __future__ import division
 
-from warnings import warn
-
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import svd, qr
@@ -212,32 +210,6 @@ def find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta):
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         tr_solver, tr_options):
-    """Minimize the sum of squares of nonlinear functions subject to bounds on
-    independent variables by Trust Region Reflective algorithm.
-
-    Options
-    -------
-    ftol : float
-        The optimization process is stopped when ``dF < ftol * F`` and
-        dF_actual / dF_predicted > 0.25, where F is the objective function
-        value (the sum of squares), dF_actual is its change in the last
-        iteration, dF_predicted is predicted change from a local quadratic
-        model.
-    xtol : float, optional
-        The optimization process is stopped when
-        ``norm(dx) < xtol * max(EPS**0.5, norm(x))``, where dx is a step taken
-        in the last iteration and EPS is machine epsilon.
-    gtol : float, optional
-        The optimization process is stopped when
-        ``norm(g_scaled, ord=np.inf) < gtol``, where g_scaled is properly
-        scaled gradient to account for the presence of bounds.
-        The scaling imposed by `scaling` parameter is not considered.
-    max_nfev : None or int, optional
-        Maximum number of function evaluations before the termination.
-        If None (default), it is assigned to 100 * n.
-    """
-    EPS = np.finfo(float).eps
-
     # Start with strictly feasible guess.
     x = make_strictly_feasible(x0, lb, ub, rstep=1e-10)
 

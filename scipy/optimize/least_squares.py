@@ -359,8 +359,8 @@ def least_squares(
                 sparse Jacobian matrices", Journal of the Institute of
                 Mathematics and its Applications, 13 (1974), pp. 117-120.
     .. [JJMore] More, J. J., "The Levenberg-Marquardt Algorithm: Implementation
-                and Theory," Numerical Analysis, ed. G. A. Watson, Lecture Notes
-                in Mathematics 630, Springer Verlag, pp. 105-116, 1977.
+                and Theory," Numerical Analysis, ed. G. A. Watson, Lecture
+                Notes in Mathematics 630, Springer Verlag, pp. 105-116, 1977.
     .. [Voglis] C. Voglis and I. E. Lagaris, "A Rectangular Trust Region
                 Dogleg Approach for Unconstrained and Bound Constrained
                 Nonlinear Optimization", WSEAS International Conference on
