@@ -9,7 +9,6 @@ __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 @_decorator
 def _held_figure(func, obj, ax=None, **kw):
     import matplotlib.pyplot as plt
-    from matplotlib.collections import LineCollection
 
     if ax is None:
         fig = plt.figure()
@@ -95,6 +94,8 @@ def convex_hull_plot_2d(hull, ax=None):
     Requires Matplotlib.
 
     """
+    from matplotlib.collections import LineCollection
+
     if hull.points.shape[1] != 2:
         raise ValueError("Convex hull is not 2-D")
 
@@ -111,7 +112,7 @@ def convex_hull_plot_2d(hull, ax=None):
 
 
 @_held_figure
-def voronoi_plot_2d(vor, ax=None):
+def voronoi_plot_2d(vor, ax=None, **kw):
     """
     Plot the given Voronoi diagram in 2-D
 
@@ -121,6 +122,8 @@ def voronoi_plot_2d(vor, ax=None):
         Diagram to plot
     ax : matplotlib.axes.Axes instance, optional
         Axes to plot on
+    show_vertices : bool, optional
+        Add the Voronoi vertices to the plot.
 
     Returns
     -------
@@ -136,11 +139,14 @@ def voronoi_plot_2d(vor, ax=None):
     Requires Matplotlib.
 
     """
+    from matplotlib.collections import LineCollection
+
     if vor.points.shape[1] != 2:
         raise ValueError("Voronoi diagram is not 2-D")
 
     ax.plot(vor.points[:,0], vor.points[:,1], '.')
-    ax.plot(vor.vertices[:,0], vor.vertices[:,1], 'o')
+    if kw.get('show_vertices', True):
+        ax.plot(vor.vertices[:,0], vor.vertices[:,1], 'o')
 
     line_segments = []
     for simplex in vor.ridge_vertices:
