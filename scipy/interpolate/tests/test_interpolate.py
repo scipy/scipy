@@ -130,10 +130,17 @@ class TestInterp1D(object):
         interp1d(self.x10, self.y10, kind='quadratic')
         interp1d(self.x10, self.y10, kind='zero')
         interp1d(self.x10, self.y10, kind='nearest')
+        interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind=0)
         interp1d(self.x10, self.y10, kind=1)
         interp1d(self.x10, self.y10, kind=2)
         interp1d(self.x10, self.y10, kind=3)
+
+        # extrapolation only allowed for nearest method
+        for kind in ('linear', 'cubic',
+                     'slinear', 'zero', 'quadratic'):
+            assert_raises(ValueError, interp1d, self.x10, self.y10, kind=kind,
+                          fill_value="extrapolate")
 
         # x array must be 1D.
         assert_raises(ValueError, interp1d, self.x25, self.y10)

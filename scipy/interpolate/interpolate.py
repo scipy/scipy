@@ -339,8 +339,8 @@ class interp1d(_Interpolator1D):
     fill_value : float or str, optional
         If provided, then this value will be used to fill in for requested
         points outside of the data range. If not provided, then the default
-        is NaN. If set to 'extrapolate' then points outside the data range
-        will be extrapolated.
+        is NaN. For kind 'nearest' this value can be set to 'extrapolate' then
+        points outside the data range will be extrapolated.
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
@@ -379,6 +379,10 @@ class interp1d(_Interpolator1D):
 
         self.copy = copy
         self.bounds_error = bounds_error
+        # extrapolation only works for nearest neighbor method
+        if fill_value == "extrapolate" and kind != 'nearest':
+            raise ValueError("Extrapolation only works with method 'nearest'.")
+
         self.fill_value = fill_value
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
