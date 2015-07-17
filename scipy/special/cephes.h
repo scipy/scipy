@@ -118,13 +118,9 @@ extern double log2 ( double x );
 /*
 extern long lrand ( void );
 extern long lsqrt ( long x );
-extern int minv ( double A[], double X[], int n, double B[], int IPS[] );
-extern int mmmpy ( int r, int c, double *A, double *B, double *Y );
 extern int mtherr ( char *name, int code );
 extern double polevl ( double x, void *P, int N );
 extern double p1evl ( double x, void *P, int N );
-extern int mtransp ( int n, double *A, double *T );
-extern int mvmpy ( int r, int c, double *A, double *V, double *Y );
 */
 extern double nbdtrc ( int k, int n, double p ); 
 extern double nbdtr ( int k, int n, double p ); 
