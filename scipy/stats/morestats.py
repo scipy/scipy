@@ -60,6 +60,10 @@ def bayes_mvs(data, alpha=0.90):
         data, and `(lower, upper)` a confidence interval, centered on the
         median, containing the estimate to a probability ``alpha``.
 
+    See Also
+    --------
+    mvsdist
+
     Notes
     -----
     Each tuple of mean, variance, and standard deviation estimates represent
@@ -77,6 +81,19 @@ def bayes_mvs(data, alpha=0.90):
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
     standard-deviation from data", http://hdl.handle.net/1877/438, 2006.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> data = [6, 9, 12, 7, 8, 8, 13]
+    >>> mean, var, std = stats.bayes_mvs(data)
+    >>> mean
+    Mean(statistic=9.0, minmax=(7.1036502226125329, 10.896349777387467))
+    >>> var
+    Variance(statistic=10.0, minmax=(3.1767242068607087, 24.459103821334018))
+    >>> std
+    Std_dev(statistic=2.9724954732045084,
+    ...     minmax=(1.7823367265645145, 4.9456146050146312))
 
     """
     m, v, s = mvsdist(data)
@@ -113,6 +130,10 @@ def mvsdist(data):
         Distribution object representing the variance of the data
     sdist : "frozen" distribution object
         Distribution object representing the standard deviation of the data
+
+    See Also
+    --------
+    bayes_mvs
 
     Notes
     -----
