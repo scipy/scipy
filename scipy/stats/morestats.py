@@ -182,9 +182,11 @@ def kstat(data, n=2):
     See Also
     --------
     kstatvar: Returns an unbiased estimator of the variance of the k-statistic.
+    moment: Returns the n-th central moment about the mean for a sample.
 
     Notes
     -----
+    The input data gets raveled prior to calculating the cumulants.
     The cumulants are related to central moments but are specifically defined
     using a power series expansion of the logarithm of the characteristic
     function (which is the Fourier transform of the PDF).
@@ -213,6 +215,15 @@ def kstat(data, n=2):
     S = zeros(n + 1, 'd')
     data = ravel(data)
     N = len(data)
+
+    # raise ValueError on empty input
+    if N == 0:
+        raise ValueError("Data input must not be empty")
+
+    # on nan input, return nan without warning
+    if np.isnan(np.sum(data)):
+        return np.nan
+
     for k in range(1, n + 1):
         S[k] = sum(data**k, axis=0)
     if n == 1:
@@ -249,7 +260,12 @@ def kstatvar(data, n=2):
 
     See Also
     --------
-    kstat
+    kstat: Returns the n-th k-statistic.
+    moment: Returns the n-th central moment about the mean for a sample.
+
+    Notes
+    -----
+    The input data gets raveled prior to performing the calculations.
 
     """
     data = ravel(data)
