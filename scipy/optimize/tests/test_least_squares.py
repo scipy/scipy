@@ -7,9 +7,9 @@ from numpy.testing import (run_module_suite, assert_, assert_allclose,
                            assert_almost_equal)
 
 from scipy.optimize import least_squares
-from scipy.optimize._lsq_bounds import make_strictly_feasible
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
+from scipy.optimize._lsq_common import make_strictly_feasible
 
 
 def fun_trivial(x, a=0):

@@ -1,11 +1,9 @@
 import numpy as np
 from numpy.testing import (run_module_suite, assert_, assert_equal,
                            assert_allclose, assert_raises)
-
-from scipy.optimize._lsq_bounds import (
+from scipy.optimize._lsq_common import (
     prepare_bounds, in_bounds, step_size_to_bound, find_active_constraints,
-    make_strictly_feasible, scaling_vector)
-from scipy.optimize._lsq_trust_region import intersect_trust_region
+    make_strictly_feasible, scaling_vector, intersect_trust_region)
 
 
 class TestBounds(object):

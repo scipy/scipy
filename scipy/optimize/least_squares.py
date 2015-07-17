@@ -11,7 +11,7 @@ from ._numdiff import approx_derivative, group_columns
 from ..sparse import issparse, csr_matrix, csc_matrix
 from ..sparse.linalg import LinearOperator
 
-from ._lsq_bounds import in_bounds, prepare_bounds
+from ._lsq_common import in_bounds, prepare_bounds
 from ._lsq_trf import trf
 from ._lsq_dogbox import dogbox
 
@@ -130,7 +130,7 @@ def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, scaling=1.0,
         diff_step=None, tr_solver=None, tr_options={}, jac_sparsity=None,
-        max_nfev=None, args=(), kwargs={}):
+        max_nfev=None, verbose=0, args=(), kwargs={}):
     """Minimize the sum of squares of nonlinear functions, subject to bound
     constraints on independent variables.
 
@@ -194,7 +194,6 @@ def least_squares(
         Tolerance for termination by the norm of gradient. Default is
         square root of machine epsilon. The exact condition depends
         on a `method` used:
-
             * For 'trf' : ``norm(g_scaled, ord=np.inf) < gtol``, where
               g_scaled is properly scaled gradient to account for the
               presence of bounds [STIR]_.
@@ -257,6 +256,12 @@ def least_squares(
         means that a corresponding element in Jacobian is identically zero.
         Forces `tr_solver` to 'lsmr' if it wasn't set. If None (default) then
         dense differencing will be used. Has no effect for ``method='lm'``.
+    verbose : {0, 1, 2}, optional
+        Level of algorithm's verbosity:
+            * 0 (default) - work silently.
+            * 1 - display a termination report.
+            * 2 - display progress during iterations
+              (not supported by 'lm'method).
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)`` and the same for
@@ -373,6 +378,9 @@ def least_squares(
 
     if tr_solver not in [None, 'exact', 'lsmr']:
         raise ValueError("'tr_solver' must be None, 'exact' or 'lsmr'.")
+
+    if verbose not in [0, 1, 2]:
+        raise ValueError("`verbose` must be in [0, 1, 2].")
 
     if len(bounds) != 2:
         raise ValueError("`bounds` must contain 2 elements.")
@@ -508,12 +516,22 @@ def least_squares(
 
     if method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
-                     gtol, max_nfev, scaling, tr_solver, tr_options.copy())
+                     gtol, max_nfev, scaling, tr_solver, tr_options.copy(),
+                     verbose)
 
     elif method == 'dogbox':
         result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
-                        xtol, gtol, max_nfev, scaling, tr_solver, tr_options)
+                        xtol, gtol, max_nfev, scaling, tr_solver, tr_options,
+                        verbose)
 
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0
+
+    if verbose >= 1:
+        print(result.message)
+        print("Function evaluations: {0}, initial obj. value: {1:.2e}, final "
+              "obj. value {2:.2e}, first-order optimality {3:.2e}."
+              .format(result.nfev, np.dot(f0, f0),
+                      result.obj_value, result.optimality))
+
     return result

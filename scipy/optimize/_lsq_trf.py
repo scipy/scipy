@@ -9,10 +9,10 @@ from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
 
 from .optimize import OptimizeResult
-from ._lsq_bounds import (step_size_to_bound, make_strictly_feasible,
-                          find_active_constraints, scaling_vector)
-from ._lsq_trust_region import (
-    intersect_trust_region, solve_lsq_trust_region, solve_trust_region_2d)
+from ._lsq_common import (
+    step_size_to_bound, make_strictly_feasible, find_active_constraints,
+    scaling_vector, intersect_trust_region, solve_lsq_trust_region,
+    solve_trust_region_2d, print_header, print_iteration)
 
 
 def lsq_linear_operator(Jop, diag_root):
@@ -209,7 +209,7 @@ def find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta):
 
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
-        tr_solver, tr_options):
+        tr_solver, tr_options, verbose):
     # Start with strictly feasible guess.
     x = make_strictly_feasible(x0, lb, ub, rstep=1e-10)
 
@@ -246,7 +246,8 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         reg_term = 0.0
         regularize = tr_options.pop("regularize", True)
 
-    obj_value = np.dot(f, f)
+    obj_value_initial = np.dot(f, f)
+    obj_value = obj_value_initial
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -254,6 +255,12 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     alpha = 0.0  # "Levenberg-Marquardt" parameter
 
     termination_status = None
+    iteration = 0
+    step_norm = None
+
+    if verbose == 2:
+        print_header()
+
     while nfev < max_nfev:
         if scaling == 'jac':
             if issparse(J):
@@ -274,6 +281,10 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         diag_h = g * jv / scale**2
 
         g_norm = norm(g * v, ord=np.inf)
+
+        if verbose == 2:
+            print_iteration(iteration, nfev, obj_value, step_norm, g_norm)
+
         if g_norm < gtol:
             termination_status = 1
 
@@ -386,7 +397,9 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             ftol_satisfied = (abs(actual_reduction) < ftol * obj_value and
                               ratio > 0.25)
-            xtol_satisfied = norm(step) < xtol * (xtol + norm(x))
+
+            step_norm = norm(step)
+            xtol_satisfied = step_norm < xtol * (xtol + norm(x))
 
             if ftol_satisfied and xtol_satisfied:
                 termination_status = 4
@@ -408,6 +421,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         elif nfev == max_nfev:  # Recompute J if algorithm is terminating.
             J = jac(x, f)
             # Don't increase njev, because it's the implementation detail.
+        iteration += 1
 
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
     return OptimizeResult(

@@ -10,7 +10,8 @@ from numpy.linalg import lstsq, norm
 from . import OptimizeResult
 from ..sparse import issparse
 from ..sparse.linalg import LinearOperator, aslinearoperator, lsmr
-from ._lsq_bounds import step_size_to_bound, in_bounds
+from ._lsq_common import (step_size_to_bound, in_bounds,
+                          print_header, print_iteration)
 
 
 def lsmr_linear_operator(Jop, active_set):
@@ -125,7 +126,7 @@ def constrained_cauchy_step(x, cauchy_step, tr_bounds, l, u):
 
 
 def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
-           tr_solver, tr_options):
+           tr_solver, tr_options, verbose):
     f = f0
     nfev = 1
 
@@ -157,6 +158,12 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         max_nfev = x0.size * 100
 
     termination_status = None
+    iteration = 0
+    step_norm = None
+
+    if verbose == 2:
+        print_header()
+
     while nfev < max_nfev:
         if scaling == 'jac':
             if issparse(J):
@@ -181,6 +188,9 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             g_norm = norm(g_free, ord=np.inf)
             if g_norm < gtol:
                 termination_status = 1
+
+        if verbose == 2:
+            print_iteration(iteration, nfev, obj_value, step_norm, g_norm)
 
         if termination_status is not None:
             return OptimizeResult(
@@ -259,7 +269,9 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             ftol_satisfied = (abs(actual_reduction) < ftol * obj_value and
                               ratio > 0.25)
-            xtol_satisfied = norm(step) < xtol * (xtol + norm(x))
+
+            step_norm = norm(step)
+            xtol_satisfied = step_norm < xtol * (xtol + norm(x))
 
             if ftol_satisfied and xtol_satisfied:
                 termination_status = 4
@@ -286,6 +298,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             J = jac(x, f)
             njev += 1
+        iteration += 1
 
     return OptimizeResult(
         x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
