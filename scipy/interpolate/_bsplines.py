@@ -73,6 +73,10 @@ class BSpline(object):
     - B-spline basis elements of degree `k` form a partition of unity on the
       *base interval*, ``t[k] <= x <= t[n]``.
 
+    - `BSpline` objects can be unpacked into tck-tuples:
+      ``t, c, k = BSpline(...)``. This feature exists for backwards
+      compatibility only and is not recommended for use in new code.
+
     Examples
     --------
 
@@ -172,6 +176,23 @@ class BSpline(object):
             return np.complex_
         else:
             return np.float_
+
+    def __iter__(self):
+        # This is to support
+        #    bspl = BSpline(...)
+        #    t, c, k = bspl, and
+        #    splev(x, bspl)
+        return iter((self.t, self.c, self.k))
+
+    def __getitem__(self, j):
+        # Support tuple-like indexing and slicing
+        # cf http://docs.python.org/2.3/whatsnew/section-slices.html
+        tck = (self.t, self.c, self.k)
+        if isinstance(j, slice):
+            indices = j.indices(3)
+            return tuple(tck[i] for i in range(*indices))
+        else:
+            return tck[j]
 
     @classmethod
     def _construct_fast(cls, t, c, k, extrapolate=True):

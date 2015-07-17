@@ -311,6 +311,46 @@ class TestBSpline(TestCase):
         assert_equal(b.derivative().__class__, B)
         assert_equal(b.antiderivative().__class__, B)
 
+    ### Test the tuple interface: for backwards-compatible interoperability
+    ### with spl* functions, a BSpline instance needs to behave as a
+    ### tuple (t, c, k). Specifically, support unpacking and indexing/slicing.
+
+    def test_unpacking(self):
+        # BSpline object unpacks into a tck-tuple, if asked
+        _, t, c, k = _make_random_spline()
+        b = BSpline(t, c, k)
+        tt, cc, kk = b
+        assert_allclose(t, tt, atol=1e-15)
+        assert_allclose(c, cc, atol=1e-15)
+        assert_equal(k, kk)
+
+        def wrong_unpacking(spl):
+            t, = spl
+        assert_raises(ValueError, wrong_unpacking, b)
+
+    def test_indexing(self):
+        b, t, c, k = _make_random_spline()
+        assert_allclose(b[0], t, atol=1e-15)
+        assert_allclose(b[1], c, atol=1e-15)
+        assert_equal(b[2], k)
+
+        assert_equal(b[-1], k)
+        assert_allclose(b[-2], c, atol=1e-15)
+        assert_allclose(b[-3], t, atol=1e-15)
+
+        def wrong_index(idx):
+            b[idx]
+        assert_raises(IndexError, wrong_index, 3)
+        assert_raises(IndexError, wrong_index, -4)
+
+    def test_slicing(self):
+        b, t, c, k = _make_random_spline()
+        tck = (t, c, k)
+        assert_equal(b[:], tck[:])
+        assert_equal(b[1:], tck[1:])
+        assert_equal(b[:-1], tck[:-1])
+        assert_equal(b[1:9], tck[1:9])
+
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
