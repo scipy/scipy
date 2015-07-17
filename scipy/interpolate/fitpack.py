@@ -524,12 +524,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         return tck
 
 
-def _ntlist(l):  # return non-trivial list
-    return l
-    # if len(l)>1: return l
-    # return l[0]
-
-
 def splev(x, tck, der=0, ext=0):
     """
     Evaluate a B-spline or its derivatives.
@@ -664,8 +658,8 @@ def splint(a, b, tck, full_output=0):
     except:
         parametric = False
     if parametric:
-        return _ntlist(list(map(lambda c, a=a, b=b, t=t, k=k:
-                                splint(a, b, [t, c, k]), c)))
+        return list(map(lambda c, a=a, b=b, t=t, k=k:
+                        splint(a, b, [t, c, k]), c))
     else:
         aint, wrk = _fitpack._splint(t, c, k, a, b)
         if full_output:
@@ -722,8 +716,8 @@ def sproot(tck, mest=10):
     except:
         parametric = False
     if parametric:
-        return _ntlist(list(map(lambda c, t=t, k=k, mest=mest:
-                                sproot([t, c, k], mest), c)))
+        return list(map(lambda c, t=t, k=k, mest=mest:
+                        sproot([t, c, k], mest), c))
     else:
         if len(t) < 8:
             raise TypeError("The number of knots %d>=8" % len(t))
@@ -783,8 +777,8 @@ def spalde(x, tck):
     except:
         parametric = False
     if parametric:
-        return _ntlist(list(map(lambda c, x=x, t=t, k=k:
-                                spalde(x, [t, c, k]), c)))
+        return list(map(lambda c, x=x, t=t, k=k:
+                        spalde(x, [t, c, k]), c))
     else:
         x = atleast_1d(x)
         if len(x) > 1:
