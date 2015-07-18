@@ -25,8 +25,9 @@ def test_group_columns():
     ]
     for transform in [np.asarray, csr_matrix, csc_matrix, lil_matrix]:
         A = transform(structure)
+        order = np.arange(6)
         groups_true = np.array([0, 1, 2, 0, 1, 2])
-        groups = group_columns(A)
+        groups = group_columns(A, order)
         assert_equal(groups, groups_true)
 
         order = [1, 2, 4, 3, 5, 0]

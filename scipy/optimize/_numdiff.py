@@ -2,6 +2,8 @@
 
 from __future__ import division
 
+import sys
+
 import numpy as np
 from scipy.sparse import issparse, csc_matrix, csr_matrix, lil_matrix, find
 
@@ -123,7 +125,7 @@ def group_columns(A, order=None):
         Matrix of which to group columns.
     order : None or iterable of int, shape (n,)
         Permutation array which defines the order of columns enumeration.
-        If None (default) the order will be ``range(n)``.
+        If None (default) the order will be random.
 
     Returns
     -------
@@ -153,12 +155,15 @@ def group_columns(A, order=None):
     n, m = A.shape
 
     if order is None:
-        order = range(n)
+        order = np.arange(n)
+        np.random.shuffle(order)
+
+    A = A[order]
 
     groups = -np.ones(n, dtype=int)
 
     current_group = 0
-    for i in order:
+    for i in range(n):
         if groups[i] >= 0:
             continue
 
@@ -183,6 +188,7 @@ def group_columns(A, order=None):
                 union += column_j
 
         current_group += 1
+    groups[order] = groups.copy()
 
     return groups
 
