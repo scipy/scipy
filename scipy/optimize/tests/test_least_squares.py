@@ -189,7 +189,7 @@ class BaseMixin(object):
         res = least_squares(fun_trivial, 2.0, method=self.method)
         # Use assert_almost_equal to check shapes of arrays too.
         assert_almost_equal(res.x, np.array([0]), decimal=1)
-        assert_almost_equal(res.obj_value, 25)
+        assert_almost_equal(res.obj_value, 12.5)
         assert_almost_equal(res.fun, np.array([5]))
         assert_almost_equal(res.jac, np.array([[0.0]]), decimal=2)
         # 'lm' works weird on this problem, thus only 3 digits.

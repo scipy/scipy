@@ -91,7 +91,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     else:
         J = np.atleast_2d(approx_derivative(fun, x))
 
-    obj_value = np.dot(f, f)
+    obj_value = 0.5 * np.dot(f, f)
     g = J.T.dot(f)
     g_norm = norm(g, ord=np.inf)
 
@@ -136,7 +136,8 @@ def least_squares(
 
     Let f(x) maps from R^n to R^m, this function finds a local minimum of::
 
-        F(x) = ||f(x)||**2 = sum(f_i(x)**2, i = 1, ..., m), lb <= x <= ub
+        F(x) = 0.5 * ||f(x)||**2 = 0.5 * sum(f_i(x)**2, i = 1, ..., m)
+        lb <= x <= ub
 
     f(x) is called vector of residuals or simply residuals.
 
@@ -273,7 +274,7 @@ def least_squares(
     x : ndarray, shape (n,)
         Found solution.
     obj_value : float
-        Sum of squares at the solution.
+        Half sum of squares at the solution.
     fun : ndarray, shape (m,)
         Vector of residuals at the solution.
     jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
@@ -531,7 +532,7 @@ def least_squares(
         print(result.message)
         print("Function evaluations: {0}, initial obj. value: {1:.2e}, final "
               "obj. value {2:.2e}, first-order optimality {3:.2e}."
-              .format(result.nfev, np.dot(f0, f0),
+              .format(result.nfev, 0.5 * np.dot(f0, f0),
                       result.obj_value, result.optimality))
 
     return result

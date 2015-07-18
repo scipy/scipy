@@ -246,8 +246,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         reg_term = 0.0
         regularize = tr_options.pop("regularize", True)
 
-    obj_value_initial = np.dot(f, f)
-    obj_value = obj_value_initial
+    obj_value = 0.5 * np.dot(f, f)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -367,7 +366,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             step_h = steps_h[min_index]
 
             # qp_values are negative, also need to double it.
-            predicted_reduction = -2 * qp_values[min_index]
+            predicted_reduction = -qp_values[min_index]
 
             step = d * step_h
             x_new = make_strictly_feasible(x + step, lb, ub, rstep=0)
@@ -376,11 +375,11 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             nfev += 1
 
             # Usual trust-region step quality estimation.
-            obj_value_new = np.dot(f_new, f_new)
+            obj_value_new = 0.5 * np.dot(f_new, f_new)
             actual_reduction = obj_value - obj_value_new
             # Correction term is specific to the algorithm,
             # vanishes in unbounded case.
-            correction = np.dot(step_h * diag_h, step_h)
+            correction = 0.5 * np.dot(step_h * diag_h, step_h)
 
             if predicted_reduction > 0:
                 ratio = (actual_reduction - correction) / predicted_reduction

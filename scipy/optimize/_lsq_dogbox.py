@@ -152,7 +152,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
     x = x0.copy()
     step = np.empty_like(x0)
-    obj_value = np.dot(f, f)
+    obj_value = 0.5 * np.dot(f, f)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -231,7 +231,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             elif tr_solver == 'lsmr':
                 Js = Jop.matvec(step)
 
-            predicted_reduction = -np.dot(Js, Js) - 2 * np.dot(Js, f)
+            predicted_reduction = -0.5 * np.dot(Js, Js) - np.dot(Js, f)
 
             # In (nearly) rank deficient case Newton (and thus dogleg) step
             # can be inadequate, in this case use (constrained) Cauchy step.
@@ -247,14 +247,14 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 elif tr_solver == 'lsmr':
                     Js = Jop.matvec(step)
 
-                predicted_reduction = -np.dot(Js, Js) - 2 * np.dot(Js, f)
+                predicted_reduction = -0.5 * np.dot(Js, Js) - np.dot(Js, f)
 
             x_new = x + step
             f_new = fun(x_new)
             nfev += 1
 
             # Usual trust-region step quality estimation.
-            obj_value_new = np.dot(f_new, f_new)
+            obj_value_new = 0.5 * np.dot(f_new, f_new)
             actual_reduction = obj_value - obj_value_new
 
             if predicted_reduction > 0:
