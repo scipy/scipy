@@ -209,3 +209,5 @@ scipy/stats/statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/version.py
 scipy/special/_exprel.c
+scipy/optimize/_group_columns.c
+

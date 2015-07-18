@@ -2,10 +2,10 @@
 
 from __future__ import division
 
-import sys
-
 import numpy as np
-from scipy.sparse import issparse, csc_matrix, csr_matrix, lil_matrix, find
+
+from ..sparse import issparse, csc_matrix, csr_matrix, lil_matrix, find
+from ._group_columns import group_dense, group_sparse
 
 EPS = np.finfo(np.float64).eps
 
@@ -141,53 +141,28 @@ def group_columns(A, order=None):
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13 (1974), pp. 117-120.
     """
-    # Transpose for convenience.
     if issparse(A):
-        A = csr_matrix(A.T)
-        sparse = True
+        A = csc_matrix(A)
     else:
-        A = np.atleast_2d(A).T
-        sparse = False
+        A = np.atleast_2d(A)
+        A = (A != 0).astype(np.int32)
 
     if A.ndim != 2:
         raise ValueError("`A` must be 2-dimensional.")
 
-    n, m = A.shape
+    m, n = A.shape
 
     if order is None:
         order = np.arange(n)
         np.random.shuffle(order)
 
-    A = A[order]
+    A = A[:, order]
 
-    groups = -np.ones(n, dtype=int)
+    if issparse(A):
+        groups = group_sparse(m, n, A.indices, A.indptr)
+    else:
+        groups = group_dense(m, n, A)
 
-    current_group = 0
-    for i in range(n):
-        if groups[i] >= 0:
-            continue
-
-        groups[i] = current_group
-        non_grouped, = np.where(groups < 0)
-
-        if non_grouped.size == 0:
-            break
-
-        if sparse:
-            union = A[i].toarray().ravel()
-        else:
-            union = A[i].copy()
-
-        for j in non_grouped:
-            column_j = A[j]
-            if sparse:
-                column_j = column_j.toarray().ravel()
-
-            if np.dot(union, column_j) == 0:
-                groups[j] = current_group
-                union += column_j
-
-        current_group += 1
     groups[order] = groups.copy()
 
     return groups
