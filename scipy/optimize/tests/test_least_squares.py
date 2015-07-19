@@ -189,7 +189,7 @@ class BaseMixin(object):
         res = least_squares(fun_trivial, 2.0, method=self.method)
         # Use assert_almost_equal to check shapes of arrays too.
         assert_almost_equal(res.x, np.array([0]), decimal=1)
-        assert_almost_equal(res.obj_value, 12.5)
+        assert_almost_equal(res.cost, 12.5)
         assert_almost_equal(res.fun, np.array([5]))
         assert_almost_equal(res.jac, np.array([[0.0]]), decimal=2)
         # 'lm' works weird on this problem, thus only 3 digits.
@@ -323,14 +323,14 @@ class SparseMixin(object):
             assert_equal(res_sparse.nfev, res_dense.nfev)
             # Not exactly equal only because of floating point issues.
             assert_allclose(res_sparse.x, res_dense.x, atol=1e-20)
-            assert_allclose(res_sparse.obj_value, 0, atol=1e-20)
-            assert_allclose(res_dense.obj_value, 0, atol=1e-20)
+            assert_allclose(res_sparse.cost, 0, atol=1e-20)
+            assert_allclose(res_dense.cost, 0, atol=1e-20)
 
     def test_tr_options(self):
         p = BroydenTridiagonal()
         res = least_squares(p.fun, p.x0, p.jac, method=self.method,
                             tr_options={'btol': 1e-10})
-        assert_allclose(res.obj_value, 0, atol=1e-20)
+        assert_allclose(res.cost, 0, atol=1e-20)
 
     def test_wrong_parameters(self):
         p = BroydenTridiagonal()
@@ -346,8 +346,8 @@ class SparseMixin(object):
                                    method=self.method)
         res_dense = least_squares(dense.fun, dense.x0, jac=dense.jac,
                                   method=self.method)
-        assert_allclose(res_sparse.obj_value, 0, atol=1e-20)
-        assert_allclose(res_dense.obj_value, 0, atol=1e-20)
+        assert_allclose(res_sparse.cost, 0, atol=1e-20)
+        assert_allclose(res_dense.cost, 0, atol=1e-20)
         assert_(issparse(res_sparse.jac))
         assert_(isinstance(res_dense.jac, np.ndarray))
 
@@ -364,8 +364,8 @@ class SparseMixin(object):
                     jac_sparsity=p.sparsity)
                 assert_equal(res_dense.nfev, res_sparse.nfev)
                 assert_allclose(res_dense.x, res_sparse.x, atol=1e-20)
-                assert_allclose(res_dense.obj_value, 0, atol=1e-20)
-                assert_allclose(res_sparse.obj_value, 0, atol=1e-20)
+                assert_allclose(res_dense.cost, 0, atol=1e-20)
+                assert_allclose(res_sparse.cost, 0, atol=1e-20)
 
     def test_with_bounds(self):
         p = BroydenTridiagonal()
@@ -391,7 +391,7 @@ class SparseMixin(object):
     def test_linear_operator(self):
         p = BroydenTridiagonal(mode='linear_op')
         res = least_squares(p.fun, p.x0, p.jac, method=self.method)
-        assert_allclose(res.obj_value, 0.0, atol=1e-20)
+        assert_allclose(res.cost, 0.0, atol=1e-20)
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
                       method=self.method, tr_solver='exact')
 
@@ -399,7 +399,7 @@ class SparseMixin(object):
         p = BroydenTridiagonal()
         res = least_squares(p.fun, p.x0, p.jac, method=self.method,
                             scaling='jac')
-        assert_allclose(res.obj_value, 0.0, atol=1e-20)
+        assert_allclose(res.cost, 0.0, atol=1e-20)
 
         p = BroydenTridiagonal(mode='linear_op')
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
@@ -418,7 +418,7 @@ class TestTRF(TestCase, BaseMixin, BoundsMixin, SparseMixin):
         for regularize in [True, False]:
             res = least_squares(p.fun, p.x0, p.jac, method='trf',
                                 tr_options={'regularize': regularize})
-            assert_allclose(res.obj_value, 0, atol=1e-20)
+            assert_allclose(res.cost, 0, atol=1e-20)
 
 
 class TestLM(TestCase, BaseMixin):

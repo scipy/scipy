@@ -91,7 +91,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     else:
         J = np.atleast_2d(approx_derivative(fun, x))
 
-    obj_value = 0.5 * np.dot(f, f)
+    cost = 0.5 * np.dot(f, f)
     g = J.T.dot(f)
     g_norm = norm(g, ord=np.inf)
 
@@ -102,7 +102,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     active_mask = np.zeros_like(x0, dtype=int)
 
     return OptimizeResult(
-        x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
+        x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
         active_mask=active_mask, nfev=nfev, njev=njev, status=status)
 
 
@@ -134,12 +134,13 @@ def least_squares(
     """Minimize the sum of squares of nonlinear functions, subject to bound
     constraints on independent variables.
 
-    Let f(x) maps from R^n to R^m, this function finds a local minimum of::
+    Let f(x) maps from R^n to R^m, `least_squares` finds a local minimum of::
 
         F(x) = 0.5 * ||f(x)||**2 = 0.5 * sum(f_i(x)**2, i = 1, ..., m)
         lb <= x <= ub
 
-    f(x) is called vector of residuals or simply residuals.
+    We use terms: f(x) - a vector of residuals or simply residuals,
+    F(x) - a cost function or simply cost.
 
     Partial derivatives of f with respect to x form m-by-n matrix called
     Jacobian, where an element (i, j) equals to a partial derivative of f[i]
@@ -179,7 +180,7 @@ def least_squares(
               efficient for small unconstrained problems.
         Default is 'trf'. See Notes for more information.
     ftol : float, optional
-        Tolerance for termination by the change of the objective value.
+        Tolerance for termination by the change of the cost function.
         Default is square root of machine epsilon. The optimization process is
         stopped when ``dF < ftol * F``, and there was adequate agreement
         between a local quadratic model and the true model in the last step.
@@ -214,7 +215,7 @@ def least_squares(
     scaling : array_like or 'jac', optional
         Applies variables scaling to potentially improve algorithm convergence.
         Default is 1.0, which means no scaling. Scaling should be used to
-        equalize the influence of each variable on the objective function.
+        equalize the influence of each variable on the cost function.
         Alternatively you can think of `scaling` as diagonal elements of
         a matrix which determines the shape of a trust region. Use smaller
         values for variables which have bigger characteristic scale compared
@@ -273,7 +274,7 @@ def least_squares(
     OptimizeResult with the following fields defined.
     x : ndarray, shape (n,)
         Found solution.
-    obj_value : float
+    cost : float
         Half sum of squares at the solution.
     fun : ndarray, shape (m,)
         Vector of residuals at the solution.
@@ -533,6 +534,6 @@ def least_squares(
         print("Function evaluations: {0}, initial cost: {1:.4e}, final cost "
               "{2:.4e}, first-order optimality {3:.2e}."
               .format(result.nfev, 0.5 * np.dot(f0, f0),
-                      result.obj_value, result.optimality))
+                      result.cost, result.optimality))
 
     return result

@@ -381,16 +381,15 @@ def print_header():
                   "Step norm", "Optimality"))
 
 
-def print_iteration(iteration, nfev, obj_value, optimality, step_norm,
-                    obj_value_decrease):
-    if obj_value_decrease is None:
-        obj_value_decrease = " " * 15
+def print_iteration(iteration, nfev, cost, cost_decrease, step_norm,
+                    optimality):
+    if cost_decrease is None:
+        cost_decrease = " " * 15
     else:
-        obj_value_decrease = "{0:^15.2e}".format(obj_value_decrease)
+        cost_decrease = "{0:^15.2e}".format(cost_decrease)
     if step_norm is None:
         step_norm = " " * 15
     else:
         step_norm = "{0:^15.2e}".format(step_norm)
     print("{0:^15}{1:^15}{2:^15.4e}{3}{4}{5:^15.2e}"
-          .format(iteration, nfev, obj_value, obj_value_decrease,
-                  step_norm, optimality))
+          .format(iteration, nfev, cost, cost_decrease, step_norm, optimality))

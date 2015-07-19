@@ -153,7 +153,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
     x = x0.copy()
     step = np.empty_like(x0)
-    obj_value = 0.5 * np.dot(f, f)
+    cost = 0.5 * np.dot(f, f)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -193,12 +193,12 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 termination_status = 1
 
         if verbose == 2:
-            print_iteration(iteration, nfev, obj_value, g_norm,
+            print_iteration(iteration, nfev, cost, g_norm,
                             step_norm, actual_reduction)
 
         if termination_status is not None:
             return OptimizeResult(
-                x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
+                x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
                 active_mask=on_bound, nfev=nfev, njev=njev,
                 status=termination_status)
 
@@ -263,8 +263,8 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             nfev += 1
 
             # Usual trust-region step quality estimation.
-            obj_value_new = 0.5 * np.dot(f_new, f_new)
-            actual_reduction = obj_value - obj_value_new
+            cost_new = 0.5 * np.dot(f_new, f_new)
+            actual_reduction = cost - cost_new
 
             if predicted_reduction > 0:
                 ratio = actual_reduction / predicted_reduction
@@ -276,7 +276,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             elif ratio > 0.75 and tr_hit:
                 Delta *= 2.0
 
-            ftol_satisfied = (abs(actual_reduction) < ftol * obj_value and
+            ftol_satisfied = (abs(actual_reduction) < ftol * cost and
                               ratio > 0.25)
 
             step_norm = norm(step)
@@ -303,12 +303,12 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             x[mask] = ub[mask]
 
             f = f_new
-            obj_value = obj_value_new
+            cost = cost_new
 
             J = jac(x, f)
             njev += 1
         iteration += 1
 
     return OptimizeResult(
-        x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
+        x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
         active_mask=on_bound, nfev=nfev, njev=njev, status=0)

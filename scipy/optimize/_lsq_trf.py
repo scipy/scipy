@@ -246,7 +246,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         reg_term = 0.0
         regularize = tr_options.pop("regularize", True)
 
-    obj_value = 0.5 * np.dot(f, f)
+    cost = 0.5 * np.dot(f, f)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -283,7 +283,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         g_norm = norm(g * v, ord=np.inf)
 
         if verbose == 2:
-            print_iteration(iteration, nfev, obj_value, g_norm,
+            print_iteration(iteration, nfev, cost, g_norm,
                             step_norm, actual_reduction)
 
         if g_norm < gtol:
@@ -292,7 +292,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         if termination_status is not None:
             active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
             return OptimizeResult(
-                x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
+                x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
                 active_mask=active_mask, nfev=nfev, njev=njev,
                 status=termination_status)
 
@@ -377,8 +377,8 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             nfev += 1
 
             # Usual trust-region step quality estimation.
-            obj_value_new = 0.5 * np.dot(f_new, f_new)
-            actual_reduction = obj_value - obj_value_new
+            cost_new = 0.5 * np.dot(f_new, f_new)
+            actual_reduction = cost - cost_new
             # Correction term is specific to the algorithm,
             # vanishes in unbounded case.
             correction = 0.5 * np.dot(step_h * diag_h, step_h)
@@ -396,7 +396,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 Delta *= 2.0
                 alpha *= 0.5
 
-            ftol_satisfied = (abs(actual_reduction) < ftol * obj_value and
+            ftol_satisfied = (abs(actual_reduction) < ftol * cost and
                               ratio > 0.25)
 
             step_norm = norm(step)
@@ -415,7 +415,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         if actual_reduction > 0:
             x = x_new
             f = f_new
-            obj_value = obj_value_new
+            cost = cost_new
 
             J = jac(x, f)
             njev += 1
@@ -426,5 +426,5 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
     return OptimizeResult(
-        x=x, fun=f, jac=J, obj_value=obj_value, optimality=g_norm,
+        x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
         active_mask=active_mask, nfev=nfev, njev=njev, status=0)
