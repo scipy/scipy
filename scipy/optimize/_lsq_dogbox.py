@@ -14,16 +14,16 @@ from ._lsq_common import (step_size_to_bound, in_bounds,
                           print_header, print_iteration)
 
 
-def lsmr_linear_operator(Jop, active_set):
+def lsmr_linear_operator(Jop, d, active_set):
     m, n = Jop.shape
 
     def matvec(x):
         x_free = x.copy()
         x_free[active_set] = 0
-        return Jop.matvec(x)
+        return Jop.matvec(x * d)
 
     def rmatvec(x):
-        r = Jop.rmatvec(x)
+        r = d * Jop.rmatvec(x)
         r[active_set] = 0
         return r
 
@@ -141,6 +141,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         scale[scale == 0] = 1
     else:
         scale = scaling
+    scale_inv = 1 / scale
 
     Delta = norm(x0 * scale, ord=np.inf)
     if Delta == 0:
@@ -171,6 +172,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             else:
                 new_scale = np.sum(J**2, axis=0)**0.5
             scale = np.maximum(scale, new_scale)
+            scale_inv = 1 / scale
 
         if isinstance(J, LinearOperator):
             g = J.rmatvec(f)
@@ -201,7 +203,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         x_free = x[free_set]
         l_free = lb[free_set]
         u_free = ub[free_set]
-        scale_free = scale[free_set]
+        scale_inv_free = scale_inv[free_set]
 
         # Compute (Gauss-)Newton and Cauchy steps
         if tr_solver == 'exact':
@@ -210,15 +212,20 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             Jg = J_free.dot(g_free)
         elif tr_solver == 'lsmr':
             Jop = aslinearoperator(J)
-            lsmr_op = lsmr_linear_operator(Jop, active_set)
+            # Here we compute lsmr step in scaled variables and then
+            # transform back to normal variables, if lsmr would give exact lsq
+            # solution this would be equivalent to not doing any
+            # transformations, but from experience it's better this way.
+            lsmr_op = lsmr_linear_operator(Jop, scale_inv, active_set)
             newton_step = -lsmr(lsmr_op, f, **tr_options)[0][free_set]
+            newton_step *= scale_inv_free
             g[active_set] = 0
             Jg = Jop.matvec(g)
         cauchy_step = -np.dot(g_free, g_free) / np.dot(Jg, Jg) * g_free
 
         actual_reduction = -1.0
         while actual_reduction <= 0 and nfev < max_nfev:
-            tr_bounds = Delta / scale_free
+            tr_bounds = Delta * scale_inv_free
 
             step_free, on_bound_free, tr_hit = dogleg_step(
                 x_free, cauchy_step, newton_step, tr_bounds, l_free, u_free)
