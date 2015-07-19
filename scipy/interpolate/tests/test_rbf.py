@@ -149,7 +149,7 @@ def check_positive_smoothing(function):
     x = np.linspace(0, n-1, n)
     f = np.array([-1 if k < n/2 else 1 for k in x], dtype=np.float)
     rbf = Rbf(x, f, smooth=1e-3, function=function)
-    offstep = range(0, n//2-1) + range(n//2+1, n)
+    offstep = list(range(0, n//2-1)) + list(range(n//2+1, n))
     x_offstep = x[offstep]
     f0 = rbf(x_offstep)
     f1 = f[offstep]
