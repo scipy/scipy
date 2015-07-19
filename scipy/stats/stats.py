@@ -1015,7 +1015,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 def moment(a, moment=1, axis=0):
     """
-    Calculates the nth central moment about the mean for a sample.
+    Calculates the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of points.
     It is often used to calculate coefficients of skewness and kurtosis due
@@ -1027,7 +1027,7 @@ def moment(a, moment=1, axis=0):
     a : array_like
        data
     moment : int or array_like of ints, optional
-       order of central moment that is returned
+       order of central moment that is returned. Default is 1.
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
        If None, compute over the whole array `a`.
@@ -1045,7 +1045,7 @@ def moment(a, moment=1, axis=0):
 
     Notes
     -----
-    [1]_ The k-th central moment of a data sample is:
+    The k-th central moment of a data sample is:
 
     .. math::
 
