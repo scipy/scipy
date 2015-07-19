@@ -161,6 +161,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     termination_status = None
     iteration = 0
     step_norm = None
+    actual_reduction = None
 
     if verbose == 2:
         print_header()
@@ -192,7 +193,8 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 termination_status = 1
 
         if verbose == 2:
-            print_iteration(iteration, nfev, obj_value, step_norm, g_norm)
+            print_iteration(iteration, nfev, obj_value, g_norm,
+                            step_norm, actual_reduction)
 
         if termination_status is not None:
             return OptimizeResult(
