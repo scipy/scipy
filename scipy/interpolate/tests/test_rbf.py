@@ -251,4 +251,4 @@ def test_rbf_epsilon_none():
 
 
 if __name__ == "__main__":
-    run_module_suite()
+    npt.run_module_suite()
