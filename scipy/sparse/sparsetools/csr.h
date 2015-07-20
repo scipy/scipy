@@ -328,10 +328,10 @@ void csr_sort_indices(const I n_row,
         I row_start = Ap[i];
         I row_end   = Ap[i+1];
 
-        temp.clear();
-
-        for(I jj = row_start; jj < row_end; jj++){
-            temp.push_back(std::make_pair(Aj[jj],Ax[jj]));
+        temp.resize(row_end - row_start);
+        for (I jj = row_start, n = 0; jj < row_end; jj++, n++){
+            temp[n].first  = Aj[jj];
+            temp[n].second = Ax[jj];
         }
 
         std::sort(temp.begin(),temp.end(),kv_pair_less<I,T>);
