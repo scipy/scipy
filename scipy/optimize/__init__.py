@@ -82,7 +82,6 @@ Equation (Local) Minimizers
 
 .. autosummary::
    :toctree: generated/
-
    leastsq - Minimize the sum of squares of M equations in N unknowns
    nnls - Linear least-squares problem with non-negativity constraint
 
@@ -232,7 +231,7 @@ from .nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
 from ._differentialevolution import differential_evolution
-
+from .least_squares import least_squares
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
