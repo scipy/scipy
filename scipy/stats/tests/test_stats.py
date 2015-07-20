@@ -1601,7 +1601,6 @@ class TestMoments(TestCase):
         assert_raises(ValueError, stats.skew, x, nan_policy='raise')
         assert_raises(ValueError, stats.skew, x, nan_policy='foobar')
 
-
     def test_skewness_scalar(self):
         # `skew` must return a scalar for 1-dim input
         assert_equal(stats.skew(arange(10)), 0.0)
