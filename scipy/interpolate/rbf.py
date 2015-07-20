@@ -353,9 +353,9 @@ class Rbf(object):
         if R.shape != A.shape:
             raise ValueError("Callable must take array and return array of the same shape")
         if self.smooth != 0.0:
-            eigmax = linalg.eigh(A, eigvals_only=True, eigvals=(self.N-1, self.N-1))[0]
-            sign = -1 if self.function == 'multiquadric' else 1
-            A += np.eye(self.N) * self.smooth * eigmax * sign
+            eigidx = 0 if self.function == 'multiquadric' else self.N - 1
+            eig = linalg.eigh(A, eigvals_only=True, eigvals=(eigidx, eigidx))[0]
+            A += np.eye(self.N) * self.smooth * eig
         return A
 
     def __init__(self, *args, **kwargs):
