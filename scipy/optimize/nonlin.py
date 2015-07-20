@@ -1393,9 +1393,11 @@ class KrylovJacobian(Jacobian):
 
     References
     ----------
-    .. [1] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2003).
+    .. [1] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2004).
+           doi:10.1016/j.jcp.2003.08.010
     .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
-             SIAM J. Matrix Anal. Appl. 26, 962 (2005).
+           SIAM J. Matrix Anal. Appl. 26, 962 (2005).
+           doi:10.1137/S0895479803422014
 
     """
 
