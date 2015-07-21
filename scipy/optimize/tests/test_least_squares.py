@@ -162,6 +162,10 @@ class BaseMixin(object):
                       2.0, scaling='auto', method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
                       2.0, scaling=-1.0, method=self.method)
+        assert_raises(ValueError, least_squares, fun_trivial,
+                      2.0, scaling=None, method=self.method)
+        assert_raises(ValueError, least_squares, fun_trivial,
+                      2.0, scaling=1.0+2.0j, method=self.method)
 
     def test_diff_step(self):
         # res1 and res2 should be equivalent.
@@ -388,6 +392,12 @@ class SparseMixin(object):
                 assert_allclose(res_2.optimality, 0, atol=1e-10)
                 assert_allclose(res_3.optimality, 0, atol=1e-10)
 
+    def test_wrong_jac_sparsity(self):
+        p = BroydenTridiagonal()
+        sparsity = p.sparsity[:-1]
+        assert_raises(ValueError, least_squares, p.fun, p.x0,
+                      jac_sparsity=sparsity, method=self.method)
+
     def test_linear_operator(self):
         p = BroydenTridiagonal(mode='linear_op')
         res = least_squares(p.fun, p.x0, p.jac, method=self.method)
@@ -437,6 +447,13 @@ class TestLM(TestCase, BaseMixin):
         x0 = [-2, 1]
         assert_raises(ValueError, least_squares, fun_rosenbrock_cropped, x0,
                       method='lm')
+
+    def test_jac_sparsity_ignored(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            res = least_squares(fun_trivial, 2.0,
+                                jac_sparsity=123, method='lm')
+        assert_allclose(res.x, 0.0)
 
 
 def test_basic():

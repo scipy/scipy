@@ -109,13 +109,16 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
 def check_scaling(scaling, x0):
     if scaling == 'jac':
         return scaling
+
     try:
         scaling = np.asarray(scaling, dtype=float)
-    except ValueError:
-        raise ValueError("`scaling` must be 'jac' or array_like with numbers.")
+        valid = np.all(np.isfinite(scaling)) and np.all(scaling > 0)
+    except (ValueError, TypeError):
+        valid = False
 
-    if np.any(scaling <= 0):
-        raise ValueError("`scaling` must contain only positive values.")
+    if not valid:
+        raise ValueError("`scaling` must be 'jac' or array_like with "
+                         "positive numbers.")
 
     if scaling.ndim == 0:
         scaling = np.resize(scaling, x0.shape)
@@ -124,6 +127,16 @@ def check_scaling(scaling, x0):
         raise ValueError("Inconsistent shapes between `scaling` and `x0`.")
 
     return scaling
+
+
+def check_jac_sparsity(jac_sparsity, n, m):
+    if not issparse(jac_sparsity):
+        jac_sparsity = np.atleast_2d(jac_sparsity)
+
+    if jac_sparsity.shape != (m, n):
+        raise ValueError("`jac_sparsity` has wrong shape.")
+
+    return jac_sparsity, group_columns(jac_sparsity)
 
 
 def least_squares(
@@ -522,15 +535,24 @@ def least_squares(
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))
 
+    f0 = fun_wrapped(x0)
+    if f0.ndim != 1:
+        raise RuntimeError("`fun` must return at most 1-d array_like.")
+
+    n = x0.size
+    m = f0.size
+    if method == 'lm' and m < n:
+        raise ValueError("Method 'lm' doesn't work when the number of "
+                         "residuals is less than the number of variables.")
+
     if jac in ['2-point', '3-point']:
         if jac_sparsity is not None:
             if method == 'lm':
                 warn("`jac_sparsity` is ignored for method='lm', dense "
                      "differencing will be used.")
+                sparsity = None
             else:
-                structure = csc_matrix(jac_sparsity)
-                groups = group_columns(structure)
-                sparsity = (structure, groups)
+                sparsity = check_jac_sparsity(jac_sparsity, n, m)
         else:
             sparsity = None
 
@@ -571,22 +593,13 @@ def least_squares(
 
             return J
 
-    f0 = fun_wrapped(x0)
-    if f0.ndim != 1:
-        raise RuntimeError("`fun` must return at most 1-d array_like.")
-
-    if method == 'lm' and f0.size < x0.size:
-        raise ValueError("Method 'lm' doesn't work when the number of "
-                         "variables is less than the number of residuals.")
-
     J0 = jac_wrapped(x0, f0)
     if len(J0.shape) != 2:
         raise RuntimeError("`jac` must return at most 2-d array_like, "
                            "sparse matrix or LinearOperator.")
 
-    if f0.shape[0] != J0.shape[0]:
-        raise RuntimeError("Inconsistent dimensions between the "
-                           "returns of `fun` and `jac`.")
+    if J0.shape != (m, n):
+        raise RuntimeError("The return value of `jac` has wrong shape.")
 
     if isinstance(J0, LinearOperator):
         if method == 'lm':
