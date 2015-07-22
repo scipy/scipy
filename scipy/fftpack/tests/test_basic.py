@@ -673,7 +673,7 @@ class TestLongDoubleFailure(TestCase):
         np.random.seed(1234)
 
     def test_complex(self):
-        if np.dtype(np.longcomplex).itemsize == np.dtype(np.complex).itemsize:
+        if np.dtype(np.longcomplex).itemsize == np.dtype(complex).itemsize:
             # longdouble == double; so fft is supported
             return
 

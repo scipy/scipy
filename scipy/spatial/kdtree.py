@@ -482,8 +482,8 @@ class KDTree(object):
         retshape = np.shape(x)[:-1]
         if retshape != ():
             if k is None:
-                dd = np.empty(retshape,dtype=np.object)
-                ii = np.empty(retshape,dtype=np.object)
+                dd = np.empty(retshape,dtype=object)
+                ii = np.empty(retshape,dtype=object)
             elif k > 1:
                 dd = np.empty(retshape+(k,),dtype=float)
                 dd.fill(np.inf)
@@ -604,7 +604,7 @@ class KDTree(object):
             return self.__query_ball_point(x, r, p, eps)
         else:
             retshape = x.shape[:-1]
-            result = np.empty(retshape, dtype=np.object)
+            result = np.empty(retshape, dtype=object)
             for c in np.ndindex(retshape):
                 result[c] = self.__query_ball_point(x[c], r, p=p, eps=eps)
             return result

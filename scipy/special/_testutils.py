@@ -196,7 +196,7 @@ class FuncData(object):
         for j in self.param_columns:
             if np.iscomplexobj(j):
                 j = int(j.imag)
-                params.append(data[:,j].astype(np.complex))
+                params.append(data[:,j].astype(complex))
             else:
                 params.append(data[:,j])
 

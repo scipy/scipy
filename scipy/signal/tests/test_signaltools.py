@@ -138,7 +138,7 @@ class _TestConvolve2d(TestCase):
 
     def test_valid_mode_complx(self):
         e = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
-        f = np.array([[1, 2, 3], [3, 4, 5]], dtype=np.complex) + 1j
+        f = np.array([[1, 2, 3], [3, 4, 5]], dtype=complex) + 1j
         g = convolve2d(e, f, 'valid')
         h = array([[62.+24.j, 80.+30.j, 98.+36.j, 116.+42.j, 134.+48.j]])
         assert_array_almost_equal(g, h)

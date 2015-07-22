@@ -582,11 +582,11 @@ def test_svd_simple_complex():
     x = np.array([[1, 2, 3],
                   [3, 4, 3],
                   [1 + 1j, 0, 2],
-                  [0, 0, 1]], np.complex)
+                  [0, 0, 1]], complex)
     y = np.array([[1, 2, 3, 8 + 5j],
                   [3 - 2j, 4, 3, 5],
                   [1, 0, 2, 3],
-                  [0, 0, 1, 0]], np.complex)
+                  [0, 0, 1, 0]], complex)
     z = csc_matrix(x)
 
     for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
