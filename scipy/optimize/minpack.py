@@ -8,7 +8,12 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, product, greater, array,
                    all, where, isscalar, asarray, inf, abs,
                    finfo, inexact, issubdtype, dtype)
+from scipy.linalg import svd
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
+from ._lsq import least_squares
+from ._lsq.common import make_strictly_feasible
+from ._lsq.least_squares import prepare_bounds
+
 
 error = _minpack.error
 
@@ -452,7 +457,7 @@ def _weighted_general_function(params, xdata, ydata, function, weights):
 
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
-              check_finite=True, **kw):
+              check_finite=True, bounds=None, method=None, **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -493,8 +498,23 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, check that the input arrays do not contain nans of infs,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
-        do contain nans.
-        Default is True.
+        do contain nans. Default is True.
+    bounds : 2-tuple of array_like, optional
+        Lower and upper bounds on independent variables. Default is None
+        (no bounds). If provided, each element of the tuple must be either an
+        array with the length equal to the number of parameters, or a scalar
+        (in which case the bound is taken to be the same for all parameters.)
+        .. versionadded:: 0.17
+    method : {'lm', 'trf', 'dogbox'}, optional
+        Method to use for optimization.  See `least_squares` for more details.
+        Default is 'lm' for unconstrained problems and 'trf' if `bounds` are
+        provided. The method 'lm' won't work when the number of observations
+        is less than the number of variables, use 'trf' or 'dogbox' in this
+        case.
+        .. versionadded:: 0.17
+    kwargs
+        Keyword arguments passed to `leastsq` for ``method='lm'`` or
+        `least_squares` otherwise.
 
     Returns
     -------
@@ -509,6 +529,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         How the `sigma` parameter affects the estimated covariance
         depends on `absolute_sigma` argument, as described above.
 
+        If the Jacobian matrix at the solution doesn't have a full rank, then
+        'lm' method returns a matrix filled with ``np.inf``, on the other hand
+        'trf'  and 'dogbox' methods use Moore-Penrose pseudoinverse to compute
+        the covariance matrix.
+
     Raises
     ------
     OptimizeWarning
@@ -519,15 +544,19 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     See Also
     --------
-    leastsq : Minimize the sum of squares of a set of equations.
+    least_squares : Minimize the sum of squares of nonlinear functions.
     stats.linregress : Calculate a linear least squares regression for two sets
                        of measurements.
-
+    
     Notes
     -----
-    The algorithm uses the Levenberg-Marquardt algorithm through `leastsq`.
-    Additional keyword arguments are passed directly to that algorithm.
+    With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
+    through `leastsq`. Note that this algorithm can only deal with
+    unconstrained problems.
 
+    Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
+    the docstring of `least_squares` for more information.
+     
     Examples
     --------
     >>> import numpy as np
@@ -541,25 +570,52 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata)
 
+    Constrain the optimization to the region of ``0 < a < 3``, ``0 < b < 2``
+    and ``0 < c < 1``:
+
+    >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 2., 1.]))
+
     """
+    if method is None:
+        if bounds is None:
+            method = 'lm'
+        else:
+            method = 'trf'
+
+    if method == 'lm' and bounds is not None:
+        raise ValueError("Method 'lm' only works for unconstrained problems. "
+                         "Use method='trf' or 'dogbox' instead")
+
     if p0 is None:
         # determine number of parameters by inspecting the function
         from scipy._lib._util import getargspec_no_self as _getargspec
         args, varargs, varkw, defaults = _getargspec(f)
         if len(args) < 2:
             msg = "Unable to determine number of fit parameters."
-            raise ValueError(msg)
-        p0 = [1.0] * (len(args)-1)
+            raise ValueError(msg)              
+        if 'self' in args:
+            p0 = np.ones(len(args) - 2)
+        else:
+            p0 = np.ones(len(args) - 1)
+    else:
+        p0 = np.atleast_1d(p0)
 
-    # Check input arguments
-    if isscalar(p0):
-        p0 = array([p0])
+    if bounds is not None:
+        # Make sure the starting point is feasible
+        lb, ub = prepare_bounds(bounds, p0)
+
+        if np.any(lb >= ub):
+            raise ValueError("Each lower bound mush be strictly less than "
+                             "each upper bound.")
+
+        p0 = make_strictly_feasible(p0, lb, ub)
 
     # NaNs can not be handled
     if check_finite:
         ydata = np.asarray_chkfinite(ydata)
     else:
         ydata = np.asarray(ydata)
+
     if isinstance(xdata, (list, tuple, np.ndarray)):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
@@ -575,14 +631,36 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         func = _weighted_general_function
         args += (1.0 / asarray(sigma),)
 
-    # Remove full_output from kw, otherwise we're passing it in twice.
-    return_full = kw.pop('full_output', False)
-    res = leastsq(func, p0, args=args, full_output=1, **kw)
-    (popt, pcov, infodict, errmsg, ier) = res
+    if method == 'lm':
+        # Remove full_output from kw, otherwise we're passing it in twice.
+        return_full = kwargs.pop('full_output', False)
+        res = leastsq(func, p0, args=args, full_output=1, **kwargs)
+        popt, pcov, infodict, errmsg, ier = res
+        cost = np.sum(infodict['fvec'] ** 2)
+        if ier not in [1, 2, 3, 4]:
+            msg = "Optimal parameters not found: " + errmsg
+            raise RuntimeError(msg)
+    else:
+        if bounds is None:
+            bounds = (-np.inf, np.inf)
 
-    if ier not in [1, 2, 3, 4]:
-        msg = "Optimal parameters not found: " + errmsg
-        raise RuntimeError(msg)
+        res = least_squares(func, p0, args=args, bounds=bounds, method=method,
+                            **kwargs)
+
+        if not res.success:
+            msg = "Optimal parameters not found: " + res.message
+            raise RuntimeError(msg)
+
+        cost = 2 * res.cost  # res.cost is half sum of squares!
+        popt = res.x
+
+        # Do Moore-Penrose inverse discarding zero singular values.
+        _, s, VT = svd(res.jac, full_matrices=False)
+        threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
+        s = s[s > threshold]
+        VT = VT[:s.size]
+        pcov = np.dot(VT.T / s**2, VT)
+        return_full = False
 
     warn_cov = False
     if pcov is None:
@@ -591,8 +669,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         pcov.fill(inf)
         warn_cov = True
     elif not absolute_sigma:
-        if len(ydata) > len(p0):
-            s_sq = (asarray(func(popt, *args))**2).sum() / (len(ydata) - len(p0))
+        if ydata.size > p0.size:
+            s_sq = cost / (ydata.size - p0.size)
             pcov = pcov * s_sq
         else:
             pcov.fill(inf)
@@ -600,7 +678,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     if warn_cov:
         warnings.warn('Covariance of the parameters could not be estimated',
-                category=OptimizeWarning)
+                      category=OptimizeWarning)
 
     if return_full:
         return popt, pcov, infodict, errmsg, ier

@@ -301,7 +301,7 @@ class TestCurveFit(TestCase):
         assert_(len(popt) == 2)
         assert_(pcov.shape == (2,2))
         assert_array_almost_equal(popt, [1.7989, 1.1642], decimal=4)
-        assert_array_almost_equal(pcov, [[0.0852, -0.1260],[-0.1260, 0.1912]],
+        assert_array_almost_equal(pcov, [[0.0852, -0.1260], [-0.1260, 0.1912]],
                                   decimal=4)
 
     def test_func_is_classmethod(self):
@@ -346,23 +346,26 @@ class TestCurveFit(TestCase):
         def f(x, a, b):
             return a*x + b
 
-        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma)
-        perr_scaled = np.sqrt(np.diag(pcov))
-        assert_allclose(perr_scaled, [0.20659803, 0.57204404], rtol=1e-3)
+        for method in ['lm', 'trf']:
+            popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
+                                   method=method)
+            perr_scaled = np.sqrt(np.diag(pcov))
+            assert_allclose(perr_scaled, [0.20659803, 0.57204404], rtol=1e-3)
 
-        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma)
-        perr_scaled = np.sqrt(np.diag(pcov))
-        assert_allclose(perr_scaled, [0.20659803, 0.57204404], rtol=1e-3)
+            popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma,
+                                   method=method)
+            perr_scaled = np.sqrt(np.diag(pcov))
+            assert_allclose(perr_scaled, [0.20659803, 0.57204404], rtol=1e-3)
 
-        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
-                               absolute_sigma=True)
-        perr = np.sqrt(np.diag(pcov))
-        assert_allclose(perr, [0.30714756, 0.85045308], rtol=1e-3)
+            popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
+                                   absolute_sigma=True, method=method)
+            perr = np.sqrt(np.diag(pcov))
+            assert_allclose(perr, [0.30714756, 0.85045308], rtol=1e-3)
 
-        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma,
-                               absolute_sigma=True)
-        perr = np.sqrt(np.diag(pcov))
-        assert_allclose(perr, [3*0.30714756, 3*0.85045308], rtol=1e-3)
+            popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma,
+                                   absolute_sigma=True, method=method)
+            perr = np.sqrt(np.diag(pcov))
+            assert_allclose(perr, [3*0.30714756, 3*0.85045308], rtol=1e-3)
 
         # infinite variances
 
@@ -372,7 +375,8 @@ class TestCurveFit(TestCase):
         with warnings.catch_warnings():
             # suppress warnings when testing with inf's
             warnings.filterwarnings('ignore', category=OptimizeWarning)
-            popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
+            popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0],
+                                   sigma=sigma)
             assert_(pcov.shape == (2, 2))
             pcov_expected = np.array([np.inf]*4).reshape(2, 2)
             assert_array_equal(pcov, pcov_expected)
@@ -394,7 +398,8 @@ class TestCurveFit(TestCase):
         # Test that a warning is returned when pcov is indeterminate
         xdata = np.array([1, 2, 3, 4, 5, 6])
         ydata = np.array([1, 2, 3, 4, 5.5, 6])
-        _assert_warns(OptimizeWarning, curve_fit, lambda x, a, b: a*x, xdata, ydata)
+        _assert_warns(OptimizeWarning, curve_fit,
+                      lambda x, a, b: a*x, xdata, ydata)
 
     def test_NaN_handling(self):
         # Test for correct handling of NaNs in input data: gh-3422
@@ -403,11 +408,49 @@ class TestCurveFit(TestCase):
         xdata = np.array([1, np.nan, 3])
         ydata = np.array([1, 2, 3])
 
-        assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b, xdata, ydata)
-        assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b, ydata, xdata)
+        assert_raises(ValueError, curve_fit,
+                      lambda x, a, b: a*x + b, xdata, ydata)
+        assert_raises(ValueError, curve_fit,
+                      lambda x, a, b: a*x + b, ydata, xdata)
 
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
                       xdata, ydata, **{"check_finite": True})
+
+    def test_method_argument(self):
+        def f(x, a, b):
+            return a * np.exp(-b*x)
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        for meth in ['trf', 'dogbox', 'lm', None]:
+            popt, pcov = curve_fit(f, xdata, ydata, method=meth)
+            assert_allclose(popt, [2., 2.])
+
+        assert_raises(ValueError, curve_fit, f, xdata, ydata, method='unknown')
+
+    def test_bounds(self):
+        def f(x, a, b):
+            return a * np.exp(-b*x)
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        # The minimum w/out bounds is at [2., 2.],
+        # and with bounds it's at [1.5, smth].
+        bounds = ([1., 0], [1.5, 3.])
+        for meth in [None, 'trf', 'dogbox']:
+            popt, pcov = curve_fit(f, xdata, ydata, bounds=bounds, method=meth)
+            assert_allclose(popt[0], 1.5)
+
+        # With bounds, the starting estimate is feasible.
+        popt, pcov = curve_fit(f, xdata, ydata, method='trf',
+                               bounds=([0., 0], [0.6, np.inf]))
+        assert_allclose(popt[0], 0.6)
+
+        # method='lm' doesn't support bounds.
+        assert_raises(ValueError, curve_fit, f, xdata, ydata, bounds=bounds,
+                      method='lm')
 
 
 class TestFixedPoint(TestCase):
