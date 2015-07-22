@@ -425,7 +425,7 @@ class TestApproxDerivativeSparse(object):
         groups_2 = group_columns(A, order)
 
         for method, groups, l, u in product(
-                ['2-point', '3-point'], [groups_1, groups_2],
+                ['2-point', '3-point', 'cs'], [groups_1, groups_2],
                 [-np.inf, self.lb], [np.inf, self.ub]):
             J = approx_derivative(self.fun, self.x0, method=method,
                                   bounds=(l, u), sparsity=(A, groups))
@@ -441,7 +441,7 @@ class TestApproxDerivativeSparse(object):
     def test_equivalence(self):
         structure = np.ones((self.n, self.n), dtype=int)
         groups = np.arange(self.n)
-        for method in ['2-point', '3-point']:
+        for method in ['2-point', '3-point', 'cs']:
             J_dense = approx_derivative(self.fun, self.x0, method=method)
             J_sparse = approx_derivative(
                 self.fun, self.x0, sparsity=(structure, groups), method=method)

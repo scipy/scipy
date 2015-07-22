@@ -438,6 +438,15 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
 
             rows = i[~mask]
             df[rows] = f2[rows] - f1[rows]
+        elif method == 'cs':
+            f1 = fun(x0 + h_vec*1.j)
+            df = f1.imag
+            dx = h_vec
+            cols, = np.where(e)
+            i, j, v = find(structure[:, cols])
+            j = cols[j]
+        else:
+            raise ValueError("Never be here.")
 
         J[i, j] = df[i] / dx[j]
 
