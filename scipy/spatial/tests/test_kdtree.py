@@ -268,7 +268,7 @@ class ball_consistency:
             assert_(distance(self.data[i],self.x,self.p) <= self.d*(1.+self.eps))
 
     def test_found_all(self):
-        c = np.ones(self.T.n,dtype=np.bool)
+        c = np.ones(self.T.n,dtype=bool)
         l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
         c[l] = False
         assert_(np.all(distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
@@ -392,7 +392,7 @@ class two_trees_consistency:
     def test_found_all(self):
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
         for i, l in enumerate(r):
-            c = np.ones(self.T2.n,dtype=np.bool)
+            c = np.ones(self.T2.n,dtype=bool)
             c[l] = False
             assert_(np.all(distance(self.data2[c],self.data1[i],self.p) >= self.d/(1.+self.eps)))
 
