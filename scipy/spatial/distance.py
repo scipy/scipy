@@ -644,7 +644,7 @@ def _nbool_correspond_all(u, v):
     if u.dtype != v.dtype:
         raise TypeError("Arrays being compared must be of the same data type.")
 
-    if u.dtype == np.int or u.dtype == np.float_ or u.dtype == np.double:
+    if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double:
         not_u = 1.0 - u
         not_v = 1.0 - v
         nff = (not_u * not_v).sum()
@@ -665,7 +665,7 @@ def _nbool_correspond_all(u, v):
 
 
 def _nbool_correspond_ft_tf(u, v):
-    if u.dtype == np.int or u.dtype == np.float_ or u.dtype == np.double:
+    if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double:
         not_u = 1.0 - u
         not_v = 1.0 - v
         nft = (not_u * v).sum()

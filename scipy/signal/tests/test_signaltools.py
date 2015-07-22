@@ -959,7 +959,7 @@ def _get_testcorrelate_class(datatype, base):
     return TestCorrelateX
 
 
-for datatype in [np.ubyte, np.byte, np.ushort, np.short, np.uint, np.int,
+for datatype in [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
                  np.ulonglong, np.ulonglong, np.float32, np.float64,
                  np.longdouble, Decimal]:
     cls = _get_testcorrelate_class(datatype, _TestCorrelateReal)

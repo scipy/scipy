@@ -253,7 +253,7 @@ class HBInfo(object):
                 raise ValueError("Inconsistency between matrix type %s and "
                                  "value type %s" % (mxtype, values_format))
             # XXX: fortran int -> dtype association ?
-            values_dtype = np.int
+            values_dtype = int
         else:
             raise ValueError("Unsupported format for values %r" % (values_format,))
 
@@ -313,12 +313,12 @@ def _read_hb_data(content, header):
     ptr_string = "".join([content.read(header.pointer_nbytes_full),
                            content.readline()])
     ptr = np.fromstring(ptr_string,
-            dtype=np.int, sep=' ')
+            dtype=int, sep=' ')
 
     ind_string = "".join([content.read(header.indices_nbytes_full),
                        content.readline()])
     ind = np.fromstring(ind_string,
-            dtype=np.int, sep=' ')
+            dtype=int, sep=' ')
 
     val_string = "".join([content.read(header.values_nbytes_full),
                           content.readline()])

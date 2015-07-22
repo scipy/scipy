@@ -68,7 +68,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError('csgraph must be a square matrix or array')
 
-    if normed and (np.issubdtype(csgraph.dtype, np.int)
+    if normed and (np.issubdtype(csgraph.dtype, int)
                    or np.issubdtype(csgraph.dtype, np.uint)):
         csgraph = csgraph.astype(np.float)
 

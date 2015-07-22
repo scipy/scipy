@@ -151,7 +151,7 @@ class TestLeastSquaresSolvers(TestCase):
 
             # Request of sizes
             work,iwork,info = gelsd_lwork(m,n,nrhs,-1)
-            lwork = np.int(np.real(work))
+            lwork = int(np.real(work))
             iwork_size = iwork
 
             x, s, rank, info = gelsd(a1, b1, lwork, iwork_size,
@@ -179,8 +179,8 @@ class TestLeastSquaresSolvers(TestCase):
 
             # Request of sizes
             work, rwork, iwork, info = gelsd_lwork(m,n,nrhs,-1)
-            lwork = np.int(np.real(work))
-            rwork_size = np.int(rwork)
+            lwork = int(np.real(work))
+            rwork_size = int(rwork)
             iwork_size = iwork
 
             x, s, rank, info = gelsd(a1, b1, lwork, rwork_size, iwork_size,
@@ -211,7 +211,7 @@ class TestLeastSquaresSolvers(TestCase):
 
             # Request of sizes
             work,info = gelss_lwork(m,n,nrhs,-1)
-            lwork = np.int(np.real(work))
+            lwork = int(np.real(work))
 
             v,x,s,rank,work,info = gelss(a1, b1,-1,lwork, False, False)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
@@ -237,7 +237,7 @@ class TestLeastSquaresSolvers(TestCase):
 
             # Request of sizes
             work,info = gelss_lwork(m,n,nrhs,-1)
-            lwork = np.int(np.real(work))
+            lwork = int(np.real(work))
 
             v,x,s,rank,work,info = gelss(a1, b1,-1,lwork, False, False)
             assert_allclose(x[:-1],
@@ -265,7 +265,7 @@ class TestLeastSquaresSolvers(TestCase):
 
             # Request of sizes
             work, info = gelsy_lwork(m,n,nrhs,10*np.finfo(dtype).eps)
-            lwork = np.int(np.real(work))
+            lwork = int(np.real(work))
 
             jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
             v, x, j, rank, info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,
@@ -289,7 +289,7 @@ class TestLeastSquaresSolvers(TestCase):
 
             # Request of sizes
             work, info = gelsy_lwork(m,n,nrhs,10*np.finfo(dtype).eps)
-            lwork = np.int(np.real(work))
+            lwork = int(np.real(work))
 
             jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
             v, x, j, rank, info = gelsy(a1, b1, jptv, np.finfo(dtype).eps,
