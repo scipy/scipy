@@ -61,7 +61,7 @@ def test_gaussian_truncate():
     # Test that Gaussian filters can be truncated at different widths.
     # These tests only check that the result has the expected number
     # of nonzero elements.
-    arr = np.zeros((100, 100), np.float)
+    arr = np.zeros((100, 100), float)
     arr[50, 50] = 1
     num_nonzeros_2 = (sndi.gaussian_filter(arr, 5, truncate=2) > 0).sum()
     assert_equal(num_nonzeros_2, 21**2)

@@ -710,7 +710,7 @@ def test_ball_point_ints():
     tree = KDTree(points)
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))
-    points = np.asarray(points, dtype=np.float)
+    points = np.asarray(points, dtype=float)
     tree = KDTree(points)
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))

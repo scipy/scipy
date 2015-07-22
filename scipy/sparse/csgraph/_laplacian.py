@@ -70,7 +70,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
 
     if normed and (np.issubdtype(csgraph.dtype, int)
                    or np.issubdtype(csgraph.dtype, np.uint)):
-        csgraph = csgraph.astype(np.float)
+        csgraph = csgraph.astype(float)
 
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0

@@ -66,7 +66,7 @@ class FortranFile(object):
     >>> f = FortranFile('test.unf', 'r')
     >>> print(f.read_ints(dtype=np.int32))
     [1 2 3 4 5]
-    >>> print(f.read_reals(dtype=np.float).reshape((5,-1)))
+    >>> print(f.read_reals(dtype=float).reshape((5,-1)))
     [[ 0.          0.05263158  0.10526316  0.15789474]
      [ 0.21052632  0.26315789  0.31578947  0.36842105]
      [ 0.42105263  0.47368421  0.52631579  0.57894737]

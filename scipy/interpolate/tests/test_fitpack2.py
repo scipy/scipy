@@ -82,7 +82,7 @@ class TestUnivariateSpline(TestCase):
 
     def test_out_of_range_regression(self):
         # Test different extrapolation modes. See ticket 3557
-        x = np.arange(5, dtype=np.float)
+        x = np.arange(5, dtype=float)
         y = x**3
 
         xp = linspace(-8, 13, 100)

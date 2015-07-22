@@ -36,8 +36,8 @@ class Test(unittest.TestCase):
 
     def test_block_average_above(self):
         N = 3000
-        x = arange(N, dtype=np.float)
-        y = arange(N, dtype=np.float)
+        x = arange(N, dtype=float)
+        y = arange(N, dtype=float)
 
         new_x = arange(N // 2) * 2
         new_y = block_average_above(x, y, new_x)
@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
 
     def test_linear2(self):
         N = 3000
-        x = arange(N, dtype=np.float)
+        x = arange(N, dtype=float)
         y = ones((100,N)) * arange(N)
         new_x = arange(N) + 0.5
         new_y = linear(x, y, new_x)

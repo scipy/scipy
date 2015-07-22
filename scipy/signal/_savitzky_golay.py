@@ -117,7 +117,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     # from -pos to window_length - pos - 1.  The powers (i.e. rows) range
     # from 0 to polyorder.  (That is, A is a vandermonde matrix, but not
     # necessarily square.)
-    x = np.arange(-pos, window_length - pos, dtype=np.float)
+    x = np.arange(-pos, window_length - pos, dtype=float)
     if use == "conv":
         # Reverse so that result can be used in a convolution.
         x = x[::-1]
