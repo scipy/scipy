@@ -95,6 +95,8 @@ def _compute_absolute_step(rel_step, x0, method):
             rel_step = EPS**0.5
         elif method == '3-point':
             rel_step = EPS**(1 / 3)
+        elif method == 'cs':
+            rel_step = EPS**(0.5)
         else:
             raise ValueError("`method` must be '2-point' or '3-point'.")
 
@@ -194,6 +196,10 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
             - '3-point' - use central difference in interior points and the
                           second order accuracy forward or backward difference
                           near the boundary.
+            - 'cs' - use a complex-step finite difference scheme. This assumes
+                     that the user function is real-valued and can be
+                     analytically continued to the complex plane. Otherwise,
+                     produces bogus results.
     rel_step : None or array_like, optional
         Relative step size to use. The absolute step size is computed as
         ``h = rel_step * sign(x0) * max(1, abs(x0))``, possibly adjusted to
@@ -293,8 +299,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     >>> approx_derivative(g, x0, bounds=(1.0, np.inf))
     array([ 2.])
     """
-    if method not in ['2-point', '3-point']:
-        raise ValueError("`method` must be '2-point' or '3-point'.")
+    if method not in ['2-point', '3-point', 'cs']:
+        raise ValueError("Unknown method '%s'. " % method)
 
     x0 = np.atleast_1d(x0)
     if x0.ndim > 1:
@@ -330,6 +336,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     elif method == '3-point':
         h, use_one_sided = _adjust_scheme_to_bounds(
             x0, h, 1, '2-sided', lb, ub)
+    elif method == 'cs':
+        use_one_sided = False
 
     if sparsity is None:
         return _dense_difference(fun_wrapped, x0, f0, h, use_one_sided, method)
@@ -369,6 +377,12 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
             f1 = fun(x1)
             f2 = fun(x2)
             df = f2 - f1
+        elif method == 'cs':
+            f1 = fun(x0 + h_vecs[i]*1.j)
+            df = f1.imag
+            dx = h_vecs[i, i]
+        else:
+            raise RuntimeError("Never be here.")
         J_transposed[i] = df / dx
 
     if m == 1:

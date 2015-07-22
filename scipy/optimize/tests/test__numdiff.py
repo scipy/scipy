@@ -186,36 +186,48 @@ class TestApproxDerivativesDense(object):
         jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_scalar_scalar, x0)
+        jac_diff_4 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='cs')
         jac_true = self.jac_scalar_scalar(x0)
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     def test_scalar_vector(self):
         x0 = 0.5
         jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_scalar_vector, x0)
+        jac_diff_4 = approx_derivative(self.fun_scalar_vector, x0,
+                                       method='cs')
         jac_true = self.jac_scalar_vector(np.atleast_1d(x0))
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     def test_vector_scalar(self):
         x0 = np.array([100.0, -0.5])
         jac_diff_2 = approx_derivative(self.fun_vector_scalar, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_vector_scalar, x0)
+        jac_diff_4 = approx_derivative(self.fun_vector_scalar, x0,
+                                       method='cs')
         jac_true = self.jac_vector_scalar(x0)
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-7)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     def test_vector_vector(self):
         x0 = np.array([-100.0, 0.2])
         jac_diff_2 = approx_derivative(self.fun_vector_vector, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_vector_vector, x0)
+        jac_diff_4 = approx_derivative(self.fun_vector_vector, x0,
+                                       method='cs')
         jac_true = self.jac_vector_vector(x0)
         assert_allclose(jac_diff_2, jac_true, rtol=1e-5)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-6)
+        assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     def test_wrong_dimensions(self):
         x0 = 1.0
@@ -340,6 +352,10 @@ class TestApproxDerivativesDense(object):
         jac_diff_3 = approx_derivative(self.jac_non_numpy, x0)
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-8)
+
+        # math.exp cannot handle complex arguments, hence this raises
+        assert_raises(TypeError, approx_derivative, self.jac_non_numpy, x0,
+                                       **dict(method='cs'))
 
     def test_check_derivative(self):
         x0 = np.array([-10.0, 10])
