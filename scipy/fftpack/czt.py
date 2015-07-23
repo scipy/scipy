@@ -40,6 +40,48 @@ from scipy.fftpack import fft, ifft, fftshift
 from scipy.fftpack.helper import _next_regular
 
 
+def czt_points(m, w=None, a=1, factor=None):
+    """
+    Returns the points at which the Z-transform is computed when doing a CZT
+    with the same arguments.
+
+    Parameters:
+    ----------
+    m : int, optional
+        The number of points desired.  The default is the length of
+        the input data.
+    w : complex, optional
+        The ratio between points in each step.
+    a : complex, optional
+        The starting point in the complex plane.  The default is 1.
+    factor : float, optional
+        Frequency scaling factor. For instance, when assigning factor=0.5,
+        the resulting FT will span half of the frequency range that an FFT
+        would produce, at half of the frequency step size.  This is an
+        alternative to `w`, and both cannot be specified at the same time.
+
+    Returns
+    -------
+    out : ndarray
+        The points in the Z plane at which the CZT samples the Z-transform,
+        as complex numbers.
+    """
+    if m < 1:
+        raise ValueError("Invalid number of CZT data "
+                         "points (%d) specified." % m)
+
+    if w is not None and factor is not None:
+        raise ValueError('Only w or factor can be specified; not both.')
+    elif w is None and factor is None:
+        # Default to FFT
+        w = cmath.exp(-2j*pi/m)
+    elif w is None:
+        w = cmath.exp(-2j*pi/m * factor)
+
+    k = arange(0, m)
+    return a*w**-k
+
+
 class CZT:
     """
     Chirp-Z Transform.
@@ -149,6 +191,13 @@ class CZT:
         y = ifft(self._Fwk2 * fft(x*self._Awk2, self._nfft))
         y = y[..., self._yidx] * self._wk2
         return y.transpose(*trnsp)
+
+    def points(self):
+        """
+        The points at which the Z-transform is computed when calling this
+        `CZT`.
+        """
+        return czt_points(self.m, self.w, self.a)
 
 
 class ZoomFFT(CZT):
