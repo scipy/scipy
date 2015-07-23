@@ -329,6 +329,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         scale = scaling
 
     v, jv = scaling_vector(x, g, lb, ub)
+    v[jv != 0] *= scale[jv != 0]
     Delta = norm(x0 * scale / v**0.5)
     if Delta == 0:
         Delta = 1.0
@@ -368,12 +369,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         else:
             g = J.T.dot(f)
 
-        # Compute Coleman-Li scaling parameters and "hat" variables.
         v, jv = scaling_vector(x, g, lb, ub)
-        d = v**0.5 / scale
-        g_h = d * g
-        diag_h = g * jv / scale**2
-
         g_norm = norm(g * v, ord=np.inf)
 
         if verbose == 2:
@@ -390,8 +386,30 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 active_mask=active_mask, nfev=nfev, njev=njev,
                 status=termination_status)
 
+        # Now compute variables in "hat" space. Here we also account for
+        # scaling introduced by `scaling` parameter. This part is a bit tricky,
+        # you have to write down the formulas and see how the trust-region
+        # problem is formulated when the two types of scaling are applied.
+        # The idea is that first we apply `scaling` and then apply Coleman-Li
+        # approach in the new variables.
+
+        # v is recomputed in the variables after applying `scaling`, note that
+        # components which were identically 1 not affected.
+        v[jv != 0] *= scale[jv != 0]
+
+        # Here we apply two types of scaling.
+        d = v**0.5 / scale
+
+        # C = diag(g / scale) Jv
+        diag_h = g * jv / scale
+
+        # After all this were done, we continue normally.
+
+        # "hat" gradient.
+        g_h = d * g
+
         # Right multiply J by diag(d), After this transformation Jacobian
-        # is in hat-space.
+        # is in "hat" space.
         if issparse(J):
             J.data *= d.take(J.indices, mode='clip')  # scikit-learn recipe.
         elif isinstance(J, LinearOperator):

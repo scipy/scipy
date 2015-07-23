@@ -244,10 +244,8 @@ def least_squares(
         to others. A scalar value won't affect the algorithm (except maybe
         fixing/introducing numerical issues and changing termination criteria).
         If 'jac', then scaling is proportional to the norms of columns of the
-        Jacobian matrix. The latter option is often helpful in unconstrained
-        problems, but not so much in constrained ones. From experience, the
-        use of ``scaling='jac'`` is not recommended for bound-constrained
-        problems with 'trf' method.
+        Jacobian matrix. If the algorithm converges poorly on your problem
+        try using this parameter.
     diff_step : None or array_like, optional
         Determines the relative step size for the finite difference
         approximation of the Jacobian. The actual step is computed as
