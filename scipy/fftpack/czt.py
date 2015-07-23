@@ -137,37 +137,34 @@ class CZT(object):
     on the unit circle.
 
     See zoomfft for a friendly interface to partial FFT calculations.
+
+    Parameters
+    ----------
+    n : int
+        The size of the signal
+    m : int, optional
+        The number of points desired.  The default is the length of
+        the input data.
+    w : complex, optional
+        The ratio between points in each step.  This must be precise or the
+        accumulated error will degrade the tail of the output sequence.
+    a : complex, optional
+        The starting point in the complex plane.  The default is 1.
+    scale : float, optional
+        Frequency scaling factor. This is a simpler and more precise way
+        to specify FFT-like transforms along the unit circle.  For
+        instance, when assigning scale=0.5, the resulting FT will span
+        half of the frequency range that an FFT would produce, at half of
+        the frequency step size.  This is an alternative to `w`, and both
+        cannot be specified at the same time.
+
+    Returns
+    -------
+    f : CZT
+        callable object ``f(x, axis=-1)`` for computing the chirp-z transform
+        on `x`
     """
     def __init__(self, n, m=None, w=None, a=1, scale=None):
-        """
-        Chirp-Z transform definition.
-
-        Parameters
-        ----------
-        n : int
-          The size of the signal
-        m : int, optional
-          The number of points desired.  The default is the length of
-          the input data.
-        w : complex, optional
-          The ratio between points in each step.  This must be precise or the
-          accumulated error will degrade the tail of the output sequence.
-        a : complex, optional
-          The starting point in the complex plane.  The default is 1.
-        scale : float, optional
-            Frequency scaling factor. This is a simpler and more precise way
-            to specify FFT-like transforms along the unit circle.  For
-            instance, when assigning scale=0.5, the resulting FT will span
-            half of the frequency range that an FFT would produce, at half of
-            the frequency step size.  This is an alternative to `w`, and both
-            cannot be specified at the same time.
-
-        Returns
-        -------
-        CZT
-          callable object ``f(x, axis=-1)`` for computing the chirp-z transform
-          on `x`
-        """
         m = _validate_sizes(n, m)
 
         k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
@@ -240,47 +237,44 @@ class ZoomFFT(CZT):
 
     This is a specialization of the chirp Z transform(CZT) for a set of
     equally spaced frequencies.
+
+    Defines a Fourier transform for a set of equally spaced frequencies.
+
+    Parameters
+    ----------
+    n : int
+        size of the signal
+    fn : array_like, optional
+        A scalar or length-2 sequence giving the start and end frequencies.
+        If a scalar, use 0 to f1.
+    m : int, optional
+        size of the output
+    Fs : float, optional
+        sampling frequency (default=2)
+
+    Returns
+    -------
+    A ZoomFFT instance
+        A callable object f(x, axis=-1) for computing the zoom FFT on x.
+
+    Notes
+    -----
+    Sampling frequency is 1/dt, the time step between samples in the
+    signal x.  The unit circle corresponds to frequencies from 0 up
+    to the sampling frequency.  The default sampling frequency of 2
+    means that f1, f2 values up to the Nyquist frequency are in the
+    range [0, 1). For f1, f2 values expressed in radians, a sampling
+    frequency of 1/pi should be used.
+
+    To plot the transform results use something like the following:
+
+        t = transform(len(x), f1, f2, m)
+        f = linspace(f1, f2, m)
+        y = t(x)
+        plot(f, y)
+
     """
     def __init__(self, n, fn, m=None, Fs=2):
-        """
-        Zoom FFT transform.
-
-        Defines a Fourier transform for a set of equally spaced frequencies.
-
-        Parameters
-        ----------
-        n : int
-          size of the signal
-        fn : array_like, optional
-          A scalar or length-2 sequence giving the start and end frequencies.
-          If a scalar, use 0 to f1.
-        m : int, optional
-          size of the output
-        Fs : float, optional
-          sampling frequency (default=2)
-
-        Returns
-        -------
-        A ZoomFFT instance
-          A callable object f(x, axis=-1) for computing the zoom FFT on x.
-
-        Notes
-        -----
-        Sampling frequency is 1/dt, the time step between samples in the
-        signal x.  The unit circle corresponds to frequencies from 0 up
-        to the sampling frequency.  The default sampling frequency of 2
-        means that f1, f2 values up to the Nyquist frequency are in the
-        range [0, 1). For f1, f2 values expressed in radians, a sampling
-        frequency of 1/pi should be used.
-
-        To plot the transform results use something like the following:
-
-            t = transform(len(x), f1, f2, m)
-            f = linspace(f1, f2, m)
-            y = t(x)
-            plot(f, y)
-
-        """
         m = _validate_sizes(n, m)
 
         if np.size(fn) == 2:
@@ -298,47 +292,46 @@ class ZoomFFT(CZT):
 
 
 class ScaledFFT(CZT):
-
-    def __init__(self, n, m=None, scale=1.0):
-        """
+    """
         Scaled FFT transform.
 
-        Similar to FFT, where the frequency range is scaled and divided
-        into m-1 equal steps.  Like the FFT, frequencies are arranged from
-        0 to scale*Fs/2-delta followed by -scale*Fs/2 to -delta, where delta
-        is the step size scale*Fs/m for sampling frequency Fs. The intended
-        use is in a convolution of two signals, each has its own sampling step.
+    Similar to FFT, where the frequency range is scaled and divided
+    into m-1 equal steps.  Like the FFT, frequencies are arranged from
+    0 to scale*Fs/2-delta followed by -scale*Fs/2 to -delta, where delta
+    is the step size scale*Fs/m for sampling frequency Fs. The intended
+    use is in a convolution of two signals, each has its own sampling step.
 
-        This is equivalent to:
+    This is equivalent to:
 
-            fftshift(zoomfft(x, [-scale, scale*(m-2.)/m], m=m))
+        fftshift(zoomfft(x, [-scale, scale*(m-2.)/m], m=m))
 
-        For example:
+    For example:
 
-            m, n = 10, len(x)
-            sf = ScaledFFT(n, m=m, scale=0.25)
-            X = fftshift(fft(x))
-            W = linspace(-8, 8*(n-2.)/n, n)
-            SX = fftshift(sf(x))
-            SW = linspace(-2, 2*(m-2.)/m, m)
-            plot(X, W, SX, SW)
+        m, n = 10, len(x)
+        sf = ScaledFFT(n, m=m, scale=0.25)
+        X = fftshift(fft(x))
+        W = linspace(-8, 8*(n-2.)/n, n)
+        SX = fftshift(sf(x))
+        SW = linspace(-2, 2*(m-2.)/m, m)
+        plot(X, W, SX, SW)
 
-        Parameters
-        ----------
-        n : int
-          Size of the signal
-        m : int, optional
-          The size of the output.
-          Default: m=n
-        scale : float, optional
-          Frequency scaling factor.
-          Default: scale=1.0
+    Parameters
+    ----------
+    n : int
+        Size of the signal
+    m : int, optional
+        The size of the output.
+        Default: m=n
+    scale : float, optional
+        Frequency scaling factor.
+        Default: scale=1.0
 
-        Returns
-        -------
-        callable f(x, axis=-1)
-          function for computing the scaled FFT on x.
-        """
+    Returns
+    -------
+    callable f(x, axis=-1)
+        function for computing the scaled FFT on x.
+    """
+    def __init__(self, n, m=None, scale=1.0):
         m = _validate_sizes(n, m)
 
         w = np.exp(-2j * pi / m * scale)
