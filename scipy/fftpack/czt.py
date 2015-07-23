@@ -290,9 +290,10 @@ class ZoomFFT(CZT):
         else:
             raise ValueError('fn must be a scalar or 2-length sequence')
 
-        w = cmath.exp(-2j * pi * (f2-f1) / ((m-1)*Fs))
+        scale = ((f2 - f1) * m) / (Fs * (m - 1))
+
         a = cmath.exp(2j * pi * f1/Fs)
-        CZT.__init__(self, n, m=m, w=w, a=a)
+        CZT.__init__(self, n, m=m, a=a, scale=scale)
         self.f1, self.f2, self.Fs = f1, f2, Fs
 
 
@@ -342,7 +343,8 @@ class ScaledFFT(CZT):
 
         w = np.exp(-2j * pi / m * scale)
         a = w**((m+1)//2)
-        CZT.__init__(self, n=n, m=m, a=a, w=w)
+
+        CZT.__init__(self, n=n, m=m, a=a, scale=scale)
         self.scale = scale
 
     def __call__(self, x, axis=-1):
