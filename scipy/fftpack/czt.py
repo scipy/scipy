@@ -28,6 +28,7 @@ zoomfft : array
 scaledfft : array
    compute a limited frequency FFT for a signal
 """
+
 from __future__ import division, absolute_import, print_function
 
 import cmath
@@ -60,7 +61,7 @@ def _validate_sizes(n, m):
     return m
 
 
-def czt_points(m, w=None, a=1, scale=None):
+def czt_points(m, w=None, a=1+0j, scale=None):
     """
     The points at which the Z-transform is computed when doing a `CZT`
     with the same arguments.
@@ -93,7 +94,7 @@ def czt_points(m, w=None, a=1, scale=None):
     Plot the points of a 16-point FFT:
 
     >>> import matplotlib.pyplot as plt
-    >>> points = czt_points(16, a=1+0j, scale=1)
+    >>> points = czt_points(16)
     >>> plt.plot(real(points), imag(points), 'o')
     >>> plt.margins(0.1, 0.1); plt.axis('equal')
     >>> plt.show()
@@ -217,7 +218,7 @@ class CZT(object):
     >>> plt.show()
 
     """
-    def __init__(self, n, m=None, w=None, a=1, scale=None):
+    def __init__(self, n, m=None, w=None, a=1+0j, scale=None):
         m = _validate_sizes(n, m)
 
         k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
@@ -380,7 +381,8 @@ class ScaledFFT(CZT):
     Returns
     -------
     f : ScaledFFT
-        callable function ``f(x, axis=-1)`` for computing the scaled FFT on `x`.
+        callable function ``f(x, axis=-1)`` for computing the scaled FFT on
+        `x`.
 
     Examples
     --------
@@ -447,7 +449,7 @@ def scaledfft(x, m=None, scale=1.0, axis=-1):
     return transform(x, axis)
 
 
-def czt(x, m=None, w=None, a=1, scale=None, axis=-1):
+def czt(x, m=None, w=None, a=1+0j, scale=None, axis=-1):
     """
     Compute the frequency response around a spiral in the Z plane.
 
@@ -487,7 +489,27 @@ def czt(x, m=None, w=None, a=1, scale=None, axis=-1):
 
     Examples
     --------
-    CZT can be used to calculate even-length rfft:
+    `czt` can quickly compute a prime-length FFT:
+
+    >>> n = 30011  # prime
+    >>> a = ones(n)  # DC (spectrum is [n, 0, 0, 0, ...])
+    >>> f = fft(a)  # takes 1.4 seconds
+    >>> c = czt(a)  # takes 21 milliseconds
+    >>> np.allclose(f, c, atol=1e-6)
+    True
+
+    However, the CZT has more error:
+
+    >>> abs(amax(f[1:]))
+    1.5961587607193906e-10
+    >>> abs(amax(c[1:]))
+    2.2517222906804262e-09
+    >>> np.linalg.norm(f[1:])
+    9.8233490457448648e-09
+    >>> np.linalg.norm(c[1:])
+    1.0822254628188106e-07
+
+    With `scale` parameter, CZT can be used to calculate even-length rfft:
 
     >>> from numpy.fft import rfft
     >>> a = np.random.rand(1024)
