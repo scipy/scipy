@@ -60,7 +60,7 @@ def _validate_sizes(n, m):
     return m
 
 
-def czt_points(m, w=None, a=1, factor=None):
+def czt_points(m, w=None, a=1, scale=None):
     """
     Returns the points at which the Z-transform is computed when doing a CZT
     with the same arguments.
@@ -74,10 +74,10 @@ def czt_points(m, w=None, a=1, factor=None):
         The ratio between points in each step.
     a : complex, optional
         The starting point in the complex plane.  The default is 1.
-    factor : float, optional
+    scale : float, optional
         Frequency scaling factor. This is a simpler and more precise way
         to specify FFT-like transforms along the unit circle.  For
-        instance, when assigning factor=0.5, the resulting FT will span
+        instance, when assigning scale=0.5, the resulting FT will span
         half of the frequency range that an FFT would produce, at half of
         the frequency step size.  This is an alternative to `w`, and both
         cannot be specified at the same time.
@@ -94,14 +94,14 @@ def czt_points(m, w=None, a=1, factor=None):
 
     a = 1.0 * a  # at least float
 
-    if w is not None and factor is not None:
-        raise ValueError('Only w or factor can be specified; not both.')
+    if w is not None and scale is not None:
+        raise ValueError('Only w or scale can be specified; not both.')
     elif w is None:
-        if factor is None:
+        if scale is None:
             # Nothing specified, default to FFT-like
-            factor = 1
+            scale = 1
 
-        return a * np.exp(2j * pi * factor * arange(m) / m)
+        return a * np.exp(2j * pi * scale * arange(m) / m)
     else:
         # w specified
         w = 1.0 * w  # at least float
@@ -131,14 +131,14 @@ class CZT(object):
     The chirp-z transform is considerably less precise than the
     equivalent zero-padded FFT, with differences on the order of 1e-7
     from the direct transform rather than 1e-15 as
-    seen with zero-padding.  Accuracy is better when using `factor` rather than
+    seen with zero-padding.  Accuracy is better when using `scale` rather than
     `w`, as any error in `w` is accumulated for long data lengths, drifting
-    away from the unit circle, but `factor` is limited to transforms that are
+    away from the unit circle, but `scale` is limited to transforms that are
     on the unit circle.
 
     See zoomfft for a friendly interface to partial FFT calculations.
     """
-    def __init__(self, n, m=None, w=None, a=1, factor=None):
+    def __init__(self, n, m=None, w=None, a=1, scale=None):
         """
         Chirp-Z transform definition.
 
@@ -154,10 +154,10 @@ class CZT(object):
           accumulated error will degrade the tail of the output sequence.
         a : complex, optional
           The starting point in the complex plane.  The default is 1.
-        factor : float, optional
+        scale : float, optional
             Frequency scaling factor. This is a simpler and more precise way
             to specify FFT-like transforms along the unit circle.  For
-            instance, when assigning factor=0.5, the resulting FT will span
+            instance, when assigning scale=0.5, the resulting FT will span
             half of the frequency range that an FFT would produce, at half of
             the frequency step size.  This is an alternative to `w`, and both
             cannot be specified at the same time.
@@ -172,15 +172,15 @@ class CZT(object):
 
         k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
 
-        if w is not None and factor is not None:
-            raise ValueError('Only w or factor can be specified; not both.')
+        if w is not None and scale is not None:
+            raise ValueError('Only w or scale can be specified; not both.')
         elif w is None:
-            if factor is None:
+            if scale is None:
                 # Nothing specified, default to FFT-like
-                factor = 1
+                scale = 1
 
-            w = cmath.exp(-2j*pi/m * factor)
-            wk2 = np.exp(-(1j * pi * factor * k**2) / m)
+            w = cmath.exp(-2j*pi/m * scale)
+            wk2 = np.exp(-(1j * pi * scale * k**2) / m)
         else:
             # w specified
             wk2 = w**(k**2/2.)
@@ -379,7 +379,7 @@ def scaledfft(x, m=None, scale=1.0, axis=-1):
     return transform(x, axis)
 
 
-def czt(x, m=None, w=None, a=1, factor=None, axis=-1):
+def czt(x, m=None, w=None, a=1, scale=None, axis=-1):
     """
     Compute the frequency response around a spiral.
 
@@ -392,8 +392,8 @@ def czt(x, m=None, w=None, a=1, factor=None, axis=-1):
     w : complex, optional
         The ratio between points in each step.
     a : complex, optional
-        The starting point in the complex plane.  Default is 1.
-    factor : float, optional
+        The starting point in the complex plane.  Default is 1+0j.
+    scale : float, optional
         The frequency step scale (relative to the normal DFT frequency step).
         Cannot be specified at the same time as `w`.
     axis : int, optional
@@ -416,7 +416,7 @@ def czt(x, m=None, w=None, a=1, factor=None, axis=-1):
     recomputing constants.
     """
     x = np.asarray(x)
-    transform = CZT(x.shape[axis], m=m, w=w, a=a, factor=factor)
+    transform = CZT(x.shape[axis], m=m, w=w, a=a, scale=scale)
     return transform(x, axis=axis)
 
 

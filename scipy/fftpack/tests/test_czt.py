@@ -190,10 +190,10 @@ def test_int_args():
 
 
 def test_conflicting_args():
-    # Cannot specify factor and w at the same time
+    # Cannot specify scale and w at the same time
     assert_raises(ValueError, czt, x=np.ones(8),
                   w=0.70710678118654746+1j*0.70710678118654746,
-                  factor=1)
+                  scale=1)
 
 
 def test_czt_points():
