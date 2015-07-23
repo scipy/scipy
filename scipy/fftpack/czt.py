@@ -30,14 +30,34 @@ scaledfft : array
 """
 from __future__ import division, absolute_import, print_function
 
-__all__ = ['czt', 'zoomfft', 'scaledfft', 'CZT', 'ZoomFFT', 'ScaledFFT']
-
 import cmath
 
 import numpy as np
 from numpy import pi, arange
 from scipy.fftpack import fft, ifft, fftshift
 from scipy.fftpack.helper import _next_regular
+
+__all__ = ['czt', 'zoomfft', 'scaledfft', 'CZT', 'ZoomFFT', 'ScaledFFT',
+           'czt_points']
+
+
+def _validate_sizes(n, m):
+    if n < 1:
+        raise ValueError("Invalid number of CZT data "
+                         "points (%d) specified." % n)
+
+    if int(n) != n:
+        raise ValueError('n must be a positive integer')
+
+    if m is None:
+        m = n
+    elif m < 1:
+        raise ValueError("Invalid number of CZT output "
+                         "points (%d) specified." % n)
+    elif int(m) != m:
+        raise ValueError('m must be a positive integer')
+
+    return m
 
 
 def czt_points(m, w=None, a=1, factor=None):
@@ -68,9 +88,7 @@ def czt_points(m, w=None, a=1, factor=None):
         The points in the Z plane at which the CZT samples the Z-transform,
         as complex numbers.
     """
-    if m < 1:
-        raise ValueError("Invalid number of CZT data "
-                         "points (%d) specified." % m)
+    m = _validate_sizes(1, m)
 
     k = arange(0, m)
 
@@ -90,7 +108,7 @@ def czt_points(m, w=None, a=1, factor=None):
         return a * w**-k
 
 
-class CZT:
+class CZT(object):
     """
     Chirp-Z Transform.
 
@@ -150,12 +168,7 @@ class CZT:
           callable object ``f(x, axis=-1)`` for computing the chirp-z transform
           on `x`
         """
-        if n < 1:
-            raise ValueError("Invalid number of CZT data "
-                             "points (%d) specified." % n)
-
-        if m is None:
-            m = n
+        m = _validate_sizes(n, m)
 
         k = arange(max(m, n), dtype=np.min_scalar_type(-max(m, n)**2))
 
@@ -268,12 +281,8 @@ class ZoomFFT(CZT):
             plot(f, y)
 
         """
-        if n < 1:
-            raise ValueError("Invalid number of CZT data "
-                             "points (%d) specified." % n)
+        m = _validate_sizes(n, m)
 
-        if m is None:
-            m = n
         if np.size(fn) == 2:
             f1, f2 = fn
         elif np.size(fn) == 1:
@@ -329,12 +338,8 @@ class ScaledFFT(CZT):
         callable f(x, axis=-1)
           function for computing the scaled FFT on x.
         """
-        if n < 1:
-            raise ValueError("Invalid number of CZT data "
-                             "points (%d) specified." % n)
+        m = _validate_sizes(n, m)
 
-        if m is None:
-            m = n
         w = np.exp(-2j * pi / m * scale)
         a = w**((m+1)//2)
         CZT.__init__(self, n=n, m=m, a=a, w=w)
