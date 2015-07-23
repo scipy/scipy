@@ -8,7 +8,7 @@ from numpy.linalg import norm
 from . import _minpack
 from .optimize import OptimizeResult
 from ._numdiff import approx_derivative, group_columns
-from ..sparse import issparse, csr_matrix, csc_matrix
+from ..sparse import issparse, csr_matrix
 from ..sparse.linalg import LinearOperator
 
 from ._lsq_common import in_bounds, prepare_bounds
@@ -553,47 +553,55 @@ def least_squares(
         raise ValueError("Method 'lm' doesn't work when the number of "
                          "residuals is less than the number of variables.")
 
-    if jac in ['2-point', '3-point', 'cs']:
+    if callable(jac):
+        J0 = jac(x0, *args, **kwargs)
+
+        if issparse(J0):
+            J0 = csr_matrix(J0)
+
+            def jac_wrapped(x, _=None):
+                return csr_matrix(jac(x, *args, **kwargs))
+        elif isinstance(J0, LinearOperator):
+            def jac_wrapped(x, _=None):
+                return jac(x, *args, **kwargs)
+        else:
+            J0 = np.atleast_2d(J0)
+
+            def jac_wrapped(x, _=None):
+                return np.atleast_2d(jac(x, *args, **kwargs))
+
+        if jac_sparsity is not None:
+            warn('`jac_sparsity = `%s is ignored.' % jac_sparsity)
+
+    else:
+        # estimate jac by finite differences
         if method == 'lm':
             if jac_sparsity is not None:
-                raise ValueError("Usage of method='lm' with `jac_sparsity` "
-                                 "provided is forbidden.")
+                raise ValueError("method='lm' does not handle sparse "
+                                 "jacobians.")
 
-            if jac == '3-point':
-                warn("jac='3-point' works equivalently to '2-point' "
-                     "for method='lm'.")
+            if jac != '2-point':
+                warn("jac='%s' works equivalently to '2-point' "
+                     "for method='lm'." % jac)
 
-            jac_wrapped = None
+            J0 = jac_wrapped = None
         else:
             if jac_sparsity is not None and tr_solver == 'exact':
-                raise ValueError("Usage of tr_solver='exact' with "
-                                 "`jac_sparsity` provided is forbidden.")
-
+                raise ValueError("Use of tr_solver='exact' is incompatible "
+                                 "with `jac_sparsity`= %s." % jac_sparsity)
             jac_sparsity = check_jac_sparsity(jac_sparsity, m, n)
 
             def jac_wrapped(x, f):
                 J = approx_derivative(fun, x, rel_step=diff_step, method=jac,
                                       f0=f, bounds=bounds, args=args,
                                       kwargs=kwargs, sparsity=jac_sparsity)
-
                 if J.ndim != 2:
                     J = np.atleast_2d(J)
-
                 return J
-    else:
-        def jac_wrapped(x, _=None):
-            J = jac(x, *args, **kwargs)
 
-            if issparse(J):
-                J = csr_matrix(J)
-            elif not isinstance(J, LinearOperator):
-                J = np.atleast_2d(J)
+            J0 = jac_wrapped(x0, f0)
 
-            return J
-
-    if jac_wrapped is not None:
-        J0 = jac_wrapped(x0, f0)
-
+    if J0 is not None:
         if J0.shape != (m, n):
             raise ValueError(
                 "The return value of `jac` has wrong shape: expected {0}, "
