@@ -66,6 +66,9 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     else:
         epsfcn = diff_step**2
 
+    if scaling == 'jac':
+        scaling = None
+
     full_output = True
     col_deriv = False
     factor = 1.0
@@ -129,7 +132,10 @@ def check_scaling(scaling, x0):
     return scaling
 
 
-def check_jac_sparsity(jac_sparsity, n, m):
+def check_jac_sparsity(jac_sparsity, m, n):
+    if jac_sparsity is None:
+        return None
+
     if not issparse(jac_sparsity):
         jac_sparsity = np.atleast_2d(jac_sparsity)
 
@@ -546,91 +552,70 @@ def least_squares(
                          "residuals is less than the number of variables.")
 
     if jac in ['2-point', '3-point']:
-        if jac_sparsity is not None:
-            if method == 'lm':
-                warn("`jac_sparsity` is ignored for method='lm', dense "
-                     "differencing will be used.")
-                sparsity = None
-            else:
-                sparsity = check_jac_sparsity(jac_sparsity, n, m)
+        if method == 'lm':
+            if jac_sparsity is not None:
+                raise ValueError("Usage of method='lm' with `jac_sparsity` "
+                                 "provided is forbidden.")
+
+            if jac == '3-point':
+                warn("jac='3-point' works equivalently to '2-point' "
+                     "for method='lm'.")
+
+            jac_wrapped = None
         else:
-            sparsity = None
+            if jac_sparsity is not None and tr_solver == 'exact':
+                raise ValueError("Usage of tr_solver='exact' with "
+                                 "`jac_sparsity` provided is forbidden.")
 
-        def jac_wrapped(x, f):
-            J = approx_derivative(
-                fun, x, rel_step=diff_step, method=jac, f0=f, bounds=bounds,
-                args=args, kwargs=kwargs, sparsity=sparsity)
+            jac_sparsity = check_jac_sparsity(jac_sparsity, m, n)
 
-            if issparse(J) and tr_solver == 'exact':
-                warn("Jacobian is converted to dense for tr_solver='exact' "
-                     "even though `jac_sparsity` is provided. Consider using "
-                     "'lsmr' trust-region solver or set `jac_sparsity` to "
-                     "None.")
-                J = J.toarray()
-            elif not issparse(J):
-                J = np.atleast_2d(J)
+            def jac_wrapped(x, f):
+                J = approx_derivative(fun, x, rel_step=diff_step, method=jac,
+                                      f0=f, bounds=bounds, args=args,
+                                      kwargs=kwargs, sparsity=jac_sparsity)
 
-            return J
+                if J.ndim != 2:
+                    J = np.atleast_2d(J)
+
+                return J
     else:
         def jac_wrapped(x, _=None):
             J = jac(x, *args, **kwargs)
 
             if issparse(J):
-                if method == 'lm':
-                    warn("Jacobian is converted to dense for "
-                         "method='lm', consider using a different `method` "
-                         "or return dense Jacobian.")
-                    J = J.toarray()
-                elif tr_solver == 'exact':
-                    warn("Jacobian is converted to dense for "
-                         "tr_solver='exact', consider using 'lsmr' "
-                         "trust-region solver or return dense Jacobian.")
-                    J = J.toarray()
-                else:
-                    J = csr_matrix(J)
+                J = csr_matrix(J)
             elif not isinstance(J, LinearOperator):
                 J = np.atleast_2d(J)
 
             return J
 
-    J0 = jac_wrapped(x0, f0)
-    if len(J0.shape) != 2:
-        raise RuntimeError("`jac` must return at most 2-d array_like, "
-                           "sparse matrix or LinearOperator.")
+    if jac_wrapped is not None:
+        J0 = jac_wrapped(x0, f0)
 
-    if J0.shape != (m, n):
-        raise RuntimeError("The return value of `jac` has wrong shape.")
+        if J0.shape != (m, n):
+            raise ValueError(
+                "The return value of `jac` has wrong shape: expected {0}, "
+                "actual {1}.".format((m, n), J0.shape))
 
-    if isinstance(J0, LinearOperator):
-        if method == 'lm':
-            raise ValueError("method='lm' can't be used when `jac` "
-                             "returns LinearOperator.")
+        if not isinstance(J0, np.ndarray):
+            if method == 'lm':
+                raise ValueError("method='lm' works only with dense Jacobian.")
 
-        if tr_solver == 'exact':
-            raise ValueError("tr_solver='exact' can't be used when `jac` "
-                             "returns LinearOperator.")
+            if tr_solver == 'exact':
+                raise ValueError(
+                    "tr_solver='exact' works only with dense Jacobian.")
 
-        if scaling == 'jac':
+        if isinstance(J0, LinearOperator) and scaling == 'jac':
             raise ValueError("scaling='jac' can't be used when `jac` "
-                             "return LinearOperator.")
+                             "returns LinearOperator.")
 
-    if tr_solver is None:
-        if isinstance(J0, np.ndarray):
-            tr_solver = 'exact'
-        else:
-            tr_solver = 'lsmr'
+        if tr_solver is None:
+            if isinstance(J0, np.ndarray):
+                tr_solver = 'exact'
+            else:
+                tr_solver = 'lsmr'
 
     if method == 'lm':
-        if jac == '2-point':
-            jac_wrapped = None
-        elif jac == '3-point':
-            jac_wrapped = None
-            warn("jac='3-point' works equivalently to '2-point' "
-                 "for 'lm' method.")
-
-        if scaling == 'jac':
-            scaling = None
-
         result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
                               max_nfev, scaling, diff_step)
 
