@@ -95,14 +95,15 @@ def czt_points(m, w=None, a=1+0j, scale=None):
 
     >>> import matplotlib.pyplot as plt
     >>> points = czt_points(16)
-    >>> plt.plot(real(points), imag(points), 'o')
+    >>> plt.plot(np.real(points), np.imag(points), 'o')
     >>> plt.margins(0.1, 0.1); plt.axis('equal')
     >>> plt.show()
 
     and a 91-point logarithmic spiral:
 
-    >>> points = czt_points(91, 0.995*exp(-1j*pi*.05), 0.8*exp(1j*pi/6))
-    >>> plt.plot(real(points), imag(points), 'o')
+    >>> m, w, a = 91, 0.995*np.exp(-1j*np.pi*.05), 0.8*np.exp(1j*np.pi/6)
+    >>> points = czt_points(m, w, a)
+    >>> plt.plot(np.real(points), np.imag(points), 'o')
     >>> plt.margins(0.1, 0.1); plt.axis('equal')
     >>> plt.show()
 
@@ -209,12 +210,12 @@ class CZT(object):
     Display the points at which the FFT is calculated:
 
     >>> czt_7.points()
-    array([ 1.00000000+0.j,  0.62348980+0.78183148j,
-      -0.22252093+0.97492791j, -0.90096887+0.43388374j,
-      -0.90096887-0.43388374j, -0.22252093-0.97492791j,
-       0.62348980-0.78183148j])
+    array([ 1.00000000+0.j        ,  0.62348980+0.78183148j,
+           -0.22252093+0.97492791j, -0.90096887+0.43388374j,
+           -0.90096887-0.43388374j, -0.22252093-0.97492791j,
+            0.62348980-0.78183148j])
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(real(czt_7.points()), imag(czt_7.points()), 'o')
+    >>> plt.plot(np.real(czt_7.points()), np.imag(czt_7.points()), 'o')
     >>> plt.show()
 
     """
@@ -327,14 +328,14 @@ class ZoomFFT(CZT):
     --------
     To plot the transform results use something like the following:
 
-    >>> t = linspace(0, 1, 1021)
-    >>> x = cos(2*pi*15*t) + sin(2*pi*17*t)
+    >>> t = np.linspace(0, 1, 1021)
+    >>> x = np.cos(2*np.pi*15*t) + np.sin(2*np.pi*17*t)
     >>> f1, f2 = 5, 27
     >>> transform = ZoomFFT(len(x), [f1, f2], len(x), 1021)
     >>> X = transform(x)
-    >>> f = linspace(f1, f2, len(x))
+    >>> f = np.linspace(f1, f2, len(x))
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(f, 20*log10(abs(X)))
+    >>> plt.plot(f, 20*np.log10(np.abs(X)))
     >>> plt.show()
 
     """
@@ -391,7 +392,7 @@ class ScaledFFT(CZT):
     >>> scale, m, n = 0.25, 200, 100
     >>> v = np.zeros(n)
     >>> v[[1, 5, 21]] = 1
-    >>> shift = scipy.fftpack.fftshift
+    >>> from scipy.fftpack import fft, fftshift as shift
     >>> x = np.linspace(-0.5, 0.5 - 1./n, n)
     >>> xz = np.linspace(-scale * 0.5, scale * 0.5 * (m - 2.) / m, m)
     >>> import matplotlib.pyplot as plt
@@ -492,7 +493,7 @@ def czt(x, m=None, w=None, a=1+0j, scale=None, axis=-1):
     `czt` can quickly compute a prime-length FFT:
 
     >>> n = 30011  # prime
-    >>> a = ones(n)  # DC (spectrum is [n, 0, 0, 0, ...])
+    >>> a = np.ones(n)  # DC (spectrum is [n, 0, 0, 0, ...])
     >>> f = fft(a)  # takes 1.4 seconds
     >>> c = czt(a)  # takes 21 milliseconds
     >>> np.allclose(f, c, atol=1e-6)
@@ -500,14 +501,14 @@ def czt(x, m=None, w=None, a=1+0j, scale=None, axis=-1):
 
     However, the CZT has more error:
 
-    >>> abs(amax(f[1:]))
-    1.5961587607193906e-10
-    >>> abs(amax(c[1:]))
-    2.2517222906804262e-09
-    >>> np.linalg.norm(f[1:])
-    9.8233490457448648e-09
-    >>> np.linalg.norm(c[1:])
-    1.0822254628188106e-07
+    >>> print(abs(np.amax(f[1:])))
+    1.59615876072e-10
+    >>> print(abs(np.amax(c[1:])))
+    2.25172229068e-09
+    >>> print(np.linalg.norm(f[1:]))
+    9.82334904574e-09
+    >>> print(np.linalg.norm(c[1:]))
+    1.08222546282e-07
 
     With `scale` parameter, CZT can be used to calculate even-length rfft:
 
@@ -515,7 +516,7 @@ def czt(x, m=None, w=None, a=1+0j, scale=None, axis=-1):
     >>> a = np.random.rand(1024)
     >>> r = rfft(a)
     >>> c = czt(a, m=513, scale=0.5*513/512)
-    >>> allclose(c, r)
+    >>> np.allclose(c, r)
     True
 
     """
