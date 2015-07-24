@@ -183,7 +183,7 @@ def least_squares(
         '2-point' (default). The scheme 'cs' uses complex steps, and while
         potentially the most accurate it is applicable only when `fun`
         correctly handles complex inputs and can be analytically continued to
-        the complex plane.
+        the complex plane. Method 'lm' always uses '2-point' scheme.
         If callable, it is used as ``jac(x, *args, **kwargs)`` and should
         return a good approximation (or the exact value) for the Jacobian as
         an array_like (np.atleast_2d is applied), a sparse matrix or a
@@ -503,8 +503,12 @@ def least_squares(
     if method not in ['trf', 'dogbox', 'lm']:
         raise ValueError("`method` must be 'trf', 'dogbox' or 'lm'.")
 
+    if jac not in ['2-point', '3-point', 'cs'] and not callable(jac):
+        raise ValueError("`jac` must be '2-point', '3-point', 'cs' or "
+                         "callable.")
+
     if tr_solver not in [None, 'exact', 'lsmr']:
-        raise ValueError("'tr_solver' must be None, 'exact' or 'lsmr'.")
+        raise ValueError("`tr_solver` must be None, 'exact' or 'lsmr'.")
 
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
@@ -519,6 +523,9 @@ def least_squares(
 
     lb, ub = prepare_bounds(bounds, x0)
 
+    if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
+        raise ValueError("Method 'lm' doesn't support bounds.")
+
     if lb.shape != x0.shape or ub.shape != x0.shape:
         raise ValueError("Inconsistent shapes between bounds and `x0`.")
 
@@ -526,19 +533,12 @@ def least_squares(
         raise ValueError("Each lower bound mush be strictly less than each "
                          "upper bound.")
 
-    if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
-        raise ValueError("Method 'lm' doesn't support bounds.")
-
-    if jac not in ['2-point', '3-point', 'cs'] and not callable(jac):
-        raise ValueError("`jac` must be '2-point', '3-point', 'cs' or "
-                         "callable.")
+    if not in_bounds(x0, lb, ub):
+        raise ValueError("`x0` is infeasible.")
 
     scaling = check_scaling(scaling, x0)
 
     ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol)
-
-    if not in_bounds(x0, lb, ub):
-        raise ValueError("`x0` is infeasible.")
 
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))
@@ -561,42 +561,42 @@ def least_squares(
 
             def jac_wrapped(x, _=None):
                 return csr_matrix(jac(x, *args, **kwargs))
+
         elif isinstance(J0, LinearOperator):
             def jac_wrapped(x, _=None):
                 return jac(x, *args, **kwargs)
+
         else:
             J0 = np.atleast_2d(J0)
 
             def jac_wrapped(x, _=None):
                 return np.atleast_2d(jac(x, *args, **kwargs))
 
-        if jac_sparsity is not None:
-            warn('`jac_sparsity = `%s is ignored.' % jac_sparsity)
-
-    else:
-        # estimate jac by finite differences
+    else:  # Estimate Jacobian by finite differences.
         if method == 'lm':
             if jac_sparsity is not None:
-                raise ValueError("method='lm' does not handle sparse "
-                                 "jacobians.")
+                raise ValueError("method='lm' does not support "
+                                 "`jac_sparsity`.")
 
             if jac != '2-point':
-                warn("jac='%s' works equivalently to '2-point' "
-                     "for method='lm'." % jac)
+                warn("jac='{0}' works equivalently to '2-point' "
+                     "for method='lm'.".format(jac))
 
             J0 = jac_wrapped = None
         else:
             if jac_sparsity is not None and tr_solver == 'exact':
-                raise ValueError("Use of tr_solver='exact' is incompatible "
-                                 "with `jac_sparsity`= %s." % jac_sparsity)
+                raise ValueError("tr_solver='exact' is incompatible "
+                                 "with `jac_sparsity`.")
+
             jac_sparsity = check_jac_sparsity(jac_sparsity, m, n)
 
             def jac_wrapped(x, f):
                 J = approx_derivative(fun, x, rel_step=diff_step, method=jac,
                                       f0=f, bounds=bounds, args=args,
                                       kwargs=kwargs, sparsity=jac_sparsity)
-                if J.ndim != 2:
+                if J.ndim != 2:  # J is guaranteed not sparse.
                     J = np.atleast_2d(J)
+
                 return J
 
             J0 = jac_wrapped(x0, f0)
@@ -609,11 +609,13 @@ def least_squares(
 
         if not isinstance(J0, np.ndarray):
             if method == 'lm':
-                raise ValueError("method='lm' works only with dense Jacobian.")
+                raise ValueError("method='lm' works only with dense "
+                                 "Jacobian matrices.")
 
             if tr_solver == 'exact':
                 raise ValueError(
-                    "tr_solver='exact' works only with dense Jacobian.")
+                    "tr_solver='exact' works only with dense "
+                    "Jacobian matrices.")
 
         if isinstance(J0, LinearOperator) and scaling == 'jac':
             raise ValueError("scaling='jac' can't be used when `jac` "
