@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['lsmr']
 
-from numpy import zeros, infty
+from numpy import zeros, infty, atleast_1d
 from numpy.linalg import norm
 from math import sqrt
 from scipy.sparse.linalg.interface import aslinearoperator
@@ -42,7 +42,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     ----------
     A : {matrix, sparse matrix, ndarray, LinearOperator}
         Matrix A in the linear system.
-    b : (m,) ndarray
+    b : array_like, shape (m,)
         Vector b in the linear system.
     damp : float
         Damping factor for regularized least-squares. `lsmr` solves
@@ -136,7 +136,9 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     """
 
     A = aslinearoperator(A)
-    b = b.squeeze()
+    b = atleast_1d(b)
+    if b.ndim > 1:
+        b = b.squeeze()
 
     msg = ('The exact solution is  x = 0                              ',
          'Ax - b is small enough, given atol, btol                  ',
