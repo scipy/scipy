@@ -54,6 +54,8 @@ elements trimmed are the lowest and/or highest, depending on the case.
 Slicing without at least partial sorting was previously done, but didn't
 make sense for unsorted input.
 
+When ``variable_names`` is set to an empty list, ``scipy.io.loadmat`` now
+correctly returns no values instead of all the contents of the MAT file.
 
 Other changes
 =============
