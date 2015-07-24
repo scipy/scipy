@@ -2986,9 +2986,11 @@ class lognorm_gen(rv_continuous):
 
     %(after_notes)s
 
-    If ``log(x)`` is normally distributed with mean ``mu`` and variance
-    ``sigma**2``, then ``x`` is log-normally distributed with shape parameter
-    sigma and scale parameter ``exp(mu)``.
+    A common parametrization for a lognormal random variable ``Y`` is in
+    terms of the mean, ``mu``, and standard deviation, ``sigma``, of the
+    unique normally distributed random variable ``X`` such that exp(X) = Y.
+    This parametrization corresponds to setting ``s = sigma`` and ``scale =
+    exp(mu)``.
 
     %(example)s
 
