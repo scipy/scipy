@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_, assert_equal, assert_array_almost_equal
+from numpy.testing import (assert_, assert_equal, assert_almost_equal,
+                           assert_array_almost_equal)
 from scipy._lib.six import xrange
 
 import scipy.sparse
@@ -72,6 +73,20 @@ def test_well_conditioned_problems():
             # Sanity check: compare to the dense array solver
             reference_solution = np.linalg.solve(A_dense, b).ravel()
             assert_array_almost_equal(solution, reference_solution)
+
+
+def test_b_shapes():
+    # Test b being a scalar.
+    A = np.array([[1.0, 2.0]])
+    b = 3.0
+    x = lsqr(A, b)[0]
+    assert_almost_equal(norm(A.dot(x) - b), 0)
+
+    # Test b being a column vector.
+    A = np.eye(10)
+    b = np.ones((10, 1))
+    x = lsqr(A, b)[0]
+    assert_almost_equal(norm(A.dot(x) - b.ravel()), 0)
 
 
 if __name__ == "__main__":
