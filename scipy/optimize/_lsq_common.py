@@ -9,6 +9,9 @@ from numpy.linalg import norm
 from scipy.linalg import cho_factor, cho_solve, LinAlgError
 
 
+EPS = np.finfo(float).eps
+
+
 # Functions related to a trust-region problem.
 
 
@@ -114,7 +117,7 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
 
     # Check if J has full rank and try Gauss-Newton step.
     if m >= n:
-        threshold = np.finfo(float).eps * m * s[0]
+        threshold = EPS * m * s[0]
         full_rank = s[-1] > threshold
     else:
         full_rank = False

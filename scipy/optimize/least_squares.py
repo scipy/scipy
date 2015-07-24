@@ -11,14 +11,11 @@ from ._numdiff import approx_derivative, group_columns
 from ..sparse import issparse, csr_matrix
 from ..sparse.linalg import LinearOperator
 
-from ._lsq_common import in_bounds, prepare_bounds
+from ._lsq_common import EPS, in_bounds, prepare_bounds
 from ._lsq_trf import trf
 from ._lsq_dogbox import dogbox
 
 __all__ = ['least_squares']
-
-
-EPS = np.finfo(float).eps
 
 
 def check_tolerance(ftol, xtol, gtol):
@@ -62,7 +59,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     n = x0.size
 
     if diff_step is None:
-        epsfcn = np.finfo(float).eps
+        epsfcn = EPS
     else:
         epsfcn = diff_step**2
 
