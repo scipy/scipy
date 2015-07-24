@@ -150,7 +150,7 @@ def cascade(hk, J=7):
     m *= s2
 
     # construct the grid of points
-    x = np.arange(0, N * (1 << J), dtype=np.float) / (1 << J)
+    x = np.arange(0, N * (1 << J), dtype=float) / (1 << J)
     phi = 0 * x
 
     psi = 0 * x

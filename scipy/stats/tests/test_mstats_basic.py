@@ -351,7 +351,7 @@ class TestMoments(TestCase):
            [True, True, True, False, True],
            [False, False, False, False, False],
            [True, True, True, True, True],
-           [False, False, True, False, False]], dtype=np.bool))
+           [False, False, True, False, False]], dtype=bool))
 
     def test_moment(self):
         y = mstats.moment(self.testcase,1)
@@ -393,7 +393,7 @@ class TestMoments(TestCase):
         correct_2d = ma.array(np.array([-1.5, -3., -1.47247052385, 0.,
                                         -1.26979517952]),
                               mask=np.array([False, False, False, True,
-                                             False], dtype=np.bool))
+                                             False], dtype=bool))
         assert_array_almost_equal(mstats.kurtosis(self.testcase_2d, 1),
                                   correct_2d)
         for i, row in enumerate(self.testcase_2d):
@@ -401,7 +401,7 @@ class TestMoments(TestCase):
 
         correct_2d_bias_corrected = ma.array(
             np.array([-1.5, -3., -1.88988209538, 0., -0.5234638463918877]),
-            mask=np.array([False, False, False, True, False], dtype=np.bool))
+            mask=np.array([False, False, False, True, False], dtype=bool))
         assert_array_almost_equal(mstats.kurtosis(self.testcase_2d, 1,
                                                   bias=False),
                                   correct_2d_bias_corrected)

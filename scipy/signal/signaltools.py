@@ -343,8 +343,8 @@ def fftconvolve(in1, in2, mode="full"):
 
     s1 = array(in1.shape)
     s2 = array(in2.shape)
-    complex_result = (np.issubdtype(in1.dtype, np.complex) or
-                      np.issubdtype(in2.dtype, np.complex))
+    complex_result = (np.issubdtype(in1.dtype, complex) or
+                      np.issubdtype(in2.dtype, complex))
     shape = s1 + s2 - 1
 
     if mode == "valid":

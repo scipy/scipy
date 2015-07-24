@@ -156,7 +156,7 @@ class TestDCTIFloat(_TestDCTBase):
 
 class TestDCTIInt(_TestDCTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 5
         self.type = 1
 
@@ -177,7 +177,7 @@ class TestDCTIIFloat(_TestDCTIIBase):
 
 class TestDCTIIInt(_TestDCTIIBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 5
         self.type = 2
 
@@ -198,7 +198,7 @@ class TestDCTIIIFloat(_TestDCTIIIBase):
 
 class TestDCTIIIInt(_TestDCTIIIBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 5
         self.type = 3
 
@@ -242,7 +242,7 @@ class TestIDCTIFloat(_TestIDCTBase):
 
 class TestIDCTIInt(_TestIDCTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 4
         self.type = 1
 
@@ -263,7 +263,7 @@ class TestIDCTIIFloat(_TestIDCTBase):
 
 class TestIDCTIIInt(_TestIDCTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 5
         self.type = 2
 
@@ -284,7 +284,7 @@ class TestIDCTIIIFloat(_TestIDCTBase):
 
 class TestIDCTIIIInt(_TestIDCTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 5
         self.type = 3
 
@@ -324,7 +324,7 @@ class TestDSTIFloat(_TestDSTBase):
 
 class TestDSTIInt(_TestDSTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 5
         self.type = 1
 
@@ -345,7 +345,7 @@ class TestDSTIIFloat(_TestDSTBase):
 
 class TestDSTIIInt(_TestDSTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 6
         self.type = 2
 
@@ -366,7 +366,7 @@ class TestDSTIIIFloat(_TestDSTBase):
 
 class TestDSTIIIInt(_TestDSTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 7
         self.type = 3
 
@@ -410,7 +410,7 @@ class TestIDSTIFloat(_TestIDSTBase):
 
 class TestIDSTIInt(_TestIDSTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 4
         self.type = 1
 
@@ -431,7 +431,7 @@ class TestIDSTIIFloat(_TestIDSTBase):
 
 class TestIDSTIIInt(_TestIDSTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 6
         self.type = 2
 
@@ -452,7 +452,7 @@ class TestIDSTIIIFloat(_TestIDSTBase):
 
 class TestIDSTIIIInt(_TestIDSTBase):
     def setUp(self):
-        self.rdt = np.int
+        self.rdt = int
         self.dec = 6
         self.type = 3
 

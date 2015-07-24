@@ -70,7 +70,7 @@ class TestRankData(TestCase):
 
     def test_empty(self):
         """stats.rankdata([]) should return an empty array."""
-        a = np.array([], dtype=np.int)
+        a = np.array([], dtype=int)
         r = rankdata(a)
         assert_array_equal(r, np.array([], dtype=np.float64))
         r = rankdata([])
@@ -79,7 +79,7 @@ class TestRankData(TestCase):
     def test_one(self):
         """Check stats.rankdata with an array of length 1."""
         data = [100]
-        a = np.array(data, dtype=np.int)
+        a = np.array(data, dtype=int)
         r = rankdata(a)
         assert_array_equal(r, np.array([1.0], dtype=np.float64))
         r = rankdata(data)
@@ -89,7 +89,7 @@ class TestRankData(TestCase):
         """Basic tests of stats.rankdata."""
         data = [100, 10, 50]
         expected = np.array([3.0, 1.0, 2.0], dtype=np.float64)
-        a = np.array(data, dtype=np.int)
+        a = np.array(data, dtype=int)
         r = rankdata(a)
         assert_array_equal(r, expected)
         r = rankdata(data)
@@ -97,7 +97,7 @@ class TestRankData(TestCase):
 
         data = [40, 10, 30, 10, 50]
         expected = np.array([4.0, 1.5, 3.0, 1.5, 5.0], dtype=np.float64)
-        a = np.array(data, dtype=np.int)
+        a = np.array(data, dtype=int)
         r = rankdata(a)
         assert_array_equal(r, expected)
         r = rankdata(data)
@@ -105,7 +105,7 @@ class TestRankData(TestCase):
 
         data = [20, 20, 20, 10, 10, 10]
         expected = np.array([5.0, 5.0, 5.0, 2.0, 2.0, 2.0], dtype=np.float64)
-        a = np.array(data, dtype=np.int)
+        a = np.array(data, dtype=int)
         r = rankdata(a)
         assert_array_equal(r, expected)
         r = rankdata(data)

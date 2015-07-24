@@ -710,7 +710,7 @@ def boxcox_llf(lmb, data):
 
     >>> x = stats.loggamma.rvs(5, loc=10, size=1000)
     >>> lmbdas = np.linspace(-2, 10)
-    >>> llf = np.zeros(lmbdas.shape, dtype=np.float)
+    >>> llf = np.zeros(lmbdas.shape, dtype=float)
     >>> for ii, lmbda in enumerate(lmbdas):
     ...     llf[ii] = stats.boxcox_llf(lmbda, x)
 
@@ -990,7 +990,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         return optimize.brent(_eval_mle, brack=brack, args=(x,))
 
     def _all(x, brack):
-        maxlog = np.zeros(2, dtype=np.float)
+        maxlog = np.zeros(2, dtype=float)
         maxlog[0] = _pearsonr(x, brack)
         maxlog[1] = _mle(x, brack)
         return maxlog
@@ -1316,7 +1316,7 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
     for i in arange(0, k):
         s = np.sort(samples[i])
         s_ssorted_right = s.searchsorted(Zstar, side='right')
-        Mij = s_ssorted_right.astype(np.float)
+        Mij = s_ssorted_right.astype(float)
         fij = s_ssorted_right - s.searchsorted(Zstar, 'left')
         Mij -= fij / 2.
         inner = lj / float(N) * (N*Mij - Bj*n[i])**2 / (Bj*(N - Bj) - N*lj/4.)

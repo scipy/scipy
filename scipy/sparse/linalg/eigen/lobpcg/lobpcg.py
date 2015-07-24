@@ -368,7 +368,7 @@ def lobpcg(A, X,
 
     ##
     # Active index set.
-    activeMask = np.ones((sizeX,), dtype=np.bool)
+    activeMask = np.ones((sizeX,), dtype=bool)
 
     lambdaHistory = [_lambda]
     residualNormsHistory = []

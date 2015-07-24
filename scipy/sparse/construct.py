@@ -554,7 +554,7 @@ def bmat(blocks, format=None, dtype=None):
             A = A.astype(dtype)
         return A
 
-    block_mask = np.zeros(blocks.shape, dtype=np.bool)
+    block_mask = np.zeros(blocks.shape, dtype=bool)
     brow_lengths = np.zeros(M, dtype=np.int64)
     bcol_lengths = np.zeros(N, dtype=np.int64)
 

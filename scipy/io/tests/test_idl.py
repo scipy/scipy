@@ -14,7 +14,7 @@ from scipy.io.idl import readsav
 
 def object_array(*args):
     """Constructs a numpy array of objects"""
-    array = np.empty(len(args), dtype=np.object)
+    array = np.empty(len(args), dtype=object)
     for i in range(len(args)):
         array[i] = args[i]
     return array
@@ -23,7 +23,7 @@ def object_array(*args):
 def assert_identical(a, b):
     """Assert whether value AND type are the same"""
     assert_equal(a, b)
-    if type(b) is np.str:
+    if type(b) is str:
         assert_equal(type(a), type(b))
     else:
         assert_equal(np.asarray(a).dtype.type, np.asarray(b).dtype.type)
@@ -125,7 +125,7 @@ class TestCompressed(TestScalars):
         assert_identical(s.arrays.a[0], np.array([1, 2, 3], dtype=np.int16))
         assert_identical(s.arrays.b[0], np.array([4., 5., 6., 7.], dtype=np.float32))
         assert_identical(s.arrays.c[0], np.array([np.complex64(1+2j), np.complex64(7+8j)]))
-        assert_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=np.object))
+        assert_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=object))
 
 
 class TestArrayDimensions:
@@ -172,7 +172,7 @@ class TestStructures:
         assert_identical(s.scalars.b, np.array(np.int32(2)))
         assert_identical(s.scalars.c, np.array(np.float32(3.)))
         assert_identical(s.scalars.d, np.array(np.float64(4.)))
-        assert_identical(s.scalars.e, np.array([b"spam"], dtype=np.object))
+        assert_identical(s.scalars.e, np.array([b"spam"], dtype=object))
         assert_identical(s.scalars.f, np.array(np.complex64(-1.+3j)))
 
     def test_scalars_replicated(self):
@@ -181,7 +181,7 @@ class TestStructures:
         assert_identical(s.scalars_rep.b, np.repeat(np.int32(2), 5))
         assert_identical(s.scalars_rep.c, np.repeat(np.float32(3.), 5))
         assert_identical(s.scalars_rep.d, np.repeat(np.float64(4.), 5))
-        assert_identical(s.scalars_rep.e, np.repeat(b"spam", 5).astype(np.object))
+        assert_identical(s.scalars_rep.e, np.repeat(b"spam", 5).astype(object))
         assert_identical(s.scalars_rep.f, np.repeat(np.complex64(-1.+3j), 5))
 
     def test_scalars_replicated_3d(self):
@@ -190,7 +190,7 @@ class TestStructures:
         assert_identical(s.scalars_rep.b, np.repeat(np.int32(2), 24).reshape(4, 3, 2))
         assert_identical(s.scalars_rep.c, np.repeat(np.float32(3.), 24).reshape(4, 3, 2))
         assert_identical(s.scalars_rep.d, np.repeat(np.float64(4.), 24).reshape(4, 3, 2))
-        assert_identical(s.scalars_rep.e, np.repeat(b"spam", 24).reshape(4, 3, 2).astype(np.object))
+        assert_identical(s.scalars_rep.e, np.repeat(b"spam", 24).reshape(4, 3, 2).astype(object))
         assert_identical(s.scalars_rep.f, np.repeat(np.complex64(-1.+3j), 24).reshape(4, 3, 2))
 
     def test_arrays(self):
@@ -198,7 +198,7 @@ class TestStructures:
         assert_array_identical(s.arrays.a[0], np.array([1, 2, 3], dtype=np.int16))
         assert_array_identical(s.arrays.b[0], np.array([4., 5., 6., 7.], dtype=np.float32))
         assert_array_identical(s.arrays.c[0], np.array([np.complex64(1+2j), np.complex64(7+8j)]))
-        assert_array_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=np.object))
+        assert_array_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=object))
 
     def test_arrays_replicated(self):
         s = readsav(path.join(DATA_PATH, 'struct_arrays_replicated.sav'), verbose=False)
@@ -226,7 +226,7 @@ class TestStructures:
                                              np.complex64(7+8j)]))
             assert_array_identical(s.arrays_rep.d[i],
                                    np.array([b"cheese", b"bacon", b"spam"],
-                                            dtype=np.object))
+                                            dtype=object))
 
     def test_arrays_replicated_3d(self):
         s = readsav(path.join(DATA_PATH, 'struct_arrays_replicated_3d.sav'), verbose=False)
@@ -257,7 +257,7 @@ class TestStructures:
                                                      np.complex64(7+8j)]))
                     assert_array_identical(s.arrays_rep.d[i, j, k],
                                            np.array([b"cheese", b"bacon", b"spam"],
-                                                    dtype=np.object))
+                                                    dtype=object))
 
     def test_inheritance(self):
         s = readsav(path.join(DATA_PATH, 'struct_inherit.sav'), verbose=False)

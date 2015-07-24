@@ -2046,7 +2046,7 @@ def test_lapack_misaligned():
     R = np.arange(100)
     R.shape = 10,10
     S = np.arange(20000,dtype=np.uint8)
-    S = np.frombuffer(S.data, offset=4, count=100, dtype=np.float)
+    S = np.frombuffer(S.data, offset=4, count=100, dtype=float)
     S.shape = 10, 10
     b = np.ones(10)
     LU, piv = lu_factor(S)

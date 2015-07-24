@@ -101,8 +101,8 @@ def _copy_arrays_if_base_present(T):
 
 
 def _convert_to_bool(X):
-    if X.dtype != np.bool:
-        X = X.astype(np.bool)
+    if X.dtype != bool:
+        X = X.astype(bool)
     if not X.flags.contiguous:
         X = X.copy()
     return X
@@ -644,14 +644,14 @@ def _nbool_correspond_all(u, v):
     if u.dtype != v.dtype:
         raise TypeError("Arrays being compared must be of the same data type.")
 
-    if u.dtype == np.int or u.dtype == np.float_ or u.dtype == np.double:
+    if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double:
         not_u = 1.0 - u
         not_v = 1.0 - v
         nff = (not_u * not_v).sum()
         nft = (not_u * v).sum()
         ntf = (u * not_v).sum()
         ntt = (u * v).sum()
-    elif u.dtype == np.bool:
+    elif u.dtype == bool:
         not_u = ~u
         not_v = ~v
         nff = (not_u & not_v).sum()
@@ -665,7 +665,7 @@ def _nbool_correspond_all(u, v):
 
 
 def _nbool_correspond_ft_tf(u, v):
-    if u.dtype == np.int or u.dtype == np.float_ or u.dtype == np.double:
+    if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double:
         not_u = 1.0 - u
         not_v = 1.0 - v
         nft = (not_u * v).sum()
@@ -775,7 +775,7 @@ def dice(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == np.bool:
+    if u.dtype == bool:
         ntt = (u & v).sum()
     else:
         ntt = (u * v).sum()
@@ -849,7 +849,7 @@ def russellrao(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == np.bool:
+    if u.dtype == bool:
         ntt = (u & v).sum()
     else:
         ntt = (u * v).sum()
@@ -888,7 +888,7 @@ def sokalmichener(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == np.bool:
+    if u.dtype == bool:
         ntt = (u & v).sum()
         nff = (~u & ~v).sum()
     else:
@@ -928,7 +928,7 @@ def sokalsneath(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == np.bool:
+    if u.dtype == bool:
         ntt = (u & v).sum()
     else:
         ntt = (u * v).sum()
@@ -1226,12 +1226,12 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
             _distance_wrap.pdist_city_block_wrap(X, dm)
         elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
-            if X.dtype == np.bool:
+            if X.dtype == bool:
                 _distance_wrap.pdist_hamming_bool_wrap(_convert_to_bool(X), dm)
             else:
                 _distance_wrap.pdist_hamming_wrap(_convert_to_double(X), dm)
         elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
-            if X.dtype == np.bool:
+            if X.dtype == bool:
                 _distance_wrap.pdist_jaccard_bool_wrap(_convert_to_bool(X), dm)
             else:
                 _distance_wrap.pdist_jaccard_wrap(_convert_to_double(X), dm)
@@ -2080,7 +2080,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             _distance_wrap.cdist_city_block_wrap(_convert_to_double(XA),
                                                  _convert_to_double(XB), dm)
         elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
-            if XA.dtype == np.bool:
+            if XA.dtype == bool:
                 _distance_wrap.cdist_hamming_bool_wrap(_convert_to_bool(XA),
                                                        _convert_to_bool(XB),
                                                        dm)
@@ -2088,7 +2088,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 _distance_wrap.cdist_hamming_wrap(_convert_to_double(XA),
                                                   _convert_to_double(XB), dm)
         elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
-            if XA.dtype == np.bool:
+            if XA.dtype == bool:
                 _distance_wrap.cdist_jaccard_bool_wrap(_convert_to_bool(XA),
                                                        _convert_to_bool(XB),
                                                        dm)

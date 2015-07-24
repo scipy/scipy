@@ -24,7 +24,7 @@ def test_squeeze_element():
     a = np.zeros((1,3))
     assert_array_equal(np.squeeze(a), squeeze_element(a))
     # 0d output from squeeze gives scalar
-    sq_int = squeeze_element(np.zeros((1,1), dtype=np.float))
+    sq_int = squeeze_element(np.zeros((1,1), dtype=float))
     assert_(isinstance(sq_int, float))
     # Unless it's a structured array
     sq_sa = squeeze_element(np.zeros((1,1),dtype=[('f1', 'f')]))

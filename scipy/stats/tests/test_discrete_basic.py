@@ -86,7 +86,7 @@ def check_cdf_ppf(distfn, arg, supp, msg):
 
 
 def check_pmf_cdf(distfn, arg, distname):
-    startind = np.int(distfn.ppf(0.01, *arg) - 1)
+    startind = int(distfn.ppf(0.01, *arg) - 1)
     index = list(range(startind, startind + 10))
     cdfs, pmfs_cum = distfn.cdf(index,*arg), distfn.pmf(index, *arg).cumsum()
 

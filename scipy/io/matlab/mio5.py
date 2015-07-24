@@ -445,7 +445,7 @@ def to_writeable(source):
             return EmptyStructMarker
     # Next try and convert to an array
     narr = np.asanyarray(source)
-    if narr.dtype.type in (np.object, np.object_) and \
+    if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible
         return None

@@ -560,11 +560,11 @@ def test_svd_simple_real():
     x = np.array([[1, 2, 3],
                   [3, 4, 3],
                   [1, 0, 2],
-                  [0, 0, 1]], np.float)
+                  [0, 0, 1]], float)
     y = np.array([[1, 2, 3, 8],
                   [3, 4, 3, 5],
                   [1, 0, 2, 3],
-                  [0, 0, 1, 0]], np.float)
+                  [0, 0, 1, 0]], float)
     z = csc_matrix(x)
 
     for m in [x.T, x, y, z, z.T]:
@@ -582,11 +582,11 @@ def test_svd_simple_complex():
     x = np.array([[1, 2, 3],
                   [3, 4, 3],
                   [1 + 1j, 0, 2],
-                  [0, 0, 1]], np.complex)
+                  [0, 0, 1]], complex)
     y = np.array([[1, 2, 3, 8 + 5j],
                   [3 - 2j, 4, 3, 5],
                   [1, 0, 2, 3],
-                  [0, 0, 1, 0]], np.complex)
+                  [0, 0, 1, 0]], complex)
     z = csc_matrix(x)
 
     for m in [x, x.T.conjugate(), x.T, y, y.conjugate(), z, z.T]:
@@ -807,7 +807,7 @@ def test_svds_partial_return():
     x = np.array([[1, 2, 3],
                   [3, 4, 3],
                   [1, 0, 2],
-                  [0, 0, 1]], np.float)
+                  [0, 0, 1]], float)
     # test vertical matrix
     z = csr_matrix(x)
     vh_full = svds(z, 2)[-1]
@@ -835,7 +835,7 @@ def test_svds_wrong_eigen_type():
     x = np.array([[1, 2, 3],
                   [3, 4, 3],
                   [1, 0, 2],
-                  [0, 0, 1]], np.float)
+                  [0, 0, 1]], float)
     assert_raises(ValueError, svds, x, 1, which='LA')
 
 

@@ -376,7 +376,7 @@ def safe_float(x):
     if '?' in x:
         return np.nan
     else:
-        return np.float(x)
+        return float(x)
 
 
 def safe_nominal(value, pvalue):
@@ -575,7 +575,7 @@ def _loadarff(ofile):
 
     # This can be used once we want to support integer as integer values and
     # not as numeric anymore (using masked arrays ?).
-    acls2dtype = {'real': np.float, 'integer': np.float, 'numeric': np.float}
+    acls2dtype = {'real': float, 'integer': float, 'numeric': float}
     acls2conv = {'real': safe_float, 'integer': safe_float, 'numeric': safe_float}
     descr = []
     convertors = []

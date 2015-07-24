@@ -234,7 +234,7 @@ def find_objects(input, max_label=0):
 
     Examples
     --------
-    >>> a = np.zeros((6,6), dtype=np.int)
+    >>> a = np.zeros((6,6), dtype=int)
     >>> a[2:4, 2:4] = 1
     >>> a[4, 4] = 1
     >>> a[:2, :3] = 2
