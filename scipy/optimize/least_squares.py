@@ -176,11 +176,14 @@ def least_squares(
     x0 : array_like with shape (n,) or float
         Initial guess on independent variables. If float, it will be treated
         as a 1-d array with one element.
-    jac : '2-point', '3-point' or callable, optional
-        Method of computing the Jacobian matrix. If set to '2-point' or
-        '3-point', the Jacobian matrix is estimated by the corresponding
-        finite difference scheme. The scheme '3-point' is more accurate, but
-        requires twice as much operations compared to '2-point' (default).
+    jac : {'2-point', '3-point', 'cs', callable}, optional
+        Method of computing the Jacobian matrix. The keywords select the
+        finite difference scheme for numerical estimation. The scheme '3-point'
+        is more accurate, but requires twice as much operations compared to
+        '2-point' (default). The scheme 'cs' uses complex steps, and while
+        potentially the most accurate it is applicable only when `fun`
+        correctly handles complex inputs and can be analytically continued to
+        the complex plane.
         If callable, it is used as ``jac(x, *args, **kwargs)`` and should
         return a good approximation (or the exact value) for the Jacobian as
         an array_like (np.atleast_2d is applied), a sparse matrix or a
@@ -526,8 +529,9 @@ def least_squares(
     if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
         raise ValueError("Method 'lm' doesn't support bounds.")
 
-    if jac not in ['2-point', '3-point'] and not callable(jac):
-        raise ValueError("`jac` must be '2-point', '3-point' or callable.")
+    if jac not in ['2-point', '3-point', 'cs'] and not callable(jac):
+        raise ValueError("`jac` must be '2-point', '3-point', 'cs' or "
+                         "callable.")
 
     scaling = check_scaling(scaling, x0)
 
@@ -549,7 +553,7 @@ def least_squares(
         raise ValueError("Method 'lm' doesn't work when the number of "
                          "residuals is less than the number of variables.")
 
-    if jac in ['2-point', '3-point']:
+    if jac in ['2-point', '3-point', 'cs']:
         if method == 'lm':
             if jac_sparsity is not None:
                 raise ValueError("Usage of method='lm' with `jac_sparsity` "

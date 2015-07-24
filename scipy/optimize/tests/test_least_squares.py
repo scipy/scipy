@@ -121,7 +121,7 @@ class BaseMixin(object):
         # Test that args and kwargs are passed correctly to the functions.
         # And that kwargs are not supported by 'lm'.
         a = 3.0
-        for jac in ['2-point', '3-point', jac_trivial]:
+        for jac in ['2-point', '3-point', 'cs', jac_trivial]:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 res = least_squares(fun_trivial, 2.0, jac, args=(a,),
@@ -140,7 +140,7 @@ class BaseMixin(object):
     def test_jac_options(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            for jac in ['2-point', '3-point', jac_trivial]:
+            for jac in ['2-point', '3-point', 'cs', jac_trivial]:
                 res = least_squares(fun_trivial, 2.0, jac, method=self.method)
                 assert_allclose(res.x, 0, atol=1e-4)
 
@@ -215,7 +215,7 @@ class BaseMixin(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             for scaling in [1.0, np.array([1.0, 5.0]), 'jac']:
-                for jac in ['2-point', '3-point', jac_rosenbrock]:
+                for jac in ['2-point', '3-point', 'cs', jac_rosenbrock]:
                     res = least_squares(fun_rosenbrock, x0, jac,
                                         scaling=scaling, method=self.method)
                     assert_allclose(res.x, x_opt)
@@ -260,7 +260,7 @@ class BoundsMixin(object):
                       bounds=([0.0], [3.0, 4.0]), method=self.method)
 
     def test_in_bounds(self):
-        for jac in ['2-point', '3-point', jac_trivial]:
+        for jac in ['2-point', '3-point', 'cs', jac_trivial]:
             res = least_squares(fun_trivial, 2.0, jac=jac,
                                 bounds=(-1.0, 3.0), method=self.method)
             assert_allclose(res.x, 0.0, atol=1e-4)
@@ -273,7 +273,7 @@ class BoundsMixin(object):
             assert_(0.5 <= res.x <= 3)
 
     def test_bounds_shape(self):
-        for jac in ['2-point', '3-point', jac_2d_trivial]:
+        for jac in ['2-point', '3-point', 'cs', jac_2d_trivial]:
             x0 = [1.0, 1.0]
             res = least_squares(fun_2d_trivial, x0, jac=jac)
             assert_allclose(res.x, [0.0, 0.0])
@@ -304,7 +304,7 @@ class BoundsMixin(object):
         ]
         for x0, bounds in problems:
             for scaling in [1.0, [1.0, 2.0], 'jac']:
-                for jac in ['2-point', '3-point', jac_rosenbrock]:
+                for jac in ['2-point', '3-point', 'cs', jac_rosenbrock]:
                     res = least_squares(fun_rosenbrock, x0, jac, bounds,
                                         method=self.method, scaling=scaling)
                     assert_allclose(res.optimality, 0.0, atol=1e-5)
@@ -365,7 +365,7 @@ class SparseMixin(object):
         p = BroydenTridiagonal()
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
-            for jac in ['2-point', '3-point']:
+            for jac in ['2-point', '3-point', 'cs']:
                 res_dense = least_squares(p.fun, p.x0, jac, method=self.method)
                 res_sparse = least_squares(
                     p.fun, p.x0, jac,method=self.method,
@@ -380,7 +380,7 @@ class SparseMixin(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             for jac, jac_sparsity in product(
-                    [p.jac, '2-point', '3-point'], [None, p.sparsity]):
+                    [p.jac, '2-point', '3-point', 'cs'], [None, p.sparsity]):
                 res_1 = least_squares(
                     p.fun, p.x0, jac, bounds=(p.lb, np.inf),
                     method=self.method,jac_sparsity=jac_sparsity)
