@@ -50,8 +50,8 @@ from . import OptimizeResult
 from ..sparse import issparse
 from ..sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from ._lsq_common import (
-    step_size_to_bound, in_bounds, evaluate_quadratic,
-    print_header, print_iteration)
+    step_size_to_bound, in_bounds,  evaluate_quadratic, build_quadratic_1d,
+    minimize_quadratic_1d, print_header, print_iteration)
 
 
 def lsmr_linear_operator(Jop, d, active_set):
@@ -99,7 +99,7 @@ def find_intersection(x, tr_bounds, lb, ub):
     return lb_total, ub_total, orig_l, orig_u, tr_l, tr_u
 
 
-def dogleg_step(x, cauchy_step, newton_step, tr_bounds, lb, ub):
+def dogleg_step(x, newton_step, g, a, b, tr_bounds, lb, ub):
     """Find dogleg step in rectangular region.
 
     Returns
@@ -109,7 +109,6 @@ def dogleg_step(x, cauchy_step, newton_step, tr_bounds, lb, ub):
     bound_hits : ndarray of int, shape (n,)
         Each component shows whether a corresponding variable hits the
         initial bound after the step is taken:
-
             *  0 - a variable doesn't hit the bound.
             * -1 - lower bound is hit.
             *  1 - upper bound is hit.
@@ -124,13 +123,14 @@ def dogleg_step(x, cauchy_step, newton_step, tr_bounds, lb, ub):
     if in_bounds(newton_step, lb_total, ub_total):
         return newton_step, bound_hits, False
 
-    if not in_bounds(cauchy_step, lb_total, ub_total):
-        step_size, _ = step_size_to_bound(
-            np.zeros_like(cauchy_step), cauchy_step, lb_total, ub_total)
-        cauchy_step = step_size * cauchy_step  # Don't want to modify inplace.
-        # The classical dogleg algorithm would stop here, but in a rectangular
-        # region it makes sense to try to improve constrained cauchy step.
-        # Thus the code after this "if" is always executed.
+    to_bounds, _ = step_size_to_bound(np.zeros_like(x), -g, lb_total, ub_total)
+
+    # The classical dogleg algorithm would check if Cauchy step fits into
+    # the bounds, and just return it constrained version if not. But in a
+    # rectangular trust region it makes sense to try to improve constrained
+    # Cauchy step too. Thus we don't distinguish these two cases.
+
+    cauchy_step = -minimize_quadratic_1d(a, b, 0, to_bounds)[0] * g
 
     step_diff = newton_step - cauchy_step
     step_size, hits = step_size_to_bound(cauchy_step, step_diff,
@@ -140,29 +140,6 @@ def dogleg_step(x, cauchy_step, newton_step, tr_bounds, lb, ub):
     tr_hit = np.any((hits < 0) & tr_l | (hits > 0) & tr_u)
 
     return cauchy_step + step_size * step_diff, bound_hits, tr_hit
-
-
-def constrained_cauchy_step(x, cauchy_step, tr_bounds, l, u):
-    """Find constrained Cauchy step.
-
-    Returns are the same as in dogleg_step function.
-    """
-    lb_total, ub_total, orig_l, orig_u, tr_l, tr_u = find_intersection(
-        x, tr_bounds, l, u
-    )
-    bound_hits = np.zeros_like(x, dtype=int)
-
-    if in_bounds(cauchy_step, lb_total, ub_total):
-        return cauchy_step, bound_hits, False
-
-    step_size, hits = step_size_to_bound(
-        np.zeros_like(cauchy_step), cauchy_step, lb_total, ub_total)
-
-    bound_hits[(hits < 0) & orig_l] = -1
-    bound_hits[(hits > 0) & orig_u] = 1
-    tr_hit = np.any((hits < 0) & tr_l | (hits > 0) & tr_u)
-
-    return step_size * cauchy_step, bound_hits, tr_hit
 
 
 def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
@@ -224,13 +201,11 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         free_set = ~active_set
 
         g_free = g[free_set]
-        if np.all(active_set):
-            g_norm = 0.0
+        g[active_set] = 0
+
+        g_norm = norm(g, ord=np.inf)
+        if g_norm < gtol:
             termination_status = 1
-        else:
-            g_norm = norm(g_free, ord=np.inf)
-            if g_norm < gtol:
-                termination_status = 1
 
         if verbose == 2:
             print_iteration(iteration, nfev, cost, actual_reduction,
@@ -243,34 +218,44 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 status=termination_status)
 
         x_free = x[free_set]
-        l_free = lb[free_set]
-        u_free = ub[free_set]
+        lb_free = lb[free_set]
+        ub_free = ub[free_set]
         scale_inv_free = scale_inv[free_set]
 
-        # Compute (Gauss-)Newton and Cauchy steps
+        # Compute (Gauss-)Newton and build quadratic model for Cauchy step.
         if tr_solver == 'exact':
             J_free = J[:, free_set]
             newton_step = lstsq(J_free, -f)[0]
-            Jg = J_free.dot(g_free)
+
+            # Coefficients for the quadratic model along the anti-gradient.
+            a, b = build_quadratic_1d(J_free, g_free, -g_free)
         elif tr_solver == 'lsmr':
             Jop = aslinearoperator(J)
-            # Here we compute lsmr step in scaled variables and then
+
+            # We compute lsmr step in scaled variables and then
             # transform back to normal variables, if lsmr would give exact lsq
             # solution this would be equivalent to not doing any
             # transformations, but from experience it's better this way.
+
+            # We pass active_set to make computations as if we selected
+            # the free subset of J columns, but without actually doing any
+            # slicing, which is expensive for sparse matrices and impossible
+            # for LinearOperator.
+
             lsmr_op = lsmr_linear_operator(Jop, scale_inv, active_set)
             newton_step = -lsmr(lsmr_op, f, **tr_options)[0][free_set]
             newton_step *= scale_inv_free
-            g[active_set] = 0
-            Jg = Jop.matvec(g)
-        cauchy_step = -np.dot(g_free, g_free) / np.dot(Jg, Jg) * g_free
+
+            # Components of g for active variables were zeroed, so this call
+            # is correct and equivalent to using J_free and g_free.
+            a, b = build_quadratic_1d(Jop, g, -g)
 
         actual_reduction = -1.0
         while actual_reduction <= 0 and nfev < max_nfev:
             tr_bounds = Delta * scale_inv_free
 
             step_free, on_bound_free, tr_hit = dogleg_step(
-                x_free, cauchy_step, newton_step, tr_bounds, l_free, u_free)
+                x_free, newton_step, g_free, a, b, tr_bounds, lb_free, ub_free)
 
             step.fill(0.0)
             step[free_set] = step_free
@@ -280,21 +265,6 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                                                           step_free)
             elif tr_solver == 'lsmr':
                 predicted_reduction = -evaluate_quadratic(Jop, g, step)
-
-            # In (nearly) rank deficient case Newton (and thus dogleg) step
-            # can be inadequate, in this case use (constrained) Cauchy step.
-            if predicted_reduction <= 0:
-                step_free, on_bound_free, tr_hit = constrained_cauchy_step(
-                    x_free, cauchy_step, tr_bounds, l_free, u_free)
-
-                step.fill(0.0)
-                step[free_set] = step_free
-
-                if tr_solver == 'exact':
-                    predicted_reduction = -evaluate_quadratic(J_free, g_free,
-                                                              step_free)
-                elif tr_solver == 'lsmr':
-                    predicted_reduction = -evaluate_quadratic(Jop, g, step)
 
             x_new = x + step
             f_new = fun(x_new)
