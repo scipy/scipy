@@ -213,6 +213,124 @@ def solve_trust_region_2d(B, g, Delta):
     return p, False
 
 
+# Construction and minimization of quadratic functions.
+
+
+def build_quadratic_1d(J, g, s, diag=None, s0=None):
+    """Compute coefficients of a 1-d quadratic function for the line search
+    from a multidimensional quadratic function.
+
+    The function is given as follows:
+    ::
+
+        f(t) = 0.5 * (s0 + s*t).T * (J.T*J + diag) * (s0 + s*t) +
+               g.T * (s0 + s*t)
+
+    Parameters
+    ----------
+    J : ndarray, sparse matrix or LinearOperator shape (m, n)
+        Jacobian matrix, affect quadratic term.
+    g : ndarray, shape (n,)
+        Gradient, defines a linear term.
+    s : ndarray, shape (n,)
+        Direction of search.
+    diag : None or ndarray with shape (n,), optional
+        Addition diagonal part, affect quadratic term.
+        If None, assumed to be 0.
+    s0 : None or ndarray with shape (n,), optional
+        Initial point. If None, assumed to be 0.
+
+    Returns
+    -------
+    a : float
+        Coefficient for t**2.
+    b : float
+        Coefficient for t.
+
+    Notes
+    -----
+    The free term "c" is not returned as it is not usually required.
+    """
+    v = J.dot(s)
+    a = np.dot(v, v)
+    if diag is not None:
+        a += np.dot(s * diag, s)
+    a *= 0.5
+
+    b = np.dot(g, s)
+
+    if s0 is not None:
+        u = J.dot(s0)
+        b += np.dot(u, v)
+        if diag is not None:
+            b += np.dot(s0 * diag, s)
+
+    return a, b
+
+
+def minimize_quadratic_1d(a, b, lb, ub):
+    """Minimize a 1-d quadratic function subject to bounds.
+
+    The free term is omitted, that is we consider y = a * t**2 + b * t.
+    Bounds must be finite.
+
+    Returns
+    -------
+    t : float
+        Minimum point.
+    y : float
+        Minimum value.
+    """
+    t = [lb, ub]
+    if a != 0:
+        extremum = -0.5 * b / a
+        if lb < extremum < ub:
+            t.append(extremum)
+    t = np.asarray(t)
+    y = a * t**2 + b * t
+    min_index = np.argmin(y)
+    return t[min_index], y[min_index]
+
+
+def evaluate_quadratic(J, g, s, diag=None):
+    """Compute values of a quadratic function arising in least-squares.
+
+    The function is 0.5 * s.T * (J.T * J + diag) * s + g.T * s.
+
+    Parameters
+    ----------
+    J : ndarray, sparse matrix or LinearOperator, shape (m, n)
+        Jacobian matrix, affect quadratic term.
+    g : ndarray, shape (n,)
+        Gradient, defines a linear term.
+    s : ndarray, shape (n, k) or (n,)
+        Array containing steps as rows.
+    diag : ndarray, shape (n,), optional
+        Addition diagonal part, affect quadratic term.
+        If None, assumed to be 0.
+
+    Returns
+    -------
+    values : ndarray with shape (k,) or float
+        Values of the function. If `s` was 2-dimensional then ndarray is
+        returned, otherwise float is returned.
+    """
+    if s.ndim == 1:
+        Js = J.dot(s)
+        q = np.dot(Js, Js)
+        if diag is not None:
+            q += np.dot(s * diag, s)
+    else:
+        Js = J.dot(s.T)
+        q = np.sum(Js**2, axis=0)
+        if diag is not None:
+            q += np.sum(diag * s**2, axis=1)
+
+    l = np.dot(s, g)
+
+    return 0.5 * q + l
+
+
 # Utility functions to work with bound constraints.
 
 

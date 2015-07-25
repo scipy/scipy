@@ -10,7 +10,8 @@ from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 from scipy.optimize._lsq_common import (
     prepare_bounds, in_bounds, step_size_to_bound, find_active_constraints,
-    make_strictly_feasible, scaling_vector, intersect_trust_region)
+    make_strictly_feasible, scaling_vector, intersect_trust_region,
+    build_quadratic_1d, minimize_quadratic_1d, evaluate_quadratic)
 
 
 # Tests of functions from ._lsq_common.
@@ -136,6 +137,75 @@ class TestBounds(object):
         v, dv = scaling_vector(x, g, lb, ub)
         assert_equal(v, [1.0, 7.0, 5.0, 1.0])
         assert_equal(dv, [0.0, 1.0, -1.0, 0.0])
+
+
+class TestQuadraticFunction(object):
+    def __init__(self):
+        self.J = np.array([
+            [0.1, 0.2],
+            [-1.0, 1.0],
+            [0.5, 0.2]])
+        self.g = np.array([0.8, -2.0])
+        self.diag = np.array([1.0, 2.0])
+
+    def test_build_quadratic_1d(self):
+        s = np.zeros(2)
+        a, b = build_quadratic_1d(self.J, self.g, s)
+        assert_equal(a, 0)
+        assert_equal(b, 0)
+
+        a, b = build_quadratic_1d(self.J, self.g, s, diag=self.diag)
+        assert_equal(a, 0)
+        assert_equal(b, 0)
+
+        s = np.array([1.0, -1.0])
+        a, b = build_quadratic_1d(self.J, self.g, s)
+        assert_equal(a, 2.05)
+        assert_equal(b, 2.8)
+
+        a, b = build_quadratic_1d(self.J, self.g, s, diag=self.diag)
+        assert_equal(a, 3.55)
+        assert_equal(b, 2.8)
+
+        s0 = np.array([0.5, 0.5])
+        a, b = build_quadratic_1d(self.J, self.g, s, diag=self.diag, s0=s0)
+        assert_equal(a, 3.55)
+        assert_allclose(b, 2.39)
+
+    def test_minimize_quadratic_1d(self):
+        a = 5
+        b = -1
+
+        t, y = minimize_quadratic_1d(a, b, 1, 2)
+        assert_equal(t, 1)
+        assert_equal(y, a * t**2 + b * t)
+
+        t, y = minimize_quadratic_1d(a, b, -2, -1)
+        assert_equal(t, -1)
+        assert_equal(y, a * t**2 + b * t)
+
+        t, y = minimize_quadratic_1d(a, b, -1, 1)
+        assert_equal(t, 0.1)
+        assert_equal(y, a * t**2 + b * t)
+
+    def test_evaluate_quadratic(self):
+        s = np.array([1.0, -1.0])
+
+        value = evaluate_quadratic(self.J, self.g, s)
+        assert_equal(value, 4.85)
+
+        value = evaluate_quadratic(self.J, self.g, s, diag=self.diag)
+        assert_equal(value, 6.35)
+
+        s = np.array([[1.0, -1.0],
+                     [1.0, 1.0],
+                     [0.0, 0.0]])
+
+        values = evaluate_quadratic(self.J, self.g, s)
+        assert_allclose(values, [4.85, -0.91, 0.0])
+
+        values = evaluate_quadratic(self.J, self.g, s, diag=self.diag)
+        assert_allclose(values, [6.35, 0.59, 0.0])
 
 
 class TestTrustRegion(object):

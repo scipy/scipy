@@ -49,8 +49,9 @@ from numpy.linalg import lstsq, norm
 from . import OptimizeResult
 from ..sparse import issparse
 from ..sparse.linalg import LinearOperator, aslinearoperator, lsmr
-from ._lsq_common import (step_size_to_bound, in_bounds,
-                          print_header, print_iteration)
+from ._lsq_common import (
+    step_size_to_bound, in_bounds, evaluate_quadratic,
+    print_header, print_iteration)
 
 
 def lsmr_linear_operator(Jop, d, active_set):
@@ -275,11 +276,10 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             step[free_set] = step_free
 
             if tr_solver == 'exact':
-                Js = J_free.dot(step_free)
+                predicted_reduction = -evaluate_quadratic(J_free, g_free,
+                                                          step_free)
             elif tr_solver == 'lsmr':
-                Js = Jop.matvec(step)
-
-            predicted_reduction = -0.5 * np.dot(Js, Js) - np.dot(Js, f)
+                predicted_reduction = -evaluate_quadratic(Jop, g, step)
 
             # In (nearly) rank deficient case Newton (and thus dogleg) step
             # can be inadequate, in this case use (constrained) Cauchy step.
@@ -291,11 +291,10 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 step[free_set] = step_free
 
                 if tr_solver == 'exact':
-                    Js = J_free.dot(step_free)
+                    predicted_reduction = -evaluate_quadratic(J_free, g_free,
+                                                              step_free)
                 elif tr_solver == 'lsmr':
-                    Js = Jop.matvec(step)
-
-                predicted_reduction = -0.5 * np.dot(Js, Js) - np.dot(Js, f)
+                    predicted_reduction = -evaluate_quadratic(Jop, g, step)
 
             x_new = x + step
             f_new = fun(x_new)

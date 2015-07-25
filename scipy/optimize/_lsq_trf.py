@@ -106,7 +106,8 @@ from .optimize import OptimizeResult
 from ._lsq_common import (
     step_size_to_bound, make_strictly_feasible, find_active_constraints,
     scaling_vector, intersect_trust_region, solve_lsq_trust_region,
-    solve_trust_region_2d, print_header, print_iteration)
+    solve_trust_region_2d, minimize_quadratic_1d, build_quadratic_1d,
+    evaluate_quadratic, print_header, print_iteration)
 
 
 def lsq_linear_operator(Jop, diag_root):
@@ -135,98 +136,6 @@ def post_multiplied_operator(Jop, d):
 
     return LinearOperator(Jop.shape, matvec=matvec, matmat=matmat,
                           rmatvec=rmatvec)
-
-
-def minimize_quadratic(a, b, lb, ub):
-    """Minimize a 1-d quadratic function subject to bounds.
-
-    The free term is omitted, that is we consider y = a * t**2 + b * t.
-
-    Returns
-    -------
-    t : float
-        Minimum point.
-    y : float
-        Minimum value.
-    """
-    t = np.array([lb, ub])
-    if a != 0:
-        extremum = -0.5 * b / a
-        if lb <= extremum <= ub:
-            t = np.hstack((t, extremum))
-    y = a * t**2 + b * t
-    i = np.argmin(y)
-    return t[i], y[i]
-
-
-def build_1d_quadratic_function(J, diag, g, s, s0=None):
-    """Compute coefficients of a 1-d quadratic function for the line search
-    from a multidimensional quadratic function.
-
-    The function is given as follows:
-    ::
-
-        f(t) = 0.5 * (s0 + t*s).T * (J.T*J + diag) * (s0 + t*s) +
-               g.T * (s0 + t*s)
-
-    Parameters
-    ----------
-    J : ndarray, shape (m, n)
-        Jacobian matrix, affect quadratic term.
-    diag : ndarray, shape (n,)
-        Addition diagonal part, affect quadratic term.
-    g : ndarray, shape (n,)
-        Gradient, defines a linear term.
-    s : ndarray, shape (n,)
-        Direction of search.
-    s0 : None or ndarray with shape (n,), optional
-        Initial point. If None, assumed to be 0.
-
-    Returns
-    -------
-    a : float
-        Coefficient for t**2.
-    b : float
-        Coefficient for t.
-
-    Notes
-    -----
-    The free term "c" is not returned as it is not usually required.
-    """
-    v = J.dot(s)
-    a = 0.5 * (np.dot(v, v) + np.dot(s * diag, s))
-    b = np.dot(g, s)
-    if s0 is not None:
-        u = J.dot(s0)
-        b += np.dot(u, v) + np.dot(s0 * diag, s)
-
-    return a, b
-
-
-def evaluate_quadratic_function(J, diag, g, steps):
-    """Compute values of a quadratic function arising in least-squares.
-
-    The function is 0.5 * s.T * (J.T * J + diag) * s + g.T * s.
-
-    Parameters
-    ----------
-    J : ndarray, shape (m, n)
-        Jacobian matrix, affect quadratic term.
-    diag : ndarray, shape (n,)
-        Addition diagonal part, affect quadratic term.
-    g : ndarray, shape (n,)
-        Gradient, defines a linear term.
-    steps : ndarray, shape (k, n)
-        Array containing k steps as rows.
-
-    Returns
-    -------
-    values : ndarray, shape (k,)
-        Array containing k values of the function.
-    """
-    Js = J.dot(steps.T)
-    return 0.5 * (np.sum(Js**2, axis=0) +
-                  np.sum(diag * steps**2, axis=1)) + np.dot(steps, g)
 
 
 def find_reflected_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, l, u, theta):
@@ -266,8 +175,8 @@ def find_reflected_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, l, u, theta):
 
     # Check if reflection step is available.
     if r_stride_l <= r_stride_u:
-        a, b = build_1d_quadratic_function(J_h, diag_h, g_h, r_h, s0=p_h)
-        r_stride, _ = minimize_quadratic(a, b, r_stride_l, r_stride_u)
+        a, b = build_quadratic_1d(J_h, g_h, r_h, s0=p_h, diag=diag_h)
+        r_stride, _ = minimize_quadratic_1d(a, b, r_stride_l, r_stride_u)
         r_h = p_h + r_h * r_stride
     else:
         r_h = None
@@ -294,7 +203,7 @@ def find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta):
     to_tr = Delta / norm(g_h)
     g_stride = min(to_bound, to_tr)
 
-    g_stride, _ = minimize_quadratic(a, b, 0.0, g_stride)
+    g_stride, _ = minimize_quadratic_1d(a, b, 0.0, g_stride)
 
     return -g_stride * g_h
 
@@ -423,9 +332,9 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             uf = U.T.dot(f_augmented)
         elif tr_solver == 'lsmr':
             if regularize:
-                a, b = build_1d_quadratic_function(J, diag_h, g_h, -g_h)
+                a, b = build_quadratic_1d(J, g_h, -g_h, diag=diag_h)
                 to_tr = Delta / norm(g_h)
-                _, g_value = minimize_quadratic(a, b, 0, to_tr)
+                _, g_value = minimize_quadratic_1d(a, b, 0, to_tr)
                 reg_term = -g_value / Delta**2
 
             Jop = aslinearoperator(J)
@@ -457,24 +366,25 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             if to_bound >= 1:  # Trust region step is feasible.
                 # Still step back from the bound.
                 p_h *= min(theta * to_bound, 1)
-                steps_h = np.atleast_2d(p_h)
+                step_h = p_h
+                predicted_reduction = -evaluate_quadratic(J, g_h, p_h,
+                                                          diag=diag_h)
             else:  # Otherwise consider a reflected and gradient steps.
                 p_h, r_h = find_reflected_step(
                     x, J, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
 
                 if tr_solver == 'exact' or not regularize:
-                    a, b = build_1d_quadratic_function(J, diag_h, g_h, -g_h)
+                    a, b = build_quadratic_1d(J, g_h, -g_h, diag=diag_h)
                 # else: a, b were already computed.
 
                 c_h = find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta)
+
                 steps_h = np.array([p_h, r_h, c_h])
+                qp_values = evaluate_quadratic(J, g_h, steps_h, diag=diag_h)
 
-            qp_values = evaluate_quadratic_function(J, diag_h, g_h, steps_h)
-            min_index = np.argmin(qp_values)
-            step_h = steps_h[min_index]
-
-            # qp_values are negative, also need to double it.
-            predicted_reduction = -qp_values[min_index]
+                min_index = np.argmin(qp_values)
+                step_h = steps_h[min_index]
+                predicted_reduction = -qp_values[min_index]
 
             step = d * step_h
             x_new = make_strictly_feasible(x + step, lb, ub, rstep=0)
