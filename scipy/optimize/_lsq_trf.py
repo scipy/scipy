@@ -412,8 +412,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 Delta *= 2.0
                 alpha *= 0.5
 
-            ftol_satisfied = (abs(actual_reduction) < ftol * cost and
-                              ratio > 0.25)
+            ftol_satisfied = actual_reduction < ftol * cost and ratio > 0.25
 
             step_norm = norm(step)
             xtol_satisfied = step_norm < xtol * (xtol + norm(x))

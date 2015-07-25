@@ -50,7 +50,7 @@ from . import OptimizeResult
 from ..sparse import issparse
 from ..sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from ._lsq_common import (
-    step_size_to_bound, in_bounds,  evaluate_quadratic, build_quadratic_1d,
+    step_size_to_bound, in_bounds, evaluate_quadratic, build_quadratic_1d,
     minimize_quadratic_1d, print_header, print_iteration)
 
 
@@ -284,8 +284,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             elif ratio > 0.75 and tr_hit:
                 Delta *= 2.0
 
-            ftol_satisfied = (abs(actual_reduction) < ftol * cost and
-                              ratio > 0.25)
+            ftol_satisfied = actual_reduction < ftol * cost and ratio > 0.25
 
             step_norm = norm(step)
             xtol_satisfied = step_norm < xtol * (xtol + norm(x))
