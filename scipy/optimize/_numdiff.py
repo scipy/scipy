@@ -125,9 +125,10 @@ def group_columns(A, order=None):
     ----------
     A : array_like or sparse matrix, shape (m, n)
         Matrix of which to group columns.
-    order : None or iterable of int, shape (n,)
+    order : None, iterable of int with shape (n,) or int
         Permutation array which defines the order of columns enumeration.
-        If None (default) the order will be random.
+        If None (default), the order will be random. If int, the order will
+        be random, but `order` will be used as a random seed.
 
     Returns
     -------
@@ -154,9 +155,13 @@ def group_columns(A, order=None):
 
     m, n = A.shape
 
-    if order is None:
-        order = np.arange(n)
-        np.random.shuffle(order)
+    if order is None or np.isscalar(order):
+        np.random.seed(order)
+        order = np.random.permutation(n)
+    else:
+        order = np.asarray(order)
+        if order.shape != (n,):
+            raise ValueError("`order` has incorrect shape.")
 
     A = A[:, order]
 
@@ -361,7 +366,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
     for i in range(h.size):
         if method == '2-point':
             x = x0 + h_vecs[i]
-            dx = x[i] - x0[i]  # recompute dx as exactly representable number
+            dx = x[i] - x0[i]  # Recompute dx as exactly representable number.
             df = fun(x) - f0
         elif method == '3-point' and use_one_sided[i]:
             x1 = x0 + h_vecs[i]
@@ -383,6 +388,7 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
             dx = h_vecs[i, i]
         else:
             raise RuntimeError("Never be here.")
+
         J_transposed[i] = df / dx
 
     if m == 1:
@@ -398,16 +404,23 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     J = lil_matrix((m, n), dtype=float)
     n_groups = np.max(groups) + 1
     for group in range(n_groups):
+        # Perturb variables which are in the same group simultaneously.
         e = np.equal(group, groups)
         h_vec = h * e
         if method == '2-point':
             x = x0 + h_vec
             dx = x - x0
             df = fun(x) - f0
-            cols, = np.where(e)
-            i, j, v = find(structure[:, cols])
+            # The result is  written to columns which correspond to perturbed
+            # variables.
+            cols, = np.nonzero(e)
+            # Find all non-zero elements in selected columns of Jacobian.
+            i, j, _ = find(structure[:, cols])
+            # Restore column indices in the full array.
             j = cols[j]
         elif method == '3-point':
+            # Here we do conceptually the same but separate one-sided
+            # and two-sided schemes.
             x1 = x0.copy()
             x2 = x0.copy()
 
@@ -426,7 +439,7 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             f1 = fun(x1)
             f2 = fun(x2)
 
-            cols, = np.where(e)
+            cols, = np.nonzero(e)
             i, j, _ = find(structure[:, cols])
             j = cols[j]
 
@@ -442,12 +455,14 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             f1 = fun(x0 + h_vec*1.j)
             df = f1.imag
             dx = h_vec
-            cols, = np.where(e)
-            i, j, v = find(structure[:, cols])
+            cols, = np.nonzero(e)
+            i, j, _ = find(structure[:, cols])
             j = cols[j]
         else:
             raise ValueError("Never be here.")
 
+        # All that's left is to compute the fraction. Note that i and j
+        # are aligned with each other by `find` function.
         J[i, j] = df[i] / dx[j]
 
     return csr_matrix(J)

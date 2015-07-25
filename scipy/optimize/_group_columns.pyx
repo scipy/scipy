@@ -10,7 +10,7 @@ from cpython cimport bool
 
 
 def group_dense(int m, int n, int [:, :] A):
-    cdef int [:, :] B = A.T
+    cdef int [:, :] B = A.T  # Transposed view for convenience.
 
     groups = -np.ones(n, dtype=np.int32)
     cdef int [:] groups_v = groups
@@ -22,24 +22,27 @@ def group_dense(int m, int n, int [:, :] A):
     union = np.empty(m, dtype=np.int32)
     cdef int [:] union_v = union
 
+    # Loop through all the columns.
     for i in range(n):
-        if groups_v[i] >= 0:
+        if groups_v[i] >= 0:  # A group was already assigned.
             continue
 
         groups_v[i] = current_group
-        non_grouped, = np.where(groups < 0)
-
-        union_v[:] = B[i]
-        if non_grouped.size == 0:
+        non_grouped, = np.nonzero(groups < 0)
+        if non_grouped.size == 0:  # All columns are grouped.
             break
 
+        union_v[:] = B[i]  # Here we store the union of grouped columns.
+
         for j in non_grouped:
+            # Determine if j-th column intersects with the union.
             intersect = False
             for k in range(m):
                 if union_v[k] > 0 and B[j, k] > 0:
                     intersect = True
                     break
 
+            # If not, add it to the union and assign the group to it.
             if not intersect:
                 union += B[j]
                 groups_v[j] = current_group
@@ -65,8 +68,7 @@ def group_sparse(int m, int n, int [:] indices, int [:] indptr):
             continue
 
         groups_v[i] = current_group
-        non_grouped, = np.where(groups < 0)
-
+        non_grouped, = np.nonzero(groups < 0)
         if non_grouped.size == 0:
             break
 
