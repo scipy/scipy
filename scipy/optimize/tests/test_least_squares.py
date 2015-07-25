@@ -209,6 +209,10 @@ def fun_rosenbrock_cropped(x):
     return fun_rosenbrock(x)[0]
 
 
+def jac_rosenbrock_cropped(x):
+    return jac_rosenbrock(x)[0]
+
+
 # When x is 1-d array, return is 2-d array.
 def fun_wrong_dimensions(x):
     return np.array([x, x**2, x**3])
@@ -367,11 +371,28 @@ class BaseMixin(object):
         x_opt = [1, 1]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            for scaling in [1.0, np.array([1.0, 5.0]), 'jac']:
-                for jac in ['2-point', '3-point', 'cs', jac_rosenbrock]:
-                    res = least_squares(fun_rosenbrock, x0, jac,
-                                        scaling=scaling, method=self.method)
-                    assert_allclose(res.x, x_opt)
+            for jac, scaling, tr_solver in product(
+                    ['2-point', '3-point', 'cs', jac_rosenbrock],
+                    [1.0, np.array([1.0, 5.0]), 'jac'],
+                    ['exact', 'lsmr']):
+                res = least_squares(fun_rosenbrock, x0, jac, scaling=scaling,
+                                    tr_solver=tr_solver, method=self.method)
+                assert_allclose(res.x, x_opt)
+
+    def test_rosenbrock_cropped(self):
+        x0 = [-2, 1]
+        if self.method == 'lm':
+            assert_raises(ValueError, least_squares, fun_rosenbrock_cropped,
+                          x0, method='lm')
+        else:
+            for jac, scaling, tr_solver in product(
+                    ['2-point', '3-point', 'cs', jac_rosenbrock_cropped],
+                    [1.0, np.array([1.0, 5.0]), 'jac'],
+                    ['exact', 'lsmr']):
+                res = least_squares(
+                    fun_rosenbrock_cropped, x0, jac, scaling=scaling,
+                    tr_solver=tr_solver, method=self.method)
+                assert_allclose(res.cost, 0, atol=1e-14)
 
     def test_fun_wrong_dimensions(self):
         assert_raises(RuntimeError, least_squares, fun_wrong_dimensions,
@@ -456,11 +477,14 @@ class BoundsMixin(object):
             (x0_5, ([-50.0, 0.0], [0.5, 100]))
         ]
         for x0, bounds in problems:
-            for scaling in [1.0, [1.0, 2.0], 'jac']:
-                for jac in ['2-point', '3-point', 'cs', jac_rosenbrock]:
-                    res = least_squares(fun_rosenbrock, x0, jac, bounds,
-                                        method=self.method, scaling=scaling)
-                    assert_allclose(res.optimality, 0.0, atol=1e-5)
+            for jac, scaling, tr_solver in product(
+                    ['2-point', '3-point', 'cs', jac_rosenbrock],
+                    [1.0, [1.0, 2.0], 'jac'],
+                    ['exact', 'lsmr']):
+                res = least_squares(fun_rosenbrock, x0, jac, bounds,
+                                    scaling=scaling, tr_solver=tr_solver,
+                                    method=self.method)
+                assert_allclose(res.optimality, 0.0, atol=1e-5)
 
 
 class SparseMixin(object):
@@ -484,7 +508,6 @@ class SparseMixin(object):
                 dense.fun, dense.x0, jac=sparse.jac,
                 method=self.method)
             assert_equal(res_sparse.nfev, res_dense.nfev)
-            # Not exactly equal only because of floating point issues.
             assert_allclose(res_sparse.x, res_dense.x, atol=1e-20)
             assert_allclose(res_sparse.cost, 0, atol=1e-20)
             assert_allclose(res_dense.cost, 0, atol=1e-20)
