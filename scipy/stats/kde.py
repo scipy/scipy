@@ -76,6 +76,8 @@ class gaussian_kde(object):
         (`kde.factor`).
     inv_cov : ndarray
         The inverse of `covariance`.
+    covariance_chol : (ndarray, bool)
+        The output returned by `linalg.cho_solve(covariance)`.
 
     Methods
     -------
@@ -209,14 +211,14 @@ class gaussian_kde(object):
             # there are more points than data, so loop over data
             for i in range(self.n):
                 diff = self.dataset[:, i, newaxis] - points
-                tdiff = dot(self.inv_cov, diff)
+                tdiff = linalg.cho_solve(self.covariance_chol, diff)
                 energy = sum(diff*tdiff,axis=0) / 2.0
                 result = result + exp(-energy)
         else:
             # loop over points
             for i in range(m):
                 diff = self.dataset - points[:, i, newaxis]
-                tdiff = dot(self.inv_cov, diff)
+                tdiff = linalg.cho_solve(self.covariance_chol, diff)
                 energy = sum(diff * tdiff, axis=0) / 2.0
                 result[i] = sum(exp(-energy), axis=0)
 
@@ -492,15 +494,26 @@ class gaussian_kde(object):
         covariance_factor().
         """
         self.factor = self.covariance_factor()
-        # Cache covariance and inverse covariance of the data
-        if not hasattr(self, '_data_inv_cov'):
+        # Cache covariance and cholesky decomp of covariance of the data
+        if not hasattr(self, '_data_cov_chol'):
             self._data_covariance = atleast_2d(np.cov(self.dataset, rowvar=1,
                                                bias=False))
-            self._data_inv_cov = linalg.inv(self._data_covariance)
+
+            # cho_solve returns a pair (ndarray, bool)
+            self._data_cov_chol = linalg.cho_factor(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2
-        self.inv_cov = self._data_inv_cov / self.factor**2
-        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
+
+        # This is very bad and should be deprecated.
+        self.inv_cov = linalg.inv(self._data_covariance) / self.factor**2
+
+        # We should do this instead
+        self.covariance_chol = (self._data_cov_chol[0] * self.factor,
+                self._data_cov_chol[1])
+
+        sqrt_det = np.prod(np.diagonal(self._data_cov_chol[0]))
+        self._norm_factor = power(2 * pi * self.factor**2,
+                self.covariance.shape[0] / 2.0) * sqrt_det * self.n
 
     def pdf(self, x):
         """
