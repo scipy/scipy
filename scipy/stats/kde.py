@@ -264,7 +264,7 @@ class gaussian_kde(object):
         sum_cov = self.covariance + cov
 
         diff = self.dataset - mean
-        tdiff = dot(linalg.inv(sum_cov), diff)
+        tdiff = linalg.solve(sum_cov, diff, sym_pos=True)
 
         energies = sum(diff * tdiff, axis=0) / 2.0
         result = sum(exp(-energies), axis=0) / sqrt(linalg.det(2 * pi *
