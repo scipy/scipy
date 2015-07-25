@@ -8,6 +8,7 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import os
 import sys
 import warnings
 from collections import namedtuple
@@ -3242,6 +3243,19 @@ class TestFOneWay(TestCase):
         res = stats.f_oneway(a, b)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+    @dec.knownfailureif(True, "Tough NIST Test Cases fail")
+    def test_nist(self):
+        # The npz file with the nist test cases data is assumed to be in the
+        # same directory as this file.
+        nist = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                    'nist_anova.npz')))
+        for test_case in nist:
+            y, x, f, dfbn, dfwn, R2, resstd, certified, caty = nist[test_case]
+            xlist = [x[y == i] for i in caty]
+            res = stats.f_oneway(*xlist)
+            assert_array_almost_equal(res[0], f)
+
 
 class TestKruskal(TestCase):
     def test_simple(self):
