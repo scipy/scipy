@@ -125,12 +125,16 @@ def lsq_linear_operator(Jop, diag_root):
 
 def post_multiplied_operator(Jop, d):
     def matvec(x):
-        return Jop.matvec(x * d)
+        return Jop.matvec(np.ravel(x) * d)
+
+    def matmat(X):
+        return Jop.matmat(X * d[:, np.newaxis])
 
     def rmatvec(x):
         return d * Jop.rmatvec(x)
 
-    return LinearOperator(Jop.shape, matvec=matvec, rmatvec=rmatvec)
+    return LinearOperator(Jop.shape, matvec=matvec, matmat=matmat,
+                          rmatvec=rmatvec)
 
 
 def minimize_quadratic(a, b, lb, ub):
@@ -220,14 +224,7 @@ def evaluate_quadratic_function(J, diag, g, steps):
     values : ndarray, shape (k,)
         Array containing k values of the function.
     """
-    if isinstance(J, LinearOperator):
-        Js = np.empty((steps.shape[0], J.shape[0]))
-        for i, s in enumerate(steps):
-            Js[i] = J.matvec(s)
-        Js = Js.T
-    else:
-        Js = J.dot(steps.T)
-
+    Js = J.dot(steps.T)
     return 0.5 * (np.sum(Js**2, axis=0) +
                   np.sum(diag * steps**2, axis=1)) + np.dot(steps, g)
 
@@ -436,10 +433,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             gn_h = lsmr(lsmr_op, f_augmented, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
             S, _ = qr(S, mode='economic')
-            if isinstance(J, LinearOperator):
-                JS = np.vstack((J.matvec(S[:, 0]), J.matvec(S[:, 1]))).T
-            else:
-                JS = J.dot(S)
+            JS = J.dot(S)  # LinearOperator does dot too.
             B_S = np.dot(JS.T, JS) + np.dot(S.T * diag_h, S)
             g_S = S.T.dot(g_h)
 

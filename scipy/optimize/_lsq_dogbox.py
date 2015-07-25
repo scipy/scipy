@@ -57,7 +57,7 @@ def lsmr_linear_operator(Jop, d, active_set):
     m, n = Jop.shape
 
     def matvec(x):
-        x_free = x.copy()
+        x_free = x.ravel().copy()
         x_free[active_set] = 0
         return Jop.matvec(x * d)
 
