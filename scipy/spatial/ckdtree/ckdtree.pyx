@@ -2082,29 +2082,19 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                                                coo_entries results,
                                                ckdtreenode *node1, ckdtreenode *node2,
                                                RectRectDistanceTracker tracker) except -1:
-        cdef ckdtreenode *lnode1
-        cdef ckdtreenode *lnode2
         cdef list results_i
         cdef np.float64_t d
         cdef np.intp_t i, j, min_j
                 
         if tracker.min_distance > tracker.upper_bound:
             return 0
+                   
         elif node1.split_dim == -1:  # 1 is leaf node
-            lnode1 = node1
             
             if node2.split_dim == -1:  # 1 & 2 are leaves
-                lnode2 = node2
-                
                 # brute-force
-                for i in range(lnode1.start_idx, lnode1.end_idx):
-                    # Special care here to avoid duplicate pairs
-                    if node1 == node2:
-                        min_j = i+1
-                    else:
-                        min_j = lnode2.start_idx
-                        
-                    for j in range(min_j, lnode2.end_idx):
+                for i in range(node1.start_idx, node1.end_idx):
+                    for j in range(node2.start_idx, node2.end_idx):
                         d = _distance_p(
                             self.raw_data + self.raw_indices[i] * self.m,
                             other.raw_data + other.raw_indices[j] * self.m,
@@ -2114,10 +2104,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                                 d = d**(1. / tracker.p)
                             results.add(self.raw_indices[i],
                                         other.raw_indices[j], d)
-                            if node1 == node2:
-                                results.add(self.raw_indices[j],
-                                            other.raw_indices[i], d)
-
+                                        
             else:  # 1 is a leaf node, 2 is inner node
                 tracker.push_less_of(2, node2)
                 self.__sparse_distance_matrix_traverse(
@@ -2155,15 +2142,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 tracker.pop()
                     
                 tracker.push_greater_of(1, node1)
-                if node1 != node2:
-                    # Avoid traversing (node1.less, node2.greater) and
-                    # (node1.greater, node2.less) (it's the same node pair
-                    # twice over, which is the source of the complication in
-                    # the original KDTree.sparse_distance_matrix)
-                    tracker.push_less_of(2, node2)
-                    self.__sparse_distance_matrix_traverse(
+                tracker.push_less_of(2, node2)
+                self.__sparse_distance_matrix_traverse(
                         other, results, node1.greater, node2.less, tracker)
-                    tracker.pop()
+                tracker.pop()
                     
                 tracker.push_greater_of(2, node2)
                 self.__sparse_distance_matrix_traverse(
@@ -2172,7 +2154,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 tracker.pop()
                 
         return 0
-            
 
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
