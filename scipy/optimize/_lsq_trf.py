@@ -99,18 +99,18 @@ from __future__ import division
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import svd, qr
-from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
 
 from .optimize import OptimizeResult
 from ._lsq_common import (
     step_size_to_bound, make_strictly_feasible, find_active_constraints,
     scaling_vector, intersect_trust_region, solve_lsq_trust_region,
-    solve_trust_region_2d, minimize_quadratic_1d, build_quadratic_1d,
-    evaluate_quadratic, print_header, print_iteration)
+    solve_trust_region_2d, update_tr_radius, minimize_quadratic_1d,
+    build_quadratic_1d, evaluate_quadratic, compute_grad, compute_jac_scaling,
+    check_termination, right_multiply, print_header, print_iteration)
 
 
-def lsq_linear_operator(Jop, diag_root):
+def lsmr_operator(Jop, diag_root):
     m, n = Jop.shape
 
     def matvec(x):
@@ -122,20 +122,6 @@ def lsq_linear_operator(Jop, diag_root):
         return Jop.rmatvec(x1) + diag_root * x2
 
     return LinearOperator((m + n, n), matvec=matvec, rmatvec=rmatvec)
-
-
-def post_multiplied_operator(Jop, d):
-    def matvec(x):
-        return Jop.matvec(np.ravel(x) * d)
-
-    def matmat(X):
-        return Jop.matmat(X * d[:, np.newaxis])
-
-    def rmatvec(x):
-        return d * Jop.rmatvec(x)
-
-    return LinearOperator(Jop.shape, matvec=matvec, matmat=matmat,
-                          rmatvec=rmatvec)
 
 
 def find_reflected_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, l, u, theta):
@@ -215,24 +201,18 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
     f = f0
     nfev = 1
+    cost = 0.5 * np.dot(f, f)
 
     J = J0
     njev = 1
     m, n = J.shape
 
-    if isinstance(J, LinearOperator):
-        g = J.rmatvec(f)
-    else:
-        g = J.T.dot(f)
+    g = compute_grad(J, f)
 
     if scaling == 'jac':
-        if issparse(J):
-            scale = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
-        else:
-            scale = np.sum(J**2, axis=0)**0.5
-        scale[scale == 0] = 1
+        scale, scale_inv = compute_jac_scaling(J)
     else:
-        scale = scaling
+        scale, scale_inv = scaling, 1 / scaling
 
     v, jv = scaling_vector(x, g, lb, ub)
     v[jv != 0] *= scale[jv != 0]
@@ -246,8 +226,6 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     elif tr_solver == 'lsmr':
         reg_term = 0.0
         regularize = tr_options.pop("regularize", True)
-
-    cost = 0.5 * np.dot(f, f)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -263,27 +241,15 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         print_header()
 
     while nfev < max_nfev:
-        if scaling == 'jac':
-            if issparse(J):
-                new_scale = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
-            else:
-                new_scale = np.sum(J**2, axis=0)**0.5
-            scale = np.maximum(scale, new_scale)
-
-        if isinstance(J, LinearOperator):
-            g = J.rmatvec(f)
-        else:
-            g = J.T.dot(f)
-
         v, jv = scaling_vector(x, g, lb, ub)
+
         g_norm = norm(g * v, ord=np.inf)
+        if g_norm < gtol:
+            termination_status = 1
 
         if verbose == 2:
             print_iteration(iteration, nfev, cost, actual_reduction,
                             step_norm, g_norm)
-
-        if g_norm < gtol:
-            termination_status = 1
 
         if termination_status is not None:
             active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
@@ -304,10 +270,10 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         v[jv != 0] *= scale[jv != 0]
 
         # Here we apply two types of scaling.
-        d = v**0.5 / scale
+        d = v**0.5 * scale_inv
 
         # C = diag(g / scale) Jv
-        diag_h = g * jv / scale
+        diag_h = g * jv * scale_inv
 
         # After all this were done, we continue normally.
 
@@ -316,12 +282,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
         # Right multiply J by diag(d), After this transformation Jacobian
         # is in "hat" space.
-        if issparse(J):
-            J.data *= d.take(J.indices, mode='clip')  # scikit-learn recipe.
-        elif isinstance(J, LinearOperator):
-            J = post_multiplied_operator(J, d)
-        else:
-            J *= d
+        J = right_multiply(J, d)
 
         f_augmented[:m] = f
         if tr_solver == 'exact':
@@ -334,11 +295,11 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             if regularize:
                 a, b = build_quadratic_1d(J, g_h, -g_h, diag=diag_h)
                 to_tr = Delta / norm(g_h)
-                _, g_value = minimize_quadratic_1d(a, b, 0, to_tr)
+                g_value = minimize_quadratic_1d(a, b, 0, to_tr)[1]
                 reg_term = -g_value / Delta**2
 
             Jop = aslinearoperator(J)
-            lsmr_op = lsq_linear_operator(Jop, (diag_h + reg_term)**0.5)
+            lsmr_op = lsmr_operator(Jop, (diag_h + reg_term)**0.5)
             gn_h = lsmr(lsmr_op, f_augmented, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
             S, _ = qr(S, mode='economic')
@@ -348,11 +309,11 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
         # theta controls step back step ratio from the bounds.
         theta = max(0.995, 1 - g_norm)
-        actual_reduction = -1
 
         # In the following: p - trust-region solution, r - reflected solution,
         # c - minimizer along the scaled gradient, _h means the variable
         # is computed in "hat" space.
+        actual_reduction = -1
         while actual_reduction <= 0 and nfev < max_nfev:
             if tr_solver == 'exact':
                 p_h, alpha, n_iter = solve_lsq_trust_region(
@@ -360,7 +321,8 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             elif tr_solver == 'lsmr':
                 p_S, _ = solve_trust_region_2d(B_S, g_S, Delta)
                 p_h = S.dot(p_S)
-            p = d * p_h
+
+            p = d * p_h  # Trust-region solution in the original space.
 
             to_bound, _ = step_size_to_bound(x, p, lb, ub)
             if to_bound >= 1:  # Trust region step is feasible.
@@ -369,7 +331,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 step_h = p_h
                 predicted_reduction = -evaluate_quadratic(J, g_h, p_h,
                                                           diag=diag_h)
-            else:  # Otherwise consider a reflected and gradient steps.
+            else:  # Otherwise consider reflected and gradient steps.
                 p_h, r_h = find_reflected_step(
                     x, J, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
 
@@ -380,11 +342,11 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 c_h = find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta)
 
                 steps_h = np.array([p_h, r_h, c_h])
-                qp_values = evaluate_quadratic(J, g_h, steps_h, diag=diag_h)
+                values = evaluate_quadratic(J, g_h, steps_h, diag=diag_h)
 
-                min_index = np.argmin(qp_values)
+                min_index = np.argmin(values)
                 step_h = steps_h[min_index]
-                predicted_reduction = -qp_values[min_index]
+                predicted_reduction = -values[min_index]
 
             step = d * step_h
             x_new = make_strictly_feasible(x + step, lb, ub, rstep=0)
@@ -399,44 +361,38 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             # vanishes in unbounded case.
             correction = 0.5 * np.dot(step_h * diag_h, step_h)
 
-            if predicted_reduction > 0:
-                ratio = (actual_reduction - correction) / predicted_reduction
-            else:
-                ratio = 0
-
-            if ratio < 0.25:
-                Delta_new = 0.25 * norm(step_h)
-                alpha *= Delta / Delta_new
-                Delta = Delta_new
-            elif ratio > 0.75 and norm(step_h) > 0.95 * Delta:
-                Delta *= 2.0
-                alpha *= 0.5
-
-            ftol_satisfied = actual_reduction < ftol * cost and ratio > 0.25
+            Delta_new, ratio = update_tr_radius(
+                Delta, actual_reduction - correction, predicted_reduction,
+                norm(step_h), norm(step_h) > 0.95 * Delta
+            )
+            alpha *= Delta / Delta_new
+            Delta = Delta_new
 
             step_norm = norm(step)
-            xtol_satisfied = step_norm < xtol * (xtol + norm(x))
-
-            if ftol_satisfied and xtol_satisfied:
-                termination_status = 4
-            elif ftol_satisfied:
-                termination_status = 2
-            elif xtol_satisfied:
-                termination_status = 3
+            termination_status = check_termination(
+                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol)
 
             if termination_status is not None:
                 break
 
         if actual_reduction > 0:
             x = x_new
+
             f = f_new
             cost = cost_new
 
             J = jac(x, f)
             njev += 1
+
+            g = compute_grad(J, f)
+
+            if scaling == 'jac':
+                scale, scale_inv = compute_jac_scaling(J, scale)
+
         elif nfev == max_nfev:  # Recompute J if algorithm is terminating.
             J = jac(x, f)
             # Don't increase njev, because it's the implementation detail.
+
         iteration += 1
 
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)

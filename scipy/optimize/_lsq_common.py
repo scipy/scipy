@@ -7,6 +7,8 @@ from math import copysign
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import cho_factor, cho_solve, LinAlgError
+from scipy.sparse import issparse
+from scipy.sparse.linalg import LinearOperator
 
 
 EPS = np.finfo(float).eps
@@ -211,6 +213,21 @@ def solve_trust_region_2d(B, g, Delta):
     p = p[:, i]
 
     return p, False
+
+
+def update_tr_radius(Delta, actual_reduction, predicted_reduction,
+                     step_norm, bound_hit):
+    if predicted_reduction > 0:
+        ratio = actual_reduction / predicted_reduction
+    else:
+        ratio = 0
+
+    if ratio < 0.25:
+        Delta = 0.25 * step_norm
+    elif ratio > 0.75 and bound_hit:
+        Delta *= 2.0
+
+    return Delta, ratio
 
 
 # Construction and minimization of quadratic functions.
@@ -515,3 +532,71 @@ def print_iteration(iteration, nfev, cost, cost_reduction, step_norm,
     print("{0:^15}{1:^15}{2:^15.4e}{3}{4}{5:^15.2e}"
           .format(iteration, nfev, cost, cost_reduction,
                   step_norm, optimality))
+
+
+# Simple helper functions.
+
+
+def compute_grad(J, f):
+    if isinstance(J, LinearOperator):
+        return J.rmatvec(f)
+    else:
+        return J.T.dot(f)
+
+
+def compute_jac_scaling(J, old_scale=None):
+    if issparse(J):
+        scale = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
+    else:
+        scale = np.sum(J**2, axis=0)**0.5
+
+    if old_scale is None:
+        scale[scale == 0] = 1
+    else:
+        scale = np.maximum(scale, old_scale)
+
+    return scale, 1 / scale
+
+
+def right_multiplied_operator(Jop, d):
+    def matvec(x):
+        return Jop.matvec(np.ravel(x) * d)
+
+    def matmat(X):
+        return Jop.matmat(X * d[:, np.newaxis])
+
+    def rmatvec(x):
+        return d * Jop.rmatvec(x)
+
+    return LinearOperator(Jop.shape, matvec=matvec, matmat=matmat,
+                          rmatvec=rmatvec)
+
+
+def right_multiply(J, d):
+    """Compute J.dot(diag(d)).
+
+    J is modified inplace if possible, the reference is returned back anyway.
+    """
+
+    if issparse(J):
+        J.data *= d.take(J.indices, mode='clip')  # scikit-learn recipe.
+    elif isinstance(J, LinearOperator):
+        J = right_multiplied_operator(J, d)
+    else:
+        J *= d
+
+    return J
+
+
+def check_termination(dF, F, dx_norm, x_norm, ratio, ftol, xtol):
+    ftol_satisfied = dF < ftol * F and ratio > 0.25
+    xtol_satisfied = dx_norm < xtol * (xtol + x_norm)
+
+    if ftol_satisfied and xtol_satisfied:
+        return 4
+    elif ftol_satisfied:
+        return 2
+    elif xtol_satisfied:
+        return 3
+    else:
+        return None

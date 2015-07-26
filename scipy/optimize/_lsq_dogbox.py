@@ -47,14 +47,14 @@ import numpy as np
 from numpy.linalg import lstsq, norm
 
 from . import OptimizeResult
-from ..sparse import issparse
 from ..sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from ._lsq_common import (
-    step_size_to_bound, in_bounds, evaluate_quadratic, build_quadratic_1d,
-    minimize_quadratic_1d, print_header, print_iteration)
+    step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
+    build_quadratic_1d, minimize_quadratic_1d, compute_grad,
+    compute_jac_scaling, check_termination, print_header, print_iteration)
 
 
-def lsmr_linear_operator(Jop, d, active_set):
+def lsmr_operator(Jop, d, active_set):
     m, n = Jop.shape
 
     def matvec(x):
@@ -146,19 +146,17 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
            tr_solver, tr_options, verbose):
     f = f0
     nfev = 1
+    cost = 0.5 * np.dot(f, f)
 
     J = J0
     njev = 1
 
+    g = compute_grad(J, f)
+
     if scaling == 'jac':
-        if issparse(J):
-            scale = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
-        else:
-            scale = np.sum(J**2, axis=0)**0.5
-        scale[scale == 0] = 1
+        scale, scale_inv = compute_jac_scaling(J)
     else:
-        scale = scaling
-    scale_inv = 1 / scale
+        scale, scale_inv = scaling, 1 / scaling
 
     Delta = norm(x0 * scale, ord=np.inf)
     if Delta == 0:
@@ -168,9 +166,8 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     on_bound[np.equal(x0, lb)] = -1
     on_bound[np.equal(x0, ub)] = 1
 
-    x = x0.copy()
+    x = x0
     step = np.empty_like(x0)
-    cost = 0.5 * np.dot(f, f)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
@@ -184,19 +181,6 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         print_header()
 
     while nfev < max_nfev:
-        if scaling == 'jac':
-            if issparse(J):
-                new_scale = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
-            else:
-                new_scale = np.sum(J**2, axis=0)**0.5
-            scale = np.maximum(scale, new_scale)
-            scale_inv = 1 / scale
-
-        if isinstance(J, LinearOperator):
-            g = J.rmatvec(f)
-        else:
-            g = J.T.dot(f)
-
         active_set = on_bound * g < 0
         free_set = ~active_set
 
@@ -242,7 +226,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             # slicing, which is expensive for sparse matrices and impossible
             # for LinearOperator.
 
-            lsmr_op = lsmr_linear_operator(Jop, scale_inv, active_set)
+            lsmr_op = lsmr_operator(Jop, scale_inv, active_set)
             newton_step = -lsmr(lsmr_op, f, **tr_options)[0][free_set]
             newton_step *= scale_inv_free
 
@@ -274,27 +258,14 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             cost_new = 0.5 * np.dot(f_new, f_new)
             actual_reduction = cost - cost_new
 
-            if predicted_reduction > 0:
-                ratio = actual_reduction / predicted_reduction
-            else:
-                ratio = 0
-
-            if ratio < 0.25:
-                Delta = 0.25 * norm(step * scale, ord=np.inf)
-            elif ratio > 0.75 and tr_hit:
-                Delta *= 2.0
-
-            ftol_satisfied = actual_reduction < ftol * cost and ratio > 0.25
+            Delta, ratio = update_tr_radius(
+                Delta, actual_reduction, predicted_reduction,
+                norm(step * scale, ord=np.inf), tr_hit
+            )
 
             step_norm = norm(step)
-            xtol_satisfied = step_norm < xtol * (xtol + norm(x))
-
-            if ftol_satisfied and xtol_satisfied:
-                termination_status = 4
-            elif ftol_satisfied:
-                termination_status = 2
-            elif xtol_satisfied:
-                termination_status = 3
+            termination_status = check_termination(
+                actual_reduction, cost, step_norm, norm(x), ratio, ftol, xtol)
 
             if termination_status is not None:
                 break
@@ -314,6 +285,12 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             J = jac(x, f)
             njev += 1
+
+            g = compute_grad(J, f)
+
+            if scaling == 'jac':
+                scale, scale_inv = compute_jac_scaling(J, scale)
+
         iteration += 1
 
     return OptimizeResult(
