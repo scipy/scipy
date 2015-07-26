@@ -12,7 +12,7 @@ import scipy.sparse
 cimport numpy as np
     
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-from libc.string cimport memset
+from libc.string cimport memset, memcpy
 
 cimport cython
 
@@ -22,13 +22,10 @@ import threading
 cdef extern from "limits.h":
     long LONG_MAX
     
-cdef extern from "query_methods.h":
+cdef extern from "ckdtree_methods.h":
     int number_of_processors
     np.float64_t infinity
-    np.float64_t dmax(np.float64_t x, np.float64_t y)
-    np.float64_t dabs(np.float64_t x)
-    np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
-                       np.float64_t p, np.intp_t k, np.float64_t upperbound)
+    
 infinity = np.inf
 number_of_processors = cpu_count()
 
@@ -62,6 +59,13 @@ cdef extern from "ckdtree_decl.h":
 # C++ helper functions
 # ====================
 
+cdef extern from "coo_entries.h":
+
+    struct coo_entry:
+        np.intp_t i
+        np.intp_t j
+        np.float64_t v
+
 cdef extern from "ordered_pair.h":
 
     struct ordered_pair:
@@ -76,88 +80,145 @@ cdef extern from "cpp_utils.h":
     object unpickle_tree_buffer(vector[ckdtreenode] *buf, object src)
     ckdtreenode *tree_buffer_root(vector[ckdtreenode] *buf)
     ordered_pair *ordered_pair_vector_buf(vector[ordered_pair] *buf)
+    coo_entry *coo_entry_vector_buf(vector[coo_entry] *buf)
     void *tree_buffer_pointer(vector[ckdtreenode] *buf)
     np.intp_t *npy_intp_vector_buf(vector[np.intp_t] *buf)
     np.float64_t *npy_float64_vector_buf(vector[np.float64_t] *buf)
     ctypedef void *intvector_ptr_t 
 
 
-# Splitting routines for a balanced kd-tree
-# Code originally written by Jake Vanderplas for scikit-learn
 
-cdef inline void index_swap(np.intp_t *arr, np.intp_t i1, np.intp_t i2):
-    """swap the values at index i1 and i2 of arr"""
-    cdef np.intp_t tmp = arr[i1]
-    arr[i1] = arr[i2]
-    arr[i2] = tmp
+# coo_entry wrapper
+# =================
 
-cdef void partition_node_indices(np.float64_t *data,
-                                np.intp_t *node_indices,
-                                np.intp_t split_dim,
-                                np.intp_t split_index,
-                                np.intp_t n_features,
-                                np.intp_t n_points):
-    """Partition points in the node into two equal-sized groups.
+cdef class coo_entries:
+
+    cdef: 
+        readonly object __array_interface__
+        vector[coo_entry] *buf
+        
+    def __cinit__(coo_entries self):    
+        self.buf = NULL
+
+    def __init__(coo_entries self):    
+        self.buf = new vector[coo_entry]()
+        
+    def __dealloc__(coo_entries self):
+        if self.buf != NULL:
+            del self.buf
+            
+    # The methods ndarray, dict, coo_matrix, and dok_matrix must only
+    # be called after the buffer is filled with coo_entry data. This
+    # is because std::vector can reallocate its internal buffer when
+    # push_back is called.
+            
+    def ndarray(coo_entries self):    
+        cdef: 
+            coo_entry *pr
+            np.uintp_t uintptr            
+        pr = coo_entry_vector_buf(self.buf) 
+        uintptr = <np.uintp_t> (<void*> pr)
+        n = <np.intp_t> self.buf.size()
+        dtype = np.dtype(np.uint8)               
+        self.__array_interface__ = dict(
+            data = (uintptr, False),
+            descr = dtype.descr,
+            shape = (n*sizeof(coo_entry),),
+            strides = (dtype.itemsize,),
+            typestr = dtype.str,
+            version = 3,
+        )
+        res_dtype = np.dtype([('i',np.intp), ('j',np.intp), ('v',np.float64)]) 
+        return np.asarray(self).view(dtype=res_dtype)
+        
+    def dict(coo_entries self):
+        cdef:
+            np.intp_t i, j, k, n
+            np.float64_t v
+            coo_entry *pr
+            dict res_dict
+        pr = coo_entry_vector_buf(self.buf)
+        n = <np.intp_t> self.buf.size()
+        res_dict = dict()           
+        for k in range(n):                    
+            i = pr[k].i
+            j = pr[k].j
+            v = pr[k].v                    
+            res_dict[(i,j)] = v
+        return res_dict
     
-    Upon return, the values in node_indices will be rearranged such that
-    (assuming numpy-style indexing):
+    def coo_matrix(coo_entries self, m, n):
+        res_arr = self.ndarray()
+        return scipy.sparse.coo_matrix(
+                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
+                                       shape=(m, n))
+        
+    def dok_matrix(coo_entries self, m, n):
+        return self.coo_matrix(m,n).todok()
+        
+        
+# ordered_pair wrapper
+# ====================
 
-        data[node_indices[0:split_index], split_dim]
-          <= data[node_indices[split_index], split_dim]
+cdef class ordered_pairs:
 
-    and
+    cdef: 
+        readonly object __array_interface__
+        vector[ordered_pair] *buf
+        
+    def __cinit__(ordered_pairs self):
+        self.buf = NULL
 
-        data[node_indices[split_index], split_dim]
-          <= data[node_indices[split_index:n_points], split_dim]
-
-    The algorithm is essentially a partial in-place quicksort around a
-    set pivot.
+    def __init__(ordered_pairs self):
+        self.buf = new vector[ordered_pair]()
+        
+    def __dealloc__(ordered_pairs self):
+        if self.buf != NULL:
+            del self.buf
+            
+    # The methods ndarray and set must only be called after the buffer 
+    # is filled with ordered_pair data.
     
-    Parameters
-    ----------
-    data : double pointer
-        Pointer to a 2D array of the training data, of shape [N, n_features].
-        N must be greater than any of the values in node_indices.
-    node_indices : int pointer
-        Pointer to a 1D array of length n_points.  This lists the indices of
-        each of the points within the current node.  This will be modified
-        in-place.
-    split_dim : int
-        the dimension on which to split.  This will usually be computed via
-        the routine ``find_node_split_dim``
-    split_index : int
-        the index within node_indices around which to split the points.
-
-    Returns
-    -------
-    status : int
-        integer exit status.  On return, the contents of node_indices are
-        modified as noted above.
-
-    """
-    cdef np.intp_t left, right, midindex, i
-    cdef np.float64_t d1, d2
-    left = 0
-    right = n_points - 1
-    
-    while True:
-        midindex = left
-        for i in range(left, right):
-            d1 = data[node_indices[i] * n_features + split_dim]
-            d2 = data[node_indices[right] * n_features + split_dim]
-            if d1 < d2:
-                index_swap(node_indices, i, midindex)
-                midindex += 1
-        index_swap(node_indices, midindex, right)
-        if midindex == split_index:
-            break
-        elif midindex < split_index:
-            left = midindex + 1
+    def ndarray(ordered_pairs self):
+        cdef: 
+            ordered_pair *pr
+            np.uintp_t uintptr            
+        pr = ordered_pair_vector_buf(self.buf) 
+        uintptr = <np.uintp_t> (<void*> pr)
+        n = <np.intp_t> self.buf.size()
+        dtype = np.dtype(np.intp)               
+        self.__array_interface__ = dict(
+            data = (uintptr, False),
+            descr = dtype.descr,
+            shape = (n,2),
+            strides = (2*dtype.itemsize,dtype.itemsize),
+            typestr = dtype.str,
+            version = 3,
+        )
+        return np.asarray(self)
+        
+    def set(ordered_pairs self):        
+        cdef: 
+            ordered_pair *pair
+            np.intp_t i, n
+            set results
+        results = set()
+        pair = ordered_pair_vector_buf(self.buf)
+        n = <np.intp_t> self.buf.size()
+        if sizeof(long) < sizeof(np.intp_t):
+            # Needed for Python 2.x on Win64
+            for i in range(n):
+                results.add((int(pair.i), int(pair.j)))
+                pair += 1 
         else:
-            right = midindex - 1
+            # other platforms
+            for i in range(n):
+                results.add((pair.i, pair.j))
+                pair += 1
+        return results
     
-    
-
+        
+            
 # Tree structure exposed to Python
 # ================================
 
@@ -256,10 +317,18 @@ cdef class cKDTreeNode:
 # Main cKDTree class
 # ==================
 
-cdef extern from "query_methods.h":
+cdef extern from "ckdtree_methods.h":
 
-    # External query methods in C++. These will internally
+    # External build and query methods in C++. These will internally
     # release the GIL to avoid locking up the interpreter.
+    
+    object build_ckdtree(ckdtree *self, 
+                         np.intp_t start_idx, 
+                         np.intp_t end_idx,
+                         np.float64_t *maxes, 
+                         np.float64_t *mins, 
+                         int _median, 
+                         int _compact)
        
     object query_knn(const ckdtree *self, 
                      np.float64_t *dd, 
@@ -304,9 +373,7 @@ cdef extern from "query_methods.h":
                                   const ckdtree *other,
                                   const np.float64_t p,
                                   const np.float64_t max_distance,
-                                  vector[np.intp_t] *results_i,
-                                  vector[np.intp_t] *results_j,
-                                  vector[np.float64_t] *results_v)                     
+                                  vector[coo_entry] *results)                    
                       
                       
 cdef public class cKDTree [object ckdtree, type ckdtree_type]:
@@ -379,12 +446,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         np.intp_t                *raw_indices
         np.ndarray               _median_workspace
     
-    
+    def __cinit__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True, 
+            copy_data=False, balanced_tree=True):
+        self.tree_buffer = NULL        
+            
     def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True, 
             copy_data=False, balanced_tree=True):
         cdef np.ndarray[np.float64_t, ndim=2] data_arr
         cdef np.float64_t *tmp
-        cdef int _median
+        cdef int _median, _compact
         data_arr = np.ascontiguousarray(data, dtype=np.float64)
         if copy_data and (data_arr is data):
             data_arr = data_arr.copy()
@@ -404,22 +474,23 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.raw_mins = <np.float64_t*> np.PyArray_DATA(self.mins)
         self.raw_indices = <np.intp_t*> np.PyArray_DATA(self.indices)
 
+        _compact = 1 if compact_nodes else 0
         _median = 1 if balanced_tree else 0
         if _median:
             self._median_workspace = np.zeros(self.n)
-        
-        self.tree_buffer = NULL
+
         self.tree_buffer = new vector[ckdtreenode]()
         
-        if not compact_nodes:
-             self.__build(0, self.n, self.raw_maxes, self.raw_mins, _median)
-        else:
-            try:
-                tmp = <np.float64_t*> PyMem_Malloc(self.m*2*sizeof(np.float64_t))
-                if tmp == NULL: raise MemoryError()
-                self.__build_compact(0, self.n, tmp, tmp+self.m, _median)
-            finally:
-                PyMem_Free(tmp)
+        try:
+            tmp = <np.float64_t*> PyMem_Malloc(self.m*2*sizeof(np.float64_t))
+            if tmp == NULL: raise MemoryError()            
+            memcpy(tmp, self.raw_maxes, self.m*sizeof(np.float64_t))
+            memcpy(tmp + self.m, self.raw_mins, self.m*sizeof(np.float64_t))
+            build_ckdtree(<ckdtree*> self, 0, self.n, tmp, tmp + self.m, 
+                _median, _compact)
+        finally:
+            PyMem_Free(tmp)
+                
         self._median_workspace = None
         
         # set up the tree structure pointers
@@ -454,292 +525,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         if self.tree_buffer != NULL:
             del self.tree_buffer
 
-
-    @cython.cdivision(True)
-    cdef np.intp_t __build(cKDTree self, np.intp_t start_idx, np.intp_t end_idx,
-                       np.float64_t *maxes, np.float64_t *mins, int _median)\
-                       except -1:
-        cdef:
-            ckdtreenode new_node
-            np.intp_t   node_index
-            np.intp_t   _less, _greater
-            ckdtreenode *n
-            ckdtreenode *root
-            
-            np.intp_t i, j, t, p, q, d
-            np.float64_t size, split, minval, maxval
-            np.float64_t *mids
-            np.float64_t *tmp_data_point
-        
-        # put a new node into the node stack
-        self.tree_buffer.push_back(new_node)
-        node_index = self.tree_buffer.size() - 1
-        root = tree_buffer_root(self.tree_buffer)
-        n = root + node_index
-                    
-        if end_idx-start_idx <= self.leafsize:
-            # below brute force limit
-            # return leafnode
-            n.split_dim = -1
-            n.children = end_idx - start_idx
-            n.start_idx = start_idx
-            n.end_idx = end_idx
-            return node_index
-        else:
-            d = 0 
-            size = 0
-            for i in range(self.m):
-                if maxes[i]-mins[i] > size:
-                    d = i
-                    size =  maxes[i]-mins[i]
-            maxval = maxes[d]
-            minval = mins[d]
-            if maxval==minval:
-                # all points are identical; warn user?
-                # return leafnode
-                n.split_dim = -1
-                n.children = end_idx - start_idx
-                n.start_idx = start_idx
-                n.end_idx = end_idx
-                return node_index
-                
-            # construct new inner node
-            if _median:
-                # split on median to create a balanced tree
-                # adopted from scikit-learn
-                i = (end_idx-start_idx) // 2
-                partition_node_indices(self.raw_data,
-                                self.raw_indices + start_idx,
-                                d,
-                                i,
-                                self.m,
-                                end_idx-start_idx)               
-                p = start_idx + i
-                split = self.raw_data[self.raw_indices[p]*self.m+d]
-
-            else:
-                # split with the sliding midpoint rule
-                # this is the default
-                split = (maxval+minval)/2
-    
-            p = start_idx
-            q = end_idx - 1
-            while p <= q:
-                if self.raw_data[self.raw_indices[p]*self.m+d] < split:
-                    p += 1
-                elif self.raw_data[self.raw_indices[q]*self.m+d] >= split:
-                    q -= 1
-                else:
-                    t = self.raw_indices[p]
-                    self.raw_indices[p] = self.raw_indices[q]
-                    self.raw_indices[q] = t
-                    p += 1
-                    q -= 1
-
-            # slide midpoint if necessary
-            if p == start_idx:
-                # no points less than split
-                j = start_idx
-                split = self.raw_data[self.raw_indices[j]*self.m+d]
-                for i in range(start_idx+1, end_idx):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] < split:
-                        j = i
-                        split = self.raw_data[self.raw_indices[j]*self.m+d]
-                t = self.raw_indices[start_idx]
-                self.raw_indices[start_idx] = self.raw_indices[j]
-                self.raw_indices[j] = t
-                p = start_idx + 1
-                q = start_idx
-            elif p == end_idx:
-                # no points greater than split
-                j = end_idx - 1
-                split = self.raw_data[self.raw_indices[j]*self.m+d]
-                for i in range(start_idx, end_idx-1):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] > split:
-                        j = i
-                        split = self.raw_data[self.raw_indices[j]*self.m+d]
-                t = self.raw_indices[end_idx-1]
-                self.raw_indices[end_idx-1] = self.raw_indices[j]
-                self.raw_indices[j] = t
-                p = end_idx - 1
-                q = end_idx - 2
-
-            try:
-                mids = <np.float64_t*> PyMem_Malloc(sizeof(np.float64_t)*self.m)
-                if mids == <np.float64_t*> NULL:
-                    raise MemoryError
-                        
-                for i in range(self.m):
-                    mids[i] = maxes[i]
-                mids[d] = split
-                _less = self.__build(start_idx, p, mids, mins, _median)
-                
-                for i in range(self.m):
-                    mids[i] = mins[i]
-                mids[d] = split
-                _greater = self.__build(p, end_idx, maxes, mids, _median)
-                
-                root = tree_buffer_root(self.tree_buffer)
-                # recompute n because std::vector can
-                # reallocate its internal buffer
-                n = root + node_index
-                # fill in entries
-                n._less = _less 
-                n._greater = _greater
-                n.less = root + _less
-                n.greater = root + _greater
-                n.children = n.less.children + n.greater.children                
-                n.split_dim = d
-                n.split = split
-            
-            finally:
-                PyMem_Free(mids)
-
-            return node_index
-
-
-    @cython.cdivision(True)
-    cdef np.intp_t __build_compact(cKDTree self, np.intp_t start_idx, 
-            np.intp_t end_idx, np.float64_t *mins, np.float64_t *maxes, 
-              int _median) except -1:
-
-        cdef: 
-            ckdtreenode new_node
-            np.intp_t   node_index
-            np.intp_t   _less, _greater
-            ckdtreenode *n
-            ckdtreenode *root
-            
-            np.intp_t i, j, t, p, q, d
-            np.float64_t size, split, minval, maxval
-            np.float64_t tmp
-            np.float64_t *tmp_data_point
-                
-        # put a new node into the node stack
-        self.tree_buffer.push_back(new_node)
-        node_index = self.tree_buffer.size() - 1
-        root = tree_buffer_root(self.tree_buffer)
-        n = root + node_index        
-        
-        if end_idx-start_idx <= self.leafsize:
-            # below brute force limit
-            # return leafnode
-            n.split_dim = -1
-            n.children = end_idx - start_idx
-            n.start_idx = start_idx
-            n.end_idx = end_idx
-            return node_index
-        else:
-            d = 0 
-            size = 0
-            # Recompute hyperrectangle bounds. This should lead to a more 
-            # compact kd-tree but comes at the expense of larger construction
-            # time. However, construction time is usually dwarfed by the
-            # query time by orders of magnitude.
-            tmp_data_point = self.raw_data + self.raw_indices[start_idx]*self.m
-            for i in range(self.m):
-                maxes[i] = tmp_data_point[i]
-                mins[i] = tmp_data_point[i]
-            for j in range(start_idx+1, end_idx):
-                tmp_data_point = self.raw_data + self.raw_indices[j]*self.m
-                for i in range(self.m):
-                    tmp = tmp_data_point[i]
-                    maxes[i] = maxes[i] if (maxes[i] > tmp) else tmp
-                    mins[i] = mins[i] if (mins[i] < tmp) else tmp
-            # split on the dimension with largest spread        
-            for i in range(self.m):
-                if maxes[i]-mins[i] > size:
-                    d = i
-                    size = maxes[i] - mins[i]
-            maxval = maxes[d]
-            minval = mins[d]
-            if maxval == minval:
-                # all points are identical; warn user?
-                # return leafnode
-                n.split_dim = -1
-                n.children = end_idx - start_idx
-                n.start_idx = start_idx
-                n.end_idx = end_idx
-                return node_index
-                
-            # construct new inner node
-            
-            if _median:  
-                # split on median to create a balanced tree
-                # adopted from scikit-learn
-                i = (end_idx-start_idx) // 2
-                partition_node_indices(self.raw_data,
-                                self.raw_indices + start_idx,
-                                d,
-                                i,
-                                self.m,
-                                end_idx-start_idx)               
-                p = start_idx + i
-                split = self.raw_data[self.raw_indices[p]*self.m+d]
-             
-            else:
-                # split with sliding midpoint rule
-                split = (maxval+minval) / 2
-    
-            p = start_idx
-            q = end_idx - 1
-            while p<=q:
-                if self.raw_data[self.raw_indices[p]*self.m+d] < split:
-                    p += 1
-                elif self.raw_data[self.raw_indices[q]*self.m+d] >= split:
-                    q -= 1
-                else:
-                    t = self.raw_indices[p]
-                    self.raw_indices[p] = self.raw_indices[q]
-                    self.raw_indices[q] = t
-                    p += 1
-                    q -= 1
-    
-            # slide midpoint if necessary
-            if p == start_idx:
-                # no points less than split
-                j = start_idx
-                split = self.raw_data[self.raw_indices[j]*self.m+d]
-                for i in range(start_idx+1, end_idx):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] < split:
-                        j = i
-                        split = self.raw_data[self.raw_indices[j]*self.m+d]
-                t = self.raw_indices[start_idx]
-                self.raw_indices[start_idx] = self.raw_indices[j]
-                self.raw_indices[j] = t
-                p = start_idx + 1
-                q = start_idx
-            elif p == end_idx:
-                # no points greater than split
-                j = end_idx - 1
-                split = self.raw_data[self.raw_indices[j]*self.m+d]
-                for i in range(start_idx, end_idx-1):
-                    if self.raw_data[self.raw_indices[i]*self.m+d] > split:
-                        j = i
-                        split = self.raw_data[self.raw_indices[j]*self.m+d]
-                t = self.raw_indices[end_idx-1]
-                self.raw_indices[end_idx-1] = self.raw_indices[j]
-                self.raw_indices[j] = t
-                p = end_idx - 1
-                q = end_idx - 2
-
-            _less = self.__build_compact(start_idx, p, mins, maxes, _median)
-            _greater = self.__build_compact(p, end_idx, mins, maxes, _median)
-                        
-            root = tree_buffer_root(self.tree_buffer)
-            # recompute n because std::vector can reallocate
-            # its internal buffer
-            n = root + node_index
-            # fill in entries
-            n._less = _less
-            n._greater = _greater
-            n.less = root + _less
-            n.greater = root + _greater
-            n.children = n.less.children + n.greater.children                
-            n.split_dim = d
-            n.split = split
-            
-            return node_index
 
     # -----
     # query
@@ -1035,6 +820,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         t.join()
                                                                 
                 else:
+                
                     query_ball_point(<ckdtree*>self, &vxx[0,0], r, p, eps, 
                         n, vvres)
                 
@@ -1183,47 +969,17 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         """
                  
-        cdef: 
-            vector[ordered_pair] *vres
-            set results
-            np.intp_t i, n
-            ordered_pair *pair
-            np.ndarray array_res
-        
-        if output_type not in ('set', 'ndarray'):
-            raise ValueError("output type must be set or ndarray")
-        
-        vres = NULL
-        results = set()
-        try:
-            vres = new vector[ordered_pair]()
-            query_pairs(<ckdtree*> self, r, p, eps, vres)
-            n = vres.size()
-            pair = ordered_pair_vector_buf(vres)
-            
-            if output_type == 'set':
-                if sizeof(long) < sizeof(np.intp_t):
-                    # Needed for Python 2.x on Win64
-                    for i in range(n):
-                        results.add((int(pair.i), int(pair.j)))
-                        pair += 1 
-                else:
-                    # other platforms
-                    for i in range(n):
-                        results.add((pair.i, pair.j))
-                        pair += 1
-            else:
-                array_res = np.zeros((n,2), dtype=np.intp)
-                string.memcpy(np.PyArray_DATA(array_res), <void*> pair, 
-                                  n*2*sizeof(np.intp_t))
-        finally:
-            if vres != NULL:
-                del vres
+        cdef ordered_pairs c
+
+        results = ordered_pairs()
+        query_pairs(<ckdtree*> self, r, p, eps, results.buf)
         
         if output_type == 'set':
-            return results
-        else:           
-            return array_res
+            return results.set()
+        elif output_type == 'ndarray':
+            return results.ndarray()
+        else:
+            raise ValueError("Invalid output type") 
 
 
     # ---------------
@@ -1246,7 +1002,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         Parameters
         ----------
-        other : KDTree instance
+        other : cKDTree instance
             The other tree to draw points from.
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
@@ -1258,9 +1014,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         Returns
         -------
         result : int or 1-D array of ints
-            The number of pairs. Note that this is internally stored in a numpy int,
-            and so may overflow if very large (2e9).
-
+            The number of pairs.
         """
         cdef: 
             int r_ndim
@@ -1330,119 +1084,40 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         
         output_type : string, optional
             Which container to use for output data. Options: 'dok_matrix',
-            'coo_matrix', 'dict', or 'recarray'. Default: 'dok_matrix'.
+            'coo_matrix', 'dict', or 'ndarray'. Default: 'dok_matrix'.
 
         Returns
         -------
         result : dok_matrix, coo_matrix, dict or ndarray
             Sparse matrix representing the results in "dictionary of keys" 
             format. If a dict is returned the keys are (i,j) tuples of indices.
-            If output_type is 'recarray' a record array with fields 'i', 'j',
+            If output_type is 'ndarray' a record array with fields 'i', 'j',
             and 'k' is returned,
         """
         
-        cdef:
-            vector[np.intp_t] *res_i
-            vector[np.intp_t] *res_j
-            vector[np.float64_t] *res_v
-            np.ndarray res_arr
-            dict res_dict
-            np.intp_t i, j, k, n, s
-            np.intp_t *pi 
-            np.intp_t *pj
-            np.intp_t *pvi 
-            np.intp_t *pvj
-            char *cur
-            np.float64_t v
-            np.float64_t *pv
-            np.float64_t *pvv
-            
+        cdef coo_entries res
+        
         # Make sure trees are compatible
         if self.m != other.m:
             raise ValueError("Trees passed to sparse_distance_matrix have "
-                             "different dimensionality")
-                             
-        # check output type:
-        if not output_type in ('dok_matrix', 'coo_matrix', 'dict', 'recarray'):
-            raise ValueError('Invalid output_type')
-                                     
-        res_i = NULL
-        res_j = NULL
-        res_v = NULL
-        
-        try:
-        
-            res_i = new vector[np.intp_t]()
-            res_j = new vector[np.intp_t]()
-            res_v = new vector[np.float64_t]()
-            
-            sparse_distance_matrix(
-                <ckdtree*> self, <ckdtree*> other, p, max_distance, 
-                res_i, res_j, res_v)
+                             "different dimensionality")                                      
+        # do the query
+        res = coo_entries()
+        sparse_distance_matrix(
+                <ckdtree*> self, <ckdtree*> other, p, max_distance, res.buf)
                 
-            if output_type == 'dict':
-                res_dict = dict()
-                n = <np.intp_t> (res_i.size())
-                pvi = npy_intp_vector_buf(res_i)
-                pvj = npy_intp_vector_buf(res_j)
-                pvv = npy_float64_vector_buf(res_v)
-                for k in range(n):
-                    i = pvi[k]
-                    j = pvj[k]
-                    v = pvv[k]
-                    res_dict[(i,j)] = v
-                result = res_dict
-                
-            else:
-                n = <np.intp_t> (res_i.size())
-                res_dtype = np.dtype(
-                   [('i', np.intp), 
-                    ('j', np.intp), 
-                    ('v',np.float64)])
-                res_arr = np.empty(n, dtype=res_dtype)
-                s = res_arr.strides[0]
-                cur = <char*> np.PyArray_DATA(res_arr)
-                pvi = npy_intp_vector_buf(res_i)
-                pvj = npy_intp_vector_buf(res_j)
-                pvv = npy_float64_vector_buf(res_v)
-                for k in range(n):
-                    pi = <np.intp_t*> cur
-                    pj = <np.intp_t*> (cur + sizeof(np.intp_t))
-                    pv = <np.float64_t*> (cur + 2*sizeof(np.intp_t))
-                    i = pvi[k]
-                    j = pvj[k]
-                    v = pvv[k]
-                    pi[0] = i
-                    pj[0] = j
-                    pv[0] = v 
-                    cur += s
-                result = res_arr
-                
-                if output_type != 'recarray':
-                    result = scipy.sparse.coo_matrix(
-                       (res_arr['v'], (res_arr['i'], res_arr['j'])),
-                                       shape=(self.n,other.n))
-                else:
-                    result = res_arr
-        
-        finally:
-        
-            if res_i != NULL: 
-                del res_i
-            
-            if res_j != NULL: 
-                del res_j
-                
-            if res_v != NULL: 
-                del res_v
-                
-                
-        if output_type != 'dok_matrix':
-            return result
+        if output_type == 'dict':
+            return res.dict()
+        elif output_type == 'ndarray':
+            return res.ndarray()
+        elif output_type == 'coo_matrix':
+            return res.coo_matrix(self.n, other.n)            
+        elif output_type == 'dok_matrix':
+            return res.dok_matrix(self.n, other.n)
         else:
-            return result.todok()
-                             
-         
+            raise ValueError('Invalid output type')
+
+
     # ----------------------
     # pickle
     # ----------------------    

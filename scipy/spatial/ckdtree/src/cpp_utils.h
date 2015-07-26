@@ -5,6 +5,7 @@
 #include "ordered_pair.h"
 #include "ckdtree_decl.h"
 #include "cpp_exc.h"
+#include "coo_entries.h"
 
 
 #if PY_MAJOR_VERSION < 3
@@ -56,6 +57,14 @@ npy_float64_vector_buf(std::vector<npy_float64> *buf)
     std::vector<npy_float64> &tmp = *buf;
     return &tmp[0];
 }
+
+inline coo_entry *
+coo_entry_vector_buf(std::vector<coo_entry> *buf)
+{
+    std::vector<coo_entry> &tmp = *buf;
+    return &tmp[0];
+}
+
 
 static PyObject *
 pickle_tree_buffer(std::vector<ckdtreenode> *buf)

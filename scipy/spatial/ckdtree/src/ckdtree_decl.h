@@ -33,7 +33,7 @@ struct ckdtree {
     // vtab pointer is present as long as cKDTree has cdef methods
     const void          *vtab; 
     // tree structure
-    const std::vector<ckdtreenode>  *tree_buffer;
+    std::vector<ckdtreenode>  *tree_buffer;
     const ckdtreenode   *ctree;
     const PyObject      *dummy;
     // meta data
