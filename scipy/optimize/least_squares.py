@@ -87,7 +87,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     active_mask = np.zeros_like(x0, dtype=int)
 
     return OptimizeResult(
-        x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
+        x=x, cost=cost, fun=f, jac=J, grad=g, optimality=g_norm,
         active_mask=active_mask, nfev=nfev, njev=njev, status=status)
 
 
@@ -316,6 +316,8 @@ def least_squares(
     jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
         Jacobian matrix at the solution. The type is the same as was used by
         the algorithm.
+    grad : ndarray, shape (n,)
+        Gradient of the cost function at the solution.
     optimality : float
         First-order optimality measure. In unconstrained problems it is always
         the uniform norm of the gradient. In constrained problems it is the

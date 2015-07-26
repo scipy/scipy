@@ -185,6 +185,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         free_set = ~active_set
 
         g_free = g[free_set]
+        g_full = g.copy()
         g[active_set] = 0
 
         g_norm = norm(g, ord=np.inf)
@@ -197,7 +198,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
         if termination_status is not None:
             return OptimizeResult(
-                x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
+                x=x, cost=cost, fun=f, jac=J, grad=g_full, optimality=g_norm,
                 active_mask=on_bound, nfev=nfev, njev=njev,
                 status=termination_status)
 
@@ -297,5 +298,5 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         iteration += 1
 
     return OptimizeResult(
-        x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
+        x=x, cost=cost, fun=f, jac=J, grad=g_full, optimality=g_norm,
         active_mask=on_bound, nfev=nfev, njev=njev, status=0)

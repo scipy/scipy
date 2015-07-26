@@ -301,7 +301,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         if termination_status is not None:
             active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
             return OptimizeResult(
-                x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
+                x=x, cost=cost, fun=f, jac=J, grad=g, optimality=g_norm,
                 active_mask=active_mask, nfev=nfev, njev=njev,
                 status=termination_status)
 
@@ -447,5 +447,5 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
     return OptimizeResult(
-        x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
+        x=x, cost=cost, fun=f, jac=J, grad=g, optimality=g_norm,
         active_mask=active_mask, nfev=nfev, njev=njev, status=0)
