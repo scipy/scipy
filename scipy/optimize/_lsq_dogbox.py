@@ -294,6 +294,9 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             if scaling == 'jac':
                 scale, scale_inv = compute_jac_scaling(J, scale)
+        else:
+            step_norm = 0
+            actual_reduction = 0
 
         iteration += 1
 

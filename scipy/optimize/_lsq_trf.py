@@ -438,10 +438,12 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             if scaling == 'jac':
                 scale, scale_inv = compute_jac_scaling(J, scale)
-
-        elif nfev == max_nfev:  # Recompute J if algorithm is terminating.
-            J = jac(x, f)
-            # Don't increase njev, because it's the implementation detail.
+        else:
+            step_norm = 0
+            actual_reduction = 0
+            if nfev == max_nfev:  # Recompute J if algorithm is terminating.
+                J = jac(x, f)
+                # Don't increase njev, because it's the implementation detail.
 
         iteration += 1
 
