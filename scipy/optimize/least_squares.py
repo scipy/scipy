@@ -639,12 +639,18 @@ def least_squares(
         result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
                               max_nfev, scaling, diff_step)
 
-    if method == 'trf':
+    elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
                      gtol, max_nfev, scaling, tr_solver, tr_options.copy(),
                      verbose)
 
     elif method == 'dogbox':
+        if tr_solver == 'lsmr' and 'regularize' in tr_options:
+            warn("The keyword 'regularize' in `tr_options` is not relevant "
+                 "for 'dogbox' method.")
+            tr_options = tr_options.copy()
+            del tr_options['regularize']
+
         result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
                         xtol, gtol, max_nfev, scaling, tr_solver, tr_options,
                         verbose)

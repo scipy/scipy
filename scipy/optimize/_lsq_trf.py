@@ -272,7 +272,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         J_augmented = np.empty((m + n, n))
     elif tr_solver == 'lsmr':
         reg_term = 0.0
-        regularize = tr_options.pop("regularize", True)
+        regularize = tr_options.pop('regularize', True)
 
     if max_nfev is None:
         max_nfev = x0.size * 100
