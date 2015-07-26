@@ -9,33 +9,16 @@ from scipy.optimize import least_squares
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 from scipy.optimize._lsq_common import (
-    prepare_bounds, in_bounds, step_size_to_bound, find_active_constraints,
-    make_strictly_feasible, scaling_vector, intersect_trust_region,
-    build_quadratic_1d, minimize_quadratic_1d, evaluate_quadratic)
+    step_size_to_bound, find_active_constraints, make_strictly_feasible,
+    intersect_trust_region, build_quadratic_1d, minimize_quadratic_1d,
+    evaluate_quadratic)
+from scipy.optimize._lsq_trf import scaling_vector
 
 
 # Tests of functions from ._lsq_common.
 
 
 class TestBounds(object):
-    def test_prepare_bounds(self):
-        bounds = (
-            1.0,
-            [2.0, 3.0, 4.0]
-        )
-        x0 = np.zeros(3)
-        lb, ub = prepare_bounds(bounds, x0)
-        assert_equal(lb, np.ones(3))
-        assert_equal(ub, np.array([2.0, 3.0, 4.0]))
-
-    def test_in_bounds(self):
-        lb = -np.ones(3)
-        ub = np.ones(3)
-        x1 = np.array([-0.1, 1.0, 0.0])
-        x2 = np.array([1.5, 0.1, -0.5])
-        assert_(in_bounds(x1, lb, ub))
-        assert_(not in_bounds(x2, lb, ub))
-
     def test_step_size_to_bounds(self):
         lb = np.array([-1.0, 2.5, 10.0])
         ub = np.array([1.0, 5.0, 100.0])

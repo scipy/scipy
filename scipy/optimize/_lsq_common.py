@@ -351,18 +351,6 @@ def evaluate_quadratic(J, g, s, diag=None):
 # Utility functions to work with bound constraints.
 
 
-def prepare_bounds(bounds, x0):
-    """Prepare bounds for usage in algorithms."""
-    lb, ub = [np.asarray(b, dtype=float) for b in bounds]
-    if lb.ndim == 0:
-        lb = np.resize(lb, x0.shape)
-
-    if ub.ndim == 0:
-        ub = np.resize(ub, x0.shape)
-
-    return lb, ub
-
-
 def in_bounds(x, lb, ub):
     """Check if a point lies within bounds."""
     return np.all((x >= lb) & (x <= ub))
@@ -461,53 +449,6 @@ def make_strictly_feasible(x, lb, ub, rstep=1e-10):
     x_new[tight_bounds] = 0.5 * (lb[tight_bounds] + ub[tight_bounds])
 
     return x_new
-
-
-def scaling_vector(x, g, lb, ub):
-    """Compute a scaling vector and its derivatives as described in papers
-    of Coleman and Li [1]_.
-
-    Components of a vector v are defined as follows:
-    ::
-
-               | ub[i] - x[i], if g[i] < 0 and ub[i] < np.inf
-        v[i] = | x[i] - lb[i], if g[i] > 0 and lb[i] > -np.inf
-               | 1,           otherwise
-
-    According to this definition v[i] >= 0 for all i. It differs from the
-    definition in paper [1]_ (eq. (2.2)), where the absolute value of v is
-    used. Both definitions are equivalent down the line.
-
-    Derivatives of v with respect to x take value 1, -1 or 0 depending on a
-    case.
-
-    Returns
-    -------
-    v : ndarray with shape of x
-        Scaling vector.
-    dv : ndarray with shape of x
-        Derivatives of v[i] with respect to x[i], diagonal elements of v's
-        Jacobian.
-
-    References
-    ----------
-    .. [1] Branch, M.A., T.F. Coleman, and Y. Li, "A Subspace, Interior,
-           and Conjugate Gradient Method for Large-Scale Bound-Constrained
-           Minimization Problems," SIAM Journal on Scientific Computing,
-           Vol. 21, Number 1, pp 1-23, 1999.
-    """
-    v = np.ones_like(x)
-    dv = np.zeros_like(x)
-
-    mask = (g < 0) & np.isfinite(ub)
-    v[mask] = ub[mask] - x[mask]
-    dv[mask] = -1
-
-    mask = (g > 0) & np.isfinite(lb)
-    v[mask] = x[mask] - lb[mask]
-    dv[mask] = 1
-
-    return v, dv
 
 
 # Functions to display algorithm's progress.

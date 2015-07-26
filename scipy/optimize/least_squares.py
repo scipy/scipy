@@ -11,26 +11,11 @@ from ._numdiff import approx_derivative, group_columns
 from ..sparse import issparse, csr_matrix
 from ..sparse.linalg import LinearOperator
 
-from ._lsq_common import EPS, in_bounds, prepare_bounds
+from ._lsq_common import EPS, in_bounds
 from ._lsq_trf import trf
 from ._lsq_dogbox import dogbox
 
 __all__ = ['least_squares']
-
-
-def check_tolerance(ftol, xtol, gtol):
-    message = "{} is too low, setting to machine epsilon {}."
-    if ftol < EPS:
-        warn(message.format("`ftol`", EPS))
-        ftol = EPS
-    if xtol < EPS:
-        warn(message.format("`xtol`", EPS))
-        xtol = EPS
-    if gtol < EPS:
-        warn(message.format("`gtol`", EPS))
-        gtol = EPS
-
-    return ftol, xtol, gtol
 
 
 TERMINATION_MESSAGES = {
@@ -44,14 +29,14 @@ TERMINATION_MESSAGES = {
 
 
 FROM_MINPACK_TO_COMMON = {
-    0: -1,  # 0 improper input parameters for MINPACK.
+    0: -1,  # Improper input parameters from MINPACK.
     1: 2,
     2: 3,
     3: 4,
     4: 1,
     5: 0
     # There are 6, 7, 8 for too small tolerance parameters,
-    # but we guard against them by checking ftol, xtol, gtol beforehand.
+    # but we guard against it by checking ftol, xtol, gtol beforehand.
 }
 
 
@@ -104,6 +89,32 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     return OptimizeResult(
         x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
         active_mask=active_mask, nfev=nfev, njev=njev, status=status)
+
+
+def prepare_bounds(bounds, x0):
+    lb, ub = [np.asarray(b, dtype=float) for b in bounds]
+    if lb.ndim == 0:
+        lb = np.resize(lb, x0.shape)
+
+    if ub.ndim == 0:
+        ub = np.resize(ub, x0.shape)
+
+    return lb, ub
+
+
+def check_tolerance(ftol, xtol, gtol):
+    message = "{} is too low, setting to machine epsilon {}."
+    if ftol < EPS:
+        warn(message.format("`ftol`", EPS))
+        ftol = EPS
+    if xtol < EPS:
+        warn(message.format("`xtol`", EPS))
+        xtol = EPS
+    if gtol < EPS:
+        warn(message.format("`gtol`", EPS))
+        gtol = EPS
+
+    return ftol, xtol, gtol
 
 
 def check_scaling(scaling, x0):
