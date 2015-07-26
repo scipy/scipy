@@ -180,7 +180,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     if verbose == 2:
         print_header()
 
-    while nfev < max_nfev:
+    while True:
         active_set = on_bound * g < 0
         free_set = ~active_set
 
@@ -200,6 +200,9 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 x=x, fun=f, jac=J, cost=cost, optimality=g_norm,
                 active_mask=on_bound, nfev=nfev, njev=njev,
                 status=termination_status)
+
+        if nfev == max_nfev:
+            break
 
         x_free = x[free_set]
         lb_free = lb[free_set]

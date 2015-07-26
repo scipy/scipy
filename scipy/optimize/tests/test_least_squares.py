@@ -419,6 +419,25 @@ class BaseMixin(object):
         assert_(res.status > 0)
         assert_(res.success)
 
+    def test_full_result_single_fev(self):
+        # MINPACK checks the number of nfev after the iteration,
+        # so it's hard to tell what he is going to compute.
+        if self.method == 'lm':
+            return
+
+        res = least_squares(fun_trivial, 2.0, method=self.method,
+                            max_nfev=1)
+        assert_equal(res.x, np.array([2]))
+        assert_equal(res.cost, 40.5)
+        assert_equal(res.fun, np.array([9]))
+        assert_equal(res.jac, np.array([[4]]))
+        assert_equal(res.optimality, 36)
+        assert_equal(res.active_mask, np.array([0]))
+        assert_equal(res.nfev, 1)
+        assert_equal(res.njev, 1)
+        assert_equal(res.status, 0)
+        assert_equal(res.success, 0)
+
     def test_rosenbrock(self):
         x0 = [-2, 1]
         x_opt = [1, 1]

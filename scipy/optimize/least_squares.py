@@ -524,6 +524,9 @@ def least_squares(
     if len(bounds) != 2:
         raise ValueError("`bounds` must contain 2 elements.")
 
+    if max_nfev is not None and max_nfev <= 0:
+        raise ValueError("`max_nfev` must be None or positive integer.")
+
     x0 = np.atleast_1d(x0).astype(float)
 
     if x0.ndim > 1:
