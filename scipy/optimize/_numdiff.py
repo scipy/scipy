@@ -115,7 +115,7 @@ def _prepare_bounds(bounds, x0):
     return lb, ub
 
 
-def group_columns(A, order=None):
+def group_columns(A, order=0):
     """Group columns of a 2-d matrix for sparse finite differencing [1]_.
 
     Two columns are in the same group if in each row at least one of them
@@ -125,10 +125,11 @@ def group_columns(A, order=None):
     ----------
     A : array_like or sparse matrix, shape (m, n)
         Matrix of which to group columns.
-    order : None, iterable of int with shape (n,) or int
+    order : int, iterable of int with shape (n,) or None
         Permutation array which defines the order of columns enumeration.
-        If None (default), the order will be random. If int, the order will
-        be random, but `order` will be used as a random seed.
+        If int or None, a random permutation is used with `order` used as
+        a random seed. Default is 0, that is use a random permutation but
+        guarantee repeatability.
 
     Returns
     -------
@@ -156,8 +157,8 @@ def group_columns(A, order=None):
     m, n = A.shape
 
     if order is None or np.isscalar(order):
-        np.random.seed(order)
-        order = np.random.permutation(n)
+        rng = np.random.RandomState(order)
+        order = rng.permutation(n)
     else:
         order = np.asarray(order)
         if order.shape != (n,):

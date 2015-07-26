@@ -35,9 +35,9 @@ def test_group_columns():
         groups = group_columns(A, order)
         assert_equal(groups, groups_true)
 
-    # Test seed repeatability.
-    groups_1 = group_columns(A, 0)
-    groups_2 = group_columns(A, 0)
+    # Test repeatability.
+    groups_1 = group_columns(A)
+    groups_2 = group_columns(A)
     assert_equal(groups_1, groups_2)
 
 
