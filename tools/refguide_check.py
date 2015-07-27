@@ -228,57 +228,54 @@ def is_deprecated(f):
             pass
         return False
 
-def report(all_dict, names, deprecated, others, module_name):
-    """Print out a report for the module"""
-
-    print("\n\n" + "=" * len(module_name))
-    print(module_name)
-    print("=" * len(module_name) + "\n")
-
+def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     num_all = len(all_dict)
     num_ref = len(names)
-    print("Non-deprecated objects in __all__: %i" % num_all)
-    print("Objects in refguide: %i" % num_ref)
+
+    output = ""
+
+    output += "Non-deprecated objects in __all__: %i\n" % num_all
+    output += "Objects in refguide: %i\n\n" % num_ref
 
     only_all, only_ref, missing = compare(all_dict, others, names, module_name)
     dep_in_ref = set(only_ref).intersection(deprecated)
     only_ref = set(only_ref).difference(deprecated)
 
     if len(dep_in_ref) > 0:
-        print("")
-        print("Deprecated objects in refguide::\n")
+        output += "Deprecated objects in refguide::\n\n"
         for name in sorted(deprecated):
-            print("    " + name)
+            output += "    " + name + "\n"
 
     if len(only_all) == len(only_ref) == len(missing) == 0:
-        print("\nNo missing or extraneous items!")
-        return True
+        if dots:
+            output_dot('.')
+        return [(None, True, output)]
     else:
         if len(only_all) > 0:
-            print("")
-            print("ERROR: objects in %s.__all__ but not in refguide::\n" % module_name)
+            output += "ERROR: objects in %s.__all__ but not in refguide::\n\n" % module_name
             for name in sorted(only_all):
-                print("    " + name)
+                output += "    " + name + "\n"
 
         if len(only_ref) > 0:
-            print("")
-            print("ERROR: objects in refguide but not in %s.__all__::\n" % module_name)
+            output += "ERROR: objects in refguide but not in %s.__all__::\n\n" % module_name
             for name in sorted(only_ref):
-                print("    " + name)
+                output += "    " + name + "\n"
 
         if len(missing) > 0:
-            print("")
-            print("ERROR: missing objects::\n")
+            output += "ERROR: missing objects::\n\n"
             for name in sorted(missing):
-                print("    " + name)
+                output += "    " + name + "\n"
 
-        return False
+        if dots:
+            output_dot('F')
+        return [(None, False, output)]
 
 
-def validate_rst_syntax(text, name):
+def validate_rst_syntax(text, name, dots=True):
     if text is None:
-        print("ERROR: %s: no documentation" % (name,))
-        return False
+        if dots:
+            output_dot('E')
+        return False, "ERROR: %s: no documentation" % (name,)
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
@@ -311,7 +308,8 @@ def validate_rst_syntax(text, name):
     # Print errors, disregarding unimportant ones
     error_msg = error_stream.getvalue()
     errors = error_msg.split(token)
-    has_errors = False
+    success = True
+    output = ""
 
     for error in errors:
         lines = error.splitlines()
@@ -323,37 +321,47 @@ def validate_rst_syntax(text, name):
             if m.group(1) in ok_unknown_items:
                 continue
 
-        print(name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip())
-        has_errors = True
+        output += name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip() + "\n"
+        success = False
 
-    if has_errors:
-        print("    " + "-"*72)
+    if not success:
+        output += "    " + "-"*72 + "\n"
         for lineno, line in enumerate(text.splitlines()):
-            print("    %-4d    %s" % (lineno, line))
-        print("    " + "-"*72 + "\n")
+            output += "    %-4d    %s\n" % (lineno, line)
+        output += "    " + "-"*72 + "\n\n"
 
-    return not has_errors
+    if dots:
+        output_dot('.' if success else 'F')
+    return success, output
 
 
-def check_rest(module, names):
+def output_dot(msg='.', stream=sys.stderr):
+    stream.write(msg)
+    stream.flush()
+
+
+def check_rest(module, names, dots=True):
     """
     Check reStructuredText formatting of docstrings
+
+    Returns: [(name, success_flag, output), ...]
     """
 
     skip_types = (dict, str, unicode, float, int)
-    success = True
+
+    results = []
 
     if module.__name__[6:] not in OTHER_MODULE_DOCS:
-        success = validate_rst_syntax(inspect.getdoc(module),
-                                      module.__name__)
+        results += [(module.__name__,) +
+                    validate_rst_syntax(inspect.getdoc(module),
+                                        module.__name__, dots=dots)]
 
     for name in names:
         full_name = module.__name__ + '.' + name
         obj = getattr(module, name, None)
 
         if obj is None:
-            print("ERROR: %s has no docstring" % (full_name,))
-            success = False
+            results.append((full_name, False, "%s has no docstring" % (full_name,)))
             continue
         elif isinstance(obj, skip_types):
             continue
@@ -361,7 +369,14 @@ def check_rest(module, names):
         if inspect.ismodule(obj):
             text = inspect.getdoc(obj)
         else:
-            text = str(get_doc_object(obj))
+            try:
+                text = str(get_doc_object(obj))
+            except:
+                import traceback
+                results.append((full_name, False,
+                                "Error in docstring format!\n" +
+                                traceback.format_exc()))
+                continue
 
         try:
             src_file = short_path(inspect.getsourcefile(obj))
@@ -369,16 +384,19 @@ def check_rest(module, names):
             src_file = None
 
         if src_file:
-            full_name = src_file + ':' + full_name
+            file_full_name = src_file + ':' + full_name
+        else:
+            file_full_name = full_name
 
-        if not validate_rst_syntax(text, full_name):
-            success = False
+        results.append((full_name,) + validate_rst_syntax(text, file_full_name, dots=dots))
 
-    return success
+    return results
 
 
-def check_docstrings(module, verbose):
+def check_doctests(module, verbose, dots=True, doctest_warnings=False):
     """Check code in docstrings of the module's public symbols.
+
+    Returns: list of [(item_name, success_flag, output), ...]
     """
     # the namespace to run examples in
     ns = {'np': np,
@@ -406,12 +424,6 @@ def check_docstrings(module, verbose):
     except ImportError:
         have_matplotlib = False
 
-
-    def format_item_header(name):
-        msg = "ERROR: " + name
-        return "\n\n" + msg + "\n" + "-" * len(msg)
-
-
     class DTRunner(doctest.DocTestRunner):
         DIVIDER = "\n"
 
@@ -422,7 +434,6 @@ def check_docstrings(module, verbose):
 
         def _report_item_name(self, out, new_line=False):
             if self._item_name is not None:
-                out(format_item_header(self._item_name))
                 if new_line:
                     out("\n")
                 self._item_name = None
@@ -532,6 +543,8 @@ def check_docstrings(module, verbose):
             return np.allclose(want, got, atol=self.atol, rtol=self.rtol)
 
     # Loop over non-deprecated items
+    results = []
+
     all_success = True
     for name in get_all_dict(module)[0]:
         full_name = module.__name__ + '.' + name
@@ -543,9 +556,9 @@ def check_docstrings(module, verbose):
             obj = getattr(module, name)
         except AttributeError:
             import traceback
-            print(format_item_header(full_name))
-            print("Missing item!")
-            print(traceback.format_exc())
+            results.append((full_name, False,
+                            "Missing item!\n" +
+                            traceback.format_exc()))
             continue
 
         finder = doctest.DocTestFinder()
@@ -553,20 +566,35 @@ def check_docstrings(module, verbose):
             tests = finder.find(obj, name, globs=dict(ns))
         except:
             import traceback
-            print(format_item_header(full_name))
-            print("Failed to get doctests:")
-            print(traceback.format_exc())
+            results.append((full_name, False,
+                            "Failed to get doctests!\n" +
+                            traceback.format_exc()))
             continue
 
         flags = NORMALIZE_WHITESPACE | ELLIPSIS | IGNORE_EXCEPTION_DETAIL
         runner = DTRunner(full_name, checker=Checker(), optionflags=flags,
                           verbose=verbose)
 
+        output = []
+        success = True
+        def out(msg):
+            output.append(msg)
+
+        class MyStderr(object):
+            """Redirect stderr to the current stdout"""
+            def write(self, msg):
+                if doctest_warnings:
+                    sys.stdout.write(msg)
+                else:
+                    out(msg)
+
         # Run tests, trying to restore global state afterward
         old_printoptions = np.get_printoptions()
         old_errstate = np.seterr()
+        old_stderr = sys.stderr
         cwd = os.getcwd()
         tmpdir = tempfile.mkdtemp()
+        sys.stderr = MyStderr()
         try:
             os.chdir(tmpdir)
 
@@ -575,23 +603,26 @@ def check_docstrings(module, verbose):
 
             for t in tests:
                 t.filename = short_path(t.filename, cwd)
-                fails, successes = runner.run(t)
+                fails, successes = runner.run(t, out=out)
                 if fails > 0:
+                    success = False
                     all_success = False
 
             if have_matplotlib:
                 plt.close('all')
         finally:
+            sys.stderr = old_stderr
             os.chdir(cwd)
             shutil.rmtree(tmpdir)
             np.set_printoptions(**old_printoptions)
             np.seterr(**old_errstate)
 
-    if not verbose and all_success:
-        # Print at least a success message if no other output was produced
-        print("\nAll doctests pass!")
+        if dots:
+            output_dot('.' if success else 'F')
 
-    return all_success
+        results.append((full_name, success, "".join(output)))
+
+    return results
 
 
 def main(argv):
@@ -599,7 +630,9 @@ def main(argv):
     parser.add_argument("module_names", metavar="SUBMODULES", default=list(PUBLIC_SUBMODULES),
                         nargs='*', help="Submodules to check (default: all public)")
     parser.add_argument("--doctests", action="store_true", help="Run also doctests")
-    parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+    parser.add_argument("--doctest-warnings", action="store_true",
+                        help="Enforce warning checking for doctests")
     args = parser.parse_args(argv)
 
     modules = []
@@ -625,24 +658,72 @@ def main(argv):
         if submodule_name in args.module_names:
             modules.append(module)
 
+    dots = True
     success = True
+    results = []
+
+    print("Running checks for %d modules:" % (len(modules),))
 
     for module in modules:
+        if dots:
+            if module is not modules[0]:
+                sys.stderr.write(' ')
+            sys.stderr.write(module.__name__ + ' ')
+            sys.stderr.flush()
+
         all_dict, deprecated, others = get_all_dict(module)
         names = names_dict.get(module.__name__, set())
-        ok = report(all_dict, names, deprecated, others, module.__name__)
-        success = success and ok
 
-        ok = check_rest(module, set(names).difference(deprecated))
-        success = success and ok
-
+        mod_results = []
+        mod_results += check_items(all_dict, names, deprecated, others, module.__name__)
+        mod_results += check_rest(module, set(names).difference(deprecated),
+                                  dots=dots)
         if args.doctests:
-            ok = check_docstrings(module, args.verbose)
-            success = success and ok
+            mod_results += check_doctests(module, (args.verbose >= 2), dots=dots,
+                                          doctest_warnings=args.doctest_warnings)
 
-    if success:
+        for v in mod_results:
+            assert isinstance(v, tuple), v
+
+        results.append((module, mod_results))
+
+    if dots:
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+
+    # Report results
+    all_success = True
+
+    for module, mod_results in results:
+        success = all(x[1] for x in mod_results)
+        all_success = all_success and success
+
+        if success and args.verbose == 0:
+            continue
+
+        print("")
+        print("=" * len(module.__name__))
+        print(module.__name__)
+        print("=" * len(module.__name__))
+        print("")
+
+        for name, success, output in mod_results:
+            if name is None:
+                if not success or args.verbose >= 1:
+                    print(output.strip())
+                    print("")
+            elif not success or (args.verbose >= 2 and output.strip()):
+                print(name)
+                print("-"*len(name))
+                print("")
+                print(output.strip())
+                print("")
+
+    if all_success:
+        print("\nOK: refguide and doctests checks passed!")
         sys.exit(0)
     else:
+        print("\nERROR: refguide or doctests have errors")
         sys.exit(1)
 
 
