@@ -124,7 +124,10 @@ struct nodeinfo {
     nodeinfo           *next;
     nodeinfo           *prev;
     const ckdtreenode  *node;
-    npy_float64        side_distances[1]; // the good old struct hack       
+    npy_float64        *mins; // the good old struct hack       
+    npy_float64        *maxes; // the good old struct hack       
+    npy_float64        *side_distances; // the good old struct hack       
+    npy_float64        buf[1]; // the good old struct hack       
 };        
 
 /*
@@ -138,16 +141,18 @@ struct nodeinfo_pool {
    
     npy_intp alloc_size;
     npy_intp arena_size;
+    npy_intp m;
     char *arena;
     char *arena_ptr;
     
     nodeinfo_pool(npy_intp m) {
-        alloc_size = sizeof(nodeinfo) + (m-1)*sizeof(npy_float64);
+        alloc_size = sizeof(nodeinfo) + (3 * m -1)*sizeof(npy_float64);
         alloc_size = 64*(alloc_size/64)+64;
         arena_size = 4096*((64*alloc_size)/4096)+4096;
         arena = new char[arena_size];
         arena_ptr = arena;
         pool.push_back(arena);
+        this->m = m;
     }
     
     ~nodeinfo_pool() {
@@ -165,12 +170,49 @@ struct nodeinfo_pool {
             pool.push_back(arena);
         }
         ni = (nodeinfo*)arena_ptr;
+        ni->maxes = &ni->buf[0];
+        ni->mins = &ni->buf[this->m];
+        ni->side_distances = &ni->buf[2 * this->m];
         arena_ptr += alloc_size;
         return ni;
     }
+    inline nodeinfo *dup(nodeinfo * ni) {
+        nodeinfo * ni_new = this->allocate();
+        memcpy(ni_new, ni, this->alloc_size);
+        ni_new->maxes = &ni_new->buf[0];
+        ni_new->mins = &ni_new->buf[this->m];
+        ni_new->side_distances = &ni_new->buf[2 * this->m];
+        return ni_new;
+    }
 };
 
+static inline npy_float64 side_distance_from_min_max(
+    const npy_float64 x,
+    const npy_float64 min,
+    const npy_float64 max,
+    const npy_float64 p,
+    const npy_float64 infinity) {
+    npy_float64 s, t;
+    s = 0; 
+    t = x - max;
+    if (t > s) {
+        s = t;
+    } else {
+        t = min - x;
+        if (t > s) s = t;
+    }
 
+    printf("sdfmm: s %g t %g x %g min %g max %g\n", s, t, x, min, max);
+    if (NPY_UNLIKELY(p == 1 || p == infinity)) {
+        s = dabs(s);
+    } else if (NPY_LIKELY(p == 2)) {
+        s = s * s;
+    } else {
+        s = std::pow(s,p);
+    }
+        
+    return s;
+}
 // k-nearest neighbor search for a single point x
 static void 
 __query_single_point(const ckdtree *self, 
@@ -205,35 +247,31 @@ __query_single_point(const ckdtree *self,
     heap neighbors(k);
     
     npy_intp      i, m = self->m;
-    npy_float64   t;
     nodeinfo      *inf;
-    nodeinfo      *inf2;
+    nodeinfo      *inf1, *inf2;
     npy_float64   d;
     npy_float64   epsfac;
     npy_float64   min_distance;
-    npy_float64   far_min_distance;
+    npy_float64   inf1_min_distance;
+    npy_float64   inf2_min_distance;
     heapitem      it, it2, neighbor;
     const ckdtreenode   *node;
     const ckdtreenode   *inode;
-    const ckdtreenode   *near;
-    const ckdtreenode   *far;
     
-    // set up first nodeifo
+    // set up first nodeinfo
     inf = nipool.allocate();
     inf->node = self->ctree;
-    
+
+    // buffer for temparory nodeinfo
+    inf1 = nipool.allocate();
+    inf2 = nipool.allocate();
+ 
     for (i=0; i<m; ++i) {
-        inf->side_distances[i] = 0;
-        t = x[i] - self->raw_maxes[i];
-        if (t > inf->side_distances[i])
-            inf->side_distances[i] = t;
-        else {
-            t = self->raw_mins[i] - x[i];
-            if (t > inf->side_distances[i])
-                inf->side_distances[i] = t;
-        }
-        if ((p != 1) &&  (p != infinity))
-            inf->side_distances[i] = std::pow(inf->side_distances[i],p);
+        inf->mins[i] = self->raw_mins[i];
+        inf->maxes[i] = self->raw_maxes[i];
+
+        inf->side_distances[i] = side_distance_from_min_max(
+            x[i], inf->mins[i], inf->maxes[i], p, infinity);
     }
     
     // compute first distance
@@ -319,77 +357,99 @@ __query_single_point(const ckdtree *self,
                 // since this is the nearest cell, we're done, bail out 
                 break;
             }
-            // set up children for searching
-            if (x[inode->split_dim] < inode->split) {
-                near = inode->less;
-                far = inode->greater;
-            } 
-            else {
-                near = inode->greater;
-                far = inode->less;
+            
+            for(i = 0; i < self->m; i ++) {
+                inf1->mins[i] = inf->mins[i];
+                inf1->maxes[i] = inf->maxes[i];
+                inf1->side_distances[i] = inf->side_distances[i];
+                inf2->mins[i] = inf->mins[i];
+                inf2->maxes[i] = inf->maxes[i];
+                inf2->side_distances[i] = inf->side_distances[i];
             }
+            
+            printf("split : %g dim: %d\n", inode->split, inode->split_dim);
+            // set up children for searching
+            // inf2 will be pushed to the queue
+            inf1->maxes[inode->split_dim] = inode->split;
+            inf1->node = inode->less;
+            inf2->mins[inode->split_dim] = inode->split;
+            inf2->node = inode->greater;
             /*
              * near child is at the same distance as the current node
              * we're going here next, so no point pushing it on the queue
              * no need to recompute the distance or the side_distances
              */
-            inf->node = near;
+            inf1->side_distances[inode->split_dim] = 
+                side_distance_from_min_max(
+                    x[inode->split_dim],
+                    inf1->mins[inode->split_dim],
+                    inf1->maxes[inode->split_dim],
+                    p, infinity);
+
+            inf2->side_distances[inode->split_dim] = 
+                side_distance_from_min_max(
+                    x[inode->split_dim],
+                    inf2->mins[inode->split_dim],
+                    inf2->maxes[inode->split_dim],
+                    p, infinity);
 
             /*
              * far child is further by an amount depending only
              * on the split value; compute its distance and side_distances
              * and push it on the queue if it's near enough
              */
-            inf2 = nipool.allocate();
-            inf2->node = far;
             
-            it2.contents.ptrdata = (void*) inf2;
-            
-            // most side distances unchanged
-            for (i=0; i<m; ++i) {
-                inf2->side_distances[i] = inf->side_distances[i];
-            }
-
             /*
              * one side distance changes
              * we can adjust the minimum distance without recomputing
              */
-            if (NPY_LIKELY(p==2.)) {
-                /* 
-                 * Euclidian distances is the more likely, so speed up
-                 * access to this option
-                 */
-                npy_float64 tmp = inode->split - x[inode->split_dim];
-                inf2->side_distances[inode->split_dim] = tmp*tmp;
-                far_min_distance = min_distance - 
-                    inf->side_distances[inode->split_dim] +
-                        inf2->side_distances[inode->split_dim];
-            } 
-            else if (p == infinity) {
+            if (NPY_UNLIKELY(p == infinity)) {
                 /*
                  * we never use side_distances in the l_infinity case
                  * so skip filling it in
                  * inf2->side_distances[inode->split_dim] = dabs(inode->split-x[inode->split_dim])
                  */
-                far_min_distance = dmax(min_distance, dabs(inode->split-x[inode->split_dim]));
-            } 
-            else if (p == 1.) {
-                inf2->side_distances[inode->split_dim] = dabs(inode->split-x[inode->split_dim]);
-                far_min_distance = min_distance - 
-                    inf->side_distances[inode->split_dim] + 
-                        inf2->side_distances[inode->split_dim];
-            } 
-            else {
-                inf2->side_distances[inode->split_dim] = std::pow(dabs(inode->split - 
-                                                            x[inode->split_dim]),p);
-                far_min_distance = min_distance - 
-                    inf->side_distances[inode->split_dim] +
-                        inf2->side_distances[inode->split_dim];
+                inf1_min_distance = dmax(min_distance, dabs(inf1->side_distances[inode->split_dim]));
+                inf2_min_distance = dmax(min_distance, dabs(inf2->side_distances[inode->split_dim]));
+            } else {
+                inf1_min_distance = min_distance -
+                        inf->side_distances[inode->split_dim];
+                        + inf1->side_distances[inode->split_dim];
+                inf2_min_distance = min_distance -
+                        inf->side_distances[inode->split_dim];
+                        + inf2->side_distances[inode->split_dim];
             }
-            it2.priority = far_min_distance;
-            // far child might be too far, if so, don't bother pushing it
-            if (far_min_distance<=distance_upper_bound*epsfac)
-                q.push(it2);
+
+            printf("sd inf1: %g inf2: %g inf: %g\n", inf1->side_distances[inode->split_dim], 
+                                                     inf2->side_distances[inode->split_dim],
+                                                     inf->side_distances[inode->split_dim]
+                        );
+            printf("inf1: %g inf2: %g inf: %g\n", inf1_min_distance, inf2_min_distance, min_distance);
+
+            if (inf1_min_distance > inf2_min_distance) {
+                // any of the children might be too far, if so, don't bother pushing it
+                nodeinfo * tmp;
+                tmp = inf;
+                inf = inf2;
+                inf2 = tmp;
+                min_distance = inf2_min_distance;
+                if (inf1_min_distance<=distance_upper_bound*epsfac) {
+                    it2.priority = inf1_min_distance;
+                    it2.contents.ptrdata = (void*) nipool.dup(inf1);
+                    q.push(it2);
+                }
+            } else {
+                nodeinfo * tmp;
+                tmp = inf;
+                inf = inf1;
+                inf1 = tmp;
+                min_distance = inf1_min_distance;
+                if (inf2_min_distance<=distance_upper_bound*epsfac) {
+                    it2.priority = inf2_min_distance;
+                    it2.contents.ptrdata = (void*) nipool.dup(inf2);
+                    q.push(it2);
+                }
+            }
         }
     }
     // fill output arrays with sorted neighbors 
