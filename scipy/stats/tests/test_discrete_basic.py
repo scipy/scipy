@@ -12,10 +12,17 @@ from common_tests import (check_normalization, check_moment, check_mean_expect,
 from scipy.stats._distr_params import distdiscrete
 knf = npt.dec.knownfailureif
 
+vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
+distdiscrete += [[stats.rv_discrete(values=vals), ()]]
+
 
 def test_discrete_basic():
     for distname, arg in distdiscrete:
-        distfn = getattr(stats, distname)
+        try:
+            distfn = getattr(stats, distname)
+        except TypeError:
+            distfn = distname
+            distname = 'sample distribution'
         np.random.seed(9765456)
         rvs = distfn.rvs(size=2000, *arg)
         supp = np.unique(rvs)
@@ -35,7 +42,11 @@ def test_discrete_basic():
         if distname in seen:
             continue
         seen.add(distname)
-        distfn = getattr(stats,distname)
+        try:
+            distfn = getattr(stats, distname)
+        except TypeError:
+            distfn = distname
+            distname = 'sample distribution'
         locscale_defaults = (0,)
         meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
@@ -43,7 +54,8 @@ def test_discrete_basic():
         spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
         k = spec_k.get(distname, 1)
         yield check_named_args, distfn, k, arg, locscale_defaults, meths
-        yield check_scale_docstring, distfn
+        if distname != 'sample distribution':
+            yield check_scale_docstring, distfn
         yield check_random_state_property, distfn, arg
 
         # Entropy
@@ -54,7 +66,11 @@ def test_discrete_basic():
 
 def test_moments():
     for distname, arg in distdiscrete:
-        distfn = getattr(stats,distname)
+        try:
+            distfn = getattr(stats, distname)
+        except TypeError:
+            distfn = distname
+            distname = 'sample distribution'
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
         yield check_normalization, distfn, arg, distname
 
@@ -86,7 +102,7 @@ def check_cdf_ppf(distfn, arg, supp, msg):
 
 
 def check_pmf_cdf(distfn, arg, distname):
-    startind = np.int(distfn.ppf(0.01, *arg) - 1)
+    startind = int(distfn.ppf(0.01, *arg) - 1)
     index = list(range(startind, startind + 10))
     cdfs, pmfs_cum = distfn.cdf(index,*arg), distfn.pmf(index, *arg).cumsum()
 

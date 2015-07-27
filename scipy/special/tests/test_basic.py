@@ -1786,7 +1786,7 @@ class TestHyper(TestCase):
 
         # complex input
         x = special.hyp0f1(3.0, np.array([-1.5, -1, 0, 1, 1.5]) + 0.j)
-        assert_allclose(x, expected.astype(np.complex), rtol=1e-12)
+        assert_allclose(x, expected.astype(complex), rtol=1e-12)
 
         # test broadcasting
         x1 = [0.5, 1.5, 2.5]

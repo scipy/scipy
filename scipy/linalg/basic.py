@@ -822,7 +822,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     # get optimal work array
     work = gelss(a1, b1, lwork=-1)[4]
-    lwork = work[0].real.astype(np.int)
+    lwork = work[0].real.astype(int)
     v, x, s, rank, work, info = gelss(
         a1, b1, cond=cond, lwork=lwork, overwrite_a=overwrite_a,
         overwrite_b=overwrite_b)

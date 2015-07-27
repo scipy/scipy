@@ -874,7 +874,7 @@ def value(key):
     codata : Contains the description of `physical_constants`, which, as a
         dictionary literal object, does not itself possess a docstring.
 
-        Examples
+    Examples
     --------
     >>> from scipy.constants import codata
     >>> codata.value('elementary charge')

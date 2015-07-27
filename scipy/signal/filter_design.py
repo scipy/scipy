@@ -19,11 +19,12 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'iirfilter', 'butter', 'cheby1', 'cheby2', 'ellip', 'bessel',
            'band_stop_obj', 'buttord', 'cheb1ord', 'cheb2ord', 'ellipord',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
-           'filter_dict', 'band_dict', 'BadCoefficients',
+           'BadCoefficients',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay']
 
 
 class BadCoefficients(UserWarning):
+    """Warning about badly conditioned filter coefficients"""
     pass
 
 abs = absolute
@@ -54,7 +55,8 @@ def findfreqs(num, den, N):
 
         H(s) = s / (s^2 + 8s + 25)
 
-    >>> findfreqs([1, 0], [1, 8, 25], N=9)
+    >>> from scipy import signal
+    >>> signal.findfreqs([1, 0], [1, 8, 25], N=9)
     array([  1.00000000e-02,   3.16227766e-02,   1.00000000e-01,
              3.16227766e-01,   1.00000000e+00,   3.16227766e+00,
              1.00000000e+01,   3.16227766e+01,   1.00000000e+02])
@@ -1600,7 +1602,7 @@ def _zpklp2lp(z, p, k, wo=1.0):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
-    wo = float(wo)  # Avoid np.int wraparound
+    wo = float(wo)  # Avoid int wraparound
 
     degree = _relative_degree(z, p)
 

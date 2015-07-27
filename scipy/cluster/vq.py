@@ -524,14 +524,14 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     >>> whitened = whiten(features)
     >>> book = array((whitened[0],whitened[2]))
     >>> kmeans(whitened,book)
-    (array([[ 2.3110306 ,  2.86287398],
+    (array([[ 2.3110306 ,  2.86287398],    # random
            [ 0.93218041,  1.24398691]]), 0.85684700941625547)
 
     >>> from numpy import random
     >>> random.seed((1000,2000))
     >>> codes = 3
     >>> kmeans(whitened,codes)
-    (array([[ 2.3110306 ,  2.86287398],
+    (array([[ 2.3110306 ,  2.86287398],    # random
            [ 1.32544402,  0.65607529],
            [ 0.40782893,  2.02786907]]), 0.5196582527686241)
 

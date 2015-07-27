@@ -134,6 +134,8 @@ class UnivariateSpline(object):
     with ``nan`` . A workaround is to use zero weights for not-a-number
     data points:
 
+    >>> from scipy.interpolate import UnivariateSpline
+    >>> x, y = np.array([1, 2, 3, 4]), np.array([1, np.nan, 3, 4])
     >>> w = np.isnan(y)
     >>> y[w] = 0.
     >>> spl = UnivariateSpline(x, y, w=~w)

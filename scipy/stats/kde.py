@@ -203,7 +203,7 @@ class gaussian_kde(object):
                     self.d)
                 raise ValueError(msg)
 
-        result = zeros((m,), dtype=np.float)
+        result = zeros((m,), dtype=float)
 
         if m >= self.n:
             # there are more points than data, so loop over data

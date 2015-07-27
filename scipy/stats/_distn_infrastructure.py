@@ -220,6 +220,7 @@ equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
 
 _doc_default = ''.join([_doc_default_longsummary,
                         _doc_allmethods,
+                        '\n',
                         _doc_default_example])
 
 _doc_default_before_notes = ''.join([_doc_default_longsummary,

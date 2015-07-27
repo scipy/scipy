@@ -52,7 +52,7 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q/16.0)
 
     def test_integer_even(self):
-        x = np.zeros(16, dtype=np.int)
+        x = np.zeros(16, dtype=int)
         x[0] = 1
         f, p = periodogram(x)
         assert_allclose(f, np.linspace(0, 0.5, 9))
@@ -63,7 +63,7 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q)
 
     def test_integer_odd(self):
-        x = np.zeros(15, dtype=np.int)
+        x = np.zeros(15, dtype=int)
         x[0] = 1
         f, p = periodogram(x)
         assert_allclose(f, np.arange(8.0)/15.0)
@@ -73,7 +73,7 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q, atol=1e-15)
 
     def test_integer_twosided(self):
-        x = np.zeros(16, dtype=np.int)
+        x = np.zeros(16, dtype=int)
         x[0] = 1
         f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(16, 1.0))
@@ -257,7 +257,7 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_even(self):
-        x = np.zeros(16, dtype=np.int)
+        x = np.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8)
@@ -267,7 +267,7 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_odd(self):
-        x = np.zeros(16, dtype=np.int)
+        x = np.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=9)
@@ -277,7 +277,7 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
-        x = np.zeros(16, dtype=np.int)
+        x = np.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
@@ -539,7 +539,7 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_even(self):
-        x = np.zeros(16, dtype=np.int)
+        x = np.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8)
@@ -549,7 +549,7 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_onesided_odd(self):
-        x = np.zeros(16, dtype=np.int)
+        x = np.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
@@ -559,7 +559,7 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
-        x = np.zeros(16, dtype=np.int)
+        x = np.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = csd(x, x, nperseg=8, return_onesided=False)

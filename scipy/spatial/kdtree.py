@@ -31,6 +31,7 @@ def minkowski_distance_p(x, y, p=2):
 
     Examples
     --------
+    >>> from scipy.spatial import minkowski_distance_p
     >>> minkowski_distance_p([[0,0],[0,0]], [[1,1],[0,1]])
     array([2, 1])
 
@@ -60,6 +61,7 @@ def minkowski_distance(x, y, p=2):
 
     Examples
     --------
+    >>> from scipy.spatial import minkowski_distance
     >>> minkowski_distance([[0,0],[0,0]], [[1,1],[0,1]])
     array([ 1.41421356,  1.        ])
 
@@ -79,8 +81,8 @@ class Rectangle(object):
     """
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""
-        self.maxes = np.maximum(maxes,mins).astype(np.float)
-        self.mins = np.minimum(maxes,mins).astype(np.float)
+        self.maxes = np.maximum(maxes,mins).astype(float)
+        self.mins = np.minimum(maxes,mins).astype(float)
         self.m, = self.maxes.shape
 
     def __repr__(self):
@@ -482,17 +484,17 @@ class KDTree(object):
         retshape = np.shape(x)[:-1]
         if retshape != ():
             if k is None:
-                dd = np.empty(retshape,dtype=np.object)
-                ii = np.empty(retshape,dtype=np.object)
+                dd = np.empty(retshape,dtype=object)
+                ii = np.empty(retshape,dtype=object)
             elif k > 1:
-                dd = np.empty(retshape+(k,),dtype=np.float)
+                dd = np.empty(retshape+(k,),dtype=float)
                 dd.fill(np.inf)
-                ii = np.empty(retshape+(k,),dtype=np.int)
+                ii = np.empty(retshape+(k,),dtype=int)
                 ii.fill(self.n)
             elif k == 1:
-                dd = np.empty(retshape,dtype=np.float)
+                dd = np.empty(retshape,dtype=float)
                 dd.fill(np.inf)
-                ii = np.empty(retshape,dtype=np.int)
+                ii = np.empty(retshape,dtype=int)
                 ii.fill(self.n)
             else:
                 raise ValueError("Requested %s nearest neighbors; acceptable numbers are integers greater than or equal to one, or None")
@@ -521,9 +523,9 @@ class KDTree(object):
                 else:
                     return np.inf, self.n
             elif k > 1:
-                dd = np.empty(k,dtype=np.float)
+                dd = np.empty(k,dtype=float)
                 dd.fill(np.inf)
-                ii = np.empty(k,dtype=np.int)
+                ii = np.empty(k,dtype=int)
                 ii.fill(self.n)
                 for j in range(len(hits)):
                     dd[j], ii[j] = hits[j]
@@ -604,7 +606,7 @@ class KDTree(object):
             return self.__query_ball_point(x, r, p, eps)
         else:
             retshape = x.shape[:-1]
-            result = np.empty(retshape, dtype=np.object)
+            result = np.empty(retshape, dtype=object)
             for c in np.ndindex(retshape):
                 result[c] = self.__query_ball_point(x[c], r, p=p, eps=eps)
             return result
@@ -941,6 +943,7 @@ def distance_matrix(x, y, p=2, threshold=1000000):
 
     Examples
     --------
+    >>> from scipy.spatial import distance_matrix
     >>> distance_matrix([[0,0],[0,1]], [[1,0],[1,1]])
     array([[ 1.        ,  1.41421356],
            [ 1.41421356,  1.        ]])
@@ -958,7 +961,7 @@ def distance_matrix(x, y, p=2, threshold=1000000):
     if m*n*k <= threshold:
         return minkowski_distance(x[:,np.newaxis,:],y[np.newaxis,:,:],p)
     else:
-        result = np.empty((m,n),dtype=np.float)  # FIXME: figure out the best dtype
+        result = np.empty((m,n),dtype=float)  # FIXME: figure out the best dtype
         if m < n:
             for i in range(m):
                 result[i,:] = minkowski_distance(x[i],y,p)

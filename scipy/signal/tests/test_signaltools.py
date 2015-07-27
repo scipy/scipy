@@ -138,7 +138,7 @@ class _TestConvolve2d(TestCase):
 
     def test_valid_mode_complx(self):
         e = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
-        f = np.array([[1, 2, 3], [3, 4, 5]], dtype=np.complex) + 1j
+        f = np.array([[1, 2, 3], [3, 4, 5]], dtype=complex) + 1j
         g = convolve2d(e, f, 'valid')
         h = array([[62.+24.j, 80.+30.j, 98.+36.j, 116.+42.j, 134.+48.j]])
         assert_array_almost_equal(g, h)
@@ -418,7 +418,7 @@ class TestMedFilt(TestCase):
              [32, 61, 88, 7, 39, 4, 92, 64, 45, 61]]
 
         d = signal.medfilt(f, [7, 3])
-        e = signal.medfilt2d(np.array(f, np.float), [7, 3])
+        e = signal.medfilt2d(np.array(f, float), [7, 3])
         assert_array_equal(d, [[0, 50, 50, 50, 42, 15, 15, 18, 27, 0],
                                [0, 50, 50, 50, 50, 42, 19, 21, 29, 0],
                                [50, 50, 50, 50, 50, 47, 34, 34, 46, 35],
@@ -959,7 +959,7 @@ def _get_testcorrelate_class(datatype, base):
     return TestCorrelateX
 
 
-for datatype in [np.ubyte, np.byte, np.ushort, np.short, np.uint, np.int,
+for datatype in [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
                  np.ulonglong, np.ulonglong, np.float32, np.float64,
                  np.longdouble, Decimal]:
     cls = _get_testcorrelate_class(datatype, _TestCorrelateReal)

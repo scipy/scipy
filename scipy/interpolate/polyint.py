@@ -166,6 +166,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
         Examples
         --------
+        >>> from scipy.interpolate import KroghInterpolator
         >>> KroghInterpolator([0,0,0],[1,2,3]).derivatives(0)
         array([1.0,2.0,3.0])
         >>> KroghInterpolator([0,0,0],[1,2,3]).derivatives([0,0])
@@ -265,6 +266,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     To produce a polynomial that is zero at 0 and 1 and has
     derivative 2 at 0, call
 
+    >>> from scipy.interpolate import KroghInterpolator
     >>> KroghInterpolator([0,0,1],[0,2,0])
 
     This constructs the quadratic 2*X**2-2*X. The derivative condition
@@ -274,6 +276,8 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     For another example, given xi, yi, and a derivative ypi for each
     point, appropriate arrays can be constructed as:
 
+    >>> xi = np.linspace(0, 1, 5)
+    >>> yi, ypi = np.random.rand(2, 5)
     >>> xi_k, yi_k = np.repeat(xi, 2), np.ravel(np.dstack((yi,ypi)))
     >>> KroghInterpolator(xi_k, yi_k)
 

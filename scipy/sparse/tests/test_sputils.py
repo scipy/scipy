@@ -19,7 +19,7 @@ class TestSparseUtils(TestCase):
     def test_getdtype(self):
         A = np.array([1],dtype='int8')
 
-        assert_equal(sputils.getdtype(None,default=float),np.float)
+        assert_equal(sputils.getdtype(None,default=float),float)
         assert_equal(sputils.getdtype(None,a=A),np.int8)
 
     def test_isscalarlike(self):

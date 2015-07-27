@@ -23,6 +23,7 @@ Sparse matrix classes
    dia_matrix - Sparse matrix with DIAgonal storage
    dok_matrix - Dictionary Of Keys based sparse matrix
    lil_matrix - Row-based linked list sparse matrix
+   spmatrix - Sparse matrix base class
 
 Functions
 ---------
@@ -45,7 +46,7 @@ Building sparse matrices:
    hstack - Stack sparse matrices horizontally (column wise)
    vstack - Stack sparse matrices vertically (row wise)
    rand - Random values in a given shape
-   norm - Return norm of a sparse matrix
+   random - Random values in a given shape
 
 Sparse matrix tools:
 

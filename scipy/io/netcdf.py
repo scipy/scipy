@@ -159,14 +159,14 @@ class netcdf_file(object):
     --------
     To create a NetCDF file:
 
-        >>> from scipy.io import netcdf
-        >>> f = netcdf.netcdf_file('simple.nc', 'w')
-        >>> f.history = 'Created for a test'
-        >>> f.createDimension('time', 10)
-        >>> time = f.createVariable('time', 'i', ('time',))
-        >>> time[:] = np.arange(10)
-        >>> time.units = 'days since 2008-01-01'
-        >>> f.close()
+    >>> from scipy.io import netcdf
+    >>> f = netcdf.netcdf_file('simple.nc', 'w')
+    >>> f.history = 'Created for a test'
+    >>> f.createDimension('time', 10)
+    >>> time = f.createVariable('time', 'i', ('time',))
+    >>> time[:] = np.arange(10)
+    >>> time.units = 'days since 2008-01-01'
+    >>> f.close()
 
     Note the assignment of ``range(10)`` to ``time[:]``.  Exposing the slice
     of the time variable allows for the data to be set in the object, rather
@@ -174,38 +174,39 @@ class netcdf_file(object):
 
     To read the NetCDF file we just created:
 
-        >>> from scipy.io import netcdf
-        >>> f = netcdf.netcdf_file('simple.nc', 'r')
-        >>> print(f.history)
-        Created for a test
-        >>> time = f.variables['time']
-        >>> print(time.units)
-        days since 2008-01-01
-        >>> print(time.shape)
-        (10,)
-        >>> print(time[-1])
-        9
+    >>> from scipy.io import netcdf
+    >>> f = netcdf.netcdf_file('simple.nc', 'r')
+    >>> print(f.history)
+    Created for a test
+    >>> time = f.variables['time']
+    >>> print(time.units)
+    days since 2008-01-01
+    >>> print(time.shape)
+    (10,)
+    >>> print(time[-1])
+    9
 
     NetCDF files, when opened read-only, return arrays that refer
     directly to memory-mapped data on disk:
 
-        >>> data = time[:]
-        >>> data.base.base
-        <mmap.mmap object at 0x7fe753763180>
+    >>> data = time[:]
+    >>> data.base.base
+    <mmap.mmap object at 0x7fe753763180>
 
     If the data is to be processed after the file is closed, it needs
     to be copied to main memory:
 
-        >>> data = time[:].copy()
-        >>> f.close()
-        >>> data.mean()
+    >>> data = time[:].copy()
+    >>> f.close()
+    >>> data.mean()
+    4.5
 
     A NetCDF file can also be used as context manager:
 
-        >>> from scipy.io import netcdf
-        >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
-        ...     print(f.history)
-        Created for a test
+    >>> from scipy.io import netcdf
+    >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
+    ...     print(f.history)
+    Created for a test
 
     """
     def __init__(self, filename, mode='r', mmap=None, version=1):

@@ -16,6 +16,13 @@ import struct
 import warnings
 
 
+__all__ = [
+    'WavFileWarning',
+    'read',
+    'write'
+]
+
+
 class WavFileWarning(UserWarning):
     pass
 

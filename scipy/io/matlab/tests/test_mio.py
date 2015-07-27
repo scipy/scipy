@@ -455,7 +455,7 @@ def test_regression_653():
     back = loadmat(sio)['d']
     # Check we got an empty struct equivalent
     assert_equal(back.shape, (1,1))
-    assert_equal(back.dtype, np.dtype(np.object))
+    assert_equal(back.dtype, np.dtype(object))
     assert_(back[0,0] is None)
 
 
@@ -678,7 +678,7 @@ def test_empty_struct():
     d = loadmat(filename, struct_as_record=True)
     a = d['a']
     assert_equal(a.shape, (1,1))
-    assert_equal(a.dtype, np.dtype(np.object))
+    assert_equal(a.dtype, np.dtype(object))
     assert_(a[0,0] is None)
     stream = BytesIO()
     arr = np.array((), dtype='U')
@@ -696,7 +696,7 @@ def test_save_empty_dict():
     d = loadmat(stream)
     a = d['arr']
     assert_equal(a.shape, (1,1))
-    assert_equal(a.dtype, np.dtype(np.object))
+    assert_equal(a.dtype, np.dtype(object))
     assert_(a[0,0] is None)
 
 
@@ -905,7 +905,7 @@ def test_read_both_endian():
         fp.close()
         assert_array_equal(d['strings'],
                            np.array([['hello'],
-                                     ['world']], dtype=np.object))
+                                     ['world']], dtype=object))
         assert_array_equal(d['floats'],
                            np.array([[2., 3.],
                                      [3., 4.]], dtype=np.float32))
@@ -1081,6 +1081,8 @@ def test_loadmat_varnames():
         assert_equal(set(vars.keys()), set(['theta'] + sys_v_names))
         vars = loadmat(eg_file, variable_names=('theta',))
         assert_equal(set(vars.keys()), set(['theta'] + sys_v_names))
+        vars = loadmat(eg_file, variable_names=[])
+        assert_equal(set(vars.keys()), set(sys_v_names))
         vnames = ['theta']
         vars = loadmat(eg_file, variable_names=vnames)
         assert_equal(vnames, ['theta'])

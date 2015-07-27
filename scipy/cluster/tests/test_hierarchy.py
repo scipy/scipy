@@ -301,7 +301,7 @@ class TestIsValidLinkage(object):
     def test_is_valid_linkage_int_type(self):
         # Tests is_valid_linkage(Z) with integer type.
         Z = np.asarray([[0, 1, 3.0, 2],
-                        [3, 2, 4.0, 3]], dtype=np.int)
+                        [3, 2, 4.0, 3]], dtype=int)
         assert_(is_valid_linkage(Z) == False)
         assert_raises(TypeError, is_valid_linkage, Z, throw=True)
 
@@ -364,7 +364,7 @@ class TestIsValidInconsistent(object):
     def test_is_valid_im_int_type(self):
         # Tests is_valid_im(R) with integer type.
         R = np.asarray([[0, 1, 3.0, 2],
-                        [3, 2, 4.0, 3]], dtype=np.int)
+                        [3, 2, 4.0, 3]], dtype=int)
         assert_(is_valid_im(R) == False)
         assert_raises(TypeError, is_valid_im, R, throw=True)
 

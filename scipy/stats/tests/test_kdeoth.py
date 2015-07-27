@@ -98,7 +98,7 @@ class _kde_subclass4(stats.gaussian_kde):
 
 
 def test_gaussian_kde_subclassing():
-    x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
+    x1 = np.array([-7, -5, 1, 4, 5], dtype=float)
     xs = np.linspace(-10, 10, num=50)
 
     # gaussian_kde itself
@@ -136,7 +136,7 @@ def test_gaussian_kde_subclassing():
 
 
 def test_gaussian_kde_covariance_caching():
-    x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
+    x1 = np.array([-7, -5, 1, 4, 5], dtype=float)
     xs = np.linspace(-10, 10, num=5)
     # These expected values are from scipy 0.10, before some changes to
     # gaussian_kde.  They were not compared with any external reference.
@@ -156,7 +156,7 @@ def test_gaussian_kde_monkeypatch():
     specifically the linked ML thread "Width of the Gaussian in stats.kde".
     If it is necessary to break this later on, that is to be discussed on ML.
     """
-    x1 = np.array([-7, -5, 1, 4, 5], dtype=np.float)
+    x1 = np.array([-7, -5, 1, 4, 5], dtype=float)
     xs = np.linspace(-10, 10, num=50)
 
     # The old monkeypatched version to get at Silverman's Rule.

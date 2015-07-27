@@ -408,8 +408,8 @@ class TestDelaunay(object):
 
             tri.vertices.sort()
 
-            assert_equal(tri.vertices, np.arange(nd+1, dtype=np.int)[None,:])
-            assert_equal(tri.neighbors, -1 + np.zeros((nd+1), dtype=np.int)[None,:])
+            assert_equal(tri.vertices, np.arange(nd+1, dtype=int)[None,:])
+            assert_equal(tri.neighbors, -1 + np.zeros((nd+1), dtype=int)[None,:])
 
     def test_2d_square(self):
         # simple smoke test: 2d square

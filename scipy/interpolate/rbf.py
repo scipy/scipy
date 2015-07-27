@@ -262,13 +262,17 @@ class Rbf(object):
     `n`-vector of the data from which to interpolate, the interpolant
     `s` is created with
 
+    >>> from scipy.interpolate import Rbf
+    >>> x, y, z, f = np.random.rand(4, 50)
     >>> s = Rbf(x, y, z, f)
 
     One can then evaluate the interpolant at arbitrary points
     `xi`, `yi`, `zi` with
 
+    >>> xi = yi = zi = np.linspace(0, 1, 20)
     >>> si = s(xi, yi, zi)
-
+    >>> di.shape
+    (20,)
     """
 
     def _euclidean_norm(self, x1, x2):

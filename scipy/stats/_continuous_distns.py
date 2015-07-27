@@ -775,13 +775,17 @@ class chi_gen(rv_continuous):
         return sqrt(chi2.rvs(df, size=sz, random_state=rndm))
 
     def _pdf(self, x, df):
-        return x**(df-1.)*exp(-x*x*0.5)/(2.0)**(df*0.5-1)/gam(df*0.5)
+        return np.exp(self._logpdf(x, df))
+
+    def _logpdf(self, x, df):
+        l = np.log(2) - .5*np.log(2)*df - special.gammaln(.5*df)
+        return l + special.xlogy(df-1.,x) - .5*x**2
 
     def _cdf(self, x, df):
-        return special.gammainc(df*0.5, 0.5*x*x)
+        return special.gammainc(.5*df, .5*x**2)
 
     def _ppf(self, q, df):
-        return sqrt(2*special.gammaincinv(df*0.5, q))
+        return sqrt(2*special.gammaincinv(.5*df, q))
 
     def _stats(self, df):
         mu = sqrt(2)*special.gamma(df/2.0+0.5)/special.gamma(df/2.0)
@@ -995,7 +999,7 @@ class expon_gen(rv_continuous):
     for ``x >= 0``.
 
     %(after_notes)s
-    
+
     A common parameterization for `expon` is in terms of the rate parameter
     ``lambda``, such that ``pdf = lambda * exp(-lambda * x)``. This
     parameterization corresponds to using ``scale = 1 / lambda``.
@@ -1048,7 +1052,7 @@ class exponnorm_gen(rv_continuous):
     The probability density function for `exponnorm` is::
 
         exponnorm.pdf(x, K) = 1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc(-(x - 1/K) / sqrt(2))
-           
+
     where the shape parameter ``K > 0``.
 
     It can be thought of as the sum of a normally distributed random
@@ -2040,22 +2044,21 @@ class gengamma_gen(rv_continuous):
         return (a > 0) & (c != 0)
 
     def _pdf(self, x, a, c):
-        return exp(self._logpdf(x, a, c))
+        return np.exp(self._logpdf(x, a, c))
 
     def _logpdf(self, x, a, c):
-        return log(abs(c)) + special.xlogy(c*a - 1, x) - x**c - gamln(a)
+        return np.log(abs(c)) + special.xlogy(c*a - 1, x) - x**c - special.gammaln(a)
 
     def _cdf(self, x, a, c):
-        val = special.gammainc(a, x**c)
-        cond = c + 0*val
-        return where(cond > 0, val, 1-val)
+        xc = x**c
+        val1 = special.gammainc(a, xc)
+        val2 = special.gammaincc(a, xc)
+        return np.where(c > 0, val1, val2)
 
     def _ppf(self, q, a, c):
         val1 = special.gammaincinv(a, q)
-        val2 = special.gammaincinv(a, 1.0-q)
-        ic = 1.0/c
-        cond = c+0*val1
-        return where(cond > 0, val1**ic, val2**ic)
+        val2 = special.gammainccinv(a, q)
+        return np.where(c > 0, val1, val2)**(1.0/c)
 
     def _munp(self, n, a, c):
         # Pochhammer symbol: poch(a,n) = gamma(a+n)/gamma(a)
@@ -2063,7 +2066,7 @@ class gengamma_gen(rv_continuous):
 
     def _entropy(self, a, c):
         val = special.psi(a)
-        return a*(1-val) + 1.0/c*val + gamln(a)-log(abs(c))
+        return a*(1-val) + 1.0/c*val + special.gammaln(a) - np.log(abs(c))
 gengamma = gengamma_gen(a=0.0, name='gengamma')
 
 
@@ -2986,9 +2989,11 @@ class lognorm_gen(rv_continuous):
 
     %(after_notes)s
 
-    If ``log(x)`` is normally distributed with mean ``mu`` and variance
-    ``sigma**2``, then ``x`` is log-normally distributed with shape parameter
-    sigma and scale parameter ``exp(mu)``.
+    A common parametrization for a lognormal random variable ``Y`` is in
+    terms of the mean, ``mu``, and standard deviation, ``sigma``, of the
+    unique normally distributed random variable ``X`` such that exp(X) = Y.
+    This parametrization corresponds to setting ``s = sigma`` and ``scale =
+    exp(mu)``.
 
     %(example)s
 

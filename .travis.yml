@@ -15,6 +15,27 @@ matrix:
       script:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
         - pep8 scipy benchmarks/benchmarks
+    - python: 2.7
+      env:
+        - TESTMODE=fast
+        - REFGUIDE_CHECK=1
+        - COVERAGE=
+        - NPY_RELAXED_STRIDES_CHECKING=1
+        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.9.1"
+      addons:
+        apt:
+          packages:
+            - libatlas-dev
+            - libatlas-base-dev
+            - liblapack-dev
+            - gfortran
+            - libgmp-dev
+            - libmpfr-dev
+            - ccache
+            - libfreetype6-dev
+            - libpng-dev
+            - zlib1g-dev
+            - texlive-fonts-recommended
     - python: 3.4
       env:
         - TESTMODE=fast
@@ -40,27 +61,6 @@ matrix:
         - TESTMODE=fast
         - OPTIMIZE=-OO
         - NUMPYSPEC="numpy==1.6.2"
-    - python: 2.7
-      env:
-        - TESTMODE=fast
-        - REFGUIDE_CHECK=1
-        - COVERAGE=
-        - NPY_RELAXED_STRIDES_CHECKING=1
-        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.9.1"
-      addons:
-        apt:
-          packages:
-            - libatlas-dev
-            - libatlas-base-dev
-            - liblapack-dev
-            - gfortran
-            - libgmp-dev
-            - libmpfr-dev
-            - ccache
-            - libfreetype6-dev
-            - libpng-dev
-            - zlib1g-dev
-            - texlive-fonts-recommended
 addons:
   apt:
     packages:
@@ -97,12 +97,12 @@ before_install:
   # Speed up install by not compiling Cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython==0.22
   - travis_retry pip install $NUMPYSPEC
-  - travis_retry pip install nose mpmath argparse
+  - travis_retry pip install nose mpmath argparse Pillow
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
-        travis_retry pip install matplotlib
+        travis_retry pip install matplotlib Sphinx
     fi
   - python -V
   - popd
@@ -113,9 +113,8 @@ script:
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" = "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
   - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE  |& tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
+  - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py --refguide-check; fi
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
   email: false
-after_success:
-  - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py --refguide-check; fi

@@ -376,7 +376,7 @@ def safe_float(x):
     if '?' in x:
         return np.nan
     else:
-        return np.float(x)
+        return float(x)
 
 
 def safe_nominal(value, pvalue):
@@ -438,14 +438,16 @@ class MetaData(object):
 
     Examples
     --------
-    data, meta = loadarff('iris.arff')
-    # This will print the attributes names of the iris.arff dataset
-    for i in meta:
-        print i
-    # This works too
-    meta.names()
-    # Getting attribute type
-    types = meta.types()
+    ::
+
+        data, meta = loadarff('iris.arff')
+        # This will print the attributes names of the iris.arff dataset
+        for i in meta:
+            print i
+        # This works too
+        meta.names()
+        # Getting attribute type
+        types = meta.types()
 
     Notes
     -----
@@ -539,6 +541,31 @@ def loadarff(f):
     read files with missing data (? in the file), representing the data
     points as NaNs.
 
+    Examples
+    --------
+    >>> from scipy.io import arff
+    >>> from cStringIO import StringIO
+    >>> content = \"\"\"
+    ... @relation foo
+    ... @attribute width  numeric
+    ... @attribute height numeric
+    ... @attribute color  {red,green,blue,yellow,black}
+    ... @data
+    ... 5.0,3.25,blue
+    ... 4.5,3.75,green
+    ... 3.0,4.00,red
+    ... \"\"\"
+    >>> f = StringIO(content)
+    >>> data, meta = arff.loadarff(f)
+    >>> data
+    array([(5.0, 3.25, 'blue'), (4.5, 3.75, 'green'), (3.0, 4.0, 'red')],
+          dtype=[('width', '<f8'), ('height', '<f8'), ('color', '|S6')])
+    >>> meta
+    Dataset: foo
+    \twidth's type is numeric
+    \theight's type is numeric
+    \tcolor's type is nominal, range is ('red', 'green', 'blue', 'yellow', 'black')
+
     """
     if hasattr(f, 'read'):
         ofile = f
@@ -575,7 +602,7 @@ def _loadarff(ofile):
 
     # This can be used once we want to support integer as integer values and
     # not as numeric anymore (using masked arrays ?).
-    acls2dtype = {'real': np.float, 'integer': np.float, 'numeric': np.float}
+    acls2dtype = {'real': float, 'integer': float, 'numeric': float}
     acls2conv = {'real': safe_float, 'integer': safe_float, 'numeric': safe_float}
     descr = []
     convertors = []

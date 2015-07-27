@@ -206,7 +206,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     if lwork is None or lwork == -1:
         # get optimal work array size
         result = gges(lambda x: None, a1, b1, lwork=-1)
-        lwork = result[-2][0].real.astype(np.int)
+        lwork = result[-2][0].real.astype(int)
 
     if sort is None:
         sort_t = 0

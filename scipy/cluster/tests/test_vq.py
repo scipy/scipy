@@ -120,7 +120,7 @@ class TestVq(TestCase):
         assert_raises(TypeError, _vq.vq, a, b)
 
     def test__vq_invalid_type(self):
-        a = np.array([1, 2], dtype=np.int)
+        a = np.array([1, 2], dtype=int)
         assert_raises(TypeError, _vq.vq, a, a)
 
     def test_vq_large_nfeat(self):

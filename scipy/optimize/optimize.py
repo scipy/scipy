@@ -610,7 +610,7 @@ def approx_fprime(xk, f, epsilon, *args):
 
     >>> x = np.ones(2)
     >>> c0, c1 = (1, 200)
-    >>> eps = np.sqrt(np.finfo(np.float).eps)
+    >>> eps = np.sqrt(np.finfo(float).eps)
     >>> optimize.approx_fprime(x, func, [eps, np.sqrt(200) * eps], c0, c1)
     array([   2.        ,  400.00004198])
 
@@ -1060,13 +1060,13 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     >>> x0 = np.asarray((0, 0))  # Initial guess.
     >>> from scipy import optimize
     >>> res1 = optimize.fmin_cg(f, x0, fprime=gradf, args=args)
-    >>> print('res1 = ', res1)
     Optimization terminated successfully.
              Current function value: 1.617021
              Iterations: 2
              Function evaluations: 5
              Gradient evaluations: 5
-    res1 =  [-1.80851064 -0.25531915]
+    >>> res1
+    array([-1.80851064, -0.25531915])
 
     Example 2: solve the same problem using the `minimize` function.
     (This `myopts` dictionary shows all of the available options,
@@ -1086,7 +1086,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             Function evaluations: 5
             Gradient evaluations: 5
     >>> res2.x  # minimum found
-    array([-1.80851064 -0.25531915])
+    array([-1.80851064, -0.25531915])
 
     """
     opts = {'gtol': gtol,

@@ -54,6 +54,9 @@ def fixed_quad(func,a,b,args=(),n=5):
     -------
     val : float
         Gaussian quadrature approximation to the integral
+    none : None
+        Statically returned value of None
+
 
     See Also
     --------

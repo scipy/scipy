@@ -285,7 +285,7 @@ class MatFile5Reader(MatFileReader):
                 process = False
             else:
                 process = True
-            if variable_names and name not in variable_names:
+            if variable_names is not None and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
             try:
@@ -300,7 +300,7 @@ class MatFile5Reader(MatFileReader):
             mdict[name] = res
             if hdr.is_global:
                 mdict['__globals__'].append(name)
-            if variable_names:
+            if variable_names is not None:
                 variable_names.remove(name)
                 if len(variable_names) == 0:
                     break
@@ -445,7 +445,7 @@ def to_writeable(source):
             return EmptyStructMarker
     # Next try and convert to an array
     narr = np.asanyarray(source)
-    if narr.dtype.type in (np.object, np.object_) and \
+    if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible
         return None

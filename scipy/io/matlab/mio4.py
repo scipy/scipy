@@ -393,12 +393,12 @@ class MatFile4Reader(MatFileReader):
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = asstr(hdr.name)
-            if variable_names and name not in variable_names:
+            if variable_names is not None and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
             mdict[name] = self.read_var_array(hdr)
             self.mat_stream.seek(next_position)
-            if variable_names:
+            if variable_names is not None:
                 variable_names.remove(name)
                 if len(variable_names) == 0:
                     break

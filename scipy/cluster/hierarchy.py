@@ -917,8 +917,8 @@ def to_tree(Z, rd=False):
 
 
 def _convert_to_bool(X):
-    if X.dtype != np.bool:
-        X = X.astype(np.bool)
+    if X.dtype != bool:
+        X = X.astype(bool)
     if not X.flags.contiguous:
         X = X.copy()
     return X
@@ -1988,18 +1988,17 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
         For example, to label singletons with their node id and
         non-singletons with their id, count, and inconsistency
-        coefficient, simply do:
+        coefficient, simply do::
 
-        >>> # First define the leaf label function.
-        >>> def llf(id):
-        ...       if id < n:
-        ...           return str(id)
-        ...       else:
-        >>>           return '[%d %d %1.2f]' % (id, count, R[n-id,3])
-        >>>
-        >>>  # The text for the leaf nodes is going to be big so force
-        >>>  # a rotation of 90 degrees.
-        >>>  dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
+            # First define the leaf label function.
+            def llf(id):
+                if id < n:
+                    return str(id)
+                else:
+                    return '[%d %d %1.2f]' % (id, count, R[n-id,3])
+            # The text for the leaf nodes is going to be big so force
+            # a rotation of 90 degrees.
+            dendrogram(Z, leaf_label_func=llf, leaf_rotation=90)
 
     show_contracted : bool, optional
         When True the heights of non-singleton nodes contracted
@@ -2010,9 +2009,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         If given, `link_color_function` is called with each non-singleton id
         corresponding to each U-shaped link it will paint. The function is
         expected to return the color to paint the link, encoded as a matplotlib
-        color string code. For example:
+        color string code. For example::
 
-        >>> dendrogram(Z, link_color_func=lambda k: colors[k])
+            dendrogram(Z, link_color_func=lambda k: colors[k])
 
         colors the direct links below each untruncated non-singleton node
         ``k`` using ``colors[k]``.

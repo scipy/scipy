@@ -861,7 +861,7 @@ lot more depth to this topic than is shown here.
 Some further reading and related software:
 
 .. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
-        J. Comp. Phys. 193, 357 (2003).
+        J. Comp. Phys. 193, 357 (2004). doi:10.1016/j.jcp.2003.08.010
 
 .. [PP] PETSc http://www.mcs.anl.gov/petsc/ and its Python bindings
         http://code.google.com/p/petsc4py/

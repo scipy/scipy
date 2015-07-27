@@ -150,7 +150,7 @@ def cascade(hk, J=7):
     m *= s2
 
     # construct the grid of points
-    x = np.arange(0, N * (1 << J), dtype=np.float) / (1 << J)
+    x = np.arange(0, N * (1 << J), dtype=float) / (1 << J)
     phi = 0 * x
 
     psi = 0 * x
@@ -336,9 +336,11 @@ def cwt(data, wavelet, widths):
 
     Notes
     -----
-    >>> length = min(10 * width[ii], len(data))
-    >>> cwt[ii,:] = scipy.signal.convolve(data, wavelet(length,
-    ...                                       width[ii]), mode='same')
+    ::
+
+        length = min(10 * width[ii], len(data))
+        cwt[ii,:] = signal.convolve(data, wavelet(length,
+                                    width[ii]), mode='same')
 
     Examples
     --------

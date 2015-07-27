@@ -27,13 +27,19 @@ class MatrixRankWarning(UserWarning):
 
 def use_solver(**kwargs):
     """
-    Valid keyword arguments with defaults (other ignored)::
+    Select default sparse direct solver to be used.
 
-      useUmfpack = True
-      assumeSortedIndices = False
+    Parameters
+    ----------
+    useUmfpack : bool, optional
+        Use UMFPACK over SuperLU. Has effect only if scikits.umfpack is
+        installed. Default: True
 
-    The default sparse solver is umfpack when available. This can be changed by
-    passing useUmfpack = False, which then causes the always present SuperLU
+    Notes
+    -----
+    The default sparse solver is umfpack when available
+    (scikits.umfpack is installed). This can be changed by passing
+    useUmfpack = False, which then causes the always present SuperLU
     based solver to be used.
 
     Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
@@ -332,14 +338,13 @@ def factorized(A):
 
     Examples
     --------
+    >>> from scipy.sparse.linalg import factorized
     >>> A = np.array([[ 3. ,  2. , -1. ],
-                      [ 2. , -2. ,  4. ],
-                      [-1. ,  0.5, -1. ]])
-
-    >>> solve = factorized( A ) # Makes LU decomposition.
-
-    >>> rhs1 = np.array([1,-2,0])
-    >>> x1 = solve( rhs1 ) # Uses the LU factors.
+    ...               [ 2. , -2. ,  4. ],
+    ...               [-1. ,  0.5, -1. ]])
+    >>> solve = factorized(A) # Makes LU decomposition.
+    >>> rhs1 = np.array([1, -2, 0])
+    >>> solve(rhs1) # Uses the LU factors.
     array([ 1., -2., -2.])
 
     """

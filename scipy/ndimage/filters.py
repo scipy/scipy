@@ -634,9 +634,9 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     on any one value, extends beyond an edge of `input`.
 
     >>> a = np.array([[1, 2, 0, 0],
-    ....    [5, 3, 0, 4],
-    ....    [0, 0, 0, 7],
-    ....    [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> k = np.array([[1,1,1],[1,1,0],[1,0,0]])
     >>> from scipy import ndimage
     >>> ndimage.convolve(a, k, mode='constant', cval=0.0)
@@ -658,9 +658,9 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     edge of `input` to fill in missing values.
 
     >>> b = np.array([[2, 0, 0],
-                      [1, 0, 0],
-                      [0, 0, 0]])
-    >>> k = np.array([[0,1,0],[0,1,0],[0,1,0]])
+    ...               [1, 0, 0],
+    ...               [0, 0, 0]])
+    >>> k = np.array([[0,1,0], [0,1,0], [0,1,0]])
     >>> ndimage.convolve(b, k, mode='reflect')
     array([[5, 0, 0],
            [3, 0, 0],
@@ -679,13 +679,13 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     `weights`.
 
     >>> c = np.array([[2, 0, 1],
-                      [1, 0, 0],
-                      [0, 0, 0]])
+    ...               [1, 0, 0],
+    ...               [0, 0, 0]])
     >>> k = np.array([[0, 1, 0],
-                      [0, 1, 0],
-                      [0, 1, 0],
-                      [0, 1, 0],
-                      [0, 1, 0]])
+    ...               [0, 1, 0],
+    ...               [0, 1, 0],
+    ...               [0, 1, 0],
+    ...               [0, 1, 0]])
     >>> ndimage.convolve(c, k, mode='nearest')
     array([[7, 0, 3],
            [5, 0, 2],

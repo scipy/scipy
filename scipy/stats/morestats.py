@@ -428,7 +428,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
     >>> x = stats.loggamma.rvs(c=2.5, size=500)
-    >>> stats.probplot(x, dist=stats.loggamma, sparams=(2.5,), plot=ax)
+    >>> res = stats.probplot(x, dist=stats.loggamma, sparams=(2.5,), plot=ax)
     >>> ax.set_title("Probplot for loggamma dist with shape parameter 2.5")
 
     Show the results with Matplotlib:
@@ -543,7 +543,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure(figsize=(8, 6))
     >>> ax = fig.add_subplot(111)
-    >>> stats.ppcc_plot(x, -5, 5, plot=ax)
+    >>> res = stats.ppcc_plot(x, -5, 5, plot=ax)
 
     We calculate the value where the shape should reach its maximum and a red
     line is drawn there. The line should coincide with the highest point in the
@@ -640,9 +640,9 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     >>> ax1 = fig.add_subplot(131)
     >>> ax2 = fig.add_subplot(132)
     >>> ax3 = fig.add_subplot(133)
-    >>> stats.probplot(x, plot=ax1)
-    >>> stats.boxcox_normplot(x, -5, 5, plot=ax2)
-    >>> stats.ppcc_plot(x, -5, 5, plot=ax3)
+    >>> res = stats.probplot(x, plot=ax1)
+    >>> res = stats.boxcox_normplot(x, -5, 5, plot=ax2)
+    >>> res = stats.ppcc_plot(x, -5, 5, plot=ax3)
     >>> ax3.vlines(-0.7, 0, 1, colors='r', label='Expected shape value')
     >>> plt.show()
 
@@ -710,7 +710,7 @@ def boxcox_llf(lmb, data):
 
     >>> x = stats.loggamma.rvs(5, loc=10, size=1000)
     >>> lmbdas = np.linspace(-2, 10)
-    >>> llf = np.zeros(lmbdas.shape, dtype=np.float)
+    >>> llf = np.zeros(lmbdas.shape, dtype=float)
     >>> for ii, lmbda in enumerate(lmbdas):
     ...     llf[ii] = stats.boxcox_llf(lmbda, x)
 
@@ -863,7 +863,7 @@ def boxcox(x, lmbda=None, alpha=None):
     >>> fig = plt.figure()
     >>> ax1 = fig.add_subplot(211)
     >>> x = stats.loggamma.rvs(5, size=500) + 5
-    >>> stats.probplot(x, dist=stats.norm, plot=ax1)
+    >>> prob = stats.probplot(x, dist=stats.norm, plot=ax1)
     >>> ax1.set_xlabel('')
     >>> ax1.set_title('Probplot against normal distribution')
 
@@ -871,7 +871,7 @@ def boxcox(x, lmbda=None, alpha=None):
 
     >>> ax2 = fig.add_subplot(212)
     >>> xt, _ = stats.boxcox(x)
-    >>> stats.probplot(xt, dist=stats.norm, plot=ax2)
+    >>> prob = stats.probplot(xt, dist=stats.norm, plot=ax2)
     >>> ax2.set_title('Probplot after Box-Cox transformation')
 
     >>> plt.show()
@@ -958,7 +958,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> stats.boxcox_normplot(x, -10, 10, plot=ax)
+    >>> prob = stats.boxcox_normplot(x, -10, 10, plot=ax)
     >>> ax.axvline(lmax_mle, color='r')
     >>> ax.axvline(lmax_pearsonr, color='g', ls='--')
 
@@ -990,7 +990,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         return optimize.brent(_eval_mle, brack=brack, args=(x,))
 
     def _all(x, brack):
-        maxlog = np.zeros(2, dtype=np.float)
+        maxlog = np.zeros(2, dtype=float)
         maxlog[0] = _pearsonr(x, brack)
         maxlog[1] = _mle(x, brack)
         return maxlog
@@ -1059,7 +1059,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     >>> x = stats.loggamma.rvs(5, size=500) + 5
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> stats.boxcox_normplot(x, -20, 20, plot=ax)
+    >>> prob = stats.boxcox_normplot(x, -20, 20, plot=ax)
 
     Determine and plot the optimal ``lmbda`` to transform ``x`` and plot it in
     the same plot:
@@ -1316,7 +1316,7 @@ def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
     for i in arange(0, k):
         s = np.sort(samples[i])
         s_ssorted_right = s.searchsorted(Zstar, side='right')
-        Mij = s_ssorted_right.astype(np.float)
+        Mij = s_ssorted_right.astype(float)
         fij = s_ssorted_right - s.searchsorted(Zstar, 'left')
         Mij -= fij / 2.
         inner = lj / float(N) * (N*Mij - Bj*n[i])**2 / (Bj*(N - Bj) - N*lj/4.)
@@ -2045,6 +2045,7 @@ def mood(x, y, axis=0):
     Examples
     --------
     >>> from scipy import stats
+    >>> np.random.seed(1234)
     >>> x2 = np.random.randn(2, 45, 6, 7)
     >>> x1 = np.random.randn(2, 30, 6, 7)
     >>> z, p = stats.mood(x1, x2, axis=1)
@@ -2061,7 +2062,7 @@ def mood(x, y, axis=0):
     >>> x1 = np.random.randn(2, 30)
     >>> x2 = np.random.randn(2, 35) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.84332354, -5.6840814 ]), array([5.11694980e-09, 1.31517628e-08]))
+    (array([-5.7178125 , -5.25342163]), array([  1.07904114e-08,   1.49299218e-07]))
 
     """
     x = np.asarray(x, dtype=float)

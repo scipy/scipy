@@ -8,7 +8,7 @@ from scipy.sparse import csr_matrix, csgraph
 
 
 def test_cs_graph_components():
-    D = np.eye(4, dtype=np.bool)
+    D = np.eye(4, dtype=bool)
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore",
