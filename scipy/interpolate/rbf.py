@@ -271,7 +271,7 @@ class Rbf(object):
 
     >>> xi = yi = zi = np.linspace(0, 1, 20)
     >>> si = s(xi, yi, zi)
-    >>> di.shape
+    >>> si.shape
     (20,)
     """
 
