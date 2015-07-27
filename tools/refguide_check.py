@@ -327,7 +327,7 @@ def validate_rst_syntax(text, name, dots=True):
     if not success:
         output += "    " + "-"*72 + "\n"
         for lineno, line in enumerate(text.splitlines()):
-            output += "    %-4d    %s\n" % (lineno, line)
+            output += "    %-4d    %s\n" % (lineno+1, line)
         output += "    " + "-"*72 + "\n\n"
 
     if dots:
