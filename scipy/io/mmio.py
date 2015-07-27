@@ -81,7 +81,7 @@ def mmread(source):
 
 def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     """
-    Writes the sparse or dense array `a` to a Matrix Market formatted file.
+    Writes the sparse or dense array `a` to the Matrix Market formatted file `target`.
 
     Parameters
     ----------
@@ -294,13 +294,24 @@ class MMFile (object):
         
         if isspmatrix(a):
             # check if number of nonzero entrys of lower and upper triangle matrix are equal
+            a = a.tocoo()
             (row, col) = a.nonzero()
             if (row < col).sum() != (row > col).sum():
                 return MMFile.SYMMETRY_GENERAL
             
+            # # Check that non-zero element indices are the same when transposed
+            # rows = a.row
+            # cols = a.col
+            # sort_rows = np.argsort(rows)
+            # rows = rows[sort_rows]
+            # cols = cols[sort_rows]
+            # sort_cols = np.argsort(cols)
+            # rows_transpose, cols_transpose = cols[sort_cols], rows[sort_cols]
+            # if np.any(rows != rows_transpose) or np.any(cols != cols_transpose)
+            #     return MMFile.SYMMETRY_GENERAL
+            
             # define iterator over symmetric pair entries
             a = a.todok()
-            
             def symm_iterator():
                 for ((i, j), aij) in a.items():
                     if i > j:
@@ -361,6 +372,27 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     def write(self, target, a, comment='', field=None, precision=None, symmetry=None):
+        """
+        Writes the sparse or dense array `a` to the Matrix Market formatted file `target`.
+        
+        Parameters
+        ----------
+        target : file
+            Matrix Market filename (extension .mtx) or open file object
+        a : array like
+            Sparse or dense 2D array
+        comment : str, optional
+            comments to be prepended to the Matrix Market file
+        field : None or str, optional
+            Either 'real', 'complex', 'pattern', or 'integer'.
+        precision : None or int, optional
+            Number of digits to display for real or complex values.
+        symmetry : None or str, optional
+            Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
+            If symmetry is None the symmetry type of 'a' is determined by its
+            values.
+        """
+        
         stream, close_it = self._open(target, 'wb')
 
         try:
