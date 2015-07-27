@@ -775,13 +775,17 @@ class chi_gen(rv_continuous):
         return sqrt(chi2.rvs(df, size=sz, random_state=rndm))
 
     def _pdf(self, x, df):
-        return x**(df-1.)*exp(-x*x*0.5)/(2.0)**(df*0.5-1)/gam(df*0.5)
+        return np.exp(self._logpdf(x, df))
+
+    def _logpdf(self, x, df):
+        l = np.log(2) - .5*np.log(2)*df - special.gammaln(.5*df)
+        return l + special.xlogy(df-1.,x) - .5*x**2
 
     def _cdf(self, x, df):
-        return special.gammainc(df*0.5, 0.5*x*x)
+        return special.gammainc(.5*df, .5*x**2)
 
     def _ppf(self, q, df):
-        return sqrt(2*special.gammaincinv(df*0.5, q))
+        return sqrt(2*special.gammaincinv(.5*df, q))
 
     def _stats(self, df):
         mu = sqrt(2)*special.gamma(df/2.0+0.5)/special.gamma(df/2.0)
