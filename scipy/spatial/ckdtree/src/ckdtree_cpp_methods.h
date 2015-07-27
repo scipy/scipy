@@ -72,6 +72,14 @@ dabs(const npy_float64 x)
         return -x;
 }
 
+inline npy_float64 
+dabs_b(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
+{
+    npy_float64 x1;
+    if (x < 0) x1 = -x;
+    if (x1 > hb) x1 = fb - x1;
+    return x1;
+}
 
 /*
  * Measuring distances
@@ -123,7 +131,7 @@ _distance_p_box(const npy_float64 *x, const npy_float64 *y,
     */
     
     npy_intp i;
-    npy_float64 r;
+    npy_float64 r, r1;
     r = 0;
     if (NPY_LIKELY(p==2.)) {
         /*
@@ -133,25 +141,46 @@ _distance_p_box(const npy_float64 *x, const npy_float64 *y,
             if (r>upperbound)
                 return r;
         }*/
-        return sqeuclidean_distance_double(x,y,k);
+        if(box->fbox == NULL) {
+            return sqeuclidean_distance_double(x,y,k);
+        } 
+        for (i=0; i<k; ++i) {
+            r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
+            r += r1 * r1;
+        }
     } 
     else if (p==infinity) {
         for (i=0; i<k; ++i) {
-            r = dmax(r,dabs(x[i]-y[i]));
+            if (box->hbox) {
+                r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
+            } else {
+                r1 = dabs(x[i] - y[i]);
+            }
+            r = dmax(r,r1);
             if (r>upperbound)
                 return r;
         }
     } 
     else if (p==1.) {
         for (i=0; i<k; ++i) {
-            r += dabs(x[i]-y[i]);
+            if (box->hbox) {
+                r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
+            } else {
+                r1 = dabs(x[i] - y[i]);
+            }
+            r += r1;
             if (r>upperbound)
                 return r;
         }
     } 
     else {
         for (i=0; i<k; ++i) {
-            r += std::pow(dabs(x[i]-y[i]),p);
+            if (box->hbox) {
+                r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
+            } else {
+                r1 = dabs(x[i] - y[i]);
+            }
+            r += std::pow(r1,p);
             if (r>upperbound)
                  return r;
         }
