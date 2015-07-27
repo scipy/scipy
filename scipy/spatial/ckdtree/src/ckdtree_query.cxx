@@ -193,6 +193,7 @@ static inline npy_float64 side_distance_from_min_max(
     const npy_float64 p,
     const npy_float64 infinity) {
     npy_float64 s, t;
+
     s = 0; 
     t = x - max;
     if (t > s) {
@@ -202,7 +203,10 @@ static inline npy_float64 side_distance_from_min_max(
         if (t > s) s = t;
     }
 
+#if 0
     printf("sdfmm: s %g t %g x %g min %g max %g\n", s, t, x, min, max);
+#endif 
+
     if (NPY_UNLIKELY(p == 1 || p == infinity)) {
         s = dabs(s);
     } else if (NPY_LIKELY(p == 2)) {
@@ -213,7 +217,6 @@ static inline npy_float64 side_distance_from_min_max(
         
     return s;
 }
-#define swap_ni(a, b) {nodeinfo * tmp; tmp = a; a = b; b = tmp;}
 
 // k-nearest neighbor search for a single point x
 static void 
@@ -369,7 +372,6 @@ __query_single_point(const ckdtree *self,
                 inf2->side_distances[i] = inf->side_distances[i];
             }
             
-            printf("split : %g dim: %d\n", inode->split, inode->split_dim);
             // set up children for searching
             // inf2 will be pushed to the queue
             inf1->maxes[inode->split_dim] = inode->split;
@@ -412,6 +414,8 @@ __query_single_point(const ckdtree *self,
                         + inf2->side_distances[inode->split_dim];
             }
 
+#define swap_ni(a, b) {nodeinfo * tmp; tmp = a; a = b; b = tmp;}
+
             /* Ensure inf1 is closer than inf2 */
             if (inf1_min_distance > inf2_min_distance) {
                 npy_float64 tmp = inf2_min_distance;
@@ -419,13 +423,14 @@ __query_single_point(const ckdtree *self,
                 inf1_min_distance = tmp;
                 swap_ni(inf1, inf2);
             }
-
+            
+#if 0
             printf("sd inf1: %g inf2: %g inf: %g\n", inf1->side_distances[inode->split_dim], 
                                                      inf2->side_distances[inode->split_dim],
                                                      inf->side_distances[inode->split_dim]
                         );
             printf("inf1: %g inf2: %g inf: %g\n", inf1_min_distance, inf2_min_distance, min_distance);
-
+#endif
             /*
              * near child is at the same or closer than the distance as the current node
              * we're going here next, so no point pushing it on the queue
