@@ -10,8 +10,8 @@ from .optimize import OptimizeResult
 from ._numdiff import approx_derivative, group_columns
 from ..sparse import issparse, csr_matrix
 from ..sparse.linalg import LinearOperator
-
-from ._lsq_common import EPS, in_bounds
+from ._lsq_common import (EPS, IMPLEMENTED_LOSSES, in_bounds,
+                          compute_loss_and_derivatives, compute_cost)
 from ._lsq_trf import trf
 from ._lsq_dogbox import dogbox
 
@@ -155,19 +155,23 @@ def check_jac_sparsity(jac_sparsity, m, n):
 
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
-        ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, scaling=1.0,
-        diff_step=None, tr_solver=None, tr_options={}, jac_sparsity=None,
-        max_nfev=None, verbose=0, args=(), kwargs={}):
-    """Minimize the sum of squares of nonlinear functions, subject to bound
-    constraints on independent variables.
+        ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, loss='linear',
+        loss_scale=1.0, scaling=1.0, diff_step=None, tr_solver=None,
+        tr_options={}, jac_sparsity=None, max_nfev=None, verbose=0, args=(),
+        kwargs={}):
+    """Minimize the robustified sum of squares of nonlinear functions, subject
+    to bound constraints on independent variables.
 
-    Let f(x) maps from R^n to R^m, `least_squares` finds a local minimum of::
+    Let f(x) be an m-dimensional function of n variables and rho(s) be a
+    scalar function, `least_squares` finds a local minimum of::
 
-        F(x) = 0.5 * ||f(x)||**2 = 0.5 * sum(f_i(x)**2, i = 1, ..., m)
-        lb <= x <= ub
+        F(x) = 0.5 * sum(rho(f_i(x)**2), i = 1, ..., m), lb <= x <= ub
 
     We call f(x) as a vector of residuals or simply residuals, and F(x) as a
     cost function or simply cost.
+
+    We call rho(s) as a loss function, its purpose to reduce the influence
+    of outliers on the solution.
 
     Partial derivatives of f with respect to x form m-by-n matrix called
     Jacobian, where an element (i, j) equals the partial derivative of f[i]
@@ -203,6 +207,7 @@ def least_squares(
         an appropriate sign to disable bounds on all or some variables.
     method : {'trf', 'dogbox', 'lm'}, optional
         Algorithm to perform minimization.
+
             * 'trf' - Trust Region Reflective algorithm, particularly suitable
               for large sparse problems with bounds. Generally robust method.
             * 'dogbox' - dogleg algorithm with rectangular trust regions,
@@ -211,6 +216,7 @@ def least_squares(
             * 'lm' - Levenberg-Marquardt algorithm as implemented in MINPACK.
               Doesn't handle bounds and sparse Jacobians. It is usually the
               most efficient method for small unconstrained problems.
+
         Default is 'trf'. See Notes for more information.
     ftol : float, optional
         Tolerance for termination by the change of the cost function.
@@ -221,14 +227,17 @@ def least_squares(
         Tolerance for termination by the change of the independent variables.
         Default is the square root of machine epsilon. The exact condition
         checked depends on the `method` used:
+
             * For 'trf' and 'dogbox': ``norm(dx) < xtol * (xtol + norm(x))``
             * For 'lm': ``Delta < xtol * norm(scaled_x)``, where ``Delta`` is
               a trust-region radius and ``scaled_x`` is the value of ``x``
               scaled according to `scaling` parameter (see below).
+
     gtol : float, optional
         Tolerance for termination by the norm of the gradient. Default is
         the square root of machine epsilon. The exact condition depends
         on a `method` used:
+
             * For 'trf' : ``norm(g_scaled, ord=np.inf) < gtol``, where
               ``g_scaled`` is the value of the gradient scaled to account for
               the presence of the bounds [STIR]_.
@@ -238,13 +247,31 @@ def least_squares(
             * For 'lm' : the maximum absolute value of the cosine of angles
               between columns of the Jacobian and the residual vector is less
               than `gtol`, or the residual vector is zero.
-    max_nfev : None or int, optional
-        Maximum number of function evaluations before the termination.
-        If None (default), the value is chosen automatically:
-            * For 'trf' and 'dogbox' : 100 * n.
-            * For 'lm':  100 * n if `jac` is callable and 100 * n * (n + 1)
-              otherwise (because 'lm' counts function calls in Jacobian
-              estimation).
+
+    loss : str or callable, optional
+        Determines the loss function. The following keyword values are allowed:
+
+            * 'linear' (default) : ``rho(z) = z``. Gives a standard
+              least-squares problem.
+            * 'soft_l1' : ``rho(z) = 2 * ((1 + z)**0.5 - 1)``. The smooth
+              approximation of l1 (absolute value) loss. Usually a good
+              choice for robust least squares.
+            * 'huber' : ``rho(z) = z if z <= 1 else z**0.5 - 1``. Works
+              similarly to 'soft_l1'.
+            * 'cauchy' : ``rho(z) = ln(1 + z)``. Severely weakens outliers
+              influence, but may cause difficulties in optimization process.
+            * 'arctan' : ``rho(z) = arctan(z)``. Limits a maximum loss on
+              a single residual, has properties similar to 'cauchy'.
+
+        If callable, it must take a 1-d ndarray ``z=f**2`` and return an
+        array_like with shape (3, m) where row 0 contains function values,
+        row 1 contains first derivatives and row 2 contains second
+        derivatives. Method 'lm' supports only 'linear' loss.
+    loss_scale : float, optional
+        Value of soft margin between inlier and outlier residuals, default
+        is 1.0. The loss function is evaluated as follows
+        ``rho_(f**2) = C**2 * rho(f**2 / C**2)``, where ``C`` is `loss_scale`,
+        and ``rho`` is determined by `loss` parameter.
     scaling : array_like or 'jac', optional
         Applies scaling to the variables to potentially improve the algorithm's
         convergence. Default is 1.0, which means no scaling. Scaling should be
@@ -257,6 +284,15 @@ def least_squares(
         If 'jac', then scaling is proportional to the norms of columns of the
         Jacobian matrix. If the algorithm converges poorly on your problem
         try using this parameter.
+    max_nfev : None or int, optional
+        Maximum number of function evaluations before the termination.
+        If None (default), the value is chosen automatically:
+
+            * For 'trf' and 'dogbox' : 100 * n.
+            * For 'lm':  100 * n if `jac` is callable and 100 * n * (n + 1)
+              otherwise (because 'lm' counts function calls in Jacobian
+              estimation).
+
     diff_step : None or array_like, optional
         Determines the relative step size for the finite difference
         approximation of the Jacobian. The actual step is computed as
@@ -266,6 +302,7 @@ def least_squares(
     tr_solver : {None, 'exact', 'lsmr'}, optional
         Method for solving trust-region subproblems, relevant only for 'trf'
         and 'dogbox' methods.
+
             * 'exact' is suitable for not very large problems with dense
               Jacobian matrices. The computational complexity per iteration is
               comparable to a singular value decomposition of the Jacobian
@@ -275,16 +312,19 @@ def least_squares(
               `scipy.sparse.linalg.lsmr` for finding a solution of a linear
               least-squares problem and only requires matrix-vector product
               evaluations.
+
         If None (default) the solver is chosen based on type of Jacobian
         returned on the first iteration.
     tr_options : dict, optional
         Keyword options passed to trust-region solver.
+
             * ``tr_solver='exact'``: `tr_options` are ignored.
             * ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
               Additionally  ``method='trf'`` supports  'regularize' option
               (bool, default is True) which adds a regularization term to the
               normal equations, which improves convergence if Jacobian is
               rank-deficient [Byrd]_ (eq. 3.4).
+
     jac_sparsity : {None, array_like, sparse matrix}, optional
         Defines the sparsity structure of the Jacobian matrix for finite
         differences. If the Jacobian has only few non-zeros in *each* row,
@@ -295,10 +335,12 @@ def least_squares(
         dense differencing will be used. Has no effect for 'lm' method.
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
+
             * 0 (default) - work silently.
             * 1 - display a termination report.
             * 2 - display progress during iterations (not supported by 'lm'
               method).
+
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)`` and the same for
@@ -314,9 +356,10 @@ def least_squares(
     fun : ndarray, shape (m,)
         Vector of residuals at the solution.
     jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
-        Jacobian matrix at the solution. The type is the same as was used by
-        the algorithm.
-    grad : ndarray, shape (n,)
+        Modified Jacobian matrix at the solution, in the sense that J^T J
+        is a Gauss-Newton approximation of the Hessian of the cost function.
+        The type is the same as was used by the algorithm.
+    grad : ndarray, shape (m,)
         Gradient of the cost function at the solution.
     optimality : float
         First-order optimality measure. In unconstrained problems it is always
@@ -325,9 +368,11 @@ def least_squares(
     active_mask : ndarray of int, shape (n,)
         Each component shows whether a corresponding constraint is active
         (that is, whether a variable is at the bound):
+
             *  0 - a constraint is not active.
             * -1 - a lower bound is active.
             *  1 - an upper bound is active.
+
         Might be somewhat arbitrary for 'trf' method as it does strictly
         feasible iterates and `active_mask` is determined within a tolerance
         threshold.
@@ -340,12 +385,14 @@ def least_squares(
         approximation is used in 'lm' method, it is set to None.
     status : int
         The reason for algorithm termination:
+
             * -1 - improper input parameters status returned from MINPACK.
             *  0 - the maximum number of function evaluations is exceeded.
             *  1 - `gtol` termination condition is satisfied.
             *  2 - `ftol` termination condition is satisfied.
             *  3 - `xtol` convergence test is satisfied.
             *  4 - Both `ftol` and `xtol` termination conditions are satisfied.
+
     message : string
         Verbal description of the termination reason.
     success : int
@@ -402,6 +449,13 @@ def least_squares(
     often outperforms 'trf' in bounded problems with a small number of
     variables.
 
+    Robust loss functions are implemented as described in [BA]_. The idea
+    is to modify a residual vector and a Jacobian matrix on each iteration
+    such that computed gradient and Gauss-Newton Hessian approximation match
+    the true gradient and Hessian approximation of the cost function. Then
+    the algorithm proceeds in a normal way, i.e. robust loss functions are
+    implemented as a simple wrapper over standard least-squares algorithms.
+
     .. versionadded: 0.17.0
 
     References
@@ -410,7 +464,7 @@ def least_squares(
           and Conjugate Gradient Method for Large-Scale Bound-Constrained
           Minimization Problems," SIAM Journal on Scientific Computing,
           Vol. 21, Number 1, pp 1-23, 1999.
-    .. [NR] William H. Press et. al. "Numerical Recipes. The Art of Scientific
+    .. [NR] William H. Press et. al., "Numerical Recipes. The Art of Scientific
             Computing. 3rd edition", Sec. 5.7.
     .. [Byrd] R. H. Byrd, R. B. Schnabel and G. A. Shultz, "Approximate
               solution of the trust region problem by minimization over
@@ -428,6 +482,9 @@ def least_squares(
                 Applied Mathematics, Corfu, Greece, 2004.
     .. [NumOpt] J. Nocedal and S. J. Wright, "Numerical optimization,
                 2nd edition", Chapter 4.
+    .. [BA] B. Triggs et. al., "Bundle Adjustment - A Modern Synthesis",
+            Proceedings of the International Workshop on Vision Algorithms:
+            Theory and Practice, pp. 298-372, 1999.
 
     Examples
     --------
@@ -509,6 +566,78 @@ def least_squares(
     4.5687161966109073e-23
     >>> res_3.optimality
     1.1650454296851518e-11
+
+    Let's also solve a curve fitting problem using robust loss function to
+    take care of outliers in the data. Define the model function as
+    ``y = a + b * exp(c * t)``, where t is a predictor variable, y is an
+    observation and  a, b, c are parameters to estimate.
+
+    First define the function which generates the data with noise and
+    outliers, define the model parameters and generate data:
+
+    >>> def gen_data(t, a, b, c, noise=0, n_outliers=0, random_state=0):
+    ...     y = a + b * np.exp(t * c)
+    ...
+    ...     rnd = np.random.RandomState(random_state)
+    ...     error = noise * rnd.randn(t.size)
+    ...     outliers = rnd.randint(0, t.size, n_outliers)
+    ...     error[outliers] *= 10
+    ...
+    ...     return y + error
+    ...
+    >>> a = 0.5
+    >>> b = 2.0
+    >>> c = -1
+    >>> t_min = 0
+    >>> t_max = 10
+    >>> n_points = 15
+    ...
+    >>> t_train = np.linspace(t_min, t_max, n_points)
+    >>> y_train = gen_data(t_train, a, b, c, noise=0.1, n_outliers=3)
+
+    Define function for computing residuals and initial estimate of
+    parameters.
+
+    >>> def fun(x, t, y):
+    ...     return x[0] + x[1] * np.exp(x[2] * t) - y
+    ...
+    >>> x0 = np.array([1.0, 1.0, 0.0])
+
+    Compute a standard least-squares solution:
+
+    >>> res_lsq = least_squares(fun, x0, args=(t_train, y_train))
+
+    Now compute two solutions with two different robust loss functions. The
+    parameter `loss_scale` is set to 0.1, meaning that inlier residuals should
+    not significantly exceed 0.1 (the noise level used).
+
+    >>> res_soft_l1 = least_squares(fun, x0, loss='soft_l1', loss_scale=0.1,
+    ...                             args=(t_train, y_train))
+    >>> res_log = least_squares(fun, x0, loss='cauchy', loss_scale=0.1,
+    ...                         args=(t_train, y_train))
+
+    And finally plot all the curves. We see that by selecting an appropriate
+    `loss`  we can get estimates close to optimal even in the presence of
+    strong outliers. But keep in mind that generally it is recommended to try
+    'soft_l1' or 'huber' losses first (if at all necessary) as other two
+    options may cause difficulties in optimization process.
+
+    >>> t_test = np.linspace(t_min, t_max, n_points * 10)
+    >>> y_true = gen_data(t_test, a, b, c)
+    >>> y_lsq = gen_data(t_test, *res_lsq.x)
+    >>> y_soft_l1 = gen_data(t_test, *res_soft_l1.x)
+    >>> y_log = gen_data(t_test, *res_log.x)
+    ...
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(t_train, y_train, 'o')
+    >>> plt.plot(t_test, y_true, 'k', linewidth=2, label='true')
+    >>> plt.plot(t_test, y_lsq, label='linear loss')
+    >>> plt.plot(t_test, y_soft_l1, label='soft_l1 loss')
+    >>> plt.plot(t_test, y_log, label='cauchy loss')
+    >>> plt.xlabel("t")
+    >>> plt.ylabel("y")
+    >>> plt.legend()
+    >>> plt.show()
     """
     if method not in ['trf', 'dogbox', 'lm']:
         raise ValueError("`method` must be 'trf', 'dogbox' or 'lm'.")
@@ -519,6 +648,13 @@ def least_squares(
 
     if tr_solver not in [None, 'exact', 'lsmr']:
         raise ValueError("`tr_solver` must be None, 'exact' or 'lsmr'.")
+
+    if loss not in IMPLEMENTED_LOSSES and not callable(loss):
+        raise ValueError("`loss` must be one of {0} or a callable."
+                         .format(IMPLEMENTED_LOSSES))
+
+    if method == 'lm' and loss != 'linear':
+        raise ValueError("method='lm' supports only 'linear' loss function.")
 
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
@@ -557,14 +693,24 @@ def least_squares(
         return np.atleast_1d(fun(x, *args, **kwargs))
 
     f0 = fun_wrapped(x0)
+
     if f0.ndim != 1:
         raise RuntimeError("`fun` must return at most 1-d array_like.")
 
     n = x0.size
     m = f0.size
+
     if method == 'lm' and m < n:
         raise ValueError("Method 'lm' doesn't work when the number of "
                          "residuals is less than the number of variables.")
+
+    if callable(loss):
+        rho = compute_loss_and_derivatives(f0, loss, loss_scale)
+        if rho.shape != (3, m):
+            raise ValueError("The return value of `loss` has wrong shape.")
+        initial_cost = 0.5 * np.sum(rho[0])
+    else:
+        initial_cost = compute_cost(f0, loss, loss_scale)
 
     if callable(jac):
         J0 = jac(x0, *args, **kwargs)
@@ -646,8 +792,8 @@ def least_squares(
 
     elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
-                     gtol, max_nfev, scaling, tr_solver, tr_options.copy(),
-                     verbose)
+                     gtol, max_nfev, scaling, loss, loss_scale, tr_solver,
+                     tr_options.copy(), verbose)
 
     elif method == 'dogbox':
         if tr_solver == 'lsmr' and 'regularize' in tr_options:
@@ -657,8 +803,8 @@ def least_squares(
             del tr_options['regularize']
 
         result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
-                        xtol, gtol, max_nfev, scaling, tr_solver, tr_options,
-                        verbose)
+                        xtol, gtol, max_nfev, scaling, loss, loss_scale,
+                        tr_solver, tr_options, verbose)
 
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0
@@ -667,7 +813,7 @@ def least_squares(
         print(result.message)
         print("Function evaluations: {0}, initial cost: {1:.4e}, final cost "
               "{2:.4e}, first-order optimality {3:.2e}."
-              .format(result.nfev, 0.5 * np.dot(f0, f0),
-                      result.cost, result.optimality))
+              .format(result.nfev, initial_cost, result.cost,
+                      result.optimality))
 
     return result

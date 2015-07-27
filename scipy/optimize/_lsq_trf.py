@@ -107,7 +107,8 @@ from ._lsq_common import (
     intersect_trust_region, solve_lsq_trust_region, solve_trust_region_2d,
     update_tr_radius, minimize_quadratic_1d, build_quadratic_1d,
     evaluate_quadratic, compute_grad, compute_jac_scaling,
-    check_termination, right_multiply, print_header, print_iteration)
+    check_termination, right_multiply, compute_loss_and_derivatives,
+    compute_cost, correct_by_loss, print_header, print_iteration)
 
 
 def lsmr_operator(Jop, diag_root):
@@ -242,17 +243,24 @@ def find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta):
 
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
-        tr_solver, tr_options, verbose):
+        loss, loss_scale, tr_solver, tr_options, verbose):
     # Start with strictly feasible guess.
     x = make_strictly_feasible(x0, lb, ub, rstep=1e-10)
 
     f = f0
+    f_true = f.copy()
     nfev = 1
-    cost = 0.5 * np.dot(f, f)
 
     J = J0
     njev = 1
     m, n = J.shape
+
+    if loss != 'linear':
+        rho = compute_loss_and_derivatives(f, loss, loss_scale)
+        cost = 0.5 * np.sum(rho[0])
+        J, f = correct_by_loss(J, f, rho)
+    else:
+        cost = 0.5 * np.dot(f, f)
 
     g = compute_grad(J, f)
 
@@ -266,6 +274,8 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     Delta = norm(x0 * scale / v**0.5)
     if Delta == 0:
         Delta = 1.0
+
+    g_norm = norm(g * v, ord=np.inf)
 
     f_augmented = np.zeros((m + n))
     if tr_solver == 'exact':
@@ -300,8 +310,9 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
         if termination_status is not None:
             active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
+
             return OptimizeResult(
-                x=x, cost=cost, fun=f, jac=J, grad=g, optimality=g_norm,
+                x=x, cost=cost, fun=f_true, jac=J, grad=g, optimality=g_norm,
                 active_mask=active_mask, nfev=nfev, njev=njev,
                 status=termination_status)
 
@@ -405,7 +416,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             nfev += 1
 
             # Usual trust-region step quality estimation.
-            cost_new = 0.5 * np.dot(f_new, f_new)
+            cost_new = compute_cost(f_new, loss, loss_scale)
             actual_reduction = cost - cost_new
             # Correction term is specific to the algorithm,
             # vanishes in unbounded case.
@@ -429,10 +440,16 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             x = x_new
 
             f = f_new
+            f_true = f.copy()
+
             cost = cost_new
 
             J = jac(x, f)
             njev += 1
+
+            if loss != 'linear':
+                rho = compute_loss_and_derivatives(f, loss, loss_scale)
+                J, f = correct_by_loss(J, f, rho)
 
             g = compute_grad(J, f)
 
@@ -442,12 +459,15 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             step_norm = 0
             actual_reduction = 0
             if nfev == max_nfev:  # Recompute J if algorithm is terminating.
-                J = jac(x, f)
                 # Don't increase njev, because it's the implementation detail.
+                J = jac(x, f_true)
+                if loss != 'linear':
+                    rho = compute_loss_and_derivatives(f, loss, loss_scale)
+                    J, f = correct_by_loss(J, f, rho)
 
         iteration += 1
 
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
     return OptimizeResult(
-        x=x, cost=cost, fun=f, jac=J, grad=g, optimality=g_norm,
+        x=x, cost=cost, fun=f_true, jac=J, grad=g, optimality=g_norm,
         active_mask=active_mask, nfev=nfev, njev=njev, status=0)

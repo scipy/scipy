@@ -51,7 +51,8 @@ from ..sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from ._lsq_common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
     build_quadratic_1d, minimize_quadratic_1d, compute_grad,
-    compute_jac_scaling, check_termination, print_header, print_iteration)
+    compute_jac_scaling, check_termination, compute_loss_and_derivatives,
+    compute_cost, correct_by_loss, print_header, print_iteration)
 
 
 def lsmr_operator(Jop, d, active_set):
@@ -143,13 +144,20 @@ def dogleg_step(x, newton_step, g, a, b, tr_bounds, lb, ub):
 
 
 def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
-           tr_solver, tr_options, verbose):
+           loss, loss_scale, tr_solver, tr_options, verbose):
     f = f0
+    f_true = f.copy()
     nfev = 1
-    cost = 0.5 * np.dot(f, f)
 
     J = J0
     njev = 1
+
+    if loss != 'linear':
+        rho = compute_loss_and_derivatives(f, loss, loss_scale)
+        cost = 0.5 * np.sum(rho[0])
+        J, f = correct_by_loss(J, f, rho)
+    else:
+        cost = 0.5 * np.dot(f, f)
 
     g = compute_grad(J, f)
 
@@ -198,8 +206,8 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
         if termination_status is not None:
             return OptimizeResult(
-                x=x, cost=cost, fun=f, jac=J, grad=g_full, optimality=g_norm,
-                active_mask=on_bound, nfev=nfev, njev=njev,
+                x=x, cost=cost, fun=f_true, jac=J, grad=g_full,
+                optimality=g_norm, active_mask=on_bound, nfev=nfev, njev=njev,
                 status=termination_status)
 
         if nfev == max_nfev:
@@ -259,7 +267,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             nfev += 1
 
             # Usual trust-region step quality estimation.
-            cost_new = 0.5 * np.dot(f_new, f_new)
+            cost_new = compute_cost(f_new, loss, loss_scale)
             actual_reduction = cost - cost_new
 
             Delta, ratio = update_tr_radius(
@@ -285,10 +293,16 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             x[mask] = ub[mask]
 
             f = f_new
+            f_true = f.copy()
+
             cost = cost_new
 
             J = jac(x, f)
             njev += 1
+
+            if loss != 'linear':
+                rho = compute_loss_and_derivatives(f, loss, loss_scale)
+                J, f = correct_by_loss(J, f, rho)
 
             g = compute_grad(J, f)
 
@@ -301,5 +315,5 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         iteration += 1
 
     return OptimizeResult(
-        x=x, cost=cost, fun=f, jac=J, grad=g_full, optimality=g_norm,
+        x=x, cost=cost, fun=f_true, jac=J, grad=g_full, optimality=g_norm,
         active_mask=on_bound, nfev=nfev, njev=njev, status=0)

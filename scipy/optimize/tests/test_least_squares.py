@@ -1,7 +1,10 @@
+from __future__ import division
+
 from itertools import product
 import warnings
 
 import numpy as np
+from numpy.linalg import norm
 from numpy.testing import (run_module_suite, assert_, assert_allclose,
                            assert_raises, assert_equal)
 
@@ -9,9 +12,9 @@ from scipy.optimize import least_squares
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 from scipy.optimize._lsq_common import (
-    step_size_to_bound, find_active_constraints, make_strictly_feasible,
-    intersect_trust_region, build_quadratic_1d, minimize_quadratic_1d,
-    evaluate_quadratic)
+    EPS, IMPLEMENTED_LOSSES, step_size_to_bound, find_active_constraints,
+    make_strictly_feasible, intersect_trust_region, build_quadratic_1d,
+    minimize_quadratic_1d, evaluate_quadratic)
 from scipy.optimize._lsq_trf import scaling_vector
 
 
@@ -324,6 +327,51 @@ class BroydenTridiagonal(object):
         i = np.arange(self.n - 1)
         J[i, i + 1] = -2
         return J
+
+
+class ExponentialFittingProblem(object):
+    """Provide data and function for exponential fitting in the form
+    y = a + exp(b * x) + noise."""
+
+    def __init__(self, a, b, noise, n_outliers=1, x_range=(-1, 1),
+                 n_points=11, random_seed=None):
+        np.random.seed(random_seed)
+        self.m = n_points
+        self.n = 2
+
+        self.p0 = np.zeros(2)
+        self.x = np.linspace(x_range[0], x_range[1], n_points)
+
+        self.y = a + np.exp(b * self.x)
+        self.y += noise * np.random.randn(self.m)
+
+        outliers = np.random.randint(0, self.m, n_outliers)
+        self.y[outliers] += 50 * noise * np.random.rand(n_outliers)
+
+        self.p_opt = np.array([a, b])
+
+    def fun(self, p):
+        return p[0] + np.exp(p[1] * self.x) - self.y
+
+    def jac(self, p):
+        J = np.empty((self.m, self.n))
+        J[:, 0] = 1
+        J[:, 1] = self.x * np.exp(p[1] * self.x)
+        return J
+
+
+def cubic_soft_l1(z):
+    rho = np.empty((3, z.size))
+
+    t = 1 + z
+    rho[0] = 3 * (t**(1/3) - 1)
+    rho[1] = t ** (-2/3)
+    rho[2] = -2/3 * t**(-5/3)
+
+    return rho
+
+
+LOSSES = IMPLEMENTED_LOSSES + [cubic_soft_l1]
 
 
 class BaseMixin(object):
@@ -668,11 +716,147 @@ class SparseMixin(object):
                       method=self.method, scaling='jac')
 
 
-class TestDogbox(BaseMixin, BoundsMixin, SparseMixin):
+class LossFunctionMixin(object):
+    def test_options(self):
+        for loss in LOSSES:
+            res = least_squares(fun_trivial, 2.0, loss=loss,
+                                method=self.method)
+            assert_allclose(res.x, 0)
+
+        assert_raises(ValueError, least_squares, fun_trivial, 2.0,
+                      loss='hinge', method=self.method)
+
+    def test_fun(self):
+        # Test that res.fun is actual residuals, and not modified by loss
+        # function stuff.
+        for loss in LOSSES:
+            res = least_squares(fun_trivial, 2.0, loss=loss,
+                                method=self.method)
+            assert_equal(res.fun, fun_trivial(res.x))
+
+    def test_grad(self):
+        # Test that res.grad is true gradient of loss function at the
+        # solution. Use max_nfev = 1, to avoid reaching minimum.
+        x = 2.0  # res.x will be this.
+
+        res = least_squares(fun_trivial, x, jac_trivial, loss='linear',
+                            max_nfev=1, method=self.method)
+        assert_equal(res.grad, 2 * x * (x**2 + 5))
+
+        res = least_squares(fun_trivial, x, jac_trivial, loss='huber',
+                            max_nfev=1, method=self.method)
+        assert_equal(res.grad, 2 * x)
+
+        res = least_squares(fun_trivial, x, jac_trivial, loss='soft_l1',
+                            max_nfev=1, method=self.method)
+        assert_allclose(res.grad,
+                        2 * x * (x**2 + 5) / (1 + (x**2 + 5)**2)**0.5)
+
+        res = least_squares(fun_trivial, x, jac_trivial, loss='cauchy',
+                            max_nfev=1, method=self.method)
+        assert_allclose(res.grad, 2 * x * (x**2 + 5) / (1 + (x**2 + 5)**2))
+
+        res = least_squares(fun_trivial, x, jac_trivial, loss='arctan',
+                            max_nfev=1, method=self.method)
+        assert_allclose(res.grad, 2 * x * (x**2 + 5) / (1 + (x**2 + 5)**4))
+
+        res = least_squares(fun_trivial, x, jac_trivial, loss=cubic_soft_l1,
+                            max_nfev=1, method=self.method)
+        assert_allclose(res.grad,
+                        2 * x * (x**2 + 5) / (1 + (x**2 + 5)**2)**(2/3))
+
+    def test_jac(self):
+        # Test that res.jac.T.dot(res.jac) gives Gauss-Newton approximation
+        # of Hessian. This approximation is computed by doubly differentiating
+        # the cost function and dropping the part containing second derivative
+        # of f. For a scalar function it is computed as
+        # H = (rho' + 2 * rho'' * f**2) * f'**2, if the expression inside the
+        # brackets is less than EPS it is replaced by EPS. Here we check
+        # against the root of H.
+
+        x = 2.0  # res.x will be this.
+        f = x**2 + 5  # res.fun will be this.
+
+        res = least_squares(fun_trivial, x, jac_trivial, loss='linear',
+                            max_nfev=1, method=self.method)
+        assert_equal(res.jac, 2 * x)
+
+        # For `huber` loss the Jacobian correction is identically zero
+        # in outlier region, in such cases it is modified to be equal EPS**0.5.
+        res = least_squares(fun_trivial, x, jac_trivial, loss='huber',
+                            max_nfev=1, method=self.method)
+        assert_equal(res.jac, 2 * x * EPS**0.5)
+
+        # Now let's apply `loss_scale` to turn the residual into an inlier.
+        # The loss function becomes linear.
+        res = least_squares(fun_trivial, x, jac_trivial, loss='huber',
+                            loss_scale=10, max_nfev=1)
+        assert_equal(res.jac, 2 * x)
+
+        # 'soft_l1' always gives a positive scaling.
+        res = least_squares(fun_trivial, x, jac_trivial, loss='soft_l1',
+                            max_nfev=1, method=self.method)
+        assert_allclose(res.jac, 2 * x * (1 + f**2)**-0.75)
+
+        # For 'cauchy' the correction term turns out to be negative, and it
+        # replaced by EPS**0.5.
+        res = least_squares(fun_trivial, x, jac_trivial, loss='cauchy',
+                            max_nfev=1, method=self.method)
+        assert_allclose(res.jac, 2 * x * EPS**0.5)
+
+        # Now use scaling to turn the residual to inlier.
+        res = least_squares(fun_trivial, x, jac_trivial, loss='cauchy',
+                            loss_scale=10, max_nfev=1, method=self.method)
+        fs = f / 10
+        assert_allclose(res.jac, 2 * x * (1 - fs**2)**0.5 / (1 + fs**2))
+
+        # 'arctan' gives an outlier.
+        res = least_squares(fun_trivial, x, jac_trivial, loss='arctan',
+                            max_nfev=1, method=self.method)
+        assert_allclose(res.jac, 2 * x * EPS**0.5)
+
+        # Turn to inlier.
+        res = least_squares(fun_trivial, x, jac_trivial, loss='arctan',
+                            loss_scale=20.0, max_nfev=1, method=self.method)
+        fs = f / 20
+        assert_allclose(res.jac, 2 * x * (1 - 3 * fs**4)**0.5 / (1 + fs**4))
+
+        # cubic_soft_l1 will give an outlier.
+        res = least_squares(fun_trivial, x, jac_trivial, loss=cubic_soft_l1,
+                            max_nfev=1)
+        assert_allclose(res.jac, 2 * x * EPS**0.5)
+
+        # Turn to inlier.
+        res = least_squares(fun_trivial, x, jac_trivial,
+                            loss=cubic_soft_l1, loss_scale=6, max_nfev=1)
+        fs = f / 6
+        assert_allclose(res.jac,
+                        2 * x * (1 - fs**2 / 3)**0.5 * (1 + fs**2)**(-5/6))
+
+    def test_robustness(self):
+        for noise in [0.1, 1.0]:
+            p = ExponentialFittingProblem(1, 0.1, noise, random_seed=0)
+
+            for jac in ['2-point', '3-point', 'cs', p.jac]:
+                res_lsq = least_squares(p.fun, p.p0, jac=jac,
+                                        method=self.method)
+                assert_allclose(res_lsq.optimality, 0, atol=1e-2)
+                for loss in LOSSES:
+                    if loss == 'linear':
+                        continue
+                    res_robust = least_squares(
+                        p.fun, p.p0, jac=jac, loss=loss, loss_scale=noise,
+                        method=self.method)
+                    assert_allclose(res_robust.optimality, 0, atol=1e-2)
+                    assert_(norm(res_robust.x - p.p_opt) <
+                            norm(res_lsq.x - p.p_opt))
+
+
+class TestDogbox(BaseMixin, BoundsMixin, SparseMixin, LossFunctionMixin):
     method = 'dogbox'
 
 
-class TestTRF(BaseMixin, BoundsMixin, SparseMixin):
+class TestTRF(BaseMixin, BoundsMixin, SparseMixin, LossFunctionMixin):
     method = 'trf'
 
     def test_lsmr_regularization(self):
@@ -708,6 +892,13 @@ class TestLM(BaseMixin):
         p = BroydenTridiagonal(mode="operator")
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
                       method='lm')
+
+    def test_loss(self):
+        res = least_squares(fun_trivial, 2.0, loss='linear', method='lm')
+        assert_allclose(res.x, 0.0)
+
+        assert_raises(ValueError, least_squares, fun_trivial, 2.0,
+                      method='lm', loss='huber')
 
 
 def test_basic():
