@@ -2055,10 +2055,21 @@ class gengamma_gen(rv_continuous):
         val2 = special.gammaincc(a, xc)
         return np.where(c > 0, val1, val2)
 
+    def _sf(self, x, a, c):
+        xc = x**c
+        val1 = special.gammainc(a, xc)
+        val2 = special.gammaincc(a, xc)
+        return np.where(c > 0, val2, val1)
+
     def _ppf(self, q, a, c):
         val1 = special.gammaincinv(a, q)
         val2 = special.gammainccinv(a, q)
         return np.where(c > 0, val1, val2)**(1.0/c)
+
+    def _isf(self, q, a, c):
+        val1 = special.gammaincinv(a, q)
+        val2 = special.gammainccinv(a, q)
+        return np.where(c > 0, val2, val1)**(1.0/c)
 
     def _munp(self, n, a, c):
         # Pochhammer symbol: poch(a,n) = gamma(a+n)/gamma(a)
