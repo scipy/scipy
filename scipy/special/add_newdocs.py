@@ -343,6 +343,7 @@ add_newdoc("scipy.special", "boxcox",
 
     Examples
     --------
+    >>> from scipy.special import boxcox
     >>> boxcox([1, 4, 10], 2.5)
     array([   0.        ,   12.4       ,  126.09110641])
     >>> boxcox(2, [0, 1, 2])
@@ -382,6 +383,7 @@ add_newdoc("scipy.special", "boxcox1p",
 
     Examples
     --------
+    >>> from scipy.special import boxcox1p
     >>> boxcox1p(1e-4, [0, 0.5, 1])
     array([  9.99950003e-05,   9.99975001e-05,   1.00000000e-04])
     >>> boxcox1p([0.01, 0.1], 0.25)
@@ -418,6 +420,7 @@ add_newdoc("scipy.special", "inv_boxcox",
 
     Examples
     --------
+    >>> from scipy.special import boxcox, inv_boxcox
     >>> y = boxcox([1, 4, 10], 2.5)
     >>> inv_boxcox(y, 2.5)
     array([1., 4., 10.])
@@ -453,6 +456,7 @@ add_newdoc("scipy.special", "inv_boxcox1p",
 
     Examples
     --------
+    >>> from scipy.special import boxcox1p, inv_boxcox1p
     >>> y = boxcox1p([1, 4, 10], 2.5)
     >>> inv_boxcox1p(y, 2.5)
     array([1., 4., 10.])
@@ -1311,6 +1315,7 @@ add_newdoc("scipy.special", "gdtria",
     --------
     First evaluate `gdtr`.
 
+    >>> from scipy.special import gdtr, gdtria
     >>> p = gdtr(1.2, 3.4, 5.6)
     >>> print(p)
     0.94378087442
@@ -1361,6 +1366,7 @@ add_newdoc("scipy.special", "gdtrib",
     --------
     First evaluate `gdtr`.
 
+    >>> from scipy.special import gdtr, gdtrib
     >>> p = gdtr(1.2, 3.4, 5.6)
     >>> print(p)
     0.94378087442
@@ -1412,6 +1418,7 @@ add_newdoc("scipy.special", "gdtrix",
     --------
     First evaluate `gdtr`.
 
+    >>> from scipy.special import gdtr, gdtrix
     >>> p = gdtr(1.2, 3.4, 5.6)
     >>> print(p)
     0.94378087442

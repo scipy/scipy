@@ -287,7 +287,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
            [  6.,   7.,   8.],
            [  9.,  10.,  11.]])
     >>> ndimage.map_coordinates(a, [[0.5, 2], [0.5, 1]], order=1)
-    [ 2.  7.]
+    array([ 2.,  7.])
 
     Above, the interpolated value of a[0.5, 0.5] gives output[0], while
     a[2, 1] is output[1].
@@ -298,7 +298,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     >>> ndimage.map_coordinates(a, inds, order=1, mode='nearest')
     array([ 2.,  8.])
     >>> ndimage.map_coordinates(a, inds, order=1, cval=0, output=bool)
-    array([ True, False], dtype=bool
+    array([ True, False], dtype=bool)
 
     """
     if order < 0 or order > 5:

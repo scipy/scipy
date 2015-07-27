@@ -71,6 +71,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> np.random.seed(1234)
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
     0.001 V**2/Hz of white noise sampled at 10 kHz.
@@ -97,7 +98,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     peak, we can recover the noise power on the signal.
 
     >>> np.mean(Pxx_den[256:])
-    0.0009924865443739191
+    0.0018156616014838548
 
     Now compute and plot the power spectrum.
 
@@ -223,6 +224,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> np.random.seed(1234)
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
     0.001 V**2/Hz of white noise sampled at 10 kHz.

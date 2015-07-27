@@ -30,6 +30,7 @@ Matrix norms
 .. autosummary::
    :toctree: generated/
 
+   norm -- Norm of a sparse matrix
    onenormest -- Estimate the 1-norm of a sparse matrix
 
 Solving linear problems
@@ -42,6 +43,8 @@ Direct methods for linear equation systems:
 
    spsolve -- Solve the sparse linear system Ax=b
    factorized -- Pre-factorize matrix to a function solving a linear system
+   MatrixRankWarning -- Warning on exactly singular matrices
+   use_solver -- Select direct solver to use
 
 Iterative methods for linear equation systems:
 

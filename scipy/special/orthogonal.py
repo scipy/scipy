@@ -1569,8 +1569,9 @@ def legendre(n, monic=False):
     --------
     Generate the 3rd-order Legendre polynomial 1/2*(5x^3 + 0x^2 - 3x + 0):
 
+    >>> from scipy.special import legendre
     >>> legendre(3)
-    poly1d([ 2.5,  0. , -1.5, -0. ])
+    poly1d([ 2.5,  0. , -1.5,  0. ])
 
     """
     if n < 0:

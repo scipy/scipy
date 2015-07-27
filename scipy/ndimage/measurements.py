@@ -98,6 +98,7 @@ def label(input, structure=None, output=None):
     Create an image with some features, then label it using the default
     (cross-shaped) structuring element:
 
+    >>> from scipy.ndimage import label, generate_binary_structure
     >>> a = np.array([[0,0,1,1,0,0],
     ...               [0,0,0,1,0,0],
     ...               [1,1,0,0,1,0],
@@ -106,9 +107,9 @@ def label(input, structure=None, output=None):
 
     Each of the 4 features are labeled with a different integer:
 
-    >>> print(num_features)
+    >>> num_features
     4
-    >>> print(labeled_array)
+    >>> labeled_array
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 3, 0],
@@ -122,8 +123,8 @@ def label(input, structure=None, output=None):
     or,
 
     >>> s = [[1,1,1],
-             [1,1,1],
-             [1,1,1]]
+    ...      [1,1,1],
+    ...      [1,1,1]]
 
     Label the image using the new structuring element:
 
@@ -132,9 +133,9 @@ def label(input, structure=None, output=None):
     Show the 2 labeled features (note that features 1, 3, and 4 from above are
     now considered a single feature):
 
-    >>> print(num_features)
+    >>> num_features
     2
-    >>> print(labeled_array)
+    >>> labeled_array
     array([[0, 0, 1, 1, 0, 0],
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 1, 0],
@@ -234,6 +235,7 @@ def find_objects(input, max_label=0):
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> a = np.zeros((6,6), dtype=int)
     >>> a[2:4, 2:4] = 1
     >>> a[4, 4] = 1
@@ -255,8 +257,8 @@ def find_objects(input, max_label=0):
 
     >>> loc = ndimage.find_objects(a)[0]
     >>> a[loc]
-    array([[1, 1, 0]
-           [1, 1, 0]
+    array([[1, 1, 0],
+           [1, 1, 0],
            [0, 0, 1]])
 
     """
@@ -310,9 +312,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     Examples
     --------
     >>> a = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> from scipy import ndimage
     >>> lbl, nlbl = ndimage.label(a)
     >>> lbls = np.arange(1, nlbl+1)
@@ -333,9 +335,9 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_p
     ...
     >>> ndimage.labeled_comprehension(a, lbl, lbls, fn, float, 0, True)
     fn says: [1 2 5 3] : [0 1 4 5]
-    fn says: [4 7] : [7 11]
+    fn says: [4 7] : [ 7 11]
     fn says: [9 3] : [12 13]
-    array([ 11.,  11., -12.])
+    array([ 11.,  11., -12.,   0.])
 
     """
 
@@ -567,13 +569,14 @@ def sum(input, labels=None, index=None):
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> input =  [0,1,2,3]
     >>> labels = [1,1,2,2]
-    >>> sum(input, labels, index=[1,2])
+    >>> ndimage.sum(input, labels, index=[1,2])
     [1.0, 5.0]
-    >>> sum(input, labels, index=1)
+    >>> ndimage.sum(input, labels, index=1)
     1
-    >>> sum(input, labels)
+    >>> ndimage.sum(input, labels)
     6
 
 
@@ -614,6 +617,7 @@ def mean(input, labels=None, index=None):
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> a = np.arange(25).reshape((5,5))
     >>> labels = np.zeros_like(a)
     >>> labels[3:5,3:5] = 1
@@ -664,9 +668,9 @@ def variance(input, labels=None, index=None):
     Examples
     --------
     >>> a = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> from scipy import ndimage
     >>> ndimage.variance(a)
     7.609375
@@ -716,9 +720,9 @@ def standard_deviation(input, labels=None, index=None):
     Examples
     --------
     >>> a = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> from scipy import ndimage
     >>> ndimage.standard_deviation(a)
     2.7585095613392387
@@ -889,6 +893,7 @@ def minimum(input, labels=None, index=None):
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -973,9 +978,9 @@ def maximum(input, labels=None, index=None):
     14.0
 
     >>> b = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> labels, labels_nb = ndimage.label(b)
     >>> labels
     array([[1, 1, 0, 0],
@@ -1028,6 +1033,7 @@ def median(input, labels=None, index=None):
 
     Examples
     --------
+    >>> from scipy import ndimage
     >>> a = np.array([[1, 2, 0, 1],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1186,9 +1192,9 @@ def extrema(input, labels=None, index=None):
     Examples
     --------
     >>> a = np.array([[1, 2, 0, 0],
-                      [5, 3, 0, 4],
-                      [0, 0, 0, 7],
-                      [9, 3, 0, 0]])
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
     >>> from scipy import ndimage
     >>> ndimage.extrema(a)
     (0, 9, (0, 2), (3, 0))
@@ -1252,9 +1258,9 @@ def center_of_mass(input, labels=None, index=None):
     Examples
     --------
     >>> a = np.array(([0,0,0,0],
-                      [0,1,1,0],
-                      [0,1,1,0],
-                      [0,1,1,0]))
+    ...               [0,1,1,0],
+    ...               [0,1,1,0],
+    ...               [0,1,1,0]))
     >>> from scipy import ndimage
     >>> ndimage.measurements.center_of_mass(a)
     (2.0, 1.5)
@@ -1262,10 +1268,10 @@ def center_of_mass(input, labels=None, index=None):
     Calculation of multiple objects in an image
 
     >>> b = np.array(([0,1,1,0],
-                      [0,1,0,0],
-                      [0,0,0,0],
-                      [0,0,1,1],
-                      [0,0,1,1]))
+    ...               [0,1,0,0],
+    ...               [0,0,0,0],
+    ...               [0,0,1,1],
+    ...               [0,0,1,1]))
     >>> lbl = ndimage.label(b)[0]
     >>> ndimage.measurements.center_of_mass(b, lbl, [1,2])
     [(0.33333333333333331, 1.3333333333333333), (3.5, 2.5)]
@@ -1315,10 +1321,10 @@ def histogram(input, min, max, bins, labels=None, index=None):
     Examples
     --------
     >>> a = np.array([[ 0.    ,  0.2146,  0.5962,  0.    ],
-                      [ 0.    ,  0.7778,  0.    ,  0.    ],
-                      [ 0.    ,  0.    ,  0.    ,  0.    ],
-                      [ 0.    ,  0.    ,  0.7181,  0.2787],
-                      [ 0.    ,  0.    ,  0.6573,  0.3094]])
+    ...               [ 0.    ,  0.7778,  0.    ,  0.    ],
+    ...               [ 0.    ,  0.    ,  0.    ,  0.    ],
+    ...               [ 0.    ,  0.    ,  0.7181,  0.2787],
+    ...               [ 0.    ,  0.    ,  0.6573,  0.3094]])
     >>> from scipy import ndimage
     >>> ndimage.measurements.histogram(a, 0, 1, 10)
     array([13,  0,  2,  1,  0,  1,  1,  2,  0,  0])

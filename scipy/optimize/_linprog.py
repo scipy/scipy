@@ -510,9 +510,6 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     >>> x1_bnds = (-3, None)
     >>> res = linprog(c, A, b, bounds=(x0_bnds, x1_bnds))
     >>> print(res)
-    Optimization terminated successfully.
-         Current function value: -22.000000
-         Iterations: 1
     status: 0
     x: array([ 10.,  -3.])
     slack: array([ 39.,   0.])
@@ -967,16 +964,17 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     >>> from scipy.optimize import linprog
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds),
     ...               options={"disp": True})
-    >>> print(res)
     Optimization terminated successfully.
-         Current function value: -11.428571
-         Iterations: 2
-    status: 0
-    success: True
-    fun: -11.428571428571429
-    x: array([-1.14285714,  2.57142857])
-    message: 'Optimization terminated successfully.'
-    nit: 2
+         Current function value: -22.000000
+         Iterations: 1
+    >>> print(res)
+      status: 0
+       slack: array([ 39.,   0.])
+     success: True
+         fun: -22.0
+           x: array([ 10.,  -3.])
+     message: 'Optimization terminated successfully.'
+         nit: 1
 
     Note the actual objective value is 11.428571.  In this case we minimized
     the negative of the objective function.

@@ -306,13 +306,14 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
 
     Examples
     --------
+    >>> from scipy.signal import savgol_filter
     >>> np.set_printoptions(precision=2)  # For compact display.
     >>> x = np.array([2, 2, 5, 2, 1, 0, 1, 4, 9])
 
     Filter with a window length of 5 and a degree 2 polynomial.  Use
     the defaults for all other parameters.
 
-    >>> y = savgol_filter(x, 5, 2)
+    >>> savgol_filter(x, 5, 2)
     array([ 1.66,  3.17,  3.54,  2.86,  0.66,  0.17,  1.  ,  4.  ,  9.  ])
 
     Note that the last five values in x are samples of a parabola, so

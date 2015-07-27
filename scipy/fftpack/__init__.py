@@ -86,7 +86,8 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'tilbert','itilbert','hilbert','ihilbert',
            'sc_diff','cs_diff','cc_diff','ss_diff',
            'shift',
-           'rfftfreq'
+           'rfftfreq',
+           'fftfreq', 'fftshift', 'ifftshift'
            ]
 
 from .fftpack_version import fftpack_version as __version__

@@ -263,10 +263,10 @@ def find_repeats(arr):
     --------
     >>> from scipy import stats
     >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-    (array([ 2. ]), array([ 4 ], dtype=int32)
+    RepeatedResults(values=array([ 2.]), counts=array([4], dtype=int32))
 
     >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-    (array([ 4., 5.]), array([2, 2], dtype=int32))
+    RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2], dtype=int32))
 
     """
     RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
@@ -1266,13 +1266,13 @@ def describe(a, axis=0, ddof=1, bias=True):
     >>> from scipy import stats
     >>> a = np.arange(10)
     >>> stats.describe(a)
-    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.16666666666666
-                   61, skewness=0.0, kurtosis=-1.2242424242424244)
+    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.1666666666666661,
+                   skewness=0.0, kurtosis=-1.2242424242424244)
     >>> b = [[1, 2], [3, 4]]
     >>> stats.describe(b)
-    DescribeResult(nobs=2, minmax=(array([1, 2]), array([3, 4])), mean=array([
-                   2., 3.]), variance=array([2., 2.]), skewness=array([0., 0.]),
-                   kurtosis=array([-2., -2.]))
+    DescribeResult(nobs=2, minmax=(array([1, 2]), array([3, 4])),
+                   mean=array([ 2., 3.]), variance=array([ 2., 2.]), 
+                   skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -3319,14 +3319,16 @@ def linregress(x, y=None):
     Examples
     --------
     >>> from scipy import stats
+    >>> np.random.seed(1234)
     >>> x = np.random.random(10)
     >>> y = np.random.random(10)
     >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
 
-    # To get coefficient of determination (r_squared)
+    To get coefficient of determination (r_squared):
 
-    >>> print("r-squared:", r_value**2)
-    r-squared: 0.15286643777
+    >>> r_squared = r_value**2
+    >>> r_squared
+    0.040765301799949707
 
     """
     TINY = 1.0e-20
@@ -4146,7 +4148,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     >>> power_divergence([16, 18, 16, 14, 12, 12],
     ...                  f_exp=[16, 16, 16, 16, 16, 8],
     ...                  lambda_='log-likelihood')
-    (3.5, 0.62338762774958223)
+    (3.3281031458963746, 0.6495419288047497)
 
     When `f_obs` is 2-D, by default the test is applied to each column.
 
@@ -4695,6 +4697,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     method : {'fisher', 'stouffer'}, optional
         Name of method to use to combine p-values. The following methods are
         available:
+
         - "fisher": Fisher's method (Fisher's combined probability test),
           the default.
         - "stouffer": Stouffer's Z-score method.

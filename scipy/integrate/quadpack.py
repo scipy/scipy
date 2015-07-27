@@ -18,6 +18,9 @@ error = _quadpack.error
 
 
 class IntegrationWarning(UserWarning):
+    """
+    Warning on issues during integration.
+    """
     pass
 
 
@@ -293,15 +296,17 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                 return args[0]*args[0] + args[1]*args[1];}
         compile to library testlib.*
 
-    >>> from scipy import integrate
-    >>> import ctypes
-    >>> lib = ctypes.CDLL('/home/.../testlib.*') #use absolute path
-    >>> lib.func.restype = ctypes.c_double
-    >>> lib.func.argtypes = (ctypes.c_int,ctypes.c_double)
-    >>> integrate.quad(lib.func,0,1,(1))
-    (1.3333333333333333, 1.4802973661668752e-14)
-    >>> print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
-    1.3333333333333333
+    ::
+
+       from scipy import integrate
+       import ctypes
+       lib = ctypes.CDLL('/home/.../testlib.*') #use absolute path
+       lib.func.restype = ctypes.c_double
+       lib.func.argtypes = (ctypes.c_int,ctypes.c_double)
+       integrate.quad(lib.func,0,1,(1))
+       #(1.3333333333333333, 1.4802973661668752e-14)
+       print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
+       # 1.3333333333333333
 
     """
     if not isinstance(args, tuple):

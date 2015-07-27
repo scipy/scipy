@@ -21,6 +21,23 @@ Package Content
    odr_error     -- Error exception.
    odr_stop      -- Stop exception.
 
+Prebuilt models:
+
+.. autosummary::
+   :toctree: generated/
+
+   polynomial
+
+.. data:: exponential
+
+.. data:: multilinear
+
+.. data:: unilinear
+
+.. data:: quadratic
+
+.. data:: polynomial
+
 Usage information
 =================
 

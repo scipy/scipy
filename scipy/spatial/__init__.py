@@ -13,6 +13,7 @@ Nearest-neighbor Queries
    KDTree      -- class for efficient nearest-neighbor queries
    cKDTree     -- class for efficient nearest-neighbor queries (faster impl.)
    distance    -- module containing many different distance measures
+   Rectangle
 
 Delaunay Triangulation, Convex Hulls and Voronoi Diagrams
 =========================================================

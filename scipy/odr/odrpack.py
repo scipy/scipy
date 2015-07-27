@@ -254,7 +254,9 @@ class Data(object):
 
         Examples
         --------
-        >>> data.set_meta(lab="Ph 7; Lab 26", title="Ag110 + Ag108 Decay")
+        ::
+
+            data.set_meta(lab="Ph 7; Lab 26", title="Ag110 + Ag108 Decay")
         """
 
         self.meta.update(kwds)

@@ -31,6 +31,7 @@ def minkowski_distance_p(x, y, p=2):
 
     Examples
     --------
+    >>> from scipy.spatial import minkowski_distance_p
     >>> minkowski_distance_p([[0,0],[0,0]], [[1,1],[0,1]])
     array([2, 1])
 
@@ -60,6 +61,7 @@ def minkowski_distance(x, y, p=2):
 
     Examples
     --------
+    >>> from scipy.spatial import minkowski_distance
     >>> minkowski_distance([[0,0],[0,0]], [[1,1],[0,1]])
     array([ 1.41421356,  1.        ])
 
@@ -941,6 +943,7 @@ def distance_matrix(x, y, p=2, threshold=1000000):
 
     Examples
     --------
+    >>> from scipy.spatial import distance_matrix
     >>> distance_matrix([[0,0],[0,1]], [[1,0],[1,1]])
     array([[ 1.        ,  1.41421356],
            [ 1.41421356,  1.        ]])

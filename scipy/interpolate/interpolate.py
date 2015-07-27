@@ -949,7 +949,7 @@ class PPoly(_PPolyBase):
         ``[-2, 1], [1, 2]``:
 
         >>> from scipy.interpolate import PPoly
-        >>> pp = PPoly(np.array([[1, 0, -1], [1, 0, 0]]).T, [-2, 1, 2])
+        >>> pp = PPoly(np.array([[1, -4, 3], [1, 0, 0]]).T, [-2, 1, 2])
         >>> pp.roots()
         array([-1.,  1.])
 
@@ -1102,7 +1102,7 @@ class BPoly(_PPolyBase):
 
     Examples
     --------
-
+    >>> from scipy.interpolate import BPoly
     >>> x = [0, 1]
     >>> c = [[1], [2], [3]]
     >>> bp = BPoly(c, x)
@@ -1325,6 +1325,7 @@ class BPoly(_PPolyBase):
         Examples
         --------
 
+        >>> from scipy.interpolate import BPoly
         >>> BPoly.from_derivatives([0, 1], [[1, 2], [3, 4]])
 
         Creates a polynomial `f(x)` of degree 3, defined on `[0, 1]`

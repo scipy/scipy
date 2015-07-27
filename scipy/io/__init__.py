@@ -47,6 +47,24 @@ Unformatted Fortran files
 
    FortranFile - A file object for unformatted sequential Fortran files
 
+Netcdf
+======
+
+.. autosummary::
+   :toctree: generated/
+
+   netcdf_file - A file object for NetCDF data
+   netcdf_variable - A data object for the netcdf module
+
+Harwell-Boeing files
+====================
+
+.. autosummary::
+   :toctree: generated/
+
+   hb_read   -- read H-B file
+   hb_write  -- write H-B file
+
 Wav sound files (:mod:`scipy.io.wavfile`)
 =========================================
 
@@ -57,6 +75,7 @@ Wav sound files (:mod:`scipy.io.wavfile`)
 
    read
    write
+   WavFileWarning
 
 Arff files (:mod:`scipy.io.arff`)
 =================================
@@ -67,17 +86,10 @@ Arff files (:mod:`scipy.io.arff`)
    :toctree: generated/
 
    loadarff
+   MetaData
+   ArffError
+   ParseArffError
 
-Netcdf (:mod:`scipy.io.netcdf`)
-===============================
-
-.. module:: scipy.io.netcdf
-
-.. autosummary::
-   :toctree: generated/
-
-   netcdf_file - A file object for NetCDF data
-   netcdf_variable - A data object for the netcdf module
 """
 from __future__ import division, print_function, absolute_import
 

@@ -64,6 +64,7 @@ Bessel Functions
    :toctree: generated/
 
    jv       -- Bessel function of real-valued order and complex argument.
+   jn       -- Alias for jv
    jve      -- Exponentially scaled Bessel function.
    yn       -- Bessel function of second kind (integer order).
    yv       -- Bessel function of the second kind (real-valued order).
@@ -206,6 +207,7 @@ Raw Statistical Functions
    fdtr       -- Integral from 0 to x of F pdf.
    fdtrc      -- Integral from x to infinity under F pdf.
    fdtri      -- Inverse of fdtrc
+   fdtridfd   -- 
    gdtr       -- Integral from 0 to x of gamma pdf.
    gdtrc      -- Integral from x to infinity under gamma pdf.
    gdtria     -- Inverse with respect to `a` of gdtr.
@@ -413,6 +415,26 @@ arithmetic, and lose information of the original orthogonal polynomial.
    polynomial coefficients is numerically unstable. To evaluate polynomial
    values, the ``eval_*`` functions should be used instead.
 
+Roots and weights for orthogonal polynomials
+
+.. autosummary::
+   :toctree: generated/
+
+   c_roots
+   cg_roots
+   h_roots
+   he_roots
+   j_roots
+   js_roots
+   l_roots
+   la_roots
+   p_roots
+   ps_roots
+   s_roots
+   t_roots
+   ts_roots
+   u_roots
+   us_roots
 
 
 Hypergeometric Functions
@@ -542,10 +564,10 @@ Combinatorics
 -------------
 
 .. autosummary::
-    :toctree: generated/
+   :toctree: generated/
 
-    comb    -- [+]Combinations of N things taken k at a time, "N choose k"
-    perm    -- [+]Permutations of N things taken k at a time, "k-permutations of N"
+   comb    -- [+]Combinations of N things taken k at a time, "N choose k"
+   perm    -- [+]Permutations of N things taken k at a time, "k-permutations of N"
 
 Other Special Functions
 -----------------------
@@ -591,6 +613,8 @@ Convenience Functions
    round    -- round the argument to the nearest integer. If argument ends in 0.5 exactly, pick the nearest even integer.
    xlogy    -- x*log(y)
    xlog1py  -- x*log1p(y)
+   exprel   -- (exp(x)-1)/x
+   sinc     -- sin(x)/x
 
 .. [+] in the description indicates a function which is not a universal
 .. function and does not follow broadcasting and automatic

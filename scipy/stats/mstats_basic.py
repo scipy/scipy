@@ -1103,11 +1103,12 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
 
     Examples
     --------
+    >>> from scipy.stats.mstats import trim
     >>> z = [ 1, 2, 3, 4, 5, 6, 7, 8, 9,10]
-    >>> trim(z,(3,8))
-    [--,--, 3, 4, 5, 6, 7, 8,--,--]
-    >>> trim(z,(0.1,0.2),relative=True)
-    [--, 2, 3, 4, 5, 6, 7, 8,--,--]
+    >>> print(trim(z,(3,8)))
+    [-- -- 3 4 5 6 7 8 -- --]
+    >>> print(trim(z,(0.1,0.2),relative=True))
+    [-- 2 3 4 5 6 7 8 -- --]
 
     """
     if relative:
@@ -1580,18 +1581,19 @@ def describe(a, axis=0, ddof=0):
 
     Examples
     --------
-
+    >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    (array(3),
-     (0, 2),
-     1.0,
-     1.0,
-     masked_array(data = 0.0,
+    DescribeResult(nobs=array(3), minmax=(masked_array(data = 0,
+                 mask = False,
+           fill_value = 999999)
+    , masked_array(data = 2,
+                 mask = False,
+           fill_value = 999999)
+    ), mean=1.0, variance=0.66666666666666663, skewness=masked_array(data = 0.0,
                  mask = False,
            fill_value = 1e+20)
-    ,
-     -1.5)
+    , kurtosis=-1.5)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1788,32 +1790,26 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     Using a 2D array, specifying axis and limit.
 
     >>> data = np.array([[   6.,    7.,    1.],
-                         [  47.,   15.,    2.],
-                         [  49.,   36.,    3.],
-                         [  15.,   39.,    4.],
-                         [  42.,   40., -999.],
-                         [  41.,   41., -999.],
-                         [   7., -999., -999.],
-                         [  39., -999., -999.],
-                         [  43., -999., -999.],
-                         [  40., -999., -999.],
-                         [  36., -999., -999.]])
-    >>> mquantiles(data, axis=0, limit=(0, 50))
-    array([[ 19.2 ,  14.6 ,   1.45],
-           [ 40.  ,  37.5 ,   2.5 ],
-           [ 42.8 ,  40.05,   3.55]])
+    ...                  [  47.,   15.,    2.],
+    ...                  [  49.,   36.,    3.],
+    ...                  [  15.,   39.,    4.],
+    ...                  [  42.,   40., -999.],
+    ...                  [  41.,   41., -999.],
+    ...                  [   7., -999., -999.],
+    ...                  [  39., -999., -999.],
+    ...                  [  43., -999., -999.],
+    ...                  [  40., -999., -999.],
+    ...                  [  36., -999., -999.]])
+    >>> print(mquantiles(data, axis=0, limit=(0, 50)))
+    [[ 19.2   14.6    1.45]
+     [ 40.    37.5    2.5 ]
+     [ 42.8   40.05   3.55]]
 
     >>> data[:, 2] = -999.
-    >>> mquantiles(data, axis=0, limit=(0, 50))
-    masked_array(data =
-     [[19.2 14.6 --]
+    >>> print(mquantiles(data, axis=0, limit=(0, 50)))
+    [[19.200000000000003 14.6 --]
      [40.0 37.5 --]
-     [42.8 40.05 --]],
-                 mask =
-     [[False False  True]
-      [False False  True]
-      [False False  True]],
-           fill_value = 1e+20)
+     [42.800000000000004 40.05 --]]
 
     """
     def _quantiles1D(data,m,p):
@@ -1994,12 +1990,13 @@ def sem(a, axis=0, ddof=1):
 
     >>> from scipy import stats
     >>> a = np.arange(20).reshape(5,4)
-    >>> stats.sem(a)
-    array([ 2.8284,  2.8284,  2.8284,  2.8284])
+    >>> print(stats.mstats.sem(a))
+    [2.8284271247461903 2.8284271247461903 2.8284271247461903
+     2.8284271247461903]
 
     Find standard error across the whole array, using n degrees of freedom:
 
-    >>> stats.sem(a, axis=None, ddof=0)
+    >>> print(stats.mstats.sem(a, axis=None, ddof=0))
     1.2893796958227628
 
     """

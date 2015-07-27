@@ -1704,10 +1704,14 @@ class Delaunay(_QhullUser):
     triangulation:
 
     >>> tri.simplices
-    array([[3, 2, 0],
+    array([[3, 2, 0],                 # may vary
            [3, 1, 0]], dtype=int32)
+
+    Note that depending on how rounding errors go, the simplices may
+    be in a different order than above.
+
     >>> points[tri.simplices]
-    array([[[ 1. ,  1. ],
+    array([[[ 1. ,  1. ],             # may vary
             [ 1. ,  0. ],
             [ 0. ,  0. ]],
            [[ 1. ,  1. ],
