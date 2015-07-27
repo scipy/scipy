@@ -191,7 +191,8 @@ static inline npy_float64 side_distance_from_min_max(
     const npy_float64 min,
     const npy_float64 max,
     const npy_float64 p,
-    const npy_float64 infinity) {
+    const npy_float64 infinity,
+    const ckdtreebox * box) {
     npy_float64 s, t;
 
     s = 0; 
@@ -228,7 +229,8 @@ __query_single_point(const ckdtree *self,
                      const npy_float64  eps, 
                      const npy_float64  p, 
                      npy_float64  distance_upper_bound,
-                     const npy_float64 infinity)
+                     const npy_float64 infinity,
+                     const ckdtreebox * box)
 {                
     // memory pool to allocate and automatically reclaim nodeinfo structs
     nodeinfo_pool nipool(self->m);
@@ -276,7 +278,7 @@ __query_single_point(const ckdtree *self,
         inf->maxes[i] = self->raw_maxes[i];
 
         inf->side_distances[i] = side_distance_from_min_max(
-            x[i], inf->mins[i], inf->maxes[i], p, infinity);
+            x[i], inf->mins[i], inf->maxes[i], p, infinity, box);
     }
     
     // compute first distance
@@ -321,8 +323,8 @@ __query_single_point(const ckdtree *self,
                     if (i < end_idx-2)
                         prefetch_datapoint(raw_data+raw_indices[i+2]*m, m);
                 
-                    d = _distance_p(raw_data+raw_indices[i]*m, x, p, m, 
-                            distance_upper_bound);
+                    d = _distance_p_box(raw_data+raw_indices[i]*m, x, p, m, 
+                            distance_upper_bound, box);
                         
                     if (d < distance_upper_bound) {
                         // replace furthest neighbor
@@ -384,14 +386,14 @@ __query_single_point(const ckdtree *self,
                     x[inode->split_dim],
                     inf1->mins[inode->split_dim],
                     inf1->maxes[inode->split_dim],
-                    p, infinity);
+                    p, infinity, box);
 
             inf2->side_distances[inode->split_dim] = 
                 side_distance_from_min_max(
                     x[inode->split_dim],
                     inf2->mins[inode->split_dim],
                     inf2->maxes[inode->split_dim],
-                    p, infinity);
+                    p, infinity, box);
 
             /*
              * one side distance changes
@@ -474,7 +476,8 @@ query_knn(const ckdtree      *self,
           const npy_intp     k, 
           const npy_float64  eps, 
           const npy_float64  p, 
-          const npy_float64  distance_upper_bound)
+          const npy_float64  distance_upper_bound,
+          const ckdtreebox * box)
 {
     npy_intp m = self->m;
     npy_intp i;
@@ -487,7 +490,7 @@ query_knn(const ckdtree      *self,
                 npy_float64 *dd_row = dd + (i*k);
                 npy_intp *ii_row = ii + (i*k);
                 const npy_float64 *xx_row = xx + (i*m);                
-                __query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                __query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity, box);
             }    
         } 
         catch(...) {

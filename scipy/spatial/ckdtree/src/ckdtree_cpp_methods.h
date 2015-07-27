@@ -109,11 +109,10 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
     return s;
 } 
  
- 
 inline npy_float64 
-_distance_p(const npy_float64 *x, const npy_float64 *y,
+_distance_p_box(const npy_float64 *x, const npy_float64 *y,
             const npy_float64 p, const npy_intp k,
-            const npy_float64 upperbound)
+            const npy_float64 upperbound, const ckdtreebox * box)
 {    
    /*
     * Compute the distance between x and y
@@ -160,6 +159,14 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
     return r;
 } 
 
+static struct ckdtreebox nonperiodic = {0};
+inline npy_float64 
+_distance_p(const npy_float64 *x, const npy_float64 *y,
+            const npy_float64 p, const npy_intp k,
+            const npy_float64 upperbound)
+{    
+    return _distance_p_box(x, y, p, k, upperbound, &nonperiodic);
+}
 // k-nearest neighbor query
           
 CKDTREE_EXTERN PyObject*
@@ -171,7 +178,8 @@ query_knn(const ckdtree     *self,
           const npy_intp     k, 
           const npy_float64  eps, 
           const npy_float64  p, 
-          const npy_float64  distance_upper_bound);
+          const npy_float64  distance_upper_bound,
+          const ckdtreebox * box);
           
 
 // Other query methods can follow here when they are implemented

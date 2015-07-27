@@ -21,6 +21,13 @@ import threading
 cdef extern from "limits.h":
     long LONG_MAX
     
+cdef extern from "ckdtree_cpp_decl.h":
+    struct ckdtreebox:
+        np.float64_t *fbox
+        np.float64_t *hbox
+        const void allocate(const int m, const np.float64_t * fbox)
+        const void free()
+
 cdef extern from "ckdtree_cpp_methods.h":
     int number_of_processors
     np.float64_t infinity
@@ -55,7 +62,6 @@ cdef extern from "ckdtree_cpp_decl.h":
         ckdtreenode *greater
         np.intp_t _less
         np.intp_t _greater
-    
     
 # Pickle helper functions
 # ======================
@@ -803,7 +809,8 @@ cdef extern from "ckdtree_cpp_methods.h":
                      const np.intp_t    k, 
                      const np.float64_t eps, 
                      const np.float64_t p, 
-                     const np.float64_t distance_upper_bound)         
+                     const np.float64_t distance_upper_bound,
+                     const ckdtreebox * box)         
                      
                       
 cdef public class cKDTree [object ckdtree, type ckdtree_type]:
@@ -1245,9 +1252,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     @cython.boundscheck(False)
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=infinity,
+              object boxsize=None,
               np.intp_t n_jobs=1):
         """
-        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, n_jobs=1)
+        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, boxsize=None, n_jobs=1)
 
         Query the kd-tree for nearest neighbors
 
@@ -1271,6 +1279,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
+        boxsize : array_like or scalar, optional 
+            size of the periodic box. All images at x + n * boxsize are considered
+            the same query location, where n are integer vectors. None for non-periodic
+            query.  Default: None
         n_jobs : int, optional
             Number of jobs to schedule for parallel processing. If -1 is given
             all processors are used. Default: 1.
@@ -1292,7 +1304,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         cdef np.ndarray[np.float64_t, ndim=2] xx
                 
         cdef np.intp_t c, n, i, j, CHUNK
-        
+        cdef ckdtreebox box 
+        cdef np.ndarray [np.float64_t, ndim=1] boxsize_arr
+
         x_arr = np.asarray(x, dtype=np.float64)
         if x_arr.ndim == 0 or x_arr.shape[x_arr.ndim - 1] != self.m:
             raise ValueError("x must consist of vectors of length %d but "
@@ -1312,6 +1326,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         ii = np.empty((n,k),dtype=np.intp)
         ii.fill(self.n)
         
+        if boxsize is not None:
+            boxsize_arr = np.empty(self.m, np.float64)
+            boxsize_arr[:] = boxsize
+            box.allocate(self.m, <np.float64_t*>boxsize_arr.data)
+        else:
+            box.fbox = <np.float64_t*> NULL
+
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.
         
@@ -1332,7 +1353,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 stop = n if stop > n else stop
                 if start < n:
                     query_knn(<ckdtree*>self, &dd[start,0], &ii[start,0], 
-                        &xx[start,0], stop-start, k, eps, p, dub)
+                        &xx[start,0], stop-start, k, eps, p, dub, &box)
             
             # There might be n_jobs+1 threads spawned here, but only n_jobs of 
             # them will do significant work.
@@ -1349,8 +1370,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 t.join()
         else:
             query_knn(<ckdtree*>self, &dd[0,0], &ii[0,0], &xx[0,0], 
-                n, k, eps, p, distance_upper_bound)
+                n, k, eps, p, distance_upper_bound, &box)
                 
+        box.free()
+
         if single:
             if k == 1:
                 if sizeof(long) < sizeof(np.intp_t):
