@@ -56,7 +56,7 @@ traverse(const ckdtree *self, const ckdtree *other,
                      prefetch_datapoint(sdata + sindices[i+2] * m, m);
             
                 prefetch_datapoint(odata + oindices[start2] * m, m);
-                if (min_j < end2)
+                if (start2 < end2)
                     prefetch_datapoint(sdata + oindices[start2+1] * m, m);
                     
                 for (npy_intp j = start2; j < end2; ++j) {
