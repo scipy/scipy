@@ -830,6 +830,30 @@ class _TestLinearFilter(TestCase):
         assert_array_equal(zi, zi_1)
         assert_array_equal(zi, zi_2)
 
+    def test_do_not_modify_a_b_IIR(self):
+        x = self.generate((6,))
+        b = self.convert_dtype([1, -1])
+        b0 = b.copy()
+        a = self.convert_dtype([0.5, -0.5])
+        a0 = a.copy()
+        y_r = self.convert_dtype([0, 2, 4, 6, 8, 10.])
+        y_f = lfilter(b, a, x)
+        assert_array_almost_equal(y_f, y_r)
+        assert_equal(b, b0)
+        assert_equal(a, a0)
+
+    def test_do_not_modify_a_b_FIR(self):
+        x = self.generate((6,))
+        b = self.convert_dtype([1, 0, 1])
+        b0 = b.copy()
+        a = self.convert_dtype([2])
+        a0 = a.copy()
+        y_r = self.convert_dtype([0, 0.5, 1, 2, 3, 4.])
+        y_f = lfilter(b, a, x)
+        assert_array_almost_equal(y_f, y_r)
+        assert_equal(b, b0)
+        assert_equal(a, a0)
+
 
 class TestLinearFilterFloat32(_TestLinearFilter):
     dtype = np.dtype('f')
