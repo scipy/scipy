@@ -299,17 +299,6 @@ class MMFile (object):
             if (row < col).sum() != (row > col).sum():
                 return MMFile.SYMMETRY_GENERAL
             
-            # # Check that non-zero element indices are the same when transposed
-            # rows = a.row
-            # cols = a.col
-            # sort_rows = np.argsort(rows)
-            # rows = rows[sort_rows]
-            # cols = cols[sort_rows]
-            # sort_cols = np.argsort(cols)
-            # rows_transpose, cols_transpose = cols[sort_cols], rows[sort_cols]
-            # if np.any(rows != rows_transpose) or np.any(cols != cols_transpose)
-            #     return MMFile.SYMMETRY_GENERAL
-            
             # define iterator over symmetric pair entries
             a = a.todok()
             def symm_iterator():
