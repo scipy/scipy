@@ -213,6 +213,8 @@ static inline npy_float64 side_distance_from_min_max(
         
     return s;
 }
+#define swap_ni(a, b) {nodeinfo * tmp; tmp = a; a = b; b = tmp;}
+
 // k-nearest neighbor search for a single point x
 static void 
 __query_single_point(const ckdtree *self, 
@@ -374,11 +376,7 @@ __query_single_point(const ckdtree *self,
             inf1->node = inode->less;
             inf2->mins[inode->split_dim] = inode->split;
             inf2->node = inode->greater;
-            /*
-             * near child is at the same distance as the current node
-             * we're going here next, so no point pushing it on the queue
-             * no need to recompute the distance or the side_distances
-             */
+            
             inf1->side_distances[inode->split_dim] = 
                 side_distance_from_min_max(
                     x[inode->split_dim],
@@ -393,12 +391,6 @@ __query_single_point(const ckdtree *self,
                     inf2->maxes[inode->split_dim],
                     p, infinity);
 
-            /*
-             * far child is further by an amount depending only
-             * on the split value; compute its distance and side_distances
-             * and push it on the queue if it's near enough
-             */
-            
             /*
              * one side distance changes
              * we can adjust the minimum distance without recomputing
@@ -420,35 +412,37 @@ __query_single_point(const ckdtree *self,
                         + inf2->side_distances[inode->split_dim];
             }
 
+            /* Ensure inf1 is closer than inf2 */
+            if (inf1_min_distance > inf2_min_distance) {
+                npy_float64 tmp = inf2_min_distance;
+                inf2_min_distance = inf1_min_distance;
+                inf1_min_distance = tmp;
+                swap_ni(inf1, inf2);
+            }
+
             printf("sd inf1: %g inf2: %g inf: %g\n", inf1->side_distances[inode->split_dim], 
                                                      inf2->side_distances[inode->split_dim],
                                                      inf->side_distances[inode->split_dim]
                         );
             printf("inf1: %g inf2: %g inf: %g\n", inf1_min_distance, inf2_min_distance, min_distance);
 
-            if (inf1_min_distance > inf2_min_distance) {
-                // any of the children might be too far, if so, don't bother pushing it
-                nodeinfo * tmp;
-                tmp = inf;
-                inf = inf2;
-                inf2 = tmp;
-                min_distance = inf2_min_distance;
-                if (inf1_min_distance<=distance_upper_bound*epsfac) {
-                    it2.priority = inf1_min_distance;
-                    it2.contents.ptrdata = (void*) nipool.dup(inf1);
-                    q.push(it2);
-                }
-            } else {
-                nodeinfo * tmp;
-                tmp = inf;
-                inf = inf1;
-                inf1 = tmp;
-                min_distance = inf1_min_distance;
-                if (inf2_min_distance<=distance_upper_bound*epsfac) {
-                    it2.priority = inf2_min_distance;
-                    it2.contents.ptrdata = (void*) nipool.dup(inf2);
-                    q.push(it2);
-                }
+            /*
+             * near child is at the same or closer than the distance as the current node
+             * we're going here next, so no point pushing it on the queue
+             * no need to recompute the distance or the side_distances
+             */
+            swap_ni(inf, inf1);
+            min_distance = inf1_min_distance;
+
+            /*
+             * far child can be further
+             * push it on the queue if it's near enough
+             */
+
+            if (inf2_min_distance<=distance_upper_bound*epsfac) {
+                it2.priority = inf2_min_distance;
+                it2.contents.ptrdata = (void*) nipool.dup(inf2);
+                q.push(it2);
             }
         }
     }
