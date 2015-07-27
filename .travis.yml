@@ -15,6 +15,27 @@ matrix:
       script:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
         - pep8 scipy benchmarks/benchmarks
+    - python: 2.7
+      env:
+        - TESTMODE=fast
+        - REFGUIDE_CHECK=1
+        - COVERAGE=
+        - NPY_RELAXED_STRIDES_CHECKING=1
+        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.9.1"
+      addons:
+        apt:
+          packages:
+            - libatlas-dev
+            - libatlas-base-dev
+            - liblapack-dev
+            - gfortran
+            - libgmp-dev
+            - libmpfr-dev
+            - ccache
+            - libfreetype6-dev
+            - libpng-dev
+            - zlib1g-dev
+            - texlive-fonts-recommended
     - python: 3.4
       env:
         - TESTMODE=fast
@@ -40,27 +61,6 @@ matrix:
         - TESTMODE=fast
         - OPTIMIZE=-OO
         - NUMPYSPEC="numpy==1.6.2"
-    - python: 2.7
-      env:
-        - TESTMODE=fast
-        - REFGUIDE_CHECK=1
-        - COVERAGE=
-        - NPY_RELAXED_STRIDES_CHECKING=1
-        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.9.1"
-      addons:
-        apt:
-          packages:
-            - libatlas-dev
-            - libatlas-base-dev
-            - liblapack-dev
-            - gfortran
-            - libgmp-dev
-            - libmpfr-dev
-            - ccache
-            - libfreetype6-dev
-            - libpng-dev
-            - zlib1g-dev
-            - texlive-fonts-recommended
 addons:
   apt:
     packages:
