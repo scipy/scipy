@@ -80,6 +80,9 @@ dabs_b(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
     if (x < 0) x1 = -x;
     if (hb > 0 && x1 > hb)
         x1 = fb - x1;
+#if 0
+    printf("dabs_b x : %g x1 %g\n", x, x1);
+#endif
     return x1;
 }
 
