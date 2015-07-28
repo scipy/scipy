@@ -176,14 +176,6 @@ struct nodeinfo_pool {
         arena_ptr += alloc_size;
         return ni;
     }
-    inline nodeinfo *dup(nodeinfo * ni) {
-        nodeinfo * ni_new = this->allocate();
-        memcpy(ni_new, ni, this->alloc_size);
-        ni_new->maxes = &ni_new->buf[0];
-        ni_new->mins = &ni_new->buf[this->m];
-        ni_new->side_distances = &ni_new->buf[2 * this->m];
-        return ni_new;
-    }
 };
 
 static inline npy_float64 side_distance_from_min_max(
@@ -297,7 +289,7 @@ __query_single_point(const ckdtree *self,
     
     npy_intp      i, m = self->m;
     nodeinfo      *inf;
-    nodeinfo      *inf1, *inf2;
+    nodeinfo      *inf2;
     npy_float64   d;
     npy_float64   epsfac;
     npy_float64   min_distance;
@@ -313,8 +305,6 @@ __query_single_point(const ckdtree *self,
     inf->node = self->ctree;
 
     // buffer for temparory nodeinfo
-    inf1 = nipool.allocate();
-    inf2 = nipool.allocate();
  
     for (i=0; i<m; ++i) {
         inf->mins[i] = self->raw_mins[i];
@@ -407,15 +397,9 @@ __query_single_point(const ckdtree *self,
                 // since this is the nearest cell, we're done, bail out 
                 break;
             }
-            /* 
-            for(i = 0; i < self->m; i ++) {
-                inf1->mins[i] = inf->mins[i];
-                inf1->maxes[i] = inf->maxes[i];
-                inf1->side_distances[i] = inf->side_distances[i];
-                inf2->mins[i] = inf->mins[i];
-                inf2->maxes[i] = inf->maxes[i];
-                inf2->side_distances[i] = inf->side_distances[i];
-            } */
+
+            inf2 = nipool.allocate();
+
             memcpy(inf2->mins, inf->mins, sizeof(npy_float64) * m); 
             memcpy(inf2->maxes, inf->maxes, sizeof(npy_float64) * m); 
             memcpy(inf2->side_distances, inf->side_distances, sizeof(npy_float64) * m); 
@@ -464,14 +448,14 @@ __query_single_point(const ckdtree *self,
                         + inf2->side_distances[inode->split_dim];
             }
 
-#define swap_ni(a, b) {nodeinfo * tmp; tmp = a; a = b; b = tmp;}
-
-            /* Ensure inf1 is closer than inf2 */
+            /* Ensure inf is closer than inf2 */
             if (inf_min_distance > inf2_min_distance) {
-                npy_float64 tmp = inf2_min_distance;
-                inf2_min_distance = inf_min_distance;
-                inf_min_distance = tmp;
-                swap_ni(inf, inf2);
+                {
+                    npy_float64 tmp = inf2_min_distance;
+                    inf2_min_distance = inf_min_distance;
+                    inf_min_distance = tmp;
+                }
+                {   nodeinfo * tmp; tmp = inf; inf = inf2; inf2 = tmp;}
             }
             
 #if 0
@@ -495,7 +479,7 @@ __query_single_point(const ckdtree *self,
 
             if (inf2_min_distance<=distance_upper_bound*epsfac) {
                 it2.priority = inf2_min_distance;
-                it2.contents.ptrdata = (void*) nipool.dup(inf2);
+                it2.contents.ptrdata = (void*) inf2;
                 q.push(it2);
             }
         }
