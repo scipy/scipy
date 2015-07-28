@@ -1290,9 +1290,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
         boxsize : array_like or scalar, optional 
-            size of the periodic box. All images at x + n * boxsize are considered
-            the same query location, where n are integer vectors. None or 0 for non-periodic
-            query.  Default: None
+            If non-negative, boxsize gives the size of the periodic box for periodic queries.
+            In a periodic query, the neighbours of all images of point x : 
+                :math:`\\left {x + n \\ocross L : n \\in \mathcal{I}^d \\right}` are sorted and
+            the nearest k neighbours are returned. Due to a implementation detail x shall not be
+            very off from the primary image :math:`[0, L)`. 
+            The positions in the tree are taken at their face value and not imaged.
+            None or 0 for non-periodic query.  Default: None
         n_jobs : int, optional
             Number of jobs to schedule for parallel processing. If -1 is given
             all processors are used. Default: 1.
