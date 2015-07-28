@@ -281,7 +281,7 @@ def validate_rst_syntax(text, name, dots=True):
         'mod', 'currentmodule', 'autosummary', 'data',
         'obj', 'versionadded', 'module', 'class',
         'ref', 'func', 'toctree', 'moduleauthor',
-        'sectionauthor', 'codeauthor',
+        'sectionauthor', 'codeauthor', 'eq',
     ])
 
     # Run through docutils
@@ -320,6 +320,10 @@ def validate_rst_syntax(text, name, dots=True):
         if m:
             if m.group(1) in ok_unknown_items:
                 continue
+
+        m = re.match(r'.*Error in "math" directive:.*unknown option: "label"', " ".join(lines), re.S)
+        if m:
+            continue
 
         output += name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip() + "\n"
         success = False
