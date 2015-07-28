@@ -195,7 +195,7 @@ static inline npy_float64 side_distance_from_min_max(
 ) {
     npy_float64 s, t, tmin, tmax;
 
-    if (fb <= 0) {
+    if (NPY_LIKELY(fb <= 0)) {
         /* non-periodic */
         s = 0; 
         t = x - max;
@@ -259,6 +259,17 @@ static inline npy_float64 side_distance_from_min_max(
     return s;
 }
 
+inline const npy_float64 adjust_min_distance(const npy_float64 min_distance, 
+        const npy_float64 old_side_distance, 
+        const npy_float64 new_side_distance,
+        const npy_float64 p, const npy_float64 infinity) {
+    if (NPY_UNLIKELY(p == infinity)) {
+        return dmax(min_distance, dabs(new_side_distance));
+    } else {
+        return min_distance - old_side_distance
+                + new_side_distance;
+    }
+}
 // k-nearest neighbor search for a single point x
 static void 
 __query_single_point(const ckdtree *self, 
@@ -410,7 +421,7 @@ __query_single_point(const ckdtree *self,
 
             // set up children for searching
             // inf2 will be pushed to the queue
-            if (box->fbox[0] <= 0) {
+            if (NPY_LIKELY(box->fbox[0] <= 0)) {
                 /*
                  * non periodic : the 'near' node is know from the
                  * relative distance to the split, and
@@ -424,14 +435,13 @@ __query_single_point(const ckdtree *self,
                     inf->maxes()[inode->split_dim] = inode->split;
                     inf2->node = inode->greater;
                     inf2->mins()[inode->split_dim] = inode->split;
-                }
-                else {
+                } else {
                     inf->node = inode->greater;
                     inf->mins()[inode->split_dim] = inode->split;
                     inf2->node = inode->less;
                     inf2->maxes()[inode->split_dim] = inode->split;
                 }
-
+                inf_min_distance = min_distance;
             } else {
                 /* 
                  * for periodic queries, we do not know which node is closer.
@@ -441,12 +451,19 @@ __query_single_point(const ckdtree *self,
                 inf->node = inode->less;
                 inf2->mins()[inode->split_dim] = inode->split;
                 inf2->node = inode->greater;
+
                 inf->side_distances()[inode->split_dim] = 
                     side_distance_from_min_max(
                         x[inode->split_dim],
                         inf->mins()[inode->split_dim],
                         inf->maxes()[inode->split_dim],
                         p, infinity, box->hbox[inode->split_dim], box->fbox[inode->split_dim]);
+
+                inf_min_distance = adjust_min_distance(min_distance, 
+                            inf_old_side_distance, 
+                            inf->side_distances()[inode->split_dim],
+                            p, infinity);
+
             }
 
             inf2->side_distances()[inode->split_dim] = 
@@ -460,17 +477,10 @@ __query_single_point(const ckdtree *self,
              * one side distance changes
              * we can adjust the minimum distance without recomputing
              */
-            if (NPY_UNLIKELY(p == infinity)) {
-                inf_min_distance = dmax(min_distance, dabs(inf->side_distances()[inode->split_dim]));
-                inf2_min_distance = dmax(min_distance, dabs(inf2->side_distances()[inode->split_dim]));
-            } else {
-                inf_min_distance = min_distance -
-                        inf_old_side_distance
-                        + inf->side_distances()[inode->split_dim];
-                inf2_min_distance = min_distance -
-                        inf_old_side_distance
-                        + inf2->side_distances()[inode->split_dim];
-            }
+            inf2_min_distance = adjust_min_distance(min_distance, 
+                        inf_old_side_distance, 
+                        inf2->side_distances()[inode->split_dim],
+                        p, infinity);
 
             /* Ensure inf is closer than inf2 */
             if (inf_min_distance > inf2_min_distance) {
