@@ -127,8 +127,7 @@ class Rbf(object):
 
     .. math::
 
-        s(\mathbf{x}) = \
-        \sum_{i=1}^{n} \alpha_i \phi_i(\mathbf{x})
+        s(\mathbf{x}) = \sum_{i=1}^{n} \alpha_i \phi_i(\mathbf{x})
 
     where the coefficients :math:`\alpha_i` are determined by the requirement
     that :math:`s` be an interpolant:
