@@ -22,8 +22,7 @@ from numpy import array, arange, float32, float64, power
 import numpy as np
 
 import scipy.stats as stats
-import scipy.stats.mstats_basic as mstats_basic
-from scipy import special
+import scipy.stats.mstats as mstats
 from common_tests import check_named_results
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -2188,16 +2187,16 @@ def test_friedmanchisquare():
     check_named_results(res, attributes)
 
     # test using mstats
-    assert_array_almost_equal(mstats_basic.friedmanchisquare(x1[0], x1[1],
-                                                             x1[2], x1[3]),
+    assert_array_almost_equal(mstats.friedmanchisquare(x1[0], x1[1],
+                                                       x1[2], x1[3]),
                               (10.2283464566929, 0.0167215803284414))
     # the following fails
-    # assert_array_almost_equal(mstats_basic.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),
+    # assert_array_almost_equal(mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),
     #                           (18.9428571428571, 0.000280938375189499))
-    assert_array_almost_equal(mstats_basic.friedmanchisquare(x3[0], x3[1],
-                                                             x3[2], x3[3]),
+    assert_array_almost_equal(mstats.friedmanchisquare(x3[0], x3[1],
+                                                       x3[2], x3[3]),
                               (10.68, 0.0135882729582176))
-    np.testing.assert_raises(ValueError, mstats_basic.friedmanchisquare,x3[0],x3[1])
+    np.testing.assert_raises(ValueError, mstats.friedmanchisquare,x3[0],x3[1])
 
 
 def test_kstest():
