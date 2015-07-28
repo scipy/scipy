@@ -25,7 +25,7 @@ __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
 
 #-------------------------------------------------------------------------------
-def mminfo(source):
+def mminfo(filename):
     """
     Queries the contents of the Matrix Market file 'filename' to
     extract size and storage information.
@@ -33,7 +33,7 @@ def mminfo(source):
     Parameters
     ----------
 
-    source : file
+    filename : file
         Matrix Market filename (extension .mtx) or open file object
 
     Returns
@@ -50,21 +50,20 @@ def mminfo(source):
         Either 'real', 'complex', 'pattern', or 'integer'.
     symmetry : str
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
-
     """
-    return MMFile.info(source)
+    return MMFile.info(filename)
 
 #-------------------------------------------------------------------------------
 
 
-def mmread(source):
+def mmread(filename):
     """
     Reads the contents of a Matrix Market file 'filename' into a matrix.
 
     Parameters
     ----------
 
-    source : file
+    filename : file
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file object.
 
@@ -72,20 +71,19 @@ def mmread(source):
     -------
     a:
         Sparse or full matrix
-
     """
-    return MMFile().read(source)
+    return MMFile().read(filename)
 
 #-------------------------------------------------------------------------------
 
 
-def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
+def mmwrite(filename, a, comment='', field=None, precision=None, symmetry=None):
     """
-    Writes the sparse or dense array `a` to the Matrix Market formatted file `target`.
+    Writes the sparse or dense array `a` to the Matrix Market formatted file `filename`.
 
     Parameters
     ----------
-    target : file
+    filename : file
         Matrix Market filename (extension .mtx) or open file object
     a : array like
         Sparse or dense 2D array
@@ -100,7 +98,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         If symmetry is None the symmetry type of 'a' is determined by its
         values.
     """
-    MMFile().write(target, a, comment, field, precision, symmetry)
+    MMFile().write(filename, a, comment, field, precision, symmetry)
 
 
 ################################################################################
@@ -198,13 +196,39 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     @classmethod
-    def info(self, source):
-        source, close_it = self._open(source)
+    def info(self, filename):
+        """
+        Queries the contents of the Matrix Market file 'filename' to
+        extract size and storage information.
+    
+        Parameters
+        ----------
+    
+        filename : file
+            Matrix Market filename (extension .mtx) or open file object
+    
+        Returns
+        -------
+    
+        rows,cols : int
+        Number of matrix rows and columns
+        entries : int
+            Number of non-zero entries of a sparse matrix
+            or rows*cols for a dense matrix
+        format : str
+            Either 'coordinate' or 'array'.
+        field : str
+            Either 'real', 'complex', 'pattern', or 'integer'.
+        symmetry : str
+            Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
+        """
+        
+        stream, close_it = self._open(filename)
 
         try:
 
             # read and validate header line
-            line = source.readline()
+            line = stream.readline()
             mmid, matrix, format, field, symmetry = \
               [asstr(part.strip()) for part in line.split()]
             if not mmid.startswith('%%MatrixMarket'):
@@ -220,7 +244,7 @@ class MMFile (object):
 
             # skip comments
             while line.startswith(b'%'):
-                line = source.readline()
+                line = stream.readline()
 
             line = line.split()
             if format == self.FORMAT_ARRAY:
@@ -237,7 +261,7 @@ class MMFile (object):
 
         finally:
             if close_it:
-                source.close()
+                stream.close()
 
     #---------------------------------------------------------------------------
     @staticmethod
@@ -301,6 +325,7 @@ class MMFile (object):
             
             # define iterator over symmetric pair entries
             a = a.todok()
+            
             def symm_iterator():
                 for ((i, j), aij) in a.items():
                     if i > j:
@@ -348,8 +373,23 @@ class MMFile (object):
         self._init_attrs(**kwargs)
 
     #---------------------------------------------------------------------------
-    def read(self, source):
-        stream, close_it = self._open(source)
+    def read(self, filename):
+        """
+        Reads the contents of a Matrix Market file 'filename' into a matrix.
+    
+        Parameters
+        ----------
+    
+        filename : file
+            Matrix Market filename (extensions .mtx, .mtz.gz)
+            or open file object.
+    
+        Returns
+        -------
+        a:
+            Sparse or full matrix
+        """
+        stream, close_it = self._open(filename)
 
         try:
             self._parse_header(stream)
@@ -360,13 +400,13 @@ class MMFile (object):
                 stream.close()
 
     #---------------------------------------------------------------------------
-    def write(self, target, a, comment='', field=None, precision=None, symmetry=None):
+    def write(self, filename, a, comment='', field=None, precision=None, symmetry=None):
         """
-        Writes the sparse or dense array `a` to the Matrix Market formatted file `target`.
-        
+        Writes the sparse or dense array `a` to the Matrix Market formatted file `filename`.
+    
         Parameters
         ----------
-        target : file
+        filename : file
             Matrix Market filename (extension .mtx) or open file object
         a : array like
             Sparse or dense 2D array
@@ -382,7 +422,7 @@ class MMFile (object):
             values.
         """
         
-        stream, close_it = self._open(target, 'wb')
+        stream, close_it = self._open(filename, 'wb')
 
         try:
             self._write(stream, a, comment, field, precision, symmetry)
