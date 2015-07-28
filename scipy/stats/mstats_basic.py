@@ -32,7 +32,6 @@ __all__ = ['argstoarray',
            'ttest_ind','ttest_rel','tvar',
            'variation',
            'winsorize',
-           'zmap', 'zscore'
            ]
 
 import numpy as np
@@ -46,7 +45,6 @@ import itertools
 import warnings
 from collections import namedtuple
 
-from . import stats
 from . import distributions
 import scipy.special as special
 from . import futil
@@ -840,7 +838,7 @@ def kruskalwallis(*args):
 
     H /= T
     df = len(output) - 1
-    prob = stats.distributions.chi2.sf(H, df)
+    prob = distributions.chi2.sf(H, df)
 
     KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
     return KruskalResult(H, prob)
@@ -897,18 +895,6 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
 
     return (d, prob)
 ks_2samp = ks_twosamp
-
-
-def ks_twosamp_old(data1, data2):
-    """ Computes the Kolmogorov-Smirnov statistic on 2 samples.
-
-    Returns
-    -------
-    KS D-value, p-value
-
-    """
-    (data1, data2) = [ma.asarray(d).compressed() for d in (data1,data2)]
-    return stats.ks_2samp(data1,data2)
 
 
 @np.deprecate(message="mstats.threshold is deprecated in scipy 0.17.0")
@@ -1709,7 +1695,7 @@ def normaltest(a, axis=0):
     k2 = s*s + k*k
 
     NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
-    return NormaltestResult(k2, stats.distributions.chi2.sf(k2, 2))
+    return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 normaltest.__doc__ = stats.normaltest.__doc__
 
 
@@ -2006,10 +1992,6 @@ def sem(a, axis=0, ddof=1):
     return s
 
 
-zmap = stats.zmap
-zscore = stats.zscore
-
-
 def f_oneway(*args):
     """
     Performs a 1-way ANOVA, returning an F-value and probability given
@@ -2109,4 +2091,4 @@ def friedmanchisquare(*args):
     FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                          ('statistic', 'pvalue'))
     return FriedmanchisquareResult(chisq,
-                                   stats.distributions.chi2.sf(chisq, k-1))
+                                   distributions.chi2.sf(chisq, k-1))

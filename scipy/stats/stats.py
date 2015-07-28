@@ -182,7 +182,7 @@ import scipy.linalg as linalg
 import numpy as np
 from . import futil
 from . import distributions
-# from . import mstats_basic
+from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 
 from ._rank import rankdata, tiecorrect
@@ -1122,7 +1122,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.moment(a, moment, axis)
+        return mstats_basic.moment(a, moment, axis)
 
     if contains_nan and nan_policy == 'propagate':
         return np.nan

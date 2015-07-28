@@ -96,4 +96,4 @@ from __future__ import division, print_function, absolute_import
 
 from .mstats_basic import *
 from .mstats_extras import *
-from scipy.stats import gmean, hmean
+from scipy.stats import gmean, hmean, zmap, zscore
