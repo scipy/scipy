@@ -213,9 +213,10 @@ static inline npy_float64 side_distance_from_min_max(
         tmax = x - max;
         tmin = x - min;
         /* is the test point in this range */
-        if(tmax <= 0 || tmin >= 0) {
+        if(tmax >= 0 || tmin <= 0) {
             /* no */
-            tmax = -tmax;
+            tmax = dabs(tmax);
+            tmin = dabs(tmin);
             /* tmin will be the closer edge */
             if(tmin > tmax) {
                 t = tmin;
