@@ -365,7 +365,7 @@ __query_single_point(const ckdtree *self,
                     if (i < end_idx-2)
                         prefetch_datapoint(raw_data+raw_indices[i+2]*m, m);
                 
-                    d = _distance_p_box(raw_data+raw_indices[i]*m, x, p, m, 
+                    d = _distance_p(raw_data+raw_indices[i]*m, x, p, m, 
                             distance_upper_bound, box);
                         
                     if (d < distance_upper_bound) {

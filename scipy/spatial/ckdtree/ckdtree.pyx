@@ -34,7 +34,8 @@ cdef extern from "ckdtree_cpp_methods.h":
     np.float64_t dmax(np.float64_t x, np.float64_t y)
     np.float64_t dabs(np.float64_t x)
     np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
-                       np.float64_t p, np.intp_t k, np.float64_t upperbound)
+                       np.float64_t p, np.intp_t k, np.float64_t upperbound,
+                       ckdtreebox * box)
 infinity = np.inf
 number_of_processors = cpu_count()
 
@@ -317,7 +318,7 @@ cdef class RectRectDistanceTracker(object):
 
     cdef np.intp_t stack_size, stack_max_size
     cdef RR_stack_item *stack
-
+    cdef ckdtreebox box
     # Stack handling
     cdef int _init_stack(self) except -1:
         cdef void *tmp
@@ -355,6 +356,9 @@ cdef class RectRectDistanceTracker(object):
         self.rect2 = rect2
         self.p = p
         
+        cdef np.ndarray[np.float64_t, ndim=1] zeros = np.zeros(rect1.m, dtype=np.float64)
+        self.box.allocate(rect1.m, <np.float64_t*>zeros.data)
+
         # internally we represent all distances as distance ** p
         if p != infinity and upper_bound != infinity:
             self.upper_bound = upper_bound ** p
@@ -384,6 +388,7 @@ cdef class RectRectDistanceTracker(object):
 
     def __dealloc__(self):
         self._free_stack()
+        self.box.free()
 
     cdef int push(self, np.intp_t which, np.intp_t direction,
                   np.intp_t split_dim,
@@ -496,6 +501,7 @@ cdef class PointRectDistanceTracker(object):
 
     cdef np.intp_t stack_size, stack_max_size
     cdef RP_stack_item *stack
+    cdef ckdtreebox box
 
     # Stack handling
     cdef int _init_stack(self) except -1:
@@ -536,6 +542,9 @@ cdef class PointRectDistanceTracker(object):
         else:
             self.upper_bound = upper_bound
 
+        cdef np.ndarray[np.float64_t, ndim=1] zeros = np.zeros(rect.m, dtype=np.float64)
+        self.box.allocate(rect.m, <np.float64_t*>zeros.data)
+
         # fiddle approximation factor
         if eps == 0:
             self.epsfac = 1
@@ -559,6 +568,7 @@ cdef class PointRectDistanceTracker(object):
 
     def __dealloc__(self):
         self._free_stack()
+        self.box.free()
 
     cdef int push(self, np.intp_t direction,
                   np.intp_t split_dim,
@@ -1451,7 +1461,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             for i in range(lnode.start_idx, lnode.end_idx):
                 d = _distance_p(
                     self.raw_data + self.raw_indices[i] * self.m,
-                    tracker.pt, tracker.p, self.m, tracker.upper_bound)
+                    tracker.pt, tracker.p, self.m, tracker.upper_bound, &tracker.box)
                 if d <= tracker.upper_bound:
                     list_append(results, self.raw_indices[i])
         else:
@@ -1614,7 +1624,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         d = _distance_p(
                             self.raw_data + self.raw_indices[i] * self.m,
                             other.raw_data + other.raw_indices[j] * other.m,
-                            tracker.p, self.m, tracker.upper_bound)
+                            tracker.p, self.m, tracker.upper_bound, &tracker.box)
                         if d <= tracker.upper_bound:
                             list_append(results_i, other.raw_indices[j])
                             
@@ -1804,7 +1814,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         d = _distance_p(
                             self.raw_data + self.raw_indices[i] * self.m,
                             self.raw_data + self.raw_indices[j] * self.m,
-                            tracker.p, self.m, tracker.upper_bound)
+                            tracker.p, self.m, tracker.upper_bound, &tracker.box)
                         if d <= tracker.upper_bound:
                             set_add_ordered_pair(results,
                                                  self.raw_indices[i],
@@ -1953,7 +1963,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                             d = _distance_p(
                                 self.raw_data + self.raw_indices[i] * self.m,
                                 other.raw_data + other.raw_indices[j] * other.m,
-                                tracker.p, self.m, tracker.max_distance)
+                                tracker.p, self.m, tracker.max_distance, &tracker.box)
                             # I think it's usually cheaper to test d against all r's
                             # than to generate a distance array, sort it, then
                             # search for all r's via binary search
@@ -2129,7 +2139,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         d = _distance_p(
                             self.raw_data + self.raw_indices[i] * self.m,
                             other.raw_data + other.raw_indices[j] * self.m,
-                            tracker.p, self.m, tracker.upper_bound)
+                            tracker.p, self.m, tracker.upper_bound, &tracker.box)
                         if d <= tracker.upper_bound:
                             if tracker.p != 1 and tracker.p != infinity:
                                 d = d**(1. / tracker.p)
