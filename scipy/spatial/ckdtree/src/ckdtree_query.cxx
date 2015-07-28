@@ -195,9 +195,10 @@ static inline npy_float64 side_distance_from_min_max(
     const npy_float64 hb,
     const npy_float64 fb
 ) {
-    npy_float64 s, t;
+    npy_float64 s, t, tmin, tmax;
 
     if (fb <= 0) {
+        /* non-periodic */
         s = 0; 
         t = x - max;
         if (t > s) {
@@ -207,12 +208,46 @@ static inline npy_float64 side_distance_from_min_max(
             if (t > s) s = t;
         }
     } else {
+        /* periodic */
         s = 0;
-        if(x > max) {
-           // d1 = x - max;
-        // FIXME: XXX
+        /* first wrap x to the primary box */
+        t = x;
+        while(t < 0) t += fb;
+        while(t >= fb) t -= fb;
+        tmax = t - max;
+        tmin = t - min;
+        /* is the test point in this range */
+        if(tmax <= 0 || tmin >= 0) {
+            /* no */
+            tmax = -tmax;
+            /* tmin will be the closer edge */
+            if(tmin > tmax) {
+                t = tmin;
+                tmin = tmax;
+                tmax = t;
+            }
+            if(tmax < hb) {
+                /* both edges are less than half a box. */
+                /* no wrapping, use the closer edge */
+                s = tmin;
+            } else if(tmin > hb) {
+                /* both edge are more than half a box. */
+                /* wrapping on both edge, use the 
+                 * wrapped further edge */
+                s = fb - tmax;
+            } else {
+                /* the further side is wrapped */
+                tmax = fb - tmax;
+                if(tmin > tmax) {
+                    s = tmax;
+                } else {
+                    s = tmin;
+                }
+            }
+        } else {
+            /* yes. min distance is 0 */
+            s = 0; 
         }
-        abort(); 
     }
 #if 0
     printf("sdfmm: s %g t %g x %g min %g max %g\n", s, t, x, min, max);
