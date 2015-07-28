@@ -210,12 +210,8 @@ static inline npy_float64 side_distance_from_min_max(
     } else {
         /* periodic */
         s = 0;
-        /* first wrap x to the primary box */
-        t = x;
-        while(t < 0) t += fb;
-        while(t >= fb) t -= fb;
-        tmax = t - max;
-        tmin = t - min;
+        tmax = x - max;
+        tmin = x - min;
         /* is the test point in this range */
         if(tmax <= 0 || tmin >= 0) {
             /* no */
@@ -525,8 +521,8 @@ query_knn(const ckdtree      *self,
           const ckdtreebox * box)
 {
     npy_intp m = self->m;
-    npy_intp i;
-    
+    npy_intp i, j;
+    npy_float64 *scratch = (npy_float64*)PyMem_Malloc(sizeof(npy_float64) * m);
     // release the GIL
     NPY_BEGIN_ALLOW_THREADS
     {
@@ -535,7 +531,15 @@ query_knn(const ckdtree      *self,
                 npy_float64 *dd_row = dd + (i*k);
                 npy_intp *ii_row = ii + (i*k);
                 const npy_float64 *xx_row = xx + (i*m);                
-                __query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity, box);
+                for (j=0; j<m; ++j) {
+                    scratch[j] = xx_row[j];
+                    if(box->fbox[j] > 0) {
+                        /* wrap the query points into the primary box if needed */
+                        while(scratch[j] < 0) scratch[j] += box->fbox[j];
+                        while(scratch[j] >= box->fbox[j]) scratch[j] -= box->fbox[j];
+                    }
+                }
+                __query_single_point(self, dd_row, ii_row, scratch, k, eps, p, distance_upper_bound, ::infinity, box);
             }    
         } 
         catch(...) {
@@ -544,6 +548,7 @@ query_knn(const ckdtree      *self,
     }
     // reacquire the GIL
     NPY_END_ALLOW_THREADS
+    PyMem_Free(scratch);
 
     if (PyErr_Occurred()) 
         // true if a C++ exception was translated
