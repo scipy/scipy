@@ -22,6 +22,7 @@ from numpy import array, arange, float32, float64, power
 import numpy as np
 
 import scipy.stats as stats
+import scipy.stats.mstats_basic as mstats_basic
 from scipy import special
 from common_tests import check_named_results
 
@@ -541,8 +542,8 @@ class TestCorrSpearmanr(TestCase):
         assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
         assert_array_equal(stats.spearmanr(X, x), (np.nan, np.nan))
         assert_array_equal(stats.spearmanr(x, X), (np.nan, np.nan))
-        # assert_array_equal(stats.spearmanr(x, x, nan_policy='omit'),
-        #                    (1.0, 0.0))
+        assert_array_equal(stats.spearmanr(x, x, nan_policy='omit'),
+                           (1.0, 0.0))
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
 
@@ -1424,7 +1425,7 @@ class TestVariability(TestCase):
         x = np.arange(10.)
         x[9] = np.nan
         assert_equal(stats.sem(x), np.nan)
-        # assert_equal(stats.sem(x, nan_policy='omit'), 0.9128709291752769)
+        assert_equal(stats.sem(x, nan_policy='omit'), 0.9128709291752769)
         assert_raises(ValueError, stats.sem, x, nan_policy='raise')
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
@@ -1562,7 +1563,7 @@ class TestMoments(TestCase):
         x = np.arange(10.)
         x[9] = np.nan
         assert_equal(stats.moment(x), np.nan)
-        # assert_almost_equal(stats.moment(x, nan_policy='omit'), 0.0)
+        assert_almost_equal(stats.moment(x, nan_policy='omit'), 0.0)
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
 
@@ -1576,8 +1577,8 @@ class TestMoments(TestCase):
         x = np.arange(10.)
         x[9] = np.nan
         assert_equal(stats.variation(x), np.nan)
-        # assert_almost_equal(stats.variation(x, nan_policy='omit'),
-        #                     0.6454972243679028)
+        assert_almost_equal(stats.variation(x, nan_policy='omit'),
+                            0.6454972243679028)
         assert_raises(ValueError, stats.variation, x, nan_policy='raise')
         assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
 
@@ -1597,7 +1598,7 @@ class TestMoments(TestCase):
         x = np.arange(10.)
         x[9] = np.nan
         assert_equal(stats.skew(x), np.nan)
-        # assert_equal(stats.skew(x, nan_policy='omit'), 0.)
+        assert_equal(stats.skew(x, nan_policy='omit'), 0.)
         assert_raises(ValueError, stats.skew, x, nan_policy='raise')
         assert_raises(ValueError, stats.skew, x, nan_policy='foobar')
 
@@ -1628,7 +1629,7 @@ class TestMoments(TestCase):
         x = np.arange(10.)
         x[9] = np.nan
         assert_equal(stats.kurtosis(x), np.nan)
-        # assert_almost_equal(stats.kurtosis(x, nan_policy='omit'), -1.230000)
+        assert_almost_equal(stats.kurtosis(x, nan_policy='omit'), -1.230000)
         assert_raises(ValueError, stats.kurtosis, x, nan_policy='raise')
         assert_raises(ValueError, stats.kurtosis, x, nan_policy='foobar')
 
@@ -1707,10 +1708,10 @@ class TestStudentTest(TestCase):
         x[50] = np.nan, np.nan
         assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
 
-        # exp_statistic = [0.59944587, -0.2897877]
-        # exp_pvalue = [0.55163744, 0.77320141]
-        # assert_array_equal(stats.ttest_1samp(x, 5.0, nan_policy='omit'),
-        #                    (exp_statistic, exp_pvalue))
+        exp_statistic = [0.59944587, -0.2897877]
+        exp_pvalue = [0.55163744, 0.77320141]
+        assert_array_equal(stats.ttest_1samp(x, 5.0, nan_policy='omit'),
+                           (exp_statistic, exp_pvalue))
         assert_raises(ValueError, stats.ttest_1samp, x, 5.0, nan_policy='raise')
         assert_raises(ValueError, stats.ttest_1samp, x, 5.0, nan_policy='foobar')
 
@@ -2187,14 +2188,16 @@ def test_friedmanchisquare():
     check_named_results(res, attributes)
 
     # test using mstats
-    assert_array_almost_equal(stats.mstats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),
+    assert_array_almost_equal(mstats_basic.friedmanchisquare(x1[0], x1[1],
+                                                             x1[2], x1[3]),
                               (10.2283464566929, 0.0167215803284414))
     # the following fails
-    # assert_array_almost_equal(stats.mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),
+    # assert_array_almost_equal(mstats_basic.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),
     #                           (18.9428571428571, 0.000280938375189499))
-    assert_array_almost_equal(stats.mstats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),
+    assert_array_almost_equal(mstats_basic.friedmanchisquare(x3[0], x3[1],
+                                                             x3[2], x3[3]),
                               (10.68, 0.0135882729582176))
-    np.testing.assert_raises(ValueError,stats.mstats.friedmanchisquare,x3[0],x3[1])
+    np.testing.assert_raises(ValueError, mstats_basic.friedmanchisquare,x3[0],x3[1])
 
 
 def test_kstest():
@@ -2314,10 +2317,10 @@ def test_ttest_rel():
     x[500] = np.nan
     assert_array_equal(stats.ttest_rel(x, x), (np.nan, np.nan))
 
-    # exp_statistic = [0.59944587, -0.2897877]
-    # exp_pvalue = [0.55163744, 0.77320141]
-    # assert_array_equal(stats.ttest_rel(x, 5.0, nan_policy='omit'),
-    #                    (exp_statistic, exp_pvalue))
+    exp_statistic = [0.59944587, -0.2897877]
+    exp_pvalue = [0.55163744, 0.77320141]
+    assert_array_equal(stats.ttest_rel(x, 5.0, nan_policy='omit'),
+                       (exp_statistic, exp_pvalue))
     assert_raises(ValueError, stats.ttest_rel, x, 5.0, nan_policy='raise')
     assert_raises(ValueError, stats.ttest_rel, x, 5.0, nan_policy='foobar')
 
@@ -2407,10 +2410,10 @@ def test_ttest_ind():
     x[500] = np.nan
     assert_array_equal(stats.ttest_ind(x, x), (np.nan, np.nan))
 
-    # exp_statistic = [0.59944587, -0.2897877]
-    # exp_pvalue = [0.55163744, 0.77320141]
-    # assert_array_equal(stats.ttest_ind(x, 5.0, nan_policy='omit'),
-    #                    (exp_statistic, exp_pvalue))
+    exp_statistic = [0.59944587, -0.2897877]
+    exp_pvalue = [0.55163744, 0.77320141]
+    assert_array_equal(stats.ttest_ind(x, 5.0, nan_policy='omit'),
+                       (exp_statistic, exp_pvalue))
     assert_raises(ValueError, stats.ttest_ind, x, 5.0, nan_policy='raise')
     assert_raises(ValueError, stats.ttest_ind, x, 5.0, nan_policy='foobar')
 
@@ -2424,8 +2427,8 @@ def test_ttest_ind():
         anan = np.array([[1,np.nan],[-1,1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),
                      ([0, np.nan], [1,np.nan]))
-        # assert_equal(stats.ttest_1samp(anan, np.zeros((2, 2))),
-        #              (np.nan, np.nan))
+        assert_equal(stats.ttest_1samp(anan, np.zeros((2, 2))),
+                     (np.nan, np.nan))
     finally:
         np.seterr(**olderr)
 
@@ -2574,7 +2577,7 @@ def test_ttest_1samp_new():
 
         # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
-        # assert_equal(stats.ttest_1samp(anan, 0),([0, np.nan], [1,np.nan]))
+        assert_equal(stats.ttest_1samp(anan, 0),([0, np.nan], [1,np.nan]))
         assert_equal(stats.ttest_1samp(anan, 0),(np.nan, np.nan))
     finally:
         np.seterr(**olderr)
@@ -2619,18 +2622,18 @@ class TestDescribe(TestCase):
         res = stats.describe(x)
         assert_array_equal(res, np.zeros(6) * np.nan)
 
-        # nc, mmc = (9, (0.0, 8.0))
-        # mc = 4.0
-        # vc = 7.5
-        # skc = 0.0
-        # kurtc = -1.2300000000000002
-        # n, mm, m, v, sk, kurt = stats.describe(x, nan_policy='omit')
-        # assert_equal(n, nc)
-        # assert_equal(mm, mmc)
-        # assert_equal(m, mc)
-        # assert_equal(v, vc)
-        # assert_array_almost_equal(sk, skc)
-        # assert_array_almost_equal(kurt, kurtc, decimal=13)
+        nc, mmc = (9, (0.0, 8.0))
+        mc = 4.0
+        vc = 7.5
+        skc = 0.0
+        kurtc = -1.2300000000000002
+        n, mm, m, v, sk, kurt = stats.describe(x, nan_policy='omit')
+        assert_equal(n, nc)
+        assert_equal(mm, mmc)
+        assert_equal(m, mc)
+        assert_equal(v, vc)
+        assert_array_almost_equal(sk, skc)
+        assert_array_almost_equal(kurt, kurtc, decimal=13)
 
         assert_raises(ValueError, stats.describe, x, nan_policy='raise')
         assert_raises(ValueError, stats.describe, x, nan_policy='foobar')
@@ -2709,30 +2712,29 @@ def test_normalitytests():
     x = np.arange(10.)
     x[9] = np.nan
     assert_array_equal(stats.skewtest(x), (np.nan, np.nan))
-    #
-    # expected = (1.0184643553962129, 0.30845733195153502)
-    # assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
-    #
+
+    expected = (1.0184643553962129, 0.30845733195153502)
+    assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
+
     assert_raises(ValueError, stats.skewtest, x, nan_policy='raise')
     assert_raises(ValueError, stats.skewtest, x, nan_policy='foobar')
 
     x = np.arange(30.)
     x[29] = np.nan
     assert_array_equal(stats.kurtosistest(x), (np.nan, np.nan))
-    #
-    # expected = (-1.7058104152122062, 0.0880433833252834)
-    # assert_array_almost_equal(stats.kurtosistest(x, nan_policy='omit'),
-    #                           expected)
-    #
+
+    expected = (-1.7058104152122062, 0.0880433833252834)
+    assert_array_almost_equal(stats.kurtosistest(x, nan_policy='omit'),
+                              expected)
+
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='raise')
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='foobar')
 
     assert_array_equal(stats.normaltest(x), (np.nan, np.nan))
-    #
-    # expected = (6.4992216395701909, 0.038789300923034474
-    # assert_array_almost_equal(stats.normaltest(x, nan_policy='omit'),
-    #                           expected)
-    #
+
+    expected = (6.4992216395701909, 0.038789300923034474)
+    assert_array_almost_equal(stats.normaltest(x, nan_policy='omit'), expected)
+
     assert_raises(ValueError, stats.normaltest, x, nan_policy='raise')
     assert_raises(ValueError, stats.normaltest, x, nan_policy='foobar')
 
