@@ -409,10 +409,10 @@ __query_single_point(const ckdtree *self,
                 inf2_min_distance = dmax(min_distance, dabs(inf2->side_distances[inode->split_dim]));
             } else {
                 inf1_min_distance = min_distance -
-                        inf->side_distances[inode->split_dim];
+                        inf->side_distances[inode->split_dim]
                         + inf1->side_distances[inode->split_dim];
                 inf2_min_distance = min_distance -
-                        inf->side_distances[inode->split_dim];
+                        inf->side_distances[inode->split_dim]
                         + inf2->side_distances[inode->split_dim];
             }
 
