@@ -301,7 +301,8 @@ __query_single_point(const ckdtree *self,
     npy_float64   d;
     npy_float64   epsfac;
     npy_float64   min_distance;
-    npy_float64   inf1_min_distance;
+    npy_float64   inf_min_distance;
+    npy_float64   inf_old_side_distance;
     npy_float64   inf2_min_distance;
     heapitem      it, it2, neighbor;
     const ckdtreenode   *node;
@@ -406,7 +407,7 @@ __query_single_point(const ckdtree *self,
                 // since this is the nearest cell, we're done, bail out 
                 break;
             }
-            
+            /* 
             for(i = 0; i < self->m; i ++) {
                 inf1->mins[i] = inf->mins[i];
                 inf1->maxes[i] = inf->maxes[i];
@@ -414,20 +415,25 @@ __query_single_point(const ckdtree *self,
                 inf2->mins[i] = inf->mins[i];
                 inf2->maxes[i] = inf->maxes[i];
                 inf2->side_distances[i] = inf->side_distances[i];
-            }
+            } */
+            memcpy(inf2->mins, inf->mins, sizeof(npy_float64) * m); 
+            memcpy(inf2->maxes, inf->maxes, sizeof(npy_float64) * m); 
+            memcpy(inf2->side_distances, inf->side_distances, sizeof(npy_float64) * m); 
+            
+            inf_old_side_distance = inf->side_distances[inode->split_dim];
             
             // set up children for searching
             // inf2 will be pushed to the queue
-            inf1->maxes[inode->split_dim] = inode->split;
-            inf1->node = inode->less;
+            inf->maxes[inode->split_dim] = inode->split;
+            inf->node = inode->less;
             inf2->mins[inode->split_dim] = inode->split;
             inf2->node = inode->greater;
             
-            inf1->side_distances[inode->split_dim] = 
+            inf->side_distances[inode->split_dim] = 
                 side_distance_from_min_max(
                     x[inode->split_dim],
-                    inf1->mins[inode->split_dim],
-                    inf1->maxes[inode->split_dim],
+                    inf->mins[inode->split_dim],
+                    inf->maxes[inode->split_dim],
                     p, infinity, box->hbox[inode->split_dim], box->fbox[inode->split_dim]);
 
             inf2->side_distances[inode->split_dim] = 
@@ -447,25 +453,25 @@ __query_single_point(const ckdtree *self,
                  * so skip filling it in
                  * inf2->side_distances[inode->split_dim] = dabs(inode->split-x[inode->split_dim])
                  */
-                inf1_min_distance = dmax(min_distance, dabs(inf1->side_distances[inode->split_dim]));
+                inf_min_distance = dmax(min_distance, dabs(inf->side_distances[inode->split_dim]));
                 inf2_min_distance = dmax(min_distance, dabs(inf2->side_distances[inode->split_dim]));
             } else {
-                inf1_min_distance = min_distance -
-                        inf->side_distances[inode->split_dim]
-                        + inf1->side_distances[inode->split_dim];
+                inf_min_distance = min_distance -
+                        inf_old_side_distance
+                        + inf->side_distances[inode->split_dim];
                 inf2_min_distance = min_distance -
-                        inf->side_distances[inode->split_dim]
+                        inf_old_side_distance
                         + inf2->side_distances[inode->split_dim];
             }
 
 #define swap_ni(a, b) {nodeinfo * tmp; tmp = a; a = b; b = tmp;}
 
             /* Ensure inf1 is closer than inf2 */
-            if (inf1_min_distance > inf2_min_distance) {
+            if (inf_min_distance > inf2_min_distance) {
                 npy_float64 tmp = inf2_min_distance;
-                inf2_min_distance = inf1_min_distance;
-                inf1_min_distance = tmp;
-                swap_ni(inf1, inf2);
+                inf2_min_distance = inf_min_distance;
+                inf_min_distance = tmp;
+                swap_ni(inf, inf2);
             }
             
 #if 0
@@ -480,8 +486,7 @@ __query_single_point(const ckdtree *self,
              * we're going here next, so no point pushing it on the queue
              * no need to recompute the distance or the side_distances
              */
-            swap_ni(inf, inf1);
-            min_distance = inf1_min_distance;
+            min_distance = inf_min_distance;
 
             /*
              * far child can be further
