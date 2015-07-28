@@ -73,13 +73,12 @@ dabs(const npy_float64 x)
 }
 
 inline npy_float64 
-dabs_b(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
+wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
 {
     npy_float64 x1;
-    x1 = x;
-    if (x < 0) x1 = -x;
-    if (hb > 0 && x1 > hb)
-        x1 = fb - x1;
+    if (NPY_UNLIKELY(x < -hb)) x1 = fb + x;
+    else if (NPY_UNLIKELY(x > hb)) x1 = x - fb;
+    else x1 = x;
 #if 0
     printf("dabs_b x : %g x1 %g\n", x, x1);
 #endif
@@ -186,17 +185,17 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
     }
     r = 0;
     for (i=0; i<k; ++i) {
-        r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
+        r1 = wrap_distance(x[i] - y[i], box->hbox[i], box->fbox[i]);
         if (NPY_LIKELY(p==2.)) {
             r += r1 * r1;
         } else if (p==infinity) {
             r = dmax(r,r1);
         } else if (p==1.) {
-            r += r1;
+            r += dabs(r1);
         } else {
-            r += std::pow(r1,p);
+            r += std::pow(dabs(r1),p);
         }
-        if (r>upperbound)
+        if (r>upperbound) 
             return r;
     } 
     return r;
@@ -229,7 +228,7 @@ static inline npy_float64 side_distance_from_min_max(
         tmax = x - max;
         tmin = x - min;
         /* is the test point in this range */
-        if(tmax >= 0 || tmin <= 0) {
+        if(NPY_UNLIKELY(tmax >= 0 || tmin <= 0)) {
             /* no */
             tmax = dabs(tmax);
             tmin = dabs(tmin);
