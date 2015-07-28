@@ -1079,7 +1079,6 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.moment(a, moment, axis)
@@ -1185,10 +1184,9 @@ def variation(a, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.variation(a, axis)
+        return mstats_basic.variation(a, axis)
 
     if contains_nan and nan_policy == 'propagate':
         return np.nan
@@ -1239,10 +1237,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.skew(a, axis, bias)
+        return mstats_basic.skew(a, axis, bias)
 
     if contains_nan and nan_policy == 'propagate':
         return np.nan
@@ -1314,10 +1311,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.kurtosis(a, axis, fisher, bias)
+        return mstats_basic.kurtosis(a, axis, fisher, bias)
 
     if contains_nan and nan_policy == 'propagate':
         return np.nan
@@ -1406,6 +1402,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
 
     """
+    #FIXME: bias keyword not implemented here, nor in mstats.describe
     a, axis = _chk_asarray(a, axis)
 
     # Return namedtuple for clarity
@@ -1415,10 +1412,9 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.describe(a, axis, ddof, bias)
+        return mstats_basic.describe(a, axis, ddof, bias)
 
     if contains_nan and nan_policy == 'propagate':
         res = np.zeros(6) * np.nan
@@ -1478,10 +1474,9 @@ def skewtest(a, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.skewtest(a, axis)
+        return mstats_basic.skewtest(a, axis)
 
     if contains_nan and nan_policy == 'propagate':
         return SkewtestResult(np.nan, np.nan)
@@ -1545,10 +1540,9 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
                                                            'pvalue'))
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.kurtosistest(a, axis)
+        return mstats_basic.kurtosistest(a, axis)
 
     if contains_nan and nan_policy == 'propagate':
         return KurtosistestResult(np.nan, np.nan)
@@ -1627,10 +1621,9 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.normaltest(a, axis)
+        return mstats_basic.normaltest(a, axis)
 
     if contains_nan and nan_policy == 'propagate':
         return NormaltestResult(np.nan, np.nan)
@@ -2401,10 +2394,9 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.sem(a, axis, ddof)
+        return mstats_basic.sem(a, axis, ddof)
 
     if contains_nan and nan_policy == 'propagate':
         return np.nan
@@ -3239,10 +3231,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.spearmanr(a, b, axis)
+        return mstats_basic.spearmanr(a, b, axis)
 
     if contains_nan and nan_policy == 'propagate':
         return SpearmanrResult(np.nan, np.nan)
@@ -3257,10 +3248,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
         contains_nan, nan_policy = _contains_nan(b, nan_policy)
 
-        # TODO: implement the delegation to mstats when nan_policy == 'omit'
         if contains_nan and nan_policy == 'omit':
             b = ma.masked_invalid(b)
-            # return mstats_basic.spearmanr(a, b, axis)
+            return mstats_basic.spearmanr(a, b, axis)
 
         if contains_nan and nan_policy == 'propagate':
             return SpearmanrResult(np.nan, np.nan)
@@ -3585,10 +3575,9 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.ttest_1samp(a, popmean, axis)
+        return mstats_basic.ttest_1samp(a, popmean, axis)
 
     if contains_nan and nan_policy == 'propagate':
         return Ttest_1sampResult(np.nan, np.nan)
@@ -3804,11 +3793,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
     contains_nan, nan_policy = _contains_nan(b, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
-        # return mstats_basic.ttest_ind(a, b, axis, equal_var)
+        return mstats_basic.ttest_ind(a, b, axis, equal_var)
 
     if contains_nan and nan_policy == 'propagate':
         return Ttest_indResult(np.nan, np.nan)
@@ -3897,10 +3885,9 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
     contains_nan, nan_policy = _contains_nan(b, nan_policy)
 
-    # TODO: implement the delegation to mstats when nan_policy == 'omit'
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        # return mstats_basic.ttest_rel(a, b, axis)
+        return mstats_basic.ttest_rel(a, b, axis)
 
     if contains_nan and nan_policy == 'propagate':
         return Ttest_relResult(np.nan, np.nan)
