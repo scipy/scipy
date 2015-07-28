@@ -1209,6 +1209,11 @@ def variation(a, axis=0, nan_policy='propagate'):
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
 
+    Returns
+    -------
+    variation : ndarray
+        The calculated variation along the requested axis.
+
     References
     ----------
     .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
