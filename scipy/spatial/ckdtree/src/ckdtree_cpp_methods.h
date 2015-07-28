@@ -146,7 +146,7 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
             if (r>upperbound)
                 return r;
         }*/
-        if(box->fbox == 0) {
+        if(box->fbox[0] <= 0) {
             return sqeuclidean_distance_double(x,y,k);
         } 
         for (i=0; i<k; ++i) {
