@@ -127,14 +127,14 @@ struct nodeinfo {
     npy_intp     m;
     npy_float64        buf[1]; // the good old struct hack       
     /* accessors to 'packed' attributes */
-    inline npy_float64        *mins() {
+    inline npy_float64        *side_distances() {
         return &buf[0];
     }
     inline npy_float64        *maxes() {
         return &buf[m];
     }
-    inline npy_float64        *side_distances() {
-        return &buf[m + m];
+    inline npy_float64        *mins() {
+        return &buf[2 * m];
     }
 };        
 
@@ -416,12 +416,12 @@ __query_single_point(const ckdtree *self,
             }
 
             inf2 = nipool.allocate();
-            memcpy(inf2->buf, inf->buf, sizeof(npy_float64) * ( 3 * m)); 
             inf_old_side_distance = inf->side_distances()[inode->split_dim];
 
             // set up children for searching
             // inf2 will be pushed to the queue
             if (NPY_LIKELY(box->fbox[0] <= 0)) {
+                memcpy(inf2->side_distances(), inf->side_distances(), sizeof(npy_float64) * ( m)); 
                 /*
                  * non periodic : the 'near' node is know from the
                  * relative distance to the split, and
@@ -432,26 +432,29 @@ __query_single_point(const ckdtree *self,
                  */
                 if (x[inode->split_dim] < inode->split) {
                     inf->node = inode->less;
-                    inf->maxes()[inode->split_dim] = inode->split;
                     inf2->node = inode->greater;
-                    inf2->mins()[inode->split_dim] = inode->split;
                 } else {
                     inf->node = inode->greater;
-                    inf->mins()[inode->split_dim] = inode->split;
                     inf2->node = inode->less;
-                    inf2->maxes()[inode->split_dim] = inode->split;
                 }
+
                 inf_min_distance = min_distance;
+
+                npy_float64 tmp = x[inode->split_dim] - inode->split; 
+                if(NPY_LIKELY(p == 2)) {
+                    inf2->side_distances()[inode->split_dim] = tmp * tmp;
+                } else {
+                    inf2->side_distances()[inode->split_dim] = std::pow(dabs(tmp), p);
+                }
+            
             } else {
+                memcpy(inf2->buf, inf->buf, sizeof(npy_float64) * ( 3 * m)); 
                 /* 
                  * for periodic queries, we do not know which node is closer.
                  * thus re-claculate inf.
                  */
                 inf->maxes()[inode->split_dim] = inode->split;
                 inf->node = inode->less;
-                inf2->mins()[inode->split_dim] = inode->split;
-                inf2->node = inode->greater;
-
                 inf->side_distances()[inode->split_dim] = 
                     side_distance_from_min_max(
                         x[inode->split_dim],
@@ -464,14 +467,16 @@ __query_single_point(const ckdtree *self,
                             inf->side_distances()[inode->split_dim],
                             p, infinity);
 
-            }
+                inf2->mins()[inode->split_dim] = inode->split;
+                inf2->node = inode->greater;
+                inf2->side_distances()[inode->split_dim] = 
+                    side_distance_from_min_max(
+                        x[inode->split_dim],
+                        inf2->mins()[inode->split_dim],
+                        inf2->maxes()[inode->split_dim],
+                        p, infinity, box->hbox[inode->split_dim], box->fbox[inode->split_dim]);
 
-            inf2->side_distances()[inode->split_dim] = 
-                side_distance_from_min_max(
-                    x[inode->split_dim],
-                    inf2->mins()[inode->split_dim],
-                    inf2->maxes()[inode->split_dim],
-                    p, infinity, box->hbox[inode->split_dim], box->fbox[inode->split_dim]);
+            }
 
             /*
              * one side distance changes
