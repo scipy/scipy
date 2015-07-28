@@ -1281,7 +1281,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             of the most recent point.
         boxsize : array_like or scalar, optional 
             size of the periodic box. All images at x + n * boxsize are considered
-            the same query location, where n are integer vectors. None for non-periodic
+            the same query location, where n are integer vectors. None or 0 for non-periodic
             query.  Default: None
         n_jobs : int, optional
             Number of jobs to schedule for parallel processing. If -1 is given
@@ -1326,12 +1326,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         ii = np.empty((n,k),dtype=np.intp)
         ii.fill(self.n)
         
-        if boxsize is not None:
-            boxsize_arr = np.empty(self.m, np.float64)
-            boxsize_arr[:] = boxsize
-            box.allocate(self.m, <np.float64_t*>boxsize_arr.data)
-        else:
-            box.fbox = <np.float64_t*> NULL
+        if boxsize is None:
+            boxsize = 0
+        
+        boxsize_arr = np.empty(self.m, np.float64)
+        boxsize_arr[:] = boxsize
+        box.allocate(self.m, <np.float64_t*>boxsize_arr.data)
 
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.
