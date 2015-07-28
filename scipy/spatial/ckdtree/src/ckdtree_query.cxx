@@ -192,18 +192,28 @@ static inline npy_float64 side_distance_from_min_max(
     const npy_float64 max,
     const npy_float64 p,
     const npy_float64 infinity,
-    const ckdtreebox * box) {
+    const npy_float64 hb,
+    const npy_float64 fb
+) {
     npy_float64 s, t;
 
-    s = 0; 
-    t = x - max;
-    if (t > s) {
-        s = t;
+    if (fb <= 0) {
+        s = 0; 
+        t = x - max;
+        if (t > s) {
+            s = t;
+        } else {
+            t = min - x;
+            if (t > s) s = t;
+        }
     } else {
-        t = min - x;
-        if (t > s) s = t;
+        s = 0;
+        if(x > max) {
+           // d1 = x - max;
+        // FIXME: XXX
+        }
+        abort(); 
     }
-
 #if 0
     printf("sdfmm: s %g t %g x %g min %g max %g\n", s, t, x, min, max);
 #endif 
@@ -278,7 +288,7 @@ __query_single_point(const ckdtree *self,
         inf->maxes[i] = self->raw_maxes[i];
 
         inf->side_distances[i] = side_distance_from_min_max(
-            x[i], inf->mins[i], inf->maxes[i], p, infinity, box);
+            x[i], inf->mins[i], inf->maxes[i], p, infinity, box->hbox[i], box->fbox[i]);
     }
     
     // compute first distance
@@ -386,14 +396,14 @@ __query_single_point(const ckdtree *self,
                     x[inode->split_dim],
                     inf1->mins[inode->split_dim],
                     inf1->maxes[inode->split_dim],
-                    p, infinity, box);
+                    p, infinity, box->hbox[inode->split_dim], box->fbox[inode->split_dim]);
 
             inf2->side_distances[inode->split_dim] = 
                 side_distance_from_min_max(
                     x[inode->split_dim],
                     inf2->mins[inode->split_dim],
                     inf2->maxes[inode->split_dim],
-                    p, infinity, box);
+                    p, infinity, box->hbox[inode->split_dim], box->fbox[inode->split_dim]);
 
             /*
              * one side distance changes
