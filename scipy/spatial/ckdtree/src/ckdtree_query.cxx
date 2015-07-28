@@ -476,7 +476,9 @@ query_knn(const ckdtree      *self,
 {
     npy_intp m = self->m;
     npy_intp i, j;
-    npy_float64 *scratch = (npy_float64*)PyMem_Malloc(sizeof(npy_float64) * m);
+    
+    npy_float64 scratch[m];
+    
     // release the GIL
     NPY_BEGIN_ALLOW_THREADS
     {
@@ -502,7 +504,6 @@ query_knn(const ckdtree      *self,
     }
     // reacquire the GIL
     NPY_END_ALLOW_THREADS
-    PyMem_Free(scratch);
 
     if (PyErr_Occurred()) 
         // true if a C++ exception was translated
