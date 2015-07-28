@@ -123,6 +123,49 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
 } 
  
 inline npy_float64 
+_distance_np(const npy_float64 *x, const npy_float64 *y,
+            const npy_float64 p, const npy_intp k,
+            const npy_float64 upperbound) {
+    /* 
+     * the non-periodic implementation of _distance_p 
+     */
+    npy_intp i;
+    npy_float64 r;
+    r = 0;
+    if (NPY_LIKELY(p==2.)) {
+        /*
+        for (i=0; i<k; ++i) {
+            z = x[i] - y[i];
+            r += z*z;
+            if (r>upperbound)
+                return r;
+        }*/
+        return sqeuclidean_distance_double(x,y,k);
+    } 
+    else if (p==infinity) {
+        for (i=0; i<k; ++i) {
+            r = dmax(r,dabs(x[i]-y[i]));
+            if (r>upperbound)
+                return r;
+        }
+    } 
+    else if (p==1.) {
+        for (i=0; i<k; ++i) {
+            r += dabs(x[i]-y[i]);
+            if (r>upperbound)
+                return r;
+        }
+    } 
+    else {
+        for (i=0; i<k; ++i) {
+            r += std::pow(dabs(x[i]-y[i]),p);
+            if (r>upperbound)
+                 return r;
+        }
+    }
+    return r;
+}
+inline npy_float64 
 _distance_p(const npy_float64 *x, const npy_float64 *y,
             const npy_float64 p, const npy_intp k,
             const npy_float64 upperbound, const ckdtreebox * box)
@@ -133,53 +176,29 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
     * Computes the Minkowski p-distance to the power p between two points.
     * If the distance**p is larger than upperbound, then any number larger
     * than upperbound may be returned (the calculation is truncated).
+    *
     */
     
     npy_intp i;
     npy_float64 r, r1;
-    r = 0;
-    if (NPY_LIKELY(p==2.)) {
-        /*
-        for (i=0; i<k; ++i) {
-            z = x[i] - y[i];
-            r += z*z;
-            if (r>upperbound)
-                return r;
-        }*/
-        if(box->fbox[0] <= 0) {
-            return sqeuclidean_distance_double(x,y,k);
-        } 
-        for (i=0; i<k; ++i) {
-            r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
-            r += r1 * r1;
-            if (r>upperbound)
-                return r;
-        }
-    } 
-    else if (p==infinity) {
-        for (i=0; i<k; ++i) {
-            r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
-            r = dmax(r,r1);
-            if (r>upperbound)
-                return r;
-        }
-    } 
-    else if (p==1.) {
-        for (i=0; i<k; ++i) {
-            r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
-            r += r1;
-            if (r>upperbound)
-                return r;
-        }
-    } 
-    else {
-        for (i=0; i<k; ++i) {
-            r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
-            r += std::pow(r1,p);
-            if (r>upperbound)
-                 return r;
-        }
+    if(NPY_LIKELY(box->fbox[0] <= 0)) {
+        return _distance_np(x, y, p, k, upperbound);
     }
+    r = 0;
+    for (i=0; i<k; ++i) {
+        r1 = dabs_b(x[i] - y[i], box->hbox[i], box->fbox[i]);
+        if (NPY_LIKELY(p==2.)) {
+            r += r1 * r1;
+        } else if (p==infinity) {
+            r = dmax(r,r1);
+        } else if (p==1.) {
+            r += r1;
+        } else {
+            r += std::pow(r1,p);
+        }
+        if (r>upperbound)
+            return r;
+    } 
     return r;
 } 
 
