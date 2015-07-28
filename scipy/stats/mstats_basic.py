@@ -48,6 +48,10 @@ from collections import namedtuple
 from . import distributions
 import scipy.special as special
 from . import futil
+from ._stats_mstats_common import (
+        linregress as stats_linregress,
+        theilslopes as stats_theilslopes
+        )
 
 
 genmissingvaldoc = """
@@ -706,21 +710,21 @@ def linregress(*args):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],
+            slope, intercept, r, prob, sterrest = stats_linregress(x.data[~m],
                                                                    y.data[~m])
         else:
             # All data is masked
             return None, None, None, None, None
     else:
-        slope, intercept, r, prob, sterrest = stats.linregress(x.data, y.data)
+        slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
 
     LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                        'rvalue', 'pvalue',
                                                        'stderr'))
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
-if stats.linregress.__doc__:
-    linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
+if stats_linregress.__doc__:
+    linregress.__doc__ = stats_linregress.__doc__ + genmissingvaldoc
 
 
 def theilslopes(y, x=None, alpha=0.95):
@@ -771,7 +775,7 @@ def theilslopes(y, x=None, alpha=0.95):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `stats.theilslopes`
-    return stats.theilslopes(y, x, alpha=alpha)
+    return stats_theilslopes(y, x, alpha=alpha)
 
 
 def sen_seasonal_slopes(x):
