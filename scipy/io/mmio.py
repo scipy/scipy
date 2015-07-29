@@ -703,7 +703,9 @@ class MMFile (object):
             # if symmetry format used, remove values above main diagonal 
             if symmetry != self.SYMMETRY_GENERAL:
                 lower_triangle_mask = coo.row >= coo.col
-                coo = coo_matrix((coo.data[lower_triangle_mask], (coo.row[lower_triangle_mask], coo.col[lower_triangle_mask])), shape=coo.shape)
+                coo = coo_matrix((coo.data[lower_triangle_mask], 
+                      (coo.row[lower_triangle_mask], coo.col[lower_triangle_mask])), 
+                      shape=coo.shape)
 
             # write shape spec
             stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
