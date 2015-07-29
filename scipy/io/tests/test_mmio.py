@@ -288,7 +288,7 @@ class TestMMIOCoordinate(TestCase):
         mmwrite(self.fn, b)
 
         fn_bzip2 = "%s.bz2" % self.fn
-        with open(fn, 'rb') as f_in:
+        with open(self.fn, 'rb') as f_in:
             f_out = bz2.BZ2File(fn_bzip2, 'wb')
             f_out.write(f_in.read())
             f_out.close()
@@ -312,7 +312,7 @@ class TestMMIOCoordinate(TestCase):
         mmwrite(self.fn, b)
 
         fn_gzip = "%s.gz" % self.fn
-        with open(fn, 'rb') as f_in:
+        with open(self.fn, 'rb') as f_in:
             f_out = gzip.open(fn_gzip, 'wb')
             f_out.write(f_in.read())
             f_out.close()
