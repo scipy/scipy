@@ -27,8 +27,7 @@ __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 #-------------------------------------------------------------------------------
 def mminfo(source):
     """
-    Queries the contents of the Matrix Market file 'source' to
-    extract size and storage information.
+    Return size and storage parameters from Matrix Market file-like 'source'.
 
     Parameters
     ----------
@@ -88,7 +87,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     a : array like
         Sparse or dense 2D array.
     comment : str, optional
-        comments to be prepended to the Matrix Market file
+        Comments to be prepended to the Matrix Market file.
     field : None or str, optional
         Either 'real', 'complex', 'pattern', or 'integer'.
     precision : None or int, optional
@@ -198,8 +197,7 @@ class MMFile (object):
     @classmethod
     def info(self, source):
         """
-        Queries the contents of the Matrix Market file 'source' to
-        extract size and storage information.
+        Return size and storage parameters from Matrix Market file-like 'source'.
     
         Parameters
         ----------
@@ -316,8 +314,9 @@ class MMFile (object):
         isskew = True
         isherm = a.dtype.char in 'FD'
         
+        # sparse input
         if isspmatrix(a):
-            # check if number of nonzero entrys of lower and upper triangle matrix are equal
+            # check if number of nonzero entries of lower and upper triangle matrix are equal
             a = a.tocoo()
             (row, col) = a.nonzero()
             if (row < col).sum() != (row > col).sum():
@@ -331,7 +330,9 @@ class MMFile (object):
                     if i > j:
                         aji = a[j, i]
                         yield (aij, aji)
-        else:            
+        
+        # non-sparse input
+        else:
             # define iterator over symmetric pair entries
             def symm_iterator():
                 for j in range(n):
@@ -411,7 +412,7 @@ class MMFile (object):
         a : array like
             Sparse or dense 2D array.
         comment : str, optional
-            comments to be prepended to the Matrix Market file
+            Comments to be prepended to the Matrix Market file.
         field : None or str, optional
             Either 'real', 'complex', 'pattern', or 'integer'.
         precision : None or int, optional
