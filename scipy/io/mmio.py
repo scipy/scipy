@@ -37,8 +37,10 @@ def mminfo(source):
 
     Returns
     -------
-    rows,cols : int
-        Number of matrix rows and columns.
+    rows : int
+        Number of matrix rows.
+    cols : int
+        Number of matrix columns.
     entries : int
         Number of non-zero entries of a sparse matrix
         or rows*cols for a dense matrix.
@@ -206,8 +208,10 @@ class MMFile (object):
     
         Returns
         -------
-        rows,cols : int
-            Number of matrix rows and columns.
+        rows : int
+            Number of matrix rows.
+        cols : int
+            Number of matrix columns.
         entries : int
             Number of non-zero entries of a sparse matrix
             or rows*cols for a dense matrix.
