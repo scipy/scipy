@@ -909,5 +909,56 @@ def test_ckdtree_view():
 # cKDTree is specialized to type double points, so no need to make
 # a unit test corresponding to test_ball_point_ints()
 
+def test_ckdtree_box():
+    # check ckdtree periodic boundary
+    #
+    self = lambda x : None
+    self.n = 2000
+    self.m = 2
+    self.k = 3
+    np.random.seed(1234)
+    data = np.random.uniform(size=(self.n, self.m))
+    kdtree = cKDTree(data, leafsize=1)
+    # use the standard python KDTree for the simulated periodic box
+    kdtree2 = KDTree(data, leafsize=1)
+#    data = data[1:2]
+
+    dd, ii = kdtree.query(data, self.k, boxsize=1.0)
+
+    dd1, ii1 = kdtree.query(data + 1.0, self.k, boxsize=1.0)
+    assert_almost_equal(dd, dd1)
+    assert_equal(ii, ii1)
+
+    dd1, ii1 = kdtree.query(data - 1.0, self.k, boxsize=1.0)
+    assert_almost_equal(dd, dd1)
+    assert_equal(ii, ii1)
+
+    dd2, ii2 = simulate_periodic_box(kdtree2, data, self.k, boxsize=1.0)
+    assert_almost_equal(dd, dd2)
+    assert_equal(ii, ii2)
+
+def simulate_periodic_box(kdtree, data, k, boxsize):
+    dd = []
+    ii = []
+    x = np.arange(3 ** data.shape[1])
+    nn = np.array(np.unravel_index(x, [3] * data.shape[1])).T
+    nn = nn - 1.0
+    for n in nn:
+        image = data + n * 1.0 * boxsize
+        dd2, ii2 = kdtree.query(image, k)
+        dd2 = dd2.reshape(-1, k)
+        ii2 = ii2.reshape(-1, k)
+        dd.append(dd2)
+        ii.append(ii2)
+    dd = np.concatenate(dd, axis=-1)
+    ii = np.concatenate(ii, axis=-1)
+
+    result = np.empty([len(data), len(nn) * k], dtype=[
+            ('ii', 'i8'),
+            ('dd', 'f8')])
+    result['ii'][:] = ii
+    result['dd'][:] = dd
+    result.sort(order='dd')
+    return result['dd'][:, :k], result['ii'][:,:k]
 if __name__ == "__main__":
     run_module_suite()
