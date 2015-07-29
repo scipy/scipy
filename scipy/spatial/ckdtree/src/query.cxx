@@ -347,7 +347,7 @@ query_single_point(const ckdtree *self,
             }
             inf2 = nipool.allocate();
 
-            inf_old_side_distance = inf->side_distances()[inode->split_dim];
+            inf_old_side_distance = inf->side_distances()[split_dim];
 
             // set up children for searching
             // inf2 will be pushed to the queue
@@ -361,7 +361,7 @@ query_single_point(const ckdtree *self,
                  * we set inf to 'near', and set inf2 to 'far'.
                  * we only recalculate the distance of 'far' later.
                  */
-                if (x[inode->split_dim] < inode->split) {
+                if (x[split_dim] < split) {
                     inf->node = inode->less;
                     inf2->node = inode->greater;
                 } else {
@@ -371,41 +371,42 @@ query_single_point(const ckdtree *self,
 
                 inf_min_distance = min_distance;
 
-                npy_float64 tmp = x[inode->split_dim] - inode->split; 
+                npy_float64 tmp = x[split_dim] - split; 
                 if(NPY_LIKELY(p == 2)) {
-                    inf2->side_distances()[inode->split_dim] = tmp * tmp;
+                    inf2->side_distances()[split_dim] = tmp * tmp;
                 } else {
-                    inf2->side_distances()[inode->split_dim] = std::pow(dabs(tmp), p);
+                    inf2->side_distances()[split_dim] = std::pow(dabs(tmp), p);
                 }
              
             } else {
+                abort();
                 memcpy(inf2->buf, inf->buf, sizeof(npy_float64) * ( 3 * m)); 
                 /* 
                  * for periodic queries, we do not know which node is closer.
                  * thus re-claculate inf.
                  */
-                inf->maxes()[inode->split_dim] = inode->split;
+                inf->maxes()[split_dim] = split;
                 inf->node = inode->less;
-                inf->side_distances()[inode->split_dim] = 
+                inf->side_distances()[split_dim] = 
                     side_distance_from_min_max(
-                        x[inode->split_dim],
-                        inf->mins()[inode->split_dim],
-                        inf->maxes()[inode->split_dim],
-                        p, infinity, box->hbox[inode->split_dim], box->fbox[inode->split_dim]);
+                        x[split_dim],
+                        inf->mins()[split_dim],
+                        inf->maxes()[split_dim],
+                        p, infinity, box->hbox[split_dim], box->fbox[split_dim]);
 
                 inf_min_distance = adjust_min_distance(min_distance, 
                             inf_old_side_distance, 
-                            inf->side_distances()[inode->split_dim],
+                            inf->side_distances()[split_dim],
                             p, infinity);
 
-                inf2->mins()[inode->split_dim] = inode->split;
+                inf2->mins()[split_dim] = split;
                 inf2->node = inode->greater;
-                inf2->side_distances()[inode->split_dim] = 
+                inf2->side_distances()[split_dim] = 
                     side_distance_from_min_max(
-                        x[inode->split_dim],
-                        inf2->mins()[inode->split_dim],
-                        inf2->maxes()[inode->split_dim],
-                        p, infinity, box->hbox[inode->split_dim], box->fbox[inode->split_dim]);
+                        x[split_dim],
+                        inf2->mins()[split_dim],
+                        inf2->maxes()[split_dim],
+                        p, infinity, box->hbox[split_dim], box->fbox[split_dim]);
 
             }
  
@@ -415,7 +416,7 @@ query_single_point(const ckdtree *self,
              */
             inf2_min_distance = adjust_min_distance(min_distance, 
                         inf_old_side_distance, 
-                        inf2->side_distances()[inode->split_dim],
+                        inf2->side_distances()[split_dim],
                         p, infinity);
 
             /* Ensure inf is closer than inf2 */
@@ -428,9 +429,9 @@ query_single_point(const ckdtree *self,
                 {   nodeinfo * tmp; tmp = inf; inf = inf2; inf2 = tmp;}
             }
 #if 0
-            printf("sd inf1: %g inf2: %g inf: %g\n", inf1->side_distances[inode->split_dim], 
-                                                     inf2->side_distances[inode->split_dim],
-                                                     inf->side_distances[inode->split_dim]
+            printf("sd inf1: %g inf2: %g inf: %g\n", inf1->side_distances[split_dim], 
+                                                     inf2->side_distances[split_dim],
+                                                     inf->side_distances[split_dim]
                         );
             printf("inf1: %g inf2: %g inf: %g\n", inf1_min_distance, inf2_min_distance, min_distance);
 #endif
