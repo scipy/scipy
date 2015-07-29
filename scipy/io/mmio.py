@@ -40,10 +40,10 @@ def mminfo(filename):
     -------
 
     rows,cols : int
-       Number of matrix rows and columns
+        Number of matrix rows and columns.
     entries : int
         Number of non-zero entries of a sparse matrix
-        or rows*cols for a dense matrix
+        or rows*cols for a dense matrix.
     format : str
         Either 'coordinate' or 'array'.
     field : str
@@ -69,8 +69,9 @@ def mmread(filename):
 
     Returns
     -------
-    a:
-        Sparse or full matrix
+    a : ndarray or coo_matrix
+        Dense or sparse matrix depending on the matrix format in the
+        Matrix Market file.
     """
     return MMFile().read(filename)
 
@@ -84,9 +85,9 @@ def mmwrite(filename, a, comment='', field=None, precision=None, symmetry=None):
     Parameters
     ----------
     filename : file
-        Matrix Market filename (extension .mtx) or open file object
+        Matrix Market filename (extension .mtx) or open file object.
     a : array like
-        Sparse or dense 2D array
+        Sparse or dense 2D array.
     comment : str, optional
         comments to be prepended to the Matrix Market file
     field : None or str, optional
@@ -211,10 +212,10 @@ class MMFile (object):
         -------
     
         rows,cols : int
-        Number of matrix rows and columns
+            Number of matrix rows and columns.
         entries : int
             Number of non-zero entries of a sparse matrix
-            or rows*cols for a dense matrix
+            or rows*cols for a dense matrix.
         format : str
             Either 'coordinate' or 'array'.
         field : str
@@ -386,8 +387,9 @@ class MMFile (object):
     
         Returns
         -------
-        a:
-            Sparse or full matrix
+        a : ndarray or coo_matrix
+            Dense or sparse matrix depending on the matrix format in the
+            Matrix Market file.
         """
         stream, close_it = self._open(filename)
 
@@ -407,9 +409,9 @@ class MMFile (object):
         Parameters
         ----------
         filename : file
-            Matrix Market filename (extension .mtx) or open file object
+            Matrix Market filename (extension .mtx) or open file object.
         a : array like
-            Sparse or dense 2D array
+            Sparse or dense 2D array.
         comment : str, optional
             comments to be prepended to the Matrix Market file
         field : None or str, optional
