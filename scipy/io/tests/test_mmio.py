@@ -36,7 +36,7 @@ class TestMMIOArray(TestCase):
 
     def test_simple_lower_triangle(self):
         a = [[0,0], [1,0]]
-        mmwrite(self.fn ,a)
+        mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'integer', 'general'))
         b = mmread(self.fn)
         assert_array_almost_equal(a, b)
@@ -44,7 +44,7 @@ class TestMMIOArray(TestCase):
     def test_simple_rectangular(self):
         a = [[1,2,3], [4,5,6]]
         mmwrite(self.fn, a)
-        assert_equal(mminfo(self.fn), (2 ,3 , 6, 'array', 'integer', 'general'))
+        assert_equal(mminfo(self.fn), (2, 3, 6, 'array', 'integer', 'general'))
         b = mmread(self.fn)
         assert_array_almost_equal(a, b)
 
@@ -197,7 +197,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_skew_symmetric_float(self):
-        a = array([[1,2] ,[-2.0,4]], 'f')
+        a = array([[1,2], [-2.0,4]], 'f')
         a = scipy.sparse.csr_matrix(a)
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), (2, 2, 3, 'coordinate', 'real', 'skew-symmetric'))
