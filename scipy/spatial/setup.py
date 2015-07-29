@@ -34,6 +34,7 @@ def configuration(parent_package='', top_path=None):
                          **cfg)
     # cKDTree    
     ckdtree_src = ['query.cxx', 
+                   'build.cxx',
                    'globals.cxx',
                    'cpp_exc.cxx',
                    'query_pairs.cxx',
