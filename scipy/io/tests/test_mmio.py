@@ -120,8 +120,6 @@ class TestMMIOSparseCSR(TestMMIOArray):
         for a, info in cases:
             single_test(a, info)
 
-    
-
 
 _general_example = '''\
 %%MatrixMarket matrix coordinate real general
@@ -214,7 +212,6 @@ class TestMMIOCoordinate(TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
     
-    
     def test_read(self):
         def single_test(example, a, info):
             f = open(self.fn, 'w')
@@ -263,8 +260,6 @@ class TestMMIOCoordinate(TestCase):
         
         for example, a, info in cases:
             single_test(example, a, info)
-
-
 
     def test_empty_write_read(self):
         #http://projects.scipy.org/scipy/ticket/883
