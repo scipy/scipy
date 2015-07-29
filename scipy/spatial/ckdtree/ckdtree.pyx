@@ -600,6 +600,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             np.ndarray[np.float64_t, ndim=2] xx      
             np.intp_t c, n, i, j, CHUNK
             ckdtreebox box 
+            ckdtreebox * pbox 
             np.ndarray [np.float64_t, ndim=1] boxsize_arr
         
         x_arr = np.asarray(x, dtype=np.float64)
@@ -627,6 +628,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         boxsize_arr = np.empty(self.m, np.float64)
         boxsize_arr[:] = boxsize
         box.allocate(self.m, <np.float64_t*>boxsize_arr.data)
+        if boxsize > 0:
+            pbox = &box
+        else:
+            pbox = NULL
 
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.
@@ -649,7 +654,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 stop = n if stop > n else stop
                 if start < n:
                     query_knn(<ckdtree*>self, &dd[start,0], &ii[start,0], 
-                        &xx[start,0], stop-start, k, eps, p, dub, &box)
+                        &xx[start,0], stop-start, k, eps, p, dub, pbox)
             
             # There might be n_jobs+1 threads spawned here, but only n_jobs of 
             # them will do significant work.
@@ -666,7 +671,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 t.join()
         else:
             query_knn(<ckdtree*>self, &dd[0,0], &ii[0,0], &xx[0,0], 
-                n, k, eps, p, distance_upper_bound, &box)
+                n, k, eps, p, distance_upper_bound, pbox)
                 
         box.free()
 

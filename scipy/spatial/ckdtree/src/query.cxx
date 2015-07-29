@@ -246,10 +246,16 @@ query_single_point(const ckdtree *self,
     for (i=0; i<m; ++i) {
         inf->mins()[i] = self->raw_mins[i];
         inf->maxes()[i] = self->raw_maxes[i];
-
+        npy_float64 hb, fb;
+        if(box) {
+            hb = box->hbox[i];
+            fb = box->fbox[i];
+        } else {
+            hb = fb = 0;
+        }
         inf->side_distances()[i] = side_distance_from_min_max(
             x[i], inf->mins()[i], inf->maxes()[i], 
-            p, infinity, box->hbox[i], box->fbox[i]);
+            p, infinity, hb, fb);
     }
     
     /* compute first distance */
@@ -302,9 +308,14 @@ query_single_point(const ckdtree *self,
                     if (i < end_idx-2)
                         prefetch_datapoint(data+indices[i+2]*m, m);
                 
-                    d = _distance_pp(data+indices[i]*m, x, p, m, 
+                    if (NPY_LIKELY(box == NULL)) {
+                        d = _distance_p(data+indices[i]*m, x, p, m, 
+                            distance_upper_bound);
+                    }  else {
+                        d = _distance_pp(data+indices[i]*m, x, p, m, 
                             distance_upper_bound, box);
-                        
+                    }
+
                     if (d < distance_upper_bound) {
                         /* replace furthest neighbor */
                         if (neighbors.n == k)
@@ -351,7 +362,7 @@ query_single_point(const ckdtree *self,
 
             // set up children for searching
             // inf2 will be pushed to the queue
-            if (NPY_LIKELY(box->fbox[0] <= 0)) {
+            if (NPY_LIKELY(box == NULL)) {
                 memcpy(inf2->side_distances(), inf->side_distances(), sizeof(npy_float64) * ( m)); 
                 /*
                  * non periodic : the 'near' node is know from the
@@ -379,7 +390,6 @@ query_single_point(const ckdtree *self,
                 }
              
             } else {
-                abort();
                 memcpy(inf2->buf, inf->buf, sizeof(npy_float64) * ( 3 * m)); 
                 /* 
                  * for periodic queries, we do not know which node is closer.
@@ -498,7 +508,7 @@ query_knn(const ckdtree      *self,
                 const npy_float64 *xx_row = xx + (i*m);                
                 for (j=0; j<m; ++j) {
                     scratch[j] = xx_row[j];
-                    if(box->fbox[j] > 0) {
+                    if(box) {
                         /* wrap the query points into the primary box if needed */
                         while(scratch[j] < 0) scratch[j] += box->fbox[j];
                         while(scratch[j] >= box->fbox[j]) scratch[j] -= box->fbox[j];
