@@ -1,5 +1,7 @@
 """
   Matrix Market I/O in Python.
+  See http://math.nist.gov/MatrixMarket/formats.html 
+  for information about the Matrix Market format.
 """
 #
 # Author: Pearu Peterson <pearu@cens.ioc.ee>
@@ -17,6 +19,7 @@ from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
                   ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
 from numpy.compat import asbytes, asstr
 from scipy._lib.six import string_types
+from scipy.sparse import spmatrix, coo_matrix, isspmatrix
 
 __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
@@ -24,30 +27,28 @@ __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 #-------------------------------------------------------------------------------
 def mminfo(source):
     """
-    Queries the contents of the Matrix Market file 'filename' to
-    extract size and storage information.
+    Return size and storage parameters from Matrix Market file-like 'source'.
 
     Parameters
     ----------
-
-    source : file
+    source : str or file-like
         Matrix Market filename (extension .mtx) or open file object
 
     Returns
     -------
-
-    rows,cols : int
-       Number of matrix rows and columns
+    rows : int
+        Number of matrix rows.
+    cols : int
+        Number of matrix columns.
     entries : int
         Number of non-zero entries of a sparse matrix
-        or rows*cols for a dense matrix
+        or rows*cols for a dense matrix.
     format : str
         Either 'coordinate' or 'array'.
     field : str
         Either 'real', 'complex', 'pattern', or 'integer'.
-    symm : str
+    symmetry : str
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
-
     """
     return MMFile.info(source)
 
@@ -56,44 +57,47 @@ def mminfo(source):
 
 def mmread(source):
     """
-    Reads the contents of a Matrix Market file 'filename' into a matrix.
+    Reads the contents of a Matrix Market file 'source' into a matrix.
 
     Parameters
     ----------
-
-    source : file
+    source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file object.
 
     Returns
     -------
-    a:
-        Sparse or full matrix
-
+    a : ndarray or coo_matrix
+        Dense or sparse matrix depending on the matrix format in the
+        Matrix Market file.
     """
     return MMFile().read(source)
 
 #-------------------------------------------------------------------------------
 
 
-def mmwrite(target, a, comment='', field=None, precision=None):
+def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     """
-    Writes the sparse or dense array `a` to a Matrix Market formatted file.
+    Writes the sparse or dense array `a` to the Matrix Market formatted file `target`.
 
     Parameters
     ----------
-    target : file
-        Matrix Market filename (extension .mtx) or open file object
+    target : str or file-like
+        Matrix Market filename (extension .mtx) or open file object.
     a : array like
-        Sparse or dense 2D array
+        Sparse or dense 2D array.
     comment : str, optional
-        comments to be prepended to the Matrix Market file
+        Comments to be prepended to the Matrix Market file.
     field : None or str, optional
         Either 'real', 'complex', 'pattern', or 'integer'.
     precision : None or int, optional
         Number of digits to display for real or complex values.
+    symmetry : None or str, optional
+        Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
+        If symmetry is None the symmetry type of 'a' is determined by its
+        values.
     """
-    MMFile().write(target, a, comment, field, precision)
+    MMFile().write(target, a, comment, field, precision, symmetry)
 
 
 ################################################################################
@@ -192,12 +196,37 @@ class MMFile (object):
     #---------------------------------------------------------------------------
     @classmethod
     def info(self, source):
-        source, close_it = self._open(source)
+        """
+        Return size and storage parameters from Matrix Market file-like 'source'.
+    
+        Parameters
+        ----------
+        source : str or file-like
+            Matrix Market filename (extension .mtx) or open file object
+    
+        Returns
+        -------
+        rows : int
+            Number of matrix rows.
+        cols : int
+            Number of matrix columns.
+        entries : int
+            Number of non-zero entries of a sparse matrix
+            or rows*cols for a dense matrix.
+        format : str
+            Either 'coordinate' or 'array'.
+        field : str
+            Either 'real', 'complex', 'pattern', or 'integer'.
+        symmetry : str
+            Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
+        """
+        
+        stream, close_it = self._open(source)
 
         try:
 
             # read and validate header line
-            line = source.readline()
+            line = stream.readline()
             mmid, matrix, format, field, symmetry = \
               [asstr(part.strip()) for part in line.split()]
             if not mmid.startswith('%%MatrixMarket'):
@@ -213,7 +242,7 @@ class MMFile (object):
 
             # skip comments
             while line.startswith(b'%'):
-                line = source.readline()
+                line = stream.readline()
 
             line = line.split()
             if format == self.FORMAT_ARRAY:
@@ -230,7 +259,7 @@ class MMFile (object):
 
         finally:
             if close_it:
-                source.close()
+                stream.close()
 
     #---------------------------------------------------------------------------
     @staticmethod
@@ -278,23 +307,51 @@ class MMFile (object):
     #---------------------------------------------------------------------------
     @staticmethod
     def _get_symmetry(a):
-        m,n = a.shape
+        m, n = a.shape
         if m != n:
             return MMFile.SYMMETRY_GENERAL
-        issymm = 1
-        isskew = 1
+        issymm = True
+        isskew = True
         isherm = a.dtype.char in 'FD'
-        for j in range(n):
-            for i in range(j+1,n):
-                aij,aji = a[i][j],a[j][i]
-                if issymm and aij != aji:
-                    issymm = 0
-                if isskew and aij != -aji:
-                    isskew = 0
-                if isherm and aij != conj(aji):
-                    isherm = 0
-                if not (issymm or isskew or isherm):
-                    break
+        
+        # sparse input
+        if isspmatrix(a):
+            # check if number of nonzero entries of lower and upper triangle matrix are equal
+            a = a.tocoo()
+            (row, col) = a.nonzero()
+            if (row < col).sum() != (row > col).sum():
+                return MMFile.SYMMETRY_GENERAL
+            
+            # define iterator over symmetric pair entries
+            a = a.todok()
+            
+            def symm_iterator():
+                for ((i, j), aij) in a.items():
+                    if i > j:
+                        aji = a[j, i]
+                        yield (aij, aji)
+        
+        # non-sparse input
+        else:
+            # define iterator over symmetric pair entries
+            def symm_iterator():
+                for j in range(n):
+                    for i in range(j+1,n):
+                        aij, aji = a[i][j], a[j][i]
+                        yield (aij, aji)
+        
+        # check for symmetry
+        for (aij, aji) in symm_iterator():
+            if issymm and aij != aji:
+                issymm = False
+            if isskew and aij != -aji:
+                isskew = False
+            if isherm and aij != conj(aji):
+                isherm = False
+            if not (issymm or isskew or isherm):
+                break
+        
+        # return symmetry value
         if issymm:
             return MMFile.SYMMETRY_SYMMETRIC
         if isskew:
@@ -318,6 +375,21 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     def read(self, source):
+        """
+        Reads the contents of a Matrix Market file 'source' into a matrix.
+    
+        Parameters
+        ----------
+        source : str or file-like
+            Matrix Market filename (extensions .mtx, .mtz.gz)
+            or open file object.
+    
+        Returns
+        -------
+        a : ndarray or coo_matrix
+            Dense or sparse matrix depending on the matrix format in the
+            Matrix Market file.
+        """
         stream, close_it = self._open(source)
 
         try:
@@ -329,11 +401,32 @@ class MMFile (object):
                 stream.close()
 
     #---------------------------------------------------------------------------
-    def write(self, target, a, comment='', field=None, precision=None):
+    def write(self, target, a, comment='', field=None, precision=None, symmetry=None):
+        """
+        Writes the sparse or dense array `a` to the Matrix Market formatted file `target`.
+    
+        Parameters
+        ----------
+        target : str or file-like
+            Matrix Market filename (extension .mtx) or open file object.
+        a : array like
+            Sparse or dense 2D array.
+        comment : str, optional
+            Comments to be prepended to the Matrix Market file.
+        field : None or str, optional
+            Either 'real', 'complex', 'pattern', or 'integer'.
+        precision : None or int, optional
+            Number of digits to display for real or complex values.
+        symmetry : None or str, optional
+            Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
+            If symmetry is None the symmetry type of 'a' is determined by its
+            values.
+        """
+        
         stream, close_it = self._open(target, 'wb')
 
         try:
-            self._write(stream, a, comment, field, precision)
+            self._write(stream, a, comment, field, precision, symmetry)
 
         finally:
             if close_it:
@@ -505,7 +598,7 @@ class MMFile (object):
         return a
 
     #---------------------------------------------------------------------------
-    def _write(self, stream, a, comment='', field=None, precision=None):
+    def _write(self, stream, a, comment='', field=None, precision=None, symmetry=None):
 
         if isinstance(a, list) or isinstance(a, ndarray) or isinstance(a, tuple) or hasattr(a,'__array__'):
             rep = self.FORMAT_ARRAY
@@ -526,8 +619,7 @@ class MMFile (object):
                         a = a.astype('D')
 
         else:
-            from scipy.sparse import spmatrix
-            if not isinstance(a,spmatrix):
+            if not isspmatrix(a):
                 raise ValueError('unknown matrix type: %s' % type(a))
             rep = 'coordinate'
             rows, cols = a.shape
@@ -551,18 +643,16 @@ class MMFile (object):
             else:
                 raise TypeError('unexpected dtype kind ' + kind)
 
-        if rep == self.FORMAT_ARRAY:
-            symm = self._get_symmetry(a)
-        else:
-            symm = self.SYMMETRY_GENERAL
+        if symmetry is None:
+            symmetry = self._get_symmetry(a)
 
         # validate rep, field, and symmetry
         self.__class__._validate_format(rep)
         self.__class__._validate_field(field)
-        self.__class__._validate_symmetry(symm)
+        self.__class__._validate_symmetry(symmetry)
 
         # write initial header line
-        stream.write(asbytes('%%%%MatrixMarket matrix %s %s %s\n' % (rep,field,symm)))
+        stream.write(asbytes('%%MatrixMarket matrix {0} {1} {2}\n'.format(rep, field, symmetry)))
 
         # write comments
         for line in comment.split('\n'):
@@ -578,7 +668,7 @@ class MMFile (object):
 
             if field in (self.FIELD_INTEGER, self.FIELD_REAL):
 
-                if symm == self.SYMMETRY_GENERAL:
+                if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
                             stream.write(asbytes(template % a[i,j]))
@@ -589,7 +679,7 @@ class MMFile (object):
 
             elif field == self.FIELD_COMPLEX:
 
-                if symm == self.SYMMETRY_GENERAL:
+                if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
                             aij = a[i,j]
@@ -609,10 +699,14 @@ class MMFile (object):
         # write sparse format
         else:
 
-            if symm != self.SYMMETRY_GENERAL:
-                raise NotImplementedError('symmetric matrices not yet supported')
-
             coo = a.tocoo()  # convert to COOrdinate format
+            
+            # if symmetry format used, remove values above main diagonal 
+            if symmetry != self.SYMMETRY_GENERAL:
+                lower_triangle_mask = coo.row >= coo.col
+                coo = coo_matrix((coo.data[lower_triangle_mask], 
+                      (coo.row[lower_triangle_mask], coo.col[lower_triangle_mask])), 
+                      shape=coo.shape)
 
             # write shape spec
             stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
