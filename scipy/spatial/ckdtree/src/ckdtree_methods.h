@@ -295,9 +295,6 @@ _distance_pp(const npy_float64 *x, const npy_float64 *y,
     
     npy_intp i;
     npy_float64 r, r1;
-    if(NPY_LIKELY(box->fbox[0] <= 0)) {
-        return _distance_p(x, y, p, k, upperbound);
-    }
     r = 0;
     for (i=0; i<k; ++i) {
         r1 = wrap_distance(x[i] - y[i], box->hbox[i], box->fbox[i]);
