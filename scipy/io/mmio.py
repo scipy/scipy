@@ -309,7 +309,7 @@ class MMFile (object):
     #---------------------------------------------------------------------------
     @staticmethod
     def _get_symmetry(a):
-        m,n = a.shape
+        m, n = a.shape
         if m != n:
             return MMFile.SYMMETRY_GENERAL
         issymm = True

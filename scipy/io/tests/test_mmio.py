@@ -27,41 +27,37 @@ class TestMMIOArray(TestCase):
             b = mmread(self.fn)
             assert_array_almost_equal(a, b)
         
-        cases = []
         # simple (integer)
-        cases.append(([[1, 2], [3, 4]], (2, 2, 4, 'array', 'integer', 'general')))
+        single_test([[1, 2], [3, 4]], (2, 2, 4, 'array', 'integer', 'general'))
         # simple upper triangle (integer)
-        cases.append(([[0, 1], [0, 0]], (2, 2, 4, 'array', 'integer', 'general')))
+        single_test([[0, 1], [0, 0]], (2, 2, 4, 'array', 'integer', 'general'))
         # simple lower triangle (integer)
-        cases.append(([[0, 0], [1, 0]], (2, 2, 4, 'array', 'integer', 'general')))
+        single_test([[0, 0], [1, 0]], (2, 2, 4, 'array', 'integer', 'general'))
         # simple rectangular (integer, 2x3)
-        cases.append(([[1, 2, 3], [4, 5, 6]], (2, 3, 6, 'array', 'integer', 'general')))
+        single_test([[1, 2, 3], [4, 5, 6]], (2, 3, 6, 'array', 'integer', 'general'))
         # simple rectangular (float, 3x2)
-        cases.append(([[1, 2], [3.5, 4], [5, 6]], (3, 2, 6, 'array', 'real', 'general')))
+        single_test([[1, 2], [3.5, 4], [5, 6]], (3, 2, 6, 'array', 'real', 'general'))
         # simple (float)
-        cases.append(([[1, 2], [3, 4.0]], (2, 2, 4, 'array', 'real', 'general')))
+        single_test([[1, 2], [3, 4.0]], (2, 2, 4, 'array', 'real', 'general'))
         # simple (complex)
-        cases.append(([[1, 2], [3, 4j]], (2, 2, 4, 'array', 'complex', 'general')))
+        single_test([[1, 2], [3, 4j]], (2, 2, 4, 'array', 'complex', 'general'))
         # simple symmetric (integer)
-        cases.append(([[1, 2], [2, 4]], (2, 2, 4, 'array', 'integer', 'symmetric')))
+        single_test([[1, 2], [2, 4]], (2, 2, 4, 'array', 'integer', 'symmetric'))
         # simple skew symmetric (integer)
-        cases.append(([[1, 2], [-2, 4]], (2, 2, 4, 'array', 'integer', 'skew-symmetric')))
+        single_test([[1, 2], [-2, 4]], (2, 2, 4, 'array', 'integer', 'skew-symmetric'))
         # simple skew symmetric (float)
-        cases.append((array([[1,2], [-2.0,4]], 'f')), (2, 2, 4, 'array', 'real', 'skew-symmetric')))
+        single_test(array([[1,2], [-2.0,4]], 'f'), (2, 2, 4, 'array', 'real', 'skew-symmetric'))
         # simple hermitian (complex)
-        cases.append(([[1, 2+3j], [2-3j, 4]], (2, 2, 4, 'array', 'complex', 'hermitian')))
+        single_test([[1, 2+3j], [2-3j, 4]], (2, 2, 4, 'array', 'complex', 'hermitian'))
         # random symmetric (float)
         sz = (20, 20)
         a = rand(*sz)
         a = a + transpose(a)
-        cases.append((a, (20, 20, 400, 'array', 'real', 'symmetric')))
+        single_test(a, (20, 20, 400, 'array', 'real', 'symmetric'))
         # random rectangular (float)
         sz = (20, 15)
         a = rand(*sz)
-        cases.append((a, (20, 15, 300, 'array', 'real', 'general')))
-        
-        for a, info in cases:
-            single_test(a, info)
+        single_test(a, (20, 15, 300, 'array', 'real', 'general'))
 
 
 class TestMMIOSparseCSR(TestMMIOArray):
@@ -80,43 +76,39 @@ class TestMMIOSparseCSR(TestMMIOArray):
             b = mmread(self.fn)
             assert_array_almost_equal(a.todense(), b.todense())
         
-        cases = []
         # simple (integer)
-        cases.append((scipy.sparse.csr_matrix([[1, 2], [3, 4]]), (2, 2, 4, 'coordinate', 'integer', 'general')))
+        single_test(scipy.sparse.csr_matrix([[1, 2], [3, 4]]), (2, 2, 4, 'coordinate', 'integer', 'general'))
         # simple upper triangle (integer)
-        cases.append((scipy.sparse.csr_matrix([[0, 1], [0, 0]]), (2, 2, 1, 'coordinate', 'integer', 'general')))
+        single_test(scipy.sparse.csr_matrix([[0, 1], [0, 0]]), (2, 2, 1, 'coordinate', 'integer', 'general'))
         # simple lower triangle (integer)
-        cases.append((scipy.sparse.csr_matrix([[0, 0], [1, 0]]), (2, 2, 1, 'coordinate', 'integer', 'general')))
+        single_test(scipy.sparse.csr_matrix([[0, 0], [1, 0]]), (2, 2, 1, 'coordinate', 'integer', 'general'))
         # simple rectangular (integer, 2x3)
-        cases.append((scipy.sparse.csr_matrix([[1, 2, 3], [4, 5, 6]]), (2, 3, 6, 'coordinate', 'integer', 'general')))
+        single_test(scipy.sparse.csr_matrix([[1, 2, 3], [4, 5, 6]]), (2, 3, 6, 'coordinate', 'integer', 'general'))
         # simple rectangular (float, 3x2)
-        cases.append((scipy.sparse.csr_matrix([[1, 2], [3.5, 4], [5, 6]]), (3, 2, 6, 'coordinate', 'real', 'general')))
+        single_test(scipy.sparse.csr_matrix([[1, 2], [3.5, 4], [5, 6]]), (3, 2, 6, 'coordinate', 'real', 'general'))
         # simple (float)
-        cases.append((scipy.sparse.csr_matrix([[1, 2], [3, 4.0]]), (2, 2, 4, 'coordinate', 'real', 'general')))
+        single_test(scipy.sparse.csr_matrix([[1, 2], [3, 4.0]]), (2, 2, 4, 'coordinate', 'real', 'general'))
         # simple (complex)
-        cases.append((scipy.sparse.csr_matrix([[1, 2], [3, 4j]]), (2, 2, 4, 'coordinate', 'complex', 'general')))
+        single_test(scipy.sparse.csr_matrix([[1, 2], [3, 4j]]), (2, 2, 4, 'coordinate', 'complex', 'general'))
         # simple symmetric (integer)
-        cases.append((scipy.sparse.csr_matrix([[1, 2], [2, 4]]), (2, 2, 3, 'coordinate', 'integer', 'symmetric')))
+        single_test(scipy.sparse.csr_matrix([[1, 2], [2, 4]]), (2, 2, 3, 'coordinate', 'integer', 'symmetric'))
         # simple skew symmetric (integer)
-        cases.append((scipy.sparse.csr_matrix([[1, 2], [-2, 4]]), (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric')))
+        single_test(scipy.sparse.csr_matrix([[1, 2], [-2, 4]]), (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'))
         # simple skew symmetric (float)
-        cases.append((scipy.sparse.csr_matrix(array([[1,2], [-2.0,4]], 'f')), (2, 2, 3, 'coordinate', 'real', 'skew-symmetric')))
+        single_test(scipy.sparse.csr_matrix(array([[1,2], [-2.0,4]], 'f')), (2, 2, 3, 'coordinate', 'real', 'skew-symmetric'))
         # simple hermitian (complex)
-        cases.append((scipy.sparse.csr_matrix([[1, 2+3j], [2-3j, 4]]), (2, 2, 3, 'coordinate', 'complex', 'hermitian')))
+        single_test(scipy.sparse.csr_matrix([[1, 2+3j], [2-3j, 4]]), (2, 2, 3, 'coordinate', 'complex', 'hermitian'))
         # random symmetric (float)
         sz = (20, 20)
         a = rand(*sz)
         a = a + transpose(a)
         a = scipy.sparse.csr_matrix(a)
-        cases.append((scipy.sparse.csr_matrix(a), (20, 20, 210, 'coordinate', 'real', 'symmetric')))
+        single_test(scipy.sparse.csr_matrix(a), (20, 20, 210, 'coordinate', 'real', 'symmetric'))
         # random rectangular (float)
         sz = (20, 15)
         a = rand(*sz)
         a = scipy.sparse.csr_matrix(a)
-        cases.append((scipy.sparse.csr_matrix(a), (20, 15, 300, 'coordinate', 'real', 'general')))
-        
-        for a, info in cases:
-            single_test(a, info)
+        single_test(scipy.sparse.csr_matrix(a), (20, 15, 300, 'coordinate', 'real', 'general'))
 
 
 _general_example = '''\
@@ -219,45 +211,41 @@ class TestMMIOCoordinate(TestCase):
             b = mmread(self.fn).todense()
             assert_array_almost_equal(a, b)
         
-        cases = []
         # general
         a = [[1, 0, 0, 6, 0],
              [0, 10.5, 0, 0, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5, 0, -280, 33.32],
              [0, 0, 0, 0, 12]]
-        cases.append((_general_example, a, (5, 5, 8, 'coordinate', 'real', 'general')))
+        single_test(_general_example, a, (5, 5, 8, 'coordinate', 'real', 'general'))
         # hermitian
         a = [[1, 0, 0, 0, 0],
              [0, 10.5, 0, 250.5 - 22.22j, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5 + 22.22j, 0, -280, -33.32j],
              [0, 0, 0, 33.32j, 12]]
-        cases.append((_hermitian_example, a, (5, 5, 7, 'coordinate', 'complex', 'hermitian')))
+        single_test(_hermitian_example, a, (5, 5, 7, 'coordinate', 'complex', 'hermitian'))
         # skew
         a = [[1, 0, 0, 0, 0],
              [0, 10.5, 0, -250.5, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5, 0, -280, 0],
              [0, 0, 0, 0, 12]]
-        cases.append((_skew_example, a, (5, 5, 7, 'coordinate', 'real', 'skew-symmetric')))
+        single_test(_skew_example, a, (5, 5, 7, 'coordinate', 'real', 'skew-symmetric'))
         # symmetric
         a = [[1, 0, 0, 0, 0],
              [0, 10.5, 0, 250.5, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5, 0, -280, 8],
              [0, 0, 0, 8, 12]]
-        cases.append((_symmetric_example, a, (5, 5, 7, 'coordinate', 'real', 'symmetric')))
+        single_test(_symmetric_example, a, (5, 5, 7, 'coordinate', 'real', 'symmetric'))
         # symmetric pattern
         a = [[1, 0, 0, 6, 0],
              [0, 10.5, 0, 0, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5, 0, -280, 33.32],
              [0, 0, 0, 0, 12]]
-        cases.append((_symmetric_pattern_example, a, (5, 5, 7, 'coordinate', 'pattern', 'symmetric')))
-        
-        for example, a, info in cases:
-            single_test(example, a, info)
+        single_test(_symmetric_pattern_example, a, (5, 5, 7, 'coordinate', 'pattern', 'symmetric'))
 
     def test_empty_write_read(self):
         #http://projects.scipy.org/scipy/ticket/883
