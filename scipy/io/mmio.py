@@ -25,15 +25,15 @@ __all__ = ['mminfo','mmread','mmwrite', 'MMFile']
 
 
 #-------------------------------------------------------------------------------
-def mminfo(filename):
+def mminfo(source):
     """
-    Queries the contents of the Matrix Market file 'filename' to
+    Queries the contents of the Matrix Market file 'source' to
     extract size and storage information.
 
     Parameters
     ----------
 
-    filename : file
+    source : str or file-like
         Matrix Market filename (extension .mtx) or open file object
 
     Returns
@@ -51,40 +51,42 @@ def mminfo(filename):
     symmetry : str
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
     """
-    return MMFile.info(filename)
+    return MMFile.info(source)
 
 #-------------------------------------------------------------------------------
 
 
-def mmread(filename):
+def mmread(source):
     """
-    Reads the contents of a Matrix Market file 'filename' into a matrix.
+    Reads the contents of a Matrix Market file 'source' into a matrix.
 
     Parameters
     ----------
-
-    filename : file
+    
+    source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file object.
 
     Returns
     -------
+    
     a : ndarray or coo_matrix
         Dense or sparse matrix depending on the matrix format in the
         Matrix Market file.
     """
-    return MMFile().read(filename)
+    return MMFile().read(source)
 
 #-------------------------------------------------------------------------------
 
 
-def mmwrite(filename, a, comment='', field=None, precision=None, symmetry=None):
+def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     """
-    Writes the sparse or dense array `a` to the Matrix Market formatted file `filename`.
+    Writes the sparse or dense array `a` to the Matrix Market formatted file `target`.
 
     Parameters
     ----------
-    filename : file
+    
+    target : str or file-like
         Matrix Market filename (extension .mtx) or open file object.
     a : array like
         Sparse or dense 2D array.
@@ -99,7 +101,7 @@ def mmwrite(filename, a, comment='', field=None, precision=None, symmetry=None):
         If symmetry is None the symmetry type of 'a' is determined by its
         values.
     """
-    MMFile().write(filename, a, comment, field, precision, symmetry)
+    MMFile().write(target, a, comment, field, precision, symmetry)
 
 
 ################################################################################
@@ -197,15 +199,15 @@ class MMFile (object):
 
     #---------------------------------------------------------------------------
     @classmethod
-    def info(self, filename):
+    def info(self, source):
         """
-        Queries the contents of the Matrix Market file 'filename' to
+        Queries the contents of the Matrix Market file 'source' to
         extract size and storage information.
     
         Parameters
         ----------
-    
-        filename : file
+
+        source : str or file-like
             Matrix Market filename (extension .mtx) or open file object
     
         Returns
@@ -224,7 +226,7 @@ class MMFile (object):
             Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         """
         
-        stream, close_it = self._open(filename)
+        stream, close_it = self._open(source)
 
         try:
 
@@ -374,14 +376,14 @@ class MMFile (object):
         self._init_attrs(**kwargs)
 
     #---------------------------------------------------------------------------
-    def read(self, filename):
+    def read(self, source):
         """
-        Reads the contents of a Matrix Market file 'filename' into a matrix.
+        Reads the contents of a Matrix Market file 'source' into a matrix.
     
         Parameters
         ----------
-    
-        filename : file
+
+        source : str or file-like
             Matrix Market filename (extensions .mtx, .mtz.gz)
             or open file object.
     
@@ -391,7 +393,7 @@ class MMFile (object):
             Dense or sparse matrix depending on the matrix format in the
             Matrix Market file.
         """
-        stream, close_it = self._open(filename)
+        stream, close_it = self._open(source)
 
         try:
             self._parse_header(stream)
@@ -402,13 +404,14 @@ class MMFile (object):
                 stream.close()
 
     #---------------------------------------------------------------------------
-    def write(self, filename, a, comment='', field=None, precision=None, symmetry=None):
+    def write(self, target, a, comment='', field=None, precision=None, symmetry=None):
         """
-        Writes the sparse or dense array `a` to the Matrix Market formatted file `filename`.
+        Writes the sparse or dense array `a` to the Matrix Market formatted file `target`.
     
         Parameters
         ----------
-        filename : file
+        
+        target : str or file-like
             Matrix Market filename (extension .mtx) or open file object.
         a : array like
             Sparse or dense 2D array.
@@ -424,7 +427,7 @@ class MMFile (object):
             values.
         """
         
-        stream, close_it = self._open(filename, 'wb')
+        stream, close_it = self._open(target, 'wb')
 
         try:
             self._write(stream, a, comment, field, precision, symmetry)
