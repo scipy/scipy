@@ -653,7 +653,7 @@ class MMFile (object):
         self.__class__._validate_symmetry(symmetry)
 
         # write initial header line
-        stream.write(asbytes('%%%%MatrixMarket matrix %s %s %s\n' % (rep,field,symmetry)))
+        stream.write(asbytes('%%MatrixMarket matrix {0} {1} {2]\n'.format(rep, field, symmetry)))
 
         # write comments
         for line in comment.split('\n'):
