@@ -32,13 +32,11 @@ def mminfo(source):
 
     Parameters
     ----------
-
     source : str or file-like
         Matrix Market filename (extension .mtx) or open file object
 
     Returns
     -------
-
     rows,cols : int
         Number of matrix rows and columns.
     entries : int
@@ -62,14 +60,12 @@ def mmread(source):
 
     Parameters
     ----------
-    
     source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file object.
 
     Returns
     -------
-    
     a : ndarray or coo_matrix
         Dense or sparse matrix depending on the matrix format in the
         Matrix Market file.
@@ -85,7 +81,6 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
 
     Parameters
     ----------
-    
     target : str or file-like
         Matrix Market filename (extension .mtx) or open file object.
     a : array like
@@ -206,13 +201,11 @@ class MMFile (object):
     
         Parameters
         ----------
-
         source : str or file-like
             Matrix Market filename (extension .mtx) or open file object
     
         Returns
         -------
-    
         rows,cols : int
             Number of matrix rows and columns.
         entries : int
@@ -382,7 +375,6 @@ class MMFile (object):
     
         Parameters
         ----------
-
         source : str or file-like
             Matrix Market filename (extensions .mtx, .mtz.gz)
             or open file object.
@@ -410,7 +402,6 @@ class MMFile (object):
     
         Parameters
         ----------
-        
         target : str or file-like
             Matrix Market filename (extension .mtx) or open file object.
         a : array like
