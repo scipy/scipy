@@ -21,111 +21,98 @@ class TestMMIOArray(TestCase):
         shutil.rmtree(self.tmpdir)
 
     def test_simple(self):
-        a = [[1,2],[3,4]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','integer','general'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[1,2], [3,4]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'integer', 'general'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_upper_triangle(self):
-        a = [[0,1],[0,0]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','integer','general'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[0,1], [0,0]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'integer', 'general'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_lower_triangle(self):
-        a = [[0,0],[1,0]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','integer','general'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[0,0], [1,0]]
+        mmwrite(self.fn ,a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'integer', 'general'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_rectangular(self):
-        a = [[1,2,3],[4,5,6]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,3,6,'array','integer','general'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[1,2,3], [4,5,6]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2 ,3 , 6, 'array', 'integer', 'general'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_rectangular_real(self):
-        a = [[1,2],[3.5,4],[5,6]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(3,2,6,'array','real','general'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[1,2], [3.5,4], [5,6]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (3, 2, 6, 'array', 'real', 'general'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_real(self):
-        a = [[1,2],[3,4.0]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','real','general'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[1,2], [3,4.0]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'real', 'general'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_complex(self):
-        a = [[1,2],[3,4j]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','complex','general'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[1,2], [3,4j]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'complex', 'general'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_symmetric(self):
-        a = [[1,2],[2,4]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','integer','symmetric'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[1,2], [2,4]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'integer', 'symmetric'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_skew_symmetric(self):
-        a = [[1,2],[-2,4]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','integer','skew-symmetric'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[1,2], [-2,4]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'integer', 'skew-symmetric'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_skew_symmetric_float(self):
-        a = array([[1,2],[-2.0,4]],'f')
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','real','skew-symmetric'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = array([[1,2], [-2.0,4]], 'f')
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'real', 'skew-symmetric'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_simple_hermitian(self):
-        a = [[1,2+3j],[2-3j,4]]
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'array','complex','hermitian'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        a = [[1,2+3j], [2-3j,4]]
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'array', 'complex', 'hermitian'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_random_symmetric_real(self):
-        sz = (20,20)
+        sz = (20, 20)
         a = rand(*sz)
         a = a + transpose(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(20,20,400,'array','real','symmetric'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (20, 20, 400, 'array', 'real', 'symmetric'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
     def test_random_rect_real(self):
-        sz = (20,15)
+        sz = (20, 15)
         a = rand(*sz)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(20,15,300,'array','real','general'))
-        b = mmread(fn)
-        assert_array_almost_equal(a,b)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (20, 15, 300, 'array', 'real', 'general'))
+        b = mmread(self.fn)
+        assert_array_almost_equal(a, b)
 
 
 class TestMMIOSparseCSR(TestMMIOArray):
@@ -138,123 +125,110 @@ class TestMMIOSparseCSR(TestMMIOArray):
         shutil.rmtree(self.tmpdir)
     
     def test_simple(self):
-        a = [[1,2],[3,4]]
+        a = [[1,2], [3,4]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'coordinate','integer','general'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'coordinate', 'integer', 'general'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_upper_triangle(self):
-        a = [[0,1],[0,0]]
+        a = [[0,1], [0,0]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,1,'coordinate','integer','general'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 1, 'coordinate', 'integer', 'general'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_lower_triangle(self):
-        a = [[0,0],[1,0]]
+        a = [[0,0], [1,0]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,1,'coordinate','integer','general'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 1, 'coordinate', 'integer', 'general'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_rectangular(self):
-        a = [[1,2,3],[4,5,6]]
+        a = [[1,2,3], [4,5,6]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,3,6,'coordinate','integer','general'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 3, 6, 'coordinate', 'integer', 'general'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_rectangular_real(self):
-        a = [[1,2],[3.5,4],[5,6]]
+        a = [[1,2], [3.5,4], [5,6]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(3,2,6,'coordinate','real','general'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (3, 2, 6, 'coordinate', 'real', 'general'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_real(self):
-        a = [[1,2],[3,4.0]]
+        a = [[1,2], [3,4.0]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'coordinate','real','general'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'coordinate', 'real', 'general'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_complex(self):
-        a = [[1,2],[3,4j]]
+        a = [[1,2], [3,4j]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,4,'coordinate','complex','general'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 4, 'coordinate', 'complex', 'general'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_symmetric(self):
-        a = [[1,2],[2,4]]
+        a = [[1,2], [2,4]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,3,'coordinate','integer','symmetric'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 3, 'coordinate', 'integer', 'symmetric'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_skew_symmetric(self):
-        a = [[1,2],[-2,4]]
+        a = [[1,2], [-2,4]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,3,'coordinate','integer','skew-symmetric'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_skew_symmetric_float(self):
-        a = array([[1,2],[-2.0,4]],'f')
+        a = array([[1,2] ,[-2.0,4]], 'f')
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,3,'coordinate','real','skew-symmetric'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 3, 'coordinate', 'real', 'skew-symmetric'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_simple_hermitian(self):
-        a = [[1,2+3j],[2-3j,4]]
+        a = [[1,2+3j], [2-3j,4]]
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(2,2,3,'coordinate','complex','hermitian'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (2, 2, 3, 'coordinate', 'complex', 'hermitian'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_random_symmetric_real(self):
-        sz = (20,20)
+        sz = (20, 20)
         a = rand(*sz)
         a = a + transpose(a)
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(20,20,210,'coordinate','real','symmetric'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (20, 20, 210, 'coordinate', 'real', 'symmetric'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
     def test_random_rect_real(self):
-        sz = (20,15)
+        sz = (20, 15)
         a = rand(*sz)
         a = scipy.sparse.csr_matrix(a)
-        fn = self.fn
-        mmwrite(fn,a)
-        assert_equal(mminfo(fn),(20,15,300,'coordinate','real','general'))
-        b = mmread(fn)
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), (20, 15, 300, 'coordinate', 'real', 'general'))
+        b = mmread(self.fn)
         assert_array_almost_equal(a.todense(),b.todense())
 
 
@@ -350,86 +324,80 @@ class TestMMIOCoordinate(TestCase):
         shutil.rmtree(self.tmpdir)
 
     def test_read_general(self):
-        fn = self.fn
-        f = open(fn,'w')
+        f = open(self.fn, 'w')
         f.write(_general_example)
         f.close()
-        assert_equal(mminfo(fn),(5,5,8,'coordinate','real','general'))
+        assert_equal(mminfo(self.fn),(5, 5, 8, 'coordinate', 'real', 'general'))
         a = [[1, 0, 0, 6, 0],
              [0, 10.5, 0, 0, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5, 0, -280, 33.32],
              [0, 0, 0, 0, 12]]
-        b = mmread(fn).todense()
-        assert_array_almost_equal(a,b)
+        b = mmread(self.fn).todense()
+        assert_array_almost_equal(a, b)
 
     def test_read_hermitian(self):
-        fn = self.fn
-        f = open(fn,'w')
+        f = open(self.fn, 'w')
         f.write(_hermitian_example)
         f.close()
-        assert_equal(mminfo(fn),(5,5,7,'coordinate','complex','hermitian'))
+        assert_equal(mminfo(self.fn), (5, 5, 7, 'coordinate', 'complex', 'hermitian'))
         a = [[1, 0, 0, 0, 0],
              [0, 10.5, 0, 250.5 - 22.22j, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5 + 22.22j, 0, -280, -33.32j],
              [0, 0, 0, 33.32j, 12]]
-        b = mmread(fn).todense()
-        assert_array_almost_equal(a,b)
+        b = mmread(self.fn).todense()
+        assert_array_almost_equal(a, b)
 
     def test_read_skew(self):
-        fn = self.fn
-        f = open(fn,'w')
+        f = open(self.fn, 'w')
         f.write(_skew_example)
         f.close()
-        assert_equal(mminfo(fn),(5,5,7,'coordinate','real','skew-symmetric'))
+        assert_equal(mminfo(self.fn), (5, 5, 7, 'coordinate', 'real', 'skew-symmetric'))
         a = [[1, 0, 0, 0, 0],
              [0, 10.5, 0, -250.5, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5, 0, -280, 0],
              [0, 0, 0, 0, 12]]
-        b = mmread(fn).todense()
-        assert_array_almost_equal(a,b)
+        b = mmread(self.fn).todense()
+        assert_array_almost_equal(a, b)
 
     def test_read_symmetric(self):
-        fn = self.fn
-        f = open(fn,'w')
+        f = open(self.fn, 'w')
         f.write(_symmetric_example)
         f.close()
-        assert_equal(mminfo(fn),(5,5,7,'coordinate','real','symmetric'))
+        assert_equal(mminfo(self.fn), (5, 5, 7, 'coordinate', 'real', 'symmetric'))
         a = [[1, 0, 0, 0, 0],
              [0, 10.5, 0, 250.5, 0],
              [0, 0, .015, 0, 0],
              [0, 250.5, 0, -280, 8],
              [0, 0, 0, 8, 12]]
-        b = mmread(fn).todense()
-        assert_array_almost_equal(a,b)
+        b = mmread(self.fn).todense()
+        assert_array_almost_equal(a, b)
 
     def test_read_symmetric_pattern(self):
-        fn = self.fn
-        f = open(fn,'w')
+        f = open(self.fn, 'w')
         f.write(_symmetric_pattern_example)
         f.close()
-        assert_equal(mminfo(fn),(5,5,7,'coordinate','pattern','symmetric'))
+        assert_equal(mminfo(self.fn),(5, 5, 7, 'coordinate', 'pattern', 'symmetric'))
         a = [[1, 0, 0, 0, 0],
              [0, 1, 0, 1, 0],
              [0, 0, 1, 0, 0],
              [0, 1, 0, 1, 1],
              [0, 0, 0, 1, 1]]
-        b = mmread(fn).todense()
-        assert_array_almost_equal(a,b)
+        b = mmread(self.fn).todense()
+        assert_array_almost_equal(a, b)
 
     def test_empty_write_read(self):
         #http://projects.scipy.org/scipy/ticket/883
 
-        b = scipy.sparse.coo_matrix((10,10))
-        fn = self.fn
-        mmwrite(fn,b)
+        b = scipy.sparse.coo_matrix((10, 10))
+        mmwrite(self.fn, b)
 
-        assert_equal(mminfo(fn),(10,10,0,'coordinate','real','symmetric'))
+        assert_equal(mminfo(self.fn), (10, 10, 0, 'coordinate', 'real', 'symmetric'))
         a = b.todense()
-        b = mmread(fn).todense()
-        assert_array_almost_equal(a,b)
+        b = mmread(self.fn).todense()
+        assert_array_almost_equal(a, b)
 
     def test_bzip2_py3(self):
         # test if fix for #2152 works
@@ -442,12 +410,11 @@ class TestMMIOCoordinate(TestCase):
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
 
-        b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
+        b = scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5))
 
-        fn = self.fn
-        mmwrite(fn, b)
+        mmwrite(self.fn, b)
 
-        fn_bzip2 = "%s.bz2" % fn
+        fn_bzip2 = "%s.bz2" % self.fn
         with open(fn, 'rb') as f_in:
             f_out = bz2.BZ2File(fn_bzip2, 'wb')
             f_out.write(f_in.read())
@@ -467,12 +434,11 @@ class TestMMIOCoordinate(TestCase):
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
 
-        b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
+        b = scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5))
 
-        fn = self.fn
-        mmwrite(fn, b)
+        mmwrite(self.fn, b)
 
-        fn_gzip = "%s.gz" % fn
+        fn_gzip = "%s.gz" % self.fn
         with open(fn, 'rb') as f_in:
             f_out = gzip.open(fn_gzip, 'wb')
             f_out.write(f_in.read())
@@ -486,15 +452,14 @@ class TestMMIOCoordinate(TestCase):
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
 
-        b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
+        b = scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5))
 
-        fn = self.fn
-        mmwrite(fn,b)
+        mmwrite(self.fn, b)
 
-        assert_equal(mminfo(fn),(5,5,8,'coordinate','real','general'))
+        assert_equal(mminfo(self.fn),(5,5,8,'coordinate','real','general'))
         a = b.todense()
-        b = mmread(fn).todense()
-        assert_array_almost_equal(a,b)
+        b = mmread(self.fn).todense()
+        assert_array_almost_equal(a, b)
 
     def test_complex_write_read(self):
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
@@ -502,15 +467,14 @@ class TestMMIOCoordinate(TestCase):
         V = array([1.0 + 3j, 6.0 + 2j, 10.50 + 0.9j, 0.015 + -4.4j,
                    250.5 + 0j, -280.0 + 5j, 33.32 + 6.4j, 12.00 + 0.8j])
 
-        b = scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5))
+        b = scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5))
 
-        fn = self.fn
-        mmwrite(fn,b)
+        mmwrite(self.fn, b)
 
-        assert_equal(mminfo(fn),(5,5,8,'coordinate','complex','general'))
+        assert_equal(mminfo(self.fn),(5, 5, 8, 'coordinate', 'complex', 'general'))
         a = b.todense()
-        b = mmread(fn).todense()
-        assert_array_almost_equal(a,b)
+        b = mmread(self.fn).todense()
+        assert_array_almost_equal(a, b)
 
     def test_sparse_formats(self):
         mats = []
@@ -519,11 +483,11 @@ class TestMMIOCoordinate(TestCase):
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
 
         V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
-        mats.append(scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5)))
+        mats.append(scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5)))
 
         V = array([1.0 + 3j, 6.0 + 2j, 10.50 + 0.9j, 0.015 + -4.4j,
                    250.5 + 0j, -280.0 + 5j, 33.32 + 6.4j, 12.00 + 0.8j])
-        mats.append(scipy.sparse.coo_matrix((V,(I,J)),shape=(5,5)))
+        mats.append(scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5)))
 
         for mat in mats:
             expected = mat.todense()
