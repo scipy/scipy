@@ -265,11 +265,11 @@ class TestMMIOCoordinate(TestCase):
         self.check_read(_symmetric_example, a, (5, 5, 7, 'coordinate', 'real', 'symmetric'))
     
     def test_read_symmetric_pattern(self):
-        a = [[1, 0, 0, 6, 0],
-             [0, 10.5, 0, 0, 0],
-             [0, 0, .015, 0, 0],
-             [0, 250.5, 0, -280, 33.32],
-             [0, 0, 0, 0, 12]]
+        a = [[1, 0, 0, 0, 0],
+             [0, 1, 0, 1, 0],
+             [0, 0, 1, 0, 0],
+             [0, 1, 0, 1, 1],
+             [0, 0, 0, 1, 1]]
         self.check_read(_symmetric_pattern_example, a, (5, 5, 7, 'coordinate', 'pattern', 'symmetric'))
 
     def test_empty_write_read(self):
