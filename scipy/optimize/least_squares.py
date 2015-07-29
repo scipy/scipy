@@ -393,10 +393,10 @@ def least_squares(
             *  3 - `xtol` convergence test is satisfied.
             *  4 - Both `ftol` and `xtol` termination conditions are satisfied.
 
-    message : string
+    message : str
         Verbal description of the termination reason.
-    success : int
-        True if one of the convergence criteria is satisfied.
+    success : bool
+        True if one of the convergence criteria is satisfied (`status` > 0).
 
     See Also
     --------
@@ -408,7 +408,7 @@ def least_squares(
     -----
     Method 'lm' (Levenberg-Marquardt) calls a wrapper over least-squares
     algorithms implemented in MINPACK (lmder, lmdif). It runs
-    Levenberg-Marquadrd algorithm formulated as a trust-region type algorithm.
+    Levenberg-Marquardt algorithm formulated as a trust-region type algorithm.
     The implementation is based on paper [JJMore]_, it is very robust and
     efficient with a lot of smart tricks. It should be your first choice
     for unconstrained problems. Note that it doesn't support bounds. Also
@@ -491,7 +491,6 @@ def least_squares(
     In this example we find a minimum of the Rosenbrock function without bounds
     on independed variables.
 
-    >>> import numpy as np
     >>> def fun_rosenbrock(x):
     ...     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
 
