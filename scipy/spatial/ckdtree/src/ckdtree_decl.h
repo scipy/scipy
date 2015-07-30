@@ -25,29 +25,7 @@ struct ckdtreenode {
     npy_intp      _greater;
 };
 
-struct ckdtreebox {
-    npy_float64 * fbox; /* full box */
-    npy_float64 * hbox; /* half box */
-    const void allocate(const int m, const npy_float64* fbox) {
-        int i;
-        this->fbox = new npy_float64[m];
-        this->hbox = new npy_float64[m];
-        for(i=0; i<m; i++) {
-            this->fbox[i] = fbox[i];
-            this->hbox[i] = 0.5 * fbox[i];
-        }
-    }
-    const void free() {
-        if (this->fbox) {
-            delete [] this->fbox;
-            delete [] this->hbox;
-        }
-        this->fbox = NULL;
-    }
-};
-
 #ifdef CKDTREE_METHODS_IMPL
-
 
 struct ckdtree {
     PyObject_HEAD
@@ -70,6 +48,8 @@ struct ckdtree {
     const PyArrayObject *indices;
     const npy_intp      *raw_indices;
     const PyArrayObject *_median_workspace;
+    const PyObject      *boxsize;
+    const npy_float64   *boxsize_data;
 };
 
 #endif

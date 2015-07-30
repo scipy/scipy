@@ -918,18 +918,19 @@ def test_ckdtree_box():
     self.k = 3
     np.random.seed(1234)
     data = np.random.uniform(size=(self.n, self.m))
-    kdtree = cKDTree(data, leafsize=1)
+    kdtree = cKDTree(data, leafsize=1, boxsize=1.0)
+
     # use the standard python KDTree for the simulated periodic box
-    kdtree2 = KDTree(data, leafsize=1)
+    kdtree2 = cKDTree(data, leafsize=1)
 #    data = data[1:2]
 
-    dd, ii = kdtree.query(data, self.k, boxsize=1.0)
+    dd, ii = kdtree.query(data, self.k)
 
-    dd1, ii1 = kdtree.query(data + 1.0, self.k, boxsize=1.0)
+    dd1, ii1 = kdtree.query(data + 1.0, self.k)
     assert_almost_equal(dd, dd1)
     assert_equal(ii, ii1)
 
-    dd1, ii1 = kdtree.query(data - 1.0, self.k, boxsize=1.0)
+    dd1, ii1 = kdtree.query(data - 1.0, self.k)
     assert_almost_equal(dd, dd1)
     assert_equal(ii, ii1)
 

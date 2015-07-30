@@ -106,7 +106,8 @@ wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
  * ===================
  */
 
-#if !defined(__GNUC__)
+#if 0 
+//!defined(__GNUC__)
 
 inline npy_float64
 sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp n)
@@ -137,7 +138,6 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp
     return s;
 } 
 
- 
 inline npy_float64 
 _distance_p(const npy_float64 *x, const npy_float64 *y,
             const npy_float64 p, const npy_intp k,
@@ -282,7 +282,7 @@ minkowski:
 inline npy_float64 
 _distance_pp(const npy_float64 *x, const npy_float64 *y,
             const npy_float64 p, const npy_intp k,
-            const npy_float64 upperbound, const ckdtreebox * box)
+            const npy_float64 upperbound, const npy_float64 * hbox, const npy_float64 * fbox)
 {    
    /*
     * Compute the distance between x and y
@@ -297,7 +297,7 @@ _distance_pp(const npy_float64 *x, const npy_float64 *y,
     npy_float64 r, r1;
     r = 0;
     for (i=0; i<k; ++i) {
-        r1 = wrap_distance(x[i] - y[i], box->hbox[i], box->fbox[i]);
+        r1 = wrap_distance(x[i] - y[i], hbox[i], fbox[i]);
         if (NPY_LIKELY(p==2.)) {
             r += r1 * r1;
         } else if (p==infinity) {
@@ -313,7 +313,7 @@ _distance_pp(const npy_float64 *x, const npy_float64 *y,
     return r;
 } 
  
-static inline npy_float64 side_distance_from_min_max(
+const inline npy_float64 side_distance_from_min_max(
     const npy_float64 x,
     const npy_float64 min,
     const npy_float64 max,
@@ -406,8 +406,7 @@ query_knn(const ckdtree     *self,
           const npy_intp     k, 
           const npy_float64  eps, 
           const npy_float64  p, 
-          const npy_float64  distance_upper_bound,
-          const ckdtreebox * box);
+          const npy_float64  distance_upper_bound);
           
 CKDTREE_EXTERN PyObject*
 query_pairs(const ckdtree *self, 
