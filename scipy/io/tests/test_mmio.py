@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 from tempfile import mkdtemp, mktemp
 import os
 import shutil
-from numpy import array,transpose
+from numpy import array,transpose, pi
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_array_almost_equal, rand)
 
@@ -392,14 +392,14 @@ class TestMMIOCoordinate(TestCase):
             # construct sparse matrix with pi as last main diagonal entry
             n = 10**precision + 1
             A = scipy.sparse.lil_matrix((n, n))
-            A[n-1, n-1] = np.pi
+            A[n-1, n-1] = pi
             # write matrix with low precision and read again
             mmwrite(self.fn, A, precision=precision)
             A = scipy.io.mmread(self.fn)
             # check for right entries in matrix
             assert_array_equal(A.row, [n-1])
             assert_array_equal(A.col, [n-1])
-            assert_array_almost_equa(A.data, [np.pi], decimal=precision-1)
+            assert_array_almost_equa(A.data, [pi], decimal=precision-1)
 
 
 if __name__ == "__main__":
