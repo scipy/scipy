@@ -20,17 +20,8 @@ cdef extern from "numpy/arrayobject.h" nogil:
         char *dataptr
         np.npy_bool contiguous
 
-    ctypedef struct PyArray_ArrFuncs:
-        PyArray_CopySwapFunc *copyswap
-    
-    ctypedef struct PyArray_Descr:
-        PyArray_ArrFuncs *f
-
     ctypedef struct PyArrayObject:
-        PyArray_Descr *descr
         int nd
-
-    PyArray_Descr *PyArray_DESCR(PyArrayObject* arr)
 
     void *PyDataMem_NEW(size_t)
     void PyDataMem_FREE(void *)
@@ -42,7 +33,6 @@ cdef extern from "numpy/arrayobject.h" nogil:
 
 # Only integer values are allowed.
 ctypedef fused data_t:
-    np.npy_bool
     np.int8_t
     np.int16_t
     np.int32_t
@@ -56,49 +46,23 @@ ctypedef fused data_t:
 # Function Specializers and asociate function for using fused type
 #####################################################################
 
-ctypedef void (*func_p)(void *data, np.flatiter iti, np.ndarray input, np.intp_t max_label, 
+ctypedef void (*func_p)(void *data, np.flatiter iti, np.intp_t max_label, 
                int *regions, int rank) nogil
 
 def get_funcs(np.ndarray[data_t] input):
     return (<Py_intptr_t> findObjectsPoint[data_t])
 
-
-######################################################################
-# Dereferencing and Dealing with Misalligned pointers
-######################################################################
-
-ctypedef data_t (* func2_p)(data_t *, np.flatiter, np.ndarray)
-
-cdef data_t get_from_iter(data_t *data, np.flatiter iter, np.ndarray arr):
-    return (<data_t *>np.PyArray_ITER_DATA(iter))[0]
-
-cdef data_t get_misaligned_from_iter(data_t *data, np.flatiter iter, np.ndarray arr):
-
-    cdef data_t ret = 0
-    cdef PyArray_CopySwapFunc copyswap = <PyArray_CopySwapFunc> <void *> PyArray_DESCR(<PyArrayObject*> arr).f.copyswap
-
-    copyswap(&ret, np.PyArray_ITER_DATA(iter), 1,<void *> arr)
-
-    return ret
-
 ######################################################################
 # Update Regions According to Input Data Type
 ######################################################################
 
-cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, np.ndarray input, 
-            np.intp_t max_label, int *regions, int rank):
+cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, np.intp_t max_label, 
+            int *regions, int rank):
     cdef int kk =0
     cdef np.intp_t cc
-    
-    cdef func2_p deref_p
-    if np.PyArray_ISBYTESWAPPED(input) == True:
-        deref_p = get_misaligned_from_iter
-
-    else:
-        deref_p = get_from_iter
 
     # only integer or boolean values are allowed, since s_index is being used in indexing
-    cdef np.intp_t s_index = <np.intp_t> deref_p(data, _iti, input) - 1
+    cdef np.intp_t s_index = <np.intp_t> (<data_t *> data)[0] - 1
 
     if s_index >=0  and s_index < max_label:
         if rank > 0:
@@ -125,9 +89,9 @@ cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, np.ndarray input,
 # Implementaion of find_Objects function:-
 ######################################################################
 
-cpdef _findObjects(np.ndarray input, np.intp_t max_label):
+cpdef _findObjects(np.ndarray input_raw, np.intp_t max_label):
     cdef:
-        funcs = get_funcs(input.take([0]))
+        funcs = get_funcs(input_raw.take([0]))
 
         int ii, rank, size_regions
         int start, jj, idx, end
@@ -137,6 +101,10 @@ cpdef _findObjects(np.ndarray input, np.intp_t max_label):
         PyArrayIterObject *iti
 
         func_p findObjectsPoint = <func_p> <void *> <Py_intptr_t> funcs
+
+        int flags = np.NPY_CONTIGUOUS | np.NPY_NOTSWAPPED | np.NPY_ALIGNED
+
+    input = np.PyArray_FROM_OF(input_raw, flags)
 
     rank = input.ndim
 
@@ -174,8 +142,7 @@ cpdef _findObjects(np.ndarray input, np.intp_t max_label):
 
             # Iteration over array:
             while np.PyArray_ITER_NOTDONE(_iti):
-                findObjectsPoint(np.PyArray_ITER_DATA(_iti), _iti, input, 
-                                max_label, regions, rank)
+                findObjectsPoint(np.PyArray_ITER_DATA(_iti), _iti, max_label, regions, rank)
                 np.PyArray_ITER_NEXT(_iti)
 
         result = []
