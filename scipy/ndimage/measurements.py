@@ -265,6 +265,9 @@ def find_objects(input, max_label=0):
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
 
+    if input.dtype == np.bool:
+        input = input.astype(int)
+
     if max_label < 1:
         max_label = input.max()
 
