@@ -1669,7 +1669,7 @@ add_newdoc("scipy.special", "itairy",
     """
     itairy(x)
 
-    Integrals of Airy functios
+    Integrals of Airy functions
 
     Calculates the integral of Airy functions from 0 to x
 
