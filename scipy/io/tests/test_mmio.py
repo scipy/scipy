@@ -5,8 +5,8 @@ from tempfile import mkdtemp, mktemp
 import os
 import shutil
 from numpy import array,transpose
-from numpy.testing import TestCase, run_module_suite, assert_array_almost_equal, \
-            assert_equal, rand
+from numpy.testing import TestCase, run_module_suite, assert_equal,\
+    assert_array_equal, assert_array_almost_equal, rand
 
 import scipy.sparse
 from scipy.io.mmio import mminfo,mmread,mmwrite
