@@ -123,13 +123,13 @@ struct nodeinfo {
     npy_float64        buf[1]; // the good old struct hack       
     /* accessors to 'packed' attributes */
     inline npy_float64        *side_distances() {
-        return &buf[0];
+        return buf;
     }
     inline npy_float64        *maxes() {
-        return &buf[m];
+        return buf + m;
     }
     inline npy_float64        *mins() {
-        return &buf[2 * m];
+        return buf + 2 * m;
     }
 };        
 
