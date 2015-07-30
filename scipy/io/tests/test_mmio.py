@@ -5,8 +5,8 @@ from tempfile import mkdtemp, mktemp
 import os
 import shutil
 from numpy import array,transpose
-from numpy.testing import TestCase, run_module_suite, assert_equal,\
-    assert_array_equal, assert_array_almost_equal, rand
+from numpy.testing import (TestCase, run_module_suite, assert_equal,
+    assert_array_equal, assert_array_almost_equal, rand)
 
 import scipy.sparse
 from scipy.io.mmio import mminfo,mmread,mmwrite
@@ -387,19 +387,19 @@ class TestMMIOCoordinate(TestCase):
                 result = mmread(fn).todense()
                 assert_array_almost_equal(result, expected)
 
-    def test_precision_indices(self):
-        for precision in range(1,5):
-            # construct sparse matrix with 1 as last main diagonal entry
+    def test_precision(self):
+        for precision in range(1, 8):
+            # construct sparse matrix with pi as last main diagonal entry
             n = 10**precision + 1
             A = scipy.sparse.lil_matrix((n, n))
-            A[n-1, n-1] = 1
+            A[n-1, n-1] = np.pi
             # write matrix with low precision and read again
             mmwrite(self.fn, A, precision=precision)
             A = scipy.io.mmread(self.fn)
             # check for right entries in matrix
             assert_array_equal(A.row, [n-1])
             assert_array_equal(A.col, [n-1])
-            assert_array_equal(A.data, [1])
+            assert_array_almost_equa(A.data, [np.pi], decimal=precision-1)
 
 
 if __name__ == "__main__":
