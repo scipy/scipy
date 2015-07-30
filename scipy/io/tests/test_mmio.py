@@ -389,25 +389,17 @@ class TestMMIOCoordinate(TestCase):
 
     def test_precision_indices(self):
         for precision in range(1,5):
-            
-            # construct sparse matrix with one entry at last main diagonal index
+            # construct sparse matrix with 1 as last main diagonal entry
             n = 10**precision + 1
             A = scipy.sparse.lil_matrix((n, n))
             A[n-1, n-1] = 1
-            
             # write matrix with low precision and read again
             mmwrite(self.fn, A, precision=precision)
             A = scipy.io.mmread(self.fn)
-            
-            # check for right number of entries in matrix
-            assert_equal(len(A.row), 1)
-            assert_equal(len(A.col), 1)
-            assert_equal(len(A.data), 1)
-            
-            # check for right entries
-            assert_equal(A.row[0], n-1)
-            assert_equal(A.col[0], n-1)
-            assert_equal(A.data[0], 1)
+            # check for right entries in matrix
+            assert_array_equal(A.row, [n-1])
+            assert_array_equal(A.col, [n-1])
+            assert_array_equal(A.data, [1])
 
 
 if __name__ == "__main__":
