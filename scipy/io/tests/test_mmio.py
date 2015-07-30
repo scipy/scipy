@@ -399,7 +399,7 @@ class TestMMIOCoordinate(TestCase):
             # check for right entries in matrix
             assert_array_equal(A.row, [n-1])
             assert_array_equal(A.col, [n-1])
-            assert_array_almost_equa(A.data, [pi], decimal=precision-1)
+            assert_array_almost_equal(A.data, [pi], decimal=precision-1)
 
 
 if __name__ == "__main__":
