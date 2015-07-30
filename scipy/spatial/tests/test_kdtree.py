@@ -938,6 +938,22 @@ def test_ckdtree_box():
     assert_almost_equal(dd, dd2)
     assert_equal(ii, ii2)
 
+def test_ckdtree_box_upper_bounds():
+    data = np.linspace(0, 2, 10).reshape(-1, 1)
+    try:
+        tree = cKDTree(data, leafsize=1, boxsize=1.0)
+    except ValueError:
+        return
+    raise AssertionError("ValueError is not raised")
+
+def test_ckdtree_box_lower_bounds():
+    data = np.linspace(-1, 1, 10)
+    try:
+        tree = cKDTree(data, leafsize=1, boxsize=1.0)
+    except ValueError:
+        return
+    raise AssertionError("ValueError is not raised")
+
 def simulate_periodic_box(kdtree, data, k, boxsize):
     dd = []
     ii = []
