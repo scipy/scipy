@@ -845,6 +845,27 @@ def test_ckdtree_pickle():
         T1 = T1.query(points, k=5)[-1]
         T2 = T2.query(points, k=5)[-1]
         assert_array_equal(T1, T2)
+
+def test_ckdtree_pickle_boxsize():
+    # test if it is possible to pickle a periodic
+    # cKDTree
+    try:
+        import cPickle
+        # known failure on Python 2
+        # pickle currently only supported on Python 3
+        cPickle.dumps('pyflakes dummy')
+    except ImportError:
+        import pickle
+        np.random.seed(0)
+        n = 50
+        k = 4
+        points = np.random.uniform(size=(n, k))
+        T1 = cKDTree(points, boxsize=1.0)
+        tmp = pickle.dumps(T1)
+        T2 = pickle.loads(tmp)
+        T1 = T1.query(points, k=5)[-1]
+        T2 = T2.query(points, k=5)[-1]
+        assert_array_equal(T1, T2)
     
 def test_ckdtree_copy_data():
     # check if copy_data=True makes the kd-tree

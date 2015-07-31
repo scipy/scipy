@@ -246,9 +246,9 @@ query_single_point(const ckdtree *self,
         inf->mins()[i] = self->raw_mins[i];
         inf->maxes()[i] = self->raw_maxes[i];
         npy_float64 hb, fb;
-        if(self->boxsize_data) {
-            fb = self->boxsize_data[i];
-            hb = self->boxsize_data[m + i];
+        if(self->raw_boxsize_data) {
+            fb = self->raw_boxsize_data[i];
+            hb = self->raw_boxsize_data[m + i];
         } else {
             hb = fb = 0;
         }
@@ -307,12 +307,12 @@ query_single_point(const ckdtree *self,
                     if (i < end_idx-2)
                         prefetch_datapoint(data+indices[i+2]*m, m);
                 
-                    if (NPY_LIKELY(self->boxsize_data == NULL)) {
+                    if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
                         d = _distance_p(data+indices[i]*m, x, p, m, 
                             distance_upper_bound);
                     }  else {
                         d = _distance_pp(data+indices[i]*m, x, p, m, 
-                            distance_upper_bound, self->boxsize_data + m, self->boxsize_data);
+                            distance_upper_bound, self->raw_boxsize_data + m, self->raw_boxsize_data);
                     }
 
                     if (d < distance_upper_bound) {
@@ -361,7 +361,7 @@ query_single_point(const ckdtree *self,
 
             // set up children for searching
             // inf2 will be pushed to the queue
-            if (NPY_LIKELY(self->boxsize_data == NULL)) {
+            if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
                 memcpy(inf2->side_distances(), inf->side_distances(), sizeof(npy_float64) * ( m)); 
                 /*
                  * non periodic : the 'near' node is know from the
@@ -401,7 +401,7 @@ query_single_point(const ckdtree *self,
                         x[split_dim],
                         inf->mins()[split_dim],
                         inf->maxes()[split_dim],
-                        p, infinity, self->boxsize_data[m + split_dim], self->boxsize_data[split_dim]);
+                        p, infinity, self->raw_boxsize_data[m + split_dim], self->raw_boxsize_data[split_dim]);
 
                 inf_min_distance = adjust_min_distance(min_distance, 
                             inf_old_side_distance, 
@@ -415,7 +415,7 @@ query_single_point(const ckdtree *self,
                         x[split_dim],
                         inf2->mins()[split_dim],
                         inf2->maxes()[split_dim],
-                        p, infinity, self->boxsize_data[m + split_dim], self->boxsize_data[split_dim]);
+                        p, infinity, self->raw_boxsize_data[m + split_dim], self->raw_boxsize_data[split_dim]);
 
             }
  
@@ -506,10 +506,10 @@ query_knn(const ckdtree      *self,
                 const npy_float64 *xx_row = xx + (i*m);                
                 for (j=0; j<m; ++j) {
                     scratch[j] = xx_row[j];
-                    if(self->boxsize_data) {
+                    if(self->raw_boxsize_data) {
                         /* wrap the query points into the primary box if needed */
-                        while(scratch[j] < 0) scratch[j] += self->boxsize_data[j];
-                        while(scratch[j] >= self->boxsize_data[j]) scratch[j] -= self->boxsize_data[j];
+                        while(scratch[j] < 0) scratch[j] += self->raw_boxsize_data[j];
+                        while(scratch[j] >= self->raw_boxsize_data[j]) scratch[j] -= self->raw_boxsize_data[j];
                     }
                 }
                 query_single_point(self, dd_row, ii_row, scratch, k, eps, p, distance_upper_bound, ::infinity);

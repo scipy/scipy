@@ -452,7 +452,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         np.intp_t                *raw_indices
         np.ndarray               _median_workspace
         readonly object          boxsize
-        np.float64_t             *boxsize_data
+        np.ndarray               boxsize_data
+        np.float64_t             *raw_boxsize_data
 
     def __cinit__(cKDTree self):
         self.tree_buffer = NULL        
@@ -462,6 +463,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         cdef np.ndarray[np.float64_t, ndim=2] data_arr
         cdef np.float64_t *tmp
         cdef int _median, _compact
+        cdef np.ndarray[np.float64_t, ndim=1] boxsize_arr
         data_arr = np.ascontiguousarray(data, dtype=np.float64)
         if copy_data and (data_arr is data):
             data_arr = data_arr.copy()
@@ -474,15 +476,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         if boxsize is None:
             self.boxsize = None
-            self.boxsize_data = NULL
+            self.raw_boxsize_data = NULL
         else:
-            self.boxsize = np.empty(self.m, dtype=np.float64)
-            self.boxsize[:] = boxsize
+            boxsize_arr = np.empty(2 * self.m, dtype=np.float64)
+            boxsize_arr[:] = boxsize
+            boxsize_arr[self.m:] = 0.5 * boxsize_arr[:self.m]
             # FIXME: how to use a matching del if new is used?
-            self.boxsize_data = <np.float64_t*> PyMem_Malloc(sizeof(np.float64_t) * self.m * 2)
-            for i in range(self.m):
-                self.boxsize_data[i] = self.boxsize[i]
-                self.boxsize_data[i + self.m] = self.boxsize[i] * 0.5
+            self.boxsize_data = boxsize_arr
+            self.raw_boxsize_data = <np.float64_t*> np.PyArray_DATA(boxsize_arr)
+            self.boxsize = boxsize_arr[:self.m].copy()
             if (self.data >= self.boxsize[None, :]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
             if (self.data < 0).any():
@@ -547,9 +549,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     def __deallocate__(cKDTree self):
         if self.tree_buffer != NULL:
             del self.tree_buffer
-
-        if self.boxsize_data != NULL:
-            PyMem_Free(self.boxsize_data)
 
     # -----
     # query
@@ -1175,7 +1174,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         cdef object state
         cdef object tree = pickle_tree_buffer(self.tree_buffer)
         state = (tree, self.data.copy(), self.n, self.m, self.leafsize,
-                      self.maxes, self.mins, self.indices.copy())
+                      self.maxes, self.mins, self.indices.copy(), 
+                      self.boxsize, self.boxsize_data)
         return state
             
     def __setstate__(cKDTree self, state):
@@ -1184,7 +1184,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         
         # unpack the state
         (tree, self.data, self.n, self.m, self.leafsize, 
-            self.maxes, self.mins, self.indices) = state
+            self.maxes, self.mins, self.indices, self.boxsize, self.boxsize_data) = state
         
         # copy kd-tree buffer 
         unpickle_tree_buffer(self.tree_buffer, tree)    
@@ -1194,7 +1194,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.raw_maxes = <np.float64_t*>np.PyArray_DATA(self.maxes)
         self.raw_mins = <np.float64_t*>np.PyArray_DATA(self.mins)
         self.raw_indices = <np.intp_t*>np.PyArray_DATA(self.indices)
-        
+        self.raw_boxsize_data = <np.float64_t*>np.PyArray_DATA(self.boxsize_data)
+ 
         # set up the tree structure pointers
         self.ctree = tree_buffer_root(self.tree_buffer)
         self._post_init(self.ctree)

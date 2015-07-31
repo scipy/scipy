@@ -49,7 +49,8 @@ struct ckdtree {
     const npy_intp      *raw_indices;
     const PyArrayObject *_median_workspace;
     const PyObject      *boxsize;
-    const npy_float64   *boxsize_data;
+    const PyArrayObject *boxsize_data;
+    const npy_float64   *raw_boxsize_data;
 };
 
 #endif
