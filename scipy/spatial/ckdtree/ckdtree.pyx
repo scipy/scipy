@@ -454,8 +454,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         readonly object          boxsize
         np.float64_t             *boxsize_data
 
-    def __cinit__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True, 
-            copy_data=False, balanced_tree=True, boxsize=None):
+    def __cinit__(cKDTree self):
         self.tree_buffer = NULL        
             
     def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True, 
