@@ -56,7 +56,7 @@ def configuration(parent_package='', top_path=None):
         
     ckdtree_dep = ['ckdtree.cxx'] + ckdtree_headers + ckdtree_src
     config.add_extension('ckdtree',
-                         sources=[join('ckdtree', 'ckdtree.cxx')] + ckdtree_src,
+                         sources=['ckdtree.cxx'] + ckdtree_src,
                          depends=ckdtree_dep,
                          include_dirs=inc_dirs + [join('ckdtree','src')])
     # _distance_wrap
