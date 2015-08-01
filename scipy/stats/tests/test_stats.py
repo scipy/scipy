@@ -1705,7 +1705,7 @@ class TestStudentTest(TestCase):
         np.random.seed(7654567)
         x = stats.norm.rvs(loc=5, scale=10, size=51)
         x[50] = np.nan
-        assert_array_equal(stats.ttest_1samp(x, 5.0), np.nan)
+        assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
 
         assert_array_almost_equal(stats.ttest_1samp(x, 5.0, nan_policy='omit'),
                                   (-1.6412624074367159, 0.107147027334048005))
@@ -2267,7 +2267,6 @@ def test_ks_2samp():
     check_named_results(res, attributes)
 
 
-@dec.knownfailureif(True, "problem with nan policy")
 def test_ttest_rel():
     # regression test
     tr,pr = 0.81248591389165692, 0.41846234511362157
@@ -2319,8 +2318,8 @@ def test_ttest_rel():
     y[500] = np.nan
     assert_array_equal(stats.ttest_rel(x, x), (np.nan, np.nan))
 
-    assert_array_equal(stats.ttest_rel(x, y, nan_policy='omit'),
-                       (0.24101764965300979, 0.80964043445811551))
+    assert_array_almost_equal(stats.ttest_rel(x, y, nan_policy='omit'),
+                              (0.25299925303978066, 0.8003729814201519))
     assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='raise')
     assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='foobar')
 
@@ -2334,7 +2333,7 @@ def test_ttest_rel():
         # check that nan in input array result in nan output
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_rel(anan, np.zeros((2, 2))),
-                     ([0, np.nan], [1, np.nan]))
+                     (np.nan, np.nan))
     finally:
         np.seterr(**olderr)
 
@@ -2354,7 +2353,6 @@ def _desc_stats(x1, x2, axis=0):
     return _stats(x1, axis) + _stats(x2, axis)
 
 
-@dec.knownfailureif(True, "problem with nan policy")
 def test_ttest_ind():
     # regression test
     tr = 1.0912746897927283
@@ -2413,8 +2411,8 @@ def test_ttest_ind():
 
     assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))
 
-    assert_array_equal(stats.ttest_ind(x, y, nan_policy='omit'),
-                       (1.489641321688568, 0.13663451548097699))
+    assert_array_almost_equal(stats.ttest_ind(x, y, nan_policy='omit'),
+                              (0.24779670949091914, 0.80434267337517906))
     assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='raise')
     assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
 

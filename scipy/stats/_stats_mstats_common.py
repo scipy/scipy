@@ -40,6 +40,7 @@ def linregress(x, y=None):
     Examples
     --------
     >>> from scipy import stats
+    >>> np.random.seed(12345678)
     >>> x = np.random.random(10)
     >>> y = np.random.random(10)
     >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
@@ -47,7 +48,7 @@ def linregress(x, y=None):
     # To get coefficient of determination (r_squared)
 
     >>> print("r-squared:", r_value**2)
-    r-squared: 0.15286643777
+    ('r-squared:', 0.080402268539028335)
 
     """
     TINY = 1.0e-20
@@ -238,10 +239,10 @@ def find_repeats(arr):
     --------
     >>> from scipy import stats
     >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-    (array([ 2. ]), array([ 4 ], dtype=int32)
+    RepeatedResults(values=array([ 2.]), counts=array([4], dtype=int32))
 
     >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-    (array([ 4., 5.]), array([2, 2], dtype=int32))
+    RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2], dtype=int32))
 
     """
     RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
