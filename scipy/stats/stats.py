@@ -245,10 +245,12 @@ def _contains_nan(a, nan_policy='propagate'):
     try:
         # Calling np.sum to avoid creating a huge array into memory
         # e.g. np.isnan(a).any()
-        contains_nan = np.isnan(np.sum(a))
+        with np.errstate(invalid='ignore'):
+            contains_nan = np.isnan(np.sum(a))
     except TypeError:
         # If the check cannot be properly performed we fallback to omiting
-        # nan values and raising a warning.
+        # nan values and raising a warning. This can happen when attempting to
+        # sum things that are not numbers (e.g. as in the function `mode`).
         contains_nan = False
         nan_policy = 'omit'
         warnings.warn("The input array could not be properly checked for nan "
@@ -3233,6 +3235,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
+        b = ma.masked_invalid(b)
         return mstats_basic.spearmanr(a, b, axis)
 
     if contains_nan and nan_policy == 'propagate':
@@ -3790,8 +3793,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
     # check both a and b
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-    contains_nan, nan_policy = _contains_nan(b, nan_policy)
+    contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
+                                _contains_nan(b, nan_policy))
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
@@ -3882,8 +3885,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
     # check both a and b
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-    contains_nan, nan_policy = _contains_nan(b, nan_policy)
+    contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
+                                _contains_nan(b, nan_policy))
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)

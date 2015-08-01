@@ -833,7 +833,7 @@ def ttest_1samp(a, popmean, axis=0):
 ttest_onesamp = ttest_1samp
 
 
-def ttest_ind(a, b, axis=0):
+def ttest_ind(a, b, axis=0, equal_var=True):
     """
     Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 
@@ -845,6 +845,12 @@ def ttest_ind(a, b, axis=0):
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
         arrays, `a`, and `b`.
+    equal_var : bool, optional
+        If True, perform a standard independent 2 sample test that assumes equal
+        population variances.
+        If False, perform Welch's t-test, which does not assume equal population
+        variance.
+        .. versionadded:: 0.17.0
 
     Returns
     -------
@@ -867,9 +873,22 @@ def ttest_ind(a, b, axis=0):
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     (n1, n2) = (a.count(axis), b.count(axis))
-    df = n1 + n2 - 2.
-    svar = ((n1-1)*v1+(n2-1)*v2) / df
-    t = (x1-x2)/ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # n-D computation here!
+
+    if equal_var:
+        df = n1 + n2 - 2.
+        svar = ((n1-1)*v1+(n2-1)*v2) / df
+        denom = ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # n-D computation here!
+    else:
+        vn1 = v1/n1
+        vn2 = v2/n2
+        df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+
+        # If df is undefined, variances are zero.
+        # It doesn't matter what df is as long as it is not NaN.
+        df = np.where(np.isnan(df), 1, df)
+        denom = ma.sqrt(vn1 + vn2)
+
+    t = (x1-x2) / denom
     t = ma.filled(t, 1)           # replace NaN t-values with 1.0
     probs = _betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
 
@@ -1937,7 +1956,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
-def describe(a, axis=0, ddof=0):
+def describe(a, axis=0, ddof=0, bias=True):
     """
     Computes several descriptive statistics of the passed array.
 
@@ -1951,6 +1970,9 @@ def describe(a, axis=0, ddof=0):
     ddof : int, optional
         degree of freedom (default 0); note that default ddof is different
         from the same routine in stats.describe
+    bias : bool, optional
+        If False, then the skewness and kurtosis calculations are corrected for
+        statistical bias.
 
     Returns
     -------
