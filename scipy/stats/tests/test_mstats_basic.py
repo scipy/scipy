@@ -776,6 +776,14 @@ class TestTtest_ind():
         res3 = mstats.ttest_ind(outcome[:, :2], outcome[:, 2:])
         assert_allclose(res2, res3)
 
+        # Check equal_var
+        res4 = stats.ttest_ind(outcome[:, 0], outcome[:, 1], equal_var=True)
+        res5 = mstats.ttest_ind(outcome[:, 0], outcome[:, 1], equal_var=True)
+        assert_allclose(res4, res5)
+        res4 = stats.ttest_ind(outcome[:, 0], outcome[:, 1], equal_var=False)
+        res5 = mstats.ttest_ind(outcome[:, 0], outcome[:, 1], equal_var=False)
+        assert_allclose(res4, res5)
+
     def test_result_attributes(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
