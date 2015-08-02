@@ -308,15 +308,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             print_iteration(iteration, nfev, cost, actual_reduction,
                             step_norm, g_norm)
 
-        if termination_status is not None:
-            active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
-
-            return OptimizeResult(
-                x=x, cost=cost, fun=f_true, jac=J, grad=g, optimality=g_norm,
-                active_mask=active_mask, nfev=nfev, njev=njev,
-                status=termination_status)
-
-        if nfev == max_nfev:
+        if termination_status is not None or nfev == max_nfev:
             break
 
         # Now compute variables in "hat" space. Here we also account for
@@ -467,7 +459,11 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
         iteration += 1
 
+    if termination_status is None:
+        termination_status = 0
+
     active_mask = find_active_constraints(x, lb, ub, rtol=xtol)
     return OptimizeResult(
         x=x, cost=cost, fun=f_true, jac=J, grad=g, optimality=g_norm,
-        active_mask=active_mask, nfev=nfev, njev=njev, status=0)
+        active_mask=active_mask, nfev=nfev, njev=njev,
+        status=termination_status)
