@@ -941,13 +941,17 @@ def test_ckdtree_box():
 
     dd, ii = kdtree.query(data, self.k)
 
-    dd1, ii1 = kdtree.query(data + 1.0, self.k)
-    assert_almost_equal(dd, dd1)
-    assert_equal(ii, ii1)
+    try:
+        dd, ii = kdtree.query(data + 1.0, self.k)
+        raise AssertionError("ValueError is not raised")
+    except ValueError:
+        pass
 
-    dd1, ii1 = kdtree.query(data - 1.0, self.k)
-    assert_almost_equal(dd, dd1)
-    assert_equal(ii, ii1)
+    try:
+        dd, ii = kdtree.query(data - 1.0, self.k)
+        raise AssertionError("ValueError is not raised")
+    except ValueError:
+        pass
 
     dd2, ii2 = simulate_periodic_box(kdtree2, data, self.k, boxsize=1.0)
     assert_almost_equal(dd, dd2)

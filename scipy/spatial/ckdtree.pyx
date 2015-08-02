@@ -617,6 +617,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             x_arr = x_arr[np.newaxis,:]
         else:
             single = False
+
+        if self.boxsize is not None:
+            if (x_arr >= self.boxsize[None, :]).any():
+                raise ValueError("Some input data are greater than the size of the periodic box.")
+            if (x_arr < 0).any():
+                raise ValueError("Negative input data are outside of the periodic box.")
+
         retshape = np.shape(x)[:-1]
         n = <np.intp_t> np.prod(retshape)
         xx = np.ascontiguousarray(x_arr).reshape(n, self.m)

@@ -492,9 +492,7 @@ query_knn(const ckdtree      *self,
           const npy_float64  distance_upper_bound)
 {
     npy_intp m = self->m;
-    npy_intp i, j;
-    
-    npy_float64 scratch[m];
+    npy_intp i;
     
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS
@@ -504,15 +502,7 @@ query_knn(const ckdtree      *self,
                 npy_float64 *dd_row = dd + (i*k);
                 npy_intp *ii_row = ii + (i*k);
                 const npy_float64 *xx_row = xx + (i*m);                
-                for (j=0; j<m; ++j) {
-                    scratch[j] = xx_row[j];
-                    if(self->raw_boxsize_data) {
-                        /* wrap the query points into the primary box if needed */
-                        while(scratch[j] < 0) scratch[j] += self->raw_boxsize_data[j];
-                        while(scratch[j] >= self->raw_boxsize_data[j]) scratch[j] -= self->raw_boxsize_data[j];
-                    }
-                }
-                query_single_point(self, dd_row, ii_row, scratch, k, eps, p, distance_upper_bound, ::infinity);
+                query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
             }    
         } 
         catch(...) {
