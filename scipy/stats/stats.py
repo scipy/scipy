@@ -637,8 +637,9 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
-    if contains_nan and nan_policy == 'propagate':
-        return ModeResult(np.nan, np.nan)
+    if contains_nan and nan_policy == 'omit':
+        a = ma.masked_invalid(a)
+        return mstats_basic.mode(a, axis)
 
     scores = np.unique(np.ravel(a))       # get ALL unique values
     testshape = list(a.shape)
@@ -3581,9 +3582,6 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.ttest_1samp(a, popmean, axis)
 
-    if contains_nan and nan_policy == 'propagate':
-        return Ttest_1sampResult(np.nan, np.nan)
-
     n = a.shape[axis]
     df = n - 1
 
@@ -3800,9 +3798,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
         b = ma.masked_invalid(b)
         return mstats_basic.ttest_ind(a, b, axis, equal_var)
 
-    if contains_nan and nan_policy == 'propagate':
-        return Ttest_indResult(np.nan, np.nan)
-
     if a.size == 0 or b.size == 0:
         return Ttest_indResult(np.nan, np.nan)
 
@@ -3890,9 +3885,6 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.ttest_rel(a, b, axis)
-
-    if contains_nan and nan_policy == 'propagate':
-        return Ttest_relResult(np.nan, np.nan)
 
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')

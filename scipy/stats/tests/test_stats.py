@@ -1380,7 +1380,7 @@ class TestMode(TestCase):
     def test_mode_nan(self):
         data1 = [3, np.nan, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
         actual = stats.mode(data1)
-        assert_equal(actual, (np.nan, np.nan))
+        assert_equal(actual, (6, 3))
 
         actual = stats.mode(data1, nan_policy='omit')
         assert_equal(actual, (6, 3))
@@ -2333,7 +2333,7 @@ def test_ttest_rel():
         # check that nan in input array result in nan output
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_rel(anan, np.zeros((2, 2))),
-                     (np.nan, np.nan))
+                     ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
@@ -2425,9 +2425,7 @@ def test_ttest_ind():
         # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2))),
-                     (np.nan, np.nan))
-        assert_equal(stats.ttest_1samp(anan, np.zeros((2, 2))),
-                     (np.nan, np.nan))
+                     ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
@@ -2534,8 +2532,8 @@ def test_ttest_ind_with_uneq_var():
 
         # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_ind(anan, np.zeros((2,2)), equal_var=False),
-                     (np.nan, np.nan))
+        assert_equal(stats.ttest_ind(anan, np.zeros((2, 2)), equal_var=False),
+                     ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
@@ -2576,8 +2574,7 @@ def test_ttest_1samp_new():
 
         # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_1samp(anan, 0),(np.nan, np.nan))
-        assert_equal(stats.ttest_1samp(anan, 0),(np.nan, np.nan))
+        assert_equal(stats.ttest_1samp(anan, 0), ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
