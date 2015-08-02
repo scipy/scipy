@@ -36,7 +36,7 @@ __all__ = ['mvsdist',
 
 
 def bayes_mvs(data, alpha=0.90):
-    """
+    r"""
     Bayesian confidence intervals for the mean, var, and std.
 
     Parameters
@@ -80,10 +80,13 @@ def bayes_mvs(data, alpha=0.90):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://hdl.handle.net/1877/438, 2006.
+    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    2006.
 
     Examples
     --------
+    First a basic example to demonstrate the outputs:
+
     >>> from scipy import stats
     >>> data = [6, 9, 12, 7, 8, 8, 13]
     >>> mean, var, std = stats.bayes_mvs(data)
@@ -92,8 +95,31 @@ def bayes_mvs(data, alpha=0.90):
     >>> var
     Variance(statistic=10.0, minmax=(3.1767242068607087, 24.459103821334018))
     >>> std
-    Std_dev(statistic=2.9724954732045084,
-    ...     minmax=(1.7823367265645145, 4.9456146050146312))
+    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.9456146050146295))
+
+    Now we generate some normally distributed random data, and get estimates of
+    mean and standard deviation with 95% confidence intervals for those
+    estimates:
+
+    >>> n_samples = 1e5
+    >>> data = stats.norm.rvs(size=n_samples)
+    >>> res_mean, res_var, res_std = stats.bayes_mvs(data, alpha=0.95)
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.hist(data, bins=100, normed=True, label='Histogram of data')
+    >>> ax.vlines(res_mean.statistic, 0, 0.5, colors='r', label='Estimated mean')
+    >>> ax.axvspan(res_mean.minmax[0],res_mean.minmax[1], facecolor='r',
+    ...            alpha=0.2, label=r'Estimated mean (95% limits)')
+    >>> ax.vlines(res_std.statistic, 0, 0.5, colors='g', label='Estimated scale')
+    >>> ax.axvspan(res_std.minmax[0],res_std.minmax[1], facecolor='g', alpha=0.2,
+    ...            label=r'Estimated scale (95% limits)')
+
+    >>> ax.legend(fontsize=10)
+    >>> ax.set_xlim([-4, 4])
+    >>> ax.set_ylim([0, 0.5])
+    >>> plt.show()
 
     """
     m, v, s = mvsdist(data)
@@ -137,12 +163,18 @@ def mvsdist(data):
 
     Notes
     -----
-    The return values from bayes_mvs(data) is equivalent to
+    The return values from ``bayes_mvs(data)`` is equivalent to
     ``tuple((x.mean(), x.interval(0.90)) for x in mvsdist(data))``.
 
     In other words, calling ``<dist>.mean()`` and ``<dist>.interval(0.90)``
     on the three distribution objects returned from this function will give
     the same results that are returned from `bayes_mvs`.
+
+    References
+    ----------
+    T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
+    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    2006.
 
     Examples
     --------
