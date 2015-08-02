@@ -3244,17 +3244,20 @@ class TestFOneWay(TestCase):
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
-    @dec.knownfailureif(True, "Tough NIST Test Cases fail")
     def test_nist(self):
         # The npz file with the nist test cases data is assumed to be in the
         # same directory as this file.
         nist = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                     'nist_anova.npz')))
+        rtol=1e-7
         for test_case in nist:
             y, x, f, dfbn, dfwn, R2, resstd, certified, caty = nist[test_case]
             xlist = [x[y == i] for i in caty]
             res = stats.f_oneway(*xlist)
-            assert_array_almost_equal(res[0], f)
+            if test_case == 'arr_9':
+                rtol=1e-4
+            assert_allclose(res[0], f, rtol=rtol,
+                            err_msg='Failing testcase: %s' % test_case)
 
 
 class TestKruskal(TestCase):
