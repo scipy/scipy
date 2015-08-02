@@ -208,12 +208,12 @@ def least_squares(
     method : {'trf', 'dogbox', 'lm'}, optional
         Algorithm to perform minimization.
 
-            * 'trf' - Trust Region Reflective algorithm, particularly suitable
+            * 'trf' : Trust Region Reflective algorithm, particularly suitable
               for large sparse problems with bounds. Generally robust method.
-            * 'dogbox' - dogleg algorithm with rectangular trust regions,
+            * 'dogbox' : dogleg algorithm with rectangular trust regions,
               typical use case is small problems with bounds. Not recommended
               to use in problems with rank-deficient Jacobian.
-            * 'lm' - Levenberg-Marquardt algorithm as implemented in MINPACK.
+            * 'lm' : Levenberg-Marquardt algorithm as implemented in MINPACK.
               Doesn't handle bounds and sparse Jacobians. It is usually the
               most efficient method for small unconstrained problems.
 
@@ -228,8 +228,8 @@ def least_squares(
         Default is the square root of machine epsilon. The exact condition
         checked depends on the `method` used:
 
-            * For 'trf' and 'dogbox': ``norm(dx) < xtol * (xtol + norm(x))``
-            * For 'lm': ``Delta < xtol * norm(scaled_x)``, where ``Delta`` is
+            * For 'trf' and 'dogbox' : ``norm(dx) < xtol * (xtol + norm(x))``
+            * For 'lm' : ``Delta < xtol * norm(scaled_x)``, where ``Delta`` is
               a trust-region radius and ``scaled_x`` is the value of ``x``
               scaled according to `scaling` parameter (see below).
 
@@ -289,7 +289,7 @@ def least_squares(
         If None (default), the value is chosen automatically:
 
             * For 'trf' and 'dogbox' : 100 * n.
-            * For 'lm':  100 * n if `jac` is callable and 100 * n * (n + 1)
+            * For 'lm' :  100 * n if `jac` is callable and 100 * n * (n + 1)
               otherwise (because 'lm' counts function calls in Jacobian
               estimation).
 
@@ -336,9 +336,9 @@ def least_squares(
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
-            * 0 (default) - work silently.
-            * 1 - display a termination report.
-            * 2 - display progress during iterations (not supported by 'lm'
+            * 0 (default) : work silently.
+            * 1 : display a termination report.
+            * 2 : display progress during iterations (not supported by 'lm'
               method).
 
     args, kwargs : tuple and dict, optional
@@ -369,9 +369,9 @@ def least_squares(
         Each component shows whether a corresponding constraint is active
         (that is, whether a variable is at the bound):
 
-            *  0 - a constraint is not active.
-            * -1 - a lower bound is active.
-            *  1 - an upper bound is active.
+            *  0 : a constraint is not active.
+            * -1 : a lower bound is active.
+            *  1 : an upper bound is active.
 
         Might be somewhat arbitrary for 'trf' method as it does strictly
         feasible iterates and `active_mask` is determined within a tolerance
@@ -386,12 +386,12 @@ def least_squares(
     status : int
         The reason for algorithm termination:
 
-            * -1 - improper input parameters status returned from MINPACK.
-            *  0 - the maximum number of function evaluations is exceeded.
-            *  1 - `gtol` termination condition is satisfied.
-            *  2 - `ftol` termination condition is satisfied.
-            *  3 - `xtol` convergence test is satisfied.
-            *  4 - Both `ftol` and `xtol` termination conditions are satisfied.
+            * -1 : improper input parameters status returned from MINPACK.
+            *  0 : the maximum number of function evaluations is exceeded.
+            *  1 : `gtol` termination condition is satisfied.
+            *  2 : `ftol` termination condition is satisfied.
+            *  3 : `xtol` convergence test is satisfied.
+            *  4 : Both `ftol` and `xtol` termination conditions are satisfied.
 
     message : str
         Verbal description of the termination reason.
