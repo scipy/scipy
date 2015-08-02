@@ -1404,7 +1404,6 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
 
     """
-    #FIXME: bias keyword not implemented here, nor in mstats.describe
     a, axis = _chk_asarray(a, axis)
 
     # Return namedtuple for clarity
@@ -1428,8 +1427,8 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
     v = np.var(a, axis=axis, ddof=ddof)
-    sk = skew(a, axis)
-    kurt = kurtosis(a, axis)
+    sk = skew(a, axis, bias=bias)
+    kurt = kurtosis(a, axis, bias=bias)
 
     return DescribeResult(n, mm, m, v, sk, kurt)
 

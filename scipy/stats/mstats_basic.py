@@ -2016,8 +2016,8 @@ def describe(a, axis=0, ddof=0, bias=True):
     mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
     m = a.mean(axis)
     v = a.var(axis, ddof=ddof)
-    sk = skew(a, axis)
-    kurt = kurtosis(a, axis)
+    sk = skew(a, axis, bias=bias)
+    kurt = kurtosis(a, axis, bias=bias)
 
     DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
                                                    'variance', 'skewness',
