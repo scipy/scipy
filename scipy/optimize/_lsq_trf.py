@@ -107,8 +107,8 @@ from ._lsq_common import (
     intersect_trust_region, solve_lsq_trust_region, solve_trust_region_2d,
     update_tr_radius, minimize_quadratic_1d, build_quadratic_1d,
     evaluate_quadratic, compute_grad, compute_jac_scaling,
-    check_termination, right_multiply, compute_loss_and_derivatives,
-    compute_cost, correct_by_loss, print_header, print_iteration)
+    check_termination, compute_loss_and_derivatives, compute_cost,
+    correct_by_loss, print_header, print_iteration, right_multiplied_operator)
 
 
 def lsmr_operator(Jop, diag_root):
@@ -333,30 +333,28 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         # "hat" gradient.
         g_h = d * g
 
-        # Right multiply J by diag(d), After this transformation Jacobian
-        # is in "hat" space.
-        J = right_multiply(J, d)
-
         f_augmented[:m] = f
         if tr_solver == 'exact':
-            J_augmented[:m] = J
+            J_augmented[:m] = J * d
+            J_h = J_augmented[:m]  # Memory view.
             J_augmented[m:] = np.diag(diag_h**0.5)
             U, s, V = svd(J_augmented, full_matrices=False)
             V = V.T
             uf = U.T.dot(f_augmented)
         elif tr_solver == 'lsmr':
+            J_h = right_multiplied_operator(J, d)
+
             if regularize:
-                a, b = build_quadratic_1d(J, g_h, -g_h, diag=diag_h)
+                a, b = build_quadratic_1d(J_h, g_h, -g_h, diag=diag_h)
                 to_tr = Delta / norm(g_h)
                 g_value = minimize_quadratic_1d(a, b, 0, to_tr)[1]
                 reg_term = -g_value / Delta**2
 
-            Jop = aslinearoperator(J)
-            lsmr_op = lsmr_operator(Jop, (diag_h + reg_term)**0.5)
+            lsmr_op = lsmr_operator(J_h, (diag_h + reg_term)**0.5)
             gn_h = lsmr(lsmr_op, f_augmented, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
             S, _ = qr(S, mode='economic')
-            JS = J.dot(S)  # LinearOperator does dot too.
+            JS = J_h.dot(S)  # LinearOperator does dot too.
             B_S = np.dot(JS.T, JS) + np.dot(S.T * diag_h, S)
             g_S = S.T.dot(g_h)
 
@@ -382,20 +380,20 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 # Still step back from the bound.
                 p_h *= min(theta * to_bound, 1)
                 step_h = p_h
-                predicted_reduction = -evaluate_quadratic(J, g_h, p_h,
+                predicted_reduction = -evaluate_quadratic(J_h, g_h, p_h,
                                                           diag=diag_h)
             else:  # Otherwise consider reflected and gradient steps.
                 p_h, r_h = find_reflected_step(
-                    x, J, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
+                    x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
 
                 if tr_solver == 'exact' or not regularize:
-                    a, b = build_quadratic_1d(J, g_h, -g_h, diag=diag_h)
+                    a, b = build_quadratic_1d(J_h, g_h, -g_h, diag=diag_h)
                 # else: a, b were already computed.
 
                 c_h = find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta)
 
                 steps_h = np.array([p_h, r_h, c_h])
-                values = evaluate_quadratic(J, g_h, steps_h, diag=diag_h)
+                values = evaluate_quadratic(J_h, g_h, steps_h, diag=diag_h)
 
                 min_index = np.argmin(values)
                 step_h = steps_h[min_index]
@@ -450,12 +448,6 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         else:
             step_norm = 0
             actual_reduction = 0
-            if nfev == max_nfev:  # Recompute J if algorithm is terminating.
-                # Don't increase njev, because it's the implementation detail.
-                J = jac(x, f_true)
-                if loss != 'linear':
-                    rho = compute_loss_and_derivatives(f, loss, loss_scale)
-                    J, f = correct_by_loss(J, f, rho)
 
         iteration += 1
 

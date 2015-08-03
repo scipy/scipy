@@ -9,7 +9,7 @@ from numpy.linalg import norm
 
 from ..linalg import cho_factor, cho_solve, LinAlgError
 from ..sparse import issparse
-from ..sparse.linalg import LinearOperator
+from ..sparse.linalg import LinearOperator, aslinearoperator
 
 
 EPS = np.finfo(float).eps
@@ -500,39 +500,47 @@ def compute_jac_scaling(J, old_scale=None):
     return scale, 1 / scale
 
 
-def left_multiplied_operator(Jop, d):
+def left_multiplied_operator(J, d):
+    """Return diag(d) J as LinearOperator."""
+    J = aslinearoperator(J)
+
     def matvec(x):
-        return d * Jop.matvec(x)
+        return d * J.matvec(x)
 
     def matmat(X):
-        return d * Jop.matmat(X)
+        return d * J.matmat(X)
 
     def rmatvec(x):
-        return Jop.rmatvec(x.ravel() * d)
+        return J.rmatvec(x.ravel() * d)
 
-    return LinearOperator(Jop.shape, matvec=matvec, matmat=matmat,
+    return LinearOperator(J.shape, matvec=matvec, matmat=matmat,
                           rmatvec=rmatvec)
 
 
-def right_multiplied_operator(Jop, d):
+def right_multiplied_operator(J, d):
+    """Return J diag(d) as LinearOperator."""
+    J = aslinearoperator(J)
+
     def matvec(x):
-        return Jop.matvec(np.ravel(x) * d)
+        return J.matvec(np.ravel(x) * d)
 
     def matmat(X):
-        return Jop.matmat(X * d[:, np.newaxis])
+        return J.matmat(X * d[:, np.newaxis])
 
     def rmatvec(x):
-        return d * Jop.rmatvec(x)
+        return d * J.rmatvec(x)
 
-    return LinearOperator(Jop.shape, matvec=matvec, matmat=matmat,
+    return LinearOperator(J.shape, matvec=matvec, matmat=matmat,
                           rmatvec=rmatvec)
 
 
-def right_multiply(J, d):
-    """Compute J.dot(diag(d)).
+def right_multiply(J, d, copy=True):
+    """Compute J diag(d).
 
-    J is modified inplace if possible, the reference is returned back anyway.
+    If `copy` is False, `J` is modified in place (unless being LinearOperator).
     """
+    if copy and not isinstance(J, LinearOperator):
+        J = J.copy()
 
     if issparse(J):
         J.data *= d.take(J.indices, mode='clip')  # scikit-learn recipe.
@@ -544,11 +552,14 @@ def right_multiply(J, d):
     return J
 
 
-def left_multiply(J, d):
-    """Compute diag(d).dot(J).
+def left_multiply(J, d, copy=True):
+    """Compute diag(d) J.
 
-    J is modified inplace if possible, the reference is returned back anyway.
+    If `copy` is False, `J` is modified in place (unless being LinearOperator).
     """
+    if copy and not isinstance(J, LinearOperator):
+        J = J.copy()
+
     if issparse(J):
         J.data *= np.repeat(d, np.diff(J.indptr))  # scikit-learn recipe.
     elif isinstance(J, LinearOperator):
@@ -650,4 +661,4 @@ def correct_by_loss(J, f, rho):
 
     f *= rho[1] / J_scale
 
-    return left_multiply(J, J_scale), f
+    return left_multiply(J, J_scale, copy=False), f
