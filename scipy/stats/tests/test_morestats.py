@@ -37,6 +37,27 @@ g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
 
 class TestBayes_mvs(TestCase):
+    def test_basic(self):
+        # Expected values in this test simply taken from the function.  For
+        # some checks regarding correctness of implementation, see review in
+        # gh-674
+        data = [6, 9, 12, 7, 8, 8, 13]
+        mean, var, std = stats.bayes_mvs(data)
+        assert_almost_equal(mean.statistic, 9.0)
+        assert_allclose(mean.minmax, (7.1036502226125329, 10.896349777387467),
+                        rtol=1e-14)
+
+        assert_almost_equal(var.statistic, 10.0)
+        assert_allclose(var.minmax, (3.1767242068607087, 24.45910381334018),
+                        rtol=1e-09)
+
+        assert_almost_equal(std.statistic, 2.9724954732045084, decimal=14)
+        assert_allclose(std.minmax, (1.7823367265645145, 4.9456146050146312),
+                        rtol=1e-14)
+
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.bayes_mvs, [])
+
     def test_result_attributes(self):
         x = np.arange(15)
         attributes = ('statistic', 'minmax')
@@ -44,6 +65,31 @@ class TestBayes_mvs(TestCase):
 
         for i in res:
             check_named_results(i, attributes)
+
+
+class TestMvsdist(TestCase):
+    def test_basic(self):
+        data = [6, 9, 12, 7, 8, 8, 13]
+        mean, var, std = stats.mvsdist(data)
+        assert_almost_equal(mean.mean(), 9.0)
+        assert_allclose(mean.interval(0.9), (7.1036502226125329,
+                                             10.896349777387467), rtol=1e-14)
+
+        assert_almost_equal(var.mean(), 10.0)
+        assert_allclose(var.interval(0.9), (3.1767242068607087,
+                                            24.45910381334018), rtol=1e-09)
+
+        assert_almost_equal(std.mean(), 2.9724954732045084, decimal=14)
+        assert_allclose(std.interval(0.9), (1.7823367265645145,
+                                            4.9456146050146312), rtol=1e-14)
+
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.mvsdist, [])
+
+    def test_bad_arg(self):
+        # Raise ValueError if fewer than two data points are given.
+        data = [1]
+        assert_raises(ValueError, stats.mvsdist, data)
 
 
 class TestShapiro(TestCase):
@@ -656,12 +702,6 @@ def test_wilcoxon_bad_arg():
     # zero_method is unknown.
     assert_raises(ValueError, stats.wilcoxon, [1], [1,2])
     assert_raises(ValueError, stats.wilcoxon, [1,2], [1,2], "dummy")
-
-
-def test_mvsdist_bad_arg():
-    # Raise ValueError if fewer than two data points are given.
-    data = [1]
-    assert_raises(ValueError, stats.mvsdist, data)
 
 
 class TestKstat(TestCase):
