@@ -3249,13 +3249,14 @@ class TestFOneWay(TestCase):
         # same directory as this file.
         nist = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                     'nist_anova.npz')))
-        rtol=1e-7
+        rtol = 1e-7
         for test_case in nist:
-            y, x, f, dfbn, dfwn, R2, resstd, certified, caty = nist[test_case]
+            (y, x, f, dfbn, dfwn, R2,
+             resstd, certified, caty) = nist[test_case]
             xlist = [x[y == i] for i in caty]
             res = stats.f_oneway(*xlist)
-            if test_case == 'arr_9':
-                rtol=1e-4
+            if test_case == 'SmLs09.dat' or test_case == 'SmLs07.dat':
+                rtol = 1e-4
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
 

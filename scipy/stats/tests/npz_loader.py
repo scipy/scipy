@@ -3,13 +3,20 @@ This is a helper script. Its purpose is to populate an single npz file from
 several other files (e.g. for nist test cases)
 """
 import os
+import sys
 import numpy as np
+try:
+    from scipy._lib.six import u
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__),
+                                    os.pardir, 'scipy', 'lib'))
+    from six import u
 
 # These are the nist ANOVA files. They can be found at:
 # http://www.itl.nist.gov/div898/strd/anova/anova.html
-filenames = ['SiRstv.dat', 'SmLs01.dat', 'SmLs02.dat', 'SmLs03.dat',
-             'AtmWtAg.dat', 'SmLs04.dat', 'SmLs05.dat', 'SmLs06.dat',
-             'SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat']
+filenames = [u('SiRstv.dat'), u('SmLs01.dat'), u('SmLs02.dat'), u('SmLs03.dat'),
+             u('AtmWtAg.dat'), u('SmLs04.dat'), u('SmLs05.dat'),
+             u('SmLs06.dat'), u('SmLs07.dat'), u('SmLs08.dat'), u('SmLs09.dat')]
 
 
 def getnist(filename):
@@ -27,19 +34,11 @@ def getnist(filename):
     dfwn = int(certified[1][-3])
     return [y, x, f, dfbn, dfwn, R2, resstd, certified, caty]
 
-
-def load_npz(filename, arr):
-    try:
-        fi = open(filename, 'w')
-        fi.write(arr)
-    finally:
-        fi.close()
-
 if __name__ == "__main__":
-    res = []
+    res = {}
     for fn in filenames:
-        res.append(getnist(fn))
+        res[fn] = (getnist(fn))
 
     np.savez(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                           'nist_anova.npz')),
-             *res)
+             **res)
