@@ -185,6 +185,12 @@ class BSpline(object):
         self.extrapolate = extrapolate
         return self
 
+    @property
+    def tck(self):
+        """A convenience attribute. Equvalent to ``(self.t, self.c, self.k)``.
+        """
+        return self.t, self.c, self.k
+
     @classmethod
     def basis_element(cls, t, extrapolate=True):
         """Return a B-spline basis element ``B(x | t[0], ..., t[k+1])``.

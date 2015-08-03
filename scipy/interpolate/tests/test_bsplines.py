@@ -41,6 +41,21 @@ class TestBSpline(TestCase):
         assert_allclose(c, b.c)
         assert_equal(k, b.k)
 
+    def test_tck(self):
+        b, t, c, k = _make_random_spline()
+        tck = b.tck
+        assert_allclose(t, tck[0], atol=1e-15, rtol=1e-15)
+        assert_allclose(c, tck[1], atol=1e-15, rtol=1e-15)
+        assert_equal(k, tck[2])
+
+        # b.tck is read-only
+        try:
+            b.tck = 'foo'
+        except AttributeError:
+            pass
+        except:
+            raise AssertionError("AttributeError not raised.")
+
     def test_degree_0(self):
         xx = np.linspace(0, 1, 10)
 
