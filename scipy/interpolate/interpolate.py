@@ -481,8 +481,7 @@ class interp1d(_Interpolator1D):
                     self._call = self.__class__._call_linear
         else:
             minval = order + 1
-            tck = make_interp_spline(self.x, self._y, k=order)
-            self._spline = BSpline(*tck)
+            self._spline = make_interp_spline(self.x, self._y, k=order)
             self._call = self.__class__._call_spline
 
         if len(self.x) < minval:
