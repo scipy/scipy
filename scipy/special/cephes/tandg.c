@@ -26,14 +26,12 @@
  *
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC      0,10          8000      3.4e-17      1.2e-17
  *    IEEE     0,10         30000      3.2e-16      8.4e-17
  *
  * ERROR MESSAGES:
  *
  *   message         condition          value returned
- * tandg total loss   x > 8.0e14 (DEC)      0.0
- *                    x > 1.0e14 (IEEE)
+ * tandg total loss   x > 1.0e14 (IEEE)     0.0
  * tandg singularity  x = 180 k  +  90     NPY_INFINITY
  */
 /*							cotdg.c
@@ -62,8 +60,7 @@
  * ERROR MESSAGES:
  *
  *   message         condition          value returned
- * cotdg total loss   x > 8.0e14 (DEC)      0.0
- *                    x > 1.0e14 (IEEE)
+ * cotdg total loss   x > 1.0e14 (IEEE)     0.0
  * cotdg singularity  x = 180 k            NPY_INFINITY
  */
 
@@ -75,33 +72,8 @@
 
 #include "mconf.h"
 
-#ifdef UNK
 static double PI180 = 1.74532925199432957692E-2;
 static double lossth = 1.0e14;
-#endif
-
-#ifdef DEC
-static unsigned short P1[] = { 0036616, 0175065, 0011224, 0164711 };
-
-#define PI180 *(double *)P1
-static double lossth = 8.0e14;
-#endif
-
-#ifdef IBMPC
-static unsigned short P1[] = { 0x9d39, 0xa252, 0xdf46, 0x3f91 };
-
-#define PI180 *(double *)P1
-static double lossth = 1.0e14;
-#endif
-
-#ifdef MIEEE
-static unsigned short P1[] = {
-    0x3f91, 0xdf46, 0xa252, 0x9d39
-};
-
-#define PI180 *(double *)P1
-static double lossth = 1.0e14;
-#endif
 
 static double tancot(double, int);
 

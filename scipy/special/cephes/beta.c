@@ -29,7 +29,6 @@
  *
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC        0,30        1700       7.7e-15     1.5e-15
  *    IEEE       0,30       30000       8.1e-14     1.1e-14
  *
  * ERROR MESSAGES:
@@ -51,18 +50,7 @@
 
 #include "mconf.h"
 
-#ifdef UNK
 #define MAXGAM 171.624376956302725
-#endif
-#ifdef DEC
-#define MAXGAM 34.84425627277176174
-#endif
-#ifdef IBMPC
-#define MAXGAM 171.624376956302725
-#endif
-#ifdef MIEEE
-#define MAXGAM 171.624376956302725
-#endif
 
 extern double MAXLOG;
 extern int sgngam;

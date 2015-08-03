@@ -28,14 +28,12 @@
  *
  *                      Relative error:
  * arithmetic   domain      # trials      peak         rms
- *    DEC       +-1000        3100      3.3e-17      9.0e-18
  *    IEEE      +-1000       30000      2.3e-16      5.6e-17
  * 
  * ERROR MESSAGES:
  *
  *   message           condition        value returned
- * sindg total loss   x > 8.0e14 (DEC)      0.0
- *                    x > 1.0e14 (IEEE)
+ * sindg total loss   x > 1.0e14 (IEEE)     0.0
  *
  */
 /*							cosdg.c
@@ -67,7 +65,6 @@
  *
  *                      Relative error:
  * arithmetic   domain      # trials      peak         rms
- *    DEC      +-1000         3400       3.5e-17     9.1e-18
  *    IEEE     +-1000        30000       2.1e-16     5.7e-17
  *  See also sin().
  *
@@ -79,7 +76,6 @@
 
 #include "mconf.h"
 
-#ifdef UNK
 static double sincof[] = {
     1.58962301572218447952E-10,
     -2.50507477628503540135E-8,
@@ -101,86 +97,6 @@ static double coscof[] = {
 
 static double PI180 = 1.74532925199432957692E-2;	/* pi/180 */
 static double lossth = 1.0e14;
-#endif
-
-#ifdef DEC
-static unsigned short sincof[] = {
-    0030056, 0143750, 0177170, 0073013,
-    0131727, 0027455, 0044510, 0132205,
-    0033470, 0167432, 0131752, 0042263,
-    0135120, 0006400, 0146776, 0174027,
-    0036410, 0104210, 0104207, 0137202,
-    0137452, 0125252, 0125252, 0125103
-};
-
-static unsigned short coscof[] = {
-    0027107, 0176030, 0153315, 0110312,
-    0131017, 0072476, 0007450, 0123243,
-    0032623, 0171174, 0070066, 0146445,
-    0134320, 0006400, 0147355, 0163313,
-    0035666, 0005540, 0133012, 0165067,
-    0137052, 0125252, 0125252, 0125206,
-    0040000, 0000000, 0000000, 0000000
-};
-static unsigned short P1[] = { 0036616, 0175065, 0011224, 0164711 };
-
-#define PI180 *(double *)P1
-static double lossth = 8.0e14;
-#endif
-
-#ifdef IBMPC
-static unsigned short sincof[] = {
-    0x0ec1, 0x1fcf, 0xd8fd, 0x3de5,
-    0x1691, 0xa929, 0xe5e5, 0xbe5a,
-    0x4896, 0x567d, 0x1de3, 0x3ec7,
-    0xdf03, 0x19bf, 0x01a0, 0xbf2a,
-    0xf7d0, 0x1110, 0x1111, 0x3f81,
-    0x5548, 0x5555, 0x5555, 0xbfc5
-};
-
-static unsigned short coscof[] = {
-    0xb219, 0x1ad9, 0xff83, 0x3da8,
-    0x14d4, 0xc1e5, 0xeea7, 0xbe21,
-    0xd9a5, 0x8e06, 0x7e4f, 0x3e92,
-    0xbcd9, 0x19dd, 0x01a0, 0xbefa,
-    0x5d47, 0x16c1, 0xc16c, 0x3f56,
-    0x5551, 0x5555, 0x5555, 0xbfa5,
-    0x0000, 0x0000, 0x0000, 0x3fe0
-};
-
-static unsigned short P1[] = { 0x9d39, 0xa252, 0xdf46, 0x3f91 };
-
-#define PI180 *(double *)P1
-static double lossth = 1.0e14;
-#endif
-
-#ifdef MIEEE
-static unsigned short sincof[] = {
-    0x3de5, 0xd8fd, 0x1fcf, 0x0ec1,
-    0xbe5a, 0xe5e5, 0xa929, 0x1691,
-    0x3ec7, 0x1de3, 0x567d, 0x4896,
-    0xbf2a, 0x01a0, 0x19bf, 0xdf03,
-    0x3f81, 0x1111, 0x1110, 0xf7d0,
-    0xbfc5, 0x5555, 0x5555, 0x5548
-};
-
-static unsigned short coscof[] = {
-    0x3da8, 0xff83, 0x1ad9, 0xb219,
-    0xbe21, 0xeea7, 0xc1e5, 0x14d4,
-    0x3e92, 0x7e4f, 0x8e06, 0xd9a5,
-    0xbefa, 0x01a0, 0x19dd, 0xbcd9,
-    0x3f56, 0xc16c, 0x16c1, 0x5d47,
-    0xbfa5, 0x5555, 0x5555, 0x5551,
-    0x3fe0, 0x0000, 0x0000, 0x0000
-};
-
-static unsigned short P1[] = {
-    0x3f91, 0xdf46, 0xa252, 0x9d39
-};
-
-#define PI180 *(double *)P1
-static double lossth = 1.0e14;
-#endif
 
 double sindg(x)
 double x;

@@ -16,15 +16,14 @@
  * This file contains a number of mathematical constants and
  * also some needed size parameters of the computer arithmetic.
  * The values are supplied as arrays of hexadecimal integers
- * for IEEE arithmetic; arrays of octal constants for DEC
- * arithmetic; and in a normal decimal scientific notation for
+ * for IEEE arithmetic, and in a normal decimal scientific notation for
  * other machines.  The particular notation used is determined
- * by a symbol (DEC, IBMPC, or UNK) defined in the include file
+ * by a symbol (IBMPC, or UNK) defined in the include file
  * mconf.h.
  *
  * The default size parameters are as follows.
  *
- * For DEC and UNK modes:
+ * For UNK mode:
  * MACHEP =  1.38777878078144567553E-17       2**-56
  * MAXLOG =  8.8029691931113054295988E1       log(2**127)
  * MINLOG = -8.872283911167299960540E1        log(2**-128)
@@ -173,37 +172,6 @@ unsigned short TWOOPI[4] = { 0x3fe4, 0x5f30, 0x6dc9, 0xc883 };
 unsigned short NEGZERO[4] = { 0x8000, 0x0000, 0x0000, 0x0000 };
 #else
 unsigned short NEGZERO[4] = { 0x0000, 0x0000, 0x0000, 0x0000 };
-#endif
-#endif
-
-#ifdef DEC
-			/* 2**-56 =  1.38777878078144567553E-17 */
-unsigned short MACHEP[4] = { 0022200, 0000000, 0000000, 0000000 };
-unsigned short UFLOWTHRESH[4] = { 0x0080, 0x0000, 0x0000, 0x0000 };
-
-			/* log 2**127 = 88.029691931113054295988 */
-unsigned short MAXLOG[4] = { 041660, 007463, 0143742, 025733, };
-
-			/* log 2**-128 = -88.72283911167299960540 */
-unsigned short MINLOG[4] = { 0141661, 071027, 0173721, 0147572, };
-
-			/* 2**127 = 1.701411834604692317316873e38 */
-unsigned short MAXNUM[4] = { 077777, 0177777, 0177777, 0177777, };
-unsigned short PI[4] = { 040511, 007732, 0121041, 064302, };
-unsigned short PIO2[4] = { 040311, 007732, 0121041, 064302, };
-unsigned short SQRT2[4] = { 040265, 002363, 031771, 0157145, };
-unsigned short SQRTH[4] = { 040065, 002363, 031771, 0157144, };
-unsigned short LOG2E[4] = { 040270, 0125073, 024534, 013761, };
-unsigned short SQ2OPI[4] = { 040114, 041051, 0117241, 0131204, };
-unsigned short LOGE2[4] = { 040061, 071027, 0173721, 0147572, };
-unsigned short LOGSQ2[4] = { 037661, 071027, 0173721, 0147572, };
-unsigned short THPIO4[4] = { 040426, 0145743, 0174631, 007222, };
-unsigned short TWOOPI[4] = { 040042, 0174603, 067116, 042025, };
-
-#ifdef MINUSZERO
-unsigned short NEGZERO[4] = { 0000000, 0000000, 0000000, 0100000 };
-#else
-unsigned short NEGZERO[4] = { 0000000, 0000000, 0000000, 0000000 };
 #endif
 #endif
 

@@ -38,10 +38,7 @@
  * [0, 1].
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC        0,2         2000       1.9e-16     3.4e-17
  *    IEEE     -10,10      150000       3.3e-15     1.4e-16
- *
- *
  */
 
 

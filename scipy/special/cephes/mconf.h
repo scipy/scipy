@@ -17,16 +17,9 @@
  * (which see).
  *
  * The file also includes a conditional assembly definition
- * for the type of computer arithmetic (IEEE, DEC, Motorola
+ * for the type of computer arithmetic (IEEE, Motorola
  * IEEE, or UNKnown).
  * 
- * For Digital Equipment PDP-11 and VAX computers, certain
- * IBM systems, and others that use numbers with a 56-bit
- * significand, the symbol DEC should be defined.  In this
- * mode, most floating point constants are given as arrays
- * of octal integers to eliminate decimal to binary conversion
- * errors that might be introduced by the compiler.
- *
  * For little-endian computers, such as IBM PC, that follow the
  * IEEE Standard for Binary Floating Point Arithmetic (ANSI/IEEE
  * Std 754-1985), the symbol IBMPC should be defined.  These
