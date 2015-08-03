@@ -432,33 +432,28 @@ class TestInterp(TestCase):
     yy = np.sin(xx)
 
     def test_order_0(self):
-        tck = make_interp_spline(self.xx, self.yy, k=0)
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, self.yy, k=0)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_linear(self):
-        tck = make_interp_spline(self.xx, self.yy, k=1)
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, self.yy, k=1)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_not_a_knot(self):
         for k in [3, 5]:
-            tck = make_interp_spline(self.xx, self.yy, k)
-            b = BSpline(*tck)
+            b = make_interp_spline(self.xx, self.yy, k)
             assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_quadratic_deriv(self):
         der = [(1, 8.)]  # order, value: f'(x) = 8.
 
         # derivative at right-hand edge
-        tck = make_interp_spline(self.xx, self.yy, k=2, deriv_r=der)
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, self.yy, k=2, deriv_r=der)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14)
 
         # derivative at left-hand edge
-        tck = make_interp_spline(self.xx, self.yy, k=2, deriv_l=der)
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, self.yy, k=2, deriv_l=der)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[0], 1), der[0][1], atol=1e-14, rtol=1e-14)
 
@@ -467,18 +462,16 @@ class TestInterp(TestCase):
 
         # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.)], [(1, 4.)]
-        tck = make_interp_spline(self.xx, self.yy, k,
-                deriv_l=der_l, deriv_r=der_r)
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, self.yy, k,
+                               deriv_l=der_l, deriv_r=der_r)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose([b(self.xx[0], 1), b(self.xx[-1], 1)],
                         [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
 
         # 'natural' cubic spline, zero out 2nd derivatives at the boundaries
         der_l, der_r = [(2, 0)], [(2, 0)]
-        tck = make_interp_spline(self.xx, self.yy, k,
-                deriv_l=der_l, deriv_r=der_r)
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, self.yy, k,
+                               deriv_l=der_l, deriv_r=der_r)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_quintic_derivs(self):
@@ -487,8 +480,7 @@ class TestInterp(TestCase):
         y = np.sin(x)
         der_l = [(1, -12.), (2, 1)]
         der_r = [(1, 8.), (2, 3.)]
-        tck = make_interp_spline(x, y, k=5, deriv_l=der_l, deriv_r=der_r)
-        b = BSpline(*tck)
+        b = make_interp_spline(x, y, k=5, deriv_l=der_l, deriv_r=der_r)
         assert_allclose(b(x), y, atol=1e-14, rtol=1e-14)
         assert_allclose([b(x[0], 1), b(x[0], 2)],
                         [val for (nu, val) in der_l])
@@ -507,8 +499,7 @@ class TestInterp(TestCase):
         t = _augknt(self.xx, k)
 
         der_l = [(1, 3.), (2, 4.)]
-        tck = make_interp_spline(self.xx, self.yy, k, t, deriv_l=der_l)
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, self.yy, k, t, deriv_l=der_l)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_knots_not_data_sites(self):
@@ -519,9 +510,8 @@ class TestInterp(TestCase):
         t = np.r_[(self.xx[0],)*(k+1),
                   (self.xx[1:] + self.xx[:-1]) / 2.,
                   (self.xx[-1],)*(k+1)]
-        tck = make_interp_spline(self.xx, self.yy, k, t,
-                deriv_l=[(2, 0)], deriv_r=[(2, 0)])
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, self.yy, k, t,
+                               deriv_l=[(2, 0)], deriv_r=[(2, 0)])
 
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose([b(self.xx[0], 2), b(self.xx[-1], 2)], [0., 0.],
@@ -534,9 +524,8 @@ class TestInterp(TestCase):
 
         # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.j)], [(1, 4.+2.j)]
-        tck = make_interp_spline(xx, yy, k,
-                deriv_l=der_l, deriv_r=der_r)
-        b = BSpline(*tck)
+        b = make_interp_spline(xx, yy, k,
+                               deriv_l=der_l, deriv_r=der_r)
         assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
         assert_allclose([b(xx[0], 1), b(xx[-1], 1)],
                         [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
@@ -546,7 +535,7 @@ class TestInterp(TestCase):
         y = np.arange(10).astype(np.int_)
 
         # cython chokes on "buffer type mismatch"
-        tck = make_interp_spline(x, y, k=1)
+        make_interp_spline(x, y, k=1)
 
     def test_sliced_input(self):
         # cython code chokes on non C contiguous arrays
@@ -555,7 +544,7 @@ class TestInterp(TestCase):
         x = xx[::5]
         y = xx[::5]
 
-        tck = make_interp_spline(x, y, k=1)
+        make_interp_spline(x, y, k=1)
 
     def test_check_finite(self):
         # check_finite defaults to True; nans and such trigger a ValueError
@@ -571,9 +560,8 @@ class TestInterp(TestCase):
         der_l = [(1, [1., 2.])]
         der_r = [(1, [3., 4.])]
 
-        tck = make_interp_spline(self.xx, yy, k=3,
-                deriv_l=der_l, deriv_r=der_r)
-        b = BSpline(*tck)
+        b = make_interp_spline(self.xx, yy, k=3,
+                               deriv_l=der_l, deriv_r=der_r)
         assert_allclose(b(self.xx), yy, atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
@@ -584,14 +572,14 @@ class TestInterp(TestCase):
         x = np.sort(np.random.random(size=n))
         y = np.random.random(size=(n, 5, 6, 7))
 
-        t, c, k = make_interp_spline(x, y, k)
-        assert_equal(c.shape, (n, 5, 6, 7))
+        b = make_interp_spline(x, y, k)
+        assert_equal(b.c.shape, (n, 5, 6, 7))
 
         # now throw in some derivatives
         d_l = [(1, np.random.random((5, 6, 7)))]
         d_r = [(1, np.random.random((5, 6, 7)))]
-        t, c, k = make_interp_spline(x, y, k, deriv_l=d_l, deriv_r=d_r)
-        assert_equal(c.shape, (n + k - 1, 5, 6, 7))
+        b = make_interp_spline(x, y, k, deriv_l=d_l, deriv_r=d_r)
+        assert_equal(b.c.shape, (n + k - 1, 5, 6, 7))
 
     def test_full_matrix(self):
         np.random.seed(1234)
@@ -600,9 +588,9 @@ class TestInterp(TestCase):
         y = np.random.random(size=n)
         t = _not_a_knot(x, k)
 
-        _, cb, _ = make_interp_spline(x, y, k, t)
+        b = make_interp_spline(x, y, k, t)
         cf = make_interp_full_matr(x, y, t, k)
-        assert_allclose(cb, cf, atol=1e-14, rtol=1e-14)
+        assert_allclose(b.c, cf, atol=1e-14, rtol=1e-14)
 
 
 def make_interp_full_matr(x, y, t, k):
@@ -730,46 +718,43 @@ class TestLSQ(TestCase):
         x, y, t, k = self.x, self.y, self.t, self.k
 
         c0, AY = make_lsq_full_matrix(x, y, t, k)
-        t, c, k = make_lsq_spline(x, y, t, k)
+        b = make_lsq_spline(x, y, t, k)
 
-        assert_allclose(c, c0)
-        assert_equal(c.shape, (t.size - k - 1,))
+        assert_allclose(b.c, c0)
+        assert_equal(b.c.shape, (t.size - k - 1,))
 
         # also check against numpy.lstsq
         aa, yy = AY
         c1, _, _, _ = np.linalg.lstsq(aa, y)
-        assert_allclose(c, c1)
+        assert_allclose(b.c, c1)
 
     def test_weights(self):
         # weights = 1 is same as None
         x, y, t, k = self.x, self.y, self.t, self.k
         w = np.ones_like(x)
 
-        tck = make_lsq_spline(x, y, t, k)
-        tck_w = make_lsq_spline(x, y, t, k, w=w)
+        b = make_lsq_spline(x, y, t, k)
+        b_w = make_lsq_spline(x, y, t, k, w=w)
 
-        assert_equal(tck[0], tck_w[0])
-        assert_equal(tck[1], tck_w[1])
-        assert_equal(tck[2], tck_w[2])
+        assert_equal(b.t, b_w.t)
+        assert_equal(b.c, b_w.c)
+        assert_equal(b.k, b_w.k)
 
     def test_multiple_rhs(self):
         x, t, k, n = self.x, self.t, self.k, self.n
         y = np.random.random(size=(n, 5, 6, 7))
 
-        t, c, k = make_lsq_spline(x, y, t, k)
-        assert_equal(c.shape, (t.size-k-1, 5, 6, 7))
+        b = make_lsq_spline(x, y, t, k)
+        assert_equal(b.c.shape, (t.size-k-1, 5, 6, 7))
 
     def test_complex(self):
         # cmplx-valued `y`
         x, t, k = self.x, self.t, self.k
         yc = self.y * (1. + 2.j)
 
-        tck = make_lsq_spline(x, yc, t, k)
-        b = BSpline(*tck)
-
-        tck_re = make_lsq_spline(x, yc.real, t, k)
-        tck_im = make_lsq_spline(x, yc.imag, t, k)
-        b_re, b_im = BSpline(*tck_re), BSpline(*tck_im)
+        b = make_lsq_spline(x, yc, t, k)
+        b_re = make_lsq_spline(x, yc.real, t, k)
+        b_im = make_lsq_spline(x, yc.imag, t, k)
 
         assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
@@ -778,7 +763,7 @@ class TestLSQ(TestCase):
         y = np.arange(10).astype(np.int_)
         t = _augknt(x, k=1)
         # cython chokes on "buffer type mismatch"
-        tck = make_lsq_spline(x, y, t, k=1)
+        make_lsq_spline(x, y, t, k=1)
 
     def test_sliced_input(self):
         # cython code chokes on non C contiguous arrays
@@ -787,7 +772,7 @@ class TestLSQ(TestCase):
         x = xx[::3]
         y = xx[::3]
         t = _augknt(x, 1)
-        tck = make_lsq_spline(x, y, t, k=1)
+        make_lsq_spline(x, y, t, k=1)
 
     def test_checkfinite(self):
         # check_finite defaults to True; nans and such trigger a ValueError
