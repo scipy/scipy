@@ -106,6 +106,8 @@ struct MinMaxDist {
         *max = tmp*tmp;
     }
 
+    /* These should be used only for p == infinity */
+
     static inline void
     rect_rect_p_inf(const Rectangle& rect1, const Rectangle& rect2,
                                  npy_float64 *min, npy_float64 *max)
@@ -174,11 +176,6 @@ inline void _interval_interval_1dp (
     }
 }
 #endif
-/* Interval arithmetic in m-D
- * ==========================
- */
-
-/* These should be used only for p == infinity */
 
 
 /*
@@ -222,10 +219,10 @@ struct RR_stack_item {
 const npy_intp LESS = 1;
 const npy_intp GREATER = 2;
 
-template<typename MinMaxDist> 
-    struct BaseRectRectDistanceTracker {
+template<typename MinMaxDist, typename Objtype1> 
+    struct BaseObjRectDistanceTracker {
     
-    Rectangle rect1; 
+    Objtype1 rect1; 
     Rectangle rect2;
     npy_float64 p; 
     npy_float64 epsfac;
@@ -246,7 +243,7 @@ template<typename MinMaxDist>
         stack_max_size = new_max_size;
     };
     
-    BaseRectRectDistanceTracker(const Rectangle& _rect1, const Rectangle& _rect2,
+    BaseObjRectDistanceTracker(const Objtype1& _rect1, const Rectangle& _rect2,
                  const npy_float64 _p, const npy_float64 eps, 
                  const npy_float64 _upper_bound)
         : rect1(_rect1), rect2(_rect2), stack_arr(8) {
@@ -409,210 +406,8 @@ template<typename MinMaxDist>
 };
 
 
-typedef BaseRectRectDistanceTracker<MinMaxDist> RectRectDistanceTracker;
-
-/*
- * Point-to-rectangle distance tracker
- * ===================================
- *
- * The other logical unit that is used in query_ball_point is to keep track
- * of the maximum and minimum distances between points in a hyperrectangle
- * and another fixed point as the rectangle is successively split.
- *
- * Example
- * -------
- * # node encloses points in rect
- *
- * cdef PointRectDistanceTracker dist_tracker
- * dist_tracker = PointRectDistanceTracker(pt, rect, p)
- *
- * ...
- *
- * if dist_tracker.min_distance < ...:
- *     ...
- *
- * dist_tracker.push_less_of(node)
- * do_something(node.less, dist_tracker)
- * dist_tracker.pop()
- *
- * dist_tracker.push_greater_of(node)
- * do_something(node.greater, dist_tracker)
- * dist_tracker.pop()
- */
- 
-
-struct RP_stack_item {
-    npy_intp split_dim;
-    npy_float64 min_along_dim;
-    npy_float64 max_along_dim;
-    npy_float64 min_distance;
-    npy_float64 max_distance;
-};
-
-
-template<typename MinMaxDist> struct BasePointRectDistanceTracker {
-
-    Rectangle   rect;
-    Point pt;
-    npy_float64 p; 
-    npy_float64 epsfac; 
-    npy_float64 upper_bound;
-    npy_float64 min_distance;
-    npy_float64 max_distance;
-    
-    npy_float64 infinity;
-
-    npy_intp stack_size;
-    npy_intp stack_max_size;
-    std::vector<RP_stack_item> stack_arr;
-    RP_stack_item *stack;
-    
-    void _resize_stack(const npy_intp new_max_size) {
-        stack_arr.resize(new_max_size);
-        stack = &stack_arr[0];
-        stack_max_size = new_max_size;
-    };
-    
-    BasePointRectDistanceTracker(const Point& _pt, const Rectangle& _rect,
-              const npy_float64 _p, const npy_float64 eps, 
-              const npy_float64 _upper_bound)
-        : pt(_pt), rect(_rect), stack_arr(8) {
-
-        npy_float64 min, max;
-        infinity = ::infinity;
-
-        p = _p;
-        
-        /* internally we represent all distances as distance ** p */
-        if (NPY_LIKELY(p == 2.0))
-            upper_bound = _upper_bound * _upper_bound;
-        else if ((p != infinity) && (_upper_bound != infinity))
-            upper_bound = std::pow(_upper_bound,p);
-        else
-            upper_bound = _upper_bound;
-
-        /* fiddle approximation factor */
-        if (NPY_LIKELY(p == 2.0)) {
-            npy_float64 tmp = 1. + eps;
-            epsfac = 1. / (tmp*tmp);
-        }
-        else if (eps == 0.)
-            epsfac = 1;
-        else if (p == infinity)
-            epsfac = 1. / (1. + eps);
-        else
-            epsfac = 1. / std::pow((1. + eps),p);
-
-        /* init stack */
-        stack = &stack_arr[0];
-        stack_max_size = 8;
-        stack_size = 0;
-
-        /* Compute initial min and max distances */
-        if (NPY_LIKELY(p == 2.0)) {
-            min_distance = 0.;
-            max_distance = 0.;
-            for(npy_intp i=0; i<rect.m; ++i) {
-                MinMaxDist::interval_interval_2(pt, rect, i, &min, &max);
-                min_distance += min;
-                max_distance += max;
-            }
-        }
-        else if (p == infinity) {
-            MinMaxDist::rect_rect_p_inf(pt, rect, &min, &max);
-            min_distance = min;
-            max_distance = max;
-        }
-        else {
-            min_distance = 0.;
-            max_distance = 0.;
-            for(npy_intp i=0; i<rect.m; ++i) {
-                MinMaxDist::interval_interval_p(pt, rect, i, p, &min, &max);
-                min_distance += min;
-                max_distance += max;
-            }
-        }
-    };
-    
-    void push(const npy_intp direction, const npy_intp split_dim,
-              const npy_float64 split_val) {
-              
-        const npy_float64 p = this->p;      
-        npy_float64 min, max;
-
-        /* push onto stack */
-        if (stack_size == stack_max_size)
-            _resize_stack(stack_max_size * 2);
-                
-        RP_stack_item *item = &stack[stack_size];
-        ++stack_size;
-        item->split_dim = split_dim;
-        item->min_distance = min_distance;
-        item->max_distance = max_distance;
-        item->min_along_dim = rect.mins[split_dim];
-        item->max_along_dim = rect.maxes[split_dim];
-            
-        if (NPY_LIKELY(p == 2.0)) {    
-            MinMaxDist::interval_interval_2(pt, rect, split_dim, &min, &max);
-            min_distance -= min;
-            max_distance -= max;
-        }
-        else if (p != infinity) {
-            MinMaxDist::interval_interval_p(pt, rect, split_dim, p, &min, &max);
-            min_distance -= min;
-            max_distance -= max;
-        }
-        
-        if (direction == LESS)
-            rect.maxes[split_dim] = split_val;
-        else
-            rect.mins[split_dim] = split_val;
- 
-        if (NPY_LIKELY(p == 2.0)) {
-            MinMaxDist::interval_interval_2(pt, rect, split_dim, &min, &max);
-            min_distance += min;
-            max_distance += max;
-        }
-        else if (p != infinity) {
-            MinMaxDist::interval_interval_p(pt, rect, split_dim, p, &min, &max);
-            min_distance += min;
-            max_distance += max;
-        }
-        else {
-            MinMaxDist::rect_rect_p_inf(pt, rect, &min, &max);
-            min_distance = min;
-            max_distance = max;
-        } 
-    };
-    
-    inline void push_less_of(const ckdtreenode* node) {
-        push(LESS, node->split_dim, node->split);
-    }
-    
-    inline void push_greater_of(const ckdtreenode* node) {
-        push(GREATER, node->split_dim, node->split);
-    }
-
-    inline void pop() {
-        /* pop */
-        --stack_size;
-        
-        /* assert stack_size >= 0 */
-        if (NPY_UNLIKELY(stack_size < 0)) {
-            const char *msg = "Bad stack size. This error should never occur.";
-            throw std::logic_error(msg);
-        }
-        
-        RP_stack_item* item = &stack[stack_size];
-        min_distance = item->min_distance;
-        max_distance = item->max_distance;
-        rect.mins[item->split_dim] = item->min_along_dim;
-        rect.maxes[item->split_dim] = item->max_along_dim;
-    };
-
-};
-
-typedef BasePointRectDistanceTracker<MinMaxDist> PointRectDistanceTracker;
+typedef BaseObjRectDistanceTracker<MinMaxDist, Rectangle> RectRectDistanceTracker;
+typedef BaseObjRectDistanceTracker<MinMaxDist, Point> PointRectDistanceTracker;
 
 
 #endif

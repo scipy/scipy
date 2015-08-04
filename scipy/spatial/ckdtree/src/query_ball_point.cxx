@@ -63,7 +63,7 @@ traverse_checking(const ckdtree *self,
         lnode = node;
         const npy_float64 p = tracker->p;
         const npy_float64 tub = tracker->upper_bound;
-        const npy_float64 *tpt = tracker->pt.x;
+        const npy_float64 *tpt = tracker->rect1.x;
         const npy_float64 *data = self->raw_data;
         const npy_intp *indices = self->raw_indices;
         const npy_intp m = self->m;
@@ -87,11 +87,11 @@ traverse_checking(const ckdtree *self,
         }
     }
     else {
-        tracker->push_less_of(node);
+        tracker->push_less_of(2, node);
         traverse_checking(self, results, node->less, tracker);
         tracker->pop();
         
-        tracker->push_greater_of(node);
+        tracker->push_greater_of(2, node);
         traverse_checking(self, results, node->greater, tracker);
         tracker->pop();
     }    
