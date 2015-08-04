@@ -19,11 +19,11 @@
 #include "cpp_exc.h"
 #include "rectangle.h"
 
-static void
+template <typename MinMaxDist> static void
 traverse(const ckdtree *self, const ckdtree *other,
          npy_intp n_queries, npy_float64 *r, npy_intp *results, npy_intp *idx,
          const ckdtreenode *node1, const ckdtreenode *node2,
-         RectRectDistanceTracker *tracker)
+         BaseRectRectDistanceTracker<MinMaxDist> *tracker)
 {
 
     const ckdtreenode *lnode1;

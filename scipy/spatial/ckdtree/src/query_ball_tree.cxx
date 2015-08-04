@@ -61,11 +61,11 @@ traverse_no_checking(const ckdtree *self, const ckdtree *other,
 }
 
 
-static void
+template <typename MinMaxDist> static void
 traverse_checking(const ckdtree *self, const ckdtree *other,
                   std::vector<npy_intp> **results,
                   const ckdtreenode *node1, const ckdtreenode *node2,
-                  RectRectDistanceTracker *tracker)
+                  BaseRectRectDistanceTracker<MinMaxDist> *tracker)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;

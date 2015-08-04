@@ -43,11 +43,11 @@ traverse_no_checking(const ckdtree *self,
 }
 
 
-static void 
+template <typename MinMaxDist> static void 
 traverse_checking(const ckdtree *self,
                   std::vector<npy_intp> *results,
                   const ckdtreenode *node,
-                  RectRectDistanceTracker *tracker)
+                  BaseRectRectDistanceTracker<MinMaxDist> *tracker)
 {
     const ckdtreenode *lnode;
     npy_float64 d;
@@ -79,12 +79,8 @@ traverse_checking(const ckdtree *self,
             if (i < end-2)
                 prefetch_datapoint(data + indices[i+2] * m, m);
            
-            if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
-                d = _distance_p(data + indices[i] * m, tpt, p, m, tub);
-            }  else {
-                d = _distance_pp(data + indices[i] * m, tpt, p, m, tub,
-                        self->raw_boxsize_data + m, self->raw_boxsize_data);
-            }
+            d = _distance_p(data + indices[i] * m, tpt, p, m, tub);
+
             if (d <= tub) {
                 results->push_back((npy_intp) indices[i]);
             }

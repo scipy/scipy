@@ -21,11 +21,11 @@
 #include "rectangle.h"
 #include "coo_entries.h"
 
-static void
+template <typename MinMaxDist> static void
 traverse(const ckdtree *self, const ckdtree *other, 
          std::vector<coo_entry> *results,
          const ckdtreenode *node1, const ckdtreenode *node2,
-         RectRectDistanceTracker *tracker)
+         BaseRectRectDistanceTracker<MinMaxDist> *tracker)
 {
             
     if (tracker->min_distance > tracker->upper_bound)
