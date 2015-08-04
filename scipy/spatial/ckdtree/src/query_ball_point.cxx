@@ -63,7 +63,7 @@ traverse_checking(const ckdtree *self,
         lnode = node;
         const npy_float64 p = tracker->p;
         const npy_float64 tub = tracker->upper_bound;
-        const npy_float64 *tpt = tracker->pt;        
+        const npy_float64 *tpt = tracker->pt.x;
         const npy_float64 *data = self->raw_data;
         const npy_intp *indices = self->raw_indices;
         const npy_intp m = self->m;
@@ -110,7 +110,8 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
             for (npy_intp i=0; i < n_queries; ++i) {
                 const npy_intp m = self->m;
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);             
-                PointRectDistanceTracker tracker(x + i*m, rect, p, eps, r);
+                Point     point(m, x + i * m);
+                PointRectDistanceTracker tracker(point, rect, p, eps, r);
                 traverse_checking(
                     self, results[i], self->ctree, &tracker);
             }
