@@ -36,15 +36,12 @@ static double LQ[] = {
     6.0118660497603843919306E1,
 };
 
-#define SQRTH 0.70710678118654752440
-#define SQRT2 1.41421356237309504880
-
 double log1p(double x)
 {
     double z;
 
     z = 1.0 + x;
-    if ((z < SQRTH) || (z > SQRT2))
+    if ((z < NPY_SQRT1_2) || (z > NPY_SQRT2))
 	return (log(z));
     z = x * x;
     z = -0.5 * z + x * (z * polevl(x, LP, 6) / p1evl(x, LQ, 6));

@@ -68,8 +68,10 @@
  */
 
 #include "mconf.h"
+#include <float.h>
 #include <stdlib.h>
-extern double MAXNUM, MACHEP;
+
+extern double MACHEP;
 
 static double iv_asymptotic(double v, double x);
 void ikv_asymptotic_uniform(double v, double x, double *Iv, double *Kv);
@@ -421,7 +423,7 @@ static int CF1_ik(double v, double x, double *fv)
      * Lentz, Applied Optics, vol 15, 668 (1976)
      */
     tolerance = 2 * MACHEP;
-    tiny = 1 / sqrt(MAXNUM);
+    tiny = 1 / sqrt(DBL_MAX);
     C = f = tiny;		/* b0 = 0, replace with tiny */
     D = 0;
     for (k = 1; k < MAXITER; k++) {

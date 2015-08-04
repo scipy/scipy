@@ -60,8 +60,9 @@
  */
 
 #include "mconf.h"
+#include <float.h>
 
-extern double MACHEP, MAXNUM;
+extern double MACHEP;
 
 static double hy1f1p(double a, double b, double x, double *acanc);
 static double hy1f1a(double a, double b, double x, double *acanc);
@@ -149,7 +150,7 @@ double *err;
 
 	/* check for blowup */
 	temp = fabs(u);
-	if ((temp > 1.0) && (maxt > (MAXNUM / temp))) {
+	if ((temp > 1.0) && (maxt > (DBL_MAX / temp))) {
 	    *err = 1.0;		/* blowup: estimate 100% error */
 	    return sum;
 	}
@@ -306,7 +307,7 @@ double *err;
 
 	/* check for blowup */
 	temp = fabs(u);
-	if ((temp > 1.0) && (maxt > (MAXNUM / temp)))
+	if ((temp > 1.0) && (maxt > (DBL_MAX / temp)))
 	    goto error;
 
 	a0 *= u;

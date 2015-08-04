@@ -43,7 +43,7 @@
  */
 
 #include "mconf.h"
-extern double MAXLOG, MINLOG, LOGE2;
+extern double MAXLOG, MINLOG;
 
 double powi(x, nn)
 double x;
@@ -100,10 +100,10 @@ int nn;
     e = (lx - 1) * n;
     if ((e == 0) || (e > 64) || (e < -64)) {
 	s = (s - 7.0710678118654752e-1) / (s + 7.0710678118654752e-1);
-	s = (2.9142135623730950 * s - 0.5 + lx) * nn * LOGE2;
+	s = (2.9142135623730950 * s - 0.5 + lx) * nn * NPY_LOGE2;
     }
     else {
-	s = LOGE2 * e;
+	s = NPY_LOGE2 * e;
     }
 
     if (s > MAXLOG) {

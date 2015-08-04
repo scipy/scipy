@@ -133,7 +133,6 @@
 #include <float.h>		/* DBL_EPSILON */
 #include "mconf.h"
 
-extern double SQRTH;
 extern double MAXLOG;
 
 static double P[] = {
@@ -208,10 +207,10 @@ double ndtr(double a)
 	return (NPY_NAN);
     }
 
-    x = a * SQRTH;
+    x = a * NPY_SQRT1_2;
     z = fabs(x);
 
-    if (z < SQRTH)
+    if (z < NPY_SQRT1_2)
 	y = 0.5 + 0.5 * erf(x);
 
     else {

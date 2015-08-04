@@ -104,36 +104,8 @@
  */
 #define UNK 1
 
-/* Define this `volatile' if your compiler thinks
- * that floating point arithmetic obeys the associative
- * and distributive laws.  It will defeat some optimizations
- * (but probably not enough of them).
- *
- * #define VOLATILE volatile
- */
-#define VOLATILE
-
-/* For 12-byte long doubles on an i386, pad a 16-bit short 0
- * to the end of real constants initialized by integer arrays.
- *
- * #define XPD 0,
- *
- * Otherwise, the type is 10 bytes long and XPD should be
- * defined blank (e.g., Microsoft C).
- *
- * #define XPD
- */
-#define XPD 0,
-
 /* Define to support tiny denormal numbers, else undefine. */
 #define DENORMAL 1
-
-/* Define to distinguish between -0.0 and +0.0.  */
-#define MINUSZERO 1
-
-/* Define 1 for ANSI C atan2() function
- * See atan.c and clog.c. */
-#define ANSIC 1
 
 /* Variable for error reporting.  See mtherr.c.  */
 extern int merror;

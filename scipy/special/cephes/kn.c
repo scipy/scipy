@@ -75,12 +75,13 @@
  * u = 4 v .
  * 
  */
-
+
 #include "mconf.h"
+#include <float.h>
 
 #define EUL 5.772156649015328606065e-1
 #define MAXFAC 31
-extern double MACHEP, MAXNUM, MAXLOG;
+extern double MACHEP, MAXLOG;
 
 double kn(nn, x)
 int nn;
@@ -150,17 +151,17 @@ double x;
 		zn *= z;
 		t = nk1f * zn / kf;
 		s += t;
-		if ((MAXNUM - fabs(t)) < fabs(s))
+		if ((DBL_MAX - fabs(t)) < fabs(s))
 		    goto overf;
-		if ((tox > 1.0) && ((MAXNUM / tox) < zmn))
+		if ((tox > 1.0) && ((DBL_MAX / tox) < zmn))
 		    goto overf;
 		zmn *= tox;
 	    }
 	    s *= 0.5;
 	    t = fabs(s);
-	    if ((zmn > 1.0) && ((MAXNUM / zmn) < t))
+	    if ((zmn > 1.0) && ((DBL_MAX / zmn) < t))
 		goto overf;
-	    if ((t > 1.0) && ((MAXNUM / t) < zmn))
+	    if ((t > 1.0) && ((DBL_MAX / t) < zmn))
 		goto overf;
 	    ans = s * zmn;
 	}
