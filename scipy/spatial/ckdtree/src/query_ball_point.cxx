@@ -47,7 +47,7 @@ static void
 traverse_checking(const ckdtree *self,
                   std::vector<npy_intp> *results,
                   const ckdtreenode *node,
-                  PointRectDistanceTracker *tracker)
+                  RectRectDistanceTracker *tracker)
 {
     const ckdtreenode *lnode;
     npy_float64 d;
@@ -63,7 +63,7 @@ traverse_checking(const ckdtree *self,
         lnode = node;
         const npy_float64 p = tracker->p;
         const npy_float64 tub = tracker->upper_bound;
-        const npy_float64 *tpt = tracker->rect1.x;
+        const npy_float64 *tpt = tracker->rect1.mins;
         const npy_float64 *data = self->raw_data;
         const npy_intp *indices = self->raw_indices;
         const npy_intp m = self->m;
@@ -79,8 +79,12 @@ traverse_checking(const ckdtree *self,
             if (i < end-2)
                 prefetch_datapoint(data + indices[i+2] * m, m);
            
-            d = _distance_p(data + indices[i] * m, tpt, p, m, tub);
-                
+            if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
+                d = _distance_p(data + indices[i] * m, tpt, p, m, tub);
+            }  else {
+                d = _distance_pp(data + indices[i] * m, tpt, p, m, tub,
+                        self->raw_boxsize_data + m, self->raw_boxsize_data);
+            }
             if (d <= tub) {
                 results->push_back((npy_intp) indices[i]);
             }
@@ -110,8 +114,8 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
             for (npy_intp i=0; i < n_queries; ++i) {
                 const npy_intp m = self->m;
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);             
-                Point     point(m, x + i * m);
-                PointRectDistanceTracker tracker(self, point, rect, p, eps, r);
+                Rectangle point(m, x + i * m, x + i * m);
+                RectRectDistanceTracker tracker(self, point, rect, p, eps, r);
                 traverse_checking(
                     self, results[i], self->ctree, &tracker);
             }

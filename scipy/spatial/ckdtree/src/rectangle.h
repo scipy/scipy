@@ -61,15 +61,6 @@ struct Rectangle {
     
 };
 
-struct Point : Rectangle {
-    npy_float64 * x;
-    Point(const npy_intp _m, 
-              const npy_float64 *_x) :
-              Rectangle(_m, _x, _x) { 
-        x = mins;
-    }
-};
-
 struct MinMaxDist {
     /* 1-d pieces
      * These should only be used if p != infinity
@@ -289,11 +280,11 @@ struct RR_stack_item {
 const npy_intp LESS = 1;
 const npy_intp GREATER = 2;
 
-template<typename MinMaxDist, typename Objtype1> 
-    struct BaseObjRectDistanceTracker {
+template<typename MinMaxDist> 
+    struct BaseRectRectDistanceTracker {
     
     const ckdtree * tree;
-    Objtype1 rect1; 
+    Rectangle rect1; 
     Rectangle rect2;
     npy_float64 p; 
     npy_float64 epsfac;
@@ -312,8 +303,8 @@ template<typename MinMaxDist, typename Objtype1>
         stack_max_size = new_max_size;
     };
     
-    BaseObjRectDistanceTracker(const ckdtree *_tree, 
-                 const Objtype1& _rect1, const Rectangle& _rect2,
+    BaseRectRectDistanceTracker(const ckdtree *_tree, 
+                 const Rectangle& _rect1, const Rectangle& _rect2,
                  const npy_float64 _p, const npy_float64 eps, 
                  const npy_float64 _upper_bound)
         : tree(_tree), rect1(_rect1), rect2(_rect2), stack_arr(8) {
@@ -476,8 +467,7 @@ template<typename MinMaxDist, typename Objtype1>
 };
 
 
-typedef BaseObjRectDistanceTracker<MinMaxDist, Rectangle> RectRectDistanceTracker;
-typedef BaseObjRectDistanceTracker<MinMaxDist, Point> PointRectDistanceTracker;
+typedef BaseRectRectDistanceTracker<MinMaxDist> RectRectDistanceTracker;
 
 
 #endif
