@@ -278,6 +278,10 @@ minkowski:
 
 #endif /* __GNUC__ */
 
+inline const npy_float64 _wrap(const npy_float64 x, const npy_float64 box) {
+    const npy_float64 r = std::floor(x / box);
+    return x - r * box;
+}
 
 inline npy_float64 
 _distance_pp(const npy_float64 *x, const npy_float64 *y,

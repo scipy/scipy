@@ -598,6 +598,11 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             If `x` has shape tuple+(self.m,), then `i` has shape tuple+(k,).
             Missing neighbors are indicated with self.n.
 
+        Notes
+        -----
+        If the KD-Tree is periodic, the position :py:code:`x` is wrapped into the
+        box.
+
         """
         
         cdef:
@@ -617,12 +622,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             x_arr = x_arr[np.newaxis,:]
         else:
             single = False
-
-        if self.boxsize is not None:
-            if (x_arr >= self.boxsize[None, :]).any():
-                raise ValueError("Some input data are greater than the size of the periodic box.")
-            if (x_arr < 0).any():
-                raise ValueError("Negative input data are outside of the periodic box.")
 
         retshape = np.shape(x)[:-1]
         n = <np.intp_t> np.prod(retshape)

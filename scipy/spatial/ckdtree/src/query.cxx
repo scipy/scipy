@@ -498,12 +498,28 @@ query_knn(const ckdtree      *self,
     NPY_BEGIN_ALLOW_THREADS
     {
         try {
-            for (i=0; i<n; ++i) {
-                npy_float64 *dd_row = dd + (i*k);
-                npy_intp *ii_row = ii + (i*k);
-                const npy_float64 *xx_row = xx + (i*m);                
-                query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
-            }    
+            if(NPY_LIKELY(!self->raw_boxsize_data)) {
+                for (i=0; i<n; ++i) {
+                    npy_float64 *dd_row = dd + (i*k);
+                    npy_intp *ii_row = ii + (i*k);
+                    const npy_float64 *xx_row = xx + (i*m);                
+                    query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                }    
+            } else {
+                std::vector<npy_float64> row(m);
+                npy_float64 * xx_row = &row[0];
+                int j;
+                for (i=0; i<n; ++i) {
+                    npy_float64 *dd_row = dd + (i*k);
+                    npy_intp *ii_row = ii + (i*k);
+                    const npy_float64 *old_xx_row = xx + (i*m);                
+                    for(j=0; j<m; ++j) {
+                        xx_row[j] = _wrap(old_xx_row[j], self->raw_boxsize_data[j]);
+                    }
+                    query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                }    
+
+            }
         } 
         catch(...) {
             translate_cpp_exception_with_gil();
