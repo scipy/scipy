@@ -9,7 +9,7 @@ import warnings
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, sum, around, unique, asarray,
+from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
                    sqrt, ceil, floor, array, poly1d, compress,
                    pi, exp, ravel, angle, count_nonzero)
@@ -212,9 +212,9 @@ def kstat(data, n=2):
     if n > 4 or n < 1:
         raise ValueError("k-statistics only supported for 1<=n<=4")
     n = int(n)
-    S = zeros(n + 1, 'd')
+    S = np.zeros(n + 1, np.float64)
     data = ravel(data)
-    N = len(data)
+    N = data.size
 
     # raise ValueError on empty input
     if N == 0:
@@ -225,7 +225,7 @@ def kstat(data, n=2):
         return np.nan
 
     for k in range(1, n + 1):
-        S[k] = sum(data**k, axis=0)
+        S[k] = np.sum(data**k, axis=0)
     if n == 1:
         return S[1] * 1.0/N
     elif n == 2:
@@ -1271,8 +1271,8 @@ def anderson(x, dist='norm'):
             a, b = ab
             tmp = (xj - a) / b
             tmp2 = exp(tmp)
-            val = [sum(1.0/(1+tmp2), axis=0) - 0.5*N,
-                   sum(tmp*(1.0-tmp2)/(1+tmp2), axis=0) + N]
+            val = [np.sum(1.0/(1+tmp2), axis=0) - 0.5*N,
+                   np.sum(tmp*(1.0-tmp2)/(1+tmp2), axis=0) + N]
             return array(val)
 
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
@@ -1289,7 +1289,7 @@ def anderson(x, dist='norm'):
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
 
     i = arange(1, N + 1)
-    A2 = -N - sum((2*i - 1.0) / N * (log(z) + log(1 - z[::-1])), axis=0)
+    A2 = -N - np.sum((2*i - 1.0) / N * (log(z) + log(1 - z[::-1])), axis=0)
 
     AndersonResult = namedtuple('AndersonResult', ('statistic',
                                                    'critical_values',
@@ -1572,7 +1572,7 @@ def ansari(x, y):
     xy = r_[x, y]  # combine
     rank = stats.rankdata(xy)
     symrank = amin(array((rank, N - rank + 1)), 0)
-    AB = sum(symrank[:n], axis=0)
+    AB = np.sum(symrank[:n], axis=0)
     uxy = unique(xy)
     repeats = (len(uxy) != len(xy))
     exact = ((m < 55) and (n < 55) and not repeats)
@@ -1581,19 +1581,19 @@ def ansari(x, y):
     if exact:
         astart, a1, ifault = statlib.gscale(n, m)
         ind = AB - astart
-        total = sum(a1, axis=0)
+        total = np.sum(a1, axis=0)
         if ind < len(a1)/2.0:
             cind = int(ceil(ind))
             if ind == cind:
-                pval = 2.0 * sum(a1[:cind+1], axis=0) / total
+                pval = 2.0 * np.sum(a1[:cind+1], axis=0) / total
             else:
-                pval = 2.0 * sum(a1[:cind], axis=0) / total
+                pval = 2.0 * np.sum(a1[:cind], axis=0) / total
         else:
             find = int(floor(ind))
             if ind == floor(ind):
-                pval = 2.0 * sum(a1[find:], axis=0) / total
+                pval = 2.0 * np.sum(a1[find:], axis=0) / total
             else:
-                pval = 2.0 * sum(a1[find+1:], axis=0) / total
+                pval = 2.0 * np.sum(a1[find+1:], axis=0) / total
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -1604,8 +1604,8 @@ def ansari(x, y):
         mnAB = n * (N+2.0) / 4.0
         varAB = m * n * (N+2) * (N-2.0) / 48 / (N-1.0)
     if repeats:   # adjust variance estimates
-        # compute sum(tj * rj**2,axis=0)
-        fac = sum(symrank**2, axis=0)
+        # compute np.sum(tj * rj**2,axis=0)
+        fac = np.sum(symrank**2, axis=0)
         if N % 2:  # N odd
             varAB = m * n * (16*N*fac - (N+1)**4) / (16.0 * N**2 * (N-1))
         else:  # N even
@@ -1681,10 +1681,10 @@ def bartlett(*args):
     for j in range(k):
         Ni[j] = len(args[j])
         ssq[j] = np.var(args[j], ddof=1)
-    Ntot = sum(Ni, axis=0)
-    spsq = sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
-    numer = (Ntot*1.0 - k) * log(spsq) - sum((Ni - 1.0)*log(ssq), axis=0)
-    denom = 1.0 + 1.0/(3*(k - 1)) * ((sum(1.0/(Ni - 1.0), axis=0)) -
+    Ntot = np.sum(Ni, axis=0)
+    spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
+    numer = (Ntot*1.0 - k) * log(spsq) - np.sum((Ni - 1.0)*log(ssq), axis=0)
+    denom = 1.0 + 1.0/(3*(k - 1)) * ((np.sum(1.0/(Ni - 1.0), axis=0)) -
                                      1.0/(Ntot - k))
     T = numer / denom
     pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
@@ -1773,7 +1773,7 @@ def levene(*args, **kwds):
     for j in range(k):
         Ni[j] = len(args[j])
         Yci[j] = func(args[j])
-    Ntot = sum(Ni, axis=0)
+    Ntot = np.sum(Ni, axis=0)
 
     # compute Zij's
     Zij = [None] * k
@@ -1788,12 +1788,12 @@ def levene(*args, **kwds):
         Zbar += Zbari[i] * Ni[i]
 
     Zbar /= Ntot
-    numer = (Ntot - k) * sum(Ni * (Zbari - Zbar)**2, axis=0)
+    numer = (Ntot - k) * np.sum(Ni * (Zbari - Zbar)**2, axis=0)
 
     # compute denom_variance
     dvar = 0.0
     for i in range(k):
-        dvar += sum((Zij[i] - Zbari[i])**2, axis=0)
+        dvar += np.sum((Zij[i] - Zbari[i])**2, axis=0)
 
     denom = (k - 1.0) * dvar
 
@@ -1993,7 +1993,7 @@ def fligner(*args, **kwds):
 
     Ni = asarray([len(args[j]) for j in range(k)])
     Yci = asarray([func(args[j]) for j in range(k)])
-    Ntot = sum(Ni, axis=0)
+    Ntot = np.sum(Ni, axis=0)
     # compute Zij's
     Zij = [abs(asarray(args[i]) - Yci[i]) for i in range(k)]
     allZij = []
@@ -2006,10 +2006,10 @@ def fligner(*args, **kwds):
     a = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
 
     # compute Aibar
-    Aibar = _apply_func(a, g, sum) / Ni
+    Aibar = _apply_func(a, g, np.sum) / Ni
     anbar = np.mean(a, axis=0)
     varsq = np.var(a, axis=0, ddof=1)
-    Xsq = sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
+    Xsq = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
     pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
     return FlignerResult(Xsq, pval)
 
@@ -2115,7 +2115,7 @@ def mood(x, y, axis=0):
         all_ranks[:, j] = stats.rankdata(xy[:, j])
 
     Ri = all_ranks[:n]
-    M = sum((Ri - (N + 1.0) / 2)**2, axis=0)
+    M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
     # Approx stat.
     mnM = n * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
@@ -2209,11 +2209,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     if count < 10:
         warnings.warn("Warning: sample size too small for normal approximation.")
     r = stats.rankdata(abs(d))
-    r_plus = sum((d > 0) * r, axis=0)
-    r_minus = sum((d < 0) * r, axis=0)
+    r_plus = np.sum((d > 0) * r, axis=0)
+    r_minus = np.sum((d < 0) * r, axis=0)
 
     if zero_method == "zsplit":
-        r_zero = sum((d == 0) * r, axis=0)
+        r_zero = np.sum((d == 0) * r, axis=0)
         r_plus += r_zero / 2.
         r_minus += r_zero / 2.
 
