@@ -65,96 +65,62 @@ struct Rectangle {
 /* 1-d pieces
  * These should only be used if p != infinity
  */
-inline npy_float64 
-min_dist_point_interval_p(const npy_float64 *x, const Rectangle& rect,
-                          const npy_intp k, const npy_float64 p)
+inline void 
+min_max_dist_point_interval_p(const npy_float64 *x, const Rectangle& rect,
+                          const npy_intp k, const npy_float64 p,
+                          npy_float64 *min, npy_float64 *max)
 {
-    /* Compute the minimum distance along dimension k between x and
+    /* Compute the minimum/maximum distance along dimension k between x and
      * a point in the hyperrectangle.
      */
-    return std::pow(dmax(0, dmax(rect.mins[k] - x[k], x[k] - rect.maxes[k])),p);
+    *min = std::pow(dmax(0, dmax(rect.mins[k] - x[k], x[k] - rect.maxes[k])),p);
+    *max = std::pow(dmax(rect.maxes[k] - x[k], x[k] - rect.mins[k]),p);
 }
 
-inline npy_float64 
-min_dist_point_interval_2(const npy_float64 *x, const Rectangle& rect,
-                          const npy_intp k)
+inline void 
+min_max_dist_point_interval_2(const npy_float64 *x, const Rectangle& rect,
+                          const npy_intp k, 
+                          npy_float64 *min, npy_float64 *max)
 {
-    /* Compute the minimum distance along dimension k between x and
+    /* Compute the minimum/maximum distance along dimension k between x and
      * a point in the hyperrectangle.
      */
     npy_float64 tmp;
     tmp = dmax(0, dmax(rect.mins[k] - x[k], x[k] - rect.maxes[k]));
-    return tmp*tmp;
-}
-
-inline npy_float64 
-max_dist_point_interval_p(const npy_float64 *x, const Rectangle& rect,
-                          const npy_intp k, const npy_float64 p)
-{
-    /* Compute the maximum distance along dimension k between x and
-     * a point in the hyperrectangle.
-     */
-    return std::pow(dmax(rect.maxes[k] - x[k], x[k] - rect.mins[k]),p);
-}
-
-inline npy_float64 
-max_dist_point_interval_2(const npy_float64 *x, const Rectangle& rect,
-                          const npy_intp k)
-{
-    /* Compute the maximum distance along dimension k between x and
-     * a point in the hyperrectangle.
-     */
-    npy_float64 tmp;
+    *min = tmp*tmp;
     tmp = dmax(rect.maxes[k] - x[k], x[k] - rect.mins[k]);
-    return tmp*tmp;
+    *max = tmp*tmp;
 }
 
-inline npy_float64 
-min_dist_interval_interval_p(const Rectangle& rect1, const Rectangle& rect2,
-                             const npy_intp k, const npy_float64 p)
+inline void 
+min_max_dist_interval_interval_p(const Rectangle& rect1, const Rectangle& rect2,
+                             const npy_intp k, const npy_float64 p,
+                             npy_float64 *min, npy_float64 *max)
 {
-    /* Compute the minimum distance along dimension k between points in
+    /* Compute the minimum/maximum distance along dimension k between points in
      * two hyperrectangles.
      */
-    return std::pow(dmax(0, dmax(rect1.mins[k] - rect2.maxes[k],
+    *min = std::pow(dmax(0, dmax(rect1.mins[k] - rect2.maxes[k],
                           rect2.mins[k] - rect1.maxes[k])),p);
+    *max = std::pow(dmax(rect1.maxes[k] - rect2.mins[k], 
+                          rect2.maxes[k] - rect1.mins[k]),p);
 }
 
-inline npy_float64 
-min_dist_interval_interval_2(const Rectangle& rect1, const Rectangle& rect2,
-                             const npy_intp k)
+inline void 
+min_max_dist_interval_interval_2(const Rectangle& rect1, const Rectangle& rect2,
+                             const npy_intp k,
+                             npy_float64 *min, npy_float64 *max)
 {
-    /* Compute the minimum distance along dimension k between points in
+    /* Compute the minimum/maximum distance along dimension k between points in
      * two hyperrectangles.
      */
     npy_float64 tmp;
     tmp = dmax(0, dmax(rect1.mins[k] - rect2.maxes[k],
                           rect2.mins[k] - rect1.maxes[k]));
-    return tmp*tmp;
-}
-
-inline npy_float64 
-max_dist_interval_interval_p(const Rectangle& rect1, const Rectangle& rect2,
-                             const npy_intp k, const npy_float64 p)
-{                             
-    /* Compute the maximum distance along dimension k between points in
-     * two hyperrectangles.
-     */
-    return std::pow(dmax(rect1.maxes[k] - rect2.mins[k], 
-                          rect2.maxes[k] - rect1.mins[k]),p);
-}
-
-inline npy_float64 
-max_dist_interval_interval_2(const Rectangle& rect1, const Rectangle& rect2,
-                             const npy_intp k)
-{                             
-    /* Compute the maximum distance along dimension k between points in
-     * two hyperrectangles.
-     */
-    npy_float64 tmp;
+    *min = tmp*tmp;
     tmp = dmax(rect1.maxes[k] - rect2.mins[k], 
                           rect2.maxes[k] - rect1.mins[k]);
-    return tmp*tmp;
+    *max = tmp*tmp;
 }
 
 /* Interval arithmetic in m-D
@@ -163,55 +129,42 @@ max_dist_interval_interval_2(const Rectangle& rect1, const Rectangle& rect2,
 
 /* These should be used only for p == infinity */
 
-inline npy_float64 
-min_dist_point_rect_p_inf(const npy_float64 *x, const Rectangle& rect) 
+inline void 
+min_max_dist_point_rect_p_inf(const npy_float64 *x, const Rectangle& rect,
+                          npy_float64 *min, npy_float64 *max)
 {
-    /* Compute the minimum distance between x and the given hyperrectangle. */
+    /* Compute the minimum/maximum distance between x and the given hyperrectangle. */
     npy_intp i;
     npy_float64 min_dist = 0.;
     for (i=0; i<rect.m; ++i) {
         min_dist = dmax(min_dist, dmax(rect.mins[i]-x[i], x[i]-rect.maxes[i]));
     }
-    return min_dist;
-}
-
-inline npy_float64 
-max_dist_point_rect_p_inf(const npy_float64 *x, const Rectangle& rect)
-{
-    /* Compute the maximum distance between x and the given hyperrectangle. */
-    npy_intp i;
+    *min = min_dist;
     npy_float64 max_dist = 0.;
     for (i=0; i<rect.m; ++i) {
         max_dist = dmax(max_dist, dmax(rect.maxes[i]-x[i], x[i]-rect.mins[i]));
     }
-    return max_dist;
+    *max = max_dist;
 }
 
-inline npy_float64 
-min_dist_rect_rect_p_inf(const Rectangle& rect1, const Rectangle& rect2)
+inline void
+min_max_dist_rect_rect_p_inf(const Rectangle& rect1, const Rectangle& rect2,
+                             npy_float64 *min, npy_float64 *max)
 {
-    /* Compute the minimum distance between points in two hyperrectangles. */
+    /* Compute the minimum/maximum distance between points in two hyperrectangles. */
     npy_intp i;
     npy_float64 min_dist = 0.;
     for (i=0; i<rect1.m; ++i) {
         min_dist = dmax(min_dist, dmax(rect1.mins[i] - rect2.maxes[i],
                                        rect2.mins[i] - rect1.maxes[i]));
     }                                   
-    return min_dist;
-}
-
-
-inline npy_float64 
-max_dist_rect_rect_p_inf(const Rectangle& rect1, const Rectangle rect2)
-{
-    /* Compute the maximum distance between points in two hyperrectangles. */
-    npy_intp i;
+    *min = min_dist;
     npy_float64 max_dist = 0.;
     for (i=0; i<rect1.m; ++i) {
         max_dist = dmax(max_dist, dmax(rect1.maxes[i] - rect2.mins[i],
                                        rect2.maxes[i] - rect1.mins[i]));
     }
-    return max_dist;
+    *max = max_dist;
 }
 
 
@@ -284,6 +237,8 @@ struct RectRectDistanceTracker {
                  const npy_float64 _upper_bound)
         : rect1(_rect1), rect2(_rect2), stack_arr(8) {
     
+        npy_float64 min, max;
+
         infinity = ::infinity;
     
         if (rect1.m != rect2.m) {
@@ -322,24 +277,23 @@ struct RectRectDistanceTracker {
             min_distance = 0.;
             max_distance = 0.;
             for(npy_intp i=0; i<rect1.m; ++i) {
-                min_distance 
-                    += min_dist_interval_interval_2(rect1, rect2, i);
-                max_distance 
-                    += max_dist_interval_interval_2(rect1, rect2, i);
+                min_max_dist_interval_interval_2(rect1, rect2, i, &min, &max);
+                min_distance += min;
+                max_distance += max;
             }
         }
         else if (p == infinity) {
-            min_distance = min_dist_rect_rect_p_inf(rect1, rect2);
-            max_distance = max_dist_rect_rect_p_inf(rect1, rect2);
+            min_max_dist_rect_rect_p_inf(rect1, rect2, &min, &max);
+            min_distance = min;
+            max_distance = max;
         }
         else {
             min_distance = 0.;
             max_distance = 0.;
             for(npy_intp i=0; i<rect1.m; ++i) {
-                min_distance 
-                    += min_dist_interval_interval_p(rect1, rect2, i, p);
-                max_distance 
-                    += max_dist_interval_interval_p(rect1, rect2, i, p);
+                min_max_dist_interval_interval_p(rect1, rect2, i, p, &min, &max);
+                min_distance += min;
+                max_distance += max;
             }
         }
     };
@@ -349,6 +303,7 @@ struct RectRectDistanceTracker {
               const npy_intp split_dim, const npy_float64 split_val) {
         
         const npy_float64 p = this->p;
+        npy_float64 min, max;
         
         Rectangle *rect;
         if (which == 1)
@@ -371,16 +326,14 @@ struct RectRectDistanceTracker {
 
         /* update min/max distances */
         if (NPY_LIKELY(p == 2.0)) {
-            min_distance 
-                -= min_dist_interval_interval_2(rect1, rect2, split_dim);
-            max_distance 
-                -= max_dist_interval_interval_2(rect1, rect2, split_dim);
+            min_max_dist_interval_interval_2(rect1, rect2, split_dim, &min, &max);
+            min_distance -= min;
+            max_distance -= max;
         }
         else if (p != infinity) {
-            min_distance 
-                -= min_dist_interval_interval_p(rect1, rect2, split_dim, p);
-            max_distance 
-                -= max_dist_interval_interval_p(rect1, rect2, split_dim, p);
+            min_max_dist_interval_interval_p(rect1, rect2, split_dim, p, &min, &max);
+            min_distance -= min;
+            max_distance -= max;
         }
         
         if (direction == LESS)
@@ -389,20 +342,19 @@ struct RectRectDistanceTracker {
             rect->mins[split_dim] = split_val;
 
         if (NPY_LIKELY(p == 2.0)) {
-            min_distance 
-                += min_dist_interval_interval_2(rect1, rect2, split_dim);
-            max_distance 
-                += max_dist_interval_interval_2(rect1, rect2, split_dim);
+            min_max_dist_interval_interval_2(rect1, rect2, split_dim, &min, &max);
+            min_distance += min;
+            max_distance += max;
         }
         else if (p != infinity) {
-            min_distance 
-                += min_dist_interval_interval_p(rect1, rect2, split_dim, p);
-            max_distance 
-                += max_dist_interval_interval_p(rect1, rect2, split_dim, p);
+            min_max_dist_interval_interval_p(rect1, rect2, split_dim, p, &min, &max);
+            min_distance += min;
+            max_distance += max;
         }
         else {
-            min_distance = min_dist_rect_rect_p_inf(rect1, rect2);
-            max_distance = max_dist_rect_rect_p_inf(rect1, rect2);
+            min_max_dist_rect_rect_p_inf(rect1, rect2, &min, &max);
+            min_distance = min;
+            max_distance = max;
         }     
     };
 
@@ -510,6 +462,7 @@ struct PointRectDistanceTracker {
               const npy_float64 _upper_bound)
         : rect(_rect), stack_arr(8) {
 
+        npy_float64 min, max;
         infinity = ::infinity;
 
         pt = _pt;
@@ -545,20 +498,23 @@ struct PointRectDistanceTracker {
             min_distance = 0.;
             max_distance = 0.;
             for(npy_intp i=0; i<rect.m; ++i) {
-                min_distance += min_dist_point_interval_2(pt, rect, i);
-                max_distance += max_dist_point_interval_2(pt, rect, i);
+                min_max_dist_point_interval_2(pt, rect, i, &min, &max);
+                min_distance += min;
+                max_distance += max;
             }
         }
         else if (p == infinity) {
-            min_distance = min_dist_point_rect_p_inf(pt, rect);
-            max_distance = max_dist_point_rect_p_inf(pt, rect);
+            min_max_dist_point_rect_p_inf(pt, rect, &min, &max);
+            min_distance = min;
+            max_distance = max;
         }
         else {
             min_distance = 0.;
             max_distance = 0.;
             for(npy_intp i=0; i<rect.m; ++i) {
-                min_distance += min_dist_point_interval_p(pt, rect, i, p);
-                max_distance += max_dist_point_interval_p(pt, rect, i, p);
+                min_max_dist_point_interval_p(pt, rect, i, p, &min, &max);
+                min_distance += min;
+                max_distance += max;
             }
         }
     };
@@ -567,6 +523,7 @@ struct PointRectDistanceTracker {
               const npy_float64 split_val) {
               
         const npy_float64 p = this->p;      
+        npy_float64 min, max;
 
         /* push onto stack */
         if (stack_size == stack_max_size)
@@ -581,12 +538,14 @@ struct PointRectDistanceTracker {
         item->max_along_dim = rect.maxes[split_dim];
             
         if (NPY_LIKELY(p == 2.0)) {    
-            min_distance -= min_dist_point_interval_2(pt, rect, split_dim);
-            max_distance -= max_dist_point_interval_2(pt, rect, split_dim);
+            min_max_dist_point_interval_2(pt, rect, split_dim, &min, &max);
+            min_distance -= min;
+            max_distance -= max;
         }
         else if (p != infinity) {
-            min_distance -= min_dist_point_interval_p(pt, rect, split_dim, p);
-            max_distance -= max_dist_point_interval_p(pt, rect, split_dim, p);
+            min_max_dist_point_interval_p(pt, rect, split_dim, p, &min, &max);
+            min_distance -= min;
+            max_distance -= max;
         }
         
         if (direction == LESS)
@@ -595,16 +554,19 @@ struct PointRectDistanceTracker {
             rect.mins[split_dim] = split_val;
  
         if (NPY_LIKELY(p == 2.0)) {
-            min_distance += min_dist_point_interval_2(pt, rect, split_dim);
-            max_distance += max_dist_point_interval_2(pt, rect, split_dim);       
+            min_max_dist_point_interval_2(pt, rect, split_dim, &min, &max);
+            min_distance += min;
+            max_distance += max;
         }
         else if (p != infinity) {
-            min_distance += min_dist_point_interval_p(pt, rect, split_dim, p);
-            max_distance += max_dist_point_interval_p(pt, rect, split_dim, p);
+            min_max_dist_point_interval_p(pt, rect, split_dim, p, &min, &max);
+            min_distance += min;
+            max_distance += max;
         }
         else {
-            min_distance = min_dist_point_rect_p_inf(pt, rect);
-            max_distance = max_dist_point_rect_p_inf(pt, rect);
+            min_max_dist_point_rect_p_inf(pt, rect, &min, &max);
+            min_distance = min;
+            max_distance = max;
         } 
     };
     
