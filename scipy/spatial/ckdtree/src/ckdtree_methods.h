@@ -80,6 +80,16 @@ dmax(const npy_float64 x, const npy_float64 y)
 };
 
 inline npy_float64 
+dmin(const npy_float64 x, const npy_float64 y) 
+{
+    if (x < y)
+        return x;
+    else
+        return y;
+};
+
+
+inline npy_float64 
 dabs(const npy_float64 x)
 {
     if (x > 0)
