@@ -49,7 +49,8 @@ Assumes you have git and the binaries/tarballs in installers/::
     paver write_release_and_log
 
 This automatically put the checksum into NOTES.txt, and write the Changelog
-which can be uploaded to sourceforge.
+which can be uploaded to Github Releases (and maybe sourceforge for historical
+reasons, see gh-4939).
 
 
 TODO
