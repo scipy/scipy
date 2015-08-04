@@ -9,10 +9,18 @@ from numpy.testing import (assert_equal, assert_array_equal,
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial.ckdtree import cKDTreeNode
-from scipy.spatial import minkowski_distance as distance
+from scipy.spatial import minkowski_distance
 
+def distance_box(a, b, p, boxsize):
+    diff = a - b
+    diff[diff > 0.5 * boxsize] -= boxsize
+    diff[diff < -0.5 * boxsize] += boxsize
+    return minkowski_distance(diff, 0, p)
 
 class ConsistencyTests:
+    def distance(self, a, b, p):
+        return minkowski_distance(a, b, p)
+
     def test_nearest(self):
         x = self.x
         d, i = self.kdtree.query(x, 1)
@@ -42,7 +50,7 @@ class ConsistencyTests:
             hits += 1
             assert_almost_equal(near_d**2,np.sum((x-self.data[near_i])**2))
             assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d,d))
-        assert_equal(np.sum(np.sum((self.data-x[np.newaxis,:])**2,axis=1) < d**2+eps),hits)
+        assert_equal(np.sum(self.distance(self.data,x,2) < d**2+eps),hits)
 
     def test_points_near_l1(self):
         x = self.x
@@ -54,9 +62,9 @@ class ConsistencyTests:
             if near_d == np.inf:
                 continue
             hits += 1
-            assert_almost_equal(near_d,distance(x,self.data[near_i],1))
+            assert_almost_equal(near_d,self.distance(x,self.data[near_i],1))
             assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d,d))
-        assert_equal(np.sum(distance(self.data,x,1) < d+eps),hits)
+        assert_equal(np.sum(self.distance(self.data,x,1) < d+eps),hits)
 
     def test_points_near_linf(self):
         x = self.x
@@ -68,9 +76,9 @@ class ConsistencyTests:
             if near_d == np.inf:
                 continue
             hits += 1
-            assert_almost_equal(near_d,distance(x,self.data[near_i],np.inf))
+            assert_almost_equal(near_d,self.distance(x,self.data[near_i],np.inf))
             assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d,d))
-        assert_equal(np.sum(distance(self.data,x,np.inf) < d+eps),hits)
+        assert_equal(np.sum(self.distance(self.data,x,np.inf) < d+eps),hits)
 
     def test_approx(self):
         x = self.x
@@ -261,17 +269,19 @@ class test_vectorization_compiled:
 
 
 class ball_consistency:
+    def distance(self, a, b, p):
+        return minkowski_distance(a, b, p)
 
     def test_in_ball(self):
         l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
         for i in l:
-            assert_(distance(self.data[i],self.x,self.p) <= self.d*(1.+self.eps))
+            assert_(self.distance(self.data[i],self.x,self.p) <= self.d*(1.+self.eps))
 
     def test_found_all(self):
         c = np.ones(self.T.n,dtype=bool)
         l = self.T.query_ball_point(self.x, self.d, p=self.p, eps=self.eps)
         c[l] = False
-        assert_(np.all(distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
+        assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
 
 
 class test_random_ball(ball_consistency):
@@ -402,18 +412,21 @@ def test_query_ball_point_multithreading():
 
 class two_trees_consistency:
 
+    def distance(self, a, b, p):
+        return minkowski_distance(a, b, p)
+
     def test_all_in_ball(self):
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
         for i, l in enumerate(r):
             for j in l:
-                assert_(distance(self.data1[i],self.data2[j],self.p) <= self.d*(1.+self.eps))
+                assert_(self.distance(self.data1[i],self.data2[j],self.p) <= self.d*(1.+self.eps))
 
     def test_found_all(self):
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
         for i, l in enumerate(r):
             c = np.ones(self.T2.n,dtype=bool)
             c[l] = False
-            assert_(np.all(distance(self.data2[c],self.data1[i],self.p) >= self.d/(1.+self.eps)))
+            assert_(np.all(self.distance(self.data2[c],self.data1[i],self.p) >= self.d/(1.+self.eps)))
 
 
 class test_two_random_trees(two_trees_consistency):
@@ -506,22 +519,22 @@ class test_rectangle:
 
 
 def test_distance_l2():
-    assert_almost_equal(distance([0,0],[1,1],2),np.sqrt(2))
+    assert_almost_equal(minkowski_distance([0,0],[1,1],2),np.sqrt(2))
 
 
 def test_distance_l1():
-    assert_almost_equal(distance([0,0],[1,1],1),2)
+    assert_almost_equal(minkowski_distance([0,0],[1,1],1),2)
 
 
 def test_distance_linf():
-    assert_almost_equal(distance([0,0],[1,1],np.inf),1)
+    assert_almost_equal(minkowski_distance([0,0],[1,1],np.inf),1)
 
 
 def test_distance_vectorization():
     np.random.seed(1234)
     x = np.random.randn(10,1,3)
     y = np.random.randn(1,7,3)
-    assert_equal(distance(x,y).shape,(10,7))
+    assert_equal(minkowski_distance(x,y).shape,(10,7))
 
 
 class test_count_neighbors:
@@ -578,14 +591,10 @@ class test_count_neighbors_compiled:
             assert_equal(self.T1.count_neighbors(self.T2, r), result)
 
 
-class test_sparse_distance_matrix:
-    def setUp(self):
-        n = 50
-        m = 4
-        np.random.seed(1234)
-        self.T1 = KDTree(np.random.randn(n,m),leafsize=2)
-        self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
-        self.r = 0.5
+class sparse_distance_matrix_consistency:
+
+    def distance(self, a, b, p):
+        return minkowski_distance(a, b, p)
 
     def test_consistency_with_neighbors(self):
         M = self.T1.sparse_distance_matrix(self.T2, self.r)
@@ -593,17 +602,34 @@ class test_sparse_distance_matrix:
         for i,l in enumerate(r):
             for j in l:
                 assert_almost_equal(M[i,j],
-                                    distance(self.T1.data[i], self.T2.data[j]),
+                                    self.distance(self.T1.data[i], self.T2.data[j], self.p),
                                     decimal=14)
         for ((i,j),d) in M.items():
             assert_(j in r[i])
 
     def test_zero_distance(self):
-        # raises an exception for bug 870
+        # raises an exception for bug 870 (FIXME: Does it?)
         self.T1.sparse_distance_matrix(self.T1, self.r)
 
+class test_sparse_distance_matrix(sparse_distance_matrix_consistency):
 
-class test_sparse_distance_matrix_compiled:
+    def setUp(self):
+        n = 50
+        m = 4
+        np.random.seed(1234)
+        data1 = np.random.randn(n,m)
+        data2 = np.random.randn(n,m)
+        self.T1 = cKDTree(data1,leafsize=2)
+        self.T2 = cKDTree(data2,leafsize=2)
+        self.r = 0.5
+        self.p = 2
+        self.data1 = data1
+        self.data2 = data2
+        self.n = n
+        self.m = m
+
+class test_sparse_distance_matrix_compiled(sparse_distance_matrix_consistency):
+
     def setUp(self):
         n = 50
         m = 4
@@ -619,21 +645,7 @@ class test_sparse_distance_matrix_compiled:
         self.m = m
         self.data1 = data1
         self.data2 = data2
-
-    def test_consistency_with_neighbors(self):
-        M = self.T1.sparse_distance_matrix(self.T2, self.r)
-        r = self.T1.query_ball_tree(self.T2, self.r)
-        for i,l in enumerate(r):
-            for j in l:
-                assert_almost_equal(M[i,j],
-                                    distance(self.T1.data[i], self.T2.data[j]),
-                                    decimal=14)
-        for ((i,j),d) in M.items():
-            assert_(j in r[i])
-
-    def test_zero_distance(self):
-        # raises an exception for bug 870 (FIXME: Does it?)
-        self.T1.sparse_distance_matrix(self.T1, self.r)
+        self.p = 2
 
     def test_consistency_with_python(self):
         M1 = self.T1.sparse_distance_matrix(self.T2, self.r)
@@ -676,6 +688,7 @@ class test_sparse_distance_matrix_compiled:
         assert_array_almost_equal(ref, r.todense(), decimal=14)
 
 
+
 def test_distance_matrix():
     m = 10
     n = 11
@@ -687,7 +700,7 @@ def test_distance_matrix():
     assert_equal(ds.shape, (m,n))
     for i in range(m):
         for j in range(n):
-            assert_almost_equal(distance(xs[i],ys[j]),ds[i,j])
+            assert_almost_equal(minkowski_distance(xs[i],ys[j]),ds[i,j])
 
 
 def test_distance_matrix_looping():
