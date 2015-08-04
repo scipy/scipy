@@ -957,10 +957,10 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         cond = factor[t] * np.finfo(t).eps
 
     rank = np.sum(s > cond * np.max(s))
-    psigma_diag = 1.0 / s[: rank]
 
-    B = np.transpose(np.conjugate(np.dot(u[:, : rank] *
-                                         psigma_diag, vh[: rank])))
+    u = u[:, :rank]
+    u /= s[:rank]
+    B = np.transpose(np.conjugate(np.dot(u, vh[:rank])))
 
     if return_rank:
         return B, rank
