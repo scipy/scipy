@@ -65,7 +65,7 @@ template <typename MinMaxDist> static void
 traverse_checking(const ckdtree *self, const ckdtree *other,
                   std::vector<npy_intp> **results,
                   const ckdtreenode *node1, const ckdtreenode *node2,
-                  BaseRectRectDistanceTracker<MinMaxDist> *tracker)
+                  RectRectDistanceTracker<MinMaxDist> *tracker)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
@@ -119,7 +119,8 @@ traverse_checking(const ckdtree *self, const ckdtree *other,
                     if (j < end2-2)
                         prefetch_datapoint(odata + oindices[j+2] * m, m);
                 
-                    d = _distance_p(
+                    d = MinMaxDist::distance_p(
+                            self,
                             sdata + sindices[i] * m,
                             odata + oindices[j] * m,
                             p, m, tmd);
@@ -199,7 +200,7 @@ query_ball_tree(const ckdtree *self, const ckdtree *other,
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
             Rectangle r2(other->m, other->raw_mins, other->raw_maxes);
             
-            RectRectDistanceTracker tracker(self, r1, r2, p, eps, r);
+            RectRectDistanceTracker<MinMaxDist> tracker(self, r1, r2, p, eps, r);
             
             traverse_checking(self, other, results, self->ctree, other->ctree, 
                 &tracker);

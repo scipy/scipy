@@ -121,6 +121,57 @@ struct MinMaxDist {
         }
         *max = max_dist;
     }
+
+    static inline npy_float64 
+    distance_p(const ckdtree * tree, 
+               const npy_float64 *x, const npy_float64 *y,
+               const npy_float64 p, const npy_intp k,
+               const npy_float64 upperbound)
+    {    
+       /*
+        * Compute the distance between x and y
+        *
+        * Computes the Minkowski p-distance to the power p between two points.
+        * If the distance**p is larger than upperbound, then any number larger
+        * than upperbound may be returned (the calculation is truncated).
+        */
+        
+        npy_intp i;
+        npy_float64 r;
+        r = 0;
+        if (NPY_LIKELY(p==2.)) {
+            /*
+            for (i=0; i<k; ++i) {
+                z = x[i] - y[i];
+                r += z*z;
+                if (r>upperbound)
+                    return r;
+            }*/
+            return sqeuclidean_distance_double(x,y,k);
+        } 
+        else if (p==infinity) {
+            for (i=0; i<k; ++i) {
+                r = dmax(r,dabs(x[i]-y[i]));
+                if (r>upperbound)
+                    return r;
+            }
+        } 
+        else if (p==1.) {
+            for (i=0; i<k; ++i) {
+                r += dabs(x[i]-y[i]);
+                if (r>upperbound)
+                    return r;
+            }
+        } 
+        else {
+            for (i=0; i<k; ++i) {
+                r += std::pow(dabs(x[i]-y[i]),p);
+                if (r>upperbound)
+                     return r;
+            }
+        }
+        return r;
+    } 
 };
 struct MinMaxDistBox {
     static inline void _interval_interval_1d (
@@ -236,8 +287,41 @@ struct MinMaxDistBox {
             *max = dmax(max_dist, *max);
         }                                   
     }
+    static inline npy_float64 
+    distance_p(const ckdtree * tree, 
+               const npy_float64 *x, const npy_float64 *y,
+               const npy_float64 p, const npy_intp k,
+               const npy_float64 upperbound)
+    {    
+       /*
+        * Compute the distance between x and y
+        *
+        * Computes the Minkowski p-distance to the power p between two points.
+       * If the distance**p is larger than upperbound, then any number larger
+        * than upperbound may be returned (the calculation is truncated).
+        *
+        */
+        
+        npy_intp i;
+        npy_float64 r, r1;
+        r = 0;
+        for (i=0; i<k; ++i) {
+            r1 = wrap_distance(x[i] - y[i], tree->raw_boxsize_data[i + tree->m], tree->raw_boxsize_data[i]);
+            if (NPY_LIKELY(p==2.)) {
+                r += r1 * r1;
+            } else if (p==infinity) {
+                r = dmax(r,r1);
+            } else if (p==1.) {
+                r += dabs(r1);
+            } else {
+                r += std::pow(dabs(r1),p);
+            }
+            if (r>upperbound) 
+                return r;
+        } 
+        return r;
+    } 
 };
-
 
 /*
  * Rectangle-to-rectangle distance tracker
@@ -281,7 +365,7 @@ const npy_intp LESS = 1;
 const npy_intp GREATER = 2;
 
 template<typename MinMaxDist> 
-    struct BaseRectRectDistanceTracker {
+    struct RectRectDistanceTracker {
     
     const ckdtree * tree;
     Rectangle rect1; 
@@ -303,7 +387,7 @@ template<typename MinMaxDist>
         stack_max_size = new_max_size;
     };
     
-    BaseRectRectDistanceTracker(const ckdtree *_tree, 
+    RectRectDistanceTracker(const ckdtree *_tree, 
                  const Rectangle& _rect1, const Rectangle& _rect2,
                  const npy_float64 _p, const npy_float64 eps, 
                  const npy_float64 _upper_bound)
@@ -465,9 +549,6 @@ template<typename MinMaxDist>
     };
 
 };
-
-
-typedef BaseRectRectDistanceTracker<MinMaxDist> RectRectDistanceTracker;
 
 
 #endif

@@ -83,7 +83,7 @@ template <typename MinMaxDist> static void
 traverse_checking(const ckdtree *self,
                   std::vector<ordered_pair> *results,
                   const ckdtreenode *node1, const ckdtreenode *node2,
-                  BaseRectRectDistanceTracker<MinMaxDist> *tracker)
+                  RectRectDistanceTracker<MinMaxDist> *tracker)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
@@ -135,7 +135,8 @@ traverse_checking(const ckdtree *self,
                     if (j < end2-2)
                         prefetch_datapoint(data+indices[j+2]*m, m);
                                         
-                    d = _distance_p(
+                    d = MinMaxDist::distance_p(
+                            self,
                             data + indices[i] * m,
                             data + indices[j] * m,
                             p, m, tub);
@@ -216,7 +217,7 @@ query_pairs(const ckdtree *self,
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
             Rectangle r2(self->m, self->raw_mins, self->raw_maxes);
                                     
-            RectRectDistanceTracker tracker(self, r1, r2, p, eps, r);
+            RectRectDistanceTracker<MinMaxDist> tracker(self, r1, r2, p, eps, r);
             
             traverse_checking(self, results, self->ctree, self->ctree, 
                 &tracker);

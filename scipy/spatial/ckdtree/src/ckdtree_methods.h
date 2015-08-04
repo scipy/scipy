@@ -115,10 +115,6 @@ wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
  * Measuring distances
  * ===================
  */
-
-#if 0 
-//!defined(__GNUC__)
-
 inline npy_float64
 sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp n)
 {
@@ -148,145 +144,6 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp
     return s;
 } 
 
-inline npy_float64 
-_distance_p(const npy_float64 *x, const npy_float64 *y,
-            const npy_float64 p, const npy_intp k,
-            const npy_float64 upperbound)
-{    
-   /*
-    * Compute the distance between x and y
-    *
-    * Computes the Minkowski p-distance to the power p between two points.
-    * If the distance**p is larger than upperbound, then any number larger
-    * than upperbound may be returned (the calculation is truncated).
-    */
-    
-    npy_intp i;
-    npy_float64 r;
-    r = 0;
-    if (NPY_LIKELY(p==2.)) {
-        /*
-        for (i=0; i<k; ++i) {
-            z = x[i] - y[i];
-            r += z*z;
-            if (r>upperbound)
-                return r;
-        }*/
-        return sqeuclidean_distance_double(x,y,k);
-    } 
-    else if (p==infinity) {
-        for (i=0; i<k; ++i) {
-            r = dmax(r,dabs(x[i]-y[i]));
-            if (r>upperbound)
-                return r;
-        }
-    } 
-    else if (p==1.) {
-        for (i=0; i<k; ++i) {
-            r += dabs(x[i]-y[i]);
-            if (r>upperbound)
-                return r;
-        }
-    } 
-    else {
-        for (i=0; i<k; ++i) {
-            r += std::pow(dabs(x[i]-y[i]),p);
-            if (r>upperbound)
-                 return r;
-        }
-    }
-    return r;
-} 
-
-
-#else
-
-/* Optimized path for GCC (and compatible compilers) using computed goto */
- 
-inline npy_float64 
-_distance_p(const npy_float64 *x, const npy_float64 *y,
-            const npy_float64 p, const npy_intp k,
-            const npy_float64 upperbound)
-{    
-    
-    void *jmptab[] = {&&minkowski, 
-                      &&max_coordinate_difference, 
-                      &&manhattan,
-                      NULL,
-                      &&euclid};
-                      
-    int dispatch = (p == infinity) | ((p == 1.)<<1) | ((p == 2.)<<2);
-    goto *jmptab[dispatch];
-    
-euclid:
-    {
-        const npy_float64 *u = x;
-        const npy_float64 *v = y;
-        const npy_intp n = k;
-        npy_float64 s;
-        npy_intp i;
-        npy_float64 acc[4] = {0., 0., 0., 0.};
-        for (i = 0; i < n/4; i += 4) {
-            npy_float64 _u[4] = {u[i], u[i + 1], u[i + 2], u[i + 3]};
-            npy_float64 _v[4] = {v[i], v[i + 1], v[i + 2], v[i + 3]};
-            npy_float64 diff[4] = {_u[0] - _v[0], 
-                                   _u[1] - _v[1], 
-                                   _u[2] - _v[2],
-                                   _u[3] - _v[3]};
-            acc[0] += diff[0] * diff[0];
-            acc[1] += diff[1] * diff[1];
-            acc[2] += diff[2] * diff[2];
-            acc[3] += diff[3] * diff[3];
-        }
-        s = acc[0] + acc[1] + acc[2] + acc[3];
-        if (i < n) {
-            for(; i<n; ++i) {
-                npy_float64 d = u[i] - v[i];
-                s += d * d;
-            }
-        }
-        return s;
-    }
-    
-max_coordinate_difference:
-    {
-        npy_intp i;
-        npy_float64 r = 0;
-        for (i=0; i<k; ++i) {
-            r = dmax(r,dabs(x[i]-y[i]));
-            if (r>upperbound)
-                return r;
-        }
-        return r;
-    }
-
-manhattan:
-    {
-        npy_intp i;
-        npy_float64 r = 0;
-        for (i=0; i<k; ++i) {
-            r += dabs(x[i]-y[i]);
-            if (r>upperbound)
-                return r;
-        }
-        return r;
-    }
-
-minkowski:
-    {
-        npy_intp i;
-        npy_float64 r = 0;
-        for (i=0; i<k; ++i) {
-            r += std::pow(dabs(x[i]-y[i]),p);
-            if (r>upperbound)
-                 return r;
-        }
-        return r;
-    }
-} 
-
-
-#endif /* __GNUC__ */
 
 inline const npy_float64 
 _wrap(const npy_float64 x, const npy_float64 box) 
@@ -295,40 +152,8 @@ _wrap(const npy_float64 x, const npy_float64 box)
     return x - r * box;
 }
 
-inline npy_float64 
-_distance_pp(const npy_float64 *x, const npy_float64 *y,
-            const npy_float64 p, const npy_intp k,
-            const npy_float64 upperbound, const npy_float64 * hbox, const npy_float64 * fbox)
-{    
-   /*
-    * Compute the distance between x and y
-    *
-    * Computes the Minkowski p-distance to the power p between two points.
-   * If the distance**p is larger than upperbound, then any number larger
-    * than upperbound may be returned (the calculation is truncated).
-    *
-    */
-    
-    npy_intp i;
-    npy_float64 r, r1;
-    r = 0;
-    for (i=0; i<k; ++i) {
-        r1 = wrap_distance(x[i] - y[i], hbox[i], fbox[i]);
-        if (NPY_LIKELY(p==2.)) {
-            r += r1 * r1;
-        } else if (p==infinity) {
-            r = dmax(r,r1);
-        } else if (p==1.) {
-            r += dabs(r1);
-        } else {
-            r += std::pow(dabs(r1),p);
-        }
-        if (r>upperbound) 
-            return r;
-    } 
-    return r;
-} 
- 
+/* FIXME: this should be replaced by a function
+ * in MinMaxDistBox */
 const inline npy_float64 side_distance_from_min_max(
     const npy_float64 x,
     const npy_float64 min,
@@ -368,8 +193,7 @@ const inline npy_float64 side_distance_from_min_max(
             }
             if(tmax < hb) {
                 /* both edges are less than half a box. */
-                /* no wrapping, use the closer edge */
-                s = tmin;
+                /* no wrapping, use the closer edge */ s = tmin;
             } else if(tmin > hb) {
                 /* both edge are more than half a box. */
                 /* wrapping on both edge, use the 

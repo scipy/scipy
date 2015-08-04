@@ -24,6 +24,7 @@
 #include "ckdtree_decl.h"
 #include "ordered_pair.h"
 #include "ckdtree_methods.h"
+#include "rectangle.h"
 #include "cpp_exc.h"
 
 /*
@@ -192,6 +193,7 @@ inline const npy_float64 adjust_min_distance(const npy_float64 min_distance,
 }
 
 /* k-nearest neighbor search for a single point x */
+template <typename MinMaxDist>
 static void 
 query_single_point(const ckdtree *self, 
                    npy_float64   *result_distances, 
@@ -307,13 +309,7 @@ query_single_point(const ckdtree *self,
                     if (i < end_idx-2)
                         prefetch_datapoint(data+indices[i+2]*m, m);
                 
-                    if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
-                        d = _distance_p(data+indices[i]*m, x, p, m, 
-                            distance_upper_bound);
-                    }  else {
-                        d = _distance_pp(data+indices[i]*m, x, p, m, 
-                            distance_upper_bound, self->raw_boxsize_data + m, self->raw_boxsize_data);
-                    }
+                    d = MinMaxDist::distance_p(self, data+indices[i]*m, x, p, m, distance_upper_bound);
 
                     if (d < distance_upper_bound) {
                         /* replace furthest neighbor */
@@ -503,7 +499,7 @@ query_knn(const ckdtree      *self,
                     npy_float64 *dd_row = dd + (i*k);
                     npy_intp *ii_row = ii + (i*k);
                     const npy_float64 *xx_row = xx + (i*m);                
-                    query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                    query_single_point<MinMaxDist>(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
                 }    
             } else {
                 std::vector<npy_float64> row(m);
@@ -516,7 +512,7 @@ query_knn(const ckdtree      *self,
                     for(j=0; j<m; ++j) {
                         xx_row[j] = _wrap(old_xx_row[j], self->raw_boxsize_data[j]);
                     }
-                    query_single_point(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                    query_single_point<MinMaxDistBox>(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
                 }    
 
             }
