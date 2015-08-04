@@ -18,7 +18,7 @@ Dept of MS&E, Stanford University.
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange, eye, zeros, ones, sqrt, transpose, hstack
+from numpy import array, arange, eye, zeros, ones, sqrt, transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import run_module_suite, assert_almost_equal
 
@@ -57,6 +57,18 @@ class TestLSMR:
         A = lowerBidiagonalMatrix(20,self.n)
         xtrue = transpose(arange(self.n,0,-1))
         self.assertCompatibleSystem(A,xtrue)
+
+    def testScalarB(self):
+        A = array([[1.0, 2.0]])
+        b = 3.0
+        x = lsmr(A, b)[0]
+        assert_almost_equal(norm(A.dot(x) - b), 0)
+
+    def testColumnB(self):
+        A = eye(self.n)
+        b = ones((self.n, 1))
+        x = lsmr(A, b)[0]
+        assert_almost_equal(norm(A.dot(x) - b.ravel()), 0)
 
 
 class TestLSMRReturns:
