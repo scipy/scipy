@@ -5,17 +5,15 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import norm
 
-from . import _minpack
-from .optimize import OptimizeResult
-from ._numdiff import approx_derivative, group_columns
-from ..sparse import issparse, csr_matrix
-from ..sparse.linalg import LinearOperator
-from ._lsq_common import (EPS, IMPLEMENTED_LOSSES, in_bounds,
-                          compute_loss_and_derivatives, compute_cost)
-from ._lsq_trf import trf
-from ._lsq_dogbox import dogbox
+from scipy.sparse import issparse, csr_matrix
+from scipy.sparse.linalg import LinearOperator
+from scipy.optimize import _minpack, OptimizeResult
+from scipy.optimize._numdiff import approx_derivative, group_columns
 
-__all__ = ['least_squares']
+from .trf import trf
+from .dogbox import dogbox
+from .common import (EPS, IMPLEMENTED_LOSSES, in_bounds, compute_cost,
+                     compute_loss_and_derivatives)
 
 
 TERMINATION_MESSAGES = {

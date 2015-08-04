@@ -93,22 +93,20 @@ References
 .. [JJMore] More, J. J., "The Levenberg-Marquardt Algorithm: Implementation
     and Theory," Numerical Analysis, ed. G. A. Watson, Lecture
 """
-
-from __future__ import division
-
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import svd, qr
-from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
+from scipy.sparse.linalg import LinearOperator, lsmr
+from scipy.optimize import OptimizeResult
 
-from .optimize import OptimizeResult
-from ._lsq_common import (
+from .common import (
     step_size_to_bound, make_strictly_feasible, find_active_constraints,
     intersect_trust_region, solve_lsq_trust_region, solve_trust_region_2d,
     update_tr_radius, minimize_quadratic_1d, build_quadratic_1d,
-    evaluate_quadratic, compute_grad, compute_jac_scaling,
-    check_termination, compute_loss_and_derivatives, compute_cost,
-    correct_by_loss, print_header, print_iteration, right_multiplied_operator)
+    evaluate_quadratic, right_multiplied_operator, scaling_vector,
+    compute_grad, compute_jac_scaling, check_termination,
+    compute_loss_and_derivatives, compute_cost, correct_by_loss, print_header,
+    print_iteration)
 
 
 def lsmr_operator(Jop, diag_root):
@@ -123,53 +121,6 @@ def lsmr_operator(Jop, diag_root):
         return Jop.rmatvec(x1) + diag_root * x2
 
     return LinearOperator((m + n, n), matvec=matvec, rmatvec=rmatvec)
-
-
-def scaling_vector(x, g, lb, ub):
-    """Compute a scaling vector and its derivatives as described in papers
-    of Coleman and Li [1]_.
-
-    Components of a vector v are defined as follows:
-    ::
-
-               | ub[i] - x[i], if g[i] < 0 and ub[i] < np.inf
-        v[i] = | x[i] - lb[i], if g[i] > 0 and lb[i] > -np.inf
-               | 1,           otherwise
-
-    According to this definition v[i] >= 0 for all i. It differs from the
-    definition in paper [1]_ (eq. (2.2)), where the absolute value of v is
-    used. Both definitions are equivalent down the line.
-
-    Derivatives of v with respect to x take value 1, -1 or 0 depending on a
-    case.
-
-    Returns
-    -------
-    v : ndarray with shape of x
-        Scaling vector.
-    dv : ndarray with shape of x
-        Derivatives of v[i] with respect to x[i], diagonal elements of v's
-        Jacobian.
-
-    References
-    ----------
-    .. [1] Branch, M.A., T.F. Coleman, and Y. Li, "A Subspace, Interior,
-           and Conjugate Gradient Method for Large-Scale Bound-Constrained
-           Minimization Problems," SIAM Journal on Scientific Computing,
-           Vol. 21, Number 1, pp 1-23, 1999.
-    """
-    v = np.ones_like(x)
-    dv = np.zeros_like(x)
-
-    mask = (g < 0) & np.isfinite(ub)
-    v[mask] = ub[mask] - x[mask]
-    dv[mask] = -1
-
-    mask = (g > 0) & np.isfinite(lb)
-    v[mask] = x[mask] - lb[mask]
-    dv[mask] = 1
-
-    return v, dv
 
 
 def find_reflected_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, l, u, theta):

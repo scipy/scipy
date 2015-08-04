@@ -40,15 +40,12 @@ References
             Mathematics, Corfu, Greece, 2004.
 .. [NumOpt] J. Nocedal and S. J. Wright, "Numerical optimization, 2nd edition".
 """
-
-from __future__ import division
-
 import numpy as np
 from numpy.linalg import lstsq, norm
 
-from . import OptimizeResult
-from ..sparse.linalg import LinearOperator, aslinearoperator, lsmr
-from ._lsq_common import (
+from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
+from scipy.optimize import OptimizeResult
+from .common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
     build_quadratic_1d, minimize_quadratic_1d, compute_grad,
     compute_jac_scaling, check_termination, compute_loss_and_derivatives,
