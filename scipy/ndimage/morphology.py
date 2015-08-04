@@ -34,6 +34,7 @@ import numpy
 from . import _ni_support
 from . import _nd_image
 from . import filters
+from . import _ni_morphology
 
 __all__ = ['iterate_structure', 'generate_binary_structure', 'binary_erosion',
            'binary_dilation', 'binary_opening', 'binary_closing',
@@ -1842,7 +1843,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     else:
         dt = None
 
-    _nd_image.distance_transform_bf(tmp1, metric, sampling, dt, ft)
+    _ni_morphology._distance_transform_bf(tmp1, metric, sampling, dt, ft)
     if return_indices:
         if isinstance(indices, numpy.ndarray):
             if indices.dtype.type != numpy.int32:
