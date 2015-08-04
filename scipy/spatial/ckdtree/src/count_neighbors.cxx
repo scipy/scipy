@@ -177,10 +177,17 @@ count_neighbors(const ckdtree *self, const ckdtree *other,
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
             Rectangle r2(other->m, other->raw_mins, other->raw_maxes);
             
-            RectRectDistanceTracker<MinMaxDist> tracker(self, r1, r2, p, 0.0, 0.0);
+            if(NPY_LIKELY(self->raw_boxsize_data == NULL)) {
+                RectRectDistanceTracker<MinMaxDist> tracker(self, r1, r2, p, 0.0, 0.0);
             
-            traverse(self, other, n_queries, real_r, results, idx,
-                     self->ctree, other->ctree, &tracker);
+                traverse(self, other, n_queries, real_r, results, idx,
+                         self->ctree, other->ctree, &tracker);
+            } else {
+                RectRectDistanceTracker<MinMaxDistBox> tracker(self, r1, r2, p, 0.0, 0.0);
+            
+                traverse(self, other, n_queries, real_r, results, idx,
+                         self->ctree, other->ctree, &tracker);
+            }
         } 
         catch(...) {
             translate_cpp_exception_with_gil();

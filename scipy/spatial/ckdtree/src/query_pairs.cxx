@@ -217,11 +217,17 @@ query_pairs(const ckdtree *self,
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
             Rectangle r2(self->m, self->raw_mins, self->raw_maxes);
                                     
-            RectRectDistanceTracker<MinMaxDist> tracker(self, r1, r2, p, eps, r);
-            
-            traverse_checking(self, results, self->ctree, self->ctree, 
-                &tracker);
-             
+            if(NPY_LIKELY(self->raw_boxsize_data == NULL)) {
+                RectRectDistanceTracker<MinMaxDist> tracker(self, r1, r2, p, eps, r);
+                
+                traverse_checking(self, results, self->ctree, self->ctree, 
+                    &tracker);
+            } else {
+                RectRectDistanceTracker<MinMaxDistBox> tracker(self, r1, r2, p, eps, r);
+                
+                traverse_checking(self, results, self->ctree, self->ctree, 
+                    &tracker);
+            }
         } 
         catch(...) {
             translate_cpp_exception_with_gil();
