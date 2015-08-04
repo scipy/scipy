@@ -209,14 +209,14 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
 
 
 def j_roots(n, alpha, beta, mu=False):
-    """Gauss-Jacobi quadrature
+    r"""Gauss-Jacobi quadrature.
 
     Computes the sample points and weights for Gauss-Jacobi quadrature. The
-    sample points are the roots of the `n`th degree Jacobi polynomial,
-    :math:`P^{\\alpha, \\beta}_n(x)`.  These sample points and weights
-    correctly integrate polynomials of degree :math:`2*n - 1` or less over the
+    sample points are the roots of the n-th degree Jacobi polynomial,
+    :math:`P^{\alpha, \beta}_n(x)`.  These sample points and weights
+    correctly integrate polynomials of degree :math:`2n - 1` or less over the
     interval :math:`[-1, 1]` with weight function
-    :math:`f(x) = (1 - x)^{\\alpha} (1 + x)^{\\beta}`.
+    :math:`f(x) = (1 - x)^{\alpha} (1 + x)^{\beta}`.
 
     Parameters
     ----------
@@ -240,8 +240,8 @@ def j_roots(n, alpha, beta, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     m = int(n)
     if n < 1 or n != m:
@@ -298,12 +298,12 @@ def jacobi(n, alpha, beta, monic=False):
 
 
 def js_roots(n, p1, q1, mu=False):
-    """Gauss-Jacobi (shifted) quadrature
+    """Gauss-Jacobi (shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Jacobi (shifted)
-    quadrature. The sample points are the roots of the `n`th degree shifted
+    quadrature. The sample points are the roots of the n-th degree shifted
     Jacobi polynomial, :math:`G^{p,q}_n(x)`.  These sample points and weights
-    correctly integrate polynomials of degree :math:`2*n - 1` or less over the
+    correctly integrate polynomials of degree :math:`2n - 1` or less over the
     interval :math:`[0, 1]` with weight function
     :math:`f(x) = (1 - x)^{p-q} x^{q-1}`
 
@@ -329,8 +329,8 @@ def js_roots(n, p1, q1, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     if (p1-q1) <= -1 or q1 <= 0:
         raise ValueError("(p - q) must be greater than -1, and q must be greater than 0.")
@@ -370,14 +370,14 @@ def sh_jacobi(n, p, q, monic=False):
 
 
 def la_roots(n, alpha, mu=False):
-    """Gauss-generalized Laguerre quadrature
+    r"""Gauss-generalized Laguerre quadrature.
 
     Computes the sample points and weights for Gauss-generalized Laguerre
-    quadrature. The sample points are the roots of the `n`th degree generalized
-    Laguerre polynomial, :math:`L^{\\alpha}_n(x)`.  These sample points and
-    weights correctly integrate polynomials of degree :math:`2*n - 1` or less
-    over the interval :math:`[0, inf]` with weight function
-    :math:`f(x) = x^{\\alpha} e^{-x}`.
+    quadrature. The sample points are the roots of the n-th degree generalized
+    Laguerre polynomial, :math:`L^{\alpha}_n(x)`.  These sample points and
+    weights correctly integrate polynomials of degree :math:`2n - 1` or less
+    over the interval :math:`[0, \infty]` with weight function
+    :math:`f(x) = x^{\alpha} e^{-x}`.
 
     Parameters
     ----------
@@ -399,8 +399,8 @@ def la_roots(n, alpha, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     m = int(n)
     if n < 1 or n != m:
@@ -454,13 +454,13 @@ def genlaguerre(n, alpha, monic=False):
 
 
 def l_roots(n, mu=False):
-    """Gauss-Laguerre quadrature
+    r"""Gauss-Laguerre quadrature.
 
     Computes the sample points and weights for Gauss-Laguerre quadrature.
-    The sample points are the roots of the `n`th degree Laguerre polynomial,
+    The sample points are the roots of the n-th degree Laguerre polynomial,
     :math:`L_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2*n - 1` or less over the interval
-    :math:`[0, inf]` with weight function :math:`f(x) = e^{-x}`.
+    polynomials of degree :math:`2n - 1` or less over the interval
+    :math:`[0, \infty]` with weight function :math:`f(x) = e^{-x}`.
 
     Parameters
     ----------
@@ -480,8 +480,8 @@ def l_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     numpy.polynomial.laguerre.laggauss
     """
     return la_roots(n, 0.0, mu=mu)
@@ -511,13 +511,13 @@ def laguerre(n, monic=False):
 
 
 def h_roots(n, mu=False):
-    """Gauss-Hermite (physicst's) quadrature
+    r"""Gauss-Hermite (physicst's) quadrature.
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
-    The sample points are the roots of the `n`th degree Hermite polynomial,
+    The sample points are the roots of the n-th degree Hermite polynomial,
     :math:`H_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2*n - 1` or less over the interval
-    :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-x^2}`.
+    polynomials of degree :math:`2n - 1` or less over the interval
+    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-x^2}`.
 
     Parameters
     ----------
@@ -549,9 +549,10 @@ def h_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     numpy.polynomial.hermite.hermgauss
+    he_roots
 
     References
     ----------
@@ -894,13 +895,14 @@ def _newton(n, x_initial, maxit=5):
 
 
 def _h_roots_asy(n):
-    """Gauss-Hermite (physicst's) quadrature for large n
+    r"""Gauss-Hermite (physicst's) quadrature for large n.
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
-    The sample points are the roots of the `n`th degree Hermite polynomial,
+    The sample points are the roots of the n-th degree Hermite polynomial,
     :math:`H_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2*n - 1` or less over the interval
-    :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-x^2}`.
+    polynomials of degree :math:`2n - 1` or less over the interval
+    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-x^2}`.
+
     This method relies on asymptotic expansions which work best for n > 150.
     The algorithm has linear runtime making computation for very large n
     feasible.
@@ -974,13 +976,13 @@ def hermite(n, monic=False):
 
 
 def he_roots(n, mu=False):
-    """Gauss-Hermite (statistician's) quadrature
+    r"""Gauss-Hermite (statistician's) quadrature.
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
-    The sample points are the roots of the `n`th degree Hermite polynomial,
+    The sample points are the roots of the n-th degree Hermite polynomial,
     :math:`He_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2*n - 1` or less over the interval
-    :math:`[-inf, inf]` with weight function :math:`f(x) = e^{-(x/2)^2}`.
+    polynomials of degree :math:`2n - 1` or less over the interval
+    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-(x/2)^2}`.
 
     Parameters
     ----------
@@ -1012,8 +1014,8 @@ def he_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     numpy.polynomial.hermite_e.hermegauss
     """
     m = int(n)
@@ -1065,13 +1067,14 @@ def hermitenorm(n, monic=False):
 
 
 def cg_roots(n, alpha, mu=False):
-    """Gauss-Gegenbauer quadrature
+    r"""Gauss-Gegenbauer quadrature.
 
     Computes the sample points and weights for Gauss-Gegenbauer quadrature.
-    The sample points are the roots of the `n`th degree Gegenbauer polynomial,
-    :math:`C^{\\alpha}_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2*n - 1` or less over the interval
-    :math:`[-1, 1]` with weight function :math:`f(x) = (1-x^2)^{\\alpha-1/2}`.
+    The sample points are the roots of the n-th degree Gegenbauer polynomial,
+    :math:`C^{\alpha}_n(x)`.  These sample points and weights correctly
+    integrate polynomials of degree :math:`2n - 1` or less over the interval
+    :math:`[-1, 1]` with weight function
+    :math:`f(x) = (1 - x^2)^{\alpha - 1/2}`.
 
     Parameters
     ----------
@@ -1093,8 +1096,8 @@ def cg_roots(n, alpha, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1139,12 +1142,12 @@ def gegenbauer(n, alpha, monic=False):
 
 
 def t_roots(n, mu=False):
-    """Gauss-Chebyshev (first kind) quadrature
+    r"""Gauss-Chebyshev (first kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the `n`th degree Chebyshev polynomial of
+    The sample points are the roots of the n-th degree Chebyshev polynomial of
     the first kind, :math:`T_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    integrate polynomials of degree :math:`2n - 1` or less over the interval
     :math:`[-1, 1]` with weight function :math:`f(x) = 1/\sqrt{1 - x^2}`.
 
     Parameters
@@ -1165,8 +1168,8 @@ def t_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     numpy.polynomial.chebyshev.chebgauss
     """
     m = int(n)
@@ -1205,12 +1208,12 @@ def chebyt(n, monic=False):
 
 
 def u_roots(n, mu=False):
-    """Gauss-Chebyshev (second kind) quadrature
+    r"""Gauss-Chebyshev (second kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the `n`th degree Chebyshev polynomial of
+    The sample points are the roots of the n-th degree Chebyshev polynomial of
     the second kind, :math:`U_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    integrate polynomials of degree :math:`2n - 1` or less over the interval
     :math:`[-1, 1]` with weight function :math:`f(x) = \sqrt{1 - x^2}`.
 
     Parameters
@@ -1231,8 +1234,8 @@ def u_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     m = int(n)
     if n < 1 or n != m:
@@ -1261,12 +1264,12 @@ def chebyu(n, monic=False):
 
 
 def c_roots(n, mu=False):
-    """Gauss-Chebyshev (first kind) quadrature
+    r"""Gauss-Chebyshev (first kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the `n`th degree Chebyshev polynomial of
+    The sample points are the roots of the n-th degree Chebyshev polynomial of
     the first kind, :math:`C_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    integrate polynomials of degree :math:`2n - 1` or less over the interval
     :math:`[-2, 2]` with weight function :math:`f(x) = 1/\sqrt{1 - (x/2)^2}`.
 
     Parameters
@@ -1287,8 +1290,8 @@ def c_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     x, w, m = t_roots(n, True)
     x *= 2
@@ -1301,8 +1304,9 @@ def c_roots(n, mu=False):
 
 
 def chebyc(n, monic=False):
-    """Return nth order Chebyshev polynomial of first kind, Cn(x).  Orthogonal
-    over [-2,2] with weight function (1-(x/2)**2)**(-1/2).
+    """Return n-th order Chebyshev polynomial of first kind, :math:`C_n(x)`. 
+    Orthogonal over :math:`[-2, 2]` with weight function
+    :math:`f(x) = 1/\sqrt{1 - (x/2)^2}`
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1328,12 +1332,12 @@ def chebyc(n, monic=False):
 
 
 def s_roots(n, mu=False):
-    """Gauss-Chebyshev (second kind) quadrature
+    r"""Gauss-Chebyshev (second kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the `n`th degree Chebyshev polynomial of
+    The sample points are the roots of the n-th degree Chebyshev polynomial of
     the second kind, :math:`S_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    integrate polynomials of degree :math:`2n - 1` or less over the interval
     :math:`[-2, 2]` with weight function :math:`f(x) = \sqrt{1 - (x/2)^2}`.
 
     Parameters
@@ -1354,8 +1358,8 @@ def s_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     x, w, m = u_roots(n, True)
     x *= 2
@@ -1368,8 +1372,9 @@ def s_roots(n, mu=False):
 
 
 def chebys(n, monic=False):
-    """Return nth order Chebyshev polynomial of second kind, Sn(x).  Orthogonal
-    over [-2,2] with weight function (1-(x/2)**2)**(1/2).
+    r"""Return nth order Chebyshev polynomial of second kind, :math:`S_n(x)`.
+    Orthogonal over :math:`[-2, 2]` with weight function
+    :math:`f(x) = \sqrt{1 - (x/2)^2}`.
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1396,12 +1401,12 @@ def chebys(n, monic=False):
 
 
 def ts_roots(n, mu=False):
-    """Gauss-Chebyshev (first kind, shifted) quadrature
+    r"""Gauss-Chebyshev (first kind, shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the `n`th degree shifted Chebyshev
+    The sample points are the roots of the n-th degree shifted Chebyshev
     polynomial of the first kind, :math:`T_n(x)`.  These sample points and
-    weights correctly integrate polynomials of degree :math:`2*n - 1` or less
+    weights correctly integrate polynomials of degree :math:`2n - 1` or less
     over the interval :math:`[0, 1]` with weight function
     :math:`f(x) = 1/\sqrt{x - x^2}`.
 
@@ -1423,8 +1428,8 @@ def ts_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     xw = t_roots(n, mu)
     return ((xw[0] + 1) / 2,) + xw[1:]
@@ -1447,12 +1452,12 @@ def sh_chebyt(n, monic=False):
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
 def us_roots(n, mu=False):
-    """Gauss-Chebyshev (second kind, shifted) quadrature
+    r"""Gauss-Chebyshev (second kind, shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
-    The sample points are the roots of the `n`th degree shifted Chebyshev
+    The sample points are the roots of the n-th degree shifted Chebyshev
     polynomial of the second kind, :math:`U_n(x)`.  These sample points and
-    weights correctly integrate polynomials of degree :math:`2*n - 1` or less
+    weights correctly integrate polynomials of degree :math:`2n - 1` or less
     over the interval :math:`[0, 1]` with weight function
     :math:`f(x) = \sqrt{x - x^2}`.
 
@@ -1474,8 +1479,8 @@ def us_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     x, w, m = u_roots(n, True)
     x = (x + 1) / 2
@@ -1502,12 +1507,12 @@ def sh_chebyu(n, monic=False):
 
 
 def p_roots(n, mu=False):
-    """Gauss-Legendre quadrature
+    r"""Gauss-Legendre quadrature.
 
     Computes the sample points and weights for Gauss-Legendre quadrature.
-    The sample points are the roots of the `n`th degree Legendre polynomial
+    The sample points are the roots of the n-th degree Legendre polynomial
     :math:`P_n(x)`.  These sample points and weights correctly integrate
-    polynomials of degree :math:`2*n - 1` or less over the interval
+    polynomials of degree :math:`2n - 1` or less over the interval
     :math:`[-1, 1]` with weight function :math:`f(x) = 1.0`.
 
     Parameters
@@ -1528,8 +1533,8 @@ def p_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     numpy.polynomial.legendre.leggauss
     """
     m = int(n)
@@ -1594,12 +1599,12 @@ def legendre(n, monic=False):
 
 
 def ps_roots(n, mu=False):
-    """Gauss-Legendre (shifted) quadrature
+    r"""Gauss-Legendre (shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Legendre quadrature.
-    The sample points are the roots of the `n`th degree shifted Legendre
+    The sample points are the roots of the n-th degree shifted Legendre
     polynomial :math:`P^*_n(x)`.  These sample points and weights correctly
-    integrate polynomials of degree :math:`2*n - 1` or less over the interval
+    integrate polynomials of degree :math:`2n - 1` or less over the interval
     :math:`[0, 1]` with weight function :math:`f(x) = 1.0`.
 
     Parameters
@@ -1620,8 +1625,8 @@ def ps_roots(n, mu=False):
 
     See Also
     --------
-    integrate.quadrature
-    integrate.fixed_quad
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
     """
     x, w = p_roots(n)
     x = (x + 1) / 2
