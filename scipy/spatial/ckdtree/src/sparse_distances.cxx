@@ -142,7 +142,7 @@ sparse_distance_matrix(const ckdtree *self, const ckdtree *other,
         
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
             Rectangle r2(other->m, other->raw_mins, other->raw_maxes);             
-            RectRectDistanceTracker tracker(r1, r2, p, 0, max_distance);
+            RectRectDistanceTracker tracker(self, r1, r2, p, 0, max_distance);
             
             traverse(self, other, results, self->ctree, other->ctree, &tracker);
                                                

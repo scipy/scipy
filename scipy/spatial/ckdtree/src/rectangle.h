@@ -76,9 +76,10 @@ struct MinMaxDist {
      */
 
     static inline void 
-    interval_interval_p(const Rectangle& rect1, const Rectangle& rect2,
-                                 const npy_intp k, const npy_float64 p,
-                                 npy_float64 *min, npy_float64 *max)
+    interval_interval_p(const ckdtree * tree, 
+                        const Rectangle& rect1, const Rectangle& rect2,
+                        const npy_intp k, const npy_float64 p,
+                        npy_float64 *min, npy_float64 *max)
     {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
@@ -90,9 +91,10 @@ struct MinMaxDist {
     }
 
     static inline void 
-    interval_interval_2(const Rectangle& rect1, const Rectangle& rect2,
-                                 const npy_intp k,
-                                 npy_float64 *min, npy_float64 *max)
+    interval_interval_2(const ckdtree * tree,
+                        const Rectangle& rect1, const Rectangle& rect2,
+                        const npy_intp k,
+                        npy_float64 *min, npy_float64 *max)
     {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
@@ -109,8 +111,9 @@ struct MinMaxDist {
     /* These should be used only for p == infinity */
 
     static inline void
-    rect_rect_p_inf(const Rectangle& rect1, const Rectangle& rect2,
-                                 npy_float64 *min, npy_float64 *max)
+    rect_rect_p_inf(const ckdtree * tree, 
+                    const Rectangle& rect1, const Rectangle& rect2,
+                    npy_float64 *min, npy_float64 *max)
     {
         /* Compute the minimum/maximum distance between points in two hyperrectangles. */
         npy_intp i;
@@ -222,6 +225,7 @@ const npy_intp GREATER = 2;
 template<typename MinMaxDist, typename Objtype1> 
     struct BaseObjRectDistanceTracker {
     
+    const ckdtree * tree;
     Objtype1 rect1; 
     Rectangle rect2;
     npy_float64 p; 
@@ -243,15 +247,14 @@ template<typename MinMaxDist, typename Objtype1>
         stack_max_size = new_max_size;
     };
     
-    BaseObjRectDistanceTracker(const Objtype1& _rect1, const Rectangle& _rect2,
+    BaseObjRectDistanceTracker(const ckdtree *_tree, 
+                 const Objtype1& _rect1, const Rectangle& _rect2,
                  const npy_float64 _p, const npy_float64 eps, 
                  const npy_float64 _upper_bound)
-        : rect1(_rect1), rect2(_rect2), stack_arr(8) {
+        : tree(_tree), rect1(_rect1), rect2(_rect2), stack_arr(8), infinity(::infinity) {
     
         npy_float64 min, max;
 
-        infinity = ::infinity;
-    
         if (rect1.m != rect2.m) {
             const char *msg = "rect1 and rect2 have different dimensions";
             throw std::invalid_argument(msg); // raises ValueError
@@ -288,13 +291,13 @@ template<typename MinMaxDist, typename Objtype1>
             min_distance = 0.;
             max_distance = 0.;
             for(npy_intp i=0; i<rect1.m; ++i) {
-                MinMaxDist::interval_interval_2(rect1, rect2, i, &min, &max);
+                MinMaxDist::interval_interval_2(tree, rect1, rect2, i, &min, &max);
                 min_distance += min;
                 max_distance += max;
             }
         }
         else if (p == infinity) {
-            MinMaxDist::rect_rect_p_inf(rect1, rect2, &min, &max);
+            MinMaxDist::rect_rect_p_inf(tree, rect1, rect2, &min, &max);
             min_distance = min;
             max_distance = max;
         }
@@ -302,7 +305,7 @@ template<typename MinMaxDist, typename Objtype1>
             min_distance = 0.;
             max_distance = 0.;
             for(npy_intp i=0; i<rect1.m; ++i) {
-                MinMaxDist::interval_interval_p(rect1, rect2, i, p, &min, &max);
+                MinMaxDist::interval_interval_p(tree, rect1, rect2, i, p, &min, &max);
                 min_distance += min;
                 max_distance += max;
             }
@@ -337,12 +340,12 @@ template<typename MinMaxDist, typename Objtype1>
 
         /* update min/max distances */
         if (NPY_LIKELY(p == 2.0)) {
-            MinMaxDist::interval_interval_2(rect1, rect2, split_dim, &min, &max);
+            MinMaxDist::interval_interval_2(tree, rect1, rect2, split_dim, &min, &max);
             min_distance -= min;
             max_distance -= max;
         }
         else if (p != infinity) {
-            MinMaxDist::interval_interval_p(rect1, rect2, split_dim, p, &min, &max);
+            MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
             min_distance -= min;
             max_distance -= max;
         }
@@ -353,17 +356,17 @@ template<typename MinMaxDist, typename Objtype1>
             rect->mins[split_dim] = split_val;
 
         if (NPY_LIKELY(p == 2.0)) {
-            MinMaxDist::interval_interval_2(rect1, rect2, split_dim, &min, &max);
+            MinMaxDist::interval_interval_2(tree, rect1, rect2, split_dim, &min, &max);
             min_distance += min;
             max_distance += max;
         }
         else if (p != infinity) {
-            MinMaxDist::interval_interval_p(rect1, rect2, split_dim, p, &min, &max);
+            MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
             min_distance += min;
             max_distance += max;
         }
         else {
-            MinMaxDist::rect_rect_p_inf(rect1, rect2, &min, &max);
+            MinMaxDist::rect_rect_p_inf(tree, rect1, rect2, &min, &max);
             min_distance = min;
             max_distance = max;
         }     

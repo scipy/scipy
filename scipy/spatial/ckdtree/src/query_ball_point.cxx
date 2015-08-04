@@ -111,7 +111,7 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
                 const npy_intp m = self->m;
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);             
                 Point     point(m, x + i * m);
-                PointRectDistanceTracker tracker(point, rect, p, eps, r);
+                PointRectDistanceTracker tracker(self, point, rect, p, eps, r);
                 traverse_checking(
                     self, results[i], self->ctree, &tracker);
             }

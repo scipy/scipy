@@ -216,7 +216,7 @@ query_pairs(const ckdtree *self,
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
             Rectangle r2(self->m, self->raw_mins, self->raw_maxes);
                                     
-            RectRectDistanceTracker tracker(r1, r2, p, eps, r);
+            RectRectDistanceTracker tracker(self, r1, r2, p, eps, r);
             
             traverse_checking(self, results, self->ctree, self->ctree, 
                 &tracker);
