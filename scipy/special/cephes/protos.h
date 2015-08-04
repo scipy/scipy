@@ -163,26 +163,5 @@ extern double zeta(double x, double q);
 extern double zetac(double x);
 extern int drand(double *a);
 
-/* polyn.c */
-extern void polini(int maxdeg);
-extern void polprt(double a[], int na, int d);
-extern void polclr(double *a, int n);
-extern void polmov(double *a, int na, double *b);
-extern void polmul(double a[], int na, double b[], int nb, double c[]);
-extern void poladd(double a[], int na, double b[], int nb, double c[]);
-extern void polsub(double a[], int na, double b[], int nb, double c[]);
-extern int poldiv(double a[], int na, double b[], int nb, double c[]);
-extern void polsbt(double a[], int na, double b[], int nb, double c[]);
-extern double poleva(double a[], int na, double x);
-
-/* polmisc.c */
-extern void polatn(double num[], double den[], double ans[], int nn);
-extern void polsqt(double pol[], double ans[], int nn);
-extern void polsin(double x[], double y[], int nn);
-extern void polcos(double x[], double y[], int nn);
-
-/* polrt.c */
-int polrt(double[], double[], int, cmplx[]);
-
 double yv(double v, double x);
 #endif
