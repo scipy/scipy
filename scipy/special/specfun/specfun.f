@@ -5713,6 +5713,7 @@ C
 10            HG=HG+R
         ENDIF
         IF (HG.NE.0.0D0) RETURN
+C       DLMF 13.2.39
         IF (X.LT.0.0D0) THEN
            A=B-A
            A0=A
@@ -5721,6 +5722,7 @@ C
         NL=0
         LA=0
         IF (A.GE.2.0D0) THEN
+C       preparing terms for DLMF 13.3.1
            NL=1
            LA=INT(A)
            A=A-LA-1.0D0
@@ -5735,9 +5737,14 @@ C
               DO 15 J=1,500
                  RG=RG*(A+J-1.0D0)/(J*(B+J-1.0D0))*X
                  HG=HG+RG
-                 IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) GO TO 25
+                 IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) THEN
+C       DLMF 13.2.39 (cf. above)
+                    IF (X0.LT.0.0D0) HG=HG*DEXP(X0)
+                    GO TO 25
+                 ENDIF
 15            CONTINUE
            ELSE
+C       DLMF 13.7.2 & 13.2.4, SUM2 corresponds to first sum
               Y=0.0D0
               CALL CGAMA(A,Y,0,TAR,TAI)
               CTA = DCMPLX(TAR, TAI)
@@ -5757,21 +5764,27 @@ C
                  R2=-R2*(B-A+I-1.0D0)*(A-I)/(X*I)
                  SUM1=SUM1+R1
 20               SUM2=SUM2+R2
-              HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
-              HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
+              IF (X0.GE.0.0D0) THEN
+                 HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
+                 HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
+              ELSE
+C       DLMF 13.2.39 (cf. above)
+                 HG1=DBLE(CDEXP(CTB-CTBA+X0))*X**(-A)*DCOS(PI*A)*SUM1
+                 HG2=DBLE(CDEXP(CTB-CTA))*X**(A-B)*SUM2
+              ENDIF
               HG=HG1+HG2
            ENDIF
 25         IF (N.EQ.0) Y0=HG
            IF (N.EQ.1) Y1=HG
 30      CONTINUE
         IF (A0.GE.2.0D0) THEN
+C       DLMF 13.3.1
            DO 35 I=1,LA-1
               HG=((2.0D0*A-B+X)*Y1+(B-A)*Y0)/A
               Y0=Y1
               Y1=HG
 35            A=A+1.0D0
         ENDIF
-        IF (X0.LT.0.0D0) HG=HG*DEXP(X0)
         A=A1
         X=X0
         RETURN
