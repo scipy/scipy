@@ -207,7 +207,7 @@ def setup_package():
         description=DOCLINES[0],
         long_description="\n".join(DOCLINES[2:]),
         url="http://www.scipy.org",
-        download_url="http://sourceforge.net/projects/scipy/files/scipy/",
+        download_url="https://github.com/scipy/scipy/releases",
         license='BSD',
         cmdclass=cmdclass,
         classifiers=[_f for _f in CLASSIFIERS.split('\n') if _f],

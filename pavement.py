@@ -171,9 +171,9 @@ elif sys.platform == "darwin":
 else:
     WINE_PY26 = [os.environ['HOME'] + "/.wine/drive_c/Python26/python.exe"]
     WINE_PY27 = [os.environ['HOME'] + "/.wine/drive_c/Python27/python.exe"]
-    WINE_PY32 = [os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"],
-    WINE_PY33 = [os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"],
-    WINE_PY34 = [os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"],
+    WINE_PY32 = [os.environ['HOME'] + "/.wine/drive_c/Python32/python.exe"]
+    WINE_PY33 = [os.environ['HOME'] + "/.wine/drive_c/Python33/python.exe"]
+    WINE_PY34 = [os.environ['HOME'] + "/.wine/drive_c/Python34/python.exe"]
     WINDOWS_ENV = os.environ
     MAKENSIS = ["wine", "makensis"]
 WINE_PYS = {'3.4':WINE_PY34, '3.3':WINE_PY33, '3.2':WINE_PY32,
@@ -410,7 +410,7 @@ def bdist_superpack(options):
         except OSError:
             # May be due to dev version having 'Unknown' in name, if git isn't
             # found.  This can be the case when compiling under Wine.
-            ix = source.find('.dev0+') + 5
+            ix = source.find('.dev0+') + 6
             source = source[:ix] + 'Unknown' + source[ix+7:]
             os.rename(source, target)
 
@@ -518,12 +518,13 @@ def _build_mpkg(pyver):
     numverstr = ".".join(["%i" % i for i in numver])
     if pyver < "3.3":
         # Numpy < 1.7 doesn't support Python 3.3
-        if not numver == (1, 5, 1):
-            raise ValueError("Scipy 0.14.x should be built against numpy "
-                             "1.5.1, (detected %s)" % numverstr)
+        if not numver == (1, 6, 2):
+            raise ValueError("Scipy 0.17.x should be built against numpy "
+                             "1.6.2, (detected %s)" % numverstr)
     else:
-        raise ValueError("Scipy 0.14.x should be built against numpy "
-                         "1.7.1, (detected %s) for Python >= 3.3" % numverstr)
+        if not numver == (1, 7, 2):
+            raise ValueError("Scipy 0.17.x should be built against numpy "
+                             "1.7.2, (detected %s) for Python >= 3.3" % numverstr)
 
     prepare_static_gfortran_runtime("build")
     # account for differences between Python 2.7.1 versions from python.org
