@@ -774,10 +774,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         vres = NULL
         vvres = NULL
         
-        if self.boxsize is not None:
-            # FIXME: implement the periodic query
-            raise NotImplementedError
-
         try:
                
             x = np.asarray(x, dtype=np.float64)
@@ -923,10 +919,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             list results
             list tmp
 
-        if self.boxsize is not None:
-            # FIXME: implement the periodic query
-            raise NotImplementedError
-
         # Make sure trees are compatible
         if self.m != other.m:
             raise ValueError("Trees passed to query_ball_tree have different "
@@ -1009,10 +1001,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                  
         cdef ordered_pairs c
 
-        if self.boxsize is not None:
-            # FIXME: implement the periodic query
-            raise NotImplementedError
-
         results = ordered_pairs()
         query_pairs(<ckdtree*> self, r, p, eps, results.buf)
         
@@ -1063,10 +1051,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             np.intp_t n_queries, i
             np.ndarray[np.float64_t, ndim=1, mode="c"] real_r
             np.ndarray[np.intp_t, ndim=1, mode="c"] results, idx
-
-        if self.boxsize is not None:
-            # FIXME: implement the periodic query
-            raise NotImplementedError
 
         # Make sure trees are compatible
         if self.m != other.m:
@@ -1143,10 +1127,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         
         cdef coo_entries res
 
-        if self.boxsize is not None:
-            # FIXME: implement the periodic query
-            raise NotImplementedError
-        
         # Make sure trees are compatible
         if self.m != other.m:
             raise ValueError("Trees passed to sparse_distance_matrix have "
