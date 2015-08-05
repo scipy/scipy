@@ -15,7 +15,8 @@ def distance_box(a, b, p, boxsize):
     diff = a - b
     diff[diff > 0.5 * boxsize] -= boxsize
     diff[diff < -0.5 * boxsize] += boxsize
-    return minkowski_distance(diff, 0, p)
+    d = minkowski_distance(diff, 0, p)
+    return d
 
 class ConsistencyTests:
     def distance(self, a, b, p):
@@ -311,6 +312,21 @@ class test_random_ball_compiled(ball_consistency):
         self.eps = 0
         self.d = 0.2
 
+class test_random_ball_compiled_periodic(ball_consistency):
+    def distance(self, a, b, p):
+        return distance_box(a, b, p, 1.0)
+
+    def setUp(self):
+        n = 100
+        m = 4
+        np.random.seed(1234)
+        self.data = np.random.uniform(size=(n,m))
+        self.T = cKDTree(self.data,leafsize=2, boxsize=1)
+        self.x = np.ones(m) * 0.1
+        self.p = 2.
+        self.eps = 0
+        self.d = 0.2
+
 
 class test_random_ball_approx(test_random_ball):
 
@@ -323,6 +339,12 @@ class test_random_ball_approx_compiled(test_random_ball_compiled):
 
     def setUp(self):
         test_random_ball_compiled.setUp(self)
+        self.eps = 0.1
+
+class test_random_ball_approx_compiled_periodic(test_random_ball_compiled_periodic):
+
+    def setUp(self):
+        test_random_ball_compiled_periodic.setUp(self)
         self.eps = 0.1
 
 
@@ -339,6 +361,12 @@ class test_random_ball_far_compiled(test_random_ball_compiled):
         test_random_ball_compiled.setUp(self)
         self.d = 2.
 
+class test_random_ball_far_compiled_periodic(test_random_ball_compiled_periodic):
+
+    def setUp(self):
+        test_random_ball_compiled_periodic.setUp(self)
+        self.d = 2.
+
 
 class test_random_ball_l1(test_random_ball):
 
@@ -353,6 +381,12 @@ class test_random_ball_l1_compiled(test_random_ball_compiled):
         test_random_ball_compiled.setUp(self)
         self.p = 1
 
+class test_random_ball_l1_compiled_periodic(test_random_ball_compiled_periodic):
+
+    def setUp(self):
+        test_random_ball_compiled_periodic.setUp(self)
+        self.p = 1
+
 
 class test_random_ball_linf(test_random_ball):
 
@@ -360,11 +394,10 @@ class test_random_ball_linf(test_random_ball):
         test_random_ball.setUp(self)
         self.p = np.inf
 
-
-class test_random_ball_linf_compiled(test_random_ball_compiled):
+class test_random_ball_linf_compiled_periodic(test_random_ball_compiled_periodic):
 
     def setUp(self):
-        test_random_ball_compiled.setUp(self)
+        test_random_ball_compiled_periodic.setUp(self)
         self.p = np.inf
 
 
@@ -458,6 +491,29 @@ class test_two_random_trees_compiled(two_trees_consistency):
         self.eps = 0
         self.d = 0.2
 
+class test_two_random_trees_compiled_periodic(two_trees_consistency):
+    def distance(self, a, b, p):
+        return distance_box(a, b, p, 1.0)
+
+    def setUp(self):
+        n = 50
+        m = 4
+        np.random.seed(1234)
+        self.data1 = np.random.uniform(size=(n,m))
+        self.T1 = cKDTree(self.data1,leafsize=2, boxsize=1.0)
+        self.data2 = np.random.uniform(size=(n,m))
+        self.T2 = cKDTree(self.data2,leafsize=2, boxsize=1.0)
+        self.p = 2.
+        self.eps = 0
+        self.d = 0.2
+
+    def test_found_all(self):
+        r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
+        for i, l in enumerate(r):
+            c = np.ones(self.T2.n,dtype=bool)
+            c[l] = False
+            d = self.distance(self.data2[c],self.data1[i],self.p)
+            assert_(np.all(self.distance(self.data2[c],self.data1[i],self.p) >= self.d/(1.+self.eps)))
 
 class test_two_random_trees_far(test_two_random_trees):
 
@@ -472,6 +528,12 @@ class test_two_random_trees_far_compiled(test_two_random_trees_compiled):
         test_two_random_trees_compiled.setUp(self)
         self.d = 2
 
+class test_two_random_trees_far_compiled_periodic(test_two_random_trees_compiled_periodic):
+
+    def setUp(self):
+        test_two_random_trees_compiled_periodic.setUp(self)
+        self.d = 2
+
 
 class test_two_random_trees_linf(test_two_random_trees):
 
@@ -484,6 +546,12 @@ class test_two_random_trees_linf_compiled(test_two_random_trees_compiled):
 
     def setUp(self):
         test_two_random_trees_compiled.setUp(self)
+        self.p = np.inf
+
+class test_two_random_trees_linf_compiled_periodic(test_two_random_trees_compiled_periodic):
+
+    def setUp(self):
+        test_two_random_trees_compiled_periodic.setUp(self)
         self.p = np.inf
 
 
@@ -537,7 +605,25 @@ def test_distance_vectorization():
     assert_equal(minkowski_distance(x,y).shape,(10,7))
 
 
-class test_count_neighbors:
+class count_neighbors_consistency:
+    def test_one_radius(self):
+        r = 0.2
+        assert_equal(self.T1.count_neighbors(self.T2, r),
+                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
+
+    def test_large_radius(self):
+        r = 1000
+        assert_equal(self.T1.count_neighbors(self.T2, r),
+                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
+
+    def test_multiple_radius(self):
+        rs = np.exp(np.linspace(np.log(0.01),np.log(10),3))
+        results = self.T1.count_neighbors(self.T2, rs)
+        assert_(np.all(np.diff(results) >= 0))
+        for r,result in zip(rs, results):
+            assert_equal(self.T1.count_neighbors(self.T2, r), result)
+
+class test_count_neighbors(count_neighbors_consistency):
 
     def setUp(self):
         n = 50
@@ -546,25 +632,8 @@ class test_count_neighbors:
         self.T1 = KDTree(np.random.randn(n,m),leafsize=2)
         self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
 
-    def test_one_radius(self):
-        r = 0.2
-        assert_equal(self.T1.count_neighbors(self.T2, r),
-                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
 
-    def test_large_radius(self):
-        r = 1000
-        assert_equal(self.T1.count_neighbors(self.T2, r),
-                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
-
-    def test_multiple_radius(self):
-        rs = np.exp(np.linspace(np.log(0.01),np.log(10),3))
-        results = self.T1.count_neighbors(self.T2, rs)
-        assert_(np.all(np.diff(results) >= 0))
-        for r,result in zip(rs, results):
-            assert_equal(self.T1.count_neighbors(self.T2, r), result)
-
-
-class test_count_neighbors_compiled:
+class test_count_neighbors_compiled(count_neighbors_consistency):
 
     def setUp(self):
         n = 50
@@ -572,23 +641,6 @@ class test_count_neighbors_compiled:
         np.random.seed(1234)
         self.T1 = cKDTree(np.random.randn(n,m),leafsize=2)
         self.T2 = cKDTree(np.random.randn(n,m),leafsize=2)
-
-    def test_one_radius(self):
-        r = 0.2
-        assert_equal(self.T1.count_neighbors(self.T2, r),
-                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
-
-    def test_large_radius(self):
-        r = 1000
-        assert_equal(self.T1.count_neighbors(self.T2, r),
-                np.sum([len(l) for l in self.T1.query_ball_tree(self.T2,r)]))
-
-    def test_multiple_radius(self):
-        rs = np.exp(np.linspace(np.log(0.01),np.log(10),3))
-        results = self.T1.count_neighbors(self.T2, rs)
-        assert_(np.all(np.diff(results) >= 0))
-        for r,result in zip(rs, results):
-            assert_equal(self.T1.count_neighbors(self.T2, r), result)
 
 
 class sparse_distance_matrix_consistency:
