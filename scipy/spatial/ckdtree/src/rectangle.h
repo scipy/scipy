@@ -310,7 +310,7 @@ struct MinMaxDistBox {
             if (NPY_LIKELY(p==2.)) {
                 r += r1 * r1;
             } else if (p==infinity) {
-                r = dmax(r,r1);
+                r = dmax(r,dabs(r1));
             } else if (p==1.) {
                 r += dabs(r1);
             } else {
