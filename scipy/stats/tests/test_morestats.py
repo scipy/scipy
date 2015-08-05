@@ -915,6 +915,10 @@ class TestBoxcox(TestCase):
     def test_empty(self):
         assert_(stats.boxcox([]).shape == (0,))
 
+    def test_data_dimensionality_validation(self):
+        for x in np.array(3), [[1.0]], np.array([[1.0, 2.0, 3.0]]):
+            assert_raises(ValueError, stats.boxcox, x)
+
 
 class TestBoxcoxNormmax(TestCase):
     def setUp(self):
