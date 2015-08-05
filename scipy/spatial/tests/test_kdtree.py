@@ -327,6 +327,23 @@ class test_random_ball_compiled_periodic(ball_consistency):
         self.eps = 0
         self.d = 0.2
 
+    def test_in_ball_outside(self):
+        l = self.T.query_ball_point(self.x + 1.0, self.d, p=self.p, eps=self.eps)
+        for i in l:
+            assert_(self.distance(self.data[i],self.x,self.p) <= self.d*(1.+self.eps))
+        l = self.T.query_ball_point(self.x - 1.0, self.d, p=self.p, eps=self.eps)
+        for i in l:
+            assert_(self.distance(self.data[i],self.x,self.p) <= self.d*(1.+self.eps))
+
+    def test_found_all_outside(self):
+        c = np.ones(self.T.n,dtype=bool)
+        l = self.T.query_ball_point(self.x + 1.0, self.d, p=self.p, eps=self.eps)
+        c[l] = False
+        assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
+
+        l = self.T.query_ball_point(self.x - 1.0, self.d, p=self.p, eps=self.eps)
+        c[l] = False
+        assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
 
 class test_random_ball_approx(test_random_ball):
 
@@ -506,14 +523,6 @@ class test_two_random_trees_compiled_periodic(two_trees_consistency):
         self.p = 2.
         self.eps = 0
         self.d = 0.2
-
-    def test_found_all(self):
-        r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
-        for i, l in enumerate(r):
-            c = np.ones(self.T2.n,dtype=bool)
-            c[l] = False
-            d = self.distance(self.data2[c],self.data1[i],self.p)
-            assert_(np.all(self.distance(self.data2[c],self.data1[i],self.p) >= self.d/(1.+self.eps)))
 
 class test_two_random_trees_far(test_two_random_trees):
 

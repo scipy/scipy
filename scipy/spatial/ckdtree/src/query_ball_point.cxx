@@ -110,12 +110,17 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
             for (npy_intp i=0; i < n_queries; ++i) {
                 const npy_intp m = self->m;
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);             
-                Rectangle point(m, x + i * m, x + i * m);
                 if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
+                    Rectangle point(m, x + i * m, x + i * m);
                     RectRectDistanceTracker<MinMaxDist> tracker(self, point, rect, p, eps, r);
                     traverse_checking(
                         self, results[i], self->ctree, &tracker);
                 } else {
+                    Rectangle point(m, x + i * m, x + i * m);
+                    int j;
+                    for(j=0; j<m; ++j) {
+                        point.maxes[j] = point.mins[j] = _wrap(point.mins[j], self->raw_boxsize_data[j]);
+                    }
                     RectRectDistanceTracker<MinMaxDistBox> tracker(self, point, rect, p, eps, r);
                     traverse_checking(
                         self, results[i], self->ctree, &tracker);
