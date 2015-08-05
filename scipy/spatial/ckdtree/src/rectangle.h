@@ -217,7 +217,7 @@ struct MinMaxDistBox {
             } else {
                 /* min below, max above */
                 *realmax = half;
-                *realmin = fmin(min, full - max);
+                *realmin = dmin(min, full - max);
             }
         } else {
             /* pass though 0 */
@@ -350,6 +350,10 @@ struct MinMaxDistBox {
  * dist_tracker.push_greater_of(1, node1)
  * do_something(node1.greater, dist_tracker)
  * dist_tracker.pop()
+ *
+ * Notice that Point is just a reduced case of Rectangle where
+ * mins == maxes. 
+ *
  */
  
 struct RR_stack_item {
@@ -393,9 +397,8 @@ template<typename MinMaxDist>
                  const npy_float64 _upper_bound)
         : tree(_tree), rect1(_rect1), rect2(_rect2), stack_arr(8) {
     
-        npy_float64 infinity = ::infinity;
-
-        npy_float64 min, max;
+        const npy_float64 infinity = ::infinity; 
+        //FIXME: Why is this line not in other member functions?
 
         if (rect1.m != rect2.m) {
             const char *msg = "rect1 and rect2 have different dimensions";
@@ -433,12 +436,16 @@ template<typename MinMaxDist>
             min_distance = 0.;
             max_distance = 0.;
             for(npy_intp i=0; i<rect1.m; ++i) {
+                npy_float64 min, max;
+
                 MinMaxDist::interval_interval_2(tree, rect1, rect2, i, &min, &max);
                 min_distance += min;
                 max_distance += max;
             }
         }
         else if (p == infinity) {
+            npy_float64 min, max;
+
             MinMaxDist::rect_rect_p_inf(tree, rect1, rect2, &min, &max);
             min_distance = min;
             max_distance = max;
@@ -447,6 +454,8 @@ template<typename MinMaxDist>
             min_distance = 0.;
             max_distance = 0.;
             for(npy_intp i=0; i<rect1.m; ++i) {
+                npy_float64 min, max;
+
                 MinMaxDist::interval_interval_p(tree, rect1, rect2, i, p, &min, &max);
                 min_distance += min;
                 max_distance += max;
@@ -459,7 +468,6 @@ template<typename MinMaxDist>
               const npy_intp split_dim, const npy_float64 split_val) {
         
         const npy_float64 p = this->p;
-        npy_float64 min, max;
         
         Rectangle *rect;
         if (which == 1)
@@ -482,11 +490,15 @@ template<typename MinMaxDist>
 
         /* update min/max distances */
         if (NPY_LIKELY(p == 2.0)) {
+            npy_float64 min, max;
+
             MinMaxDist::interval_interval_2(tree, rect1, rect2, split_dim, &min, &max);
             min_distance -= min;
             max_distance -= max;
         }
         else if (p != infinity) {
+            npy_float64 min, max;
+
             MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
             min_distance -= min;
             max_distance -= max;
@@ -498,16 +510,22 @@ template<typename MinMaxDist>
             rect->mins[split_dim] = split_val;
 
         if (NPY_LIKELY(p == 2.0)) {
+            npy_float64 min, max;
+
             MinMaxDist::interval_interval_2(tree, rect1, rect2, split_dim, &min, &max);
             min_distance += min;
             max_distance += max;
         }
         else if (p != infinity) {
+            npy_float64 min, max;
+
             MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
             min_distance += min;
             max_distance += max;
         }
         else {
+            npy_float64 min, max;
+
             MinMaxDist::rect_rect_p_inf(tree, rect1, rect2, &min, &max);
             min_distance = min;
             max_distance = max;

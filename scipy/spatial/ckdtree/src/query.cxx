@@ -358,7 +358,7 @@ query_single_point(const ckdtree *self,
             // set up children for searching
             // inf2 will be pushed to the queue
             if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
-                memcpy(inf2->side_distances(), inf->side_distances(), sizeof(npy_float64) * ( m)); 
+                std::memcpy(inf2->side_distances(), inf->side_distances(), sizeof(npy_float64) * ( m)); 
                 /*
                  * non periodic : the 'near' node is know from the
                  * relative distance to the split, and
@@ -385,7 +385,7 @@ query_single_point(const ckdtree *self,
                 }
              
             } else {
-                memcpy(inf2->buf, inf->buf, sizeof(npy_float64) * ( 3 * m)); 
+                std::memcpy(inf2->buf, inf->buf, sizeof(npy_float64) * ( 3 * m)); 
                 /* 
                  * for periodic queries, we do not know which node is closer.
                  * thus re-claculate inf.
