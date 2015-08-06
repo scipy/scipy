@@ -1302,8 +1302,7 @@ def splantider(tck, n=1):
         c = np.cumsum(c[:-k-1] * dt, axis=0) / (k + 1)
         c = np.r_[np.zeros((1,) + c.shape[1:]),
                   c,
-                  [c[-1]] * (k+2)
-        ]
+                  [c[-1]] * (k+2)]
         # New knots
         t = np.r_[t[0], t, t[-1]]
         k += 1
