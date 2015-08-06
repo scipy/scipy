@@ -425,7 +425,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
     elif statistic == 'median':
         result.fill(np.nan)
         for i in np.unique(xy):
-            result[i] = np.median(values[xy == i])
+            bin_values = values[xy == i]
+            if bin_values.size > 0:
+                result[i] = np.median(bin_values)
     elif callable(statistic):
         with warnings.catch_warnings():
             # Numpy generates a warnings for mean/std/... with empty list
