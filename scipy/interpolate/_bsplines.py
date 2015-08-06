@@ -430,7 +430,7 @@ class BSpline(object):
         c = self.c
         ct = len(self.t) - len(c)
         if ct > 0:
-            c = np.r_[c, [0]*ct]
+            c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         t, c, k = _fitpack_impl.splantider((self.t, c, self.k), 1)
 
         # prepare x & c

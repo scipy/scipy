@@ -509,7 +509,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         warnings.warn(RuntimeWarning(_mess))
     if ier > 0 and not full_output:
         if ier in [1, 2, 3]:
-            warnings.warn(RuntimeWarning(+_iermess[ier][0]))
+            warnings.warn(RuntimeWarning(_iermess[ier][0]))
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -1303,7 +1303,7 @@ def splantider(tck, n=1):
         c = np.r_[np.zeros((1,) + c.shape[1:]),
                   c,
                   [c[-1]] * (k+2)
-                  ]
+        ]
         # New knots
         t = np.r_[t[0], t, t[-1]]
         k += 1

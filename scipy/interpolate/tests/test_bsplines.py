@@ -1,15 +1,16 @@
 import numpy as np
 from numpy.testing import (run_module_suite, TestCase, assert_equal,
         assert_allclose, assert_raises, assert_)
-from numpy.testing.decorators import skipif, knownfailureif
+from numpy.testing.decorators import knownfailureif
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
-         sproot, splint, spalde)
+         sproot, splint, spalde, insert)
 import scipy.linalg as sl
 
 from scipy.interpolate._bsplines import _not_a_knot, _augknt
 import scipy.interpolate._fitpack_impl as _impl
+
 
 class TestBSpline(TestCase):
 
@@ -481,6 +482,218 @@ def _make_multiples(b):
     yield BSpline(t1, c, k)
 
 
+class TestInterop(object):
+    #
+    # Test that FITPACK-based spl* functions can deal with BSpline objects
+    #
+    def __init__(self):
+        xx = np.linspace(0, 4.*np.pi, 41)
+        yy = np.cos(xx)
+        b = make_interp_spline(xx, yy)
+        self.tck = (b.t, b.c, b.k)
+        self.xx, self.yy, self.b = xx, yy, b
+
+        self.xnew = np.linspace(0, 4.*np.pi, 21)
+
+        c2 = np.c_[b.c, b.c, b.c]
+        self.c2 = np.dstack((c2, c2))
+        self.b2 = BSpline(b.t, self.c2, b.k)
+
+    def test_splev(self):
+        xnew, b, b2 = self.xnew, self.b, self.b2
+
+        # check that splev works with 1D array of coefficients
+        assert_allclose(splev(xnew, b),
+                        b(xnew), atol=1e-15, rtol=1e-15)
+
+        # scalar `x` is handled
+        ynew = [splev(x, b) for x in xnew]
+        assert_allclose(ynew, b(xnew), atol=1e-15, rtol=1e-15)
+
+        # with n-D coefficients, there's a quirck.
+        # If everything is done with splrep/splprep and splev, there are no
+        # issues: it's consistent and backwards compatible.
+        # (see also test_splrep and test_splprep below)
+        # Constructing a BSpline instance and __call__-ing it is also fine.
+        # But if the two are mixed, some transposing is necessary:
+        res_splev, res_b2 = splev(xnew, b2), b2(xnew)
+
+        assert_equal(np.shape(res_b2), (xnew.size,) + b2.c.shape[1:])
+        assert_equal(np.shape(res_splev), b2.c.shape[1:] + (xnew.size,))
+
+        # check also values
+        sh = tuple(range(1, res_b2.ndim)) + (0,)
+        assert_allclose(res_b2.transpose(sh), res_splev, atol=1e-15)
+
+        # Here's the relation between using a BSpline object and
+        # its tck-tuple representation:
+        c2r = b2.c.transpose(sh)  # make interp axis last
+        res_tck = splev(xnew, (b2.t, c2r, b2.k))
+        assert_allclose(res_tck, res_splev, atol=1e-15)
+
+    def test_splrep(self):
+        x, y = self.xx, self.yy
+        # test that "new" splrep is equivalent to the "old" one
+        b = splrep(x, y)
+        t, c, k = _impl.splrep(x, y)
+        assert_allclose(b.t, t, atol=1e-15)
+        assert_allclose(b.c, c, atol=1e-15)
+        assert_equal(b.k, k)
+
+        # also cover the `full_output=True` branch
+        b_f, _, _, _ = splrep(x, y, full_output=True)
+        assert_allclose(b_f.t, t, atol=1e-15)
+        assert_allclose(b_f.c, c, atol=1e-15)
+        assert_equal(b_f.k, k)
+
+        # test that the result of splrep roundtrips with splev:
+        # evaluate the spline on the original `x` points
+        yy = splev(x, b)
+        yy1 = splev(x, (t, c, k))
+        assert_allclose(y, yy, atol=1e-15)
+        assert_allclose(y, yy1, atol=1e-15)
+
+        # test that both "old" and "new" splrep raise for an n-D ``y`` array
+        # with n > 1
+        y2 = np.c_[y, y]
+        assert_raises(Exception, splrep, x, y2)
+        assert_raises(Exception, _impl.splrep, x, y2)
+
+    def test_splprep(self):
+        x = np.arange(15).reshape((3, 5))
+        b, u = splprep(x)
+        tck, u1 = _impl.splprep(x)
+
+        # test the roundtrip with splev for both "old" and "new" output
+        assert_allclose(u, u1, atol=1e-15)
+        assert_allclose(splev(u, b), x, atol=1e-15)
+        assert_allclose(splev(u, tck), x, atol=1e-15)
+
+        # cover the ``full_output=True`` branch
+        (b_f, u_f), _, _, _ = splprep(x, full_output=True)
+
+        assert_allclose(u, u_f, atol=1e-15)
+        assert_allclose(splev(u, b_f), x, atol=1e-15)
+
+        # test that both "old" and "new" code paths raise for x.ndim > 2
+        x1 = np.arange(3*4*5).reshape((3, 4, 5))
+        assert_raises(ValueError, splprep, x1)
+        assert_raises(ValueError, _impl.splprep, x1)
+
+    def test_sproot(self):
+        b, b2 = self.b, self.b2
+        roots = np.array([0.5, 1.5, 2.5, 3.5])*np.pi
+        # sproot accepts a BSpline obj w/ 1D coef array
+        assert_allclose(sproot(b), roots, atol=1e-7, rtol=1e-7)
+        assert_allclose(sproot((b.t, b.c, b.k)), roots, atol=1e-7, rtol=1e-7)
+
+        # ... and deals with trailing dimensions if coef array is n-D
+        r = sproot(b2, mest=50)
+        r = np.asarray(r)
+
+        assert_equal(r.shape, (3, 2, 4))
+        assert_equal(r - roots, 0)
+
+        # and legacy behavior is preserved for a tck tuple w/ n-D coef
+        c2r = b2.c.transpose(1, 2, 0)
+        rr = np.asarray(sproot((b2.t, c2r, b2.k), mest=50))
+        assert_equal(rr.shape, (3, 2, 4))
+        assert_equal(rr - roots, 0)
+
+    def test_splint(self):
+        # test that splint accepts BSpline objects
+        b, tck, b2 = self.b, self.tck, self.b2
+        assert_equal(splint(0, 1, b), splint(0, 1, tck))
+        assert_equal(splint(0, 1, b), b.integrate(0, 1))
+
+        # ... and deals with n-D arrays of coefficients
+        assert_equal(splint(0, 1, b2), b2.integrate(0, 1))
+
+        # and the legacy behavior is preserved for a tck tuple w/ n-D coef
+        c2r = b2.c.transpose(1, 2, 0)
+        integr = np.asarray(splint(0, 1, (b2.t, c2r, b2.k)))
+        assert_equal(integr.shape, (3, 2))
+        assert_equal(integr, splint(0, 1, b))
+
+    def test_spalde(self):
+        b, b2 = self.b, self.b2
+
+        # spalde handles 1D coefficient arrays
+        x0 = [0, np.pi/2., np.pi]
+        assert_allclose(spalde(x0, b),
+                        spalde(x0, self.tck), atol=1e-15)
+
+        # and is equivalent to `k` repeated calls to splev
+        res = np.array([[splev(x, b, j) for j in range(b.k+1)] for x in x0])
+        assert_allclose(res, spalde(x0, b), atol=1e-15)
+
+        # for n-D coefs, the equivalence still holds
+        # for `x` being a scalar
+        res = np.array([splev(x0[0], b2, j) for j in range(b2.k+1)])
+        assert_allclose(res, spalde(x0[0], b2), atol=1e-15)
+
+        # and for `x` being an array
+        res = np.array([[splev(x, b2, j) for j in range(b2.k+1)] for x in x0])
+        assert_allclose(res, spalde(x0, b2), atol=1e-15)
+
+    def test_splder(self):
+        for b in [self.b, self.b2]:
+            # pad the c array (FITPACK convention)
+            ct = len(b.t) - len(b.c)
+            if ct > 0:
+                b.c = np.r_[b.c, np.zeros((ct,) + b.c.shape[1:])]
+
+            for n in [1, 2, 3]:
+                bd = splder(b)
+                tck_d = _impl.splder((b.t, b.c, b.k))
+                assert_allclose(bd.t, tck_d[0], atol=1e-15)
+                assert_allclose(bd.c, tck_d[1], atol=1e-15)
+                assert_equal(bd.k, tck_d[2])
+                assert_(isinstance(bd, BSpline))
+                assert_(isinstance(tck_d, tuple))  # back-compat: tck in and out
+
+    def test_splantider(self):
+        for b in [self.b, self.b2]:
+            # pad the c array (FITPACK convention)
+            ct = len(b.t) - len(b.c)
+            if ct > 0:
+                b.c = np.r_[b.c, np.zeros((ct,) + b.c.shape[1:])]
+
+            for n in [1, 2, 3]:
+                bd = splantider(b)
+                tck_d = _impl.splantider((b.t, b.c, b.k))
+                assert_allclose(bd.t, tck_d[0], atol=1e-15)
+                assert_allclose(bd.c, tck_d[1], atol=1e-15)
+                assert_equal(bd.k, tck_d[2])
+                assert_(isinstance(bd, BSpline))
+                assert_(isinstance(tck_d, tuple))  # back-compat: tck in and out
+
+    def test_insert(self):
+        b, b2 = self.b, self.b2
+
+        j = b.t.size // 2
+        tn = 0.5*(b.t[j] + b.t[j+1])
+
+        bn, bn1 = insert(tn, b), insert(tn, (b.t, b.c, b.k))
+        assert_allclose(splev(self.xx, bn),
+                        splev(self.xx, bn1), atol=1e-15)
+        assert_(isinstance(bn, BSpline))
+        assert_(isinstance(bn1, tuple))   # back-compat: tck in, tck out
+
+        # for n-D array of coefficients, BSpline.c needs to be transposed
+        # after that, the results are equivalent
+        sh = tuple(range(b2.c.ndim))
+        c_ = b2.c.transpose(sh[1:] + (0,))
+        bn3 = insert(tn, (b2.t, c_, b2.k))
+
+        bn2 = insert(tn, b2)
+
+        assert_allclose(splev(self.xx, bn2),
+                        splev(self.xx, bn3), atol=1e-15)
+        assert_(isinstance(bn2, BSpline))
+        assert_(isinstance(bn3, tuple))   # back-compat: tck in, tck out
+
+
 class TestInterp(TestCase):
     #
     # Test basic ways of constructing interpolating splines.
@@ -537,7 +750,7 @@ class TestInterp(TestCase):
         y = np.sin(x)
         der_l = [(1, -12.), (2, 1)]
         der_r = [(1, 8.), (2, 3.)]
-        b = make_interp_spline(x, y, k=5, deriv_l=der_l, deriv_r=der_r)
+        b = make_interp_spline(x, y, k=k, deriv_l=der_l, deriv_r=der_r)
         assert_allclose(b(x), y, atol=1e-14, rtol=1e-14)
         assert_allclose([b(x[0], 1), b(x[0], 2)],
                         [val for (nu, val) in der_l])
@@ -563,7 +776,7 @@ class TestInterp(TestCase):
         # Knots need not coincide with the data sites.
         # use a quadratic spline, knots are at data averages,
         # two additional constraints are zero 2nd derivs at edges
-        k, n = 2, 8
+        k = 2
         t = np.r_[(self.xx[0],)*(k+1),
                   (self.xx[1:] + self.xx[:-1]) / 2.,
                   (self.xx[-1],)*(k+1)]
@@ -739,7 +952,6 @@ def make_lsq_full_matrix(x, y, t, k=3):
 
     A = np.zeros((m, n), dtype=np.float_)
 
-    i = 0
     for j in range(m):
         xval = x[j]
         # find interval
