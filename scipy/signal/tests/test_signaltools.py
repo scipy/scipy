@@ -830,6 +830,32 @@ class _TestLinearFilter(TestCase):
         assert_array_equal(zi, zi_1)
         assert_array_equal(zi, zi_2)
 
+    def test_short_x_FIR(self):
+        # regression test for #5116
+        # x shorter than b, with non None zi fails
+        a = self.convert_dtype([1])
+        b = self.convert_dtype([1, 0, -1])
+        zi = self.convert_dtype([2, 7])
+        x = self.convert_dtype([72])
+        ye = self.convert_dtype([74])
+        zfe = self.convert_dtype([7, -72])
+        y, zf = lfilter(b, a, x, zi=zi)
+        assert_array_almost_equal(y, ye)
+        assert_array_almost_equal(zf, zfe)
+
+    def test_short_x_IIR(self):
+        # regression test for #5116
+        # x shorter than b, with non None zi fails
+        a = self.convert_dtype([1, 1])
+        b = self.convert_dtype([1, 0, -1])
+        zi = self.convert_dtype([2, 7])
+        x = self.convert_dtype([72])
+        ye = self.convert_dtype([74])
+        zfe = self.convert_dtype([-67, -72])
+        y, zf = lfilter(b, a, x, zi=zi)
+        assert_array_almost_equal(y, ye)
+        assert_array_almost_equal(zf, zfe)
+
 
 class TestLinearFilterFloat32(_TestLinearFilter):
     dtype = np.dtype('f')

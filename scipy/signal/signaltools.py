@@ -945,15 +945,18 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
         out_full = np.apply_along_axis(lambda y: np.convolve(b, y), axis, x)
         ind = out_full.ndim * [slice(None)]
+        if zi is not None:
+            ind[axis] = slice(zi.shape[axis])
+            out_full[ind] += zi
+
         ind[axis] = slice(out_full.shape[axis] - len(b) + 1)
         out = out_full[ind]
+
         if zi is None:
             return out
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
             zf = out_full[ind]
-            ind[axis] = slice(zi.shape[axis])
-            out[ind] += zi
             return out, zf
     else:
         if zi is None:
