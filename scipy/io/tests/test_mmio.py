@@ -394,7 +394,7 @@ class TestMMIOCoordinate(TestCase):
             for precision in test_precisions:
                 # construct sparse matrix with test value at last main diagonal
                 n = 10**precision + 1
-                A = scipy.sparse.lil_matrix((n, n))
+                A = scipy.sparse.dok_matrix((n, n))
                 A[n-1, n-1] = value
                 # write matrix with test precision and read again
                 mmwrite(self.fn, A, precision=precision)
@@ -402,7 +402,7 @@ class TestMMIOCoordinate(TestCase):
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
-                assert_array_almost_equal(A.data, 
+                assert_array_almost_equal(A.data,
                     [float('%%.%dg' % precision % value)])
 
 
