@@ -280,6 +280,10 @@ def binned_statistic_dd(sample, values, statistic='mean',
             referenced.
           * 'sum' : compute the sum of values for points within each bin.
             This is identical to a weighted histogram.
+          * 'max' : compute the maximum value for points within each bin.
+            Empty bins will be represented by NaN.
+          * 'min' : compute the minimum value for points within each bin.
+            Empty bins will be represented by NaN.
           * function : a user-defined function which takes a 1D array of
             values, and outputs a single numerical statistic. This function
             will be called on the values in each bin.  Empty bins will be
@@ -318,7 +322,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     .. versionadded:: 0.11.0
 
     """
-    known_stats = ['mean', 'median', 'count', 'sum', 'std']
+    known_stats = ['mean', 'median', 'count', 'sum', 'std', 'min', 'max']
     if not callable(statistic) and statistic not in known_stats:
         raise ValueError('invalid statistic %r' % (statistic,))
 
@@ -428,6 +432,18 @@ def binned_statistic_dd(sample, values, statistic='mean',
             bin_values = values[xy == i]
             if bin_values.size > 0:
                 result[i] = np.median(bin_values)
+    elif statistic == 'max':
+        result.fill(np.nan)
+        for i in np.unique(xy):
+            bin_values = values[xy == i]
+            if bin_values.size > 0:
+                result[i] = np.max(bin_values)
+    elif statistic == 'min':
+        result.fill(np.nan)
+        for i in np.unique(xy):
+            bin_values = values[xy == i]
+            if bin_values.size > 0:
+                result[i] = np.min(bin_values)
     elif callable(statistic):
         with warnings.catch_warnings():
             # Numpy generates a warnings for mean/std/... with empty list
