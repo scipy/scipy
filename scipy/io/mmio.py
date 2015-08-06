@@ -617,8 +617,7 @@ class MMFile (object):
             # write shape spec
             stream.write(asbytes('%i %i %i\n' % (rows, cols, coo.nnz)))
 
-            fmt = '%%.%dg' % precision
-
+            # make indices and data array
             if field == self.FIELD_PATTERN:
                 IJV = vstack((coo.row, coo.col)).T
             elif field in [self.FIELD_INTEGER, self.FIELD_REAL]:
@@ -627,9 +626,11 @@ class MMFile (object):
                 IJV = vstack((coo.row, coo.col, coo.data.real, coo.data.imag)).T
             else:
                 raise TypeError('Unknown field type %s' % field)
-
             IJV[:,:2] += 1  # change base 0 -> base 1
 
+            # formats for row indices, col indices and data columns
+            fmt = ('%i', '%i') + ('%%.%dg' % precision,) * (IJV.shape[1]-2)
+            # save to file
             savetxt(stream, IJV, fmt=fmt)
 
 
