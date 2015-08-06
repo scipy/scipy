@@ -887,7 +887,7 @@ class TestBoxcox(TestCase):
         x = stats.norm.rvs(loc=10, size=50000)
         x_inv = (x * lmbda + 1)**(-lmbda)
         for method in None, 'pearsonr', 'mle', 'mle-newton':
-            for guess in None, 0, -2, 1, 5:
+            for guess in None, 0, -2, 1, 3:
                 if guess is None or method is not None:
                     xt, maxlog = stats.boxcox(
                             x_inv, lmbda=guess, lmbda_estimation=method)
@@ -931,7 +931,6 @@ class TestBoxcox(TestCase):
         _, _, interval = stats.boxcox(x, alpha=0.999,
                 lmbda_estimation='mle-newton', conf_method='asy')
         assert_allclose(interval, [5.8331624474718664, 5.837352912433583])
-
 
     def test_boxcox_bad_arg(self):
         # Raise ValueError if any data value is negative.

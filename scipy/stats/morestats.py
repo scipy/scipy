@@ -961,7 +961,7 @@ def boxcox(x, lmbda=None, alpha=None, lmbda_estimation=None, conf_method='lrt'):
     if any(x <= 0):
         raise ValueError("Data must be positive.")
 
-    if lmbda is not None and lmbda_estimation is None: # single transformation
+    if lmbda is not None and lmbda_estimation is None:
         return special.boxcox(x, lmbda)
 
     # If requested, find the lmbda that maximizes the log-likelihood function.
@@ -1009,7 +1009,7 @@ def _boxcox_llf_derivs(lam, logy):
 def _minimize_scalar_newton(x0, fprimes, xatol=1.48e-8, maxiter=50):
     # Related to scipy.optimize.zeros.newton().
     if xatol <= 0:
-        raise valueError('xatol too small (%g <= 0)' % xatol)
+        raise ValueError('xatol too small (%g <= 0)' % xatol)
     p0 = x0
     for i in range(maxiter):
         d1, d2 = fprimes(p0)
@@ -1034,16 +1034,6 @@ def _asarray_1d_positive(x):
     if np.any(x <= 0):
         raise ValueError("Data must be positive.")
     return x
-
-
-def _boxcox_normmax_mle_newton(data, lam0):
-    logy = np.log(y)
-
-    def fprimes(lam):
-        nd1, nd2 = _boxcox_llf_derivs(lam, logy)
-        return -nd1, -nd2
-
-    return _minimize_scalar_newton(lam0, fprimes)
 
 
 def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
