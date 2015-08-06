@@ -3,11 +3,13 @@ from numpy.testing import (run_module_suite, TestCase, assert_equal,
         assert_allclose, assert_raises, assert_)
 from numpy.testing.decorators import skipif, knownfailureif
 
-from scipy.interpolate import (BSpline, splev, splrep, BPoly, PPoly,
-        make_interp_spline, make_lsq_spline, _bspl)
-from scipy.interpolate._bsplines import _not_a_knot, _augknt
+from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
+        make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
+         sproot, splint, spalde)
 import scipy.linalg as sl
 
+from scipy.interpolate._bsplines import _not_a_knot, _augknt
+import scipy.interpolate._fitpack_impl as _impl
 
 class TestBSpline(TestCase):
 

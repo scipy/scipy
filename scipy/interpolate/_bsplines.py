@@ -7,7 +7,7 @@ import numpy as np
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded)
 from . import _bspl
-from . import fitpack
+from . import _fitpack_impl
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
 
@@ -342,7 +342,7 @@ class BSpline(object):
         ct = len(self.t) - len(c)
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
-        tck = fitpack.splder((self.t, c, self.k), nu)
+        tck = _fitpack_impl.splder((self.t, c, self.k), nu)
         return self._construct_fast(*tck, extrapolate=self.extrapolate)
 
     def antiderivative(self, nu=1):
@@ -368,7 +368,7 @@ class BSpline(object):
         ct = len(self.t) - len(c)
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
-        tck = fitpack.splantider((self.t, c, self.k), nu)
+        tck = _fitpack_impl.splantider((self.t, c, self.k), nu)
         return self._construct_fast(*tck, extrapolate=self.extrapolate)
 
     def integrate(self, a, b, extrapolate=None):
@@ -431,7 +431,7 @@ class BSpline(object):
         ct = len(self.t) - len(c)
         if ct > 0:
             c = np.r_[c, [0]*ct]
-        t, c, k = fitpack.splantider((self.t, c, self.k), 1)
+        t, c, k = _fitpack_impl.splantider((self.t, c, self.k), 1)
 
         # prepare x & c
         if not c.flags.c_contiguous:
