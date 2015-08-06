@@ -809,7 +809,26 @@ def boxcox_llf(lmb, data):
     return llf
 
 
-def _boxcox_conf_interval(x, lmax, alpha):
+def _boxcox_conf_interval(x, lmax, alpha, method='lrt'):
+    methods = {'lrt': _boxcox_conf_interval_lrt,
+               'asy': _boxcox_conf_interval_asy}
+    if method not in methods.keys():
+        raise ValueError("Method %s not recognized." % method)
+    return methods[method](x, lmax, alpha)
+
+
+def _boxcox_conf_interval_asy(x, lmax, alpha):
+    zstar = -special.ndtri(alpha / 2)
+    x = _asarray_1d_positive(x)
+    d1, d2 = _boxcox_llf_derivs(lmax, np.log(x))
+    if d2 >= 0:
+        raise RuntimeError('the second derivative of the log likelihood '
+                           'at the mle should be negative')
+    delta = zstar / np.sqrt(-d2)
+    return (lmax - delta, lmax + delta)
+
+
+def _boxcox_conf_interval_lrt(x, lmax, alpha):
     # Need to find the lambda for which
     #  f(x,lmbda) >= f(x,lmax) - 0.5*chi^2_alpha;1
     fac = 0.5 * distributions.chi2.ppf(1 - alpha, 1)
@@ -844,7 +863,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 
-def boxcox(x, lmbda=None, alpha=None):
+def boxcox(x, lmbda=None, alpha=None, lmbda_estimation=None, conf_method='lrt'):
     r"""
     Return a positive dataset transformed by a Box-Cox power transformation.
 
@@ -861,6 +880,11 @@ def boxcox(x, lmbda=None, alpha=None):
         If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
         Must be between 0.0 and 1.0.
+    lmbda_estimation : str, optional
+        One of {'pearsonr', 'mle', 'mle-newton'}.
+    conf_method : str, optional
+        One of {'lrt', 'asy'}.  This is only used if ``alpha`` is not None.
+        Default: 'lrt'
 
     Returns
     -------
@@ -937,19 +961,89 @@ def boxcox(x, lmbda=None, alpha=None):
     if any(x <= 0):
         raise ValueError("Data must be positive.")
 
-    if lmbda is not None:  # single transformation
+    if lmbda is not None and lmbda_estimation is None: # single transformation
         return special.boxcox(x, lmbda)
 
-    # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
-    lmax = boxcox_normmax(x, method='mle')
+    # If requested, find the lmbda that maximizes the log-likelihood function.
+    brack = (-2, 2)
+    if lmbda_estimation is not None:
+        method = lmbda_estimation
+        if lmbda is not None:
+            brack = (lmbda-2, lmbda+2)
+    else:
+        method = 'mle'
+    lmax = boxcox_normmax(x, brack=brack, method=method)
     y = boxcox(x, lmax)
 
     if alpha is None:
         return y, lmax
     else:
         # Find confidence interval
-        interval = _boxcox_conf_interval(x, lmax, alpha)
+        interval = _boxcox_conf_interval(x, lmax, alpha, method=conf_method)
         return y, lmax, interval
+
+
+def _boxcox_llf_derivs(lam, logy):
+    # equations (6, 15)
+    # Note that z, u, v are centered here but not in the paper.
+    # Here v is negated relative to v in the paper.
+
+    def _boxcox_confluent_hypergeometric_helper(k):
+        x = lam * logy
+        r = special.hyp1f1(k, k+1, x) * (logy ** k) / k
+        if not np.isfinite(r).all():
+            msg = 'boxcox derivatives instability k=%d x=%s' % (k, x)
+            warnings.warn(msg, RuntimeWarning)
+        return r - r.mean()
+
+    n = logy.size
+    z = _boxcox_confluent_hypergeometric_helper(1)
+    u = _boxcox_confluent_hypergeometric_helper(2)
+    v = _boxcox_confluent_hypergeometric_helper(3)
+    var = np.var(z)
+    fprime = logy.sum() - u.dot(z) / var
+    fprime2 = (2/n) * (u.dot(z) / var)**2 - (v.dot(z) + u.dot(u)) / var
+    return fprime, fprime2
+
+
+def _minimize_scalar_newton(x0, fprimes, xatol=1.48e-8, maxiter=50):
+    # Related to scipy.optimize.zeros.newton().
+    if xatol <= 0:
+        raise valueError('xatol too small (%g <= 0)' % xatol)
+    p0 = x0
+    for i in range(maxiter):
+        d1, d2 = fprimes(p0)
+        if d2 <= 0:
+            msg = 'second derivative is not positive'
+            warnings.warn(msg, RuntimeWarning)
+        # Newton step.
+        p = p0 - d1 / d2
+        if abs(p - p0) < xatol:
+            return p
+        p0 = p
+    msg = 'Failed to converge after %d iterations, value is %s' % (maxiter, p)
+    raise RuntimeError(msg)
+
+
+def _asarray_1d_positive(x):
+    x = np.asarray(x)
+    if len(x.shape) != 1:
+        raise ValueError('Data must be 1d.')
+    if not x.size:
+        return x
+    if np.any(x <= 0):
+        raise ValueError("Data must be positive.")
+    return x
+
+
+def _boxcox_normmax_mle_newton(data, lam0):
+    logy = np.log(y)
+
+    def fprimes(lam):
+        nd1, nd2 = _boxcox_llf_derivs(lam, logy)
+        return -nd1, -nd2
+
+    return _minimize_scalar_newton(lam0, fprimes)
 
 
 def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
@@ -973,8 +1067,12 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
             normally-distributed.
 
         'mle'
-            Minimizes the log-likelihood `boxcox_llf`.  This is the method used
-            in `boxcox`.
+            Maximizes the log-likelihood `boxcox_llf` using direct function
+            evaluation.  This is the method used in `boxcox`.
+
+        'mle-newton'
+            Maximizes the log-likelihood `boxcox_llf` with the help of its
+            first and second derivatives.
 
         'all'
             Use all optimization methods available, and return all results.
@@ -1018,6 +1116,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     >>> plt.show()
 
     """
+    x = _asarray_1d_positive(x)
 
     def _pearsonr(x, brack):
         osm_uniform = _calc_uniform_order_statistic_medians(x)
@@ -1043,13 +1142,25 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
         return optimize.brent(_eval_mle, brack=brack, args=(x,))
 
     def _all(x, brack):
-        maxlog = np.zeros(2, dtype=float)
+        maxlog = np.zeros(3, dtype=float)
         maxlog[0] = _pearsonr(x, brack)
         maxlog[1] = _mle(x, brack)
+        maxlog[2] = _mle_newton(x, brack)
         return maxlog
+
+    def _mle_newton(x, brack):
+        lam0 = np.mean(brack)
+        logx = np.log(x)
+
+        def _fprimes(lam):
+            nd1, nd2 = _boxcox_llf_derivs(lam, logx)
+            return -nd1, -nd2
+
+        return _minimize_scalar_newton(lam0, _fprimes)
 
     methods = {'pearsonr': _pearsonr,
                'mle': _mle,
+               'mle-newton': _mle_newton,
                'all': _all}
     if method not in methods.keys():
         raise ValueError("Method %s not recognized." % method)
