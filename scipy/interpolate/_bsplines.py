@@ -45,6 +45,17 @@ class BSpline(object):
         functions active on the base interval.
         Default is True.
 
+    Attributes
+    ----------
+    t : ndarray
+        knot vector
+    c : ndarray
+        spline coefficients
+    k : int
+        spline degree
+    tck : tuple
+        A read-only equivalent of ``(self.t, self.c, self.k)``    
+
     Methods
     -------
     __call__
@@ -208,7 +219,7 @@ class BSpline(object):
 
     @property
     def tck(self):
-        """A convenience attribute. Equvalent to ``(self.t, self.c, self.k)``.
+        """Equvalent to ``(self.t, self.c, self.k)`` (read-only).
         """
         return self.t, self.c, self.k
 
