@@ -164,13 +164,13 @@ def kstat(data, n=2):
     """
     Return the nth k-statistic (1<=n<=4 so far).
 
-    The nth k-statistic is the unique symmetric unbiased estimator of the nth
-    cumulant kappa_n.
+    The nth k-statistic k_n is the unique symmetric unbiased estimator of the
+    nth cumulant kappa_n.
 
     Parameters
     ----------
     data : array_like
-        Input array.
+        Input array. Note that n-D input gets flattened.
     n : int, {1, 2, 3, 4}, optional
         Default is equal to 2.
 
@@ -186,21 +186,17 @@ def kstat(data, n=2):
 
     Notes
     -----
-    The input data gets raveled prior to calculating the cumulants.
-    The cumulants are related to central moments but are specifically defined
-    using a power series expansion of the logarithm of the characteristic
-    function (which is the Fourier transform of the PDF).
-    In particular let phi(t) be the characteristic function, then::
+    For a sample size n, the first few k-statistics are given by:
 
-        ln phi(t) = > kappa_n (it)^n / n!    (sum from n=0 to inf)
+    .. math::
 
-    The first few cumulants (kappa_n)  in terms of central moments (mu_n) are::
+        k_{1} = \mu
+        k_{2} = \frac{n}{n-1} m_{2}
+        k_{3} = \frac{ n^{2} } {(n-1) (n-2)} m_{3}
+        k_{4} = \frac{ n^{2} [(n + 1)m_{4} - 3(n - 1) m^2_{2}]} {(n-1) (n-2) (n-3)}
 
-        kappa_1 = mu_1
-        kappa_2 = mu_2
-        kappa_3 = mu_3
-        kappa_4 = mu_4 - 3*mu_2**2
-        kappa_5 = mu_5 - 10*mu_2 * mu_3
+    where ``:math:\mu`` is the sample mean, ``:math:m_2`` is the sample
+    variance, and ``:math:m_i`` is the i-th sample central moment.
 
     References
     ----------
@@ -208,6 +204,25 @@ def kstat(data, n=2):
 
     http://mathworld.wolfram.com/Cumulant.html
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> rndm = np.random.RandomState(1234)
+
+    As sample size increases, n-th moment and n-th k-statistic converge to the
+    same number (although they aren't identical). In the case of the normal
+    distribution, they converge to zero.
+
+    >>> for n in [2, 3, 4, 5, 6, 7]:
+    ...     x = rndm.normal(size=10**n)
+    ...     m, k = stats.moment(x, 3), stats.kstat(x, 3)
+    ...     print("%.3g %.3g %.3g" % (m, k, m-k))
+    -0.631 -0.651 0.0194
+    0.0282 0.0283 -8.49e-05
+    -0.0454 -0.0454 1.36e-05
+    7.53e-05 7.53e-05 -2.26e-09
+    0.00166 0.00166 -4.99e-09
+    -2.88e-06 -2.88e-06 8.63e-13
     """
     if n > 4 or n < 1:
         raise ValueError("k-statistics only supported for 1<=n<=4")
@@ -249,7 +264,7 @@ def kstatvar(data, n=2):
     Parameters
     ----------
     data : array_like
-        Input array.
+        Input array. Note that n-D input gets flattened.
     n : int, {1, 2}, optional
         Default is equal to 2.
 
@@ -265,8 +280,20 @@ def kstatvar(data, n=2):
 
     Notes
     -----
-    The input data gets raveled prior to performing the calculations.
+    The variances of the first few k-statistics are given by:
 
+    .. math::
+
+        var(k_{1}) = \frac{\kappa^2}{n}
+        var(k_{2}) = \frac{\kappa^4}{n} + \frac{2\kappa^2_{2}}{n - 1}
+        var(k_{3}) = \frac{\kappa^6}{n} + \frac{9 \kappa_2 \kappa_4}{n - 1} +
+                     \frac{9 \kappa^2_{3}}{n - 1} +
+                     \frac{6 n \kappa^3_{2}}{(n-1) (n-2)}
+        var(k_{4}) = \frac{\kappa^8}{n} + \frac{16 \kappa_2 \kappa_6}{n - 1} +
+                     \frac{48 \kappa_{3} \kappa_5}{n - 1} +
+                     \frac{34 \kappa^2_{4}}{n-1} + \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
+                     \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
+                     \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
     """
     data = ravel(data)
     N = len(data)
