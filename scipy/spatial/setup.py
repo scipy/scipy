@@ -50,6 +50,8 @@ def configuration(parent_package='', top_path=None):
                        'query_methods.h',
                        'cpp_utils.h',
                        'rectangle.h',
+                       'distance.h',
+                       'distance_box.h',
                        'ordered_pair.h']
                        
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]

@@ -487,6 +487,11 @@ query_knn(const ckdtree      *self,
           const npy_float64  p, 
           const npy_float64  distance_upper_bound)
 {
+#define HANDLE(cond, kls) \
+    if(cond) { \
+        query_single_point<kls>(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity); \
+    } else
+
     npy_intp m = self->m;
     npy_intp i;
     
@@ -499,7 +504,11 @@ query_knn(const ckdtree      *self,
                     npy_float64 *dd_row = dd + (i*k);
                     npy_intp *ii_row = ii + (i*k);
                     const npy_float64 *xx_row = xx + (i*m);                
-                    query_single_point<MinMaxDist>(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                    HANDLE(NPY_LIKELY(p == 2), MinMaxDistP2)
+                    HANDLE(p == 1, MinMaxDistP1)
+                    HANDLE(p == infinity, MinMaxDistPinf)
+                    HANDLE(1, MinMaxDistPp) 
+                    {}
                 }    
             } else {
                 std::vector<npy_float64> row(m);
@@ -512,7 +521,10 @@ query_knn(const ckdtree      *self,
                     for(j=0; j<m; ++j) {
                         xx_row[j] = _wrap(old_xx_row[j], self->raw_boxsize_data[j]);
                     }
-                    query_single_point<MinMaxDistBox>(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity);
+                    HANDLE(NPY_LIKELY(p == 2), BoxMinMaxDistP2)
+                    HANDLE(p == 1, BoxMinMaxDistP1)
+                    HANDLE(p == infinity, BoxMinMaxDistPinf)
+                    HANDLE(1, BoxMinMaxDistPp) {}
                 }    
 
             }

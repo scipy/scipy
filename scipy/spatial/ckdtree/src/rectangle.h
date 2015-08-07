@@ -61,267 +61,8 @@ struct Rectangle {
     
 };
 
-struct MinMaxDist {
-    /* 1-d pieces
-     * These should only be used if p != infinity
-     */
-
-    static inline void 
-    interval_interval_p(const ckdtree * tree, 
-                        const Rectangle& rect1, const Rectangle& rect2,
-                        const npy_intp k, const npy_float64 p,
-                        npy_float64 *min, npy_float64 *max)
-    {
-        /* Compute the minimum/maximum distance along dimension k between points in
-         * two hyperrectangles.
-         */
-        *min = std::pow(dmax(0, dmax(rect1.mins[k] - rect2.maxes[k],
-                              rect2.mins[k] - rect1.maxes[k])),p);
-        *max = std::pow(dmax(rect1.maxes[k] - rect2.mins[k], 
-                              rect2.maxes[k] - rect1.mins[k]),p);
-    }
-
-    static inline void 
-    interval_interval_2(const ckdtree * tree,
-                        const Rectangle& rect1, const Rectangle& rect2,
-                        const npy_intp k,
-                        npy_float64 *min, npy_float64 *max)
-    {
-        /* Compute the minimum/maximum distance along dimension k between points in
-         * two hyperrectangles.
-         */
-        npy_float64 tmp;
-        tmp = dmax(0, dmax(rect1.mins[k] - rect2.maxes[k],
-                              rect2.mins[k] - rect1.maxes[k]));
-        *min = tmp*tmp;
-        tmp = dmax(rect1.maxes[k] - rect2.mins[k], 
-                              rect2.maxes[k] - rect1.mins[k]);
-        *max = tmp*tmp;
-    }
-
-    /* These should be used only for p == infinity */
-
-    static inline void
-    rect_rect_p_inf(const ckdtree * tree, 
-                    const Rectangle& rect1, const Rectangle& rect2,
-                    npy_float64 *min, npy_float64 *max)
-    {
-        /* Compute the minimum/maximum distance between points in two hyperrectangles. */
-        npy_intp i;
-        npy_float64 min_dist = 0.;
-        for (i=0; i<rect1.m; ++i) {
-            min_dist = dmax(min_dist, dmax(rect1.mins[i] - rect2.maxes[i],
-                                           rect2.mins[i] - rect1.maxes[i]));
-        }                                   
-        *min = min_dist;
-        npy_float64 max_dist = 0.;
-        for (i=0; i<rect1.m; ++i) {
-            max_dist = dmax(max_dist, dmax(rect1.maxes[i] - rect2.mins[i],
-                                           rect2.maxes[i] - rect1.mins[i]));
-        }
-        *max = max_dist;
-    }
-
-    static inline npy_float64 
-    distance_p(const ckdtree * tree, 
-               const npy_float64 *x, const npy_float64 *y,
-               const npy_float64 p, const npy_intp k,
-               const npy_float64 upperbound)
-    {    
-       /*
-        * Compute the distance between x and y
-        *
-        * Computes the Minkowski p-distance to the power p between two points.
-        * If the distance**p is larger than upperbound, then any number larger
-        * than upperbound may be returned (the calculation is truncated).
-        */
-        
-        npy_intp i;
-        npy_float64 r;
-        r = 0;
-        if (NPY_LIKELY(p==2.)) {
-            /*
-            for (i=0; i<k; ++i) {
-                z = x[i] - y[i];
-                r += z*z;
-                if (r>upperbound)
-                    return r;
-            }*/
-            return sqeuclidean_distance_double(x,y,k);
-        } 
-        else if (p==infinity) {
-            for (i=0; i<k; ++i) {
-                r = dmax(r,dabs(x[i]-y[i]));
-                if (r>upperbound)
-                    return r;
-            }
-        } 
-        else if (p==1.) {
-            for (i=0; i<k; ++i) {
-                r += dabs(x[i]-y[i]);
-                if (r>upperbound)
-                    return r;
-            }
-        } 
-        else {
-            for (i=0; i<k; ++i) {
-                r += std::pow(dabs(x[i]-y[i]),p);
-                if (r>upperbound)
-                     return r;
-            }
-        }
-        return r;
-    } 
-};
-struct MinMaxDistBox {
-    static inline void _interval_interval_1d (
-        npy_float64 min, npy_float64 max,
-        npy_float64 *realmin, npy_float64 *realmax,
-        const npy_float64 full, const npy_float64 half
-    ) 
-    {
-        /* Minimum and maximum distance of two intervals in a periodic box
-         *
-         * min and max is the nonperiodic distance between the near
-         * and far edges.
-         *
-         * full and half are the box size and 0.5 * box size.
-         *
-         * value is returned in realmin and realmax;
-         *
-         * This function is copied from kdcount, and the convention
-         * of is that
-         *
-         * min = rect1.min - rect2.max
-         * max = rect1.max - rect2.min = - (rect2.min - rect1.max)
-         *
-         * We will fix the convention later.
-         * */
-        if(max <= 0 || min >= 0) {
-            /* do not pass through 0 */
-            min = dabs(min);
-            max = dabs(max);
-            if(min > max) {
-                double t = min;
-                min = max;
-                max = t;
-            }
-            if(max < half) {
-                /* all below half*/
-                *realmin = min;
-                *realmax = max;
-            } else if(min > half) {
-                /* all above half */
-                *realmax = full - min;
-                *realmin = full - max;
-            } else {
-                /* min below, max above */
-                *realmax = half;
-                *realmin = dmin(min, full - max);
-            }
-        } else {
-            /* pass though 0 */
-            min = -min;
-            if(min > max) max = min;
-            if(max > half) max = half;
-            *realmax = max;
-            *realmin = 0;
-        }
-    }
-
-    /* Periodic MinMaxDist functions */
-    static inline void 
-    interval_interval_p(const ckdtree * tree, 
-                        const Rectangle& rect1, const Rectangle& rect2,
-                        const npy_intp k, const npy_float64 p,
-                        npy_float64 *min, npy_float64 *max)
-    {
-        /* Compute the minimum/maximum distance along dimension k between points in
-         * two hyperrectangles.
-         */
-        _interval_interval_1d(rect1.mins[k] - rect2.maxes[k],
-                    rect1.maxes[k] - rect2.mins[k], min, max,
-                    tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + rect1.m]);
-
-        *min = std::pow(*min, p);
-        *max = std::pow(*max, p);
-    }
-
-    static inline void 
-    interval_interval_2(const ckdtree * tree,
-                        const Rectangle& rect1, const Rectangle& rect2,
-                        const npy_intp k,
-                        npy_float64 *min, npy_float64 *max)
-    {
-        /* Compute the minimum/maximum distance along dimension k between points in
-         * two hyperrectangles.
-         */
-        _interval_interval_1d(rect1.mins[k] - rect2.maxes[k],
-                    rect1.maxes[k] - rect2.mins[k], min, max,
-                    tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + rect1.m]);
-        *min *= *min;
-        *max *= *max;
-    }
-
-    /* These should be used only for p == infinity */
-
-    static inline void
-    rect_rect_p_inf(const ckdtree * tree, 
-                    const Rectangle& rect1, const Rectangle& rect2,
-                    npy_float64 *min, npy_float64 *max)
-    {
-        /* Compute the minimum/maximum distance between points in two hyperrectangles. */
-        npy_intp k;
-        npy_float64 min_dist = 0.;
-        npy_float64 max_dist = 0.;
-        k = 0;
-        _interval_interval_1d(rect1.mins[k] - rect2.maxes[k],
-                    rect1.maxes[k] - rect2.mins[k], min, max,
-                    tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + rect1.m]);
-
-        for (k=1; k<rect1.m; ++k) {
-            _interval_interval_1d(rect1.mins[k] - rect2.maxes[k],
-                        rect1.maxes[k] - rect2.mins[k], &min_dist, &max_dist,
-                        tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + rect1.m]);
-            *min = dmin(min_dist, *min);
-            *max = dmax(max_dist, *max);
-        }                                   
-    }
-    static inline npy_float64 
-    distance_p(const ckdtree * tree, 
-               const npy_float64 *x, const npy_float64 *y,
-               const npy_float64 p, const npy_intp k,
-               const npy_float64 upperbound)
-    {    
-       /*
-        * Compute the distance between x and y
-        *
-        * Computes the Minkowski p-distance to the power p between two points.
-       * If the distance**p is larger than upperbound, then any number larger
-        * than upperbound may be returned (the calculation is truncated).
-        *
-        */
-        
-        npy_intp i;
-        npy_float64 r, r1;
-        r = 0;
-        for (i=0; i<k; ++i) {
-            r1 = wrap_distance(x[i] - y[i], tree->raw_boxsize_data[i + tree->m], tree->raw_boxsize_data[i]);
-            if (NPY_LIKELY(p==2.)) {
-                r += r1 * r1;
-            } else if (p==infinity) {
-                r = dmax(r,dabs(r1));
-            } else if (p==1.) {
-                r += dabs(r1);
-            } else {
-                r += std::pow(dabs(r1),p);
-            }
-            if (r>upperbound) 
-                return r;
-        } 
-        return r;
-    } 
-};
+#include "distance.h"
+#include "distance_box.h"
 
 /*
  * Rectangle-to-rectangle distance tracker
@@ -432,35 +173,8 @@ template<typename MinMaxDist>
         stack_size = 0;
 
         /* Compute initial min and max distances */
-        if (NPY_LIKELY(p == 2.0)) {
-            min_distance = 0.;
-            max_distance = 0.;
-            for(npy_intp i=0; i<rect1.m; ++i) {
-                npy_float64 min, max;
+        MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
 
-                MinMaxDist::interval_interval_2(tree, rect1, rect2, i, &min, &max);
-                min_distance += min;
-                max_distance += max;
-            }
-        }
-        else if (p == infinity) {
-            npy_float64 min, max;
-
-            MinMaxDist::rect_rect_p_inf(tree, rect1, rect2, &min, &max);
-            min_distance = min;
-            max_distance = max;
-        }
-        else {
-            min_distance = 0.;
-            max_distance = 0.;
-            for(npy_intp i=0; i<rect1.m; ++i) {
-                npy_float64 min, max;
-
-                MinMaxDist::interval_interval_p(tree, rect1, rect2, i, p, &min, &max);
-                min_distance += min;
-                max_distance += max;
-            }
-        }
     };
     
 
@@ -489,47 +203,23 @@ template<typename MinMaxDist>
         item->max_along_dim = rect->maxes[split_dim];
 
         /* update min/max distances */
-        if (NPY_LIKELY(p == 2.0)) {
-            npy_float64 min, max;
+        npy_float64 min, max;
 
-            MinMaxDist::interval_interval_2(tree, rect1, rect2, split_dim, &min, &max);
-            min_distance -= min;
-            max_distance -= max;
-        }
-        else if (p != infinity) {
-            npy_float64 min, max;
+        MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
 
-            MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
-            min_distance -= min;
-            max_distance -= max;
-        }
+        min_distance -= min;
+        max_distance -= max;
         
         if (direction == LESS)
             rect->maxes[split_dim] = split_val;
         else
             rect->mins[split_dim] = split_val;
 
-        if (NPY_LIKELY(p == 2.0)) {
-            npy_float64 min, max;
+        MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
 
-            MinMaxDist::interval_interval_2(tree, rect1, rect2, split_dim, &min, &max);
-            min_distance += min;
-            max_distance += max;
-        }
-        else if (p != infinity) {
-            npy_float64 min, max;
+        min_distance += min;
+        max_distance += max;
 
-            MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
-            min_distance += min;
-            max_distance += max;
-        }
-        else {
-            npy_float64 min, max;
-
-            MinMaxDist::rect_rect_p_inf(tree, rect1, rect2, &min, &max);
-            min_distance = min;
-            max_distance = max;
-        }     
     };
 
     inline void push_less_of(const npy_intp which,

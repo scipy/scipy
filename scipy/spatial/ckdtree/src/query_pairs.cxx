@@ -209,6 +209,13 @@ query_pairs(const ckdtree *self,
             std::vector<ordered_pair> *results)
 {
 
+#define HANDLE(cond, kls) \
+    if(cond) { \
+        RectRectDistanceTracker<kls> tracker(self, r1, r2, p, eps, r);\
+        traverse_checking(self, results, self->ctree, self->ctree, \
+            &tracker); \
+    } else
+
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
     {
@@ -218,15 +225,17 @@ query_pairs(const ckdtree *self,
             Rectangle r2(self->m, self->raw_mins, self->raw_maxes);
                                     
             if(NPY_LIKELY(self->raw_boxsize_data == NULL)) {
-                RectRectDistanceTracker<MinMaxDist> tracker(self, r1, r2, p, eps, r);
-                
-                traverse_checking(self, results, self->ctree, self->ctree, 
-                    &tracker);
+                HANDLE(NPY_LIKELY(p == 2), MinMaxDistP2)
+                HANDLE(p == 1, MinMaxDistP1)
+                HANDLE(p == infinity, MinMaxDistPinf)
+                HANDLE(1, MinMaxDistPp) 
+                {}
             } else {
-                RectRectDistanceTracker<MinMaxDistBox> tracker(self, r1, r2, p, eps, r);
-                
-                traverse_checking(self, results, self->ctree, self->ctree, 
-                    &tracker);
+                HANDLE(NPY_LIKELY(p == 2), BoxMinMaxDistP2)
+                HANDLE(p == 1, BoxMinMaxDistP1)
+                HANDLE(p == infinity, BoxMinMaxDistPinf)
+                HANDLE(1, BoxMinMaxDistPp) 
+                {}
             }
         } 
         catch(...) {
