@@ -156,6 +156,7 @@ scipy/linalg/flapack.pyf
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_ni_morphology.c
+scipy/ndimage/src/_ni_measure.c
 scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
 scipy/optimize/minpack2/minpack2module.c
