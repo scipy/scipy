@@ -241,6 +241,7 @@ which work for masked arrays.
    mannwhitneyu
    tiecorrect
    rankdata
+   filliben
    ranksums
    wilcoxon
    kruskal

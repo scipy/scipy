@@ -317,17 +317,6 @@ def kstatvar(data, n=2):
         raise ValueError("Only n=1 or n=2 supported.")
 
 
-def _calc_uniform_order_statistic_medians(x):
-    """See Notes section of `probplot` for details."""
-    N = len(x)
-    osm_uniform = np.zeros(N, dtype=np.float64)
-    osm_uniform[-1] = 0.5**(1.0 / N)
-    osm_uniform[0] = 1 - osm_uniform[-1]
-    i = np.arange(2, N)
-    osm_uniform[1:-1] = (i - 0.3175) / (N + 0.365)
-    return osm_uniform
-
-
 def _parse_dist_kw(dist, enforce_subclass=True):
     """Parse `dist` keyword.
 
@@ -497,7 +486,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
         else:
             return x, x
 
-    osm_uniform = _calc_uniform_order_statistic_medians(x)
+    osm_uniform = stats.filliben(len(x))
     dist = _parse_dist_kw(dist, enforce_subclass=False)
     if sparams is None:
         sparams = ()
@@ -609,7 +598,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
 
     """
     dist = _parse_dist_kw(dist)
-    osm_uniform = _calc_uniform_order_statistic_medians(x)
+    osm_uniform = stats.filliben(len(x))
     osr = sort(x)
 
     # this function computes the x-axis values of the probability plot
@@ -1020,7 +1009,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     """
 
     def _pearsonr(x, brack):
-        osm_uniform = _calc_uniform_order_statistic_medians(x)
+        osm_uniform = stats.filliben(len(x))
         xvals = distributions.norm.ppf(osm_uniform)
 
         def _eval_pearsonr(lmbda, xvals, samps):
