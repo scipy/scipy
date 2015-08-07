@@ -270,6 +270,7 @@ which work for masked arrays.
    boxcox
    boxcox_normmax
    boxcox_llf
+   filliben
 
    entropy
 
@@ -337,6 +338,7 @@ from __future__ import division, print_function, absolute_import
 from .stats import *
 from .distributions import *
 from .morestats import *
+from ._morestats_utils import *
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
