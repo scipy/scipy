@@ -984,9 +984,19 @@ def boxcox(x, lmbda=None, alpha=None, lmbda_estimation=None, conf_method='lrt'):
 
 
 def _boxcox_llf_derivs(lam, logy):
-    # equations (6, 15)
+    # equations (6, 15) in the masters thesis
     # Note that z, u, v are centered here but not in the paper.
     # Here v is negated relative to v in the paper.
+    #
+    # See the differentiation rule DLMF 13.3.15:
+    # d/dx 1f1(a, b, x) = a/b * 1f1(a+1, b+1, x)
+    #
+    # 1f1(1, 2, x) = (e^x - 1) / x (= exprel(x))
+    # 1f1(2, 3, x) = 2*(x*e^x - e^x + 1) / x^2
+    # 1f1(3, 4, x) = 3*(x^2*e^x -2*x*e^x + 2*e^x - 2) / x^3
+    #
+    # Note that exprel and the hypergeometric functions
+    # remove the singularity at 0.
 
     def _boxcox_confluent_hypergeometric_helper(k):
         x = lam * logy
