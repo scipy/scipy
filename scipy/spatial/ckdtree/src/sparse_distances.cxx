@@ -135,6 +135,11 @@ sparse_distance_matrix(const ckdtree *self, const ckdtree *other,
                        const npy_float64 max_distance,
                        std::vector<coo_entry> *results)
 {
+#define HANDLE(cond, kls) \
+    if(cond) { \
+        RectRectDistanceTracker<kls> tracker(self, r1, r2, p, 0, max_distance);\
+        traverse(self, other, results, self->ctree, other->ctree, &tracker); \
+    } else
 
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
@@ -144,13 +149,17 @@ sparse_distance_matrix(const ckdtree *self, const ckdtree *other,
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
             Rectangle r2(other->m, other->raw_mins, other->raw_maxes);             
             if(NPY_LIKELY(self->raw_boxsize_data == NULL)) {
-                RectRectDistanceTracker<MinMaxDist> tracker(self, r1, r2, p, 0, max_distance);
-
-                traverse(self, other, results, self->ctree, other->ctree, &tracker);
+                HANDLE(NPY_LIKELY(p == 2), MinMaxDistP2)
+                HANDLE(p == 1, MinMaxDistP1)
+                HANDLE(p == infinity, MinMaxDistPinf)
+                HANDLE(1, MinMaxDistPp) 
+                {}
             } else {
-                RectRectDistanceTracker<MinMaxDistBox> tracker(self, r1, r2, p, 0, max_distance);
-
-                traverse(self, other, results, self->ctree, other->ctree, &tracker);
+                HANDLE(NPY_LIKELY(p == 2), BoxMinMaxDistP2)
+                HANDLE(p == 1, BoxMinMaxDistP1)
+                HANDLE(p == infinity, BoxMinMaxDistPinf)
+                HANDLE(1, BoxMinMaxDistPp) 
+                {}
             }                                               
         } 
         catch(...) {

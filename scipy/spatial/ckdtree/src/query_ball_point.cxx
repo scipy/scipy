@@ -103,6 +103,12 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
                  const npy_float64 r, const npy_float64 p, const npy_float64 eps,
                  const npy_intp n_queries, std::vector<npy_intp> **results)
 {
+#define HANDLE(cond, kls) \
+    if(cond) { \
+        RectRectDistanceTracker<kls> tracker(self, point, rect, p, eps, r); \
+        traverse_checking(self, results[i], self->ctree, &tracker); \
+    } else
+
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
     {
@@ -112,18 +118,22 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);             
                 if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
                     Rectangle point(m, x + i * m, x + i * m);
-                    RectRectDistanceTracker<MinMaxDist> tracker(self, point, rect, p, eps, r);
-                    traverse_checking(
-                        self, results[i], self->ctree, &tracker);
+                    HANDLE(NPY_LIKELY(p == 2), MinMaxDistP2)
+                    HANDLE(p == 1, MinMaxDistP1)
+                    HANDLE(p == infinity, MinMaxDistPinf)
+                    HANDLE(1, MinMaxDistPp) 
+                    {}
                 } else {
                     Rectangle point(m, x + i * m, x + i * m);
                     int j;
                     for(j=0; j<m; ++j) {
                         point.maxes[j] = point.mins[j] = _wrap(point.mins[j], self->raw_boxsize_data[j]);
                     }
-                    RectRectDistanceTracker<MinMaxDistBox> tracker(self, point, rect, p, eps, r);
-                    traverse_checking(
-                        self, results[i], self->ctree, &tracker);
+                    HANDLE(NPY_LIKELY(p == 2), BoxMinMaxDistP2)
+                    HANDLE(p == 1, BoxMinMaxDistP1)
+                    HANDLE(p == infinity, BoxMinMaxDistPinf)
+                    HANDLE(1, BoxMinMaxDistPp) 
+                    {}
                 }
             }
         } 
