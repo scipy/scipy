@@ -12,20 +12,14 @@ np.import_array()
 cdef extern from *:
    ctypedef int Py_intptr_t
 
-ctypedef void (*PyArray_CopySwapFunc)(void *, void *, int, void *)
-
 cdef extern from "numpy/arrayobject.h" nogil:
     ctypedef struct PyArrayIterObject:
         np.intp_t *coordinates
         char *dataptr
         np.npy_bool contiguous
 
-    ctypedef struct PyArrayObject:
-        int nd
-
     void *PyDataMem_NEW(size_t)
     void PyDataMem_FREE(void *)
-
 
 ######################################################################
 # Use of Cython's type templates for type specialization
@@ -47,7 +41,7 @@ ctypedef fused data_t:
 #####################################################################
 
 ctypedef void (*func_p)(void *data, np.flatiter iti, np.intp_t max_label, 
-               int *regions, int rank) nogil
+                        int *regions, int rank) nogil
 
 def get_funcs(np.ndarray[data_t] input):
     return (<Py_intptr_t> findObjectsPoint[data_t])
@@ -57,16 +51,17 @@ def get_funcs(np.ndarray[data_t] input):
 ######################################################################
 
 cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, np.intp_t max_label, 
-            int *regions, int rank):
+                             int *regions, int rank):
     cdef int kk =0
     cdef np.intp_t cc
 
     # only integer or boolean values are allowed, since s_index is being used in indexing
     cdef np.intp_t s_index = <np.intp_t> (<data_t *> data)[0] - 1
 
-    if s_index >=0  and s_index < max_label:
+    if s_index >= 0  and s_index < max_label:
         if rank > 0:
             s_index *= 2 * rank
+
             if regions[s_index] < 0:
                 for kk in range(rank):
                     cc = (<PyArrayIterObject *>_iti).coordinates[kk]
@@ -83,8 +78,6 @@ cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, np.intp_t max_label
         else:
             regions[s_index] = 1
 
-    return 1
-
 ######################################################################
 # Implementaion of find_Objects function:-
 ######################################################################
@@ -93,8 +86,8 @@ cpdef _findObjects(np.ndarray input_raw, np.intp_t max_label):
     cdef:
         funcs = get_funcs(input_raw.take([0]))
 
-        int ii, rank, size_regions
-        int start, jj, idx, end
+        np.intp_t ii, rank, size_regions
+        np.intp_t start, jj, idx, end
         int *regions = NULL
 
         np.flatiter _iti
@@ -102,7 +95,7 @@ cpdef _findObjects(np.ndarray input_raw, np.intp_t max_label):
 
         func_p findObjectsPoint = <func_p> <void *> <Py_intptr_t> funcs
 
-        int flags = np.NPY_CONTIGUOUS | np.NPY_NOTSWAPPED | np.NPY_ALIGNED
+        int flags = np.NPY_NOTSWAPPED | np.NPY_ALIGNED
 
     input = np.PyArray_FROM_OF(input_raw, flags)
 
@@ -118,21 +111,17 @@ cpdef _findObjects(np.ndarray input_raw, np.intp_t max_label):
     # Declaring output array
     size_regions = 0
 
-    if max_label < 0:
-        max_label = 0
-    elif max_label > 0:
+    if max_label > 0:
         if rank > 0:
             size_regions = 2 * max_label * rank
-
         else:
             size_regions = max_label
         
         regions = <int *> PyDataMem_NEW(size_regions * sizeof(int))
         if regions == NULL:
             raise MemoryError()
-
     else:
-        regions = NULL
+        max_label = 0
     
     try:
         with nogil:
@@ -150,7 +139,6 @@ cpdef _findObjects(np.ndarray input_raw, np.intp_t max_label):
         for ii in range(max_label):
             if rank > 0:
                 idx = 2 * rank * ii
-
             else:
                 idx = ii
 
