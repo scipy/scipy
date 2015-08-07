@@ -118,10 +118,10 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);             
                 if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
                     Rectangle point(m, x + i * m, x + i * m);
-                    HANDLE(NPY_LIKELY(p == 2), MinMaxDistP2)
-                    HANDLE(p == 1, MinMaxDistP1)
-                    HANDLE(p == infinity, MinMaxDistPinf)
-                    HANDLE(1, MinMaxDistPp) 
+                    HANDLE(NPY_LIKELY(p == 2), MinkowskiDistP2)
+                    HANDLE(p == 1, MinkowskiDistP1)
+                    HANDLE(p == infinity, MinkowskiDistPinf)
+                    HANDLE(1, MinkowskiDistPp) 
                     {}
                 } else {
                     Rectangle point(m, x + i * m, x + i * m);
@@ -129,10 +129,10 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
                     for(j=0; j<m; ++j) {
                         point.maxes[j] = point.mins[j] = _wrap(point.mins[j], self->raw_boxsize_data[j]);
                     }
-                    HANDLE(NPY_LIKELY(p == 2), BoxMinMaxDistP2)
-                    HANDLE(p == 1, BoxMinMaxDistP1)
-                    HANDLE(p == infinity, BoxMinMaxDistPinf)
-                    HANDLE(1, BoxMinMaxDistPp) 
+                    HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
+                    HANDLE(p == 1, BoxMinkowskiDistP1)
+                    HANDLE(p == infinity, BoxMinkowskiDistPinf)
+                    HANDLE(1, BoxMinkowskiDistPp) 
                     {}
                 }
             }

@@ -1,4 +1,4 @@
-struct MinMaxDist1 {
+struct Dist1D {
     static inline void 
     interval_interval(const ckdtree * tree, 
                         const Rectangle& rect1, const Rectangle& rect2,
@@ -21,8 +21,8 @@ struct MinMaxDist1 {
         return dabs(x[k] - y[k]);
     }
 };
-template <typename MinMaxDist1>
-struct MinkowskiDistP1 {
+template <typename Dist1D>
+struct BaseMinkowskiDistP1 {
 
     static inline void 
     interval_interval_p(const ckdtree * tree, 
@@ -33,7 +33,7 @@ struct MinkowskiDistP1 {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
          */
-        MinMaxDist1::interval_interval(tree, rect1, rect2, k, min, max);
+        Dist1D::interval_interval(tree, rect1, rect2, k, min, max);
     }
 
     static inline void 
@@ -47,7 +47,7 @@ struct MinkowskiDistP1 {
         for(npy_intp i=0; i<rect1.m; ++i) {
             npy_float64 min_, max_;
 
-            MinMaxDist1::interval_interval(tree, rect1, rect2, i, &min_, &max_);
+            Dist1D::interval_interval(tree, rect1, rect2, i, &min_, &max_);
 
             *min += min_;
             *max += max_;
@@ -64,7 +64,7 @@ struct MinkowskiDistP1 {
         npy_float64 r;
         r = 0;
         for (i=0; i<k; ++i) {
-            r += MinMaxDist1::point_point(tree, x, y, i);
+            r += Dist1D::point_point(tree, x, y, i);
             if (r>upperbound)
                 return r;
         }
@@ -72,8 +72,8 @@ struct MinkowskiDistP1 {
     }
 };
 
-template <typename MinMaxDist1>
-struct MinkowskiDistPp {
+template <typename Dist1D>
+struct BaseMinkowskiDistPp {
     /* 1-d pieces
      * These should only be used if p != infinity
      */
@@ -87,7 +87,7 @@ struct MinkowskiDistPp {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
          */
-        MinMaxDist1::interval_interval(tree, rect1, rect2, k, min, max);
+        Dist1D::interval_interval(tree, rect1, rect2, k, min, max);
         *min = std::pow(*min, p);
         *max = std::pow(*max, p);
     }
@@ -103,7 +103,7 @@ struct MinkowskiDistPp {
         for(npy_intp i=0; i<rect1.m; ++i) {
             npy_float64 min_, max_;
 
-            MinMaxDist1::interval_interval(tree, rect1, rect2, i, &min_, &max_);
+            Dist1D::interval_interval(tree, rect1, rect2, i, &min_, &max_);
 
             *min += std::pow(min_, p);
             *max += std::pow(max_, p);
@@ -128,7 +128,7 @@ struct MinkowskiDistPp {
         npy_float64 r, r1;
         r = 0;
         for (i=0; i<k; ++i) {
-            r1 = MinMaxDist1::point_point(tree, x, y, i);
+            r1 = Dist1D::point_point(tree, x, y, i);
             r += std::pow(r1, p);
             if (r>upperbound)
                  return r;
@@ -137,8 +137,8 @@ struct MinkowskiDistPp {
     } 
 };
 
-template <typename MinMaxDist1>
-struct MinkowskiDistPinf {
+template <typename Dist1D>
+struct BaseMinkowskiDistPinf {
     static inline void 
     interval_interval_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
@@ -159,7 +159,7 @@ struct MinkowskiDistPinf {
         for(npy_intp i=0; i<rect1.m; ++i) {
             npy_float64 min_, max_;
 
-            MinMaxDist1::interval_interval(tree, rect1, rect2, i, &min_, &max_);
+            Dist1D::interval_interval(tree, rect1, rect2, i, &min_, &max_);
 
             *min = dmax(*min, min_);
             *max = dmax(*max, max_);
@@ -176,7 +176,7 @@ struct MinkowskiDistPinf {
         npy_float64 r;
         r = 0;
         for (i=0; i<k; ++i) {
-            r = dmax(r,MinMaxDist1::point_point(tree, x, y, i));
+            r = dmax(r,Dist1D::point_point(tree, x, y, i));
             if (r>upperbound)
                 return r;
         }
@@ -184,8 +184,8 @@ struct MinkowskiDistPinf {
     }
 };
 
-template <typename MinMaxDist1>
-struct MinkowskiDistP2 {
+template <typename Dist1D>
+struct BaseMinkowskiDistP2 {
     static inline void 
     interval_interval_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
@@ -195,7 +195,7 @@ struct MinkowskiDistP2 {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
          */
-        MinMaxDist1::interval_interval(tree, rect1, rect2, k, min, max);
+        Dist1D::interval_interval(tree, rect1, rect2, k, min, max);
         *min *= *min;
         *max *= *max;
     }
@@ -211,7 +211,7 @@ struct MinkowskiDistP2 {
         for(npy_intp i=0; i<rect1.m; ++i) {
             npy_float64 min_, max_;
 
-            MinMaxDist1::interval_interval(tree, rect1, rect2, i, &min_, &max_);
+            Dist1D::interval_interval(tree, rect1, rect2, i, &min_, &max_);
             min_ *= min_;
             max_ *= max_;
 
@@ -230,7 +230,7 @@ struct MinkowskiDistP2 {
         npy_float64 r;
         r = 0;
         for (i=0; i<k; ++i) {
-            npy_float64 r1 = MinMaxDist1::point_point(tree, x, y, i);
+            npy_float64 r1 = Dist1D::point_point(tree, x, y, i);
             r += r1 * r1;
             if (r>upperbound)
                 return r;
@@ -239,14 +239,14 @@ struct MinkowskiDistP2 {
     }
 };
 
-typedef MinkowskiDistPp<MinMaxDist1> MinMaxDistPp;
-//typedef MinkowskiDistP2<MinMaxDist1> MinMaxDistP2;
-typedef MinkowskiDistPinf<MinMaxDist1> MinMaxDistPinf;
-typedef MinkowskiDistP1<MinMaxDist1> MinMaxDistP1;
+typedef BaseMinkowskiDistPp<Dist1D> MinkowskiDistPp;
+//typedef BaseMinkowskiDistP2<Dist1D> MinkowskiDistP2;
+typedef BaseMinkowskiDistPinf<Dist1D> MinkowskiDistPinf;
+typedef BaseMinkowskiDistP1<Dist1D> MinkowskiDistP1;
 
-typedef MinkowskiDistP2<MinMaxDist1> NonOptimizedMinMaxDistP2;
+typedef BaseMinkowskiDistP2<Dist1D> NonOptimizedMinkowskiDistP2;
 
-struct MinMaxDistP2: NonOptimizedMinMaxDistP2 {
+struct MinkowskiDistP2: NonOptimizedMinkowskiDistP2 {
     static inline npy_float64 
     distance_p(const ckdtree * tree, 
                const npy_float64 *x, const npy_float64 *y,

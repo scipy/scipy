@@ -1,4 +1,4 @@
-struct BoxMinMaxDist1 {
+struct BoxDist1D {
     static inline void _interval_interval_1d (
         npy_float64 min, npy_float64 max,
         npy_float64 *realmin, npy_float64 *realmax,
@@ -80,8 +80,8 @@ struct BoxMinMaxDist1 {
 };
 
 
-typedef MinkowskiDistPp<BoxMinMaxDist1> BoxMinMaxDistPp;
-typedef MinkowskiDistPinf<BoxMinMaxDist1> BoxMinMaxDistPinf;
-typedef MinkowskiDistP1<BoxMinMaxDist1> BoxMinMaxDistP1;
-typedef MinkowskiDistP2<BoxMinMaxDist1> BoxMinMaxDistP2;
+typedef BaseMinkowskiDistPp<BoxDist1D> BoxMinkowskiDistPp;
+typedef BaseMinkowskiDistPinf<BoxDist1D> BoxMinkowskiDistPinf;
+typedef BaseMinkowskiDistP1<BoxDist1D> BoxMinkowskiDistP1;
+typedef BaseMinkowskiDistP2<BoxDist1D> BoxMinkowskiDistP2;
 

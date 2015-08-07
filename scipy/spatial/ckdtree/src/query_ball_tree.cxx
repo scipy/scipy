@@ -208,16 +208,16 @@ query_ball_tree(const ckdtree *self, const ckdtree *other,
             Rectangle r2(other->m, other->raw_mins, other->raw_maxes);
             
             if(NPY_LIKELY(self->raw_boxsize_data == NULL)) {
-                HANDLE(NPY_LIKELY(p == 2), MinMaxDistP2)
-                HANDLE(p == 1, MinMaxDistP1)
-                HANDLE(p == infinity, MinMaxDistPinf)
-                HANDLE(1, MinMaxDistPp) 
+                HANDLE(NPY_LIKELY(p == 2), MinkowskiDistP2)
+                HANDLE(p == 1, MinkowskiDistP1)
+                HANDLE(p == infinity, MinkowskiDistPinf)
+                HANDLE(1, MinkowskiDistPp) 
                 {}
             } else {
-                HANDLE(NPY_LIKELY(p == 2), BoxMinMaxDistP2)
-                HANDLE(p == 1, BoxMinMaxDistP1)
-                HANDLE(p == infinity, BoxMinMaxDistPinf)
-                HANDLE(1, BoxMinMaxDistPp) 
+                HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
+                HANDLE(p == 1, BoxMinkowskiDistP1)
+                HANDLE(p == infinity, BoxMinkowskiDistPinf)
+                HANDLE(1, BoxMinkowskiDistPp) 
                 {}
             }
         } 
