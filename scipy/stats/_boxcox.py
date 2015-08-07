@@ -4,6 +4,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
+from scipy import special
+from scipy import optimize
+from ._morestats_utils import filliben
+
 __all__ = ['boxcox_llf', 'boxcox', 'boxcox_normmax']
 
 
@@ -409,7 +413,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     x = _asarray_1d_positive(x)
 
     def _pearsonr(x, brack):
-        osm_uniform = _calc_uniform_order_statistic_medians(x)
+        osm_uniform = filliben(len(x))
         xvals = distributions.norm.ppf(osm_uniform)
 
         def _eval_pearsonr(lmbda, xvals, samps):
