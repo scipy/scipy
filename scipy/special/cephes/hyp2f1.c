@@ -70,25 +70,8 @@
 #include "mconf.h"
 #include <stdlib.h>
 
-#ifdef DEC
-#define EPS 1.0e-14
-#define EPS2 1.0e-11
-#endif
-
-#ifdef IBMPC
 #define EPS 1.0e-13
 #define EPS2 1.0e-10
-#endif
-
-#ifdef MIEEE
-#define EPS 1.0e-13
-#define EPS2 1.0e-10
-#endif
-
-#ifdef UNK
-#define EPS 1.0e-13
-#define EPS2 1.0e-10
-#endif
 
 #define ETHRESH 1.0e-12
 

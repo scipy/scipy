@@ -24,7 +24,7 @@
 
 */
 
-extern double MACHEP, MAXNUM;
+extern double MACHEP;
 
 static double
 gammainc(double x, double params[2])

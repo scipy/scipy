@@ -54,11 +54,7 @@
 #include <stdio.h>
 #endif
 
-#ifdef DEC
-#define MAXGAM 34.84425627277176174
-#else
 #define MAXGAM 171.624376956302725
-#endif
 
 extern double MACHEP, MINLOG, MAXLOG;
 

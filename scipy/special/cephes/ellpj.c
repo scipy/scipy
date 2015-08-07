@@ -40,7 +40,6 @@
  *
  *            Absolute error (* = relative error):
  * arithmetic   function   # trials      peak         rms
- *    DEC       sn           1800       4.5e-16     8.7e-17
  *    IEEE      phi         10000       9.2e-16*    1.4e-16*
  *    IEEE      sn          50000       4.1e-15     4.6e-16
  *    IEEE      cn          40000       3.6e-15     4.4e-16

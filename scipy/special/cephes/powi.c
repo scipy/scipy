@@ -28,7 +28,6 @@
  *
  *                      Relative error:
  * arithmetic   x domain   n domain  # trials      peak         rms
- *    DEC       .04,26     -26,26    100000       2.7e-16     4.3e-17
  *    IEEE      .04,26     -26,26     50000       2.0e-15     3.8e-16
  *    IEEE        1,2    -1022,1023   50000       8.6e-14     1.6e-14
  *
@@ -44,7 +43,7 @@
  */
 
 #include "mconf.h"
-extern double MAXLOG, MINLOG, LOGE2;
+extern double MAXLOG, MINLOG;
 
 double powi(x, nn)
 double x;
@@ -101,10 +100,10 @@ int nn;
     e = (lx - 1) * n;
     if ((e == 0) || (e > 64) || (e < -64)) {
 	s = (s - 7.0710678118654752e-1) / (s + 7.0710678118654752e-1);
-	s = (2.9142135623730950 * s - 0.5 + lx) * nn * LOGE2;
+	s = (2.9142135623730950 * s - 0.5 + lx) * nn * NPY_LOGE2;
     }
     else {
-	s = LOGE2 * e;
+	s = NPY_LOGE2 * e;
     }
 
     if (s > MAXLOG) {
