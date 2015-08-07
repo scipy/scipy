@@ -22,7 +22,7 @@ struct MinMaxDist1 {
     }
 };
 template <typename MinMaxDist1>
-struct BaseMinMaxDistP1 {
+struct MinkowskiDistP1 {
 
     static inline void 
     interval_interval_p(const ckdtree * tree, 
@@ -73,7 +73,7 @@ struct BaseMinMaxDistP1 {
 };
 
 template <typename MinMaxDist1>
-struct BaseMinMaxDistPp {
+struct MinkowskiDistPp {
     /* 1-d pieces
      * These should only be used if p != infinity
      */
@@ -138,7 +138,7 @@ struct BaseMinMaxDistPp {
 };
 
 template <typename MinMaxDist1>
-struct BaseMinMaxDistPinf {
+struct MinkowskiDistPinf {
     static inline void 
     interval_interval_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
@@ -185,7 +185,7 @@ struct BaseMinMaxDistPinf {
 };
 
 template <typename MinMaxDist1>
-struct BaseMinMaxDistP2 {
+struct MinkowskiDistP2 {
     static inline void 
     interval_interval_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
@@ -239,12 +239,12 @@ struct BaseMinMaxDistP2 {
     }
 };
 
-typedef BaseMinMaxDistPp<MinMaxDist1> MinMaxDistPp;
-//typedef BaseMinMaxDistP2<MinMaxDist1> MinMaxDistP2;
-typedef BaseMinMaxDistPinf<MinMaxDist1> MinMaxDistPinf;
-typedef BaseMinMaxDistP1<MinMaxDist1> MinMaxDistP1;
+typedef MinkowskiDistPp<MinMaxDist1> MinMaxDistPp;
+//typedef MinkowskiDistP2<MinMaxDist1> MinMaxDistP2;
+typedef MinkowskiDistPinf<MinMaxDist1> MinMaxDistPinf;
+typedef MinkowskiDistP1<MinMaxDist1> MinMaxDistP1;
 
-typedef BaseMinMaxDistP2<MinMaxDist1> NonOptimizedMinMaxDistP2;
+typedef MinkowskiDistP2<MinMaxDist1> NonOptimizedMinMaxDistP2;
 
 struct MinMaxDistP2: NonOptimizedMinMaxDistP2 {
     static inline npy_float64 

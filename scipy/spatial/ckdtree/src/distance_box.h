@@ -80,8 +80,8 @@ struct BoxMinMaxDist1 {
 };
 
 
-typedef BaseMinMaxDistPp<BoxMinMaxDist1> BoxMinMaxDistPp;
-typedef BaseMinMaxDistPinf<BoxMinMaxDist1> BoxMinMaxDistPinf;
-typedef BaseMinMaxDistP1<BoxMinMaxDist1> BoxMinMaxDistP1;
-typedef BaseMinMaxDistP2<BoxMinMaxDist1> BoxMinMaxDistP2;
+typedef MinkowskiDistPp<BoxMinMaxDist1> BoxMinMaxDistPp;
+typedef MinkowskiDistPinf<BoxMinMaxDist1> BoxMinMaxDistPinf;
+typedef MinkowskiDistP1<BoxMinMaxDist1> BoxMinMaxDistP1;
+typedef MinkowskiDistP2<BoxMinMaxDist1> BoxMinMaxDistP2;
 
