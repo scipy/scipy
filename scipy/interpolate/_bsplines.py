@@ -555,10 +555,29 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     >>> np.allclose([b_n(x0, 2), b_n(x1, 2)], [0, 0])
     True
 
+    Interpolation of parametric curves is also supported. As an example, we
+    compute a discretization of a snail curve in polar coordinates
+
+    >>> phi = np.linspace(0, 2.*np.pi, 40)
+    >>> r = 0.3 + np.cos(phi)
+    >>> x, y = r*np.cos(phi), r*np.sin(phi)  # convert to Cartesian coordinates
+
+    Build an interpolating curve, parameterizing it by the angle
+
+    >>> from scipy.interpolate import make_interp_spline
+    >>> spl = make_interp_spline(phi, np.c_[x, y])
+
+    Evaluate the interpolant on a finer grid (note that we transpose the result
+    to unpack it into a pair of x- and y-arrays)
+
+    >>> phi_new = np.linspace(0, 2.*np.pi, 100)
+    >>> x_new, y_new = spl(phi_new).T
+
+    Plot the result
+
     >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, y, 'ro')
-    >>> ax.plot(x, b_n(x), 'b-')
+    >>> plt.plot(x, y, 'o')
+    >>> plt.plot(x_new, y_new, '-')
     >>> plt.show()
 
     See Also
