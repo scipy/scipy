@@ -938,7 +938,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         if dtype.char not in 'fdgFDGO':
             raise NotImplementedError("input type '%s' not supported" % dtype)
 
-        b = np.array(b, dtype=dtype, copy=False)
+        b = np.array(b, dtype=dtype)
         a = np.array(a, dtype=dtype, copy=False)
         b /= a[0]
         x = np.array(x, dtype=dtype, copy=False)
