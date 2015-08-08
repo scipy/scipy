@@ -3313,6 +3313,13 @@ class TestKruskal(TestCase):
         assert_approx_equal(h, expected)
         assert_approx_equal(p, stats.distributions.chi2.sf(h, 2))
 
+    def test_empty(self):
+        # A test of stats.kruskal with three groups, with ties.
+        x = [1, 1, 1]
+        y = [2, 2, 2]
+        z = []
+        assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
+
     def test_kruskal_result_attributes(self):
         x = [1, 3, 5, 7, 9]
         y = [2, 4, 6, 8, 10]

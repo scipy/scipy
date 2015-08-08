@@ -4644,9 +4644,9 @@ def kruskal(*args):
 
     References
     ----------
-    .. [1] Kruskal, William H. & Wallis, W. Allen, "Use of Ranks in
-    One-Criterion Variance Analysis", Journal of the American Statistical
-    Association, Volume 47, Issue 260, pp. 583-621, 1952.
+    .. [1] W. H. Kruskal & W. W. Wallis, "Use of Ranks in
+       One-Criterion Variance Analysis", Journal of the American Statistical
+       Association, Vol. 47, Issue 260, pp. 583-621, 1952.
     .. [2] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
 
     Examples
@@ -4662,6 +4662,7 @@ def kruskal(*args):
     >>> z = [2, 2]
     >>> stats.kruskal(x, y, z)
     KruskalResult(statistic=7.0, pvalue=0.030197383422318501)
+
     """
     args = list(map(np.asarray, args))
     num_groups = len(args)
