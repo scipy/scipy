@@ -903,6 +903,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                                                  sk[numpy.newaxis, :])
 
     fval = old_fval
+    if np.isnan(fval):
+        # This can happen if the first call to f returned NaN;
+        # the loop is then never entered.
+        warnflag = 2
+
     if warnflag == 2:
         msg = _status_message['pr_loss']
         if disp:
