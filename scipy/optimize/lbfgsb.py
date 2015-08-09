@@ -51,7 +51,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
                   epsilon=1e-8,
                   iprint=-1, maxfun=15000, maxiter=15000, disp=None,
-                  callback=None):
+                  callback=None, maxls=20):
     """
     Minimize a function func using the L-BFGS-B algorithm.
 
@@ -108,6 +108,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
+    maxls : int, optional
+        Maximum number of line search steps (per iteration). Default is 20.
 
     Returns
     -------
@@ -182,7 +184,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'eps': epsilon,
             'maxfun': maxfun,
             'maxiter': maxiter,
-            'callback': callback}
+            'callback': callback,
+            'maxls': maxls}
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
                            **opts)
@@ -200,7 +203,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                      disp=None, maxcor=10, ftol=2.2204460492503131e-09,
                      gtol=1e-5, eps=1e-8, maxfun=15000, maxiter=15000,
-                     iprint=-1, callback=None, **unknown_options):
+                     iprint=-1, callback=None, maxls=20, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -236,6 +239,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         Maximum number of function evaluations.
     maxiter : int
         Maximum number of iterations.
+    maxls : int, optional
+        Maximum number of line search steps (per iteration). Default is 20.
 
     """
     _check_unknown_options(unknown_options)
@@ -289,6 +294,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             u = 1
         nbd[i] = bounds_map[l, u]
 
+    if not maxls > 0:
+        raise ValueError('maxls must be positive.')
+
     x = array(x0, float64)
     f = array(0.0, float64)
     g = zeros((n,), float64)
@@ -308,7 +316,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
-                       isave, dsave)
+                       isave, dsave, maxls)
         task_str = task.tostring()
         if task_str.startswith(b'FG'):
             if n_function_evals[0] > maxfun:

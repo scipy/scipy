@@ -1,7 +1,7 @@
 !    -*- f90 -*-
 python module _lbfgsb ! in 
     interface  ! in :_lbfgsb
-        subroutine setulb(n,m,x,l,u,nbd,f,g,factr,pgtol,wa,iwa,task,iprint,csave,lsave,isave,dsave) ! in :lbfgsb:lbfgsb.f
+        subroutine setulb(n,m,x,l,u,nbd,f,g,factr,pgtol,wa,iwa,task,iprint,csave,lsave,isave,dsave,maxls) ! in :lbfgsb:lbfgsb.f
             integer intent(in),optional,check(len(x)>=n),depend(x) :: n=len(x)
             integer intent(in) :: m
             double precision dimension(n),intent(inout) :: x
@@ -20,6 +20,7 @@ python module _lbfgsb ! in
             logical dimension(4),intent(inout) :: lsave
             integer dimension(44),intent(inout) :: isave
             double precision dimension(29),intent(inout) :: dsave
+            integer intent(in) :: maxls
         end subroutine setulb
     end interface 
 end python module _lbfgsb

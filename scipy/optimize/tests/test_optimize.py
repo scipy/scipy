@@ -484,6 +484,13 @@ class TestOptimizeSimple(CheckOptimize):
 
             assert_allclose(v, self.func(self.solution), rtol=tol)
 
+    def test_minimize_l_bfgs_maxls(self):
+        # check that the maxls is passed down to the Fortran routine
+        sol = optimize.minimize(optimize.rosen, np.array([-1.2,1.0]),
+                                method='L-BFGS-B', jac=optimize.rosen_der,
+                                options={'disp': False, 'maxls': 1})
+        assert_(not sol.success)
+
     def test_custom(self):
         # This function comes from the documentation example.
         def custmin(fun, x0, args=(), maxfev=None, stepsize=0.1,
