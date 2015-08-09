@@ -87,6 +87,7 @@ Equation (Local) Minimizers
    leastsq - Minimize the sum of squares of M equations in N unknowns
    least_squares - Feature-rich least-squares minimization.
    nnls - Linear least-squares problem with non-negativity constraint
+   lsq_linear - Linear least-squares problem with arbitrary bound constraints
 
 Global Optimization
 -------------------
@@ -243,7 +244,8 @@ from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
 from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
-from ._lsq import least_squares
+from ._lsq import least_squares, lsq_linear
+
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester

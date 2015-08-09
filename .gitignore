@@ -160,6 +160,7 @@ scipy/optimize/lbfgsb/_lbfgsbmodule.c
 scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
+scipy/optimize/_lsq/givens_elimination.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
 scipy/signal/correlate_nd.c
