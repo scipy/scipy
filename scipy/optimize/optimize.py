@@ -930,9 +930,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             print("         Function evaluations: %d" % func_calls[0])
             print("         Gradient evaluations: %d" % grad_calls[0])
 
+    success = (warnflag == 0 and not np.isnan(fval))
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk,
+                            success=success, message=msg, x=xk,
                             nit=k)
     if retall:
         result['allvecs'] = allvecs
