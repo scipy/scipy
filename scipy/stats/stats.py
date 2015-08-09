@@ -1321,7 +1321,7 @@ def describe(a, axis=0, ddof=1, bias=True):
     >>> b = [[1, 2], [3, 4]]
     >>> stats.describe(b)
     DescribeResult(nobs=2, minmax=(array([1, 2]), array([3, 4])),
-                   mean=array([ 2., 3.]), variance=array([ 2., 2.]), 
+                   mean=array([ 2., 3.]), variance=array([ 2., 2.]),
                    skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
 
     """
@@ -4630,6 +4630,12 @@ def kruskal(*args):
        The p-value for the test using the assumption that H has a chi
        square distribution
 
+    See Also
+    --------
+    f_oneway : 1-way ANOVA
+    mannwhitneyu : Mann-Whitney rank test on two samples.
+    friedmanchisquare : Friedman test for repeated measurements
+
     Notes
     -----
     Due to the assumption that H has a chi square distribution, the number
@@ -4638,33 +4644,55 @@ def kruskal(*args):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
+    .. [1] W. H. Kruskal & W. W. Wallis, "Use of Ranks in
+       One-Criterion Variance Analysis", Journal of the American Statistical
+       Association, Vol. 47, Issue 260, pp. 583-621, 1952.
+    .. [2] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = [1, 3, 5, 7, 9]
+    >>> y = [2, 4, 6, 8, 10]
+    >>> stats.kruskal(x, y)
+    KruskalResult(statistic=0.27272727272727337, pvalue=0.60150813444058948)
+
+    >>> x = [1, 1, 1]
+    >>> y = [2, 2, 2]
+    >>> z = [2, 2]
+    >>> stats.kruskal(x, y, z)
+    KruskalResult(statistic=7.0, pvalue=0.030197383422318501)
 
     """
-    args = list(map(np.asarray, args))  # convert to a numpy array
-    na = len(args)     # Kruskal-Wallis on 'na' groups, each in it's own array
-    if na < 2:
+    args = list(map(np.asarray, args))
+    num_groups = len(args)
+    if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
+
+    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
+
+    for arg in args:
+        if arg.size == 0:
+            return KruskalResult(np.nan, np.nan)
     n = np.asarray(list(map(len, args)))
 
     alldata = np.concatenate(args)
-    ranked = rankdata(alldata)  # Rank the data
-    ties = tiecorrect(ranked)      # Correct for ties
+    ranked = rankdata(alldata)
+    ties = tiecorrect(ranked)
     if ties == 0:
         raise ValueError('All numbers are identical in kruskal')
 
     # Compute sum^2/n for each group and sum
     j = np.insert(np.cumsum(n), 0, 0)
     ssbn = 0
-    for i in range(na):
+    for i in range(num_groups):
         ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / float(n[i])
 
     totaln = np.sum(n)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
-    df = na - 1
+    df = num_groups - 1
     h /= ties
 
-    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
     return KruskalResult(h, distributions.chi2.sf(h, df))
 
 
