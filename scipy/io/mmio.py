@@ -29,12 +29,12 @@ __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 # -----------------------------------------------------------------------------
 def mminfo(source):
     """
-    Return size and storage parameters from Matrix Market file 'source'.
+    Return size and storage parameters from Matrix Market file-like 'source'.
 
     Parameters
     ----------
     source : str or file-like
-        Matrix Market filename (extension .mtx) or open file object
+        Matrix Market filename (extension .mtx) or open file-like object
 
     Returns
     -------
@@ -59,13 +59,13 @@ def mminfo(source):
 
 def mmread(source):
     """
-    Reads the contents of a Matrix Market file 'source' into a matrix.
+    Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
     Parameters
     ----------
     source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
-        or open file object.
+        or open file-like object.
 
     Returns
     -------
@@ -80,12 +80,12 @@ def mmread(source):
 
 def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     """
-    Writes the sparse or dense array `a` to Matrix Market file `target`.
+    Writes the sparse or dense array `a` to Matrix Market file-like `target`.
 
     Parameters
     ----------
     target : str or file-like
-        Matrix Market filename (extension .mtx) or open file object.
+        Matrix Market filename (extension .mtx) or open file-like object.
     a : array like
         Sparse or dense 2D array.
     comment : str, optional
@@ -198,12 +198,12 @@ class MMFile (object):
     @classmethod
     def info(self, source):
         """
-        Return size and storage parameters from Matrix Market file 'source'.
+        Return size, storage parameters from Matrix Market file-like 'source'.
 
         Parameters
         ----------
         source : str or file-like
-            Matrix Market filename (extension .mtx) or open file object
+            Matrix Market filename (extension .mtx) or open file-like object
 
         Returns
         -------
@@ -266,10 +266,25 @@ class MMFile (object):
     # -------------------------------------------------------------------------
     @staticmethod
     def _open(filespec, mode='rb'):
-        """
-        Return an open file stream for reading based on source.  If source is
-        a file name, open it (after trying to find it with mtx and gzipped mtx
-        extensions).  Otherwise, just return source.
+        """ Return an open file stream for reading based on source.
+
+        If source is a file name, open it (after trying to find it with mtx and
+        gzipped mtx extensions).  Otherwise, just return source.
+
+        Parameters
+        ----------
+        filespec : str or file-like
+            String giving file name or file-like object
+        mode : str, optional
+            Mode with which to open file, if `filespec` is a file name.
+
+        Returns
+        -------
+        fobj : file-like
+            Open file-like object.
+        close_it : bool
+            True if the calling function should close this file when done,
+            false otherwise.
         """
         close_it = False
         if isinstance(filespec, string_types):
@@ -379,7 +394,7 @@ class MMFile (object):
     # -------------------------------------------------------------------------
     def read(self, source):
         """
-        Reads the contents of a Matrix Market file 'source' into a matrix.
+        Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
         Parameters
         ----------
@@ -407,12 +422,12 @@ class MMFile (object):
     def write(self, target, a, comment='', field=None, precision=None,
               symmetry=None):
         """
-        Writes the sparse or dense array `a` to Matrix Market file `target`.
+        Writes sparse or dense array `a` to Matrix Market file-like `target`.
 
         Parameters
         ----------
         target : str or file-like
-            Matrix Market filename (extension .mtx) or open file object.
+            Matrix Market filename (extension .mtx) or open file-like object.
         a : array like
             Sparse or dense 2D array.
         comment : str, optional
@@ -744,11 +759,10 @@ class MMFile (object):
 
 def _is_fromfile_compatible(stream):
     """
-    Check whether stream is compatible with numpy.fromfile.
+    Check whether `stream` is compatible with numpy.fromfile.
 
-    Passing a gzipped file to fromfile/fromstring doesn't work
-    with Python3
-
+    Passing a gzipped file object to ``fromfile/fromstring`` doesn't work with
+    Python3.
     """
     if sys.version_info[0] < 3:
         return True
