@@ -705,8 +705,6 @@ def test_wilcoxon_bad_arg():
 
 
 class TestKstat(TestCase):
-    # Note: `kstat` still needs review.  Statistics Review issue gh-675.
-
     def test_moments_normal_distribution(self):
         np.random.seed(32149)
         data = np.random.randn(12345)
@@ -717,6 +715,21 @@ class TestKstat(TestCase):
         expected = [0.011315, 1.017931, 0.05811052, 0.0754134]
         assert_allclose(moments, expected, rtol=1e-4)
 
+        # test equivalence with `stats.moment`
+        m1 = stats.moment(data, moment=1)
+        m2 = stats.moment(data, moment=2)
+        m3 = stats.moment(data, moment=3)
+        assert_allclose((m1, m2, m3), expected[:-1], atol=0.02, rtol=1e-2)
+
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.kstat, [])
+
+    def test_nan_input(self):
+        data = np.arange(10.)
+        data[6] = np.nan
+
+        assert_equal(stats.kstat(data), np.nan)
+
     def test_kstat_bad_arg(self):
         # Raise ValueError if n > 4 or n < 1.
         data = np.arange(10)
@@ -724,11 +737,21 @@ class TestKstat(TestCase):
             assert_raises(ValueError, stats.kstat, data, n=n)
 
 
-def test_kstatvar_bad_arg():
-    # Raise ValueError is n is not 1 or 2.
-    data = [1]
-    n = 10
-    assert_raises(ValueError, stats.kstatvar, data, n=n)
+class TestKstatVar(TestCase):
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.kstatvar, [])
+
+    def test_nan_input(self):
+        data = np.arange(10.)
+        data[6] = np.nan
+
+        assert_equal(stats.kstat(data), np.nan)
+
+    def test_bad_arg(self):
+        # Raise ValueError is n is not 1 or 2.
+        data = [1]
+        n = 10
+        assert_raises(ValueError, stats.kstatvar, data, n=n)
 
 
 class TestPpccPlot(TestCase):
