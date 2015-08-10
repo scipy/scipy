@@ -244,13 +244,13 @@ def build_quadratic_1d(J, g, s, diag=None, s0=None):
     Parameters
     ----------
     J : ndarray, sparse matrix or LinearOperator shape (m, n)
-        Jacobian matrix, affect quadratic term.
+        Jacobian matrix, affects the quadratic term.
     g : ndarray, shape (n,)
-        Gradient, defines a linear term.
+        Gradient, defines the linear term.
     s : ndarray, shape (n,)
         Direction of search.
     diag : None or ndarray with shape (n,), optional
-        Addition diagonal part, affect quadratic term.
+        Addition diagonal part, affects the quadratic term.
         If None, assumed to be 0.
     s0 : None or ndarray with shape (n,), optional
         Initial point. If None, assumed to be 0.
@@ -261,10 +261,8 @@ def build_quadratic_1d(J, g, s, diag=None, s0=None):
         Coefficient for t**2.
     b : float
         Coefficient for t.
-
-    Notes
-    -----
-    The free term "c" is not returned as it is not usually required.
+    c : float
+        Free term. Returned only if `s0` is provided.
     """
     v = J.dot(s)
     a = np.dot(v, v)
@@ -277,17 +275,19 @@ def build_quadratic_1d(J, g, s, diag=None, s0=None):
     if s0 is not None:
         u = J.dot(s0)
         b += np.dot(u, v)
+        c = 0.5 * np.dot(u, u) + np.dot(g, s0)
         if diag is not None:
             b += np.dot(s0 * diag, s)
+            c += 0.5 * np.dot(s0 * diag, s0)
+        return a, b, c
+    else:
+        return a, b
 
-    return a, b
 
-
-def minimize_quadratic_1d(a, b, lb, ub):
+def minimize_quadratic_1d(a, b, lb, ub, c=0):
     """Minimize a 1-d quadratic function subject to bounds.
 
-    The free term is omitted, that is we consider y = a * t**2 + b * t.
-    Bounds must be finite.
+    The free term `c` is 0 by default. Bounds must be finite.
 
     Returns
     -------
@@ -302,7 +302,7 @@ def minimize_quadratic_1d(a, b, lb, ub):
         if lb < extremum < ub:
             t.append(extremum)
     t = np.asarray(t)
-    y = a * t**2 + b * t
+    y = a * t**2 + b * t + c
     min_index = np.argmin(y)
     return t[min_index], y[min_index]
 
@@ -315,13 +315,13 @@ def evaluate_quadratic(J, g, s, diag=None):
     Parameters
     ----------
     J : ndarray, sparse matrix or LinearOperator, shape (m, n)
-        Jacobian matrix, affect quadratic term.
+        Jacobian matrix, affects the quadratic term.
     g : ndarray, shape (n,)
-        Gradient, defines a linear term.
-    s : ndarray, shape (n, k) or (n,)
+        Gradient, defines the linear term.
+    s : ndarray, shape (k, n) or (n,)
         Array containing steps as rows.
     diag : ndarray, shape (n,), optional
-        Addition diagonal part, affect quadratic term.
+        Addition diagonal part, affects the quadratic term.
         If None, assumed to be 0.
 
     Returns
@@ -576,6 +576,29 @@ def right_multiplied_operator(J, d):
 
     return LinearOperator(J.shape, matvec=matvec, matmat=matmat,
                           rmatvec=rmatvec)
+
+
+def regularized_lsq_operator(J, diag):
+    """Return a matrix arising in a regularized least-squares problem as
+    linear a operator.
+
+    The matrix is
+        [ J ]
+        [ D ]
+    where D is diagonal matrix with elements from `diag`.
+    """
+    J = aslinearoperator(J)
+    m, n = J.shape
+
+    def matvec(x):
+        return np.hstack((J.matvec(x), diag * x))
+
+    def rmatvec(x):
+        x1 = x[:m]
+        x2 = x[m:]
+        return J.rmatvec(x1) + diag * x2
+
+    return LinearOperator((m + n, n), matvec=matvec, rmatvec=rmatvec)
 
 
 def right_multiply(J, d, copy=True):

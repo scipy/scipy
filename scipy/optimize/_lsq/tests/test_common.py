@@ -141,9 +141,10 @@ class TestQuadraticFunction(object):
         assert_equal(b, 2.8)
 
         s0 = np.array([0.5, 0.5])
-        a, b = build_quadratic_1d(self.J, self.g, s, diag=self.diag, s0=s0)
+        a, b, c = build_quadratic_1d(self.J, self.g, s, diag=self.diag, s0=s0)
         assert_equal(a, 3.55)
         assert_allclose(b, 2.39)
+        assert_allclose(c, -0.1525)
 
     def test_minimize_quadratic_1d(self):
         a = 5
@@ -160,6 +161,11 @@ class TestQuadraticFunction(object):
         t, y = minimize_quadratic_1d(a, b, -1, 1)
         assert_equal(t, 0.1)
         assert_equal(y, a * t**2 + b * t)
+
+        c = 10
+        t, y = minimize_quadratic_1d(a, b, -1, 1, c=c)
+        assert_equal(t, 0.1)
+        assert_equal(y, a * t**2 + b * t + c)
 
     def test_evaluate_quadratic(self):
         s = np.array([1.0, -1.0])

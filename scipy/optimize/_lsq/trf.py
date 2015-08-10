@@ -100,37 +100,21 @@ from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
 
 from .common import (
-    step_size_to_bound, make_strictly_feasible, find_active_constraints,
-    intersect_trust_region, solve_lsq_trust_region, solve_trust_region_2d,
-    update_tr_radius, minimize_quadratic_1d, build_quadratic_1d,
-    evaluate_quadratic, right_multiplied_operator, scaling_vector,
-    compute_grad, compute_jac_scaling, check_termination,
-    compute_loss_and_derivatives, compute_cost, correct_by_loss, print_header,
-    print_iteration)
+    step_size_to_bound, find_active_constraints, in_bounds,
+    make_strictly_feasible, intersect_trust_region, solve_lsq_trust_region,
+    solve_trust_region_2d, minimize_quadratic_1d, build_quadratic_1d,
+    evaluate_quadratic, right_multiplied_operator, regularized_lsq_operator,
+    scaling_vector, compute_grad, compute_jac_scaling, check_termination,
+    update_tr_radius, compute_cost, correct_by_loss,
+    compute_loss_and_derivatives, print_header, print_iteration)
 
 
-def lsmr_operator(Jop, diag_root):
-    m, n = Jop.shape
+def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
+    if in_bounds(x + p, lb, ub):
+        p_value = evaluate_quadratic(J_h, g_h, p_h, diag=diag_h)
+        return p, p_h, -p_value
 
-    def matvec(x):
-        return np.hstack((Jop.matvec(x), diag_root * x))
-
-    def rmatvec(x):
-        x1 = x[:m]
-        x2 = x[m:]
-        return Jop.rmatvec(x1) + diag_root * x2
-
-    return LinearOperator((m + n, n), matvec=matvec, rmatvec=rmatvec)
-
-
-def find_reflected_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, l, u, theta):
-    """Find a singly reflected step.
-
-    Also corrects the initial step p_h. This function must be called only
-    if x + p is not within the bounds.
-    """
-    # Use term "stride" for scalar step length.
-    p_stride, hits = step_size_to_bound(x, p, l, u)
+    p_stride, hits = step_size_to_bound(x, p, lb, ub)
 
     # Compute the reflected direction.
     r_h = np.copy(p_h)
@@ -145,52 +129,60 @@ def find_reflected_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, l, u, theta):
     # Reflected direction will cross first either feasible region or trust
     # region boundary.
     _, to_tr = intersect_trust_region(p_h, r_h, Delta)
-    to_bound, _ = step_size_to_bound(x_on_bound, r, l, u)
-    to_bound *= theta  # Stay interior.
+    to_bound, _ = step_size_to_bound(x_on_bound, r, lb, ub)
 
-    r_stride_u = min(to_bound, to_tr)
-
-    # We want a reflected step be at the same theta distance from the bound,
-    # so we introduce a lower bound on the allowed stride.
-    # The formula below is correct as p_h and r_h has the same norm.
-    if r_stride_u > 0:
-        r_stride_l = (1 - theta) * p_stride / r_stride_u
+    # Find lower and upper bounds on a step size along the reflected
+    # direction, considering the strict feasibility requirement. There is no
+    # single correct way to do that, the chosen approach seems to work best
+    # on test problems.
+    r_stride = min(to_bound, to_tr)
+    if r_stride > 0:
+        r_stride_l = (1 - theta) * p_stride / r_stride
+        if r_stride == to_bound:
+            r_stride_u = theta * to_bound
+        else:
+            r_stride_u = to_tr
     else:
-        r_stride_l = -1
+        r_stride_l = 0
+        r_stride_u = -1
 
     # Check if reflection step is available.
     if r_stride_l <= r_stride_u:
-        a, b = build_quadratic_1d(J_h, g_h, r_h, s0=p_h, diag=diag_h)
-        r_stride, _ = minimize_quadratic_1d(a, b, r_stride_l, r_stride_u)
-        r_h = p_h + r_h * r_stride
+        a, b, c = build_quadratic_1d(J_h, g_h, r_h, s0=p_h, diag=diag_h)
+        r_stride, r_value = minimize_quadratic_1d(
+            a, b, r_stride_l, r_stride_u, c=c)
+        r_h *= r_stride
+        r_h += p_h
+        r = r_h * d
     else:
-        r_h = None
+        r_value = np.inf
 
     # Now correct p_h to make it strictly interior.
+    p *= theta
     p_h *= theta
+    p_value = evaluate_quadratic(J_h, g_h, p_h, diag=diag_h)
 
-    # If no reflection step, just return p_h for convenience.
-    if r_h is None:
-        return p_h, p_h
+    ag_h = -g_h
+    ag = d * ag_h
+
+    to_tr = Delta / norm(ag_h)
+    to_bound, _ = step_size_to_bound(x, ag, lb, ub)
+    if to_bound < to_tr:
+        ag_stride = theta * to_bound
     else:
-        return p_h, r_h
+        ag_stride = to_tr
 
+    a, b = build_quadratic_1d(J_h, g_h, ag_h, diag=diag_h)
+    ag_stride, ag_value = minimize_quadratic_1d(a, b, 0, ag_stride)
+    ag_h *= ag_stride
+    ag *= ag_stride
 
-def find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta):
-    """Find a minimizer of a quadratic model along the scaled gradient.
-
-    a, b - coefficients of a quadratic model along g_h, should be
-    precomputed.
-    """
-    to_bound, _ = step_size_to_bound(x, -g_h * d, lb, ub)
-    to_bound *= theta
-
-    to_tr = Delta / norm(g_h)
-    g_stride = min(to_bound, to_tr)
-
-    g_stride, _ = minimize_quadratic_1d(a, b, 0.0, g_stride)
-
-    return -g_stride * g_h
+    if p_value < r_value and p_value < ag_value:
+        return p, p_h, -p_value
+    elif r_value < p_value and r_value < ag_value:
+        return r, r_h, -r_value
+    else:
+        return ag, ag_h, -ag_value
 
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
@@ -298,10 +290,10 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             if regularize:
                 a, b = build_quadratic_1d(J_h, g_h, -g_h, diag=diag_h)
                 to_tr = Delta / norm(g_h)
-                g_value = minimize_quadratic_1d(a, b, 0, to_tr)[1]
-                reg_term = -g_value / Delta**2
+                ag_value = minimize_quadratic_1d(a, b, 0, to_tr)[1]
+                reg_term = -ag_value / Delta**2
 
-            lsmr_op = lsmr_operator(J_h, (diag_h + reg_term)**0.5)
+            lsmr_op = regularized_lsq_operator(J_h, (diag_h + reg_term)**0.5)
             gn_h = lsmr(lsmr_op, f_augmented, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
             S, _ = qr(S, mode='economic')
@@ -312,9 +304,6 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
         # theta controls step back step ratio from the bounds.
         theta = max(0.995, 1 - g_norm)
 
-        # In the following: p - trust-region solution, r - reflected solution,
-        # c - minimizer along the scaled gradient, _h means the variable
-        # is computed in "hat" space.
         actual_reduction = -1
         while actual_reduction <= 0 and nfev < max_nfev:
             if tr_solver == 'exact':
@@ -325,32 +314,9 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 p_h = S.dot(p_S)
 
             p = d * p_h  # Trust-region solution in the original space.
+            step, step_h, predicted_reduction = select_step(
+                x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
 
-            to_bound, _ = step_size_to_bound(x, p, lb, ub)
-            if to_bound >= 1:  # Trust region step is feasible.
-                # Still step back from the bound.
-                p_h *= min(theta * to_bound, 1)
-                step_h = p_h
-                predicted_reduction = -evaluate_quadratic(J_h, g_h, p_h,
-                                                          diag=diag_h)
-            else:  # Otherwise consider reflected and gradient steps.
-                p_h, r_h = find_reflected_step(
-                    x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
-
-                if tr_solver == 'exact' or not regularize:
-                    a, b = build_quadratic_1d(J_h, g_h, -g_h, diag=diag_h)
-                # else: a, b were already computed.
-
-                c_h = find_gradient_step(x, a, b, g_h, d, Delta, lb, ub, theta)
-
-                steps_h = np.array([p_h, r_h, c_h])
-                values = evaluate_quadratic(J_h, g_h, steps_h, diag=diag_h)
-
-                min_index = np.argmin(values)
-                step_h = steps_h[min_index]
-                predicted_reduction = -values[min_index]
-
-            step = d * step_h
             x_new = make_strictly_feasible(x + step, lb, ub, rstep=0)
 
             f_new = fun(x_new)
