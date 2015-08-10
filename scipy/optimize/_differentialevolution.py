@@ -57,9 +57,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
         The default is 'best1bin'.
     maxiter : int, optional
-        The maximum number of times the entire population is evolved.
-        The maximum number of function evaluations (with no polishing) is:
-        ``(maxiter + 1) * popsize * len(x)``
+        The maximum number of generations over which the entire population is
+        evolved. The maximum number of function evaluations (with no polishing)
+        is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals.
@@ -69,7 +69,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         is greater than 1 the solving process terminates:
         ``convergence = mean(pop) * tol / stdev(pop) > 1``
     mutation : float or tuple(float, float), optional
-        The mutation constant.
+        The mutation constant. In the literature this is also known as
+        differential weight, being denoted by F.
         If specified as a float it should be in the range [0, 2].
         If specified as a tuple ``(min, max)`` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
@@ -78,9 +79,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Increasing the mutation constant increases the search radius, but will
         slow down convergence.
     recombination : float, optional
-        The recombination constant, should be in the range [0, 1]. Increasing
-        this value allows a larger number of mutants to progress into the next
-        generation, but at the risk of population stability.
+        The recombination constant, should be in the range [0, 1]. In the
+        literature this is also known as the crossover probability, being
+        denoted by CR. Increasing this value allows a larger number of mutants
+        to progress into the next generation, but at the risk of population
+        stability.
     seed : int or `np.random.RandomState`, optional
         If `seed` is not specified the `np.RandomState` singleton is used.
         If `seed` is an int, a new `np.random.RandomState` instance is used,
@@ -238,9 +241,9 @@ class DifferentialEvolutionSolver(object):
         The default is 'best1bin'
 
     maxiter : int, optional
-        The maximum number of times the entire population is evolved. The
-        maximum number of function evaluations (with no polishing) is:
-        ``(maxiter + 1) * popsize * len(x)``
+        The maximum number of generations over which the entire population is
+        evolved. The maximum number of function evaluations (with no polishing)
+        is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals.
@@ -250,7 +253,8 @@ class DifferentialEvolutionSolver(object):
         is greater than 1 the solving process terminates:
         ``convergence = mean(pop) * tol / stdev(pop) > 1``
     mutation : float or tuple(float, float), optional
-        The mutation constant.
+        The mutation constant. In the literature this is also known as
+        differential weight, being denoted by F.
         If specified as a float it should be in the range [0, 2].
         If specified as a tuple ``(min, max)`` dithering is employed. Dithering
         randomly changes the mutation constant on a generation by generation
@@ -259,9 +263,11 @@ class DifferentialEvolutionSolver(object):
         Increasing the mutation constant increases the search radius, but will
         slow down convergence.
     recombination : float, optional
-        The recombination constant, should be in the range [0, 1]. Increasing
-        this value allows a larger number of mutants to progress into the next
-        generation, but at the risk of population stability.
+        The recombination constant, should be in the range [0, 1]. In the
+        literature this is also known as the crossover probability, being
+        denoted by CR. Increasing this value allows a larger number of mutants
+        to progress into the next generation, but at the risk of population
+        stability.
     seed : int or `np.random.RandomState`, optional
         If `seed` is not specified the `np.random.RandomState` singleton is
         used.
