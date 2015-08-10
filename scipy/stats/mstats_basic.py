@@ -1602,7 +1602,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     return ma.minimum.reduce(am, axis)
 
 
-def tmax(a, upperlimit, axis=0, inclusive=True):
+def tmax(a, upperlimit=None, axis=0, inclusive=True):
     """
     Compute the trimmed maximum
 
