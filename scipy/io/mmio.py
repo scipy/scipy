@@ -10,16 +10,18 @@
 # References:
 #  http://math.nist.gov/MatrixMarket/
 #
-
 from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-from numpy import asarray, real, imag, conj, zeros, ndarray, concatenate, \
-    ones, ascontiguousarray, vstack, savetxt, fromfile, fromstring
+
+from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
+                   ones, ascontiguousarray, vstack, savetxt, fromfile,
+                   fromstring)
 from numpy.compat import asbytes, asstr
+
 from scipy._lib.six import string_types
-from scipy.sparse import spmatrix, coo_matrix, isspmatrix
+from scipy.sparse import coo_matrix, isspmatrix
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
@@ -769,7 +771,6 @@ def _is_fromfile_compatible(stream):
 
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    import sys
     import time
     for filename in sys.argv[1:]:
         print('Reading', filename, '...', end=' ')
