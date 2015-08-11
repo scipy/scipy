@@ -897,6 +897,23 @@ class TestSVD(TestCase):
             sigma[i,i] = s[i]
         assert_array_almost_equal(dot(dot(u,sigma),vh),a)
 
+    def test_gh_5039(self):
+        # This is a smoke test for https://github.com/scipy/scipy/issues/5039
+        #
+        # The following is reported to raise "ValueError: On entry to DGESDD
+        # parameter number 12 had an illegal value".
+        # `interp1d([1,2,3,4], [1,2,3,4], kind='cubic')`
+        # This is reported to only show up on LAPACK 3.0.3. 
+        #
+        # The matrix below is taken from the call to
+        # `B = _fitpack._bsplmat(order, xk)` in interpolate._find_smoothest
+        b = np.array(
+            [[0.16666667, 0.66666667, 0.16666667, 0., 0., 0.],
+             [0., 0.16666667, 0.66666667, 0.16666667, 0., 0.],
+             [0., 0., 0.16666667, 0.66666667, 0.16666667, 0.],
+             [0., 0., 0., 0.16666667, 0.66666667, 0.16666667]])
+        svd(b)
+
 
 class TestSVDVals(TestCase):
 
