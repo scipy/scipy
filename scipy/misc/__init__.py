@@ -44,9 +44,10 @@ systems that don't have PIL installed.
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['who', 'source', 'info', 'doccer',
-           'comb', 'factorial', 'factorial2', 'factorialk', 'SPool']
+           'comb', 'factorial', 'factorial2', 'factorialk', 'SPool', 'PPool']
 
 from ._spool import SPool
+from ._ppool import PPool
 from . import doccer
 from .common import *
 from numpy import who, source, info as _info
