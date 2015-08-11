@@ -60,6 +60,8 @@ correctly returns no values instead of all the contents of the MAT file.
 Other changes
 =============
 
+``scipy.constants`` is updated to the CODATA 2014 recommended values.
+
 
 Authors
 =======
