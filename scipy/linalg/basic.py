@@ -792,6 +792,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     See Also
     --------
     optimize.nnls : linear least squares with non-negativity constraint
+    optimize.bounded_lstsq : linear least squares with arbitrary bounds
 
     """
     a1 = _asarray_validated(a, check_finite=check_finite)

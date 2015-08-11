@@ -70,6 +70,10 @@ def configuration(parent_package='',top_path=None):
                                           for x in ["nnls.f","nnls.pyf"]],
                          **numpy_nodepr_api)
 
+    sources = ["bvls.f", "bvls.pyf"]
+    config.add_extension('_bvlslib', sources=[join('bvls', x)
+                                              for x in sources])
+
     config.add_data_dir('tests')
     return config
 

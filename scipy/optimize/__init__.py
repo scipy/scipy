@@ -231,6 +231,7 @@ from .cobyla import fmin_cobyla
 from .nonlin import *
 from .slsqp import fmin_slsqp
 from .nnls import nnls
+from ._bvls import bounded_lstsq
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
 from ._differentialevolution import differential_evolution

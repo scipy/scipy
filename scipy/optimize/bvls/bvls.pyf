@@ -1,0 +1,23 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _bvlslib ! in 
+    interface  ! in :_bvlslib
+        subroutine bvls(a,b,m,n,bnd,x,rnorm,nsetp,w,index_bn,ierr) ! in :_bvlslib:bvls.f
+            real*8 dimension(m,n),intent(inout) :: a
+            real*8 dimension(m),depend(m),intent(inout) :: b
+            integer, optional,check(shape(a,0)==m),depend(a),intent(hide) :: m=shape(a,0)
+            integer, optional,check(shape(a,1)==n),depend(a),intent(hide) :: n=shape(a,1)
+            real*8 dimension(2,n),depend(n),intent(in) :: bnd
+            real*8 dimension(n),depend(n),intent(inout) :: x
+            real*8,intent(out) :: rnorm
+            integer,intent(out) :: nsetp
+            real*8 dimension(n),depend(n),intent(in) :: w
+            integer dimension(n),depend(n),intent(in) :: index_bn
+            integer,intent(out) :: ierr
+        end subroutine bvls
+    end interface 
+end python module _bvls
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

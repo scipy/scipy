@@ -159,6 +159,7 @@ scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
 scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
+scipy/optimize/bvls/_bvlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
