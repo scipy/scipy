@@ -21,7 +21,7 @@ const char *sf_error_messages[] = {
 
 static int print_error_messages = 0;
 
-extern int wrap_PyUFunc_getfperr();
+extern int wrap_PyUFunc_getfperr(void);
 
 int sf_error_set_print(int flag)
 {
@@ -35,7 +35,7 @@ int sf_error_get_print()
     return print_error_messages;
 }
 
-void sf_error(char *func_name, sf_error_t code, char *fmt, ...)
+void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
 {
     char msg[2048], info[1024];
     static PyObject *py_SpecialFunctionWarning = NULL;
@@ -111,7 +111,7 @@ void sf_error(char *func_name, sf_error_t code, char *fmt, ...)
 #define UFUNC_FPE_UNDERFLOW     4
 #define UFUNC_FPE_INVALID       8
 
-void sf_error_check_fpe(char *func_name)
+void sf_error_check_fpe(const char *func_name)
 {
     int status;
     status = wrap_PyUFunc_getfperr();

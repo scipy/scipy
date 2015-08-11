@@ -111,7 +111,7 @@ extern double log10(double x);
  */
 extern long lrand(void);
 extern long lsqrt(long x);
-extern int mtherr(char *name, int code);
+extern void mtherr(const char *name, int code);
 extern double nbdtrc(int k, int n, double p);
 extern double nbdtr(int k, int n, double p);
 extern double nbdtri(int k, int n, double p);
