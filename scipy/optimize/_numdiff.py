@@ -4,7 +4,7 @@ from __future__ import division
 
 import numpy as np
 
-from ..sparse import issparse, csc_matrix, csr_matrix, lil_matrix, find
+from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
 
 EPS = np.finfo(np.float64).eps
@@ -402,7 +402,10 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
                        structure, groups, method):
     m = f0.size
     n = x0.size
-    J = lil_matrix((m, n), dtype=float)
+    row_indices = []
+    col_indices = []
+    fractions = []
+
     n_groups = np.max(groups) + 1
     for group in range(n_groups):
         # Perturb variables which are in the same group simultaneously.
@@ -462,10 +465,16 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
         else:
             raise ValueError("Never be here.")
 
-        # All that's left is to compute the fraction. Note that i and j
-        # are aligned with each other by `find` function.
-        J[i, j] = df[i] / dx[j]
+        # All that's left is to compute the fraction. We store i, j and
+        # fractions as separate arrays and later construct coo_matrix.
+        row_indices.append(i)
+        col_indices.append(j)
+        fractions.append(df[i] / dx[j])
 
+    row_indices = np.hstack(row_indices)
+    col_indices = np.hstack(col_indices)
+    fractions = np.hstack(fractions)
+    J = coo_matrix((fractions, (row_indices, col_indices)), shape=(m, n))
     return csr_matrix(J)
 
 
