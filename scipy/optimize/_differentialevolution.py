@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
+from scipy.misc import SPool
 import numbers
 
 __all__ = ['differential_evolution']
@@ -310,7 +311,9 @@ class DifferentialEvolutionSolver(object):
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True,
                  init='latinhypercube'):
-
+        
+        self.pool = SPool()
+        
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
         elif strategy in self._exponential:
@@ -447,12 +450,16 @@ class DifferentialEvolutionSolver(object):
 
         nfev, nit, warning_flag = 0, 0, False
         status_message = _status_message['success']
-
+        
+        
         # calculate energies to start with
         for index, candidate in enumerate(self.population):
-            parameters = self._scale_parameters(candidate)
-            self.population_energies[index] = self.func(parameters,
-                                                        *self.args)
+            # incapsulate additional fixed arguments to parameters
+            parameters = []
+            parameters.append(self._scale_parameters(candidate), *(self.args))
+            
+            # evaluate function
+            self.population_energies[index] = self.pool.map(self.func, parameters)[0]
             nfev += 1
 
             if nfev > self.maxfun:
@@ -491,9 +498,10 @@ class DifferentialEvolutionSolver(object):
 
                 trial = self._mutate(candidate)
                 self._ensure_constraint(trial)
-                parameters = self._scale_parameters(trial)
+                parameters = []
+                parameters.append(self._scale_parameters(trial), *(self.args))
 
-                energy = self.func(parameters, *self.args)
+                energy = self.pool.map(self.func, parameters)[0]
                 nfev += 1
 
                 if energy < self.population_energies[candidate]:
