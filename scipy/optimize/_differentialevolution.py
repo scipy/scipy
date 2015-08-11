@@ -18,7 +18,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
-                           init='latinhypercube'):
+                           init='latinhypercube', pool=None):
     """Finds the global minimum of a multivariate function.
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
@@ -199,7 +199,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          seed=seed, polish=polish,
                                          callback=callback,
                                          disp=disp,
-                                         init=init)
+                                         init=init, pool=pool)
     return solver.solve()
 
 
@@ -310,9 +310,13 @@ class DifferentialEvolutionSolver(object):
                  strategy='best1bin', maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True,
-                 init='latinhypercube'):
+                 init='latinhypercube', pool=None):
         
-        self.pool = SPool()
+        if pool is None:
+            self.pool = SPool()
+        else:
+            self.pool = pool
+            print("Starting %g workers in parallel." % self.pool.poolsize())
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -450,7 +454,6 @@ class DifferentialEvolutionSolver(object):
 
         nfev, nit, warning_flag = 0, 0, False
         status_message = _status_message['success']
-        
         
         # calculate energies to start with
         for index, candidate in enumerate(self.population):
