@@ -1424,6 +1424,8 @@ def kurtosistest(a, axis=0):
     Notes
     -----
     Valid only for n>20.  The Z-score is set to 0 for bad entries.
+    This function uses the method of Anscombe & Glynn (1983).
+    See doi: 10.1093/biomet/70.1.227
 
     """
     a, axis = _chk_asarray(a, axis)
