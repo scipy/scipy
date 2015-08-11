@@ -115,6 +115,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         maximize coverage of the available parameter space. 'random' initializes
         the population randomly - this has the drawback that clustering can
         occur, preventing the whole of parameter space being covered.
+    pool : object, optional
+        Optional iterable object which is used for parallelization. It can be
+        any object with a map method that follows the same calling sequence as
+        the built-in map function, and with poolsize method. There are two 
+        helper classes -- SPool and PPool that provide serial and 
+        multiprocessing-based parallel pools. 'mpi4py'-based paralelization and
+        'joblib'-based parallelization alternative pools can be also used here.
 
     Returns
     -------
@@ -185,6 +192,54 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result = differential_evolution(ackley, bounds)
     >>> result.x, result.fun
     (array([ 0.,  0.]), 4.4408920985006262e-16)
+
+
+    Next example demonstrates the parallelization capabilities.
+
+    >>>
+    from scipy.optimize import rosen
+    from scipy.optimize import differential_evolution as de
+    from scipy.misc import SPool
+    from scipy.misc import PPool
+    import time
+
+    def objfunc(params):
+        for it in xrange(1000000):
+            it**2
+        return rosen(params)
+
+    bounds = [(0,2), (0, 2), (0,2)]
+
+    start_time = time.time()
+    p = PPool()
+    result = de(objfunc, bounds, maxiter=10, polish=False, pool=p)
+    print("Parallel: %s seconds ---" % (time.time() - start_time))
+    print(result)
+
+    start_time = time.time()
+    result = de(objfunc, bounds, maxiter=10, polish=False)
+    print("Serial: %s seconds ---" % (time.time() - start_time))
+    print(result)
+    >>>
+    
+    Result in this case shows significant speedup:
+    
+        Starting 8 workers in parallel.
+        Parallel: 10.3080079556 seconds ---
+            nfev: 495
+         success: False
+             fun: 0.10339721875784408
+               x: array([ 1.13160783,  1.28034415,  1.63063239])
+         message: 'Maximum number of iterations has been exceeded.'
+             nit: 10
+        Serial: 51.7796390057 seconds ---
+            nfev: 495
+         success: False
+             fun: 0.11308221467067792
+               x: array([ 0.90177458,  0.78971613,  0.6172659 ])
+         message: 'Maximum number of iterations has been exceeded.'
+             nit: 10
+    
 
     References
     ----------
@@ -299,6 +354,13 @@ class DifferentialEvolutionSolver(object):
 
             - 'latinhypercube'
             - 'random'
+    pool : object, optional
+        Optional iterable object which is used for parallelization. It can be
+        any object with a map method that follows the same calling sequence as
+        the built-in map function, and with poolsize method. There are two 
+        helper classes -- SPool and PPool that provide serial and 
+        multiprocessing-based parallel pools. 'mpi4py'-based paralelization and
+        'joblib'-based parallelization alternative pools can be also used here.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
