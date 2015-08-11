@@ -48,8 +48,8 @@ from scipy.optimize import OptimizeResult
 from .common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
     build_quadratic_1d, minimize_quadratic_1d, compute_grad,
-    compute_jac_scaling, check_termination, compute_loss_and_derivatives,
-    compute_cost, correct_by_loss, print_header, print_iteration)
+    compute_jac_scaling, check_termination, correct_by_loss,
+    print_header, print_iteration)
 
 
 def lsmr_operator(Jop, d, active_set):
@@ -141,7 +141,7 @@ def dogleg_step(x, newton_step, g, a, b, tr_bounds, lb, ub):
 
 
 def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
-           loss, loss_scale, tr_solver, tr_options, verbose):
+           loss_function, tr_solver, tr_options, verbose):
     f = f0
     f_true = f.copy()
     nfev = 1
@@ -149,8 +149,8 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     J = J0
     njev = 1
 
-    if loss != 'linear':
-        rho = compute_loss_and_derivatives(f, loss, loss_scale)
+    if loss_function is not None:
+        rho = loss_function(f)
         cost = 0.5 * np.sum(rho[0])
         J, f = correct_by_loss(J, f, rho)
     else:
@@ -258,7 +258,10 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             nfev += 1
 
             # Usual trust-region step quality estimation.
-            cost_new = compute_cost(f_new, loss, loss_scale)
+            if loss_function is not None:
+                cost_new = loss_function(f_new, cost_only=True)
+            else:
+                cost_new = 0.5 * np.dot(f_new, f_new)
             actual_reduction = cost - cost_new
 
             Delta, ratio = update_tr_radius(
@@ -291,8 +294,8 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             J = jac(x, f)
             njev += 1
 
-            if loss != 'linear':
-                rho = compute_loss_and_derivatives(f, loss, loss_scale)
+            if loss_function is not None:
+                rho = loss_function(f)
                 J, f = correct_by_loss(J, f, rho)
 
             g = compute_grad(J, f)

@@ -105,8 +105,7 @@ from .common import (
     solve_trust_region_2d, minimize_quadratic_1d, build_quadratic_1d,
     evaluate_quadratic, right_multiplied_operator, regularized_lsq_operator,
     scaling_vector, compute_grad, compute_jac_scaling, check_termination,
-    update_tr_radius, compute_cost, correct_by_loss,
-    compute_loss_and_derivatives, print_header, print_iteration)
+    update_tr_radius, correct_by_loss, print_header, print_iteration)
 
 
 def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
@@ -186,7 +185,7 @@ def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
 
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
-        loss, loss_scale, tr_solver, tr_options, verbose):
+        loss_function, tr_solver, tr_options, verbose):
     # Start with strictly feasible guess.
     x = make_strictly_feasible(x0, lb, ub, rstep=1e-10)
 
@@ -198,8 +197,8 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     njev = 1
     m, n = J.shape
 
-    if loss != 'linear':
-        rho = compute_loss_and_derivatives(f, loss, loss_scale)
+    if loss_function is not None:
+        rho = loss_function(f)
         cost = 0.5 * np.sum(rho[0])
         J, f = correct_by_loss(J, f, rho)
     else:
@@ -323,7 +322,10 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             nfev += 1
 
             # Usual trust-region step quality estimation.
-            cost_new = compute_cost(f_new, loss, loss_scale)
+            if loss_function is not None:
+                cost_new = loss_function(f_new, cost_only=True)
+            else:
+                cost_new = 0.5 * np.dot(f_new, f_new)
             actual_reduction = cost - cost_new
             # Correction term is specific to the algorithm,
             # vanishes in unbounded case.
@@ -354,8 +356,8 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             J = jac(x, f)
             njev += 1
 
-            if loss != 'linear':
-                rho = compute_loss_and_derivatives(f, loss, loss_scale)
+            if loss_function is not None:
+                rho = loss_function(f)
                 J, f = correct_by_loss(J, f, rho)
 
             g = compute_grad(J, f)

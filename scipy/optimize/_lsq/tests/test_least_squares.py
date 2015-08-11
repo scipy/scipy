@@ -12,8 +12,8 @@ from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
 
 from scipy.optimize import least_squares
-from scipy.optimize._lsq.common import (EPS, IMPLEMENTED_LOSSES,
-                                        make_strictly_feasible)
+from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
+from scipy.optimize._lsq.common import EPS, make_strictly_feasible
 
 
 def fun_trivial(x, a=0):
@@ -161,7 +161,7 @@ def cubic_soft_l1(z):
     return rho
 
 
-LOSSES = IMPLEMENTED_LOSSES + [cubic_soft_l1]
+LOSSES = list(IMPLEMENTED_LOSSES.keys()) + [cubic_soft_l1]
 
 
 class BaseMixin(object):

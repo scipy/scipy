@@ -12,8 +12,7 @@ from scipy.optimize._numdiff import approx_derivative, group_columns
 
 from .trf import trf
 from .dogbox import dogbox
-from .common import (EPS, IMPLEMENTED_LOSSES, in_bounds, compute_cost,
-                     compute_loss_and_derivatives)
+from .common import EPS, in_bounds
 
 
 TERMINATION_MESSAGES = {
@@ -149,6 +148,81 @@ def check_jac_sparsity(jac_sparsity, m, n):
         raise ValueError("`jac_sparsity` has wrong shape.")
 
     return jac_sparsity, group_columns(jac_sparsity)
+
+
+# Loss functions.
+
+
+def huber(z, rho, cost_only):
+    mask = z <= 1
+    rho[0, mask] = z[mask]
+    rho[0, ~mask] = 2 * z[~mask]**0.5 - 1
+    if cost_only:
+        return
+    rho[1, mask] = 1
+    rho[1, ~mask] = z[~mask]**-0.5
+    rho[2, mask] = 0
+    rho[2, ~mask] = -0.5 * z[~mask]**-1.5
+
+
+def soft_l1(z, rho, cost_only):
+    t = 1 + z
+    rho[0] = 2 * (t**0.5 - 1)
+    if cost_only:
+        return
+    rho[1] = t**-0.5
+    rho[2] = -0.5 * t**-1.5
+
+
+def cauchy(z, rho, cost_only):
+    rho[0] = np.log1p(z)
+    if cost_only:
+        return
+    t = 1 + z
+    rho[1] = 1 / t
+    rho[2] = -1 / t**2
+
+
+def arctan(z, rho, cost_only):
+    rho[0] = np.arctan(z)
+    if cost_only:
+        return
+    t = 1 + z**2
+    rho[1] = 1 / t
+    rho[2] = -2 * z / t**2
+
+
+IMPLEMENTED_LOSSES = dict(linear=None, huber=huber, soft_l1=soft_l1,
+                          cauchy=cauchy, arctan=arctan)
+
+
+def construct_loss_function(m, loss, loss_scale):
+    if loss == 'linear':
+        return None
+
+    if not callable(loss):
+        loss = IMPLEMENTED_LOSSES[loss]
+        rho = np.empty((3, m))
+
+        def loss_function(f, cost_only=False):
+            z = (f / loss_scale) ** 2
+            loss(z, rho, cost_only=cost_only)
+            if cost_only:
+                return 0.5 * loss_scale**2 * np.sum(rho[0])
+            rho[0] *= loss_scale**2
+            rho[2] /= loss_scale**2
+            return rho
+    else:
+        def loss_function(f, cost_only=False):
+            z = (f / loss_scale) ** 2
+            rho = loss(z)
+            if cost_only:
+                return 0.5 * loss_scale**2 * np.sum(rho[0])
+            rho[0] *= loss_scale**2
+            rho[2] /= loss_scale**2
+            return rho
+
+    return loss_function
 
 
 def least_squares(
@@ -648,7 +722,7 @@ def least_squares(
 
     if loss not in IMPLEMENTED_LOSSES and not callable(loss):
         raise ValueError("`loss` must be one of {0} or a callable."
-                         .format(IMPLEMENTED_LOSSES))
+                         .format(IMPLEMENTED_LOSSES.keys()))
 
     if method == 'lm' and loss != 'linear':
         raise ValueError("method='lm' supports only 'linear' loss function.")
@@ -701,13 +775,17 @@ def least_squares(
         raise ValueError("Method 'lm' doesn't work when the number of "
                          "residuals is less than the number of variables.")
 
+    loss_function = construct_loss_function(m, loss, loss_scale)
     if callable(loss):
-        rho = compute_loss_and_derivatives(f0, loss, loss_scale)
+        rho = loss_function(f0)
         if rho.shape != (3, m):
-            raise ValueError("The return value of `loss` has wrong shape.")
+            raise ValueError("The return value of `loss` callable has wrong "
+                             "shape.")
         initial_cost = 0.5 * np.sum(rho[0])
+    elif loss_function is not None:
+        initial_cost = loss_function(f0, cost_only=True)
     else:
-        initial_cost = compute_cost(f0, loss, loss_scale)
+        initial_cost = 0.5 * np.dot(f0, f0)
 
     if callable(jac):
         J0 = jac(x0, *args, **kwargs)
@@ -789,7 +867,7 @@ def least_squares(
 
     elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
-                     gtol, max_nfev, scaling, loss, loss_scale, tr_solver,
+                     gtol, max_nfev, scaling, loss_function, tr_solver,
                      tr_options.copy(), verbose)
 
     elif method == 'dogbox':
@@ -800,7 +878,7 @@ def least_squares(
             del tr_options['regularize']
 
         result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
-                        xtol, gtol, max_nfev, scaling, loss, loss_scale,
+                        xtol, gtol, max_nfev, scaling, loss_function,
                         tr_solver, tr_options, verbose)
 
     result.message = TERMINATION_MESSAGES[result.status]

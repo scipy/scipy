@@ -651,77 +651,12 @@ def check_termination(dF, F, dx_norm, x_norm, ratio, ftol, xtol):
         return None
 
 
-# Routines for robust loss function operations.
-
-
-IMPLEMENTED_LOSSES = ['linear', 'huber', 'soft_l1', 'cauchy', 'arctan']
-
-
-def compute_cost(f, loss, loss_scale):
-    if loss == 'linear':
-        return 0.5 * np.dot(f, f)
-
-    z = (f / loss_scale) ** 2
-    if loss == 'huber':
-        rho = z
-        rho[rho > 1] = 2 * z[rho > 1]**0.5 - 1
-    elif loss == 'soft_l1':
-        rho = 2 * ((1 + z)**0.5 - 1)
-    elif loss == 'cauchy':
-        rho = np.log1p(z)
-    elif loss == 'arctan':
-        rho = np.arctan(z)
-    elif callable(loss):
-        rho = loss(z)[0]
-    else:
-        raise ValueError("Unknown `loss`.")
-
-    return 0.5 * loss_scale**2 * np.sum(rho)
-
-
-def compute_loss_and_derivatives(f, loss, loss_scale):
-    if loss == 'linear':
-        return np.vstack((f**2, np.ones_like(f), np.zeros_like(f)))
-
-    rho = np.empty((3, f.size))
-    z = (f / loss_scale) ** 2
-
-    if loss == 'huber':
-        mask = z <= 1
-        rho[0, mask] = z[mask]
-        rho[0, ~mask] = 2 * z[~mask]**0.5 - 1
-        rho[1, mask] = 1
-        rho[1, ~mask] = z[~mask]**-0.5
-        rho[2, mask] = 0
-        rho[2, ~mask] = -0.5 * z[~mask]**-1.5
-    elif loss == 'soft_l1':
-        t = 1 + z
-        rho[0] = 2 * (t**0.5 - 1)
-        rho[1] = t**-0.5
-        rho[2] = -0.5 * t**-1.5
-    elif loss == 'cauchy':
-        rho[0] = np.log1p(z)
-        t = 1 + z
-        rho[1] = 1 / t
-        rho[2] = -1 / t**2
-    elif loss == 'arctan':
-        rho[0] = np.arctan(z)
-        t = 1 + z**2
-        rho[1] = 1 / t
-        rho[2] = -2 * z / t**2
-    elif callable(loss):
-        rho = np.atleast_2d(loss(z))
-    else:
-        raise ValueError("Unknown `loss`.")
-
-    rho[0] *= loss_scale**2
-    rho[2] /= loss_scale**2
-
-    return rho
-
-
 def correct_by_loss(J, f, rho):
-    """J and f are modified inplace when possible."""
+    """Correct J and f to make an iteration correspond to a robust loss
+    function.
+
+    Arrays are modified in place.
+    """
     J_scale = rho[1] + 2 * rho[2] * f**2
     J_scale[J_scale < EPS] = EPS
     J_scale **= 0.5
