@@ -3245,18 +3245,34 @@ class TestFOneWay(TestCase):
         check_named_results(res, attributes)
 
     def test_nist(self):
-        # The npz file with the nist test cases data is assumed to be in the
-        # same directory as this file.
-        nist = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                    'nist_anova.npz')))
-        rtol = 1e-7
-        for test_case in nist:
-            (y, x, f, dfbn, dfwn, R2,
-             resstd, certified, caty) = nist[test_case]
+        # These are the nist ANOVA files. They can be found at:
+        # http://www.itl.nist.gov/div898/strd/anova/anova.html
+        filenames = ['SiRstv.dat', 'SmLs01.dat', 'SmLs02.dat', 'SmLs03.dat',
+                     'AtmWtAg.dat', 'SmLs04.dat', 'SmLs05.dat', 'SmLs06.dat',
+                     'SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat']
+
+        for test_case in filenames:
+            rtol = 1e-7
+            fname = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/nist_anova', test_case))
+            with open(fname, 'r') as f:
+                content = f.read().split('\n')
+            certified = [line.split() for line in content[40:48]
+                         if line.strip()]
+            dataf = np.loadtxt(fname, skiprows=60)
+            y, x = dataf.T
+            y = y.astype(int)
+            caty = np.unique(y)
+            f = float(certified[0][-1])
+
             xlist = [x[y == i] for i in caty]
             res = stats.f_oneway(*xlist)
-            if test_case == 'SmLs09.dat' or test_case == 'SmLs07.dat':
+
+            # With the hard test cases we relax the tolerance a bit.
+            hard_tc = ('SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat')
+            if test_case in hard_tc:
                 rtol = 1e-4
+
             assert_allclose(res[0], f, rtol=rtol,
                             err_msg='Failing testcase: %s' % test_case)
 
