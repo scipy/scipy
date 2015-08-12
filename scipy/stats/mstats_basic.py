@@ -683,7 +683,7 @@ def pointbiserialr(x, y):
     return PointbiserialrResult(rpb, prob)
 
 
-def linregress(*args):
+def linregress(x, y=None):
     """
     Linear regression calculation
 
@@ -691,19 +691,9 @@ def linregress(*args):
     replaced by the non-masked docstring + some info on missing data.
 
     """
-    if len(args) == 1:
-        # Input is a single 2-D array containing x and y
-        args = ma.array(args[0], copy=True)
-        if len(args) == 2:
-            x = args[0]
-            y = args[1]
-        else:
-            x = args[:, 0]
-            y = args[:, 1]
-    else:
-        # Input is two 1-D arrays
-        x = ma.array(args[0]).flatten()
-        y = ma.array(args[1]).flatten()
+    x = ma.array(x).flatten()
+    if y is not None:
+        y = ma.array(y).flatten()
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y), shrink=False)
     if m is not nomask:
