@@ -1218,9 +1218,9 @@ def value(key):
 
     Examples
     --------
-    >>> from scipy.constants import codata
-    >>> codata.value('elementary charge')
-        1.602176487e-019
+    >>> from scipy import constants
+    >>> constants.value(u'elementary charge')
+        1.6021766208e-19
 
     """
     _check_obsolete(key)
@@ -1248,8 +1248,8 @@ def unit(key):
 
     Examples
     --------
-    >>> from scipy.constants import codata
-    >>> codata.unit(u'proton mass')
+    >>> from scipy import constants
+    >>> constants.unit(u'proton mass')
     'kg'
 
     """
@@ -1278,9 +1278,9 @@ def precision(key):
 
     Examples
     --------
-    >>> from scipy.constants import codata
-    >>> codata.precision(u'proton mass')
-    4.96226989798e-08
+    >>> from scipy import constants
+    >>> constants.precision(u'proton mass')
+    1.2555138746605121e-08
 
     """
     _check_obsolete(key)
@@ -1289,7 +1289,7 @@ def precision(key):
 
 def find(sub=None, disp=False):
     """
-    Return list of codata.physical_constant keys containing a given string.
+    Return list of physical_constant keys containing a given string.
 
     Parameters
     ----------
