@@ -503,17 +503,14 @@ class rv_frozen(object):
     def interval(self, alpha):
         return self.dist.interval(alpha, *self.args, **self.kwds)
 
-    def expect(self, func=None, lb=None, ub=None, 
-                     conditional=False, **kwds):
+    def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         # expect method only accepts shape parameters as positional args
         # hence convert self.args, self.kwds, also loc/scale
         # See the .expect method docstrings for the meaning of
         # other parameters.
         a, loc, scale = self.dist._parse_args(*self.args, **self.kwds)
         if isinstance(self.dist, rv_discrete):
-            if kwds:
-                raise ValueError("Discrete expect does not accept **kwds.")
-            return self.dist.expect(func, a, loc, lb, ub, conditional)
+            return self.dist.expect(func, a, loc, lb, ub, conditional, **kwds)
         else:
             return self.dist.expect(func, a, loc, scale, lb, ub,
                                     conditional, **kwds)
@@ -3143,7 +3140,7 @@ class rv_discrete(rv_generic):
             return ent
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
-               conditional=False):
+               conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
         """
         Calculate expected value of a function with respect to the distribution
         for discrete distribution.
@@ -3160,7 +3157,7 @@ class rv_discrete(rv_generic):
             Location parameter.
             Default is 0.
         lb, ub : int, optional
-            Lower and upper bound for integration, default is set to the
+            Lower and upper bound for the summation, default is set to the
             support of the distribution, inclusive (``ul <= k <= ub``).
         conditional : bool, optional
             If true then the expectation is corrected by the conditional
@@ -3168,6 +3165,14 @@ class rv_discrete(rv_generic):
             expectation of the function, `func`, conditional on being in
             the given interval (k such that ``ul <= k <= ub``).
             Default is False.
+        maxcount : int, optional
+            Maximal number of terms to evaluate (to avoid an endless loop for
+            an infinite sum). Default is 1000.
+        tolerance : float, optional
+            Absolute tolerance for the summation. Default is 1e-10.
+        chunksize : int, optional
+            Iterate over the support of a distributions in chunks of this size.
+            Default is 32.
 
         Returns
         -------
@@ -3176,29 +3181,16 @@ class rv_discrete(rv_generic):
 
         Notes
         -----
-        * function is not vectorized
-        * accuracy: uses self.moment_tol as stopping criterium
-          for heavy tailed distribution e.g. zipf(4), accuracy for
-          mean, variance in example is only 1e-5,
-          increasing precision (moment_tol) makes zipf very slow
-        * suppnmin=100 internal parameter for minimum number of points to
-          evaluate could be added as keyword parameter, to evaluate functions
-          with non-monotonic shapes, points include integers in (-suppnmin,
-          suppnmin)
-        * uses maxcount=1000 limits the number of points that are evaluated
-          to break loop for infinite sums
-          (a maximum of suppnmin+1000 positive plus suppnmin+1000 negative
-          integers are evaluated)
+        For heavy-tailed distributions, the expected value may or may not exist,
+        depending on the function, `func`. If it does exist, but the sum converges
+        slowly, the accuracy of the result may be rather low. For instance, for
+        ``zipf(4)``, accuracy for mean, variance in example is only 1e-5.
+        increasing `maxcount` and/or `chunksize` may improve the result, but may also
+        makes zipf very slow.
+
+        The function is not vectorized.
 
         """
-
-        # moment_tol = 1e-12 # increase compared to self.moment_tol,
-        # too slow for only small gain in precision for zipf
-
-        # avoid endless loop with unbound integral, eg. var of zipf(2)
-        maxcount = 1000
-        suppnmin = 100  # minimum number of points to evaluate (+ and -)
-
         if func is None:
             def fun(x):
                 # loc and args from outer scope
@@ -3213,11 +3205,11 @@ class rv_discrete(rv_generic):
 
         self._argcheck(*args)  # (re)generate scalar self.a and self.b
         if lb is None:
-            lb = (self.a)
+            lb = self.a
         else:
             lb = lb - loc   # convert bound for standardized distribution
         if ub is None:
-            ub = (self.b)
+            ub = self.b
         else:
             ub = ub - loc   # convert bound for standardized distribution
         if conditional:
@@ -3229,36 +3221,76 @@ class rv_discrete(rv_generic):
         else:
             invfac = 1.0
 
-        tot = 0.0
-        low, upp = self._ppf(0.001, *args), self._ppf(0.999, *args)
-        low = max(min(-suppnmin, low), lb)
-        upp = min(max(suppnmin, upp), ub)
-        supp = np.arange(low, upp+1, self.inc)  # check limits
-        tot = np.sum(fun(supp))
-        diff = 1e100
-        pos = upp + self.inc
-        count = 0
+        # short-circuit if the support size is small enough
+        if (ub - lb) <= chunksize:
+            supp = np.arange(lb, ub+1, self.inc)
+            vals = fun(supp)
+            return np.sum(vals) / invfac
 
-        # handle cases with infinite support
+        # otherwise, iterate starting from median
+        x0 = self.ppf(0.5, *args)
+        if x0 < lb:
+            x0 = lb
+        if x0 > ub:
+            x0 = ub
 
-        while (pos <= ub) and (diff > self.moment_tol) and count <= maxcount:
-            diff = fun(pos)
-            tot += diff
-            pos += self.inc
-            count += 1
+        count, tot = 0, 0.
+        # iterate over [x0, ub] inclusive
+        for x in _iter_chunked(x0, ub+1, chunksize=chunksize, inc=self.inc):
+            count += x.size
+            delta = np.sum(fun(x))
+            tot += delta
+            if abs(delta) < tolerance * x.size:
+                break
+            if count > maxcount:
+                warnings.warn('expect(): sum did not converge', RuntimeWarning)
+                return tot / invfac
+        
+        # iterate over [lb, x0)
+        for x in _iter_chunked(x0-1, lb-1, chunksize=chunksize, inc=-self.inc):
+            count += x.size
+            delta = np.sum(fun(x))
+            tot += delta
+            if abs(delta) < tolerance * x.size:
+                break
+            if count > maxcount:
+                warnings.warn('expect(): sum did not converge', RuntimeWarning)
+                break
 
-        if self.a < 0:  # handle case when self.a = -inf
-            diff = 1e100
-            pos = low - self.inc
-            while ((pos >= lb) and (diff > self.moment_tol) and
-                   count <= maxcount):
-                diff = fun(pos)
-                tot += diff
-                pos -= self.inc
-                count += 1
-        if count > maxcount:
-            warnings.warn('expect(): sum did not converge', RuntimeWarning)
         return tot/invfac
+
+def _iter_chunked(x0, x1, chunksize=4, inc=1):
+    """Iterate from x0 to x1 in chunks of chunksize and steps inc.
+
+    x0 must be finite, x1 need not be. In the latter case, the iterator is infinite.
+    Handles both x0 < x1 and x0 > x1. In the latter case, iterates downwards
+    (make sure to set inc < 0.)
+    
+    >>> [x for x in _iter_chunked(2, 5, inc=2)]
+    [array([2, 4])]
+    >>> [x for x in _iter_chunked(2, 11, inc=2)]
+    [array([2, 4, 6, 8]), array([10])]
+    >>> [x for x in _iter_chunked(2, -5, inc=-2)]
+    [array([ 2,  0, -2, -4])]
+    >>> [x for x in _iter_chunked(2, -9, inc=-2)]
+    [array([ 2,  0, -2, -4]), array([-6, -8])]
+
+    """
+    if inc == 0:
+        raise ValueError('Cannot increment by zero.')
+    if chunksize <= 0:
+        raise ValueError('Chunk size must be positive; got %s.' % chunksize)
+
+    s = 1 if inc > 0 else -1
+    stepsize = abs(chunksize * inc)
+    
+    x = x0
+    while (x - x1) * inc < 0:
+        delta = min(stepsize, abs(x - x1))
+        step = delta * s
+        supp = np.arange(x, x + step, inc)
+        x += step
+        yield supp
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):
