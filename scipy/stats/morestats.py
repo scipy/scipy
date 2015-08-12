@@ -1222,12 +1222,33 @@ def shapiro(x, a=None, reta=False):
     See Also
     --------
     anderson : The Anderson-Darling test for normality
+    kstest : The Kolmogorov-Smirnov test for goodness of fit.
 
     References
     ----------
     .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
+           normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
+    .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
+           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests, Journal of
+           Statistical Modeling and Analytics, Vol. 2, pp. 21-33.
+    .. [4] ALGORITHM AS R94 APPL. STATIST. (1995) VOL. 44, NO. 4.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> np.random.seed(12345678)
+    >>> x = stats.norm.rvs(loc=5, scale=3, size=100)
+    >>> stats.shapiro(x)
+    (0.9772805571556091, 0.08144091814756393)
 
     """
+    x = np.ravel(x)
+    if x.dtype == object:
+        # np.ravel and np.ndarray.flatten don't work with dtype=object
+        # i.e. they will fail to flatten if there are different sized arrays.
+        x = np.hstack(x)
+
     N = len(x)
     if N < 3:
         raise ValueError("Data must be at least length 3.")
@@ -1241,7 +1262,8 @@ def shapiro(x, a=None, reta=False):
     y = sort(x)
     a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
     if ifault not in [0, 2]:
-        warnings.warn(str(ifault))
+        warnings.warn("There has been a problem in the computation. The "
+                      "results may not be accurate.")
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
     if reta:
