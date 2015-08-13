@@ -3489,6 +3489,14 @@ class TestKruskal(TestCase):
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_nan_policy(self):
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(stats.kruskal(x, x), (np.nan, np.nan))
+        assert_almost_equal(stats.kruskal(x, x, nan_policy='omit'), (0.0, 1.0))
+        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='raise')
+        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
+
 
 class TestCombinePvalues(TestCase):
 

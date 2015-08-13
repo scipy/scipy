@@ -4610,7 +4610,7 @@ def ranksums(x, y):
     return RanksumsResult(z, prob)
 
 
-def kruskal(*args):
+def kruskal(*args, **kargs):
     """
     Compute the Kruskal-Wallis H-test for independent samples
 
@@ -4626,6 +4626,10 @@ def kruskal(*args):
     sample1, sample2, ... : array_like
        Two or more arrays with the sample measurements can be given as
        arguments.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -4652,6 +4656,32 @@ def kruskal(*args):
         raise ValueError("Need at least two groups in stats.kruskal()")
     n = np.asarray(list(map(len, args)))
 
+    if 'nan_policy' in kargs.keys():
+        if kargs['nan_policy'] not in ('propagate', 'raise', 'omit'):
+            raise ValueError("nan_policy must be 'propagate', "
+                             "'raise' or'omit'")
+        else:
+            nan_policy = kargs['nan_policy']
+    else:
+        nan_policy = 'propagate'
+
+    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
+
+    contains_nan = False
+    for arg in args:
+        cn = _contains_nan(arg, nan_policy)
+        if cn[0]:
+            contains_nan = True
+            break
+
+    if contains_nan and nan_policy == 'omit':
+        for a in args:
+            a = ma.masked_invalid(a)
+        return mstats_basic.kruskal(*args)
+
+    if contains_nan and nan_policy == 'propagate':
+        return KruskalResult(np.nan, np.nan)
+
     alldata = np.concatenate(args)
     ranked = rankdata(alldata)  # Rank the data
     ties = tiecorrect(ranked)      # Correct for ties
@@ -4669,7 +4699,6 @@ def kruskal(*args):
     df = na - 1
     h /= ties
 
-    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
     return KruskalResult(h, distributions.chi2.sf(h, df))
 
 
