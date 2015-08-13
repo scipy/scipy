@@ -215,8 +215,8 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         shape of `b`.
 
     """
-    a1 = _asarray_validated(ab, check_finite=check_finite)
-    b1 = _asarray_validated(b, check_finite=check_finite)
+    a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
+    b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
@@ -226,13 +226,17 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                 " l+u+1 (%d) does not equal ab.shape[0] (%d)" % (l+u+1, ab.shape[0]))
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
+    if a1.shape[-1] == 1:
+        b2 = np.array(b1, copy=overwrite_b)
+        b2 /= a1[1,0]
+        return b2
     if l == u == 1:
-        overwrite_ab = overwrite_ab or _datacopied(b1, b)
+        overwrite_ab = overwrite_ab or _datacopied(a1, ab)
         gtsv, = get_lapack_funcs(('gtsv',), (a1, b1))
         du = a1[0,1:]
         d = a1[1,:]
         dl = a1[2,:-1]
-        du2, d, du, x, info = gtsv(dl, d, du, b, overwrite_ab, overwrite_ab,
+        du2, d, du, x, info = gtsv(dl, d, du, b1, overwrite_ab, overwrite_ab,
                                    overwrite_ab, overwrite_b)
     else:
         gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))

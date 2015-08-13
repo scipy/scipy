@@ -22,17 +22,17 @@ Run tests if linalg is not installed:
 """
 
 import numpy as np
-from numpy import arange, array, dot, zeros, identity, conjugate, transpose, \
-        float32
+from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
+        float32)
 import numpy.linalg as linalg
 
-from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
-    assert_equal, assert_almost_equal, assert_array_almost_equal, assert_, \
-    assert_allclose
+from numpy.testing import (TestCase, rand, run_module_suite, assert_raises,
+    assert_equal, assert_almost_equal, assert_array_almost_equal, assert_,
+    assert_allclose, assert_array_equal)
 
-from scipy.linalg import solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,\
-        solve_banded, solveh_banded, solve_triangular, solve_circulant, \
-        circulant, LinAlgError
+from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
+        solve_banded, solveh_banded, solve_triangular, solve_circulant,
+        circulant, LinAlgError)
 
 from scipy.linalg._testutils import assert_no_overwrite
 
@@ -155,6 +155,11 @@ class TestSolveBanded(TestCase):
 
         # Values of (l,u) are not compatible with ab.
         assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
+
+    def test_1x1(self):
+        x = solve_banded((1, 1), [[0], [1], [0]], [[1, 2, 3]])
+        assert_array_equal(x, [[1.0, 2.0, 3.0]])
+        assert_equal(x.dtype, np.dtype('f8'))
 
 
 class TestSolveHBanded(TestCase):
@@ -456,6 +461,11 @@ class TestSolveHBanded(TestCase):
         assert_raises(ValueError, solveh_banded, ab, b)
         assert_raises(ValueError, solveh_banded, ab, [1.0, 2.0])
         assert_raises(ValueError, solveh_banded, ab, [1.0])
+
+    def test_1x1(self):
+        x = solveh_banded([[1]], [[1, 2, 3]])
+        assert_array_equal(x, [[1.0, 2.0, 3.0]])
+        assert_equal(x.dtype, np.dtype('f8'))
 
 
 class TestSolve(TestCase):
