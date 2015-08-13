@@ -7914,6 +7914,7 @@ C
            C0=R0*RG
         ENDIF
         IF (V0.EQ.0.0D0) THEN
+C          DLMF 14.3.4, 14.7.17, 15.2.4
            PMV=1.0D0
            R=1.0D0
            DO 20 K=1,NV-M
@@ -7923,6 +7924,7 @@ C
            PMV=(-1)**NV*C0*PMV
         ELSE
            IF (X.GE.-0.35D0) THEN
+C             DLMF 14.3.4, 15.2.1
               PMV=1.0D0
               R=1.0D0
               DO 25 K=1,100
@@ -7932,6 +7934,7 @@ C
 25            CONTINUE
 30            PMV=(-1)**M*C0*PMV
            ELSE
+C             DLMF 14.3.5, 15.8.10
               VS=DSIN(V*PI)/PI
               PV0=0.0D0
               IF (M.NE.0) THEN
@@ -7996,6 +7999,7 @@ C
         ENDIF
         VX=V
         MX=M
+C       DLMF 14.9.5
         IF (V.LT.0) THEN
            VX=-VX-1
         ENDIF
@@ -8013,7 +8017,7 @@ C             We don't handle cases where DLMF 14.9.3 doesn't help
         NV=INT(VX)
         V0=VX-NV
         IF (NV.GT.2.AND.NV.GT.MX) THEN
-C          Up-recursion on degree, AMS 8.5.3
+C          Up-recursion on degree, AMS 8.5.3 / DLMF 14.10.3
            CALL LPMV0(V0+MX, MX, X, P0)
            CALL LPMV0(V0+MX+1, MX, X, P1)
            PMV = P1
