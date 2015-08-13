@@ -2687,6 +2687,30 @@ def f_oneway(*args):
 
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
+    .. [3] McDonald, G. H. "Handbook of Biological Statistics", One-way ANOVA.
+           http://http://www.biostathandbook.com/onewayanova.html
+
+    Examples
+    --------
+    >>> import scipy.stats as stats
+
+    [3]_ Here are some data on a shell measurement (the length of the anterior
+    adductor muscle scar, standardized by dividing by length) in the mussel
+    Mytilus trossulus from five locations: Tillamook, Oregon; Newport, Oregon;
+    Petersburg, Alaska; Magadan, Russia; and Tvarminne, Finland, taken from a
+    much larger data set used in McDonald et al. (1991).
+
+    >>> tillamook = [0.0571, 0.0813, 0.0831, 0.0976, 0.0817, 0.0859, 0.0735,
+    ...              0.0659, 0.0923, 0.0836]
+    >>> newport = [0.0873, 0.0662, 0.0672, 0.0819, 0.0749, 0.0649, 0.0835,
+    ...            0.0725]
+    >>> petersburg = [0.0974, 0.1352, 0.0817, 0.1016, 0.0968, 0.1064, 0.105]
+    >>> magadan = [0.1033, 0.0915, 0.0781, 0.0685, 0.0677, 0.0697, 0.0764,
+    ...            0.0689]
+    >>> tvarminne = [0.0703, 0.1026, 0.0956, 0.0973, 0.1039, 0.1045]
+    >>> stats.f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
+    F_onewayResult(statistic=7.1210194716424473, pvalue=0.00028122423145345439)
+
     """
     args = [np.asarray(arg, dtype=float) for arg in args]
     # ANOVA on N groups, each in its own array
