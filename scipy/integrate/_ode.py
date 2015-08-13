@@ -104,7 +104,9 @@ class ode(object):
     """
     A generic interface class to numeric integrators.
 
-    Solve an equation system :math:`y'(t) = f(t,y)` with (optional) ``jac = df/dy``.
+    Solve an equation system :math:`y'(t) = f(t,y)` with (optional)
+    ``jac = df/dy``. ("Buyer Beware": the odeint interface takes `f(y,t)`
+    with parameters `y` and `t` in reversed order!)
 
     Parameters
     ----------

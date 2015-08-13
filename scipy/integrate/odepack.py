@@ -42,7 +42,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     Parameters
     ----------
     func : callable(y, t0, ...)
-        Computes the derivative of y at t0.
+        Computes the derivative of y at t0. ("Buyer Beware": the ode class
+        takes a `func(t0,y)` with parameters `y` and `t0` in reversed order!)
     y0 : array
         Initial condition on y (can be a vector).
     t : array
