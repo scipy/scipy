@@ -58,6 +58,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     ------
     LinAlgError
         If `a` is singular.
+    ValueError
+        If `a` is not square
 
     Examples
     --------
