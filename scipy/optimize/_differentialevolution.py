@@ -364,10 +364,8 @@ class DifferentialEvolutionSolver(object):
         self.__scale_arg1 = 0.5 * (self.limits[0] + self.limits[1])
         self.__scale_arg2 = np.fabs(self.limits[0] - self.limits[1])
 
-        # Store the dimensionality of the problem.
         self.parameter_count = np.size(self.limits, 1)
 
-        # We need a random number generator.
         self.random_number_generator = _make_random_gen(seed)
 
         # default population initialization is a latin hypercube design, but
@@ -490,13 +488,11 @@ class DifferentialEvolutionSolver(object):
                            success=(warning_flag is not True))
 
         # do the optimisation.
-        # evolve the population over `maxiter` generations.
         for nit in range(1, self.maxiter + 1):
             if self.dither is not None:
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
 
-            # evolve and test each candidate solution in the population.
             for candidate in range(self.population_size):
                 if nfev > self.maxfun:
                     warning_flag = True
@@ -609,7 +605,6 @@ class DifferentialEvolutionSolver(object):
         """
         trial = np.copy(self.population[candidate])
 
-        # get the random number generator
         rng = self.random_number_generator
 
         fill_point = rng.randint(0, self.parameter_count)
