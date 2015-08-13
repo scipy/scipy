@@ -1680,7 +1680,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
         else:
             leaf_fs = float(_get_tick_text_size(len(ivl)))
-            map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
+            map(lambda lbl: lbl.set_size(leaf_fs), lbls)
 
         # Make the tick marks invisible because they cover up the links
         for line in ax.get_xticklines():
