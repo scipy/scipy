@@ -4646,7 +4646,7 @@ def ranksums(x, y):
     return RanksumsResult(z, prob)
 
 
-def kruskal(*args, **kargs):
+def kruskal(*args, **kwargs):
     """
     Compute the Kruskal-Wallis H-test for independent samples
 
@@ -4721,12 +4721,12 @@ def kruskal(*args, **kargs):
             return KruskalResult(np.nan, np.nan)
     n = np.asarray(list(map(len, args)))
 
-    if 'nan_policy' in kargs.keys():
-        if kargs['nan_policy'] not in ('propagate', 'raise', 'omit'):
+    if 'nan_policy' in kwargs.keys():
+        if kwargs['nan_policy'] not in ('propagate', 'raise', 'omit'):
             raise ValueError("nan_policy must be 'propagate', "
                              "'raise' or'omit'")
         else:
-            nan_policy = kargs['nan_policy']
+            nan_policy = kwargs['nan_policy']
     else:
         nan_policy = 'propagate'
 
