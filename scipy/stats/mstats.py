@@ -96,4 +96,6 @@ from __future__ import division, print_function, absolute_import
 
 from .mstats_basic import *
 from .mstats_extras import *
-from scipy.stats import gmean, hmean
+# Functions that support masked array input in stats but need to be kept in the
+# mstats namespace for backwards compatibility:
+from scipy.stats import gmean, hmean, zmap, zscore, chisquare

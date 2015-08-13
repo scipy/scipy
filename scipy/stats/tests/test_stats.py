@@ -23,7 +23,7 @@ from numpy import array, arange, float32, float64, power
 import numpy as np
 
 import scipy.stats as stats
-from scipy import special
+import scipy.stats.mstats as mstats
 from common_tests import check_named_results
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -90,6 +90,13 @@ class TestTrimmedStats(TestCase):
         assert_equal(stats.tmin(x, axis=1), [0, 2, 4, 6, 8])
         assert_equal(stats.tmin(x, axis=None), 0)
 
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(stats.tmin(x), np.nan)
+        assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
+        assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
+        assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
+
     def test_tmax(self):
         assert_equal(stats.tmax(4), 4)
 
@@ -102,6 +109,13 @@ class TestTrimmedStats(TestCase):
         assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), [8, 7])
         assert_equal(stats.tmax(x, axis=1), [1, 3, 5, 7, 9])
         assert_equal(stats.tmax(x, axis=None), 9)
+
+        x = np.arange(10.)
+        x[6] = np.nan
+        assert_equal(stats.tmax(x), np.nan)
+        assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
+        assert_raises(ValueError, stats.tmax, x, nan_policy='raise')
+        assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
 
     def test_tsem(self):
         y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
@@ -521,6 +535,17 @@ class TestCorrSpearmanr(TestCase):
     def test_uneven_lengths(self):
         assert_raises(ValueError, stats.spearmanr, [1, 2, 1], [8, 9])
         assert_raises(ValueError, stats.spearmanr, [1, 2, 1], 8)
+
+    def test_nan_policy(self):
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
+        assert_array_equal(stats.spearmanr(X, x), (np.nan, np.nan))
+        assert_array_equal(stats.spearmanr(x, X), (np.nan, np.nan))
+        assert_array_equal(stats.spearmanr(x, x, nan_policy='omit'),
+                           (1.0, 0.0))
+        assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
+        assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
 
     def test_sXX(self):
         y = stats.spearmanr(X,X)
@@ -1301,7 +1326,9 @@ class TestMode(TestCase):
 
     def test_strings(self):
         data1 = ['rain', 'showers', 'showers']
-        vals = stats.mode(data1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            vals = stats.mode(data1)
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
@@ -1310,7 +1337,9 @@ class TestMode(TestCase):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
         arr[:] = objects
-        vals = stats.mode(arr)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            vals = stats.mode(arr)
         assert_equal(vals[0][0], 10)
         assert_equal(vals[1][0], 2)
 
@@ -1349,6 +1378,17 @@ class TestMode(TestCase):
         attributes = ('mode', 'count')
         check_named_results(actual, attributes)
 
+    def test_mode_nan(self):
+        data1 = [3, np.nan, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
+        actual = stats.mode(data1)
+        assert_equal(actual, (6, 3))
+
+        actual = stats.mode(data1, nan_policy='omit')
+        assert_equal(actual, (6, 3))
+        assert_raises(ValueError, stats.mode, data1, nan_policy='raise')
+        assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
+
+
 class TestVariability(TestCase):
 
     testcase = [1,2,3,4]
@@ -1381,6 +1421,13 @@ class TestVariability(TestCase):
         n = len(self.testcase)
         assert_allclose(stats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
                         stats.sem(self.testcase, ddof=2))
+
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(stats.sem(x), np.nan)
+        assert_equal(stats.sem(x, nan_policy='omit'), 0.9128709291752769)
+        assert_raises(ValueError, stats.sem, x, nan_policy='raise')
+        assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
     def test_zmap(self):
         # not in R, so tested by using:
@@ -1513,12 +1560,27 @@ class TestMoments(TestCase):
         y = stats.moment([])
         assert_equal(y, np.nan)
 
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(stats.moment(x), np.nan)
+        assert_almost_equal(stats.moment(x, nan_policy='omit'), 0.0)
+        assert_raises(ValueError, stats.moment, x, nan_policy='raise')
+        assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
+
     def test_variation(self):
         # variation = samplestd / mean
         y = stats.variation(self.scalar_testcase)
         assert_approx_equal(y, 0.0)
         y = stats.variation(self.testcase)
         assert_approx_equal(y, 0.44721359549996, 10)
+
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(stats.variation(x), np.nan)
+        assert_almost_equal(stats.variation(x, nan_policy='omit'),
+                            0.6454972243679028)
+        assert_raises(ValueError, stats.variation, x, nan_policy='raise')
+        assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
 
     def test_skewness(self):
         # Scalar test case
@@ -1532,6 +1594,13 @@ class TestMoments(TestCase):
         assert_approx_equal(y, -0.437111105023940, 10)
         y = stats.skew(self.testcase)
         assert_approx_equal(y, 0.0, 10)
+
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(stats.skew(x), np.nan)
+        assert_equal(stats.skew(x, nan_policy='omit'), 0.)
+        assert_raises(ValueError, stats.skew, x, nan_policy='raise')
+        assert_raises(ValueError, stats.skew, x, nan_policy='foobar')
 
     def test_skewness_scalar(self):
         # `skew` must return a scalar for 1-dim input
@@ -1556,6 +1625,13 @@ class TestMoments(TestCase):
         assert_approx_equal(y, 3.663542721189047, 10)
         y = stats.kurtosis(self.testcase, 0, 0)
         assert_approx_equal(y, 1.64)
+
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(stats.kurtosis(x), np.nan)
+        assert_almost_equal(stats.kurtosis(x, nan_policy='omit'), -1.230000)
+        assert_raises(ValueError, stats.kurtosis, x, nan_policy='raise')
+        assert_raises(ValueError, stats.kurtosis, x, nan_policy='foobar')
 
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
@@ -1625,6 +1701,18 @@ class TestStudentTest(TestCase):
 
         assert_array_almost_equal(t, self.T1_2)
         assert_array_almost_equal(p, self.P1_2)
+
+        # check nan policy
+        np.random.seed(7654567)
+        x = stats.norm.rvs(loc=5, scale=10, size=51)
+        x[50] = np.nan
+        assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
+
+        assert_array_almost_equal(stats.ttest_1samp(x, 5.0, nan_policy='omit'),
+                                  (-1.6412624074367159, 0.107147027334048005))
+        assert_raises(ValueError, stats.ttest_1samp, x, 5.0, nan_policy='raise')
+        assert_raises(ValueError, stats.ttest_1samp, x, 5.0,
+                      nan_policy='foobar')
 
 
 def test_percentileofscore():
@@ -2099,14 +2187,16 @@ def test_friedmanchisquare():
     check_named_results(res, attributes)
 
     # test using mstats
-    assert_array_almost_equal(stats.mstats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),
+    assert_array_almost_equal(mstats.friedmanchisquare(x1[0], x1[1],
+                                                       x1[2], x1[3]),
                               (10.2283464566929, 0.0167215803284414))
     # the following fails
-    # assert_array_almost_equal(stats.mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),
+    # assert_array_almost_equal(mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),
     #                           (18.9428571428571, 0.000280938375189499))
-    assert_array_almost_equal(stats.mstats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),
+    assert_array_almost_equal(mstats.friedmanchisquare(x3[0], x3[1],
+                                                       x3[2], x3[3]),
                               (10.68, 0.0135882729582176))
-    np.testing.assert_raises(ValueError,stats.mstats.friedmanchisquare,x3[0],x3[1])
+    np.testing.assert_raises(ValueError, mstats.friedmanchisquare,x3[0],x3[1])
 
 
 def test_kstest():
@@ -2220,6 +2310,20 @@ def test_ttest_rel():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
 
+    # check nan policy
+    np.random.seed(12345678)
+    x = stats.norm.rvs(loc=5, scale=10, size=501)
+    x[500] = np.nan
+    y = (stats.norm.rvs(loc=5, scale=10, size=501) +
+         stats.norm.rvs(scale=0.2, size=501))
+    y[500] = np.nan
+    assert_array_equal(stats.ttest_rel(x, x), (np.nan, np.nan))
+
+    assert_array_almost_equal(stats.ttest_rel(x, y, nan_policy='omit'),
+                              (0.25299925303978066, 0.8003729814201519))
+    assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='raise')
+    assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='foobar')
+
     olderr = np.seterr(all='ignore')
     try:
         # test zero division problem
@@ -2299,6 +2403,20 @@ def test_ttest_ind():
     assert_equal(t.shape, (3, 2))
 
     olderr = np.seterr(all='ignore')
+
+    # check nan policy
+    np.random.seed(12345678)
+    x = stats.norm.rvs(loc=5, scale=10, size=501)
+    x[500] = np.nan
+    y = stats.norm.rvs(loc=5, scale=10, size=500)
+
+    assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))
+
+    assert_array_almost_equal(stats.ttest_ind(x, y, nan_policy='omit'),
+                              (0.24779670949091914, 0.80434267337517906))
+    assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='raise')
+    assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
+
     try:
         # test zero division problem
         t,p = stats.ttest_ind([0,0,0],[1,1,1])
@@ -2307,7 +2425,8 @@ def test_ttest_ind():
 
         # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_ind(anan, np.zeros((2,2))),([0, np.nan], [1,np.nan]))
+        assert_equal(stats.ttest_ind(anan, np.zeros((2, 2))),
+                     ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
@@ -2414,8 +2533,8 @@ def test_ttest_ind_with_uneq_var():
 
         # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_ind(anan, np.zeros((2,2)), equal_var=False),
-                     ([0, np.nan], [1,np.nan]))
+        assert_equal(stats.ttest_ind(anan, np.zeros((2, 2)), equal_var=False),
+                     ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
@@ -2456,7 +2575,7 @@ def test_ttest_1samp_new():
 
         # check that nan in input array result in nan output
         anan = np.array([[1,np.nan],[-1,1]])
-        assert_equal(stats.ttest_1samp(anan, 0),([0, np.nan], [1,np.nan]))
+        assert_equal(stats.ttest_1samp(anan, 0), ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)
 
@@ -2494,6 +2613,27 @@ class TestDescribe(TestCase):
         assert_equal(v, vc)
         assert_array_almost_equal(sk, skc, decimal=13)
         assert_array_almost_equal(kurt, kurtc, decimal=13)
+
+        x = np.arange(10.)
+        x[9] = np.nan
+        res = stats.describe(x)
+        assert_array_equal(res, np.zeros(6) * np.nan)
+
+        nc, mmc = (9, (0.0, 8.0))
+        mc = 4.0
+        vc = 7.5
+        skc = 0.0
+        kurtc = -1.2300000000000002
+        n, mm, m, v, sk, kurt = stats.describe(x, nan_policy='omit')
+        assert_equal(n, nc)
+        assert_equal(mm, mmc)
+        assert_equal(m, mc)
+        assert_equal(v, vc)
+        assert_array_almost_equal(sk, skc)
+        assert_array_almost_equal(kurt, kurtc, decimal=13)
+
+        assert_raises(ValueError, stats.describe, x, nan_policy='raise')
+        assert_raises(ValueError, stats.describe, x, nan_policy='foobar')
 
     def test_describe_result_attributes(self):
         actual = stats.describe(np.arange(5))
@@ -2565,6 +2705,35 @@ def test_normalitytests():
            (st_skew, pv_skew))
     yield (assert_array_almost_equal, stats.kurtosistest(x, axis=None),
            (st_kurt, pv_kurt))
+
+    x = np.arange(10.)
+    x[9] = np.nan
+    assert_array_equal(stats.skewtest(x), (np.nan, np.nan))
+
+    expected = (1.0184643553962129, 0.30845733195153502)
+    assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
+
+    assert_raises(ValueError, stats.skewtest, x, nan_policy='raise')
+    assert_raises(ValueError, stats.skewtest, x, nan_policy='foobar')
+
+    x = np.arange(30.)
+    x[29] = np.nan
+    assert_array_equal(stats.kurtosistest(x), (np.nan, np.nan))
+
+    expected = (-2.2683547379505273, 0.023307594135872967)
+    assert_array_almost_equal(stats.kurtosistest(x, nan_policy='omit'),
+                              expected)
+
+    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='raise')
+    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='foobar')
+
+    assert_array_equal(stats.normaltest(x), (np.nan, np.nan))
+
+    expected = (6.2260409514287449, 0.04446644248650191)
+    assert_array_almost_equal(stats.normaltest(x, nan_policy='omit'), expected)
+
+    assert_raises(ValueError, stats.normaltest, x, nan_policy='raise')
+    assert_raises(ValueError, stats.normaltest, x, nan_policy='foobar')
 
 
 class TestRankSums(TestCase):
@@ -3360,6 +3529,14 @@ class TestKruskal(TestCase):
         res = stats.kruskal(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+    def test_nan_policy(self):
+        x = np.arange(10.)
+        x[9] = np.nan
+        assert_equal(stats.kruskal(x, x), (np.nan, np.nan))
+        assert_almost_equal(stats.kruskal(x, x, nan_policy='omit'), (0.0, 1.0))
+        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='raise')
+        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
 
 
 class TestCombinePvalues(TestCase):

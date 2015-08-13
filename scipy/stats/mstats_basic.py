@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['argstoarray',
            'betai',
-           'chisquare','count_tied_groups',
+           'count_tied_groups',
            'describe',
            'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
@@ -32,7 +32,6 @@ __all__ = ['argstoarray',
            'ttest_ind','ttest_rel','tvar',
            'variation',
            'winsorize',
-           'zmap', 'zscore'
            ]
 
 import numpy as np
@@ -46,10 +45,13 @@ import itertools
 import warnings
 from collections import namedtuple
 
-from . import stats
 from . import distributions
 import scipy.special as special
 from . import futil
+from ._stats_mstats_common import (
+        linregress as stats_linregress,
+        theilslopes as stats_theilslopes
+        )
 
 
 genmissingvaldoc = """
@@ -258,6 +260,29 @@ def rankdata(data, axis=None, use_missing=False):
 
 
 def mode(a, axis=0):
+    """
+    Returns an array of the modal (most common) value in the passed array.
+
+    Parameters
+    ----------
+    a : array_like
+        n-dimensional array of which to find mode(s).
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
+
+    Returns
+    -------
+    mode : ndarray
+        Array of modal values.
+    count : ndarray
+        Array of counts for each mode.
+
+    Notes
+    -----
+    For more details, see `stats.mode`.
+
+    """
     a, axis = _chk_asarray(a, axis)
 
     def _mode1D(a):
@@ -287,14 +312,17 @@ def mode(a, axis=0):
 
     ModeResult = namedtuple('ModeResult', ('mode', 'count'))
     return ModeResult(*output)
-mode.__doc__ = stats.mode.__doc__
 
 
 @np.deprecate(message="mstats.betai is deprecated in scipy 0.17.0; "
               "use special.betainc instead.")
 def betai(a, b, x):
+    """
+    betai() is deprecated in scipy 0.17.0.
+
+    For details about this function, see `stats.betai`.
+    """
     return _betai(a, b, x)
-betai.__doc__ = stats.betai.__doc__
 
 
 def _betai(a, b, x):
@@ -603,6 +631,30 @@ def kendalltau_seasonal(x):
 
 
 def pointbiserialr(x, y):
+    """Calculates a point biserial correlation coefficient and its p-value.
+
+    Parameters
+    ----------
+    x : array_like of bools
+        Input array.
+    y : array_like
+        Input array.
+
+    Returns
+    -------
+    correlation : float
+        R value
+    pvalue : float
+        2-tailed p-value
+
+    Notes
+    -----
+    Missing values are considered pair-wise: if a value is missing in x,
+    the corresponding value in y is masked.
+
+    For more details on `pointbiserialr`, see `stats.pointbiserialr`.
+
+    """
     x = ma.fix_invalid(x, copy=True).astype(bool)
     y = ma.fix_invalid(y, copy=True).astype(float)
     # Get rid of the missing data
@@ -629,9 +681,6 @@ def pointbiserialr(x, y):
     PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
                                                                'pvalue'))
     return PointbiserialrResult(rpb, prob)
-
-if stats.pointbiserialr.__doc__:
-    pointbiserialr.__doc__ = stats.pointbiserialr.__doc__ + genmissingvaldoc
 
 
 def linregress(*args):
@@ -661,24 +710,57 @@ def linregress(*args):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            slope, intercept, r, prob, sterrest = stats.linregress(x.data[~m],
+            slope, intercept, r, prob, sterrest = stats_linregress(x.data[~m],
                                                                    y.data[~m])
         else:
             # All data is masked
             return None, None, None, None, None
     else:
-        slope, intercept, r, prob, sterrest = stats.linregress(x.data, y.data)
+        slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
 
     LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                        'rvalue', 'pvalue',
                                                        'stderr'))
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
-if stats.linregress.__doc__:
-    linregress.__doc__ = stats.linregress.__doc__ + genmissingvaldoc
+if stats_linregress.__doc__:
+    linregress.__doc__ = stats_linregress.__doc__ + genmissingvaldoc
 
 
 def theilslopes(y, x=None, alpha=0.95):
+    r"""
+    Computes the Theil-Sen estimator for a set of points (x, y).
+
+    `theilslopes` implements a method for robust linear regression.  It
+    computes the slope as the median of all slopes between paired values.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    alpha : float, optional
+        Confidence degree between 0 and 1. Default is 95% confidence.
+        Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
+        interpreted as "find the 90% confidence interval".
+
+    Returns
+    -------
+    medslope : float
+        Theil slope.
+    medintercept : float
+        Intercept of the Theil line, as ``median(y) - medslope*median(x)``.
+    lo_slope : float
+        Lower bound of the confidence interval on `medslope`.
+    up_slope : float
+        Upper bound of the confidence interval on `medslope`.
+
+    Notes
+    -----
+    For more details on `theilslopes`, see `stats.theilslopes`.
+
+    """
     y = ma.asarray(y).flatten()
     if x is None:
         x = ma.arange(len(y), dtype=float)
@@ -693,8 +775,7 @@ def theilslopes(y, x=None, alpha=0.95):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `stats.theilslopes`
-    return stats.theilslopes(y, x, alpha=alpha)
-theilslopes.__doc__ = stats.theilslopes.__doc__
+    return stats_theilslopes(y, x, alpha=alpha)
 
 
 def sen_seasonal_slopes(x):
@@ -709,6 +790,32 @@ def sen_seasonal_slopes(x):
 
 
 def ttest_1samp(a, popmean, axis=0):
+    """
+    Calculates the T-test for the mean of ONE group of scores.
+
+    Parameters
+    ----------
+    a : array_like
+        sample observation
+    popmean : float or array_like
+        expected value in null hypothesis, if array_like than it must have the
+        same shape as `a` excluding the axis dimension
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        array `a`.
+
+    Returns
+    -------
+    statistic : float or array
+        t-statistic
+    pvalue : float or array
+        two-tailed p-value
+
+    Notes
+    -----
+    For more details on `ttest_1samp`, see `stats.ttest_1samp`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return (np.nan, np.nan)
@@ -723,11 +830,40 @@ def ttest_1samp(a, popmean, axis=0):
 
     Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
     return Ttest_1sampResult(t, prob)
-ttest_1samp.__doc__ = stats.ttest_1samp.__doc__
 ttest_onesamp = ttest_1samp
 
 
-def ttest_ind(a, b, axis=0):
+def ttest_ind(a, b, axis=0, equal_var=True):
+    """
+    Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+
+    Parameters
+    ----------
+    a, b : array_like
+        The arrays must have the same shape, except in the dimension
+        corresponding to `axis` (the first, by default).
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        arrays, `a`, and `b`.
+    equal_var : bool, optional
+        If True, perform a standard independent 2 sample test that assumes equal
+        population variances.
+        If False, perform Welch's t-test, which does not assume equal population
+        variance.
+        .. versionadded:: 0.17.0
+
+    Returns
+    -------
+    statistic : float or array
+        The calculated t-statistic.
+    pvalue : float or array
+        The two-tailed p-value.
+
+    Notes
+    -----
+    For more details on `ttest_ind`, see `stats.ttest_ind`.
+
+    """
     a, b, axis = _chk2_asarray(a, b, axis)
 
     Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
@@ -737,17 +873,52 @@ def ttest_ind(a, b, axis=0):
     (x1, x2) = (a.mean(axis), b.mean(axis))
     (v1, v2) = (a.var(axis=axis, ddof=1), b.var(axis=axis, ddof=1))
     (n1, n2) = (a.count(axis), b.count(axis))
-    df = n1 + n2 - 2.
-    svar = ((n1-1)*v1+(n2-1)*v2) / df
-    t = (x1-x2)/ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # n-D computation here!
+
+    if equal_var:
+        df = n1 + n2 - 2.
+        svar = ((n1-1)*v1+(n2-1)*v2) / df
+        denom = ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # n-D computation here!
+    else:
+        vn1 = v1/n1
+        vn2 = v2/n2
+        df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+
+        # If df is undefined, variances are zero.
+        # It doesn't matter what df is as long as it is not NaN.
+        df = np.where(np.isnan(df), 1, df)
+        denom = ma.sqrt(vn1 + vn2)
+
+    t = (x1-x2) / denom
     t = ma.filled(t, 1)           # replace NaN t-values with 1.0
     probs = _betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
 
     return Ttest_indResult(t, probs.squeeze())
-ttest_ind.__doc__ = stats.ttest_ind.__doc__
 
 
 def ttest_rel(a, b, axis=0):
+    """
+    Calculates the T-test on TWO RELATED samples of scores, a and b.
+
+    Parameters
+    ----------
+    a, b : array_like
+        The arrays must have the same shape.
+    axis : int or None, optional
+        Axis along which to compute test. If None, compute over the whole
+        arrays, `a`, and `b`.
+
+    Returns
+    -------
+    statistic : float or array
+        t-statistic
+    pvalue : float or array
+        two-tailed p-value
+
+    Notes
+    -----
+    For more details on `ttest_rel`, see `stats.ttest_rel`.
+
+    """
     a, b, axis = _chk2_asarray(a, b, axis)
     if len(a) != len(b):
         raise ValueError('unequal length arrays')
@@ -765,14 +936,6 @@ def ttest_rel(a, b, axis=0):
     probs = _betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
 
     return Ttest_relResult(t, probs)
-ttest_rel.__doc__ = stats.ttest_rel.__doc__
-
-
-# stats.chisquare works with masked arrays, so we don't need to
-# implement it here.
-# For backwards compatibilty, stats.chisquare is included in
-# the stats.mstats namespace.
-chisquare = stats.chisquare
 
 
 def mannwhitneyu(x,y, use_continuity=True):
@@ -825,7 +988,29 @@ def mannwhitneyu(x,y, use_continuity=True):
     return MannwhitneyuResult(u, prob)
 
 
-def kruskalwallis(*args):
+def kruskal(*args):
+    """
+    Compute the Kruskal-Wallis H-test for independent samples
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+       Two or more arrays with the sample measurements can be given as
+       arguments.
+
+    Returns
+    -------
+    statistic : float
+       The Kruskal-Wallis H statistic, corrected for ties
+    pvalue : float
+       The p-value for the test using the assumption that H has a chi
+       square distribution
+
+    Notes
+    -----
+    For more details on `kruskal`, see `stats.kruskal`.
+
+    """
     output = argstoarray(*args)
     ranks = ma.masked_equal(rankdata(output, use_missing=False), 0)
     sumrk = ranks.sum(-1)
@@ -840,12 +1025,11 @@ def kruskalwallis(*args):
 
     H /= T
     df = len(output) - 1
-    prob = stats.distributions.chi2.sf(H, df)
+    prob = distributions.chi2.sf(H, df)
 
     KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
     return KruskalResult(H, prob)
-kruskal = kruskalwallis
-kruskalwallis.__doc__ = stats.kruskal.__doc__
+kruskalwallis = kruskal
 
 
 def ks_twosamp(data1, data2, alternative="two-sided"):
@@ -897,18 +1081,6 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
 
     return (d, prob)
 ks_2samp = ks_twosamp
-
-
-def ks_twosamp_old(data1, data2):
-    """ Computes the Kolmogorov-Smirnov statistic on 2 samples.
-
-    Returns
-    -------
-    KS D-value, p-value
-
-    """
-    (data1, data2) = [ma.asarray(d).compressed() for d in (data1,data2)]
-    return stats.ks_2samp(data1,data2)
 
 
 @np.deprecate(message="mstats.threshold is deprecated in scipy 0.17.0")
@@ -1327,11 +1499,66 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
 
 
 def tmean(a, limits=None, inclusive=(True,True)):
+    """
+    Compute the trimmed mean.
+
+    Parameters
+    ----------
+    a : array_like
+        Array of values.
+    limits : None or (lower limit, upper limit), optional
+        Values in the input array less than the lower limit or greater than the
+        upper limit will be ignored.  When limits is None (default), then all
+        values are used.  Either of the limit values in the tuple can also be
+        None representing a half-open interval.
+    inclusive : (bool, bool), optional
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to the lower or upper limits
+        are included.  The default value is (True, True).
+
+    Returns
+    -------
+    tmean : float
+
+    Notes
+    -----
+    For more details on `tmean`, see `stats.tmean`.
+
+    """
     return trima(a, limits=limits, inclusive=inclusive).mean()
-tmean.__doc__ = stats.tmean.__doc__
 
 
 def tvar(a, limits=None, inclusive=(True,True)):
+    """
+    Compute the trimmed variance
+
+    This function computes the sample variance of an array of values,
+    while ignoring values which are outside of given `limits`.
+
+    Parameters
+    ----------
+    a : array_like
+        Array of values.
+    limits : None or (lower limit, upper limit), optional
+        Values in the input array less than the lower limit or greater than the
+        upper limit will be ignored. When limits is None, then all values are
+        used. Either of the limit values in the tuple can also be None
+        representing a half-open interval.  The default value is None.
+    inclusive : (bool, bool), optional
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to the lower or upper limits
+        are included.  The default value is (True, True).
+
+    Returns
+    -------
+    tvar : float
+        Trimmed variance.
+
+    Notes
+    -----
+    For more details on `tvar`, see `stats.tvar`.
+
+    """
     a = a.astype(float).ravel()
     if limits is None:
         n = (~a.mask).sum()  # todo: better way to do that?
@@ -1340,24 +1567,107 @@ def tvar(a, limits=None, inclusive=(True,True)):
         raise ValueError('mstats.tvar() with limits not implemented yet so far')
 
     return r
-tvar.__doc__ = stats.tvar.__doc__
 
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
+    """
+    Compute the trimmed minimum
+
+    Parameters
+    ----------
+    a : array_like
+        array of values
+    lowerlimit : None or float, optional
+        Values in the input array less than the given limit will be ignored.
+        When lowerlimit is None, then all values are used. The default value
+        is None.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
+    inclusive : {True, False}, optional
+        This flag determines whether values exactly equal to the lower limit
+        are included.  The default value is True.
+
+    Returns
+    -------
+    tmin : float, int or ndarray
+
+    Notes
+    -----
+    For more details on `tmin`, see `stats.tmin`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
-tmin.__doc__ = stats.tmin.__doc__
 
 
 def tmax(a, upperlimit, axis=0, inclusive=True):
+    """
+    Compute the trimmed maximum
+
+    This function computes the maximum value of an array along a given axis,
+    while ignoring values larger than a specified upper limit.
+
+    Parameters
+    ----------
+    a : array_like
+        array of values
+    upperlimit : None or float, optional
+        Values in the input array greater than the given limit will be ignored.
+        When upperlimit is None, then all values are used. The default value
+        is None.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over the
+        whole array `a`.
+    inclusive : {True, False}, optional
+        This flag determines whether values exactly equal to the upper limit
+        are included.  The default value is True.
+
+    Returns
+    -------
+    tmax : float, int or ndarray
+
+    Notes
+    -----
+    For more details on `tmax`, see `stats.tmax`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
-tmax.__doc__ = stats.tmax.__doc__
 
 
 def tsem(a, limits=None, inclusive=(True,True)):
+    """
+    Compute the trimmed standard error of the mean.
+
+    This function finds the standard error of the mean for given
+    values, ignoring values outside the given `limits`.
+
+    Parameters
+    ----------
+    a : array_like
+        array of values
+    limits : None or (lower limit, upper limit), optional
+        Values in the input array less than the lower limit or greater than the
+        upper limit will be ignored. When limits is None, then all values are
+        used. Either of the limit values in the tuple can also be None
+        representing a half-open interval.  The default value is None.
+    inclusive : (bool, bool), optional
+        A tuple consisting of the (lower flag, upper flag).  These flags
+        determine whether values exactly equal to the lower or upper limits
+        are included.  The default value is (True, True).
+
+    Returns
+    -------
+    tsem : float
+
+    Notes
+    -----
+    For more details on `tsem`, see `stats.tsem`.
+
+    """
     a = ma.asarray(a).ravel()
     if limits is None:
         n = float(a.count())
@@ -1366,7 +1676,6 @@ def tsem(a, limits=None, inclusive=(True,True)):
     am = trima(a.ravel(), limits, inclusive)
     sd = np.sqrt(am.var(ddof=1))
     return sd / np.sqrt(am.count())
-tsem.__doc__ = stats.tsem.__doc__
 
 
 def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
@@ -1452,6 +1761,31 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
 
 
 def moment(a, moment=1, axis=0):
+    """
+    Calculates the nth moment about the mean for a sample.
+
+    Parameters
+    ----------
+    a : array_like
+       data
+    moment : int, optional
+       order of central moment that is returned
+    axis : int or None, optional
+       Axis along which the central moment is computed. Default is 0.
+       If None, compute over the whole array `a`.
+
+    Returns
+    -------
+    n-th central moment : ndarray or float
+       The appropriate moment along the given axis or over all values if axis
+       is None. The denominator for the moment calculation is the number of
+       observations, no degrees of freedom correction is done.
+
+    Notes
+    -----
+    For more details about `moment`, see `stats.moment`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     if moment == 1:
         # By definition the first moment about the mean is 0.
@@ -1487,16 +1821,60 @@ def moment(a, moment=1, axis=0):
             if n % 2:
                 s *= a_zero_mean
         return s.mean(axis)
-moment.__doc__ = stats.moment.__doc__
 
 
 def variation(a, axis=0):
+    """
+    Computes the coefficient of variation, the ratio of the biased standard
+    deviation to the mean.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array.
+    axis : int or None, optional
+        Axis along which to calculate the coefficient of variation. Default
+        is 0. If None, compute over the whole array `a`.
+
+    Returns
+    -------
+    variation : ndarray
+        The calculated variation along the requested axis.
+
+    Notes
+    -----
+    For more details about `variation`, see `stats.variation`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     return a.std(axis)/a.mean(axis)
-variation.__doc__ = stats.variation.__doc__
 
 
 def skew(a, axis=0, bias=True):
+    """
+    Computes the skewness of a data set.
+
+    Parameters
+    ----------
+    a : ndarray
+        data
+    axis : int or None, optional
+        Axis along which skewness is calculated. Default is 0.
+        If None, compute over the whole array `a`.
+    bias : bool, optional
+        If False, then the calculations are corrected for statistical bias.
+
+    Returns
+    -------
+    skewness : ndarray
+        The skewness of values along an axis, returning 0 where all values are
+        equal.
+
+    Notes
+    -----
+    For more details about `skew`, see `stats.skew`.
+
+    """
     a, axis = _chk_asarray(a,axis)
     n = a.count(axis)
     m2 = moment(a, 2, axis)
@@ -1515,10 +1893,45 @@ def skew(a, axis=0, bias=True):
             nval = ma.sqrt((n-1.0)*n)/(n-2.0)*m3/m2**1.5
             np.place(vals, can_correct, nval)
     return vals
-skew.__doc__ = stats.skew.__doc__
 
 
 def kurtosis(a, axis=0, fisher=True, bias=True):
+    """
+    Computes the kurtosis (Fisher or Pearson) of a dataset.
+
+    Kurtosis is the fourth central moment divided by the square of the
+    variance. If Fisher's definition is used, then 3.0 is subtracted from
+    the result to give 0.0 for a normal distribution.
+
+    If bias is False then the kurtosis is calculated using k statistics to
+    eliminate bias coming from biased moment estimators
+
+    Use `kurtosistest` to see if result is close enough to normal.
+
+    Parameters
+    ----------
+    a : array
+        data for which the kurtosis is calculated
+    axis : int or None, optional
+        Axis along which the kurtosis is calculated. Default is 0.
+        If None, compute over the whole array `a`.
+    fisher : bool, optional
+        If True, Fisher's definition is used (normal ==> 0.0). If False,
+        Pearson's definition is used (normal ==> 3.0).
+    bias : bool, optional
+        If False, then the calculations are corrected for statistical bias.
+
+    Returns
+    -------
+    kurtosis : array
+        The kurtosis of values along an axis. If all values are equal,
+        return -3 for Fisher's definition and 0 for Pearson's definition.
+
+    Notes
+    -----
+    For more details about `kurtosis`, see `stats.kurtosis`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     m2 = moment(a, 2, axis)
     m4 = moment(a, 4, axis)
@@ -1541,10 +1954,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals - 3
     else:
         return vals
-kurtosis.__doc__ = stats.kurtosis.__doc__
 
 
-def describe(a, axis=0, ddof=0):
+def describe(a, axis=0, ddof=0, bias=True):
     """
     Computes several descriptive statistics of the passed array.
 
@@ -1558,6 +1970,9 @@ def describe(a, axis=0, ddof=0):
     ddof : int, optional
         degree of freedom (default 0); note that default ddof is different
         from the same routine in stats.describe
+    bias : bool, optional
+        If False, then the skewness and kurtosis calculations are corrected for
+        statistical bias.
 
     Returns
     -------
@@ -1601,8 +2016,8 @@ def describe(a, axis=0, ddof=0):
     mm = (ma.minimum.reduce(a), ma.maximum.reduce(a))
     m = a.mean(axis)
     v = a.var(axis, ddof=ddof)
-    sk = skew(a, axis)
-    kurt = kurtosis(a, axis)
+    sk = skew(a, axis, bias=bias)
+    kurt = kurtosis(a, axis, bias=bias)
 
     DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
                                                    'variance', 'skewness',
@@ -1642,6 +2057,29 @@ def stde_median(data, axis=None):
 
 
 def skewtest(a, axis=0):
+    """
+    Tests whether the skew is different from the normal distribution.
+
+    Parameters
+    ----------
+    a : array
+        The data to be tested
+    axis : int or None, optional
+       Axis along which statistics are calculated. Default is 0.
+       If None, compute over the whole array `a`.
+
+    Returns
+    -------
+    statistic : float
+        The computed z-score for this test.
+    pvalue : float
+        a 2-sided p-value for the hypothesis test
+
+    Notes
+    -----
+    For more details about `skewtest`, see `stats.skewtest`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     if axis is None:
         a = a.ravel()
@@ -1663,10 +2101,32 @@ def skewtest(a, axis=0):
 
     SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
-skewtest.__doc__ = stats.skewtest.__doc__
 
 
 def kurtosistest(a, axis=0):
+    """
+    Tests whether a dataset has normal kurtosis
+
+    Parameters
+    ----------
+    a : array
+        array of the sample data
+    axis : int or None, optional
+       Axis along which to compute test. Default is 0. If None,
+       compute over the whole array `a`.
+
+    Returns
+    -------
+    statistic : float
+        The computed z-score for this test.
+    pvalue : float
+        The 2-sided p-value for the hypothesis test
+
+    Notes
+    -----
+    For more details about `kurtosistest`, see `stats.kurtosistest`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
     if np.min(n) < 5:
@@ -1699,18 +2159,40 @@ def kurtosistest(a, axis=0):
     KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
                                                            'pvalue'))
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
-kurtosistest.__doc__ = stats.kurtosistest.__doc__
 
 
 def normaltest(a, axis=0):
+    """
+    Tests whether a sample differs from a normal distribution.
+
+    Parameters
+    ----------
+    a : array_like
+        The array containing the data to be tested.
+    axis : int or None, optional
+        Axis along which to compute test. Default is 0. If None,
+        compute over the whole array `a`.
+
+    Returns
+    -------
+    statistic : float or array
+        ``s^2 + k^2``, where ``s`` is the z-score returned by `skewtest` and
+        ``k`` is the z-score returned by `kurtosistest`.
+    pvalue : float or array
+       A 2-sided chi squared probability for the hypothesis test.
+
+    Notes
+    -----
+    For more details about `normaltest`, see `stats.normaltest`.
+
+    """
     a, axis = _chk_asarray(a, axis)
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
 
     NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
-    return NormaltestResult(k2, stats.distributions.chi2.sf(k2, 2))
-normaltest.__doc__ = stats.normaltest.__doc__
+    return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
 def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
@@ -2006,10 +2488,6 @@ def sem(a, axis=0, ddof=1):
     return s
 
 
-zmap = stats.zmap
-zscore = stats.zscore
-
-
 def f_oneway(*args):
     """
     Performs a 1-way ANOVA, returning an F-value and probability given
@@ -2084,6 +2562,7 @@ def friedmanchisquare(*args):
         the test statistic.
     pvalue : float
         the associated p-value.
+
     """
     data = argstoarray(*args).astype(float)
     k = len(data)
@@ -2109,4 +2588,4 @@ def friedmanchisquare(*args):
     FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                          ('statistic', 'pvalue'))
     return FriedmanchisquareResult(chisq,
-                                   stats.distributions.chi2.sf(chisq, k-1))
+                                   distributions.chi2.sf(chisq, k-1))
