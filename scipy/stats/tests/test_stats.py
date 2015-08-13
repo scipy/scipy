@@ -8,6 +8,7 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import os
 import sys
 import warnings
 from collections import namedtuple
@@ -3259,6 +3260,39 @@ class TestFOneWay(TestCase):
         res = stats.f_oneway(a, b)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+    def test_nist(self):
+        # These are the nist ANOVA files. They can be found at:
+        # http://www.itl.nist.gov/div898/strd/anova/anova.html
+        filenames = ['SiRstv.dat', 'SmLs01.dat', 'SmLs02.dat', 'SmLs03.dat',
+                     'AtmWtAg.dat', 'SmLs04.dat', 'SmLs05.dat', 'SmLs06.dat',
+                     'SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat']
+
+        for test_case in filenames:
+            rtol = 1e-7
+            fname = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/nist_anova', test_case))
+            with open(fname, 'r') as f:
+                content = f.read().split('\n')
+            certified = [line.split() for line in content[40:48]
+                         if line.strip()]
+            dataf = np.loadtxt(fname, skiprows=60)
+            y, x = dataf.T
+            y = y.astype(int)
+            caty = np.unique(y)
+            f = float(certified[0][-1])
+
+            xlist = [x[y == i] for i in caty]
+            res = stats.f_oneway(*xlist)
+
+            # With the hard test cases we relax the tolerance a bit.
+            hard_tc = ('SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat')
+            if test_case in hard_tc:
+                rtol = 1e-4
+
+            assert_allclose(res[0], f, rtol=rtol,
+                            err_msg='Failing testcase: %s' % test_case)
+
 
 class TestKruskal(TestCase):
     def test_simple(self):
