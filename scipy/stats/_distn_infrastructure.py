@@ -115,11 +115,11 @@ _doc_fit = """\
     Parameter estimates for generic data.
 """
 _doc_expect = """\
-``expect(func, %(shapes)s, loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)``
+``expect(func, args=(%(shapes_)s), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)``
     Expected value of a function (of one argument) with respect to the distribution.
 """
 _doc_expect_discrete = """\
-``expect(func, %(shapes)s, loc=0, lb=None, ub=None, conditional=False)``
+``expect(func, args=(%(shapes_)s), loc=0, lb=None, ub=None, conditional=False)``
     Expected value of a function (of one argument) with respect to the distribution.
 """
 _doc_median = """\
@@ -747,6 +747,10 @@ class rv_generic(object):
             shapes_vals = ()
         vals = ', '.join('%.3g' % val for val in shapes_vals)
         tempdict['vals'] = vals
+
+        tempdict['shapes_'] = self.shapes or ''
+        if self.shapes and self.numargs == 1:
+            tempdict['shapes_'] += ','
 
         if self.shapes:
             tempdict['set_vals_stmt'] = '>>> %s = %s' % (self.shapes, vals)
@@ -3186,7 +3190,7 @@ class rv_discrete(rv_generic):
         slowly, the accuracy of the result may be rather low. For instance, for
         ``zipf(4)``, accuracy for mean, variance in example is only 1e-5.
         increasing `maxcount` and/or `chunksize` may improve the result, but may also
-        makes zipf very slow.
+        make zipf very slow.
 
         The function is not vectorized.
 
