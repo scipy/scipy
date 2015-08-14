@@ -17,8 +17,7 @@ from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 
-from scipy.special import (comb, chndtr, gammaln, hyp0f1,
-                           entr, kl_div)
+from scipy.special import (comb, chndtr, gammaln, entr, kl_div, xlogy, ive)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -612,9 +611,14 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
 # I think the function name ncx2 is an abbreviation for noncentral chi squared.
 
 def _ncx2_log_pdf(x, df, nc):
-    a = asarray(df/2.0)
-    fac = -nc/2.0 - x/2.0 + (a-1)*log(x) - a*log(2) - gammaln(a)
-    return fac + np.nan_to_num(log(hyp0f1(a, nc * x/4.0)))
+    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the factor
+    # of exp(-xs*ns) into the ive function to improve numerical stability
+    # at large values of xs. See also `rice.pdf`.
+    df2 = df/2.0 - 1.0
+    xs, ns = np.sqrt(x), np.sqrt(nc)
+    res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
+    res += np.log(ive(df2, xs*ns) / 2.0)
+    return res
 
 
 def _ncx2_pdf(x, df, nc):
