@@ -257,6 +257,12 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             f_new = fun(x_new)
             nfev += 1
 
+            step_h_norm = norm(step * scale)
+
+            if not np.all(np.isfinite(f_new)):
+                Delta = 0.25 * step_h_norm
+                continue
+
             # Usual trust-region step quality estimation.
             if loss_function is not None:
                 cost_new = loss_function(f_new, cost_only=True)
@@ -266,7 +272,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             Delta, ratio = update_tr_radius(
                 Delta, actual_reduction, predicted_reduction,
-                norm(step * scale, ord=np.inf), tr_hit
+                step_h_norm, tr_hit
             )
 
             step_norm = norm(step)

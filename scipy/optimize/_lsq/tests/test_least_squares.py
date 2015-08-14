@@ -307,7 +307,7 @@ class BaseMixin(object):
                 assert_allclose(res.cost, 0, atol=1e-14)
 
     def test_fun_wrong_dimensions(self):
-        assert_raises(RuntimeError, least_squares, fun_wrong_dimensions,
+        assert_raises(ValueError, least_squares, fun_wrong_dimensions,
                       2.0, method=self.method)
 
     def test_jac_wrong_dimensions(self):

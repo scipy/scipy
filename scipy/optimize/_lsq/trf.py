@@ -317,9 +317,14 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
                 x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta)
 
             x_new = make_strictly_feasible(x + step, lb, ub, rstep=0)
-
             f_new = fun(x_new)
             nfev += 1
+
+            step_h_norm = norm(step_h)
+
+            if not np.all(np.isfinite(f_new)):
+                Delta = 0.25 * step_h_norm
+                continue
 
             # Usual trust-region step quality estimation.
             if loss_function is not None:
@@ -333,7 +338,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             Delta_new, ratio = update_tr_radius(
                 Delta, actual_reduction - correction, predicted_reduction,
-                norm(step_h), norm(step_h) > 0.95 * Delta
+                step_h_norm, step_h_norm > 0.95 * Delta
             )
             alpha *= Delta / Delta_new
             Delta = Delta_new
