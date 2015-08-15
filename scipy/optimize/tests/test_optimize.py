@@ -384,6 +384,22 @@ class TestOptimizeSimple(CheckOptimize):
             x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
             assert_(np.isnan(func(x)))
 
+    def test_bfgs_nan_return(self):
+        # Test corner cases where fun returns NaN. See gh-4793.
+
+        # First case: NaN from first call.
+        func = lambda x: np.nan
+        result = optimize.minimize(func, 0)
+        assert_(np.isnan(result['fun']))
+        assert_(result['success'] is False)
+
+        # Second case: NaN from second call.
+        func = lambda x: 0 if x == 0 else np.nan
+        fprime = lambda x: np.ones_like(x)  # Steer away from zero.
+        result = optimize.minimize(func, 0, jac=fprime)
+        assert_(np.isnan(result['fun']))
+        assert_(result['success'] is False)
+
     def test_bfgs_numerical_jacobian(self):
         # BFGS with numerical jacobian and a vector epsilon parameter.
         # define the epsilon parameter using a random vector
