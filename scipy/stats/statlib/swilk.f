@@ -4,6 +4,15 @@ C        ALGORITHM AS R94 APPL. STATIST. (1995) VOL.44, NO.4
 C
 C        Calculates the Shapiro-Wilk W test and its significance level
 C
+C        IFAULT error code details from the R94 paper:
+C        - 0 for no fault
+C        - 1 if N1 < 3
+C        - 2 if N > 5000 (a non-fatal error)
+C        - 3 if N2 < N/2, so insufficient storage for A
+C        - 4 if N1 > N or (N1 < N and N < 20)
+C        - 5 if the proportion censored (N-N1)/N > 0.8
+C        - 6 if the data have zero range (if sorted on input)
+C
       INTEGER N, N1, N2, IFAULT
       REAL X(*), A(*), PW, W
       REAL C1(6), C2(6), C3(4), C4(4), C5(4), C6(3), C7(2)
