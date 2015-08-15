@@ -1224,6 +1224,15 @@ def shapiro(x, a=None, reta=False):
     anderson : The Anderson-Darling test for normality
     kstest : The Kolmogorov-Smirnov test for goodness of fit.
 
+    Notes
+    -----
+    The algorithm used is described in [4]_ but censoring parameters as
+    described are not implemented. For N > 5000 the W test statistic is accurate
+    but the p-value may not be.
+
+    The chance of rejecting the null hypothesis when it is true is close to 5%
+    regardless of sample size.
+
     References
     ----------
     .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
@@ -1243,6 +1252,9 @@ def shapiro(x, a=None, reta=False):
     (0.9772805571556091, 0.08144091814756393)
 
     """
+    if a is not None or reta:
+        warnings.warn("input parameters 'a' and 'reta' are scheduled to be "
+                      "removed in version 0.18.0", FutureWarning)
     x = np.ravel(x)
     if x.dtype == object:
         # np.ravel and np.ndarray.flatten don't work with dtype=object
@@ -1262,8 +1274,8 @@ def shapiro(x, a=None, reta=False):
     y = sort(x)
     a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
     if ifault not in [0, 2]:
-        warnings.warn("There has been a problem in the computation. The "
-                      "results may not be accurate.")
+        warnings.warn("Input data for shapiro has range zero. The results "
+                      "may not be accurate.")
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
     if reta:
