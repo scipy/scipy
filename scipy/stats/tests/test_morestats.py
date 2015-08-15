@@ -111,8 +111,8 @@ class TestShapiro(TestCase):
         np.random.seed(12345678)
         x3 = stats.norm.rvs(loc=5, scale=3, size=100)
         w, pw = stats.shapiro(x3)
-        assert_almost_equal(w, 0.9772805571556091)
-        assert_almost_equal(pw, 0.08144091814756393)
+        assert_almost_equal(w, 0.9772805571556091, decimal=6)
+        assert_almost_equal(pw, 0.08144091814756393, decimal=3)
 
         # Extracted from original paper
         x4 = [0.139, 0.157, 0.175, 0.256, 0.344, 0.413, 0.503, 0.577, 0.614,
