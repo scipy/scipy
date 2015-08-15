@@ -1,4 +1,4 @@
-"""Linear least squares with constraints on independent variables."""
+"""Linear least squares with bound constraints on independent variables."""
 import numpy as np
 from numpy.linalg import norm, lstsq
 from scipy.sparse import issparse, csr_matrix
@@ -78,8 +78,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
               used when `A` is sparse or LinearOperator.
             * 'lsmr' : Use `scipy.sparse.linalg.lsmr` iterative procedure
               which requires only matrix-vector product evaluations. Can't
-              be used with ``method='bvls'``. The parameters 'atol' and 'btol'
-              for `lsmr` are set to ``1e-2 * tol``.
+              be used with ``method='bvls'``.
 
         If None (default) the solver is chosen based on type of `A`.
     lsmr_tol : None, float or 'auto', optional
@@ -89,7 +88,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         speed up the optimization process, but not always reliable.
     max_iter : None or int, optional
         Maximum number of iterations before termination. Default is 100 for
-        ``method='trf'` and n for ``method='bvls'``.
+        ``method='trf'` and n for ``method='bvls'`` (not counting iterations
+        required for BVLS initialization).
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
@@ -158,14 +158,14 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Method 'bvls' runs a Python implementation of the algorithm described in
     [BVLS]_. The algorithm maintains active and free sets of variables, on
-    each iteration chooses a new variable to move from active set to free set
-    and then solves an unconstrained least-squares problem on a new free set
-    This method gives very accurate solution but may require up to n
-    iterations. Additionally, the ad-hoc initialization procedure is
-    implemented, which roughly determines what variables to set free or
+    each iteration chooses a new variable to move from the active set to the
+    free set and then solves an unconstrained least-squares problem on free
+    variables. This method gives very accurate solution but may require up to
+    n iterations. Additionally, an ad-hoc initialization procedure is
+    implemented, which roughly determines which variables to set free or
     active initially. It takes some number of iterations before actual BVLS
-    starts, but can significantly reduce the number of iterations BVLS will
-    make.
+    starts, but can significantly reduce the number of iterations required
+    by BVLS.
 
     References
     ----------

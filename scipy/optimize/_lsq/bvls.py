@@ -1,3 +1,4 @@
+"""Bounded-Variable Least-Squares algorithm."""
 import numpy as np
 from numpy.linalg import norm, lstsq
 from scipy.optimize import OptimizeResult
@@ -34,6 +35,15 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
     if verbose == 2:
         print_header_linear()
+
+    # This is the initialization loop. The requirement is that the
+    # least-squares solution on free variables is feasible before BVLS starts.
+    # One possible initialization is to set all variables to lower or upper
+    # bounds, but many iterations may be required from this state later on.
+    # The implemented ad-hoc procedure which intuitively should give a better
+    # initial state: find the least-squares solution on current free variables,
+    # if its feasible then stop, otherwise set violating variables to
+    # corresponding bounds and continue on the reduced set of free variables.
 
     while free_set.size > 0:
         if verbose == 2:
@@ -81,8 +91,11 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
     if max_iter is None:
         max_iter = n
+    max_iter += iteration
 
     termination_status = None
+
+    # Main BVLS loop.
 
     for iteration in range(iteration, max_iter):
         g_dir = g * on_bound
@@ -115,7 +128,6 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
         A_free = A[:, free_set]
         b_free = b - A.dot(x * active_set)
-
         z = lstsq(A_free, b_free)[0]
 
         lbv, = np.nonzero(z < lb_free)
@@ -135,10 +147,8 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
             x_free += alpha * z
 
             if i < lbv.size:
-                x_free[i_free] = lb_free[i_free]
                 on_bound[free_set[i_free]] = -1
             else:
-                x_free[i_free] = ub_free[i_free]
                 on_bound[free_set[i_free]] = 1
         else:
             x_free = z
