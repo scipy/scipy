@@ -200,7 +200,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     import time
 
     def objfunc(params):
-        for it in xrange(1000000):
+        for it in range(1000000):
             it**2
         return rosen(params)
 
@@ -580,7 +580,7 @@ class DifferentialEvolutionSolver(object):
                 # initialize list for all members (parameters) of the current subpopulation
                 spparams = []
                 # mutate parameters for the sub-population
-                for candidate in xrange(lensp):
+                for candidate in range(lensp):
                     trial = self._mutate(candidate + self.pool.poolsize()*itsp)
                     self._ensure_constraint(trial)
                     spparams.append(self._scale_parameters(trial), *(self.args))
@@ -599,7 +599,7 @@ class DifferentialEvolutionSolver(object):
 
                 # update population and their energies if subpopulation members are 
                 # better by iteration among all members (or jobs) of the subpopulation
-                for itjob in xrange(lensp):
+                for itjob in range(lensp):
                     energy = spenergies[itjob]
                     if energy < self.population_energies[itjob + self.pool.poolsize()*itsp]:
                         self.population[itjob + self.pool.poolsize()*itsp] =\
