@@ -107,10 +107,57 @@ class TestShapiro(TestCase):
         assert_almost_equal(w,0.9590270,6)
         assert_almost_equal(pw,0.52460,3)
 
+        # Verified against R
+        np.random.seed(12345678)
+        x3 = stats.norm.rvs(loc=5, scale=3, size=100)
+        w, pw = stats.shapiro(x3)
+        assert_almost_equal(w, 0.9772805571556091, decimal=6)
+        assert_almost_equal(pw, 0.08144091814756393, decimal=3)
+
+        # Extracted from original paper
+        x4 = [0.139, 0.157, 0.175, 0.256, 0.344, 0.413, 0.503, 0.577, 0.614,
+              0.655, 0.954, 1.392, 1.557, 1.648, 1.690, 1.994, 2.174, 2.206,
+              3.245, 3.510, 3.571, 4.354, 4.980, 6.084, 8.351]
+        W_expected = 0.83467
+        p_expected = 0.000914
+        w, pw = stats.shapiro(x4)
+        assert_almost_equal(w, W_expected, decimal=4)
+        assert_almost_equal(pw, p_expected, decimal=5)
+
+    def test_2d(self):
+        x1 = [[0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
+              4.43, 0.21, 4.75], [0.71, 1.52, 3.24,
+              0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]]
+        w, pw = stats.shapiro(x1)
+        assert_almost_equal(w, 0.90047299861907959, 6)
+        assert_almost_equal(pw, 0.042089745402336121, 6)
+        x2 = [[1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
+              3.48, 1.10], [0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
+              0.08, 3.67, 2.81, 3.49]]
+        w, pw = stats.shapiro(x2)
+        assert_almost_equal(w, 0.9590270, 6)
+        assert_almost_equal(pw, 0.52460, 3)
+
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.shapiro, [])
+        assert_raises(ValueError, stats.shapiro, [[], [], []])
+
+    def test_not_enough_values(self):
+        assert_raises(ValueError, stats.shapiro, [1, 2])
+        assert_raises(ValueError, stats.shapiro, [[], [2]])
+
     def test_bad_arg(self):
         # Length of x is less than 3.
         x = [1]
         assert_raises(ValueError, stats.shapiro, x)
+
+    def test_nan_input(self):
+        x = np.arange(10.)
+        x[9] = np.nan
+
+        w, pw = stats.shapiro(x)
+        assert_equal(w, np.nan)
+        assert_almost_equal(pw, 1.0)
 
 
 class TestAnderson(TestCase):
