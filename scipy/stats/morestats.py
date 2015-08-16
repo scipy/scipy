@@ -1256,10 +1256,6 @@ def shapiro(x, a=None, reta=False):
         warnings.warn("input parameters 'a' and 'reta' are scheduled to be "
                       "removed in version 0.18.0", FutureWarning)
     x = np.ravel(x)
-    if x.dtype == object:
-        # np.ravel and np.ndarray.flatten don't work with dtype=object
-        # i.e. they will fail to flatten if there are different sized arrays.
-        x = np.hstack(x)
 
     N = len(x)
     if N < 3:
