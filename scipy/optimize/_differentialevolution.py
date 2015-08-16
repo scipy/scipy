@@ -17,7 +17,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
-                           init='latinhypercube', pool=None):
+                           init='latinhypercube', workers=None):
     """Finds the global minimum of a multivariate function.
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
@@ -257,7 +257,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          seed=seed, polish=polish,
                                          callback=callback,
                                          disp=disp,
-                                         init=init, pool=pool)
+                                         init=init, workers=workers)
     return solver.solve()
 
 
@@ -378,17 +378,44 @@ class DifferentialEvolutionSolver(object):
                  strategy='best1bin', maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True,
-                 init='latinhypercube', pool=None):
+                 init='latinhypercube', workers=None):
         
-        if pool is None:
+        # default behaviour is serial
+        if workers is None:
             self.pool_map = map
             self.poolsize = 1
-        else:
-            self.pool_map = pool.map
-            self.poolsize = pool.poolsize()
-            print("Starting %g workers in parallel." % self.poolsize)
             
+        # if int argument is supplied, then used ither serial or paralle pool
+        elif isinstance(workers, int):
+            # serial case
+            if workers == 1:
+                self.pool_map = map
+                self.poolsize = 1
+            # parallel case
+            else:
+                from scipy.misc import PPool
+                # if number of processes within sane limits
+                if (workers > 1) and (workers < 100):                
+                    pool = PPool(n_jobs=workers)
+                    self.pool_map = pool.map
+                    self.poolsize = pool.poolsize()
+                # if number of processes is negative or insane
+                else:
+                    pool = PPool()
+                    self.pool_map = pool.map
+                    self.poolsize = pool.poolsize()
+                    
+                print("Starting %g workers in parallel." % self.poolsize)
         
+        # and as a last option, the workers keyword can take a pool object
+        else:
+            try:
+                self.pool_map = workers.map
+                self.poolsize = workers.poolsize()
+            except:
+                raise ValueError("Workers keyword expected a pool object with map and poolsize methods")
+                
+            print("Starting %g workers in parallel." % self.poolsize)
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
