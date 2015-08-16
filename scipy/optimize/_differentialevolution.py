@@ -652,16 +652,15 @@ class DifferentialEvolutionSolver(object):
 
                         if energy < self.population_energies[0]:
                             self.population_energies[0] = energy
-                            self.population[0] =\
-                                self._unscale_parameters(spparams[itjob])
-                            if self.disp:
-                                print(" Best updated: f(x)= %g"
-                                      % (self.population_energies[0]))
-                                print(self._scale_parameters(self.population[0]))
 
                             # exchange places between old and new global best    
                             self.population[[0, itjob + self.poolsize*itsp], :] =\
                                 self.population[[itjob + self.poolsize*itsp, 0], :]
+
+                            if self.disp:
+                                print(" Best updated: f(x)= %g" % (energy))
+                                print(self._scale_parameters(self.population[0]))
+
                 itsp += 1
                                   
             # report on the results of the current generation
