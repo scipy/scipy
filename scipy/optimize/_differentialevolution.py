@@ -379,6 +379,8 @@ class DifferentialEvolutionSolver(object):
         else:
             self.pool = pool
             print("Starting %g workers in parallel." % self.pool.poolsize())
+            
+        self.poolsize = self.pool.poolsize()
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -567,21 +569,21 @@ class DifferentialEvolutionSolver(object):
             # determine number of sub-populations 'nsp', or number of 
             # parallel evaluations, which is 'nsp + 1'
             # and the length of the reminder 'lenrem'
-            nsp, lenrem = divmod(np.size(self.population, 0), self.pool.poolsize())
+            nsp, lenrem = divmod(np.size(self.population, 0), self.poolsize)
             
             itsp = 0
             # iterate among sub-populations
-            # when self.pool.poolsize() == 1 the mutation is aggressive
-            # when self.pool.poolsize() > 1 the mutation is quasi-aggressive
+            # when self.poolsize == 1 the mutation is aggressive
+            # when self.poolsize > 1 the mutation is quasi-aggressive
             while itsp <= nsp:
                 # determine the length of the subpopulation
-                lensp = self.pool.poolsize() if (itsp < nsp) else lenrem
+                lensp = self.poolsize if (itsp < nsp) else lenrem
 
                 # initialize list for all members (parameters) of the current subpopulation
                 spparams = []
                 # mutate parameters for the sub-population
                 for candidate in range(lensp):
-                    trial = self._mutate(candidate + self.pool.poolsize()*itsp)
+                    trial = self._mutate(candidate + self.poolsize*itsp)
                     self._ensure_constraint(trial)
                     spparams.append(self._scale_parameters(trial), *(self.args))
                     nfev += 1
@@ -601,10 +603,10 @@ class DifferentialEvolutionSolver(object):
                 # better by iteration among all members (or jobs) of the subpopulation
                 for itjob in range(lensp):
                     energy = spenergies[itjob]
-                    if energy < self.population_energies[itjob + self.pool.poolsize()*itsp]:
-                        self.population[itjob + self.pool.poolsize()*itsp] =\
+                    if energy < self.population_energies[itjob + self.poolsize*itsp]:
+                        self.population[itjob + self.poolsize*itsp] =\
                             self._unscale_parameters(spparams[itjob])
-                        self.population_energies[itjob + self.pool.poolsize()*itsp] = energy
+                        self.population_energies[itjob + self.poolsize*itsp] = energy
                         
                         # update global best if there is a better in the current sub-population
                         # the strategy is aggressive
@@ -619,8 +621,8 @@ class DifferentialEvolutionSolver(object):
                                 print(self._scale_parameters(self.population[0]))
 
                             # exchange places between old and new global best    
-                            self.population[[0, itjob + self.pool.poolsize()*itsp], :] =\
-                                self.population[[itjob + self.pool.poolsize()*itsp, 0], :]
+                            self.population[[0, itjob + self.poolsize*itsp], :] =\
+                                self.population[[itjob + self.poolsize*itsp, 0], :]
                 itsp += 1
                                   
             # report on the results of the current generation
