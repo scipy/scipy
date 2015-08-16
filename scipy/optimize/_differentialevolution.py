@@ -375,6 +375,8 @@ class DifferentialEvolutionSolver(object):
                  maxfun=None, callback=None, disp=False, polish=True,
                  init='latinhypercube', workers=None):
         
+        self.disp = disp
+        
         # default behaviour is serial
         if workers is None:
             self.pool_map = map
@@ -399,8 +401,9 @@ class DifferentialEvolutionSolver(object):
                     pool = PPool()
                     self.pool_map = pool.map
                     self.poolsize = pool.poolsize()
-                    
-                print("Starting %g workers in parallel." % self.poolsize)
+                
+                if self.disp:            
+                    print("Starting %g workers in parallel." % self.poolsize)
         
         # and as a last option, the workers keyword can take a pool object
         else:
@@ -409,8 +412,9 @@ class DifferentialEvolutionSolver(object):
                 self.poolsize = workers.poolsize()
             except:
                 raise ValueError("Workers keyword expected a pool object with map and poolsize methods")
-                
-            print("Starting %g workers in parallel." % self.poolsize)
+            
+            if self.disp:    
+                print("Starting %g workers in parallel." % self.poolsize)
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -482,8 +486,6 @@ class DifferentialEvolutionSolver(object):
 
         self.population_energies = np.ones(
             popsize * parameter_count) * np.inf
-
-        self.disp = disp
 
     def init_population_lhs(self):
         """
