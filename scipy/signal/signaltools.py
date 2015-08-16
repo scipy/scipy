@@ -314,12 +314,12 @@ def fftconvolve(in1, in2, mode="full"):
     but is far slower.
 
     >>> from scipy import misc
-    >>> lena = misc.lena()
+    >>> face = misc.face(gray=True)
     >>> kernel = np.outer(signal.gaussian(70, 8), signal.gaussian(70, 8))
-    >>> blurred = signal.fftconvolve(lena, kernel, mode='same')
+    >>> blurred = signal.fftconvolve(face, kernel, mode='same')
 
     >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(1, 3)
-    >>> ax_orig.imshow(lena, cmap='gray')
+    >>> ax_orig.imshow(face, cmap='gray')
     >>> ax_orig.set_title('Original')
     >>> ax_orig.set_axis_off()
     >>> ax_kernel.imshow(kernel, cmap='gray')
@@ -666,15 +666,15 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
-    >>> lena = misc.lena()
+    >>> face = misc.face(gray=True)
     >>> scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],
     ...                    [-10+0j, 0+ 0j, +10 +0j],
     ...                    [ -3+3j, 0+10j,  +3 +3j]]) # Gx + j*Gy
-    >>> grad = signal.convolve2d(lena, scharr, boundary='symm', mode='same')
+    >>> grad = signal.convolve2d(face, scharr, boundary='symm', mode='same')
 
     >>> import matplotlib.pyplot as plt
     >>> fig, (ax_orig, ax_mag, ax_ang) = plt.subplots(1, 3)
-    >>> ax_orig.imshow(lena, cmap='gray')
+    >>> ax_orig.imshow(face, cmap='gray')
     >>> ax_orig.set_title('Original')
     >>> ax_orig.set_axis_off()
     >>> ax_mag.imshow(np.absolute(grad), cmap='gray')
@@ -753,16 +753,16 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
-    >>> lena = misc.lena() - misc.lena().mean()
-    >>> template = np.copy(lena[235:295, 310:370]) # right eye
+    >>> face = misc.face(gray=True) - misc.face(gray=True).mean()
+    >>> template = np.copy(face[300:365, 670:750])  # right eye
     >>> template -= template.mean()
-    >>> lena = lena + np.random.randn(*lena.shape) * 50 # add noise
-    >>> corr = signal.correlate2d(lena, template, boundary='symm', mode='same')
-    >>> y, x = np.unravel_index(np.argmax(corr), corr.shape) # find the match
+    >>> face = face + np.random.randn(*face.shape) * 50  # add noise
+    >>> corr = signal.correlate2d(face, template, boundary='symm', mode='same')
+    >>> y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
 
     >>> import matplotlib.pyplot as plt
     >>> fig, (ax_orig, ax_template, ax_corr) = plt.subplots(1, 3)
-    >>> ax_orig.imshow(lena, cmap='gray')
+    >>> ax_orig.imshow(face, cmap='gray')
     >>> ax_orig.set_title('Original')
     >>> ax_orig.set_axis_off()
     >>> ax_template.imshow(template, cmap='gray')

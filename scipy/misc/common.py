@@ -347,8 +347,9 @@ def pade(an, m):
 
 def lena():
     """
-    Get classic image processing example image, Lena, at 8-bit grayscale
-    bit-depth, 512 x 512 size.
+    Function that previously returned an example image
+
+    .. note:: Removed in 0.17
 
     Parameters
     ----------
@@ -356,41 +357,24 @@ def lena():
 
     Returns
     -------
-    lena : ndarray
-        Lena image
+    None
+
+    Raises
+    ------
+    RuntimeError
+        This functionality has been removed.
 
     Notes
     -----
-    Though safe for work in most places, this sexualized image is drawn from
-    Playboy and makes some viewers uncomfortable.  It has been very widely
-    used as an example in image processing and is therefore made available
-    for compatibility.  For new code that needs an example image we recommend
-    `face` or `ascent`.
+    The image previously returned by this function has an incompatible license
+    and has been removed from SciPy. Please use `face` or `ascent` instead.
 
-    Examples
+    See Also
     --------
-    >>> import scipy.misc
-    >>> lena = scipy.misc.lena()
-    >>> lena.shape
-    (512, 512)
-    >>> lena.max()
-    245
-    >>> lena.dtype
-    dtype('int64')
-
-    >>> import matplotlib.pyplot as plt
-    >>> plt.gray()
-    >>> plt.imshow(lena)
-    >>> plt.show()
-
+    face, ascent
     """
-    import pickle
-    import os
-    fname = os.path.join(os.path.dirname(__file__),'lena.dat')
-    f = open(fname,'rb')
-    lena = array(pickle.load(f))
-    f.close()
-    return lena
+    raise RuntimeError('lena() is no longer included in SciPy, please use '
+                       'ascent() or face() instead')
 
 
 def ascent():
