@@ -606,7 +606,7 @@ def linkage(y, method='single', metric='euclidean'):
         for full descriptions.
     metric : str or function, optional
         The distance metric to use. See the ``distance.pdist`` function for a
-        list of valid distance metrics. The customized distance can also be 
+        list of valid distance metrics. The customized distance can also be
         used. See the ``distance.pdist`` function for details.
 
     Returns
@@ -1680,7 +1680,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
         else:
             leaf_fs = float(_get_tick_text_size(len(ivl)))
-            map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
+            map(lambda lbl: lbl.set_size(leaf_fs), lbls)
 
         # Make the tick marks invisible because they cover up the links
         for line in ax.get_xticklines():
@@ -1708,7 +1708,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             map(lambda lbl: lbl.set_size(leaf_font_size), lbls)
         else:
             leaf_fs = float(_get_tick_text_size(p))
-            map(lambda lbl: lbl.set_rotation(leaf_fs), lbls)
+            map(lambda lbl: lbl.set_size(leaf_fs), lbls)
 
         ax.xaxis.set_ticks_position('top')
         # Make the tick marks invisible because they cover up the links
