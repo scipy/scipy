@@ -12,7 +12,7 @@ from scipy.optimize._numdiff import approx_derivative, group_columns
 
 from .trf import trf
 from .dogbox import dogbox
-from .common import EPS, in_bounds
+from .common import EPS, in_bounds, make_strictly_feasible
 
 
 TERMINATION_MESSAGES = {
@@ -762,6 +762,9 @@ def least_squares(
 
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))
+
+    if method == 'trf':
+        x0 = make_strictly_feasible(x0, lb, ub)
 
     f0 = fun_wrapped(x0)
 
