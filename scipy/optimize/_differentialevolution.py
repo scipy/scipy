@@ -6,7 +6,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
-from scipy.misc import SPool
 import numbers
 
 __all__ = ['differential_evolution']
@@ -375,12 +374,14 @@ class DifferentialEvolutionSolver(object):
                  init='latinhypercube', pool=None):
         
         if pool is None:
-            self.pool = SPool()
+            self.pool_map = map
+            self.poolsize = 1
         else:
-            self.pool = pool
-            print("Starting %g workers in parallel." % self.pool.poolsize())
+            self.pool_map = pool.map
+            self.poolsize = pool.poolsize()
+            print("Starting %g workers in parallel." % self.poolsize)
             
-        self.poolsize = self.pool.poolsize()
+        
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -526,7 +527,7 @@ class DifferentialEvolutionSolver(object):
             parameters.append(self._scale_parameters(candidate), *(self.args))
             
         # evaluate function for the whole population using a pool
-        self.population_energies = self.pool.map(self.func, parameters)
+        self.population_energies = self.pool_map(self.func, parameters)
         
         # In parallel version where the whole population is evaluated 
         # simultaneously it is impossible to track number of separate function
@@ -590,7 +591,7 @@ class DifferentialEvolutionSolver(object):
                     
                 # in parallel case the self.func must return a list of energies
                 # for the whole subpopulation
-                spenergies = self.pool.map(self.func, spparams)
+                spenergies = self.pool_map(self.func, spparams)
 
                 # check the number of evaluation of the functions
                 # (this, perhaps, should be deprecated as unnecessary)
