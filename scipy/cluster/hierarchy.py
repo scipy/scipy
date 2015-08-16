@@ -1658,38 +1658,28 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     ivw = len(ivl) * 10
     # Dependent variable plot height
     dvw = mh + mh * 0.05
-    ivticks = np.arange(5, len(ivl) * 10 + 5, 10)
-    if orientation == 'top':
-        ax.set_ylim([0, dvw])
-        ax.set_xlim([0, ivw])
+
+    iv_ticks = np.arange(5, len(ivl) * 10 + 5, 10)
+    if orientation in ('top', 'bottom'):
+        if orientation == 'top':
+            ax.set_ylim([0, dvw])
+            ax.set_xlim([0, ivw])
+        else:
+            ax.set_ylim([dvw, 0])
+            ax.set_xlim([0, ivw])
+
         xlines = icoords
         ylines = dcoords
         if no_labels:
             ax.set_xticks([])
             ax.set_xticklabels([])
         else:
-            ax.set_xticks(ivticks)
+            ax.set_xticks(iv_ticks)
+
+        # FIXME: this is implemented asymmetrically with left/right!
+        if orientation == 'top':
             ax.xaxis.set_ticks_position('bottom')
-
-            # Make the tick marks invisible because they cover up the links
-            for line in ax.get_xticklines():
-                line.set_visible(False)
-
-            leaf_rot = float(_get_tick_rotation(len(ivl))) if (
-                                    leaf_rotation is None) else leaf_rotation
-            leaf_font = float(_get_tick_text_size(len(ivl))) if (
-                                    leaf_font_size is None) else leaf_font_size
-            ax.set_xticklabels(ivl, rotation=leaf_rot, size=leaf_font)
-    elif orientation == 'bottom':
-        ax.set_ylim([dvw, 0])
-        ax.set_xlim([0, ivw])
-        xlines = icoords
-        ylines = dcoords
-        if no_labels:
-            ax.set_xticks([])
-            ax.set_xticklabels([])
         else:
-            ax.set_xticks(ivticks)
             ax.xaxis.set_ticks_position('top')
 
             # Make the tick marks invisible because they cover up the links
@@ -1701,40 +1691,23 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             leaf_font = float(_get_tick_text_size(len(ivl))) if (
                                     leaf_font_size is None) else leaf_font_size
             ax.set_xticklabels(ivl, rotation=leaf_rot, size=leaf_font)
-    elif orientation == 'left':
-        ax.set_xlim([0, dvw])
-        ax.set_ylim([0, ivw])
+
+    elif orientation in ('left', 'right'):
+        if orientation == 'left':
+            ax.set_xlim([0, dvw])
+            ax.set_ylim([0, ivw])
+        else:
+            ax.set_xlim([dvw, 0])
+            ax.set_ylim([0, ivw])
+
         xlines = dcoords
         ylines = icoords
         if no_labels:
             ax.set_yticks([])
             ax.set_yticklabels([])
         else:
-            ax.set_yticks(ivticks)
-            ax.yaxis.set_ticks_position('left')
-            # Make the tick marks invisible because they cover up the links
-            for line in ax.get_yticklines():
-                line.set_visible(False)
-
-            leaf_font = float(_get_tick_text_size(len(ivl))) if (
-                                    leaf_font_size is None) else leaf_font_size
-
-            if leaf_rotation is not None:
-                ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font)
-            else:
-                ax.set_yticklabels(ivl, size=leaf_font)
-
-    elif orientation == 'right':
-        ax.set_xlim([dvw, 0])
-        ax.set_ylim([0, ivw])
-        xlines = dcoords
-        ylines = icoords
-        if no_labels:
-            ax.set_yticks([])
-            ax.set_yticklabels([])
-        else:
-            ax.set_yticks(ivticks)
-            ax.yaxis.set_ticks_position('right')
+            ax.set_yticks(iv_ticks)
+            ax.yaxis.set_ticks_position(orientation)
             # Make the tick marks invisible because they cover up the links
             for line in ax.get_yticklines():
                 line.set_visible(False)
@@ -1767,28 +1740,21 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     for color in colors_used:
         if color != above_threshold_color:
             ax.add_collection(colors_to_collections[color])
-    # If there is a grouping of links above the color threshold,
-    # it should go last.
+    # If there's a grouping of links above the color threshold, it goes last.
     if above_threshold_color in colors_to_collections:
         ax.add_collection(colors_to_collections[above_threshold_color])
 
     if contraction_marks is not None:
-        if orientation in ('left', 'right'):
-            for (x, y) in contraction_marks:
-                e = matplotlib.patches.Ellipse((y, x),
-                                               width=dvw / 100, height=1.0)
-                ax.add_artist(e)
-                e.set_clip_box(ax.bbox)
-                e.set_alpha(0.5)
-                e.set_facecolor('k')
-        if orientation in ('top', 'bottom'):
-            for (x, y) in contraction_marks:
-                e = matplotlib.patches.Ellipse((x, y),
-                                             width=1.0, height=dvw / 100)
-                ax.add_artist(e)
-                e.set_clip_box(ax.bbox)
-                e.set_alpha(0.5)
-                e.set_facecolor('k')
+        Ellipse = matplotlib.patches.Ellipse
+        for (x, y) in contraction_marks:
+            if orientation in ('left', 'right'):
+                e = Ellipse((y, x), width=dvw / 100, height=1.0)
+            else:
+                e = Ellipse((x, y), width=1.0, height=dvw / 100)
+            ax.add_artist(e)
+            e.set_clip_box(ax.bbox)
+            e.set_alpha(0.5)
+            e.set_facecolor('k')
 
     if trigger_redraw:
         matplotlib.pylab.draw_if_interactive()
@@ -2148,10 +2114,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
          'leaves': lvs, 'color_list': color_list}
-    if show_contracted:
-        contraction_marks = []
-    else:
-        contraction_marks = None
+
+    # Empty list will be filled in _dendrogram_calculate_info
+    contraction_marks = [] if show_contracted else None
 
     _dendrogram_calculate_info(
         Z=Z, p=p,
@@ -2293,7 +2258,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
 
       * h is the height of the subtree in dependent variable units
 
-      * md is the max(Z[*,2]) for all nodes * below and including
+      * md is the ``max(Z[*,2]``) for all nodes ``*`` below and including
         the target node.
 
     """
@@ -2305,9 +2270,9 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
 
     if truncate_mode == 'lastp':
         # If the node is a leaf node but corresponds to a non-single cluster,
-        # it's label is either the empty string or the number of original
+        # its label is either the empty string or the number of original
         # observations belonging to cluster i.
-        if i < 2 * n - p and i >= n:
+        if i < 2*n - p and i >= n:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
