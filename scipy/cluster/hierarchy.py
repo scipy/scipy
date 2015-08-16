@@ -1676,11 +1676,10 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         else:
             ax.set_xticks(iv_ticks)
 
-        # FIXME: this is implemented asymmetrically with left/right!
-        if orientation == 'top':
-            ax.xaxis.set_ticks_position('bottom')
-        else:
-            ax.xaxis.set_ticks_position('top')
+            if orientation == 'top':
+                ax.xaxis.set_ticks_position('bottom')
+            else:
+                ax.xaxis.set_ticks_position('top')
 
             # Make the tick marks invisible because they cover up the links
             for line in ax.get_xticklines():
@@ -1694,10 +1693,10 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
 
     elif orientation in ('left', 'right'):
         if orientation == 'left':
-            ax.set_xlim([0, dvw])
+            ax.set_xlim([dvw, 0])
             ax.set_ylim([0, ivw])
         else:
-            ax.set_xlim([dvw, 0])
+            ax.set_xlim([0, dvw])
             ax.set_ylim([0, ivw])
 
         xlines = dcoords
@@ -1707,7 +1706,12 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_yticklabels([])
         else:
             ax.set_yticks(iv_ticks)
-            ax.yaxis.set_ticks_position(orientation)
+
+            if orientation == 'left':
+                ax.yaxis.set_ticks_position('right')
+            else:
+                ax.yaxis.set_ticks_position('left')
+
             # Make the tick marks invisible because they cover up the links
             for line in ax.get_yticklines():
                 line.set_visible(False)
