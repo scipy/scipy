@@ -114,13 +114,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         maximize coverage of the available parameter space. 'random' initializes
         the population randomly - this has the drawback that clustering can
         occur, preventing the whole of parameter space being covered.
-    pool : object, optional
+    workers : pool object or int, optional
         Optional iterable object which is used for parallelization. It can be
         any object with a map method that follows the same calling sequence as
-        the built-in map function, and with poolsize method. There are two 
-        helper classes -- SPool and PPool that provide serial and 
-        multiprocessing-based parallel pools. 'mpi4py'-based paralelization and
-        'joblib'-based parallelization alternative pools can be also used here.
+        the built-in map function, and with poolsize method.
+        If int is given as the argument, then a multiprocessing-based pool is
+        spawned internally with the corresponding number of parallel processes.
+        'mpi4py'-based paralelization and 'joblib'-based parallelization 
+        alternative pools can be also used here.
 
     Returns
     -------
@@ -353,13 +354,14 @@ class DifferentialEvolutionSolver(object):
 
             - 'latinhypercube'
             - 'random'
-    pool : object, optional
+    workers : pool object or int, optional
         Optional iterable object which is used for parallelization. It can be
         any object with a map method that follows the same calling sequence as
-        the built-in map function, and with poolsize method. There are two 
-        helper classes -- SPool and PPool that provide serial and 
-        multiprocessing-based parallel pools. 'mpi4py'-based paralelization and
-        'joblib'-based parallelization alternative pools can be also used here.
+        the built-in map function, and with poolsize method.
+        If int is given as the argument, then a multiprocessing-based pool is
+        spawned internally with the corresponding number of parallel processes.
+        'mpi4py'-based paralelization and 'joblib'-based parallelization 
+        alternative pools can be also used here.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
