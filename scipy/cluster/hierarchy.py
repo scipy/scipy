@@ -1799,17 +1799,45 @@ _link_line_colors = ['g', 'r', 'c', 'm', 'y', 'k']
 
 def set_link_color_palette(palette):
     """
-    Set list of matplotlib color codes for dendrogram color_threshold.
+    Set list of matplotlib color codes for use by dendrogram.
+
+    Note that this palette is global (i.e. setting it once changes the colors
+    for all subsequent calls to `dendrogram`) and that it affects only the
+    the colors below ``color_threshold``.
+
+    Note that `dendrogram` also accepts a custom coloring function through its
+    ``link_color_func`` keyword, which is more flexible and non-global.
 
     Parameters
     ----------
-    palette : list
-        A list of matplotlib color codes. The order of
-        the color codes is the order in which the colors are cycled
-        through when color thresholding in the dendrogram.
+    palette : list of str
+        A list of matplotlib color codes.  The order of the color codes is the
+        order in which the colors are cycled through when color thresholding in
+        the dendrogram.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> from scipy.cluster import hierarchy
+    >>> ytdist = np.array([662., 877., 255., 412., 996., 295., 468., 268., 400.,
+    ...                    754., 564., 138., 219., 869., 669.])
+    >>> Z = hierarchy.linkage(ytdist, 'single')
+    >>> dn = hierarchy.dendrogram(Z, no_plot=True)
+    >>> dn['color_list']
+    ['g', 'b', 'b', 'b', 'b']
+    >>> hierarchy.set_link_color_palette(['c', 'm', 'y', 'k'])
+    >>> dn = hierarchy.dendrogram(Z, no_plot=True)
+    >>> dn['color_list']
+    ['c', 'b', 'b', 'b', 'b']
+    >>> dn = hierarchy.dendrogram(Z, no_plot=True, color_threshold=267,
+    ...                           above_threshold_color='k')
+    >>> dn['color_list']
+    ['c', 'm', 'm', 'k', 'k']
 
     """
-
     if type(palette) not in (list, tuple):
         raise TypeError("palette must be a list or tuple")
     _ptypes = [isinstance(p, string_types) for p in palette]
