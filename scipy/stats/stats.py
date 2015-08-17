@@ -3399,7 +3399,7 @@ def pointbiserialr(x, y):
     return PointbiserialrResult(rpb, prob)
 
 
-def kendalltau(x, y, initial_lexsort=True):
+def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
     """
     Calculates Kendall's tau, a correlation measure for ordinal data.
 
@@ -3419,6 +3419,10 @@ def kendalltau(x, y, initial_lexsort=True):
         `kendalltau` is of complexity O(n log(n)). If False, the complexity is
         O(n^2), but with a smaller pre-factor (so quicksort may be faster for
         small arrays).
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -3427,6 +3431,11 @@ def kendalltau(x, y, initial_lexsort=True):
     pvalue : float
        The two-sided p-value for a hypothesis test whose null hypothesis is
        an absence of association, tau = 0.
+
+    See also
+    --------
+    spearmanr : Calculates a Spearman rank-order correlation coefficient.
+    theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
 
     Notes
     -----
@@ -3462,8 +3471,23 @@ def kendalltau(x, y, initial_lexsort=True):
 
     KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
-    if not x.size or not y.size:
+    if x.size != y.size:
+        raise ValueError("All inputs to `kendalltau` must be of the same size, "
+                         "found x-size %s and y-size %s" % (x.size, y.size))
+    elif not x.size or not y.size:
         return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
+
+    # check both x and y
+    contains_nan, nan_policy = (_contains_nan(x, nan_policy) or
+                                _contains_nan(y, nan_policy))
+
+    if contains_nan and nan_policy == 'propagate':
+        return KendalltauResult(np.nan, np.nan)
+
+    elif contains_nan and nan_policy == 'omit':
+        x = ma.masked_invalid(x)
+        y = ma.masked_invalid(y)
+        return mstats_basic.kendalltau(x, y)
 
     n = np.int64(len(x))
     temp = list(range(n))  # support structure used by mergesort

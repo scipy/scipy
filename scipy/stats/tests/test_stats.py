@@ -726,6 +726,20 @@ def test_kendalltau():
     # and do we get a tau of 1 for identical inputs?
     assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2])[0], 1.0)
 
+    # test nan_policy
+    x = np.arange(10.)
+    x[9] = np.nan
+    assert_array_equal(stats.kendalltau(x, x), (np.nan, np.nan))
+    assert_allclose(stats.kendalltau(x, x, nan_policy='omit'),
+                    (1.0, 0.00017455009626808976), rtol=1e-06)
+    assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='raise')
+    assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='foobar')
+
+    # test unequal length inputs
+    x = np.arange(10.)
+    y = np.arange(20.)
+    assert_raises(ValueError, stats.kendalltau, x, y)
+
 
 class TestFindRepeats(TestCase):
 
