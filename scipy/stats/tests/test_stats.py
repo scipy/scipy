@@ -735,6 +735,10 @@ def test_kendalltau():
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='raise')
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='foobar')
 
+    # test unequal length inputs
+    x = np.arange(10.)
+    y = np.arange(20.)
+    assert_raises(ValueError, stats.kendalltau, x, y)
 
 
 class TestFindRepeats(TestCase):

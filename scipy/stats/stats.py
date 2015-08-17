@@ -3454,7 +3454,10 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
 
     KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
-    if not x.size or not y.size:
+    if x.size != y.size:
+        raise ValueError("All inputs to `kendalltau` must be of the same size, "
+                         "found x-size %s and y-size %s" % (x.size, y.size))
+    elif not x.size or not y.size:
         return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # check both x and y
