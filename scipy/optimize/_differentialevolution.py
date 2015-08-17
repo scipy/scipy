@@ -581,10 +581,14 @@ class DifferentialEvolutionSolver(object):
         parameters = []
         for candidate in self.population:
             # incapsulate additional fixed arguments to parameters
-            parameters.append(self._scale_parameters(candidate), *(self.args))
+            parameters.append(self._scale_parameters(candidate))
+
 
         # evaluate function for the whole population using a pool
-        self.population_energies = self.pool_map(self.func, parameters)
+        if len(self.args) is not 0:
+            self.population_energies = self.pool_map(lambda pars: self.func(pars, *self.args), parameters)
+        else:
+            self.population_energies = self.pool_map(self.func, parameters)
 
         # In parallel version where the whole population is evaluated 
         # simultaneously it is impossible to track number of separate function
@@ -643,13 +647,17 @@ class DifferentialEvolutionSolver(object):
                 for candidate in range(lensp):
                     trial = self._mutate(candidate + self.poolsize*itsp)
                     self._ensure_constraint(trial)
-                    spparams.append(self._scale_parameters(trial), *(self.args))
+                    spparams.append(self._scale_parameters(trial))
+
                     nfev += 1
-                    
+
                 # in parallel case the self.func must return a list of energies
                 # for the whole subpopulation
-                spenergies = self.pool_map(self.func, spparams)
-
+                if len(self.args) is not 0:
+                    spenergies = self.pool_map(lambda pars: self.func(pars, *self.args), spparams)
+                else:
+                    spenergies = self.pool_map(self.func, spparams)
+                    
                 # check the number of evaluation of the functions
                 # (this, perhaps, should be deprecated as unnecessary)
                 if nfev > self.maxfun:
