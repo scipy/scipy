@@ -61,6 +61,8 @@ Element-wise multiplication of sparse matrices now returns a sparse result
 in all cases. Previously, multiplying a sparse matrix with a dense matrix or
 array would return a dense matrix.
 
+The function ``misc.lena`` has been removed due to license incompatibility.
+
 Other changes
 =============
 

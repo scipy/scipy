@@ -362,7 +362,7 @@ def lena():
     Raises
     ------
     RuntimeError
-        This functionality has been removed.
+        This functionality has been removed due to licensing reasons.
 
     Notes
     -----
