@@ -845,6 +845,27 @@ class TestRegression(TestCase):
         attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
         check_named_results(res, attributes)
 
+    def test_nist_norris(self):
+        x = [0.2, 337.4, 118.2, 884.6, 10.1, 226.5, 666.3, 996.3, 448.6, 777.0,
+             558.2, 0.4, 0.6, 775.5, 666.9, 338.0, 447.5, 11.6, 556.0, 228.1,
+             995.8, 887.6, 120.2, 0.3, 0.3, 556.8, 339.1, 887.2, 999.0, 779.0,
+             11.1, 118.3, 229.2, 669.1, 448.9, 0.5]
+
+        y = [0.1, 338.8, 118.1, 888.0, 9.2, 228.1, 668.5, 998.5, 449.1, 778.9,
+             559.2, 0.3, 0.1, 778.1, 668.8, 339.3, 448.9, 10.8, 557.7, 228.3,
+             998.0, 888.8, 119.6, 0.3, 0.6, 557.6, 339.3, 888.0, 998.5, 778.9,
+             10.2, 117.6, 228.9, 668.4, 449.2, 0.2]
+
+        # Expected values
+        exp_slope = 1.00211681802045
+        exp_intercept = -0.262323073774029
+        exp_rvalue = 0.999993745883712
+
+        actual = stats.linregress(x, y)
+
+        assert_almost_equal(actual.slope, exp_slope)
+        assert_almost_equal(actual.intercept, exp_intercept)
+        assert_almost_equal(actual.rvalue, exp_rvalue, decimal=5)
 
 def test_theilslopes():
     # Basic slope test.
