@@ -1780,14 +1780,25 @@ def set_link_color_palette(palette):
 
     Parameters
     ----------
-    palette : list of str
+    palette : list of str or None
         A list of matplotlib color codes.  The order of the color codes is the
         order in which the colors are cycled through when color thresholding in
         the dendrogram.
 
+        If ``None``, resets the palette to its default (which is
+        ``['g', 'r', 'c', 'm', 'y', 'k']``).
+
     Returns
     -------
     None
+
+    See Also
+    --------
+    dendrogram
+
+    Notes
+    -----
+    Ability to reset the palette with ``None`` added in Scipy 0.17.0.
 
     Examples
     --------
@@ -1807,8 +1818,15 @@ def set_link_color_palette(palette):
     >>> dn['color_list']
     ['c', 'm', 'm', 'k', 'k']
 
+    Now reset the color palette to its default:
+
+    >>> hierarchy.set_link_color_palette(None)
+
     """
-    if type(palette) not in (list, tuple):
+    if palette is None:
+        # reset to its default
+        palette = ['g', 'r', 'c', 'm', 'y', 'k']
+    elif type(palette) not in (list, tuple):
         raise TypeError("palette must be a list or tuple")
     _ptypes = [isinstance(p, string_types) for p in palette]
 
@@ -2060,6 +2078,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     ...                            orientation='top')
     >>> dn2 = hierarchy.dendrogram(Z, ax=axes[1], above_threshold_color='#bcbddc',
     ...                            orientation='right')
+    >>> hierarchy.set_link_color_palette(None)  # reset to default after use
     >>> plt.show()
 
     """

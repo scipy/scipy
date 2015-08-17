@@ -853,6 +853,9 @@ class TestDendrogram(object):
         color_list = R['color_list']
         assert_equal(color_list, ['c', 'm', 'g', 'g', 'g'])
 
+        # reset color palette (global list)
+        set_link_color_palette(None)
+
 
 def calculate_maximum_distances(Z):
     # Used for testing correctness of maxdists.
