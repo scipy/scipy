@@ -194,53 +194,79 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     (array([ 0.,  0.]), 4.4408920985006262e-16)
 
 
-    Next example demonstrates the parallelization capabilities.
+    Next example demonstrates the usage of parallelization capabilities.
 
-    >>>
-    from scipy.optimize import rosen
-    from scipy.optimize import differential_evolution as de
-    from scipy.misc import SPool
-    from scipy.misc import PPool
-    import time
+        import numpy as np
+        from scipy.optimize import differential_evolution as de
+        from scipy.misc import PPool
+        import time
 
-    def objfunc(params):
-        for it in range(1000000):
-            it**2
-        return rosen(params)
+        def ackley(x):
+            arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
+            arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
+            return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
 
-    bounds = [(0,2), (0, 2), (0,2)]
+        def objfuncheavy(params):
+            for it in range(100000):
+                it**2
+            return ackley(params)
 
-    start_time = time.time()
-    p = PPool()
-    result = de(objfunc, bounds, maxiter=10, polish=False, pool=p)
-    print("Parallel: %s seconds ---" % (time.time() - start_time))
-    print(result)
+        def objfunclight(params):
+            return ackley(params)
 
-    start_time = time.time()
-    result = de(objfunc, bounds, maxiter=10, polish=False)
-    print("Serial: %s seconds ---" % (time.time() - start_time))
-    print(result)
-    >>>
+        bounds = [(-2,2), (-2, 2)]
+
+        p = PPool(n_jobs=10)
+
+        start_time = time.time()
+        result = de(objfuncheavy, bounds, polish=False, workers=p)
+        print("Parallel heavy function: %s seconds ---" % (time.time() - start_time))
+        print(result)
+
+        start_time = time.time()
+        result = de(objfuncheavy, bounds, polish=False)
+        print("Serial heavy function: %s seconds ---" % (time.time() - start_time))
+        print(result)
+
+        start_time = time.time()
+        result = de(objfunclight, bounds, polish=False, workers=10)
+        print("Parallel light function: %s seconds ---" % (time.time() - start_time))
+
+        start_time = time.time()
+        result = de(objfunclight, bounds, polish=False)
+        print("Serial light function: %s seconds ---" % (time.time() - start_time))
     
-    Result in this case shows significant speedup:
+    Results are as follows::
     
-        Starting 8 workers in parallel.
-        Parallel: 10.3080079556 seconds ---
-            nfev: 495
-         success: False
-             fun: 0.10339721875784408
-               x: array([ 1.13160783,  1.28034415,  1.63063239])
-         message: 'Maximum number of iterations has been exceeded.'
-             nit: 10
-        Serial: 51.7796390057 seconds ---
-            nfev: 495
-         success: False
-             fun: 0.11308221467067792
-               x: array([ 0.90177458,  0.78971613,  0.6172659 ])
-         message: 'Maximum number of iterations has been exceeded.'
-             nit: 10
+        Parallel heavy function: 8.27454996109 seconds ---
+            nfev: 3390
+         success: True
+             fun: 4.4408920985006262e-16
+               x: array([ -2.22044605e-16,  -2.22044605e-16])
+         message: 'Optimization terminated successfully.'
+             nit: 112
+        Serial heavy function: 29.4678740501 seconds ---
+            nfev: 3150
+         success: True
+             fun: 4.4408920985006262e-16
+               x: array([ 0.,  0.])
+         message: 'Optimization terminated successfully.'
+             nit: 104
+        Parallel light function: 0.465750932693 seconds ---
+        Serial light function: 0.209820985794 seconds ---
     
-
+    Results show significant speedup in case of a heavy objective function. 
+    The number of required iterations in parallel case can be higher, as the
+    mutation in the parallel case is quasi-aggressive (the best solution is
+    updated from the best available after evaluation of a subpopulation,
+    whereas in the aggressive case the best solution is updated after
+    evaluation of every population member). Nevertheless, the gained speedup
+    can be still beneficial.
+    In case when the objective function is computationally inexpensive, the
+    computational overhand due to parallel execution can deteriorate the
+    performance. In such a case, the usage of serial version of the algorithm is
+    preferred.
+    
     References
     ----------
     .. [1] Storn, R and Price, K, Differential Evolution - a Simple and
@@ -563,10 +589,10 @@ class DifferentialEvolutionSolver(object):
         for candidate in self.population:
             # incapsulate additional fixed arguments to parameters
             parameters.append(self._scale_parameters(candidate), *(self.args))
-            
+
         # evaluate function for the whole population using a pool
         self.population_energies = self.pool_map(self.func, parameters)
-        
+
         # In parallel version where the whole population is evaluated 
         # simultaneously it is impossible to track number of separate function
         # executions. Parameter self.maxfun looses its importance. 
