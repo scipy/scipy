@@ -2021,10 +2021,25 @@ add_newdoc("scipy.special", "lpmv",
     ----------
     m : int
         Order
-    v : real
-        Degree. Must be ``v>-m-1`` or ``v<m``
-    x : complex
+    v : float
+        Degree.
+    x : float
         Argument. Must be ``|x| <= 1``.
+
+    Returns
+    -------
+    res : float
+        The value of the function.
+
+    See Also
+    --------
+    lpmn : Similar, but computes values for all orders 0..m and degrees 0..n.
+    clpmn : Similar to `lpmn` but allows a complex argument.
+
+    Notes
+    -----
+    It is possible to extend the domain of this function to all
+    complex m, v, x, but this is not yet implemented.
 
     """)
 
