@@ -867,6 +867,19 @@ class TestRegression(TestCase):
         assert_almost_equal(actual.intercept, exp_intercept)
         assert_almost_equal(actual.rvalue, exp_rvalue, decimal=5)
 
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.linregress, [], [])
+
+    def test_nan_input(self):
+        x = np.arange(10.)
+        x[9] = np.nan
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            assert_array_equal(stats.linregress(x, x),
+                               (np.nan, np.nan, np.nan, np.nan, np.nan))
+
+
 def test_theilslopes():
     # Basic slope test.
     slope, intercept, lower, upper = stats.theilslopes([0,1,1])
