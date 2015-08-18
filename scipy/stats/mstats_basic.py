@@ -691,9 +691,22 @@ def linregress(x, y=None):
     replaced by the non-masked docstring + some info on missing data.
 
     """
-    x = ma.array(x).flatten()
-    if y is not None:
-        y = ma.array(y).flatten()
+    if y is None:
+        x = ma.array(x)
+        if x.shape[0] == 2:
+            x, y = x
+        elif x.shape[1] == 2:
+            x, y = x.T
+        else:
+            msg = ("If only `x` is given as input, it has to be of shape "
+                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
+            raise ValueError(msg)
+    else:
+        x = ma.array(x)
+        y = ma.array(y)
+
+    x = x.flatten()
+    y = y.flatten()
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y), shrink=False)
     if m is not nomask:
@@ -1488,7 +1501,52 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
                                    lolim,uplim,loinc,upinc)
 
 
-def tmean(a, limits=None, inclusive=(True,True)):
+def _mask_to_limits(a, limits, inclusive):
+    """Mask an array for values outside of given limits.
+
+    This is primarily a utility function.
+
+    Parameters
+    ----------
+    a : array
+    limits : (float or None, float or None)
+    A tuple consisting of the (lower limit, upper limit).  Values in the
+    input array less than the lower limit or greater than the upper limit
+    will be masked out. None implies no limit.
+    inclusive : (bool, bool)
+    A tuple consisting of the (lower flag, upper flag).  These flags
+    determine whether values exactly equal to lower or upper are allowed.
+
+    Returns
+    -------
+    A MaskedArray.
+
+    Raises
+    ------
+    A ValueError if there are no values within the given limits.
+    """
+    lower_limit, upper_limit = limits
+    lower_include, upper_include = inclusive
+    am = ma.MaskedArray(a)
+    if lower_limit is not None:
+        if lower_include:
+            am = ma.masked_less(am, lower_limit)
+        else:
+            am = ma.masked_less_equal(am, lower_limit)
+
+    if upper_limit is not None:
+        if upper_include:
+            am = ma.masked_greater(am, upper_limit)
+        else:
+            am = ma.masked_greater_equal(am, upper_limit)
+
+    if am.count() == 0:
+        raise ValueError("No array values within given limits")
+
+    return am
+
+
+def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     Compute the trimmed mean.
 
@@ -1505,6 +1563,9 @@ def tmean(a, limits=None, inclusive=(True,True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. If None, compute over the
+        whole array. Default is None.
 
     Returns
     -------
@@ -1515,10 +1576,10 @@ def tmean(a, limits=None, inclusive=(True,True)):
     For more details on `tmean`, see `stats.tmean`.
 
     """
-    return trima(a, limits=limits, inclusive=inclusive).mean()
+    return trima(a, limits=limits, inclusive=inclusive).mean(axis=axis)
 
 
-def tvar(a, limits=None, inclusive=(True,True)):
+def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed variance
 
@@ -1538,6 +1599,11 @@ def tvar(a, limits=None, inclusive=(True,True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. If None, compute over the
+        whole array. Default is zero.
+    ddof : int, optional
+        Delta degrees of freedom. Default is 1.
 
     Returns
     -------
@@ -1552,11 +1618,10 @@ def tvar(a, limits=None, inclusive=(True,True)):
     a = a.astype(float).ravel()
     if limits is None:
         n = (~a.mask).sum()  # todo: better way to do that?
-        r = trima(a, limits=limits, inclusive=inclusive).var() * (n/(n-1.))
-    else:
-        raise ValueError('mstats.tvar() with limits not implemented yet so far')
+        return np.ma.var(a) * n/(n-1.)
+    am = _mask_to_limits(a, limits=limits, inclusive=inclusive)
 
-    return r
+    return np.ma.var(am, axis=axis, ddof=ddof)
 
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
@@ -1628,7 +1693,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     return ma.maximum.reduce(am, axis)
 
 
-def tsem(a, limits=None, inclusive=(True,True)):
+def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed standard error of the mean.
 
@@ -1648,6 +1713,11 @@ def tsem(a, limits=None, inclusive=(True,True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. If None, compute over the
+        whole array. Default is zero.
+    ddof : int, optional
+        Delta degrees of freedom. Default is 1.
 
     Returns
     -------
@@ -1661,10 +1731,10 @@ def tsem(a, limits=None, inclusive=(True,True)):
     a = ma.asarray(a).ravel()
     if limits is None:
         n = float(a.count())
-        return a.std(ddof=1)/ma.sqrt(n)
+        return a.std(axis=axis, ddof=ddof)/ma.sqrt(n)
 
     am = trima(a.ravel(), limits, inclusive)
-    sd = np.sqrt(am.var(ddof=1))
+    sd = np.sqrt(am.var(axis=axis, ddof=ddof))
     return sd / np.sqrt(am.count())
 
 

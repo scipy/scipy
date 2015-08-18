@@ -2641,7 +2641,7 @@ def sigmaclip(a, low=4., high=4.):
     return SigmaclipResult(c, critlower, critupper)
 
 
-def trimboth(a, proportiontocut=0.2, axis=0):
+def trimboth(a, proportiontocut, axis=0):
     """
     Slices off a proportion of items from both ends of an array.
 
@@ -2656,7 +2656,7 @@ def trimboth(a, proportiontocut=0.2, axis=0):
     ----------
     a : array_like
         Data to trim.
-    proportiontocut : float, optional
+    proportiontocut : float
         Proportion (in range 0-1) of total data set to trim of each end.
     axis : int or None, optional
         Axis along which to trim data. Default is 0. If None, compute over
