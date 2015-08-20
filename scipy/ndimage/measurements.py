@@ -270,9 +270,7 @@ def find_objects(input, max_label=0):
 
     if max_label < 1:
         max_label = input.max()
-
-    return _ni_measure._findObjects(input, max_label)
-
+    return _ni_measure._findObjects(input.flatten(), input.shape, max_label)
 
 def labeled_comprehension(input, labels, index, func, out_dtype, default, pass_positions=False):
     """

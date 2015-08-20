@@ -36,16 +36,6 @@ ctypedef fused data_t:
     np.uint32_t
     np.uint64_t
 
-#####################################################################
-# Function Specializers and asociate function for using fused type
-#####################################################################
-
-ctypedef void (*func_p)(void *data, np.flatiter iti, np.intp_t max_label, 
-                        int *regions, int rank) nogil
-
-def get_funcs(np.ndarray[data_t] input):
-    return (<Py_intptr_t> findObjectsPoint[data_t])
-
 ######################################################################
 # Update Regions According to Input Data Type
 ######################################################################
@@ -62,32 +52,33 @@ cdef inline findObjectsPoint(data_t *data, np.flatiter _iti, np.intp_t max_label
                              int *regions, int rank):
     cdef int kk =0
     cdef np.intp_t cc
-
-    # only integer or boolean values are allowed, since s_index is being used in indexing
     cdef np.intp_t s_index = <np.intp_t> (<data_t *> data)[0] - 1
     cdef np.intp_t val
-    if s_index >= 0  and s_index < max_label:
-        if rank > 0:
-            s_index *= 2 * rank
+    
+    with nogil:
+        # only integer or boolean values are allowed, since s_index is being used in indexing
+        if s_index >= 0  and s_index < max_label:
+            if rank > 0:
+                s_index *= 2 * rank
 
-            val = regions[s_index]
-            for kk in range(rank):
-                cc = (<PyArrayIterObject *>_iti).coordinates[kk]
-                if val < 0 or cc < regions[s_index + kk]:
-                    regions[s_index + kk] = cc
-                if val < 0 or cc + 1 > regions[s_index + kk + rank]:
-                    regions[s_index + kk + rank] = cc + 1
+                val = regions[s_index]
+                for kk in range(rank):
+                    cc = (<PyArrayIterObject *>_iti).coordinates[kk]
+                    if val < 0 or cc < regions[s_index + kk]:
+                        regions[s_index + kk] = cc
+                    if val < 0 or cc + 1 > regions[s_index + kk + rank]:
+                        regions[s_index + kk + rank] = cc + 1
 
-        else:
-            regions[s_index] = 1
+            else:
+                regions[s_index] = 1
 
 ######################################################################
 # Implementaion of find_Objects function:-
 ######################################################################
 
-cpdef _findObjects(input_raw, m_label):
+cpdef _findObjects(np.ndarray[data_t] input_raw, shape, m_label):
+    input_raw.resize(shape)
     cdef:
-        funcs = get_funcs(input_raw.take([0]))
 
         np.intp_t ii, rank, size_regions, max_label = m_label
         np.intp_t start, jj, idx, end
@@ -95,8 +86,6 @@ cpdef _findObjects(input_raw, m_label):
 
         np.flatiter _iti
         PyArrayIterObject *iti
-
-        func_p findObjectsPoint = <func_p> <void *> <Py_intptr_t> funcs
 
         int flags = np.NPY_NOTSWAPPED | np.NPY_ALIGNED
         np.ndarray input
@@ -135,7 +124,8 @@ cpdef _findObjects(input_raw, m_label):
 
             # Iteration over array:
             while np.PyArray_ITER_NOTDONE(_iti):
-                findObjectsPoint(np.PyArray_ITER_DATA(_iti), _iti, max_label, regions, rank)
+                with gil:
+                    findObjectsPoint(<data_t *>np.PyArray_ITER_DATA(_iti), _iti, max_label, regions, rank)
                 np.PyArray_ITER_NEXT(_iti)
 
         result = []
