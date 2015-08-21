@@ -605,9 +605,11 @@ def linkage(y, method='single', metric='euclidean'):
         The linkage algorithm to use. See the ``Linkage Methods`` section below
         for full descriptions.
     metric : str or function, optional
-        The distance metric to use. See the ``distance.pdist`` function for a
-        list of valid distance metrics. The customized distance can also be
-        used. See the ``distance.pdist`` function for details.
+        The distance metric to use in the case that y is a collection of 
+        observation vectors; ignored otherwise. See the ``distance.pdist``
+        function for a list of valid distance metrics. A custom distance
+        function can also be used. See the ``distance.pdist`` function for
+        details.
 
     Returns
     -------
