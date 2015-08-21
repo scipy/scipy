@@ -131,6 +131,14 @@ class TestConstructUtils(TestCase):
                 print("%r %r %r" % (d, o, shape))
                 raise
 
+    def test_diags_default(self):
+        a = array([1, 2, 3, 4, 5])
+        assert_equal(construct.diags(a).todense(), np.diag(a))
+
+    def test_diags_default_bad(self):
+        a = array([[1, 2, 3, 4, 5], [2, 3, 4, 5, 6]])
+        assert_raises(ValueError, construct.diags, a)
+
     def test_diags_bad(self):
         a = array([1, 2, 3, 4, 5])
         b = array([6, 7, 8, 9, 10])
