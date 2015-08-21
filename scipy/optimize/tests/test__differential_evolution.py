@@ -8,7 +8,7 @@ import numpy as np
 from scipy.optimize import rosen
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
                            run_module_suite, assert_almost_equal,
-                           assert_string_equal)
+                           assert_string_equal, assert_)
 
 
 class TestDifferentialEvolutionSolver(TestCase):
@@ -230,6 +230,19 @@ class TestDifferentialEvolutionSolver(TestCase):
                                         polish=True)
         assert_almost_equal(result.fun, 2 / 3.)
 
+    def test_args_tuple_is_passed_parallel(self):
+        # test that the args tuple is passed to the cost function properly.
+        # in the parallel version
+        bounds = [(-10, 10)]
+        args = (1., 2., 3.)
+
+        result = differential_evolution(quad_args,
+                                        bounds,
+                                        args=args,
+                                        polish=True,
+                                        workers=4)
+        assert_almost_equal(result.fun, 2 / 3.)
+
     def test_init_with_invalid_strategy(self):
         #test that passing an invalid strategy raises ValueError
         func = rosen
@@ -364,6 +377,40 @@ class TestDifferentialEvolutionSolver(TestCase):
         # this test, we use maxiter=1 to reduce the testing time.
         bounds = [(-5, 5), (-5, 5)]
         result = differential_evolution(rosen, bounds, popsize=1815, maxiter=1)
+
+    def test_tolerant_to_array_return(self):
+        # some objective functions will return an array by mistake, check that
+        # we can handle it
+        bounds = [(-10, 10)]
+        def quadratic(x):
+            return x**2
+
+        assert_(type(quadratic(np.array([1.]))), np.ndarray)
+        res = differential_evolution(quadratic,
+                                     bounds,
+                                     polish=True)
+        assert_almost_equal(res.fun, 0.)
+
+    def test_parallel_differential_evolution(self):
+        # smoke test to see if parallel DE works.
+        result = differential_evolution(quad,
+                                        [(-100, 100)],
+                                        polish=False,
+                                        seed=1,
+                                        tol=0.5,
+                                        workers=4)
+
+
+# functions for testing multiprocessing
+# these functions can't be nested
+def quad(x):
+    return x[0]**2
+
+
+def quad_args(x, *args):
+    if type(args) != tuple:
+        raise ValueError('args should be a tuple')
+    return args[0] + args[1] * x[0] + args[2] * x[0]**2.
 
 
 if __name__ == '__main__':
