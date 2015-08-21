@@ -579,13 +579,16 @@ class DifferentialEvolutionSolver(object):
         nfev, nit, warning_flag = 0, 0, False
         status_message = _status_message['success']
 
-        # calculate energies to start with for the whole population
+        # calculate starting energies for the whole population
         parameters = self._scale_parameters(self.population)
-        energies = (self.pool_map(_wrapper,
-                                  itertools.izip(itertools.repeat(self.func),
-                                                 parameters,
-                                                 itertools.repeat(self.args))))
-        self.population_energies = np.r_[energies]
+        energies = list(self.pool_map(_wrapper,
+                                      zip(itertools.repeat(self.func),
+                                      parameters,
+                                      itertools.repeat(self.args))))
+
+        # the squeeze is necessary because some objective functions return
+        # arrays instead of floats.
+        self.population_energies = np.r_[energies].squeeze()
 
         nfev += len(self.population)
         
@@ -637,7 +640,7 @@ class DifferentialEvolutionSolver(object):
                 cnd_range = range(self.poolsize*it, self.poolsize*it + sp_size)
 
                 # create trial vectors through mutation
-                trials = np.array(map(self._mutate, cnd_range))
+                trials = np.array(list(map(self._mutate, cnd_range)))
 
                 # ensure parameters are within the limits
                 trials[trials < 0] = (
@@ -652,12 +655,12 @@ class DifferentialEvolutionSolver(object):
                 # params.shape = (lensp, self.num_params) and is iterable
                 # over the rows
                 # if len(self.args):
-                spenergies = (
+                spenergies = list(
                     self.pool_map(_wrapper,
-                                  itertools.izip(itertools.repeat(self.func),
-                                                 parameters,
-                                                 itertools.repeat(self.args))))
-                spenergies = np.r_[spenergies]
+                                  zip(itertools.repeat(self.func),
+                                      parameters,
+                                      itertools.repeat(self.args))))
+                spenergies = np.r_[spenergies].squeeze()
 
                 # check the number of evaluation of the functions
                 # (this, perhaps, should be deprecated as unnecessary)
@@ -669,17 +672,17 @@ class DifferentialEvolutionSolver(object):
                 # find out which trial candidates have have lower energy than
                 # the existing population and replace the original population
                 # members
-                improved = (spenergies[:, np.newaxis]
-                            < self.population_energies[cnd_range, np.newaxis])
-                new_pop = np.where(improved,
+                improved = spenergies < self.population_energies[cnd_range]
+
+                new_pop = np.where(improved[:, np.newaxis],
                                    trials,
                                    self.population[cnd_range])
                 self.population[cnd_range] = new_pop
 
                 # also replace the energies if they got lower
-                new_energy = (np.where(improved,
-                                       spenergies,
-                                       self.population_energies[cnd_range]))
+                new_energy = np.where(improved,
+                                      spenergies,
+                                      self.population_energies[cnd_range])
                 self.population_energies[cnd_range] = new_energy
 
                 # the overall best solution may have changed. If so, replace
