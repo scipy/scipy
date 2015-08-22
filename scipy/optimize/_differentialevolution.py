@@ -34,7 +34,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function. If you are using parallelisation with
-        several `workers`, then this function must be pickleable.
+        several `workers`, then this function must be picklable.
     bounds : sequence
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
@@ -301,7 +301,7 @@ class DifferentialEvolutionSolver(object):
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function. If you are using parallelisation with
-        several `workers`, then this function must be pickleable.
+        several `workers`, then this function must be picklable.
     bounds : sequence
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
@@ -414,35 +414,24 @@ class DifferentialEvolutionSolver(object):
         self.disp = disp
 
         # default is serial
+        self.__pool = None
+        self.__created_pool = False
         self.pool_map = map
         self.poolsize = 1
+        self.workers = workers
 
-        # if int argument is supplied, then use either serial or parallel pool
         if type(workers) is int:
-            # parallel case
-            if workers != 1:
-                from scipy.misc import PPool
-                if (workers > 1) and (workers < 100):
-                    pool = PPool(n_jobs=workers)
-                    self.pool_map = pool.map
-                    self.poolsize = pool.poolsize()
-                # if number of processes is negative or insane
-                else:
-                    pool = PPool()
-                    self.pool_map = pool.map
-                    self.poolsize = pool.poolsize()
-
-        # the workers keyword can also take a pool object
+            # We'll deal with creating our own pool in solve. This is because
+            # we have to terminate them ourselves when the solve has finished.
+            pass
         else:
             try:
+                self.__pool = workers
                 self.pool_map = workers.map
                 self.poolsize = workers.poolsize()
             except:
                 raise ValueError('Workers keyword expected a pool object with '
                                  'map and poolsize methods')
-            
-        if self.disp:
-            print("Starting %g workers in parallel." % self.poolsize)
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -576,6 +565,27 @@ class DifferentialEvolutionSolver(object):
             ``jac`` attributes.
         """
 
+        # if int argument is supplied, then use either serial or parallel pool
+        self.__created_pool = False
+        if type(self.workers) is int:
+            # parallel case
+            if self.workers != 1:
+                from scipy.misc import PPool
+                if (self.workers > 1) and (self.workers < 100):
+                    pool = PPool(n_jobs=self.workers)
+                    self.pool_map = pool.map
+                    self.poolsize = pool.poolsize()
+                # if number of processes is negative or insane
+                else:
+                    pool = PPool()
+                    self.pool_map = pool.map
+                    self.poolsize = pool.poolsize()
+                self.__pool = pool
+                self.__created_pool = True
+
+                if self.disp:
+                    print("Starting %g workers in parallel." % self.poolsize)
+
         nfev, nit, warning_flag = 0, 0, False
         status_message = _status_message['success']
 
@@ -652,9 +662,7 @@ class DifferentialEvolutionSolver(object):
                 parameters = self._scale_parameters(trials)
                 nfev += sp_size
 
-                # params.shape = (lensp, self.num_params) and is iterable
-                # over the rows
-                # if len(self.args):
+                # calculate the energies of the trials
                 spenergies = list(
                     self.pool_map(_wrapper,
                                   zip(itertools.repeat(self.func),
@@ -750,6 +758,9 @@ class DifferentialEvolutionSolver(object):
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
+
+        if self.__created_pool:
+            self.__pool.terminate()
 
         return DE_result
 

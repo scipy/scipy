@@ -32,9 +32,15 @@ class PPool(object):
             self.nworkers = cpu_count()
         
         self.pool = Pool(processes=self.nworkers)   
-    
+
+    def __del__(self):
+        self.terminate()
+
     def map(self, func, task):
         return self.pool.map(func, task)
         
     def poolsize(self):
         return self.nworkers
+
+    def terminate(self):
+        self.pool.terminate()
