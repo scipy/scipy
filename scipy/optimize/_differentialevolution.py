@@ -122,8 +122,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Important attributes are: ``x`` the solution array, ``success`` a
         Boolean flag indicating if the optimizer exited successfully and
         ``message`` which describes the cause of the termination. See
-        `OptimizeResult` for a description of other attributes. If `polish`
-        was employed, then OptimizeResult also contains the `jac` attribute.
+        `OptimizeResult` for a description of other attributes.  If `polish`
+        was employed, and a lower minimum was obtained by the polishing, then
+        OptimizeResult also contains the ``jac`` attribute.
 
     Notes
     -----
@@ -446,9 +447,9 @@ class DifferentialEvolutionSolver(object):
             Important attributes are: ``x`` the solution array, ``success`` a
             Boolean flag indicating if the optimizer exited successfully and
             ``message`` which describes the cause of the termination. See
-            `OptimizeResult` for a description of other attributes. If polish
-            was employed, then OptimizeResult also contains the ``hess_inv`` and
-            ``jac`` attributes.
+            `OptimizeResult` for a description of other attributes.  If `polish`
+            was employed, and a lower minimum was obtained by the polishing,
+            then OptimizeResult also contains the ``jac`` attribute.
         """
 
         nfev, nit, warning_flag = 0, 0, False
