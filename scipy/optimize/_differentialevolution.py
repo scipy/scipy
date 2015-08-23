@@ -573,13 +573,12 @@ class DifferentialEvolutionSolver(object):
                 from scipy.misc import PPool
                 if (self.workers > 1) and (self.workers < 100):
                     pool = PPool(n_jobs=self.workers)
-                    self.pool_map = pool.map
-                    self.poolsize = pool.poolsize()
                 # if number of processes is negative or insane
                 else:
                     pool = PPool()
-                    self.pool_map = pool.map
-                    self.poolsize = pool.poolsize()
+
+                self.pool_map = pool.map
+                self.poolsize = pool.poolsize()
                 self.__pool = pool
                 self.__created_pool = True
 
@@ -591,14 +590,14 @@ class DifferentialEvolutionSolver(object):
 
         # calculate starting energies for the whole population
         parameters = self._scale_parameters(self.population)
-        energies = list(self.pool_map(_wrapper,
-                                      zip(itertools.repeat(self.func),
-                                      parameters,
-                                      itertools.repeat(self.args))))
+        energies = self.pool_map(_wrapper,
+                                 zip(itertools.repeat(self.func),
+                                 parameters,
+                                 itertools.repeat(self.args)))
 
         # the squeeze is necessary because some objective functions return
         # arrays instead of floats.
-        self.population_energies = np.r_[energies].squeeze()
+        self.population_energies = np.fromiter(energies, float).squeeze()
 
         nfev += len(self.population)
         
@@ -663,12 +662,11 @@ class DifferentialEvolutionSolver(object):
                 nfev += sp_size
 
                 # calculate the energies of the trials
-                spenergies = list(
-                    self.pool_map(_wrapper,
-                                  zip(itertools.repeat(self.func),
-                                      parameters,
-                                      itertools.repeat(self.args))))
-                spenergies = np.r_[spenergies].squeeze()
+                spenergies = self.pool_map(_wrapper,
+                                           zip(itertools.repeat(self.func),
+                                           parameters,
+                                           itertools.repeat(self.args)))
+                spenergies = np.fromiter(spenergies, float).squeeze()
 
                 # check the number of evaluation of the functions
                 # (this, perhaps, should be deprecated as unnecessary)
@@ -693,8 +691,7 @@ class DifferentialEvolutionSolver(object):
                                       self.population_energies[cnd_range])
                 self.population_energies[cnd_range] = new_energy
 
-                # the overall best solution may have changed. If so, replace
-                # it.
+                # the overall best solution may have changed. If so, replace it
                 minval = np.argmin(self.population_energies)
                 if minval:
                     self.population_energies[[minval, 0]] = (
