@@ -649,7 +649,7 @@ class DifferentialEvolutionSolver(object):
                 cnd_range = range(self.poolsize*it, self.poolsize*it + sp_size)
 
                 # create trial vectors through mutation
-                trials = np.array(list(map(self._mutate, cnd_range)))
+                trials = np.array([self._mutate(cand) for cand in cnd_range])
 
                 # ensure parameters are within the limits
                 trials[trials < 0] = (
