@@ -732,7 +732,7 @@ class cauchy_gen(rv_continuous):
         return tan(pi/2.0-pi*q)
 
     def _stats(self):
-        return inf, inf, nan, nan
+        return nan, nan, nan, nan
 
     def _entropy(self):
         return log(4*pi)
