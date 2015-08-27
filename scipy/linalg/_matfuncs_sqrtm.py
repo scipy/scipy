@@ -173,7 +173,7 @@ def sqrtm(A, disp=True, blocksize=64):
         R = _sqrtm_triu(T, blocksize=blocksize)
         ZH = np.conjugate(Z).T
         X = Z.dot(R).dot(ZH)
-    except SqrtmError as e:
+    except SqrtmError:
         failflag = True
         X = np.empty_like(A)
         X.fill(np.nan)
