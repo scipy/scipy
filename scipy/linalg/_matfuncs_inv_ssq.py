@@ -876,7 +876,7 @@ def _logm(A):
             if keep_it_real:
                 T, Z = schur(A)
                 if not np.array_equal(T, np.triu(T)):
-                    T, Z = rsf2csf(T,Z)
+                    T, Z = rsf2csf(T, Z)
             else:
                 T, Z = schur(A, output='complex')
             T = _logm_force_nonsingular_triangular_matrix(T, inplace=True)

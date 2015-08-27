@@ -13,20 +13,22 @@ python _cython_signature_generator.py lapack <lapack_src_directory> <out_file>
 import glob
 from numpy.f2py import crackfortran
 
-sig_types = {'integer':'int',
-             'complex':'c',
-             'double precision':'d',
-             'real':'s',
-             'complex*16':'z',
-             'double complex':'z',
-             'character':'char',
-             'logical':'bint'}
+sig_types = {'integer': 'int',
+             'complex': 'c',
+             'double precision': 'd',
+             'real': 's',
+             'complex*16': 'z',
+             'double complex': 'z',
+             'character': 'char',
+             'logical': 'bint'}
+
 
 def get_type(info, arg):
     argtype = sig_types[info['vars'][arg]['typespec']]
     if argtype == 'c' and info['vars'][arg].get('kindselector') is not None:
         argtype = 'z'
     return argtype
+
 
 def make_signature(filename):
     info = crackfortran.crackfortran(filename)[0]
@@ -41,8 +43,10 @@ def make_signature(filename):
     args = args.replace('rank_bn', 'rank')
     return '{} {}({})\n'.format(return_type, name, args)
 
+
 def get_sig_name(line):
     return line.split('(')[0].split(' ')[-1]
+
 
 def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
     if directory[-1] in ['/', '\\']:

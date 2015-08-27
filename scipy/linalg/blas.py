@@ -164,7 +164,7 @@ from scipy.linalg._fblas import *
 del empty_module
 
 # 'd' will be default for 'i',..
-_type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z', 'G':'z'}
+_type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z', 'G': 'z'}
 
 # some convenience alias for complex functions
 _blas_alias = {'cnrm2': 'scnrm2', 'znrm2': 'dznrm2',

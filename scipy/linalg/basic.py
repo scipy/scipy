@@ -84,24 +84,24 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     overwrite_a = overwrite_a or _datacopied(a1, a)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
-        print('solve:overwrite_a=',overwrite_a)
-        print('solve:overwrite_b=',overwrite_b)
+        print('solve:overwrite_a=', overwrite_a)
+        print('solve:overwrite_b=', overwrite_b)
     if sym_pos:
-        posv, = get_lapack_funcs(('posv',), (a1,b1))
+        posv, = get_lapack_funcs(('posv',), (a1, b1))
         c, x, info = posv(a1, b1, lower=lower,
-                        overwrite_a=overwrite_a,
-                        overwrite_b=overwrite_b)
+                          overwrite_a=overwrite_a,
+                          overwrite_b=overwrite_b)
     else:
-        gesv, = get_lapack_funcs(('gesv',), (a1,b1))
+        gesv, = get_lapack_funcs(('gesv',), (a1, b1))
         lu, piv, x, info = gesv(a1, b1, overwrite_a=overwrite_a,
-                                            overwrite_b=overwrite_b)
+                                overwrite_b=overwrite_b)
 
     if info == 0:
         return x
     if info > 0:
         raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal gesv|posv'
-                                                                    % -info)
+    raise ValueError('illegal value in %d-th argument of internal gesv|posv' %
+                     -info)
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
@@ -161,22 +161,23 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         raise ValueError('incompatible dimensions')
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if debug:
-        print('solve:overwrite_b=',overwrite_b)
+        print('solve:overwrite_b=', overwrite_b)
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
-    trtrs, = get_lapack_funcs(('trtrs',), (a1,b1))
+    trtrs, = get_lapack_funcs(('trtrs',), (a1, b1))
     x, info = trtrs(a1, b1, overwrite_b=overwrite_b, lower=lower,
                     trans=trans, unitdiag=unit_diagonal)
 
     if info == 0:
         return x
     if info > 0:
-        raise LinAlgError("singular matrix: resolution failed at diagonal %s" % (info-1))
-    raise ValueError('illegal value in %d-th argument of internal trtrs'
-            % -info)
+        raise LinAlgError("singular matrix: resolution failed at diagonal %s" %
+                          info-1)
+    raise ValueError('illegal value in %d-th argument of internal trtrs' %
+                     -info)
 
 
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
-                debug=False, check_finite=True):
+                 debug=False, check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
 
@@ -222,37 +223,39 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         raise ValueError("shapes of ab and b are not compatible.")
     (l, u) = l_and_u
     if l + u + 1 != a1.shape[0]:
-        raise ValueError("invalid values for the number of lower and upper diagonals:"
-                " l+u+1 (%d) does not equal ab.shape[0] (%d)" % (l+u+1, ab.shape[0]))
+        raise ValueError("invalid values for the number of lower and upper "
+                         "diagonals: l+u+1 (%d) does not equal ab.shape[0] "
+                         "(%d)" % (l+u+1, ab.shape[0]))
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=overwrite_b)
-        b2 /= a1[1,0]
+        b2 /= a1[1, 0]
         return b2
     if l == u == 1:
         overwrite_ab = overwrite_ab or _datacopied(a1, ab)
         gtsv, = get_lapack_funcs(('gtsv',), (a1, b1))
-        du = a1[0,1:]
-        d = a1[1,:]
-        dl = a1[2,:-1]
+        du = a1[0, 1:]
+        d = a1[1, :]
+        dl = a1[2, :-1]
         du2, d, du, x, info = gtsv(dl, d, du, b1, overwrite_ab, overwrite_ab,
                                    overwrite_ab, overwrite_b)
     else:
         gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
         a2 = np.zeros((2*l+u+1, a1.shape[1]), dtype=gbsv.dtype)
-        a2[l:,:] = a1
+        a2[l:, :] = a1
         lu, piv, x, info = gbsv(l, u, a2, b1, overwrite_ab=True,
-                                                    overwrite_b=overwrite_b)
+                                overwrite_b=overwrite_b)
     if info == 0:
         return x
     if info > 0:
         raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal gbsv/gtsv' % -info)
+    raise ValueError('illegal value in %d-th argument of internal gbsv/gtsv' %
+                     -info)
 
 
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
-                    check_finite=True):
+                  check_finite=True):
     """
     Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
@@ -312,21 +315,22 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     if a1.shape[0] == 2:
         ptsv, = get_lapack_funcs(('ptsv',), (a1, b1))
         if lower:
-            d = a1[0,:].real
-            e = a1[1,:-1]
+            d = a1[0, :].real
+            e = a1[1, :-1]
         else:
-            d = a1[1,:].real
-            e = a1[0,1:].conj()
-        d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
+            d = a1[1, :].real
+            e = a1[0, 1:].conj()
+        d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab,
+                              overwrite_b)
     else:
         pbsv, = get_lapack_funcs(('pbsv',), (a1, b1))
         c, x, info = pbsv(a1, b1, lower=lower, overwrite_ab=overwrite_ab,
-                                                overwrite_b=overwrite_b)
+                          overwrite_b=overwrite_b)
     if info > 0:
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal pbsv'
-                                                                    % -info)
+        raise ValueError('illegal value in %d-th argument of internal pbsv' %
+                         -info)
     return x
 
 
@@ -398,7 +402,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         b_shape = b.shape
         b = b.reshape(b.shape[0], -1)
         x = np.column_stack(
-            (levinson(vals, np.ascontiguousarray(b[:,i]))[0])
+            (levinson(vals, np.ascontiguousarray(b[:, i]))[0])
             for i in range(b.shape[1]))
         x = x.reshape(*b_shape)
 
@@ -663,12 +667,15 @@ def inv(a, overwrite_a=False, check_finite=True):
 ##         if info>0: raise LinAlgError, "singular matrix"
 ##         if info<0: raise ValueError,\
 ##            'illegal value in %d-th argument of internal inv.getrf|getri'%(-info)
-    getrf, getri, getri_lwork = get_lapack_funcs(('getrf','getri', 'getri_lwork'), (a1,))
+    getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
+                                                  'getri_lwork'),
+                                                 (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info == 0:
         lwork, info = getri_lwork(a1.shape[0])
         if info != 0:
-            raise ValueError('internal getri work space query failed: %d' % (info,))
+            raise ValueError('internal getri work space query failed: %d' %
+                             (info,))
         lwork = int(lwork.real)
 
         # XXX: the following line fixes curious SEGFAULT when
@@ -683,7 +690,7 @@ def inv(a, overwrite_a=False, check_finite=True):
         raise LinAlgError("singular matrix")
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal '
-                                                    'getrf|getri' % -info)
+                         'getrf|getri' % -info)
     return inv_a
 
 
@@ -743,7 +750,7 @@ def det(a, overwrite_a=False, check_finite=True):
     a_det, info = fdet(a1, overwrite_a=overwrite_a)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal '
-                                                        'det.getrf' % -info)
+                         'det.getrf' % -info)
     return a_det
 
 ### Linear Least Squares
@@ -817,7 +824,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         # a larger solution matrix
         if len(b1.shape) == 2:
             b2 = np.zeros((n, nrhs), dtype=gelss.dtype)
-            b2[:m,:] = b1
+            b2[:m, :] = b1
         else:
             b2 = np.zeros(n, dtype=gelss.dtype)
             b2[:m] = b1
@@ -836,8 +843,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     if info > 0:
         raise LinAlgError("SVD did not converge in Linear Least Squares")
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gelss'
-                                                                    % -info)
+        raise ValueError('illegal value in %d-th argument of internal gelss' %
+                         -info)
     resids = np.asarray([], dtype=x.dtype)
     if n < m:
         x1 = x[:n]
@@ -957,7 +964,7 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
 
     if rcond is not None:
         cond = rcond
-    if cond in [None,-1]:
+    if cond in [None, -1]:
         t = u.dtype.char.lower()
         factor = {'f': 1E3, 'd': 1E6}
         cond = factor[t] * np.finfo(t).eps

@@ -85,7 +85,7 @@ def _sqrtm_triu(T, blocksize=64):
                 denom = R[i, i] + R[j, j]
                 if not denom:
                     raise SqrtmError('failed to find the matrix square root')
-                R[i,j] = (T[i,j] - s) / denom
+                R[i, j] = (T[i, j] - s) / denom
 
     # Between-block interactions.
     for j in range(nblocks):
@@ -94,8 +94,8 @@ def _sqrtm_triu(T, blocksize=64):
             istart, istop = start_stop_pairs[i]
             S = T[istart:istop, jstart:jstop]
             if j - i > 1:
-                S = S - R[istart:istop, istop:jstart].dot(
-                        R[istop:jstart, jstart:jstop])
+                S = S - R[istart:istop, istop:jstart].dot(R[istop:jstart,
+                                                            jstart:jstop])
 
             # Invoke LAPACK.
             # For more details, see the solve_sylvester implemention
@@ -165,7 +165,7 @@ def sqrtm(A, disp=True, blocksize=64):
     if keep_it_real:
         T, Z = schur(A)
         if not np.array_equal(T, np.triu(T)):
-            T, Z = rsf2csf(T,Z)
+            T, Z = rsf2csf(T, Z)
     else:
         T, Z = schur(A, output='complex')
     failflag = False
@@ -187,7 +187,7 @@ def sqrtm(A, disp=True, blocksize=64):
         return X
     else:
         try:
-            arg2 = norm(X.dot(X) - A,'fro')**2 / norm(A,'fro')
+            arg2 = norm(X.dot(X) - A, 'fro')**2 / norm(A, 'fro')
         except ValueError:
             # NaNs in matrix
             arg2 = np.inf

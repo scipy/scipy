@@ -20,7 +20,7 @@ __all__ = ['solve_sylvester', 'solve_lyapunov', 'solve_discrete_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']
 
 
-def solve_sylvester(a,b,q):
+def solve_sylvester(a, b, q):
     """
     Computes a solution (X) to the Sylvester equation :math:`AX + XB = Q`.
 
@@ -58,24 +58,26 @@ def solve_sylvester(a,b,q):
     """
 
     # Compute the Schur decomp form of a
-    r,u = schur(a, output='real')
+    r, u = schur(a, output='real')
 
     # Compute the Schur decomp of b
-    s,v = schur(b.conj().transpose(), output='real')
+    s, v = schur(b.conj().transpose(), output='real')
 
     # Construct f = u'*q*v
     f = np.dot(np.dot(u.conj().transpose(), q), v)
 
     # Call the Sylvester equation solver
-    trsyl, = get_lapack_funcs(('trsyl',), (r,s,f))
+    trsyl, = get_lapack_funcs(('trsyl',), (r, s, f))
     if trsyl is None:
-        raise RuntimeError('LAPACK implementation does not contain a proper Sylvester equation solver (TRSYL)')
+        raise RuntimeError('LAPACK implementation does not contain a proper '
+                           'Sylvester equation solver (TRSYL)')
     y, scale, info = trsyl(r, s, f, tranb='C')
 
     y = scale*y
 
     if info < 0:
-        raise LinAlgError("Illegal value encountered in the %d term" % (-info,))
+        raise LinAlgError("Illegal value encountered in "
+                          "the %d term" % (-info,))
 
     return np.dot(np.dot(u, y), v.conj().transpose())
 
@@ -270,7 +272,8 @@ def solve_continuous_are(a, b, q, r):
     try:
         g = inv(r)
     except LinAlgError:
-        raise ValueError('Matrix R in the algebraic Riccati equation solver is ill-conditioned')
+        raise ValueError('Matrix R in the algebraic Riccati equation solver '
+                         'is ill-conditioned')
 
     g = np.dot(np.dot(b, g), b.conj().transpose())
 
@@ -340,14 +343,16 @@ def solve_discrete_are(a, b, q, r):
     try:
         g = inv(r)
     except LinAlgError:
-        raise ValueError('Matrix R in the algebraic Riccati equation solver is ill-conditioned')
+        raise ValueError('Matrix R in the algebraic Riccati equation solver '
+                         'is ill-conditioned')
 
     g = np.dot(np.dot(b, g), b.conj().transpose())
 
     try:
         ait = inv(a).conj().transpose()  # ait is "A inverse transpose"
     except LinAlgError:
-        raise ValueError('Matrix A in the algebraic Riccati equation solver is ill-conditioned')
+        raise ValueError('Matrix A in the algebraic Riccati equation solver '
+                         'is ill-conditioned')
 
     z11 = a+np.dot(np.dot(g, ait), q)
     z12 = -1.0*np.dot(g, ait)
@@ -360,7 +365,7 @@ def solve_discrete_are(a, b, q, r):
     #       while the lower right is outside (Laub, p. 7)
     s, u, _ = schur(z, sort='iuc')
 
-    (m,n) = u.shape
+    (m, n) = u.shape
 
     u11 = u[0:m//2, 0:n//2]
     u21 = u[m//2:m, 0:n//2]

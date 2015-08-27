@@ -5,20 +5,20 @@ import os
 from os.path import join
 
 
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from scipy._build_utils import (get_sgemv_fix, get_g77_abi_wrappers,
                                     split_fortran_files)
 
-    config = Configuration('linalg',parent_package,top_path)
+    config = Configuration('linalg', parent_package, top_path)
 
     lapack_opt = get_info('lapack_opt')
 
     if not lapack_opt:
         raise NotFoundError('no lapack/blas resources found')
 
-    atlas_version = ([v[3:-3] for k,v in lapack_opt.get('define_macros',[])
+    atlas_version = ([v[3:-3] for k, v in lapack_opt.get('define_macros', [])
                       if k == 'ATLAS_INFO']+[None])[0]
     if atlas_version:
         print(('ATLAS version: %s' % atlas_version))
@@ -61,7 +61,7 @@ def configuration(parent_package='',top_path=None):
 
     # _flinalg:
     config.add_extension('_flinalg',
-                         sources=[join('src','det.f'),join('src','lu.f')],
+                         sources=[join('src', 'det.f'), join('src', 'lu.f')],
                          extra_info=lapack_opt
                          )
 
@@ -109,9 +109,8 @@ def configuration(parent_package='',top_path=None):
         'zffti1',
     ]
     print('Splitting linalg.interpolative Fortran source files')
-    fnames = split_fortran_files(join(os.path.split(
-                                          os.path.abspath(__file__))[0],
-                                      'src', 'id_dist', 'src'),
+    dirname = os.path.split(os.path.abspath(__file__))[0]
+    fnames = split_fortran_files(join(dirname, 'src', 'id_dist', 'src'),
                                  routines_to_split)
     fnames = [join('src', 'id_dist', 'src', f) for f in fnames]
     config.add_extension('_interpolative', fnames + ["interpolative.pyf"],

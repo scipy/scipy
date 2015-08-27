@@ -12,37 +12,37 @@ from scipy._lib.six import callable
 
 __all__ = ['qz']
 
-_double_precision = ['i','l','d']
+_double_precision = ['i', 'l', 'd']
 
 
 def _select_function(sort, typ):
-    if typ in ['F','D']:
+    if typ in ['F', 'D']:
         if callable(sort):
             # assume the user knows what they're doing
             sfunction = sort
         elif sort == 'lhp':
-            sfunction = lambda x,y: (np.real(x/y) < 0.0)
+            sfunction = lambda x, y: (np.real(x/y) < 0.0)
         elif sort == 'rhp':
-            sfunction = lambda x,y: (np.real(x/y) >= 0.0)
+            sfunction = lambda x, y: (np.real(x/y) >= 0.0)
         elif sort == 'iuc':
-            sfunction = lambda x,y: (abs(x/y) <= 1.0)
+            sfunction = lambda x, y: (abs(x/y) <= 1.0)
         elif sort == 'ouc':
-            sfunction = lambda x,y: (abs(x/y) > 1.0)
+            sfunction = lambda x, y: (abs(x/y) > 1.0)
         else:
             raise ValueError("sort parameter must be None, a callable, or "
                 "one of ('lhp','rhp','iuc','ouc')")
-    elif typ in ['f','d']:
+    elif typ in ['f', 'd']:
         if callable(sort):
             # assume the user knows what they're doing
             sfunction = sort
         elif sort == 'lhp':
-            sfunction = lambda x,y,z: (np.real((x+y*1j)/z) < 0.0)
+            sfunction = lambda x, y, z: (np.real((x+y*1j)/z) < 0.0)
         elif sort == 'rhp':
-            sfunction = lambda x,y,z: (np.real((x+y*1j)/z) >= 0.0)
+            sfunction = lambda x, y, z: (np.real((x+y*1j)/z) >= 0.0)
         elif sort == 'iuc':
-            sfunction = lambda x,y,z: (abs((x+y*1j)/z) <= 1.0)
+            sfunction = lambda x, y, z: (abs((x+y*1j)/z) <= 1.0)
         elif sort == 'ouc':
-            sfunction = lambda x,y,z: (abs((x+y*1j)/z) > 1.0)
+            sfunction = lambda x, y, z: (abs((x+y*1j)/z) > 1.0)
         else:
             raise ValueError("sort parameter must be None, a callable, or "
                 "one of ('lhp','rhp','iuc','ouc')")
@@ -164,9 +164,9 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     if sort is not None:
         # Disabled due to segfaults on win32, see ticket 1717.
         raise ValueError("The 'sort' input of qz() has to be None (will "
-                 " change when this functionality is made more robust).")
+                 "change when this functionality is made more robust).")
 
-    if output not in ['real','complex','r','c']:
+    if output not in ['real', 'complex', 'r', 'c']:
         raise ValueError("argument must be 'real', or 'complex'")
 
     if check_finite:
@@ -182,7 +182,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("Array dimensions must be square and agree")
 
     typa = a1.dtype.char
-    if output in ['complex', 'c'] and typa not in ['F','D']:
+    if output in ['complex', 'c'] and typa not in ['F', 'D']:
         if typa in _double_precision:
             a1 = a1.astype('D')
             typa = 'D'
@@ -190,7 +190,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
             a1 = a1.astype('F')
             typa = 'F'
     typb = b1.dtype.char
-    if output in ['complex', 'c'] and typb not in ['F','D']:
+    if output in ['complex', 'c'] and typb not in ['F', 'D']:
         if typb in _double_precision:
             b1 = b1.astype('D')
             typb = 'D'
@@ -198,10 +198,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
             b1 = b1.astype('F')
             typb = 'F'
 
-    overwrite_a = overwrite_a or (_datacopied(a1,A))
-    overwrite_b = overwrite_b or (_datacopied(b1,B))
+    overwrite_a = overwrite_a or (_datacopied(a1, A))
+    overwrite_b = overwrite_b or (_datacopied(b1, B))
 
-    gges, = get_lapack_funcs(('gges',), (a1,b1))
+    gges, = get_lapack_funcs(('gges',), (a1, b1))
 
     if lwork is None or lwork == -1:
         # get optimal work array size
@@ -223,8 +223,8 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("Illegal value in argument %d of gges" % -info)
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
-                "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be correct "
-                "for J=%d,...,N" % info-1, UserWarning)
+                "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "
+                "correct for J=%d,...,N" % info-1, UserWarning)
     elif info == a_n+1:
         raise LinAlgError("Something other than QZ iteration failed")
     elif info == a_n+2:
