@@ -2,7 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy
-from numpy import asarray_chkfinite, asarray, zeros, r_, diag
+from numpy import zeros, r_, diag
 
 # Local imports.
 from .misc import LinAlgError, _datacopied

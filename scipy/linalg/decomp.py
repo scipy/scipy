@@ -18,15 +18,13 @@ __all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
            'hessenberg']
 
 import numpy
-import numpy as np
-from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
-        isfinite, inexact, nonzero, iscomplexobj, cast, flatnonzero, conj
+from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
+                   flatnonzero, conj)
 # Local imports
 from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
 from .misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs
-from .blas import get_blas_funcs
 
 
 _I = cast['F'](1j)
