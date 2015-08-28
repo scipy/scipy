@@ -135,8 +135,10 @@ cdef inline void lartg(blas_t* a, blas_t* b, blas_t* c, blas_t* s) nogil:
     elif blas_t is double:
         lapack_pointers.dlartg(a, b, c, s, &g)
     elif blas_t is float_complex:
+        c[0] = 0. # init imag
         lapack_pointers.clartg(a, b, <float*>c, s, &g)
     else:
+        c[0] = 0. # init imag
         lapack_pointers.zlartg(a, b, <double*>c, s, &g)
     # make this function more like the BLAS drotg
     a[0] = g
