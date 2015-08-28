@@ -1789,6 +1789,10 @@ class genextreme_gen(rv_continuous):
             comb(n, k) * (-1)**k * special.gamma(c*k + 1),
             axis=0)
         return where(c*n > -1, vals, inf)
+
+    def _entropy(self, c):
+        return _EULER*(1 - c) + 1
+
 genextreme = genextreme_gen(name='genextreme')
 
 
