@@ -14,19 +14,17 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['eig','eigh','eig_banded','eigvals','eigvalsh', 'eigvals_banded',
-           'hessenberg']
+__all__ = ['eig', 'eigh', 'eig_banded', 'eigvals', 'eigvalsh',
+           'eigvals_banded', 'hessenberg']
 
 import numpy
-import numpy as np
-from numpy import array, asarray_chkfinite, asarray, diag, zeros, ones, \
-        isfinite, inexact, nonzero, iscomplexobj, cast, flatnonzero, conj
+from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
+                   flatnonzero, conj)
 # Local imports
 from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
 from .misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs
-from .blas import get_blas_funcs
 
 
 _I = cast['F'](1j)
@@ -41,8 +39,8 @@ def _make_complex_eigvecs(w, vin, dtype):
     m = (w.imag > 0)
     m[:-1] |= (w.imag[1:] < 0)  # workaround for LAPACK bug, cf. ticket #709
     for i in flatnonzero(m):
-        v.imag[:,i] = vin[:,i+1]
-        conj(v[:,i], v[:,i+1])
+        v.imag[:, i] = vin[:, i+1]
+        conj(v[:, i], v[:, i+1])
     return v
 
 
@@ -53,18 +51,19 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
     lwork = res[-2][0].real.astype(numpy.int)
     if ggev.typecode in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
-                                                    overwrite_a, overwrite_b)
+                                               overwrite_a, overwrite_b)
         w = alpha / beta
     else:
-        alphar, alphai, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
-                                                        overwrite_a,overwrite_b)
+        alphar, alphai, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr,
+                                                        lwork, overwrite_a,
+                                                        overwrite_b)
         w = (alphar + _I * alphai) / beta
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal ggev'
-                                                                    % -info)
+        raise ValueError('illegal value in %d-th argument of internal ggev' %
+                         -info)
     if info > 0:
-        raise LinAlgError("generalized eig algorithm did not converge (info=%d)"
-                                                                    % info)
+        raise LinAlgError("generalized eig algorithm did not converge "
+                          "(info=%d)" % info)
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag, 0.0))
     if not (ggev.typecode in 'cz' or only_real):
@@ -164,7 +163,8 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                              compute_vl=compute_vl,
                              compute_vr=compute_vr)
     if info != 0:
-        raise LinAlgError("internal *geev work array calculation failed: %d" % (info,))
+        raise LinAlgError("internal *geev work array calculation failed: %d" %
+                          (info,))
     lwork = int(lwork.real)
 
     if geev.typecode in 'cz':
@@ -177,15 +177,15 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-        t = {'f':'F','d':'D'}[wr.dtype.char]
+        t = {'f': 'F', 'd': 'D'}[wr.dtype.char]
         w = wr + _I * wi
 
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal geev'
-                                                                    % -info)
+        raise ValueError('illegal value in %d-th argument of internal geev' %
+                         -info)
     if info > 0:
         raise LinAlgError("eig algorithm did not converge (only eigenvalues "
-                            "with order >= %d have converged)" % info)
+                          "with order >= %d have converged)" % info)
 
     only_real = numpy.logical_and.reduce(numpy.equal(w.imag, 0.0))
     if not (geev.typecode in 'cz' or only_real):
@@ -357,22 +357,22 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     else:
         # Use '*gvx' routines if range is specified
         if eigvals is not None:
-            (gvx,) = get_lapack_funcs((pfx+'gvx',), (a1,b1))
+            (gvx,) = get_lapack_funcs((pfx+'gvx',), (a1, b1))
             (lo, hi) = eigvals
             w_tot, v, ifail, info = gvx(a1, b1, uplo=uplo, iu=hi,
-                                        itype=type,jobz=_job, il=lo,
+                                        itype=type, jobz=_job, il=lo,
                                         overwrite_a=overwrite_a,
                                         overwrite_b=overwrite_b)
             w = w_tot[0:hi-lo+1]
         # Use '*gvd' routine if turbo is on and no eigvals are specified
         elif turbo:
-            (gvd,) = get_lapack_funcs((pfx+'gvd',), (a1,b1))
+            (gvd,) = get_lapack_funcs((pfx+'gvd',), (a1, b1))
             v, w, info = gvd(a1, b1, uplo=uplo, itype=type, jobz=_job,
                              overwrite_a=overwrite_a,
                              overwrite_b=overwrite_b)
         # Use '*gv' routine if turbo is off and no eigvals are specified
         else:
-            (gv,) = get_lapack_funcs((pfx+'gv',), (a1,b1))
+            (gv,) = get_lapack_funcs((pfx+'gv',), (a1, b1))
             v, w, info = gv(a1, b1, uplo=uplo, itype=type, jobz=_job,
                             overwrite_a=overwrite_a,
                             overwrite_b=overwrite_b)
@@ -515,9 +515,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
             #         see above
             # lwork = calc_lwork.sbevd(bevd.typecode, a1.shape[0], lower)
             internal_name = 'sbevd'
-        w,v,info = bevd(a1, compute_v=not eigvals_only,
-                        lower=lower,
-                        overwrite_ab=overwrite_a_band)
+        w, v, info = bevd(a1, compute_v=not eigvals_only,
+                          lower=lower, overwrite_ab=overwrite_a_band)
     if select.lower() in [1, 2, 'i', 'v', 'index', 'value']:
         # calculate certain range only
         if select.lower() in [2, 'i', 'index']:
@@ -558,8 +557,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         if not eigvals_only:
             v = v[:, :m]
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal %s'
-                                                    % (-info, internal_name))
+        raise ValueError('illegal value in %d-th argument of internal %s' %
+                         (-info, internal_name))
     if info > 0:
         raise LinAlgError("eig algorithm did not converge")
 
@@ -610,7 +609,7 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
 
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
-                check_finite=check_finite)
+               check_finite=check_finite)
 
 
 def eigvalsh(a, b=None, lower=True, overwrite_a=False,
@@ -767,7 +766,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                       overwrite_a_band=overwrite_a_band, select=select,
                       select_range=select_range, check_finite=check_finite)
 
-_double_precision = ['i','l','d']
+_double_precision = ['i', 'l', 'd']
 
 
 def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
@@ -815,23 +814,24 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
             return a1, numpy.eye(a1.shape[0])
         return a1
 
-    gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd','gebal', 'gehrd_lwork'), (a1,))
+    gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd', 'gebal',
+                                                  'gehrd_lwork'), (a1,))
     ba, lo, hi, pivscale, info = gebal(a1, permute=0, overwrite_a=overwrite_a)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gebal '
-                                                    '(hessenberg)' % -info)
+                         '(hessenberg)' % -info)
     n = len(a1)
 
     lwork, info = gehrd_lwork(ba.shape[0], lo=lo, hi=hi)
     if info != 0:
         raise ValueError('failed to compute internal gehrd work array size. '
-                            'LAPACK info = %d ' % info)
+                         'LAPACK info = %d ' % info)
     lwork = int(lwork.real)
 
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gehrd '
-                                        '(hessenberg)' % -info)
+                         '(hessenberg)' % -info)
     h = numpy.triu(hq, -1)
     if not calc_q:
         return h
@@ -841,7 +841,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     lwork, info = orghr_lwork(n, lo=lo, hi=hi)
     if info != 0:
         raise ValueError('failed to compute internal orghr work array size. '
-                            'LAPACK info = %d ' % info)
+                         'LAPACK info = %d ' % info)
     lwork = int(lwork.real)
     q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:

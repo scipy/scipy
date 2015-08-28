@@ -7,29 +7,30 @@ all the BLAS/LAPACK routines that should be included in the wrappers.
 
 from operator import itemgetter
 
-fortran_types = {'int':'integer',
-                 'c':'complex',
-                 'd':'double precision',
-                 's':'real',
-                 'z':'complex*16',
-                 'char':'character',
-                 'bint':'logical'}
+fortran_types = {'int': 'integer',
+                 'c': 'complex',
+                 'd': 'double precision',
+                 's': 'real',
+                 'z': 'complex*16',
+                 'char': 'character',
+                 'bint': 'logical'}
 
-c_types = {'int':'int',
-           'c':'npy_complex64',
-           'd':'double',
-           's':'float',
-           'z':'npy_complex128',
-           'char':'char',
-           'bint':'int',
-           'cselect1':'_cselect1',
-           'cselect2':'_cselect2',
-           'dselect2':'_dselect2',
-           'dselect3':'_dselect3',
-           'sselect2':'_sselect2',
-           'sselect3':'_sselect3',
-           'zselect1':'_zselect1',
-           'zselect2':'_zselect2'}
+c_types = {'int': 'int',
+           'c': 'npy_complex64',
+           'd': 'double',
+           's': 'float',
+           'z': 'npy_complex128',
+           'char': 'char',
+           'bint': 'int',
+           'cselect1': '_cselect1',
+           'cselect2': '_cselect2',
+           'dselect2': '_dselect2',
+           'dselect3': '_dselect3',
+           'sselect2': '_sselect2',
+           'sselect3': '_sselect3',
+           'zselect1': '_zselect1',
+           'zselect2': '_zselect2'}
+
 
 def arg_names_and_types(args):
     return zip(*[arg.split(' *') for arg in args.split(', ')])
@@ -43,11 +44,12 @@ cdef {ret_type} {name}({args}) nogil:
     return out
 """
 
-npy_types = {'c':'npy_complex64', 'z':'npy_complex128',
-             'cselect1':'_cselect1', 'cselect2':'_cselect2',
-             'dselect2':'_dselect2', 'dselect3':'_dselect3',
-             'sselect2':'_sselect2', 'sselect3':'_sselect3',
-             'zselect1':'_zselect1', 'zselect2':'_zselect2'}
+npy_types = {'c': 'npy_complex64', 'z': 'npy_complex128',
+             'cselect1': '_cselect1', 'cselect2': '_cselect2',
+             'dselect2': '_dselect2', 'dselect3': '_dselect3',
+             'sselect2': '_sselect2', 'sselect3': '_sselect3',
+             'zselect1': '_zselect1', 'zselect2': '_zselect2'}
+
 
 def arg_casts(arg):
     if arg in ['npy_complex64', 'npy_complex128', '_cselect1', '_cselect2',
@@ -55,6 +57,7 @@ def arg_casts(arg):
                '_zselect1', '_zselect2']:
         return '<{}*>'.format(arg)
     return ''
+
 
 def pyx_decl_func(name, ret_type, args, header_name):
     argtypes, argnames = arg_names_and_types(args)
@@ -85,6 +88,7 @@ pyx_sub_template = """cdef extern from "{header_name}":
 cdef void {name}({args}) nogil:
     _fortran_{name}({argnames})
 """
+
 
 def pyx_decl_sub(name, args, header_name):
     argtypes, argnames = arg_names_and_types(args)
@@ -138,6 +142,7 @@ cdef extern from "fortran_defs.h":
 from numpy cimport npy_complex64, npy_complex128
 
 '''
+
 
 def make_blas_pyx_preamble(all_sigs):
     names = [sig[0] for sig in all_sigs]
@@ -195,6 +200,7 @@ cdef extern from "_lapack_subroutines.h":
     ctypedef bint _zselect2(npy_complex128*, npy_complex128*)
 
 '''
+
 
 def make_lapack_pyx_preamble(all_sigs):
     names = [sig[0] for sig in all_sigs]
@@ -401,6 +407,7 @@ cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) nog
     return zdotu(&n, &zx[0], &incx, &zy[0], &incy)
 """
 
+
 def generate_blas_pyx(func_sigs, sub_sigs, all_sigs, header_name):
     funcs = "\n".join(pyx_decl_func(*(s+(header_name,))) for s in func_sigs)
     subs = "\n" + "\n".join(pyx_decl_sub(*(s[::2]+(header_name,)))
@@ -428,6 +435,7 @@ def _test_slamch(cmach):
     return slamch(cmach_char)
 """
 
+
 def generate_lapack_pyx(func_sigs, sub_sigs, all_sigs, header_name):
     funcs = "\n".join(pyx_decl_func(*(s+(header_name,))) for s in func_sigs)
     subs = "\n" + "\n".join(pyx_decl_sub(*(s[::2]+(header_name,)))
@@ -440,6 +448,7 @@ cdef {name}_t *{name}_f
 """
 pxd_template = """cdef {ret_type} {name}({args}) nogil
 """
+
 
 def pxd_decl(name, ret_type, args):
     args = args.replace('lambda', 'lambda_').replace('*in,', '*in_,')
@@ -462,6 +471,7 @@ ctypedef float complex c
 ctypedef double complex z
 
 """
+
 
 def generate_blas_pxd(all_sigs):
     body = '\n'.join(pxd_decl(*sig) for sig in all_sigs)
@@ -496,6 +506,7 @@ ctypedef bint zselect2(z*, z*)
 
 """
 
+
 def generate_lapack_pxd(all_sigs):
     return lapack_pxd_preamble + '\n'.join(pxd_decl(*sig) for sig in all_sigs)
 
@@ -508,9 +519,9 @@ fortran_template = """      subroutine {name}wrp(ret, {argnames})
       end
 """
 
-dims = {'work':'(*)', 'ab':'(ldab,*)', 'a':'(lda,*)', 'dl':'(*)', 'd':'(*)',
-        'du':'(*)', 'ap':'(*)', 'e':'(*)', 'lld':'(*)'}
-        
+dims = {'work': '(*)', 'ab': '(ldab,*)', 'a': '(lda,*)', 'dl': '(*)',
+        'd': '(*)', 'du': '(*)', 'ap': '(*)', 'e': '(*)', 'lld': '(*)'}
+
 
 def process_fortran_name(name, funcname):
     if 'inc' in name:
@@ -522,6 +533,7 @@ def process_fortran_name(name, funcname):
         return name + dims[name]
     return name
 
+
 def fort_subroutine_wrapper(name, ret_type, args):
     if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
         wrapper = 'w' + name
@@ -529,7 +541,7 @@ def fort_subroutine_wrapper(name, ret_type, args):
         wrapper = name
     types, names = arg_names_and_types(args)
     argnames = ', '.join(names)
-    
+
     names = [process_fortran_name(n, name) for n in names]
     argdecls = '\n        '.join('{} {}'.format(fortran_types[t], n)
                                  for n, t in zip(names, types))
@@ -537,8 +549,10 @@ def fort_subroutine_wrapper(name, ret_type, args):
                                    argnames=argnames, argdecls=argdecls,
                                    ret_type=fortran_types[ret_type])
 
+
 def generate_fortran(func_sigs):
     return "\n".join(fort_subroutine_wrapper(*sig) for sig in func_sigs)
+
 
 def make_c_args(args):
     types, names = arg_names_and_types(args)
@@ -547,6 +561,7 @@ def make_c_args(args):
 
 c_func_template = "void F_FUNC({name}wrp, {upname}WRP)({return_type} *ret, {args});\n"
 
+
 def c_func_decl(name, return_type, args):
     args = make_c_args(args)
     return_type = c_types[return_type]
@@ -554,6 +569,7 @@ def c_func_decl(name, return_type, args):
                                   return_type=return_type, args=args)
 
 c_sub_template = "void F_FUNC({name},{upname})({args});\n"
+
 
 def c_sub_decl(name, return_type, args):
     args = make_c_args(args)
@@ -590,6 +606,7 @@ c_end = """
 #endif
 """
 
+
 def generate_c_header(func_sigs, sub_sigs, all_sigs, lib_name):
     funcs = "".join(c_func_decl(*sig) for sig in func_sigs)
     subs = "\n" + "".join(c_sub_decl(*sig) for sig in sub_sigs)
@@ -599,10 +616,12 @@ def generate_c_header(func_sigs, sub_sigs, all_sigs, lib_name):
         preamble = c_preamble.format(lib=lib_name)
     return "".join([preamble, cpp_guard, funcs, subs, c_end])
 
+
 def split_signature(sig):
     name_and_type, args = sig[:-1].split('(')
     ret_type, name = name_and_type.split(' ')
     return name, ret_type, args
+
 
 def filter_lines(ls):
     ls = [l.strip() for l in ls if l != '\n' and l[0] != '#']
@@ -610,6 +629,7 @@ def filter_lines(ls):
     sub_sigs = [split_signature(l) for l in ls if l.split(' ')[0] == 'void']
     all_sigs = list(sorted(func_sigs + sub_sigs, key=itemgetter(0)))
     return func_sigs, sub_sigs, all_sigs
+
 
 def make_all(blas_signature_file="cython_blas_signatures.txt",
              lapack_signature_file="cython_lapack_signatures.txt",

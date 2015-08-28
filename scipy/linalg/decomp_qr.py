@@ -4,7 +4,6 @@ from __future__ import division, print_function, absolute_import
 import numpy
 
 # Local imports
-from .blas import get_blas_funcs
 from .lapack import get_lapack_funcs
 from .misc import _datacopied
 
