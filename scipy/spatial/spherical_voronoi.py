@@ -11,8 +11,35 @@ Spherical Voronoi Code
 #
 
 import numpy as np
+import math
 
 __all__ = ['SphericalVoronoi']
+
+def convert_spherical_array_to_cartesian_array(spherical_coord_array,angle_measure='radians'):
+    '''Take shape (N,3) spherical_coord_array (r,theta,phi) and return an array of the same shape in cartesian coordinate form (x,y,z). Based on the equations provided at: http://en.wikipedia.org/wiki/List_of_common_coordinate_transformations#From_spherical_coordinates
+    use radians for the angles by default, degrees if angle_measure == 'degrees' '''
+    cartesian_coord_array = np.zeros(spherical_coord_array.shape)
+    #convert to radians if degrees are used in input (prior to Cartesian conversion process)
+    if angle_measure == 'degrees':
+        spherical_coord_array[...,1] = np.deg2rad(spherical_coord_array[...,1])
+        spherical_coord_array[...,2] = np.deg2rad(spherical_coord_array[...,2])
+    #now the conversion to Cartesian coords
+    cartesian_coord_array[...,0] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
+    cartesian_coord_array[...,1] = spherical_coord_array[...,0] * np.sin(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
+    cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
+    return cartesian_coord_array
+
+def generate_random_array_spherical_generators(num_generators,sphere_radius,prng_object):
+    '''Recoded using standard uniform selector over theta and acos phi, http://mathworld.wolfram.com/SpherePointPicking.html
+    Same as in iPython notebook version'''
+    u = prng_object.uniform(low=0,high=1,size=num_generators)
+    v = prng_object.uniform(low=0,high=1,size=num_generators)
+    theta_array = 2 * math.pi * u
+    phi_array = np.arccos((2*v - 1.0))
+    r_array = sphere_radius * np.ones((num_generators,))
+    spherical_polar_data = np.column_stack((r_array,theta_array,phi_array))
+    cartesian_random_points = convert_spherical_array_to_cartesian_array(spherical_polar_data)
+    return cartesian_random_points
 
 class SphericalVoronoi:
     '''Voronoi diagrams on the surface of a sphere.
