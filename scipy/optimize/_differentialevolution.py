@@ -7,6 +7,7 @@ import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 import numbers
+import itertools
 
 __all__ = ['differential_evolution']
 
@@ -17,7 +18,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=None, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
-                           init='latinhypercube', workers=None):
+                           init='latinhypercube', workers=1):
     """Finds the global minimum of a multivariate function.
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
@@ -32,15 +33,16 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         The objective function to be minimized.  Must be in the form
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
-        completely specify the function.
+        completely specify the function. If you are using parallelisation with
+        several `workers`, then this function must be picklable.
     bounds : sequence
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
         ``len(bounds)`` is used to determine the number of parameters in ``x``.
     args : tuple, optional
-        Any additional fixed parameters needed to
-        completely specify the objective function.
+        Any additional fixed parameters needed to completely specify the
+        objective function.
     strategy : str, optional
         The differential evolution strategy to use. Should be one of:
 
@@ -194,66 +196,69 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     (array([ 0.,  0.]), 4.4408920985006262e-16)
 
 
-    Next example demonstrates the usage of parallelization capabilities.
 
-        import numpy as np
-        from scipy.optimize import differential_evolution as de
-        from scipy.misc import PPool
-        import time
+    This example demonstrates the usage of parallelization capabilities.
 
-        def ackley(x):
-            arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
-            arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
-            return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
+    >>> import numpy as np
+    >>> from scipy.optimize import differential_evolution
+    >>> from scipy.misc import PPool
+    >>> import time
+    >>> def ackley(x):
+    ...     arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
+    ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
+    ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
 
-        def objfuncheavy(params):
-            for it in range(100000):
-                it**2
-            return ackley(params)
+    >>> def objfuncheavy(params):
+    ...     for it in range(100000):
+    ...         it**2
+    ...     return ackley(params)
 
-        def objfunclight(params):
-            return ackley(params)
+    >>> def objfunclight(params):
+    ...     return ackley(params)
 
-        bounds = [(-2,2), (-2, 2)]
+    >>> bounds = [(-2,2), (-2, 2)]
+    >>> p = PPool(n_jobs=10)
 
-        p = PPool(n_jobs=10)
+    >>> start_time = time.time()
+    >>> result = differential_evolution(objfuncheavy,bounds, polish=False,
+    ... workers=p)
+    >>> print("Parallel heavy function: %s seconds ---"
+    ... % (time.time() - start_time))
+    >>> print(result)
 
-        start_time = time.time()
-        result = de(objfuncheavy, bounds, polish=False, workers=p)
-        print("Parallel heavy function: %s seconds ---" % (time.time() - start_time))
-        print(result)
+    >>> start_time = time.time()
+    >>> result = differential_evolution(objfuncheavy, bounds, polish=False)
+    >>> print("Serial heavy function: %s seconds ---"
+    ... % (time.time() - start_time))
+    >>> print(result)
 
-        start_time = time.time()
-        result = de(objfuncheavy, bounds, polish=False)
-        print("Serial heavy function: %s seconds ---" % (time.time() - start_time))
-        print(result)
+    >>> start_time = time.time()
+    >>> result = differential_evolution(objfunclight, bounds, polish=False,
+    ... workers=10)
+    >>> print("Parallel light function: %s seconds ---"
+    ... % (time.time() - start_time))
 
-        start_time = time.time()
-        result = de(objfunclight, bounds, polish=False, workers=10)
-        print("Parallel light function: %s seconds ---" % (time.time() - start_time))
+    >>> start_time = time.time()
+    >>> result = differential_evolution(objfunclight, bounds, polish=False)
+    >>> print("Serial light function: %s seconds ---"
+    ... % (time.time() - start_time))
+    Parallel heavy function: 8.27454996109 seconds ---
+        nfev: 3390
+     success: True
+         fun: 4.4408920985006262e-16
+           x: array([ -2.22044605e-16,  -2.22044605e-16])
+     message: 'Optimization terminated successfully.'
+         nit: 112
+    Serial heavy function: 29.4678740501 seconds ---
+        nfev: 3150
+     success: True
+         fun: 4.4408920985006262e-16
+           x: array([ 0.,  0.])
+     message: 'Optimization terminated successfully.'
+         nit: 104
+    Parallel light function: 0.465750932693 seconds ---
+    Serial light function: 0.209820985794 seconds ---
 
-        start_time = time.time()
-        result = de(objfunclight, bounds, polish=False)
-        print("Serial light function: %s seconds ---" % (time.time() - start_time))
-    
-    Results are as follows::
-    
-        Parallel heavy function: 8.27454996109 seconds ---
-            nfev: 3390
-         success: True
-             fun: 4.4408920985006262e-16
-               x: array([ -2.22044605e-16,  -2.22044605e-16])
-         message: 'Optimization terminated successfully.'
-             nit: 112
-        Serial heavy function: 29.4678740501 seconds ---
-            nfev: 3150
-         success: True
-             fun: 4.4408920985006262e-16
-               x: array([ 0.,  0.])
-         message: 'Optimization terminated successfully.'
-             nit: 104
-        Parallel light function: 0.465750932693 seconds ---
-        Serial light function: 0.209820985794 seconds ---
     
     Results show significant speedup in case of a heavy objective function. 
     The number of required iterations in parallel case can be higher, as the
@@ -264,8 +269,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     can be still beneficial.
     In case when the objective function is computationally inexpensive, the
     computational overhand due to parallel execution can deteriorate the
-    performance. In such a case, the usage of serial version of the algorithm is
-    preferred.
+
+    performance. In such a case, the usage of serial version of the algorithm
+    is preferred.
+
     
     References
     ----------
@@ -298,15 +305,16 @@ class DifferentialEvolutionSolver(object):
         The objective function to be minimized.  Must be in the form
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
-        completely specify the function.
+        completely specify the function. If you are using parallelisation with
+        several `workers`, then this function must be picklable.
     bounds : sequence
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
         ``len(bounds)`` is used to determine the number of parameters in ``x``.
     args : tuple, optional
-        Any additional fixed parameters needed to
-        completely specify the objective function.
+        Any additional fixed parameters needed to completely specify the
+        objective function.
     strategy : str, optional
         The differential evolution strategy to use. Should be one of:
 
@@ -406,48 +414,29 @@ class DifferentialEvolutionSolver(object):
                  strategy='best1bin', maxiter=None, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True,
-                 init='latinhypercube', workers=None):
+                 init='latinhypercube', workers=1):
         
         self.disp = disp
-        
-        # default behaviour is serial
-        if workers is None:
-            self.pool_map = map
-            self.poolsize = 1
-            
-        # if int argument is supplied, then used ither serial or paralle pool
-        elif isinstance(workers, int):
-            # serial case
-            if workers == 1:
-                self.pool_map = map
-                self.poolsize = 1
-            # parallel case
-            else:
-                from scipy.misc import PPool
-                # if number of processes within sane limits
-                if (workers > 1) and (workers < 100):                
-                    pool = PPool(n_jobs=workers)
-                    self.pool_map = pool.map
-                    self.poolsize = pool.poolsize()
-                # if number of processes is negative or insane
-                else:
-                    pool = PPool()
-                    self.pool_map = pool.map
-                    self.poolsize = pool.poolsize()
-                
-                if self.disp:            
-                    print("Starting %g workers in parallel." % self.poolsize)
-        
-        # and as a last option, the workers keyword can take a pool object
+
+        # default is serial
+        self.__pool = None
+        self.__created_pool = False
+        self.pool_map = map
+        self.poolsize = 1
+        self.workers = workers
+
+        if type(workers) is int:
+            # We'll deal with creating our own pool in solve. This is because
+            # we have to terminate them ourselves when the solve has finished.
+            pass
         else:
             try:
+                self.__pool = workers
                 self.pool_map = workers.map
                 self.poolsize = workers.poolsize()
             except:
-                raise ValueError("Workers keyword expected a pool object with map and poolsize methods")
-            
-            if self.disp:    
-                print("Starting %g workers in parallel." % self.poolsize)
+                raise ValueError('Workers keyword expected a pool object with '
+                                 'map and poolsize methods')
         
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -461,8 +450,8 @@ class DifferentialEvolutionSolver(object):
         self.polish = polish
         self.tol = tol
 
-        #Mutation constant should be in [0, 2). If specified as a sequence
-        #then dithering is performed.
+        # Mutation constant should be in [0, 2). If specified as a sequence
+        # then dithering is performed.
         self.scale = mutation
         if (not np.all(np.isfinite(mutation)) or
                 np.any(np.array(mutation) >= 2) or
@@ -505,8 +494,8 @@ class DifferentialEvolutionSolver(object):
         parameter_count = np.size(self.limits, 1)
         self.random_number_generator = _make_random_gen(seed)
 
-        #default initialization is a latin hypercube design, but there
-        #are other population initializations possible.
+        # default initialization is a latin hypercube design, but there
+        # are other population initializations possible.
         self.population = np.zeros((popsize * parameter_count,
                                     parameter_count))
         if init == 'latinhypercube':
@@ -581,6 +570,26 @@ class DifferentialEvolutionSolver(object):
             then OptimizeResult also contains the ``jac`` attribute.
         """
 
+        # if int argument is supplied, then use either serial or parallel pool
+        self.__created_pool = False
+        if type(self.workers) is int:
+            # parallel case
+            if self.workers != 1:
+                from scipy.misc import PPool
+                if (self.workers > 1) and (self.workers < 100):
+                    pool = PPool(n_jobs=self.workers)
+                # if number of processes is negative or insane
+                else:
+                    pool = PPool()
+
+                self.pool_map = pool.map
+                self.poolsize = pool.poolsize()
+                self.__pool = pool
+                self.__created_pool = True
+
+                if self.disp:
+                    print("Starting %g workers in parallel." % self.poolsize)
+
         nfev, nit, warning_flag = 0, 0, False
         status_message = _status_message['success']
         
@@ -591,15 +600,17 @@ class DifferentialEvolutionSolver(object):
             parameters.append(self._scale_parameters(candidate))
 
 
-        # evaluate function for the whole population using a pool
-        if len(self.args) is not 0:
-            self.population_energies = self.pool_map(lambda pars: self.func(pars, *self.args), parameters)
-        else:
-            self.population_energies = self.pool_map(self.func, parameters)
+        # calculate starting energies for the whole population
+        parameters = self._scale_parameters(self.population)
+        energies = self.pool_map(_wrapper,
+                                 zip(itertools.repeat(self.func),
+                                 parameters,
+                                 itertools.repeat(self.args)))
 
-        # In parallel version where the whole population is evaluated 
-        # simultaneously it is impossible to track number of separate function
-        # executions. Parameter self.maxfun looses its importance. 
+        # the squeeze is necessary because some objective functions return
+        # arrays instead of floats.
+        self.population_energies = np.fromiter(energies, float).squeeze()
+
         nfev += len(self.population)
         
         # check the number of evaluation of the functions
@@ -611,60 +622,68 @@ class DifferentialEvolutionSolver(object):
         minval = np.argmin(self.population_energies)
 
         # put the lowest energy into the best solution position
-        lowest_energy = self.population_energies[minval]
-        self.population_energies[minval] = self.population_energies[0]
-        self.population_energies[0] = lowest_energy
+
+        self.population_energies[[minval, 0]] = (
+            self.population_energies[[0, minval]])
+
 
         # and exchange places of previous and new best solutions
         self.population[[0, minval], :] = self.population[[minval, 0], :]
 
         if warning_flag:
             return OptimizeResult(
-                           x=self.x,
-                           fun=self.population_energies[0],
-                           nfev=nfev,
-                           nit=nit,
-                           message=status_message,
-                           success=(warning_flag is not True))
+                x=self.x,
+                fun=self.population_energies[0],
+                nfev=nfev,
+                nit=nit,
+                message=status_message,
+                success=(warning_flag is not True))
 
-        # do the optimisation.
+        # divide populations into subpopulations depending on poolsize
+        # determine number of sub-populations 'nsp', or number of
+        # parallel evaluations, which is 'nsp + 1'
+        # and the length of the reminder 'lenrem'
+        nsp, lenrem = divmod(np.size(self.population, 0), self.poolsize)
+        sp_sizes = [self.poolsize] * nsp
+        if lenrem:
+            sp_sizes += [lenrem]
+
+        # do the optimisation, evolving over several generations
         for nit in range(1, self.maxiter + 1):
         
             if self.dither is not None:
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
-                
-            # brake the population to subpopulation depending on the size of the pool
-            # determine number of sub-populations 'nsp', or number of 
-            # parallel evaluations, which is 'nsp + 1'
-            # and the length of the reminder 'lenrem'
-            nsp, lenrem = divmod(np.size(self.population, 0), self.poolsize)
-            
-            itsp = 0
-            # iterate among sub-populations
+
+
+            # within a generation iterate among sub-populations
             # when self.poolsize == 1 the mutation is aggressive
             # when self.poolsize > 1 the mutation is quasi-aggressive
-            while itsp <= nsp:
-                # determine the length of the subpopulation
-                lensp = self.poolsize if (itsp < nsp) else lenrem
+            for it, sp_size in enumerate(sp_sizes):
+                # range of candidates we're evaluating in the subpopulation
+                cnd_range = range(self.poolsize*it, self.poolsize*it + sp_size)
 
-                # initialize list for all members (parameters) of the current subpopulation
-                spparams = []
-                # mutate parameters for the sub-population
-                for candidate in range(lensp):
-                    trial = self._mutate(candidate + self.poolsize*itsp)
-                    self._ensure_constraint(trial)
-                    spparams.append(self._scale_parameters(trial))
+                # create trial vectors through mutation
+                trials = np.array([self._mutate(cand) for cand in cnd_range])
 
-                    nfev += 1
+                # ensure parameters are within the limits
+                trials[trials < 0] = (
+                    np.random.random(np.count_nonzero(trials < 0)))
+                trials[trials > 1] = (
+                    np.random.random(np.count_nonzero(trials > 1)))
 
-                # in parallel case the self.func must return a list of energies
-                # for the whole subpopulation
-                if len(self.args) is not 0:
-                    spenergies = self.pool_map(lambda pars: self.func(pars, *self.args), spparams)
-                else:
-                    spenergies = self.pool_map(self.func, spparams)
-                    
+                # scale trials to parameter values
+                parameters = self._scale_parameters(trials)
+                nfev += sp_size
+
+                # calculate the energies of the trials
+                spenergies = self.pool_map(_wrapper,
+                                           zip(itertools.repeat(self.func),
+                                           parameters,
+                                           itertools.repeat(self.args)))
+                spenergies = np.fromiter(spenergies, float).squeeze()
+
+
                 # check the number of evaluation of the functions
                 # (this, perhaps, should be deprecated as unnecessary)
                 if nfev > self.maxfun:
@@ -672,31 +691,36 @@ class DifferentialEvolutionSolver(object):
                     status_message = _status_message['maxfev']
                     break
 
-                # update population and their energies if subpopulation members are 
-                # better by iteration among all members (or jobs) of the subpopulation
-                for itjob in range(lensp):
-                    energy = spenergies[itjob]
-                    if energy < self.population_energies[itjob + self.poolsize*itsp]:
-                        self.population[itjob + self.poolsize*itsp] =\
-                            self._unscale_parameters(spparams[itjob])
-                        self.population_energies[itjob + self.poolsize*itsp] = energy
-                        
-                        # update global best if there is a better in the current sub-population
-                        # the strategy is aggressive
 
-                        if energy < self.population_energies[0]:
-                            self.population_energies[0] = energy
+                # find out which trial candidates have have lower energy than
+                # the existing population and replace the original population
+                # members
+                improved = spenergies < self.population_energies[cnd_range]
 
-                            # exchange places between old and new global best    
-                            self.population[[0, itjob + self.poolsize*itsp], :] =\
-                                self.population[[itjob + self.poolsize*itsp, 0], :]
+                new_pop = np.where(improved[:, np.newaxis],
+                                   trials,
+                                   self.population[cnd_range])
+                self.population[cnd_range] = new_pop
 
-                            if self.disp:
-                                print(" Best updated: f(x)= %g" % (energy))
-                                print(self._scale_parameters(self.population[0]))
+                # also replace the energies if they got lower
+                new_energy = np.where(improved,
+                                      spenergies,
+                                      self.population_energies[cnd_range])
+                self.population_energies[cnd_range] = new_energy
 
-                itsp += 1
-                                  
+                # the overall best solution may have changed. If so, replace it
+                minval = np.argmin(self.population_energies)
+                if minval:
+                    self.population_energies[[minval, 0]] = (
+                        self.population_energies[[0, minval]])
+                    self.population[[0, minval], :] = (
+                        self.population[[minval, 0], :])
+                    if self.disp:
+                        print(" Best updated: f(x)= %g" %
+                              self.population_energies[0])
+                        print(self._scale_parameters(self.population[0]))
+
+
             # report on the results of the current generation
             if self.disp:
                 print("differential_evolution step %d: f(x)= %g"
@@ -749,6 +773,9 @@ class DifferentialEvolutionSolver(object):
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
+
+        if self.__created_pool:
+            self.__pool.terminate()
 
         return DE_result
 
@@ -844,8 +871,8 @@ class DifferentialEvolutionSolver(object):
         """
         r0, r1, r2, r3 = samples[:4]
         bprime = (self.population[0] + self.scale *
-                            (self.population[r0] + self.population[r1] -
-                             self.population[r2] - self.population[r3]))
+                  (self.population[r0] + self.population[r1] -
+                   self.population[r2] - self.population[r3]))
 
         return bprime
 
@@ -855,8 +882,8 @@ class DifferentialEvolutionSolver(object):
         """
         r0, r1, r2, r3, r4 = samples
         bprime = (self.population[r0] + self.scale *
-                 (self.population[r1] + self.population[r2] -
-                  self.population[r3] - self.population[r4]))
+                  (self.population[r1] + self.population[r2] -
+                   self.population[r3] - self.population[r4]))
 
         return bprime
 
@@ -870,6 +897,30 @@ class DifferentialEvolutionSolver(object):
         self.random_number_generator.shuffle(idxs)
         idxs = idxs[:number_samples]
         return idxs
+
+
+def _wrapper(xarg):
+    """
+    Wrapper to allow the objective function to be called in a multiprocessing
+    context.
+
+    Parameters
+    ----------
+    xarg: tuple
+        Tuple containing the objective function and all its parameters.
+        xarg[0]: callable
+            The objective function.
+        xarg[1]: np.ndarray
+            Solution array.
+        xarg[2]: tuple
+            The extra parameters required to fully specify the objective
+            function.
+    Returns
+    -------
+    Evaluated function value
+    """
+    func = xarg[0]
+    return func(xarg[1], *xarg[2])
 
 
 def _make_random_gen(seed):
