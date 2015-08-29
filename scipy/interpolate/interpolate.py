@@ -2,10 +2,6 @@
 """
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly', 'RegularGridInterpolator',
-           'interpn']
-
 import itertools
 
 from numpy import (shape, sometrue, array, transpose, searchsorted,
@@ -29,6 +25,11 @@ from .polyint import _Interpolator1D
 from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
+
+
+__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
+           'ppform', 'lagrange', 'PPoly', 'BPoly', 'RegularGridInterpolator',
+           'interpn']
 
 
 def reduce_sometrue(a):
@@ -1474,8 +1475,8 @@ class BPoly(_PPolyBase):
             raise ValueError('ya and yb have incompatible dimensions.')
 
         dta, dtb = ya.dtype, yb.dtype
-        if (np.issubdtype(dta, np.complexfloating)
-               or np.issubdtype(dtb, np.complexfloating)):
+        if (np.issubdtype(dta, np.complexfloating) or
+               np.issubdtype(dtb, np.complexfloating)):
             dt = np.complex_
         else:
             dt = np.float_
@@ -1658,8 +1659,8 @@ class RegularGridInterpolator(object):
         self.fill_value = fill_value
         if fill_value is not None:
             fill_value_dtype = np.asarray(fill_value).dtype
-            if (hasattr(values, 'dtype')
-                    and not np.can_cast(fill_value_dtype, values.dtype,
+            if (hasattr(values, 'dtype') and not
+                    np.can_cast(fill_value_dtype, values.dtype,
                                         casting='same_kind')):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
