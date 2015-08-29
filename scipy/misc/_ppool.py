@@ -1,26 +1,27 @@
 from __future__ import division, print_function, absolute_import
-from multiprocessing import Pool, cpu_count
+from multiprocessing import cpu_count
+from multiprocessing.pool import Pool
 
 __all__ = ["PPool"]
 
-class PPool(object):
+
+class PPool(Pool):
     '''
-    Parallel pool which wraps an objective function into a pool object for
-    parallel execution. This pool is based on multiprocessing.Pool.map 
-    augumented with `poolsize` method to tell the user the number of active 
-    workers.
+    Parallel pool object for parallel execution. This pool is based on
+    multiprocessing.Pool augumented with the `poolsize` method to tell
+    the user the number of active workers.
     
     Parameters
     ----------
     n_jobs : int (Default)
-        Sets the number of workers. In order to keep the responsivenes of the
+        Sets the number of workers. In order to keep the responsiveness of the
         system, sometimes, this number could be set less then cpu_count().
         The default is cpu_count()
 
     '''
 
     def __init__(self, *args, **kwargs):
-        
+
         self.args = args
         self.kwargs = kwargs
         
@@ -30,11 +31,9 @@ class PPool(object):
             self.nworkers = n_jobs
         else:
             self.nworkers = cpu_count()
-        
-        self.pool = Pool(processes=self.nworkers)   
-    
-    def map(self, func, task):
-        return self.pool.map(func, task)
+
+
+        super(PPool, self).__init__(processes=self.nworkers)
         
     def poolsize(self):
         return self.nworkers

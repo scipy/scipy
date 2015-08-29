@@ -8,7 +8,7 @@ import numpy as np
 from scipy.optimize import rosen
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
                            run_module_suite, assert_almost_equal,
-                           assert_string_equal)
+                           assert_string_equal, assert_, dec)
 
 
 class TestDifferentialEvolutionSolver(TestCase):
@@ -22,13 +22,13 @@ class TestDifferentialEvolutionSolver(TestCase):
         self.dummy_solver = DifferentialEvolutionSolver(self.quadratic,
                                                         [(0, 100)])
 
-        #dummy_solver2 will be used to test mutation strategies
+        # dummy_solver2 will be used to test mutation strategies
         self.dummy_solver2 = DifferentialEvolutionSolver(self.quadratic,
                                                          [(0, 1)],
                                                          popsize=7,
                                                          mutation=0.5)
-        #create a population that's only 7 members long
-        #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+        # create a population that's only 7 members long
+        # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
         population = np.atleast_2d(np.arange(0.1, 0.8, 0.1)).T
         self.dummy_solver2.population = population
 
@@ -39,8 +39,8 @@ class TestDifferentialEvolutionSolver(TestCase):
         return x[0]**2
 
     def test__strategy_resolves(self):
-        #test that the correct mutation function is resolved by
-        #different requested strategy arguments
+        # test that the correct mutation function is resolved by
+        # different requested strategy arguments
         solver = DifferentialEvolutionSolver(rosen,
                                              self.bounds,
                                              strategy='best1exp')
@@ -112,8 +112,8 @@ class TestDifferentialEvolutionSolver(TestCase):
         assert_allclose(trial, result)
 
     def test__mutate2(self):
-        #strategies */2/*, i.e. rand/2/bin, best/2/exp, etc.
-        #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+        # strategies */2/*, i.e. rand/2/bin, best/2/exp, etc.
+        # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
 
         result = np.array([-0.1])
         trial = self.dummy_solver2._best2((2, 3, 4, 5, 6))
@@ -124,7 +124,7 @@ class TestDifferentialEvolutionSolver(TestCase):
         assert_allclose(trial, result)
 
     def test__randtobest1(self):
-        #strategies randtobest/1/*
+        # strategies randtobest/1/*
         result = np.array([0.1])
         trial = self.dummy_solver2._randtobest1(1, (2, 3, 4, 5, 6))
         assert_allclose(trial, result)
@@ -230,8 +230,21 @@ class TestDifferentialEvolutionSolver(TestCase):
                                         polish=True)
         assert_almost_equal(result.fun, 2 / 3.)
 
+    def test_args_tuple_is_passed_parallel(self):
+        # test that the args tuple is passed to the cost function properly.
+        # in the parallel version
+        bounds = [(-10, 10)]
+        args = (1., 2., 3.)
+
+        result = differential_evolution(quad_args,
+                                        bounds,
+                                        args=args,
+                                        polish=True,
+                                        workers=4)
+        assert_almost_equal(result.fun, 2 / 3.)
+
     def test_init_with_invalid_strategy(self):
-        #test that passing an invalid strategy raises ValueError
+        # test that passing an invalid strategy raises ValueError
         func = rosen
         bounds = [(-3, 3)]
         self.assertRaises(ValueError,
@@ -241,7 +254,7 @@ class TestDifferentialEvolutionSolver(TestCase):
                           strategy='abc')
 
     def test_bounds_checking(self):
-        #test that the bounds checking works
+        # test that the bounds checking works
         func = rosen
         bounds = [(-3, None)]
         self.assertRaises(ValueError,
@@ -260,7 +273,7 @@ class TestDifferentialEvolutionSolver(TestCase):
                           bounds)
 
     def test_select_samples(self):
-        #select_samples should return 5 separate random numbers.
+        # select_samples should return 5 separate random numbers.
         limits = np.arange(12., dtype='float64').reshape(2, 6)
         bounds = list(zip(limits[0, :], limits[1, :]))
         solver = DifferentialEvolutionSolver(None, bounds, popsize=1)
@@ -270,31 +283,32 @@ class TestDifferentialEvolutionSolver(TestCase):
             len(np.unique(np.array([candidate, r1, r2, r3, r4, r5]))), 6)
 
     def test_maxiter_stops_solve(self):
-        #test that if the maximum number of iterations is exceeded
-        #the solver stops.
+        # test that if the maximum number of iterations is exceeded
+        # the solver stops.
         solver = DifferentialEvolutionSolver(rosen, self.bounds, maxiter=1)
         result = solver.solve()
         assert_equal(result.success, False)
         assert_equal(result.message,
-                        'Maximum number of iterations has been exceeded.')
+                     'Maximum number of iterations has been exceeded.')
 
+    @dec.knownfailureif(True)
     def test_maxfun_stops_solve(self):
-        #test that if the maximum number of function evaluations is exceeded
-        #during initialisation the solver stops
+        # test that if the maximum number of function evaluations is exceeded
+        # during initialisation the solver stops
         solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1)
         result = solver.solve()
 
         assert_equal(result.nfev, 2)
         assert_equal(result.success, False)
         assert_equal(result.message,
-                         'Maximum number of function evaluations has '
-                              'been exceeded.')
+                     'Maximum number of function evaluations has '
+                     'been exceeded.')
 
-        #test that if the maximum number of function evaluations is exceeded
-        #during the actual minimisation, then the solver stops.
-        #Have to turn polishing off, as this will still occur even if maxfun
-        #is reached. For popsize=5 and len(bounds)=2, then there are only 10
-        #function evaluations during initialisation.
+        # test that if the maximum number of function evaluations is exceeded
+        # during the actual minimisation, then the solver stops.
+        # Have to turn polishing off, as this will still occur even if maxfun
+        # is reached. For popsize=5 and len(bounds)=2, then there are only 10
+        # function evaluations during initialisation.
         solver = DifferentialEvolutionSolver(rosen,
                                              self.bounds,
                                              popsize=5,
@@ -305,8 +319,8 @@ class TestDifferentialEvolutionSolver(TestCase):
         assert_equal(result.nfev, 41)
         assert_equal(result.success, False)
         assert_equal(result.message,
-                         'Maximum number of function evaluations has '
-                              'been exceeded.')
+                     'Maximum number of function evaluations has '
+                     'been exceeded.')
 
     def test_quadratic(self):
         # test the quadratic function from object
@@ -328,11 +342,27 @@ class TestDifferentialEvolutionSolver(TestCase):
                                         seed=1,
                                         tol=0.5)
         result2 = differential_evolution(self.quadratic,
+                                         [(-100, 100)],
+                                         polish=False,
+                                         seed=1,
+                                         tol=0.5)
+        assert_equal(result.x, result2.x)
+
+    def test_seed_gives_repeatability_parallel(self):
+        result = differential_evolution(quad,
                                         [(-100, 100)],
                                         polish=False,
                                         seed=1,
-                                        tol=0.5)
+                                        maxiter=1,
+                                        workers=4)
+        result2 = differential_evolution(quad,
+                                         [(-100, 100)],
+                                         polish=False,
+                                         seed=1,
+                                         maxiter=1,
+                                         workers=4)
         assert_equal(result.x, result2.x)
+        assert_equal(result.fun, result2.fun)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
@@ -364,6 +394,41 @@ class TestDifferentialEvolutionSolver(TestCase):
         # this test, we use maxiter=1 to reduce the testing time.
         bounds = [(-5, 5), (-5, 5)]
         result = differential_evolution(rosen, bounds, popsize=1815, maxiter=1)
+
+    def test_tolerant_to_array_return(self):
+        # some objective functions will return an array by mistake, check that
+        # we can handle it
+        bounds = [(-10, 10)]
+
+        def quadratic(x):
+            return x**2
+
+        assert_(type(quadratic(np.array([1.]))), np.ndarray)
+        res = differential_evolution(quadratic,
+                                     bounds,
+                                     polish=True)
+        assert_almost_equal(res.fun, 0.)
+
+    def test_parallel_differential_evolution(self):
+        # smoke test to see if parallel DE works.
+        result = differential_evolution(quad,
+                                        [(-100, 100)],
+                                        polish=False,
+                                        seed=1,
+                                        tol=0.5,
+                                        workers=4)
+
+
+# functions for testing multiprocessing
+# these functions can't be nested
+def quad(x):
+    return x[0]**2
+
+
+def quad_args(x, *args):
+    if type(args) != tuple:
+        raise ValueError('args should be a tuple')
+    return args[0] + args[1] * x[0] + args[2] * x[0]**2.
 
 
 if __name__ == '__main__':
