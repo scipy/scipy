@@ -599,7 +599,6 @@ class DifferentialEvolutionSolver(object):
             # incapsulate additional fixed arguments to parameters
             parameters.append(self._scale_parameters(candidate))
 
-
         # calculate starting energies for the whole population
         parameters = self._scale_parameters(self.population)
         energies = self.pool_map(_wrapper,
@@ -625,7 +624,6 @@ class DifferentialEvolutionSolver(object):
 
         self.population_energies[[minval, 0]] = (
             self.population_energies[[0, minval]])
-
 
         # and exchange places of previous and new best solutions
         self.population[[0, minval], :] = self.population[[minval, 0], :]
@@ -655,7 +653,6 @@ class DifferentialEvolutionSolver(object):
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
 
-
             # within a generation iterate among sub-populations
             # when self.poolsize == 1 the mutation is aggressive
             # when self.poolsize > 1 the mutation is quasi-aggressive
@@ -683,14 +680,12 @@ class DifferentialEvolutionSolver(object):
                                            itertools.repeat(self.args)))
                 spenergies = np.fromiter(spenergies, float).squeeze()
 
-
                 # check the number of evaluation of the functions
                 # (this, perhaps, should be deprecated as unnecessary)
                 if nfev > self.maxfun:
                     warning_flag = True
                     status_message = _status_message['maxfev']
                     break
-
 
                 # find out which trial candidates have have lower energy than
                 # the existing population and replace the original population
@@ -719,7 +714,6 @@ class DifferentialEvolutionSolver(object):
                         print(" Best updated: f(x)= %g" %
                               self.population_energies[0])
                         print(self._scale_parameters(self.population[0]))
-
 
             # report on the results of the current generation
             if self.disp:

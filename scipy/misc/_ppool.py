@@ -32,7 +32,6 @@ class PPool(Pool):
         else:
             self.nworkers = cpu_count()
 
-
         super(PPool, self).__init__(processes=self.nworkers)
         
     def poolsize(self):
