@@ -336,12 +336,13 @@ class interp1d(_Interpolator1D):
         If True, a ValueError is raised any time interpolation is attempted on
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
-        By default, an error is raised.
-    fill_value : float or str, optional
+        By default, an error is raised unless `fill_value="extrapolate"`.
+    fill_value : float or "extrapolate", optional
         If provided, then this value will be used to fill in for requested
         points outside of the data range. If not provided, then the default
-        is NaN. For kind 'nearest' this value can be set to 'extrapolate' then
-        points outside the data range will be extrapolated.
+        is NaN.
+        If "extrapolate", then points outside the data range will be
+        extrapolated. ("nearest" and "linear" kinds only.)
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
