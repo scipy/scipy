@@ -195,53 +195,43 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun
     (array([ 0.,  0.]), 4.4408920985006262e-16)
 
-
-
     This example demonstrates the usage of parallelization capabilities.
 
-    >>> import numpy as np
-    >>> from scipy.optimize import differential_evolution
-    >>> from scipy.misc import PPool
-    >>> import time
-    >>> def ackley(x):
-    ...     arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
-    ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
-    ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
-
-    >>> def objfuncheavy(params):
-    ...     for it in range(100000):
-    ...         it**2
-    ...     return ackley(params)
-
-    >>> def objfunclight(params):
-    ...     return ackley(params)
-
-    >>> bounds = [(-2,2), (-2, 2)]
-    >>> p = PPool(n_jobs=10)
-
-    >>> start_time = time.time()
-    >>> result = differential_evolution(objfuncheavy,bounds, polish=False,
-    ... workers=p)
-    >>> print("Parallel heavy function: %s seconds ---"
-    ... % (time.time() - start_time))
-    >>> print(result)
-
-    >>> start_time = time.time()
-    >>> result = differential_evolution(objfuncheavy, bounds, polish=False)
-    >>> print("Serial heavy function: %s seconds ---"
-    ... % (time.time() - start_time))
-    >>> print(result)
-
-    >>> start_time = time.time()
-    >>> result = differential_evolution(objfunclight, bounds, polish=False,
-    ... workers=10)
-    >>> print("Parallel light function: %s seconds ---"
-    ... % (time.time() - start_time))
-
-    >>> start_time = time.time()
-    >>> result = differential_evolution(objfunclight, bounds, polish=False)
-    >>> print("Serial light function: %s seconds ---"
-    ... % (time.time() - start_time))
+    >>> def example():
+    ...     import numpy as np
+    ...     from scipy.optimize import differential_evolution
+    ...     from scipy.misc import PPool
+    ...     import time
+    ...     def ackley(x):
+    ...         arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
+    ...         arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
+    ...         return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
+    ...     
+    ...     def objfuncheavy(params):
+    ...         for it in range(100000):
+    ...             it**2
+    ...         return ackley(params)
+    ...    
+    ...     def objfunclight(params):
+    ...         return ackley(params)
+    ...     
+    ...     bounds = [(-2,2), (-2, 2)]
+    ...     p = PPool(n_jobs=10)
+    ...     start_time = time.time()
+    ...     result = differential_evolution(objfuncheavy,bounds, polish=False, workers=p)
+    ...     print("Parallel heavy function: %s seconds ---" % (time.time() - start_time))
+    ...     print(result)
+    ...     start_time = time.time()
+    ...     result = differential_evolution(objfuncheavy, bounds, polish=False)
+    ...     print("Serial heavy function: %s seconds ---" % (time.time() - start_time))
+    ...     print(result)
+    ...     start_time = time.time()
+    ...     result = differential_evolution(objfunclight, bounds, polish=False, workers=10)
+    ...     print("Parallel light function: %s seconds ---" % (time.time() - start_time))
+    ...     start_time = time.time()
+    ...     result = differential_evolution(objfunclight, bounds, polish=False)
+    ...     print("Serial light function: %s seconds ---" % (time.time() - start_time))
+    >>> example() # doctest: +SKIP
     Parallel heavy function: 8.27454996109 seconds ---
         nfev: 3390
      success: True
