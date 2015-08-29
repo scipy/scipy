@@ -227,6 +227,17 @@ class TestInterp1D(object):
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 6., 6.]),)
 
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='nearest',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='nearest',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
     @dec.knownfailureif(True, "zero-order splines fail for the last point")
     def test_zero(self):
         # Check the actual implementation of zero-order spline interpolation.

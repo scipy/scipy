@@ -372,17 +372,23 @@ class interp1d(_Interpolator1D):
     """
 
     def __init__(self, x, y, kind='linear', axis=-1,
-                 copy=True, bounds_error=True, fill_value=np.nan,
+                 copy=True, bounds_error=None, fill_value=np.nan,
                  assume_sorted=False):
         """ Initialize a 1D linear interpolation class."""
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
-        self.copy = copy
-        self.bounds_error = bounds_error
         # extrapolation only works for nearest neighbor method
         if fill_value == "extrapolate" and kind != 'nearest':
             raise ValueError("Extrapolation only works with method 'nearest'.")
 
+        if fill_value == 'extrapolate' and bounds_error:
+            raise ValueError("Cannot extrapolate and raise at the same time.")
+
+        if bounds_error is None:
+            bounds_error = True
+        self.bounds_error = bounds_error
+
+        self.copy = copy
         self.fill_value = fill_value
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
