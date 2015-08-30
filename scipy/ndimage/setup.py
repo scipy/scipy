@@ -14,6 +14,7 @@ def configuration(parent_package='', top_path=None):
                  "src/ni_fourier.c","src/ni_interpolation.c",
                  "src/ni_measure.c",
                  "src/ni_morphology.c","src/ni_support.c"],
+        extra_link_args = ['-lpython2.7'],
         include_dirs=['src']+[get_include()],
     )
 
@@ -21,6 +22,7 @@ def configuration(parent_package='', top_path=None):
     config.add_extension("_ni_label",
                          sources=["src/_ni_label.c",],
                          include_dirs=['src']+[get_include()],
+                         extra_link_args = ['-lpython2.7']
                          )
 
     config.add_data_dir('tests')

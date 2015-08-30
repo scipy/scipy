@@ -23,12 +23,14 @@ def configuration(parent_package='',top_path=None):
 
     # add vonmises_cython module
     config.add_extension('vonmises_cython',
-        sources=['vonmises_cython.c'],  # FIXME: use cython source
+        sources=['vonmises_cython.c'],  # FIXME: use cython source,
+        extra_link_args = ['-lpython2.7']
     )
 
     # add _rank module
     config.add_extension('_rank',
         sources=['_rank.c'],          # FIXME: use cython source
+        extra_link_args = ['-lpython2.7']
     )
 
     # add futil module

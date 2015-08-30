@@ -73,7 +73,8 @@ def configuration(parent_package='',top_path=None):
                          depends=dop_src)
 
     config.add_extension('_test_multivariate',
-                         sources=quadpack_test_src)
+                         sources=quadpack_test_src,
+                         extra_link_args = ['-lpython2.7'])
 
     # Fortran+f2py extension module for testing odeint.
     config.add_extension('_test_odeint_banded',

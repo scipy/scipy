@@ -125,7 +125,8 @@ def configuration(parent_package='', top_path=None):
     # _solve_toeplitz:
     config.add_extension('_solve_toeplitz',
                          sources=[('_solve_toeplitz.c')],
-                         include_dirs=[get_numpy_include_dirs()])
+                         include_dirs=[get_numpy_include_dirs()],
+                         extra_info={'extra_link_args' : ['-lpython2.7']})
 
     config.add_data_dir('tests')
 
@@ -145,6 +146,7 @@ def configuration(parent_package='', top_path=None):
                                   'fortran_defs.h', '_blas_subroutines.h'],
                          include_dirs=['.'],
                          libraries=['fwrappers'],
+                         extra_link_args = ['-lpython2.7'],
                          extra_info=lapack_opt)
 
     config.add_extension('cython_lapack',
@@ -153,10 +155,12 @@ def configuration(parent_package='', top_path=None):
                                   'fortran_defs.h', '_lapack_subroutines.h'],
                          include_dirs=['.'],
                          libraries=['fwrappers'],
+                         extra_link_args = ['-lpython2.7'],
                          extra_info=lapack_opt)
 
     config.add_extension('_decomp_update',
-                         sources=['_decomp_update.c'])
+                         sources=['_decomp_update.c'],
+                         extra_link_args = ['-lpython2.7'])
 
     return config
 

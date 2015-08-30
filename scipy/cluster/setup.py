@@ -21,10 +21,12 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_vq',
         sources=[('_vq.c')],
         include_dirs=[get_numpy_include_dirs()],
+        extra_link_args = ['-lpython2.7'],
         extra_info=blas_opt)
 
     config.add_extension('_hierarchy',
         sources=[('_hierarchy.c')],
+        extra_link_args = ['-lpython2.7'],
         include_dirs=[get_numpy_include_dirs()])
 
     return config

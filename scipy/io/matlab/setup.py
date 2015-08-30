@@ -5,9 +5,12 @@ from __future__ import division, print_function, absolute_import
 def configuration(parent_package='io',top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('matlab', parent_package, top_path)
-    config.add_extension('streams', sources=['streams.c'])
-    config.add_extension('mio_utils', sources=['mio_utils.c'])
-    config.add_extension('mio5_utils', sources=['mio5_utils.c'])
+    config.add_extension('streams', sources=['streams.c'],
+    	extra_link_args = ['-lpython2.7'])
+    config.add_extension('mio_utils', sources=['mio_utils.c'],
+    	extra_link_args = ['-lpython2.7'])
+    config.add_extension('mio5_utils', sources=['mio5_utils.c'],
+    	extra_link_args = ['-lpython2.7'],)
     config.add_data_dir('tests')
     return config
 

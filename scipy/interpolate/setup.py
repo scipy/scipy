@@ -9,6 +9,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
 
     lapack_opt = get_info('lapack_opt', notfound_action=2)
+    lapack_opt['extra_link_args'].append('-lpython2.7')
 
     config = Configuration('interpolate', parent_package, top_path)
 
@@ -16,7 +17,8 @@ def configuration(parent_package='',top_path=None):
     config.add_library('fitpack', sources=fitpack_src)
 
     config.add_extension('interpnd',
-                         sources=['interpnd.c'])
+                         sources=['interpnd.c'],
+                         extra_link_args = ['-lpython2.7'])
 
     config.add_extension('_ppoly',
                          sources=['_ppoly.c'],
@@ -38,7 +40,8 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_interpolate',
                          sources=['src/_interpolate.cpp'],
                          include_dirs=['src'],
-                         depends=['src/interpolate.h'])
+                         depends=['src/interpolate.h'],
+                         extra_link_args = ['-lpython2.7'])
 
     config.add_data_dir('tests')
 

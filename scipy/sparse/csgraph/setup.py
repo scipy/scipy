@@ -11,22 +11,27 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_shortest_path',
          sources=['_shortest_path.c'],
-         include_dirs=[numpy.get_include()])
+         include_dirs=[numpy.get_include()],
+         extra_link_args = ['-lpython2.7'])
 
     config.add_extension('_traversal',
          sources=['_traversal.c'],
-         include_dirs=[numpy.get_include()])
+         include_dirs=[numpy.get_include()],
+         extra_link_args = ['-lpython2.7'])
 
     config.add_extension('_min_spanning_tree',
          sources=['_min_spanning_tree.c'],
-         include_dirs=[numpy.get_include()])
+         include_dirs=[numpy.get_include()],
+         extra_link_args = ['-lpython2.7'])
     
     config.add_extension('_reordering',
          sources=['_reordering.c'],
-         include_dirs=[numpy.get_include()])
+         include_dirs=[numpy.get_include()],
+         extra_link_args = ['-lpython2.7'])
 
     config.add_extension('_tools',
          sources=['_tools.c'],
-         include_dirs=[numpy.get_include()])
+         include_dirs=[numpy.get_include()],
+         extra_link_args = ['-lpython2.7'])
 
     return config
