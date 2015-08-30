@@ -15,6 +15,72 @@ import math
 
 __all__ = ['SphericalVoronoi']
 
+def calculate_and_sum_up_inner_sphere_surface_angles_Voronoi_polygon(array_ordered_Voronoi_polygon_vertices,sphere_radius):
+    '''Takes an array of ordered Voronoi polygon vertices (for a single generator) and calculates the sum of the inner angles on the sphere surface. The resulting value is theta in the equation provided here: http://mathworld.wolfram.com/SphericalPolygon.html '''
+    #if sphere_radius != 1.0:
+        #try to deal with non-unit circles by temporarily normalizing the data to radius 1:
+        #spherical_polar_polygon_vertices = convert_cartesian_array_to_spherical_array(array_ordered_Voronoi_polygon_vertices)
+        #spherical_polar_polygon_vertices[...,0] = 1.0
+        #array_ordered_Voronoi_polygon_vertices = convert_spherical_array_to_cartesian_array(spherical_polar_polygon_vertices)
+
+    num_vertices_in_Voronoi_polygon = array_ordered_Voronoi_polygon_vertices.shape[0] #the number of rows == number of vertices in polygon
+
+    #some debugging here -- I'm concerned that some sphere radii are demonstrating faulty projection of coordinates (some have r = 1, while others have r = sphere_radius -- see workflowy for more detailed notes)
+    spherical_polar_polygon_vertices = convert_cartesian_array_to_spherical_array(array_ordered_Voronoi_polygon_vertices)
+    min_vertex_radius = spherical_polar_polygon_vertices[...,0].min()
+    #print 'before array projection check'
+    assert sphere_radius - min_vertex_radius < 0.1, "The minimum projected Voronoi vertex r value should match the sphere_radius of {sphere_radius}, but got {r_min}.".format(sphere_radius=sphere_radius,r_min=min_vertex_radius)
+    #print 'after array projection check'
+
+    #two edges (great circle arcs actually) per vertex are needed to calculate tangent vectors / inner angle at that vertex
+    current_vertex_index = 0
+    list_Voronoi_poygon_angles_radians = []
+    while current_vertex_index < num_vertices_in_Voronoi_polygon:
+        current_vertex_coordinate = array_ordered_Voronoi_polygon_vertices[current_vertex_index]
+        if current_vertex_index == 0:
+            previous_vertex_index = num_vertices_in_Voronoi_polygon - 1
+        else:
+            previous_vertex_index = current_vertex_index - 1
+        if current_vertex_index == num_vertices_in_Voronoi_polygon - 1:
+            next_vertex_index = 0
+        else:
+            next_vertex_index = current_vertex_index + 1
+        #try using the law of cosines to produce the angle at the current vertex (basically using a subtriangle, which is a common strategy anyway)
+        current_vertex = array_ordered_Voronoi_polygon_vertices[current_vertex_index] 
+        previous_vertex = array_ordered_Voronoi_polygon_vertices[previous_vertex_index]
+        next_vertex = array_ordered_Voronoi_polygon_vertices[next_vertex_index] 
+        #produce a,b,c for law of cosines using spherical distance (http://mathworld.wolfram.com/SphericalDistance.html)
+        #old_a = math.acos(numpy.dot(current_vertex,next_vertex))
+        #old_b = math.acos(numpy.dot(next_vertex,previous_vertex))
+        #old_c = math.acos(numpy.dot(previous_vertex,current_vertex))
+        #print 'law of cosines a,b,c:', old_a,old_b,old_c
+        #a = calculate_haversine_distance_between_spherical_points(current_vertex,next_vertex,sphere_radius)
+        #b = calculate_haversine_distance_between_spherical_points(next_vertex,previous_vertex,sphere_radius)
+        #c = calculate_haversine_distance_between_spherical_points(previous_vertex,current_vertex,sphere_radius)
+        a = calculate_Vincenty_distance_between_spherical_points(current_vertex,next_vertex,sphere_radius)
+        b = calculate_Vincenty_distance_between_spherical_points(next_vertex,previous_vertex,sphere_radius)
+        c = calculate_Vincenty_distance_between_spherical_points(previous_vertex,current_vertex,sphere_radius)
+        #print 'law of haversines a,b,c:', a,b,c
+        #print 'Vincenty edge lengths a,b,c:', a,b,c
+        pre_acos_term = (math.cos(b) - math.cos(a)*math.cos(c)) / (math.sin(a)*math.sin(c))
+        if abs(pre_acos_term) > 1.0:
+            print 'angle calc vertex coords (giving acos violation):', [convert_cartesian_array_to_spherical_array(vertex) for vertex in [current_vertex,previous_vertex,next_vertex]]
+            print 'Vincenty edge lengths (giving acos violation) a,b,c:', a,b,c
+            print 'pre_acos_term:', pre_acos_term
+            #break
+        current_vertex_inner_angle_on_sphere_surface = math.acos(pre_acos_term)
+
+        list_Voronoi_poygon_angles_radians.append(current_vertex_inner_angle_on_sphere_surface)
+
+        current_vertex_index += 1
+
+    if abs(pre_acos_term) > 1.0:
+        theta = 0
+    else:
+        theta = np.sum(np.array(list_Voronoi_poygon_angles_radians))
+
+    return theta 
+
 def calculate_haversine_distance_between_spherical_points(cartesian_array_1,cartesian_array_2,sphere_radius):
     '''Calculate the haversine-based distance between two points on the surface of a sphere. Should be more accurate than the arc cosine strategy. See, for example: http://en.wikipedia.org/wiki/Haversine_formula'''
     spherical_array_1 = convert_cartesian_array_to_spherical_array(cartesian_array_1)
