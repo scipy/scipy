@@ -31,6 +31,7 @@ def configuration(parent_package='',top_path=None):
                          sources=['zeros.c'],
                          libraries=['rootfind'],
                          depends=(rootfind_src + rootfind_hdr),
+                         extra_info={'extra_link_args' : ['-lpython2.7']},
                          **numpy_nodepr_api)
 
     lapack = get_info('lapack_opt')
@@ -49,6 +50,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('moduleTNC',
                          sources=[join('tnc',x) for x in sources],
                          depends=[join('tnc','tnc.h')],
+                         extra_info={'extra_link_args' : ['-lpython2.7']},
                          **numpy_nodepr_api)
 
     config.add_extension('_cobyla',

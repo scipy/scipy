@@ -96,9 +96,11 @@ def configuration(parent_package='',top_path=None):
                          depends=ufuncs_cxx_dep,
                          include_dirs=[curdir],
                          define_macros=define_macros,
+                         extra_link_args = ['-lpython2.7'],
                          extra_info=get_info("npymath"))
 
     cfg = dict(get_system_info('lapack_opt'))
+    cfg['extra_link_args'].append('-lpython2.7')
     config.add_extension('_ellip_harm_2',
                          sources=['_ellip_harm_2.c', 'sf_error.c',],
                          **cfg

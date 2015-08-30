@@ -17,7 +17,8 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('csgraph')
 
     config.add_extension('_csparsetools',
-                         sources=['_csparsetools.c'])
+                         sources=['_csparsetools.c'],
+                         extra_link_args = ['-lpython2.7'])
 
     def get_sparsetools_sources(ext, build_dir):
         # Defer generation of source files
@@ -54,7 +55,8 @@ def configuration(parent_package='',top_path=None):
                                   os.path.join('sparsetools', 'csc.cxx'),
                                   os.path.join('sparsetools', 'bsr.cxx'),
                                   os.path.join('sparsetools', 'other.cxx'),
-                                  get_sparsetools_sources]
+                                  get_sparsetools_sources],
+                          extra_link_args = ['-lpython2.7']
                          )
 
     return config

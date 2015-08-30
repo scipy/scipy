@@ -27,6 +27,7 @@ def configuration(parent_package='', top_path=None):
     inc_dirs.append(get_numpy_include_dirs())
 
     cfg = dict(get_info('lapack_opt'))
+    cfg['extra_link_args'].append('-lpython2.7')
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
     cfg.setdefault('define_macros', []).append(('qh_QHpointer','1'))
     config.add_extension('qhull',
@@ -48,11 +49,13 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('ckdtree',
                          sources=[join('ckdtree', 'ckdtree.cxx')] + ckdtree_src,
                          depends=ckdtree_dep,
-                         include_dirs=inc_dirs + [join('ckdtree','src')])
+                         include_dirs=inc_dirs + [join('ckdtree','src')],
+                         extra_link_args = ['-lpython2.7'])
     # _distance_wrap
     config.add_extension('_distance_wrap',
         sources=[join('src', 'distance_wrap.c')],
         depends=[join('src', 'distance_impl.h')],
+        extra_link_args = ['-lpython2.7'],
         include_dirs=[get_numpy_include_dirs()])
 
     return config

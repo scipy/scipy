@@ -47,6 +47,7 @@ def configuration(parent_package='',top_path=None):
                          libraries=['superlu_src'],
                          depends=(sources + headers),
                          extra_info=lapack_opt,
+                         extra_link_args = ['-lpython2.7']
                          )
 
     return config
