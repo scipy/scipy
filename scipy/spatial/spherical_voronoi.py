@@ -15,6 +15,19 @@ import math
 
 __all__ = ['SphericalVoronoi']
 
+def convert_cartesian_array_to_spherical_array(coord_array,angle_measure='radians'):
+    '''Take shape (N,3) cartesian coord_array and return an array of the same shape in spherical polar form (r, theta, phi). Based on StackOverflow response: http://stackoverflow.com/a/4116899
+    use radians for the angles by default, degrees if angle_measure == 'degrees' '''
+    spherical_coord_array = np.zeros(coord_array.shape)
+    xy = coord_array[...,0]**2 + coord_array[...,1]**2
+    spherical_coord_array[...,0] = np.sqrt(xy + coord_array[...,2]**2)
+    spherical_coord_array[...,1] = np.arctan2(coord_array[...,1], coord_array[...,0])
+    spherical_coord_array[...,2] = np.arccos(coord_array[...,2] / spherical_coord_array[...,0])
+    if angle_measure == 'degrees':
+        spherical_coord_array[...,1] = np.degrees(spherical_coord_array[...,1])
+        spherical_coord_array[...,2] = np.degrees(spherical_coord_array[...,2])
+    return spherical_coord_array
+
 def calculate_surface_area_of_a_spherical_Voronoi_polygon(array_ordered_Voronoi_polygon_vertices,sphere_radius):
     '''Calculate the surface area of a polygon on the surface of a sphere. Based on equation provided here: http://mathworld.wolfram.com/LHuiliersTheorem.html
     Decompose into triangles, calculate excess for each'''
