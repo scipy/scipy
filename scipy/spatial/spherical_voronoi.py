@@ -15,6 +15,18 @@ import math
 
 __all__ = ['SphericalVoronoi']
 
+def calculate_haversine_distance_between_spherical_points(cartesian_array_1,cartesian_array_2,sphere_radius):
+    '''Calculate the haversine-based distance between two points on the surface of a sphere. Should be more accurate than the arc cosine strategy. See, for example: http://en.wikipedia.org/wiki/Haversine_formula'''
+    spherical_array_1 = convert_cartesian_array_to_spherical_array(cartesian_array_1)
+    spherical_array_2 = convert_cartesian_array_to_spherical_array(cartesian_array_2)
+    lambda_1 = spherical_array_1[1]
+    lambda_2 = spherical_array_2[1]
+    phi_1 = spherical_array_1[2]
+    phi_2 = spherical_array_2[2]
+    #we rewrite the standard Haversine slightly as long/lat is not the same as spherical coordinates - phi differs by pi/4
+    spherical_distance = 2.0 * sphere_radius * math.asin(math.sqrt( ((1 - math.cos(phi_2-phi_1))/2.) + math.sin(phi_1) * math.sin(phi_2) * ( (1 - math.cos(lambda_2-lambda_1))/2.)  ))
+    return spherical_distance
+
 def calculate_Vincenty_distance_between_spherical_points(cartesian_array_1,cartesian_array_2,sphere_radius):
     '''Apparently, the special case of the Vincenty formula (http://en.wikipedia.org/wiki/Great-circle_distance) may be the most accurate method for calculating great-circle distances.'''
     spherical_array_1 = convert_cartesian_array_to_spherical_array(cartesian_array_1)
