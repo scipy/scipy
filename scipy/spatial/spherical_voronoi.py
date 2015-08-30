@@ -11,6 +11,7 @@ Spherical Voronoi Code
 #
 
 import numpy as np
+import scipy
 import math
 
 __all__ = ['SphericalVoronoi']
