@@ -48,7 +48,7 @@ def calculate_surface_area_of_a_spherical_Voronoi_polygon(array_ordered_Voronoi_
         # this could definitely be written more nicely
         b_point = array_ordered_Voronoi_polygon_vertices[1]
         root_b_dist = calculate_haversine_distance_between_spherical_points(root_point, b_point, 1.0)
-        for i in 1 + numpy.arange(n - 2):
+        for i in 1 + np.arange(n - 2):
             a_point = b_point
             b_point = array_ordered_Voronoi_polygon_vertices[i+1]
             root_a_dist = root_b_dist
@@ -322,13 +322,13 @@ class SphericalVoronoi:
     '''
 
     def __init__(self,points,sphere_radius=None,sphere_center_origin_offset_vector=None):
-        if numpy.all(sphere_center_origin_offset_vector):
+        if np.all(sphere_center_origin_offset_vector):
             self.original_point_array = points - sphere_center_origin_offset_vector #translate generator data such that sphere center is at origin
         else:
             self.original_point_array = points
-        self.sphere_centroid = numpy.zeros((3,)) #already at origin, or has been moved to origin
+        self.sphere_centroid = np.zeros((3,)) #already at origin, or has been moved to origin
         if not sphere_radius:
-            self.estimated_sphere_radius = numpy.average(scipy.spatial.distance.cdist(self.original_point_array,self.sphere_centroid[numpy.newaxis,:]))
+            self.estimated_sphere_radius = np.average(scipy.spatial.distance.cdist(self.original_point_array,self.sphere_centroid[np.newaxis,:]))
         else: 
             self.estimated_sphere_radius = sphere_radius #if the radius of the sphere is known, it is pobably best to specify to avoid centroid bias in radius estimation, etc.
 
@@ -345,18 +345,18 @@ class SphericalVoronoi:
         tri = scipy.spatial.ConvexHull(self.original_point_array) #using ConvexHull is much faster in scipy (vs. Delaunay), but here we only get the triangles on the sphere surface in the simplices object (no longer adding an extra point at the origin at this stage)
         #add the origin to each of the simplices to get the same tetrahedra we'd have gotten from Delaunay tetrahedralization
         simplex_coords = tri.points[tri.simplices] #triangles on surface surface
-        simplex_coords = numpy.insert(simplex_coords, 3, numpy.zeros((1,3)), axis = 1)
+        simplex_coords = np.insert(simplex_coords, 3, np.zeros((1,3)), axis = 1)
         #step 3: produce circumspheres / circumcenters of tetrahedra from 3D Delaunay
         array_circumcenter_coords = circumcircle.calc_circumcenter_circumsphere_tetrahedron_vectorized(simplex_coords)
         #step 4: project tetrahedron circumcenters up to the surface of the sphere, to produce the Voronoi vertices
-        array_vector_lengths = scipy.spatial.distance.cdist(array_circumcenter_coords, numpy.zeros((1,3)))
-        array_Voronoi_vertices = (self.estimated_sphere_radius / numpy.abs(array_vector_lengths)) * array_circumcenter_coords
+        array_vector_lengths = scipy.spatial.distance.cdist(array_circumcenter_coords, np.zeros((1,3)))
+        array_Voronoi_vertices = (self.estimated_sphere_radius / np.abs(array_vector_lengths)) * array_circumcenter_coords
         #step 5: use the Delaunay tetrahedralization neighbour information to connect the Voronoi vertices around the generators, to produce the Voronoi regions
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
         array_tetrahedra = simplex_coords
         generator_index = 0
-        generator_index_array = numpy.arange(self.original_point_array.shape[0])
-        filter_tuple = numpy.where((numpy.expand_dims(tri.simplices, -1) == generator_index_array).any(axis=1))
+        generator_index_array = np.arange(self.original_point_array.shape[0])
+        filter_tuple = np.where((np.expand_dims(tri.simplices, -1) == generator_index_array).any(axis=1))
         df = pandas.DataFrame({'generator_indices' : filter_tuple[1]}, index = filter_tuple[0])
         gb = df.groupby('generator_indices')
         dictionary_generators_and_triangle_indices_containing_those_generators = gb.groups
@@ -367,7 +367,7 @@ class SphericalVoronoi:
             first_tetrahedron = array_tetrahedra[first_tetrahedron_index]
             first_triangle = first_tetrahedron[:-1,...]
             #pick one of the two non-generator vertices in the first triangle
-            indices_non_generator_vertices_first_triangle = numpy.unique(numpy.where(first_triangle != generator)[0])
+            indices_non_generator_vertices_first_triangle = np.unique(np.where(first_triangle != generator)[0])
             ordered_list_tetrahedron_indices_surrounding_current_generator = [first_tetrahedron_index] 
             #determine the appropriate ordering of Voronoi vertices to close the Voronoi region (polygon) by traversing the Delaunay neighbour data structure from scipy
             vertices_remaining = len(indices_of_triangles_surrounding_generator) - 1
@@ -384,9 +384,9 @@ class SphericalVoronoi:
                 current_tetrahedron_index = ordered_list_tetrahedron_indices_surrounding_current_generator[-1]
                 current_tetrahedron_coord_array = array_tetrahedra[current_tetrahedron_index]
                 current_triangle_coord_array = current_tetrahedron_coord_array[:-1,...]
-                indices_candidate_vertices_current_triangle_excluding_generator = numpy.unique(numpy.where(current_triangle_coord_array != generator)[0])
+                indices_candidate_vertices_current_triangle_excluding_generator = np.unique(np.where(current_triangle_coord_array != generator)[0])
                 array_candidate_vertices = current_triangle_coord_array[indices_candidate_vertices_current_triangle_excluding_generator]
-                current_tetrahedron_index_for_neighbour_propagation = numpy.unique(numpy.where(current_tetrahedron_coord_array == common_vertex_coordinate)[0])
+                current_tetrahedron_index_for_neighbour_propagation = np.unique(np.where(current_tetrahedron_coord_array == common_vertex_coordinate)[0])
                 next_tetrahedron_index_surrounding_generator = tri.neighbors[current_tetrahedron_index][current_tetrahedron_index_for_neighbour_propagation][0]
                 common_vertex_coordinate = array_candidate_vertices[array_candidate_vertices != common_vertex_coordinate] #for the next iteration
                 ordered_list_tetrahedron_indices_surrounding_current_generator.append(next_tetrahedron_index_surrounding_generator)
