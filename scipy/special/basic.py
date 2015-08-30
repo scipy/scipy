@@ -68,8 +68,8 @@ def diric(x, n):
     >>> import matplotlib.pyplot as plt
 
     >>> x = np.linspace(-8*np.pi, 8*np.pi, num=201)
-    >>> plt.figure(figsize=(8,8))
-    >>> for idx, n in enumerate([2,3,4,9]):
+    >>> plt.figure(figsize=(8, 8));
+    >>> for idx, n in enumerate([2, 3, 4, 9]):
     ...     plt.subplot(2, 2, idx+1)
     ...     plt.plot(x, special.diric(x, n))
     ...     plt.title('diric, n={}'.format(n))
@@ -405,8 +405,8 @@ def y1p_zeros(nt, complex=False):
 
 def _bessel_diff_formula(v, z, n, L, phase):
     # from AMS55.
-    # L(v,z) = J(v,z), Y(v,z), H1(v,z), H2(v,z), phase = -1
-    # L(v,z) = I(v,z) or exp(v*pi*i)K(v,z), phase = 1
+    # L(v, z) = J(v, z), Y(v, z), H1(v, z), H2(v, z), phase = -1
+    # L(v, z) = I(v, z) or exp(v*pi*i)K(v, z), phase = 1
     # For K, you can pull out the exp((v-k)*pi*i) into the caller
     p = 1.0
     s = L(v-n, z)
@@ -1011,7 +1011,7 @@ def hyp0f1(v, z):
     -----
     This function is defined as:
 
-    .. math:: _0F_1(v,z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
+    .. math:: _0F_1(v, z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
 
     It's also the limit as q -> infinity of ``1F1(q;v;z/q)``, and satisfies
     the differential equation :math:`f''(z) + vf'(z) = f(z)`.
@@ -1958,11 +1958,11 @@ def agm(a, b):
     a_{n+1} = (a_n+b_n)/2
     b_{n+1} = sqrt(a_n*b_n)
 
-    until a_n=b_n.   The result is agm(a,b)
+    until a_n=b_n.   The result is agm(a, b)
 
-    agm(a,b)=agm(b,a)
-    agm(a,a) = a
-    min(a,b) < agm(a,b) < max(a,b)
+    agm(a, b)=agm(b, a)
+    agm(a, a) = a
+    min(a, b) < agm(a, b) < max(a, b)
     """
     s = a + b + 0.0
     return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)
@@ -2112,7 +2112,7 @@ def factorial(n, exact=False):
     Examples
     --------
     >>> from scipy.special import factorial
-    >>> arr = np.array([3,4,5])
+    >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
     array([   6.,   24.,  120.])
     >>> factorial(5, exact=True)
