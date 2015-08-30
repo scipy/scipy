@@ -129,7 +129,7 @@ add_newdoc("scipy.special", "bdtr",
 
     ::
 
-        y = sum(nCj p**j (1-p)**(n-j),j=0..k)
+        y = sum(nCj p**j (1-p)**(n-j), j=0..k)
 
     Parameters
     ----------
@@ -269,7 +269,7 @@ add_newdoc("scipy.special", "beta",
 
     ::
 
-        beta(a,b) =  gamma(a) * gamma(b) / gamma(a+b)
+        beta(a, b) =  gamma(a) * gamma(b) / gamma(a+b)
     """)
 
 add_newdoc("scipy.special", "betainc",
@@ -298,7 +298,7 @@ add_newdoc("scipy.special", "betaincinv",
 
     Inverse function to beta integral.
 
-    Compute x such that betainc(a,b,x) = y.
+    Compute x such that betainc(a, b, x) = y.
     """)
 
 add_newdoc("scipy.special", "betaln",
@@ -464,7 +464,7 @@ add_newdoc("scipy.special", "inv_boxcox1p",
 
 add_newdoc("scipy.special", "btdtr",
     """
-    btdtr(a,b,x)
+    btdtr(a, b, x)
 
     Cumulative beta distribution.
 
@@ -479,12 +479,12 @@ add_newdoc("scipy.special", "btdtr",
 
 add_newdoc("scipy.special", "btdtri",
     """
-    btdtri(a,b,p)
+    btdtri(a, b, p)
 
     p-th quantile of the beta distribution.
 
     This is effectively the inverse of btdtr returning the value of x for which
-    ``btdtr(a,b,x) = p``
+    ``btdtr(a, b, x) = p``
 
     See Also
     --------
@@ -512,7 +512,7 @@ add_newdoc("scipy.special", "chdtr",
 
 add_newdoc("scipy.special", "chdtrc",
     """
-    chdtrc(v,x)
+    chdtrc(v, x)
 
     Chi square survival function
 
@@ -525,11 +525,11 @@ add_newdoc("scipy.special", "chdtrc",
 
 add_newdoc("scipy.special", "chdtri",
     """
-    chdtri(v,p)
+    chdtri(v, p)
 
     Inverse to chdtrc
 
-    Returns the argument x such that ``chdtrc(v,x) == p``.
+    Returns the argument x such that ``chdtrc(v, x) == p``.
     """)
 
 add_newdoc("scipy.special", "chdtriv",
@@ -599,7 +599,7 @@ add_newdoc("scipy.special", "dawsn",
 
     Computes::
 
-        exp(-x**2) * integral(exp(t**2),t=0..x).
+        exp(-x**2) * integral(exp(t**2), t=0..x).
 
     References
     ----------
@@ -992,7 +992,7 @@ add_newdoc("scipy.special", "exp1",
 
     ::
 
-        integral(exp(-z*t)/t,t=1..inf).
+        integral(exp(-z*t)/t, t=1..inf).
     """)
 
 add_newdoc("scipy.special", "exp10",
@@ -1017,7 +1017,7 @@ add_newdoc("scipy.special", "expi",
 
     Defined as::
 
-        integral(exp(t)/t,t=-inf..x)
+        integral(exp(t)/t, t=-inf..x)
 
     See `expn` for a different exponential integral.
     """)
@@ -1130,7 +1130,7 @@ add_newdoc("scipy.special", "fdtridfd",
 
     Inverse to fdtr vs dfd
 
-    Finds the F density argument dfd such that ``fdtr(dfn,dfd,x) == p``.
+    Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
     """)
 
 add_newdoc("scipy.special", "fdtridfn",
@@ -1139,7 +1139,7 @@ add_newdoc("scipy.special", "fdtridfn",
 
     Inverse to fdtr vs dfn
 
-    finds the F density argument dfn such that ``fdtr(dfn,dfd,x) == p``.
+    finds the F density argument dfn such that ``fdtr(dfn, dfd, x) == p``.
     """)
 
 add_newdoc("scipy.special", "fresnel",
@@ -1150,8 +1150,8 @@ add_newdoc("scipy.special", "fresnel",
 
     Defined as::
 
-        ssa = integral(sin(pi/2 * t**2),t=0..z)
-        csa = integral(cos(pi/2 * t**2),t=0..z)
+        ssa = integral(sin(pi/2 * t**2), t=0..z)
+        csa = integral(cos(pi/2 * t**2), t=0..z)
 
     Parameters
     ----------
@@ -1191,24 +1191,24 @@ add_newdoc("scipy.special", "gammainc",
 
 add_newdoc("scipy.special", "gammaincc",
     """
-    gammaincc(a,x)
+    gammaincc(a, x)
 
     Complemented incomplete gamma integral
 
     Defined as::
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a,x)
+        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a, x)
 
     `a` must be positive and `x` must be >= 0.
     """)
 
 add_newdoc("scipy.special", "gammainccinv",
     """
-    gammainccinv(a,y)
+    gammainccinv(a, y)
 
     Inverse to gammaincc
 
-    Returns `x` such that ``gammaincc(a,x) == y``.
+    Returns `x` such that ``gammaincc(a, x) == y``.
     """)
 
 add_newdoc("scipy.special", "gammaincinv",
@@ -1248,14 +1248,14 @@ add_newdoc("scipy.special", "gammasgn",
 
 add_newdoc("scipy.special", "gdtr",
     """
-    gdtr(a,b,x)
+    gdtr(a, b, x)
 
     Gamma distribution cumulative density function.
 
     Returns the integral from zero to x of the gamma probability
     density function::
 
-        a**b / gamma(b) * integral(t**(b-1) exp(-at),t=0..x).
+        a**b / gamma(b) * integral(t**(b-1) exp(-at), t=0..x).
 
     The arguments a and b are used differently here than in other
     definitions.
@@ -1263,7 +1263,7 @@ add_newdoc("scipy.special", "gdtr",
 
 add_newdoc("scipy.special", "gdtrc",
     """
-    gdtrc(a,b,x)
+    gdtrc(a, b, x)
 
     Gamma distribution survival function.
 
@@ -1452,7 +1452,7 @@ add_newdoc("scipy.special", "hankel1e",
 
     Defined as::
 
-        hankel1e(v,z) = hankel1(v,z) * exp(-1j * z)
+        hankel1e(v, z) = hankel1(v, z) * exp(-1j * z)
 
     Parameters
     ----------
@@ -1485,7 +1485,7 @@ add_newdoc("scipy.special", "hankel2e",
 
     Defined as::
 
-        hankel1e(v,z) = hankel1(v,z) * exp(1j * z)
+        hankel1e(v, z) = hankel1(v, z) * exp(1j * z)
 
     Parameters
     ----------
@@ -1636,7 +1636,7 @@ add_newdoc("scipy.special", "it2i0k0",
     ii0
         ``integral((i0(t)-1)/t, t=0..x)``
     ik0
-        ``int(k0(t)/t,t=x..inf)``
+        ``int(k0(t)/t, t=x..inf)``
     """)
 
 add_newdoc("scipy.special", "it2j0y0",
@@ -1736,7 +1736,7 @@ add_newdoc("scipy.special", "itstruve0",
 
 add_newdoc("scipy.special", "iv",
     """
-    iv(v,z)
+    iv(v, z)
 
     Modified Bessel function of the first kind  of real order
 
@@ -1751,13 +1751,13 @@ add_newdoc("scipy.special", "iv",
 
 add_newdoc("scipy.special", "ive",
     """
-    ive(v,z)
+    ive(v, z)
 
     Exponentially scaled modified Bessel function of the first kind
 
     Defined as::
 
-        ive(v,z) = iv(v,z) * exp(-abs(z.real))
+        ive(v, z) = iv(v, z) * exp(-abs(z.real))
     """)
 
 add_newdoc("scipy.special", "j0",
@@ -1801,7 +1801,7 @@ add_newdoc("scipy.special", "jve",
 
     Defined as::
 
-        jve(v,z) = jv(v,z) * exp(-abs(z.imag))
+        jve(v, z) = jv(v, z) * exp(-abs(z.imag))
     """)
 
 add_newdoc("scipy.special", "k0",
@@ -1952,7 +1952,7 @@ add_newdoc("scipy.special", "kolmogorov",
 
 add_newdoc("scipy.special", "kv",
     """
-    kv(v,z)
+    kv(v, z)
 
     Modified Bessel function of the second kind of real order v
 
@@ -1962,7 +1962,7 @@ add_newdoc("scipy.special", "kv",
 
 add_newdoc("scipy.special", "kve",
     """
-    kve(v,z)
+    kve(v, z)
 
     Exponentially scaled modified Bessel function of the second kind.
 
@@ -1970,7 +1970,7 @@ add_newdoc("scipy.special", "kve",
     second kind (sometimes called the third kind) for real order v at
     complex z::
 
-        kve(v,z) = kv(v,z) * exp(z)
+        kve(v, z) = kv(v, z) * exp(z)
     """)
 
 add_newdoc("scipy.special", "log1p",
@@ -2030,33 +2030,33 @@ add_newdoc("scipy.special", "lpmv",
 
 add_newdoc("scipy.special", "mathieu_a",
     """
-    mathieu_a(m,q)
+    mathieu_a(m, q)
 
     Characteristic value of even Mathieu functions
 
     Returns the characteristic value for the even solution,
-    ``ce_m(z,q)``, of Mathieu's equation.
+    ``ce_m(z, q)``, of Mathieu's equation.
     """)
 
 add_newdoc("scipy.special", "mathieu_b",
     """
-    mathieu_b(m,q)
+    mathieu_b(m, q)
 
     Characteristic value of odd Mathieu functions
 
     Returns the characteristic value for the odd solution,
-    ``se_m(z,q)``, of Mathieu's equation.
+    ``se_m(z, q)``, of Mathieu's equation.
     """)
 
 add_newdoc("scipy.special", "mathieu_cem",
     """
-    mathieu_cem(m,q,x)
+    mathieu_cem(m, q, x)
 
     Even Mathieu function and its derivative
 
-    Returns the even Mathieu function, ``ce_m(x,q)``, of order m and
+    Returns the even Mathieu function, ``ce_m(x, q)``, of order m and
     parameter q evaluated at x (given in degrees).  Also returns the
-    derivative with respect to x of ce_m(x,q)
+    derivative with respect to x of ce_m(x, q)
 
     Parameters
     ----------
@@ -2082,7 +2082,7 @@ add_newdoc("scipy.special", "mathieu_modcem1",
     Even modified Mathieu function of the first kind and its derivative
 
     Evaluates the even modified Mathieu function of the first kind,
-    ``Mc1m(x,q)``, and its derivative at `x` for order m and parameter
+    ``Mc1m(x, q)``, and its derivative at `x` for order m and parameter
     `q`.
 
     Returns
@@ -2100,7 +2100,7 @@ add_newdoc("scipy.special", "mathieu_modcem2",
     Even modified Mathieu function of the second kind and its derivative
 
     Evaluates the even modified Mathieu function of the second kind,
-    Mc2m(x,q), and its derivative at x (given in degrees) for order m
+    Mc2m(x, q), and its derivative at x (given in degrees) for order m
     and parameter q.
 
     Returns
@@ -2113,12 +2113,12 @@ add_newdoc("scipy.special", "mathieu_modcem2",
 
 add_newdoc("scipy.special", "mathieu_modsem1",
     """
-    mathieu_modsem1(m,q,x)
+    mathieu_modsem1(m, q, x)
 
     Odd modified Mathieu function of the first kind and its derivative
 
     Evaluates the odd modified Mathieu function of the first kind,
-    Ms1m(x,q), and its derivative at x (given in degrees) for order m
+    Ms1m(x, q), and its derivative at x (given in degrees) for order m
     and parameter q.
 
     Returns
@@ -2136,7 +2136,7 @@ add_newdoc("scipy.special", "mathieu_modsem2",
     Odd modified Mathieu function of the second kind and its derivative
 
     Evaluates the odd modified Mathieu function of the second kind,
-    Ms2m(x,q), and its derivative at x (given in degrees) for order m
+    Ms2m(x, q), and its derivative at x (given in degrees) for order m
     and parameter q.
 
     Returns
@@ -2153,9 +2153,9 @@ add_newdoc("scipy.special", "mathieu_sem",
 
     Odd Mathieu function and its derivative
 
-    Returns the odd Mathieu function, se_m(x,q), of order m and
+    Returns the odd Mathieu function, se_m(x, q), of order m and
     parameter q evaluated at x (given in degrees).  Also returns the
-    derivative with respect to x of se_m(x,q).
+    derivative with respect to x of se_m(x, q).
 
     Parameters
     ----------
@@ -2183,7 +2183,7 @@ add_newdoc("scipy.special", "modfresnelm",
     Returns
     -------
     fm
-        Integral ``F_-(x)``: ``integral(exp(-1j*t*t),t=x..inf)``
+        Integral ``F_-(x)``: ``integral(exp(-1j*t*t), t=x..inf)``
     km
         Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
     """)
@@ -2197,7 +2197,7 @@ add_newdoc("scipy.special", "modfresnelp",
     Returns
     -------
     fp
-        Integral ``F_+(x)``: ``integral(exp(1j*t*t),t=x..inf)``
+        Integral ``F_+(x)``: ``integral(exp(1j*t*t), t=x..inf)``
     kp
         Integral ``K_+(x)``: ``1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp``
     """)
@@ -2221,7 +2221,7 @@ add_newdoc("scipy.special", "nbdtr",
     Returns the sum of the terms 0 through k of the negative binomial
     distribution::
 
-        sum((n+j-1)Cj p**n (1-p)**j,j=0..k).
+        sum((n+j-1)Cj p**n (1-p)**j, j=0..k).
 
     In a sequence of Bernoulli trials this is the probability that k
     or fewer failures precede the nth success.
@@ -2229,7 +2229,7 @@ add_newdoc("scipy.special", "nbdtr",
 
 add_newdoc("scipy.special", "nbdtrc",
     """
-    nbdtrc(k,n,p)
+    nbdtrc(k, n, p)
 
     Negative binomial survival function
 
@@ -2243,25 +2243,25 @@ add_newdoc("scipy.special", "nbdtri",
 
     Inverse of nbdtr vs p
 
-    Finds the argument p such that ``nbdtr(k,n,p) = y``.
+    Finds the argument p such that ``nbdtr(k, n, p) = y``.
     """)
 
 add_newdoc("scipy.special", "nbdtrik",
     """
-    nbdtrik(y,n,p)
+    nbdtrik(y, n, p)
 
     Inverse of nbdtr vs k
 
-    Finds the argument k such that ``nbdtr(k,n,p) = y``.
+    Finds the argument k such that ``nbdtr(k, n, p) = y``.
     """)
 
 add_newdoc("scipy.special", "nbdtrin",
     """
-    nbdtrin(k,y,p)
+    nbdtrin(k, y, p)
 
     Inverse of nbdtr vs n
 
-    Finds the argument n such that ``nbdtr(k,n,p) = y``.
+    Finds the argument n such that ``nbdtr(k, n, p) = y``.
     """)
 
 add_newdoc("scipy.special", "ncfdtr",
@@ -2472,7 +2472,7 @@ add_newdoc("scipy.special", "ndtr",
     Returns the area under the standard Gaussian probability
     density function, integrated from minus infinity to x::
 
-        1/sqrt(2*pi) * integral(exp(-t**2 / 2),t=-inf..x)
+        1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x)
 
     """)
 
@@ -2595,12 +2595,12 @@ add_newdoc("scipy.special", "obl_cv",
     Characteristic value of oblate spheroidal function
 
     Computes the characteristic value of oblate spheroidal wave
-    functions of order m,n (n>=m) and spheroidal parameter c.
+    functions of order m, n (n>=m) and spheroidal parameter c.
     """)
 
 add_newdoc("scipy.special", "obl_rad1",
     """
-    obl_rad1(m,n,c,x)
+    obl_rad1(m, n, c, x)
 
     Oblate spheroidal radial function of the first kind and its derivative
 
@@ -2618,7 +2618,7 @@ add_newdoc("scipy.special", "obl_rad1",
 
 add_newdoc("scipy.special", "obl_rad1_cv",
     """
-    obl_rad1_cv(m,n,c,cv,x)
+    obl_rad1_cv(m, n, c, cv, x)
 
     Oblate spheroidal radial function obl_rad1 for precomputed characteristic value
 
@@ -2637,7 +2637,7 @@ add_newdoc("scipy.special", "obl_rad1_cv",
 
 add_newdoc("scipy.special", "obl_rad2",
     """
-    obl_rad2(m,n,c,x)
+    obl_rad2(m, n, c, x)
 
     Oblate spheroidal radial function of the second kind and its derivative.
 
@@ -2655,7 +2655,7 @@ add_newdoc("scipy.special", "obl_rad2",
 
 add_newdoc("scipy.special", "obl_rad2_cv",
     """
-    obl_rad2_cv(m,n,c,cv,x)
+    obl_rad2_cv(m, n, c, cv, x)
 
     Oblate spheroidal radial function obl_rad2 for precomputed characteristic value
 
@@ -2678,7 +2678,7 @@ add_newdoc("scipy.special", "pbdv",
 
     Parabolic cylinder function D
 
-    Returns (d,dp) the parabolic cylinder function Dv(x) in d and the
+    Returns (d, dp) the parabolic cylinder function Dv(x) in d and the
     derivative, Dv'(x) in dp.
 
     Returns
@@ -2691,7 +2691,7 @@ add_newdoc("scipy.special", "pbdv",
 
 add_newdoc("scipy.special", "pbvv",
     """
-    pbvv(v,x)
+    pbvv(v, x)
 
     Parabolic cylinder function V
 
@@ -2708,12 +2708,12 @@ add_newdoc("scipy.special", "pbvv",
 
 add_newdoc("scipy.special", "pbwa",
     """
-    pbwa(a,x)
+    pbwa(a, x)
 
     Parabolic cylinder function W
 
-    Returns the parabolic cylinder function W(a,x) in w and the
-    derivative, W'(a,x) in wp.
+    Returns the parabolic cylinder function W(a, x) in w and the
+    derivative, W'(a, x) in wp.
 
     .. warning::
 
@@ -2751,7 +2751,7 @@ add_newdoc("scipy.special", "pdtrc",
 
 add_newdoc("scipy.special", "pdtri",
     """
-    pdtri(k,y)
+    pdtri(k, y)
 
     Inverse to pdtr vs m
 
@@ -2763,7 +2763,7 @@ add_newdoc("scipy.special", "pdtri",
 
 add_newdoc("scipy.special", "pdtrik",
     """
-    pdtrik(p,m)
+    pdtrik(p, m)
 
     Inverse to pdtr vs k
 
@@ -2787,7 +2787,7 @@ add_newdoc("scipy.special", "poch",
 
 add_newdoc("scipy.special", "pro_ang1",
     """
-    pro_ang1(m,n,c,x)
+    pro_ang1(m, n, c, x)
 
     Prolate spheroidal angular function of the first kind and its derivative
 
@@ -2805,7 +2805,7 @@ add_newdoc("scipy.special", "pro_ang1",
 
 add_newdoc("scipy.special", "pro_ang1_cv",
     """
-    pro_ang1_cv(m,n,c,cv,x)
+    pro_ang1_cv(m, n, c, cv, x)
 
     Prolate spheroidal angular function pro_ang1 for precomputed characteristic value
 
@@ -2824,17 +2824,17 @@ add_newdoc("scipy.special", "pro_ang1_cv",
 
 add_newdoc("scipy.special", "pro_cv",
     """
-    pro_cv(m,n,c)
+    pro_cv(m, n, c)
 
     Characteristic value of prolate spheroidal function
 
     Computes the characteristic value of prolate spheroidal wave
-    functions of order m,n (n>=m) and spheroidal parameter c.
+    functions of order m, n (n>=m) and spheroidal parameter c.
     """)
 
 add_newdoc("scipy.special", "pro_rad1",
     """
-    pro_rad1(m,n,c,x)
+    pro_rad1(m, n, c, x)
 
     Prolate spheroidal radial function of the first kind and its derivative
 
@@ -2852,7 +2852,7 @@ add_newdoc("scipy.special", "pro_rad1",
 
 add_newdoc("scipy.special", "pro_rad1_cv",
     """
-    pro_rad1_cv(m,n,c,cv,x)
+    pro_rad1_cv(m, n, c, cv, x)
 
     Prolate spheroidal radial function pro_rad1 for precomputed characteristic value
 
@@ -2871,7 +2871,7 @@ add_newdoc("scipy.special", "pro_rad1_cv",
 
 add_newdoc("scipy.special", "pro_rad2",
     """
-    pro_rad2(m,n,c,x)
+    pro_rad2(m, n, c, x)
 
     Prolate spheroidal radial function of the secon kind and its derivative
 
@@ -2889,7 +2889,7 @@ add_newdoc("scipy.special", "pro_rad2",
 
 add_newdoc("scipy.special", "pro_rad2_cv",
     """
-    pro_rad2_cv(m,n,c,cv,x)
+    pro_rad2_cv(m, n, c, cv, x)
 
     Prolate spheroidal radial function pro_rad2 for precomputed characteristic value
 
@@ -3074,12 +3074,12 @@ add_newdoc("scipy.special", "spence",
 
     Returns the dilogarithm integral::
 
-        -integral(log t / (t-1),t=1..x)
+        -integral(log t / (t-1), t=1..x)
     """)
 
 add_newdoc("scipy.special", "stdtr",
     """
-    stdtr(df,t)
+    stdtr(df, t)
 
     Student t distribution cumulative density function
 
@@ -3093,25 +3093,25 @@ add_newdoc("scipy.special", "stdtr",
 
 add_newdoc("scipy.special", "stdtridf",
     """
-    stdtridf(p,t)
+    stdtridf(p, t)
 
     Inverse of stdtr vs df
 
-    Returns the argument df such that stdtr(df,t) is equal to p.
+    Returns the argument df such that stdtr(df, t) is equal to p.
     """)
 
 add_newdoc("scipy.special", "stdtrit",
     """
-    stdtrit(df,p)
+    stdtrit(df, p)
 
     Inverse of stdtr vs t
 
-    Returns the argument t such that stdtr(df,t) is equal to p.
+    Returns the argument t such that stdtr(df, t) is equal to p.
     """)
 
 add_newdoc("scipy.special", "struve",
     """
-    struve(v,x)
+    struve(v, x)
 
     Struve function
 
@@ -3220,7 +3220,7 @@ add_newdoc("scipy.special", "y1",
 
 add_newdoc("scipy.special", "yn",
     """
-    yn(n,x)
+    yn(n, x)
 
     Bessel function of the second kind of integer order
 
@@ -3230,7 +3230,7 @@ add_newdoc("scipy.special", "yn",
 
 add_newdoc("scipy.special", "yv",
     """
-    yv(v,z)
+    yv(v, z)
 
     Bessel function of the second kind of real order
 
@@ -3240,14 +3240,14 @@ add_newdoc("scipy.special", "yv",
 
 add_newdoc("scipy.special", "yve",
     """
-    yve(v,z)
+    yve(v, z)
 
     Exponentially scaled Bessel function of the second kind of real order
 
     Returns the exponentially scaled Bessel function of the second
     kind of real order v at complex z::
 
-        yve(v,z) = yv(v,z) * exp(-abs(z.imag))
+        yve(v, z) = yv(v, z) * exp(-abs(z.imag))
 
     """)
 
