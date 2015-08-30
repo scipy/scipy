@@ -58,8 +58,8 @@ class Test_delaunay_triangulation_on_sphere_surface(TestCase):
         expected_approximate_increase_in_num_triangulation_facets = increase_in_number_data_set_points ** (dimensions / 2.0)
         print 'expected_approximate_increase_in_num_triangulation_facets:', expected_approximate_increase_in_num_triangulation_facets
 
-        voronoi_instance_small = spherical_voronoi.Voronoi_Sphere_Surface(self.simple_sphere_coordinate_array)
-        voronoi_instance_large = spherical_voronoi.Voronoi_Sphere_Surface(self.simple_sphere_coordinate_array_LARGE)
+        voronoi_instance_small = spherical_voronoi.SphericalVoronoi(self.simple_sphere_coordinate_array)
+        voronoi_instance_large = spherical_voronoi.SphericalVoronoi(self.simple_sphere_coordinate_array_LARGE)
         actual_Delaunay_point_array_small = voronoi_instance_small.Delaunay_triangulation_spherical_surface()
         actual_Delaunay_point_array_large = voronoi_instance_large.Delaunay_triangulation_spherical_surface()
         actual_increase_in_num_triangulation_facets = actual_Delaunay_point_array_large.shape[0] - actual_Delaunay_point_array_small.shape[0]
@@ -74,7 +74,7 @@ class Test_delaunay_triangulation_on_sphere_surface(TestCase):
         #create a networkx graph object of the Delaunay triangulation vertices & edges
 
         
-        voronoi_instance_small = spherical_voronoi.Voronoi_Sphere_Surface(self.simple_sphere_coordinate_array)
+        voronoi_instance_small = spherical_voronoi.SphericalVoronoi(self.simple_sphere_coordinate_array)
         Delaunay_point_array_small = voronoi_instance_small.delaunay_triangulation_spherical_surface() #should be shape (N,3,3) for N triangles and their vertices in 3D space
 
         node_dictionary = {}
@@ -208,7 +208,7 @@ class Test_voronoi_surface_area_calculations(TestCase):
 
     def test_spherical_voronoi_surface_area_reconstitution(self):
         '''Given a pseudo-random set of points on the unit sphere, the sum of the surface areas of the Voronoi polygons should be equal to the surface area of the sphere itself.'''
-        random_dist_voronoi_instance = spherical_voronoi.Voronoi_Sphere_Surface(self.cartesian_coord_array,1.0)
+        random_dist_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.cartesian_coord_array,1.0)
         dictionary_Voronoi_region_surface_areas_for_each_generator = random_dist_voronoi_instance.voronoi_region_surface_areas_spherical_surface()
         sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.itervalues())
         percent_reconstituted_surface_area = sum_Voronoi_polygon_surface_areas / self.unit_sphere_surface_area * 100.
@@ -218,7 +218,7 @@ class Test_voronoi_surface_area_calculations(TestCase):
     def test_spherical_voronoi_surface_area_reconstitution_non_origin(self):
         '''Given a pseudo-random set of points on the unit sphere, the sum of the surface areas of the Voronoi polygons should be equal to the surface area of the sphere itself.
         Introduces additional complication of not having its center point at the origin.'''
-        random_dist_voronoi_instance = spherical_voronoi.Voronoi_Sphere_Surface(self.cartesian_coord_array + 3.0,1.0,np.array([3.0,3.0,3.0])) # +3 translation to all Cartesian coords [amazingly, this seems to fail is I use a value of 4.0, but 3.0 is fine --floating-point sensitivity somewhere?!]
+        random_dist_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.cartesian_coord_array + 3.0,1.0,np.array([3.0,3.0,3.0])) # +3 translation to all Cartesian coords [amazingly, this seems to fail is I use a value of 4.0, but 3.0 is fine --floating-point sensitivity somewhere?!]
         dictionary_Voronoi_region_surface_areas_for_each_generator = random_dist_voronoi_instance.voronoi_region_surface_areas_spherical_surface()
         sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.itervalues())
         percent_reconstituted_surface_area = sum_Voronoi_polygon_surface_areas / self.unit_sphere_surface_area * 100.
@@ -227,7 +227,7 @@ class Test_voronoi_surface_area_calculations(TestCase):
 
     def test_spherical_voronoi_surface_area_reconstitution_large_radius(self):
         '''Given a pseudo-random set of points on a sphere, the sum of the surface areas of the Voronoi polygons should be equal to the surface area of the sphere itself. Using a much larger radius (self.large_sphere_radius) than the standard unit sphere in this test.'''
-        random_dist_voronoi_instance = spherical_voronoi.Voronoi_Sphere_Surface(self.cartesian_coord_array_large_radius,self.large_sphere_radius)
+        random_dist_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.cartesian_coord_array_large_radius,self.large_sphere_radius)
         dictionary_Voronoi_region_surface_areas_for_each_generator = random_dist_voronoi_instance.voronoi_region_surface_areas_spherical_surface()
         sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.itervalues())
         percent_reconstituted_surface_area = sum_Voronoi_polygon_surface_areas / (math.pi * 4.0 * (self.large_sphere_radius ** 2)) * 100.
@@ -358,7 +358,7 @@ class Test_Spherical_Voronoi_Diagram_Properties(TestCase):
         '''My empirical testing suggests that there is a maximum of 2n - 4 Voronoi vertices allowed on the surface of the sphere (where n is the number of generators), although ideally we'd like to see a formal proof for this. This maximum is one greater than the maximum allowed for the planar case, 2n - 5, as proven formally in Theorem 4.12 in Discrete and Computational Geometry (Devadoss and O'Rourke, 2011).'''
         max_allowed_spherical_Voronoi_vertices = (2 * self.num_generators) - 4
         #loop through and identify the actual number of unique Voronoi vertices produced by the algorithm in this code
-        spherical_voronoi_instance = spherical_voronoi.Voronoi_Sphere_Surface(self.random_spherical_coord_array, self.test_sphere_radius)
+        spherical_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.random_spherical_coord_array, self.test_sphere_radius)
         dictionary_voronoi_regions = spherical_voronoi_instance.voronoi_region_vertices_spherical_surface()
         list_voronoi_vertices = []
         for generator_index, voronoi_vertex_array in dictionary_voronoi_regions.iteritems():
