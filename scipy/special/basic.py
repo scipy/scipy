@@ -311,7 +311,7 @@ def ynp_zeros(n, nt):
     return jnyn_zeros(n, nt)[3]
 
 
-def y0_zeros(nt, complex=0):
+def y0_zeros(nt, complex=False):
     """Compute nt zeros of Bessel function Y0(z), and derivative at each zero.
 
     The derivatives are given by Y0'(z0) = -Y1(z0) at each zero z0.
@@ -320,9 +320,9 @@ def y0_zeros(nt, complex=0):
     ----------
     nt : int
         Number of zeros to return
-    complex : int, default 0
-        Set to 0 to return only the real zeros; set to 1 to return only the
-        complex zeros with negative real part and positive imaginary part.
+    complex : bool, default False
+        Set to False to return only the real zeros; set to True to return only
+        the complex zeros with negative real part and positive imaginary part.
         Note that the complex conjugates of the latter are also zeros of the
         function, but are not returned by this routine.
 
@@ -343,11 +343,11 @@ def y0_zeros(nt, complex=0):
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 0
-    kc = (complex != 1)
+    kc = not complex
     return specfun.cyzo(nt, kf, kc)
 
 
-def y1_zeros(nt, complex=0):
+def y1_zeros(nt, complex=False):
     """Compute nt zeros of Bessel function Y1(z), and derivative at each zero.
 
     The derivatives are given by Y1'(z1) = Y0(z1) at each zero z1.
@@ -356,9 +356,9 @@ def y1_zeros(nt, complex=0):
     ----------
     nt : int
         Number of zeros to return
-    complex : int, default 0
-        Set to 0 to return only the real zeros; set to 1 to return only the
-        complex zeros with negative real part and positive imaginary part.
+    complex : bool, default False
+        Set to False to return only the real zeros; set to True to return only
+        the complex zeros with negative real part and positive imaginary part.
         Note that the complex conjugates of the latter are also zeros of the
         function, but are not returned by this routine.
 
@@ -379,11 +379,11 @@ def y1_zeros(nt, complex=0):
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 1
-    kc = (complex != 1)
+    kc = not complex
     return specfun.cyzo(nt, kf, kc)
 
 
-def y1p_zeros(nt, complex=0):
+def y1p_zeros(nt, complex=False):
     """Compute nt zeros of Bessel derivative Y1'(z), and value at each zero.
 
     The values are given by Y1(z1) at each z1 where Y1'(z1)=0.
@@ -392,9 +392,9 @@ def y1p_zeros(nt, complex=0):
     ----------
     nt : int
         Number of zeros to return
-    complex : int, default 0
-        Set to 0 to return only the real zeros; set to 1 to return only the
-        complex zeros with negative real part and positive imaginary part.
+    complex : bool, default False
+        Set to False to return only the real zeros; set to True to return only
+        the complex zeros with negative real part and positive imaginary part.
         Note that the complex conjugates of the latter are also zeros of the
         function, but are not returned by this routine.
 
@@ -415,7 +415,7 @@ def y1p_zeros(nt, complex=0):
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 2
-    kc = (complex != 1)
+    kc = not complex
     return specfun.cyzo(nt, kf, kc)
 
 
