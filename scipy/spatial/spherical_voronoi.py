@@ -15,6 +15,45 @@ import math
 
 __all__ = ['SphericalVoronoi']
 
+def calculate_surface_area_of_planar_polygon_in_3D_space(array_ordered_Voronoi_polygon_vertices):
+    '''Based largely on: http://stackoverflow.com/a/12653810
+    Use this function when spherical polygon surface area calculation fails (i.e., lots of nearly-coplanar vertices and negative surface area).'''
+    #unit normal vector of plane defined by points a, b, and c
+    def unit_normal(a, b, c):
+        x = np.linalg.det([[1,a[1],a[2]],
+             [1,b[1],b[2]],
+             [1,c[1],c[2]]])
+        y = np.linalg.det([[a[0],1,a[2]],
+             [b[0],1,b[2]],
+             [c[0],1,c[2]]])
+        z = np.linalg.det([[a[0],a[1],1],
+             [b[0],b[1],1],
+             [c[0],c[1],1]])
+        magnitude = (x**2 + y**2 + z**2)**.5
+        return (x/magnitude, y/magnitude, z/magnitude)
+
+    #area of polygon poly
+    def poly_area(poly):
+        '''Accepts a list of xyz tuples.'''
+        assert len(poly) >= 3, "Not a polygon (< 3 vertices)."
+        total = [0, 0, 0]
+        N = len(poly)
+        for i in range(N):
+            vi1 = poly[i]
+            vi2 = poly[(i+1) % N]
+            prod = np.cross(vi1, vi2)
+            total[0] += prod[0]
+            total[1] += prod[1]
+            total[2] += prod[2]
+        result = np.dot(total, unit_normal(poly[0], poly[1], poly[2]))
+        return abs(result/2)
+
+    list_vertices = [] #need a list of tuples for above function
+    for coord in array_ordered_Voronoi_polygon_vertices:
+        list_vertices.append(tuple(coord))
+    planar_polygon_surface_area = poly_area(list_vertices)
+    return planar_polygon_surface_area
+
 def calculate_and_sum_up_inner_sphere_surface_angles_Voronoi_polygon(array_ordered_Voronoi_polygon_vertices,sphere_radius):
     '''Takes an array of ordered Voronoi polygon vertices (for a single generator) and calculates the sum of the inner angles on the sphere surface. The resulting value is theta in the equation provided here: http://mathworld.wolfram.com/SphericalPolygon.html '''
     #if sphere_radius != 1.0:
