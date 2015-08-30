@@ -34,7 +34,10 @@ class TestCtypesQuad(TestCase):
     @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
     def setUp(self):
         if sys.platform == 'win32':
-            file = ctypes.util.find_msvcrt()
+            if sys.version_info < (3, 5):
+                file = ctypes.util.find_msvcrt()
+            else:
+                file = 'api-ms-win-crt-math-l1-1-0.dll'
         elif sys.platform == 'darwin':
             file = 'libm.dylib'
         else:
