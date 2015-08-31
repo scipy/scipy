@@ -242,18 +242,21 @@ class BaseMixin(object):
                       method=self.method, options={'max_nfev': 100})
 
     def test_full_result(self):
+        # MINPACK doesn't work very well with factor=100 on this problem,
+        # thus using low 'atol'.
         res = least_squares(fun_trivial, 2.0, method=self.method)
-        assert_equal(res.x, np.array([0]))
-        assert_equal(res.cost, 12.5)
-        assert_equal(res.fun, np.array([5]))
-        assert_equal(res.jac, np.array([[0]]))
-        assert_equal(res.grad, np.array([0]))
-        assert_equal(res.optimality, 0)
-        assert_equal(res.active_mask, np.array([0]))
-        assert_(res.nfev < 10)
+        assert_allclose(res.x, 0, atol=1e-4)
+        assert_allclose(res.cost, 12.5)
+        assert_allclose(res.fun, 5)
+        assert_allclose(res.jac, 0, atol=1e-4)
+        assert_allclose(res.grad, 0, atol=1e-2)
+        assert_allclose(res.optimality, 0, atol=1e-2)
+        assert_equal(res.active_mask, 0)
         if self.method == 'lm':
+            assert_(res.nfev < 30)
             assert_(res.njev is None)
         else:
+            assert_(res.nfev < 10)
             assert_(res.njev < 10)
         assert_(res.status > 0)
         assert_(res.success)
@@ -685,7 +688,7 @@ class TestLM(BaseMixin):
 
     def test_loss(self):
         res = least_squares(fun_trivial, 2.0, loss='linear', method='lm')
-        assert_allclose(res.x, 0.0)
+        assert_allclose(res.x, 0.0, atol=1e-4)
 
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       method='lm', loss='huber')

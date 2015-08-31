@@ -50,7 +50,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
 
     full_output = True
     col_deriv = False
-    factor = 1.0
+    factor = 100.0
 
     if jac is None:
         if max_nfev is None:
