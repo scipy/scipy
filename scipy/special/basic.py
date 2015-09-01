@@ -144,7 +144,7 @@ def diric(x, n):
 
 
 def jnjnp_zeros(nt):
-    """Compute nt zeros of Bessel functions Jn and Jn'.
+    """Compute zeros of integer-order Bessel functions Jn and Jn'.
 
     Results are arranged in order of the magnitudes of the zeros.
 
@@ -216,7 +216,7 @@ def jnyn_zeros(n, nt):
 
 
 def jn_zeros(n, nt):
-    """Compute nt zeros of Bessel function Jn(x).
+    """Compute zeros of integer-order Bessel function Jn(x).
 
     Parameters
     ----------
@@ -236,7 +236,7 @@ def jn_zeros(n, nt):
 
 
 def jnp_zeros(n, nt):
-    """Compute nt zeros of Bessel function derivative Jn'(x).
+    """Compute zeros of integer-order Bessel function derivative Jn'(x).
 
     Parameters
     ----------
@@ -256,7 +256,7 @@ def jnp_zeros(n, nt):
 
 
 def yn_zeros(n, nt):
-    """Compute nt zeros of Bessel function Yn(x).
+    """Compute zeros of integer-order Bessel function Yn(x).
 
     Parameters
     ----------
@@ -276,7 +276,7 @@ def yn_zeros(n, nt):
 
 
 def ynp_zeros(n, nt):
-    """Compute nt zeros of Bessel function derivative Yn'(x).
+    """Compute zeros of integer-order Bessel function derivative Yn'(x).
 
     Parameters
     ----------
