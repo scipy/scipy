@@ -386,14 +386,26 @@ class SphericalVoronoi:
         #step 5: use the Delaunay tetrahedralization neighbour information to connect the Voronoi vertices around the generators, to produce the Voronoi regions
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
         array_tetrahedra = simplex_coords
-        generator_index = 0
         generator_index_array = np.arange(self.original_point_array.shape[0])
         filter_tuple = np.where((np.expand_dims(tri.simplices, -1) == generator_index_array).any(axis=1))
-        df = pandas.DataFrame({'generator_indices' : filter_tuple[1]}, index = filter_tuple[0])
-        gb = df.groupby('generator_indices')
-        dictionary_generators_and_triangle_indices_containing_those_generators = gb.groups
+        dictionary_generators_and_triangle_indices_containing_those_generators = {}
+        for generator_index, triangle_index in zip(filter_tuple[1], filter_tuple[0]):
+            dictionary_generators_and_triangle_indices_containing_those_generators.setdefault(generator_index, []).append(triangle_index)
+
+        #print 'dictionary_generators_and_triangle_indices_containing_those_generators[0]:', dictionary_generators_and_triangle_indices_containing_those_generators[0]
+
+        #print 'filter_tuple:', filter_tuple
+        #print 'len(filter_tuple[0]):', len(filter_tuple[0])
+        #print 'len(filter_tuple[1]):', len(filter_tuple[1])
+        #df = pandas.DataFrame({'generator_indices' : filter_tuple[1]}, index = filter_tuple[0])
+        #gb = df.groupby('generator_indices')
+        #dictionary_generators_and_triangle_indices_containing_those_generators = gb.groups
+        generator_index = 0
         for generator in tri.points[:-1]:
+            #print 'generator_index:', generator_index
+            #print 'generator:', generator
             indices_of_triangles_surrounding_generator = dictionary_generators_and_triangle_indices_containing_those_generators[generator_index]
+            #print 'indices_of_triangles_surrounding_generator:', indices_of_triangles_surrounding_generator
             #pick any one of the triangles surrounding the generator and pick a non-generator vertex
             first_tetrahedron_index = indices_of_triangles_surrounding_generator[0]
             first_tetrahedron = array_tetrahedra[first_tetrahedron_index]
@@ -419,6 +431,8 @@ class SphericalVoronoi:
                 indices_candidate_vertices_current_triangle_excluding_generator = np.unique(np.where(current_triangle_coord_array != generator)[0])
                 array_candidate_vertices = current_triangle_coord_array[indices_candidate_vertices_current_triangle_excluding_generator]
                 current_tetrahedron_index_for_neighbour_propagation = np.unique(np.where(current_tetrahedron_coord_array == common_vertex_coordinate)[0])
+                #print 'current_tetrahedron_index:', current_tetrahedron_index
+                #print 'current_tetrahedron_index_for_neighbour_propagation:', current_tetrahedron_index_for_neighbour_propagation
                 next_tetrahedron_index_surrounding_generator = tri.neighbors[current_tetrahedron_index][current_tetrahedron_index_for_neighbour_propagation][0]
                 common_vertex_coordinate = array_candidate_vertices[array_candidate_vertices != common_vertex_coordinate] #for the next iteration
                 ordered_list_tetrahedron_indices_surrounding_current_generator.append(next_tetrahedron_index_surrounding_generator)
