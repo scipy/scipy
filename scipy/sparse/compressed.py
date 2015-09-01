@@ -1106,7 +1106,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         data_dtype = self.dtype
         if not np.can_cast(other.dtype, self.dtype):
-           data_dtype = upcast(self.dtype, other.dtype)
+            data_dtype = upcast(self.dtype, other.dtype)
 
         fn(self.shape[0], self.shape[1],
            np.asarray(self.indptr, dtype=idx_dtype),
