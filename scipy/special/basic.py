@@ -49,7 +49,7 @@ def diric(x, n):
 
         diric(x) = sin(x * n/2) / (n * sin(x / 2)),
 
-    where n is a positive integer.
+    where `n` is a positive integer.
 
     Parameters
     ----------
@@ -187,7 +187,7 @@ def jnjnp_zeros(nt):
 def jnyn_zeros(n, nt):
     """Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
 
-    Returns 4 arrays of length nt, corresponding to the first nt zeros of
+    Returns 4 arrays of length `nt`, corresponding to the first `nt` zeros of
     Jn(x), Jn'(x), Yn(x), and Yn'(x), respectively.
 
     Parameters
@@ -421,7 +421,7 @@ bessel_diff_formula = np.deprecate(_bessel_diff_formula,
 
 
 def jvp(v, z, n=1):
-    """Compute nth derivative of Bessel function Jv(z) with respect to z.
+    """Compute nth derivative of Bessel function Jv(z) with respect to `z`.
 
     Parameters
     ----------
@@ -448,7 +448,7 @@ def jvp(v, z, n=1):
 
 
 def yvp(v, z, n=1):
-    """Compute nth derivative of Bessel function Yv(z) with respect to z.
+    """Compute nth derivative of Bessel function Yv(z) with respect to `z`.
 
     Parameters
     ----------
@@ -502,7 +502,8 @@ def kvp(v, z, n=1):
 
 
 def ivp(v, z, n=1):
-    """Compute nth derivative of modified Bessel function Iv(z) with respect to z.
+    """Compute nth derivative of modified Bessel function Iv(z) with respect
+    to `z`.
 
     Parameters
     ----------
@@ -529,7 +530,7 @@ def ivp(v, z, n=1):
 
 
 def h1vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H1v(z) with respect to z.
+    """Compute nth derivative of Hankel function H1v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -556,7 +557,7 @@ def h1vp(v, z, n=1):
 
 
 def h2vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H2v(z) with respect to z.
+    """Compute nth derivative of Hankel function H2v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -1509,9 +1510,10 @@ def ai_zeros(nt):
     """
     Compute `nt` zeros and values of the Airy function Ai and its derivative.
 
-    Computes the first nt zeros, a, of the Airy function Ai(x); first nt zeros,
-    a', of the derivative of the Airy function Ai'(x); the corresponding values
-    Ai(a'); and the corresponding values Ai'(a).
+    Computes the first `nt` zeros, `a`, of the Airy function Ai(x);
+    first `nt` zeros, `ap`, of the derivative of the Airy function Ai'(x);
+    the corresponding values Ai(a');
+    and the corresponding values Ai'(a).
 
     Parameters
     ----------
@@ -1521,13 +1523,13 @@ def ai_zeros(nt):
     Returns
     -------
     a : ndarray
-        First nt zeros of Ai(x)
+        First `nt` zeros of Ai(x)
     ap : ndarray
-        First nt zeros of Ai'(x)
+        First `nt` zeros of Ai'(x)
     ai : ndarray
-        Values of Ai(x) evaluated at first nt zeros of Ai'(x)
+        Values of Ai(x) evaluated at first `nt` zeros of Ai'(x)
     aip : ndarray
-        Values of Ai'(x) evaluated at first nt zeros of Ai(x)
+        Values of Ai'(x) evaluated at first `nt` zeros of Ai(x)
 
     References
     ----------
@@ -1546,9 +1548,10 @@ def bi_zeros(nt):
     """
     Compute `nt` zeros and values of the Airy function Bi and its derivative.
 
-    Computes the first nt zeros, b, of the Airy function Bi(x); first nt zeros,
-    b', of the derivative of the Airy function Bi'(x); the corresponding values
-    Bi(b'); and the corresponding values Bi'(b).
+    Computes the first `nt` zeros, b, of the Airy function Bi(x);
+    first `nt` zeros, b', of the derivative of the Airy function Bi'(x);
+    the corresponding values Bi(b');
+    and the corresponding values Bi'(b).
 
     Parameters
     ----------
@@ -1558,13 +1561,13 @@ def bi_zeros(nt):
     Returns
     -------
     b : ndarray
-        First nt zeros of Bi(x)
+        First `nt` zeros of Bi(x)
     bp : ndarray
-        First nt zeros of Bi'(x)
+        First `nt` zeros of Bi'(x)
     bi : ndarray
-        Values of Bi(x) evaluated at first nt zeros of Bi'(x)
+        Values of Bi(x) evaluated at first `nt` zeros of Bi'(x)
     bip : ndarray
-        Values of Bi'(x) evaluated at first nt zeros of Bi(x)
+        Values of Bi'(x) evaluated at first `nt` zeros of Bi(x)
 
     References
     ----------
