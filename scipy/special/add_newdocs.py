@@ -1954,6 +1954,7 @@ add_newdoc("scipy.special", "kn",
     >>> plt.ylim(0, 10)
     >>> plt.legend()
     >>> plt.title(r'Modified Bessel function of the second kind $K_n(x)$')
+    >>> plt.show()
 
     Calculate for a single value at multiple orders:
 
@@ -2017,6 +2018,7 @@ add_newdoc("scipy.special", "kv",
     >>> plt.ylim(0, 10)
     >>> plt.legend()
     >>> plt.title(r'Modified Bessel function of the second kind $K_\nu(x)$')
+    >>> plt.show()
 
     Calculate for a single value at multiple orders:
 
