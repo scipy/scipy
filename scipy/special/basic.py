@@ -491,22 +491,43 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute nth derivative of modified Bessel function Kv(z) with respect to z.
+    """Compute nth derivative of real-order modified Bessel function Kv(z)
+
+    Kv(z) is the modified Bessel function of the second kind.
+    Derivative is calculated with respect to `z`.
 
     Parameters
     ----------
-    v : float
+    v : array_like of float
         Order of Bessel function
-    z : complex
+    z : array_like of complex
         Argument at which to evaluate the derivative
-    n : int, default 1
-        Order of derivative
+    n : int
+        Order of derivative.  Default is first derivative.
+
+    Returns
+    -------
+    out : ndarray
+        The results
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            http://jin.ece.illinois.edu/specfunc.html
+
+    Examples
+    --------
+    Calculate multiple values at order 5:
+
+    >>> print(kvp(5, (1, 2, 3+5j)))
+    [ -1.84903536e+03+0.j          -2.57735387e+01+0.j
+      -3.06627741e-02+0.08750845j]
+
+    Calculate for a single value at multiple orders:
+
+    >>> print(kvp((4, 4.5, 5), 1))
+    [ -184.03092621  -568.95853449 -1849.03536385]
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -523,9 +544,9 @@ def ivp(v, z, n=1):
 
     Parameters
     ----------
-    v : float
+    v : array_like of float
         Order of Bessel function
-    z : complex
+    z : array_like of complex
         Argument at which to evaluate the derivative
     n : int, default 1
         Order of derivative
