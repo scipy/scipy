@@ -125,7 +125,7 @@ add_newdoc("scipy.special", "bdtr",
 
     Binomial distribution cumulative distribution function.
 
-    Sum of the terms 0 through k of the Binomial probability density.
+    Sum of the terms 0 through `k` of the Binomial probability density.
 
     ::
 
@@ -151,7 +151,7 @@ add_newdoc("scipy.special", "bdtrc",
 
     Binomial distribution survival function.
 
-    Sum of the terms k+1 through n of the Binomial probability density
+    Sum of the terms k+1 through `n` of the Binomial probability density
 
     ::
 
@@ -175,7 +175,7 @@ add_newdoc("scipy.special", "bdtri",
     """
     bdtri(k, n, y)
 
-    Inverse function to bdtr vs. p
+    Inverse function to `bdtr` vs. `p`
 
     Finds probability `p` such that for the cumulative binomial
     probability ``bdtr(k, n, p) == y``.
@@ -185,14 +185,14 @@ add_newdoc("scipy.special", "bdtrik",
     """
     bdtrik(y, n, p)
 
-    Inverse function to bdtr vs k
+    Inverse function to `bdtr` vs `k`
     """)
 
 add_newdoc("scipy.special", "bdtrin",
     """
     bdtrin(k, y, p)
 
-    Inverse function to bdtr vs n
+    Inverse function to `bdtr` vs `n`
     """)
 
 add_newdoc("scipy.special", "binom",
@@ -206,7 +206,7 @@ add_newdoc("scipy.special", "btdtria",
     """
     btdtria(p, b, x)
 
-    Inverse of btdtr vs a
+    Inverse of `btdtr` vs `a`
 
     """)
 
@@ -214,7 +214,7 @@ add_newdoc("scipy.special", "btdtrib",
     """
     btdtria(a, p, x)
 
-    Inverse of btdtr vs b
+    Inverse of `btdtr` vs `b`
 
     """)
 
@@ -229,7 +229,7 @@ add_newdoc("scipy.special", "beip",
     """
     beip(x)
 
-    Derivative of the Kelvin function bei
+    Derivative of the Kelvin function `bei`
     """)
 
 add_newdoc("scipy.special", "ber",
@@ -243,7 +243,7 @@ add_newdoc("scipy.special", "berp",
     """
     berp(x)
 
-    Derivative of the Kelvin function ber
+    Derivative of the Kelvin function `ber`
     """)
 
 add_newdoc("scipy.special", "besselpoly",
@@ -279,7 +279,7 @@ add_newdoc("scipy.special", "betainc",
     Incomplete beta integral.
 
     Compute the incomplete beta integral of the arguments, evaluated
-    from zero to x::
+    from zero to `x`::
 
         gamma(a+b) / (gamma(a)*gamma(b)) * integral(t**(a-1) (1-t)**(b-1), t=0..x).
 
@@ -298,7 +298,7 @@ add_newdoc("scipy.special", "betaincinv",
 
     Inverse function to beta integral.
 
-    Compute x such that betainc(a, b, x) = y.
+    Compute `x` such that betainc(a, b, x) = y.
     """)
 
 add_newdoc("scipy.special", "betaln",
@@ -468,7 +468,7 @@ add_newdoc("scipy.special", "btdtr",
 
     Cumulative beta distribution.
 
-    Returns the area from zero to x under the beta density function::
+    Returns the area from zero to `x` under the beta density function::
 
         gamma(a+b)/(gamma(a)*gamma(b)))*integral(t**(a-1) (1-t)**(b-1), t=0..x)
 
@@ -483,7 +483,7 @@ add_newdoc("scipy.special", "btdtri",
 
     p-th quantile of the beta distribution.
 
-    This is effectively the inverse of btdtr returning the value of x for which
+    This is effectively the inverse of `btdtr` returning the value of `x` for which
     ``btdtr(a, b, x) = p``
 
     See Also
@@ -495,7 +495,7 @@ add_newdoc("scipy.special", "cbrt",
     """
     cbrt(x)
 
-    Cube root of x
+    Cube root of `x`
     """)
 
 add_newdoc("scipy.special", "chdtr",
@@ -504,8 +504,8 @@ add_newdoc("scipy.special", "chdtr",
 
     Chi square cumulative distribution function
 
-    Returns the area under the left hand tail (from 0 to x) of the Chi
-    square probability density function with v degrees of freedom::
+    Returns the area under the left hand tail (from 0 to `x`) of the Chi
+    square probability density function with `v` degrees of freedom::
 
         1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=0..x)
     """)
@@ -516,8 +516,8 @@ add_newdoc("scipy.special", "chdtrc",
 
     Chi square survival function
 
-    Returns the area under the right hand tail (from x to
-    infinity) of the Chi square probability density function with v
+    Returns the area under the right hand tail (from `x` to
+    infinity) of the Chi square probability density function with `v`
     degrees of freedom::
 
         1/(2**(v/2) * gamma(v/2)) * integral(t**(v/2-1) * exp(-t/2), t=x..inf)
@@ -527,7 +527,7 @@ add_newdoc("scipy.special", "chdtri",
     """
     chdtri(v, p)
 
-    Inverse to chdtrc
+    Inverse to `chdtrc`
 
     Returns the argument x such that ``chdtrc(v, x) == p``.
     """)
@@ -536,7 +536,7 @@ add_newdoc("scipy.special", "chdtriv",
     """
     chdtri(p, x)
 
-    Inverse to chdtr vs v
+    Inverse to `chdtr` vs `v`
 
     Returns the argument v such that ``chdtr(v, x) == p``.
     """)
@@ -553,42 +553,42 @@ add_newdoc("scipy.special", "chndtrix",
     """
     chndtrix(p, df, nc)
 
-    Inverse to chndtr vs x
+    Inverse to `chndtr` vs `x`
     """)
 
 add_newdoc("scipy.special", "chndtridf",
     """
     chndtridf(x, p, nc)
 
-    Inverse to chndtr vs df
+    Inverse to `chndtr` vs `df`
     """)
 
 add_newdoc("scipy.special", "chndtrinc",
     """
     chndtrinc(x, df, p)
 
-    Inverse to chndtr vs nc
+    Inverse to `chndtr` vs `nc`
     """)
 
 add_newdoc("scipy.special", "cosdg",
     """
     cosdg(x)
 
-    Cosine of the angle x given in degrees.
+    Cosine of the angle `x` given in degrees.
     """)
 
 add_newdoc("scipy.special", "cosm1",
     """
     cosm1(x)
 
-    cos(x) - 1 for use when x is near zero.
+    cos(x) - 1 for use when `x` is near zero.
     """)
 
 add_newdoc("scipy.special", "cotdg",
     """
     cotdg(x)
 
-    Cotangent of the angle x given in degrees.
+    Cotangent of the angle `x` given in degrees.
     """)
 
 add_newdoc("scipy.special", "dawsn",
@@ -629,7 +629,7 @@ add_newdoc("scipy.special", "ellipe",
 
     See Also
     --------
-    ellipkm1 : Complete elliptic integral of the first kind, near  m = 1
+    ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipeinc : Incomplete elliptic integral of the second kind
@@ -660,7 +660,7 @@ add_newdoc("scipy.special", "ellipeinc",
 
     See Also
     --------
-    ellipkm1 : Complete elliptic integral of the first kind, near m = 1
+    ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
@@ -672,8 +672,8 @@ add_newdoc("scipy.special", "ellipj",
 
     Jacobian elliptic functions
 
-    Calculates the Jacobian elliptic functions of parameter m between
-    0 and 1, and real u.
+    Calculates the Jacobian elliptic functions of parameter `m` between
+    0 and 1, and real `u`.
 
     Parameters
     ----------
@@ -696,7 +696,7 @@ add_newdoc("scipy.special", "ellipkm1",
     """
     ellipkm1(p)
 
-    Complete elliptic integral of the first kind around m = 1
+    Complete elliptic integral of the first kind around `m` = 1
 
     This function is defined as
 
@@ -707,7 +707,7 @@ add_newdoc("scipy.special", "ellipkm1",
     Parameters
     ----------
     p : array_like
-        Defines the parameter of the elliptic integral as m = 1 - p.
+        Defines the parameter of the elliptic integral as `m` = 1 - p.
 
     Returns
     -------
@@ -751,7 +751,7 @@ add_newdoc("scipy.special", "ellipkinc",
 
     See Also
     --------
-    ellipkm1 : Complete elliptic integral of the first kind, near  m = 1
+    ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
@@ -774,7 +774,7 @@ add_newdoc("scipy.special", "entr",
     Returns
     -------
     res : ndarray
-        The value of the elementwise entropy function at the given points x.
+        The value of the elementwise entropy function at the given points `x`.
 
     See Also
     --------
@@ -804,7 +804,7 @@ add_newdoc("scipy.special", "erf",
     Returns
     -------
     res : ndarray
-        The values of the error function at the given points x.
+        The values of the error function at the given points `x`.
 
     See Also
     --------
@@ -1056,7 +1056,7 @@ add_newdoc("scipy.special", "expm1",
     """
     expm1(x)
 
-    exp(x) - 1 for use when x is near zero.
+    exp(x) - 1 for use when `x` is near zero.
     """)
 
 add_newdoc("scipy.special", "expn",
@@ -1065,7 +1065,8 @@ add_newdoc("scipy.special", "expn",
 
     Exponential integral E_n
 
-    Returns the exponential integral for integer n and non-negative x and n::
+    Returns the exponential integral for integer `n` and non-negative `x` and
+    `n`::
 
         integral(exp(-x*t) / t**n, t=1..inf).
     """)
@@ -1074,7 +1075,7 @@ add_newdoc("scipy.special", "exprel",
     r"""
     exprel(x)
 
-    Relative error exponential, (exp(x)-1)/x, for use when x is near zero.
+    Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
 
     Parameters
     ----------
@@ -1099,7 +1100,7 @@ add_newdoc("scipy.special", "fdtr",
 
     F cumulative distribution function
 
-    Returns the area from zero to x under the F density function (also
+    Returns the area from zero to `x` under the F density function (also
     known as Snedcor's density or the variance ratio density).  This
     is the density of X = (unum/dfn)/(uden/dfd), where unum and uden
     are random variables having Chi square distributions with dfn and
@@ -1119,16 +1120,16 @@ add_newdoc("scipy.special", "fdtri",
     """
     fdtri(dfn, dfd, p)
 
-    Inverse to fdtr vs x
+    Inverse to `fdtr` vs x
 
-    Finds the F density argument x such that ``fdtr(dfn, dfd, x) == p``.
+    Finds the F density argument `x` such that ``fdtr(dfn, dfd, x) == p``.
     """)
 
 add_newdoc("scipy.special", "fdtridfd",
     """
     fdtridfd(dfn, p, x)
 
-    Inverse to fdtr vs dfd
+    Inverse to `fdtr` vs dfd
 
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
     """)
@@ -1137,7 +1138,7 @@ add_newdoc("scipy.special", "fdtridfn",
     """
     fdtridfn(p, dfd, x)
 
-    Inverse to fdtr vs dfn
+    Inverse to `fdtr` vs dfn
 
     finds the F density argument dfn such that ``fdtr(dfn, dfd, x) == p``.
     """)
@@ -1206,7 +1207,7 @@ add_newdoc("scipy.special", "gammainccinv",
     """
     gammainccinv(a, y)
 
-    Inverse to gammaincc
+    Inverse to `gammaincc`
 
     Returns `x` such that ``gammaincc(a, x) == y``.
     """)
@@ -1215,7 +1216,7 @@ add_newdoc("scipy.special", "gammaincinv",
     """
     gammaincinv(a, y)
 
-    Inverse to gammainc
+    Inverse to `gammainc`
 
     Returns `x` such that ``gammainc(a, x) = y``.
     """)
@@ -1252,12 +1253,12 @@ add_newdoc("scipy.special", "gdtr",
 
     Gamma distribution cumulative density function.
 
-    Returns the integral from zero to x of the gamma probability
+    Returns the integral from zero to `x` of the gamma probability
     density function::
 
         a**b / gamma(b) * integral(t**(b-1) exp(-at), t=0..x).
 
-    The arguments a and b are used differently here than in other
+    The arguments `a` and `b` are used differently here than in other
     definitions.
     """)
 
@@ -1267,7 +1268,7 @@ add_newdoc("scipy.special", "gdtrc",
 
     Gamma distribution survival function.
 
-    Integral from x to infinity of the gamma probability density
+    Integral from `x` to infinity of the gamma probability density
     function.
 
     See Also
@@ -1279,7 +1280,7 @@ add_newdoc("scipy.special", "gdtria",
     """
     gdtria(p, b, x, out=None)
 
-    Inverse of gdtr vs a.
+    Inverse of `gdtr` vs a.
 
     Returns the inverse with respect to the parameter `a` of ``p =
     gdtr(a, b, x)``, the cumulative distribution function of the gamma
@@ -1330,7 +1331,7 @@ add_newdoc("scipy.special", "gdtrib",
     """
     gdtrib(a, p, x, out=None)
 
-    Inverse of gdtr vs b.
+    Inverse of `gdtr` vs b.
 
     Returns the inverse with respect to the parameter `b` of ``p =
     gdtr(a, b, x)``, the cumulative distribution function of the gamma
@@ -1381,7 +1382,7 @@ add_newdoc("scipy.special", "gdtrix",
     """
     gdtrix(a, b, p, out=None)
 
-    Inverse of gdtr vs x.
+    Inverse of `gdtr` vs x.
 
     Returns the inverse with respect to the parameter `x` of ``p =
     gdtr(a, b, x)``, the cumulative distribution function of the gamma
@@ -1671,7 +1672,7 @@ add_newdoc("scipy.special", "itairy",
 
     Integrals of Airy functions
 
-    Calculates the integral of Airy functions from 0 to x
+    Calculates the integral of Airy functions from 0 to `x`
 
     Returns
     -------
@@ -1688,8 +1689,8 @@ add_newdoc("scipy.special", "iti0k0",
 
     Integrals of modified Bessel functions of order 0
 
-    Returns simple integrals from 0 to x of the zeroth order modified
-    Bessel functions i0 and k0.
+    Returns simple integrals from 0 to `x` of the zeroth order modified
+    Bessel functions `i0` and `k0`.
 
     Returns
     -------
@@ -1702,8 +1703,8 @@ add_newdoc("scipy.special", "itj0y0",
 
     Integrals of Bessel functions of order 0
 
-    Returns simple integrals from 0 to x of the zeroth order Bessel
-    functions j0 and y0.
+    Returns simple integrals from 0 to `x` of the zeroth order Bessel
+    functions `j0` and `y0`.
 
     Returns
     -------
@@ -1743,7 +1744,7 @@ add_newdoc("scipy.special", "iv",
     Parameters
     ----------
     v
-        Order. If z is of real type and negative, v must be integer valued.
+        Order. If `z` is of real type and negative, `v` must be integer valued.
     z
         Argument.
 
@@ -1778,7 +1779,7 @@ add_newdoc("scipy.special", "jn",
     """
     jn(n, x)
 
-    Bessel function of the first kind of integer order n.
+    Bessel function of the first kind of integer order `n`.
 
     Notes
     -----
@@ -1790,14 +1791,14 @@ add_newdoc("scipy.special", "jv",
     """
     jv(v, z)
 
-    Bessel function of the first kind of real order v
+    Bessel function of the first kind of real order `v`
     """)
 
 add_newdoc("scipy.special", "jve",
     """
     jve(v, z)
 
-    Exponentially scaled Bessel function of order v
+    Exponentially scaled Bessel function of order `v`
 
     Defined as::
 
@@ -1868,7 +1869,7 @@ add_newdoc("scipy.special", "kelvin",
     Be, Ke, Bep, Kep
         The tuple (Be, Ke, Bep, Kep) contains complex numbers
         representing the real and imaginary Kelvin functions and their
-        derivatives evaluated at x.  For example, kelvin(x)[0].real =
+        derivatives evaluated at `x`.  For example, kelvin(x)[0].real =
         ber x and kelvin(x)[0].imag = bei x with similar relationships
         for ker and kei.
     """)
@@ -1913,7 +1914,7 @@ add_newdoc("scipy.special", "kl_div",
 
     Notes
     -----
-    This function is non-negative and is jointly convex in x and y.
+    This function is non-negative and is jointly convex in `x` and `y`.
 
     .. versionadded:: 0.14.0
 
@@ -1923,7 +1924,7 @@ add_newdoc("scipy.special", "kn",
     """
     kn(n, x)
 
-    Modified Bessel function of the second kind of integer order n
+    Modified Bessel function of the second kind of integer order `n`
 
     These are also sometimes called functions of the third kind.
     """)
@@ -1954,7 +1955,7 @@ add_newdoc("scipy.special", "kv",
     """
     kv(v, z)
 
-    Modified Bessel function of the second kind of real order v
+    Modified Bessel function of the second kind of real order `v`
 
     Returns the modified Bessel function of the second kind (sometimes
     called the third kind) for real order v at complex z.
@@ -1967,8 +1968,8 @@ add_newdoc("scipy.special", "kve",
     Exponentially scaled modified Bessel function of the second kind.
 
     Returns the exponentially scaled, modified Bessel function of the
-    second kind (sometimes called the third kind) for real order v at
-    complex z::
+    second kind (sometimes called the third kind) for real order `v` at
+    complex `z`::
 
         kve(v, z) = kv(v, z) * exp(z)
     """)
@@ -1977,7 +1978,7 @@ add_newdoc("scipy.special", "log1p",
     """
     log1p(x)
 
-    Calculates log(1+x) for use when x is near zero
+    Calculates log(1+x) for use when `x` is near zero
     """)
 
 add_newdoc('scipy.special', 'logit',
@@ -2054,9 +2055,9 @@ add_newdoc("scipy.special", "mathieu_cem",
 
     Even Mathieu function and its derivative
 
-    Returns the even Mathieu function, ``ce_m(x, q)``, of order m and
-    parameter q evaluated at x (given in degrees).  Also returns the
-    derivative with respect to x of ce_m(x, q)
+    Returns the even Mathieu function, ``ce_m(x, q)``, of order `m` and
+    parameter `q` evaluated at `x` (given in degrees).  Also returns the
+    derivative with respect to `x` of ce_m(x, q)
 
     Parameters
     ----------
@@ -2082,7 +2083,7 @@ add_newdoc("scipy.special", "mathieu_modcem1",
     Even modified Mathieu function of the first kind and its derivative
 
     Evaluates the even modified Mathieu function of the first kind,
-    ``Mc1m(x, q)``, and its derivative at `x` for order m and parameter
+    ``Mc1m(x, q)``, and its derivative at `x` for order `m` and parameter
     `q`.
 
     Returns
@@ -2100,8 +2101,8 @@ add_newdoc("scipy.special", "mathieu_modcem2",
     Even modified Mathieu function of the second kind and its derivative
 
     Evaluates the even modified Mathieu function of the second kind,
-    Mc2m(x, q), and its derivative at x (given in degrees) for order m
-    and parameter q.
+    Mc2m(x, q), and its derivative at `x` (given in degrees) for order `m`
+    and parameter `q`.
 
     Returns
     -------
@@ -2118,8 +2119,8 @@ add_newdoc("scipy.special", "mathieu_modsem1",
     Odd modified Mathieu function of the first kind and its derivative
 
     Evaluates the odd modified Mathieu function of the first kind,
-    Ms1m(x, q), and its derivative at x (given in degrees) for order m
-    and parameter q.
+    Ms1m(x, q), and its derivative at `x` (given in degrees) for order `m`
+    and parameter `q`.
 
     Returns
     -------
@@ -2136,7 +2137,7 @@ add_newdoc("scipy.special", "mathieu_modsem2",
     Odd modified Mathieu function of the second kind and its derivative
 
     Evaluates the odd modified Mathieu function of the second kind,
-    Ms2m(x, q), and its derivative at x (given in degrees) for order m
+    Ms2m(x, q), and its derivative at `x` (given in degrees) for order `m`
     and parameter q.
 
     Returns
@@ -2153,9 +2154,9 @@ add_newdoc("scipy.special", "mathieu_sem",
 
     Odd Mathieu function and its derivative
 
-    Returns the odd Mathieu function, se_m(x, q), of order m and
-    parameter q evaluated at x (given in degrees).  Also returns the
-    derivative with respect to x of se_m(x, q).
+    Returns the odd Mathieu function, se_m(x, q), of order `m` and
+    parameter `q` evaluated at `x` (given in degrees).  Also returns the
+    derivative with respect to `x` of se_m(x, q).
 
     Parameters
     ----------
@@ -2208,8 +2209,8 @@ add_newdoc("scipy.special", "modstruve",
 
     Modified Struve function
 
-    Returns the modified Struve function Lv(x) of order v at x, x must
-    be positive unless v is an integer.
+    Returns the modified Struve function Lv(x) of order `v` at `x`, `x` must
+    be positive unless `v` is an integer.
     """)
 
 add_newdoc("scipy.special", "nbdtr",
@@ -2218,7 +2219,7 @@ add_newdoc("scipy.special", "nbdtr",
 
     Negative binomial cumulative distribution function
 
-    Returns the sum of the terms 0 through k of the negative binomial
+    Returns the sum of the terms 0 through `k` of the negative binomial
     distribution::
 
         sum((n+j-1)Cj p**n (1-p)**j, j=0..k).
@@ -2241,7 +2242,7 @@ add_newdoc("scipy.special", "nbdtri",
     """
     nbdtri(k, n, y)
 
-    Inverse of nbdtr vs p
+    Inverse of `nbdtr` vs `p`
 
     Finds the argument p such that ``nbdtr(k, n, p) = y``.
     """)
@@ -2250,7 +2251,7 @@ add_newdoc("scipy.special", "nbdtrik",
     """
     nbdtrik(y, n, p)
 
-    Inverse of nbdtr vs k
+    Inverse of `nbdtr` vs `k`
 
     Finds the argument k such that ``nbdtr(k, n, p) = y``.
     """)
@@ -2259,9 +2260,9 @@ add_newdoc("scipy.special", "nbdtrin",
     """
     nbdtrin(k, y, p)
 
-    Inverse of nbdtr vs n
+    Inverse of `nbdtr` vs `n`
 
-    Finds the argument n such that ``nbdtr(k, n, p) = y``.
+    Finds the argument `n` such that ``nbdtr(k, n, p) = y``.
     """)
 
 add_newdoc("scipy.special", "ncfdtr",
@@ -2361,7 +2362,7 @@ add_newdoc("scipy.special", "nctdtr",
     """
     nctdtr(df, nc, t)
 
-    Cumulative distribution function of the non-central t distribution.
+    Cumulative distribution function of the non-central `t` distribution.
 
     Parameters
     ----------
@@ -2470,7 +2471,7 @@ add_newdoc("scipy.special", "ndtr",
     Gaussian cumulative distribution function
 
     Returns the area under the standard Gaussian probability
-    density function, integrated from minus infinity to x::
+    density function, integrated from minus infinity to `x`::
 
         1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x)
 
@@ -2535,7 +2536,7 @@ add_newdoc("scipy.special", "log_ndtr",
     Logarithm of Gaussian cumulative distribution function
 
     Returns the log of the area under the standard Gaussian probability
-    density function, integrated from minus infinity to x::
+    density function, integrated from minus infinity to `x`::
 
         log(1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x))
     """)
@@ -2544,10 +2545,10 @@ add_newdoc("scipy.special", "ndtri",
     """
     ndtri(y)
 
-    Inverse of ndtr vs x
+    Inverse of `ndtr` vs x
 
     Returns the argument x for which the area under the Gaussian
-    probability density function (integrated from minus infinity to x)
+    probability density function (integrated from minus infinity to `x`)
     is equal to y.
     """)
 
@@ -2558,8 +2559,8 @@ add_newdoc("scipy.special", "obl_ang1",
     Oblate spheroidal angular function of the first kind and its derivative
 
     Computes the oblate spheroidal angular function of the first kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``.
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
     Returns
     -------
@@ -2576,8 +2577,8 @@ add_newdoc("scipy.special", "obl_ang1_cv",
     Oblate spheroidal angular function obl_ang1 for precomputed characteristic value
 
     Computes the oblate spheroidal angular function of the first kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
     Returns
@@ -2595,7 +2596,7 @@ add_newdoc("scipy.special", "obl_cv",
     Characteristic value of oblate spheroidal function
 
     Computes the characteristic value of oblate spheroidal wave
-    functions of order m, n (n>=m) and spheroidal parameter c.
+    functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
     """)
 
 add_newdoc("scipy.special", "obl_rad1",
@@ -2605,8 +2606,8 @@ add_newdoc("scipy.special", "obl_rad1",
     Oblate spheroidal radial function of the first kind and its derivative
 
     Computes the oblate spheroidal radial function of the first kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``.
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
     Returns
     -------
@@ -2623,8 +2624,8 @@ add_newdoc("scipy.special", "obl_rad1_cv",
     Oblate spheroidal radial function obl_rad1 for precomputed characteristic value
 
     Computes the oblate spheroidal radial function of the first kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
     Returns
@@ -2642,8 +2643,8 @@ add_newdoc("scipy.special", "obl_rad2",
     Oblate spheroidal radial function of the second kind and its derivative.
 
     Computes the oblate spheroidal radial function of the second kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``.
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
     Returns
     -------
@@ -2660,8 +2661,8 @@ add_newdoc("scipy.special", "obl_rad2_cv",
     Oblate spheroidal radial function obl_rad2 for precomputed characteristic value
 
     Computes the oblate spheroidal radial function of the second kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
     Returns
@@ -2733,9 +2734,9 @@ add_newdoc("scipy.special", "pdtr",
 
     Poisson cumulative distribution function
 
-    Returns the sum of the first k terms of the Poisson distribution:
+    Returns the sum of the first `k` terms of the Poisson distribution:
     sum(exp(-m) * m**j / j!, j=0..k) = gammaincc( k+1, m).  Arguments
-    must both be positive and k an integer.
+    must both be positive and `k` an integer.
     """)
 
 add_newdoc("scipy.special", "pdtrc",
@@ -2746,26 +2747,26 @@ add_newdoc("scipy.special", "pdtrc",
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
-    k+1, m).  Arguments must both be positive and k an integer.
+    k+1, m).  Arguments must both be positive and `k` an integer.
     """)
 
 add_newdoc("scipy.special", "pdtri",
     """
     pdtri(k, y)
 
-    Inverse to pdtr vs m
+    Inverse to `pdtr` vs m
 
-    Returns the Poisson variable m such that the sum from 0 to k of
-    the Poisson density is equal to the given probability y:
-    calculated by gammaincinv(k+1, y).  k must be a nonnegative
-    integer and y between 0 and 1.
+    Returns the Poisson variable `m` such that the sum from 0 to `k` of
+    the Poisson density is equal to the given probability `y`:
+    calculated by gammaincinv(k+1, y). `k` must be a nonnegative
+    integer and `y` between 0 and 1.
     """)
 
 add_newdoc("scipy.special", "pdtrik",
     """
     pdtrik(p, m)
 
-    Inverse to pdtr vs k
+    Inverse to `pdtr` vs k
 
     Returns the quantile k such that ``pdtr(k, m) = p``
     """)
@@ -2792,8 +2793,8 @@ add_newdoc("scipy.special", "pro_ang1",
     Prolate spheroidal angular function of the first kind and its derivative
 
     Computes the prolate spheroidal angular function of the first kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``.
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
     Returns
     -------
@@ -2810,8 +2811,8 @@ add_newdoc("scipy.special", "pro_ang1_cv",
     Prolate spheroidal angular function pro_ang1 for precomputed characteristic value
 
     Computes the prolate spheroidal angular function of the first kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
     Returns
@@ -2829,7 +2830,7 @@ add_newdoc("scipy.special", "pro_cv",
     Characteristic value of prolate spheroidal function
 
     Computes the characteristic value of prolate spheroidal wave
-    functions of order m, n (n>=m) and spheroidal parameter c.
+    functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
     """)
 
 add_newdoc("scipy.special", "pro_rad1",
@@ -2839,8 +2840,8 @@ add_newdoc("scipy.special", "pro_rad1",
     Prolate spheroidal radial function of the first kind and its derivative
 
     Computes the prolate spheroidal radial function of the first kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``.
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
     Returns
     -------
@@ -2857,8 +2858,8 @@ add_newdoc("scipy.special", "pro_rad1_cv",
     Prolate spheroidal radial function pro_rad1 for precomputed characteristic value
 
     Computes the prolate spheroidal radial function of the first kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
     Returns
@@ -2876,8 +2877,8 @@ add_newdoc("scipy.special", "pro_rad2",
     Prolate spheroidal radial function of the secon kind and its derivative
 
     Computes the prolate spheroidal radial function of the second kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``.
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
     Returns
     -------
@@ -2894,8 +2895,8 @@ add_newdoc("scipy.special", "pro_rad2_cv",
     Prolate spheroidal radial function pro_rad2 for precomputed characteristic value
 
     Computes the prolate spheroidal radial function of the second kind
-    and its derivative (with respect to x) for mode parameters m>=0
-    and n>=m, spheroidal parameter c and ``|x| < 1.0``. Requires
+    and its derivative (with respect to `x`) for mode parameters m>=0
+    and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
     Returns
@@ -2941,7 +2942,7 @@ add_newdoc("scipy.special", "psi",
     Digamma function
 
     The derivative of the logarithm of the gamma function evaluated at
-    z (also called the digamma function).
+    `z` (also called the digamma function).
     """)
 
 add_newdoc("scipy.special", "radian",
@@ -3001,8 +3002,8 @@ add_newdoc("scipy.special", "round",
 
     Round to nearest integer
 
-    Returns the nearest integer to x as a double precision floating
-    point result.  If x ends in 0.5 exactly, the nearest even integer
+    Returns the nearest integer to `x` as a double precision floating
+    point result.  If `x` ends in 0.5 exactly, the nearest even integer
     is chosen.
     """)
 
@@ -3053,7 +3054,7 @@ add_newdoc("scipy.special", "smirnov",
     distribution function (Dn+ or Dn-) for a one-sided test of
     equality between an empirical and a theoretical distribution. It
     is equal to the probability that the maximum difference between a
-    theoretical distribution and an empirical one based on n samples
+    theoretical distribution and an empirical one based on `n` samples
     is greater than e.
     """)
 
@@ -3061,7 +3062,7 @@ add_newdoc("scipy.special", "smirnovi",
     """
     smirnovi(n, y)
 
-    Inverse to smirnov
+    Inverse to `smirnov`
 
     Returns ``e`` such that ``smirnov(n, e) = y``.
     """)
@@ -3095,18 +3096,18 @@ add_newdoc("scipy.special", "stdtridf",
     """
     stdtridf(p, t)
 
-    Inverse of stdtr vs df
+    Inverse of `stdtr` vs df
 
-    Returns the argument df such that stdtr(df, t) is equal to p.
+    Returns the argument df such that stdtr(df, t) is equal to `p`.
     """)
 
 add_newdoc("scipy.special", "stdtrit",
     """
     stdtrit(df, p)
 
-    Inverse of stdtr vs t
+    Inverse of `stdtr` vs `t`
 
-    Returns the argument t such that stdtr(df, t) is equal to p.
+    Returns the argument `t` such that stdtr(df, t) is equal to `p`.
     """)
 
 add_newdoc("scipy.special", "struve",
@@ -3115,8 +3116,8 @@ add_newdoc("scipy.special", "struve",
 
     Struve function
 
-    Computes the struve function Hv(x) of order v at x, x must be
-    positive unless v is an integer.
+    Computes the struve function Hv(x) of order `v` at `x`, `x` must be
+    positive unless `v` is an integer.
     """)
 
 add_newdoc("scipy.special", "tandg",
@@ -3154,7 +3155,7 @@ add_newdoc("scipy.special", "xlogy",
     """
     xlogy(x, y)
 
-    Compute ``x*log(y)`` so that the result is 0 if `x = 0`.
+    Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
 
     Parameters
     ----------
@@ -3179,7 +3180,7 @@ add_newdoc("scipy.special", "xlog1py",
     """
     xlog1py(x, y)
 
-    Compute ``x*log1p(y)`` so that the result is 0 if `x = 0`.
+    Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
 
     Parameters
     ----------
@@ -3206,7 +3207,7 @@ add_newdoc("scipy.special", "y0",
 
     Bessel function of the second kind of order 0
 
-    Returns the Bessel function of the second kind of order 0 at x.
+    Returns the Bessel function of the second kind of order 0 at `x`.
     """)
 
 add_newdoc("scipy.special", "y1",
@@ -3215,7 +3216,7 @@ add_newdoc("scipy.special", "y1",
 
     Bessel function of the second kind of order 1
 
-    Returns the Bessel function of the second kind of order 1 at x.
+    Returns the Bessel function of the second kind of order 1 at `x`.
     """)
 
 add_newdoc("scipy.special", "yn",
@@ -3224,8 +3225,8 @@ add_newdoc("scipy.special", "yn",
 
     Bessel function of the second kind of integer order
 
-    Returns the Bessel function of the second kind of integer order n
-    at x.
+    Returns the Bessel function of the second kind of integer order `n`
+    at `x`.
     """)
 
 add_newdoc("scipy.special", "yv",
@@ -3234,8 +3235,8 @@ add_newdoc("scipy.special", "yv",
 
     Bessel function of the second kind of real order
 
-    Returns the Bessel function of the second kind of real order v at
-    complex z.
+    Returns the Bessel function of the second kind of real order `v` at
+    complex `z`.
     """)
 
 add_newdoc("scipy.special", "yve",
@@ -3245,7 +3246,7 @@ add_newdoc("scipy.special", "yve",
     Exponentially scaled Bessel function of the second kind of real order
 
     Returns the exponentially scaled Bessel function of the second
-    kind of real order v at complex z::
+    kind of real order `v` at complex `z`::
 
         yve(v, z) = yv(v, z) * exp(-abs(z.imag))
 
@@ -3258,7 +3259,7 @@ add_newdoc("scipy.special", "zeta",
     Hurwitz zeta function
 
     The Riemann zeta function of two arguments (also known as the
-    Hurwitz zeta funtion).
+    Hurwitz zeta function).
 
     This function is defined as
 
@@ -3294,7 +3295,7 @@ add_newdoc("scipy.special", "_struve_asymp_large_z",
     """
     _struve_asymp_large_z(v, z, is_h)
 
-    Internal function for testing struve & modstruve
+    Internal function for testing `struve` & `modstruve`
 
     Evaluates using asymptotic expansion
 
@@ -3307,7 +3308,7 @@ add_newdoc("scipy.special", "_struve_power_series",
     """
     _struve_power_series(v, z, is_h)
 
-    Internal function for testing struve & modstruve
+    Internal function for testing `struve` & `modstruve`
 
     Evaluates using power series
 
@@ -3320,7 +3321,7 @@ add_newdoc("scipy.special", "_struve_bessel_series",
     """
     _struve_bessel_series(v, z, is_h)
 
-    Internal function for testing struve & modstruve
+    Internal function for testing `struve` & `modstruve`
 
     Evaluates using Bessel function series
 
