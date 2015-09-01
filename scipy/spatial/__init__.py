@@ -91,6 +91,7 @@ from __future__ import division, print_function, absolute_import
 from .kdtree import *
 from .ckdtree import *
 from .qhull import *
+from .spherical_voronoi import SphericalVoronoi
 from ._plotutils import *
 from ._procrustes import procrustes
 
