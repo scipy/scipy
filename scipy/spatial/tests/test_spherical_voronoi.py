@@ -365,9 +365,10 @@ class Test_Spherical_Voronoi_Diagram_Properties(TestCase):
             for voronoi_vertex in voronoi_vertex_array:
                 list_voronoi_vertices.append(voronoi_vertex)
         array_voronoi_vertices = np.array(list_voronoi_vertices)
-        df = pandas.DataFrame(array_voronoi_vertices)
-        df_unique_vertices = df.drop_duplicates()
-        actual_number_unique_spherical_Voronoi_vertices = df_unique_vertices.shape[0]
+        contig_array = np.ascontiguousarray(array_voronoi_vertices)
+        unique_array_voronoi_vertices = np.unique(contig_array.view([('', contig_array.dtype)]*contig_array.shape[1]))
+        unique_array_voronoi_vertices = unique_array_voronoi_vertices.view(contig_array.dtype).reshape((unique_array_voronoi_vertices.shape[0], contig_array.shape[1]))
+        actual_number_unique_spherical_Voronoi_vertices = unique_array_voronoi_vertices.shape[0]
         self.assertLessEqual(actual_number_unique_spherical_Voronoi_vertices, max_allowed_spherical_Voronoi_vertices, 'The maximum number of Voronoi vertices allowed on the spherical surface should be 2n - 4.')
 
 
