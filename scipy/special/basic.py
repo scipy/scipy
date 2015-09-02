@@ -522,14 +522,13 @@ def kvp(v, z, n=1):
     Calculate multiple values at order 5:
 
     >>> from scipy.special import kvp
-    >>> print(kvp(5, (1, 2, 3+5j)))
-    [ -1.84903536e+03+0.j          -2.57735387e+01+0.j
-      -3.06627741e-02+0.08750845j]
+    >>> kvp(5, (1, 2, 3+5j))
+    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
 
     Calculate for a single value at multiple orders:
 
-    >>> print(kvp((4, 4.5, 5), 1))
-    [ -184.03092621  -568.95853449 -1849.03536385]
+    >>> kvp((4, 4.5, 5), 1)
+    array([ -184.0309,  -568.9585, -1849.0354])
 
     """
     if not isinstance(n, int) or (n < 0):
