@@ -1926,7 +1926,47 @@ add_newdoc("scipy.special", "kn",
 
     Modified Bessel function of the second kind of integer order `n`
 
-    These are also sometimes called functions of the third kind.
+    Returns the modified Bessel function of the second kind for integer order
+    `n` at real `z`.
+
+    These are also sometimes called functions of the third kind, Basset
+    functions, or Macdonald functions.
+
+    Parameters
+    ----------
+    n : array_like of int
+        Order of Bessel functions (floats will truncate with a warning)
+    z : array_like of float
+        Argument at which to evaluate the Bessel functions
+
+    Returns
+    -------
+    out : ndarray
+        The results
+
+    See Also
+    --------
+    kv : Same function, but accepts real order and complex argument
+    kvp : Derivative of this function
+
+    Examples
+    --------
+    Plot the function of several orders for real input:
+
+    >>> from scipy.special import kn
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 1000)
+    >>> for N in range(6):
+    ...     plt.plot(x, kn(N, x), label='$K_{}(x)$'.format(N))
+    >>> plt.ylim(0, 10)
+    >>> plt.legend()
+    >>> plt.title(r'Modified Bessel function of the second kind $K_n(x)$')
+    >>> plt.show()
+
+    Calculate for a single value at multiple orders:
+
+    >>> kn([4, 5, 6], 1)
+    array([   44.2324,   360.9606,  3653.8384], dtype=float32)
     """)
 
 add_newdoc("scipy.special", "kolmogi",
@@ -1952,13 +1992,52 @@ add_newdoc("scipy.special", "kolmogorov",
     """)
 
 add_newdoc("scipy.special", "kv",
-    """
+    r"""
     kv(v, z)
 
     Modified Bessel function of the second kind of real order `v`
 
-    Returns the modified Bessel function of the second kind (sometimes
-    called the third kind) for real order v at complex z.
+    Returns the modified Bessel function of the second kind for real order
+    `v` at complex `z`.
+
+    These are also sometimes called functions of the third kind, Basset
+    functions, or Macdonald functions.
+
+    Parameters
+    ----------
+    v : array_like of float
+        Order of Bessel functions
+    z : array_like of complex
+        Argument at which to evaluate the Bessel functions
+
+    Returns
+    -------
+    out : ndarray
+        The results
+
+    See Also
+    --------
+    kvp : Derivative of this function
+
+    Examples
+    --------
+    Plot the function of several orders for real input:
+
+    >>> from scipy.special import kv
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 1000)
+    >>> for N in np.linspace(0, 6, 5):
+    ...     plt.plot(x, kv(N, x), label='$K_{{{}}}(x)$'.format(N))
+    >>> plt.ylim(0, 10)
+    >>> plt.legend()
+    >>> plt.title(r'Modified Bessel function of the second kind $K_\nu(x)$')
+    >>> plt.show()
+
+    Calculate for a single value at multiple orders:
+
+    >>> kv([4, 4.5, 5], 1+2j)
+    array([ 0.1992+2.3892j,  2.3493+3.6j   ,  7.2827+3.8104j])
+
     """)
 
 add_newdoc("scipy.special", "kve",
