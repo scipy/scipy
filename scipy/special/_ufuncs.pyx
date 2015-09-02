@@ -6581,6 +6581,11 @@ cdef char *ufunc_kn_doc = (
     "out : ndarray\n"
     "    The results\n"
     "\n"
+    "See Also\n"
+    "--------\n"
+    "kv : Same function, but accepts real order and complex argument\n"
+    "kvp : Derivative of this function\n"
+    "\n"
     "Examples\n"
     "--------\n"
     "Plot the function of several orders for real input:\n"
@@ -6597,8 +6602,8 @@ cdef char *ufunc_kn_doc = (
     "\n"
     "Calculate for a single value at multiple orders:\n"
     "\n"
-    ">>> print(kn([4, 5, 6], 1))\n"
-    "[   44.23241425   360.96060181  3653.83837891]")
+    ">>> kn([4, 5, 6], 1)\n"
+    "array([   44.2324,   360.9606,  3653.8384], dtype=float32)")
 ufunc_kn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_kn_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_kn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
@@ -6718,8 +6723,8 @@ cdef char *ufunc_kv_doc = (
     "\n"
     "    Calculate for a single value at multiple orders:\n"
     "\n"
-    "    >>> print(kv([4, 4.5, 5], 1+2j))\n"
-    "    [ 0.19920848+2.38918114j  2.34926017+3.59995073j  7.28267680+3.81037734j]")
+    "    >>> kv([4, 4.5, 5], 1+2j)\n"
+    "    array([ 0.1992+2.3892j,  2.3493+3.6j   ,  7.2827+3.8104j])")
 ufunc_kv_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_kv_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
 ufunc_kv_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
