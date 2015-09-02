@@ -521,6 +521,7 @@ def kvp(v, z, n=1):
     --------
     Calculate multiple values at order 5:
 
+    >>> from scipy.special import kvp
     >>> print(kvp(5, (1, 2, 3+5j)))
     [ -1.84903536e+03+0.j          -2.57735387e+01+0.j
       -3.06627741e-02+0.08750845j]

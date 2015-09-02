@@ -1948,9 +1948,11 @@ add_newdoc("scipy.special", "kn",
     --------
     Plot the function of several orders for real input:
 
+    >>> from scipy.special import kn
     >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 5, 1000)
     >>> for N in range(6):
-    >>>     plot(x, kn(N, x), label='$K_{}(x)$'.format(N))
+    ...     plt.plot(x, kn(N, x), label='$K_{}(x)$'.format(N))
     >>> plt.ylim(0, 10)
     >>> plt.legend()
     >>> plt.title(r'Modified Bessel function of the second kind $K_n(x)$')
@@ -2012,9 +2014,11 @@ add_newdoc("scipy.special", "kv",
     --------
     Plot the function of several orders for real input:
 
+    >>> from scipy.special import kv
     >>> import matplotlib.pyplot as plt
-    >>> for N in linspace(0, 2, 5):
-    >>>     plot(x, kv(N, x), label='$K_{{{}}}(x)$'.format(N))
+    >>> x = np.linspace(0, 5, 1000)
+    >>> for N in np.linspace(0, 6, 5):
+    ...     plt.plot(x, kv(N, x), label='$K_{{{}}}(x)$'.format(N))
     >>> plt.ylim(0, 10)
     >>> plt.legend()
     >>> plt.title(r'Modified Bessel function of the second kind $K_\nu(x)$')
