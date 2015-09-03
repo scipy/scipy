@@ -1966,7 +1966,7 @@ add_newdoc("scipy.special", "kn",
     Calculate for a single value at multiple orders:
 
     >>> kn([4, 5, 6], 1)
-    array([   44.2324,   360.9606,  3653.8384], dtype=float32)
+    array([   44.23241585,   360.9605896 ,  3653.83831186])
     """)
 
 add_newdoc("scipy.special", "kolmogi",
