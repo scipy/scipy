@@ -6603,7 +6603,7 @@ cdef char *ufunc_kn_doc = (
     "Calculate for a single value at multiple orders:\n"
     "\n"
     ">>> kn([4, 5, 6], 1)\n"
-    "array([   44.2324,   360.9606,  3653.8384], dtype=float32)")
+    "array([   44.23241585,   360.9605896 ,  3653.83831186])")
 ufunc_kn_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
 ufunc_kn_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_kn_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
