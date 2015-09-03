@@ -1819,7 +1819,7 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
     if cnp.PyArray_TYPE(u1) != typecode:
         raise ValueError("'u' must have the same type as 'Q' and 'R'")
 
-    if not (-m <= k1 < m):
+    if not (-m <= k1 <= m):
         raise ValueError("'k' is out of bounds")
 
     if k1 < 0:
@@ -1943,7 +1943,7 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
         
     if cnp.PyArray_TYPE(u1) != typecode:
         raise ValueError("'u' must have the same type as Q and R")
-    if not (-n <= k1 < n):
+    if not (-n <= k1 <= n):
         raise ValueError("'k' is out of bounds")
     if k1 < 0:
         k1 += n
