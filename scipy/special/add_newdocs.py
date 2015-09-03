@@ -2013,7 +2013,8 @@ add_newdoc("scipy.special", "kv",
     Returns
     -------
     out : ndarray
-        The results
+        The results. Note that input must be of complex type to get complex
+        output, e.g. ``kv(3, -2+0j)`` instead of ``kv(3, -2)``.
 
     See Also
     --------
