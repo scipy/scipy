@@ -54,6 +54,15 @@ def linear_sum_assignment(cost_matrix):
     -----
     .. versionadded:: 0.17.0
 
+    Example
+    -------
+    >>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])
+    >>> row_ind, col_ind = linear_sum_assignment(cost)
+    >>> col_ind
+    array([1, 0, 2])
+    >>> cost[row_ind, col_ind].sum()
+    5
+
     References
     ----------
     1. http://www.public.iastate.edu/~ddoty/HungarianAlgorithm.html
