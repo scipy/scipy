@@ -162,7 +162,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 raise TypeError('dimensions not understood')
             warn('coo_matrix(None, shape=(M,N)) is deprecated, '
                     'use coo_matrix( (M,N) ) instead', DeprecationWarning)
-            idx_dtype = get_index_dtype(maxval=max(M, N))
+            idx_dtype = get_index_dtype(maxval=max(shape))
             self.shape = shape
             self.data = np.array([], getdtype(dtype, default=float))
             self.row = np.array([], dtype=idx_dtype)
