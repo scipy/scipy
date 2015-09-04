@@ -156,18 +156,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.data = np.array(obj, copy=copy)
                 self.has_canonical_format = False
 
-        elif arg1 is None:
-            # Initialize an empty matrix.
-            if not isinstance(shape, tuple) or not isintlike(shape[0]):
-                raise TypeError('dimensions not understood')
-            warn('coo_matrix(None, shape=(M,N)) is deprecated, '
-                    'use coo_matrix( (M,N) ) instead', DeprecationWarning)
-            idx_dtype = get_index_dtype(maxval=max(shape))
-            self.shape = shape
-            self.data = np.array([], getdtype(dtype, default=float))
-            self.row = np.array([], dtype=idx_dtype)
-            self.col = np.array([], dtype=idx_dtype)
-            self.has_canonical_format = True
         else:
             if isspmatrix(arg1):
                 if isspmatrix_coo(arg1) and copy:
