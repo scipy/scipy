@@ -2294,8 +2294,6 @@ class TestBessel(TestCase):
         assert_array_almost_equal(ao, array([2.19714133, 5.42968104]), 6)
         ao = special.ynp_zeros(43, 5)
         assert_tol_equal(special.yvp(43, ao), 0, atol=1e-15)
-        ao = special.ynp_zeros(443, 5)
-        assert_tol_equal(special.yvp(443, ao), 0, atol=1e-9)
 
     def test_ynp_zeros_large_order(self):
         ao = special.ynp_zeros(443, 5)
