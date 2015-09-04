@@ -172,10 +172,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = False
             else:
                 #dense argument
-                try:
-                    M = np.atleast_2d(np.asarray(arg1))
-                except:
-                    raise TypeError('invalid input format')
+                M = np.atleast_2d(np.asarray(arg1))
 
                 if M.ndim != 2:
                     raise TypeError('expected dimension <= 2 array or matrix')
