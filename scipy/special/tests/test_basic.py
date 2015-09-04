@@ -2299,6 +2299,26 @@ class TestBessel(TestCase):
         ao = special.ynp_zeros(443, 5)
         assert_tol_equal(special.yvp(443, ao), 0, atol=1e-14)
 
+        # The following is a regression test for gh-4690.
+        # The expected values were computed using mpmath as follows:
+        #   >>> from sympy import mpmath
+        #   >>> mpmath.mp.prec = 320
+        #   >>> expected = [float(mpmath.besselyzero(281, k, derivative=1))
+        #   ...             for k in range(1, 9)]
+        z = special.ynp_zeros(281, 8)
+        expected = [293.0713342856311, 302.64840780827103,
+                    310.529174168482, 317.57549340480614,
+                    324.0914195952365, 330.2295785846844,
+                    336.0802251530475, 341.70224309198016]
+        assert_allclose(z, expected, rtol=1e-13)
+
+        # The expected value of ynp_zeros(1000, 200)[-1] was also computed
+        # using mpmath:
+        #   >>> float(mpmath.besselyzero(1000, 200, derivative=1))
+        #   1933.428569979655
+        z = special.ynp_zeros(1000, 200)
+        assert_allclose(z[-1], 1933.428569979655, rtol=1e-13)
+
     def test_yn(self):
         yn2n = special.yn(1, .2)
         assert_almost_equal(yn2n, -3.3238249881118471, 8)
