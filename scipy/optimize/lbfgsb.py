@@ -372,6 +372,9 @@ class LbfgsInvHessProduct(LinearOperator):
     memory approximation to the inverse Hessian, accumulated during the
     optimization.
 
+    Objects of this class implement the ``scipy.sparse.linalg.LinearOperator``
+    interface.
+
     Parameters
     ----------
     sk : array_like, shape=(n_corr, n)

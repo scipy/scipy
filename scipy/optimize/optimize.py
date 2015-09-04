@@ -86,10 +86,14 @@ class OptimizeResult(dict):
         underlying solver. Refer to `message` for details.
     message : str
         Description of the cause of the termination.
-    fun, jac, hess, hess_inv : ndarray
-        Values of objective function, Jacobian, Hessian or its inverse (if
+    fun, jac, hess: ndarray
+        Values of objective function, its Jacobian and its Hessian (if
         available). The Hessians may be approximations, see the documentation
         of the function in question.
+    hess_inv : object
+        Inverse of the objective function's Hessian; may be an approximation.
+        Not available for all solvers. The type of this attribute may be
+        either np.ndarray or scipy.sparse.linalg.LinearOperator.
     nfev, njev, nhev : int
         Number of evaluations of the objective functions and of its
         Jacobian and Hessian.
