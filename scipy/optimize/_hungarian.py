@@ -1,10 +1,6 @@
-"""
-Solve the unique lowest-cost assignment problem using the
-Hungarian algorithm (also known as Munkres algorithm).
-
-"""
-# Taken from scikit-learn.
-# Based on original code by Brian Clapper, adapted to NumPy by Gael Varoquaux.
+# Hungarian algorithm (Kuhn-Munkres) for solving the linear sum assignment
+# problem. Taken from scikit-learn. Based on original code by Brian Clapper,
+# adapted to NumPy by Gael Varoquaux.
 # Further improvements by Ben Root, Vlad Niculae and Lars Buitinck.
 #
 # Copyright (c) 2008 Brian M. Clapper <bmc@clapper.org>, Gael Varoquaux
@@ -54,6 +50,10 @@ def linear_sum_assignment(cost_matrix):
         sorted; in the case of a square cost matrix they will be equal to
         ``numpy.arange(cost_matrix.shape[0])``.
 
+    Notes
+    -----
+    .. versionadded:: 0.17.0
+
     References
     ----------
     1. http://www.public.iastate.edu/~ddoty/HungarianAlgorithm.html
@@ -69,6 +69,11 @@ def linear_sum_assignment(cost_matrix):
 
     5. https://en.wikipedia.org/wiki/Hungarian_algorithm
     """
+    cost_matrix = np.asarray(cost_matrix)
+    if len(cost_matrix.shape) != 2:
+        raise ValueError("expected a matrix (2-d array), got a %r array"
+                         % (cost_matrix.shape,))
+
     state = _Hungary(cost_matrix)
 
     # No need to bother with assignments if one of the dimensions
@@ -91,8 +96,6 @@ class _Hungary(object):
     """
 
     def __init__(self, cost_matrix):
-        cost_matrix = np.atleast_2d(cost_matrix)
-
         # The algorithm expects more columns than rows in the cost matrix.
         if cost_matrix.shape[1] < cost_matrix.shape[0]:
             self.C = (cost_matrix.T).copy()
@@ -107,16 +110,6 @@ class _Hungary(object):
         self.Z0_c = 0
         self.path = np.zeros((n + m, 2), dtype=int)
         self.marked = np.zeros((n, m), dtype=int)
-
-    def _find_prime_in_row(self, row):
-        """
-        Find the first prime element in the specified row. Returns
-        the column index, or -1 if no starred element was found.
-        """
-        col = np.argmax(self.marked[row] == 2)
-        if self.marked[row, col] != 2:
-            col = -1
-        return col
 
     def _clear_covers(self):
         """Clear all covered matrix cells"""

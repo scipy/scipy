@@ -1,7 +1,7 @@
 # Author: Brian M. Clapper, G. Varoquaux, Lars Buitinck
 # License: BSD
 
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_raises
 
 import numpy as np
 
@@ -47,3 +47,13 @@ def test_linear_sum_assignment():
         row_ind, col_ind = linear_sum_assignment(cost_matrix.T)
         assert_array_equal(row_ind, np.sort(row_ind))
         assert_array_equal(expected_cost, cost_matrix[row_ind, col_ind])
+
+
+def test_linear_sum_assignment_input_validation():
+    assert_raises(ValueError, linear_sum_assignment, [1, 2, 3])
+
+    C = [[1, 2, 3], [4, 5, 6]]
+    assert_array_equal(linear_sum_assignment(C),
+                       linear_sum_assignment(np.asarray(C)))
+    assert_array_equal(linear_sum_assignment(C),
+                       linear_sum_assignment(np.matrix(C)))
