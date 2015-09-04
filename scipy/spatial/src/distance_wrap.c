@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include <Python.h>
 #include <numpy/arrayobject.h>
+#include <numpy/npy_math.h>
 
 #include "distance_impl.h"
 

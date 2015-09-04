@@ -413,13 +413,19 @@ pdist_cosine(const double *X, double *dm, npy_intp m, npy_intp n,
              const double *norms)
 {
     const double *u, *v;
+    double cosine;
     npy_intp i, j;
 
     for (i = 0; i < m; i++) {
         for (j = i + 1; j < m; j++, dm++) {
             u = X + (n * i);
             v = X + (n * j);
-            *dm = 1. - dot_product(u, v, n) / (norms[i] * norms[j]);
+            cosine = dot_product(u, v, n) / (norms[i] * norms[j]);
+            if (fabs(cosine) > 1.) {
+                /* Clip to correct rounding error. */
+                cosine = npy_copysign(1, cosine);
+            }
+            *dm = 1. - cosine;
         }
     }
 }
