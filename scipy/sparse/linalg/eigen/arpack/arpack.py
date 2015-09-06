@@ -1649,8 +1649,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         .. versionadded:: 0.12.0
     v0 : ndarray, optional
         Starting vector for iteration, of length min(A.shape). Should be an
-        (approximate) right singular vector if N > M and a right singular vector
-        otherwise.
+        (approximate) left singular vector if N > M and a right singular
+        vector otherwise.
         Default: random
 
         .. versionadded:: 0.12.0
