@@ -441,6 +441,8 @@ class ode(object):
         """
         if self._integrator.supports_solout:
             self._integrator.set_solout(solout)
+            if self._y is not None:
+                self._integrator.reset(len(self._y), self.jac is not None)
         else:
             raise ValueError("selected integrator does not support solout,"
                             + " choose another one")
