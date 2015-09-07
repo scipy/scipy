@@ -91,6 +91,12 @@ class TestLinkage(object):
         expectedZ = getattr(hierarchy_test_data, 'linkage_X_' + method)
         assert_allclose(Z, expectedZ, atol=1e-06)
 
+        # Also test on a condensed matrix
+        y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
+                                         metric="euclidean")
+        Z = linkage(y, method)
+        assert_allclose(Z, expectedZ, atol=1e-06)
+
 
 class TestInconsistent(object):
     def test_inconsistent_tdist(self):
