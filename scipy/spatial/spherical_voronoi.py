@@ -288,13 +288,14 @@ class SphericalVoronoi:
     >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     >>> import numpy as np
     >>> import scipy as sp
-    >>> import voronoi_utility
+    >>> from scipy.spatial import SphericalVoronoi
+    >>> import scipy.spatial.spherical_voronoi
     >>> #pin down the pseudo random number generator (prng) object to avoid certain pathological generator sets
     >>> prng = np.random.RandomState(117) #otherwise, would need to filter the random data to ensure Voronoi diagram is possible
     >>> #produce 1000 random points on the unit sphere using the above seed
-    >>> random_coordinate_array = voronoi_utility.generate_random_array_spherical_generators(1000,1.0,prng)
+    >>> random_coordinate_array = scipy.spatial.spherical_voronoi.generate_random_array_spherical_generators(1000,1.0,prng)
     >>> #produce the Voronoi diagram data
-    >>> voronoi_instance = voronoi_utility.Voronoi_Sphere_Surface(random_coordinate_array,1.0)
+    >>> voronoi_instance = SphericalVoronoi(random_coordinate_array,1.0)
     >>> dictionary_voronoi_polygon_vertices = voronoi_instance.voronoi_region_vertices_spherical_surface()
     >>> #plot the Voronoi diagram
     >>> fig = plt.figure()
@@ -315,8 +316,7 @@ class SphericalVoronoi:
     [<matplotlib.axis.XTick object at 0x...>, <matplotlib.axis.XTick object at 0x...>]
     [<matplotlib.axis.XTick object at 0x...>, <matplotlib.axis.XTick object at 0x...>]
     >>> plt.tick_params(axis='both', which='major', labelsize=6)
-
-    .. image:: example_random_Voronoi_plot.png
+    >>> plt.show
 
     Now, calculate the surface areas of the Voronoi region polygons and verify that the reconstituted surface area is sensible:
 
@@ -331,6 +331,7 @@ class SphericalVoronoi:
     For completeness, produce the Delaunay triangulation on the surface of the unit sphere for the same data set:
 
     >>> Delaunay_triangles = voronoi_instance.delaunay_triangulation_spherical_surface()
+    >>> Delaunay_triangles = random_coordinate_array[Delaunay_triangles]
     >>> fig2 = plt.figure()
     >>> fig2.set_size_inches(2,2)
     >>> ax = fig2.add_subplot(111, projection='3d')
@@ -348,8 +349,7 @@ class SphericalVoronoi:
     [<matplotlib.axis.XTick object at 0x...>, <matplotlib.axis.XTick object at 0x...>]
     [<matplotlib.axis.XTick object at 0x...>, <matplotlib.axis.XTick object at 0x...>]
     >>> plt.tick_params(axis='both', which='major', labelsize=6)
-
-    .. image:: example_Delaunay.png
+    >>> plt.show
 
     '''
 
@@ -367,7 +367,7 @@ class SphericalVoronoi:
     def delaunay_triangulation_spherical_surface(self):
         '''Delaunay tessellation of the points on the surface of the sphere. This is simply the 3D convex hull of the points. Returns a shape (N,3,3) array of points representing the vertices of the Delaunay triangulation on the sphere (i.e., N three-dimensional triangle vertex arrays).'''
         hull = scipy.spatial.ConvexHull(self.original_point_array)
-        array_points_vertices_Delaunay_triangulation = produce_triangle_vertex_coordinate_array_Delaunay_sphere(hull)
+        array_points_vertices_Delaunay_triangulation = hull.simplices
         return array_points_vertices_Delaunay_triangulation
 
     def voronoi_region_vertices_spherical_surface(self):
