@@ -131,21 +131,10 @@ def calculate_surface_area_of_planar_polygon_in_3D_space(array_ordered_Voronoi_p
 
 def calculate_and_sum_up_inner_sphere_surface_angles_Voronoi_polygon(array_ordered_Voronoi_polygon_vertices,sphere_radius):
     '''Takes an array of ordered Voronoi polygon vertices (for a single generator) and calculates the sum of the inner angles on the sphere surface. The resulting value is theta in the equation provided here: http://mathworld.wolfram.com/SphericalPolygon.html '''
-    #if sphere_radius != 1.0:
-        #try to deal with non-unit circles by temporarily normalizing the data to radius 1:
-        #spherical_polar_polygon_vertices = convert_cartesian_array_to_spherical_array(array_ordered_Voronoi_polygon_vertices)
-        #spherical_polar_polygon_vertices[...,0] = 1.0
-        #array_ordered_Voronoi_polygon_vertices = convert_spherical_array_to_cartesian_array(spherical_polar_polygon_vertices)
-
     num_vertices_in_Voronoi_polygon = array_ordered_Voronoi_polygon_vertices.shape[0] #the number of rows == number of vertices in polygon
-
-    #some debugging here -- I'm concerned that some sphere radii are demonstrating faulty projection of coordinates (some have r = 1, while others have r = sphere_radius -- see workflowy for more detailed notes)
     spherical_polar_polygon_vertices = convert_cartesian_array_to_spherical_array(array_ordered_Voronoi_polygon_vertices)
     min_vertex_radius = spherical_polar_polygon_vertices[...,0].min()
-    #print 'before array projection check'
     assert sphere_radius - min_vertex_radius < 0.1, "The minimum projected Voronoi vertex r value should match the sphere_radius of {sphere_radius}, but got {r_min}.".format(sphere_radius=sphere_radius,r_min=min_vertex_radius)
-    #print 'after array projection check'
-
     #two edges (great circle arcs actually) per vertex are needed to calculate tangent vectors / inner angle at that vertex
     current_vertex_index = 0
     list_Voronoi_poygon_angles_radians = []
@@ -163,36 +152,18 @@ def calculate_and_sum_up_inner_sphere_surface_angles_Voronoi_polygon(array_order
         current_vertex = array_ordered_Voronoi_polygon_vertices[current_vertex_index] 
         previous_vertex = array_ordered_Voronoi_polygon_vertices[previous_vertex_index]
         next_vertex = array_ordered_Voronoi_polygon_vertices[next_vertex_index] 
-        #produce a,b,c for law of cosines using spherical distance (http://mathworld.wolfram.com/SphericalDistance.html)
-        #old_a = math.acos(numpy.dot(current_vertex,next_vertex))
-        #old_b = math.acos(numpy.dot(next_vertex,previous_vertex))
-        #old_c = math.acos(numpy.dot(previous_vertex,current_vertex))
-        #print 'law of cosines a,b,c:', old_a,old_b,old_c
-        #a = calculate_haversine_distance_between_spherical_points(current_vertex,next_vertex,sphere_radius)
-        #b = calculate_haversine_distance_between_spherical_points(next_vertex,previous_vertex,sphere_radius)
-        #c = calculate_haversine_distance_between_spherical_points(previous_vertex,current_vertex,sphere_radius)
         a = calculate_Vincenty_distance_between_spherical_points(current_vertex,next_vertex,sphere_radius)
         b = calculate_Vincenty_distance_between_spherical_points(next_vertex,previous_vertex,sphere_radius)
         c = calculate_Vincenty_distance_between_spherical_points(previous_vertex,current_vertex,sphere_radius)
-        #print 'law of haversines a,b,c:', a,b,c
-        #print 'Vincenty edge lengths a,b,c:', a,b,c
         pre_acos_term = (math.cos(b) - math.cos(a)*math.cos(c)) / (math.sin(a)*math.sin(c))
-        if abs(pre_acos_term) > 1.0:
-            print 'angle calc vertex coords (giving acos violation):', [convert_cartesian_array_to_spherical_array(vertex) for vertex in [current_vertex,previous_vertex,next_vertex]]
-            print 'Vincenty edge lengths (giving acos violation) a,b,c:', a,b,c
-            print 'pre_acos_term:', pre_acos_term
-            #break
         current_vertex_inner_angle_on_sphere_surface = math.acos(pre_acos_term)
-
         list_Voronoi_poygon_angles_radians.append(current_vertex_inner_angle_on_sphere_surface)
-
         current_vertex_index += 1
 
     if abs(pre_acos_term) > 1.0:
         theta = 0
     else:
         theta = np.sum(np.array(list_Voronoi_poygon_angles_radians))
-
     return theta 
 
 def calculate_haversine_distance_between_spherical_points(cartesian_array_1,cartesian_array_2,sphere_radius):
@@ -380,10 +351,10 @@ class SphericalVoronoi:
     def voronoi_region_vertices_spherical_surface(self):
         '''Returns a dictionary with the sorted (non-intersecting) polygon vertices for the Voronoi regions associated with each generator (original data point) index. A dictionary entry would be structured as follows: `{generator_index : array_polygon_vertices, ...}`.'''
         #use strategy for Voronoi region generation discussed at PyData London 2015 with Ross Hemsley and Nikolai Nowaczyk
-        #step 2: perform 3D Delaunay triangulation on data set that includes the extra generator
-        tri = scipy.spatial.ConvexHull(self.original_point_array) #using ConvexHull is much faster in scipy (vs. Delaunay), but here we only get the triangles on the sphere surface in the simplices object (no longer adding an extra point at the origin at this stage)
-        #add the origin to each of the simplices to get the same tetrahedra we'd have gotten from Delaunay tetrahedralization
-        simplex_coords = tri.points[tri.simplices] #triangles on surface surface
+        #step 1: perform 3D Delaunay triangulation on data set (ConvexHull can also be used, and is faster)
+        tri = scipy.spatial.ConvexHull(self.original_point_array) 
+        #step 2: add the origin to each of the simplices to get the same tetrahedra we'd have gotten from Delaunay tetrahedralization
+        simplex_coords = tri.points[tri.simplices] #triangles on sphere surface
         simplex_coords = np.insert(simplex_coords, 3, np.zeros((1,3)), axis = 1)
         #step 3: produce circumspheres / circumcenters of tetrahedra from 3D Delaunay
         array_circumcenter_coords = calc_circumcenter_circumsphere_tetrahedron_vectorized(simplex_coords)
@@ -398,21 +369,9 @@ class SphericalVoronoi:
         dictionary_generators_and_triangle_indices_containing_those_generators = {}
         for generator_index, triangle_index in zip(filter_tuple[1], filter_tuple[0]):
             dictionary_generators_and_triangle_indices_containing_those_generators.setdefault(generator_index, []).append(triangle_index)
-
-        #print 'dictionary_generators_and_triangle_indices_containing_those_generators[0]:', dictionary_generators_and_triangle_indices_containing_those_generators[0]
-
-        #print 'filter_tuple:', filter_tuple
-        #print 'len(filter_tuple[0]):', len(filter_tuple[0])
-        #print 'len(filter_tuple[1]):', len(filter_tuple[1])
-        #df = pandas.DataFrame({'generator_indices' : filter_tuple[1]}, index = filter_tuple[0])
-        #gb = df.groupby('generator_indices')
-        #dictionary_generators_and_triangle_indices_containing_those_generators = gb.groups
         generator_index = 0
         for generator in tri.points[:-1]:
-            #print 'generator_index:', generator_index
-            #print 'generator:', generator
             indices_of_triangles_surrounding_generator = dictionary_generators_and_triangle_indices_containing_those_generators[generator_index]
-            #print 'indices_of_triangles_surrounding_generator:', indices_of_triangles_surrounding_generator
             #pick any one of the triangles surrounding the generator and pick a non-generator vertex
             first_tetrahedron_index = indices_of_triangles_surrounding_generator[0]
             first_tetrahedron = array_tetrahedra[first_tetrahedron_index]
@@ -438,8 +397,6 @@ class SphericalVoronoi:
                 indices_candidate_vertices_current_triangle_excluding_generator = np.unique(np.where(current_triangle_coord_array != generator)[0])
                 array_candidate_vertices = current_triangle_coord_array[indices_candidate_vertices_current_triangle_excluding_generator]
                 current_tetrahedron_index_for_neighbour_propagation = np.unique(np.where(current_tetrahedron_coord_array == common_vertex_coordinate)[0])
-                #print 'current_tetrahedron_index:', current_tetrahedron_index
-                #print 'current_tetrahedron_index_for_neighbour_propagation:', current_tetrahedron_index_for_neighbour_propagation
                 next_tetrahedron_index_surrounding_generator = tri.neighbors[current_tetrahedron_index][current_tetrahedron_index_for_neighbour_propagation][0]
                 common_vertex_coordinate = array_candidate_vertices[array_candidate_vertices != common_vertex_coordinate] #for the next iteration
                 ordered_list_tetrahedron_indices_surrounding_current_generator.append(next_tetrahedron_index_surrounding_generator)
