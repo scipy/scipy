@@ -276,6 +276,10 @@ class SphericalVoronoi:
     .. [Caroli] Caroli et al. Robust and Efficient Delaunay triangulations of points on or close to a sphere. Research Report RR-7004, 2009.
     .. [Weisstein] "L'Huilier's Theorem." From MathWorld--A Wolfram Web Resource. http://mathworld.wolfram.com/LHuiliersTheorem.html
     
+    See Also
+    --------
+    Voronoi : Conventional Voronoi diagrams in N dimensions.
+
     Examples
     --------
 
