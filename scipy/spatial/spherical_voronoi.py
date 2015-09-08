@@ -299,8 +299,9 @@ class SphericalVoronoi:
     >>> dictionary_voronoi_polygon_vertices = voronoi_instance.voronoi_region_vertices_spherical_surface()
     >>> #plot the Voronoi diagram
     >>> fig = plt.figure()
-    >>> fig.set_size_inches(2,2)
+    >>> fig.set_size_inches(4,4)
     >>> ax = fig.add_subplot(111, projection='3d')
+    >>> ax.set_title('Voronoi Diagram on Sphere')
     >>> for generator_index, voronoi_region in dictionary_voronoi_polygon_vertices.iteritems():
     ...    random_color = colors.rgb2hex(sp.rand(3))
     ...    #fill in the Voronoi region (polygon) that contains the generator:
@@ -316,7 +317,8 @@ class SphericalVoronoi:
     [<matplotlib.axis.XTick object at 0x...>, <matplotlib.axis.XTick object at 0x...>]
     [<matplotlib.axis.XTick object at 0x...>, <matplotlib.axis.XTick object at 0x...>]
     >>> plt.tick_params(axis='both', which='major', labelsize=6)
-    >>> plt.show
+    >>> plt.tight_layout()
+    >>> plt.show()
 
     Now, calculate the surface areas of the Voronoi region polygons and verify that the reconstituted surface area is sensible:
 
@@ -333,8 +335,9 @@ class SphericalVoronoi:
     >>> Delaunay_triangles = voronoi_instance.delaunay_triangulation_spherical_surface()
     >>> Delaunay_triangles = random_coordinate_array[Delaunay_triangles]
     >>> fig2 = plt.figure()
-    >>> fig2.set_size_inches(2,2)
+    >>> fig2.set_size_inches(4,4)
     >>> ax = fig2.add_subplot(111, projection='3d')
+    >>> ax.set_title('Delaunay Triangulation on Sphere')
     >>> for triangle_coordinate_array in Delaunay_triangles:
     ...     m = ax.plot(triangle_coordinate_array[...,0],triangle_coordinate_array[...,1],triangle_coordinate_array[...,2],c='r',alpha=0.1)
     ...     connecting_array = np.delete(triangle_coordinate_array,1,0)
@@ -349,8 +352,8 @@ class SphericalVoronoi:
     [<matplotlib.axis.XTick object at 0x...>, <matplotlib.axis.XTick object at 0x...>]
     [<matplotlib.axis.XTick object at 0x...>, <matplotlib.axis.XTick object at 0x...>]
     >>> plt.tick_params(axis='both', which='major', labelsize=6)
-    >>> plt.show
-
+    >>> plt.tight_layout()
+    >>> plt.show()
     '''
 
     def __init__(self,points,sphere_radius=None,sphere_center_origin_offset_vector=None):
