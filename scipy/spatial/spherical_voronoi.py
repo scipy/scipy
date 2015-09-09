@@ -159,7 +159,7 @@ def calculate_and_sum_up_inner_sphere_surface_angles_Voronoi_polygon(array_order
     if abs(pre_acos_term) > 1.0:
         theta = 0
     else:
-        theta = np.sum(np.array(list_Voronoi_poygon_angles_radians))
+        theta = np.sum(list_Voronoi_poygon_angles_radians)
     return theta 
 
 def calculate_haversine_distance_between_spherical_points(cartesian_array_1,cartesian_array_2,sphere_radius):
