@@ -127,17 +127,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = True
             else:
                 try:
-                    obj, ij = arg1
-                except:
+                    obj, (row, col) = arg1
+                except (TypeError, ValueError):
                     raise TypeError('invalid input format')
 
-                try:
-                    if len(ij) != 2:
-                        raise TypeError
-                except TypeError:
-                    raise TypeError('invalid input format')
-
-                row, col = ij
                 if shape is None:
                     if len(row) == 0 or len(col) == 0:
                         raise ValueError('cannot infer dimensions from zero '
