@@ -189,6 +189,8 @@ class _TestCommon:
 
         # Some sparse and dense matrices with data for every supported
         # dtype.
+        # This set union is a workaround for numpy#6295, which means that
+        # two np.int64 dtypes don't hash to the same value.
         self.checked_dtypes = set(supported_dtypes).union(self.math_dtypes)
         self.dat_dtypes = {}
         self.datsp_dtypes = {}
