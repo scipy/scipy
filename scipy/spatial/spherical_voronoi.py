@@ -111,15 +111,13 @@ def calculate_surface_area_of_planar_polygon_in_3D_space(array_ordered_Voronoi_p
     def poly_area(poly):
         '''Accepts a list of xyz tuples.'''
         assert len(poly) >= 3, "Not a polygon (< 3 vertices)."
-        total = [0, 0, 0]
+        total = np.zeros(3)
         N = len(poly)
         for i in range(N):
             vi1 = poly[i]
             vi2 = poly[(i+1) % N]
             prod = np.cross(vi1, vi2)
-            total[0] += prod[0]
-            total[1] += prod[1]
-            total[2] += prod[2]
+            total += prod
         result = np.dot(total, unit_normal(poly[0], poly[1], poly[2]))
         return abs(result/2)
 
