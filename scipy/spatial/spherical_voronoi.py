@@ -121,9 +121,7 @@ def calculate_surface_area_of_planar_polygon_in_3D_space(array_ordered_Voronoi_p
         result = np.dot(total, unit_normal(poly[0], poly[1], poly[2]))
         return abs(result/2)
 
-    list_vertices = [] #need a list of tuples for above function
-    for coord in array_ordered_Voronoi_polygon_vertices:
-        list_vertices.append(tuple(coord))
+    list_vertices = list(map(tuple, array_ordered_Voronoi_polygon_vertices))
     planar_polygon_surface_area = poly_area(list_vertices)
     return planar_polygon_surface_area
 
