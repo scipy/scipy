@@ -61,7 +61,7 @@ def spdiags(data, diags, m, n, format=None):
     return dia_matrix((data, diags), shape=(m,n)).asformat(format)
 
 
-def diags(diagonals, offsets, shape=None, format=None, dtype=None):
+def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     """
     Construct a sparse matrix from diagonals.
 
@@ -70,9 +70,9 @@ def diags(diagonals, offsets, shape=None, format=None, dtype=None):
     diagonals : sequence of array_like
         Sequence of arrays containing the matrix diagonals,
         corresponding to `offsets`.
-    offsets : sequence of int
+    offsets : sequence of int or an int, optional
         Diagonals to set:
-          - k = 0  the main diagonal
+          - k = 0  the main diagonal (default)
           - k > 0  the k-th upper diagonal
           - k < 0  the k-th lower diagonal
     shape : tuple of int, optional
