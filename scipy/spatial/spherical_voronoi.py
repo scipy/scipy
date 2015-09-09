@@ -44,7 +44,7 @@ def calc_circumcenter_circumsphere_tetrahedron_vectorized(tetrahedron_coord_arra
     array_x0_values = array_Dx_values / array_denominator_values
     array_y0_values = array_Dy_values / array_denominator_values
     array_z0_values = array_Dz_values / array_denominator_values
-    circumcenter_array = np.hstack((array_x0_values[:,np.newaxis], array_y0_values[:,np.newaxis], array_z0_values[:,np.newaxis]))
+    circumcenter_array = np.column_stack((array_x0_values, array_y0_values, array_z0_values))
     return circumcenter_array
 
 def convert_cartesian_array_to_spherical_array(coord_array,angle_measure='radians'):
