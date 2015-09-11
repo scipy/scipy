@@ -792,7 +792,7 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
 
 static void _VoronoiFT(char *pf, npy_intp len, npy_intp *coor, int rank,
                        int d, npy_intp stride, npy_intp cstride,
-                       npy_intp **f, npy_intp *g, Float64 *sampling)
+                       npy_intp **f, npy_intp *g, const Float64 *sampling)
 {
     npy_intp l = -1, ii, maxl, idx1, idx2;
     npy_intp jj;
@@ -879,17 +879,13 @@ static void _VoronoiFT(char *pf, npy_intp len, npy_intp *coor, int rank,
 
 /* Recursive feature transform */
 static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
-                       npy_intp *istrides, npy_intp *fstrides, int rank,
-                       int d, npy_intp *coor, npy_intp **f, npy_intp *g,
-                       PyArrayObject *features, Float64 *sampling,
-                       int recursing)
+                       const npy_intp *istrides, const npy_intp *fstrides,
+                       int rank, int d, npy_intp *coor, npy_intp **f,
+                       npy_intp *g, PyArrayObject *features,
+                       const Float64 *sampling)
 {
     npy_intp kk;
     npy_intp jj;
-    NPY_BEGIN_THREADS_DEF;
-    if (!recursing) {
-        NPY_BEGIN_THREADS;
-    }
 
     if (d == 0) {
         char *tf1 = pf;
@@ -918,7 +914,7 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
         for(jj = 0; jj < ishape[d]; jj++) {
             coor[d] = jj;
             _ComputeFT(pi, tf, ishape, istrides, fstrides, rank, d - 1, coor, f,
-                                 g, features, sampling, 1);
+                                 g, features, sampling);
             pi += istrides[d];
             tf += fstrides[d + 1];
         }
@@ -940,9 +936,6 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
         for(kk = 0; kk < d; kk++)
             coor[kk] = 0;
     }
-    if (!recursing) {
-        NPY_END_THREADS;
-    }
 }
 
 /* Exact euclidean feature transform, as described in: C. R. Maurer,
@@ -958,6 +951,7 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
     npy_intp *tmp = NULL, **f = NULL, *g = NULL;
     char *pi, *pf;
     Float64 *sampling = sampling_arr ? ((void *)PyArray_DATA(sampling_arr)) : NULL;
+    NPY_BEGIN_THREADS_DEF;
 
     pi = (void *)PyArray_DATA(input);
     pf = (void *)PyArray_DATA(features);
@@ -979,8 +973,10 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
         f[jj] = tmp + jj * input->nd;
 
     /* First call of recursive feature transform */
+    NPY_BEGIN_THREADS;
     _ComputeFT(pi, pf, input->dimensions, input->strides, features->strides,
-               input->nd, input->nd - 1, coor, f, g, features, sampling, 0);
+               input->nd, input->nd - 1, coor, f, g, features, sampling);
+    NPY_END_THREADS;
 
  exit:
     free(f);
