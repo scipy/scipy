@@ -98,6 +98,7 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.levy_stable',
     'scipy.special.sinc', # comes from numpy
     'scipy.misc.who', # comes from numpy
+    'weave.rst',  # tutorial for a deprecated module
 ])
 
 # these names are not required to be present in ALL despite being in
@@ -526,7 +527,7 @@ class Checker(doctest.OutputChecker):
             # heterog tuple, eg (1, np.array([1., 2.]))
            try:
                 return all(self._do_check(w, g) for w, g in zip(a_want, a_got))
-           except TypeError:
+           except (TypeError, ValueError):
                 return False
 
     def _do_check(self, want, got):
@@ -540,7 +541,7 @@ class Checker(doctest.OutputChecker):
         return np.allclose(want, got, atol=self.atol, rtol=self.rtol)
 
 
-def _run_doctests(tests, full_name, verbose):
+def _run_doctests(tests, full_name, verbose, doctest_warnings):
     """Run modified doctests for the set of `tests`.
 
     Returns: list of [(success_flag, output), ...]
@@ -635,7 +636,8 @@ def check_doctests(module, verbose, ns=_namespace,
                             traceback.format_exc()))
             continue
 
-        success, output = _run_doctests(tests, full_name, verbose)
+        success, output = _run_doctests(tests, full_name, verbose,
+                                        doctest_warnings)
 
         if dots:
             output_dot('.' if success else 'F')
@@ -670,16 +672,17 @@ def check_doctests_testfile(fname, verbose, ns=_namespace,
 
     results = []
 
+    _, short_name = os.path.split(fname)
+    if short_name in DOCTEST_SKIPLIST:
+        return results
+
     full_name = fname
     text = open(fname).read()
 
     parser = doctest.DocTestParser()
     tests = parser.get_doctest(text, ns, fname, fname, 0)
-
-##    import pdb; pdb.set_trace()
-
-    success, output = _run_doctests([tests], full_name, verbose)
-
+    success, output = _run_doctests([tests], full_name, verbose,
+                                    doctest_warnings)
     if dots:
         output_dot('.' if success else 'F')
 
@@ -756,11 +759,14 @@ def main(argv):
         results.append((module, mod_results))
 
     if not args.skip_tutorial:
-        tut_results = []
         tut_path = os.path.join(os.getcwd(), 'doc', 'source', 'tutorial', '*.rst')
         for filename in glob.glob(tut_path):
-            tut_results += check_doctests_testfile(filename, (args.verbose >= 2),
+            tut_results = check_doctests_testfile(filename, (args.verbose >= 2),
                     dots=dots, doctest_warnings=args.doctest_warnings)
+
+            def scratch(): pass        # stub out a "module", see below
+            scratch.__name__ = filename
+            results.append((scratch, tut_results))
 
     if dots:
         sys.stderr.write("\n")
