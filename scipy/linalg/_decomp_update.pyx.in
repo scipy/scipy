@@ -1835,13 +1835,13 @@ def qr_insert_row(Q, R, u, k, overwrite_qru, check_finite):
         if u1.shape[1] != n:
             raise ValueError("'u' should be either (N,) or (p,N) when "
                              "inserting rows. Found %s." %
-                             str(getattr(u, 'shape')))
+                             str(getattr(u1, 'shape')))
     elif u1.ndim == 1:
         p = 1
         if u1.shape[0] != n:
             raise ValueError("'u' should be either (N,) or (p,N) when "
                              "inserting rows. Found %s." %
-                             str(getattr(u, 'shape')))
+                             str(getattr(u1, 'shape')))
     else:
         raise ValueError("'u' must be either 1- or 2-D")
 
@@ -1958,13 +1958,13 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
         if u1.shape[0] != m:
             raise ValueError("'u' should be either (M,) or (M,p) when "
                              "inserting columns. Found %s." %
-                             str(getattr(u, 'shape')))
+                             str(getattr(u1, 'shape')))
     elif u1.ndim == 1:
         p = 1
         if u1.shape[0] != m:
             raise ValueError("'u' should be either (M,) or (M,p) when "
                              "inserting columns. Found %s." %
-                             str(getattr(u, 'shape')))
+                             str(getattr(u1, 'shape')))
     else:
         raise ValueError("'u' must be either 1- or 2-D")
 
@@ -1976,6 +1976,12 @@ def qr_insert_col(Q, R, u, k, rcond, overwrite_qru, check_finite):
     elif rcond is not None:
         raise ValueError("'rcond' is not used when updating full, (M,M) (M,N) "
                          "decompositions and must be None.")
+
+    # special case 1xN 
+    # if m == 1, Q is always 1x1 and abs(Q[0,0]) == 1.0
+    if m == 1:
+        rnew = np.insert(r1, k*np.ones(p, np.intp), q1.conjugate()*u1, 1)
+        return q1.copy(), rnew
 
     if economic:
         if n+p <= m:
@@ -2280,6 +2286,14 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
 
     u1 = validate_array(u1, check_finite)
     v1 = validate_array(v1, check_finite)
+
+    # special case 1xN 
+    # if m == 1, Q is always 1x1 and abs(Q[0,0]) == 1.0
+    # we only need consider rank 1 updates, since we have
+    # limited p to max(m,n) above.
+    if m == 1:
+        rnew = r1 + q1.conjugate()*u1.ravel()*v1.conjugate().ravel()
+        return q1.copy(), rnew
 
     if economic:
         ndim = 1
