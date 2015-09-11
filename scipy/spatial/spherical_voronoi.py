@@ -16,9 +16,19 @@ import math
 
 __all__ = ['SphericalVoronoi']
 
+
 def calc_circumcenter_circumsphere_tetrahedron_vectorized(tetrahedron_coord_array):
-    '''An alternative implementation based on http://mathworld.wolfram.com/Circumsphere.html because of issues with the initial implementation from the Berkeley page.
-    Vectorized version for use with multiple tetrahedra in tetrahedron_coord_array -- the latter should have shape (N, 4, 3).'''
+    """ Get the cirumcenters of the circumspheres of tetrahedrons.
+
+    An alternative implementation based on
+    http://mathworld.wolfram.com/Circumsphere.html
+    because of issues with the initial implementation from the Berkeley page.
+
+    Vectorized version for use with multiple tetrahedra in
+    tetrahedron_coord_array -- the latter should have shape (N, 4, 3).'''
+
+    """
+
     num_tetrahedra = tetrahedron_coord_array.shape[0]
     #reshape the tetrahedron_coord_array to place all tetrahedra consecutively without nesting
     tetrahedron_coord_array = np.reshape(tetrahedron_coord_array, (tetrahedron_coord_array.shape[0] * tetrahedron_coord_array.shape[1], tetrahedron_coord_array.shape[2]))
