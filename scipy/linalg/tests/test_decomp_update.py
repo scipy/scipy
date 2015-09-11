@@ -1642,7 +1642,7 @@ def test_form_qTu():
     # and F.
 
     q_order = ['F', 'C']
-    q_shape = [(8, 8), (1,1)]
+    q_shape = [(8, 8), ]
     u_order = ['F', 'C', 'A']  # here A means is not F not C
     u_shape = [1, 3]
     dtype = ['f', 'd', 'F', 'D']
