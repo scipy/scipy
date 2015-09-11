@@ -73,7 +73,7 @@ that do not form a regular grid.
     Suppose we want to interpolate the 2-D function
 
     >>> def func(x, y):
-    >>>     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+    ...     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
 
     on a grid in [0, 1]x[0, 1]
 
@@ -197,13 +197,13 @@ example that follows.
    Integral of spline
 
    >>> def integ(x, tck, constant=-1):
-   >>>     x = np.atleast_1d(x)
-   >>>     out = np.zeros(x.shape, dtype=x.dtype)
-   >>>     for n in xrange(len(out)):
-   >>>         out[n] = interpolate.splint(0, x[n], tck)
-   >>>     out += constant
-   >>>     return out
-   >>>
+   ...     x = np.atleast_1d(x)
+   ...     out = np.zeros(x.shape, dtype=x.dtype)
+   ...     for n in xrange(len(out)):
+   ...         out[n] = interpolate.splint(0, x[n], tck)
+   ...     out += constant
+   ...     return out
+
    >>> yint = integ(xnew, tck)
    >>> plt.figure()
    >>> plt.plot(xnew, yint, xnew, -np.cos(xnew), '--')
@@ -214,7 +214,7 @@ example that follows.
 
    Roots of spline
 
-   >>> print(interpolate.sproot(tck))
+   >>> interpolate.sproot(tck)
    [ 0.      3.1416]
 
    Parametric spline

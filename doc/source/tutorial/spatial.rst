@@ -148,7 +148,7 @@ follows:
    >>> import matplotlib.pyplot as plt
    >>> plt.plot(points[:,0], points[:,1], 'o')
    >>> for simplex in hull.simplices:
-   >>>     plt.plot(points[simplex,0], points[simplex,1], 'k-')
+   ...     plt.plot(points[simplex,0], points[simplex,1], 'k-')
    >>> plt.show()
 
 The same can be achieved with `scipy.spatial.convex_hull_plot_2d`.
@@ -226,8 +226,8 @@ points is closest to this one", and define the regions that way:
    recorded:
    
    >>> vor.ridge_points
-   array([[0, 3],
-          [0, 1],
+   array([[0, 1],
+          [0, 3],
           [6, 3],
           [6, 7],
           [3, 4],
@@ -244,31 +244,31 @@ points is closest to this one", and define the regions that way:
    
    We can plot it as follows. First the points and the Voronoi vertices:
    
-   >>> plt.plot(points[:,0], points[:,1], 'o')
-   >>> plt.plot(vor.vertices[:,0], vor.vertices[:,1], '*')
+   >>> plt.plot(points[:, 0], points[:, 1], 'o')
+   >>> plt.plot(vor.vertices[:, 0], vor.vertices[:, 1], '*')
    >>> plt.xlim(-1, 3); plt.ylim(-1, 3)
    
    Plotting the finite line segments goes as for the convex hull,
    but now we have to guard for the infinite edges:
    
    >>> for simplex in vor.ridge_vertices:
-   >>>     simplex = np.asarray(simplex)
-   >>>     if np.all(simplex >= 0):
-   >>>         plt.plot(vor.vertices[simplex,0], vor.vertices[simplex,1], 'k-')
+   ...     simplex = np.asarray(simplex)
+   ...     if np.all(simplex >= 0):
+   ...         plt.plot(vor.vertices[simplex, 0], vor.vertices[simplex, 1], 'k-')
    
    The ridges extending to infinity require a bit more care:
    
    >>> center = points.mean(axis=0)
    >>> for pointidx, simplex in zip(vor.ridge_points, vor.ridge_vertices):
-   >>>     simplex = np.asarray(simplex)
-   >>>     if np.any(simplex < 0):
-   >>>         i = simplex[simplex >= 0][0] # finite end Voronoi vertex
-   >>>         t = points[pointidx[1]] - points[pointidx[0]] # tangent
-   >>>         t /= np.linalg.norm(t)
-   >>>         n = np.array([-t[1], t[0]]) # normal
-   >>>         midpoint = points[pointidx].mean(axis=0)
-   >>>         far_point = vor.vertices[i] + np.sign(np.dot(midpoint - center, n)) * n * 100
-   >>>         plt.plot([vor.vertices[i,0], far_point[0]], 
+   ...     simplex = np.asarray(simplex)
+   ...     if np.any(simplex < 0):
+   ...         i = simplex[simplex >= 0][0] # finite end Voronoi vertex
+   ...         t = points[pointidx[1]] - points[pointidx[0]] # tangent
+   ...         t /= np.linalg.norm(t)
+   ...         n = np.array([-t[1], t[0]]) # normal
+   ...         midpoint = points[pointidx].mean(axis=0)
+   ...         far_point = vor.vertices[i] + np.sign(np.dot(midpoint - center, n)) * n * 100
+   ...         plt.plot([vor.vertices[i,0], far_point[0]], 
    ...                  [vor.vertices[i,1], far_point[1]], 'k--')
    >>> plt.show()
    

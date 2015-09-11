@@ -41,11 +41,11 @@ part will discuss the operation of :obj:`np.mgrid` , :obj:`np.ogrid` ,
 
 For example, rather than writing something like the following
 
-    >>> concatenate(([3],[0]*5,arange(-1,1.002,2/9.0)))
+    >>> a = np.concatenate(([3], [0]*5, np.arange(-1, 1.002, 2/9.0)))
 
 with the :obj:`r_` command one can enter this as
 
-    >>> r_[3,[0]*5,-1:1:10j]
+    >>> a = np.r_[3,[0]*5,-1:1:10j]
 
 which can ease typing and make for more readable code. Notice how
 objects are concatenated, and the slicing syntax is (ab)used to
@@ -76,7 +76,7 @@ N-d arrays which provide coordinate arrays for an N-dimensional
 volume. The easiest way to understand this is with an example of its
 usage:
 
-    >>> mgrid[0:5,0:5]
+    >>> np.mgrid[0:5,0:5]
     array([[[0, 0, 0, 0, 0],
             [1, 1, 1, 1, 1],
             [2, 2, 2, 2, 2],
@@ -87,7 +87,7 @@ usage:
             [0, 1, 2, 3, 4],
             [0, 1, 2, 3, 4],
             [0, 1, 2, 3, 4]]])
-    >>> mgrid[0:5:4j,0:5:4j]
+    >>> np.mgrid[0:5:4j,0:5:4j]
     array([[[ 0.    ,  0.    ,  0.    ,  0.    ],
             [ 1.6667,  1.6667,  1.6667,  1.6667],
             [ 3.3333,  3.3333,  3.3333,  3.3333],
@@ -129,6 +129,7 @@ polynomial. The polynomial object can then be manipulated in algebraic
 expressions, integrated, differentiated, and evaluated. It even prints
 like a polynomial:
 
+    >>> from numpy import poly1d
     >>> p = poly1d([3,4,5])
     >>> print p
        2
@@ -137,11 +138,11 @@ like a polynomial:
        4      3      2
     9 x + 24 x + 46 x + 40 x + 25
     >>> print p.integ(k=6)
-     3     2
-    x + 2 x + 5 x + 6
+       3     2
+    1 x + 2 x + 5 x + 6
     >>> print p.deriv()
     6 x + 4
-    >>> p([4,5])
+    >>> p([4, 5])
     array([ 69, 100])
 
 The other way to handle polynomials is as an array of coefficients
@@ -170,7 +171,7 @@ ufuncs). For example, suppose you have a Python function named
 which defines a function of two scalar variables and returns a scalar
 result. The class vectorize can be used to "vectorize "this function so that ::
 
-    >>> vec_addsubtract = vectorize(addsubtract)
+    >>> vec_addsubtract = np.vectorize(addsubtract)
 
 returns a function which takes array arguments and returns an array
 result:
@@ -238,10 +239,10 @@ a list of conditions. Each element of the return array is taken from
 the array in a ``choicelist`` corresponding to the first condition in
 ``condlist`` that is true. For example
 
-    >>> x = r_[-2:3]
+    >>> x = np.r_[-2:3]
     >>> x
     array([-2, -1,  0,  1,  2])
-    >>> np.select([x > 3, x >= 0],[0,x+2])
+    >>> np.select([x > 3, x >= 0], [0, x+2])
     array([0, 0, 2, 3, 4])
 
 Some additional useful functions can also be found in the module

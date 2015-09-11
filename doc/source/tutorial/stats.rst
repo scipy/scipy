@@ -84,9 +84,9 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats,d), stats.rv_discrete)]
     >>> print 'number of continuous distributions:', len(dist_continu)
-    number of continuous distributions: 84
+    number of continuous distributions: 89
     >>> print 'number of discrete distributions:  ', len(dist_discrete)
-    number of discrete distributions:   12
+    number of discrete distributions:   13
 
 
 Common Methods
@@ -243,7 +243,7 @@ Now we set the value of the shape variable to 1 to obtain the
 exponential distribution, so that we compare easily whether we get the
 results we expect.
 
-    >>>  gamma(1, scale=2.).stats(moments="mv")
+    >>> gamma(1, scale=2.).stats(moments="mv")
     (array(2.0), array(4.0))
 
 Notice that we can also specify shape parameters as keywords:
@@ -741,19 +741,19 @@ hypothesized distribution.
 
     >>> quantiles = [0.0, 0.01, 0.05, 0.1, 1-0.10, 1-0.05, 1-0.01, 1.0]
     >>> crit = stats.t.ppf(quantiles, 10)
-    >>> print crit
-    [       -Inf -2.76376946 -1.81246112 -1.37218364  1.37218364  1.81246112
-      2.76376946         Inf]
+    >>> crit
+    array([-Inf, -2.76376946, -1.81246112, -1.37218364, 1.37218364, 1.81246112,
+      2.76376946, Inf])
     >>> n_sample = x.size
     >>> freqcount = np.histogram(x, bins=crit)[0]
     >>> tprob = np.diff(quantiles)
     >>> nprob = np.diff(stats.norm.cdf(crit))
     >>> tch, tpval = stats.chisquare(freqcount, tprob*n_sample)
     >>> nch, npval = stats.chisquare(freqcount, nprob*n_sample)
-    >>> print 'chisquare for t:      chi2 = %6.3f pvalue = %6.4f' % (tch, tpval)
-    chisquare for t:      chi2 =  2.300 pvalue = 0.8901
-    >>> print 'chisquare for normal: chi2 = %6.3f pvalue = %6.4f' % (nch, npval)
-    chisquare for normal: chi2 = 64.605 pvalue = 0.0000
+    >>> print 'chisquare for t:      chi2 = %6.2f pvalue = %6.4f' % (tch, tpval)
+    chisquare for t:      chi2 =  2.30 pvalue = 0.8901
+    >>> print 'chisquare for normal: chi2 = %6.2f pvalue = %6.4f' % (nch, npval)
+    chisquare for normal: chi2 = 64.60 pvalue = 0.0000
 
 We see that the standard normal distribution is clearly rejected while the
 standard t-distribution cannot be rejected. Since the variance of our sample
@@ -770,10 +770,10 @@ estimated distribution.
     >>> nprob = np.diff(stats.norm.cdf(crit, loc=nloc, scale=nscale))
     >>> tch, tpval = stats.chisquare(freqcount, tprob*n_sample)
     >>> nch, npval = stats.chisquare(freqcount, nprob*n_sample)
-    >>> print 'chisquare for t:      chi2 = %6.3f pvalue = %6.4f' % (tch, tpval)
-    chisquare for t:      chi2 =  1.577 pvalue = 0.9542
-    >>> print 'chisquare for normal: chi2 = %6.3f pvalue = %6.4f' % (nch, npval)
-    chisquare for normal: chi2 = 11.084 pvalue = 0.0858
+    >>> print 'chisquare for t:      chi2 = %6.2f pvalue = %6.4f' % (tch, tpval)
+    chisquare for t:      chi2 =  1.58 pvalue = 0.9542
+    >>> print 'chisquare for normal: chi2 = %6.2f pvalue = %6.4f' % (nch, npval)
+    chisquare for normal: chi2 = 11.08 pvalue = 0.0858
 
 Taking account of the estimated parameters, we can still reject the
 hypothesis that our sample came from a normal distribution (at the 5% level),
