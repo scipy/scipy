@@ -656,13 +656,37 @@ def check_doctests_testfile(fname, verbose, ns=_namespace,
                    dots=True, doctest_warnings=False):
     """Check code in a text file.
 
-    Mimics `check_doctests` above, differing only in test discovery.
+    Mimic `check_doctests` above, differing mostly in test discovery.
     (which is borrowed from stdlib's doctest.testfile here,
      https://github.com/python-git/python/blob/master/Lib/doctest.py)
 
     Returns: list of [(item_name, success_flag, output), ...]
-    """
 
+    Notes
+    -----
+
+    We also try to weed out pseudocode:
+    * We maintain a list of exceptions which signal pseudocode,
+    * We split the text file into "blocks" of code separated by empty lines
+      and/or intervening text.
+    * If a block contains a marker, the whole block is then assumed to be
+      pseudocode. It is then not being doctested.
+
+    The rationale is that typically, the text looks like this:
+
+    blah
+    <BLANKLINE>
+    >>> from numpy import some_module   # pseudocode!
+    >>> func = some_module.some_function
+    >>> func(42)                  # still pseudocode
+    146
+    <BLANKLINE>
+    blah
+    <BLANKLINE>
+    >>> 2 + 3        # real code, doctest it
+    5
+
+    """
     # if MPL is available, use display-less backend
     try:
         import matplotlib
@@ -681,10 +705,30 @@ def check_doctests_testfile(fname, verbose, ns=_namespace,
     full_name = fname
     text = open(fname).read()
 
+    PSEUDOCODE = set(['some_function', 'some_module', 'import example',
+                      'ctypes.CDLL',     # likely need compiling, skip it
+                      'integrate.nquad(func,'  # ctypes integrate tutotial
+    ])
+
+    # split the text into "blocks" and try to detect and omit pseudocode blocks.
     parser = doctest.DocTestParser()
-    tests = parser.get_doctest(text, ns, fname, fname, 0)
+    good_parts = []
+    for part in text.split('\n\n'):
+        tests = parser.get_doctest(part, ns, fname, fname, 0)
+        if any(word in ex.source for word in PSEUDOCODE
+                                 for ex in tests.examples):
+            # omit it
+            pass
+        else:
+            # `part` looks like a good code, let's doctest it
+            good_parts += [part]
+
+    # Reassemble the good bits and doctest them:
+    good_text = '\n\n'.join(good_parts)
+    tests = parser.get_doctest(good_text, ns, fname, fname, 0)
     success, output = _run_doctests([tests], full_name, verbose,
                                     doctest_warnings)
+
     if dots:
         output_dot('.' if success else 'F')
 
