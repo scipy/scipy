@@ -459,7 +459,8 @@ class Checker(doctest.OutputChecker):
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
                  'set_title', 'imshow', 'plt.show', 'ax.axis', 'plt.plot(',
-                 '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim'}
+                 '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim',
+                 '# reformatted'}
 
     def __init__(self, ns=_namespace, parse_namedtuples=True,
                  atol=1e-8, rtol=1e-2):

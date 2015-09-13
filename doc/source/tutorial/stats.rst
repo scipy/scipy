@@ -39,21 +39,26 @@ In the discussion below we mostly focus on continuous RVs. Nearly all
 applies to discrete variables also, but we point out some differences
 here: :ref:`discrete_points_label`.
 
+In the code samples below we assume that the :mod:`scipy.stats` package
+is imported as
+
+    >>> from scipy import stats
+
+and in some cases we assume that individual objects are imported as
+
+    >>> from scipy.stats import norm
 
 Getting Help
 ^^^^^^^^^^^^
 
 First of all, all distributions are accompanied with help
-functions. To obtain just some basic information we can call
-
-    >>> from scipy import stats
-    >>> from scipy.stats import norm
-    >>> print norm.__doc__
+functions. To obtain just some basic information we print the relevant
+docstring: ``print(stats.norm.__doc__)``.
 
 To find the support, i.e., upper and lower bound of the distribution,
 call:
 
-    >>> print 'bounds of distribution lower: %s, upper: %s' % (norm.a,norm.b)
+    >>> print 'bounds of distribution lower: %s, upper: %s' % (norm.a, norm.b)
     bounds of distribution lower: -inf, upper: inf
 
 We can list all methods and properties of the distribution with
@@ -112,10 +117,10 @@ Let's take a normal RV as an example.
 To compute the ``cdf`` at a number of points, we can pass a list or a numpy array.
 
     >>> norm.cdf([-1., 0, 1])
-    array([ 0.15865525,  0.5       ,  0.84134475])
+    array([ 0.15865525,  0.5,  0.84134475])
     >>> import numpy as np
     >>> norm.cdf(np.array([-1., 0, 1]))
-    array([ 0.15865525,  0.5       ,  0.84134475])
+    array([ 0.15865525,  0.5,  0.84134475])
 
 Thus, the basic methods such as `pdf`, `cdf`, and so on are vectorized
 with ``np.vectorize``.
@@ -136,13 +141,28 @@ function ``ppf``, which is the inverse of the ``cdf``:
 To generate a sequence of random variates, use the ``size`` keyword
 argument:
 
-    >>> norm.rvs(size=5)
-    array([-0.35687759,  1.34347647, -0.11710531, -1.00725181, -0.51275702])
+    >>> norm.rvs(size=3)
+    array([-0.35687759,  1.34347647, -0.11710531])   # random
+
+Note that drawing random numbers relies on generators from
+:mod:`numpy.random` package. In the example above, the specific stream of
+random numbers is not reproducible across runs. To achieve reproducibility,
+you can explicitly seed a global variable
+
+    >>> np.random.seed(1234)
+
+Relying on a global state is not recommended though. A better way is to use
+the `random_state` parameter which accepts an instance of
+`numpy.random.RandomState` class, or an integer which is then used to seed
+an internal `RandomState` object:
+
+    >>> norm.rvs(size=5, random_state=1234)
+    array([ 0.47143516, -1.19097569,  1.43270697, -0.3126519 , -0.72058873])
 
 Don't think that ``norm.rvs(5)`` generates 5 variates:
 
     >>> norm.rvs(5)
-    7.131624370075814
+    5.471435163732493
 
 Here, ``5`` with no keyword is being interpreted as the first possible
 keyword argument, ``loc``, which is the first of a pair of keyword arguments
@@ -476,12 +496,7 @@ intervals centered around the integers.
 
 **General Info**
 
-From the docstring of rv_discrete, i.e.,
-
-    >>> from scipy.stats import rv_discrete
-    >>> help(rv_discrete)
-
-we learn that:
+From the docstring of rv_discrete, ``help(stats.rv_discrete)``,
 
   "You can construct an arbitrary discrete rv where P{X=xk} = pk by
   passing to the rv_discrete initialization method (through the values=
@@ -813,9 +828,11 @@ exactly the same results if we test the standardized sample:
 Because normality is rejected so strongly, we can check whether the
 normaltest gives reasonable results for other cases:
 
-    >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(stats.t.rvs(10, size=100))
+    >>> print('normaltest teststat = %6.3f pvalue = %6.4f' %
+    ...              stats.normaltest(stats.t.rvs(10, size=100)))
     normaltest teststat =  4.698 pvalue = 0.0955
-    >>> print 'normaltest teststat = %6.3f pvalue = %6.4f' % stats.normaltest(stats.norm.rvs(size=1000))
+    >>> print('normaltest teststat = %6.3f pvalue = %6.4f' %
+    ...              stats.normaltest(stats.norm.rvs(size=1000)))
     normaltest teststat =  0.613 pvalue = 0.7361
 
 When testing for normality of a small sample of t-distributed observations
