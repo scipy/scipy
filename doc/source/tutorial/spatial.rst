@@ -106,14 +106,14 @@ input data randomly until degeneracies are resolved:
 
 >>> tri = Delaunay(points, qhull_options="QJ Pp")
 >>> points[tri.simplices]
-array([[[1, 1],
-        [1, 0],
+array([[[1, 0],
+        [1, 1],
         [0, 0]],
        [[1, 1],
         [1, 1],
         [1, 0]],
-       [[0, 1],
-        [1, 1],
+       [[1, 1],
+        [0, 1],
         [0, 0]],
        [[0, 1],
         [1, 1],
