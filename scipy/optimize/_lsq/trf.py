@@ -104,8 +104,9 @@ from .common import (
     make_strictly_feasible, intersect_trust_region, solve_lsq_trust_region,
     solve_trust_region_2d, minimize_quadratic_1d, build_quadratic_1d,
     evaluate_quadratic, right_multiplied_operator, regularized_lsq_operator,
-    scaling_vector, compute_grad, compute_jac_scaling, check_termination,
-    update_tr_radius, correct_by_loss, print_header, print_iteration)
+    CL_scaling_vector, compute_grad, compute_jac_scaling, check_termination,
+    update_tr_radius, scale_for_robust_loss_function, print_header,
+    print_iteration)
 
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
@@ -216,7 +217,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
     if loss_function is not None:
         rho = loss_function(f)
         cost = 0.5 * np.sum(rho[0])
-        J, f = correct_by_loss(J, f, rho)
+        J, f = scale_for_robust_loss_function(J, f, rho)
     else:
         cost = 0.5 * np.dot(f, f)
 
@@ -227,7 +228,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
     else:
         scale, scale_inv = scaling, 1 / scaling
 
-    v, dv = scaling_vector(x, g, lb, ub)
+    v, dv = CL_scaling_vector(x, g, lb, ub)
     v[dv != 0] *= scale[dv != 0]
     Delta = norm(x0 * scale / v**0.5)
     if Delta == 0:
@@ -256,7 +257,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
         print_header()
 
     while True:
-        v, dv = scaling_vector(x, g, lb, ub)
+        v, dv = CL_scaling_vector(x, g, lb, ub)
 
         g_norm = norm(g * v, ord=np.inf)
         if g_norm < gtol:
@@ -379,7 +380,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
             if loss_function is not None:
                 rho = loss_function(f)
-                J, f = correct_by_loss(J, f, rho)
+                J, f = scale_for_robust_loss_function(J, f, rho)
 
             g = compute_grad(J, f)
 
@@ -416,7 +417,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
     if loss_function is not None:
         rho = loss_function(f)
         cost = 0.5 * np.sum(rho[0])
-        J, f = correct_by_loss(J, f, rho)
+        J, f = scale_for_robust_loss_function(J, f, rho)
     else:
         cost = 0.5 * np.dot(f, f)
 
@@ -540,7 +541,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
 
             if loss_function is not None:
                 rho = loss_function(f)
-                J, f = correct_by_loss(J, f, rho)
+                J, f = scale_for_robust_loss_function(J, f, rho)
 
             g = compute_grad(J, f)
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from scipy.optimize._lsq.common import (
     step_size_to_bound, find_active_constraints, make_strictly_feasible,
-    scaling_vector, intersect_trust_region, build_quadratic_1d,
+    CL_scaling_vector, intersect_trust_region, build_quadratic_1d,
     minimize_quadratic_1d, evaluate_quadratic)
 
 
@@ -107,7 +107,7 @@ class TestBounds(object):
         ub = np.array([1.0, np.inf, 10.0, np.inf])
         x = np.array([0.5, 2.0, 5.0, 0.0])
         g = np.array([1.0, 0.1, -10.0, 0.0])
-        v, dv = scaling_vector(x, g, lb, ub)
+        v, dv = CL_scaling_vector(x, g, lb, ub)
         assert_equal(v, [1.0, 7.0, 5.0, 1.0])
         assert_equal(dv, [0.0, 1.0, -1.0, 0.0])
 

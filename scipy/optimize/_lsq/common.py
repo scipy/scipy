@@ -16,10 +16,9 @@ EPS = np.finfo(float).eps
 
 
 def intersect_trust_region(x, s, Delta):
-    """Find the intersection of a line with a spherical bound of a trust
-    region.
+    """Find the intersection of a line with the boundary of a trust region.
 
-    This function just solves the quadratic equation with respect to t
+    This function solves the quadratic equation with respect to t
     ||(x + s*t)||**2 = Delta**2.
 
     Returns
@@ -55,22 +54,13 @@ def intersect_trust_region(x, s, Delta):
         return t2, t1
 
 
-def _phi_and_derivative(alpha, suf, s, Delta):
-    """Used by solve_lsq_trust_region."""
-    denom = s**2 + alpha
-    p_norm = norm(suf / denom)
-    phi = p_norm - Delta
-    phi_prime = -np.sum(suf ** 2 / denom**3) / p_norm
-    return phi, phi_prime
-
-
 def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
                            rtol=0.01, max_iter=10):
-    """Solve a trust-region problem arising in least-squares minimization by
-    MINPACK approach.
+    """Solve a trust-region problem arising in least-squares minimization.
 
-    This function implements a method described by J. J. More [1]_, but it
-    relies on SVD of Jacobian. Before running this function compute:
+    This function implements a method described by J. J. More [1]_ and used
+    in MINPACK, but it relies on a single SVD of Jacobian instead of series
+    of Cholesky decompositions. Before running this function, compute:
     ``U, s, VT = svd(J, full_matrices=False)``.
 
     Parameters
@@ -89,10 +79,10 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
         Radius of a trust region.
     initial_alpha : float, optional
         Initial guess for alpha, which might be available from a previous
-        iteration.
+        iteration. If None, determined automatically.
     rtol : float, optional
         Stopping tolerance for the root-finding procedure. Namely, the
-        solution p will satisfy ``abs(norm(p) - Delta) < rtol * Delta``.
+        solution ``p`` will satisfy ``abs(norm(p) - Delta) < rtol * Delta``.
     max_iter : int, optional
         Maximum allowed number of iterations for the root-finding procedure.
 
@@ -113,6 +103,18 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
            and Theory," Numerical Analysis, ed. G. A. Watson, Lecture Notes
            in Mathematics 630, Springer Verlag, pp. 105-116, 1977.
     """
+    def phi_and_derivative(alpha, suf, s, Delta):
+        """Function of which we need to find zero.
+
+        It is "norm of regularized (by alpha) least-squares solution minus
+        `Delta`". Refer to [1]_.
+        """
+        denom = s**2 + alpha
+        p_norm = norm(suf / denom)
+        phi = p_norm - Delta
+        phi_prime = -np.sum(suf ** 2 / denom**3) / p_norm
+        return phi, phi_prime
+
     suf = s * uf
 
     # Check if J has full rank and try Gauss-Newton step.
@@ -130,7 +132,7 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
     alpha_upper = norm(suf) / Delta
 
     if full_rank:
-        phi, phi_prime = _phi_and_derivative(0.0, suf, s, Delta)
+        phi, phi_prime = phi_and_derivative(0.0, suf, s, Delta)
         alpha_lower = -phi / phi_prime
     else:
         alpha_lower = 0.0
@@ -144,7 +146,7 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
         if alpha < alpha_lower or alpha > alpha_upper:
             alpha = max(0.001 * alpha_upper, (alpha_lower * alpha_upper)**0.5)
 
-        phi, phi_prime = _phi_and_derivative(alpha, suf, s, Delta)
+        phi, phi_prime = phi_and_derivative(alpha, suf, s, Delta)
 
         if phi < 0:
             alpha_upper = alpha
@@ -157,6 +159,10 @@ def solve_lsq_trust_region(n, m, uf, s, V, Delta, initial_alpha=None,
             break
 
     p = -V.dot(suf / (s**2 + alpha))
+
+    # Make the norm of p equal to Delta. Note, that p is changed
+    # insignificantly during this. It is done to prevent p lie outside the
+    # trust region (which can cause problems later).
     p *= Delta / norm(p)
 
     return p, alpha, it + 1
@@ -175,7 +181,7 @@ def solve_trust_region_2d(B, g, Delta):
     g : ndarray, shape (2,)
         Defines a linear term of the function.
     Delta : float
-        Trust-region radius.
+        Radius of a trust region.
 
     Returns
     -------
@@ -232,10 +238,9 @@ def update_tr_radius(Delta, actual_reduction, predicted_reduction,
 
 
 def build_quadratic_1d(J, g, s, diag=None, s0=None):
-    """Compute coefficients of a 1-d quadratic function for the line search
-    from a multidimensional quadratic function.
+    """Parameterize a multivariate quadratic function along a line.
 
-    The function is given as follows:
+    The resulting univariate quadratic function is given as follows:
     ::
 
         f(t) = 0.5 * (s0 + s*t).T * (J.T*J + diag) * (s0 + s*t) +
@@ -248,7 +253,7 @@ def build_quadratic_1d(J, g, s, diag=None, s0=None):
     g : ndarray, shape (n,)
         Gradient, defines the linear term.
     s : ndarray, shape (n,)
-        Direction of search.
+        Direction vector of a line.
     diag : None or ndarray with shape (n,), optional
         Addition diagonal part, affects the quadratic term.
         If None, assumed to be 0.
@@ -449,9 +454,8 @@ def make_strictly_feasible(x, lb, ub, rstep=1e-10):
     return x_new
 
  
-def scaling_vector(x, g, lb, ub):
-    """Compute a scaling vector and its derivatives as described in papers
-    of Coleman and Li [1]_.
+def CL_scaling_vector(x, g, lb, ub):
+    """Compute Coleman-Li scaling vector and its derivatives.
 
     Components of a vector v are defined as follows:
     ::
@@ -477,7 +481,7 @@ def scaling_vector(x, g, lb, ub):
 
     References
     ----------
-    .. [1] Branch, M.A., T.F. Coleman, and Y. Li, "A Subspace, Interior,
+    .. [1] M.A. Branch, T.F. Coleman, and Y. Li, "A Subspace, Interior,
            and Conjugate Gradient Method for Large-Scale Bound-Constrained
            Minimization Problems," SIAM Journal on Scientific Computing,
            Vol. 21, Number 1, pp 1-23, 1999.
@@ -511,10 +515,12 @@ def print_iteration(iteration, nfev, cost, cost_reduction, step_norm,
         cost_reduction = " " * 15
     else:
         cost_reduction = "{0:^15.2e}".format(cost_reduction)
+
     if step_norm is None:
         step_norm = " " * 15
     else:
         step_norm = "{0:^15.2e}".format(step_norm)
+
     print("{0:^15}{1:^15}{2:^15.4e}{3}{4}{5:^15.2e}"
           .format(iteration, nfev, cost, cost_reduction,
                   step_norm, optimality))
@@ -579,8 +585,7 @@ def right_multiplied_operator(J, d):
 
 
 def regularized_lsq_operator(J, diag):
-    """Return a matrix arising in a regularized least-squares problem as
-    linear a operator.
+    """Return a matrix arising in regularized least squares as LinearOperator.
 
     The matrix is
         [ J ]
@@ -651,9 +656,8 @@ def check_termination(dF, F, dx_norm, x_norm, ratio, ftol, xtol):
         return None
 
 
-def correct_by_loss(J, f, rho):
-    """Correct J and f to make an iteration correspond to a robust loss
-    function.
+def scale_for_robust_loss_function(J, f, rho):
+    """Scale Jacobian and residuals for a robust loss function.
 
     Arrays are modified in place.
     """

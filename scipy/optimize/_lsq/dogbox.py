@@ -48,7 +48,7 @@ from scipy.optimize import OptimizeResult
 from .common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
     build_quadratic_1d, minimize_quadratic_1d, compute_grad,
-    compute_jac_scaling, check_termination, correct_by_loss,
+    compute_jac_scaling, check_termination, scale_for_robust_loss_function,
     print_header, print_iteration)
 
 
@@ -152,7 +152,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     if loss_function is not None:
         rho = loss_function(f)
         cost = 0.5 * np.sum(rho[0])
-        J, f = correct_by_loss(J, f, rho)
+        J, f = scale_for_robust_loss_function(J, f, rho)
     else:
         cost = 0.5 * np.dot(f, f)
 
@@ -302,7 +302,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             if loss_function is not None:
                 rho = loss_function(f)
-                J, f = correct_by_loss(J, f, rho)
+                J, f = scale_for_robust_loss_function(J, f, rho)
 
             g = compute_grad(J, f)
 
