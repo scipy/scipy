@@ -405,9 +405,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._binopt(other, '_elmul_')
             # Single element.
             elif other.shape == (1,1):
-                return self.__mul__(other.tocsc().data[0])
+                return self._mul_scalar(other.toarray()[0, 0])
             elif self.shape == (1,1):
-                return other.__mul__(self.tocsc().data[0])
+                return other._mul_scalar(self.toarray()[0, 0])
             # A row times a column.
             elif self.shape[1] == other.shape[0] and self.shape[1] == 1:
                 return self._mul_sparse_matrix(other.tocsc())
