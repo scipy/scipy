@@ -378,21 +378,42 @@ class SphericalVoronoi:
         return array_points_vertices_Delaunay_triangulation
 
     def voronoi_region_vertices_spherical_surface(self):
-        '''Returns a dictionary with the sorted (non-intersecting) polygon vertices for the Voronoi regions associated with each generator (original data point) index. A dictionary entry would be structured as follows: `{generator_index : array_polygon_vertices, ...}`.'''
-        #use strategy for Voronoi region generation discussed at PyData London 2015 with Ross Hemsley and Nikolai Nowaczyk
-        #step 1: perform 3D Delaunay triangulation on data set (ConvexHull can also be used, and is faster)
+        """
+        Returns a dictionary with the sorted (non-intersecting) polygon
+        vertices for the Voronoi regions associated with each generator index.
+        A dictionary entry would be structured as follows:
+            {generator_index : array_polygon_vertices, ...}
+
+        This algorithm was discussed at PyData London 2015 by
+        Tyler Reddy, Ross Hemsley and Nikolai Nowaczyk
+        """
+
+        #step 1: perform 3D Delaunay triangulation on data set
+        #        (here ConvexHull can also be used, and is faster)
         tri = scipy.spatial.ConvexHull(self.generators)
-        #step 2: add the origin to each of the simplices to get the same tetrahedra we'd have gotten from Delaunay tetrahedralization
-        simplex_coords = tri.points[tri.simplices] #triangles on sphere surface
-        simplex_coords = np.insert(simplex_coords, 3, np.zeros((1,3)), axis = 1)
-        #step 3: produce circumspheres / circumcenters of tetrahedra from 3D Delaunay
-        array_circumcenter_coords = calc_circumcenters(simplex_coords)
-        #step 4: project tetrahedron circumcenters up to the surface of the sphere, to produce the Voronoi vertices
-        array_vector_lengths = scipy.spatial.distance.cdist(array_circumcenter_coords, np.zeros((1,3)))
-        array_Voronoi_vertices = (self.radius / np.abs(array_vector_lengths)) * array_circumcenter_coords
-        #step 5: use the Delaunay tetrahedralization neighbour information to connect the Voronoi vertices around the generators, to produce the Voronoi regions
+
+        #step 2: add the origin to each of the simplices in tri to get the
+        #        same tetrahedrons we'd have gotten from Delaunay
+        #        tetrahedralization
+        tetrahedrons = tri.points[tri.simplices]
+        tetrahedrons = np.insert(tetrahedrons, 3, np.zeros((1, 3)), axis=1)
+
+        #step 3: produce circumcenters of tetrahedrons from 3D Delaunay
+        circumcenters = calc_circumcenters(tetrahedrons)
+
+        #step 4: project tetrahedron circumcenters to the surface of the sphere
+        #        to produce the Voronoi vertices
+        lengths = scipy.spatial.distance.cdist(circumcenters, np.zeros((1, 3)))
+        voronoi_vertices = (self.radius / np.abs(lengths)) * circumcenters
+
+        #step 5: use the Delaunay tetrahedralization neighbour information to
+        #        connect the Voronoi vertices around the generators, to
+        #        produce the Voronoi regions
+        return self._sort_vertices(tetrahedrons, tri, voronoi_vertices)
+
+    def _sort_vertices(self, tetrahedrons, tri, voronoi_vertices):
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
-        array_tetrahedra = simplex_coords
+        array_tetrahedra = tetrahedrons
         generator_index_array = np.arange(self.generators.shape[0])
         filter_tuple = np.where((np.expand_dims(tri.simplices, -1) == generator_index_array).any(axis=1))
         dictionary_generators_and_triangle_indices_containing_those_generators = {}
@@ -407,14 +428,14 @@ class SphericalVoronoi:
             first_triangle = first_tetrahedron[:-1,...]
             #pick one of the two non-generator vertices in the first triangle
             indices_non_generator_vertices_first_triangle = np.unique(np.where(first_triangle != generator)[0])
-            ordered_list_tetrahedron_indices_surrounding_current_generator = [first_tetrahedron_index] 
+            ordered_list_tetrahedron_indices_surrounding_current_generator = [first_tetrahedron_index]
             #determine the appropriate ordering of Voronoi vertices to close the Voronoi region (polygon) by traversing the Delaunay neighbour data structure from scipy
             vertices_remaining = len(indices_of_triangles_surrounding_generator) - 1
             #choose the neighbour opposite the first non-generator vertex of the first triangle
             neighbour_tetrahedral_index = tri.neighbors[first_tetrahedron_index][indices_non_generator_vertices_first_triangle[0]]
             ordered_list_tetrahedron_indices_surrounding_current_generator.append(neighbour_tetrahedral_index)
             vertices_remaining -= 1
-            
+
             #for all subsequent triangles it is the common non-generator vertex with the previous neighbour that should be used to propagate the connection chain to the following neighbour
             #the common vertex with the previous neighbour is the the vertex of the previous neighbour that was NOT used to locate the current neighbour
             #since there are only two candidate vertices on the previous neighbour and I've chosen to use the vertex with index 0, the remaining vertex on the previous neighbour is the non-generator vertex with index 1
@@ -430,7 +451,7 @@ class SphericalVoronoi:
                 common_vertex_coordinate = array_candidate_vertices[array_candidate_vertices != common_vertex_coordinate] #for the next iteration
                 ordered_list_tetrahedron_indices_surrounding_current_generator.append(next_tetrahedron_index_surrounding_generator)
                 vertices_remaining -= 1
-            dictionary_sorted_Voronoi_point_coordinates_for_each_generator[generator_index] = array_Voronoi_vertices[ordered_list_tetrahedron_indices_surrounding_current_generator]
+            dictionary_sorted_Voronoi_point_coordinates_for_each_generator[generator_index] = voronoi_vertices[ordered_list_tetrahedron_indices_surrounding_current_generator]
             generator_index += 1
         return dictionary_sorted_Voronoi_point_coordinates_for_each_generator
 
