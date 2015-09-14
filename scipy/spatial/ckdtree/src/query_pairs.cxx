@@ -79,11 +79,11 @@ traverse_no_checking(const ckdtree *self,
 }    
 
 
-static void
+template <typename MinMaxDist> static void
 traverse_checking(const ckdtree *self,
                   std::vector<ordered_pair> *results,
                   const ckdtreenode *node1, const ckdtreenode *node2,
-                  RectRectDistanceTracker *tracker)
+                  RectRectDistanceTracker<MinMaxDist> *tracker)
 {
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
@@ -135,7 +135,8 @@ traverse_checking(const ckdtree *self,
                     if (j < end2-2)
                         prefetch_datapoint(data+indices[j+2]*m, m);
                                         
-                    d = _distance_p(
+                    d = MinMaxDist::distance_p(
+                            self,
                             data + indices[i] * m,
                             data + indices[j] * m,
                             p, m, tub);
@@ -208,6 +209,13 @@ query_pairs(const ckdtree *self,
             std::vector<ordered_pair> *results)
 {
 
+#define HANDLE(cond, kls) \
+    if(cond) { \
+        RectRectDistanceTracker<kls> tracker(self, r1, r2, p, eps, r);\
+        traverse_checking(self, results, self->ctree, self->ctree, \
+            &tracker); \
+    } else
+
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
     {
@@ -216,11 +224,19 @@ query_pairs(const ckdtree *self,
             Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
             Rectangle r2(self->m, self->raw_mins, self->raw_maxes);
                                     
-            RectRectDistanceTracker tracker(r1, r2, p, eps, r);
-            
-            traverse_checking(self, results, self->ctree, self->ctree, 
-                &tracker);
-             
+            if(NPY_LIKELY(self->raw_boxsize_data == NULL)) {
+                HANDLE(NPY_LIKELY(p == 2), MinkowskiDistP2)
+                HANDLE(p == 1, MinkowskiDistP1)
+                HANDLE(p == infinity, MinkowskiDistPinf)
+                HANDLE(1, MinkowskiDistPp) 
+                {}
+            } else {
+                HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
+                HANDLE(p == 1, BoxMinkowskiDistP1)
+                HANDLE(p == infinity, BoxMinkowskiDistPinf)
+                HANDLE(1, BoxMinkowskiDistPp) 
+                {}
+            }
         } 
         catch(...) {
             translate_cpp_exception_with_gil();

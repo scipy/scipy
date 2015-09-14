@@ -43,11 +43,11 @@ traverse_no_checking(const ckdtree *self,
 }
 
 
-static void 
+template <typename MinMaxDist> static void 
 traverse_checking(const ckdtree *self,
                   std::vector<npy_intp> *results,
                   const ckdtreenode *node,
-                  PointRectDistanceTracker *tracker)
+                  RectRectDistanceTracker<MinMaxDist> *tracker)
 {
     const ckdtreenode *lnode;
     npy_float64 d;
@@ -63,7 +63,7 @@ traverse_checking(const ckdtree *self,
         lnode = node;
         const npy_float64 p = tracker->p;
         const npy_float64 tub = tracker->upper_bound;
-        const npy_float64 *tpt = tracker->pt;        
+        const npy_float64 *tpt = tracker->rect1.mins;
         const npy_float64 *data = self->raw_data;
         const npy_intp *indices = self->raw_indices;
         const npy_intp m = self->m;
@@ -79,19 +79,19 @@ traverse_checking(const ckdtree *self,
             if (i < end-2)
                 prefetch_datapoint(data + indices[i+2] * m, m);
            
-            d = _distance_p(data + indices[i] * m, tpt, p, m, tub);
-                
+            d = MinMaxDist::distance_p(self, data + indices[i] * m, tpt, p, m, tub);
+
             if (d <= tub) {
                 results->push_back((npy_intp) indices[i]);
             }
         }
     }
     else {
-        tracker->push_less_of(node);
+        tracker->push_less_of(2, node);
         traverse_checking(self, results, node->less, tracker);
         tracker->pop();
         
-        tracker->push_greater_of(node);
+        tracker->push_greater_of(2, node);
         traverse_checking(self, results, node->greater, tracker);
         tracker->pop();
     }    
@@ -103,6 +103,12 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
                  const npy_float64 r, const npy_float64 p, const npy_float64 eps,
                  const npy_intp n_queries, std::vector<npy_intp> **results)
 {
+#define HANDLE(cond, kls) \
+    if(cond) { \
+        RectRectDistanceTracker<kls> tracker(self, point, rect, p, eps, r); \
+        traverse_checking(self, results[i], self->ctree, &tracker); \
+    } else
+
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
     {
@@ -110,9 +116,25 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
             for (npy_intp i=0; i < n_queries; ++i) {
                 const npy_intp m = self->m;
                 Rectangle rect(m, self->raw_mins, self->raw_maxes);             
-                PointRectDistanceTracker tracker(x + i*m, rect, p, eps, r);
-                traverse_checking(
-                    self, results[i], self->ctree, &tracker);
+                if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
+                    Rectangle point(m, x + i * m, x + i * m);
+                    HANDLE(NPY_LIKELY(p == 2), MinkowskiDistP2)
+                    HANDLE(p == 1, MinkowskiDistP1)
+                    HANDLE(p == infinity, MinkowskiDistPinf)
+                    HANDLE(1, MinkowskiDistPp) 
+                    {}
+                } else {
+                    Rectangle point(m, x + i * m, x + i * m);
+                    int j;
+                    for(j=0; j<m; ++j) {
+                        point.maxes[j] = point.mins[j] = _wrap(point.mins[j], self->raw_boxsize_data[j]);
+                    }
+                    HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
+                    HANDLE(p == 1, BoxMinkowskiDistP1)
+                    HANDLE(p == infinity, BoxMinkowskiDistPinf)
+                    HANDLE(1, BoxMinkowskiDistPp) 
+                    {}
+                }
             }
         } 
         catch(...) {

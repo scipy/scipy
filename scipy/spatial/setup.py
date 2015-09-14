@@ -34,6 +34,7 @@ def configuration(parent_package='', top_path=None):
                          **cfg)
     # cKDTree    
     ckdtree_src = ['query.cxx', 
+                   'build.cxx',
                    'globals.cxx',
                    'cpp_exc.cxx',
                    'query_pairs.cxx',
@@ -49,13 +50,15 @@ def configuration(parent_package='', top_path=None):
                        'query_methods.h',
                        'cpp_utils.h',
                        'rectangle.h',
+                       'distance.h',
+                       'distance_box.h',
                        'ordered_pair.h']
                        
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
         
     ckdtree_dep = ['ckdtree.cxx'] + ckdtree_headers + ckdtree_src
     config.add_extension('ckdtree',
-                         sources=[join('ckdtree', 'ckdtree.cxx')] + ckdtree_src,
+                         sources=['ckdtree.cxx'] + ckdtree_src,
                          depends=ckdtree_dep,
                          include_dirs=inc_dirs + [join('ckdtree','src')])
     # _distance_wrap
