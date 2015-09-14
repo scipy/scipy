@@ -219,35 +219,46 @@ def generate_random_array_spherical_generators(num_generators,sphere_radius,prng
     cartesian_random_points = convert_spherical_array_to_cartesian_array(spherical_polar_data)
     return cartesian_random_points
 
+
 class SphericalVoronoi:
-    '''Voronoi diagrams on the surface of a sphere.
+    """ Voronoi diagrams on the surface of a sphere.
 
     .. versionadded:: 0.17.0
-    
-    Parameters
-    ----------
-    points : *array, shape (npoints, 3)*
-        Coordinates of points used to construct a Voronoi diagram on the surface of a sphere.
-    sphere_radius : *float*
-        Radius of the sphere (providing radius is more accurate than forcing an estimate). Default: None (force estimation).
-    sphere_center_origin_offset_vector : *array, shape (3,)*
-        A 1D numpy array that can be subtracted from the generators (original data points) to translate the center of the sphere back to the origin. Default: None assumes already centered at origin.
-    
-    Notes
-    -----
 
-    The spherical Voronoi diagram algorithm proceeds as follows. The Convex Hull of the input points (generators) is calculated, and is equivalent to their Delaunay triangulation on the surface of the sphere [Caroli]_. A 3D Delaunay tetrahedralization is obtained by including the origin of the coordinate system as the fourth vertex of each simplex of the Convex Hull. The circumcenters of all tetrahedra in the system are calculated and projected to the surface of the sphere, producing the Voronoi vertices. The Delaunay tetrahedralization neighbour information is then used to order the Voronoi region vertices around each generator. The latter approach is substantially less sensitive to floating point issues than angle-based methods of Voronoi region vertex sorting.
+    The spherical Voronoi diagram algorithm proceeds as follows. The Convex
+    Hull of the input points (generators) is calculated, and is equivalent to
+    their Delaunay triangulation on the surface of the sphere [Caroli]_.
+    A 3D Delaunay tetrahedralization is obtained by including the origin of
+    the coordinate system as the fourth vertex of each simplex of the Convex
+    Hull. The circumcenters of all tetrahedra in the system are calculated and
+    projected to the surface of the sphere, producing the Voronoi vertices.
+    The Delaunay tetrahedralization neighbour information is then used to
+    order the Voronoi region vertices around each generator. The latter
+    approach is substantially less sensitive to floating point issues than
+    angle-based methods of Voronoi region vertex sorting.
 
-    The surface area of spherical polygons is calculated by decomposing them into triangles and using L'Huilier's Theorem to calculate the spherical excess of each triangle [Weisstein]_. The sum of the spherical excesses is multiplied by the square of the sphere radius to obtain the surface area of the spherical polygon. For nearly-degenerate spherical polygons an area of approximately 0 is returned by default, rather than attempting the unstable calculation. 
+    The surface area of spherical polygons is calculated by decomposing them
+    into triangles and using L'Huilier's Theorem to calculate the spherical
+    excess of each triangle [Weisstein]_. The sum of the spherical excesses is
+    multiplied by the square of the sphere radius to obtain the surface area
+    of the spherical polygon. For nearly-degenerate spherical polygons an area
+    of approximately 0 is returned by default, rather than attempting the
+    unstable calculation.
 
-    Empirical assessment of spherical Voronoi algorithm performance suggests quadratic time complexity (loglinear is optimal, but algorithms are more challenging to implement). The reconstitution of the surface area of the sphere, measured as the sum of the surface areas of all Voronoi regions, is closest to 100 % for larger (>> 10) numbers of generators. 
+    Empirical assessment of spherical Voronoi algorithm performance suggests
+    quadratic time complexity (loglinear is optimal, but algorithms are more
+    challenging to implement). The reconstitution of the surface area of the
+    sphere, measured as the sum of the surface areas of all Voronoi regions,
+    is closest to 100 % for larger (>> 10) numbers of generators.
 
     References
     ----------
-    
-    .. [Caroli] Caroli et al. Robust and Efficient Delaunay triangulations of points on or close to a sphere. Research Report RR-7004, 2009.
-    .. [Weisstein] "L'Huilier's Theorem." From MathWorld--A Wolfram Web Resource. http://mathworld.wolfram.com/LHuiliersTheorem.html
-    
+
+    .. [Caroli] Caroli et al. Robust and Efficient Delaunay triangulations of
+                points on or close to a sphere. Research Report RR-7004, 2009.
+    .. [Weisstein] "L'Huilier's Theorem." From MathWorld -- A Wolfram Web
+                Resource. http://mathworld.wolfram.com/LHuiliersTheorem.html
+
     See Also
     --------
     Voronoi : Conventional Voronoi diagrams in N dimensions.
@@ -255,7 +266,8 @@ class SphericalVoronoi:
     Examples
     --------
 
-    Produce a Voronoi diagram for a pseudo-random set of points on the unit sphere:
+    Produce a Voronoi diagram for a pseudo-random set of points on the
+    unit sphere:
 
     >>> import matplotlib
     >>> import matplotlib.pyplot as plt
@@ -330,9 +342,21 @@ class SphericalVoronoi:
     >>> plt.tick_params(axis='both', which='major', labelsize=6)
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
     def __init__(self,points,sphere_radius=None,sphere_center_origin_offset_vector=None):
+        """
+        points : array of shape (N, 3)
+            N points in 3D to generate the Voronoi diagram
+        sphere_radius : *float*
+            radius of the sphere (providing radius is more accurate than
+            forcing an estimate).
+            Default: None (force estimation)
+        sphere_center_origin_offset_vector : array of shape (3,)
+            center of the sphere
+            Default: None (assumes sphere is centered at origin)
+        """
+
         if np.all(sphere_center_origin_offset_vector):
             self.original_point_array = points - sphere_center_origin_offset_vector #translate generator data such that sphere center is at origin
         else:
