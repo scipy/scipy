@@ -18,7 +18,7 @@ import math
 __all__ = ['SphericalVoronoi']
 
 
-def calc_circumcenter_circumsphere_tetrahedron_vectorized(tetrahedrons):
+def calc_circumcenters(tetrahedrons):
     """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
 
     An implementation based on
@@ -356,7 +356,7 @@ class SphericalVoronoi:
         simplex_coords = tri.points[tri.simplices] #triangles on sphere surface
         simplex_coords = np.insert(simplex_coords, 3, np.zeros((1,3)), axis = 1)
         #step 3: produce circumspheres / circumcenters of tetrahedra from 3D Delaunay
-        array_circumcenter_coords = calc_circumcenter_circumsphere_tetrahedron_vectorized(simplex_coords)
+        array_circumcenter_coords = calc_circumcenters(simplex_coords)
         #step 4: project tetrahedron circumcenters up to the surface of the sphere, to produce the Voronoi vertices
         array_vector_lengths = scipy.spatial.distance.cdist(array_circumcenter_coords, np.zeros((1,3)))
         array_Voronoi_vertices = (self.estimated_sphere_radius / np.abs(array_vector_lengths)) * array_circumcenter_coords
