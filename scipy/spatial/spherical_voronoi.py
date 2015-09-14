@@ -19,14 +19,20 @@ __all__ = ['SphericalVoronoi']
 
 
 def calc_circumcenter_circumsphere_tetrahedron_vectorized(tetrahedron_coord_array):
-    """ Get the cirumcenters of the circumspheres of tetrahedrons.
+    """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
 
-    An alternative implementation based on
+    An implementation based on
     http://mathworld.wolfram.com/Circumsphere.html
-    because of issues with the initial implementation from the Berkeley page.
 
-    Vectorized version for use with multiple tetrahedra in
-    tetrahedron_coord_array -- the latter should have shape (N, 4, 3).'''
+    Parameters
+    ----------
+    tetrahedrons : an array of shape (N, 4, 3)
+        consisting of N tetrahedrons defined by 4 points in 3D
+
+    Returns
+    ----------
+    circumcenters : an array of shape (N, 3)
+        consisting of the N circumcenters of the tetrahedrons in 3D
 
     """
 
