@@ -182,6 +182,18 @@ class Test_spherical_polygon_angle_summation(TestCase):
         self.assertGreater(theta,minimum_allowed_angle,msg='theta must be greater than 2 * pi for spherical polygon with 4 vertices but got theta = {theta}'.format(theta=theta))
 
 
+class TestSphericalVoronoi(TestCase):
+
+    def test_constructor_center(self):
+        generators = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+        translated = np.array([[-1, 0, 1], [-1, 1, 0], [0, 0, 0]])
+        s1 = spherical_voronoi.SphericalVoronoi(generators, 1)
+        s2 = spherical_voronoi.SphericalVoronoi(generators, 1, [0, 0, 0])
+        s3 = spherical_voronoi.SphericalVoronoi(generators, 1, [1, 0, 0])
+        assert_array_almost_equal(s1.generators, generators)
+        assert_array_almost_equal(s2.generators, generators)
+        assert_array_almost_equal(s3.generators, translated)
+
 
 class Test_voronoi_surface_area_calculations(TestCase):
 
