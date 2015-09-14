@@ -344,32 +344,36 @@ class SphericalVoronoi:
     >>> plt.show()
     """
 
-    def __init__(self,points,sphere_radius=None,sphere_center_origin_offset_vector=None):
+    def __init__(self, generators, radius=None, center=None):
         """
-        points : array of shape (N, 3)
-            N points in 3D to generate the Voronoi diagram
-        sphere_radius : *float*
+        generators : array of shape (N, 3)
+            N points in 3D to generate the Voronoi diagram from
+        radius : *float*
             radius of the sphere (providing radius is more accurate than
             forcing an estimate).
             Default: None (force estimation)
-        sphere_center_origin_offset_vector : array of shape (3,)
+        center : array of shape (3,)
             center of the sphere
             Default: None (assumes sphere is centered at origin)
         """
 
-        if np.all(sphere_center_origin_offset_vector):
-            self.original_point_array = points - sphere_center_origin_offset_vector #translate generator data such that sphere center is at origin
+        # translate generators such that sphere center is at origin
+        if np.any(center):
+            self.generators = generators - center
         else:
-            self.original_point_array = points
-        self.sphere_centroid = np.zeros((3,)) #already at origin, or has been moved to origin
-        if not sphere_radius:
-            self.estimated_sphere_radius = np.average(scipy.spatial.distance.cdist(self.original_point_array,self.sphere_centroid[np.newaxis,:]))
-        else: 
-            self.estimated_sphere_radius = sphere_radius #if the radius of the sphere is known, it is pobably best to specify to avoid centroid bias in radius estimation, etc.
+            self.generators = generators
+
+        # estimate radius if not known
+        if radius:
+            self.radius = radius
+        else:
+            self.radius = np.average(
+                scipy.spatial.distance.cdist(self.generators,
+                                             np.zeros((3,))[np.newaxis, :]))
 
     def delaunay_triangulation_spherical_surface(self):
         '''Delaunay tessellation of the points on the surface of the sphere. This is simply the 3D convex hull of the points. Returns a shape (N,3,3) array of points representing the vertices of the Delaunay triangulation on the sphere (i.e., N three-dimensional triangle vertex arrays).'''
-        hull = scipy.spatial.ConvexHull(self.original_point_array)
+        hull = scipy.spatial.ConvexHull(self.generators)
         array_points_vertices_Delaunay_triangulation = hull.simplices
         return array_points_vertices_Delaunay_triangulation
 
@@ -377,7 +381,7 @@ class SphericalVoronoi:
         '''Returns a dictionary with the sorted (non-intersecting) polygon vertices for the Voronoi regions associated with each generator (original data point) index. A dictionary entry would be structured as follows: `{generator_index : array_polygon_vertices, ...}`.'''
         #use strategy for Voronoi region generation discussed at PyData London 2015 with Ross Hemsley and Nikolai Nowaczyk
         #step 1: perform 3D Delaunay triangulation on data set (ConvexHull can also be used, and is faster)
-        tri = scipy.spatial.ConvexHull(self.original_point_array) 
+        tri = scipy.spatial.ConvexHull(self.generators)
         #step 2: add the origin to each of the simplices to get the same tetrahedra we'd have gotten from Delaunay tetrahedralization
         simplex_coords = tri.points[tri.simplices] #triangles on sphere surface
         simplex_coords = np.insert(simplex_coords, 3, np.zeros((1,3)), axis = 1)
@@ -385,11 +389,11 @@ class SphericalVoronoi:
         array_circumcenter_coords = calc_circumcenters(simplex_coords)
         #step 4: project tetrahedron circumcenters up to the surface of the sphere, to produce the Voronoi vertices
         array_vector_lengths = scipy.spatial.distance.cdist(array_circumcenter_coords, np.zeros((1,3)))
-        array_Voronoi_vertices = (self.estimated_sphere_radius / np.abs(array_vector_lengths)) * array_circumcenter_coords
+        array_Voronoi_vertices = (self.radius / np.abs(array_vector_lengths)) * array_circumcenter_coords
         #step 5: use the Delaunay tetrahedralization neighbour information to connect the Voronoi vertices around the generators, to produce the Voronoi regions
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
         array_tetrahedra = simplex_coords
-        generator_index_array = np.arange(self.original_point_array.shape[0])
+        generator_index_array = np.arange(self.generators.shape[0])
         filter_tuple = np.where((np.expand_dims(tri.simplices, -1) == generator_index_array).any(axis=1))
         dictionary_generators_and_triangle_indices_containing_those_generators = {}
         for generator_index, triangle_index in zip(filter_tuple[1], filter_tuple[0]):
@@ -435,7 +439,7 @@ class SphericalVoronoi:
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = self.voronoi_region_vertices_spherical_surface()
         dictionary_Voronoi_region_surface_areas_for_each_generator = {}
         for generator_index, Voronoi_polygon_sorted_vertex_array in dictionary_sorted_Voronoi_point_coordinates_for_each_generator.iteritems():
-            current_Voronoi_polygon_surface_area_on_sphere = calculate_surface_area_of_a_spherical_Voronoi_polygon(Voronoi_polygon_sorted_vertex_array,self.estimated_sphere_radius)
+            current_Voronoi_polygon_surface_area_on_sphere = calculate_surface_area_of_a_spherical_Voronoi_polygon(Voronoi_polygon_sorted_vertex_array,self.radius)
             assert current_Voronoi_polygon_surface_area_on_sphere > 0, "Obtained a surface area of zero for a Voronoi region."
             dictionary_Voronoi_region_surface_areas_for_each_generator[generator_index] = current_Voronoi_polygon_surface_area_on_sphere
         return dictionary_Voronoi_region_surface_areas_for_each_generator
