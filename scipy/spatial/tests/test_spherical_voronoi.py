@@ -374,7 +374,7 @@ class Test_Spherical_Voronoi_Diagram_Properties(TestCase):
         max_allowed_spherical_Voronoi_vertices = (2 * self.num_generators) - 4
         #loop through and identify the actual number of unique Voronoi vertices produced by the algorithm in this code
         spherical_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.random_spherical_coord_array, self.test_sphere_radius)
-        dictionary_voronoi_regions = spherical_voronoi_instance.voronoi_region_vertices_spherical_surface()
+        dictionary_voronoi_regions = spherical_voronoi_instance.calc_vertices()
         list_voronoi_vertices = []
         for generator_index, voronoi_vertex_array in dictionary_voronoi_regions.iteritems():
             for voronoi_vertex in voronoi_vertex_array:

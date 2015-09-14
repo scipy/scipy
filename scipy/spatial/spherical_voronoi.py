@@ -284,7 +284,7 @@ class SphericalVoronoi:
     >>> random_coordinate_array = scipy.spatial.spherical_voronoi.generate_random_array_spherical_generators(1000,1.0,prng)
     >>> #produce the Voronoi diagram data
     >>> voronoi_instance = SphericalVoronoi(random_coordinate_array,1.0)
-    >>> dictionary_voronoi_polygon_vertices = voronoi_instance.voronoi_region_vertices_spherical_surface()
+    >>> dictionary_voronoi_polygon_vertices = voronoi_instance.calc_vertices()
     >>> #plot the Voronoi diagram
     >>> fig = plt.figure()
     >>> fig.set_size_inches(4,4)
@@ -377,7 +377,7 @@ class SphericalVoronoi:
         array_points_vertices_Delaunay_triangulation = hull.simplices
         return array_points_vertices_Delaunay_triangulation
 
-    def voronoi_region_vertices_spherical_surface(self):
+    def calc_vertices(self):
         """
         Returns a dictionary with the sorted (non-intersecting) polygon
         vertices for the Voronoi regions associated with each generator index.
@@ -457,7 +457,7 @@ class SphericalVoronoi:
 
     def voronoi_region_surface_areas_spherical_surface(self):
         '''Returns a dictionary with the estimated surface areas of the Voronoi region polygons corresponding to each generator (original data point) index. An example dictionary entry: `{generator_index : surface_area, ...}`.'''
-        dictionary_sorted_Voronoi_point_coordinates_for_each_generator = self.voronoi_region_vertices_spherical_surface()
+        dictionary_sorted_Voronoi_point_coordinates_for_each_generator = self.calc_vertices()
         dictionary_Voronoi_region_surface_areas_for_each_generator = {}
         for generator_index, Voronoi_polygon_sorted_vertex_array in dictionary_sorted_Voronoi_point_coordinates_for_each_generator.iteritems():
             current_Voronoi_polygon_surface_area_on_sphere = calculate_surface_area_of_a_spherical_Voronoi_polygon(Voronoi_polygon_sorted_vertex_array,self.radius)
