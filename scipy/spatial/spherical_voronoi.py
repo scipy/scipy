@@ -12,6 +12,7 @@ Spherical Voronoi Code
 #
 
 import numpy as np
+import numpy.matlib
 import scipy
 import math
 
@@ -49,6 +50,7 @@ def calc_circumcenters(tetrahedrons):
     nominator = np.vstack((dx, dy, dz))
     denominator = np.matlib.repmat(2 * np.linalg.det(a), 3, 1)
     return (nominator / denominator).transpose()
+
 
 def convert_cartesian_array_to_spherical_array(coord_array,angle_measure='radians'):
     '''Take shape (N,3) cartesian coord_array and return an array of the same shape in spherical polar form (r, theta, phi). Based on StackOverflow response: http://stackoverflow.com/a/4116899

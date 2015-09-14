@@ -1,11 +1,37 @@
 import numpy as np
 from numpy.testing import (verbose, TestCase, run_module_suite, assert_,
         assert_raises, assert_array_equal, assert_equal, assert_almost_equal,
-        assert_allclose)
+        assert_allclose, assert_array_almost_equal)
 from numpy.testing.decorators import skipif
 import math
 from scipy.spatial.spherical_voronoi import SphericalVoronoi
 from scipy.spatial import spherical_voronoi
+
+
+class TestCircumcenters(TestCase):
+
+    def test_circumcenters(self):
+
+        tetrahedrons = np.array([
+            [[1, 2, 3],
+            [-1.1, -2.1, -3.1],
+            [-1.2, 2.2, 3.2],
+            [-1.3, -2.3, 3.3]],
+            [[10, 20, 30],
+            [-10.1, -20.1, -30.1],
+            [-10.2, 20.2, 30.2],
+            [-10.3, -20.3, 30.3]]
+        ])
+
+        result = spherical_voronoi.calc_circumcenters(tetrahedrons)
+
+        expected = [
+            [-0.5680861153262529, -0.133279590288315, 0.1843323216995444],
+            [-0.5965330784014926, -0.1480377040397778, 0.1981967854886021]
+        ]
+
+        assert_array_almost_equal(result, expected)
+
 
 class Test_delaunay_triangulation_on_sphere_surface(TestCase):
 
