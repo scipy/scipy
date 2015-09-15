@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from numpy.testing import (verbose, TestCase, run_module_suite, assert_,
         assert_raises, assert_array_equal, assert_equal, assert_almost_equal,
@@ -82,14 +83,14 @@ class Test_delaunay_triangulation_on_sphere_surface(TestCase):
         dimensions = 3.0
         increase_in_number_data_set_points = self.num_triangulation_input_points_LARGE - self.num_triangulation_input_points
         expected_approximate_increase_in_num_triangulation_facets = increase_in_number_data_set_points ** (dimensions / 2.0)
-        print 'expected_approximate_increase_in_num_triangulation_facets:', expected_approximate_increase_in_num_triangulation_facets
+        print('expected_approximate_increase_in_num_triangulation_facets:', expected_approximate_increase_in_num_triangulation_facets)
 
         voronoi_instance_small = spherical_voronoi.SphericalVoronoi(self.simple_sphere_coordinate_array)
         voronoi_instance_large = spherical_voronoi.SphericalVoronoi(self.simple_sphere_coordinate_array_LARGE)
         actual_Delaunay_point_array_small = voronoi_instance_small.Delaunay_triangulation_spherical_surface()
         actual_Delaunay_point_array_large = voronoi_instance_large.Delaunay_triangulation_spherical_surface()
         actual_increase_in_num_triangulation_facets = actual_Delaunay_point_array_large.shape[0] - actual_Delaunay_point_array_small.shape[0]
-        print 'actual_increase_in_num_triangulation_facets:', actual_increase_in_num_triangulation_facets
+        print('actual_increase_in_num_triangulation_facets:', actual_increase_in_num_triangulation_facets)
 
         self.assertEqual(actual_increase_in_num_triangulation_facets,expected_approximate_increase_in_num_triangulation_facets)
 
@@ -113,7 +114,7 @@ class Test_delaunay_triangulation_on_sphere_surface(TestCase):
             '''Return the node number based on the coordinates in the original test sphere data set.'''
             nodenum = 0
             num_positives_debug = 0
-            for node_number, node_coordinates in node_dictionary.iteritems():
+            for node_number, node_coordinates in node_dictionary.items():
                 if np.allclose(node_coordinates,coordinate_array,atol=1e-18):
                     nodenum = node_number
                     num_positives_debug += 1
@@ -225,7 +226,7 @@ class Test_voronoi_surface_area_calculations(TestCase):
         '''Given a pseudo-random set of points on the unit sphere, the sum of the surface areas of the Voronoi polygons should be equal to the surface area of the sphere itself.'''
         random_dist_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.cartesian_coord_array,1.0)
         dictionary_Voronoi_region_surface_areas_for_each_generator = random_dist_voronoi_instance.voronoi_region_surface_areas_spherical_surface()
-        sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.itervalues())
+        sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.values())
         percent_reconstituted_surface_area = sum_Voronoi_polygon_surface_areas / self.unit_sphere_surface_area * 100.
         self.assertGreater(percent_reconstituted_surface_area,99.0,msg='Reconstituted surface area of Voronoi polygons on unit sphere should match theoretical surface area of sphere within 1 %.') #using a slightly more relaxed testing requirement as it seems fairly clear that the code won't match to multiple decimal places anytime soon
         self.assertLessEqual(percent_reconstituted_surface_area,100.0,msg='Reconstituted surface area of Voronoi polygons should be less than or equal to 100% of the theoretical surface area of spherebut got {percent} %.'.format(percent=percent_reconstituted_surface_area))
@@ -235,7 +236,7 @@ class Test_voronoi_surface_area_calculations(TestCase):
         Introduces additional complication of not having its center point at the origin.'''
         random_dist_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.cartesian_coord_array + 3.0,1.0,np.array([3.0,3.0,3.0])) # +3 translation to all Cartesian coords [amazingly, this seems to fail is I use a value of 4.0, but 3.0 is fine --floating-point sensitivity somewhere?!]
         dictionary_Voronoi_region_surface_areas_for_each_generator = random_dist_voronoi_instance.voronoi_region_surface_areas_spherical_surface()
-        sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.itervalues())
+        sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.values())
         percent_reconstituted_surface_area = sum_Voronoi_polygon_surface_areas / self.unit_sphere_surface_area * 100.
         self.assertGreater(percent_reconstituted_surface_area,99.0,msg='Reconstituted surface area of Voronoi polygons on unit sphere should match theoretical surface area of sphere within 1 %.') 
         self.assertLessEqual(percent_reconstituted_surface_area,100.0,msg='Reconstituted surface area of Voronoi polygons should be less than or equal to 100% of the theoretical surface area of spherebut got {percent} %.'.format(percent=percent_reconstituted_surface_area))
@@ -244,7 +245,7 @@ class Test_voronoi_surface_area_calculations(TestCase):
         '''Given a pseudo-random set of points on a sphere, the sum of the surface areas of the Voronoi polygons should be equal to the surface area of the sphere itself. Using a much larger radius (self.large_sphere_radius) than the standard unit sphere in this test.'''
         random_dist_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.cartesian_coord_array_large_radius,self.large_sphere_radius)
         dictionary_Voronoi_region_surface_areas_for_each_generator = random_dist_voronoi_instance.voronoi_region_surface_areas_spherical_surface()
-        sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.itervalues())
+        sum_Voronoi_polygon_surface_areas = sum(dictionary_Voronoi_region_surface_areas_for_each_generator.values())
         percent_reconstituted_surface_area = sum_Voronoi_polygon_surface_areas / (math.pi * 4.0 * (self.large_sphere_radius ** 2)) * 100.
         np.testing.assert_almost_equal(percent_reconstituted_surface_area,99.98,decimal=1)
             
@@ -376,7 +377,7 @@ class Test_Spherical_Voronoi_Diagram_Properties(TestCase):
         spherical_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.random_spherical_coord_array, self.test_sphere_radius)
         dictionary_voronoi_regions = spherical_voronoi_instance.calc_vertices()
         list_voronoi_vertices = []
-        for generator_index, voronoi_vertex_array in dictionary_voronoi_regions.iteritems():
+        for generator_index, voronoi_vertex_array in dictionary_voronoi_regions.items():
             for voronoi_vertex in voronoi_vertex_array:
                 list_voronoi_vertices.append(voronoi_vertex)
         array_voronoi_vertices = np.array(list_voronoi_vertices)

@@ -308,7 +308,7 @@ class SphericalVoronoi:
     >>> fig.set_size_inches(4,4)
     >>> ax = fig.add_subplot(111, projection='3d')
     >>> ax.set_title('Voronoi Diagram on Sphere')
-    >>> for generator_index, voronoi_region in dictionary_voronoi_polygon_vertices.iteritems():
+    >>> for generator_index, voronoi_region in dictionary_voronoi_polygon_vertices.items():
     ...    random_color = colors.rgb2hex(sp.rand(3))
     ...    #fill in the Voronoi region (polygon) that contains the generator:
     ...    polygon = Poly3DCollection([voronoi_region],alpha=1.0)
@@ -471,7 +471,7 @@ class SphericalVoronoi:
         '''Returns a dictionary with the estimated surface areas of the Voronoi region polygons corresponding to each generator (original data point) index. An example dictionary entry: `{generator_index : surface_area, ...}`.'''
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = self.calc_vertices()
         dictionary_Voronoi_region_surface_areas_for_each_generator = {}
-        for generator_index, Voronoi_polygon_sorted_vertex_array in dictionary_sorted_Voronoi_point_coordinates_for_each_generator.iteritems():
+        for generator_index, Voronoi_polygon_sorted_vertex_array in dictionary_sorted_Voronoi_point_coordinates_for_each_generator.items():
             current_Voronoi_polygon_surface_area_on_sphere = calculate_surface_area_of_a_spherical_Voronoi_polygon(Voronoi_polygon_sorted_vertex_array,self.radius)
             assert current_Voronoi_polygon_surface_area_on_sphere > 0, "Obtained a surface area of zero for a Voronoi region."
             dictionary_Voronoi_region_surface_areas_for_each_generator[generator_index] = current_Voronoi_polygon_surface_area_on_sphere
