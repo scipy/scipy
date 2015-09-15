@@ -37,7 +37,7 @@ import numpy as np
 from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
-from inspect import getargspec
+from scipy._lib._util import getargspec_no_self as _getargspec
 
 
 # standard status messages of optimizers
@@ -2609,7 +2609,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         xmin = xmin[0]
     if callable(finish):
         # set up kwargs for `finish` function
-        finish_args = getargspec(finish).args
+        finish_args = _getargspec(finish).args
         finish_kwargs = dict()
         if 'full_output' in finish_args:
             finish_kwargs['full_output'] = 1
