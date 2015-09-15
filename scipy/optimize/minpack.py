@@ -542,15 +542,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
-        import inspect
-        args, varargs, varkw, defaults = inspect.getargspec(f)
+        from scipy._lib._util import getargspec_no_self as _getargspec
+        args, varargs, varkw, defaults = _getargspec(f)
         if len(args) < 2:
             msg = "Unable to determine number of fit parameters."
             raise ValueError(msg)
-        if 'self' in args:
-            p0 = [1.0] * (len(args)-2)
-        else:
-            p0 = [1.0] * (len(args)-1)
+        p0 = [1.0] * (len(args)-1)
 
     # Check input arguments
     if isscalar(p0):

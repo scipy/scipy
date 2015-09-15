@@ -5,6 +5,8 @@ import operator
 import sys
 import warnings
 import numbers
+from collections import namedtuple
+import inspect
 
 import numpy as np
 
@@ -148,3 +150,96 @@ def _asarray_validated(a, check_finite=True,
                 a = toarray(a).astype(np.float_)
     return a
 
+
+# Add a replacement for inspect.getargspec() which is deprecated in python 3.5
+# The version below is borrowed from Django,
+# https://github.com/django/django/pull/4846
+
+# Note an inconsistency between inspect.getargspec(func) and
+# inspect.signature(func). If `func` is a bound method, the latter does *not* 
+# list `self` as a first argument, while the former *does*.
+# Hence cook up a common ground replacement: `getargspec_no_self` which
+# mimics `inspect.getargspec` but does not list `self`.
+#
+# This way, the caller code does not need to know whether it uses a legacy
+# .getargspec or bright and shiny .signature.
+
+try:
+    # is it python 3.3 or higher?
+    inspect.signature
+
+    # Apparently, yes. Wrap inspect.signature
+
+    ArgSpec = namedtuple('ArgSpec', ['args', 'varargs', 'keywords', 'defaults'])
+
+    def getargspec_no_self(func):
+        """inspect.getargspec replacement using inspect.signature.
+
+        inspect.getargspec is deprecated in python 3. This is a replacement
+        based on the (new in python 3.3) `inspect.signature`.
+
+        Parameters
+        ----------
+        func : callable
+            A callable to inspect
+
+        Returns
+        -------
+        argspec : ArgSpec(args, varargs, varkw, defaults)
+            This is similar to the result of inspect.getargspec(func) under
+            python 2.x.
+            NOTE: if the first argument of `func` is self, it is *not*, I repeat
+            *not* included in argspec.args.
+            This is done for consistency between inspect.getargspec() under
+            python 2.x, and inspect.signature() under python 3.x.
+        """
+        sig = inspect.signature(func)
+        args = [
+            p.name for p in sig.parameters.values()
+            if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+        ]
+        varargs = [
+            p.name for p in sig.parameters.values()
+            if p.kind == inspect.Parameter.VAR_POSITIONAL
+        ]
+        varargs = varargs[0] if varargs else None
+        varkw = [
+            p.name for p in sig.parameters.values()
+            if p.kind == inspect.Parameter.VAR_KEYWORD
+        ]
+        varkw = varkw[0] if varkw else None
+        defaults = [
+            p.default for p in sig.parameters.values()
+            if (p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and
+               p.default is not p.empty)
+        ] or None
+        return ArgSpec(args, varargs, varkw, defaults)
+
+except AttributeError:
+    # python 2.x
+    def getargspec_no_self(func):
+        """inspect.getargspec replacement for compatibility with python 3.x.
+
+        inspect.getargspec is deprecated in python 3. This wraps it, and
+        *removes* `self` from the argument list of `func`, if present.
+        This is done for forward compatibility with python 3.
+
+        Parameters
+        ----------
+        func : callable
+            A callable to inspect
+
+        Returns
+        -------
+        argspec : ArgSpec(args, varargs, varkw, defaults)
+            This is similar to the result of inspect.getargspec(func) under
+            python 2.x.
+            NOTE: if the first argument of `func` is self, it is *not*, I repeat
+            *not* included in argspec.args.
+            This is done for consistency between inspect.getargspec() under
+            python 2.x, and inspect.signature() under python 3.x.
+        """
+        argspec = inspect.getargspec(func)
+        if argspec.args[0] == 'self':
+            argspec.args.pop(0)
+        return argspec
