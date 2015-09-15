@@ -344,7 +344,7 @@ class SphericalVoronoi:
     >>> plt.show()
     """
 
-    def __init__(self, generators, radius=None, center=None):
+    def __init__(self, points, radius=None, center=None):
         """
         generators : array of shape (N, 3)
             N points in 3D to generate the Voronoi diagram from
@@ -359,21 +359,21 @@ class SphericalVoronoi:
 
         # translate generators such that sphere center is at origin
         if np.any(center):
-            self.generators = generators - center
+            self.points = points - center
         else:
-            self.generators = generators
+            self.points = points
 
         # estimate radius if not known
         if radius:
             self.radius = radius
         else:
             self.radius = np.average(
-                scipy.spatial.distance.cdist(self.generators,
+                scipy.spatial.distance.cdist(self.points,
                                              np.zeros((3,))[np.newaxis, :]))
 
     def delaunay_triangulation_spherical_surface(self):
         '''Delaunay tessellation of the points on the surface of the sphere. This is simply the 3D convex hull of the points. Returns a shape (N,3,3) array of points representing the vertices of the Delaunay triangulation on the sphere (i.e., N three-dimensional triangle vertex arrays).'''
-        hull = scipy.spatial.ConvexHull(self.generators)
+        hull = scipy.spatial.ConvexHull(self.points)
         array_points_vertices_Delaunay_triangulation = hull.simplices
         return array_points_vertices_Delaunay_triangulation
 
@@ -390,7 +390,7 @@ class SphericalVoronoi:
 
         #step 1: perform 3D Delaunay triangulation on data set
         #        (here ConvexHull can also be used, and is faster)
-        tri = scipy.spatial.ConvexHull(self.generators)
+        tri = scipy.spatial.ConvexHull(self.points)
 
         #step 2: add the origin to each of the simplices in tri to get the
         #        same tetrahedrons we'd have gotten from Delaunay
@@ -414,7 +414,7 @@ class SphericalVoronoi:
     def _sort_vertices(self, tetrahedrons, tri, voronoi_vertices):
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
         array_tetrahedra = tetrahedrons
-        generator_index_array = np.arange(self.generators.shape[0])
+        generator_index_array = np.arange(self.points.shape[0])
         filter_tuple = np.where((np.expand_dims(tri.simplices, -1) == generator_index_array).any(axis=1))
         dictionary_generators_and_triangle_indices_containing_those_generators = {}
         for generator_index, triangle_index in zip(filter_tuple[1], filter_tuple[0]):
