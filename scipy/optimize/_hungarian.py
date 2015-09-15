@@ -54,9 +54,10 @@ def linear_sum_assignment(cost_matrix):
     -----
     .. versionadded:: 0.17.0
 
-    Example
-    -------
+    Examples
+    --------
     >>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])
+    >>> from scipy.optimize import linear_sum_assignment
     >>> row_ind, col_ind = linear_sum_assignment(cost)
     >>> col_ind
     array([1, 0, 2])
