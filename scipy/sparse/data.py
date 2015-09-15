@@ -96,6 +96,8 @@ class _data_matrix(spmatrix):
     ###########################
 
     def _mul_scalar(self, other):
+        if other == 0:
+            return self.__class__(self.shape, dtype=self.dtype)
         return self._with_data(self.data * other)
 
 
