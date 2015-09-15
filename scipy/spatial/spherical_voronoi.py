@@ -225,6 +225,24 @@ class SphericalVoronoi:
 
     .. versionadded:: 0.17.0
 
+    Attributes
+    ----------
+        points : double array of shape (npoints, 3)
+            the points in 3D to generate the Voronoi diagram from
+        radius : double
+            radius of the sphere
+            Default: None (forces estimation, which is less precise)
+        center : double array of shape (3,)
+            center of the sphere
+            Default: None (assumes sphere is centered at origin)
+        vertices : double array of shape (nvertices, 3)
+            Voronoi vertices corresponding to points
+        regions : list of list of integers of shape (npoints, *)
+            the n-th entry is a list consisting of the indices
+            of the vertices belonging to the n-th point in points
+
+    Notes
+    ----------
     The spherical Voronoi diagram algorithm proceeds as follows. The Convex
     Hull of the input points (generators) is calculated, and is equivalent to
     their Delaunay triangulation on the surface of the sphere [Caroli]_.
@@ -345,18 +363,6 @@ class SphericalVoronoi:
     """
 
     def __init__(self, points, radius=None, center=None):
-        """
-        generators : array of shape (N, 3)
-            N points in 3D to generate the Voronoi diagram from
-        radius : *float*
-            radius of the sphere (providing radius is more accurate than
-            forcing an estimate).
-            Default: None (force estimation)
-        center : array of shape (3,)
-            center of the sphere
-            Default: None (assumes sphere is centered at origin)
-        """
-
         # translate generators such that sphere center is at origin
         if np.any(center):
             self.points = points - center
@@ -370,6 +376,8 @@ class SphericalVoronoi:
             self.radius = np.average(
                 scipy.spatial.distance.cdist(self.points,
                                              np.zeros((3,))[np.newaxis, :]))
+        self.vertices = None
+        self.regions = None
 
     def delaunay_triangulation_spherical_surface(self):
         '''Delaunay tessellation of the points on the surface of the sphere. This is simply the 3D convex hull of the points. Returns a shape (N,3,3) array of points representing the vertices of the Delaunay triangulation on the sphere (i.e., N three-dimensional triangle vertex arrays).'''
@@ -404,14 +412,18 @@ class SphericalVoronoi:
         #step 4: project tetrahedron circumcenters to the surface of the sphere
         #        to produce the Voronoi vertices
         lengths = scipy.spatial.distance.cdist(circumcenters, np.zeros((1, 3)))
-        voronoi_vertices = (self.radius / np.abs(lengths)) * circumcenters
+        self.vertices = (self.radius / np.abs(lengths)) * circumcenters
+
+        self.regions = [[k for k in range(0, len(tri.simplices))
+                         if n in tri.simplices[k]]
+                        for n in range(0, len(self.points))]
 
         #step 5: use the Delaunay tetrahedralization neighbour information to
         #        connect the Voronoi vertices around the generators, to
         #        produce the Voronoi regions
-        return self._sort_vertices(tetrahedrons, tri, voronoi_vertices)
+        return self._sort_vertices(tetrahedrons, tri)
 
-    def _sort_vertices(self, tetrahedrons, tri, voronoi_vertices):
+    def _sort_vertices(self, tetrahedrons, tri):
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
         array_tetrahedra = tetrahedrons
         generator_index_array = np.arange(self.points.shape[0])
@@ -451,7 +463,7 @@ class SphericalVoronoi:
                 common_vertex_coordinate = array_candidate_vertices[array_candidate_vertices != common_vertex_coordinate] #for the next iteration
                 ordered_list_tetrahedron_indices_surrounding_current_generator.append(next_tetrahedron_index_surrounding_generator)
                 vertices_remaining -= 1
-            dictionary_sorted_Voronoi_point_coordinates_for_each_generator[generator_index] = voronoi_vertices[ordered_list_tetrahedron_indices_surrounding_current_generator]
+            dictionary_sorted_Voronoi_point_coordinates_for_each_generator[generator_index] = self.vertices[ordered_list_tetrahedron_indices_surrounding_current_generator]
             generator_index += 1
         return dictionary_sorted_Voronoi_point_coordinates_for_each_generator
 
