@@ -174,7 +174,7 @@ example that follows.
    >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/8)
    >>> y = np.sin(x)
    >>> tck = interpolate.splrep(x, y, s=0)
-   >>> xnew = np.arange(0,2*np.pi,np.pi/50)
+   >>> xnew = np.arange(0, 2*np.pi, np.pi/50)
    >>> ynew = interpolate.splev(xnew, tck, der=0)
 
    >>> plt.figure()
@@ -188,7 +188,7 @@ example that follows.
 
    >>> yder = interpolate.splev(xnew, tck, der=1)
    >>> plt.figure()
-   >>> plt.plot(xnew,yder,xnew,np.cos(xnew),'--')
+   >>> plt.plot(xnew, yder, xnew, np.cos(xnew),'--')
    >>> plt.legend(['Cubic Spline', 'True'])
    >>> plt.axis([-0.05, 6.33, -1.05, 1.05])
    >>> plt.title('Derivative estimation from spline')
@@ -215,14 +215,24 @@ example that follows.
    Roots of spline
 
    >>> interpolate.sproot(tck)
-   [ 0.      3.1416]
+   array([3.1416])
+
+   Notice that `sproot` failed to find an obvious solution at the edge of the
+   approximation interval, :math:`x = 0`. If we define the spline on a slightly
+   larger interval, we recover both roots :math:`x = 0` and :math:`x = 2\pi`:
+
+   >>> x = np.linspace(-np.pi/4, 2.*np.pi + np.pi/4, 21)
+   >>> y = np.sin(x)
+   >>> tck = interpolate.splrep(x, y, s=0)
+   >>> interpolate.sproot(tck)
+   array([0., 3.1416])
 
    Parametric spline
 
    >>> t = np.arange(0, 1.1, .1)
    >>> x = np.sin(2*np.pi*t)
    >>> y = np.cos(2*np.pi*t)
-   >>> tck,u = interpolate.splprep([x,y], s=0)
+   >>> tck, u = interpolate.splprep([x, y], s=0)
    >>> unew = np.arange(0, 1.01, 0.01)
    >>> out = interpolate.splev(unew, tck)
    >>> plt.figure()
