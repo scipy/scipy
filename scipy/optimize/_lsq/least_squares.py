@@ -581,8 +581,8 @@ def least_squares(
     4.4408921315878507e-14
 
     We now constrain the variables, in such a way that the previous solution
-    becomes infeasible. Specifically, we require that ``x[0] >= 1.5``, and
-    ``x[1]`` left unconstrained. To this end, we specify the `bounds` parameter
+    becomes infeasible. Specifically, we require that ``x[1] >= 1.5``, and
+    ``x[0]`` left unconstrained. To this end, we specify the `bounds` parameter
     to `least_squares` in the form ``bounds=([-np.inf, 1.5], np.inf)``.
 
     We also provide the analytic Jacobian:

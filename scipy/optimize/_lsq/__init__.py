@@ -1,4 +1,4 @@
-"""Module contains last-squares algorithms."""
+"""This module contains least-squares algorithms."""
 
 from __future__ import division, print_function, absolute_import
 
