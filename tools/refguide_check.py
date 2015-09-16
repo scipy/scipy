@@ -354,7 +354,12 @@ def check_rest(module, names, dots=True):
     Returns: [(name, success_flag, output), ...]
     """
 
-    skip_types = (dict, str, unicode, float, int)
+    try:
+        skip_types = (dict, str, unicode, float, int)
+    except NameError:
+        # python 3
+        skip_types = (dict, str, float, int)
+
 
     results = []
 
