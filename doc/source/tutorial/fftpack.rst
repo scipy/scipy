@@ -143,8 +143,9 @@ helper functions.
 The function :func:`fftfreq` returns the FFT sample frequency points.
 
 >>> from scipy.fftpack import fftfreq
->>> freq = fftfreq(np.arange(8), 0.125)
-[ 0.  1.  2.  3. -4. -3. -2. -1.]
+>>> freq = fftfreq(8, 0.125)
+>>> freq
+array([ 0., 1., 2., 3., -4., -3., -2., -1.])
 
 In a similar spirit, the function :func:`fftshift` allows swapping the lower
 and upper halves of a vector, so that it becomes suitable for display.
