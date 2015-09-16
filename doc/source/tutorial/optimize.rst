@@ -450,7 +450,12 @@ This is shown in the following example:
    >>> from scipy.optimize import leastsq
    >>> plsq = leastsq(residuals, p0, args=(y_meas, x))
    >>> plsq[0]
-   array([10.9437, 33.3605, 0.5834])
+   array([10.9437, 33.3605, 0.5834])  # may vary (periodicity)
+
+   Notice that this example has multiple equivalent minima related by
+   :math:`\theta \to \theta + \pi` and :math:`A\to -A`. The optimization
+   process may converge to any of these minima, depending on the
+   initial guess.
 
    >>> A, k, theta
    (10., 33.3333, 0.5236)
@@ -483,7 +488,7 @@ function: `brent` and `golden`, but `golden` is included only for academic
 purposes and should rarely be used. These can be respectively selected
 through the `method` parameter in :func:`minimize_scalar`. The `brent`
 method uses Brent's algorithm for locating a minimum. Optimally a bracket
-(the `bs` parameter) should be given which contains the minimum desired. A
+(the `bracket` parameter) should be given which contains the minimum desired. A
 bracket is a triple :math:`\left( a, b, c \right)` such that :math:`f
 \left( a \right) > f \left( b \right) < f \left( c \right)` and :math:`a <
 b < c` . If this is not given, then alternatively two starting points can
@@ -509,7 +514,7 @@ before minimization occurs. The `bounded` method in :func:`minimize_scalar`
 is an example of a constrained minimization procedure that provides a
 rudimentary interval constraint for scalar functions. The interval
 constraint allows the minimization to occur only between two fixed
-endpoints, specified using the mandatory `bs` parameter.
+endpoints, specified using the mandatory `bounds` parameter.
 
 For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 :math:`x=5` , :func:`minimize_scalar` can be called using the interval
@@ -602,6 +607,8 @@ This will work just as well in case of univariate optimization::
     ...
     ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
     ...                           nfev=funcalls, success=(niter > 1))
+    >>> def f(x):
+    ...    return (x - 2)**2 * (x + 2)**2
     >>> res = minimize_scalar(f, bracket=(-3.5, 0), method=custmin,
     ...                       options=dict(stepsize = 0.05))
     >>> res.x
