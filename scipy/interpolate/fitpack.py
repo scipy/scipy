@@ -509,7 +509,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         warnings.warn(RuntimeWarning(_mess))
     if ier > 0 and not full_output:
         if ier in [1, 2, 3]:
-            warnings.warn(RuntimeWarning(+_iermess[ier][0]))
+            warnings.warn(RuntimeWarning(_iermess[ier][0]))
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
