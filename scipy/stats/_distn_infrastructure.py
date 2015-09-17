@@ -2692,6 +2692,8 @@ class rv_discrete(rv_generic):
                                                  self, rv_discrete)
             self.moment_gen = instancemethod(_drv_moment_gen,
                                              self, rv_discrete)
+
+            self.shapes = ' '   # bypass inspection 
             self._construct_argparser(meths_to_inspect=[self._pmf],
                                       locscale_in='loc=0',
                                       # scale=1 for discrete RVs
