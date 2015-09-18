@@ -302,7 +302,7 @@ class SphericalVoronoi:
     >>> random_coordinate_array = scipy.spatial.spherical_voronoi.generate_random_array_spherical_generators(1000,1.0,prng)
     >>> #produce the Voronoi diagram data
     >>> voronoi_instance = SphericalVoronoi(random_coordinate_array,1.0)
-    >>> dictionary_voronoi_polygon_vertices = voronoi_instance.calc_vertices()
+    >>> dictionary_voronoi_polygon_vertices = voronoi_instance.calc_sorted_vertices()
     >>> #plot the Voronoi diagram
     >>> fig = plt.figure()
     >>> fig.set_size_inches(4,4)
@@ -381,6 +381,8 @@ class SphericalVoronoi:
                                              np.zeros((3,))[np.newaxis, :]))
         self.vertices = None
         self.regions = None
+        self._tri = None
+        self._tetrahedrons = None
 
     def delaunay_triangulation_spherical_surface(self):
         '''Delaunay tessellation of the points on the surface of the sphere. This is simply the 3D convex hull of the points. Returns a shape (N,3,3) array of points representing the vertices of the Delaunay triangulation on the sphere (i.e., N three-dimensional triangle vertex arrays).'''
@@ -388,7 +390,7 @@ class SphericalVoronoi:
         array_points_vertices_Delaunay_triangulation = hull.simplices
         return array_points_vertices_Delaunay_triangulation
 
-    def calc_vertices(self):
+    def calc_sorted_vertices(self):
         """
         Returns a dictionary with the sorted (non-intersecting) polygon
         vertices for the Voronoi regions associated with each generator index.
@@ -401,16 +403,16 @@ class SphericalVoronoi:
 
         #step 1: perform 3D Delaunay triangulation on data set
         #        (here ConvexHull can also be used, and is faster)
-        tri = scipy.spatial.ConvexHull(self.centered_points)
+        self._tri = scipy.spatial.ConvexHull(self.centered_points)
 
         #step 2: add the origin to each of the simplices in tri to get the
         #        same tetrahedrons we'd have gotten from Delaunay
         #        tetrahedralization
-        tetrahedrons = tri.points[tri.simplices]
-        tetrahedrons = np.insert(tetrahedrons, 3, np.zeros((1, 3)), axis=1)
+        self._tetrahedrons = self._tri.points[self._tri.simplices]
+        self._tetrahedrons = np.insert(self._tetrahedrons, 3, np.zeros((1, 3)), axis=1)
 
         #step 3: produce circumcenters of tetrahedrons from 3D Delaunay
-        circumcenters = calc_circumcenters(tetrahedrons)
+        circumcenters = calc_circumcenters(self._tetrahedrons)
 
         #step 4: project tetrahedron circumcenters to the surface of the sphere
         #        to produce the Voronoi vertices
@@ -418,15 +420,15 @@ class SphericalVoronoi:
         self.vertices = (self.radius / np.abs(lengths)) * circumcenters
         self.vertices += self.center
 
-        self.regions = [[k for k in range(0, len(tri.simplices))
-                         if n in tri.simplices[k]]
+        self.regions = [[k for k in range(0, len(self._tri.simplices))
+                         if n in self._tri.simplices[k]]
                         for n in range(0, len(self.centered_points))]
 
 
         #step 5: use the Delaunay tetrahedralization neighbour information to
         #        connect the Voronoi vertices around the generators, to
         #        produce the Voronoi regions
-        return self._sort_vertices(tetrahedrons, tri)
+        return self._sort_vertices(self._tetrahedrons, self._tri)
 
     def _sort_vertices(self, tetrahedrons, tri):
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
@@ -474,7 +476,7 @@ class SphericalVoronoi:
 
     def voronoi_region_surface_areas_spherical_surface(self):
         '''Returns a dictionary with the estimated surface areas of the Voronoi region polygons corresponding to each generator (original data point) index. An example dictionary entry: `{generator_index : surface_area, ...}`.'''
-        dictionary_sorted_Voronoi_point_coordinates_for_each_generator = self.calc_vertices()
+        dictionary_sorted_Voronoi_point_coordinates_for_each_generator = self.calc_sorted_vertices()
         dictionary_Voronoi_region_surface_areas_for_each_generator = {}
         for generator_index, Voronoi_polygon_sorted_vertex_array in dictionary_sorted_Voronoi_point_coordinates_for_each_generator.items():
             current_Voronoi_polygon_surface_area_on_sphere = calculate_surface_area_of_a_spherical_Voronoi_polygon(Voronoi_polygon_sorted_vertex_array,self.radius)

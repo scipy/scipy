@@ -217,11 +217,11 @@ class TestSphericalVoronoi(TestCase):
     def test_vertices_regions_translation_invariance(self):
         points = TestSphericalVoronoi.points_unsymmetric
         sv_origin = spherical_voronoi.SphericalVoronoi(points)
-        sv_origin.calc_vertices()
+        sv_origin.calc_sorted_vertices()
         center = np.array([1, 1, 1])
         points += center
         sv_translated = spherical_voronoi.SphericalVoronoi(points, None, center)
-        sv_translated.calc_vertices()
+        sv_translated.calc_sorted_vertices()
         assert_array_equal(sv_origin.regions, sv_translated.regions)
         assert_array_almost_equal(sv_origin.vertices+center,
                                   sv_translated.vertices)
@@ -406,7 +406,7 @@ class Test_Spherical_Voronoi_Diagram_Properties(TestCase):
         max_allowed_spherical_Voronoi_vertices = (2 * self.num_generators) - 4
         #loop through and identify the actual number of unique Voronoi vertices produced by the algorithm in this code
         spherical_voronoi_instance = spherical_voronoi.SphericalVoronoi(self.random_spherical_coord_array, self.test_sphere_radius)
-        dictionary_voronoi_regions = spherical_voronoi_instance.calc_vertices()
+        dictionary_voronoi_regions = spherical_voronoi_instance.calc_sorted_vertices()
         list_voronoi_vertices = []
         for generator_index, voronoi_vertex_array in dictionary_voronoi_regions.items():
             for voronoi_vertex in voronoi_vertex_array:
