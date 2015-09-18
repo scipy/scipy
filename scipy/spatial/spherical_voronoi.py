@@ -383,6 +383,7 @@ class SphericalVoronoi:
         self.regions = None
         self._tri = None
         self._tetrahedrons = None
+        self.calc_vertices_regions()
 
     def delaunay_triangulation_spherical_surface(self):
         '''Delaunay tessellation of the points on the surface of the sphere. This is simply the 3D convex hull of the points. Returns a shape (N,3,3) array of points representing the vertices of the Delaunay triangulation on the sphere (i.e., N three-dimensional triangle vertex arrays).'''
@@ -390,7 +391,7 @@ class SphericalVoronoi:
         array_points_vertices_Delaunay_triangulation = hull.simplices
         return array_points_vertices_Delaunay_triangulation
 
-    def calc_sorted_vertices(self):
+    def calc_vertices_regions(self):
         """
         Returns a dictionary with the sorted (non-intersecting) polygon
         vertices for the Voronoi regions associated with each generator index.
@@ -409,7 +410,8 @@ class SphericalVoronoi:
         #        same tetrahedrons we'd have gotten from Delaunay
         #        tetrahedralization
         self._tetrahedrons = self._tri.points[self._tri.simplices]
-        self._tetrahedrons = np.insert(self._tetrahedrons, 3, np.zeros((1, 3)), axis=1)
+        self._tetrahedrons = np.insert(self._tetrahedrons, 3,
+                                       np.zeros((1, 3)), axis=1)
 
         #step 3: produce circumcenters of tetrahedrons from 3D Delaunay
         circumcenters = calc_circumcenters(self._tetrahedrons)
@@ -424,15 +426,16 @@ class SphericalVoronoi:
                          if n in self._tri.simplices[k]]
                         for n in range(0, len(self.centered_points))]
 
-
+    def calc_sorted_vertices(self):
+        """
         #step 5: use the Delaunay tetrahedralization neighbour information to
-        #        connect the Voronoi vertices around the generators, to
-        #        produce the Voronoi regions
-        return self._sort_vertices(self._tetrahedrons, self._tri)
+        connect the Voronoi vertices around the generators, to
+        produce the Voronoi regions
+        """
 
-    def _sort_vertices(self, tetrahedrons, tri):
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
-        array_tetrahedra = tetrahedrons
+        array_tetrahedra = self._tetrahedrons
+        tri = self._tri
         generator_index_array = np.arange(self.centered_points.shape[0])
         filter_tuple = np.where((np.expand_dims(tri.simplices, -1) == generator_index_array).any(axis=1))
         dictionary_generators_and_triangle_indices_containing_those_generators = {}

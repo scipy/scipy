@@ -197,17 +197,18 @@ class TestSphericalVoronoi(TestCase):
     )
 
     def test_constructor_centered_points(self):
-        generators = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
-        translated = np.array([[-1, 0, 1], [-1, 1, 0], [0, 0, 0]])
+        generators = TestSphericalVoronoi.points_unsymmetric
+        center = np.array([1, 2, 3])
+        translated = generators - center
         s1 = spherical_voronoi.SphericalVoronoi(generators, 1)
         s2 = spherical_voronoi.SphericalVoronoi(generators, 1, [0, 0, 0])
-        s3 = spherical_voronoi.SphericalVoronoi(generators, 1, [1, 0, 0])
+        s3 = spherical_voronoi.SphericalVoronoi(generators, 1, center)
         assert_array_almost_equal(s1.centered_points, generators)
         assert_array_almost_equal(s2.centered_points, generators)
         assert_array_almost_equal(s3.centered_points, translated)
 
     def test_constructor_center(self):
-        generators = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+        generators = TestSphericalVoronoi.points_unsymmetric
         center = np.array([1, 2, 3])
         sv1 = spherical_voronoi.SphericalVoronoi(generators)
         sv2 = spherical_voronoi.SphericalVoronoi(generators, None, center)
@@ -217,11 +218,9 @@ class TestSphericalVoronoi(TestCase):
     def test_vertices_regions_translation_invariance(self):
         points = TestSphericalVoronoi.points_unsymmetric
         sv_origin = spherical_voronoi.SphericalVoronoi(points)
-        sv_origin.calc_sorted_vertices()
         center = np.array([1, 1, 1])
         points += center
         sv_translated = spherical_voronoi.SphericalVoronoi(points, None, center)
-        sv_translated.calc_sorted_vertices()
         assert_array_equal(sv_origin.regions, sv_translated.regions)
         assert_array_almost_equal(sv_origin.vertices+center,
                                   sv_translated.vertices)
