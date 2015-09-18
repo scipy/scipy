@@ -237,7 +237,7 @@ class SphericalVoronoi:
             Default: None (assumes sphere is centered at origin)
         vertices : double array of shape (nvertices, 3)
             Voronoi vertices corresponding to points
-        regions : list of list of integers of shape (npoints, *)
+        regions : list of list of integers of shape (npoints, _ )
             the n-th entry is a list consisting of the indices
             of the vertices belonging to the n-th point in points
 
