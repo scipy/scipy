@@ -191,9 +191,9 @@ class TestSphericalVoronoi(TestCase):
         s1 = spherical_voronoi.SphericalVoronoi(generators, 1)
         s2 = spherical_voronoi.SphericalVoronoi(generators, 1, [0, 0, 0])
         s3 = spherical_voronoi.SphericalVoronoi(generators, 1, [1, 0, 0])
-        assert_array_almost_equal(s1.points, generators)
-        assert_array_almost_equal(s2.points, generators)
-        assert_array_almost_equal(s3.points, translated)
+        assert_array_almost_equal(s1.centered_points, generators)
+        assert_array_almost_equal(s2.centered_points, generators)
+        assert_array_almost_equal(s3.centered_points, translated)
 
 
 class Test_voronoi_surface_area_calculations(TestCase):

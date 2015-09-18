@@ -364,24 +364,25 @@ class SphericalVoronoi:
 
     def __init__(self, points, radius=None, center=None):
         # translate generators such that sphere center is at origin
+        self.points = points
         if np.any(center):
-            self.points = points - center
+            self.centered_points = points - center
         else:
-            self.points = points
+            self.centered_points = points
 
         # estimate radius if not known
         if radius:
             self.radius = radius
         else:
             self.radius = np.average(
-                scipy.spatial.distance.cdist(self.points,
+                scipy.spatial.distance.cdist(self.centered_points,
                                              np.zeros((3,))[np.newaxis, :]))
         self.vertices = None
         self.regions = None
 
     def delaunay_triangulation_spherical_surface(self):
         '''Delaunay tessellation of the points on the surface of the sphere. This is simply the 3D convex hull of the points. Returns a shape (N,3,3) array of points representing the vertices of the Delaunay triangulation on the sphere (i.e., N three-dimensional triangle vertex arrays).'''
-        hull = scipy.spatial.ConvexHull(self.points)
+        hull = scipy.spatial.ConvexHull(self.centered_points)
         array_points_vertices_Delaunay_triangulation = hull.simplices
         return array_points_vertices_Delaunay_triangulation
 
@@ -398,7 +399,7 @@ class SphericalVoronoi:
 
         #step 1: perform 3D Delaunay triangulation on data set
         #        (here ConvexHull can also be used, and is faster)
-        tri = scipy.spatial.ConvexHull(self.points)
+        tri = scipy.spatial.ConvexHull(self.centered_points)
 
         #step 2: add the origin to each of the simplices in tri to get the
         #        same tetrahedrons we'd have gotten from Delaunay
@@ -416,7 +417,7 @@ class SphericalVoronoi:
 
         self.regions = [[k for k in range(0, len(tri.simplices))
                          if n in tri.simplices[k]]
-                        for n in range(0, len(self.points))]
+                        for n in range(0, len(self.centered_points))]
 
         #step 5: use the Delaunay tetrahedralization neighbour information to
         #        connect the Voronoi vertices around the generators, to
@@ -426,7 +427,7 @@ class SphericalVoronoi:
     def _sort_vertices(self, tetrahedrons, tri):
         dictionary_sorted_Voronoi_point_coordinates_for_each_generator = {}
         array_tetrahedra = tetrahedrons
-        generator_index_array = np.arange(self.points.shape[0])
+        generator_index_array = np.arange(self.centered_points.shape[0])
         filter_tuple = np.where((np.expand_dims(tri.simplices, -1) == generator_index_array).any(axis=1))
         dictionary_generators_and_triangle_indices_containing_those_generators = {}
         for generator_index, triangle_index in zip(filter_tuple[1], filter_tuple[0]):
