@@ -367,8 +367,10 @@ class SphericalVoronoi:
         self.points = points
         if np.any(center):
             self.centered_points = points - center
+            self.center = center
         else:
             self.centered_points = points
+            self.center = np.zeros(3)
 
         # estimate radius if not known
         if radius:
@@ -414,10 +416,12 @@ class SphericalVoronoi:
         #        to produce the Voronoi vertices
         lengths = scipy.spatial.distance.cdist(circumcenters, np.zeros((1, 3)))
         self.vertices = (self.radius / np.abs(lengths)) * circumcenters
+        self.vertices += self.center
 
         self.regions = [[k for k in range(0, len(tri.simplices))
                          if n in tri.simplices[k]]
                         for n in range(0, len(self.centered_points))]
+
 
         #step 5: use the Delaunay tetrahedralization neighbour information to
         #        connect the Voronoi vertices around the generators, to

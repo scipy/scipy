@@ -185,7 +185,7 @@ class Test_spherical_polygon_angle_summation(TestCase):
 
 class TestSphericalVoronoi(TestCase):
 
-    def test_constructor_center(self):
+    def test_constructor_centered_points(self):
         generators = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
         translated = np.array([[-1, 0, 1], [-1, 1, 0], [0, 0, 0]])
         s1 = spherical_voronoi.SphericalVoronoi(generators, 1)
@@ -194,6 +194,14 @@ class TestSphericalVoronoi(TestCase):
         assert_array_almost_equal(s1.centered_points, generators)
         assert_array_almost_equal(s2.centered_points, generators)
         assert_array_almost_equal(s3.centered_points, translated)
+
+    def test_constructor_center(self):
+        generators = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+        center = np.array([1 ,2, 3])
+        sv1 = spherical_voronoi.SphericalVoronoi(generators)
+        sv2 = spherical_voronoi.SphericalVoronoi(generators, None, center)
+        assert_array_equal(sv1.center, np.array([0, 0, 0]))
+        assert_array_equal(sv2.center, center)
 
 
 class Test_voronoi_surface_area_calculations(TestCase):
