@@ -64,6 +64,16 @@ class TestSparseUtils(TestCase):
         assert_equal(sputils.issequence(np.array([[1],[2],[3]])),False)
         assert_equal(sputils.issequence(3),False)
 
+    def test_ismatrix(self):
+        assert_equal(sputils.ismatrix(((),)), True)
+        assert_equal(sputils.ismatrix([[1],[2]]), True)
+        assert_equal(sputils.ismatrix(np.arange(3)[None]), True)
+
+        assert_equal(sputils.ismatrix([1,2]), False)
+        assert_equal(sputils.ismatrix(np.arange(3)), False)
+        assert_equal(sputils.ismatrix([[[1]]]), False)
+        assert_equal(sputils.ismatrix(3), False)
+
     def test_isdense(self):
         assert_equal(sputils.isdense(np.array([1])),True)
         assert_equal(sputils.isdense(np.matrix([1])),True)
