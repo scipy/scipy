@@ -221,7 +221,7 @@ def issequence(t):
 
 
 def ismatrix(t):
-    return ((issequence(t) and issequence(t[0]) and (len(t[0]) == 0 or np.isscalar(t[0][0])))
+    return ((isinstance(t, (list, tuple)) and len(t) > 0 and issequence(t[0]))
             or (isinstance(t, np.ndarray) and t.ndim == 2))
 
 
