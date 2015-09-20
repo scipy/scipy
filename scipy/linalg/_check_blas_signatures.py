@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import
 
 from _library_check import get_linking_signatures
 
+
 def run():
     from numpy.distutils.system_info import get_info, NotFoundError
 
@@ -25,5 +26,6 @@ def run():
     with open('cython_blas_signatures_actual.txt','w') as f:
         f.writelines(sigs)
 
+    
 if __name__ == '__main__':
     run()

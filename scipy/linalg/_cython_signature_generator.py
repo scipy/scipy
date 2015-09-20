@@ -15,14 +15,14 @@ import os
 import os.path
 from numpy.f2py import crackfortran
 
-sig_types = {'integer':'int',
-             'complex':'c',
-             'double precision':'d',
-             'real':'s',
-             'complex*16':'z',
-             'double complex':'z',
-             'character':'char',
-             'logical':'bint'}
+sig_types = {'integer': 'int',
+             'complex': 'c',
+             'double precision': 'd',
+             'real': 's',
+             'complex*16': 'z',
+             'double complex': 'z',
+             'character': 'char',
+             'logical': 'bint'}
 
 
 def get_type(info, arg):
@@ -88,6 +88,9 @@ def sigs_from_dirs(dirs, outfile, manual_wrappers=None, exclusions=None):
 blas_manual_wrappers = '''void cgemm3m(char *transa, char *transb, int *m, int *n, int *k, c *alpha, c *a, int *lda, c *b, int *ldb, c *beta, c *c, int *ldc)
 void zgemm3m(char *transa, char *transb, int *m, int *n, int *k, z *alpha, z *a, int *lda, z *b, int *ldb, z *beta, z *c, int *ldc)
 '''
+# Currently we do not force the gemm3m kernels, however,
+# when dynamic checking they should definitely be added.
+blas_manual_wrappers = ''
 
 
 lapack_manual_wrappers = '''void cgees(char *jobvs, char *sort, cselect1 *select, int *n, c *a, int *lda, int *sdim, c *w, c *vs, int *ldvs, c *work, int *lwork, s *rwork, bint *bwork, int *info)
