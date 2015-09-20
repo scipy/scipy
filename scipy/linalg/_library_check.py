@@ -10,10 +10,12 @@ otherwise it is removed from the list.
 """
 from __future__ import division, print_function, absolute_import
 
-import distutils.ccompiler
+from os.path import join
+
+import os
 import tempfile
 import shutil
-from os.path import join
+import distutils.ccompiler
 
 __all__ = ['get_linking_signatures']
 
