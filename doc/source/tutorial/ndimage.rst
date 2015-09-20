@@ -1517,7 +1517,7 @@ number, or as a tuple of lists, if *index* is a sequence.
     treated as a single object. If *label* is None, all elements of
     *input* are used in the calculation. The result is a tuple giving
     the minimum, the maximum, the position of the minimum and the
-    postition of the maximum. The result is the same as a tuple formed
+    position of the maximum. The result is the same as a tuple formed
     by the results of the functions *minimum*, *maximum*,
     *minimum_position*, and *maximum_position* that are described
     above.
@@ -1662,7 +1662,7 @@ This extension can then be used in Python, for example:
 
 C callback functions for use with :mod:`ndimage` functions must all
 be written according to this scheme. The next section lists the
-:mod:`ndimage` functions that acccept a C callback function and
+:mod:`ndimage` functions that accept a C callback function and
 gives the prototype of the callback function.
 
 Functions that support C callback functions

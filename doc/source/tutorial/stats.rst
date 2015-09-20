@@ -278,7 +278,7 @@ Broadcasting
 
 The basic methods ``pdf`` and so on satisfy the usual numpy broadcasting rules. For
 example, we can calculate the critical values for the upper tail of
-the t distribution for different probabilites and degrees of freedom.
+the t distribution for different probabilities and degrees of freedom.
 
     >>> stats.t.isf([0.1, 0.05, 0.01], [[10], [11]])
     array([[ 1.37218364,  1.81246112,  2.76376946],
@@ -293,7 +293,7 @@ broadcasting rules give the same result of calling ``isf`` twice:
     >>> stats.t.isf([0.1, 0.05, 0.01], 11)
     array([ 1.36343032,  1.79588482,  2.71807918])
 
-If the array with probabilities, i.e, ``[0.1, 0.05, 0.01]`` and the
+If the array with probabilities, i.e., ``[0.1, 0.05, 0.01]`` and the
 array of degrees of freedom i.e., ``[10, 11, 12]``, have the same
 array shape, then element wise matching is used. As an example, we can
 obtain the 10% tail for 10 d.o.f., the 5% tail for 11 d.o.f. and the
@@ -483,7 +483,7 @@ From the docstring of rv_discrete, i.e.,
 
 we learn that:
 
-  "You can construct an aribtrary discrete rv where P{X=xk} = pk by
+  "You can construct an arbitrary discrete rv where P{X=xk} = pk by
   passing to the rv_discrete initialization method (through the values=
   keyword) a tuple of sequences (xk, pk) which describes only those
   values of X (xk) that occur with nonzero probability (pk)."
@@ -646,7 +646,7 @@ T-test and KS-test
 ^^^^^^^^^^^^^^^^^^
 
 We can use the t-test to test whether the mean of our sample differs
-in a statistcally significant way from the theoretical expectation.
+in a statistically significant way from the theoretical expectation.
 
     >>> print 't-statistic = %6.3f pvalue = %6.4f' %  stats.ttest_1samp(x, m)
     t-statistic =  0.391 pvalue = 0.6955
@@ -736,7 +736,7 @@ has less weight in the tails:
     tail prob. of normal at 1%, 5% and 10%   0.2857   3.4957   8.5003
 
 The chisquare test can be used to test, whether for a finite number of bins,
-the observed frequencies differ significantly from the probabilites of the
+the observed frequencies differ significantly from the probabilities of the
 hypothesized distribution.
 
     >>> quantiles = [0.0, 0.01, 0.05, 0.1, 1-0.10, 1-0.05, 1-0.01, 1.0]
@@ -761,7 +761,7 @@ differs from both standard distribution, we can again redo the test taking
 the estimate for scale and location into account.
 
 The fit method of the distributions can be used to estimate the parameters
-of the distribution, and the test is repeated using probabilites of the
+of the distribution, and the test is repeated using probabilities of the
 estimated distribution.
 
     >>> tdof, tloc, tscale = stats.t.fit(x)
