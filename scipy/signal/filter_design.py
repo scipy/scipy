@@ -1565,7 +1565,7 @@ def _zpkbilinear(z, p, k, fs):
 
 
 def _zpklp2lp(z, p, k, wo=1.0):
-    """
+    r"""
     Transform a lowpass filter prototype to a different frequency.
 
     Return an analog low-pass filter with cutoff frequency `wo`
@@ -1618,7 +1618,7 @@ def _zpklp2lp(z, p, k, wo=1.0):
 
 
 def _zpklp2hp(z, p, k, wo=1.0):
-    """
+    r"""
     Transform a lowpass filter prototype to a highpass filter.
 
     Return an analog high-pass filter with cutoff frequency `wo`
@@ -1677,7 +1677,7 @@ def _zpklp2hp(z, p, k, wo=1.0):
 
 
 def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
-    """
+    r"""
     Transform a lowpass filter prototype to a bandpass filter.
 
     Return an analog band-pass filter with center frequency `wo` and
@@ -1749,7 +1749,7 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
 
 
 def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
-    """
+    r"""
     Transform a lowpass filter prototype to a bandstop filter.
 
     Return an analog band-stop filter with center frequency `wo` and
