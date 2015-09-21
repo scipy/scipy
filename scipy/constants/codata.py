@@ -1142,6 +1142,10 @@ physical_constants = {}
 
 
 def parse_constants(d,firstcol,secondcol,thirdcol):
+    """
+    firstcol,secondcol,thirdcol :   column numbers in txt20(02|06|10|14) data to determine where
+                                    to slice strings
+    """
     constants = {}
     for line in d.split('\n'):
         name = line[:firstcol].rstrip()
@@ -1180,7 +1184,6 @@ for k in _physical_constants_2002:
 for k in _physical_constants_2006:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
-
 
 class ConstantWarning(DeprecationWarning):
     """Accessing a constant no longer in current CODATA data set"""
