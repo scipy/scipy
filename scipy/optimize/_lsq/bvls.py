@@ -6,6 +6,13 @@ from scipy.optimize import OptimizeResult
 from .common import print_header_linear, print_iteration_linear
 
 
+def compute_kkt_optimality(g, on_bound):
+    g_kkt = g * on_bound
+    free_set = on_bound == 0
+    g_kkt[free_set] = np.abs(g[free_set])
+    return np.max(g_kkt)
+
+
 def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
     m, n = A.shape
 
@@ -47,7 +54,7 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
     while free_set.size > 0:
         if verbose == 2:
-            optimality = max(norm(g[free_set]), np.max(g * on_bound))
+            optimality = compute_kkt_optimality(g, on_bound)
             print_iteration_linear(iteration, cost, cost_change, step_norm,
                                    optimality)
 
@@ -97,25 +104,19 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
     # Main BVLS loop.
 
+    optimality = compute_kkt_optimality(g, on_bound)
     for iteration in range(iteration, max_iter):
-        g_dir = g * on_bound
-        move_to_free = np.argmax(g_dir)
-        max_g_dir = g_dir[move_to_free]
-
-        if max_g_dir <= 0:
-            termination_status = 3
-
         if verbose == 2:
-            g_norm = max(0, max_g_dir)
-            if free_set.size > 0:
-                g_norm = max(g_norm, norm(g[free_set], ord=np.inf))
-
             print_iteration_linear(iteration, cost, cost_change,
-                                   step_norm, g_norm)
+                                   step_norm, optimality)
+
+        if optimality < tol:
+            termination_status = 1
 
         if termination_status is not None:
             break
 
+        move_to_free = np.argmax(g * on_bound)
         on_bound[move_to_free] = 0
         free_set = on_bound == 0
         active_set = ~free_set
@@ -165,15 +166,12 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
         cost = cost_new
 
         g = A.T.dot(r)
+        optimality = compute_kkt_optimality(g, on_bound)
 
     if termination_status is None:
         termination_status = 0
 
-    g_norm = max(0, max_g_dir)
-    if free_set.size > 0:
-        g_norm = max(g_norm, norm(g[free_set], ord=np.inf))
-
     return OptimizeResult(
-        x=x, fun=r, cost=cost, optimality=g_norm, active_mask=on_bound,
+        x=x, fun=r, cost=cost, optimality=optimality, active_mask=on_bound,
         nit=iteration + 1, status=termination_status,
         initial_cost=initial_cost)

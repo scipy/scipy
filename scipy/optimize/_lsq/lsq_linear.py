@@ -25,10 +25,9 @@ def prepare_bounds(bounds, n):
 TERMINATION_MESSAGES = {
     -1: "The algorithm was not able to make progress on the last iteration.",
     0: "The maximum number of iterations is exceeded.",
-    1: "The uniform norm of the scaled gradient is less than `tol`.",
+    1: "The first-order optimality is less than `tol`.",
     2: "The relative change of the cost function is less than `tol`.",
-    3: "The exact solution is found by 'bvls' method.",
-    4: "The unconstrained solution is optimal."
+    3: "The unconstrained solution is optimal."
 }
 
 
@@ -67,12 +66,17 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     tol : float, optional
         Tolerance parameter. The algorithm terminates if the relative change
         of the cost function is less than `tol` on the last iteration.
-        For ``method='trf'``, the algorithm also terminates if the uniform
-        norm of the gradient, scaled to account for the presence of the bounds,
-        is less than `tol`. Default is 1e-10.
+        Additionally the first-order optimality measure is considered:
+
+            * ``method='trf'`` terminates if the uniform norm of the gradient,
+              scaled to account for the presence of the bounds, is less than
+              `tol`.
+            * ``method='bvls'`` terminates if Karush-Kuhn-Tucker conditions
+              are violated by less than `tol`.
+
     lsq_solver : {None, 'exact', 'lsmr'}, optional
         Method of solving unbounded least-squares problems throughout
-        iterations.
+        iterations:
 
             * 'exact' : Use dense QR or SVD decomposition approach. Can't be
               used when `A` is sparse or LinearOperator.
@@ -130,8 +134,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             *  0 : the maximum number of iterations is exceeded.
             *  1 : the uniform norm of the scaled gradient is less than `tol`.
             *  2 : the relative change of the cost function is less than `tol`.
-            *  3 : the exact solution is found by 'bvls' method.
-            *  4 : the unconstrained solution is optimal.
+            *  3 : the unconstrained solution is optimal.
 
     message : str
         Verbal description of the termination reason.
@@ -140,7 +143,9 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     See Also
     --------
-    nnls : Linear least-squares with non-negativity constraint
+    nnls : Linear least squares with non-negativity constraint
+    least_squares : Robust nonlinear least squares with bound constraints
+                    on independent variables.   
 
     Notes
     -----
@@ -154,7 +159,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     in the nonlinear algorithm, but as the quadratic model is always accurate
     we don't need to track or modify a trust-region radius. The line search
     (backtracking) is used as a safety net when the step does not decrease
-    the cost function. TODO: Add link to `least_squares` when available.
+    the cost function. Read more detailed description of the algorithm
+    in `scipy.optimize.least_squares`.
 
     Method 'bvls' runs a Python implementation of the algorithm described in
     [BVLS]_. The algorithm maintains active and free sets of variables, on
@@ -162,10 +168,9 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     free set and then solves an unconstrained least-squares problem on free
     variables. This method gives very accurate solution but may require up to
     n iterations. Additionally, an ad-hoc initialization procedure is
-    implemented, which roughly determines which variables to set free or
-    active initially. It takes some number of iterations before actual BVLS
-    starts, but can significantly reduce the number of iterations required
-    by BVLS.
+    implemented, that determines which variables to set free or active
+    initially. It takes some number of iterations before actual BVLS starts,
+    but can significantly reduce the number of iterations required by BVLS.
 
     References
     ----------
@@ -179,7 +184,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Examples
     --------
-    In this example a problem with large sparse matrix is solved.
+    In this example a problem with large sparse matrix and bounds on the
+    variables is solved.
 
     >>> from scipy.sparse import rand
     >>> from scipy.optimize import lsq_linear
@@ -267,7 +273,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if in_bounds(x_lsq, lb, ub):
         r = A.dot(x_lsq) - b
         cost = 0.5 * np.dot(r, r)
-        termination_status = 4
+        termination_status = 3
         termination_message = TERMINATION_MESSAGES[termination_status]
         g = compute_grad(A, r)
         g_norm = norm(g, ord=np.inf)

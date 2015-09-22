@@ -87,7 +87,7 @@ Equation (Local) Minimizers
    leastsq - Minimize the sum of squares of M equations in N unknowns
    least_squares - Feature-rich least-squares minimization.
    nnls - Linear least-squares problem with non-negativity constraint
-   lsq_linear - Linear least-squares problem with arbitrary bound constraints
+   lsq_linear - Linear least-squares problem with bound constraints
 
 Global Optimization
 -------------------
