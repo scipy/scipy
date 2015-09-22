@@ -12,7 +12,8 @@ from scipy._lib.six import xrange
 
 from ._sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
-from .sputils import upcast, isintlike, IndexMixin, issequence, get_index_dtype
+from .sputils import (upcast, isintlike, IndexMixin, issequence,
+                      get_index_dtype, ismatrix)
 
 from .compressed import _cs_matrix
 
@@ -299,6 +300,14 @@ class csr_matrix(_cs_matrix, IndexMixin):
                     return extracted
                 else:
                     return extracted[:,col]
+
+        elif ismatrix(row) and issequence(col):
+            if len(row[0]) == 1 and isintlike(row[0][0]):
+                # [[[1],[2]], [1,2]], outer indexing
+                row = asindices(row)
+                P_row = extractor(row[:,0], self.shape[0])
+                P_col = extractor(col, self.shape[1]).T
+                return P_row * self * P_col
 
         if not (issequence(col) and issequence(row)):
             # Sample elementwise
