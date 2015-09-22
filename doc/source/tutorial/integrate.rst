@@ -40,7 +40,7 @@ This could be computed using :obj:`quad`:
     >>> print abs(result[0]-I)
     1.03761443881e-11
 
-The first argument to quad is a "callable" Python object (*i.e* a
+The first argument to quad is a "callable" Python object (*i.e.* a
 function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
 limits of integration. The return value is a tuple, with the first
@@ -137,7 +137,7 @@ General multiple integration (:func:`dblquad`, :func:`tplquad`, :func:`nquad`)
 
 The mechanics for double and triple integration have been wrapped up into the
 functions :obj:`dblquad` and :obj:`tplquad`. These functions take the function
-to  integrate and four, or six arguments, respecively. The limits of all
+to  integrate and four, or six arguments, respectively. The limits of all
 inner integrals need to be defined as functions.
 
 An example of using double integration to compute several values of

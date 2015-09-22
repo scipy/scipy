@@ -141,7 +141,7 @@ required. This input is a list of :math:`N` -arrays representing the
 curve in :math:`N` -dimensional space. The length of each array is the
 number of curve points, and each array provides one component of the
 :math:`N` -dimensional data point. The parameter variable is given
-with the keword argument, *u,* which defaults to an equally-spaced
+with the keyword argument, *u,* which defaults to an equally-spaced
 monotonic sequence between :math:`0` and :math:`1` . The default
 output consists of two objects: a 3-tuple, :math:`\left(t,c,k\right)`
 , containing the spline representation and the parameter variable

@@ -573,7 +573,7 @@ def wiener(im, mysize=None, noise=None):
     ----------
     im : ndarray
         An N-dimensional array.
-    mysize : int or arraylike, optional
+    mysize : int or array_like, optional
         A scalar or an N-length list giving the size of the Wiener filter
         window in each dimension.  Elements of mysize should be odd.
         If mysize is a scalar, then this scalar is used as the size

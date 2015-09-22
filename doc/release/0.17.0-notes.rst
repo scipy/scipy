@@ -21,7 +21,7 @@ This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
 New features
 ============
 
-Linear assigment problem solver
+Linear assignment problem solver
 -------------------------------
 
 ``scipy.optimize.linear_sum_assignment`` is a new function for solving the

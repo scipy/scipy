@@ -258,7 +258,7 @@ equally-spaced :math:`N`-point approximation to the derivative of
 order *o*. These weights must be multiplied by the function
 corresponding to these points and the results added to obtain the
 derivative approximation. This function is intended for use when only
-samples of the function are avaiable. When the function is an object
+samples of the function are available. When the function is an object
 that can be handed to a routine and evaluated, the function
 :obj:`derivative` can be used to automatically evaluate the object at
 the correct points to obtain an N-point approximation to the *o*-th

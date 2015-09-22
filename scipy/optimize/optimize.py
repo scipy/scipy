@@ -2249,7 +2249,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     over each current direction in the direction set. At the end
     of the inner loop, if certain conditions are met, the direction
     that gave the largest decrease is dropped and replaced with
-    the difference between the current estiamted x and the estimated
+    the difference between the current estimated x and the estimated
     x from the beginning of the inner-loop.
 
     The technical conditions for replacing the direction of greatest

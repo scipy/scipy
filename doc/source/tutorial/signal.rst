@@ -446,7 +446,7 @@ As an example consider the following system:
   y[n] = \frac{1}{2} x[n] + \frac{1}{4} x[n-1] + \frac{1}{3} y[n-1]
 
 The code calculates the signal :math:`y[n]` for a given signal :math:`x[n]`;
-first for initial condiditions :math:`y[-1] = 0` (default case), then for
+first for initial conditions :math:`y[-1] = 0` (default case), then for
 :math:`y[-1] = 2` by means of :func:`lfiltic`.
 
 >>> import numpy as np
@@ -478,7 +478,7 @@ means of its transfer function :math:`H(z)` according to
 
    H(z) = k \frac{ (z-z_1)(z-z_2)...(z-z_{N_z})}{ (z-p_1)(z-p_2)...(z-p_{N_p})}
 
-This alternative representation can be obtain wit hthe scipy function
+This alternative representation can be obtain with the scipy function
 :func:`tf2zpk`; the inverse is provided by :func:`zpk2tf`.
 
 For the example from above we have
@@ -491,7 +491,7 @@ For the example from above we have
 i.e. the system has a zero at :math:`z=-1/2` and a pole at :math:`z=1/3`. 
 
 The scipy function :func:`freqz` allows calculation of the frequency response
-of a system described by the coeffcients :math:`a_k` and :math:`b_k`. See the
+of a system described by the coefficients :math:`a_k` and :math:`b_k`. See the
 help of the :func:`freqz` function of a comprehensive example.
 
 
@@ -894,7 +894,7 @@ polynomial time series and plots the remaining signal components.
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ..
 ..
-.. Inifinite-impulse response design
+.. Infinite-impulse response design
 .. ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ..
 ..

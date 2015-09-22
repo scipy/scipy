@@ -388,7 +388,7 @@ data-point as
 
     e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert
 
-An objective function to pass to any of the previous minization
+An objective function to pass to any of the previous minimization
 algorithms to obtain a least-squares fit is.
 
 .. math::

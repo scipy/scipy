@@ -27,7 +27,7 @@ beginning and ending (integer) values :math:`a` and :math:`b` which must be such
 
 in which case, it is assumed that the pdf function is specified on the
 integers :math:`a+mk\leq b` where :math:`k` is a non-negative integer ( :math:`0,1,2,\ldots` ) and :math:`m` is a positive integer multiplier. Alternatively, the two lists :math:`x_{k}` and :math:`p\left(x_{k}\right)` can be provided directly in which case a dictionary is set up
-internally to evaulate probabilities and generate random variates.
+internally to evaluate probabilities and generate random variates.
 
 
 Probability Mass Function (PMF)

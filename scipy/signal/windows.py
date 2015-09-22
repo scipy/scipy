@@ -1619,8 +1619,8 @@ def get_window(window, Nx, fftbins=True):
     Nx : int
         The number of samples in the window.
     fftbins : bool, optional
-        If True, create a "periodic" window ready to use with ifftshift
-        and be multiplied by the result of an fft (SEE ALSO fftfreq).
+        If True, create a "periodic" window ready to use with `ifftshift`
+        and be multiplied by the result of an fft (SEE ALSO `fftfreq`).
 
     Returns
     -------

@@ -877,7 +877,7 @@ and so the matrix tangent is defined as
 Hyperbolic trigonometric functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The hyperbolic trigonemetric functions :math:`\sinh` , :math:`\cosh` ,
+The hyperbolic trigonometric functions :math:`\sinh` , :math:`\cosh` ,
 and :math:`\tanh` can also be defined for matrices using the familiar
 definitions:
 
