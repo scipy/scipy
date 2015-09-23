@@ -23,7 +23,8 @@ __all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
 # the keyword (attribute of relation, for now).
 
 # TODO:
-#   - both integer and reals are treated as numeric -> the integer info is lost !
+#   - both integer and reals are treated as numeric -> the integer info
+#    is lost!
 #   - Replace ValueError by ParseError or something
 
 # We know can handle the following:
@@ -201,7 +202,8 @@ def get_date_format(atrv):
             pattern = pattern.replace("ss", "%S")
             datetime_unit = "s"
         if "z" in pattern or "Z" in pattern:
-            raise ValueError("Date type attributes with time zone not supported, yet")
+            raise ValueError("Date type attributes with time zone not "
+                             "supported, yet")
 
         if datetime_unit is None:
             raise ValueError("Invalid or unsupported date format")
@@ -570,7 +572,9 @@ def _loadarff(ofile):
     # This can be used once we want to support integer as integer values and
     # not as numeric anymore (using masked arrays ?).
     acls2dtype = {'real': float, 'integer': float, 'numeric': float}
-    acls2conv = {'real': safe_float, 'integer': safe_float, 'numeric': safe_float}
+    acls2conv = {'real': safe_float,
+                 'integer': safe_float,
+                 'numeric': safe_float}
     descr = []
     convertors = []
     if not hasstr:
@@ -579,7 +583,8 @@ def _loadarff(ofile):
             if type == 'date':
                 date_format, datetime_unit = get_date_format(value)
                 descr.append((name, "datetime64[%s]" % datetime_unit))
-                convertors.append(partial(safe_date, date_format=date_format, datetime_unit=datetime_unit))
+                convertors.append(partial(safe_date, date_format=date_format,
+                                          datetime_unit=datetime_unit))
             elif type == 'nominal':
                 n = maxnomlen(value)
                 descr.append((name, 'S%d' % n))
@@ -661,7 +666,7 @@ def test_weka(filename):
     print(len(data.dtype))
     print(data.size)
     for i in meta:
-        print_attribute(i,meta[i],data[i])
+        print_attribute(i, meta[i], data[i])
 
 # make sure nose does not find this as a test
 test_weka.__test__ = False

@@ -13,8 +13,9 @@ else:
 
 import numpy as np
 
-from numpy.testing import (TestCase, assert_array_almost_equal, assert_array_equal, assert_equal,
-        assert_, assert_raises, dec, run_module_suite)
+from numpy.testing import (TestCase, assert_array_almost_equal,
+                           assert_array_equal, assert_equal, assert_,
+                           assert_raises, dec, run_module_suite)
 
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
@@ -33,8 +34,8 @@ test6 = pjoin(data_path, 'test6.arff')
 test7 = pjoin(data_path, 'test7.arff')
 test8 = pjoin(data_path, 'test8.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
-        (-0.1, -0.2, -0.3, -0.4, 'class2'),
-        (1, 2, 3, 4, 'class3')]
+                (-0.1, -0.2, -0.3, -0.4, 'class2'),
+                (1, 2, 3, 4, 'class3')]
 expected_types = ['numeric', 'numeric', 'numeric', 'numeric', 'nominal']
 
 missing = pjoin(data_path, 'missing.arff')
@@ -179,11 +180,13 @@ class HeaderTest(TestCase):
 
 
 class DateAttributeTest(TestCase):
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
+                "No np.datetime64 in Numpy < 1.7.0")
     def setUp(self):
         self.data, self.meta = loadarff(test7)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
+                "No np.datetime64 in Numpy < 1.7.0")
     def test_year_attribute(self):
         expected = np.array([
             '1999',
@@ -196,7 +199,8 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_year"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
+                "No np.datetime64 in Numpy < 1.7.0")
     def test_month_attribute(self):
         expected = np.array([
             '1999-01',
@@ -209,7 +213,8 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_month"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
+                "No np.datetime64 in Numpy < 1.7.0")
     def test_date_attribute(self):
         expected = np.array([
             '1999-01-31',
@@ -222,7 +227,8 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_date"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
+                "No np.datetime64 in Numpy < 1.7.0")
     def test_datetime_local_attribute(self):
         expected = np.array([
             datetime.datetime(year=1999, month=1, day=31, hour=0, minute=1),
@@ -235,7 +241,8 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_datetime_local"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
+                "No np.datetime64 in Numpy < 1.7.0")
     def test_datetime_missing(self):
         expected = np.array([
             'nat',
