@@ -5,7 +5,7 @@ import numpy as np
 from scipy.optimize._lsq.common import (
     step_size_to_bound, find_active_constraints, make_strictly_feasible,
     CL_scaling_vector, intersect_trust_region, build_quadratic_1d,
-    minimize_quadratic_1d, evaluate_quadratic)
+    minimize_quadratic_1d, evaluate_quadratic, reflective_transformation)
 
 
 class TestBounds(object):
@@ -214,6 +214,37 @@ class TestTrustRegion(object):
         x = np.zeros(3)
         s = np.zeros(3)
         assert_raises(ValueError, intersect_trust_region, x, s, Delta)
+
+
+def test_reflective_transformation():
+    lb = np.array([-1, -2])
+    ub = np.array([5, 3])
+
+    y = np.array([0, 0])
+    x, g = reflective_transformation(y, lb, ub)
+    assert_equal(x, y)
+    assert_equal(g, np.ones(2))
+
+    y = np.array([-4, 4])
+
+    x, g = reflective_transformation(y, lb, np.array([np.inf, np.inf]))
+    assert_equal(x, [2, 4])
+    assert_equal(g, [-1, 1])
+
+    x, g = reflective_transformation(y, np.array([-np.inf, -np.inf]), ub)
+    assert_equal(x, [-4, 2])
+    assert_equal(g, [1, -1])
+
+    x, g = reflective_transformation(y, lb, ub)
+    assert_equal(x, [2, 2])
+    assert_equal(g, [-1, -1])
+
+    lb = np.array([-np.inf, -2])
+    ub = np.array([5, np.inf])
+    y = np.array([10, 10])
+    x, g = reflective_transformation(y, lb, ub)
+    assert_equal(x, [0, 10])
+    assert_equal(g, [-1, 1])
 
 
 if __name__ == '__main__':
