@@ -1520,7 +1520,7 @@ class TestButter(TestCase):
         assert_array_almost_equal(b, [0.0219, 0.1097, 0.2194,
                                       0.2194, 0.1097, 0.0219], decimal=4)
         assert_array_almost_equal(a, [1.0000, -0.9853, 0.9738,
-                                     -0.3864, 0.1112, -0.0113], decimal=4)
+                                      -0.3864, 0.1112, -0.0113], decimal=4)
 
     def test_highpass(self):
         # highpass, high even order

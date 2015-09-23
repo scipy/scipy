@@ -3078,7 +3078,7 @@ def _bessel_poly(n, reverse=False):
     match http://oeis.org/A001498/b001498.txt :
 
     i = 0
-    for n in xrange(51):
+    for n in range(51):
         for x in bessel_poly(n, reverse=True):
             print i, x
             i += 1
@@ -3089,7 +3089,7 @@ def _bessel_poly(n, reverse=False):
         n = int(n)  # np.int32 doesn't work, for instance
 
     out = []
-    for k in xrange(n + 1):
+    for k in range(n + 1):
         num = factorial(2*n - k, exact=True)
         den = 2**(n - k) * (factorial(k, exact=True) *
                             factorial(n - k, exact=True))
@@ -3147,7 +3147,7 @@ def _aberth(f, fp, x0, tol=1e-15, maxiter=50):
 
         # Model "repulsion" between zeros
         for k in range(N):
-            beta[k]  = np.sum(1/(x[k] - x[k+1:]))
+            beta[k] = np.sum(1/(x[k] - x[k+1:]))
             beta[k] += np.sum(1/(x[k] - x[:k]))
 
         x += alpha / (1 + alpha * beta)
