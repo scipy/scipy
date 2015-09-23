@@ -83,6 +83,21 @@ class MissingDataTest(TestCase):
             assert_array_almost_equal(data[i], expect_missing[i])
 
 
+class NoDataTest(TestCase):
+    def test_nodata(self):
+        # The file nodata.arff has no data in the @DATA section.
+        # Reading it should result in an array with length 0.
+        nodata_filename = os.path.join(data_path, 'nodata.arff')
+        data, meta = loadarff(nodata_filename)
+        expected_dtype = np.dtype([('sepallength', '<f8'),
+                                   ('sepalwidth', '<f8'),
+                                   ('petallength', '<f8'),
+                                   ('petalwidth', '<f8'),
+                                   ('class', 'S15')])
+        assert_equal(data.dtype, expected_dtype)
+        assert_equal(data.size, 0)
+
+
 class HeaderTest(TestCase):
     def test_type_parsing(self):
         # Test parsing type of attribute from their value.

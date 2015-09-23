@@ -398,39 +398,6 @@ def safe_date(value, date_format, datetime_unit):
         return np.datetime64(dt).astype("datetime64[%s]" % datetime_unit)
 
 
-def get_delim(line):
-    """Given a string representing a line of data, check whether the
-    delimiter is ',' or space.
-
-    Parameters
-    ----------
-    line : str
-       line of data
-
-    Returns
-    -------
-    delim : {',', ' '}
-
-    Examples
-    --------
-    >>> get_delim(',')
-    ','
-    >>> get_delim(' ')
-    ' '
-    >>> get_delim(', ')
-    ','
-    >>> get_delim('x')
-    Traceback (most recent call last):
-       ...
-    ValueError: delimiter not understood: x
-    """
-    if ',' in line:
-        return ','
-    if ' ' in line:
-        return ' '
-    raise ValueError("delimiter not understood: " + line)
-
-
 class MetaData(object):
     """Small container to keep useful informations on a ARFF dataset.
 
@@ -630,26 +597,6 @@ def _loadarff(ofile):
 
     ni = len(convertors)
 
-    # Get the delimiter from the first line of data:
-    def next_data_line(row_iter):
-        """Assumes we are already in the data part (eg after @data)."""
-        raw = next(row_iter)
-        while r_empty.match(raw) or r_comment.match(raw):
-            raw = next(row_iter)
-        return raw
-
-    try:
-        try:
-            dtline = next_data_line(ofile)
-            delim = get_delim(dtline)
-        except ValueError as e:
-            raise ParseArffError("Error while parsing delimiter: " + str(e))
-    finally:
-        ofile.seek(0, 0)
-        ofile = go_data(ofile)
-        # skip the @data line
-        next(ofile)
-
     def generator(row_iter, delim=','):
         # TODO: this is where we are spending times (~80%). I think things
         # could be made more efficiently:
@@ -681,7 +628,7 @@ def _loadarff(ofile):
             row = raw.split(delim)
             yield tuple([convertors[i](row[i]) for i in elems])
 
-    a = generator(ofile, delim=delim)
+    a = generator(ofile)
     # No error should happen here: it is a bug otherwise
     data = np.fromiter(a, descr)
     return data, meta
