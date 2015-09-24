@@ -622,6 +622,309 @@ class multivariate_normal_frozen(multi_rv_frozen):
         rank = self.cov_info.rank
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
+##### BEGIN WORK ZONE #####
+
+
+class matrix_normal_gen(multi_rv_generic):
+    r"""
+    A matrix normal random variable.
+
+    The `mean` keyword specifies the mean. The `rowcov` keyword specifies the
+    among-row covariance matrix. The 'colcov' keyword specified the
+    among-column covariance matrix.
+
+    Methods
+    -------
+    ``pdf(X, mean=None, rowcov=1, colcov=1)``
+        Probability density function.
+    ``logpdf(X, mean=None, rowcov=1, colcov=1)``
+        Log of the probability density function.
+    ``rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)``
+        Draw random samples.
+    ``entropy()``
+        Compute the differential entropy.
+
+    Parameters
+    ----------
+    X : array_like
+        Quantiles, with the last axis of `x` denoting the components.
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Alternatively, the object may be called (as a function) to fix the mean
+    and covariance parameters, returning a "frozen" matrix normal
+    random variable:
+
+    rv = multivariate_normal(mean=None, cov=1, allow_singular=False)
+        - Frozen object with the same methods but holding the given
+          mean and covariance fixed.
+
+    Notes
+    -----
+    %(_doc_callparams_note)s
+
+    The covariance matrices `rowcov` and `colcov` must be (symmetric) positive
+    definite matrices. If `X` is :math:`m \times n`, then `rowcov` must be
+    :math:`m \times m` and `colcov` must be :math:`n \times n`. `mean` must
+    be the same shape as `X`.
+
+    The probability density function for `matrix_normal` is
+
+    .. math::
+
+        f(X) = |2 \pi U|^{-\frac{1}{2}} |2 \pi V|^{-\frac{1}{2}}
+               \exp\left( -\frac{1}{2} \trace\left[ U^{-1} (X-M) V^{-1}
+               (X-M)^T \right] \right),
+
+    where :math:`M` is the mean, :math:`U` the among-row covariance matrix,
+    :math:`V` the among-column covariance matrix.
+
+    .. versionadded:: 0.14.0
+
+    Examples
+    --------
+    #TODO Add examples.
+
+
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import matrix_normal
+
+    >>> x = np.linspace(0, 5, 10, endpoint=False)
+    >>> y = multivariate_normal.pdf(x, mean=2.5, cov=0.5); y
+    array([ 0.00108914,  0.01033349,  0.05946514,  0.20755375,  0.43939129,
+            0.56418958,  0.43939129,  0.20755375,  0.05946514,  0.01033349])
+    >>> fig1 = plt.figure()
+    >>> ax = fig1.add_subplot(111)
+    >>> ax.plot(x, y)
+
+    The input quantiles can be any shape of array, as long as the last
+    axis labels the components.  This allows us for instance to
+    display the frozen pdf for a non-isotropic random variable in 2D as
+    follows:
+
+    >>> x, y = np.mgrid[-1:1:.01, -1:1:.01]
+    >>> pos = np.dstack((x, y))
+    >>> rv = multivariate_normal([0.5, -0.2], [[2.0, 0.3], [0.3, 0.5]])
+    >>> fig2 = plt.figure()
+    >>> ax2 = fig2.add_subplot(111)
+    >>> ax2.contourf(x, y, rv.pdf(pos))
+
+    """
+
+    def __init__(self, seed=None):
+        super(matrix_normal_gen, self).__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__, docdict_params)
+
+    def __call__(self, mean=None, cov=1, seed=None):
+        """
+        Create a frozen matrix normal distribution.
+
+        See `matrix_normal_frozen` for more information.
+
+        """
+        return matrix_normal_frozen(mean, cov,
+                                          seed=seed)
+
+    def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
+        """
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the log of the probability
+            density function
+        mean : ndarray
+            Mean of the distribution
+        prec_U : ndarray
+            A decomposition such that np.dot(prec_U, prec_U.T)
+            is the precision matrix, i.e. inverse of the covariance matrix.
+        log_det_cov : float
+            Logarithm of the determinant of the covariance matrix
+        rank : int
+            Rank of the covariance matrix.
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'logpdf' instead.
+
+        """
+        dev = x - mean
+        maha = np.sum(np.square(np.dot(dev, prec_U)), axis=-1)
+        return -0.5 * (rank * _LOG_2PI + log_det_cov + maha)
+
+    def logpdf(self, x, mean, cov, allow_singular=False):
+        """
+        Log of the multivariate normal probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Log of the probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        """
+        dim, mean, cov = _process_parameters(None, mean, cov)
+        x = _process_quantiles(x, dim)
+        psd = _PSD(cov, allow_singular=allow_singular)
+        out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
+        return _squeeze_output(out)
+
+    def pdf(self, x, mean, cov, allow_singular=False):
+        """
+        Multivariate normal probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        """
+        dim, mean, cov = _process_parameters(None, mean, cov)
+        x = _process_quantiles(x, dim)
+        psd = _PSD(cov, allow_singular=allow_singular)
+        out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
+        return _squeeze_output(out)
+
+    def rvs(self, mean=None, cov=1, size=1, random_state=None):
+        """
+        Draw random samples from a multivariate normal distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of size (`size`, `N`), where `N` is the
+            dimension of the random variable.
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        """
+        dim, mean, cov = _process_parameters(None, mean, cov)
+
+        random_state = self._get_random_state(random_state)
+        out = random_state.multivariate_normal(mean, cov, size)
+        return _squeeze_output(out)
+
+    def entropy(self, mean=None, cov=1):
+        """
+        Compute the differential entropy of the multivariate normal.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the multivariate normal distribution
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+
+        """
+        dim, mean, cov = _process_parameters(None, mean, cov)
+        _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov)
+        return 0.5 * logdet
+
+
+multivariate_normal = multivariate_normal_gen()
+
+
+class multivariate_normal_frozen(multi_rv_frozen):
+    def __init__(self, mean=None, cov=1, allow_singular=False, seed=None):
+        """
+        Create a frozen multivariate normal distribution.
+
+        Parameters
+        ----------
+        mean : array_like, optional
+            Mean of the distribution (default zero)
+        cov : array_like, optional
+            Covariance matrix of the distribution (default one)
+        allow_singular : bool, optional
+            If this flag is True then tolerate a singular
+            covariance matrix (default False).
+        seed : None or int or np.random.RandomState instance, optional
+            This parameter defines the RandomState object to use for drawing
+            random variates.
+            If None (or np.random), the global np.random state is used.
+            If integer, it is used to seed the local RandomState instance
+            Default is None.
+
+        Examples
+        --------
+        When called with the default parameters, this will create a 1D random
+        variable with mean 0 and covariance 1:
+
+        >>> from scipy.stats import multivariate_normal
+        >>> r = multivariate_normal()
+        >>> r.mean
+        array([ 0.])
+        >>> r.cov
+        array([[1.]])
+
+        """
+        self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
+        self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
+        self._dist = multivariate_normal_gen(seed)
+
+    def logpdf(self, x):
+        x = _process_quantiles(x, self.dim)
+        out = self._dist._logpdf(x, self.mean, self.cov_info.U,
+                                 self.cov_info.log_pdet, self.cov_info.rank)
+        return _squeeze_output(out)
+
+    def pdf(self, x):
+        return np.exp(self.logpdf(x))
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.mean, self.cov, size, random_state)
+
+    def entropy(self):
+        """
+        Computes the differential entropy of the multivariate normal.
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the multivariate normal distribution
+
+        """
+        log_pdet = self.cov_info.log_pdet
+        rank = self.cov_info.rank
+        return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
+
+
+
+###### END OF WORK ZONE #####
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
