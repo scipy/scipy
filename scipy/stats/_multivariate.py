@@ -10,7 +10,11 @@ from scipy.special import gammaln, psi, multigammaln
 from scipy._lib._util import check_random_state
 
 
-__all__ = ['multivariate_normal', 'dirichlet', 'wishart', 'invwishart']
+__all__ = ['multivariate_normal',
+           'matrix_normal',
+           'dirichlet',
+           'wishart',
+           'invwishart']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
