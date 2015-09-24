@@ -219,20 +219,40 @@ class _PSD(object):
             raise np.linalg.LinAlgError('singular matrix')
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
+        
+        # Save the eigenvector basis and tolerance for testing support
+        self.eps = eps
+        self.V = u[:,s > eps]
 
         # Initialize the eagerly precomputed attributes.
         self.rank = len(d)
         self.U = U
         self.log_pdet = np.sum(np.log(d))
 
-        # Initialize an attribute to be lazily computed.
+        # Initialize attributes to be lazily computed.
         self._pinv = None
+        self._proj = None
+
+    def in_support(self, x):
+        """
+        Check whether x lies in the support of the distribution.
+        """
+        residual = np.dot(self.proj, x.T).T
+        out_of_bounds = np.any(np.abs(residual) > self.eps, axis=1)
+        return out_of_bounds
 
     @property
     def pinv(self):
         if self._pinv is None:
             self._pinv = np.dot(self.U, self.U.T)
         return self._pinv
+
+    @property
+    def proj(self):
+        if self._proj is None:
+            I = np.identity(self.U.shape[0])
+            self._proj = I - np.dot(self.V, self.V.T)
+        return self._proj
 
 
 _doc_default_callparams = """\
@@ -472,6 +492,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = _process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
+        if allow_singular and (psd.rank < dim):
+            out_of_bounds = psd.in_support(x-mean)
+            out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
     def pdf(self, x, mean, cov, allow_singular=False):
@@ -498,6 +521,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = _process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
+        if allow_singular and (psd.rank < dim):
+            out_of_bounds = psd.in_support(x-mean)
+            out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
@@ -588,6 +614,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """
+        self.allow_singular = allow_singular
         self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
         self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
         self._dist = multivariate_normal_gen(seed)
@@ -596,6 +623,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
         x = _process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_info.U,
                                  self.cov_info.log_pdet, self.cov_info.rank)
+        if self.allow_singular and (self.cov_info.rank < self.dim):
+            out_of_bounds = self.cov_info.in_support(x-self.mean)
+            out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
     def pdf(self, x):
