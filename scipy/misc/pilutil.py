@@ -193,13 +193,20 @@ def fromimage(im, flatten=0):
     """
     if not Image.isImageType(im):
         raise TypeError("Input is not a PIL image.")
+
     if flatten:
         im = im.convert('F')
     elif im.mode == '1':
-        # workaround for crash in PIL, see #1613.
-        im.convert('L')
+        # Workaround for crash in PIL. When im is 1-bit, the call array(im)
+        # can cause a seg. fault, or generate garbage. See
+        # https://github.com/scipy/scipy/issues/2138 and
+        # https://github.com/python-pillow/Pillow/issues/350.
+        #
+        # This converts im from a 1-bit image to an 8-bit image.
+        im = im.convert('L')
 
-    return array(im)
+    a = array(im)
+    return a
 
 _errstr = "Mode is unknown or incompatible with input array shape."
 
@@ -416,7 +423,7 @@ def imresize(arr, size, interp='bilinear', mode=None):
     -------
     imresize : ndarray
         The resized array of image.
-    
+
     See Also
     --------
     toimage : Implicitly used to convert `arr` according to `mode`.
