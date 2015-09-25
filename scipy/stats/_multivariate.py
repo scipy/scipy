@@ -237,7 +237,7 @@ class _PSD(object):
         """
         Check whether x lies in the support of the distribution.
         """
-        residual = np.dot(self.proj, x.T).T
+        residual = np.dot(x, self.proj.T)
         out_of_bounds = np.any(np.abs(residual) > self.eps, axis=1)
         return out_of_bounds
 
