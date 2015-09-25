@@ -76,16 +76,20 @@ class TestMultivariateNormal(TestCase):
             return u
 
         for n in range(1, 5):
-            x = np.random.randn(n)
-            for k in range(1, n + 1):
+            z = np.random.randn(n)
+            for k in range(1, n):
                 # Sample a small covariance matrix.
                 s = np.random.randn(k, k)
                 cov_kk = np.dot(s, s.T)
 
-                # Embed the small covariance matrix into a larger low rank matrix.
+                # Embed the small covariance matrix into a larger singular one.
                 cov_nn = np.zeros((n, n))
                 cov_nn[:k, :k] = cov_kk
 
+                # Embed part of the vector in the same way
+                x = np.zeros(n)
+                x[:k] = z[:k]
+                
                 # Define a rotation of the larger low rank matrix.
                 u = _sample_orthonormal_matrix(n)
                 cov_rr = np.dot(u, np.dot(cov_nn, u.T))
@@ -111,6 +115,13 @@ class TestMultivariateNormal(TestCase):
                 logpdf_rr = distn_rr.logpdf(y)
                 assert_allclose(logpdf_kk, logpdf_nn)
                 assert_allclose(logpdf_kk, logpdf_rr)
+
+                # Add an orthogonal component and find the density
+                y_orth = y + u[:,-1]
+                pdf_rr_orth = distn_rr.pdf(y_orth)
+
+                # Ensure that this has zero probability
+                assert_equal(pdf_rr_orth, 0.0)
 
     def test_large_pseudo_determinant(self):
         # Check that large pseudo-determinants are handled appropriately.
