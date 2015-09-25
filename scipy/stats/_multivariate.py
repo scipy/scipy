@@ -21,84 +21,6 @@ _LOG_2 = np.log(2)
 _LOG_PI = np.log(np.pi)
 
 
-def _process_parameters(dim, mean, cov):
-    """
-    Infer dimensionality from mean or covariance matrix, ensure that
-    mean and covariance are full vector resp. matrix.
-
-    """
-
-    # Try to infer dimensionality
-    if dim is None:
-        if mean is None:
-            if cov is None:
-                dim = 1
-            else:
-                cov = np.asarray(cov, dtype=float)
-                if cov.ndim < 2:
-                    dim = 1
-                else:
-                    dim = cov.shape[0]
-        else:
-            mean = np.asarray(mean, dtype=float)
-            dim = mean.size
-    else:
-        if not np.isscalar(dim):
-            raise ValueError("Dimension of random variable must be a scalar.")
-
-    # Check input sizes and return full arrays for mean and cov if necessary
-    if mean is None:
-        mean = np.zeros(dim)
-    mean = np.asarray(mean, dtype=float)
-
-    if cov is None:
-        cov = 1.0
-    cov = np.asarray(cov, dtype=float)
-
-    if dim == 1:
-        mean.shape = (1,)
-        cov.shape = (1, 1)
-
-    if mean.ndim != 1 or mean.shape[0] != dim:
-        raise ValueError("Array 'mean' must be a vector of length %d." % dim)
-    if cov.ndim == 0:
-        cov = cov * np.eye(dim)
-    elif cov.ndim == 1:
-        cov = np.diag(cov)
-    elif cov.ndim == 2 and cov.shape != (dim, dim):
-        rows, cols = cov.shape
-        if rows != cols:
-            msg = ("Array 'cov' must be square if it is two dimensional,"
-                   " but cov.shape = %s." % str(cov.shape))
-        else:
-            msg = ("Dimension mismatch: array 'cov' is of shape %s,"
-                   " but 'mean' is a vector of length %d.")
-            msg = msg % (str(cov.shape), len(mean))
-        raise ValueError(msg)
-    elif cov.ndim > 2:
-        raise ValueError("Array 'cov' must be at most two-dimensional,"
-                         " but cov.ndim = %d" % cov.ndim)
-
-    return dim, mean, cov
-
-
-def _process_quantiles(x, dim):
-    """
-    Adjust quantiles array so that last axis labels the components of
-    each data point.
-
-    """
-    x = np.asarray(x, dtype=float)
-
-    if x.ndim == 0:
-        x = x[np.newaxis]
-    elif x.ndim == 1:
-        if dim == 1:
-            x = x[:, np.newaxis]
-        else:
-            x = x[np.newaxis, :]
-
-    return x
 
 
 def _squeeze_output(out):
@@ -425,6 +347,85 @@ class multivariate_normal_gen(multi_rv_generic):
                                           allow_singular=allow_singular,
                                           seed=seed)
 
+    def _process_parameters(dim, mean, cov):
+        """
+        Infer dimensionality from mean or covariance matrix, ensure that
+        mean and covariance are full vector resp. matrix.
+
+        """
+
+        # Try to infer dimensionality
+        if dim is None:
+            if mean is None:
+                if cov is None:
+                    dim = 1
+                else:
+                    cov = np.asarray(cov, dtype=float)
+                    if cov.ndim < 2:
+                        dim = 1
+                    else:
+                        dim = cov.shape[0]
+            else:
+                mean = np.asarray(mean, dtype=float)
+                dim = mean.size
+        else:
+            if not np.isscalar(dim):
+                raise ValueError("Dimension of random variable must be a scalar.")
+
+        # Check input sizes and return full arrays for mean and cov if necessary
+        if mean is None:
+            mean = np.zeros(dim)
+        mean = np.asarray(mean, dtype=float)
+
+        if cov is None:
+            cov = 1.0
+        cov = np.asarray(cov, dtype=float)
+
+        if dim == 1:
+            mean.shape = (1,)
+            cov.shape = (1, 1)
+
+        if mean.ndim != 1 or mean.shape[0] != dim:
+            raise ValueError("Array 'mean' must be a vector of length %d." % dim)
+        if cov.ndim == 0:
+            cov = cov * np.eye(dim)
+        elif cov.ndim == 1:
+            cov = np.diag(cov)
+        elif cov.ndim == 2 and cov.shape != (dim, dim):
+            rows, cols = cov.shape
+            if rows != cols:
+                msg = ("Array 'cov' must be square if it is two dimensional,"
+                       " but cov.shape = %s." % str(cov.shape))
+            else:
+                msg = ("Dimension mismatch: array 'cov' is of shape %s,"
+                       " but 'mean' is a vector of length %d.")
+                msg = msg % (str(cov.shape), len(mean))
+            raise ValueError(msg)
+        elif cov.ndim > 2:
+            raise ValueError("Array 'cov' must be at most two-dimensional,"
+                             " but cov.ndim = %d" % cov.ndim)
+
+        return dim, mean, cov
+
+
+    def _process_quantiles(x, dim):
+        """
+        Adjust quantiles array so that last axis labels the components of
+        each data point.
+
+        """
+        x = np.asarray(x, dtype=float)
+
+        if x.ndim == 0:
+            x = x[np.newaxis]
+        elif x.ndim == 1:
+            if dim == 1:
+                x = x[:, np.newaxis]
+            else:
+                x = x[np.newaxis, :]
+
+        return x
+    
     def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
         Parameters
@@ -472,8 +473,8 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_doc_callparams_note)s
 
         """
-        dim, mean, cov = _process_parameters(None, mean, cov)
-        x = _process_quantiles(x, dim)
+        dim, mean, cov = self._process_parameters(None, mean, cov)
+        x = self._process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
         return _squeeze_output(out)
@@ -498,8 +499,8 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_doc_callparams_note)s
 
         """
-        dim, mean, cov = _process_parameters(None, mean, cov)
-        x = _process_quantiles(x, dim)
+        dim, mean, cov = self._process_parameters(None, mean, cov)
+        x = self._process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
         return _squeeze_output(out)
@@ -526,7 +527,7 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_doc_callparams_note)s
 
         """
-        dim, mean, cov = _process_parameters(None, mean, cov)
+        dim, mean, cov = self._process_parameters(None, mean, cov)
 
         random_state = self._get_random_state(random_state)
         out = random_state.multivariate_normal(mean, cov, size)
@@ -550,7 +551,7 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_doc_callparams_note)s
 
         """
-        dim, mean, cov = _process_parameters(None, mean, cov)
+        dim, mean, cov = self._process_parameters(None, mean, cov)
         _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov)
         return 0.5 * logdet
 
@@ -592,12 +593,12 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """
-        self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
+        self.dim, self.mean, self.cov = self._process_parameters(None, mean, cov)
         self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
         self._dist = multivariate_normal_gen(seed)
 
     def logpdf(self, x):
-        x = _process_quantiles(x, self.dim)
+        x = self._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_info.U,
                                  self.cov_info.log_pdet, self.cov_info.rank)
         return _squeeze_output(out)
@@ -641,13 +642,11 @@ class matrix_normal_gen(multi_rv_generic):
         Log of the probability density function.
     ``rvs(mean=None, rowcov=1, colcov=1, size=1, random_state=None)``
         Draw random samples.
-    ``entropy()``
-        Compute the differential entropy.
 
     Parameters
     ----------
     X : array_like
-        Quantiles, with the last axis of `x` denoting the components.
+        Quantiles, with the last two axes of `X` denoting the components.
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
@@ -664,22 +663,22 @@ class matrix_normal_gen(multi_rv_generic):
     %(_doc_callparams_note)s
 
     The covariance matrices `rowcov` and `colcov` must be (symmetric) positive
-    definite matrices. If `X` is :math:`m \times n`, then `rowcov` must be
-    :math:`m \times m` and `colcov` must be :math:`n \times n`. `mean` must
-    be the same shape as `X`.
+    definite matrices. If the samples in `X` are :math:`m \times n`, then
+    `rowcov` must be :math:`m \times m` and `colcov` must be
+    :math:`n \times n`. `mean` must be the same shape as `X`.
 
     The probability density function for `matrix_normal` is
 
     .. math::
 
-        f(X) = |2 \pi U|^{-\frac{1}{2}} |2 \pi V|^{-\frac{1}{2}}
+        f(X) = (2 \pi)^{-\frac{mn}{2}}|U|^{-\frac{n}{2}} |V|^{-\frac{m}{2}}
                \exp\left( -\frac{1}{2} \trace\left[ U^{-1} (X-M) V^{-1}
                (X-M)^T \right] \right),
 
     where :math:`M` is the mean, :math:`U` the among-row covariance matrix,
     :math:`V` the among-column covariance matrix.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.17.0
 
     Examples
     --------
@@ -772,8 +771,8 @@ class matrix_normal_gen(multi_rv_generic):
         %(_doc_callparams_note)s
 
         """
-        dim, mean, cov = _process_parameters(None, mean, cov)
-        x = _process_quantiles(x, dim)
+        dim, mean, cov = self._process_parameters(None, mean, cov)
+        x = self._process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
         return _squeeze_output(out)
@@ -798,8 +797,8 @@ class matrix_normal_gen(multi_rv_generic):
         %(_doc_callparams_note)s
 
         """
-        dim, mean, cov = _process_parameters(None, mean, cov)
-        x = _process_quantiles(x, dim)
+        dim, mean, cov = self._process_parameters(None, mean, cov)
+        x = self._process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
         return _squeeze_output(out)
@@ -826,7 +825,7 @@ class matrix_normal_gen(multi_rv_generic):
         %(_doc_callparams_note)s
 
         """
-        dim, mean, cov = _process_parameters(None, mean, cov)
+        dim, mean, cov = self._process_parameters(None, mean, cov)
 
         random_state = self._get_random_state(random_state)
         out = random_state.multivariate_normal(mean, cov, size)
@@ -850,7 +849,7 @@ class matrix_normal_gen(multi_rv_generic):
         %(_doc_callparams_note)s
 
         """
-        dim, mean, cov = _process_parameters(None, mean, cov)
+        dim, mean, cov = self._process_parameters(None, mean, cov)
         _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov)
         return 0.5 * logdet
 
@@ -892,12 +891,12 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """
-        self.dim, self.mean, self.cov = _process_parameters(None, mean, cov)
+        self.dim, self.mean, self.cov = self._process_parameters(None, mean, cov)
         self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
         self._dist = multivariate_normal_gen(seed)
 
     def logpdf(self, x):
-        x = _process_quantiles(x, self.dim)
+        x = self._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_info.U,
                                  self.cov_info.log_pdet, self.cov_info.rank)
         return _squeeze_output(out)
