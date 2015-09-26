@@ -161,11 +161,19 @@ def correlate(in1, in2, mode='full'):
 
     if mode == 'valid':
         _check_valid_mode_shapes(in1.shape, in2.shape)
+        # numpy is significantly faster for 1d
+        if in1.ndim == 1 and in2.ndim == 1:
+            return np.correlate(in1, in2, mode)
+
         ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
         out = np.empty(ps, in1.dtype)
 
         z = sigtools._correlateND(in1, in2, out, val)
     else:
+        # numpy is significantly faster for 1d
+        if in1.ndim == 1 and in2.ndim == 1 and (in1.size >= in2.size):
+            return np.correlate(in1, in2, mode)
+
         # _correlateND is far slower when in2.size > in1.size, so swap them
         # and then undo the effect afterward
         swapped_inputs = (mode == 'full') and (in2.size > in1.size)
@@ -450,6 +458,10 @@ def convolve(in1, in2, mode='full'):
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
+
+    # fastpath to faster numpy 1d convolve
+    if volume.ndim == 1 and kernel.ndim == 1 and volume.size >= kernel.size:
+        return np.convolve(volume, kernel, mode)
 
     slice_obj = [slice(None, None, -1)] * len(kernel.shape)
 
