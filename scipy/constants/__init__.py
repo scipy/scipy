@@ -262,6 +262,12 @@ Temperature
    C2F
    F2K
    K2F
+   C2R
+   K2R
+   F2R
+   R2C
+   R2K
+   R2F
 
 Energy
 ------
