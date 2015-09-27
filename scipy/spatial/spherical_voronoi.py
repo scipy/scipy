@@ -137,22 +137,16 @@ class SphericalVoronoi:
     """
 
     def __init__(self, points, radius=None, center=None):
-        # translate generators such that sphere center is at origin
         self.points = points
+        # default to unit sphere
         if np.any(center):
-            self.centered_points = points - center
             self.center = center
         else:
-            self.centered_points = points
             self.center = np.zeros(3)
-
-        # estimate radius if not known
         if radius:
             self.radius = radius
         else:
-            self.radius = np.average(
-                scipy.spatial.distance.cdist(self.centered_points,
-                                             np.zeros((3,))[np.newaxis, :]))
+            self.radius = 1
         self.vertices = None
         self.regions = None
         self._tri = None
