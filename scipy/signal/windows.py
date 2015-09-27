@@ -4,8 +4,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from scipy import special, linalg
-from scipy.fftpack import fft
+from scipy import fftpack, linalg, special
 from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
@@ -1324,13 +1323,13 @@ def chebwin(M, at, sym=True):
     # Appropriate IDFT and filling up
     # depending on even/odd M
     if M % 2:
-        w = np.real(fft(p))
+        w = np.real(fftpack.fft(p))
         n = (M + 1) // 2
         w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
         p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
-        w = np.real(fft(p))
+        w = np.real(fftpack.fft(p))
         n = M // 2 + 1
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
     w = w / max(w)

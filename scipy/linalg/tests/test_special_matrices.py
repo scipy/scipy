@@ -10,11 +10,11 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
 
 from scipy._lib.six import xrange
 
+from scipy import fftpack
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie,
                           companion, tri, triu, tril, kron, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal, dft)
-from scipy.fftpack import fft
 from numpy.linalg import cond
 
 
@@ -576,7 +576,7 @@ def test_dft():
     x = array([0, 1, 2, 3, 4, 5, 0, 1])
     m = dft(8)
     mx = m.dot(x)
-    fx = fft(x)
+    fx = fftpack.fft(x)
     yield (assert_array_almost_equal, mx, fx)
 
 
