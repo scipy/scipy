@@ -399,7 +399,7 @@ def K2R(K):
     --------
     >>> from scipy.constants import K2R
     >>> K2R(np.array([273.15, 0.0]))
-    array([491.67.,  0.])
+    array([ 491.67,    0.  ])
 
     """
     return 1.8 * _np.asanyarray(K)

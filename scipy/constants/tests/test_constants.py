@@ -30,29 +30,29 @@ def test_celcius_to_fahrenheit():
 
 
 def test_celcius_to_rankine():
-    assert_allclose(sc.C2R([0, 0]), [491.67, 491.67], rtol = 0., atol=1e-13)
+    assert_allclose(sc.C2R([0, 0]), [491.67, 491.67], rtol=0., atol=1e-13)
 
 
 def test_kelvin_to_rankine():
-    assert_allclose(sc.K2R([273.15, 273.15]), [491.67, 491.67], rtol = 0., 
+    assert_allclose(sc.K2R([273.15, 273.15]), [491.67, 491.67], rtol=0., 
                     atol=1e-13)
 
 
 def test_fahrenheit_to_rankine():
-    assert_allclose(sc.F2R([32, 32]), [491.67, 491.67], rtol = 0., atol=1e-13)
+    assert_allclose(sc.F2R([32, 32]), [491.67, 491.67], rtol=0., atol=1e-13)
 
 
 def test_rankine_to_fahrenheit():
-    assert_allclose(sc.R2F([491.67, 491.67]), [32., 32.], rtol = 0., 
+    assert_allclose(sc.R2F([491.67, 491.67]), [32., 32.], rtol=0., 
                     atol=1e-13)
 
 
 def test_rankine_to_celcius():
-    assert_allclose(sc.R2C([491.67, 491.67]), [0., 0.], rtol = 0., atol=1e-13)
+    assert_allclose(sc.R2C([491.67, 491.67]), [0., 0.], rtol=0., atol=1e-13)
 
 
 def test_rankine_to_kelvin():
-    assert_allclose(sc.R2K([491.67, 0.]), [273.15, 0.], rtol = 0., atol=1e-13)
+    assert_allclose(sc.R2K([491.67, 0.]), [273.15, 0.], rtol=0., atol=1e-13)
 
 
 def test_lambda_to_nu():
