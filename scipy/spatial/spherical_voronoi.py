@@ -424,27 +424,35 @@ class SphericalVoronoi:
         Tyler Reddy, Ross Hemsley and Nikolai Nowaczyk
         """
 
-        #step 1: perform 3D Delaunay triangulation on data set
-        #        (here ConvexHull can also be used, and is faster)
+        # perform 3D Delaunay triangulation on data set
+        # (here ConvexHull can also be used, and is faster)
         self._tri = scipy.spatial.ConvexHull(self.points)
 
-        #step 2: add the origin to each of the simplices in tri to get the
-        #        same tetrahedrons we'd have gotten from Delaunay
-        #        tetrahedralization
+        # add the center to each of the simplices in tri to get the same
+        # tetrahedrons we'd have gotten from Delaunay tetrahedralization
         self._tetrahedrons = self._tri.points[self._tri.simplices]
-        self._tetrahedrons = np.insert(self._tetrahedrons, 3,
-                                       np.array([self.center]), axis=1)
+        self._tetrahedrons = np.insert(
+            self._tetrahedrons,
+            3,
+            np.array([self.center]),
+            axis=1
+        )
 
-        #step 3: produce circumcenters of tetrahedrons from 3D Delaunay
+        # produce circumcenters of tetrahedrons from 3D Delaunay
         circumcenters = calc_circumcenters(self._tetrahedrons)
 
-        #step 4: project tetrahedron circumcenters to the surface of the sphere
-        #        to produce the Voronoi vertices
-        self.vertices = project_to_sphere(circumcenters, self.center, self.radius)
+        # project tetrahedron circumcenters to the surface of the sphere
+        self.vertices = project_to_sphere(
+            circumcenters,
+            self.center,
+            self.radius
+        )
 
+        # calculate regions from triangulation
         self.regions = [[k for k in range(0, len(self._tri.simplices))
                          if n in self._tri.simplices[k]]
                         for n in range(0, len(self.points))]
+
 
     def sort_vertices_of_regions(self):
         """
