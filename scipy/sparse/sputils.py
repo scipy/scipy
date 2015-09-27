@@ -47,12 +47,7 @@ def upcast(*args):
     if t is not None:
         return t
 
-    if np.all([np.issubdtype(bool, arg) for arg in args]):
-        # numpy 1.5.x compat - it gives int8 for
-        # np.find_common_type([bool, bool)
-        upcast = bool
-    else:
-        upcast = np.find_common_type(args, [])
+    upcast = np.find_common_type(args, [])
 
     for t in supported_dtypes:
         if np.can_cast(upcast, t):
