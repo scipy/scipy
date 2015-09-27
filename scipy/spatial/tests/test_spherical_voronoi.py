@@ -1,11 +1,8 @@
 from __future__ import print_function
 import numpy as np
-from numpy.testing import (verbose, TestCase, run_module_suite, assert_,
-        assert_raises, assert_array_equal, assert_equal, assert_almost_equal,
-        assert_allclose, assert_array_almost_equal)
-from numpy.testing.decorators import skipif
-import math
-from scipy.spatial.spherical_voronoi import SphericalVoronoi
+from numpy.testing import (TestCase,
+                           assert_array_equal,
+                           assert_array_almost_equal)
 from scipy.spatial import spherical_voronoi
 
 
