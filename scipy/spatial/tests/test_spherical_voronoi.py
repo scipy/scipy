@@ -70,24 +70,22 @@ class TestSphericalVoronoi(TestCase):
         [0.79979205, 0.54555747, 0.25039913]]
     )
 
-    def test_constructor_centered_points(self):
+    def test_constructor(self):
         generators = TestSphericalVoronoi.points_unsymmetric
         center = np.array([1, 2, 3])
-        translated = generators - center
-        s1 = spherical_voronoi.SphericalVoronoi(generators, 1)
-        s2 = spherical_voronoi.SphericalVoronoi(generators, 1, [0, 0, 0])
-        s3 = spherical_voronoi.SphericalVoronoi(generators, 1, center)
-        assert_array_almost_equal(s1.centered_points, generators)
-        assert_array_almost_equal(s2.centered_points, generators)
-        assert_array_almost_equal(s3.centered_points, translated)
-
-    def test_constructor_center(self):
-        generators = TestSphericalVoronoi.points_unsymmetric
-        center = np.array([1, 2, 3])
-        sv1 = spherical_voronoi.SphericalVoronoi(generators)
-        sv2 = spherical_voronoi.SphericalVoronoi(generators, None, center)
-        assert_array_equal(sv1.center, np.array([0, 0, 0]))
-        assert_array_equal(sv2.center, center)
+        radius = 2
+        s1 = spherical_voronoi.SphericalVoronoi(generators)
+        s2 = spherical_voronoi.SphericalVoronoi(generators, radius)
+        s3 = spherical_voronoi.SphericalVoronoi(generators, None, center)
+        s4 = spherical_voronoi.SphericalVoronoi(generators, radius, center)
+        assert_array_equal(s1.center, np.array([0, 0, 0]))
+        self.assertEqual(s1.radius, 1)
+        assert_array_equal(s2.center, np.array([0, 0, 0]))
+        self.assertEqual(s2.radius, 2)
+        assert_array_equal(s3.center, center)
+        self.assertEqual(s3.radius, 1)
+        assert_array_equal(s4.center, center)
+        self.assertEqual(s4.radius, radius)
 
     def test_vertices_regions_translation_invariance(self):
         points = TestSphericalVoronoi.points_unsymmetric
