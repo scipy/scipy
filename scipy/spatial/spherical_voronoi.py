@@ -426,6 +426,49 @@ class SphericalVoronoi:
                          if n in self._tri.simplices[k]]
                         for n in range(0, len(self.centered_points))]
 
+    def sort_vertices_of_regions(self):
+        """
+         For each region in regions, it sorts the indices of the Voronoi
+         vertices such that the resulting points are in a clockwise or
+         counterclockwise order around the generator point.
+
+         This is done as follows: Recall that the n-th region in regions
+         surrounds the n-th generator in points and that the k-th
+         Voronoi vertex in vertices is the projected circumcenter of the
+         tetrahedron obtained by the k-th triangle in _tri.simplices (and the
+         origin). For each region n, we choose the first triangle (=Voronoi
+         vertex) in _tri.simplices and a vertex of that triangle not equal to
+         the center n. These determine a unique neighbor of that triangle,
+         which is then chosen as the second triangle. The second triangle
+         will have a unique vertex not equal to the current vertex or the
+         center. This determines a unique neighbor of the second triangle,
+         which is then chosen as the third triangle and so forth. We proceed
+         through all the triangles (=Voronoi vertices) belonging to the
+         generator in points and obtain a sorted version of the vertices
+         of its surrounding region.
+        """
+
+        for n in range(0, len(self.regions)):
+            remaining = self.regions[n][:]
+            sorted_vertices = []
+            current_simplex = remaining[0]
+            current_vertex = [k for k in self._tri.simplices[current_simplex]
+                              if k != n][0]
+            remaining.remove(current_simplex)
+            sorted_vertices.append(current_simplex)
+            while remaining:
+                current_simplex = [
+                    s for s in remaining
+                    if current_vertex in self._tri.simplices[s]
+                    ][0]
+                current_vertex = [
+                    s for s in self._tri.simplices[current_simplex]
+                    if s != n and s != current_vertex
+                    ][0]
+                remaining.remove(current_simplex)
+                sorted_vertices.append(current_simplex)
+            self.regions[n] = sorted_vertices
+
     def calc_sorted_vertices(self):
         """
         #step 5: use the Delaunay tetrahedralization neighbour information to

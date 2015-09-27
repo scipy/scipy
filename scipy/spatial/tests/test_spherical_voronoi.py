@@ -225,6 +225,13 @@ class TestSphericalVoronoi(TestCase):
         assert_array_almost_equal(sv_origin.vertices+center,
                                   sv_translated.vertices)
 
+    def test_sort_vertices_of_regions(self):
+        generators = TestSphericalVoronoi.points_unsymmetric
+        sv = spherical_voronoi.SphericalVoronoi(generators)
+        unsorted_regions = sv.regions
+        sv.sort_vertices_of_regions()
+        assert_array_equal(sorted(sv.regions), sorted(unsorted_regions))
+
 
 class Test_voronoi_surface_area_calculations(TestCase):
 
