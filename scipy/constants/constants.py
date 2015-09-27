@@ -516,8 +516,8 @@ def R2F(Ra):
     Examples
     --------
     >>> from scipy.constants import R2F
-    >>> R2F(np.array([459.67, 559.67]))
-    array([ 0.0, 100.0])
+    >>> R2F(np.array([491.67, 559.67]))
+    array([ 32., 100.])
 
     """
     return C2F(R2C(_np.asanyarray(Ra)))
