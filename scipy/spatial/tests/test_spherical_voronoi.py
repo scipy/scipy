@@ -9,16 +9,15 @@ from scipy.spatial import spherical_voronoi
 class TestCircumcenters(TestCase):
 
     def test_circumcenters(self):
-
         tetrahedrons = np.array([
             [[1, 2, 3],
-            [-1.1, -2.1, -3.1],
-            [-1.2, 2.2, 3.2],
-            [-1.3, -2.3, 3.3]],
+             [-1.1, -2.1, -3.1],
+             [-1.2, 2.2, 3.2],
+             [-1.3, -2.3, 3.3]],
             [[10, 20, 30],
-            [-10.1, -20.1, -30.1],
-            [-10.2, 20.2, 30.2],
-            [-10.3, -20.3, 30.3]]
+             [-10.1, -20.1, -30.1],
+             [-10.2, 20.2, 30.2],
+             [-10.3, -20.3, 30.3]]
         ])
 
         result = spherical_voronoi.calc_circumcenters(tetrahedrons)
@@ -53,21 +52,22 @@ class TestProjectToSphere(TestCase):
         center = np.array([1, 2, 3])
         translated = points + center
         radius = 1
-        projected = spherical_voronoi.project_to_sphere(translated, center, radius)
+        projected = spherical_voronoi.project_to_sphere(translated, center,
+                                                        radius)
         assert_array_almost_equal(translated, projected)
 
 
 class TestSphericalVoronoi(TestCase):
 
     points_unsymmetric = np.array([
-            [-0.78928481, -0.16341094, 0.59188373],
-            [-0.66839141, 0.73309634, 0.12578818],
-            [0.32535778, -0.92476944, -0.19734181],
-            [-0.90177102, -0.03785291, -0.43055335],
-            [0.71781344, 0.68428936, 0.12842096],
-            [-0.96064876, 0.23492353, -0.14820556],
-            [0.73181537, -0.22025898, -0.6449281],
-            [0.79979205, 0.54555747, 0.25039913]]
+        [-0.78928481, -0.16341094, 0.59188373],
+        [-0.66839141, 0.73309634, 0.12578818],
+        [0.32535778, -0.92476944, -0.19734181],
+        [-0.90177102, -0.03785291, -0.43055335],
+        [0.71781344, 0.68428936, 0.12842096],
+        [-0.96064876, 0.23492353, -0.14820556],
+        [0.73181537, -0.22025898, -0.6449281],
+        [0.79979205, 0.54555747, 0.25039913]]
     )
 
     def test_constructor_centered_points(self):
@@ -96,7 +96,7 @@ class TestSphericalVoronoi(TestCase):
         points += center
         sv_translated = spherical_voronoi.SphericalVoronoi(points, None, center)
         assert_array_equal(sv_origin.regions, sv_translated.regions)
-        assert_array_almost_equal(sv_origin.vertices+center,
+        assert_array_almost_equal(sv_origin.vertices + center,
                                   sv_translated.vertices)
 
     def test_sort_vertices_of_regions(self):
