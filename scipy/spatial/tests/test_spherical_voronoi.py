@@ -97,6 +97,15 @@ class TestSphericalVoronoi(TestCase):
         assert_array_almost_equal(sv_origin.vertices + center,
                                   sv_translated.vertices)
 
+    def test_vertices_regions_scaling_invariance(self):
+        points = TestSphericalVoronoi.points_unsymmetric
+        sv_unit = spherical_voronoi.SphericalVoronoi(points)
+        points *= 2
+        sv_scaled = spherical_voronoi.SphericalVoronoi(points, 2)
+        assert_array_equal(sv_unit.regions, sv_scaled.regions)
+        assert_array_almost_equal(sv_unit.vertices * 2,
+                                  sv_scaled.vertices)
+
     def test_sort_vertices_of_regions(self):
         generators = TestSphericalVoronoi.points_unsymmetric
         sv = spherical_voronoi.SphericalVoronoi(generators)
