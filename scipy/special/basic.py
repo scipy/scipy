@@ -105,22 +105,6 @@ def diric(x, n):
     >>> k * special.diric(theta, k)
     array([ 3.        ,  2.41421356,  1.        , -0.41421356, -1.        ,
            -0.41421356,  1.        ,  2.41421356])
-
-    We get the exact Fourier transform if we multiply by the phase
-    factors ``np.exp(-1j*theta)``:
-
-    >>> np.fft.fft(x)
-    array([ 3.00000000+0.j        ,  1.70710678-1.70710678j,
-            0.00000000-1.j        ,  0.29289322+0.29289322j,
-            1.00000000+0.j        ,  0.29289322-0.29289322j,
-            0.00000000+1.j        ,  1.70710678+1.70710678j])
-
-    >>> np.exp(-1j*theta) * k * special.diric(theta, k)
-    array([ 3.00000000+0.j        ,  1.70710678-1.70710678j,
-            0.00000000-1.j        ,  0.29289322+0.29289322j,
-            1.00000000+0.j        ,  0.29289322-0.29289322j,
-           -0.00000000+1.j        ,  1.70710678+1.70710678j])
-
     """
     x, n = asarray(x), asarray(n)
     n = asarray(n + (x-x))
