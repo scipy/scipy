@@ -52,6 +52,28 @@ def calc_circumcenters(tetrahedrons):
     return (nominator / denominator).transpose()
 
 
+def project_to_sphere(points, center, radius):
+    """
+    Projects the elements of points onto the sphere defined
+    by center and radius.
+
+    Parameters
+    ----------
+    points : array of floats of shape (npoints, ndim)
+             consisting of the points in a space of dimension ndim
+    center : array of floats of shape (ndim,)
+            the center of the sphere to project on
+    radius : float
+            the radius of the sphere to project on
+
+    returns: array of floats of shape (npoints, ndim)
+            the points projected onto the sphere
+    """
+
+    lengths = scipy.spatial.distance.cdist(points, np.array([center]))
+    return (points - center)/lengths*radius + center
+
+
 def convert_cartesian_array_to_spherical_array(coord_array,angle_measure='radians'):
     '''Take shape (N,3) cartesian coord_array and return an array of the same shape in spherical polar form (r, theta, phi). Based on StackOverflow response: http://stackoverflow.com/a/4116899
     use radians for the angles by default, degrees if angle_measure == 'degrees' '''
@@ -418,8 +440,7 @@ class SphericalVoronoi:
 
         #step 4: project tetrahedron circumcenters to the surface of the sphere
         #        to produce the Voronoi vertices
-        lengths = scipy.spatial.distance.cdist(circumcenters, np.zeros((1, 3)))
-        self.vertices = (self.radius / np.abs(lengths)) * circumcenters
+        self.vertices = project_to_sphere(circumcenters, np.zeros(3), self.radius)
         self.vertices += self.center
 
         self.regions = [[k for k in range(0, len(self._tri.simplices))

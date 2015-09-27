@@ -34,6 +34,32 @@ class TestCircumcenters(TestCase):
         assert_array_almost_equal(result, expected)
 
 
+class TestProjectToSphere(TestCase):
+
+    def test_unit_sphere(self):
+        points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        center = np.array([0, 0, 0])
+        radius = 1
+        projected = spherical_voronoi.project_to_sphere(points, center, radius)
+        assert_array_almost_equal(points, projected)
+
+    def test_scaled_points(self):
+        points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        center = np.array([0, 0, 0])
+        radius = 1
+        scaled = points * 2
+        projected = spherical_voronoi.project_to_sphere(scaled, center, radius)
+        assert_array_almost_equal(points, projected)
+
+    def test_translated_sphere(self):
+        points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        center = np.array([1, 2, 3])
+        translated = points + center
+        radius = 1
+        projected = spherical_voronoi.project_to_sphere(translated, center, radius)
+        assert_array_almost_equal(translated, projected)
+
+
 class Test_delaunay_triangulation_on_sphere_surface(TestCase):
 
     def setUp(self):
