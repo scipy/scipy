@@ -1,4 +1,3 @@
-
 #ifndef CKDTREE_CPP_METHODS
 #define CKDTREE_CPP_METHODS
 
@@ -9,7 +8,6 @@
 struct ckdtree;
 #endif 
 
-extern npy_float64 infinity;
 extern int number_of_processors;
 
 #ifndef NPY_LIKELY
@@ -17,6 +15,7 @@ extern int number_of_processors;
 #endif
 
 #include <cmath>
+#include <numpy/npy_math.h>
 
 #if defined(__GNUC__)
 inline void 
@@ -136,7 +135,7 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
         }*/
         return sqeuclidean_distance_double(x,y,k);
     } 
-    else if (p==infinity) {
+    else if (npy_isinf(p)) {
         for (i=0; i<k; ++i) {
             r = dmax(r,dabs(x[i]-y[i]));
             if (r>upperbound)
