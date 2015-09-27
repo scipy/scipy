@@ -71,7 +71,7 @@ def project_to_sphere(points, center, radius):
     """
 
     lengths = scipy.spatial.distance.cdist(points, np.array([center]))
-    return (points - center)/lengths*radius + center
+    return (points - center) / lengths * radius + center
 
 
 class SphericalVoronoi:
@@ -150,7 +150,6 @@ class SphericalVoronoi:
         self.vertices = None
         self.regions = None
         self._tri = None
-        self._tetrahedrons = None
         self.calc_vertices_regions()
 
     def calc_vertices_regions(self):
@@ -170,16 +169,16 @@ class SphericalVoronoi:
 
         # add the center to each of the simplices in tri to get the same
         # tetrahedrons we'd have gotten from Delaunay tetrahedralization
-        self._tetrahedrons = self._tri.points[self._tri.simplices]
-        self._tetrahedrons = np.insert(
-            self._tetrahedrons,
+        tetrahedrons = self._tri.points[self._tri.simplices]
+        tetrahedrons = np.insert(
+            tetrahedrons,
             3,
             np.array([self.center]),
             axis=1
         )
 
         # produce circumcenters of tetrahedrons from 3D Delaunay
-        circumcenters = calc_circumcenters(self._tetrahedrons)
+        circumcenters = calc_circumcenters(tetrahedrons)
 
         # project tetrahedron circumcenters to the surface of the sphere
         self.vertices = project_to_sphere(
