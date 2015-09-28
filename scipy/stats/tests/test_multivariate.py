@@ -434,7 +434,7 @@ class TestMatrixNormal(TestCase):
                 assert_equal(logpdf1, logpdf2)
 
     def test_matches_multivariate(self):
-        # Check that the pdfs match those obtained by vectorising and using
+        # Check that the pdfs match those obtained by vectorising and
         # treating as a multivariate normal.
         for i in range(1,5):
             for j in range(1,5):
@@ -466,14 +466,18 @@ class TestMatrixNormal(TestCase):
         N = 10
 
         frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
-        X = frozen.rvs(size=N, random_state=1234)
-        assert_equal(X.shape, (N, num_rows, num_cols))
+        X1 = frozen.rvs(size=N, random_state=1234)
+        X2 = frozen.rvs(size=N, random_state=4321)
+        X = np.concatenate((X1[np.newaxis,:,:,:],X2[np.newaxis,:,:,:]), axis=0)
+        assert_equal(X.shape, (2, N, num_rows, num_cols))
 
         array_logpdf = frozen.logpdf(X)
-        for i in range(N):
-            separate_logpdf = matrix_normal.logpdf(X[i], mean=M,
-                                                   rowcov=U, colcov=V)
-            assert_equal(separate_logpdf, array_logpdf[i])
+        assert_equal(array_logpdf.shape, (2, N))
+        for i in range(2):
+            for j in range(N):
+                separate_logpdf = matrix_normal.logpdf(X[i,j], mean=M,
+                                                       rowcov=U, colcov=V)
+                assert_equal(separate_logpdf, array_logpdf[i,j])
 
     def test_moments(self):
         # Check that the sample moments match the parameters
