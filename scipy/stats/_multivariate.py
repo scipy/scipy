@@ -630,7 +630,6 @@ for name in ['logpdf', 'pdf', 'rvs']:
     method_frozen.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_params)
 
-##### BEGIN WORK ZONE #####
 
 
 _matnorm_doc_default_callparams = """\
@@ -647,7 +646,7 @@ _matnorm_doc_callparams_note = \
     The dimensions of this matrix are inferred from the shape of `rowcov` and
     `colcov`, if these are provided, or set to `1` if ambiguous.
 
-    `rowcov` and `colcov` can be two-dimensional arrays specifying the
+    `rowcov` and `colcov` can be two-dimensional array_likes specifying the
     covariance matrices directly. Alternatively, a one-dimensional array will
     be be interpreted as the entries of a diagonal matrix, and a scalar or
     zero-dimensional array will be interpreted as this value times the
@@ -698,7 +697,7 @@ class matrix_normal_gen(multi_rv_generic):
     and covariance parameters, returning a "frozen" matrix normal
     random variable:
 
-    rv = multivariate_normal(mean=None, cov=1, allow_singular=False)
+    rv = matrix_normal(mean=None, rowcov=1, colcov=1)
         - Frozen object with the same methods but holding the given
           mean and covariance fixed.
 
@@ -727,13 +726,25 @@ class matrix_normal_gen(multi_rv_generic):
     Examples
     --------
 
-    >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import matrix_normal
 
-    >>> X = np.arange(9)
-    >>> X.shape = (3,3)
-    >>> y = matrix_normal.pdf(X, mean=np.zeros((3,3)), cov=np.identity(3));
-    #TODO Add output
+    >>> M = np.arange(6).reshape(3,2); M
+    array([[0, 1],
+           [2, 3],
+           [4, 5]])
+    >>> U = np.diag([1,2,3]); U
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3]])
+    >>> V = 0.3*np.identity(2); V
+    array([[ 0.3,  0. ],
+           [ 0. ,  0.3]])
+    >>> X = M + np.random.random(size=(3,2)); X
+    array([[ 0.73402558,  1.06228978],
+           [ 2.38091321,  3.46926355],
+           [ 4.88218081,  5.08843309]])
+    >>> matrix_normal.pdf(X, mean=M, rowcov=U, colcov=V)
+    0.0048004319393355347
     """
 
     def __init__(self, seed=None):
@@ -751,8 +762,8 @@ class matrix_normal_gen(multi_rv_generic):
 
     def _process_parameters(self, mean, rowcov, colcov):
         """
-        Infer dimensionality from mean or covariance matrices. Ensure
-        compatible dimensions.
+        Infer dimensionality from mean or covariance matrices. Handle
+        defaults. Ensure compatible dimensions.
 
         """
 
@@ -819,7 +830,7 @@ class matrix_normal_gen(multi_rv_generic):
 
     def _process_quantiles(self, X, dims):
         """
-        Adjust quantiles array so that last axis labels the components of
+        Adjust quantiles array so that last two axes labels the components of
         each data point.
 
         """
@@ -836,6 +847,8 @@ class matrix_normal_gen(multi_rv_generic):
         """
         Parameters
         ----------
+        dims : tuple
+            Dimensions of the matrix variates
         X : ndarray
             Points at which to evaluate the log of the probability
             density function
@@ -872,7 +885,7 @@ class matrix_normal_gen(multi_rv_generic):
 
         Parameters
         ----------
-        x : array_like
+        X : array_like
             Quantiles, with the last two axes of `X` denoting the components.
         %(_matnorm_doc_default_callparams)s
 
@@ -902,7 +915,7 @@ class matrix_normal_gen(multi_rv_generic):
         Parameters
         ----------
         X : array_like
-            Quantiles, with the last two axes of `x` denoting the components.
+            Quantiles, with the last two axes of `X` denoting the components.
         %(_matnorm_doc_default_callparams)s
 
         Returns
@@ -919,7 +932,7 @@ class matrix_normal_gen(multi_rv_generic):
 
     def rvs(self, mean=None, rowcov=1, colcov=1, size=1, random_state=None):
         """
-        Draw random samples from a multivariate normal distribution.
+        Draw random samples from a matrix normal distribution.
 
         Parameters
         ----------
@@ -931,8 +944,8 @@ class matrix_normal_gen(multi_rv_generic):
         Returns
         -------
         rvs : ndarray or scalar
-            Random variates of size (`size`, `N`), where `N` is the
-            dimension of the random variable.
+            Random variates of size (`size`, `dims`), where `dims` is the
+            dimension of the random matrices.
 
         Notes
         -----
@@ -956,37 +969,30 @@ matrix_normal = matrix_normal_gen()
 
 
 class matrix_normal_frozen(multi_rv_frozen):
-    def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
+    def __init__(self, mean=None, rowcov=1, colcov=1, random_state=None):
         """
-        Create a frozen multivariate normal distribution.
+        Create a frozen matrix normal distribution.
 
         Parameters
         ----------
-        mean : array_like, optional
-            Mean of the distribution (default zero)
-        cov : array_like, optional
-            Covariance matrix of the distribution (default one)
-        seed : None or int or np.random.RandomState instance, optional
-            This parameter defines the RandomState object to use for drawing
-            random variates.
-            If None (or np.random), the global np.random state is used.
-            If integer, it is used to seed the local RandomState instance
-            Default is None.
+        %(_matnorm_doc_default_callparams)s
+        %(_random_state)s
 
         Examples
         --------
-        When called with the default parameters, this will create a 1D random
-        variable with mean 0 and covariance 1:
+        >>> from scipy.stats import matrix_normal
 
-        >>> from scipy.stats import multivariate_normal
-        >>> r = multivariate_normal()
-        >>> r.mean
-        array([ 0.])
-        >>> r.cov
-        array([[1.]])
-
+        >>> distn = matrix_normal(mean=np.zeros((3,3)))
+        >>> X = distn.rvs(); X
+        array([[-0.02976962,  0.93339138, -0.09663178],
+               [ 0.67405524,  0.28250467, -0.93308929],
+               [-0.31144782,  0.74535536,  1.30412916]])
+        >>> distn.pdf(X)
+        2.5160642368346784e-05
+        >>> distn.logpdf(X)
+        -10.590229595124615
         """
-        self._dist = matrix_normal_gen(seed)
+        self._dist = matrix_normal_gen(random_state)
         self.dims, self.mean, self.rowcov, self.colcov = \
             self._dist._process_parameters(mean, rowcov, colcov)
         self.rowpsd = _PSD(self.rowcov, allow_singular=False)
@@ -1015,7 +1021,7 @@ for name in ['logpdf', 'pdf', 'rvs']:
     method_frozen.__doc__ = doccer.docformat(method.__doc__, matnorm_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, matnorm_docdict_params)
 
-###### END OF WORK ZONE #####
+
 
 _dirichlet_doc_default_callparams = """\
 alpha : array_like
