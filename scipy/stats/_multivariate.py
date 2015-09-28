@@ -734,12 +734,12 @@ class matrix_normal_gen(multi_rv_generic):
     >>> V = 0.3*np.identity(2); V
     array([[ 0.3,  0. ],
            [ 0. ,  0.3]])
-    >>> X = M + np.random.random(size=(3,2)); X
-    array([[ 0.73402558,  1.06228978],
-           [ 2.38091321,  3.46926355],
-           [ 4.88218081,  5.08843309]])
+    >>> X = M + 0.1; X
+    array([[ 0.1,  1.1],
+           [ 2.1,  3.1],
+           [ 4.1,  5.1]])
     >>> matrix_normal.pdf(X, mean=M, rowcov=U, colcov=V)
-    0.0048004319393355347
+    0.023410202050005054
     """
 
     def __init__(self, seed=None):
