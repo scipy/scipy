@@ -637,27 +637,22 @@ _matnorm_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default: `None`)
 rowcov : array_like, optional
-    Among-row covariance matrix of the distribution (default: `None`)
+    Among-row covariance matrix of the distribution (default: `1`)
 colcov : array_like, optional
-    Among-column covariance matrix of the distribution (default: `None`)
+    Among-column covariance matrix of the distribution (default: `1`)
 """
 
 _matnorm_doc_callparams_note = \
     """If `mean` is set to `None` then a matrix of zeros is used for the mean.
-    The dimensions of this matrix are inferred from the shape of `rowcov` or
+    The dimensions of this matrix are inferred from the shape of `rowcov` and
     `colcov`, if these are provided, or set to `1` if ambiguous.
 
-    If `rowcov` or `colcov` is set to `None`, then an identity matrix is used.
-    The dimension is inferred from the shape of `mean`, if provided, or set to
-    `1` if ambiguous.
+    `rowcov` and `colcov` can be two-dimensional arrays specifying the
+    covariance matrices directly. Alternatively, a one-dimensional array will
+    be be interpreted as the entries of a diagonal matrix, and a scalar or
+    zero-dimensional array will be interpreted as this value times the
+    identity matrix.
     """
-
-"""Setting the parameter `mean` to `None` is equivalent to having `mean`
-be the zero-vector. The parameter `cov` can be a scalar, in which case
-the covariance matrix is the identity times that value, a vector of
-diagonal entries for the covariance matrix, or a two-dimensional
-array_like.
-"""
 
 _matnorm_doc_frozen_callparams = ""
 
@@ -777,6 +772,8 @@ class matrix_normal_gen(multi_rv_generic):
                 rowcov = rowcov * np.identity(meanshape[0])
             else:
                 rowcov = rowcov * np.identity(1)
+        elif rowcov.ndim == 1:
+            rowcov = np.diag(rowcov)
         rowshape = rowcov.shape
         if len(rowshape) != 2:
             raise ValueError("`rowcov` must be a scalar or a 2D array.")
@@ -793,6 +790,8 @@ class matrix_normal_gen(multi_rv_generic):
                 colcov = colcov * np.identity(meanshape[1])
             else:
                 colcov = colcov * np.identity(1)
+        elif colcov.ndim == 1:
+            colcov = np.diag(colcov)
         colshape = colcov.shape
         if len(colshape) != 2:
             raise ValueError("`colcov` must be a scalar or a 2D array.")

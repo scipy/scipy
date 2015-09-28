@@ -358,11 +358,11 @@ class TestMatrixNormal(TestCase):
 
         # Incorrect dimensions
         assert_raises(ValueError, matrix_normal, np.zeros((5,4,3)))
-        assert_raises(ValueError, matrix_normal, np.zeros(4))
-        assert_raises(ValueError, matrix_normal, np.array(0))
-        assert_raises(ValueError, matrix_normal, 1)
+        assert_raises(ValueError, matrix_normal, M, np.zeros(10), V)
+        assert_raises(ValueError, matrix_normal, M, U, np.zeros(10))
         assert_raises(ValueError, matrix_normal, M, U, U)
         assert_raises(ValueError, matrix_normal, M, V, V)
+        assert_raises(ValueError, matrix_normal, M.T, U, V)
         
         # Singular covariance
         e = np.linalg.LinAlgError
@@ -408,6 +408,28 @@ class TestMatrixNormal(TestCase):
         assert_equal(matrix_normal(mean=M, rowcov=U).colcov, Ic)
         assert_equal(matrix_normal(mean=M, colcov=V).rowcov , Ir)
         assert_equal(matrix_normal(rowcov=U, colcov=V).mean , Z)
+
+    def test_covariance_expansion(self):
+        # Check that covariance can be specified with scalar or vector
+        num_rows = 4
+        num_cols = 3
+        M = 0.3 * np.ones((num_rows,num_cols))
+        Uv = 0.2*np.ones(num_rows)
+        Us = 0.2
+        Vv = 0.1*np.ones(num_cols)
+        Vs = 0.1
+
+        Ir = np.identity(num_rows)
+        Ic = np.identity(num_cols)
+
+        assert_equal(matrix_normal(mean=M, rowcov=Uv, colcov=Vv).rowcov,
+                     0.2*Ir)
+        assert_equal(matrix_normal(mean=M, rowcov=Uv, colcov=Vv).colcov,
+                     0.1*Ic)
+        assert_equal(matrix_normal(mean=M, rowcov=Us, colcov=Vs).rowcov,
+                     0.2*Ir)
+        assert_equal(matrix_normal(mean=M, rowcov=Us, colcov=Vs).colcov,
+                     0.1*Ic)
 
     def test_frozen_matrix_normal(self):
         for i in range(1,5):
