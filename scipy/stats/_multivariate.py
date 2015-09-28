@@ -345,7 +345,7 @@ class multivariate_normal_gen(multi_rv_generic):
                                           allow_singular=allow_singular,
                                           seed=seed)
 
-    def _process_parameters(dim, mean, cov):
+    def _process_parameters(self, dim, mean, cov):
         """
         Infer dimensionality from mean or covariance matrix, ensure that
         mean and covariance are full vector resp. matrix.
@@ -406,7 +406,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return dim, mean, cov
 
 
-    def _process_quantiles(x, dim):
+    def _process_quantiles(self, x, dim):
         """
         Adjust quantiles array so that last axis labels the components of
         each data point.
@@ -591,12 +591,13 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """
-        self.dim, self.mean, self.cov = self._process_parameters(None, mean, cov)
-        self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
         self._dist = multivariate_normal_gen(seed)
+        self.dim, self.mean, self.cov = self._dist._process_parameters(
+                                                            None, mean, cov)
+        self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
 
     def logpdf(self, x):
-        x = self._process_quantiles(x, self.dim)
+        x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_info.U,
                                  self.cov_info.log_pdet, self.cov_info.rank)
         return _squeeze_output(out)
@@ -764,6 +765,8 @@ class matrix_normal_gen(multi_rv_generic):
             meanshape = mean.shape
             if len(meanshape) != 2:
                 raise ValueError("Array `mean` must be two dimensional.")
+            if np.any(meanshape==0):
+                raise ValueError("Array `mean` has invalid shape.")
 
         # Process among-row covariance
         if rowcov is not None:
@@ -775,6 +778,8 @@ class matrix_normal_gen(multi_rv_generic):
                 raise ValueError("Array `rowcov` must be two dimensional.")
             if rowshape[0] != rowshape[1]:
                 raise ValueError("Array `rowcov` must be square.")
+            if rowshape[0]==0:
+                raise ValueError("Array `rowcov` has invalid shape.")
             numrows = rowshape[0]
         else:
             if mean is not None:
@@ -794,6 +799,8 @@ class matrix_normal_gen(multi_rv_generic):
                 raise ValueError("Array `colcov` must be two dimensional.")
             if colshape[0] != colshape[1]:
                 raise ValueError("Array `colcov` must be square.")
+            if colshape[0]==0:
+                raise ValueError("Array `colcov` has invalid shape.")
             numcols = colshape[0]
         else:
             if mean is not None:
@@ -868,7 +875,7 @@ class matrix_normal_gen(multi_rv_generic):
         return -0.5 * (numrows*numcols*_LOG_2PI + numcols*log_det_rowcov \
                        + numrows*log_det_colcov + maha)
 
-    def logpdf(self, x, mean, rowcov, colcov):
+    def logpdf(self, X, mean, rowcov, colcov):
         """
         Log of the matrix normal probability density function.
 
@@ -891,8 +898,8 @@ class matrix_normal_gen(multi_rv_generic):
         dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
                                                               colcov)
         X = self._process_quantiles(X, dims)
-        rowpsd = _PSD(rowcov)
-        colpsd = _PSD(colcov)
+        rowpsd = _PSD(rowcov, allow_singular=False)
+        colpsd = _PSD(colcov, allow_singular=False)
         out = self._logpdf(dims, X, mean, rowpsd.U, rowpsd.log_pdet, colpsd.U,
                            colpsd.log_pdet)
         return _squeeze_output(out)
@@ -919,7 +926,8 @@ class matrix_normal_gen(multi_rv_generic):
         """
         return np.exp(self.logpdf(X, mean, rowcov, colcov))
 
-    def rvs(self, mean=None, rowcov=1, colcov=1, size=1, random_state=None):
+    def rvs(self, mean=None, rowcov=None, colcov=None, size=1,
+            random_state=None):
         """
         Draw random samples from a multivariate normal distribution.
 
@@ -941,20 +949,24 @@ class matrix_normal_gen(multi_rv_generic):
         %(_matnorm_doc_callparams_note)s
 
         """
+        size = int(size)
         dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
                                                               colcov)
         rowchol = scipy.linalg.cholesky(rowcov, lower=True)
         colchol = scipy.linalg.cholesky(colcov, lower=True)
         random_state = self._get_random_state(random_state)
-        std_norm = random_state.standard_normal(size=dims)
-        out = np.dot(rowchol, np.dot(std_norm, colchol.T))
-        return _squeeze_output(out)
+        std_norm = random_state.standard_normal(size=(dims[1],size,dims[0]))
+        roll_rvs = np.tensordot(colchol, np.dot(std_norm, rowchol.T), 1)
+        out = np.rollaxis(roll_rvs.T, axis=1, start=0) + mean[np.newaxis,:,:]
+        if size == 1:
+            out = np.squeeze(out, axis=0)
+        return out
 
 matrix_normal = matrix_normal_gen()
 
 
 class matrix_normal_frozen(multi_rv_frozen):
-    def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
+    def __init__(self, mean=None, rowcov=None, colcov=None, seed=None):
         """
         Create a frozen multivariate normal distribution.
 
@@ -987,8 +999,8 @@ class matrix_normal_frozen(multi_rv_frozen):
         self._dist = matrix_normal_gen(seed)
         self.dims, self.mean, self.rowcov, self.colcov = \
             self._dist._process_parameters(mean, rowcov, colcov)
-        self.rowpsd = _PSD(self.rowcov)
-        self.colpsd = _PSD(self.colcov)
+        self.rowpsd = _PSD(self.rowcov, allow_singular=False)
+        self.colpsd = _PSD(self.colcov, allow_singular=False)
 
     def logpdf(self, X):
         X = self._dist._process_quantiles(X, self.dims)
