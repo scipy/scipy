@@ -635,26 +635,28 @@ for name in ['logpdf', 'pdf', 'rvs']:
 
 _matnorm_doc_default_callparams = """\
 mean : array_like, optional
-    Mean of the distribution (default zero)
-cov : array_like, optional
-    Covariance matrix of the distribution (default one)
-allow_singular : bool, optional
-    Whether to allow a singular covariance matrix.  (Default: False)
+    Mean of the distribution (default: `None`)
+rowcov : array_like, optional
+    Among-row covariance matrix of the distribution (default: `None`)
+colcov : array_like, optional
+    Among-column covariance matrix of the distribution (default: `None`)
 """
 
 _matnorm_doc_callparams_note = \
-    """Setting the parameter `mean` to `None` is equivalent to having `mean`
-    be the zero-vector. The parameter `cov` can be a scalar, in which case
-    the covariance matrix is the identity times that value, a vector of
-    diagonal entries for the covariance matrix, or a two-dimensional
-    array_like.
+    """If `mean` is set to `None` then a matrix of zeros is used for the mean.
+    The dimensions of this matrix are inferred from the shape of `rowcov` or
+    `colcov`, if these are provided, or set to `1` if ambiguous.
+
+    If `rowcov` or `colcov` is set to `None`, then an identity matrix is used.
+    The dimension is inferred from the shape of `mean`, if provided, or set to
+    `1` if ambiguous.
     """
 
-_matnorm_doc_random_state = """\
-random_state : None or int or np.random.RandomState instance, optional
-    If int or RandomState, use it for drawing the random variates.
-    If None (or np.random), the global np.random state is used.
-    Default is None.
+"""Setting the parameter `mean` to `None` is equivalent to having `mean`
+be the zero-vector. The parameter `cov` can be a scalar, in which case
+the covariance matrix is the identity times that value, a vector of
+diagonal entries for the covariance matrix, or a two-dimensional
+array_like.
 """
 
 _matnorm_doc_frozen_callparams = ""
@@ -665,13 +667,13 @@ _matnorm_doc_frozen_callparams_note = \
 matnorm_docdict_params = {
     '_matnorm_doc_default_callparams': _matnorm_doc_default_callparams,
     '_matnorm_doc_callparams_note': _matnorm_doc_callparams_note,
-    '_matnorm_doc_random_state': _matnorm_doc_random_state
+    '_doc_random_state': _doc_random_state
 }
 
 matnorm_docdict_noparams = {
     '_matnorm_doc_default_callparams': _matnorm_doc_frozen_callparams,
     '_matnorm_doc_callparams_note': _matnorm_doc_frozen_callparams_note,
-    '_matnorm_doc_random_state': _matnorm_doc_random_state
+    '_doc_random_state': _doc_random_state
 }
 class matrix_normal_gen(multi_rv_generic):
     r"""
@@ -695,7 +697,7 @@ class matrix_normal_gen(multi_rv_generic):
     X : array_like
         Quantiles, with the last two axes of `X` denoting the components.
     %(_matnorm_doc_default_callparams)s
-    %(_matnorm_doc_random_state)s
+    %(_doc_random_state)s
 
     Alternatively, the object may be called (as a function) to fix the mean
     and covariance parameters, returning a "frozen" matrix normal
@@ -743,7 +745,7 @@ class matrix_normal_gen(multi_rv_generic):
         super(matrix_normal_gen, self).__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, matnorm_docdict_params)
 
-    def __call__(self, mean=None, rowcov=None, colcov=None, seed=None):
+    def __call__(self, mean=None, rowcov=1, colcov=1, seed=None):
         """
         Create a frozen matrix normal distribution.
 
@@ -769,47 +771,37 @@ class matrix_normal_gen(multi_rv_generic):
                 raise ValueError("Array `mean` has invalid shape.")
 
         # Process among-row covariance
-        if rowcov is not None:
-            rowcov = np.asarray(rowcov, dtype=float)
-            if rowcov.size == 1:
-                rowcov.shape = (1,1)
-            rowshape = rowcov.shape
-            if len(rowshape) != 2:
-                raise ValueError("Array `rowcov` must be two dimensional.")
-            if rowshape[0] != rowshape[1]:
-                raise ValueError("Array `rowcov` must be square.")
-            if rowshape[0]==0:
-                raise ValueError("Array `rowcov` has invalid shape.")
-            numrows = rowshape[0]
-        else:
+        rowcov = np.asarray(rowcov, dtype=float)
+        if rowcov.ndim == 0:
             if mean is not None:
-                rowcov = np.identity(meanshape[0])
-                numrows = meanshape[0]
+                rowcov = rowcov * np.identity(meanshape[0])
             else:
-                rowcov = np.identity(1)
-                numrows = 1
-
+                rowcov = rowcov * np.identity(1)
+        rowshape = rowcov.shape
+        if len(rowshape) != 2:
+            raise ValueError("`rowcov` must be a scalar or a 2D array.")
+        if rowshape[0] != rowshape[1]:
+            raise ValueError("Array `rowcov` must be square.")
+        if rowshape[0]==0:
+            raise ValueError("Array `rowcov` has invalid shape.")
+        numrows = rowshape[0]
+            
         # Process among-column covariance
-        if colcov is not None:
-            colcov = np.asarray(colcov, dtype=float)
-            if colcov.size == 1:
-                colcov.shape = (1,1)
-            colshape = colcov.shape
-            if len(colshape) != 2:
-                raise ValueError("Array `colcov` must be two dimensional.")
-            if colshape[0] != colshape[1]:
-                raise ValueError("Array `colcov` must be square.")
-            if colshape[0]==0:
-                raise ValueError("Array `colcov` has invalid shape.")
-            numcols = colshape[0]
-        else:
+        colcov = np.asarray(colcov, dtype=float)
+        if colcov.ndim == 0:
             if mean is not None:
-                colcov = np.identity(meanshape[1])
-                numcols = meanshape[1]
+                colcov = colcov * np.identity(meanshape[1])
             else:
-                colcov = np.identity(1)
-                numcols = 1
-
+                colcov = colcov * np.identity(1)
+        colshape = colcov.shape
+        if len(colshape) != 2:
+            raise ValueError("`colcov` must be a scalar or a 2D array.")
+        if colshape[0] != colshape[1]:
+            raise ValueError("Array `colcov` must be square.")
+        if colshape[0]==0:
+            raise ValueError("Array `colcov` has invalid shape.")
+        numcols = colshape[0]
+        
         # Ensure mean and covariances compatible
         if mean is not None:
             if meanshape[0] != numrows:
@@ -875,7 +867,7 @@ class matrix_normal_gen(multi_rv_generic):
         return -0.5 * (numrows*numcols*_LOG_2PI + numcols*log_det_rowcov \
                        + numrows*log_det_colcov + maha)
 
-    def logpdf(self, X, mean, rowcov, colcov):
+    def logpdf(self, X, mean=None, rowcov=1, colcov=1):
         """
         Log of the matrix normal probability density function.
 
@@ -904,7 +896,7 @@ class matrix_normal_gen(multi_rv_generic):
                            colpsd.log_pdet)
         return _squeeze_output(out)
 
-    def pdf(self, X, mean, rowcov, colcov):
+    def pdf(self, X, mean=None, rowcov=1, colcov=1):
         """
         Matrix normal probability density function.
 
@@ -926,8 +918,7 @@ class matrix_normal_gen(multi_rv_generic):
         """
         return np.exp(self.logpdf(X, mean, rowcov, colcov))
 
-    def rvs(self, mean=None, rowcov=None, colcov=None, size=1,
-            random_state=None):
+    def rvs(self, mean=None, rowcov=1, colcov=1, size=1, random_state=None):
         """
         Draw random samples from a multivariate normal distribution.
 
@@ -936,7 +927,7 @@ class matrix_normal_gen(multi_rv_generic):
         %(_matnorm_doc_default_callparams)s
         size : integer, optional
             Number of samples to draw (default 1).
-        %(_matnorm_doc_random_state)s
+        %(_doc_random_state)s
 
         Returns
         -------
@@ -966,7 +957,7 @@ matrix_normal = matrix_normal_gen()
 
 
 class matrix_normal_frozen(multi_rv_frozen):
-    def __init__(self, mean=None, rowcov=None, colcov=None, seed=None):
+    def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
         """
         Create a frozen multivariate normal distribution.
 
