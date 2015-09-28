@@ -19,6 +19,39 @@ import math
 __all__ = ['SphericalVoronoi']
 
 
+def determinant_fallback(m):
+    """
+    Calculates the determinant of m using Laplace expansion in the first row.
+    This function is used only as a fallback to ensure backwards compatibility
+    with Python 2.6.
+
+    m : an array of floats assumed to be of shape (4, 4)
+
+    returns : determinant of m
+    """
+
+    def det3(a):
+        """
+        Calculates the determinant of a using Sarrus' rule.
+
+        a : an array of floats assumed to be of shape (3, 3)
+
+        returns : determinant of a
+        """
+
+        return \
+            a[0][0] * a[1][1] * a[2][2] \
+            + a[0][1] * a[1][2] * a[2][0] \
+            + a[0][2] * a[1][0] * a[2][1] \
+            - a[0][2] * a[1][1] * a[2][0] \
+            - a[0][1] * a[1][0] * a[2][2] \
+            - a[0][0] * a[1][2] * a[2][1]
+
+    minors = [det3(np.delete(np.delete(m, 0, axis=0), k, axis=1))
+              for k in range(0, 4)]
+    return sum([(-1) ** k * m[0][k] * minors[k] for k in range(0, 4)])
+
+
 def calc_circumcenters(tetrahedrons):
     """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
 
@@ -43,9 +76,18 @@ def calc_circumcenters(tetrahedrons):
     sums = np.sum(tetrahedrons ** 2, axis=2)
     d = np.concatenate((sums[:, :, np.newaxis], a), axis=2)
 
-    dx = np.linalg.det(np.delete(d, 1, axis=2))
-    dy = -np.linalg.det(np.delete(d, 2, axis=2))
-    dz = np.linalg.det(np.delete(d, 3, axis=2))
+    dx = np.delete(d, 1, axis=2)
+    dy = np.delete(d, 2, axis=2)
+    dz = np.delete(d, 3, axis=2)
+
+    try:
+        dx = np.linalg.det(dx)
+        dy = -np.linalg.det(dy)
+        dz = np.linalg.det(dz)
+    except np.linalg.LinAlgError:
+        dx = np.array([determinant_fallback(m) for m in dx])
+        dy = -np.array([determinant_fallback(m) for m in dy])
+        dz = np.array([determinant_fallback(m) for m in dz])
 
     nominator = np.vstack((dx, dy, dz))
     denominator = np.matlib.repmat(2 * np.linalg.det(a), 3, 1)
