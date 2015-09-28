@@ -72,6 +72,18 @@ dabs(const npy_float64 x)
         return -x;
 }
 
+inline npy_float64 
+wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
+{
+    npy_float64 x1;
+    if (NPY_UNLIKELY(x < -hb)) x1 = fb + x;
+    else if (NPY_UNLIKELY(x > hb)) x1 = x - fb;
+    else x1 = x;
+#if 0
+    printf("dabs_b x : %g x1 %g\n", x, x1);
+#endif
+    return x1;
+}
 
 /*
  * Measuring distances
@@ -109,20 +121,13 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
     return s;
 } 
  
- 
 inline npy_float64 
-_distance_p(const npy_float64 *x, const npy_float64 *y,
+_distance_np(const npy_float64 *x, const npy_float64 *y,
             const npy_float64 p, const npy_intp k,
-            const npy_float64 upperbound)
-{    
-   /*
-    * Compute the distance between x and y
-    *
-    * Computes the Minkowski p-distance to the power p between two points.
-    * If the distance**p is larger than upperbound, then any number larger
-    * than upperbound may be returned (the calculation is truncated).
-    */
-    
+            const npy_float64 upperbound) {
+    /* 
+     * the non-periodic implementation of _distance_p 
+     */
     npy_intp i;
     npy_float64 r;
     r = 0;
@@ -158,7 +163,118 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
         }
     }
     return r;
+}
+inline npy_float64 
+_distance_p(const npy_float64 *x, const npy_float64 *y,
+            const npy_float64 p, const npy_intp k,
+            const npy_float64 upperbound, const ckdtreebox * box)
+{    
+   /*
+    * Compute the distance between x and y
+    *
+    * Computes the Minkowski p-distance to the power p between two points.
+    * If the distance**p is larger than upperbound, then any number larger
+    * than upperbound may be returned (the calculation is truncated).
+    *
+    */
+    
+    npy_intp i;
+    npy_float64 r, r1;
+    if(NPY_LIKELY(box->fbox[0] <= 0)) {
+        return _distance_np(x, y, p, k, upperbound);
+    }
+    r = 0;
+    for (i=0; i<k; ++i) {
+        r1 = wrap_distance(x[i] - y[i], box->hbox[i], box->fbox[i]);
+        if (NPY_LIKELY(p==2.)) {
+            r += r1 * r1;
+        } else if (p==infinity) {
+            r = dmax(r,r1);
+        } else if (p==1.) {
+            r += dabs(r1);
+        } else {
+            r += std::pow(dabs(r1),p);
+        }
+        if (r>upperbound) 
+            return r;
+    } 
+    return r;
 } 
+
+static inline npy_float64 side_distance_from_min_max(
+    const npy_float64 x,
+    const npy_float64 min,
+    const npy_float64 max,
+    const npy_float64 p,
+    const npy_float64 infinity,
+    const npy_float64 hb,
+    const npy_float64 fb
+) {
+    npy_float64 s, t, tmin, tmax;
+
+    if (NPY_LIKELY(fb <= 0)) {
+        /* non-periodic */
+        s = 0; 
+        t = x - max;
+        if (t > s) {
+            s = t;
+        } else {
+            t = min - x;
+            if (t > s) s = t;
+        }
+    } else {
+        /* periodic */
+        s = 0;
+        tmax = x - max;
+        tmin = x - min;
+        /* is the test point in this range */
+        if(NPY_UNLIKELY(tmax >= 0 || tmin <= 0)) {
+            /* no */
+            tmax = dabs(tmax);
+            tmin = dabs(tmin);
+            /* tmin will be the closer edge */
+            if(tmin > tmax) {
+                t = tmin;
+                tmin = tmax;
+                tmax = t;
+            }
+            if(tmax < hb) {
+                /* both edges are less than half a box. */
+                /* no wrapping, use the closer edge */
+                s = tmin;
+            } else if(tmin > hb) {
+                /* both edge are more than half a box. */
+                /* wrapping on both edge, use the 
+                 * wrapped further edge */
+                s = fb - tmax;
+            } else {
+                /* the further side is wrapped */
+                tmax = fb - tmax;
+                if(tmin > tmax) {
+                    s = tmax;
+                } else {
+                    s = tmin;
+                }
+            }
+        } else {
+            /* yes. min distance is 0 */
+            s = 0; 
+        }
+    }
+#if 0
+    printf("sdfmm: s %g t %g x %g min %g max %g\n", s, t, x, min, max);
+#endif 
+
+    if (NPY_UNLIKELY(p == 1 || p == infinity)) {
+        s = dabs(s);
+    } else if (NPY_LIKELY(p == 2)) {
+        s = s * s;
+    } else {
+        s = std::pow(s,p);
+    }
+        
+    return s;
+}
 
 // k-nearest neighbor query
           
@@ -171,7 +287,8 @@ query_knn(const ckdtree     *self,
           const npy_intp     k, 
           const npy_float64  eps, 
           const npy_float64  p, 
-          const npy_float64  distance_upper_bound);
+          const npy_float64  distance_upper_bound,
+          const ckdtreebox * box);
           
 
 // Other query methods can follow here when they are implemented

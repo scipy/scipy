@@ -21,13 +21,21 @@ import threading
 cdef extern from "limits.h":
     long LONG_MAX
     
+cdef extern from "ckdtree_cpp_decl.h":
+    struct ckdtreebox:
+        np.float64_t *fbox
+        np.float64_t *hbox
+        const void allocate(const int m, const np.float64_t * fbox)
+        const void free()
+
 cdef extern from "ckdtree_cpp_methods.h":
     int number_of_processors
     np.float64_t infinity
     np.float64_t dmax(np.float64_t x, np.float64_t y)
     np.float64_t dabs(np.float64_t x)
     np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
-                       np.float64_t p, np.intp_t k, np.float64_t upperbound)
+                       np.float64_t p, np.intp_t k, np.float64_t upperbound,
+                       ckdtreebox * box)
 infinity = np.inf
 number_of_processors = cpu_count()
 
@@ -55,7 +63,6 @@ cdef extern from "ckdtree_cpp_decl.h":
         ckdtreenode *greater
         np.intp_t _less
         np.intp_t _greater
-    
     
 # Pickle helper functions
 # ======================
@@ -311,7 +318,7 @@ cdef class RectRectDistanceTracker(object):
 
     cdef np.intp_t stack_size, stack_max_size
     cdef RR_stack_item *stack
-
+    cdef ckdtreebox box
     # Stack handling
     cdef int _init_stack(self) except -1:
         cdef void *tmp
@@ -349,6 +356,9 @@ cdef class RectRectDistanceTracker(object):
         self.rect2 = rect2
         self.p = p
         
+        cdef np.ndarray[np.float64_t, ndim=1] zeros = np.zeros(rect1.m, dtype=np.float64)
+        self.box.allocate(rect1.m, <np.float64_t*>zeros.data)
+
         # internally we represent all distances as distance ** p
         if p != infinity and upper_bound != infinity:
             self.upper_bound = upper_bound ** p
@@ -378,6 +388,7 @@ cdef class RectRectDistanceTracker(object):
 
     def __dealloc__(self):
         self._free_stack()
+        self.box.free()
 
     cdef int push(self, np.intp_t which, np.intp_t direction,
                   np.intp_t split_dim,
@@ -490,6 +501,7 @@ cdef class PointRectDistanceTracker(object):
 
     cdef np.intp_t stack_size, stack_max_size
     cdef RP_stack_item *stack
+    cdef ckdtreebox box
 
     # Stack handling
     cdef int _init_stack(self) except -1:
@@ -530,6 +542,9 @@ cdef class PointRectDistanceTracker(object):
         else:
             self.upper_bound = upper_bound
 
+        cdef np.ndarray[np.float64_t, ndim=1] zeros = np.zeros(rect.m, dtype=np.float64)
+        self.box.allocate(rect.m, <np.float64_t*>zeros.data)
+
         # fiddle approximation factor
         if eps == 0:
             self.epsfac = 1
@@ -553,6 +568,7 @@ cdef class PointRectDistanceTracker(object):
 
     def __dealloc__(self):
         self._free_stack()
+        self.box.free()
 
     cdef int push(self, np.intp_t direction,
                   np.intp_t split_dim,
@@ -803,7 +819,8 @@ cdef extern from "ckdtree_cpp_methods.h":
                      const np.intp_t    k, 
                      const np.float64_t eps, 
                      const np.float64_t p, 
-                     const np.float64_t distance_upper_bound)         
+                     const np.float64_t distance_upper_bound,
+                     const ckdtreebox * box)         
                      
                       
 cdef public class cKDTree [object ckdtree, type ckdtree_type]:
@@ -1245,9 +1262,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     @cython.boundscheck(False)
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=infinity,
+              object boxsize=None,
               np.intp_t n_jobs=1):
         """
-        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, n_jobs=1)
+        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, boxsize=None, n_jobs=1)
 
         Query the kd-tree for nearest neighbors
 
@@ -1271,6 +1289,14 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
             of the most recent point.
+        boxsize : array_like or scalar, optional 
+            If non-negative, boxsize gives the size of the periodic box for periodic queries.
+            In a periodic query, the neighbours of all images of point x : 
+                :math:`\\left {x + n \\ocross L : n \\in \mathcal{I}^d \\right}` are sorted and
+            the nearest k neighbours are returned. Due to a implementation detail x shall not be
+            very off from the primary image :math:`[0, L)`. 
+            The positions in the tree are taken at their face value and not imaged.
+            None or 0 for non-periodic query.  Default: None
         n_jobs : int, optional
             Number of jobs to schedule for parallel processing. If -1 is given
             all processors are used. Default: 1.
@@ -1292,7 +1318,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         cdef np.ndarray[np.float64_t, ndim=2] xx
                 
         cdef np.intp_t c, n, i, j, CHUNK
-        
+        cdef ckdtreebox box 
+        cdef np.ndarray [np.float64_t, ndim=1] boxsize_arr
+
         x_arr = np.asarray(x, dtype=np.float64)
         if x_arr.ndim == 0 or x_arr.shape[x_arr.ndim - 1] != self.m:
             raise ValueError("x must consist of vectors of length %d but "
@@ -1312,6 +1340,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         ii = np.empty((n,k),dtype=np.intp)
         ii.fill(self.n)
         
+        if boxsize is None:
+            boxsize = 0
+        
+        boxsize_arr = np.empty(self.m, np.float64)
+        boxsize_arr[:] = boxsize
+        box.allocate(self.m, <np.float64_t*>boxsize_arr.data)
+
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.
         
@@ -1332,7 +1367,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 stop = n if stop > n else stop
                 if start < n:
                     query_knn(<ckdtree*>self, &dd[start,0], &ii[start,0], 
-                        &xx[start,0], stop-start, k, eps, p, dub)
+                        &xx[start,0], stop-start, k, eps, p, dub, &box)
             
             # There might be n_jobs+1 threads spawned here, but only n_jobs of 
             # them will do significant work.
@@ -1349,8 +1384,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 t.join()
         else:
             query_knn(<ckdtree*>self, &dd[0,0], &ii[0,0], &xx[0,0], 
-                n, k, eps, p, distance_upper_bound)
+                n, k, eps, p, distance_upper_bound, &box)
                 
+        box.free()
+
         if single:
             if k == 1:
                 if sizeof(long) < sizeof(np.intp_t):
@@ -1428,7 +1465,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             for i in range(lnode.start_idx, lnode.end_idx):
                 d = _distance_p(
                     self.raw_data + self.raw_indices[i] * self.m,
-                    tracker.pt, tracker.p, self.m, tracker.upper_bound)
+                    tracker.pt, tracker.p, self.m, tracker.upper_bound, &tracker.box)
                 if d <= tracker.upper_bound:
                     list_append(results, self.raw_indices[i])
         else:
@@ -1591,7 +1628,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         d = _distance_p(
                             self.raw_data + self.raw_indices[i] * self.m,
                             other.raw_data + other.raw_indices[j] * other.m,
-                            tracker.p, self.m, tracker.upper_bound)
+                            tracker.p, self.m, tracker.upper_bound, &tracker.box)
                         if d <= tracker.upper_bound:
                             list_append(results_i, other.raw_indices[j])
                             
@@ -1781,7 +1818,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         d = _distance_p(
                             self.raw_data + self.raw_indices[i] * self.m,
                             self.raw_data + self.raw_indices[j] * self.m,
-                            tracker.p, self.m, tracker.upper_bound)
+                            tracker.p, self.m, tracker.upper_bound, &tracker.box)
                         if d <= tracker.upper_bound:
                             set_add_ordered_pair(results,
                                                  self.raw_indices[i],
@@ -1930,7 +1967,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                             d = _distance_p(
                                 self.raw_data + self.raw_indices[i] * self.m,
                                 other.raw_data + other.raw_indices[j] * other.m,
-                                tracker.p, self.m, tracker.max_distance)
+                                tracker.p, self.m, tracker.max_distance, &tracker.box)
                             # I think it's usually cheaper to test d against all r's
                             # than to generate a distance array, sort it, then
                             # search for all r's via binary search
@@ -2106,7 +2143,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         d = _distance_p(
                             self.raw_data + self.raw_indices[i] * self.m,
                             other.raw_data + other.raw_indices[j] * self.m,
-                            tracker.p, self.m, tracker.upper_bound)
+                            tracker.p, self.m, tracker.upper_bound, &tracker.box)
                         if d <= tracker.upper_bound:
                             if tracker.p != 1 and tracker.p != infinity:
                                 d = d**(1. / tracker.p)
