@@ -969,14 +969,17 @@ matrix_normal = matrix_normal_gen()
 
 
 class matrix_normal_frozen(multi_rv_frozen):
-    def __init__(self, mean=None, rowcov=1, colcov=1, random_state=None):
+    def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
         """
         Create a frozen matrix normal distribution.
 
         Parameters
         ----------
         %(_matnorm_doc_default_callparams)s
-        %(_random_state)s
+        seed : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None (or np.random), the global np.random state is used.
+            Default is None.
 
         Examples
         --------
@@ -992,7 +995,7 @@ class matrix_normal_frozen(multi_rv_frozen):
         >>> distn.logpdf(X)
         -10.590229595124615
         """
-        self._dist = matrix_normal_gen(random_state)
+        self._dist = matrix_normal_gen(seed)
         self.dims, self.mean, self.rowcov, self.colcov = \
             self._dist._process_parameters(mean, rowcov, colcov)
         self.rowpsd = _PSD(self.rowcov, allow_singular=False)
