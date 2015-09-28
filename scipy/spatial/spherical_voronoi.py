@@ -84,13 +84,15 @@ def calc_circumcenters(tetrahedrons):
         dx = np.linalg.det(dx)
         dy = -np.linalg.det(dy)
         dz = np.linalg.det(dz)
+        a = np.linalg.det(a)
     except np.linalg.LinAlgError:
         dx = np.array([determinant_fallback(m) for m in dx])
         dy = -np.array([determinant_fallback(m) for m in dy])
         dz = np.array([determinant_fallback(m) for m in dz])
+        a = np.array([determinant_fallback(m) for m in a])
 
     nominator = np.vstack((dx, dy, dz))
-    denominator = np.matlib.repmat(2 * np.linalg.det(a), 3, 1)
+    denominator = np.matlib.repmat(2 * a, 3, 1)
     return (nominator / denominator).transpose()
 
 
