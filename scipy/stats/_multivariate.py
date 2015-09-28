@@ -962,7 +962,8 @@ class matrix_normal_gen(multi_rv_generic):
         roll_rvs = np.tensordot(colchol, np.dot(std_norm, rowchol.T), 1)
         out = np.rollaxis(roll_rvs.T, axis=1, start=0) + mean[np.newaxis,:,:]
         if size == 1:
-            out = np.squeeze(out, axis=0)
+            #out = np.squeeze(out, axis=0)
+            out = out.reshape(mean.shape)
         return out
 
 matrix_normal = matrix_normal_gen()

@@ -499,7 +499,7 @@ class TestMatrixNormal(TestCase):
             for j in range(N):
                 separate_logpdf = matrix_normal.logpdf(X[i,j], mean=M,
                                                        rowcov=U, colcov=V)
-                assert_equal(separate_logpdf, array_logpdf[i,j])
+                assert_allclose(separate_logpdf, array_logpdf[i,j], 1E-10)
 
     def test_moments(self):
         # Check that the sample moments match the parameters
