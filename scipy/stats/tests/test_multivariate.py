@@ -344,8 +344,6 @@ class TestMultivariateNormal(TestCase):
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
-
-
 class TestMatrixNormal(TestCase):
 
     def test_bad_input(self):
@@ -369,7 +367,6 @@ class TestMatrixNormal(TestCase):
         assert_raises(e, matrix_normal, M, U, np.ones((num_cols, num_cols)))
         assert_raises(e, matrix_normal, M, np.ones((num_rows, num_rows)), V)
         
-
     def test_default_inputs(self):
         # Check that default argument handling works
         num_rows = 4
@@ -406,8 +403,8 @@ class TestMatrixNormal(TestCase):
         assert_equal(matrix_normal(colcov=V).mean, Zc)
         assert_equal(matrix_normal(colcov=V).rowcov, I1)
         assert_equal(matrix_normal(mean=M, rowcov=U).colcov, Ic)
-        assert_equal(matrix_normal(mean=M, colcov=V).rowcov , Ir)
-        assert_equal(matrix_normal(rowcov=U, colcov=V).mean , Z)
+        assert_equal(matrix_normal(mean=M, colcov=V).rowcov, Ir)
+        assert_equal(matrix_normal(rowcov=U, colcov=V).mean, Z)
 
     def test_covariance_expansion(self):
         # Check that covariance can be specified with scalar or vector
@@ -522,8 +519,6 @@ class TestMatrixNormal(TestCase):
         sample_rowcov = np.cov(np.swapaxes(X,1,2).reshape(
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
-
-
 
 class TestDirichlet(TestCase):
 

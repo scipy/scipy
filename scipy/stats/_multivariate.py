@@ -28,8 +28,6 @@ random_state : None or int or np.random.RandomState instance, optional
     Default is None.
 """
 
-
-
 def _squeeze_output(out):
     """
     Remove single-dimensional entries from array and convert to scalar,
@@ -405,7 +403,6 @@ class multivariate_normal_gen(multi_rv_generic):
 
         return dim, mean, cov
 
-
     def _process_quantiles(self, x, dim):
         """
         Adjust quantiles array so that last axis labels the components of
@@ -630,8 +627,6 @@ for name in ['logpdf', 'pdf', 'rvs']:
     method_frozen.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_params)
 
-
-
 _matnorm_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default: `None`)
@@ -773,7 +768,7 @@ class matrix_normal_gen(multi_rv_generic):
             meanshape = mean.shape
             if len(meanshape) != 2:
                 raise ValueError("Array `mean` must be two dimensional.")
-            if np.any(meanshape==0):
+            if np.any(meanshape == 0):
                 raise ValueError("Array `mean` has invalid shape.")
 
         # Process among-row covariance
@@ -790,7 +785,7 @@ class matrix_normal_gen(multi_rv_generic):
             raise ValueError("`rowcov` must be a scalar or a 2D array.")
         if rowshape[0] != rowshape[1]:
             raise ValueError("Array `rowcov` must be square.")
-        if rowshape[0]==0:
+        if rowshape[0] == 0:
             raise ValueError("Array `rowcov` has invalid shape.")
         numrows = rowshape[0]
             
@@ -808,7 +803,7 @@ class matrix_normal_gen(multi_rv_generic):
             raise ValueError("`colcov` must be a scalar or a 2D array.")
         if colshape[0] != colshape[1]:
             raise ValueError("Array `colcov` must be square.")
-        if colshape[0]==0:
+        if colshape[0] == 0:
             raise ValueError("Array `colcov` has invalid shape.")
         numcols = colshape[0]
         
@@ -826,7 +821,6 @@ class matrix_normal_gen(multi_rv_generic):
         dims = (numrows, numcols)
         
         return dims, mean, rowcov, colcov
-
 
     def _process_quantiles(self, X, dims):
         """
@@ -876,7 +870,7 @@ class matrix_normal_gen(multi_rv_generic):
         scale_dev = np.tensordot(col_prec_rt.T,
                                  np.dot(roll_dev, row_prec_rt), 1)
         maha = np.sum(np.sum(np.square(scale_dev), axis=-1), axis=0)
-        return -0.5 * (numrows*numcols*_LOG_2PI + numcols*log_det_rowcov \
+        return -0.5 * (numrows*numcols*_LOG_2PI + numcols*log_det_rowcov
                        + numrows*log_det_colcov + maha)
 
     def logpdf(self, X, mean=None, rowcov=1, colcov=1):
@@ -1024,8 +1018,6 @@ for name in ['logpdf', 'pdf', 'rvs']:
     method_frozen = matrix_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__, matnorm_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, matnorm_docdict_params)
-
-
 
 _dirichlet_doc_default_callparams = """\
 alpha : array_like
