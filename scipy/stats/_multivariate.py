@@ -943,8 +943,11 @@ class matrix_normal_gen(multi_rv_generic):
         """
         dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
                                                               colcov)
+        rowchol = scipy.linalg.cholesky(rowcov, lower=True)
+        colchol = scipy.linalg.cholesky(colcov, lower=True)
         random_state = self._get_random_state(random_state)
-        out = random_state.matrix_normal(mean, rowcov, colcov, size)
+        std_norm = random_state.standard_normal(size=dims)
+        out = np.dot(rowchol, np.dot(std_norm, colchol.T))
         return _squeeze_output(out)
 
 matrix_normal = matrix_normal_gen()
