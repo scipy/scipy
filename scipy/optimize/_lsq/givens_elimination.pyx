@@ -5,8 +5,7 @@ import numpy as np
 
 
 def givens_elimination(double [:, ::1] S, double [:] v, double [:] diag):
-    """Apply a series of Givens rotations to zero out a diagonal block of
-    a matrix.
+    """Zero out a diagonal block of a matrix by series of Givens rotations.
 
     The matrix has the structure::
 

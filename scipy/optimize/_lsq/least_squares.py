@@ -231,8 +231,7 @@ def least_squares(
         loss_scale=1.0, scaling=1.0, diff_step=None, tr_solver=None,
         tr_options={}, jac_sparsity=None, max_nfev=None, verbose=0, args=(),
         kwargs={}):
-    """Minimize the robustified sum of squares of nonlinear functions, subject
-    to bound constraints on independent variables.
+    """Solve a nonlinear least-squares problem with bounds on the variables.
 
     Let f(x) be an m-dimensional function of n variables and rho(s) be a
     scalar function, `least_squares` finds a local minimum of::

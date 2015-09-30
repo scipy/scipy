@@ -33,12 +33,11 @@ TERMINATION_MESSAGES = {
 
 def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                lsq_solver=None, lsmr_tol=None, max_iter=None, verbose=0):
-    r"""Solve a linear least-squares problem subject to bound constraints on
-    independent variables.
+    r"""Solve a linear least-squares problem with bounds on the variables.
 
     `lsq_linear` finds a minimum of the cost function 0.5 * ||A x - b||**2,
-    such that lb <= x <= ub. Where `A` is an m-by-n design matrix and `b` is
-    a target vector with m elements.
+    such that lb <= x <= ub. Where A is an m-by-n design matrix and b is a
+    target vector with m elements.
 
     Parameters
     ----------
@@ -46,7 +45,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Design matrix. Can be `scipy.sparse.linalg.LinearOperator`.
     b : array_like, shape (m,)
         Target vector.
-    bounds : array_like or float, optional
+    bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must have shape (n,) or be a scalar, in the latter
         case a bound will be the same for all variables. Use ``np.inf`` with
