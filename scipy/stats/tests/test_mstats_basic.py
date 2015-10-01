@@ -1180,11 +1180,14 @@ class TestCompareWithStats(TestCase):
         tmp = np.asarray([1,1,2,2,3,3,3,4,4,4,4,5,5,5,5]).astype('float')
         mask = (tmp == 5.)
         xm = np.ma.array(tmp, mask=mask)
+        x_orig, xm_orig = x.copy(), xm.copy()
 
         r = stats.find_repeats(x)
         rm = stats.mstats.find_repeats(xm)
 
-        assert_equal(r,rm)
+        assert_equal(r, rm)
+        assert_equal(x, x_orig)
+        assert_equal(xm, xm_orig)
 
     def test_kendalltau(self):
         for n in self.get_n():

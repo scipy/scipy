@@ -3,7 +3,6 @@ from collections import namedtuple
 import numpy as np
 
 from . import distributions
-from . import futil
 
 
 __all__ = ['find_repeats', 'linregress', 'theilslopes']
@@ -213,42 +212,12 @@ def theilslopes(y, x=None, alpha=0.95):
     return medslope, medinter, delta[0], delta[1]
 
 
-def find_repeats(arr):
-    """
-    Find repeats and repeat counts.
+def _find_repeats(arr):
+    # XXX This cast was previously needed for the Fortran implementation,
+    # should we ditch it?
+    arr = arr.astype(np.float64)
 
-    Parameters
-    ----------
-    arr : array_like
-        Input array
-
-    Returns
-    -------
-    values : ndarray
-        The unique values from the (flattened) input that are repeated.
-
-    counts : ndarray
-        Number of times the corresponding 'value' is repeated.
-
-    Notes
-    -----
-    In numpy >= 1.9 `numpy.unique` provides similar functionality. The main
-    difference is that `find_repeats` only returns repeated values.
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-    RepeatedResults(values=array([ 2.]), counts=array([4], dtype=int32))
-
-    >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-    RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2], dtype=int32))
-
-    """
-    RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
-
-    if np.asarray(arr).size == 0:
-        return RepeatedResults([], [])
-
-    v1, v2, n = futil.dfreps(arr)
-    return RepeatedResults(v1[:n], v2[:n])
+    un, ind = np.unique(arr, return_inverse=True)
+    freq = np.bincount(ind)
+    atleast2 = freq > 1
+    return un[atleast2], freq[atleast2]

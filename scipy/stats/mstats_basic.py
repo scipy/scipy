@@ -47,8 +47,8 @@ from collections import namedtuple
 
 from . import distributions
 import scipy.special as special
-from . import futil
 from ._stats_mstats_common import (
+        _find_repeats,
         linregress as stats_linregress,
         theilslopes as stats_theilslopes
         )
@@ -137,7 +137,8 @@ def argstoarray(*args):
 
 def find_repeats(arr):
     """Find repeats in arr and return a tuple (repeats, repeat_count).
-    Masked values are discarded.
+
+    The input is cast to float64. Masked values are discarded.
 
     Parameters
     ----------
@@ -152,12 +153,7 @@ def find_repeats(arr):
         Array of counts.
 
     """
-    marr = ma.compressed(arr)
-    if not marr.size:
-        return (np.array(0), np.array(0))
-
-    (v1, v2, n) = futil.dfreps(ma.array(ma.compressed(arr), copy=True))
-    return (v1[:n], v2[:n])
+    return _find_repeats(ma.compressed(arr))
 
 
 def count_tied_groups(x, use_missing=False):
