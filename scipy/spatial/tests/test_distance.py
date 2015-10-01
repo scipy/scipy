@@ -1203,6 +1203,49 @@ class TestSomeDistanceFunctions(TestCase):
             dist = mahalanobis(x, y, vi)
             assert_almost_equal(dist, np.sqrt(6.0))
 
+    def test_correlation_corner_cases(self):
+        eps = 1e-15
+
+        # correlation +1
+        X1 = np.array([1, 2, 3])
+        X2 = np.array([2, 4, 6])
+        Y1 = correlation(X1, X2)
+        Y2 = 0.
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+        # correlation -1
+        Y1 = correlation(X1, -X2)
+        Y2 = 2.
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+        # constant
+        X2 = np.array([1, 1, 1])
+        Y1 = correlation(X1, X2)
+        Y2 = 1.
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+        # constant with negative
+        Y1 = correlation(X1, -X2)
+        Y2 = 1.
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+        # both same constant => correlation +1
+        Y1 = correlation(X2, X2)
+        Y2 = 1.
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+        # opposite constant => correlation -1
+        Y1 = correlation(X2, -X2)
+        Y2 = 1.
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
+        # zeros
+        X1 = np.zeros(3)
+        X2 = -X1
+        Y1 = correlation(X1, X2)
+        Y2 = 1.
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+
 
 class TestSquareForm(TestCase):
 

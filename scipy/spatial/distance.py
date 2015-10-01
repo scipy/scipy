@@ -360,6 +360,12 @@ def correlation(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+
+    # Deal with the corner cases at first
+    # Avoid to output nan in any case
+    if np.ptp(u) == 0.0 or np.ptp(v) == 0.0:
+        return 1.0
+
     umu = u.mean()
     vmu = v.mean()
     um = u - umu
