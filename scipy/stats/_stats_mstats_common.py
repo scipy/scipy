@@ -5,7 +5,7 @@ import numpy as np
 from . import distributions
 
 
-__all__ = ['find_repeats', 'linregress', 'theilslopes']
+__all__ = ['_find_repeats', 'linregress', 'theilslopes']
 
 
 def linregress(x, y=None):
@@ -175,11 +175,12 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> plt.show()
 
     """
-    y = np.asarray(y).flatten()
+    # We copy both x and y so we can use _find_repeats.
+    y = np.array(y).flatten()
     if x is None:
         x = np.arange(len(y), dtype=float)
     else:
-        x = np.asarray(x, dtype=float).flatten()
+        x = np.array(x, dtype=float).flatten()
         if len(x) != len(y):
             raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
 
@@ -196,8 +197,8 @@ def theilslopes(y, x=None, alpha=0.95):
 
     z = distributions.norm.ppf(alpha / 2.)
     # This implements (2.6) from Sen (1968)
-    _, nxreps = find_repeats(x)
-    _, nyreps = find_repeats(y)
+    _, nxreps = _find_repeats(x)
+    _, nyreps = _find_repeats(y)
     nt = len(slopes)       # N in Sen (1968)
     ny = len(y)            # n in Sen (1968)
     # Equation 2.6 in Sen (1968):
@@ -213,11 +214,19 @@ def theilslopes(y, x=None, alpha=0.95):
 
 
 def _find_repeats(arr):
+    # This function assumes it may clobber its input.
+    if len(arr) == 0:
+        return [], []
+
     # XXX This cast was previously needed for the Fortran implementation,
     # should we ditch it?
-    arr = arr.astype(np.float64)
+    arr = arr.astype(np.float64).ravel()
+    arr.sort()
 
-    un, ind = np.unique(arr, return_inverse=True)
-    freq = np.bincount(ind)
+    # Taken from NumPy 1.9's np.unique.
+    change = np.concatenate(([True], arr[1:] != arr[:-1]))
+    unique = arr[change]
+    change_idx = np.concatenate(np.nonzero(change) + ([arr.size],))
+    freq = np.diff(change_idx)
     atleast2 = freq > 1
-    return un[atleast2], freq[atleast2]
+    return unique[atleast2], freq[atleast2]

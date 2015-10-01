@@ -153,6 +153,7 @@ def find_repeats(arr):
         Array of counts.
 
     """
+    # Note: ma.compressed always copies.
     return _find_repeats(ma.compressed(arr))
 
 

@@ -5147,6 +5147,7 @@ def find_repeats(arr):
 
     """
     RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
+    # Note: always copies.
     return RepeatedResults(*_find_repeats(np.array(arr, dtype=np.float64)))
 
 
