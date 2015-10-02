@@ -135,17 +135,17 @@ class SphericalVoronoi:
 
     Attributes
     ----------
-        points : double array of shape (npoints, 3)
+    points : double array of shape (npoints, 3)
             the points in 3D to generate the Voronoi diagram from
-        radius : double
+    radius : double
             radius of the sphere
             Default: None (forces estimation, which is less precise)
-        center : double array of shape (3,)
+    center : double array of shape (3,)
             center of the sphere
             Default: None (assumes sphere is centered at origin)
-        vertices : double array of shape (nvertices, 3)
+    vertices : double array of shape (nvertices, 3)
             Voronoi vertices corresponding to points
-        regions : list of list of integers of shape (npoints, _ )
+    regions : list of list of integers of shape (npoints, _ )
             the n-th entry is a list consisting of the indices
             of the vertices belonging to the n-th point in points
 
@@ -191,6 +191,7 @@ class SphericalVoronoi:
 
     Examples
     --------
+
     >>> from matplotlib import colors
     >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     >>> import numpy as np
@@ -228,6 +229,7 @@ class SphericalVoronoi:
     ...    polygon.set_color(random_color)
     ...    ax.add_collection3d(polygon)
     >>> plt.show()
+
     """
 
     def __init__(self, points, radius=None, center=None):
