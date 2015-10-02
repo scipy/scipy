@@ -196,12 +196,12 @@ class SphericalVoronoi:
     >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> import scipy.spatial.spherical_voronoi
+    >>> from scipy.spatial import spherical_voronoi
     >>> from mpl_toolkits.mplot3d import proj3d
     >>> import scipy as sp
     >>> # set input data
     >>> points = np.array([[0, 0, 1], [0, 0, -1], [1, 0, 0],
-    >>>                    [0, 1, 0], [0, -1, 0], [-1, 0, 0], ])
+    ...                    [0, 1, 0], [0, -1, 0], [-1, 0, 0], ])
     >>> center = np.array([0, 0, 0])
     >>> radius = 1
     >>> # calculate spherical Voronoi diagram
