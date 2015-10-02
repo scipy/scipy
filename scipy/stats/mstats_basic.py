@@ -153,8 +153,12 @@ def find_repeats(arr):
         Array of counts.
 
     """
-    # Note: ma.compressed always copies.
-    return _find_repeats(ma.compressed(arr))
+    # Make sure we get a copy. ma.compressed promises a "new array", but can
+    # actually return a reference.
+    compr = np.asarray(ma.compressed(arr), dtype=np.float64)
+    if compr is arr or compr.base is arr:
+        compr = compr.copy()
+    return _find_repeats(compr)
 
 
 def count_tied_groups(x, use_missing=False):

@@ -1189,6 +1189,11 @@ class TestCompareWithStats(TestCase):
         assert_equal(x, x_orig)
         assert_equal(xm, xm_orig)
 
+        # This crazy behavior is expected by count_tied_groups, but is not
+        # in the docstring...
+        _, counts = stats.mstats.find_repeats([])
+        assert_equal(counts, np.array(0, dtype=np.intp))
+
     def test_kendalltau(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
