@@ -1246,6 +1246,14 @@ class TestSomeDistanceFunctions(TestCase):
         Y2 = 1.
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
+        # almost constant
+        X1 = np.array([1, 1, 1])
+        noise = np.array([.5, 0, -.01])
+        X2 = np.array([2, 4, 6])
+        for eps in np.linspace(-1e-15, .0, 50):
+            Y1 = correlation(X1 + eps * noise, X2)
+            assert_(Y1 is not np.nan)
+
 
 class TestSquareForm(TestCase):
 
