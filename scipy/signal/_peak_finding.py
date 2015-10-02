@@ -1187,8 +1187,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
 
 def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
-                   gap_thresh=None, min_length=None,
-                   min_snr=1, noise_perc=10, window_size=None):
+                   gap_thresh=None, min_length=None, min_snr=1, noise_perc=10):
     """
     Find peaks in a 1-D array with wavelet transformation.
 
@@ -1201,8 +1200,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ----------
     vector : ndarray
         1-D array in which to find the peaks.
-    widths : sequence
-        1-D array of widths to use for calculating the CWT matrix. In general,
+    widths : float or sequence
+        Single width or 1-D array-like of widths to use for calculating
+        the CWT matrix. In general,
         this range should cover the expected width of peaks of interest.
     wavelet : callable, optional
         Should take two parameters and return a 1-D array to convolve
@@ -1288,6 +1288,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     if wavelet is None:
         wavelet = ricker
 
+    widths = np.array(widths, copy=False, ndmin=1)
     cwt_dat = cwt(vector, wavelet, widths, window_size=window_size)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
