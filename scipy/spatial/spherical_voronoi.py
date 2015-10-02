@@ -123,6 +123,16 @@ class SphericalVoronoi:
 
     .. versionadded:: 0.17.0
 
+    Parameters
+    ----------
+    points : ndarray of floats, shape (npoints, 3)
+        Coordinates of points to construct a spherical 
+        Voronoi diagram from
+    radius : float, optional
+        Radius of the sphere (Default: unit sphere)
+    center : ndarray of floats, shape (3,)
+        Center of sphere (Default: origin)
+
     Attributes
     ----------
         points : double array of shape (npoints, 3)
@@ -179,7 +189,7 @@ class SphericalVoronoi:
     --------
     Voronoi : Conventional Voronoi diagrams in N dimensions.
 
-    Example
+    Examples
     --------
     >>> from matplotlib import colors
     >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
