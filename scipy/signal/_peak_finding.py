@@ -431,8 +431,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ----------
     vector : ndarray
         1-D array in which to find the peaks.
-    widths : sequence
-        1-D array of widths to use for calculating the CWT matrix. In general,
+    widths : float or sequence
+        Single width or 1-D array-like of widths to use for calculating
+        the CWT matrix. In general,
         this range should cover the expected width of peaks of interest.
     wavelet : callable, optional
         Should take a single variable and return a 1-D array to convolve
@@ -508,6 +509,8 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         max_distances = widths / 4.0
     if wavelet is None:
         wavelet = ricker
+
+    widths = np.array(widths, copy=False, ndmin=1)
 
     cwt_dat = cwt(vector, wavelet, widths)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
