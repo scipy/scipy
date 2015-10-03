@@ -49,10 +49,15 @@ from .common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
     build_quadratic_1d, minimize_quadratic_1d, compute_grad,
     compute_jac_scaling, check_termination, scale_for_robust_loss_function,
-    print_header, print_iteration)
+    print_header_nonlinear, print_iteration_nonlinear)
 
 
 def lsmr_operator(Jop, d, active_set):
+    """Compute LinearOperator to use in LSMR by dogbox algorithm.
+
+    `active_set` mask is used to excluded active variables from computations
+    of matrix-vector products.
+    """
     m, n = Jop.shape
 
     def matvec(x):
@@ -98,7 +103,7 @@ def find_intersection(x, tr_bounds, lb, ub):
 
 
 def dogleg_step(x, newton_step, g, a, b, tr_bounds, lb, ub):
-    """Find dogleg step in rectangular region.
+    """Find dogleg step in a rectangular region.
 
     Returns
     -------
@@ -183,7 +188,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
     actual_reduction = None
 
     if verbose == 2:
-        print_header()
+        print_header_nonlinear()
 
     while True:
         active_set = on_bound * g < 0
@@ -198,8 +203,8 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             termination_status = 1
 
         if verbose == 2:
-            print_iteration(iteration, nfev, cost, actual_reduction,
-                            step_norm, g_norm)
+            print_iteration_nonlinear(iteration, nfev, cost, actual_reduction,
+                                      step_norm, g_norm)
 
         if termination_status is not None or nfev == max_nfev:
             break

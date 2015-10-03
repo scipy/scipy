@@ -105,8 +105,8 @@ from .common import (
     solve_trust_region_2d, minimize_quadratic_1d, build_quadratic_1d,
     evaluate_quadratic, right_multiplied_operator, regularized_lsq_operator,
     CL_scaling_vector, compute_grad, compute_jac_scaling, check_termination,
-    update_tr_radius, scale_for_robust_loss_function, print_header,
-    print_iteration)
+    update_tr_radius, scale_for_robust_loss_function, print_header_nonlinear,
+    print_iteration_nonlinear)
 
 
 def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
@@ -127,6 +127,7 @@ def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
 
 def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
+    """Select the best step according to Trust Region Reflective algorithm."""
     if in_bounds(x + p, lb, ub):
         p_value = evaluate_quadratic(J_h, g_h, p_h, diag=diag_h)
         return p, p_h, -p_value
@@ -254,7 +255,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
     actual_reduction = None
 
     if verbose == 2:
-        print_header()
+        print_header_nonlinear()
 
     while True:
         v, dv = CL_scaling_vector(x, g, lb, ub)
@@ -264,8 +265,8 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
             termination_status = 1
 
         if verbose == 2:
-            print_iteration(iteration, nfev, cost, actual_reduction,
-                            step_norm, g_norm)
+            print_iteration_nonlinear(iteration, nfev, cost, actual_reduction,
+                                      step_norm, g_norm)
 
         if termination_status is not None or nfev == max_nfev:
             break
@@ -448,7 +449,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
     actual_reduction = None
 
     if verbose == 2:
-        print_header()
+        print_header_nonlinear()
 
     while True:
         g_norm = norm(g, ord=np.inf)
@@ -456,8 +457,8 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
             termination_status = 1
 
         if verbose == 2:
-            print_iteration(iteration, nfev, cost, actual_reduction,
-                            step_norm, g_norm)
+            print_iteration_nonlinear(iteration, nfev, cost, actual_reduction,
+                                      step_norm, g_norm)
 
         if termination_status is not None or nfev == max_nfev:
             break
