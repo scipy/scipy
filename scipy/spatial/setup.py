@@ -7,7 +7,8 @@ from os.path import join
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    from numpy.distutils.system_info import get_info
+    from numpy.distutils.misc_util import get_info as get_misc_info
+    from numpy.distutils.system_info import get_info as get_sys_info
     from distutils.sysconfig import get_python_inc
 
     config = Configuration('spatial', parent_package, top_path)
@@ -26,7 +27,7 @@ def configuration(parent_package='', top_path=None):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.append(get_numpy_include_dirs())
 
-    cfg = dict(get_info('lapack_opt'))
+    cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
     cfg.setdefault('define_macros', []).append(('qh_QHpointer','1'))
     config.add_extension('qhull',
@@ -53,7 +54,8 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_distance_wrap',
         sources=[join('src', 'distance_wrap.c')],
         depends=[join('src', 'distance_impl.h')],
-        include_dirs=[get_numpy_include_dirs()])
+        include_dirs=[get_numpy_include_dirs()],
+        extra_info=get_misc_info("npymath"))
 
     return config
 
