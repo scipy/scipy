@@ -784,6 +784,28 @@ class VarWriter5(object):
         self._write_items(arr)
 
 
+class ZlibOutputStream(object):
+    ''' Simple container for writing to a zlib compression stream '''
+    def __init__(self, file_stream):
+        self.file_stream = file_stream
+        self.zobj = zlib.compressobj()
+
+    def write(self, filestr):
+        if len(filestr) < (2**31):
+            self.file_stream.write(self.zobj.compress(filestr))
+        else:
+            rounds = int(np.ceil(1.0*len(filestr)/(2**30)))
+            for idx in xrange(rounds):
+                substr = filestr[idx * (2**30) : (idx+1) * (2**30)]
+                self.file_stream.write(self.zobj.compress(substr))
+
+    def flush(self):
+        self.file_stream.write(self.zobj.flush(zlib.Z_SYNC_FLUSH))
+
+    def close(self):
+        self.file_stream.write(self.zobj.flush())
+
+
 class MatFile5Writer(object):
     ''' Class for writing mat5 files '''
 
@@ -855,14 +877,19 @@ class MatFile5Writer(object):
                 continue
             is_global = name in self.global_vars
             if self.do_compression:
-                stream = BytesIO()
-                self._matrix_writer.file_stream = stream
-                self._matrix_writer.write_top(var, asbytes(name), is_global)
-                out_str = zlib.compress(stream.getvalue())
+                start_pos = self.file_stream.tell()
                 tag = np.empty((), NDT_TAG_FULL)
                 tag['mdtype'] = miCOMPRESSED
-                tag['byte_count'] = len(out_str)
+                tag['byte_count'] = 0
                 self.file_stream.write(tag.tostring())
-                self.file_stream.write(out_str)
+                stream = ZlibOutputStream(self.file_stream)
+                self._matrix_writer.file_stream = stream
+                self._matrix_writer.write_top(var, asbytes(name), is_global)
+                stream.close()
+                curr_pos = self.file_stream.tell()
+                self.file_stream.seek(start_pos)
+                tag['byte_count'] = curr_pos - start_pos - tag.nbytes
+                self.file_stream.write(tag.tostring())
+                self.file_stream.seek(curr_pos)
             else:  # not compressing
                 self._matrix_writer.write_top(var, asbytes(name), is_global)
