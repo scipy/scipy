@@ -250,10 +250,9 @@ class SphericalVoronoi:
 
     def calc_vertices_regions(self):
         """
-        Returns a dictionary with the sorted (non-intersecting) polygon
-        vertices for the Voronoi regions associated with each generator index.
-        A dictionary entry would be structured as follows:
-            {generator_index : array_polygon_vertices, ...}
+        Calculates the Voronoi vertices and regions of the generators stored
+        in self.points. The vertices will be stored in self.vertices and the
+        regions in self.regions.
 
         This algorithm was discussed at PyData London 2015 by
         Tyler Reddy, Ross Hemsley and Nikolai Nowaczyk
