@@ -78,6 +78,7 @@ import sys
 import zlib
 
 from io import BytesIO
+from collections import Counter
 
 import warnings
 
@@ -452,6 +453,34 @@ def to_writeable(source):
     return narr
 
 
+class VarWriter5ByteCounter(object):
+    ''' Pseudo file stream for byte counting in place of writing '''
+    def __init__(self, matrix_writer):
+        self.byte_count_dict = matrix_writer.byte_count_dict
+        self.matrix_writer = matrix_writer
+        self._seek_lock = False
+        # Reset byte count dictionary for each new variable/call to write_top
+        self.byte_count_dict.clear()
+
+    def write(self, filestr):
+        if self._seek_lock: return
+        #UPDATE: Counter's don't need to check.
+        #if not self.byte_count_dict.has_key(self.matrix_writer.cur_arrname):
+        #    self.byte_count_dict[self.matrix_writer.cur_arrname] = 0
+        self.byte_count_dict[self.matrix_writer.cur_arrname] += len(filestr)
+
+    def seek(self, pos, whence=0):
+        # Seeking is done by update_matrix_tag, so there is a need to
+        # lock from writing the mat_tag again.
+        self._seek_lock = not self._seek_lock
+
+    def tell(self):
+        # Placeholder so update_matrix_tag won't throw up.
+        #return self.byte_count_dict[self.matrix_writer.cur_arrname]
+        test_key = [x for x in self.byte_count_dict.keys() if x.startswith(self.matrix_writer.cur_arrname)]
+        return sum(map(self.byte_count_dict.get, test_key))
+
+
 # Native byte ordered dtypes for convenience for writers
 NDT_FILE_HDR = MDTYPES[native_code]['dtypes']['file_header']
 NDT_TAG_FULL = MDTYPES[native_code]['dtypes']['tag_full']
@@ -472,6 +501,10 @@ class VarWriter5(object):
         # These are used for top level writes, and unset after
         self._var_name = None
         self._var_is_global = False
+        # These are used for byte counting
+        self.byte_count_dict = Counter()
+        self.cur_arrname = None
+        self._count_bytes = True
 
     def write_bytes(self, arr):
         self.file_stream.write(arr.tostring(order='F'))
@@ -562,6 +595,14 @@ class VarWriter5(object):
         if byte_count >= 2**32:
             raise MatWriteError("Matrix too large to save with Matlab "
                                 "5 format")
+        test_key = [x for x in self.byte_count_dict.keys() if x.startswith(self.cur_arrname)]
+        test_bc = sum(map(self.byte_count_dict.get, test_key)) - 8
+        #test_bc = self.byte_count_dict[self.cur_arrname] - 8
+        #DEBUG: Testing byte count
+        if test_bc != byte_count:
+            raise Exception("Byte count wrong for "+str(self.cur_arrname)+": "
+                           +str(test_bc)+" != "+str(byte_count)+"\n"
+                           +str(self.byte_count_dict))
         self.mat_tag['byte_count'] = byte_count
         self.write_bytes(self.mat_tag)
         self.file_stream.seek(curr_pos)
@@ -583,23 +624,52 @@ class VarWriter5(object):
         # the end of the same write, because they do not apply for lower levels
         self._var_is_global = is_global
         self._var_name = name
+        # Count bytes of header and data
+        print("Count")
+        real_file_stream = self.file_stream
+        self.file_stream = VarWriter5ByteCounter(self)
+        self._count_bytes = True #DEBUG
+        self.write(arr, "top")
+        print("Uncount")
         # write the header and data
-        self.write(arr)
+        self._var_is_global = is_global
+        self._var_name = name
+        self.file_stream = real_file_stream
+        self._count_bytes = False #DEBUG
+        self.write(arr, "top")
 
-    def write(self, arr):
+    def write(self, arr, next_arrname):
         ''' Write `arr` to stream at top and sub levels
 
         Parameters
         ----------
         arr : array_like
             array-like object to create writer for
+        next_arrname : string
+            name of the next level of the array, used for byte counting
         '''
+        # Store previous arrname before self.write_header changes it
+        # Used to revert back once this array is done.
+        prev_arrname = self.cur_arrname
+        # self.mat_tag should not be counted in current array's byte count
+        # Only switch to current byte counter after it is counted "outside."
+        # UPDATE: Actually, just subtract 8 for the extra bytes.
+        self.cur_arrname = next_arrname
+        # DEBUG: This should be a new array to count bytes of.
+        if self._count_bytes and self.byte_count_dict.has_key(self.cur_arrname):
+            raise Exception("Has count: "+str(self.cur_arrname)+"  "
+                                         +str(self.byte_count_dict))
         # store position, so we can update the matrix tag
         mat_tag_pos = self.file_stream.tell()
+        if self._count_bytes and mat_tag_pos != 0:
+            raise Exception("Has count: "+str(self.cur_arrname)+"  "
+                                         +str(self.byte_count_dict))
         # First check if these are sparse
         if scipy.sparse.issparse(arr):
             self.write_sparse(arr)
             self.update_matrix_tag(mat_tag_pos)
+            # Revert back to previous arrname
+            self.cur_arrname = prev_arrname
             return
         # Try to convert things that aren't arrays
         narr = to_writeable(arr)
@@ -625,6 +695,8 @@ class VarWriter5(object):
         else:
             self.write_numeric(narr)
         self.update_matrix_tag(mat_tag_pos)
+        # Revert back to previous arrname
+        self.cur_arrname = prev_arrname
 
     def write_numeric(self, arr):
         imagf = arr.dtype.kind == 'c'
@@ -719,8 +791,9 @@ class VarWriter5(object):
                           mxCELL_CLASS)
         # loop over data, column major
         A = np.atleast_2d(arr).flatten('F')
-        for el in A:
-            self.write(el)
+        for elid, el in enumerate(A):
+            next_arrname = self.cur_arrname+".__"+str(elid)
+            self.write(el, next_arrname)
 
     def write_empty_struct(self):
         self.write_header((1, 1), mxSTRUCT_CLASS)
@@ -747,9 +820,11 @@ class VarWriter5(object):
             np.array(fieldnames, dtype='S%d' % (length)),
             mdtype=miINT8)
         A = np.atleast_2d(arr).flatten('F')
-        for el in A:
+        for elid, el in enumerate(A):
+            next_arrname_prefix = self.cur_arrname+".__"+str(elid)
             for f in fieldnames:
-                self.write(el[f])
+                next_arrname = next_arrname_prefix+"-"+str(f)
+                self.write(el[f], next_arrname)
 
     def write_object(self, arr):
         '''Same as writing structs, except different mx class, and extra
