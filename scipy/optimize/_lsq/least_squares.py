@@ -461,7 +461,7 @@ def least_squares(
             *  0 : the maximum number of function evaluations is exceeded.
             *  1 : `gtol` termination condition is satisfied.
             *  2 : `ftol` termination condition is satisfied.
-            *  3 : `xtol` convergence test is satisfied.
+            *  3 : `xtol` termination condition is satisfied.
             *  4 : Both `ftol` and `xtol` termination conditions are satisfied.
 
     message : str
@@ -532,9 +532,9 @@ def least_squares(
     References
     ----------
     .. [STIR] M. A. Branch, T. F. Coleman, and Y. Li, "A Subspace, Interior,
-          and Conjugate Gradient Method for Large-Scale Bound-Constrained
-          Minimization Problems," SIAM Journal on Scientific Computing,
-          Vol. 21, Number 1, pp 1-23, 1999.
+              and Conjugate Gradient Method for Large-Scale Bound-Constrained
+              Minimization Problems," SIAM Journal on Scientific Computing,
+              Vol. 21, Number 1, pp 1-23, 1999.
     .. [NR] William H. Press et. al., "Numerical Recipes. The Art of Scientific
             Computing. 3rd edition", Sec. 5.7.
     .. [Byrd] R. H. Byrd, R. B. Schnabel and G. A. Shultz, "Approximate
