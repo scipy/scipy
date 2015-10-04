@@ -129,7 +129,7 @@ class SphericalVoronoi:
         Coordinates of points to construct a spherical 
         Voronoi diagram from
     radius : float, optional
-        Radius of the sphere (Default: unit sphere)
+        Radius of the sphere (Default: 1)
     center : ndarray of floats, shape (3,)
         Center of sphere (Default: origin)
 
@@ -233,8 +233,19 @@ class SphericalVoronoi:
     """
 
     def __init__(self, points, radius=None, center=None):
+        """
+        Initializes the object and starts the computation of the Voronoi
+        diagram.
+
+        points : The generator points of the Voronoi diagram assumed to be
+         all on the sphere with radius supplied by the radius parameter and
+         center supplied by the center parameter.
+        radius : The radius of the sphere. Will default to 1 if not supplied.
+        center : The center of the sphere. Will default to the origin if not
+         supplied.
+        """
+
         self.points = points
-        # default to unit sphere
         if np.any(center):
             self.center = center
         else:
