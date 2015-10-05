@@ -72,6 +72,8 @@ The function ``misc.lena`` has been removed due to license incompatibility.
 Other changes
 =============
 
+``scipy.constants`` is updated to the CODATA 2014 recommended values.
+
 
 Authors
 =======
