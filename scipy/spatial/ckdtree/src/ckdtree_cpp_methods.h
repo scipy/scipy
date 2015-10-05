@@ -52,6 +52,19 @@ prefetch_datapoint(const npy_float64 *x, const npy_intp m)
  * Utility functions
  * =================
  */
+
+/*
+ * We can't use isinf or npy_isinf here because Apple's C++ compiler forgets
+ * to define isinf.
+ *
+ * Note that this definition also only matches positive infinity, which is
+ * fine for ckdtree purposes.
+ */
+inline bool
+ckdtree_isinf(npy_float64 x)
+{
+    return x == NPY_INFINITY;
+}
  
 inline npy_float64 
 dmax(const npy_float64 x, const npy_float64 y) 
@@ -60,7 +73,7 @@ dmax(const npy_float64 x, const npy_float64 y)
         return x;
     else
         return y;
-};
+}
 
 inline npy_float64 
 dabs(const npy_float64 x)
@@ -135,7 +148,7 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
         }*/
         return sqeuclidean_distance_double(x,y,k);
     } 
-    else if (npy_isinf(p)) {
+    else if (ckdtree_isinf(p)) {
         for (i=0; i<k; ++i) {
             r = dmax(r,dabs(x[i]-y[i]));
             if (r>upperbound)
