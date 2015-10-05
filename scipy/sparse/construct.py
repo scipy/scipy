@@ -169,10 +169,12 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     M = max(0, M)
     data_arr = np.zeros((len(offsets), M), dtype=dtype)
 
+    K = min(m, n)
+
     for j, diagonal in enumerate(diagonals):
         offset = offsets[j]
         k = max(0, offset)
-        length = min(m + offset, n - offset)
+        length = min(m + offset, n - offset, K)
         if length <= 0:
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
         try:
