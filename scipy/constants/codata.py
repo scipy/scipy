@@ -29,10 +29,10 @@ find(sub):
 Source
 ------
 The values of the constants provided at this site are recommended for
-international use by CODATA and are the latest available. Termed the "2010
+international use by CODATA and are the latest available. Termed the "2014
 CODATA recommended values," they are generally recognized worldwide for use in
-all fields of science and technology. The values became available on 2 June
-2011 and replaced the 2006 CODATA set. They are based on all of the data
+all fields of science and technology. The values became available on 27 July
+2015 and replaced the 2010 CODATA set. They are based on all of the data
 available through 31 December 2010. The 2010 adjustment was carried out under
 the auspices of the CODATA Task Group on Fundamental Constants. See References
 for an introduction to the constants for non-experts.
@@ -1279,7 +1279,7 @@ def precision(key):
     --------
     >>> from scipy.constants import codata
     >>> codata.precision(u'proton mass')
-    4.96226989798e-08
+    1.2555138746605121e-08
 
     """
     _check_obsolete(key)
