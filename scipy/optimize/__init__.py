@@ -27,6 +27,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-powell
    optimize.minimize-cg
    optimize.minimize-bfgs
+   optimize.minimize-bfgs-h
    optimize.minimize-newtoncg
    optimize.minimize-lbfgsb
    optimize.minimize-tnc
@@ -56,6 +57,7 @@ General-purpose multivariate methods:
    fmin_powell - Powell's (modified) level set method
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm
    fmin_bfgs - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno)
+   fmin_bfgs_h - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno) independent of target functions
    fmin_ncg - Line-search Newton Conjugate Gradient
 
 Constrained multivariate methods:
@@ -235,6 +237,7 @@ from ._root import *
 from .minpack import *
 from .zeros import *
 from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
+from .bfgs_h import fmin_bfgs_h
 from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *

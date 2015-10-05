@@ -131,7 +131,6 @@ class CheckOptimizeParameterized(CheckOptimize):
             res = optimize.minimize(self.func, self.startparams,
                                     jac=self.grad, method='BFGS', args=(),
                                     options=opts)
-
             params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag = (
                     res['x'], res['fun'], res['jac'], res['hess_inv'],
                     res['nfev'], res['njev'], res['status'])
@@ -154,6 +153,42 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert_allclose(self.trace[6:8],
                         [[0, -5.25060743e-01, 4.87748473e-01],
                          [0, -5.24885582e-01, 4.87530347e-01]],
+                        atol=1e-14, rtol=1e-7)
+
+    @suppressed_stdout
+    def test_bfgs_h(self):
+        # Broyden-Fletcher-Goldfarb-Shanno no target function 
+        # optimization routine
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': self.disp,
+                    'return_all': False, 'alpha': 5.0, 'beta':0.7}
+
+            res = optimize.minimize(self.func, self.startparams,
+                                    jac=self.grad, method='BFGS-H', args=(),
+                                    options=opts)
+            params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag = (
+                    res['x'], res['fun'], res['jac'], res['hess_inv'],
+                    res['nfev'], res['njev'], res['status'])
+        else:
+            retval = optimize.fmin_bfgs_h(self.func, self.startparams, self.grad,
+                                        args=(), maxiter=self.maxiter,
+                                        alpha=5.0, beta=0.7, H_reset=True,
+                                        full_output=True, disp=self.disp,
+                                        retall=False)
+            (params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag) = retval
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
+
+        # Ensure that function call counts are 'known good'.
+        # Don't allow them to increase.
+        assert_(self.funccalls == 11, self.funccalls)
+        assert_(self.gradcalls == 9, self.gradcalls)
+
+        # Ensure that the function behaves the same.
+        assert_allclose(self.trace[6:8],
+                        [[ -1.11022480e-15,  -5.24937403e-01,   4.87416444e-01],
+                         [ -2.15302694e-21,  -5.24845382e-01,   4.87567017e-01]],
                         atol=1e-14, rtol=1e-7)
 
     @suppressed_stdout

@@ -28,6 +28,7 @@ from ._trustregion_ncg import _minimize_trust_ncg
 
 # constrained minimization
 from .lbfgsb import _minimize_lbfgsb
+from .bfgs_h import _minimize_bfgs_h
 from .tnc import _minimize_tnc
 from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
@@ -68,6 +69,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'Powell'      :ref:`(see here) <optimize.minimize-powell>`
             - 'CG'          :ref:`(see here) <optimize.minimize-cg>`
             - 'BFGS'        :ref:`(see here) <optimize.minimize-bfgs>`
+            - 'BFGS-H'      :ref:`(see here) <optimize.minimize-bfgsh>`
             - 'Newton-CG'   :ref:`(see here) <optimize.minimize-newtoncg>`
             - 'L-BFGS-B'    :ref:`(see here) <optimize.minimize-lbfgsb>`
             - 'TNC'         :ref:`(see here) <optimize.minimize-tnc>`
@@ -82,7 +84,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         depending if the problem has constraints or bounds.
     jac : bool or callable, optional
         Jacobian (gradient) of objective function. Only for CG, BFGS,
-        Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg.
+        Newton-CG, L-BFGS-B, BFGS-H, TNC, SLSQP, dogleg, trust-ncg.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         gradient along with the objective function. If False, the
         gradient will be estimated numerically.
@@ -183,6 +185,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     performance even for non-smooth optimizations. This method also
     returns an approximation of the Hessian inverse, stored as
     `hess_inv` in the OptimizeResult object.
+
+    Method :ref:`BFGS-H <optimize.minimize-bfgsh>` uses the BFGS-H
+    algorithm [13]_, [14]_, [15]_, [16]_ for target function
+    independent optimization given a gradient.
 
     Method :ref:`Newton-CG <optimize.minimize-newtoncg>` uses a
     Newton-CG algorithm [5]_ pp. 168 (also known as the truncated
@@ -289,6 +295,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [12] Kraft, D. A software package for sequential quadratic
        programming. 1988. Tech. Rep. DFVLR-FB 88-28, DLR German Aerospace
        Center -- Institute for Flight Mechanics, Koln, Germany.
+    .. [13] Fletcher, R., and Powell, M. J. D. (1963) ( A rapidly convergent descent
+       method for minimization.) The Computer Journal, Volume 6, pp. 163-168
+    .. [14] Broyden, C. G. (1966) Quasi-Newton Methods and their Application to
+       Functional Minimisation Math. Comp., Volume 21, pp. 368-381
+    .. [15] Broyden, C. G. (1970) The Convergence of Single-Rank Quasi-Newton
+       Methods Math. Comp., Volume 24, pp. 365-382
+    .. [16] Sheppard, D., Terrell, R., and Henkelman, G. (2007) Optimization Methods
+       for Finding Minimum Energy Paths. doi: 10.1063/1.2841941
+
 
     Examples
     --------
@@ -387,7 +402,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian-vector product '
                 'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
+    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'bfgs-h', 'newton-cg', 'dogleg',
                  'trust-ncg'] and (bounds is not None or np.any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
@@ -421,7 +436,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('xtol', tol)
         if meth in ['nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp']:
             options.setdefault('ftol', tol)
-        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg', 'trust-ncg']:
+        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'bfgs-h', 'tnc', 'dogleg', 'trust-ncg']:
             options.setdefault('gtol', tol)
         if meth in ['cobyla', '_custom']:
             options.setdefault('tol', tol)
@@ -438,6 +453,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         return _minimize_cg(fun, x0, args, jac, callback, **options)
     elif meth == 'bfgs':
         return _minimize_bfgs(fun, x0, args, jac, callback, **options)
+    elif meth == 'bfgs-h':
+        return _minimize_bfgs_h(fun, x0, args, jac, callback, **options)
     elif meth == 'newton-cg':
         return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
                                   **options)
