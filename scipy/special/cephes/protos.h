@@ -123,17 +123,12 @@ extern double ndtri(double y0);
 extern double pdtrc(int k, double m);
 extern double pdtr(int k, double m);
 extern double pdtri(int k, double y);
-extern double pow(double x, double y);
-extern double powi(double x, int nn);
 extern double psi(double x);
 extern void revers(double y[], double x[], int n);
 extern double rgamma(double x);
 extern double round(double x);
 extern int shichi(double x, double *si, double *ci);
 extern int sici(double x, double *si, double *ci);
-extern double simpsn(double f[], double delta);
-extern int simq(double A[], double B[], double X[], int n, int flag,
-		int IPS[]);
 extern double sin(double x);
 extern double cos(double x);
 extern double radian(double d, double m, double s);
