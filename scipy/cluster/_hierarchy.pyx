@@ -44,7 +44,7 @@ cdef inline void set_visited(uchar *bitset, int i):
     bitset[i >> 3] |= 1 << (i & 7)
 
 
-cpdef calculate_cluster_sizes(double[:, :] Z, double[:] cs, int n):
+cpdef void calculate_cluster_sizes(double[:, :] Z, double[:] cs, int n):
     """
     Calculate the size of each cluster. The result is the fourth column of
     the linkage matrix.
@@ -142,8 +142,8 @@ def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
     cluster_maxclust_monocrit(Z, max_dists, T, n, mc)
 
 
-def cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
-                              int n, int max_nc):
+cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
+                                     int n, int max_nc):
     """
     Form flat clusters by maxclust_monocrit criterion.
 
@@ -163,15 +163,12 @@ def cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     """
     cdef int i, k, i_lc, i_rc, root, nc, lower_idx, upper_idx
     cdef double thresh
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
     if not visited:
         raise MemoryError
-
-    max_illegal = -1
-    min_legal = MC[n - 2]
 
     lower_idx = 0
     upper_idx = n - 1
@@ -231,8 +228,8 @@ def cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     cluster_monocrit(Z, MC, T, MC[upper_idx], n)
 
 
-cpdef cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
-                       double cutoff, int n):
+cpdef void cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
+                            double cutoff, int n):
     """
     Form flat clusters by monocrit criterion.
 
@@ -252,7 +249,7 @@ cpdef cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
         The number of observations.
     """
     cdef int k, i_lc, i_rc, root, n_cluster = 0, cluster_leader = -1
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -315,9 +312,9 @@ def cophenetic_distances(double[:, :] Z, double[:] d, int n):
     """
     cdef int i, j, k, root, i_lc, i_rc, n_lc, n_rc, right_start
     cdef double dist
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
-    cdef int[:] members = np.ndarray(n, dtype=np.int32)
-    cdef int[:] left_start = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
+    cdef int[:] members = np.ndarray(n, dtype=np.intc)
+    cdef int[:] left_start = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -389,7 +386,7 @@ cdef from_pointer_representation(double[:, :] Z, double[:] Lambda, int[:] Pi,
     """
     cdef int i, current_leaf, pi
     cdef np.intp_t[:] sorted_idx = np.argsort(Lambda)
-    cdef int[:] node_ids = np.ndarray(n, dtype=np.int32)
+    cdef int[:] node_ids = np.ndarray(n, dtype=np.intc)
 
     for i in range(n):
         node_ids[i] = i
@@ -410,8 +407,8 @@ cdef from_pointer_representation(double[:, :] Z, double[:] Lambda, int[:] Pi,
     calculate_cluster_sizes(Z, Z[:, 3], n)
 
 
-cpdef get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
-                                      double[:] max_rfs, int n, int rf):
+cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
+                                           double[:] max_rfs, int n, int rf):
     """
     Get the maximum statistic for each non-singleton cluster. For the i'th
     non-singleton cluster, max_rfs[i] = max{R[j, rf] j is a descendent of i}.
@@ -431,7 +428,7 @@ cpdef get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
     """
     cdef int k, i_lc, i_rc, root
     cdef double max_rf, max_l, max_r
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -489,7 +486,7 @@ cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n):
     """
     cdef int k, i_lc, i_rc, root
     cdef double max_dist, max_l, max_r
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -555,7 +552,7 @@ def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
         The number of levels included in calculation below a node.
     """
     cdef int i, k, i_lc, i_rc, root, level_count
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
     cdef double level_sum, level_std_sum, level_std, dist
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
@@ -641,8 +638,8 @@ def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
         `-1` indicates success.
     """
     cdef int k, i_lc, i_rc, root, cid_lc, cid_rc, leader_idx, result = -1
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
-    cdef int[:] cluster_ids = np.ndarray(n * 2 - 1, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
+    cdef int[:] cluster_ids = np.ndarray(n * 2 - 1, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -714,7 +711,7 @@ def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
     return result  # -1 means success here
 
 
-def linkage(double[:] dists, np.ndarray[double, ndim=2] Z, int n, int method):
+def linkage(double[:] dists, double[:, :] Z, int n, int method):
     """
     Perform hierarchy clustering.
 
@@ -735,7 +732,7 @@ def linkage(double[:] dists, np.ndarray[double, ndim=2] Z, int n, int method):
     # inter-cluster dists
     cdef double[:] D = np.ndarray(n * (n - 1) / 2, dtype=np.double)
     # map the indices to node ids
-    cdef int[:] id_map = np.ndarray(n, dtype=np.int32)
+    cdef int[:] id_map = np.ndarray(n, dtype=np.intc)
     cdef linkage_distance_update new_dist
 
     new_dist = linkage_methods[method]
@@ -766,10 +763,10 @@ def linkage(double[:] dists, np.ndarray[double, ndim=2] Z, int n, int method):
         ny = 1 if id_y < n else <int>Z[id_y - n, 3]
 
         # record the new node
-        if id_x < id_y:
-            Z[k] = (id_x, id_y, current_min, nx + ny)
-        else:
-            Z[k] = (id_y, id_x, current_min, nx + ny)
+        Z[k, 0] = min(id_x, id_y)
+        Z[k, 1] = max(id_y, id_x)
+        Z[k, 2] = current_min
+        Z[k, 3] = nx + ny
         id_map[x] = -1  # cluster x will be dropped
         id_map[y] = n + k  # cluster y will be replaced with the new cluster
 
@@ -803,7 +800,7 @@ def prelist(double[:, :] Z, int[:] members, int n):
         The number of observations.
     """
     cdef int k, i_lc, i_rc, root, mem_idx
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -865,7 +862,7 @@ def slink(double[:] dists, double[:, :] Z, int n):
     cdef int i, j
     cdef double[:] M = np.ndarray(n, dtype=np.double)
     cdef double[:] Lambda = np.ndarray(n, dtype=np.double)
-    cdef int[:] Pi = np.ndarray(n, dtype=np.int32)
+    cdef int[:] Pi = np.ndarray(n, dtype=np.intc)
 
     Pi[0] = 0
     Lambda[0] = NPY_INFINITYF
