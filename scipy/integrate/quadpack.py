@@ -628,10 +628,12 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
           - wvar   = None
           - wopts  = None
 
-        The ``full_output`` option from `quad` is unavailable, due to the
-        complexity of handling the large amount of data such an option would
-        return for this kind of nested integration.  For more information on
-        these options, see `quad` and `quad_explain`.
+        For more information on these options, see `quad` and `quad_explain`.
+
+    full_output : bool, optional
+        Preliminary implementation of ``full_output`` is now available. At
+        present, the number of evaluations ``neval`` can be obtained by
+        setting ``full_output=True`` when calling nquad.
 
     Returns
     -------
