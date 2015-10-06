@@ -477,6 +477,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         if boxsize is None:
             self.boxsize = None
             self.raw_boxsize_data = NULL
+            self.boxsize_data = None
         else:
             boxsize_arr = np.empty(2 * self.m, dtype=np.float64)
             boxsize_arr[:] = boxsize
@@ -1180,7 +1181,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.raw_maxes = <np.float64_t*>np.PyArray_DATA(self.maxes)
         self.raw_mins = <np.float64_t*>np.PyArray_DATA(self.mins)
         self.raw_indices = <np.intp_t*>np.PyArray_DATA(self.indices)
-        self.raw_boxsize_data = <np.float64_t*>np.PyArray_DATA(self.boxsize_data)
+        if self.boxsize_data is not None:
+            self.raw_boxsize_data = <np.float64_t*>np.PyArray_DATA(self.boxsize_data)
  
         # set up the tree structure pointers
         self.ctree = tree_buffer_root(self.tree_buffer)
