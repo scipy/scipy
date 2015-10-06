@@ -187,8 +187,8 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that the function behaves the same.
         assert_allclose(self.trace[6:8],
-                        [[ -1.11022480e-15,  -5.24937403e-01,   4.87416444e-01],
-                         [ -2.15302694e-21,  -5.24845382e-01,   4.87567017e-01]],
+                        [[-1.11022480e-15, -5.24937403e-01, 4.87416444e-01],
+                         [-2.15302694e-21, -5.24845382e-01, 4.87567017e-01]],
                         atol=1e-14, rtol=1e-7)
 
     @suppressed_stdout
