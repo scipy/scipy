@@ -28,8 +28,7 @@ Linear assignment problem solver
 linear sum assignment problem. It uses the Hungarian algorithm (Kuhn-Munkres).
 
 ``scipy.optimize.fmin_bfgs_h`` is a gradient based function for minimization 
-independent of the target function itself.
-
+independent of the target function itself. It uses the BFGS(Hess) algorithm.
 
 Deprecated features
 ===================

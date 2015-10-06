@@ -40,8 +40,9 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
               H_reset=True, norm=Inf, epsilon=_epsilon, maxiter=None,
               full_output=0, disp=True, retall=False, callback=None):
     """
-    Gradient Minimization independent of target function using the BFGS
-    algorithm while applying the inverse hessian directly to steps.
+    Gradient Minimization independent of target function using the BFGS(Hess)
+    algorithm described by Sheppard et al. while applying the inverse hessian
+    directly to steps.
 
     Parameters
     ----------
@@ -113,15 +114,16 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
     so it adjusts step size accordingly.
 
     Optimization of the function using the Broyden-Fletcher-Goldfarb-
-    Shanno (BFGS) algorithm for not well-defined functions.  Instead of using
-    a line search for the step size alhpa, the following adjustments have been
-    made:
+    Shanno (BFGS) algorithm independent of target functions.  Instead
+    of using a line search for the step size alpha, the following 
+    adjustments have been made:
         1. alpha is a constant that is changed by beta whenever f(x0)
            indicates the maximum has increased.
         2. rho, a scalar used in scipy.optimize._minimize_bfgs, was removed as
            alpha is now manually adjusted.
-    Method is an application of the bfgs-hess function described by Sheppard
-    et al.
+    Method is an application of the BFGS(Hess) function described by Sheppard
+    et al. for Nudged Elastic Band applications (though it could be used in
+    other systems).
 
     References
     ----------
