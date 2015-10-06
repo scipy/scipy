@@ -556,6 +556,21 @@ def svd_estimate(u, s, vh):
     return np.dot(u, np.dot(np.diag(s), vh))
 
 
+def svd_test_input_check():
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1, 0, 2],
+                  [0, 0, 1]], float)
+
+    assert_raises(ValueError, svds, x, k=-1)
+    assert_raises(ValueError, svds, x, k=0)
+    assert_raises(ValueError, svds, x, k=10)
+    assert_raises(ValueError, svds, x, k=x.shape[0])
+    assert_raises(ValueError, svds, x, k=x.shape[1])
+    assert_raises(ValueError, svds, x.T, k=x.shape[0])
+    assert_raises(ValueError, svds, x.T, k=x.shape[1])
+
+
 def test_svd_simple_real():
     x = np.array([[1, 2, 3],
                   [3, 4, 3],
