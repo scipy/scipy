@@ -1,5 +1,4 @@
-/*                                                     Gamma.c
- *
+/*
  *     Gamma function
  *
  *
@@ -7,7 +6,6 @@
  * SYNOPSIS:
  *
  * double x, y, Gamma();
- * extern int sgngam;
  *
  * y = Gamma( x );
  *
@@ -16,10 +14,7 @@
  * DESCRIPTION:
  *
  * Returns Gamma function of the argument.  The result is
- * correctly signed, and the sign (+1 or -1) is also
- * returned in a global (extern) variable named sgngam.
- * This variable is also filled in by the logarithmic Gamma
- * function lgam().
+ * correctly signed.
  *
  * Arguments |x| <= 34 are reduced by recurrence and the function
  * approximated by a rational function of degree 6/7 in the
@@ -39,7 +34,8 @@
  * Error for arguments outside the test range will be larger
  * owing to error amplification by the exponential function.
  *
- */
+ */
+
 /*                                                     lgam()
  *
  *     Natural logarithm of Gamma function
@@ -49,7 +45,6 @@
  * SYNOPSIS:
  *
  * double x, y, lgam();
- * extern int sgngam;
  *
  * y = lgam( x );
  *
@@ -59,8 +54,6 @@
  *
  * Returns the base e (2.718...) logarithm of the absolute
  * value of the Gamma function of the argument.
- * The sign (+1 or -1) of the Gamma function is returned in a
- * global (extern) variable named sgngam.
  *
  * For arguments greater than 13, the logarithm of the Gamma
  * function is approximated by the logarithmic version of
@@ -90,9 +83,6 @@
  *    IEEE    -200, -4             10000     4.8e-16     1.3e-16
  *
  */
-
-/*                                                     Gamma.c */
-/*     Gamma function  */
 
 /*
  * Cephes Math Library Release 2.2:  July, 1992
@@ -139,8 +129,6 @@ static double STIR[5] = {
 #define MAXSTIR 143.01608
 static double SQTPI = 2.50662827463100050242E0;
 
-int sgngam = 0;
-extern int sgngam;
 extern double MAXLOG;
 static double stirf(double);
 
@@ -169,13 +157,12 @@ static double stirf(double x)
 }
 
 
-
 double Gamma(double x)
 {
     double p, q, z;
     int i;
+    int sgngam = 1;
 
-    sgngam = 1;
     if (!cephes_isfinite(x)) {
 	return x;
     }
@@ -287,17 +274,23 @@ static double LS2PI = 0.91893853320467274178;
 /* Logarithm of Gamma function */
 double lgam(double x)
 {
+    int sign;
+    return lgam_sgn(x, &sign);
+}
+
+double lgam_sgn(double x, int *sign)
+{
     double p, q, u, w, z;
     int i;
 
-    sgngam = 1;
+    *sign = 1;
 
     if (!cephes_isfinite(x))
 	return x;
 
     if (x < -34.0) {
 	q = -x;
-	w = lgam(q);		/* note this modifies sgngam! */
+	w = lgam_sgn(q, sign);
 	p = floor(q);
 	if (p == q) {
 	  lgsing:
@@ -306,9 +299,9 @@ double lgam(double x)
 	}
 	i = p;
 	if ((i & 1) == 0)
-	    sgngam = -1;
+	    *sign = -1;
 	else
-	    sgngam = 1;
+	    *sign = 1;
 	z = q - p;
 	if (z > 0.5) {
 	    p += 1.0;
@@ -339,11 +332,11 @@ double lgam(double x)
 	    u = x + p;
 	}
 	if (z < 0.0) {
-	    sgngam = -1;
+	    *sign = -1;
 	    z = -z;
 	}
 	else
-	    sgngam = 1;
+	    *sign = 1;
 	if (u == 2.0)
 	    return (log(z));
 	p -= 2.0;
@@ -353,7 +346,7 @@ double lgam(double x)
     }
 
     if (x > MAXLGM) {
-	return (sgngam * NPY_INFINITY);
+	return (*sign * NPY_INFINITY);
     }
 
     q = (x - 0.5) * log(x) - x + LS2PI;

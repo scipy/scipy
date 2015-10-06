@@ -72,6 +72,7 @@ extern double fdtri(double a, double b, double y);
 extern int fresnl(double xxa, double *ssa, double *cca);
 extern double Gamma(double x);
 extern double lgam(double x);
+extern double lgam_sgn(double x, int *sign);
 extern double gdtr(double a, double b, double x);
 extern double gdtrc(double a, double b, double x);
 extern int gels(double A[], double R[], int M, double EPS, double AUX[]);
