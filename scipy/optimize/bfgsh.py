@@ -122,8 +122,7 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
         2. rho, a scalar used in scipy.optimize._minimize_bfgs, was removed as
            alpha is now manually adjusted.
     Method is an application of the BFGS(Hess) function described by Sheppard
-    et al. for Nudged Elastic Band applications (though it could be used in
-    other systems).
+    et al.
 
     References
     ----------
@@ -224,8 +223,7 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         2. rho, a scalar used in scipy.optimize._minimize_bfgs, was removed as
            alpha is now manually adjusted.
     Method is an application of the BFGS(Hess) function described by Sheppard
-    et al. for Nudged Elastic Band applications (though it could be used in
-    other systems).
+    et al.
 
     References
     ----------
