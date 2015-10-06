@@ -257,7 +257,8 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     ##################################
 
     if beta > 1:
-        if disp: print("Warning - Unreasonable Beta (must be less than or\
+        if disp:
+            print("Warning - Unreasonable Beta (must be less than or\
                         equal to 1). Setting to 1.")
         beta = 1.0
 
@@ -286,16 +287,19 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     if retall:
         allvecs = [x0]
     # Main Loop:
-    if disp: print("Alpha, Beta, H_reset = %lg, %lg, %s"
+    if disp:
+        print("Alpha, Beta, H_reset = %lg, %lg, %s"
                    % (alpha,beta,str(H_reset)))
     while (gnorm > gtol) and (k < maxiter):
-        if disp: print("Step %d, " % k),
+        if disp:
+            print("Step %d, " % k),
         # Get your step direction
         sk = -numpy.dot(Hk, gfk)
 
         # If we are doing unreasonably small step sizes, quit
         if numpy.linalg.norm(sk*alpha) < 1E-7:
-            if disp: print("Error - Step size unreasonable (%lg Angstroms)" 
+            if disp:
+                print("Error - Step size unreasonable (%lg Angstroms)" 
                             % numpy.linalg.norm(sk*alpha))
             warnflag = 2
             break
@@ -315,10 +319,12 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
                         % (fval, old_fval))
                 print("\talpha: %lg" % alpha),
             alpha *= float(beta)
-            if disp: print("-> %lg\n" % alpha)
+            if disp:
+                print("-> %lg\n" % alpha)
 
             # Reset the Inverse Hessian if desired - This is recommended!
-            if H_reset: Hk = I
+            if H_reset:
+                Hk = I
             continue
         
         # Store new parameters, as it has passed the check
@@ -340,7 +346,8 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         # Update the conditional check
         gnorm = vecnorm(gfk, ord=norm)
 
-        if disp: print("gnorm %lg" % gnorm)
+        if disp:
+            print("gnorm %lg" % gnorm)
 
         # If callback is desired
         if callback is not None:
