@@ -3,6 +3,7 @@
 
 import numpy as np
 cimport numpy as np
+cimport cython
 
 from scipy.sparse import csr_matrix, isspmatrix_csc, isspmatrix
 from scipy.sparse.csgraph._validation import validate_graph
@@ -102,35 +103,36 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     return sp_tree
 
 
-cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] col_indices,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] i_sort,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] row_indices,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
-                        np.ndarray[ITYPE_t, ndim=1, mode='c'] rank):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef void _min_spanning_tree(DTYPE_t[::1] data,
+                             ITYPE_t[::1] col_indices,
+                             ITYPE_t[::1] indptr,
+                             ITYPE_t[::1] i_sort,
+                             ITYPE_t[::1] row_indices,
+                             ITYPE_t[::1] predecessors,
+                             ITYPE_t[::1] rank) nogil:
     # Work-horse routine for computing minimum spanning tree using
     #  Kruskal's algorithm.  By separating this code here, we get more
     #  efficient indexing.
-    cdef unsigned int i, j, V1, V2, R1, R2, n_edges_in_mst, n_verts
-    cdef DTYPE_t E
+    cdef unsigned int i, j, V1, V2, R1, R2, n_edges_in_mst, n_verts, n_data
     n_verts = predecessors.shape[0]
+    n_data = i_sort.shape[0]
     
     # Arrange `row_indices` to contain the row index of each value in `data`.
     # Note that the array `col_indices` already contains the column index.
-    for i from 0 <= i < n_verts:
-        for j from indptr[i] <= j < indptr[i + 1]:
+    for i in range(n_verts):
+        for j in range(indptr[i], indptr[i + 1]):
             row_indices[j] = i
     
     # step through the edges from smallest to largest.
-    #  V1 and V2 are the vertices, and E is the edge weight connecting them.
+    #  V1 and V2 are connected vertices.
     n_edges_in_mst = 0
     i = 0
-    while i < i_sort.shape[0] and n_edges_in_mst < n_verts - 1:
+    while i < n_data and n_edges_in_mst < n_verts - 1:
         j = i_sort[i]
         V1 = row_indices[j]
         V2 = col_indices[j]
-        E = data[j]
 
         # progress upward to the head node of each subtree
         R1 = V1
@@ -167,7 +169,7 @@ cdef _min_spanning_tree(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
         i += 1
         
     # We may have stopped early if we found a full-sized MST so zero out the rest
-    while i < i_sort.shape[0]:
+    while i < n_data:
         j = i_sort[i]
         data[j] = 0
         i += 1
