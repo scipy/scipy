@@ -149,7 +149,7 @@ Fukumu Tsutsumi for bug fixes.
 J.J. Green for interpolation bug fixes.
 François Magimel for documentation improvements.
 Josh Levy-Kramer for the log survival function of the hypergeometric distribution
-Henry C. Herbol for addition of the bfgs_h optimization code
+Henry C. Herbol for addition of the BFGS(Hess) optimization code
 
 Institutions
 ------------
