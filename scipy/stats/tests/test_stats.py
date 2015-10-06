@@ -751,10 +751,10 @@ class TestFindRepeats(TestCase):
 
     def test_empty_result(self):
         # Check that empty arrays are returned when there are no repeats.
-        a = [10, 20, 50, 30, 40]
-        repeated, counts = stats.find_repeats(a)
-        assert_array_equal(repeated, [])
-        assert_array_equal(counts, [])
+        for a in [[10, 20, 50, 30, 40], []]:
+            repeated, counts = stats.find_repeats(a)
+            assert_array_equal(repeated, [])
+            assert_array_equal(counts, [])
 
 
 class TestRegression(TestCase):

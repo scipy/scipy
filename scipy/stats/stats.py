@@ -183,7 +183,7 @@ import numpy as np
 from . import distributions
 from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
-from ._stats_mstats_common import find_repeats, linregress, theilslopes
+from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 
 from ._rank import rankdata, tiecorrect
 
@@ -5113,6 +5113,43 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 #####################################
 #         SUPPORT FUNCTIONS         #
 #####################################
+
+def find_repeats(arr):
+    """
+    Find repeats and repeat counts.
+
+    Parameters
+    ----------
+    arr : array_like
+        Input array. This is cast to float64.
+
+    Returns
+    -------
+    values : ndarray
+        The unique values from the (flattened) input that are repeated.
+
+    counts : ndarray
+        Number of times the corresponding 'value' is repeated.
+
+    Notes
+    -----
+    In numpy >= 1.9 `numpy.unique` provides similar functionality. The main
+    difference is that `find_repeats` only returns repeated values.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
+    RepeatedResults(values=array([ 2.]), counts=array([4]))
+
+    >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
+    RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2]))
+
+    """
+    RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
+    # Note: always copies.
+    return RepeatedResults(*_find_repeats(np.array(arr, dtype=np.float64)))
+
 
 @np.deprecate(message="scipy.stats.ss is deprecated in scipy 0.17.0")
 def ss(a, axis=0):

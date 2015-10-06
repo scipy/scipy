@@ -3,10 +3,9 @@ from collections import namedtuple
 import numpy as np
 
 from . import distributions
-from . import futil
 
 
-__all__ = ['find_repeats', 'linregress', 'theilslopes']
+__all__ = ['_find_repeats', 'linregress', 'theilslopes']
 
 
 def linregress(x, y=None):
@@ -176,11 +175,12 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> plt.show()
 
     """
-    y = np.asarray(y).flatten()
+    # We copy both x and y so we can use _find_repeats.
+    y = np.array(y).flatten()
     if x is None:
         x = np.arange(len(y), dtype=float)
     else:
-        x = np.asarray(x, dtype=float).flatten()
+        x = np.array(x, dtype=float).flatten()
         if len(x) != len(y):
             raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
 
@@ -197,8 +197,8 @@ def theilslopes(y, x=None, alpha=0.95):
 
     z = distributions.norm.ppf(alpha / 2.)
     # This implements (2.6) from Sen (1968)
-    _, nxreps = find_repeats(x)
-    _, nyreps = find_repeats(y)
+    _, nxreps = _find_repeats(x)
+    _, nyreps = _find_repeats(y)
     nt = len(slopes)       # N in Sen (1968)
     ny = len(y)            # n in Sen (1968)
     # Equation 2.6 in Sen (1968):
@@ -213,42 +213,20 @@ def theilslopes(y, x=None, alpha=0.95):
     return medslope, medinter, delta[0], delta[1]
 
 
-def find_repeats(arr):
-    """
-    Find repeats and repeat counts.
+def _find_repeats(arr):
+    # This function assumes it may clobber its input.
+    if len(arr) == 0:
+        return np.array(0, np.float64), np.array(0, np.intp)
 
-    Parameters
-    ----------
-    arr : array_like
-        Input array
+    # XXX This cast was previously needed for the Fortran implementation,
+    # should we ditch it?
+    arr = np.asarray(arr, np.float64).ravel()
+    arr.sort()
 
-    Returns
-    -------
-    values : ndarray
-        The unique values from the (flattened) input that are repeated.
-
-    counts : ndarray
-        Number of times the corresponding 'value' is repeated.
-
-    Notes
-    -----
-    In numpy >= 1.9 `numpy.unique` provides similar functionality. The main
-    difference is that `find_repeats` only returns repeated values.
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-    RepeatedResults(values=array([ 2.]), counts=array([4], dtype=int32))
-
-    >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-    RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2], dtype=int32))
-
-    """
-    RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
-
-    if np.asarray(arr).size == 0:
-        return RepeatedResults([], [])
-
-    v1, v2, n = futil.dfreps(arr)
-    return RepeatedResults(v1[:n], v2[:n])
+    # Taken from NumPy 1.9's np.unique.
+    change = np.concatenate(([True], arr[1:] != arr[:-1]))
+    unique = arr[change]
+    change_idx = np.concatenate(np.nonzero(change) + ([arr.size],))
+    freq = np.diff(change_idx)
+    atleast2 = freq > 1
+    return unique[atleast2], freq[atleast2]
