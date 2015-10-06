@@ -834,6 +834,73 @@ class ClusterNode:
 
         return preorder
 
+    def traversal_paths(self, absolute=False):
+        """
+        Performs pre-order traversal without recursive function calls and record the 
+        path for each leaf node.
+
+        When a leaf node is first encountered, the path of the traversal is recorded
+        , and the path is appended to the list of paths. The order of paths is the same 
+        with that of the leaves returned by pre_order function.
+
+        Parameters
+        ----------       
+        absolute: boolean
+            if absolute is true, the traversal paths are the full path (from root the leave);
+            otherwise, shortest relative paths will be returned
+
+        Returns
+        -------
+        L : list
+            The pre-order traversal paths.
+
+        """
+
+        # Do a preorder traversal, caching the result. To avoid having to do
+        # recursion, we'll store the previous index we've visited in a vector.
+        n = self.count
+        rootid = self.id
+
+        curNode = [None] * (2 * n)
+        lvisited = np.zeros((2 * n,), dtype=bool)
+        rvisited = np.zeros((2 * n,), dtype=bool)
+        curNode[0] = self
+        k = 0
+        preorder_paths = []
+        path = []
+        while k >= 0:
+            nd = curNode[k]
+            ndid = nd.id
+            path.append(ndid)
+            if nd.is_leaf():
+                preorder_paths.append(path)
+                path = []
+                k = k - 1
+            else:
+                if not lvisited[ndid]:
+                    curNode[k + 1] = nd.left
+                    lvisited[ndid] = True
+                    k = k + 1
+                elif not rvisited[ndid]:
+                    curNode[k + 1] = nd.right
+                    rvisited[ndid] = True
+                    k = k + 1
+                # If we've visited the left and right of this non-leaf
+                # node already, go up in the tree.
+                else:
+                    path.pop()
+                    k = k - 1
+        if absolute:
+            for path in preorder_paths:
+                if path[0] == rootid:
+                    path_from_root = path[0:-1]
+                else:
+                    idx = path_from_root.index(path[0])
+                    for i in range(idx-1,-1,-1):
+                        path.insert(0, path_from_root[i])
+                    path_from_root.extend(path[idx+1:-1])
+        return preorder_paths
+
 _cnode_bare = ClusterNode(0)
 _cnode_type = type(ClusterNode)
 
