@@ -2688,6 +2688,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`Powell      <optimize.minimize-powell>`
     - :ref:`CG          <optimize.minimize-cg>`
     - :ref:`BFGS        <optimize.minimize-bfgs>`
+    - :ref:`BFGS-H      <optimize.minimize-bfgsh>`
     - :ref:`Newton-CG   <optimize.minimize-newtoncg>`
     - :ref:`L-BFGS-B    <optimize.minimize-lbfgsb>`
     - :ref:`TNC         <optimize.minimize-tnc>`
@@ -2725,6 +2726,7 @@ def show_options(solver=None, method=None, disp=True):
     doc_routines = {
         'minimize': (
             ('bfgs', 'scipy.optimize.optimize._minimize_bfgs'),
+            ('bfgsh', 'scipy.optimize.bfgsh._minimize_bfgs_h'),
             ('cg', 'scipy.optimize.optimize._minimize_cg'),
             ('cobyla', 'scipy.optimize.cobyla._minimize_cobyla'),
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),

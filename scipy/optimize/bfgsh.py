@@ -1,3 +1,12 @@
+"""
+Functions
+---------
+.. autosummary::
+   :toctree: generated/
+
+    fmin_bfgs_h
+
+"""
 # ******NOTICE***************
 # bfgs_h.py module by Henry C. Herbol
 #
@@ -14,6 +23,8 @@
 import numpy
 from numpy import (Inf, sqrt)
 from .optimize import (vecnorm, wrap_function, _check_unknown_options, OptimizeResult)
+
+__all__ = ['fmin_bfgs_h', '_minimize_bfgs_h']
 
 _epsilon = sqrt(numpy.finfo(float).eps)
 # standard status messages of optimizers
@@ -123,6 +134,8 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
       Methods Math. Comp., Volume 24, pp. 365-382
     * Sheppard, D., Terrell, R., and Henkelman, G. (2007) Optimization Methods
       for Finding Minimum Energy Paths. doi: 10.1063/1.2841941
+
+    .. versionadded:: 0.17.0
     """
     opts = {'gtol': gtol,
             'alpha': alpha,
@@ -152,10 +165,6 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     gtol=1e-5, alpha=0.5, beta=0.7, H_reset=True, norm=Inf,
     eps=_epsilon, maxiter=None, disp=False, return_all=False,
     **unknown_options):
-    
-    print("\n\tgtol, alpha, beta, H_reset = %lg, %lg, %lg, %s" 
-    % ( gtol, alpha, beta, str(H_reset)))
-    disp=0
     """
     Gradient Minimization independent of target function using the BFGS
     algorithm while applying the inverse hessian directly to steps.
@@ -225,6 +234,8 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
       Methods Math. Comp., Volume 24, pp. 365-382
     * Sheppard, D., Terrell, R., and Henkelman, G. (2007) Optimization Methods
       for Finding Minimum Energy Paths. doi: 10.1063/1.2841941
+
+    .. versionadded:: 0.17.0
     """
 
     # Interface code with scipy output

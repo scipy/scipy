@@ -28,7 +28,7 @@ from ._trustregion_ncg import _minimize_trust_ncg
 
 # constrained minimization
 from .lbfgsb import _minimize_lbfgsb
-from .bfgs_h import _minimize_bfgs_h
+from .bfgsh import _minimize_bfgs_h
 from .tnc import _minimize_tnc
 from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
@@ -189,6 +189,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Method :ref:`BFGS-H <optimize.minimize-bfgsh>` uses the BFGS-H
     algorithm [13]_, [14]_, [15]_, [16]_ for target function
     independent optimization given a gradient.
+    .. versionadded:: 0.17.0
 
     Method :ref:`Newton-CG <optimize.minimize-newtoncg>` uses a
     Newton-CG algorithm [5]_ pp. 168 (also known as the truncated

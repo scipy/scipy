@@ -27,6 +27,9 @@ Linear assignment problem solver
 ``scipy.optimize.linear_sum_assignment`` is a new function for solving the
 linear sum assignment problem. It uses the Hungarian algorithm (Kuhn-Munkres).
 
+``scipy.optimize.fmin_bfgs_h`` is a gradient based function for minimization 
+independent of the target function itself.
+
 
 Deprecated features
 ===================

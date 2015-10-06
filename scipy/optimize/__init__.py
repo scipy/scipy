@@ -27,7 +27,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-powell
    optimize.minimize-cg
    optimize.minimize-bfgs
-   optimize.minimize-bfgs-h
+   optimize.minimize-bfgsh
    optimize.minimize-newtoncg
    optimize.minimize-lbfgsb
    optimize.minimize-tnc
@@ -237,7 +237,7 @@ from ._root import *
 from .minpack import *
 from .zeros import *
 from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
-from .bfgs_h import fmin_bfgs_h
+from .bfgsh import fmin_bfgs_h
 from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *
