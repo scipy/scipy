@@ -146,5 +146,14 @@ def test_rbf_epsilon_none():
     rbf = Rbf(x, y, epsilon=None)
 
 
+def test_rbf_epsilon_none_collinear():
+    # Check that collinear points in one dimension doesn't cause an error
+    # due to epsilon = 0
+    x = [1, 2, 3]
+    y = [4, 4, 4]
+    z = [5, 6, 7]
+    rbf = Rbf(x, y, z, epsilon=None)
+    assert_(rbf.epsilon > 0)
+
 if __name__ == "__main__":
     run_module_suite()

@@ -200,11 +200,14 @@ class Rbf(object):
         r = self._call_norm(self.xi, self.xi)
         self.epsilon = kwargs.pop('epsilon', None)
         if self.epsilon is None:
-            # default epsilon is the "the average distance between nodes"
+            # default epsilon is the "the average distance between nodes" based
+            # on a bounding hypercube
             dim = self.xi.shape[0]
             ximax = np.amax(self.xi, axis=1)
             ximin = np.amin(self.xi, axis=1)
-            self.epsilon = np.power(np.prod(ximax - ximin)/self.N, 1.0/dim)
+            edges = ximax-ximin
+            edges = edges[np.nonzero(edges)]
+            self.epsilon = np.power(np.prod(edges)/self.N, 1.0/edges.size)
         self.smooth = kwargs.pop('smooth', 0.0)
 
         self.function = kwargs.pop('function', 'multiquadric')
