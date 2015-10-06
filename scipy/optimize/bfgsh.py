@@ -22,7 +22,7 @@ Functions
 
 import numpy
 from numpy import (Inf, sqrt)
-from .optimize import (vecnorm, wrap_function, _check_unknown_options, OptimizeResult)
+from .optimize import (vecnorm, wrap_function, _check_unknown_options, OptimizeResult, approx_fprime)
 
 __all__ = ['fmin_bfgs_h', '_minimize_bfgs_h']
 
@@ -117,10 +117,11 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
     Shanno (BFGS) algorithm independent of target functions.  Instead
     of using a line search for the step size alpha, the following 
     adjustments have been made:
-        1. alpha is a constant that is changed by beta whenever f(x0)
-           indicates the maximum has increased.
-        2. rho, a scalar used in scipy.optimize._minimize_bfgs, was removed as
-           alpha is now manually adjusted.
+    
+    * alpha is a constant that is changed by beta whenever f(x0)
+      indicates the maximum has increased.
+    * rho, a scalar used in scipy.optimize._minimize_bfgs, was removed as
+      alpha is now manually adjusted.
     Method is an application of the BFGS(Hess) function described by Sheppard
     et al.
 
@@ -218,10 +219,11 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     Shanno (BFGS) algorithm independent of target functions.  Instead
     of using a line search for the step size alpha, the following 
     adjustments have been made:
-        1. alpha is a constant that is changed by beta whenever f(x0)
-           indicates the maximum has increased.
-        2. rho, a scalar used in scipy.optimize._minimize_bfgs, was removed as
-           alpha is now manually adjusted.
+
+    * alpha is a constant that is changed by beta whenever f(x0)
+      indicates the maximum has increased.
+    * rho, a scalar used in scipy.optimize._minimize_bfgs, was removed as
+      alpha is now manually adjusted.
     Method is an application of the BFGS(Hess) function described by Sheppard
     et al.
 
