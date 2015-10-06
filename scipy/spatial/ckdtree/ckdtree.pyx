@@ -10,7 +10,7 @@ import numpy as np
 import scipy.sparse
 
 cimport numpy as np
-from numpy.math cimport isinf, INFINITY
+from numpy.math cimport INFINITY
     
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
@@ -22,19 +22,20 @@ import threading
 cdef extern from "limits.h":
     long LONG_MAX
     
-cdef extern from "ckdtree_cpp_methods.h":
+cdef extern from "ckdtree_cpp_methods.h" nogil:
     int number_of_processors
     np.float64_t dmax(np.float64_t x, np.float64_t y)
     np.float64_t dabs(np.float64_t x)
     np.float64_t _distance_p(np.float64_t *x, np.float64_t *y,
                        np.float64_t p, np.intp_t k, np.float64_t upperbound)
+    bint isinf "ckdtree_isinf"(np.float64_t)
 number_of_processors = cpu_count()
 
 from libcpp.vector cimport vector
 
 __all__ = ['cKDTree']
 
-    
+
 # Borrowed references
 # ===================
 

@@ -232,14 +232,14 @@ __query_single_point(const ckdtree *self,
             if (t > inf->side_distances[i])
                 inf->side_distances[i] = t;
         }
-        if (p != 1 && !npy_isinf(p))
+        if (p != 1 && !ckdtree_isinf(p))
             inf->side_distances[i] = std::pow(inf->side_distances[i],p);
     }
     
     // compute first distance
     min_distance = 0.;
     for (i=0; i<m; ++i) {
-        if (npy_isinf(p))
+        if (ckdtree_isinf(p))
             min_distance = dmax(min_distance,inf->side_distances[i]);
         else
             min_distance += inf->side_distances[i];
@@ -248,13 +248,13 @@ __query_single_point(const ckdtree *self,
     // fiddle approximation factor
     if (eps == 0.)
         epsfac = 1.;
-    else if (npy_isinf(p))
+    else if (ckdtree_isinf(p))
         epsfac = 1./(1+eps);
     else
         epsfac = 1./std::pow((1+eps),p);
 
     // internally we represent all distances as distance**p
-    if (!(npy_isinf(p) || npy_isinf(distance_upper_bound)))
+    if (!(ckdtree_isinf(p) || ckdtree_isinf(distance_upper_bound)))
         distance_upper_bound = std::pow(distance_upper_bound,p);
 
     for(;;) {
@@ -365,7 +365,7 @@ __query_single_point(const ckdtree *self,
                     inf->side_distances[inode->split_dim] +
                         inf2->side_distances[inode->split_dim];
             } 
-            else if (npy_isinf(p)) {
+            else if (ckdtree_isinf(p)) {
                 /*
                  * we never use side_distances in the l_infinity case
                  * so skip filling it in
@@ -396,7 +396,7 @@ __query_single_point(const ckdtree *self,
     for (i=neighbors.n-1; i>=0; --i) {
         neighbor = neighbors.pop();
         result_indices[i] = neighbor.contents.intdata;
-        if (p == 1. || npy_isinf(p))
+        if (p == 1. || ckdtree_isinf(p))
             result_distances[i] = -neighbor.priority;
         else
             result_distances[i] = std::pow((-neighbor.priority),(1./p));
