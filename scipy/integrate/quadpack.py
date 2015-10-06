@@ -570,7 +570,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
                    epsabs=epsabs, epsrel=epsrel)
 
 
-def nquad(func, ranges, args=None, opts=None):
+def nquad(func, ranges, args=None, opts=None, full_output=False):
     """
     Integration over multiple variables.
 
@@ -699,7 +699,7 @@ def nquad(func, ranges, args=None, opts=None):
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
 
-    return _NQuad(func, ranges, opts).integrate(*args)
+    return _NQuad(func, ranges, opts, full_output).integrate(*args)
 
 
 class _RangeFunc(object):
@@ -725,12 +725,15 @@ class _OptFunc(object):
 
 
 class _NQuad(object):
-    def __init__(self, func, ranges, opts):
+    def __init__(self, func, ranges, opts, full_output):
         self.abserr = 0
         self.func = func
         self.ranges = ranges
         self.opts = opts
         self.maxdepth = len(ranges)
+        self.full_output = full_output
+        if self.full_output:
+            self.out_dict = {'neval': 0}
 
     def integrate(self, *args, **kwargs):
         depth = kwargs.pop('depth', 0)
@@ -750,11 +753,22 @@ class _NQuad(object):
             f = self.func
         else:
             f = partial(self.integrate, depth=depth+1)
-
-        value, abserr = quad(f, low, high, args=args, **opt)
+        quad_r = quad(f, low, high, args=args, full_output=True, **opt)
+        out = {}
+        for key, item in zip(
+                ('value', 'abserr', 'infodict', 'message', 'explain'), quad_r):
+            out[key] = item
+        value = out.pop('value')
+        abserr = out.pop('abserr')
+        if self.full_output:
+            if depth + 1 == self.maxdepth:
+                self.out_dict['neval'] += out['infodict']['neval']
         self.abserr = max(self.abserr, abserr)
         if depth > 0:
             return value
         else:
             # Final result of n-D integration with error
-            return value, self.abserr
+            if self.full_output:
+                return value, self.abserr, self.out_dict
+            else:
+                return value, self.abserr
