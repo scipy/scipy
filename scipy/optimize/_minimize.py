@@ -185,7 +185,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     performance even for non-smooth optimizations. This method also
     returns an approximation of the Hessian inverse, stored as
     `hess_inv` in the OptimizeResult object.
+    
+    Method :ref:`BFGS-H <optimize.minimize-bfgsh>` uses the BFGS(Hess)
+    algorithm described by Sheppard et al. [13]_, [14]_, [15]_, [16]_
+    for target function independent optimization given a gradient.
 
+    .. versionadded:: 0.17.0
+    
     Method :ref:`Newton-CG <optimize.minimize-newtoncg>` uses a
     Newton-CG algorithm [5]_ pp. 168 (also known as the truncated
     Newton method). It uses a CG method to the compute the search
@@ -253,14 +259,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     the method.  You can find an example in the scipy.optimize tutorial.
 
     .. versionadded:: 0.11.0
-
-    **Unconstrained minimization**
-    
-    Method :ref:`BFGS-H <optimize.minimize-bfgsh>` uses the BFGS(Hess)
-    algorithm described by Sheppard et al. [13]_, [14]_, [15]_, [16]_
-    for target function independent optimization given a gradient.
-
-    .. versionadded:: 0.17.0
 
     References
     ----------
