@@ -28,6 +28,18 @@ class _TestConvolve(TestCase):
         c = convolve(a, b)
         assert_array_equal(c, array([3, 10, 22, 28, 32, 32, 23, 12]))
 
+    def test_same(self):
+        a = [3, 4, 5]
+        b = [1, 2, 3, 4]
+        c = convolve(a, b, mode="same")
+        assert_array_equal(c, array([10, 22, 34]))
+
+    def test_same_eq(self):
+        a = [3, 4, 5]
+        b = [1, 2, 3]
+        c = convolve(a, b, mode="same")
+        assert_array_equal(c, array([10, 22, 22]))
+
     def test_complex(self):
         x = array([1 + 1j, 2 + 1j, 3 + 1j])
         y = array([1 + 1j, 2 + 1j])
@@ -1055,6 +1067,18 @@ class _TestCorrelateComplex(TestCase):
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
         assert_equal(y.dtype, self.dt)
+
+    def test_swap_full(self):
+        d = np.array([0.+0.j, 1.+1.j, 2.+2.j], dtype=self.dt)
+        k = np.array([1.+3.j, 2.+4.j, 3.+5.j, 4.+6.j], dtype=self.dt)
+        y = correlate(d, k)
+        assert_equal(y, [0.+0.j, 10.-2.j, 28.-6.j, 22.-6.j, 16.-6.j, 8.-4.j])
+
+    def test_swap_same(self):
+        d = [0.+0.j, 1.+1.j, 2.+2.j]
+        k = [1.+3.j, 2.+4.j, 3.+5.j, 4.+6.j]
+        y = correlate(d, k, mode="same")
+        assert_equal(y, [10.-2.j, 28.-6.j, 22.-6.j])
 
     def test_rank3(self):
         a = np.random.randn(10, 8, 6).astype(self.dt)
