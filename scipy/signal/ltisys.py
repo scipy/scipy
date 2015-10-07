@@ -2029,7 +2029,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             requested_poles : 1-D ndarray
                 The poles the algorithm was asked to place sorted as above,
                 they may differ from what was achieved.
-            X : 2D ndarray
+            X : 2-D ndarray
                 The transfer matrix such as ``X * diag(poles) = (A - B*K)*X``
                 (see Notes)
             rtol : float
@@ -2276,9 +2276,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             else:
                 transfer_matrix = np.hstack((transfer_matrix, transfer_matrix_j))
 
-        if rankB > 1:
-            # FIXME !!!!
-            # either have nothing to update (KNV0) or fail (YT)
+        if rankB > 1:  # otherwise there is nothing we can optimize
             stop, cur_rtol, nb_iter = update_loop(ker_pole, transfer_matrix,
                                                   poles, B, maxiter, rtol)
             if not stop and rtol > 0:
