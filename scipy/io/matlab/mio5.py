@@ -440,11 +440,11 @@ def to_writeable(source):
                 dtype.append((field, object))
                 values.append(value)
         if dtype:
-            return np.array([tuple(values)], dtype)
+            return np.array([tuple(values)], dtype, order='F')
         else:
             return EmptyStructMarker
     # Next try and convert to an array
-    narr = np.asanyarray(source)
+    narr = np.asanyarray(source, order='F')
     if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible
@@ -492,7 +492,10 @@ class VarWriter5(object):
         self.cur_arrname = None
 
     def write_bytes(self, arr):
-        self.file_stream.write(arr.tostring(order='F'))
+        if arr.flags['F_CONTIGUOUS']:
+            self.file_stream.write(arr.data)
+        else:
+            self.file_stream.write(arr.tostring(order='F'))
 
     def write_string(self, s):
         self.file_stream.write(s)
