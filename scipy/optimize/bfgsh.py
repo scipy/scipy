@@ -308,18 +308,21 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         if disp:
             print("Step %d, " % k),
         # Get your step direction
-        sk = -numpy.dot(Hk, gfk)
+        pk = -numpy.dot(Hk, gfk)
 
         # If we are doing unreasonably small step sizes, quit
-        if numpy.linalg.norm(sk*alpha) < 1E-7:
+        if numpy.linalg.norm(pk*alpha) < 1E-7:
             if disp:
                 print("Error - Step size unreasonable (%lg)" 
-                            % numpy.linalg.norm(sk*alpha))
+                            % numpy.linalg.norm(pk*alpha))
             warnflag = 2
             break
 
         # Hold new parameters
-        xkp1 = xk + alpha * sk
+        xkp1 = xk + alpha * pk
+
+        # Recalculate sk to maintain the secant condition
+        sk = xkp1 - xk
 
         # Get the new gradient
         gfkp1 = fprime(xkp1)
