@@ -313,7 +313,7 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         # If we are doing unreasonably small step sizes, quit
         if numpy.linalg.norm(sk*alpha) < 1E-7:
             if disp:
-                print("Error - Step size unreasonable (%lg Angstroms)" 
+                print("Error - Step size unreasonable (%lg)" 
                             % numpy.linalg.norm(sk*alpha))
             warnflag = 2
             break
