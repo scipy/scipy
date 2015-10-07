@@ -304,7 +304,12 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     if disp:
         print("Alpha, Beta, H_reset = %lg, %lg, %s"
                    % (alpha,beta,str(H_reset)))
+
+    backtrack = 0
     while (gnorm > gtol) and (k < maxiter):
+        if backtrack >= 10:
+            warnflag = 2
+            break
         if disp:
             print("Step %d, " % k),
         # Get your step direction
@@ -343,6 +348,7 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
             # Reset the Inverse Hessian if desired - This is recommended!
             if H_reset:
                 Hk = I
+            backtrack += 1
             continue
         
         # Store new parameters, as it has passed the check
