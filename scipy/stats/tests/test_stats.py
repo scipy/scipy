@@ -939,9 +939,9 @@ class TestHistogram(TestCase):
         # weights used (first n are used for each test, where n is len of array) (14 values)
         weights = np.array([1., 3., 4.5, 0.1, -1.0, 0.0, 0.3, 7.0, 103.2, 2, 40, 0, 0, 1])
         # results taken from the numpy version of histogram
-        basic_tests = ((self.low_values, (np.array([4.0, 0.0, 4.5, -0.9, 0.0,
-                                                      0.3,110.2, 0.0, 0.0, 42.0]),
-                                          0.2, 0.1, 0)),
+        basic_tests = ((self.low_values, (np.array([4.0, 0.0, 4.5, -0.9, 0.3,
+                                                      0.0, 7.0, 103.2, 0.0, 42.0]),
+                                         0.2, 0.1, 0)),
                        (self.high_range, (np.array([9.6, 0., -1., 0., 0.,
                                                       0.,145.2, 0., 0.3, 7.]),
                                           2.0, 9.3, 0)),
