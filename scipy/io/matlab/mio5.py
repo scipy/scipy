@@ -440,16 +440,31 @@ def to_writeable(source):
                 dtype.append((field, object))
                 values.append(value)
         if dtype:
-            return np.array([tuple(values)], dtype)
+            return np.array([tuple(values)], dtype, order='F')
         else:
             return EmptyStructMarker
     # Next try and convert to an array
-    narr = np.asanyarray(source)
+    narr = np.asanyarray(source, order='F')
     if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible
         return None
     return narr
+
+
+class VarWriter5ByteCounter(object):
+    ''' Pseudo file stream for byte counting in place of writing '''
+    def __init__(self, matrix_writer):
+        self.byte_count_dict = matrix_writer.byte_count_dict
+        self.matrix_writer = matrix_writer
+        # Reset byte count dictionary for each new variable/call to write_top
+        self.byte_count_dict.clear()
+        # Optimization for faster updates
+        self.get_bcd = self.byte_count_dict.get
+
+    def write(self, filestr):
+        arrname = self.matrix_writer.cur_arrname
+        self.byte_count_dict[arrname] = self.get_bcd(arrname, 0) + len(filestr)
 
 
 # Native byte ordered dtypes for convenience for writers
@@ -472,9 +487,15 @@ class VarWriter5(object):
         # These are used for top level writes, and unset after
         self._var_name = None
         self._var_is_global = False
+        # These are used for byte counting
+        self.byte_count_dict = dict()
+        self.cur_arrname = None
 
     def write_bytes(self, arr):
-        self.file_stream.write(arr.tostring(order='F'))
+        if arr.flags['F_CONTIGUOUS']:
+            self.file_stream.write(arr.data)
+        else:
+            self.file_stream.write(arr.tostring(order='F'))
 
     def write_string(self, s):
         self.file_stream.write(s)
@@ -532,8 +553,14 @@ class VarWriter5(object):
         # get name and is_global from one-shot object store
         name = self._var_name
         is_global = self._var_is_global
-        # initialize the top-level matrix tag, store position
-        self._mat_tag_pos = self.file_stream.tell()
+        # write the top-level matrix tag
+        count_keys = self.byte_count_dict.keys()
+        cur_keys = [x for x in count_keys if x.startswith(self.cur_arrname)]
+        byte_count = sum(map(self.byte_count_dict.get, cur_keys)) - 8
+        if byte_count >= 2**32:
+            raise MatWriteError("Matrix too large to save with Matlab "
+                                "5 format")
+        self.mat_tag['byte_count'] = byte_count
         self.write_bytes(self.mat_tag)
         # write array flags (complex, global, logical, class, nzmax)
         af = np.zeros((), NDT_ARRAY_FLAGS)
@@ -555,17 +582,6 @@ class VarWriter5(object):
         self._var_name = ''
         self._var_is_global = False
 
-    def update_matrix_tag(self, start_pos):
-        curr_pos = self.file_stream.tell()
-        self.file_stream.seek(start_pos)
-        byte_count = curr_pos - start_pos - 8
-        if byte_count >= 2**32:
-            raise MatWriteError("Matrix too large to save with Matlab "
-                                "5 format")
-        self.mat_tag['byte_count'] = byte_count
-        self.write_bytes(self.mat_tag)
-        self.file_stream.seek(curr_pos)
-
     def write_top(self, arr, name, is_global):
         """ Write variable at top level of mat file
 
@@ -583,6 +599,15 @@ class VarWriter5(object):
         # the end of the same write, because they do not apply for lower levels
         self._var_is_global = is_global
         self._var_name = name
+        real_file_stream = self.file_stream
+        self.file_stream = VarWriter5ByteCounter(self)
+        self.cur_arrname = "top"
+        # Count bytes of header and data
+        self.write(arr)
+        self._var_is_global = is_global
+        self._var_name = name
+        self.file_stream = real_file_stream
+        self.cur_arrname = "top"
         # write the header and data
         self.write(arr)
 
@@ -594,12 +619,9 @@ class VarWriter5(object):
         arr : array_like
             array-like object to create writer for
         '''
-        # store position, so we can update the matrix tag
-        mat_tag_pos = self.file_stream.tell()
         # First check if these are sparse
         if scipy.sparse.issparse(arr):
             self.write_sparse(arr)
-            self.update_matrix_tag(mat_tag_pos)
             return
         # Try to convert things that aren't arrays
         narr = to_writeable(arr)
@@ -624,7 +646,6 @@ class VarWriter5(object):
             self.write_char(narr, codec)
         else:
             self.write_numeric(narr)
-        self.update_matrix_tag(mat_tag_pos)
 
     def write_numeric(self, arr):
         imagf = arr.dtype.kind == 'c'
@@ -719,8 +740,11 @@ class VarWriter5(object):
                           mxCELL_CLASS)
         # loop over data, column major
         A = np.atleast_2d(arr).flatten('F')
-        for el in A:
+        root_arrname = self.cur_arrname
+        for elid, el in enumerate(A):
+            self.cur_arrname = root_arrname+".__"+str(elid)
             self.write(el)
+        self.cur_arrname = root_arrname
 
     def write_empty_struct(self):
         self.write_header((1, 1), mxSTRUCT_CLASS)
@@ -747,9 +771,12 @@ class VarWriter5(object):
             np.array(fieldnames, dtype='S%d' % (length)),
             mdtype=miINT8)
         A = np.atleast_2d(arr).flatten('F')
-        for el in A:
+        root_arrname = self.cur_arrname
+        for elid, el in enumerate(A):
             for f in fieldnames:
+                self.cur_arrname = root_arrname+".__"+str(elid)+"-"+str(f)
                 self.write(el[f])
+        self.cur_arrname = root_arrname
 
     def write_object(self, arr):
         '''Same as writing structs, except different mx class, and extra
@@ -760,6 +787,28 @@ class VarWriter5(object):
         self.write_element(np.array(arr.classname, dtype='S'),
                            mdtype=miINT8)
         self._write_items(arr)
+
+
+class ZlibOutputStream(object):
+    ''' Simple container for writing to a zlib compression stream '''
+    def __init__(self, file_stream):
+        self.file_stream = file_stream
+        self.zobj = zlib.compressobj()
+
+    def write(self, filestr):
+        if len(filestr) < (2**31):
+            self.file_stream.write(self.zobj.compress(filestr))
+        else:
+            rounds = int(np.ceil(1.0*len(filestr)/(2**30)))
+            for idx in xrange(rounds):
+                substr = filestr[idx * (2**30):(idx+1) * (2**30)]
+                self.file_stream.write(self.zobj.compress(substr))
+
+    def flush(self):
+        self.file_stream.write(self.zobj.flush(zlib.Z_SYNC_FLUSH))
+
+    def close(self):
+        self.file_stream.write(self.zobj.flush())
 
 
 class MatFile5Writer(object):
@@ -833,14 +882,19 @@ class MatFile5Writer(object):
                 continue
             is_global = name in self.global_vars
             if self.do_compression:
-                stream = BytesIO()
-                self._matrix_writer.file_stream = stream
-                self._matrix_writer.write_top(var, asbytes(name), is_global)
-                out_str = zlib.compress(stream.getvalue())
+                start_pos = self.file_stream.tell()
                 tag = np.empty((), NDT_TAG_FULL)
                 tag['mdtype'] = miCOMPRESSED
-                tag['byte_count'] = len(out_str)
+                tag['byte_count'] = 0
                 self.file_stream.write(tag.tostring())
-                self.file_stream.write(out_str)
+                stream = ZlibOutputStream(self.file_stream)
+                self._matrix_writer.file_stream = stream
+                self._matrix_writer.write_top(var, asbytes(name), is_global)
+                stream.close()
+                curr_pos = self.file_stream.tell()
+                self.file_stream.seek(start_pos)
+                tag['byte_count'] = curr_pos - start_pos - tag.nbytes
+                self.file_stream.write(tag.tostring())
+                self.file_stream.seek(curr_pos)
             else:  # not compressing
                 self._matrix_writer.write_top(var, asbytes(name), is_global)
