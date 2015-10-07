@@ -15,6 +15,10 @@ import numpy as np
 import numpy.matlib
 import scipy
 import math
+from scipy._lib._version import NumpyVersion
+
+# Whether Numpy has stacked matrix linear algebra
+HAS_NUMPY_VEC_DET = (NumpyVersion(np.__version__) >= '1.8.0')
 
 __all__ = ['SphericalVoronoi']
 
@@ -80,20 +84,20 @@ def calc_circumcenters(tetrahedrons):
     dy = np.delete(d, 2, axis=2)
     dz = np.delete(d, 3, axis=2)
 
-    try:
+    if HAS_NUMPY_VEC_DET:
         dx = np.linalg.det(dx)
         dy = -np.linalg.det(dy)
         dz = np.linalg.det(dz)
         a = np.linalg.det(a)
-    except np.linalg.LinAlgError:
+    else:
         dx = np.array([determinant_fallback(m) for m in dx])
         dy = -np.array([determinant_fallback(m) for m in dy])
         dz = np.array([determinant_fallback(m) for m in dz])
         a = np.array([determinant_fallback(m) for m in a])
 
     nominator = np.vstack((dx, dy, dz))
-    denominator = np.matlib.repmat(2 * a, 3, 1)
-    return (nominator / denominator).transpose()
+    denominator = 2*a
+    return (nominator / denominator).T
 
 
 def project_to_sphere(points, center, radius):
@@ -257,9 +261,9 @@ class SphericalVoronoi:
         self.vertices = None
         self.regions = None
         self._tri = None
-        self.calc_vertices_regions()
+        self._calc_vertices_regions()
 
-    def calc_vertices_regions(self):
+    def _calc_vertices_regions(self):
         """
         Calculates the Voronoi vertices and regions of the generators stored
         in self.points. The vertices will be stored in self.vertices and the
