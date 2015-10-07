@@ -89,13 +89,13 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
     xopt : ndarray
         Parameters which minimize f, i.e. f(xopt) == fopt.
     fopt : float
-        Minimum value.
+        Minimum value. If function f was None, then fopt == None.
     gopt : ndarray
         Value of gradient at minimum, f'(xopt), which should be near 0.
     Bopt : ndarray
         Value of 1/f''(xopt), i.e. the inverse hessian matrix.
     func_calls : int
-        Number of function_calls made.
+        Number of function_calls made. If function f was None, then 0.
     grad_calls : int
         Number of gradient calls made.
     warnflag : integer
@@ -205,15 +205,15 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     Returns
     -------
     xopt : ndarray
-        Parameters that minimize f(x0).
+        Parameters which minimize f, i.e. f(xopt) == fopt.
     fopt : float
-        Minimum value.
-    gopt : float
-        Gradient norm for f(xopt).
+        Minimum value. If function f was None, then fopt == None.
+    gopt : ndarray
+        Value of gradient at minimum, f'(xopt), which should be near 0.
     Bopt : ndarray
-        The inverse hessian matrix.
+        Value of 1/f''(xopt), i.e. the inverse hessian matrix.
     func_calls : int
-        Number of function_calls made.
+        Number of function_calls made. If function f was None, then 0.
     grad_calls : int
         Number of gradient calls made.
     warnflag : integer
@@ -351,7 +351,8 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
             allvecs.append(xk)
         
         # Store new max value in old_max for future comparison
-        old_fval = fval
+        if f is not None:
+            old_fval = fval
 
         # Get difference in gradients for further calculations
         yk = gfkp1 - gfk
@@ -380,7 +381,11 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + \
              (sk[:, numpy.newaxis] * sk[numpy.newaxis, :])
 
-    fval = old_fval
+    if f is not None:
+        fval = old_fval
+    else:
+        fval = float('NaN')
+
     if numpy.isnan(fval):
         # This can happen if the first call to f returned NaN;
         # the loop is then never entered.
