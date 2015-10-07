@@ -3361,9 +3361,13 @@ class t_gen(rv_continuous):
         return -special.stdtrit(df, q)
 
     def _stats(self, df):
-        mu2 = where(df > 2, df / (df-2.0), inf)
-        g1 = where(df > 3, 0.0, nan)
-        g2 = where(df > 4, 6.0/(df-4.0), nan)
+        mu2 = _lazywhere(df > 2, (df,),
+                         lambda df: df / (df-2.0),
+                         np.inf)
+        g1 = where(df > 3, 0.0, np.nan)
+        g2 = _lazywhere(df > 4, (df,),
+                        lambda df: 6.0 / (df-4.0),
+                        np.nan)
         return 0, mu2, g1, g2
 t = t_gen(name='t')
 
