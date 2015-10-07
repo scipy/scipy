@@ -2277,7 +2277,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 transfer_matrix = np.hstack((transfer_matrix, transfer_matrix_j))
 
         if rankB > 1:
-            # otherwise all ker_pole_j will have only one column so we'll
+            # FIXME !!!!
             # either have nothing to update (KNV0) or fail (YT)
             stop, cur_rtol, nb_iter = update_loop(ker_pole, transfer_matrix,
                                                   poles, B, maxiter, rtol)
