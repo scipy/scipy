@@ -1633,6 +1633,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         Array to compute the SVD on, of shape (M, N)
     k : int, optional
         Number of singular values and vectors to compute.
+        Must be 1 <= k < min(A.shape).
     ncv : int, optional
         The number of Lanczos vectors generated
         ncv must be greater than k+1 and smaller than n;
@@ -1692,6 +1693,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         A = np.asarray(A)
 
     n, m = A.shape
+
+    if k <= 0 or k >= min(n, m):
+        raise ValueError("k must be between 1 and min(A.shape), k=%d" % k)
 
     if isinstance(A, LinearOperator):
         if n > m:
