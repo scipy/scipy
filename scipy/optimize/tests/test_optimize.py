@@ -161,7 +161,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         # optimization routine
         if self.use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': self.disp,
-                    'return_all': False, 'alpha': 5.0, 'beta':0.7}
+                    'return_all': False, 'alpha': 1.0, 'beta':0.7}
 
             res = optimize.minimize(self.func, self.startparams,
                                     jac=self.grad, method='BFGS-H', args=(),
@@ -172,7 +172,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         else:
             retval = optimize.fmin_bfgs_h(self.func, self.startparams, self.grad,
                                         args=(), maxiter=self.maxiter,
-                                        alpha=5.0, beta=0.7, H_reset=True,
+                                        alpha=1.0, beta=0.7, H_reset=True,
                                         full_output=True, disp=self.disp,
                                         retall=False)
             (params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag) = retval
@@ -182,15 +182,14 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'.
         # Don't allow them to increase.
-        assert_(self.funccalls == 11, self.funccalls)
-        assert_(self.gradcalls == 9, self.gradcalls)
+        assert_(self.funccalls == 9, self.funccalls)
+        assert_(self.gradcalls == 7, self.gradcalls)
 
         # Ensure that the function behaves the same.
         assert_allclose(self.trace[6:8],
-                        [[-5.55148792e-16, -5.24888104e-01, 4.87321452e-01],
-                         [-1.66537175e-15, -5.24862960e-01, 4.87613323e-01]],
+                        [[1.01090710e-15, -5.24894503e-01, 4.87530345e-01],
+                         [1.01090710e-15, -5.24894503e-01, 4.87530345e-01]],
                         atol=1e-14, rtol=1e-7)
-
     @suppressed_stdout
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.

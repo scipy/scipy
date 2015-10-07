@@ -21,7 +21,7 @@ Functions
 # target functions.
 
 import numpy
-from numpy import (Inf, sqrt)
+from numpy import (Inf, sqrt, isinf)
 from .optimize import (vecnorm, wrap_function, _check_unknown_options, OptimizeResult, approx_fprime)
 
 __all__ = ['fmin_bfgs_h', '_minimize_bfgs_h']
@@ -378,11 +378,21 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         if (gnorm <= gtol):
             break
 
+        try:  # this was handled in numeric, let it remaines for more safety
+            rhok = 1.0 / (numpy.dot(yk, sk))
+        except ZeroDivisionError:
+            rhok = 1000.0
+            if disp:
+                print("Divide-by-zero encountered: rhok assumed large")
+        if isinf(rhok):  # this is patch for numpy
+            rhok = 1000.0
+            if disp:
+                print("Divide-by-zero encountered: rhok assumed large")
         # Run BFGS Update for the Inverse Hessian
-        A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :]
-        A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :]
+        A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
+        A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
         Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + \
-             (sk[:, numpy.newaxis] * sk[numpy.newaxis, :])
+             (rhok * sk[:, numpy.newaxis] * sk[numpy.newaxis, :])
 
     if f is not None:
         fval = old_fval
