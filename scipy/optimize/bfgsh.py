@@ -40,14 +40,17 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
               H_reset=True, norm=Inf, epsilon=_epsilon, maxiter=None,
               full_output=0, disp=True, retall=False, callback=None):
     """
-    Gradient Minimization independent of target function using the BFGS(Hess)
-    algorithm described by Sheppard et al. while applying the inverse hessian
-    directly to steps.
+    Gradient Minimization independent of target function using the BFGS
+    algorithm while applying the inverse hessian directly to steps.  This
+    uses the backtracking line search method to adjust step size alpha if
+    function (fun) is defined.  If no objective function is defined, passing
+    None for function will run the minimization for a constant alpha for 
+    maxiter iterations.
 
     Parameters
     ----------
     f : callable f(x,*args)
-        Objective function to be minimized.
+        Objective function to be minimized. If none available, pass None.
     x0 : ndarray
         Initial guess.
     fprime : callable f'(x,*args), optional
@@ -114,9 +117,10 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
     so it adjusts step size accordingly.
 
     Optimization of the function using the Broyden-Fletcher-Goldfarb-
-    Shanno (BFGS) algorithm independent of target functions.  Instead
-    of using a line search for the step size alpha, the following 
-    adjustments have been made:
+    Shanno (BFGS) algorithm independent of target functions.  If an objective
+    function is passed, the line search is calculated by the backtracking
+    line search method (if None, then a constant alpha is used for maxiter
+    loops):
 
     * alpha is a constant that is changed by beta whenever f(x0)
       indicates the maximum has increased.
@@ -170,7 +174,11 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     **unknown_options):
     """
     Gradient Minimization independent of target function using the BFGS
-    algorithm while applying the inverse hessian directly to steps.
+    algorithm while applying the inverse hessian directly to steps.  This
+    uses the backtracking line search method to adjust step size alpha if
+    function (fun) is defined.  If no objective function is defined, passing
+    None for function will run the minimization for a constant alpha for 
+    maxiter iterations.
 
     Options
     -------
@@ -281,7 +289,8 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     Hk = I
 
     # Store your old func_max
-    old_fval = f(x0, *args)
+    if f is not None:
+        old_fval = f(x0, *args)
 
     xk = x0
 
@@ -316,8 +325,9 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         gfkp1 = fprime(xkp1)
 
         # Check if max has increased
-        fval = f(xkp1, *args)
-        if fval > old_fval:
+        if f is not None:
+            fval = f(xkp1, *args)
+        if f is not None and fval > old_fval:
             # Step taken overstepped the minimum.  Lowering step size
             if disp:
                 print("\tResetting System as %lg > %lg!"
