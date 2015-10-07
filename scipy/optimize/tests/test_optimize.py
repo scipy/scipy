@@ -190,6 +190,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                         [[1.01090710e-15, -5.24894503e-01, 4.87530345e-01],
                          [1.01090710e-15, -5.24894503e-01, 4.87530345e-01]],
                         atol=1e-14, rtol=1e-7)
+
     @suppressed_stdout
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
