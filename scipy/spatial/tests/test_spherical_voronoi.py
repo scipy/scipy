@@ -5,6 +5,7 @@ from numpy.testing import (TestCase,
                            assert_array_equal,
                            assert_array_almost_equal)
 from scipy.spatial import spherical_voronoi
+import scipy
 
 
 class TestDeterminantFallback(TestCase):
@@ -129,3 +130,13 @@ class TestSphericalVoronoi(TestCase):
         unsorted_regions = sv.regions
         sv.sort_vertices_of_regions()
         assert_array_equal(sorted(sv.regions), sorted(unsorted_regions))
+
+    def test_voronoi_circles(self):
+        generators = TestSphericalVoronoi.points_unsymmetric
+        sv = spherical_voronoi.SphericalVoronoi(generators)
+        for vertex in sv.vertices:
+            distances = scipy.spatial.distance.cdist(sv.points,
+                                                     np.array([vertex]))
+            closest = np.array(sorted(distances)[0:3])
+            assert_almost_equal(closest[0], closest[1])
+            assert_almost_equal(closest[0], closest[2])
