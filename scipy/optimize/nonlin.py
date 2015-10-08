@@ -1500,8 +1500,8 @@ def _nonlin_wrapper(name, jac):
     keyword arguments of `nonlin_solve`
 
     """
-    import inspect
-    args, varargs, varkw, defaults = inspect.getargspec(jac.__init__)
+    from scipy._lib._util import inspect_args
+    args, defaults = inspect_args(jac.__init__)
     kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
