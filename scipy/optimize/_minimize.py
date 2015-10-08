@@ -188,7 +188,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     
     Method :ref:`BFGS-H <optimize.minimize-bfgsh>` uses the BFGS(Hess)
     algorithm described by Sheppard et al. [13]_, [14]_, [15]_, [16]_
-    for target function independent optimization given a gradient.
+    for gradient based minimization independent of the objective
+    function.
 
     .. versionadded:: 0.17.0
     
