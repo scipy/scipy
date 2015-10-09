@@ -679,7 +679,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      +            iprint, sbgnrm, info, epsmch)
       if (info .ne. 0) then 
 c         singular triangular system detected; refresh the lbfgs memory.
-         if(iprint .ge. 1) write (6, 1005)
+         if(iprint .ge. 1) write (0, 1005)
          info   = 0
          col    = 0
          head   = 1
@@ -727,7 +727,7 @@ c                     [ 0  I]
       if (info .ne. 0) then
 c          nonpositive definiteness in Cholesky factorization;
 c          refresh the lbfgs memory and restart the iteration.
-         if(iprint .ge. 1) write (6, 1006)
+         if(iprint .ge. 1) write (0, 1006)
          info   = 0
          col    = 0
          head   = 1
@@ -753,7 +753,7 @@ c-jlm-jn   call the direct method.
       if (info .ne. 0) then 
 c          singular triangular system detected;
 c          refresh the lbfgs memory and restart the iteration.
-         if(iprint .ge. 1) write (6, 1005)
+         if(iprint .ge. 1) write (0, 1005)
          info   = 0
          col    = 0
          head   = 1
@@ -804,7 +804,7 @@ c                restore the actual number of f and g evaluations etc.
             goto 999
          else
 c             refresh the lbfgs memory and restart the iteration.
-            if(iprint .ge. 1) write (6, 1008)
+            if(iprint .ge. 1) write (0, 1008)
             if (info .eq. 0) nfgv = nfgv - 1
             info   = 0
             col    = 0
@@ -902,7 +902,7 @@ c           J' stored in the upper triangular of wt.
       if (info .ne. 0) then 
 c          nonpositive definiteness in Cholesky factorization;
 c          refresh the lbfgs memory and restart the iteration.
-         if(iprint .ge. 1) write (6, 1007)
+         if(iprint .ge. 1) write (0, 1007)
          info = 0
          col = 0
          head = 1
@@ -1085,10 +1085,10 @@ c                   this variable is always fixed
   20  continue
 
       if (iprint .ge. 0) then
-         if (prjctd) write (6,*)
+         if (prjctd) write (0,*)
      +   'The initial X is infeasible.  Restart with its projection.'
          if (.not. cnstnd)
-     +      write (6,*) 'This problem is unconstrained.'
+     +      write (0,*) 'This problem is unconstrained.'
       endif
 
       if (iprint .gt. 0) write (6,1001) nbdd
@@ -2549,7 +2549,7 @@ c     Determine the maximum step length.
 c                               the directional derivative >=0.
 c                               Line search is impossible.
             if (iprint .ge. 0) then
-                write(6,*)' ascent direction in projection gd = ', gd
+                write(0,*)' ascent direction in projection gd = ', gd
             endif
             info = -4
             return
@@ -2857,16 +2857,16 @@ c     ************
       if (iprint .ge. 0) then
          write (6,3009) task
          if (info .ne. 0) then
-            if (info .eq. -1) write (6,9011)
-            if (info .eq. -2) write (6,9012)
-            if (info .eq. -3) write (6,9013)
-            if (info .eq. -4) write (6,9014)
-            if (info .eq. -5) write (6,9015)
-            if (info .eq. -6) write (6,*)' Input nbd(',k,') is invalid.'
+            if (info .eq. -1) write (0,9011)
+            if (info .eq. -2) write (0,9012)
+            if (info .eq. -3) write (0,9013)
+            if (info .eq. -4) write (0,9014)
+            if (info .eq. -5) write (0,9015)
+            if (info .eq. -6) write (0,*)' Input nbd(',k,') is invalid.'
             if (info .eq. -7) 
      +      write (6,*)' l(',k,') > u(',k,').  No feasible solution.'
-            if (info .eq. -8) write (6,9018)
-            if (info .eq. -9) write (6,9019)
+            if (info .eq. -8) write (0,9018)
+            if (info .eq. -9) write (0,9019)
          endif
          if (iprint .ge. 1) write (6,3007) cachyt,sbtime,lnscht
          write (6,3008) time
