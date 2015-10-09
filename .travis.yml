@@ -36,6 +36,11 @@ matrix:
             - libpng-dev
             - zlib1g-dev
             - texlive-fonts-recommended
+    - python: 3.5
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC=numpy
     - python: 3.4
       env:
         - TESTMODE=fast
