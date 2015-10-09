@@ -311,6 +311,7 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
         PyErr_Format(PyExc_RuntimeError,
             "The Jacobian array must be two dimensional, but got ndim=%d.",
             ndim);
+        *n = -1;
         Py_DECREF(arglist);
         Py_DECREF(result_array);
         return -1;
@@ -341,6 +342,7 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
         PyErr_Format(PyExc_RuntimeError,
             "Expected a %sJacobian array with shape (%d, %d)",
             b, nrows, ncols);
+        *n = -1;
         Py_DECREF(arglist);
         Py_DECREF(result_array);
         return -1;
