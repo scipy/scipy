@@ -115,17 +115,19 @@ class PchipInterpolator(BPoly):
         hk = x[1:] - x[:-1]
         mk = (y[1:] - y[:-1]) / hk
         smk = np.sign(mk)
-        condition = ((smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0))
+        condition = (smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0)
 
         w1 = 2*hk[1:] + hk[:-1]
         w2 = hk[1:] + 2*hk[:-1]
+
         # values where division by zero occurs will be excluded
         # by 'condition' afterwards
         with np.errstate(divide='ignore'):
-            whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
+            whmean = (w1/mk[:-1] + w2/mk[1:]) / (w1 + w2)
+
         dk = np.zeros_like(y)
         dk[1:-1][condition] = 0.0
-        dk[1:-1][~condition] = 1.0/whmean[~condition]
+        dk[1:-1][~condition] = 1.0 / whmean[~condition]
 
         # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
         #  one of d_1 or m_0 is 0, then choose d_0 = 0

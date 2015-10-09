@@ -492,5 +492,55 @@ class TestPCHIP(TestCase):
 
         assert_allclose(curve, curve1, atol=1e-14, rtol=1e-14)
 
+    def test_nag(self):
+        # Example from NAG C implementation,
+        # http://nag.com/numeric/cl/nagdoc_cl25/html/e01/e01bec.html
+        # suggested in gh-5326 as a smoke test for the way the derivatives
+        # are computed (see also gh-3453)
+        from StringIO import StringIO
+
+        dataStr = '''
+          7.99   0.00000E+0
+          8.09   0.27643E-4
+          8.19   0.43750E-1
+          8.70   0.16918E+0
+          9.20   0.46943E+0
+         10.00   0.94374E+0
+         12.00   0.99864E+0
+         15.00   0.99992E+0
+         20.00   0.99999E+0
+        '''
+        data = np.loadtxt(StringIO(dataStr))
+        pch = pchip(data[:,0], data[:,1])
+
+        resultStr = '''
+           7.9900       0.0000
+           9.1910       0.4640
+          10.3920       0.9645
+          11.5930       0.9965
+          12.7940       0.9992
+          13.9950       0.9998
+          15.1960       0.9999
+          16.3970       1.0000
+          17.5980       1.0000
+          18.7990       1.0000
+          20.0000       1.0000
+        '''
+        result = np.loadtxt(StringIO(resultStr))
+        assert_allclose(result[:,1], pch(result[:,0]), rtol=0., atol=5e-5)
+
+    def test_all_zeros(self):
+        x = np.arange(10)
+        y = np.zeros_like(x)
+
+        # this should work and not generate any warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings('error')
+            pch = pchip(x, y)
+
+        xx = np.linspace(0, 9, 101)
+        assert_equal(pch(xx), 0.)
+
+
 if __name__ == '__main__':
     run_module_suite()
