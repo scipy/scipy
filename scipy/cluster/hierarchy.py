@@ -834,6 +834,7 @@ class ClusterNode:
 
         return preorder
 
+
 _cnode_bare = ClusterNode(0)
 _cnode_type = type(ClusterNode)
 
@@ -860,7 +861,6 @@ def to_tree(Z, rd=False):
     Z : ndarray
         The linkage matrix in proper form (see the ``linkage``
         function documentation).
-
     rd : bool, optional
         When False, a reference to the root ClusterNode object is
         returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
@@ -876,13 +876,10 @@ def to_tree(Z, rd=False):
         The pre-order traversal.
 
     """
-
     Z = np.asarray(Z, order='c')
-
     is_valid_linkage(Z, throw=True, name='Z')
 
-    # The number of original objects is equal to the number of rows minus
-    # 1.
+    # Number of original objects is equal to the number of rows minus 1.
     n = Z.shape[0] + 1
 
     # Create a list full of None's to store the node objects
@@ -950,8 +947,7 @@ def cophenet(Z, Y=None):
     ----------
     Z : ndarray
         The hierarchical clustering encoded as an array
-        (see ``linkage`` function).
-
+        (see `linkage` function).
     Y : ndarray (optional)
         Calculates the cophenetic correlation coefficient ``c`` of a
         hierarchical clustering defined by the linkage matrix `Z`
@@ -969,13 +965,12 @@ def cophenet(Z, Y=None):
         original observations :math:`i` and :math:`j`.
 
     """
-
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
 
-    zz = np.zeros((n * (n - 1)) // 2, dtype=np.double)
+    zz = np.zeros((n * (n-1)) // 2, dtype=np.double)
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
     Z = _convert_to_double(Z)
@@ -992,14 +987,14 @@ def cophenet(Z, Y=None):
     Yy = Y - y
     Zz = zz - z
     numerator = (Yy * Zz)
-    denomA = Yy ** 2
-    denomB = Zz ** 2
+    denomA = Yy**2
+    denomB = Zz**2
     c = numerator.sum() / np.sqrt((denomA.sum() * denomB.sum()))
     return (c, zz)
 
 
 def inconsistent(Z, d=2):
-    """
+    r"""
     Calculates inconsistency statistics on a linkage.
 
     Note: This function behaves similarly to the MATLAB(TM)
@@ -1008,26 +1003,24 @@ def inconsistent(Z, d=2):
     Parameters
     ----------
     Z : ndarray
-        The :math:`(n-1)` by 4 matrix encoding the linkage
-        (hierarchical clustering).  See ``linkage`` documentation
-        for more information on its form.
+        The :math:`(n-1)` by 4 matrix encoding the linkage (hierarchical
+        clustering).  See `linkage` documentation for more information on its
+        form.
     d : int, optional
-        The number of links up to `d` levels below each
-        non-singleton cluster.
+        The number of links up to `d` levels below each non-singleton cluster.
 
     Returns
     -------
     R : ndarray
-        A :math:`(n-1)` by 5 matrix where the ``i``'th row
-        contains the link statistics for the non-singleton cluster
-        ``i``. The link statistics are computed over the link
-        heights for links :math:`d` levels below the cluster
-        ``i``. ``R[i,0]`` and ``R[i,1]`` are the mean and standard
-        deviation of the link heights, respectively; ``R[i,2]`` is
-        the number of links included in the calculation; and
-        ``R[i,3]`` is the inconsistency coefficient,
+        A :math:`(n-1)` by 5 matrix where the ``i``'th row contains the link
+        statistics for the non-singleton cluster ``i``. The link statistics are
+        computed over the link heights for links :math:`d` levels below the
+        cluster ``i``. ``R[i,0]`` and ``R[i,1]`` are the mean and standard
+        deviation of the link heights, respectively; ``R[i,2]`` is the number
+        of links included in the calculation; and ``R[i,3]`` is the
+        inconsistency coefficient,
 
-        .. math:: \\frac{\\mathtt{Z[i,2]}-\\mathtt{R[i,0]}} {R[i,1]}
+        .. math:: \frac{\mathtt{Z[i,2]} - \mathtt{R[i,0]}} {R[i,1]}
 
     """
     Z = np.asarray(Z, order='c')
@@ -1094,6 +1087,7 @@ def from_mlab_linkage(Z):
     Zpart = Z.copy()
     if Zpart[:, 0:2].min() != 1.0 and Zpart[:, 0:2].max() != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N')
+
     Zpart[:, 0:2] -= 1.0
     CS = np.zeros((Zs[0],), dtype=np.double)
     _hierarchy.calculate_cluster_sizes(Zpart, CS, int(Zs[0]) + 1)
@@ -1223,6 +1217,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
         if warning:
             _warning(str(e))
         valid = False
+
     return valid
 
 
@@ -1230,14 +1225,18 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     """
     Checks the validity of a linkage matrix.
 
-    A linkage matrix is valid if it is a two dimensional
-    ndarray (type double) with :math:`n`
-    rows and 4 columns.  The first two columns must contain indices
-    between 0 and :math:`2n-1`. For a given row ``i``,
-    :math:`0 \\leq \\mathtt{Z[i,0]} \\leq i+n-1`
-    and :math:`0 \\leq Z[i,1] \\leq i+n-1`
-    (i.e. a cluster cannot join another cluster unless the cluster
-    being joined has been generated.)
+    A linkage matrix is valid if it is a two dimensional array (type double)
+    with :math:`n` rows and 4 columns.  The first two columns must contain
+    indices between 0 and :math:`2n-1`. For a given row ``i``, the following
+    two expressions have to hold:
+
+    .. math::
+
+        0 \\leq \\mathtt{Z[i,0]} \\leq i+n-1
+        0 \\leq Z[i,1] \\leq i+n-1
+
+    I.e. a cluster cannot join another cluster unless the cluster being joined
+    has been generated.
 
     Parameters
     ----------
@@ -1256,7 +1255,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     Returns
     -------
     b : bool
-        True iff the inconsistency matrix is valid.
+        True if the inconsistency matrix is valid.
 
     """
     Z = np.asarray(Z, order='c')
@@ -1299,6 +1298,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         if warning:
             _warning(str(e))
         valid = False
+
     return valid
 
 
@@ -1421,11 +1421,10 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
               For example, to threshold on the maximum mean distance
               as computed in the inconsistency matrix R with a
-              threshold of 0.8 do:
+              threshold of 0.8 do::
 
-                MR = maxRstat(Z, R, 3)
-
-                cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
+                  MR = maxRstat(Z, R, 3)
+                  cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
 
           ``maxclust_monocrit`` : Forms a flat cluster from a
               non-singleton cluster node ``c`` when ``monocrit[i] <=
@@ -1434,11 +1433,10 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
               flat clusters are formed. monocrit must be
               monotonic. For example, to minimize the threshold t on
               maximum inconsistency values so that no more than 3 flat
-              clusters are formed, do:
+              clusters are formed, do::
 
-                MI = maxinconsts(Z, R)
-
-                cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
+                  MI = maxinconsts(Z, R)
+                  cluster(Z, t=3, criterion='maxclust_monocrit', monocrit=MI)
 
     depth : int, optional
         The maximum depth to perform the inconsistency calculation.
@@ -1451,7 +1449,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         statistics upon which non-singleton i is thresholded. The
         monocrit vector must be monotonic, i.e. given a node c with
         index i, for all node indices j corresponding to nodes
-        below c, `monocrit[i] >= monocrit[j]`.
+        below c, ``monocrit[i] >= monocrit[j]``.
 
     Returns
     -------
@@ -1645,7 +1643,9 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         import matplotlib.patches
         import matplotlib.collections
     except ImportError:
-        raise ImportError("You must install the matplotlib library to plot the dendrogram. Use no_plot=True to calculate the dendrogram without plotting.")
+        raise ImportError("You must install the matplotlib library to plot "
+                          "the dendrogram. Use no_plot=True to calculate the "
+                          "dendrogram without plotting.")
 
     if ax is None:
         ax = matplotlib.pylab.gca()
@@ -1656,127 +1656,76 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
 
     # Independent variable plot width
     ivw = len(ivl) * 10
-    # Depenendent variable plot height
+    # Dependent variable plot height
     dvw = mh + mh * 0.05
-    ivticks = np.arange(5, len(ivl) * 10 + 5, 10)
-    if orientation == 'top':
-        ax.set_ylim([0, dvw])
-        ax.set_xlim([0, ivw])
+
+    iv_ticks = np.arange(5, len(ivl) * 10 + 5, 10)
+    if orientation in ('top', 'bottom'):
+        if orientation == 'top':
+            ax.set_ylim([0, dvw])
+            ax.set_xlim([0, ivw])
+        else:
+            ax.set_ylim([dvw, 0])
+            ax.set_xlim([0, ivw])
+
         xlines = icoords
         ylines = dcoords
         if no_labels:
             ax.set_xticks([])
             ax.set_xticklabels([])
         else:
-            ax.set_xticks(ivticks)
-            ax.set_xticklabels(ivl)
-        ax.xaxis.set_ticks_position('bottom')
+            ax.set_xticks(iv_ticks)
 
-        lbls = ax.get_xticklabels()
-        if leaf_rotation:
-            for lbl in lbls:
-                lbl.set_rotation(leaf_rotation)
-        else:
-            leaf_rot = float(_get_tick_rotation(len(ivl)))
-            for lbl in lbls:
-                lbl.set_rotation(leaf_rot)
-        if leaf_font_size:
-            for lbl in lbls:
-                lbl.set_size(leaf_font_size)
-        else:
-            leaf_fs = float(_get_tick_text_size(len(ivl)))
-            for lbl in lbls:
-                lbl.set_size(leaf_fs)
+            if orientation == 'top':
+                ax.xaxis.set_ticks_position('bottom')
+            else:
+                ax.xaxis.set_ticks_position('top')
 
-        # Make the tick marks invisible because they cover up the links
-        for line in ax.get_xticklines():
-            line.set_visible(False)
-    elif orientation == 'bottom':
-        ax.set_ylim([dvw, 0])
-        ax.set_xlim([0, ivw])
-        xlines = icoords
-        ylines = dcoords
-        if no_labels:
-            ax.set_xticks([])
-            ax.set_xticklabels([])
-        else:
-            ax.set_xticks(ivticks)
-            ax.set_xticklabels(ivl)
+            # Make the tick marks invisible because they cover up the links
+            for line in ax.get_xticklines():
+                line.set_visible(False)
 
-        lbls = ax.get_xticklabels()
-        if leaf_rotation:
-            for lbl in lbls:
-                lbl.set_rotation(leaf_rotation)
-        else:
-            leaf_rot = float(_get_tick_rotation(p))
-            for lbl in lbls:
-                lbl.set_rotation(leaf_rot)
+            leaf_rot = float(_get_tick_rotation(len(ivl))) if (
+                                    leaf_rotation is None) else leaf_rotation
+            leaf_font = float(_get_tick_text_size(len(ivl))) if (
+                                    leaf_font_size is None) else leaf_font_size
+            ax.set_xticklabels(ivl, rotation=leaf_rot, size=leaf_font)
 
-        if leaf_font_size:
-            for lbl in lbls:
-                lbl.set_size(leaf_font_size)
+    elif orientation in ('left', 'right'):
+        if orientation == 'left':
+            ax.set_xlim([dvw, 0])
+            ax.set_ylim([0, ivw])
         else:
-            leaf_fs = float(_get_tick_text_size(p))
-            for lbl in lbls:
-                lbl.set_size(leaf_fs)
+            ax.set_xlim([0, dvw])
+            ax.set_ylim([0, ivw])
 
-        ax.xaxis.set_ticks_position('top')
-        # Make the tick marks invisible because they cover up the links
-        for line in ax.get_xticklines():
-            line.set_visible(False)
-    elif orientation == 'left':
-        ax.set_xlim([0, dvw])
-        ax.set_ylim([0, ivw])
         xlines = dcoords
         ylines = icoords
         if no_labels:
             ax.set_yticks([])
             ax.set_yticklabels([])
         else:
-            ax.set_yticks(ivticks)
-            ax.set_yticklabels(ivl)
+            ax.set_yticks(iv_ticks)
 
-        lbls = ax.get_yticklabels()
-        if leaf_rotation:
-            for lbl in lbls:
-                lbl.set_rotation(leaf_rotation)
-        if leaf_font_size:
-            for lbl in lbls:
-                lbl.set_size(leaf_font_size)
+            if orientation == 'left':
+                ax.yaxis.set_ticks_position('right')
+            else:
+                ax.yaxis.set_ticks_position('left')
 
-        ax.yaxis.set_ticks_position('left')
-        # Make the tick marks invisible because they cover up the
-        # links
-        for line in ax.get_yticklines():
-            line.set_visible(False)
-    elif orientation == 'right':
-        ax.set_xlim([dvw, 0])
-        ax.set_ylim([0, ivw])
-        xlines = dcoords
-        ylines = icoords
-        if no_labels:
-            ax.set_yticks([])
-            ax.set_yticklabels([])
-        else:
-            ax.set_yticks(ivticks)
-            ax.set_yticklabels(ivl)
+            # Make the tick marks invisible because they cover up the links
+            for line in ax.get_yticklines():
+                line.set_visible(False)
 
-        lbls = ax.get_yticklabels()
-        if leaf_rotation:
-            for lbl in lbls:
-                lbl.set_rotation(leaf_rotation)
-        if leaf_font_size:
-            for lbl in lbls:
-                lbl.set_size(leaf_font_size)
+            leaf_font = float(_get_tick_text_size(len(ivl))) if (
+                                    leaf_font_size is None) else leaf_font_size
 
-        ax.yaxis.set_ticks_position('right')
-        # Make the tick marks invisible because they cover up the links
-        for line in ax.get_yticklines():
-            line.set_visible(False)
+            if leaf_rotation is not None:
+                ax.set_yticklabels(ivl, rotation=leaf_rotation, size=leaf_font)
+            else:
+                ax.set_yticklabels(ivl, size=leaf_font)
 
-    # Let's use collections instead. This way there is a separate legend
-    # item for each tree grouping, rather than stupidly one for each line
-    # segment.
+    # Let's use collections instead. This way there is a separate legend item
+    # for each tree grouping, rather than stupidly one for each line segment.
     colors_used = _remove_dups(color_list)
     color_to_lines = {}
     for color in colors_used:
@@ -1792,53 +1741,92 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         colors_to_collections[color] = coll
 
     # Add all the groupings below the color threshold.
-
     for color in colors_used:
         if color != above_threshold_color:
             ax.add_collection(colors_to_collections[color])
-    # If there is a grouping of links above the color threshold,
-    # it should go last.
+    # If there's a grouping of links above the color threshold, it goes last.
     if above_threshold_color in colors_to_collections:
         ax.add_collection(colors_to_collections[above_threshold_color])
 
     if contraction_marks is not None:
-        if orientation in ('left', 'right'):
-            for (x, y) in contraction_marks:
-                e = matplotlib.patches.Ellipse((y, x),
-                                               width=dvw / 100, height=1.0)
-                ax.add_artist(e)
-                e.set_clip_box(ax.bbox)
-                e.set_alpha(0.5)
-                e.set_facecolor('k')
-        if orientation in ('top', 'bottom'):
-            for (x, y) in contraction_marks:
-                e = matplotlib.patches.Ellipse((x, y),
-                                             width=1.0, height=dvw / 100)
-                ax.add_artist(e)
-                e.set_clip_box(ax.bbox)
-                e.set_alpha(0.5)
-                e.set_facecolor('k')
+        Ellipse = matplotlib.patches.Ellipse
+        for (x, y) in contraction_marks:
+            if orientation in ('left', 'right'):
+                e = Ellipse((y, x), width=dvw / 100, height=1.0)
+            else:
+                e = Ellipse((x, y), width=1.0, height=dvw / 100)
+            ax.add_artist(e)
+            e.set_clip_box(ax.bbox)
+            e.set_alpha(0.5)
+            e.set_facecolor('k')
 
     if trigger_redraw:
         matplotlib.pylab.draw_if_interactive()
+
 
 _link_line_colors = ['g', 'r', 'c', 'm', 'y', 'k']
 
 
 def set_link_color_palette(palette):
     """
-    Set list of matplotlib color codes for dendrogram color_threshold.
+    Set list of matplotlib color codes for use by dendrogram.
+
+    Note that this palette is global (i.e. setting it once changes the colors
+    for all subsequent calls to `dendrogram`) and that it affects only the
+    the colors below ``color_threshold``.
+
+    Note that `dendrogram` also accepts a custom coloring function through its
+    ``link_color_func`` keyword, which is more flexible and non-global.
 
     Parameters
     ----------
-    palette : list
-        A list of matplotlib color codes. The order of
-        the color codes is the order in which the colors are cycled
-        through when color thresholding in the dendrogram.
+    palette : list of str or None
+        A list of matplotlib color codes.  The order of the color codes is the
+        order in which the colors are cycled through when color thresholding in
+        the dendrogram.
+
+        If ``None``, resets the palette to its default (which is
+        ``['g', 'r', 'c', 'm', 'y', 'k']``).
+
+    Returns
+    -------
+    None
+
+    See Also
+    --------
+    dendrogram
+
+    Notes
+    -----
+    Ability to reset the palette with ``None`` added in Scipy 0.17.0.
+
+    Examples
+    --------
+    >>> from scipy.cluster import hierarchy
+    >>> ytdist = np.array([662., 877., 255., 412., 996., 295., 468., 268., 400.,
+    ...                    754., 564., 138., 219., 869., 669.])
+    >>> Z = hierarchy.linkage(ytdist, 'single')
+    >>> dn = hierarchy.dendrogram(Z, no_plot=True)
+    >>> dn['color_list']
+    ['g', 'b', 'b', 'b', 'b']
+    >>> hierarchy.set_link_color_palette(['c', 'm', 'y', 'k'])
+    >>> dn = hierarchy.dendrogram(Z, no_plot=True)
+    >>> dn['color_list']
+    ['c', 'b', 'b', 'b', 'b']
+    >>> dn = hierarchy.dendrogram(Z, no_plot=True, color_threshold=267,
+    ...                           above_threshold_color='k')
+    >>> dn['color_list']
+    ['c', 'm', 'm', 'k', 'k']
+
+    Now reset the color palette to its default:
+
+    >>> hierarchy.set_link_color_palette(None)
 
     """
-
-    if type(palette) not in (list, tuple):
+    if palette is None:
+        # reset to its default
+        palette = ['g', 'r', 'c', 'm', 'y', 'k']
+    elif type(palette) not in (list, tuple):
         raise TypeError("palette must be a list or tuple")
     _ptypes = [isinstance(p, string_types) for p in palette]
 
@@ -1853,10 +1841,10 @@ def set_link_color_palette(palette):
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                get_leaves=True, orientation='top', labels=None,
                count_sort=False, distance_sort=False, show_leaf_counts=True,
-               no_plot=False, no_labels=False, color_list=None,
-               leaf_font_size=None, leaf_rotation=None, leaf_label_func=None,
-               no_leaves=False, show_contracted=False,
-               link_color_func=None, ax=None, above_threshold_color='b'):
+               no_plot=False, no_labels=False, leaf_font_size=None,
+               leaf_rotation=None, leaf_label_func=None,
+               show_contracted=False, link_color_func=None, ax=None,
+               above_threshold_color='b'):
     """
     Plots the hierarchical clustering as a dendrogram.
 
@@ -2064,8 +2052,37 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           ``i``-th leaf node corresponds to an original observation.
           Otherwise, it corresponds to a non-singleton cluster.
 
+    See Also
+    --------
+    linkage, set_link_color_palette
+
+    Examples
+    --------
+    >>> from scipy.cluster import hierarchy
+    >>> import matplotlib.pyplot as plt
+
+    A very basic example:
+
+    >>> ytdist = np.array([662., 877., 255., 412., 996., 295., 468., 268.,
+    ...                    400., 754., 564., 138., 219., 869., 669.])
+    >>> Z = hierarchy.linkage(ytdist, 'single')
+    >>> plt.figure()
+    >>> dn = hierarchy.dendrogram(Z)
+
+    Now plot in given axes, improve the color scheme and use both vertical and
+    horizontal orientations:
+
+    >>> hierarchy.set_link_color_palette(['m', 'c', 'y', 'k'])
+    >>> fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+    >>> dn1 = hierarchy.dendrogram(Z, ax=axes[0], above_threshold_color='y',
+    ...                            orientation='top')
+    >>> dn2 = hierarchy.dendrogram(Z, ax=axes[1], above_threshold_color='#bcbddc',
+    ...                            orientation='right')
+    >>> hierarchy.set_link_color_palette(None)  # reset to default after use
+    >>> plt.show()
+
     """
-    # Features under consideration.
+    # This feature was thought about but never implemented (still useful?):
     #
     #         ... = dendrogram(..., leaves_order=None)
     #
@@ -2109,21 +2126,17 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     color_list = []
     current_color = [0]
     currently_below_threshold = [False]
-    if no_leaves:
-        ivl = None
-    else:
-        ivl = []
+    ivl = []  # list of leaves
 
-    if color_threshold is None or \
-       (isinstance(color_threshold, string_types) and
-                           color_threshold == 'default'):
+    if color_threshold is None or (isinstance(color_threshold, string_types) and
+                                   color_threshold == 'default'):
         color_threshold = max(Z[:, 2]) * 0.7
+
     R = {'icoord': icoord_list, 'dcoord': dcoord_list, 'ivl': ivl,
          'leaves': lvs, 'color_list': color_list}
-    if show_contracted:
-        contraction_marks = []
-    else:
-        contraction_marks = None
+
+    # Empty list will be filled in _dendrogram_calculate_info
+    contraction_marks = [] if show_contracted else None
 
     _dendrogram_calculate_info(
         Z=Z, p=p,
@@ -2135,9 +2148,13 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         count_sort=count_sort,
         distance_sort=distance_sort,
         show_leaf_counts=show_leaf_counts,
-        i=2 * n - 2, iv=0.0, ivl=ivl, n=n,
+        i=2*n - 2,
+        iv=0.0,
+        ivl=ivl,
+        n=n,
         icoord_list=icoord_list,
-        dcoord_list=dcoord_list, lvs=lvs,
+        dcoord_list=dcoord_list,
+        lvs=lvs,
         current_color=current_color,
         color_list=color_list,
         currently_below_threshold=currently_below_threshold,
@@ -2261,7 +2278,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
 
       * h is the height of the subtree in dependent variable units
 
-      * md is the max(Z[*,2]) for all nodes * below and including
+      * md is the ``max(Z[*,2]``) for all nodes ``*`` below and including
         the target node.
 
     """
@@ -2273,9 +2290,9 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
 
     if truncate_mode == 'lastp':
         # If the node is a leaf node but corresponds to a non-single cluster,
-        # it's label is either the empty string or the number of original
+        # its label is either the empty string or the number of original
         # observations belonging to cluster i.
-        if i < 2 * n - p and i >= n:
+        if i < 2*n - p and i >= n:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
@@ -2446,6 +2463,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         color_list.append(v)
     else:
         color_list.append(c)
+
     return (((uiva + uivb) / 2), uwa + uwb, h, max_dist)
 
 
@@ -2567,8 +2585,8 @@ def maxRstat(Z, R, i):
     Parameters
     ----------
     Z : array_like
-        The hierarchical clustering encoded as a matrix. See
-        ``linkage`` for more information.
+        The hierarchical clustering encoded as a matrix. See `linkage` for more
+        information.
     R : array_like
         The inconsistency matrix.
     i : int
@@ -2674,40 +2692,3 @@ def leaders(Z, T):
         raise ValueError(('T is not a valid assignment vector. Error found '
                           'when examining linkage node %d (< 2n-1).') % s)
     return (L, M)
-
-
-# These are test functions to help me test the leaders function.
-
-def _leaders_test(Z, T):
-    tr = to_tree(Z)
-    _leaders_test_recurs_mark(tr, T)
-    return tr
-
-
-def _leader_identify(tr, T):
-    if tr.is_leaf():
-        return T[tr.id]
-    else:
-        left = tr.get_left()
-        right = tr.get_right()
-        lfid = _leader_identify(left, T)
-        rfid = _leader_identify(right, T)
-        print('ndid: %d lid: %d lfid: %d rid: %d rfid: %d'
-              % (tr.get_id(), left.get_id(), lfid, right.get_id(), rfid))
-        if lfid != rfid:
-            if lfid != -1:
-                print('leader: %d with tag %d' % (left.id, lfid))
-            if rfid != -1:
-                print('leader: %d with tag %d' % (right.id, rfid))
-            return -1
-        else:
-            return lfid
-
-
-def _leaders_test_recurs_mark(tr, T):
-    if tr.is_leaf():
-        tr.asgn = T[tr.id]
-    else:
-        tr.asgn = -1
-        _leaders_test_recurs_mark(tr.left, T)
-        _leaders_test_recurs_mark(tr.right, T)
