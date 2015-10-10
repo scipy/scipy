@@ -108,10 +108,8 @@ csr_has_canonical_format  i iII
 # coo.h, dia.h, csgraph.h
 OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
-coo_tocsc           v iiiIIT*I*I*T
 coo_todense         v iiiIIT*Ti
 coo_matvec          v iIITT*T
-coo_count_diagonals i iII
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """

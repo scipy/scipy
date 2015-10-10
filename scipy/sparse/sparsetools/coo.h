@@ -2,7 +2,6 @@
 #define __COO_H__
 
 #include <algorithm>
-#include <set>
 
 /*
  * Compute B = A for COO matrix A, CSR matrix B
@@ -77,18 +76,6 @@ void coo_tocsr(const I n_row,
     //now Bp,Bj,Bx form a CSR representation (with possible duplicates)
 }
 
-template<class I, class T>
-void coo_tocsc(const I n_row,
-      	       const I n_col,
-      	       const I nnz,
-      	       const I Ai[],
-      	       const I Aj[],
-      	       const T Ax[],
-      	             I Bp[],
-      	             I Bi[],
-      	             T Bx[])
-{ coo_tocsr<I,T>(n_col, n_row, nnz, Aj, Ai, Ax, Bp, Bi, Bx); }
-
 /*
  * Compute B += A for COO matrix A, dense matrix B
  *
@@ -157,27 +144,5 @@ void coo_matvec(const I nnz,
         Yx[Ai[n]] += Ax[n] * Xx[Aj[n]];
     }
 }
-
-/*
- * Count the number of occupied diagonals in COO matrix A
- *
- * Input Arguments:
- *   I  nnz             - number of nonzeros in A
- *   I  Ai[nnz(A)]      - row indices
- *   I  Aj[nnz(A)]      - column indices
- *
- */
-template <class I>
-I coo_count_diagonals(const I nnz,
-                      const I Ai[],
-                      const I Aj[])
-{
-    std::set<I> diagonals;
-    for(I n = 0; n < nnz; n++){
-        diagonals.insert(Aj[n] - Ai[n]);
-    }
-    return diagonals.size();
-}
-
 
 #endif
