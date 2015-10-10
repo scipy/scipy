@@ -10,9 +10,7 @@ __all__ = ['_find_repeats', 'linregress', 'theilslopes']
 
 def linregress(x, y=None):
     """
-    Calculate a regression line
-
-    This computes a least-squares regression for two sets of measurements.
+    Calculate a linear least-squares regression for two sets of measurements.
 
     Parameters
     ----------
@@ -35,6 +33,11 @@ def linregress(x, y=None):
         that the slope is zero.
     stderr : float
         Standard error of the estimate
+
+    See also
+    --------
+    optimize.curve_fit : Use non-linear least squares to fit a function to data.
+    optimize.leastsq : Minimize the sum of squares of a set of equations.
 
     Examples
     --------
@@ -64,6 +67,10 @@ def linregress(x, y=None):
     else:
         x = np.asarray(x)
         y = np.asarray(y)
+
+    if x.size == 0 or y.size == 0:
+        raise ValueError("Inputs must not be empty.")
+
     n = len(x)
     xmean = np.mean(x, None)
     ymean = np.mean(y, None)

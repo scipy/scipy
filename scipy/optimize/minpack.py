@@ -294,9 +294,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         in x0, otherwise the default `maxfev` is 200*(N+1).
     epsfcn : float, optional
         A variable used in determining a suitable step length for the forward-
-        difference approximation of the Jacobian (for Dfun=None). 
+        difference approximation of the Jacobian (for Dfun=None).
         Normally the actual step length will be sqrt(epsfcn)*x
-        If epsfcn is less than the machine precision, it is assumed that the 
+        If epsfcn is less than the machine precision, it is assumed that the
         relative errors are of the order of the machine precision.
     factor : float, optional
         A parameter determining the initial step bound
@@ -519,7 +519,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     See Also
     --------
-    leastsq
+    leastsq : Minimize the sum of squares of a set of equations.
+    stats.linregress : Calculate a linear least squares regression for two sets
+                       of measurements.
 
     Notes
     -----
