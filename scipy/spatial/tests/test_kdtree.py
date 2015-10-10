@@ -616,8 +616,15 @@ class test_sparse_distance_matrix_compiled:
     def test_consistency_with_python(self):
         M1 = self.T1.sparse_distance_matrix(self.T2, self.r)
         M2 = self.ref_T1.sparse_distance_matrix(self.ref_T2, self.r)
-
         assert_array_almost_equal(M1.todense(), M2.todense(), decimal=14)
+        
+    def test_against_logic_error_regression(self):
+        # regression test for gh-5077 logic error
+        np.random.seed(0)
+        too_many = np.array(np.random.randn(18, 2), dtype=int)
+        tree = cKDTree(too_many, balanced_tree=False, compact_nodes=False)
+        d = tree.sparse_distance_matrix(tree, 3).todense()
+        assert_array_almost_equal(d, d.T, decimal=14)
 
 
 def test_distance_matrix():
