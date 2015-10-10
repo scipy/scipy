@@ -5924,7 +5924,7 @@ cdef char ufunc_itairy_types[10]
 cdef char *ufunc_itairy_doc = (
     "itairy(x)\n"
     "\n"
-    "Integrals of Airy functios\n"
+    "Integrals of Airy functions\n"
     "\n"
     "Calculates the integral of Airy functions from 0 to x\n"
     "\n"
@@ -6836,10 +6836,25 @@ cdef char *ufunc_lpmv_doc = (
     "----------\n"
     "m : int\n"
     "    Order\n"
-    "v : real\n"
-    "    Degree. Must be ``v>-m-1`` or ``v<m``\n"
-    "x : complex\n"
-    "    Argument. Must be ``|x| <= 1``.")
+    "v : float\n"
+    "    Degree.\n"
+    "x : float\n"
+    "    Argument. Must be ``|x| <= 1``.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "res : float\n"
+    "    The value of the function.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "lpmn : Similar, but computes values for all orders 0..m and degrees 0..n.\n"
+    "clpmn : Similar to `lpmn` but allows a complex argument.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "It is possible to extend the domain of this function to all\n"
+    "complex m, v, x, but this is not yet implemented.")
 ufunc_lpmv_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_lpmv_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_lpmv_types[0] = <char>NPY_FLOAT
