@@ -336,10 +336,11 @@ class interp1d(_Interpolator1D):
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised.
-    fill_value : float, optional
+    fill_value : float or str, optional
         If provided, then this value will be used to fill in for requested
         points outside of the data range. If not provided, then the default
-        is NaN.
+        is NaN. For kind 'nearest' this value can be set to 'extrapolate' then
+        points outside the data range will be extrapolated.
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
@@ -378,6 +379,10 @@ class interp1d(_Interpolator1D):
 
         self.copy = copy
         self.bounds_error = bounds_error
+        # extrapolation only works for nearest neighbor method
+        if fill_value == "extrapolate" and kind != 'nearest':
+            raise ValueError("Extrapolation only works with method 'nearest'.")
+
         self.fill_value = fill_value
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
@@ -494,10 +499,11 @@ class interp1d(_Interpolator1D):
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
         x_new = asarray(x_new)
-        out_of_bounds = self._check_bounds(x_new)
         y_new = self._call(self, x_new)
-        if len(y_new) > 0:
-            y_new[out_of_bounds] = self.fill_value
+        if self.fill_value != 'extrapolate':
+            out_of_bounds = self._check_bounds(x_new)
+            if len(y_new) > 0:
+                y_new[out_of_bounds] = self.fill_value
         return y_new
 
     def _check_bounds(self, x_new):
