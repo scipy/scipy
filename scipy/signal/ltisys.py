@@ -2029,18 +2029,19 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             requested_poles : 1-D ndarray
                 The poles the algorithm was asked to place sorted as above,
                 they may differ from what was achieved.
-            X : 2D ndarray
+            X : 2-D ndarray
                 The transfer matrix such as ``X * diag(poles) = (A - B*K)*X``
                 (see Notes)
             rtol : float
                 The relative tolerance achieved on ``det(X)`` (see Notes).
-                `rtol` will be NaN if the optimisation algorithms can not run,
-                i.e when ``B.shape[1] == 1``, or 0 when the solution is unique.
+                `rtol` will be NaN if it is possible to solve the system
+                ``diag(poles) = (A - B*K)``, or 0 when the optimization 
+                algorithms can't do anything i.e when ``B.shape[1] == 1``.
             nb_iter : int
                 The number of iterations performed before converging.
-                `nb_iter` will be NaN if the optimisation algorithms can
-                not run, i.e when ``B.shape[1] == 1``, or 0 when the solution
-                is unique.
+                `nb_iter` will be NaN if it is possible to solve the system
+                ``diag(poles) = (A - B*K)``, or 0 when the optimization 
+                algorithms can't do anything i.e when ``B.shape[1] == 1``.
 
     Notes
     -----
@@ -2164,9 +2165,9 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     update_loop, poles = _valid_inputs(A, B, poles, method, rtol, maxiter)
 
     # The current value of the relative tolerance we achieved
-    cur_rtol = np.nan
+    cur_rtol = 0
     # The number of iterations needed before converging
-    nb_iter = np.nan
+    nb_iter = 0
 
     # Step A: QR decomposition of B page 1132 KN
     # to debug with numpy qr uncomment the line below
@@ -2177,13 +2178,17 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     u1 = u[:, rankB:]
     z = z[:rankB, :]
 
-    # If the solution is unique
+    # If we can use the identity matrix as X the solution is obvious
     if B.shape[0] == rankB:
         # if B is square and full rank there is only one solution
-        # such as (A+BK)=diag(P) i.e BK=diag(P)-A
-        # if B has as many lines as its rank (but not square) the solution
-        # is the same as above using least squares
-        # => use lstsq in both cases
+        # such as (A+BK)=inv(X)*diag(P)*X with X=eye(A.shape[0])
+        # i.e K=inv(B)*(diag(P)-A)
+        # if B has as many lines as its rank (but not square) there are many
+        # solutions and we can choose one using least squares
+        # => use lstsq in both cases. 
+        # In both cases the transfer matrix X will be eye(A.shape[0]) and I
+        # can hardly think of a better one so there is nothing to optimize
+        # 
         # for complex poles we use the following trick
         #
         # |a -b| has for eigenvalues a+b and a-b
@@ -2207,8 +2212,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             idx += 1
         gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
         transfer_matrix = np.eye(A.shape[0])
-        cur_rtol = 0
-        nb_iter = 0
+        cur_rtol = np.nan
+        nb_iter = np.nan
     else:
         # step A (p1144 KNV) and begining of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
@@ -2238,18 +2243,21 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             ker_pole_j = Q[:, pole_space_j.shape[1]:]
 
             # We want to select one vector in ker_pole_j to build the transfer
-            # matrix, however qr returns sometimes vectors with zeros on the same
-            # line for each pole and this yields very long convergence times.
+            # matrix, however qr returns sometimes vectors with zeros on the
+            # same line for each pole and this yields very long convergence
+            # times.
             # Or some other times a set of vectors, one with zero imaginary
             # part and one (or several) with imaginary parts. After trying
             # many ways to select the best possible one (eg ditch vectors
             # with zero imaginary part for complex poles) I ended up summing
-            # all vectors in ker_pole_j, this solves 100% of the problems and is
-            # still a valid choice for transfer_matrix. Indeed for complex poles
-            # we are sure to have a non zero imaginary part that way, and the
-            # problem of lines full of zeros in transfer_matrix is solved too as
-            # when a vector from ker_pole_j has a zero the other one(s)
-            # (when ker_pole_j.shape[1]>1) for sure won't have a zero there.
+            # all vectors in ker_pole_j, this solves 100% of the problems and
+            # is a valid choice for transfer_matrix. 
+            # This way for complex poles we are sure to have a non zero
+            # imaginary part that way, and the problem of lines full of zeros
+            # in transfer_matrix is solved too as when a vector from
+            # ker_pole_j has a zero the other one(s) when
+            # ker_pole_j.shape[1]>1) for sure won't have a zero there.
+            
             transfer_matrix_j = np.sum(ker_pole_j, axis=1)[:, np.newaxis]
             transfer_matrix_j = (transfer_matrix_j /
                                  np.linalg.norm(transfer_matrix_j))

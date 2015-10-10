@@ -147,26 +147,26 @@ class TestPlacePoles(TestCase):
         # one unique solution
         P = np.array([-0.2, -0.5, -5.0566, -8.6659])
         fsf = self._check(A, B, P)
-        #rtol and nb_iter should be set to 0 as the solution is unique
-        assert_equal(fsf.rtol, 0)
-        assert_equal(fsf.nb_iter, 0)
+        # rtol and nb_iter should be set to np.nan as the identity can be
+        # used as transfer matrix
+        assert_equal(fsf.rtol, np.nan)
+        assert_equal(fsf.nb_iter, np.nan)
 
         # check with complex poles too as they trigger a specific case in
         # the specific case :-)
         P = np.array((-2+1j,-2-1j,-3,-2))
         fsf = self._check(A, B, P)
-        assert_equal(fsf.rtol, 0)
-        assert_equal(fsf.nb_iter, 0)
+        assert_equal(fsf.rtol, np.nan)
+        assert_equal(fsf.nb_iter, np.nan)
 
         #now test with a B matrix with only one column (no optimisation)
         B = B[:,0].reshape(4,1)
         P = np.array((-2+1j,-2-1j,-3,-2))
         fsf = self._check(A, B, P)
 
-        #rtol and nb_iter are meaningless here as we can't optimize anything,
-        #check they are set to NaN as expected
-        assert_equal(fsf.rtol, np.nan)
-        assert_equal(fsf.nb_iter, np.nan)
+        #  we can't optimize anything, check they are set to 0 as expected
+        assert_equal(fsf.rtol, 0)
+        assert_equal(fsf.nb_iter, 0)
 
     def test_errors(self):
         # Test input mistakes from user
