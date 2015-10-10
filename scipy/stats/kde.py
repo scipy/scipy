@@ -263,12 +263,19 @@ class gaussian_kde(object):
 
         sum_cov = self.covariance + cov
 
+        # This will raise LinAlgError if the new cov matrix is not s.p.d
+        # cho_factor returns (ndarray, bool) where bool is a flag for whether
+        # or not ndarray is upper or lower triangular
+        sum_cov_chol = linalg.cho_factor(sum_cov)
+
         diff = self.dataset - mean
-        tdiff = dot(linalg.inv(sum_cov), diff)
+        tdiff = linalg.cho_solve(sum_cov_chol, diff)
+
+        sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
+        norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
 
         energies = sum(diff * tdiff, axis=0) / 2.0
-        result = sum(exp(-energies), axis=0) / sqrt(linalg.det(2 * pi *
-                                                        sum_cov)) / self.n
+        result = sum(exp(-energies), axis=0) / norm_const / self.n
 
         return result
 
@@ -381,7 +388,10 @@ class gaussian_kde(object):
             energies = sum(diff * tdiff, axis=0) / 2.0
             result += sum(exp(-energies), axis=0)
 
-        result /= sqrt(linalg.det(2 * pi * sum_cov)) * large.n * small.n
+        sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
+        norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
+
+        result /= norm_const * large.n * small.n
 
         return result
 
