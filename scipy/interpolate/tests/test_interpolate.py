@@ -130,10 +130,17 @@ class TestInterp1D(object):
         interp1d(self.x10, self.y10, kind='quadratic')
         interp1d(self.x10, self.y10, kind='zero')
         interp1d(self.x10, self.y10, kind='nearest')
+        interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
+        interp1d(self.x10, self.y10, kind='linear', fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind=0)
         interp1d(self.x10, self.y10, kind=1)
         interp1d(self.x10, self.y10, kind=2)
         interp1d(self.x10, self.y10, kind=3)
+
+        # extrapolation is only allowed for nearest & linear methods
+        for kind in ('cubic', 'slinear', 'zero', 'quadratic'):
+            assert_raises(ValueError, interp1d, self.x10, self.y10, kind=kind,
+                          fill_value="extrapolate")
 
         # x array must be 1D.
         assert_raises(ValueError, interp1d, self.x25, self.y10)
@@ -204,6 +211,17 @@ class TestInterp1D(object):
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2.4, 5.6, 6.0]))
 
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='linear',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [-1, 0, 9, 11], rtol=1e-14)
+
+        opts = dict(kind='linear',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
     def test_cubic(self):
         # Check the actual implementation of spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='cubic')
@@ -219,6 +237,17 @@ class TestInterp1D(object):
         assert_array_almost_equal(interp10(1.2), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 6., 6.]),)
+
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='nearest',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='nearest',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
     @dec.knownfailureif(True, "zero-order splines fail for the last point")
     def test_zero(self):

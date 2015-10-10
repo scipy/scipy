@@ -2,10 +2,6 @@
 """
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly', 'RegularGridInterpolator',
-           'interpn']
-
 import itertools
 
 from numpy import (shape, sometrue, array, transpose, searchsorted,
@@ -29,6 +25,11 @@ from .polyint import _Interpolator1D
 from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
+
+
+__all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
+           'ppform', 'lagrange', 'PPoly', 'BPoly', 'RegularGridInterpolator',
+           'interpn']
 
 
 def reduce_sometrue(a):
@@ -335,11 +336,13 @@ class interp1d(_Interpolator1D):
         If True, a ValueError is raised any time interpolation is attempted on
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
-        By default, an error is raised.
-    fill_value : float, optional
+        By default, an error is raised unless `fill_value="extrapolate"`.
+    fill_value : float or "extrapolate", optional
         If provided, then this value will be used to fill in for requested
         points outside of the data range. If not provided, then the default
         is NaN.
+        If "extrapolate", then points outside the data range will be
+        extrapolated. ("nearest" and "linear" kinds only.)
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
@@ -371,13 +374,26 @@ class interp1d(_Interpolator1D):
     """
 
     def __init__(self, x, y, kind='linear', axis=-1,
-                 copy=True, bounds_error=True, fill_value=np.nan,
+                 copy=True, bounds_error=None, fill_value=np.nan,
                  assume_sorted=False):
         """ Initialize a 1D linear interpolation class."""
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
-        self.copy = copy
+        # extrapolation only works for nearest neighbor and linear methods
+        if fill_value == "extrapolate":       
+            if kind not in ('nearest', 'linear'):
+                raise ValueError("Extrapolation does not work with "
+                                 "kind=%s" % kind)
+
+            if bounds_error:
+                raise ValueError("Cannot extrapolate and raise at the same time.")
+            bounds_error = False
+
+        if bounds_error is None:
+            bounds_error = True
         self.bounds_error = bounds_error
+
+        self.copy = copy
         self.fill_value = fill_value
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
@@ -494,10 +510,11 @@ class interp1d(_Interpolator1D):
         #    or return a list of mask array indicating the outofbounds values.
         #    The behavior is set by the bounds_error variable.
         x_new = asarray(x_new)
-        out_of_bounds = self._check_bounds(x_new)
         y_new = self._call(self, x_new)
-        if len(y_new) > 0:
-            y_new[out_of_bounds] = self.fill_value
+        if self.fill_value != 'extrapolate':
+            out_of_bounds = self._check_bounds(x_new)
+            if len(y_new) > 0:
+                y_new[out_of_bounds] = self.fill_value
         return y_new
 
     def _check_bounds(self, x_new):
@@ -1459,8 +1476,8 @@ class BPoly(_PPolyBase):
             raise ValueError('ya and yb have incompatible dimensions.')
 
         dta, dtb = ya.dtype, yb.dtype
-        if (np.issubdtype(dta, np.complexfloating)
-               or np.issubdtype(dtb, np.complexfloating)):
+        if (np.issubdtype(dta, np.complexfloating) or
+               np.issubdtype(dtb, np.complexfloating)):
             dt = np.complex_
         else:
             dt = np.float_
@@ -1643,8 +1660,8 @@ class RegularGridInterpolator(object):
         self.fill_value = fill_value
         if fill_value is not None:
             fill_value_dtype = np.asarray(fill_value).dtype
-            if (hasattr(values, 'dtype')
-                    and not np.can_cast(fill_value_dtype, values.dtype,
+            if (hasattr(values, 'dtype') and not
+                    np.can_cast(fill_value_dtype, values.dtype,
                                         casting='same_kind')):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
