@@ -1,9 +1,12 @@
+cimport cython
 from scipy.linalg.cython_lapack cimport dlartg
 from scipy.linalg.cython_blas cimport drot
 
 import numpy as np
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def givens_elimination(double [:, ::1] S, double [:] v, double [:] diag):
     """Zero out a diagonal block of a matrix by series of Givens rotations.
 
@@ -28,7 +31,7 @@ def givens_elimination(double [:, ::1] S, double [:] v, double [:] diag):
     such that on exit it contains the first n components of the above
     mentioned vector after rotations were applied.
     """
-    cdef int n = diag.size
+    cdef int n = diag.shape[0]
     cdef int k
 
     cdef int i, j
@@ -44,7 +47,7 @@ def givens_elimination(double [:, ::1] S, double [:] v, double [:] diag):
         if diag[i] == 0:
             continue
 
-        diag_row[:] = 0
+        diag_row[i+1:] = 0
         diag_row[i] = diag[i]
         u = 0
 
