@@ -138,5 +138,6 @@ class TestSphericalVoronoi(TestCase):
             distances = scipy.spatial.distance.cdist(sv.points,
                                                      np.array([vertex]))
             closest = np.array(sorted(distances)[0:3])
+            print(closest)
             assert_almost_equal(closest[0], closest[1], 7, str(vertex))
             assert_almost_equal(closest[0], closest[2], 7, str(vertex))
