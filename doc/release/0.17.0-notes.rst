@@ -69,6 +69,11 @@ array would return a dense matrix.
 
 The function ``misc.lena`` has been removed due to license incompatibility.
 
+The constructor for ``sparse.coo_matrix`` no longer accepts ``(None, (m,n))``
+to construct an all-zero matrix of shape ``(m,n)``. This functionality was
+deprecated since at least 2007 and was already broken in the previous SciPy
+release. Use ``coo_matrix((m,n))`` instead.
+
 Other changes
 =============
 
