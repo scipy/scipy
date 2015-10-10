@@ -402,7 +402,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 
 def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
-                scaling='density', axis=-1):
+                scaling='density', axis=-1, mode='psd'):
     """
     Compute a spectrogram with consecutive Fourier transforms.
 
@@ -445,6 +445,9 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     axis : int, optional
         Axis along which the spectrogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
+    mode : str, optional
+        Defines what kind of return values are expected. Options are ['psd',
+        'complex', 'magnitude', 'angle', 'phase'].
 
     Returns
     -------
@@ -510,7 +513,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
 
     freqs, time, Pxy = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided, scaling,
-                                        axis, mode='psd')
+                                        axis, mode=mode)
 
     return freqs, time, Pxy
 
