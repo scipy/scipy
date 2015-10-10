@@ -37,6 +37,7 @@ import cmath
 import numpy as np
 from numpy import pi, arange
 from scipy.fftpack import fft, ifft, fftshift
+from scipy.fftpack.helper import _next_regular
 
 
 class CZT:
@@ -101,7 +102,7 @@ class CZT:
 
         k = arange(max(m, n))
         wk2 = w**(k**2/2.)
-        nfft = 2**nextpow2(n+m-1)
+        nfft = _next_regular(n+m-1)
         self._Awk2 = (a**-k * wk2)[:n]
         self._nfft = nfft
         self._Fwk2 = fft(1/np.hstack((wk2[n-1:0:-1], wk2[:m])), nfft)
@@ -135,13 +136,6 @@ class CZT:
         y = ifft(self._Fwk2 * fft(x*self._Awk2, self._nfft))
         y = y[..., self._yidx] * self._wk2
         return y.transpose(*trnsp)
-
-
-def nextpow2(n):
-    """
-    Return the smallest power of two greater than or equal to n.
-    """
-    return int(math.ceil(math.log(n)/math.log(2)))
 
 
 class ZoomFFT(CZT):
