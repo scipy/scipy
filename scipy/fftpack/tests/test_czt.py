@@ -6,8 +6,9 @@ A unit test module for czt.py
 from __future__ import division, absolute_import, print_function
 
 from numpy.testing import (run_module_suite, assert_, assert_allclose,
-                           assert_raises)
-from czt import czt, zoomfft, scaledfft, czt_points
+                           assert_raises, dec)
+from scipy.fftpack.czt import (czt, zoomfft, scaledfft, czt_points, CZT,
+                               ZoomFFT, ScaledFFT)
 import numpy as np
 
 fft = np.fft.fft
@@ -33,6 +34,11 @@ def check_zoomfft(x):
     # Check that zoomfft is the equivalent of normal fft
     y = fft(x)
     y1 = zoomfft(x, [0, 2-2./len(y)])
+    err = norm(y-y1)/norm(y)
+    assert_(err < 1e-10, "error for direct transform is %g" % (err,))
+
+    # Test fn scalar
+    y1 = zoomfft(x, 2-2./len(y))
     err = norm(y-y1)/norm(y)
     assert_(err < 1e-10, "error for direct transform is %g" % (err,))
 
@@ -136,6 +142,15 @@ def test_large_prime_lengths():
         assert_allclose(y, y1, rtol=1e-9)
 
 
+@dec.slow
+def test_czt_vs_fft():
+    np.random.seed(123)
+    random_lengths = np.random.exponential(100000, size=10).astype('int')
+    for n in random_lengths:
+        a = np.random.randn(n)
+        assert_allclose(czt(a), fft(a), rtol=1e-7, atol=1e-8)
+
+
 def test_empty_input():
     assert_raises(ValueError, czt, [])
     assert_raises(ValueError, scaledfft, [])
@@ -188,8 +203,50 @@ def test_czt_points():
     assert_allclose(czt_points(7, w=1), np.ones(7))
     assert_allclose(czt_points(11, w=2.), 1/(2**np.arange(11)))
 
-    # Test every branch with every combination of args
+    func = CZT(12, m=11, w=2., a=1)
+    assert_allclose(func.points(), 1/(2**np.arange(11)))
+
+
+def test_czt_points_errors():
+    # Invalid number of points
+    assert_raises(ValueError, czt_points, 0)
+    assert_raises(ValueError, czt_points, -11)
+    assert_raises(ValueError, czt_points, 5.5)
+
+    # Cannot specify scale and w at the same time
+    assert_raises(ValueError, czt_points, 5,
+                  0.70710678118654746+1j*0.70710678118654746, 1, 1)
+
+
+def test_invalid_size():
+    # Data size doesn't match function's expected size
+    for myfunc in (CZT(100), ZoomFFT(100, 0.2), ScaledFFT(100)):
+        assert_raises(ValueError, myfunc, np.arange(5))
+
+    # Nonsense input and output sizes
+    # Numpy and Scipy fft() give ValueError for 0 output size, so we do, too
+    for size in (0, -5, 3.5):
+        assert_raises(ValueError, CZT, size, 3)
+        assert_raises(ValueError, ZoomFFT, size, 0.2, 3)
+        assert_raises(ValueError, ScaledFFT, size, 3)
+        assert_raises(ValueError, CZT, 3, size)
+        assert_raises(ValueError, ZoomFFT, 3, 0.2, size)
+        assert_raises(ValueError, ScaledFFT, 3, size)
+        assert_raises(ValueError, czt, [1, 2, 3], size)
+        assert_raises(ValueError, zoomfft, [1, 2, 3], 0.2, size)
+        assert_raises(ValueError, scaledfft, [1, 2, 3], size)
+
+
+def test_invalid_range():
+    assert_raises(ValueError, ZoomFFT, 100, [1, 2, 3])
+
 
 if __name__ == '__main__':
     np.random.seed()
+
+    old_settings = np.seterr(all='ignore')  # seterr to known value
+    np.seterr(over='raise')  # Test should fail if internal overflow occurs
+
     run_module_suite()
+
+    np.seterr(**old_settings)  # reset to default
