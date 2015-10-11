@@ -12,7 +12,7 @@ import numpy as np
 from scipy._lib.six import xrange, zip as izip
 
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from .base import isspmatrix
+from .base import isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
         isintlike, get_index_dtype, downcast_intp_index)
@@ -352,19 +352,19 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         from .dia import dia_matrix
 
         ks = self.col - self.row  # the diagonal for each nonzero
-        diags = np.unique(ks)
+        diags, diag_idx = np.unique(ks, return_inverse=True)
 
         if len(diags) > 100:
-            #probably undesired, should we do something?
-            #should todia() have a maxdiags parameter?
-            pass
+            # probably undesired, should todia() have a maxdiags parameter?
+            warn("Constructing a DIA matrix with %d diagonals "
+                 "is inefficient" % len(diags), SparseEfficiencyWarning)
 
         #initialize and fill in data array
         if self.data.size == 0:
             data = np.zeros((0, 0), dtype=self.dtype)
         else:
             data = np.zeros((len(diags), self.col.max()+1), dtype=self.dtype)
-            data[np.searchsorted(diags,ks), self.col] = self.data
+            data[diag_idx, self.col] = self.data
 
         return dia_matrix((data,diags), shape=self.shape)
 
