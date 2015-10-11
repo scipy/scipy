@@ -1070,6 +1070,31 @@ class TestPPoly(TestCase):
         assert_array_equal(pp.roots(),
                            [0.25, 0.4, np.nan, 0.6 + 0.25])
 
+        # ditto for p.solve(const) with sections identically equal const
+        const = 2.
+        c1 = c.copy()
+        c1[1, :] += const
+        pp1 = PPoly(c1, x)
+
+        assert_array_equal(pp1.solve(const),
+                           [0.25, 0.4, np.nan, 0.6 + 0.25])
+
+    def test_roots_all_zero(self):
+        # test the code path for the polynomial being identically zero everywhere
+        c = [[0], [0]]
+        x = [0, 1]
+        p = PPoly(c, x)
+        assert_array_equal(p.roots(), [0, np.nan])
+        assert_array_equal(p.solve(0), [0, np.nan])
+        assert_array_equal(p.solve(1), [])
+
+        c = [[0, 0], [0, 0]]
+        x = [0, 1, 2]
+        p = PPoly(c, x)
+        assert_array_equal(p.roots(), [0, np.nan, 1, np.nan])
+        assert_array_equal(p.solve(0), [0, np.nan, 1, np.nan])
+        assert_array_equal(p.solve(1), [])
+
     def test_roots_repeated(self):
         # Check roots repeated in multiple sections are reported only
         # once.
@@ -1089,6 +1114,13 @@ class TestPPoly(TestCase):
         pp = PPoly(c, x)
         assert_array_equal(pp.roots(), [0.5])
         assert_array_equal(pp.roots(discontinuity=False), [])
+
+        # ditto for a discontinuity across y:
+        assert_array_equal(pp.solve(0.5), [0.5])
+        assert_array_equal(pp.solve(0.5, discontinuity=False), [])
+
+        assert_array_equal(pp.solve(1.5), [])
+        assert_array_equal(pp.solve(1.5, discontinuity=False), [])
 
     def test_roots_random(self):
         # Check high-order polynomials with random coefficients

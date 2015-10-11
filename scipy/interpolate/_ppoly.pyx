@@ -57,7 +57,7 @@ def evaluate(double_or_complex[:,:,::1] c,
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
     extrapolate : bint, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
@@ -187,7 +187,7 @@ def integrate(double_or_complex[:,:,::1] c,
     b : double
         End point of integration.
     extrapolate : bint, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (n,)
         Integral of the piecewise polynomial, assuming the polynomial
@@ -301,8 +301,9 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
             for interval in range(c.shape[1]):
                 # Check for sign change across intervals
                 if interval > 0 and report_discont:
-                    va = evaluate_poly1(x[interval] - x[interval-1], c, interval-1, jp, 0)
-                    vb = evaluate_poly1(0, c, interval, jp, 0)
+                    va = evaluate_poly1(x[interval] - x[interval-1],
+                                        c, interval-1, jp, 0) - y
+                    vb = evaluate_poly1(0, c, interval, jp, 0) - y
                     if (va < 0 and vb > 0) or (va > 0 and vb < 0):
                         # sign change between intervals
                         if x[interval] != last_root:
@@ -580,10 +581,17 @@ cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
 
     if order < 0:
         # Zero everywhere
-        return -1
+        if y == 0:
+            return -1
+        else:
+            return 0
     elif order == 0:
         # Nonzero constant polynomial: no roots
-        return 0
+        # (unless r.h.s. is exactly equal to the coefficient, that is.)
+        if c[n-1, ci, cj] == y:
+            return -1
+        else:
+            return 0
     elif order == 1:
         # Low-order polynomial: a0*x + a1
         a0 = c[n-1-order,ci,cj]
@@ -872,7 +880,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
     extrapolate : bint, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
