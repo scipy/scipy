@@ -592,11 +592,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         args, varargs, varkw, defaults = _getargspec(f)
         if len(args) < 2:
             msg = "Unable to determine number of fit parameters."
-            raise ValueError(msg)              
-        if 'self' in args:
-            p0 = np.ones(len(args) - 2)
-        else:
-            p0 = np.ones(len(args) - 1)
+            raise ValueError(msg)                      
+        p0 = np.ones(len(args) - 1)
     else:
         p0 = np.atleast_1d(p0)
 
