@@ -199,7 +199,7 @@ class SphericalVoronoi:
     >>> from matplotlib import colors
     >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.spatial import spherical_voronoi
+    >>> from scipy.spatial import SphericalVoronoi
     >>> from mpl_toolkits.mplot3d import proj3d
     >>> # set input data
     >>> points = np.array([[0, 0, 1], [0, 0, -1], [1, 0, 0],
@@ -207,7 +207,7 @@ class SphericalVoronoi:
     >>> center = np.array([0, 0, 0])
     >>> radius = 1
     >>> # calculate spherical Voronoi diagram
-    >>> sv = spherical_voronoi.SphericalVoronoi(points, radius, center)
+    >>> sv = SphericalVoronoi(points, radius, center)
     >>> # sort vertices (optional, helpful for plotting)
     >>> sv.sort_vertices_of_regions()
     >>> # generate plot

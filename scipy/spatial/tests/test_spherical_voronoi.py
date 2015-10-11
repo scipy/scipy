@@ -4,8 +4,8 @@ from numpy.testing import (TestCase,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
-from scipy.spatial import spherical_voronoi
-import scipy
+from scipy.spatial import SphericalVoronoi
+from scipy.spatial import _spherical_voronoi as spherical_voronoi
 
 
 class TestDeterminantFallback(TestCase):
@@ -92,10 +92,10 @@ class TestSphericalVoronoi(TestCase):
         generators = TestSphericalVoronoi.points_unsymmetric
         center = np.array([1, 2, 3])
         radius = 2
-        s1 = spherical_voronoi.SphericalVoronoi(generators)
-        s2 = spherical_voronoi.SphericalVoronoi(generators, radius)
-        s3 = spherical_voronoi.SphericalVoronoi(generators, None, center)
-        s4 = spherical_voronoi.SphericalVoronoi(generators, radius, center)
+        s1 = SphericalVoronoi(generators)
+        s2 = SphericalVoronoi(generators, radius)
+        s3 = SphericalVoronoi(generators, None, center)
+        s4 = SphericalVoronoi(generators, radius, center)
         assert_array_equal(s1.center, np.array([0, 0, 0]))
         self.assertEqual(s1.radius, 1)
         assert_array_equal(s2.center, np.array([0, 0, 0]))
@@ -107,26 +107,26 @@ class TestSphericalVoronoi(TestCase):
 
     def test_vertices_regions_translation_invariance(self):
         points = TestSphericalVoronoi.points_unsymmetric
-        sv_origin = spherical_voronoi.SphericalVoronoi(points)
+        sv_origin = SphericalVoronoi(points)
         center = np.array([1, 1, 1])
         points += center
-        sv_translated = spherical_voronoi.SphericalVoronoi(points, None, center)
+        sv_translated = SphericalVoronoi(points, None, center)
         assert_array_equal(sv_origin.regions, sv_translated.regions)
         assert_array_almost_equal(sv_origin.vertices + center,
                                   sv_translated.vertices)
 
     def test_vertices_regions_scaling_invariance(self):
         points = TestSphericalVoronoi.points_unsymmetric
-        sv_unit = spherical_voronoi.SphericalVoronoi(points)
+        sv_unit = SphericalVoronoi(points)
         points *= 2
-        sv_scaled = spherical_voronoi.SphericalVoronoi(points, 2)
+        sv_scaled = SphericalVoronoi(points, 2)
         assert_array_equal(sv_unit.regions, sv_scaled.regions)
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
 
     def test_sort_vertices_of_regions(self):
         generators = TestSphericalVoronoi.points_unsymmetric
-        sv = spherical_voronoi.SphericalVoronoi(generators)
+        sv = SphericalVoronoi(generators)
         unsorted_regions = sv.regions
         sv.sort_vertices_of_regions()
         assert_array_equal(sorted(sv.regions), sorted(unsorted_regions))
