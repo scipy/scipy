@@ -43,32 +43,61 @@ Contents
 Graph Representations
 =====================
 This module uses graphs which are stored in a matrix format.  A
-graph with N nodes can be represented by an (N x N) adjacency matrix G.
-If there is a connection from node i to node j, then G[i, j] = w, where
-w is the weight of the connection.  For nodes i and j which are
+graph with ``N`` nodes can be represented by an ``(N x N)`` adjacency matrix ``G``.
+If there is a connection from node ``i`` to node ``j``, then ``G[i, j] = w``, where
+``w`` is the weight of the connection.  For nodes ``i`` and ``j`` which are
 not connected, the value depends on the representation:
 
-- for dense array representations, non-edges are represented by
-  G[i, j] = 0, infinity, or NaN.
+- for *dense array* representations, non-edges are represented by
+  ``G[i, j] = 0``, infinity, or NaN.
 
-- for dense masked representations (of type np.ma.MaskedArray), non-edges
-  are represented by masked values.  This can be useful when graphs with
-  zero-weight edges are desired.
+- for *dense masked* representations (of type `numpy.ma.MaskedArray <http://docs.scipy.org/doc/numpy/reference/maskedarray.generic.html#what-is-a-masked-array>`_),
+  non-edges are represented by masked values.  This can be useful when
+  graphs with zero-weight edges are desired.
 
-- for sparse array representations, non-edges are represented by
+- for *sparse array* representations, non-edges are represented by
   non-entries in the matrix.  This sort of sparse representation also
   allows for edges with zero weights.
 
 As a concrete example, imagine that you would like to represent the following
-undirected graph::
+undirected graph:
 
-              G
+.. raw:: html
 
-             (0)
-            /   \
-           1     2
-          /       \
-        (2)       (1)
+   <!-- Title: Graph G1 Pages: 1 -->
+   <svg width="134pt" height="131pt"
+    viewBox="0.00 0.00 134.00 131.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 127)">
+   <title>Graph G1</title>
+   <polygon fill="white" stroke="none" points="-4,4 -4,-127 130,-127 130,4 -4,4"/>
+   <!-- 0 -->
+   <g id="node1" class="node"><title>0</title>
+   <ellipse fill="none" stroke="black" stroke-width="2" cx="63" cy="-105" rx="27" ry="18"/>
+   <text text-anchor="middle" x="63" y="-101.3" font-family="Times,serif" font-size="14.00">0</text>
+   </g>
+   <!-- 1 -->
+   <g id="node2" class="node"><title>1</title>
+   <ellipse fill="none" stroke="black" stroke-width="2" cx="27" cy="-18" rx="27" ry="18"/>
+   <text text-anchor="middle" x="27" y="-14.3" font-family="Times,serif" font-size="14.00">1</text>
+   </g>
+   <!-- 0&#45;&#45;1 -->
+   <g id="edge2" class="edge"><title>0&#45;&#45;1</title>
+   <path fill="none" stroke="black" d="M55.8876,-87.2067C49.5353,-72.2083 40.2853,-50.368 33.9752,-35.4692"/>
+   <text text-anchor="middle" x="51.5" y="-57.8" font-family="Times,serif" font-size="14.00">2</text>
+   </g>
+   <!-- 2 -->
+   <g id="node3" class="node"><title>2</title>
+   <ellipse fill="none" stroke="black" stroke-width="2" cx="99" cy="-18" rx="27" ry="18"/>
+   <text text-anchor="middle" x="99" y="-14.3" font-family="Times,serif" font-size="14.00">2</text>
+   </g>
+   <!-- 0&#45;&#45;2 -->
+   <g id="edge1" class="edge"><title>0&#45;&#45;2</title>
+   <path fill="none" stroke="black" d="M70.1124,-87.2067C76.4647,-72.2083 85.7147,-50.368 92.0248,-35.4692"/>
+   <text text-anchor="middle" x="86.5" y="-57.8" font-family="Times,serif" font-size="14.00">1</text>
+   </g>
+   </g>
+   </svg>
+
 
 This graph has three nodes, where node 0 and 1 are connected by an edge of
 weight 2, and nodes 0 and 2 are connected by an edge of weight 1.
@@ -82,22 +111,52 @@ keeping in mind that an undirected graph is represented by a symmetric matrix::
     >>> from scipy.sparse import csr_matrix
     >>> G_sparse = csr_matrix(G_dense)
 
+
 This becomes more difficult when zero edges are significant.  For example,
-consider the situation when we slightly modify the above graph::
+consider the situation when we slightly modify the above graph:
 
-             G2
+.. raw:: html
 
-             (0)
-            /   \
-           0     2
-          /       \
-        (2)       (1)
+   <!-- Title: Graph G2 Pages: 1 -->
+   <svg width="134pt" height="131pt"
+    viewBox="0.00 0.00 134.00 131.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 127)">
+   <title>Graph G2</title>
+   <polygon fill="white" stroke="none" points="-4,4 -4,-127 130,-127 130,4 -4,4"/>
+   <!-- 0 -->
+   <g id="node1" class="node"><title>0</title>
+   <ellipse fill="none" stroke="black" stroke-width="2" cx="63" cy="-105" rx="27" ry="18"/>
+   <text text-anchor="middle" x="63" y="-101.3" font-family="Times,serif" font-size="14.00">0</text>
+   </g>
+   <!-- 1 -->
+   <g id="node2" class="node"><title>1</title>
+   <ellipse fill="none" stroke="black" stroke-width="2" cx="27" cy="-18" rx="27" ry="18"/>
+   <text text-anchor="middle" x="27" y="-14.3" font-family="Times,serif" font-size="14.00">1</text>
+   </g>
+   <!-- 0&#45;&#45;1 -->
+   <g id="edge2" class="edge"><title>0&#45;&#45;1</title>
+   <path fill="none" stroke="black" d="M55.8876,-87.2067C49.5353,-72.2083 40.2853,-50.368 33.9752,-35.4692"/>
+   <text text-anchor="middle" x="51.5" y="-57.8" font-family="Times,serif" font-size="14.00">2</text>
+   </g>
+   <!-- 2 -->
+   <g id="node3" class="node"><title>2</title>
+   <ellipse fill="none" stroke="black" stroke-width="2" cx="99" cy="-18" rx="27" ry="18"/>
+   <text text-anchor="middle" x="99" y="-14.3" font-family="Times,serif" font-size="14.00">2</text>
+   </g>
+   <!-- 0&#45;&#45;2 -->
+   <g id="edge1" class="edge"><title>0&#45;&#45;2</title>
+   <path fill="none" stroke="red" d="M70.1124,-87.2067C76.4647,-72.2083 85.7147,-50.368 92.0248,-35.4692"/>
+   <text text-anchor="middle" x="86.5" y="-57.8" font-family="Times,serif" font-size="14.00">0</text>
+   </g>
+   </g>
+   </svg>
+
 
 This is identical to the previous graph, except nodes 0 and 2 are connected
-by an edge of zero weight.  In this case, the dense representation above
-leads to ambiguities: how can non-edges be represented if zero is a meaningful
-value?  In this case, either a masked or sparse representation must be used
-to eliminate the ambiguity::
+by an edge of *zero* weight (the one in red).  In this case, the dense
+representation above leads to ambiguities: how can non-edges be represented
+if zero is a meaningful value?  In this case, either a masked or sparse
+representation must be used to eliminate the ambiguity::
 
     >>> G2_data = np.array([[np.inf, 2,      0     ],
     ...                     [2,      np.inf, np.inf],
@@ -109,7 +168,7 @@ to eliminate the ambiguity::
     >>> G2_sparse.data
     array([ 2.,  0.,  2.,  0.])
 
-Here we have used a utility routine from the csgraph submodule in order to
+Here we have used a utility routine from the ``csgraph`` submodule in order to
 convert the dense representation to a sparse representation which can be
 understood by the algorithms in submodule.  By viewing the data array, we
 can see that the zero values are explicitly encoded in the graph.
@@ -117,19 +176,19 @@ can see that the zero values are explicitly encoded in the graph.
 Directed vs. Undirected
 -----------------------
 Matrices may represent either directed or undirected graphs.  This is
-specified throughout the csgraph module by a boolean keyword.  Graphs are
+specified throughout the ``csgraph`` module by a boolean keyword.  Graphs are
 assumed to be directed by default. In a directed graph, traversal from node
-i to node j can be accomplished over the edge G[i, j], but not the edge
-G[j, i].  In a non-directed graph, traversal from node i to node j can be
-accomplished over either G[i, j] or G[j, i].  If both edges are not null,
+``i`` to node ``j`` can be accomplished over the edge ``G[i, j]``, but not the edge
+``G[j, i]``.  In a non-directed graph, traversal from node ``i`` to node ``j`` can be
+accomplished over either ``G[i, j]`` or ``G[j, i]``.  If both edges are not null,
 and the two have unequal weights, then the smaller of the two is used.
 Note that a symmetric matrix will represent an undirected graph, regardless
-of whether the 'directed' keyword is set to True or False.  In this case,
+of whether the 'directed' keyword is set to ``True`` or ``False``.  In this case,
 using ``directed=True`` generally leads to more efficient computation.
 
-The routines in this module accept as input either scipy.sparse representations
-(csr, csc, or lil format), masked representations, or dense representations
-with non-edges indicated by zeros, infinities, and NaN entries.
+The routines in this module accept as input either `scipy.sparse <http://docs.scipy.org/doc/scipy/reference/sparse.html#module-scipy.sparse>`_
+representations (`csr`, `csc`, or `lil` format), masked representations,
+or dense representations with non-edges indicated by zeros, infinities, and NaN entries.
 """
 
 from __future__ import division, print_function, absolute_import
