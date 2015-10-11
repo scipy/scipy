@@ -529,6 +529,16 @@ class TestPCHIP(TestCase):
         result = np.loadtxt(StringIO(resultStr))
         assert_allclose(result[:,1], pch(result[:,0]), rtol=0., atol=5e-5)
 
+    def test_endslopes(self):
+        # this is a smoke test for gh-3453: PCHIP interpolator should not
+        # set edge slopes to zero if the data do not suggest zero edge derivatives
+        x = np.array([0.0, 0.1, 0.25, 0.35]);
+        y1 = np.array([279.35, 0.5e3, 1.0e3, 2.5e3]);
+        y2 = np.array([279.35, 2.5e3, 1.50e3, 1.0e3]);
+        for pp in (pchip(x, y1), pchip(x, y2)):
+            for t in (x[0], x[-1]):
+                assert_(pp(t, 1) != 0)
+
     def test_all_zeros(self):
         x = np.arange(10)
         y = np.zeros_like(x)

@@ -89,11 +89,20 @@ class PchipInterpolator(BPoly):
         return (PPoly.from_bernstein_basis(self._bpoly)).roots()
 
     @staticmethod
-    def _edge_case(m0, d1, out):
-        m0 = np.atleast_1d(m0)
-        d1 = np.atleast_1d(d1)
-        mask = (d1 != 0) & (m0 != 0)
-        out[mask] = 1.0/(1.0/m0[mask]+1.0/d1[mask])
+    def _edge_case(h0, h1, m0, m1):
+        # one-sided three-point estimate for the derivative
+        d = ((2*h0 + h1)*m0 - h0*m1) / (h0 + h1)
+
+        # try to preserve shape
+        mask = np.sign(d) != np.sign(m0)
+        mask2 = (np.sign(m0) != np.sign(m1)) & (np.abs(d) > 3.*np.abs(m0))
+        mmm = (~mask) & mask2
+
+        d[mask] = 0.
+        d[mmm] = 3.*m0[mmm]
+
+        return d
+
 
     @staticmethod
     def _find_derivatives(x, y):
@@ -129,10 +138,10 @@ class PchipInterpolator(BPoly):
         dk[1:-1][condition] = 0.0
         dk[1:-1][~condition] = 1.0 / whmean[~condition]
 
-        # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
-        #  one of d_1 or m_0 is 0, then choose d_0 = 0
-        PchipInterpolator._edge_case(mk[0], dk[1], dk[0])
-        PchipInterpolator._edge_case(mk[-1], dk[-2], dk[-1])
+        # special case endpoints, as suggested in 
+        # Cleve Moler, Numerical Computing with MATLAB, Chap 3.4
+        dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1])
+        dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2])
 
         return dk.reshape(y_shape)
 
