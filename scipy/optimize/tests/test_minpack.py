@@ -346,7 +346,7 @@ class TestCurveFit(TestCase):
         def f(x, a, b):
             return a*x + b
 
-        for method in ['lm', 'trf']:
+        for method in ['lm', 'trf', 'dogbox']:
             popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
                                    method=method)
             perr_scaled = np.sqrt(np.diag(pcov))
