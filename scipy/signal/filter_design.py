@@ -20,8 +20,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'band_stop_obj', 'buttord', 'cheb1ord', 'cheb2ord', 'ellipord',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'filter_dict', 'band_dict', 'BadCoefficients',
-           'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-           'eqtflength']
+           'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay']
 
 
 class BadCoefficients(UserWarning):
@@ -519,7 +518,7 @@ def _cplxpair(z, tol=None):
     return z
 
 
-def eqtflength(b, a):
+def _eqtflength(b, a):
     r"""Equalize lengths of transfer function numerator and denominator
 
     The lengths of the numerator and denominator are made equal by appending
@@ -549,17 +548,17 @@ def eqtflength(b, a):
 
     >>> b = [1, 2]
     >>> a = [3, 4, 5]
-    >>> eqtflength(b, a)
+    >>> _eqtflength(b, a)
     (array([1, 2, 0]), array([3, 4, 5]))
 
     >>> b = [1, 2, 3, 4]
     >>> a = [5, 6, 7]
-    >>> eqtflength(b, a)
+    >>> _eqtflength(b, a)
     (array([1, 2, 3, 4]), array([5, 6, 7, 0]))
 
     >>> b = [1, 2, 3, 0]
     >>> a = [4, 5, 6, 0]
-    >>> eqtflength(b, a)
+    >>> _eqtflength(b, a)
     (array([1, 2, 3]), array([4, 5, 6]))
     """
 
@@ -588,14 +587,14 @@ def eqtflength(b, a):
     return b, a
 
 
-def tf2zpk(b, a, var='s'):
+def tf2zpk(b, a, negative_powers=False):
     r"""Convert ba representation into zpk representation.
 
     Return zero, pole, gain (z, p, k) representation from a numerator,
     denominator (b, a) representation of a linear filter.
 
     This can be used with both analog and digital filters, by using the
-    appropriate `var` argument.
+    `negative_powers` argument.
 
     Parameters
     ----------
@@ -603,11 +602,11 @@ def tf2zpk(b, a, var='s'):
         Numerator polynomial coefficients.
     a : array_like
         Denominator polynomial coefficients.
-    var : {'s', 'z', 'z^-1'}, optional
+    negative_powers : bool, optional
         Whether the coefficients represent negative or positive powers of
-        the variable.  's' or 'z' represent positive powers, similar to
-        Matlab's ``tf2zp`` (default).  'z^-1' represents negative powers,
-        similar to Matlab's ``tf2zpk``.
+        the variable. False represents positive powers, similar to Matlab's
+        ``tf2zp`` (default).  True represents negative powers, similar to
+        Matlab's ``tf2zpk``.
 
     Returns
     -------
@@ -623,10 +622,10 @@ def tf2zpk(b, a, var='s'):
     If some values of `b` are too close to 0, they are removed. In that case,
     a BadCoefficients warning is emitted.
 
-    If `var` is 's' or 'z', the `b` and `a` arrays are interpreted as
+    If `negative_powers` is False, the `b` and `a` arrays are interpreted as
     coefficients for positive, descending powers of the transfer function
     variable.  So the inputs :math:`b = [b_0, b_1, ..., b_M]` and
-    :math:`a =[a_0, a_1, ..., a_N]` can represent an analog filter ('s') of
+    :math:`a =[a_0, a_1, ..., a_N]` can represent an analog filter of
     the form:
 
     .. math::
@@ -635,7 +634,7 @@ def tf2zpk(b, a, var='s'):
         {b_0 s^M + b_1 s^{(M-1)} + \cdots + b_M}
         {a_0 s^N + a_1 s^{(N-1)} + \cdots + a_N}
 
-    or a discrete-time filter ('z') of the form:
+    or a discrete-time filter of the form:
 
     .. math::
 
@@ -646,9 +645,9 @@ def tf2zpk(b, a, var='s'):
     This "positive powers" form is found more commonly in controls
     engineering.
 
-    If `var` is 'z^-1', the `b` and `a` arrays are interpreted as coefficients
-    for negative, descending powers of z.  This is the discrete-time form
-    preferred in DSP:
+    If `negative_powers` is True, the `b` and `a` arrays are interpreted as
+    coefficients for negative, descending powers of the variable.  This is the
+    discrete-time form preferred in DSP:
 
     .. math::
 
@@ -664,31 +663,26 @@ def tf2zpk(b, a, var='s'):
     --------
     >>> b = [1, -6, 11, -6]
     >>> a = [1, -9, 20]
-    >>> z, p, k = tf2zpk(b, a, 'z')
-    >>> print sort(z), sort(p), k
+    >>> z, p, k = tf2zpk(b, a, False)
+    >>> print(sort(z), sort(p), k)
     [ 1.  2.  3.] [ 4.  5.] 1.0
 
-    >>> z, p, k = tf2zpk(b, a, 'z^-1')
+    >>> z, p, k = tf2zpk(b, a, True)
     >>> print(sort(z), sort(p), k)
     [ 1.  2.  3.] [ 0.  4.  5.] 1.0
 
     >>> b = [1, -3, 2]
     >>> a = [1, -12, 47, -60]
-    >>> z, p, k = tf2zpk(b, a, 's')
-    >>> print sort(z), sort(p), k
+    >>> z, p, k = tf2zpk(b, a, False)
+    >>> print(sort(z), sort(p), k)
     [ 1.  2.] [ 3.  4.  5.] 1.0
 
     """
 
     b, a = normalize(b, a)
 
-    # Matlab's tf() supports 's' = 'p', 'z' = 'q', 'z^-1' = 'q^-1'
-    # Actual variable name doesn't matter here, so is ignored, but could be
-    # passed from TransferFunction class.
-    if len(var) == 4 and '^-1' in var:
-        b, a = eqtflength(b, a)
-    elif len(var) != 1:
-        raise ValueError('var argument "{0}" not understood'.format(var))
+    if negative_powers:
+        b, a = _eqtflength(b, a)
 
     b = (b + 0.0) / a[0]
     a = (a + 0.0) / a[0]

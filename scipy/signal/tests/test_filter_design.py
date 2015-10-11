@@ -15,8 +15,8 @@ from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
                           ellipord, butter, bessel, buttap, besselap,
                           cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
                           lp2lp, lp2hp, lp2bp, lp2bs, bilinear, group_delay,
-                          firwin, eqtflength)
-from scipy.signal.filter_design import _cplxreal, _cplxpair
+                          firwin)
+from scipy.signal.filter_design import _cplxreal, _cplxpair, _eqtflength
 
 
 class TestCplxPair(TestCase):
@@ -192,12 +192,12 @@ class TestEqTfLength(TestCase):
                 [1, 2, 3]), ([1, 2, 0], [0, 1, 2]), ([1, 2], [1, 2]))
 
         for case, result in zip(cases, results):
-            assert_equal(eqtflength(*case), result)
+            assert_equal(_eqtflength(*case), result)
 
     def test_zero_division(self):
         for b in ([], [0], [1], [1, 2], [0, 1], [1, 0], [1, 2, 3]):
             for a in ([], [0], [0, 0], [0, 0, 0]):
-                assert_raises(ZeroDivisionError, eqtflength, b, a)
+                assert_raises(ZeroDivisionError, _eqtflength, b, a)
 
 
 class TestTf2zpk(TestCase):
@@ -227,40 +227,36 @@ class TestTf2zpk(TestCase):
         finally:
             warnings.simplefilter("always", BadCoefficients)
 
-    def test_var(self):
+    def test_powers(self):
         b = [1, -6, 11, -6]
         a = [1, -9, 20]
 
-        for var in ('s', 'z', 'q', 'p'):
-            z, p, k = tf2zpk(b, a, var)
-            z.sort()
-            p.sort()
-            assert_allclose(z, [1, 2, 3])
-            assert_allclose(p, [4, 5])
+        z, p, k = tf2zpk(b, a, False)
+        z.sort()
+        p.sort()
+        assert_allclose(z, [1, 2, 3])
+        assert_allclose(p, [4, 5])
 
-        for var in ('z^-1', 'q^-1'):
-            z, p, k = tf2zpk(b, a, var)
-            z.sort()
-            p.sort()
-            assert_allclose(z, [1, 2, 3])
-            assert_allclose(p, [0, 4, 5])
+        z, p, k = tf2zpk(b, a, True)
+        z.sort()
+        p.sort()
+        assert_allclose(z, [1, 2, 3])
+        assert_allclose(p, [0, 4, 5])
 
         b = [1, -3, 2]
         a = [1, -12, 47, -60]
 
-        for var in ('s', 'z', 'q', 'p'):
-            z, p, k = tf2zpk(b, a, var)
-            z.sort()
-            p.sort()
-            assert_allclose(z, [1, 2])
-            assert_allclose(p, [3, 4, 5])
+        z, p, k = tf2zpk(b, a, False)
+        z.sort()
+        p.sort()
+        assert_allclose(z, [1, 2])
+        assert_allclose(p, [3, 4, 5])
 
-        for var in ('z^-1', 'q^-1'):
-            z, p, k = tf2zpk(b, a, var)
-            z.sort()
-            p.sort()
-            assert_allclose(z, [0, 1, 2])
-            assert_allclose(p, [3, 4, 5])
+        z, p, k = tf2zpk(b, a, True)
+        z.sort()
+        p.sort()
+        assert_allclose(z, [0, 1, 2])
+        assert_allclose(p, [3, 4, 5])
 
 
 class TestZpk2Tf(TestCase):
