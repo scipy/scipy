@@ -198,11 +198,9 @@ class SphericalVoronoi:
 
     >>> from matplotlib import colors
     >>> from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import spherical_voronoi
     >>> from mpl_toolkits.mplot3d import proj3d
-    >>> import scipy as sp
     >>> # set input data
     >>> points = np.array([[0, 0, 1], [0, 0, -1], [1, 0, 0],
     ...                    [0, 1, 0], [0, -1, 0], [-1, 0, 0], ])
