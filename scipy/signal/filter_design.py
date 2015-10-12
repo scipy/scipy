@@ -661,20 +661,21 @@ def tf2zpk(b, a, negative_powers=False):
 
     Examples
     --------
+    >>> from scipy.signal import tf2zpk
     >>> b = [1, -6, 11, -6]
     >>> a = [1, -9, 20]
     >>> z, p, k = tf2zpk(b, a, False)
-    >>> print(sort(z), sort(p), k)
+    >>> print(np.sort(z), np.sort(p), k)
     [ 1.  2.  3.] [ 4.  5.] 1.0
 
     >>> z, p, k = tf2zpk(b, a, True)
-    >>> print(sort(z), sort(p), k)
+    >>> print(np.sort(z), np.sort(p), k)
     [ 1.  2.  3.] [ 0.  4.  5.] 1.0
 
     >>> b = [1, -3, 2]
     >>> a = [1, -12, 47, -60]
     >>> z, p, k = tf2zpk(b, a, False)
-    >>> print(sort(z), sort(p), k)
+    >>> print(np.sort(z), np.sort(p), k)
     [ 1.  2.] [ 3.  4.  5.] 1.0
 
     """
