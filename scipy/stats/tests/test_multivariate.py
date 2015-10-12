@@ -136,7 +136,7 @@ class TestMultivariateNormal(TestCase):
                 pdf = multivariate_normal.pdf(X, mean=mn, cov=vr,
                                               allow_singular=True)
                 assert_equal(pdf.size, k)
-                assert_equal(pdf>0.0, True)
+                assert_equal(pdf > 0.0, True)
 
     def test_large_pseudo_determinant(self):
         # Check that large pseudo-determinants are handled appropriately.
