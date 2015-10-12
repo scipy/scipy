@@ -1077,6 +1077,11 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(stats.tmax(y,2.),
                                 stats.mstats.tmax(ym,2.), 10)
 
+            assert_almost_equal(stats.tmax(x, upperlimit=3.),
+                                stats.mstats.tmax(xm, upperlimit=3.), 10)
+            assert_almost_equal(stats.tmax(y, upperlimit=3.),
+                                stats.mstats.tmax(ym, upperlimit=3.), 10)
+
     def test_tmin(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
