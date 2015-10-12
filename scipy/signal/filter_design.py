@@ -665,19 +665,18 @@ def tf2zpk(b, a, negative_powers=False):
     >>> b = [1, -6, 11, -6]
     >>> a = [1, -9, 20]
     >>> z, p, k = tf2zpk(b, a, False)
-    >>> print(np.sort(z), np.sort(p), k)
-    [ 1.  2.  3.] [ 4.  5.] 1.0
+    >>> np.sort(z), np.sort(p), k
+    (array([ 1.,  2.,  3.]), array([ 4.,  5.]), 1.0)
 
     >>> z, p, k = tf2zpk(b, a, True)
-    >>> print(np.sort(z), np.sort(p), k)
-    [ 1.  2.  3.] [ 0.  4.  5.] 1.0
+    >>> np.sort(z), np.sort(p), k
+    (array([ 1.,  2.,  3.]), array([ 0.,  4.,  5.]), 1.0)
 
     >>> b = [1, -3, 2]
     >>> a = [1, -12, 47, -60]
     >>> z, p, k = tf2zpk(b, a, False)
-    >>> print(np.sort(z), np.sort(p), k)
-    [ 1.  2.] [ 3.  4.  5.] 1.0
-
+    >>> np.sort(z), np.sort(p), k
+    (array([ 1.,  2.]), array([ 3.,  4.,  5.]), 1.0)
     """
 
     b, a = normalize(b, a)
