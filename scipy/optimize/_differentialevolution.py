@@ -370,9 +370,10 @@ class DifferentialEvolutionSolver(object):
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
-        self.population = np.zeros((popsize * self.parameter_count,
-                                    self.parameter_count))
-        self.population_size = np.size(self.population, 0)
+        self.num_population_members = popsize * self.parameter_count
+
+        self.population_shape = (self.num_population_members,
+                                 self.parameter_count)
 
         if init == 'latinhypercube':
             self.init_population_lhs()
@@ -382,7 +383,8 @@ class DifferentialEvolutionSolver(object):
             raise ValueError("The population initialization method must be one"
                              "of 'latinhypercube' or 'random'")
 
-        self.population_energies = np.ones(self.population_size) * np.inf
+        self.population_energies = (np.ones(self.num_population_members)
+                                    * np.inf)
 
         self.disp = disp
 
@@ -396,18 +398,17 @@ class DifferentialEvolutionSolver(object):
 
         # Each parameter range needs to be sampled uniformly. The scaled
         # parameter range ([0, 1)) needs to be split into
-        # `self.population_size` segments, each of which has the following
+        # `self.num_population_members` segments, each of which has the following
         # size:
-        segsize = 1.0 / self.population_size
+        segsize = 1.0 / self.num_population_members
 
         # Within each segment we sample from a uniform random distribution.
         # We need to do this sampling for each parameter.
-        samples = segsize * rng.rand(self.population_size,
-                                     self.parameter_count)
+        samples = (segsize * rng.random_sample(self.population_shape)
 
         # Offset each segment to cover the entire parameter range [0, 1)
-        samples += np.atleast_2d(
-            np.linspace(0., 1., self.population_size, endpoint=False)).T
+                   + np.linspace(0., 1., self.num_population_members,
+                                 endpoint=False)[:, np.newaxis])
 
         # Create an array for population of candidate solutions.
         self.population = np.zeros_like(samples)
@@ -415,7 +416,7 @@ class DifferentialEvolutionSolver(object):
         # Initialize population of candidate solutions by permutation of the
         # random samples.
         for j in range(self.parameter_count):
-            order = rng.permutation(range(self.population_size))
+            order = rng.permutation(range(self.num_population_members))
             self.population[:, j] = samples[order, j]
 
     def init_population_random(self):
@@ -424,7 +425,7 @@ class DifferentialEvolutionSolver(object):
         can possess clustering, Latin Hypercube sampling is generally better.
         """
         rng = self.random_number_generator
-        self.population = rng.random_sample(self.population.shape)
+        self.population = rng.random_sample(self.population_shape)
 
     @property
     def x(self):
@@ -493,7 +494,7 @@ class DifferentialEvolutionSolver(object):
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
 
-            for candidate in range(self.population_size):
+            for candidate in range(self.num_population_members):
                 if nfev > self.maxfun:
                     warning_flag = True
                     status_message = _status_message['maxfev']
@@ -689,10 +690,10 @@ class DifferentialEvolutionSolver(object):
 
     def _select_samples(self, candidate, number_samples):
         """
-        obtain random integers from range(self.population_size),
+        obtain random integers from range(self.num_population_members),
         without replacement.  You can't have the original candidate either.
         """
-        idxs = list(range(self.population_size))
+        idxs = list(range(self.num_population_members))
         idxs.remove(candidate)
         self.random_number_generator.shuffle(idxs)
         idxs = idxs[:number_samples]
