@@ -3488,19 +3488,6 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         b[:,0] = 0
         assert_(len(b.keys()) == 0, "Unexpected entries in keys")
 
-    ##
-    ## TODO: The DOK matrix currently returns invalid results rather
-    ##       than raising errors in some indexing operations
-    ##
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_fancy_indexing(self):
-        pass
-
-    @dec.knownfailureif(True, "known deficiency in DOK")
-    def test_add_sub(self):
-        pass
-
 
 class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
@@ -3664,7 +3651,7 @@ class TestCOO(sparse_test_class(getset=False,
         coo = coo_matrix(mat)
         assert_array_equal(coo.todense(),mat.reshape(1,-1))
 
-    # COO does not have a __getitem__ to support iteration
+    @dec.knownfailureif(True, 'COO does not have a __getitem__')
     def test_iterator(self):
         pass
 
@@ -3707,7 +3694,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         offsets = np.array([0,-1,2])
         assert_equal(dia_matrix((data,offsets), shape=(4,4)).todense(), D)
 
-    # DIA does not have a __getitem__ to support iteration
+    @dec.knownfailureif(True, 'DIA does not have a __getitem__')
     def test_iterator(self):
         pass
 
@@ -3799,11 +3786,11 @@ class TestBSR(sparse_test_class(getset=False,
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
 
-    @dec.knownfailureif(True, "BSR not implemented")
+    @dec.knownfailureif(True, 'BSR does not have a __getitem__')
     def test_iterator(self):
         pass
 
-    @dec.knownfailureif(True, "known deficiency in BSR")
+    @dec.knownfailureif(True, 'BSR does not have a __setitem__')
     def test_setdiag(self):
         pass
 
@@ -3874,32 +3861,20 @@ class _NonCanonicalMixin(object):
 
         return NC
 
-    @dec.knownfailureif(True, 'abs broken with non-canonical matrix')
-    def test_abs(self):
-        pass
-
-    @dec.knownfailureif(True, 'bool(matrix) broken with non-canonical matrix')
+    @dec.skipif(True, 'bool(matrix) counts explicit zeros')
     def test_bool(self):
         pass
 
-    @dec.knownfailureif(True, 'min/max broken with non-canonical matrix')
-    def test_minmax(self):
+    @dec.skipif(True, 'getnnz-axis counts explicit zeros')
+    def test_getnnz_axis(self):
         pass
 
-    @dec.knownfailureif(True, 'format conversion broken with non-canonical matrix')
-    def test_sparse_format_conversions(self):
+    @dec.skipif(True, 'nnz counts explicit zeros')
+    def test_empty(self):
         pass
 
     @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical matrix')
     def test_unary_ufunc_overrides(self):
-        pass
-
-    @dec.knownfailureif(True, 'some binary ufuncs fail with scalars for noncanonical matrices')
-    def test_binary_ufunc_overrides(self):
-        pass
-
-    @dec.knownfailureif(True, 'getnnz-axis broken with non-canonical matrix')
-    def test_getnnz_axis(self):
         pass
 
 
@@ -3920,14 +3895,6 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
 
 
 class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
-    @dec.knownfailureif(True, '__getitem__ with non-canonical matrix broken for sparse boolean index due to __gt__')
-    def test_fancy_indexing_sparse_boolean(self):
-        pass
-
-    @dec.knownfailureif(True, 'broadcasting element-wise multiply broken with non-canonical matrix')
-    def test_elementwise_multiply_broadcast(self):
-        pass
-
     @dec.knownfailureif(True, 'inverse broken with non-canonical matrix')
     def test_inv(self):
         pass
@@ -3938,19 +3905,11 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
 
 
 class TestCSRNonCanonical(_NonCanonicalCSMixin, TestCSR):
-    @dec.knownfailureif(True, 'nnz counts explicit zeros')
-    def test_empty(self):
-        pass
+    pass
 
 
 class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
-    @dec.knownfailureif(True, 'nnz counts explicit zeros')
-    def test_empty(self):
-        pass
-
-    @dec.knownfailureif(True, 'nonzero reports explicit zeros')
-    def test_nonzero(self):
-        pass
+    pass
 
 
 class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
@@ -3959,44 +3918,12 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
         x[i,j] = 0
         return x.tobsr(blocksize=M.blocksize)
 
-    @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical BSR')
+    @dec.knownfailureif(True, 'diagonal broken with non-canonical BSR')
     def test_diagonal(self):
         pass
 
-    @dec.knownfailureif(True, 'unary ufunc overrides broken with non-canonical BSR')
+    @dec.knownfailureif(True, 'expm broken with non-canonical BSR')
     def test_expm(self):
-        pass
-
-    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
-    def test_eq(self):
-        pass
-
-    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
-    def test_ne(self):
-        pass
-
-    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
-    def test_gt(self):
-        pass
-
-    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
-    def test_lt(self):
-        pass
-
-    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
-    def test_ge(self):
-        pass
-
-    @dec.knownfailureif(True, 'inequalities require sum_duplicates, not implemented for BSR')
-    def test_le(self):
-        pass
-
-    @dec.knownfailureif(True, 'maximum and minimum fail for non-canonical BSR')
-    def test_maximum_minimum(self):
-        pass
-
-    @dec.knownfailureif(True, 'nnz counts explicit zeros')
-    def test_empty(self):
         pass
 
 
@@ -4018,10 +3945,6 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         m.setdiag([3, 2], k=1)
         m.sum_duplicates()
         assert_(np.all(np.diff(m.col) >= 0))
-
-    @dec.knownfailureif(True, 'nnz counts explicit zeros')
-    def test_empty(self):
-        pass
 
 
 class Test64Bit(object):

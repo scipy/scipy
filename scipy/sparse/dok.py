@@ -137,6 +137,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         element.  If either i or j is a slice or sequence, return a new sparse
         matrix with just these elements.
         """
+        zero = self.dtype.type(0)
         i, j = self._unpack_index(index)
 
         i_intlike = isintlike(i)
@@ -154,7 +155,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 j += self.shape[1]
             if j < 0 or j >= self.shape[1]:
                 raise IndexError('index out of bounds')
-            return dict.get(self, (i,j), 0.)
+            return dict.get(self, (i,j), zero)
         elif ((i_intlike or isinstance(i, slice)) and
               (j_intlike or isinstance(j, slice))):
             # Fast path for slicing very sparse matrices
@@ -201,7 +202,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         for a in xrange(i.shape[0]):
             for b in xrange(i.shape[1]):
-                v = dict.get(self, (i[a,b], j[a,b]), 0.)
+                v = dict.get(self, (i[a,b], j[a,b]), zero)
                 if v != 0:
                     dict.__setitem__(newdok, (a, b), v)
 
@@ -302,8 +303,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             res_dtype = upcast(self.dtype, other.dtype)
             new = dok_matrix(self.shape, dtype=res_dtype)
             new.update(self)
-            for key in other.keys():
-                new[key] += other[key]
+            with np.errstate(over='ignore'):
+                for key in other.keys():
+                    new[key] += other[key]
         elif isspmatrix(other):
             csc = self.tocsc()
             new = csc + other

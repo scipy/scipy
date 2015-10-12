@@ -196,10 +196,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Scalar version of self._binopt, for cases in which no new nonzeros
         are added. Produces a new spmatrix in canonical form.
         """
-        try:
-            self.sum_duplicates()
-        except NotImplementedError:
-            pass
+        self.sum_duplicates()
         res = self._with_data(op(self.data, other), copy=True)
         res.eliminate_zeros()
         return res
@@ -533,10 +530,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, op_name)
             else:
-                try:
-                    self.sum_duplicates()
-                except NotImplementedError:
-                    pass
+                self.sum_duplicates()
                 new_data = npop(self.data, np.asarray(other))
                 mat = self.__class__((new_data, self.indices, self.indptr),
                                      dtype=new_data.dtype, shape=self.shape)
@@ -948,10 +942,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         This is an *in place* operation
         """
-        fn = _sparsetools.csr_eliminate_zeros
-        M,N = self._swap(self.shape)
-        fn(M, N, self.indptr, self.indices, self.data)
-
+        M, N = self._swap(self.shape)
+        _sparsetools.csr_eliminate_zeros(M, N, self.indptr, self.indices,
+                                         self.data)
         self.prune()  # nnz may have changed
 
     def __get_has_canonical_format(self):
@@ -971,9 +964,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # not sorted => not canonical
             self._has_canonical_format = False
         elif not hasattr(self, '_has_canonical_format'):
-            fn = _sparsetools.csr_has_canonical_format
-            self.has_canonical_format = \
-                    fn(len(self.indptr) - 1, self.indptr, self.indices)
+            self.has_canonical_format = _sparsetools.csr_has_canonical_format(
+                len(self.indptr) - 1, self.indptr, self.indices)
         return self._has_canonical_format
 
     def __set_has_canonical_format(self, val):
@@ -993,9 +985,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
         self.sort_indices()
 
-        fn = _sparsetools.csr_sum_duplicates
-        M,N = self._swap(self.shape)
-        fn(M, N, self.indptr, self.indices, self.data)
+        M, N = self._swap(self.shape)
+        _sparsetools.csr_sum_duplicates(M, N, self.indptr, self.indices,
+                                        self.data)
 
         self.prune()  # nnz may have changed
         self.has_canonical_format = True
@@ -1011,9 +1003,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # first check to see if result was cached
         if not hasattr(self,'_has_sorted_indices'):
-            fn = _sparsetools.csr_has_sorted_indices
-            self._has_sorted_indices = \
-                    fn(len(self.indptr) - 1, self.indptr, self.indices)
+            self._has_sorted_indices = _sparsetools.csr_has_sorted_indices(
+                len(self.indptr) - 1, self.indptr, self.indices)
         return self._has_sorted_indices
 
     def __set_sorted(self, val):
@@ -1037,8 +1028,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """
 
         if not self.has_sorted_indices:
-            fn = _sparsetools.csr_sort_indices
-            fn(len(self.indptr) - 1, self.indptr, self.indices, self.data)
+            _sparsetools.csr_sort_indices(len(self.indptr) - 1, self.indptr,
+                                          self.indices, self.data)
             self.has_sorted_indices = True
 
     def prune(self):

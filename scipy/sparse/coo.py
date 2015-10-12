@@ -353,6 +353,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def todia(self):
         from .dia import dia_matrix
 
+        self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
         diags, diag_idx = np.unique(ks, return_inverse=True)
 
