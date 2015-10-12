@@ -24,6 +24,10 @@ from scipy.integrate import romb
 
 from common_tests import check_random_state_property
 
+def _sample_orthonormal_matrix(n):
+    M = np.random.randn(n, n)
+    u, s, v = scipy.linalg.svd(M)
+    return u
 
 class TestMultivariateNormal(TestCase):
     def test_input_shape(self):
@@ -69,11 +73,6 @@ class TestMultivariateNormal(TestCase):
             assert_equal(distn.cov_info.rank, expected_rank)
 
     def test_degenerate_distributions(self):
-
-        def _sample_orthonormal_matrix(n):
-            M = np.random.randn(n, n)
-            u, s, v = scipy.linalg.svd(M)
-            return u
 
         for n in range(1, 5):
             z = np.random.randn(n)
@@ -122,6 +121,22 @@ class TestMultivariateNormal(TestCase):
 
                 # Ensure that this has zero probability
                 assert_equal(pdf_rr_orth, 0.0)
+
+    def test_degenerate_array(self):
+        # Test that we can generate arrays of random variate from a degenerate
+        # multivariate normal, and that the pdf for these samples is non-zero
+        # (i.e. samples from the distribution lie on the subspace)
+        k = 10
+        for n in range(2,6):
+            for r in range(1,n):
+                mn = np.zeros(n)
+                u = _sample_orthonormal_matrix(n)[:,:r]
+                vr = np.dot(u, u.T)
+                X = multivariate_normal.rvs(mean=mn, cov=vr, size=k)
+                pdf = multivariate_normal.pdf(X, mean=mn, cov=vr,
+                                              allow_singular=True)
+                assert_equal(pdf.size, k)
+                assert_equal(pdf>0.0, True)
 
     def test_large_pseudo_determinant(self):
         # Check that large pseudo-determinants are handled appropriately.

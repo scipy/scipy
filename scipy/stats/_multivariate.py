@@ -220,8 +220,8 @@ class _PSD(object):
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
         
-        # Save the eigenvector basis and tolerance for testing support
-        self.eps = eps
+        # Save the eigenvector basis, and tolerance for testing support
+        self.eps = 100*eps
         self.V = u[:,s > eps]
 
         # Initialize the eagerly precomputed attributes.
