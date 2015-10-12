@@ -226,7 +226,7 @@ class SphericalVoronoi:
     >>> ax.scatter(sv.vertices[:, 0], sv.vertices[:, 1], sv.vertices[:, 2], c='g')
     >>> # indicate Voronoi regions (as Euclidean polygons)
     >>> for region in sv.regions:
-    ...    random_color = colors.rgb2hex(sp.rand(3))
+    ...    random_color = colors.rgb2hex(scipy.rand(3))
     ...    polygon = Poly3DCollection([sv.vertices[region]], alpha=1.0)
     ...    polygon.set_color(random_color)
     ...    ax.add_collection3d(polygon)
