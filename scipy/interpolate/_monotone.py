@@ -12,10 +12,10 @@ __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
 
 
 class PchipInterpolator(BPoly):
-    """PCHIP 1-d monotonic cubic interpolation
+    r"""PCHIP 1-d monotonic cubic interpolation.
 
-    x and y are arrays of values used to approximate some function f,
-    with ``y = f(x)``.  The interpolant uses monotonic cubic splines
+    `x` and `y` are arrays of values used to approximate some function f,
+    with ``y = f(x)``. The interpolant uses monotonic cubic splines
     to find the value of new points. (PCHIP stands for Piecewise Cubic
     Hermite Interpolating Polynomial).
 
@@ -25,8 +25,8 @@ class PchipInterpolator(BPoly):
         A 1-D array of monotonically increasing real values.  `x` cannot
         include duplicate values (otherwise f is overspecified)
     y : ndarray
-        A 1-D array of real values.  `y`'s length along the interpolation
-        axis must be equal to the length of `x`. If N-D array, use axis
+        A 1-D array of real values. `y`'s length along the interpolation
+        axis must be equal to the length of `x`. If N-D array, use `axis`
         parameter to select correct axis.
     axis : int, optional
         Axis in the y array corresponding to the x-coordinate values.
@@ -39,6 +39,7 @@ class PchipInterpolator(BPoly):
     __call__
     derivative
     antiderivative
+    roots
 
     See Also
     --------
@@ -46,23 +47,38 @@ class PchipInterpolator(BPoly):
 
     Notes
     -----
+    The interpolator preserves monotonicity in the interpolation data and does
+    not overshoot if the data is not smooth.
+
     The first derivatives are guaranteed to be continuous, but the second
-    derivatives may jump at x_k.
+    derivatives may jump at :math:`x_k`.
 
-    Preserves monotonicity in the interpolation data and does not overshoot
-    if the data is not smooth.
+    Determines the derivatives at the points :math:`x_k`, :math:`f'_k`,
+    by using PCHIP algorithm [1]_.
 
-    Determines the derivatives at the points x_k, d_k, by using PCHIP
-    algorithm:
+    Let :math:`h_k = x_{k+1} - x_k`, and  :math:`d_k = (y_{k+1} - y_k) / h_k`
+    are the slopes at internal points :math:`x_k`.
+    If the signs of :math:`d_k` and :math:`d_{k-1}` are different or either of
+    them equals zero, then :math:`f'_k = 0`. Otherwise, it is given by the
+    weighted harmonic mean
 
-    Let m_k be the slope of the kth segment (between k and k+1)
-    If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
-    else use weighted harmonic mean:
+    .. math::
 
-       w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
-       1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
+        \frac{w_1 + w_2}{f'_k} = \frac{w_1}{d_{k-1}} + \frac{w_2}{d_k}
 
-    where h_k is the spacing between x_k and x_{k+1}.
+    where :math:`w_1 = 2 h_k + h_{k-1}` and :math:`w_2 = h_k + 2 h_{k-1}`.
+
+    The end slopes are set using a one-sided scheme [2]_.
+
+
+    References
+    ----------
+    .. [1] F. N. Fritsch and R. E. Carlson, Monotone Piecewise Cubic Interpolation,
+           SIAM J. Numer. Anal., 17(2), 238 (1980).
+           DOI:10.1137/0717021
+    .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
+           DOI: http://dx.doi.org/10.1137/1.9780898717952
+
 
     """
     def __init__(self, x, y, axis=0, extrapolate=None):
@@ -102,7 +118,6 @@ class PchipInterpolator(BPoly):
         d[mmm] = 3.*m0[mmm]
 
         return d
-
 
     @staticmethod
     def _find_derivatives(x, y):
