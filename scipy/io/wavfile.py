@@ -45,7 +45,6 @@ def _read_fmt_chunk(fid):
     res = struct.unpack(fmt+'iHHIIHH', fid.read(20))
     size, comp, noc, rate, sbytes, ba, bits = res
 
-
     bytes_read = 0
     if comp == WAVE_FORMAT_EXTENSIBLE and size >= (16+2):
         ext_chunk_size = struct.unpack('<H', fid.read(2))[0]
@@ -54,12 +53,12 @@ def _read_fmt_chunk(fid):
             extensible_chunk_data = fid.read(22)
             bytes_read += 22
             raw_guid = extensible_chunk_data[2+4:2+4+16]
-            tail = '\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71'# GUID template {XXXXXXXX-0000-0010-8000-00AA00389B71} (RFC-2361)
+            # GUID template {XXXXXXXX-0000-0010-8000-00AA00389B71} (RFC-2361)
+            tail = '\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71'
             if raw_guid.endswith(tail):
                 comp = struct.unpack('<I', raw_guid[:4])[0]
         else:
             raise Exception("Binary structure of wave file is not compliant")
-
 
     if comp not in KNOWN_WAVE_FORMATS:
         raise Exception("Unknown wave file format")
