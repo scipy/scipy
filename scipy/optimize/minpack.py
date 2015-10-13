@@ -456,8 +456,26 @@ def _weighted_general_function(params, xdata, ydata, function, weights):
     return weights * (function(xdata, *params) - ydata)
 
 
+def _initialize_feasible(lb, ub):
+    p0 = np.ones_like(lb)
+    lb_finite = np.isfinite(lb)
+    ub_finite = np.isfinite(ub)
+
+    mask = lb_finite & ub_finite
+    p0[mask] = 0.5 * (lb[mask] + ub[mask])
+    
+    mask = lb_finite & ~ub_finite
+    p0[mask] = lb[mask] + 1
+    
+    mask = ~lb_finite & ub_finite
+    p0[mask] = ub[mask] - 1
+
+    return p0
+
+
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
-              check_finite=True, bounds=None, method=None, **kwargs):
+              check_finite=True, bounds=(-np.inf, np.inf), method=None,
+              **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -500,10 +518,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         False may silently produce nonsensical results if the input arrays
         do contain nans. Default is True.
     bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Default is None
-        (no bounds). If provided, each element of the tuple must be either an
-        array with the length equal to the number of parameters, or a scalar
-        (in which case the bound is taken to be the same for all parameters.)
+        Lower and upper bounds on independent variables. Defaults to no bounds.        
+        Each element of the tuple must be either an array with the length equal
+        to the number of parameters, or a scalar (in which case the bound is
+        taken to be the same for all parameters.) Use ``np.inf`` with an
+        appropriate sign to disable bounds on all or some parameters.
         .. versionadded:: 0.17
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization.  See `least_squares` for more details.
@@ -575,37 +594,29 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 2., 1.]))
 
-    """
-    if method is None:
-        if bounds is None:
-            method = 'lm'
-        else:
-            method = 'trf'
-
-    if method == 'lm' and bounds is not None:
-        raise ValueError("Method 'lm' only works for unconstrained problems. "
-                         "Use method='trf' or 'dogbox' instead")
-
+    """    
     if p0 is None:
         # determine number of parameters by inspecting the function
         from scipy._lib._util import getargspec_no_self as _getargspec
         args, varargs, varkw, defaults = _getargspec(f)
         if len(args) < 2:
-            msg = "Unable to determine number of fit parameters."
-            raise ValueError(msg)                      
+            raise ValueError("Unable to determine number of fit parameters.")                      
         p0 = np.ones(len(args) - 1)
     else:
         p0 = np.atleast_1d(p0)
+    
+    lb, ub = prepare_bounds(bounds, p0)
+    bounded_problem = np.any((lb > -np.inf) | (ub < np.inf))
 
-    if bounds is not None:
-        # Make sure the starting point is feasible
-        lb, ub = prepare_bounds(bounds, p0)
+    if method is None:
+        if bounded_problem:
+            method = 'trf'
+        else:
+            method = 'lm'    
 
-        if np.any(lb >= ub):
-            raise ValueError("Each lower bound mush be strictly less than "
-                             "each upper bound.")
-
-        p0 = make_strictly_feasible(p0, lb, ub)
+    if method == 'lm' and bounded_problem:
+        raise ValueError("Method 'lm' only works for unconstrained problems. "
+                         "Use method='trf' or 'dogbox' instead")
 
     # NaNs can not be handled
     if check_finite:
@@ -629,24 +640,20 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         args += (1.0 / asarray(sigma),)
 
     if method == 'lm':
-        # Remove full_output from kw, otherwise we're passing it in twice.
+        # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)
         res = leastsq(func, p0, args=args, full_output=1, **kwargs)
         popt, pcov, infodict, errmsg, ier = res
         cost = np.sum(infodict['fvec'] ** 2)
         if ier not in [1, 2, 3, 4]:
-            msg = "Optimal parameters not found: " + errmsg
-            raise RuntimeError(msg)
+            raise RuntimeError("Optimal parameters not found: " + errmsg)
     else:
-        if bounds is None:
-            bounds = (-np.inf, np.inf)
-
+        p0 = _initialize_feasible(lb, ub)
         res = least_squares(func, p0, args=args, bounds=bounds, method=method,
                             **kwargs)
 
         if not res.success:
-            msg = "Optimal parameters not found: " + res.message
-            raise RuntimeError(msg)
+            raise RuntimeError("Optimal parameters not found: " + res.message)
 
         cost = 2 * res.cost  # res.cost is half sum of squares!
         popt = res.x

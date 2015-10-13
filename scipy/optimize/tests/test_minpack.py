@@ -423,8 +423,8 @@ class TestCurveFit(TestCase):
         xdata = np.linspace(0, 1, 11)
         ydata = f(xdata, 2., 2.)
 
-        for meth in ['trf', 'dogbox', 'lm', None]:
-            popt, pcov = curve_fit(f, xdata, ydata, method=meth)
+        for method in ['trf', 'dogbox', 'lm', None]:
+            popt, pcov = curve_fit(f, xdata, ydata, method=method)
             assert_allclose(popt, [2., 2.])
 
         assert_raises(ValueError, curve_fit, f, xdata, ydata, method='unknown')
@@ -439,8 +439,9 @@ class TestCurveFit(TestCase):
         # The minimum w/out bounds is at [2., 2.],
         # and with bounds it's at [1.5, smth].
         bounds = ([1., 0], [1.5, 3.])
-        for meth in [None, 'trf', 'dogbox']:
-            popt, pcov = curve_fit(f, xdata, ydata, bounds=bounds, method=meth)
+        for method in [None, 'trf', 'dogbox']:
+            popt, pcov = curve_fit(f, xdata, ydata, bounds=bounds,
+                                   method=method)
             assert_allclose(popt[0], 1.5)
 
         # With bounds, the starting estimate is feasible.
