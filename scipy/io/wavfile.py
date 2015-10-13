@@ -54,7 +54,7 @@ def _read_fmt_chunk(fid):
             bytes_read += 22
             raw_guid = extensible_chunk_data[2+4:2+4+16]
             # GUID template {XXXXXXXX-0000-0010-8000-00AA00389B71} (RFC-2361)
-            tail = '\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71'
+            tail = b'\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71'
             if raw_guid.endswith(tail):
                 comp = struct.unpack('<I', raw_guid[:4])[0]
         else:
