@@ -497,8 +497,7 @@ class TestPCHIP(TestCase):
         # http://nag.com/numeric/cl/nagdoc_cl25/html/e01/e01bec.html
         # suggested in gh-5326 as a smoke test for the way the derivatives
         # are computed (see also gh-3453)
-        from StringIO import StringIO
-
+        from scipy._lib.six import StringIO
         dataStr = '''
           7.99   0.00000E+0
           8.09   0.27643E-4
@@ -532,9 +531,9 @@ class TestPCHIP(TestCase):
     def test_endslopes(self):
         # this is a smoke test for gh-3453: PCHIP interpolator should not
         # set edge slopes to zero if the data do not suggest zero edge derivatives
-        x = np.array([0.0, 0.1, 0.25, 0.35]);
-        y1 = np.array([279.35, 0.5e3, 1.0e3, 2.5e3]);
-        y2 = np.array([279.35, 2.5e3, 1.50e3, 1.0e3]);
+        x = np.array([0.0, 0.1, 0.25, 0.35])
+        y1 = np.array([279.35, 0.5e3, 1.0e3, 2.5e3])
+        y2 = np.array([279.35, 2.5e3, 1.50e3, 1.0e3])
         for pp in (pchip(x, y1), pchip(x, y2)):
             for t in (x[0], x[-1]):
                 assert_(pp(t, 1) != 0)
