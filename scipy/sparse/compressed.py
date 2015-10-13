@@ -53,7 +53,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     idx_dtype = get_index_dtype((indices, indptr), check_contents=True)
                     self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
-                    self.data = np.array(data, copy=copy, dtype=getdtype(dtype, data))
+                    self.data = np.array(data, copy=copy, dtype=dtype)
                 else:
                     raise ValueError("unrecognized %s_matrix constructor usage" %
                             self.format)

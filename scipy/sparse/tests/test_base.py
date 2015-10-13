@@ -3096,6 +3096,15 @@ class TestCSR(sparse_test_class()):
         csr = csr_matrix((data, indices, indptr))
         assert_array_equal(csr.shape,(3,6))
 
+    def test_constructor6(self):
+        # infer dimensions and dtype from lists
+        indptr = [0, 1, 3, 3]
+        indices = [0, 5, 1, 2]
+        data = [1, 2, 3, 4]
+        csr = csr_matrix((data, indices, indptr))
+        assert_array_equal(csr.shape, (3,6))
+        assert_(np.issubdtype(csr.dtype, int))
+
     def test_sort_indices(self):
         data = arange(5)
         indices = array([7, 2, 1, 5, 4])
@@ -3257,6 +3266,15 @@ class TestCSC(sparse_test_class()):
         data = array([1,2,3,4])
         csc = csc_matrix((data, indices, indptr))
         assert_array_equal(csc.shape,(6,3))
+
+    def test_constructor6(self):
+        # infer dimensions and dtype from lists
+        indptr = [0, 1, 3, 3]
+        indices = [0, 5, 1, 2]
+        data = [1, 2, 3, 4]
+        csc = csc_matrix((data, indices, indptr))
+        assert_array_equal(csc.shape,(6,3))
+        assert_(np.issubdtype(csc.dtype, int))
 
     def test_eliminate_zeros(self):
         data = array([1, 0, 0, 0, 2, 0, 3, 0])
