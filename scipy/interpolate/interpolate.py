@@ -442,7 +442,13 @@ class interp1d(_Interpolator1D):
                 self.x_bds = (x[1:] + x[:-1]) / 2.0
                 self._call = self.__class__._call_nearest
             else:
-                self._call = self.__class__._call_linear
+                # Check if we can delegate to numpy.interp (2x-10x faster).
+                if (not np.issubdtype(self.y.dtype, np.complexfloating) and
+                   self.y.ndim == 1 and
+                   fill_value != 'extrapolate'):
+                    self._call = self.__class__._call_linear_np
+                else:
+                    self._call = self.__class__._call_linear
         else:
             minval = order + 1
             self._spline = splmake(x, y, order=order)
@@ -455,6 +461,10 @@ class interp1d(_Interpolator1D):
         self._kind = kind
         self.x = x
         self._y = y
+
+    def _call_linear_np(self, x_new):
+        # Note that out-of-bounds values are taken care of in self._evaluate
+        return np.interp(x_new, self.x, self.y)
 
     def _call_linear(self, x_new):
         # 2. Find where in the orignal data, the values to interpolate
