@@ -330,8 +330,8 @@ class DifferentialEvolutionSolver(object):
         self.polish = polish
         self.tol = tol
 
-        #Mutation constant should be in [0, 2). If specified as a sequence
-        #then dithering is performed.
+        # Mutation constant should be in [0, 2). If specified as a sequence
+        # then dithering is performed.
         self.scale = mutation
         if (not np.all(np.isfinite(mutation)) or
                 np.any(np.array(mutation) >= 2) or
@@ -371,13 +371,17 @@ class DifferentialEvolutionSolver(object):
         self.__scale_arg1 = 0.5 * (self.limits[0] + self.limits[1])
         self.__scale_arg2 = np.fabs(self.limits[0] - self.limits[1])
 
-        parameter_count = np.size(self.limits, 1)
+        self.parameter_count = np.size(self.limits, 1)
+
         self.random_number_generator = _make_random_gen(seed)
 
-        #default initialization is a latin hypercube design, but there
-        #are other population initializations possible.
-        self.population = np.zeros((popsize * parameter_count,
-                                    parameter_count))
+        # default population initialization is a latin hypercube design, but
+        # there are other population initializations possible.
+        self.num_population_members = popsize * self.parameter_count
+
+        self.population_shape = (self.num_population_members,
+                                 self.parameter_count)
+
         if init == 'latinhypercube':
             self.init_population_lhs()
         elif init == 'random':
@@ -386,35 +390,41 @@ class DifferentialEvolutionSolver(object):
             raise ValueError("The population initialization method must be one"
                              "of 'latinhypercube' or 'random'")
 
-        self.population_energies = np.ones(
-            popsize * parameter_count) * np.inf
+        self.population_energies = (np.ones(self.num_population_members)
+                                    * np.inf)
 
         self.disp = disp
 
     def init_population_lhs(self):
         """
-        Initializes the population with Latin Hypercube Sampling
-        Latin Hypercube Sampling ensures that the sampling of parameter space
-        is maximised.
+        Initializes the population with Latin Hypercube Sampling.
+        Latin Hypercube Sampling ensures that each parameter is uniformly
+        sampled over its range.
         """
-        samples = np.size(self.population, 0)
-        N = np.size(self.population, 1)
         rng = self.random_number_generator
 
-        # Generate the intervals
-        segsize = 1.0 / samples
+        # Each parameter range needs to be sampled uniformly. The scaled
+        # parameter range ([0, 1)) needs to be split into
+        # `self.num_population_members` segments, each of which has the following
+        # size:
+        segsize = 1.0 / self.num_population_members
 
-        # Fill points uniformly in each interval
-        rdrange = rng.rand(samples, N) * segsize
-        rdrange += np.atleast_2d(
-            np.linspace(0., 1., samples, endpoint=False)).T
+        # Within each segment we sample from a uniform random distribution.
+        # We need to do this sampling for each parameter.
+        samples = (segsize * rng.random_sample(self.population_shape)
 
-        # Make the random pairings
-        self.population = np.zeros_like(rdrange)
+        # Offset each segment to cover the entire parameter range [0, 1)
+                   + np.linspace(0., 1., self.num_population_members,
+                                 endpoint=False)[:, np.newaxis])
 
-        for j in range(N):
-            order = rng.permutation(range(samples))
-            self.population[:, j] = rdrange[order, j]
+        # Create an array for population of candidate solutions.
+        self.population = np.zeros_like(samples)
+
+        # Initialize population of candidate solutions by permutation of the
+        # random samples.
+        for j in range(self.parameter_count):
+            order = rng.permutation(range(self.num_population_members))
+            self.population[:, j] = samples[order, j]
 
     def init_population_random(self):
         """
@@ -422,7 +432,7 @@ class DifferentialEvolutionSolver(object):
         can possess clustering, Latin Hypercube sampling is generally better.
         """
         rng = self.random_number_generator
-        self.population = rng.random_sample(self.population.shape)
+        self.population = rng.random_sample(self.population_shape)
 
     @property
     def x(self):
@@ -490,23 +500,34 @@ class DifferentialEvolutionSolver(object):
             if self.dither is not None:
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
-            for candidate in range(np.size(self.population, 0)):
+
+            for candidate in range(self.num_population_members):
                 if nfev > self.maxfun:
                     warning_flag = True
                     status_message = _status_message['maxfev']
                     break
 
+                # create a trial solution
                 trial = self._mutate(candidate)
+
+                # ensuring that it's in the range [0, 1)
                 self._ensure_constraint(trial)
+
+                # scale from [0, 1) to the actual parameter value
                 parameters = self._scale_parameters(trial)
 
+                # determine the energy of the objective function
                 energy = self.func(parameters, *self.args)
                 nfev += 1
 
+                # if the energy of the trial candidate is lower than the
+                # original population member then replace it
                 if energy < self.population_energies[candidate]:
                     self.population[candidate] = trial
                     self.population_energies[candidate] = energy
 
+                    # if the trial candidate also has a lower energy than the
+                    # best solution then replace that as well
                     if energy < self.population_energies[0]:
                         self.population_energies[0] = energy
                         self.population[0] = trial
@@ -591,9 +612,10 @@ class DifferentialEvolutionSolver(object):
         create a trial vector based on a mutation strategy
         """
         trial = np.copy(self.population[candidate])
-        parameter_count = np.size(trial, 0)
 
-        fill_point = self.random_number_generator.randint(0, parameter_count)
+        rng = self.random_number_generator
+
+        fill_point = rng.randint(0, self.parameter_count)
 
         if (self.strategy == 'randtobest1exp'
                 or self.strategy == 'randtobest1bin'):
@@ -603,7 +625,7 @@ class DifferentialEvolutionSolver(object):
             bprime = self.mutation_func(self._select_samples(candidate, 5))
 
         if self.strategy in self._binomial:
-            crossovers = self.random_number_generator.rand(parameter_count)
+            crossovers = rng.rand(self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
             # the last one is always from the bprime vector for binomial
             # If you fill in modulo with a loop you have to set the last one to
@@ -615,12 +637,11 @@ class DifferentialEvolutionSolver(object):
 
         elif self.strategy in self._exponential:
             i = 0
-            while (i < parameter_count and
-                   self.random_number_generator.rand() <
-                   self.cross_over_probability):
+            while (i < self.parameter_count and
+                   rng.rand() < self.cross_over_probability):
 
                 trial[fill_point] = bprime[fill_point]
-                fill_point = (fill_point + 1) % parameter_count
+                fill_point = (fill_point + 1) % self.parameter_count
                 i += 1
 
             return trial
@@ -658,8 +679,8 @@ class DifferentialEvolutionSolver(object):
         """
         r0, r1, r2, r3 = samples[:4]
         bprime = (self.population[0] + self.scale *
-                            (self.population[r0] + self.population[r1]
-                           - self.population[r2] - self.population[r3]))
+                  (self.population[r0] + self.population[r1]
+                   - self.population[r2] - self.population[r3]))
 
         return bprime
 
@@ -669,17 +690,17 @@ class DifferentialEvolutionSolver(object):
         """
         r0, r1, r2, r3, r4 = samples
         bprime = (self.population[r0] + self.scale *
-                 (self.population[r1] + self.population[r2] -
-                  self.population[r3] - self.population[r4]))
+                  (self.population[r1] + self.population[r2] -
+                   self.population[r3] - self.population[r4]))
 
         return bprime
 
     def _select_samples(self, candidate, number_samples):
         """
-        obtain random integers from range(np.size(self.population, 0)),
+        obtain random integers from range(self.num_population_members),
         without replacement.  You can't have the original candidate either.
         """
-        idxs = list(range(np.size(self.population, 0)))
+        idxs = list(range(self.num_population_members))
         idxs.remove(candidate)
         self.random_number_generator.shuffle(idxs)
         idxs = idxs[:number_samples]
