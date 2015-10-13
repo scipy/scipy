@@ -98,7 +98,7 @@ try:
 
     if not setup_py.ISRELEASED:
         if GIT_REVISION == "Unknown":
-            FULLVERSION += '.dev0'
+            FULLVERSION += '.dev0+Unknown'
         else:
             FULLVERSION += '.dev0+' + GIT_REVISION[:7]
 finally:
@@ -309,8 +309,16 @@ def tarball_name(type='gztar'):
 
 @task
 def sdist():
-    # To be sure to bypass paver when building sdist... paver + scipy.distutils
+    # First clean the repo and update submodules (for up-to-date doc html theme
+    # and Sphinx extensions)
+    sh('git clean -xdf')
+    sh('git submodule init')
+    sh('git submodule update')
+
+    # To be sure to bypass paver when building sdist... paver + numpy.distutils
     # do not play well together.
+    # Cython is run over all Cython files in setup.py, so generated C files
+    # will be included.
     sh('python setup.py sdist --formats=gztar,zip')
     sh('python setup.py sdist --formats=tar')
     if os.path.exists(os.path.join('dist', tarball_name("xztar"))):
