@@ -14,6 +14,11 @@ matrix:
       script:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
         - pep8 scipy benchmarks/benchmarks
+    - python: 3.5
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC=numpy
     - python: 3.4
       env:
         - TESTMODE=fast

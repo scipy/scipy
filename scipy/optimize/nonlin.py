@@ -114,14 +114,14 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import numpy as np
-from scipy._lib.six import callable, exec_
-from scipy._lib.six import xrange
+from scipy._lib.six import callable, exec_, xrange
 from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
+from scipy._lib._util import getargspec_no_self as _getargspec
 from .linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 
@@ -1498,8 +1498,7 @@ def _nonlin_wrapper(name, jac):
     keyword arguments of `nonlin_solve`
 
     """
-    import inspect
-    args, varargs, varkw, defaults = inspect.getargspec(jac.__init__)
+    args, varargs, varkw, defaults = _getargspec(jac.__init__)
     kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:

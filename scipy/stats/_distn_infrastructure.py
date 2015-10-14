@@ -5,11 +5,11 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy._lib.six import string_types, exec_
+from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
 import keyword
 import re
-import inspect
 import types
 import warnings
 
@@ -633,7 +633,7 @@ class rv_generic(object):
         super(rv_generic, self).__init__()
 
         # figure out if _stats signature has 'moments' keyword
-        sign = inspect.getargspec(self._stats)
+        sign = _getargspec(self._stats)
         self._stats_has_moments = ((sign[2] is not None) or
                                    ('moments' in sign[0]))
         self._random_state = check_random_state(seed)
@@ -686,15 +686,17 @@ class rv_generic(object):
                         'shapes must be valid python identifiers')
         else:
             # find out the call signatures (_pdf, _cdf etc), deduce shape
-            # arguments
+            # arguments. Generic methods only have 'self, x', any further args
+            # are shapes.
             shapes_list = []
             for meth in meths_to_inspect:
-                shapes_args = inspect.getargspec(meth)
-                shapes_list.append(shapes_args.args)
+                shapes_args = _getargspec(meth)   # NB: does not contain self
+                args = shapes_args.args[1:]       # peel off 'x', too
 
-                # *args or **kwargs are not allowed w/automatic shapes
-                # (generic methods have 'self, x' only)
-                if len(shapes_args.args) > 2:
+                if args:
+                    shapes_list.append(args)
+
+                    # *args or **kwargs are not allowed w/automatic shapes
                     if shapes_args.varargs is not None:
                         raise TypeError(
                             '*args are not allowed w/out explicit shapes')
@@ -704,14 +706,15 @@ class rv_generic(object):
                     if shapes_args.defaults is not None:
                         raise TypeError('defaults are not allowed for shapes')
 
-            shapes = max(shapes_list, key=lambda x: len(x))
-            shapes = shapes[2:]  # remove self, x,
+            if shapes_list:
+                shapes = shapes_list[0]
 
-            # make sure the signatures are consistent
-            # (generic methods have 'self, x' only)
-            for item in shapes_list:
-                if len(item) > 2 and item[2:] != shapes:
-                    raise TypeError('Shape arguments are inconsistent.')
+                # make sure the signatures are consistent
+                for item in shapes_list:
+                    if item != shapes:
+                        raise TypeError('Shape arguments are inconsistent.')
+            else:
+                shapes = []
 
         # have the arguments, construct the method from template
         shapes_str = ', '.join(shapes) + ', ' if shapes else ''  # NB: not None
@@ -2689,7 +2692,9 @@ class rv_discrete(rv_generic):
                                                  self, rv_discrete)
             self.moment_gen = instancemethod(_drv_moment_gen,
                                              self, rv_discrete)
-            self._construct_argparser(meths_to_inspect=[_drv_pmf],
+
+            self.shapes = ' '   # bypass inspection 
+            self._construct_argparser(meths_to_inspect=[self._pmf],
                                       locscale_in='loc=0',
                                       # scale=1 for discrete RVs
                                       locscale_out='loc, 1')
