@@ -58,10 +58,10 @@ def _read_fmt_chunk(fid):
             if raw_guid.endswith(tail):
                 comp = struct.unpack('<I', raw_guid[:4])[0]
         else:
-            raise Exception("Binary structure of wave file is not compliant")
+            raise ValueError("Binary structure of wave file is not compliant")
 
     if comp not in KNOWN_WAVE_FORMATS:
-        raise Exception("Unknown wave file format")
+        raise ValueError("Unknown wave file format")
         
     if size > (16+bytes_read):
         fid.read(size - (16+bytes_read))
