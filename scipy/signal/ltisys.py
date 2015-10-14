@@ -146,6 +146,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     ----------
     A, B, C, D : array_like, optional
         State-space matrices. All of them are None (missing) by default.
+        See `ss2tf` for format.
 
     Returns
     -------
@@ -183,12 +184,21 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
 def ss2tf(A, B, C, D, input=0):
     """State-space to transfer function.
 
+    A, B, C, D defines a linear state-space system with `p` inputs,
+    `q` outputs, and `n` state variables.
+
     Parameters
     ----------
-    A, B, C, D : ndarray
-        State-space representation of linear system.
+    A : array_like
+        State (or system) matrix of shape ``(n, n)``
+    B : array_like
+        Input matrix of shape ``(n, p)``
+    C : array_like
+        Output matrix of shape ``(q, n)``
+    D : array_like
+        Feedthrough (or feedforward) matrix of shape ``(q, p)``
     input : int, optional
-        For multiple-input systems, the input to use.
+        For multiple-input systems, the index of the input to use.
 
     Returns
     -------
@@ -258,12 +268,21 @@ def zpk2ss(z, p, k):
 def ss2zpk(A, B, C, D, input=0):
     """State-space representation to zero-pole-gain representation.
 
+    A, B, C, D defines a linear state-space system with `p` inputs,
+    `q` outputs, and `n` state variables.
+
     Parameters
     ----------
-    A, B, C, D : ndarray
-        State-space representation of linear system.
+    A : array_like
+        State (or system) matrix of shape ``(n, n)``
+    B : array_like
+        Input matrix of shape ``(n, p)``
+    C : array_like
+        Output matrix of shape ``(q, n)``
+    D : array_like
+        Feedthrough (or feedforward) matrix of shape ``(q, p)``
     input : int, optional
-        For multiple-input systems, the input to use.
+        For multiple-input systems, the index of the input to use.
 
     Returns
     -------
@@ -390,7 +409,7 @@ class lti(object):
 
     @property
     def A(self):
-        """A matrix of the `StateSpace` system."""
+        """State matrix of the `StateSpace` system."""
         return self.to_ss().A
 
     @A.setter
@@ -402,7 +421,7 @@ class lti(object):
 
     @property
     def B(self):
-        """B matrix of the `StateSpace` system."""
+        """Input matrix of the `StateSpace` system."""
         return self.to_ss().B
 
     @B.setter
@@ -414,7 +433,7 @@ class lti(object):
 
     @property
     def C(self):
-        """C matrix of the `StateSpace` system."""
+        """Output matrix of the `StateSpace` system."""
         return self.to_ss().C
 
     @C.setter
@@ -426,7 +445,7 @@ class lti(object):
 
     @property
     def D(self):
-        """D matrix of the `StateSpace` system."""
+        """Feedthrough matrix of the `StateSpace` system."""
         return self.to_ss().D
 
     @D.setter
@@ -556,6 +575,7 @@ class TransferFunction(lti):
 
     @property
     def num(self):
+        """Numerator of the `TransferFunction` system."""
         return self._num
 
     @num.setter
@@ -571,6 +591,7 @@ class TransferFunction(lti):
 
     @property
     def den(self):
+        """Denominator of the `TransferFunction` system."""
         return self._den
 
     @den.setter
@@ -687,6 +708,7 @@ class ZerosPolesGain(lti):
 
     @property
     def zeros(self):
+        """Zeros of the `ZerosPolesGain` system."""
         return self._zeros
 
     @zeros.setter
@@ -702,6 +724,7 @@ class ZerosPolesGain(lti):
 
     @property
     def poles(self):
+        """Poles of the `ZerosPolesGain` system."""
         return self._poles
 
     @poles.setter
@@ -710,6 +733,7 @@ class ZerosPolesGain(lti):
 
     @property
     def gain(self):
+        """Gain of the `ZerosPolesGain` system."""
         return self._gain
 
     @gain.setter
@@ -827,6 +851,7 @@ class StateSpace(lti):
 
     @property
     def A(self):
+        """State matrix of the `StateSpace` system."""
         return self._A
 
     @A.setter
@@ -835,6 +860,7 @@ class StateSpace(lti):
 
     @property
     def B(self):
+        """Input matrix of the `StateSpace` system."""
         return self._B
 
     @B.setter
@@ -844,6 +870,7 @@ class StateSpace(lti):
 
     @property
     def C(self):
+        """Output matrix of the `StateSpace` system."""
         return self._C
 
     @C.setter
@@ -853,6 +880,7 @@ class StateSpace(lti):
 
     @property
     def D(self):
+        """Feedthrough matrix of the `StateSpace` system."""
         return self._D
 
     @D.setter
