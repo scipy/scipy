@@ -80,6 +80,10 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # distslow are sorted by speed (very slow to slow)
 
 
+# These distributions fail the complex derivative test below.
+# Here 'fail' mean produce wrong results and/or raise exceptions, depending
+# on the implementation details of corresponding special functions.
+# cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma', 
     'dweibull', 'erlang', 'expon', 'exponnorm', 'exponpow', 'exponweib', 'f',
     'fatiguelife', 'foldnorm', 'frechet_l', 'frechet_r', 'gamma', 'gausshyper',
