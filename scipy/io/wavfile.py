@@ -277,8 +277,8 @@ def write(filename, rate, data):
         fid.write( struct.pack('<I', len(fmt_chunk_data)) )
         fid.write(fmt_chunk_data)
 
-        # fact chunk
-        if dkind == 'f':
+        # fact chunk (non-PCM files)
+        if not (dkind == 'i' or dkind == 'u'):
             fid.write(b'fact')
             fid.write(struct.pack('<II', 4, data.shape[0]))
         
