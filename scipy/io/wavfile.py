@@ -272,7 +272,7 @@ def write(filename, rate, data):
                                      ba, bits)
         if not (dkind == 'i' or dkind == 'u'):
             # add cbSize field for non-PCM files
-            fmt_chunk_data += '\x00\x00'
+            fmt_chunk_data += b'\x00\x00'
         
         fid.write(struct.pack('<I', len(fmt_chunk_data)))
         fid.write(fmt_chunk_data)
