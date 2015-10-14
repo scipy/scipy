@@ -132,6 +132,7 @@ class TestInterp1D(object):
         interp1d(self.x10, self.y10, kind='nearest')
         interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value="extrapolate")
+        interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
         interp1d(self.x10, self.y10, kind=0)
         interp1d(self.x10, self.y10, kind=1)
         interp1d(self.x10, self.y10, kind=2)
@@ -170,6 +171,8 @@ class TestInterp1D(object):
         assert_(np.isnan(interp1d(self.x10, self.y10).fill_value))
         assert_equal(interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
                      3.0)
+        assert_equal(interp1d(self.x10, self.y10, fill_value=(1.0, 2.0)).fill_value,
+                     (1.0, 2.0))
         assert_equal(interp1d(self.x10, self.y10).axis, 0)
         assert_equal(interp1d(self.x10, self.y210).axis, 1)
         assert_equal(interp1d(self.x10, self.y102, axis=0).axis, 0)
@@ -269,7 +272,8 @@ class TestInterp1D(object):
                            np.array(self.fill_value),)
         assert_array_equal(extrap10._check_bounds(
                                np.array([-1.0, 0.0, 5.0, 9.0, 11.0])),
-                           np.array([True, False, False, False, True]))
+                           np.array([[True, False, False, False, False],
+                                     [False, False, False, False, True]]))
 
         raises_bounds_error = interp1d(self.x10, self.y10, bounds_error=True,
                                        kind=kind)
@@ -290,6 +294,19 @@ class TestInterp1D(object):
                      'slinear', 'zero', 'quadratic'):
             self._bounds_check(kind)
             self._bounds_check_int_nan_fill(kind)
+
+    def _check_fill_value(self, kind):
+        interp = interp1d(self.x10, self.y10, kind=kind,
+                          fill_value=(-100, 100), bounds_error=False)
+        assert_array_almost_equal(interp(10), 100)
+        assert_array_almost_equal(interp(-10), -100)
+        assert_array_almost_equal(interp([-10, 10]), [-100, 100])
+
+    def test_fill_value(self):
+        # test that two-element fill value works
+        for kind in ('linear', 'nearest', 'cubic', 'slinear', 'quadratic',
+                     'zero'):
+            self._check_fill_value(kind)
 
     def _nd_check_interp(self, kind='linear'):
         # Check the behavior when the inputs and outputs are multidimensional.

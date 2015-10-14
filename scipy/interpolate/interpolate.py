@@ -388,6 +388,16 @@ class interp1d(_Interpolator1D):
             if bounds_error:
                 raise ValueError("Cannot extrapolate and raise at the same time.")
             bounds_error = False
+            self._extrapolate = True
+        else:
+            # either a pair (_below_range, _above_range) or a single value
+            # for both above and below range
+            try:
+                self._fill_value_below, self._fill_value_above = fill_value
+            except TypeError:
+                self._fill_value_below = fill_value
+                self._fill_value_above = fill_value
+            self._extrapolate = False
 
         if bounds_error is None:
             bounds_error = True
@@ -521,10 +531,11 @@ class interp1d(_Interpolator1D):
         #    The behavior is set by the bounds_error variable.
         x_new = asarray(x_new)
         y_new = self._call(self, x_new)
-        if self.fill_value != 'extrapolate':
-            out_of_bounds = self._check_bounds(x_new)
+        if not self._extrapolate:
+            below_bounds, above_bounds = self._check_bounds(x_new)
             if len(y_new) > 0:
-                y_new[out_of_bounds] = self.fill_value
+                y_new[below_bounds] = self._fill_value_below
+                y_new[above_bounds] = self._fill_value_above
         return y_new
 
     def _check_bounds(self, x_new):
@@ -556,8 +567,7 @@ class interp1d(_Interpolator1D):
 
         # !! Should we emit a warning if some values are out of bounds?
         # !! matlab does not.
-        out_of_bounds = logical_or(below_bounds, above_bounds)
-        return out_of_bounds
+        return below_bounds, above_bounds
 
 
 class _PPolyBase(object):
