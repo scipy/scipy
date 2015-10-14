@@ -42,21 +42,25 @@ def _read_fmt_chunk(fid):
         fmt = '>'
     else:
         fmt = '<'
-    res = struct.unpack(fmt+'iHHIIHH', fid.read(20))
+    res = struct.unpack(fmt+'IHHIIHH', fid.read(20))
     size, comp, noc, rate, sbytes, ba, bits = res
 
     bytes_read = 0
     if comp == WAVE_FORMAT_EXTENSIBLE and size >= (16+2):
-        ext_chunk_size = struct.unpack('<H', fid.read(2))[0]
+        ext_chunk_size = struct.unpack(fmt+'H', fid.read(2))[0]
         bytes_read += 2
         if ext_chunk_size >= 22:
             extensible_chunk_data = fid.read(22)
             bytes_read += 22
             raw_guid = extensible_chunk_data[2+4:2+4+16]
             # GUID template {XXXXXXXX-0000-0010-8000-00AA00389B71} (RFC-2361)
-            tail = b'\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71'
+            # MS GUID byte order: first three groups are native byte order, rest is Big Endian
+            if _big_endian:
+                tail = b'\x00\x00\x00\x10\x80\x00\x00\xAA\x00\x38\x9B\x71'
+            else:
+                tail = b'\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71'
             if raw_guid.endswith(tail):
-                comp = struct.unpack('<I', raw_guid[:4])[0]
+                comp = struct.unpack(fmt+'I', raw_guid[:4])[0]
         else:
             raise ValueError("Binary structure of wave file is not compliant")
 
@@ -73,9 +77,9 @@ def _read_fmt_chunk(fid):
 #   after the 'data' id
 def _read_data_chunk(fid, comp, noc, bits, mmap=False):
     if _big_endian:
-        fmt = '>i'
+        fmt = '>I'
     else:
-        fmt = '<i'
+        fmt = '<I'
     size = struct.unpack(fmt, fid.read(4))[0]
 
     bytes = bits//8
@@ -105,9 +109,9 @@ def _read_data_chunk(fid, comp, noc, bits, mmap=False):
 
 def _skip_unknown_chunk(fid):
     if _big_endian:
-        fmt = '>i'
+        fmt = '>I'
     else:
-        fmt = '<i'
+        fmt = '<I'
 
     data = fid.read(4)
     # call unpack() and seek() only if we have really read data from file
@@ -263,11 +267,24 @@ def write(filename, rate, data):
         bits = data.dtype.itemsize * 8
         sbytes = rate*(bits // 8)*noc
         ba = noc * (bits // 8)
-        fid.write(struct.pack('<ihHIIHH', 16, comp, noc, rate, sbytes,
-                              ba, bits))
+        
+        fmt_chunk_data = struct.pack('<HHIIHH', comp, noc, rate, sbytes,
+                                     ba, bits)
+        if not (dkind == 'i' or dkind == 'u'):
+            # add cbSize field for non-PCM files
+            fmt_chunk_data += '\x00\x00'
+        
+        fid.write( struct.pack('<I', len(fmt_chunk_data)) )
+        fid.write(fmt_chunk_data)
+
+        # fact chunk
+        if dkind == 'f':
+            fid.write(b'fact')
+            fid.write(struct.pack('<II', 4, data.shape[0]))
+        
         # data chunk
         fid.write(b'data')
-        fid.write(struct.pack('<i', data.nbytes))
+        fid.write(struct.pack('<I', data.nbytes))
         if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and
                                            sys.byteorder == 'big'):
             data = data.byteswap()
@@ -277,7 +294,7 @@ def write(filename, rate, data):
         #  position at start of the file.
         size = fid.tell()
         fid.seek(4)
-        fid.write(struct.pack('<i', size-8))
+        fid.write(struct.pack('<I', size-8))
 
     finally:
         if not hasattr(filename, 'write'):
