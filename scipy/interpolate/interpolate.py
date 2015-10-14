@@ -304,6 +304,16 @@ class interp2d(object):
         return array(z)
 
 
+def _duplicate(ab):
+    # ab is either a pair (a, b) or a single value. In the latter case,
+    # transform to a pair (a, a)
+    try:
+        a, b = ab
+    except TypeError:
+        a, b = ab, ab
+    return a, b
+
+
 class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function.
@@ -390,13 +400,9 @@ class interp1d(_Interpolator1D):
             bounds_error = False
             self._extrapolate = True
         else:
-            # either a pair (_below_range, _above_range) or a single value
+            # it's either a pair (_below_range, _above_range) or a single value
             # for both above and below range
-            try:
-                self._fill_value_below, self._fill_value_above = fill_value
-            except TypeError:
-                self._fill_value_below = fill_value
-                self._fill_value_above = fill_value
+            self._fill_value_below, self._fill_value_above = _duplicate(fill_value)
             self._extrapolate = False
 
         if bounds_error is None:
@@ -404,7 +410,7 @@ class interp1d(_Interpolator1D):
         self.bounds_error = bounds_error
 
         self.copy = copy
-        self.fill_value = fill_value
+        self._fill_value_orig = fill_value
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'nearest': 0, 'zero': 0,'slinear': 1,
@@ -471,6 +477,21 @@ class interp1d(_Interpolator1D):
         self._kind = kind
         self.x = x
         self._y = y
+
+    @property
+    def fill_value(self):
+        # backwards compat: mimic a public attribute
+        return self._fill_value_orig
+
+    @fill_value.setter
+    def fill_value(self, value):
+        # backwards compat: fill_value was a public attr; make it writeable
+        self._fill_value_orig = value
+        if value == 'extrapolate':
+            self._extrapolate = True
+        else:
+            self._fill_value_below, self._fill_value_above = _duplicate(value)
+            self._extrapolate = False
 
     def _call_linear_np(self, x_new):
         # Note that out-of-bounds values are taken care of in self._evaluate

@@ -308,6 +308,13 @@ class TestInterp1D(object):
                      'zero'):
             self._check_fill_value(kind)
 
+    def test_fill_value_writeable(self):
+        # backwards compat: fill_value is a public writeable attribute
+        interp = interp1d(self.x10, self.y10, fill_value=123.0)
+        assert_equal(interp.fill_value, 123.0)
+        interp.fill_value = 321.0
+        assert_equal(interp.fill_value, 321.0)
+
     def _nd_check_interp(self, kind='linear'):
         # Check the behavior when the inputs and outputs are multidimensional.
 
