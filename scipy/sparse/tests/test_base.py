@@ -2405,7 +2405,8 @@ class _TestFancyIndexing:
         assert_equal(todense(A[B > 9]), B[B > 9])
 
         I = np.array([True, False, True, True, False])
-        J = np.array([False, True, True, False, True])
+        J = np.array([False, True, True, False, True,
+                      False, False, False, False, False])
 
         assert_equal(todense(A[I, J]), B[I, J])
 
