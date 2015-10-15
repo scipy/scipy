@@ -267,7 +267,7 @@ def ss2tf(A, B, C, D, input=0):
     (array([[1, 3, 3]]), array([ 1.,  2.,  1.])
     """
     # transfer function is C (sI - A)**(-1) B + D
-    A, B, C, D = map(asarray, (A, B, C, D))
+
     # Check consistency and make them all rank-2 arrays
     A, B, C, D = abcd_normalize(A, B, C, D)
 
@@ -275,7 +275,7 @@ def ss2tf(A, B, C, D, input=0):
     if input >= nin:
         raise ValueError("System does not have the input specified.")
 
-    # make MOSI from possibly MOMI system.
+    # make SIMO from possibly MIMO system.
     B = B[:, input:input + 1]
     D = D[:, input:input + 1]
 
