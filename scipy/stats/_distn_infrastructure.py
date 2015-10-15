@@ -1595,11 +1595,12 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        x = asarray((x-loc)*1.0/scale)
+        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
         cond = cond0 & cond1
-        output = zeros(shape(cond), 'd')
+        output = zeros(shape(cond), dtyp)
         putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
         if any(cond):
             goodargs = argsreduce(cond, *((x,)+args+(scale,)))
@@ -1636,11 +1637,12 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        x = asarray((x-loc)*1.0/scale)
+        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
         cond = cond0 & cond1
-        output = empty(shape(cond), 'd')
+        output = empty(shape(cond), dtyp)
         output.fill(NINF)
         putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
         if any(cond):
@@ -1676,12 +1678,13 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        x = (x-loc)*1.0/scale
+        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
-        output = zeros(shape(cond), 'd')
+        output = zeros(shape(cond), dtyp)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
         place(output, cond2, 1.0)
         if any(cond):  # call only if at least 1 entry
@@ -1716,12 +1719,13 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        x = (x-loc)*1.0/scale
+        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
-        output = empty(shape(cond), 'd')
+        output = empty(shape(cond), dtyp)
         output.fill(NINF)
         place(output, (1-cond0)*(cond1 == cond1)+np.isnan(x), self.badvalue)
         place(output, cond2, 0.0)
@@ -1757,12 +1761,13 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        x = (x-loc)*1.0/scale
+        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
-        output = zeros(shape(cond), 'd')
+        output = zeros(shape(cond), dtyp)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
         place(output, cond2, 1.0)
         if any(cond):
@@ -1800,12 +1805,13 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        x = (x-loc)*1.0/scale
+        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = (scale > 0) & (x > self.a) & (x < self.b)
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
-        output = empty(shape(cond), 'd')
+        output = empty(shape(cond), dtyp)
         output.fill(NINF)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
         place(output, cond2, 0.0)
