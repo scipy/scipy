@@ -92,7 +92,7 @@ def tf2ss(num, den):
     >>> C
     array([[ 1.,  2.]])
     >>> D
-    array([ 1.]
+    array([ 1.])
     """
     # Controller canonical state-space representation.
     #  if M+1 = len(num) and K+1 = len(den) then we must have M <= K
@@ -266,7 +266,7 @@ def ss2tf(A, B, C, D, input=0):
 
     >>> from scipy.signal import ss2tf
     >>> ss2tf(A, B, C, D)
-    (array([[1, 3, 3]]), array([ 1.,  2.,  1.])
+    (array([[1, 3, 3]]), array([ 1.,  2.,  1.]))
     """
     # transfer function is C (sI - A)**(-1) B + D
 
