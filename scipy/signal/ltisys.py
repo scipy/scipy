@@ -81,6 +81,7 @@ def tf2ss(num, den):
         \textbf{y}(t) = \begin{bmatrix} 1 & 2 \end{bmatrix} \textbf{x}(t) +
         \begin{bmatrix} 1 \end{bmatrix} \textbf{u}(t)
 
+    >>> from scipy.signal import tf2ss
     >>> A, B, C, D = tf2ss(num, den)
     >>> A
     array([[-2., -1.],
@@ -263,6 +264,7 @@ def ss2tf(A, B, C, D, input=0):
 
     .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
 
+    >>> from scipy.signal import ss2tf
     >>> ss2tf(A, B, C, D)
     (array([[1, 3, 3]]), array([ 1.,  2.,  1.])
     """
