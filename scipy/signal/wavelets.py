@@ -322,7 +322,7 @@ def cwt(data, wavelet, widths):
     wavelet : function
         Wavelet function, which should take 2 arguments.
         The first argument is the number of points that the returned vector
-        will have (len(wavelet(width,length)) == length).
+        will have (len(wavelet(length,width)) == length).
         The second is a width parameter, defining the size of the wavelet
         (e.g. standard deviation of a gaussian). See `ricker`, which
         satisfies these requirements.
