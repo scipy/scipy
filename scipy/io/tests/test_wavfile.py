@@ -52,8 +52,11 @@ def test_read_3():
         
 def test_read_4():
     for mmap in [False, True]:
-        rate, data = wavfile.read(datafile('test-48000Hz-2ch-64bit-float-le-wavex.wav'),
-                                  mmap=mmap)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', wavfile.WavFileWarning)
+            rate, data = wavfile.read(datafile('test-48000Hz-2ch-64bit-float-le-wavex.wav'),
+                                      mmap=mmap)
+            
         assert_equal(rate, 48000)
         assert_(np.issubdtype(data.dtype, np.float64))
         assert_equal(data.shape, (480, 2))

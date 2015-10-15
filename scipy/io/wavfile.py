@@ -191,6 +191,7 @@ def read(filename, mmap=False):
 
     try:
         fsize, is_big_endian = _read_riff_chunk(fid)
+        fmt_chunk_received = False
         noc = 1
         bits = 8
         comp = WAVE_FORMAT_PCM
@@ -198,6 +199,7 @@ def read(filename, mmap=False):
             # read the next chunk
             chunk_id = fid.read(4)
             if chunk_id == b'fmt ':
+                fmt_chunk_received = True
                 size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid, is_big_endian=is_big_endian)
                 if bits == 24:
                     raise ValueError("Unsupported bit depth: the wav file "
@@ -205,6 +207,8 @@ def read(filename, mmap=False):
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian=is_big_endian)
             elif chunk_id == b'data':
+                if not fmt_chunk_received:
+                    raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, comp, noc, bits, is_big_endian=is_big_endian, mmap=mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
