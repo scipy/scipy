@@ -55,6 +55,9 @@ class BSpline(object):
         spline degree
     tck : tuple
         A read-only equivalent of ``(self.t, self.c, self.k)``    
+    extrapolate : bool
+        If True, extrapolates the first and last polynomial pieces of b-spline
+        functions active on the base interval.
 
     Methods
     -------
@@ -437,16 +440,15 @@ class BSpline(object):
             a = max(a, self.t[self.k])
             b = min(b, self.t[-self.k - 1])
 
+        # prepare t & c
+        self._ensure_c_contiguous()
+
         # compute the antiderivative
         c = self.c
         ct = len(self.t) - len(c)
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         t, c, k = _fitpack_impl.splantider((self.t, c, self.k), 1)
-
-        # prepare x & c
-        if not c.flags.c_contiguous:
-            c = c.copy()
 
         # evaluate the diff of antiderivatives
         x = np.asarray([a, b], dtype=np.float_)
@@ -685,7 +687,8 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     elif info < 0:
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
-    return BSpline(t, c.reshape((nt,) + y.shape[1:]), k)
+    c = np.ascontiguousarray(c.reshape((nt,) + y.shape[1:]))
+    return BSpline._construct_fast(t, c, k)
 
 
 def make_lsq_spline(x, y, t, k=3, w=None, check_finite=True):
@@ -836,4 +839,6 @@ def make_lsq_spline(x, y, t, k=3, w=None, check_finite=True):
     c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
                          check_finite=check_finite)
 
-    return BSpline(t, c, k)
+    c = np.ascontiguousarray(c)
+    return BSpline._construct_fast(t, c, k)
+

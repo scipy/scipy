@@ -39,17 +39,22 @@ class TestBSpline(TestCase):
                 **dict(t=[0., 0, 1, 1, 2, 3], c=[1., 1, 1], k=2))
 
         # tck vs self.tck
-        b, t, c, k = _make_random_spline()
+        n, k = 11, 3
+        t = np.arange(n+k+1)
+        c = np.random.random(n)
+        b = BSpline(t, c, k)
+
         assert_allclose(t, b.t)
         assert_allclose(c, b.c)
         assert_equal(k, b.k)
 
     def test_tck(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
         tck = b.tck
-        assert_allclose(t, tck[0], atol=1e-15, rtol=1e-15)
-        assert_allclose(c, tck[1], atol=1e-15, rtol=1e-15)
-        assert_equal(k, tck[2])
+
+        assert_allclose(b.t, tck[0], atol=1e-15, rtol=1e-15)
+        assert_allclose(b.c, tck[1], atol=1e-15, rtol=1e-15)
+        assert_equal(b.k, tck[2])
 
         # b.tck is read-only
         try:
@@ -96,7 +101,8 @@ class TestBSpline(TestCase):
     def test_rndm_naive_eval(self):
         # test random coefficient spline *on the base interval*,
         # t[k] <= x < t[-k-1]
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         xx = np.linspace(t[k], t[-k-1], 50)
         y_b = b(xx)
 
@@ -107,7 +113,8 @@ class TestBSpline(TestCase):
         assert_allclose(y_b, y_n2, atol=1e-14)
 
     def test_rndm_splev(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         xx = np.linspace(t[k], t[-k-1], 50)
         assert_allclose(b(xx), splev(xx, (t, c, k)), atol=1e-14)
 
@@ -124,9 +131,9 @@ class TestBSpline(TestCase):
         assert_allclose(b(xx), splev(xx, tck), atol=1e-14)
 
     def test_rndm_unity(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
         b.c = np.ones_like(b.c)
-        xx = np.linspace(t[k], t[-k-1], 100)
+        xx = np.linspace(b.t[b.k], b.t[-b.k-1], 100)
         assert_allclose(b(xx), 1.)
 
     def test_vectorization(self):
@@ -158,7 +165,8 @@ class TestBSpline(TestCase):
 
     def test_endpoints(self):
         # base interval is closed
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, _, k = b
         tm, tp = t[k], t[-k-1]
         for extrap in (True, False):
             assert_allclose(b([tm, tp], extrap),
@@ -166,12 +174,14 @@ class TestBSpline(TestCase):
 
     def test_continuity(self):
         # assert continuity at internal knots
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, _, k = b.tck
         assert_allclose(b(t[k+1:-k-1] - 1e-10), b(t[k+1:-k-1] + 1e-10),
                 atol=1e-9)
 
     def test_extrap(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         dt = t[-1] - t[0]
         xx = np.linspace(t[k] - dt, t[-k-1] + dt, 50)
         mask = (t[k] < xx) & (xx < t[-k-1])
@@ -186,20 +196,23 @@ class TestBSpline(TestCase):
 
     def test_default_extrap(self):
         # BSpline defaults to extrapolate=True
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, _, k = b
         xx = [t[0] - 1, t[-1] + 1]
         yy = b(xx)
         assert_(not np.all(np.isnan(yy)))
 
     def test_ppoly(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         pp = PPoly.from_spline((t, c, k))
 
         xx = np.linspace(t[k], t[-k], 100)
         assert_allclose(b(xx), pp(xx), atol=1e-14, rtol=1e-14)
 
     def test_derivative_rndm(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         xx = np.linspace(t[0], t[-1], 50)
         xx = np.r_[xx, t]
 
@@ -208,7 +221,7 @@ class TestBSpline(TestCase):
             assert_allclose(yd, b(xx, nu=der), atol=1e-14)
 
         # higher derivatives all vanish
-        assert_allclose(b(xx, nu=k+1), 0)
+        assert_allclose(b(xx, nu=k+1), 0, atol=1e-14)
 
     def test_derivative_jumps(self):
         # example from de Boor, Chap IX, example (24)
@@ -252,12 +265,14 @@ class TestBSpline(TestCase):
                 np.where(xx < 1, xx*xx, (2.-xx)**2), atol=1e-14)
 
     def test_basis_element_rndm(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         xx = np.linspace(t[k], t[-k-1], 20)
         assert_allclose(b(xx), _sum_basis_elements(xx, t, c, k), atol=1e-14)
 
     def test_cmplx(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         cc = c * (1. + 3.j)
 
         b = BSpline(t, cc, k)
@@ -274,7 +289,8 @@ class TestBSpline(TestCase):
         assert_(np.isnan(b(np.nan)))
 
     def test_derivative_method(self):
-        b, t, c, k = _make_random_spline(k=5)
+        b = _make_random_spline(k=5)
+        t, c, k = b.tck
         b0 = BSpline(t, c, k)
         xx = np.linspace(t[k], t[-k-1], 20)
         for j in range(1, k):
@@ -282,7 +298,8 @@ class TestBSpline(TestCase):
             assert_allclose(b0(xx, j), b(xx), atol=1e-12, rtol=1e-12)
 
     def test_antiderivative_method(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         xx = np.linspace(t[k], t[-k-1], 20)
         assert_allclose(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
@@ -320,8 +337,11 @@ class TestBSpline(TestCase):
 
     def test_unpacking(self):
         # BSpline object unpacks into a tck-tuple, if asked
-        _, t, c, k = _make_random_spline()
+        n, k = 11, 3
+        t = np.arange(n+k+1)
+        c = np.random.random(n)
         b = BSpline(t, c, k)
+
         tt, cc, kk = b
         assert_allclose(t, tt, atol=1e-15)
         assert_allclose(c, cc, atol=1e-15)
@@ -332,7 +352,8 @@ class TestBSpline(TestCase):
         assert_raises(ValueError, wrong_unpacking, b)
 
     def test_indexing(self):
-        b, t, c, k = _make_random_spline()
+        b = _make_random_spline()
+        t, c, k = b.tck
         assert_allclose(b[0], t, atol=1e-15)
         assert_allclose(b[1], c, atol=1e-15)
         assert_equal(b[2], k)
@@ -347,8 +368,8 @@ class TestBSpline(TestCase):
         assert_raises(IndexError, wrong_index, -4)
 
     def test_slicing(self):
-        b, t, c, k = _make_random_spline()
-        tck = (t, c, k)
+        b = _make_random_spline()
+        tck = b.tck
         assert_equal(b[:], tck[:])
         assert_equal(b[1:], tck[1:])
         assert_equal(b[:-1], tck[:-1])
@@ -361,7 +382,7 @@ def test_knots_multiplicity():
 
     def check_splev(b, j, der=0, atol=1e-14, rtol=1e-14):
         # check evaluations against FITPACK, incl extrapolations
-        t, c, k = b.t, b.c, b.k
+        t, c, k = b.tck
         x = np.unique(t)
         x = np.r_[t[0]-0.1, 0.5*(x[1:] + x[:1]), t[-1]+0.1]
         assert_allclose(splev(x, (t, c, k), der), b(x, der),
@@ -370,7 +391,7 @@ def test_knots_multiplicity():
     # test loop itself
     # [the index `j` is for interpreting the traceback in case of a failure]
     for k in [1, 2, 3, 4, 5]:
-        b, t, c, k = _make_random_spline(k=k)
+        b = _make_random_spline(k=k)
         for j, b1 in enumerate(_make_multiples(b)):
             yield check_splev, b1, j
             for der in range(1, k+1):
@@ -461,7 +482,7 @@ def _make_random_spline(n=35, k=3):
     np.random.seed(123)
     t = np.sort(np.random.random(n+k+1))
     c = np.random.random(n)
-    return BSpline(t, c, k), t, c, k
+    return BSpline._construct_fast(t, c, k)
 
 
 def _make_multiples(b):
@@ -592,22 +613,22 @@ class TestInterop(object):
         r = np.asarray(r)
 
         assert_equal(r.shape, (3, 2, 4))
-        assert_equal(r - roots, 0)
+        assert_allclose(r - roots, 0, atol=1e-12)
 
         # and legacy behavior is preserved for a tck tuple w/ n-D coef
         c2r = b2.c.transpose(1, 2, 0)
         rr = np.asarray(sproot((b2.t, c2r, b2.k), mest=50))
         assert_equal(rr.shape, (3, 2, 4))
-        assert_equal(rr - roots, 0)
+        assert_allclose(rr - roots, 0, atol=1e-12)
 
     def test_splint(self):
         # test that splint accepts BSpline objects
         b, tck, b2 = self.b, self.tck, self.b2
-        assert_equal(splint(0, 1, b), splint(0, 1, tck))
-        assert_equal(splint(0, 1, b), b.integrate(0, 1))
+        assert_allclose(splint(0, 1, b), splint(0, 1, tck), atol=1e-14)
+        assert_allclose(splint(0, 1, b), b.integrate(0, 1), atol=1e-14)
 
         # ... and deals with n-D arrays of coefficients
-        assert_equal(splint(0, 1, b2), b2.integrate(0, 1))
+        assert_allclose(splint(0, 1, b2), b2.integrate(0, 1), atol=1e-14)
 
         # and the legacy behavior is preserved for a tck tuple w/ n-D coef
         c2r = b2.c.transpose(1, 2, 0)
@@ -1005,8 +1026,8 @@ class TestLSQ(TestCase):
         b = make_lsq_spline(x, y, t, k)
         b_w = make_lsq_spline(x, y, t, k, w=w)
 
-        assert_equal(b.t, b_w.t)
-        assert_equal(b.c, b_w.c)
+        assert_allclose(b.t, b_w.t, atol=1e-14)
+        assert_allclose(b.c, b_w.c, atol=1e-14)
         assert_equal(b.k, b_w.k)
 
     def test_multiple_rhs(self):
