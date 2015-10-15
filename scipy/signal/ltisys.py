@@ -2063,12 +2063,12 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             rtol : float
                 The relative tolerance achieved on ``det(X)`` (see Notes).
                 `rtol` will be NaN if it is possible to solve the system
-                ``diag(poles) = (A - B*K)``, or 0 when the optimization 
+                ``diag(poles) = (A - B*K)``, or 0 when the optimization
                 algorithms can't do anything i.e when ``B.shape[1] == 1``.
             nb_iter : int
                 The number of iterations performed before converging.
                 `nb_iter` will be NaN if it is possible to solve the system
-                ``diag(poles) = (A - B*K)``, or 0 when the optimization 
+                ``diag(poles) = (A - B*K)``, or 0 when the optimization
                 algorithms can't do anything i.e when ``B.shape[1] == 1``.
 
     Notes
@@ -2213,10 +2213,10 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         # i.e K=inv(B)*(diag(P)-A)
         # if B has as many lines as its rank (but not square) there are many
         # solutions and we can choose one using least squares
-        # => use lstsq in both cases. 
+        # => use lstsq in both cases.
         # In both cases the transfer matrix X will be eye(A.shape[0]) and I
         # can hardly think of a better one so there is nothing to optimize
-        # 
+        #
         # for complex poles we use the following trick
         #
         # |a -b| has for eigenvalues a+b and a-b
@@ -2279,13 +2279,13 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             # many ways to select the best possible one (eg ditch vectors
             # with zero imaginary part for complex poles) I ended up summing
             # all vectors in ker_pole_j, this solves 100% of the problems and
-            # is a valid choice for transfer_matrix. 
+            # is a valid choice for transfer_matrix.
             # This way for complex poles we are sure to have a non zero
             # imaginary part that way, and the problem of lines full of zeros
             # in transfer_matrix is solved too as when a vector from
             # ker_pole_j has a zero the other one(s) when
             # ker_pole_j.shape[1]>1) for sure won't have a zero there.
-            
+
             transfer_matrix_j = np.sum(ker_pole_j, axis=1)[:, np.newaxis]
             transfer_matrix_j = (transfer_matrix_j /
                                  np.linalg.norm(transfer_matrix_j))
