@@ -47,7 +47,7 @@ __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
 
 
 def tf2ss(num, den):
-    """Transfer function to state-space representation.
+    r"""Transfer function to state-space representation.
 
     Parameters
     ----------
@@ -61,6 +61,37 @@ def tf2ss(num, den):
         State space representation of the system, in controller canonical
         form.
 
+    Examples
+    --------
+    Convert the transfer function:
+
+    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+
+    >>> num = [1, 3, 3]
+    >>> den = [1, 2, 1]
+
+    to the state-space representation:
+
+    .. math::
+
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} -2 & -1 \\ 1 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 1 \\ 0 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 1 & 2 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 1 \end{bmatrix} \textbf{u}(t)
+
+    >>> A, B, C, D = tf2ss(num, den)
+    >>> A
+    array([[-2., -1.],
+           [ 1.,  0.]])
+    >>> B
+    array([[ 1.],
+           [ 0.]])
+    >>> C
+    array([[ 1.,  2.]])
+    >>> D
+    array([ 1.]
     """
     # Controller canonical state-space representation.
     #  if M+1 = len(num) and K+1 = len(den) then we must have M <= K
@@ -182,7 +213,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
 
 
 def ss2tf(A, B, C, D, input=0):
-    """State-space to transfer function.
+    r"""State-space to transfer function.
 
     A, B, C, D defines a linear state-space system with `p` inputs,
     `q` outputs, and `n` state variables.
@@ -210,6 +241,30 @@ def ss2tf(A, B, C, D, input=0):
         Denominator of the resulting transfer function(s).  `den` is a sequence
         representation of the denominator polynomial.
 
+    Examples
+    --------
+    Convert the state-space representation:
+
+    .. math::
+
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} -2 & -1 \\ 1 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 1 \\ 0 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 1 & 2 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 1 \end{bmatrix} \textbf{u}(t)
+
+    >>> A = [[-2, -1], [1, 0]]
+    >>> B = [[1], [0]]  # 2-dimensional column vector
+    >>> C = [[1, 2]]    # 2-dimensional row vector
+    >>> D = 1
+
+    to the transfer function:
+
+    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+
+    >>> ss2tf(A, B, C, D)
+    (array([[1, 3, 3]]), array([ 1.,  2.,  1.])
     """
     # transfer function is C (sI - A)**(-1) B + D
     A, B, C, D = map(asarray, (A, B, C, D))
