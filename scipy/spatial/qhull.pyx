@@ -1704,7 +1704,7 @@ class Delaunay(_QhullUser):
     triangulation:
 
     >>> tri.simplices
-    array([[3, 2, 0],                 # may vary
+    array([[2, 3, 0],                 # may vary
            [3, 1, 0]], dtype=int32)
 
     Note that depending on how rounding errors go, the simplices may
