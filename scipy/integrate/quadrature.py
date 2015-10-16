@@ -312,8 +312,8 @@ def _basic_simps(y, start, stop, x, dx, axis):
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
         h = np.diff(x, axis=axis)
-        sl0 = tupleset(all, axis, slice(start, stop, step))
-        sl1 = tupleset(all, axis, slice(start+1, stop+1, step))
+        sl0 = tupleset(slice_all, axis, slice(start, stop, step))
+        sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
         h0 = h[sl0]
         h1 = h[sl1]
         hsum = h0 + h1
