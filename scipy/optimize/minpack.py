@@ -150,7 +150,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
 def _root_hybr(func, x0, args=(), jac=None,
                col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
-               factor=100, diag=None, full_output=0, **unknown_options):
+               factor=100, diag=None, full_output=1, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
     hybrj routines (modified Powell method).
@@ -184,6 +184,9 @@ def _root_hybr(func, x0, args=(), jac=None,
     diag : sequence
         N positive entries that serve as a scale factors for the
         variables.
+    full_output : bool
+        If true, produce additional warnings about the outcome of the
+        method.
 
     """
     _check_unknown_options(unknown_options)
@@ -230,7 +233,7 @@ def _root_hybr(func, x0, args=(), jac=None,
                   "ten iterations.", ValueError],
               'unknown': ["An error occurred.", TypeError]}
 
-    if status != 1 and not full_output:
+    if status != 1 and full_output:
         if status in [2, 3, 4, 5]:
             msg = errors[status][0]
             warnings.warn(msg, RuntimeWarning)
