@@ -9,6 +9,7 @@ from scipy.sparse import issparse, csr_matrix
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize import _minpack, OptimizeResult
 from scipy.optimize._numdiff import approx_derivative, group_columns
+from scipy._lib.six import string_types
 
 from .trf import trf
 from .dogbox import dogbox
@@ -45,7 +46,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     else:
         epsfcn = diff_step**2
 
-    if scaling == 'jac':
+    if isinstance(scaling, string_types) and scaling == 'jac':
         scaling = None
 
     full_output = True
@@ -115,7 +116,7 @@ def check_tolerance(ftol, xtol, gtol):
 
 
 def check_scaling(scaling, x0):
-    if scaling == 'jac':
+    if isinstance(scaling, string_types) and scaling == 'jac':
         return scaling
 
     try:
@@ -856,7 +857,8 @@ def least_squares(
                     "tr_solver='exact' works only with dense "
                     "Jacobian matrices.")
 
-        if isinstance(J0, LinearOperator) and scaling == 'jac':
+        jac_scaling = isinstance(scaling, string_types) and scaling == 'jac'
+        if isinstance(J0, LinearOperator) and jac_scaling:
             raise ValueError("scaling='jac' can't be used when `jac` "
                              "returns LinearOperator.")
 
