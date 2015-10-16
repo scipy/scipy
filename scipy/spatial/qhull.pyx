@@ -1711,8 +1711,8 @@ class Delaunay(_QhullUser):
     be in a different order than above.
 
     >>> points[tri.simplices]
-    array([[[ 1. ,  1. ],             # may vary
-            [ 1. ,  0. ],
+    array([[[ 1. ,  0. ],            # may vary
+            [ 1. ,  1. ],
             [ 0. ,  0. ]],
            [[ 1. ,  1. ],
             [ 0. ,  1.1],
