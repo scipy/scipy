@@ -144,9 +144,13 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         info['fvec'] = res['fun']
         return x, info, res['status'], res['message']
     else:
-        if res['status'] != 1:
-            msg = res['message']
-            warnings.warn(msg, RuntimeWarning)
+        status = res['status']
+        msg = res['message']
+        if status != 1:
+            if status in [2, 3, 4, 5]:
+                warnings.warn(msg, RuntimeWarning)
+            else:
+                raise TypeError(msg)
         return res['x']
 
 
@@ -217,35 +221,29 @@ def _root_hybr(func, x0, args=(), jac=None,
 
     x, status = retval[0], retval[-1]
 
-    errors = {0: ["Improper input parameters were entered.", TypeError],
-              1: ["The solution converged.", None],
-              2: ["The number of calls to function has "
-                  "reached maxfev = %d." % maxfev, ValueError],
-              3: ["xtol=%f is too small, no further improvement "
+    errors = {0: "Improper input parameters were entered.",
+              1: "The solution converged.",
+              2: "The number of calls to function has "
+                  "reached maxfev = %d." % maxfev,
+              3: "xtol=%f is too small, no further improvement "
                   "in the approximate\n  solution "
-                  "is possible." % xtol, ValueError],
-              4: ["The iteration is not making good progress, as measured "
+                  "is possible." % xtol,
+              4: "The iteration is not making good progress, as measured "
                   "by the \n  improvement from the last five "
-                  "Jacobian evaluations.", ValueError],
-              5: ["The iteration is not making good progress, "
+                  "Jacobian evaluations.",
+              5: "The iteration is not making good progress, "
                   "as measured by the \n  improvement from the last "
-                  "ten iterations.", ValueError],
-              'unknown': ["An error occurred.", TypeError]}
-
-    if status not in [1, 2, 3, 4, 5]:
-        try:
-            raise errors[status][1](errors[status][0])
-        except KeyError:
-            raise errors['unknown'][1](errors['unknown'][0])
+                  "ten iterations.",
+              'unknown': "An error occurred."}
 
     info = retval[1]
     info['fun'] = info.pop('fvec')
     sol = OptimizeResult(x=x, success=(status == 1), status=status)
     sol.update(info)
     try:
-        sol['message'] = errors[status][0]
+        sol['message'] = errors[status]
     except KeyError:
-        info['message'] = errors['unknown'][0]
+        info['message'] = errors['unknown']
 
     return sol
 
