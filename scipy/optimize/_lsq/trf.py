@@ -98,6 +98,7 @@ from numpy.linalg import norm
 from scipy.linalg import svd, qr
 from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
+from scipy._lib.six import string_types
 
 from .common import (
     step_size_to_bound, find_active_constraints, in_bounds,
@@ -224,7 +225,8 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
     g = compute_grad(J, f)
 
-    if scaling == 'jac':
+    jac_scaling = isinstance(scaling, string_types) and scaling == 'jac'
+    if jac_scaling:
         scale, scale_inv = compute_jac_scaling(J)
     else:
         scale, scale_inv = scaling, 1 / scaling
@@ -385,7 +387,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
             g = compute_grad(J, f)
 
-            if scaling == 'jac':
+            if jac_scaling:
                 scale, scale_inv = compute_jac_scaling(J, scale)
         else:
             step_norm = 0
@@ -424,7 +426,8 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
 
     g = compute_grad(J, f)
 
-    if scaling == 'jac':
+    jac_scaling = isinstance(scaling, string_types) and scaling == 'jac'
+    if jac_scaling:
         scale, scale_inv = compute_jac_scaling(J)
     else:
         scale, scale_inv = scaling, 1 / scaling
@@ -546,7 +549,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
 
             g = compute_grad(J, f)
 
-            if scaling == 'jac':
+            if jac_scaling:
                 scale, scale_inv = compute_jac_scaling(J, scale)
         else:
             step_norm = 0

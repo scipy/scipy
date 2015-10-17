@@ -45,6 +45,8 @@ from numpy.linalg import lstsq, norm
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from scipy.optimize import OptimizeResult
+from scipy._lib.six import string_types
+
 from .common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
     build_quadratic_1d, minimize_quadratic_1d, compute_grad,
@@ -163,7 +165,8 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
     g = compute_grad(J, f)
 
-    if scaling == 'jac':
+    jac_scaling = isinstance(scaling, string_types) and scaling == 'jac'
+    if jac_scaling:
         scale, scale_inv = compute_jac_scaling(J)
     else:
         scale, scale_inv = scaling, 1 / scaling
@@ -311,7 +314,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
 
             g = compute_grad(J, f)
 
-            if scaling == 'jac':
+            if jac_scaling:
                 scale, scale_inv = compute_jac_scaling(J, scale)
         else:
             step_norm = 0
