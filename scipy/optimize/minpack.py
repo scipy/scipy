@@ -134,11 +134,13 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                'band': band,
                'eps': epsfcn,
                'factor': factor,
-               'diag': diag,
-               'full_output': full_output}
+               'diag': diag}
 
     res = _root_hybr(func, x0, args, jac=fprime, **options)
     if full_output:
+        if res['status'] != 1:
+            msg = res['message']
+            warnings.warn(msg, RuntimeWarning)
         x = res['x']
         info = dict((k, res.get(k))
                     for k in ('nfev', 'njev', 'fjac', 'r', 'qtf') if k in res)
@@ -150,7 +152,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
 def _root_hybr(func, x0, args=(), jac=None,
                col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
-               factor=100, diag=None, full_output=0, **unknown_options):
+               factor=100, diag=None, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
     hybrj routines (modified Powell method).
@@ -230,15 +232,11 @@ def _root_hybr(func, x0, args=(), jac=None,
                   "ten iterations.", ValueError],
               'unknown': ["An error occurred.", TypeError]}
 
-    if status != 1 and not full_output:
-        if status in [2, 3, 4, 5]:
-            msg = errors[status][0]
-            warnings.warn(msg, RuntimeWarning)
-        else:
-            try:
-                raise errors[status][1](errors[status][0])
-            except KeyError:
-                raise errors['unknown'][1](errors['unknown'][0])
+    if status not in [1, 2, 3, 4, 5]:
+        try:
+            raise errors[status][1](errors[status][0])
+        except KeyError:
+            raise errors['unknown'][1](errors['unknown'][0])
 
     info = retval[1]
     info['fun'] = info.pop('fvec')
