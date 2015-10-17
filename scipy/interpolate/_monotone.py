@@ -12,10 +12,10 @@ __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
 
 
 class PchipInterpolator(BPoly):
-    """PCHIP 1-d monotonic cubic interpolation
+    r"""PCHIP 1-d monotonic cubic interpolation.
 
-    x and y are arrays of values used to approximate some function f,
-    with ``y = f(x)``.  The interpolant uses monotonic cubic splines
+    `x` and `y` are arrays of values used to approximate some function f,
+    with ``y = f(x)``. The interpolant uses monotonic cubic splines
     to find the value of new points. (PCHIP stands for Piecewise Cubic
     Hermite Interpolating Polynomial).
 
@@ -25,8 +25,8 @@ class PchipInterpolator(BPoly):
         A 1-D array of monotonically increasing real values.  `x` cannot
         include duplicate values (otherwise f is overspecified)
     y : ndarray
-        A 1-D array of real values.  `y`'s length along the interpolation
-        axis must be equal to the length of `x`. If N-D array, use axis
+        A 1-D array of real values. `y`'s length along the interpolation
+        axis must be equal to the length of `x`. If N-D array, use `axis`
         parameter to select correct axis.
     axis : int, optional
         Axis in the y array corresponding to the x-coordinate values.
@@ -39,6 +39,7 @@ class PchipInterpolator(BPoly):
     __call__
     derivative
     antiderivative
+    roots
 
     See Also
     --------
@@ -46,23 +47,38 @@ class PchipInterpolator(BPoly):
 
     Notes
     -----
+    The interpolator preserves monotonicity in the interpolation data and does
+    not overshoot if the data is not smooth.
+
     The first derivatives are guaranteed to be continuous, but the second
-    derivatives may jump at x_k.
+    derivatives may jump at :math:`x_k`.
 
-    Preserves monotonicity in the interpolation data and does not overshoot
-    if the data is not smooth.
+    Determines the derivatives at the points :math:`x_k`, :math:`f'_k`,
+    by using PCHIP algorithm [1]_.
 
-    Determines the derivatives at the points x_k, d_k, by using PCHIP
-    algorithm:
+    Let :math:`h_k = x_{k+1} - x_k`, and  :math:`d_k = (y_{k+1} - y_k) / h_k`
+    are the slopes at internal points :math:`x_k`.
+    If the signs of :math:`d_k` and :math:`d_{k-1}` are different or either of
+    them equals zero, then :math:`f'_k = 0`. Otherwise, it is given by the
+    weighted harmonic mean
 
-    Let m_k be the slope of the kth segment (between k and k+1)
-    If m_k=0 or m_{k-1}=0 or sgn(m_k) != sgn(m_{k-1}) then d_k == 0
-    else use weighted harmonic mean:
+    .. math::
 
-       w_1 = 2h_k + h_{k-1}, w_2 = h_k + 2h_{k-1}
-       1/d_k = 1/(w_1 + w_2)*(w_1 / m_k + w_2 / m_{k-1})
+        \frac{w_1 + w_2}{f'_k} = \frac{w_1}{d_{k-1}} + \frac{w_2}{d_k}
 
-    where h_k is the spacing between x_k and x_{k+1}.
+    where :math:`w_1 = 2 h_k + h_{k-1}` and :math:`w_2 = h_k + 2 h_{k-1}`.
+
+    The end slopes are set using a one-sided scheme [2]_.
+
+
+    References
+    ----------
+    .. [1] F. N. Fritsch and R. E. Carlson, Monotone Piecewise Cubic Interpolation,
+           SIAM J. Numer. Anal., 17(2), 238 (1980).
+           DOI:10.1137/0717021
+    .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
+           DOI: http://dx.doi.org/10.1137/1.9780898717952
+
 
     """
     def __init__(self, x, y, axis=0, extrapolate=None):
@@ -89,11 +105,19 @@ class PchipInterpolator(BPoly):
         return (PPoly.from_bernstein_basis(self._bpoly)).roots()
 
     @staticmethod
-    def _edge_case(m0, d1, out):
-        m0 = np.atleast_1d(m0)
-        d1 = np.atleast_1d(d1)
-        mask = (d1 != 0) & (m0 != 0)
-        out[mask] = 1.0/(1.0/m0[mask]+1.0/d1[mask])
+    def _edge_case(h0, h1, m0, m1):
+        # one-sided three-point estimate for the derivative
+        d = ((2*h0 + h1)*m0 - h0*m1) / (h0 + h1)
+
+        # try to preserve shape
+        mask = np.sign(d) != np.sign(m0)
+        mask2 = (np.sign(m0) != np.sign(m1)) & (np.abs(d) > 3.*np.abs(m0))
+        mmm = (~mask) & mask2
+
+        d[mask] = 0.
+        d[mmm] = 3.*m0[mmm]
+
+        return d
 
     @staticmethod
     def _find_derivatives(x, y):
@@ -115,22 +139,24 @@ class PchipInterpolator(BPoly):
         hk = x[1:] - x[:-1]
         mk = (y[1:] - y[:-1]) / hk
         smk = np.sign(mk)
-        condition = ((smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0))
+        condition = (smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0)
 
         w1 = 2*hk[1:] + hk[:-1]
         w2 = hk[1:] + 2*hk[:-1]
+
         # values where division by zero occurs will be excluded
         # by 'condition' afterwards
         with np.errstate(divide='ignore'):
-            whmean = 1.0/(w1+w2)*(w1/mk[1:] + w2/mk[:-1])
+            whmean = (w1/mk[:-1] + w2/mk[1:]) / (w1 + w2)
+
         dk = np.zeros_like(y)
         dk[1:-1][condition] = 0.0
-        dk[1:-1][~condition] = 1.0/whmean[~condition]
+        dk[1:-1][~condition] = 1.0 / whmean[~condition]
 
-        # For end-points choose d_0 so that 1/d_0 = 1/m_0 + 1/d_1 unless
-        #  one of d_1 or m_0 is 0, then choose d_0 = 0
-        PchipInterpolator._edge_case(mk[0], dk[1], dk[0])
-        PchipInterpolator._edge_case(mk[-1], dk[-2], dk[-1])
+        # special case endpoints, as suggested in 
+        # Cleve Moler, Numerical Computing with MATLAB, Chap 3.4
+        dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1])
+        dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2])
 
         return dk.reshape(y_shape)
 
