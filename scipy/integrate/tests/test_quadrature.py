@@ -7,7 +7,7 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_allclose, assert_
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
-                             cumtrapz, quad)
+                             cumtrapz, quad, simps)
 from scipy.integrate.quadrature import AccuracyWarning
 
 
@@ -126,6 +126,18 @@ class TestQuadrature(TestCase):
         exact_integral = 9.0
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
+
+    def test_simps(self):
+        y = np.arange(17)
+        assert_equal(simps(y), 128)
+        assert_equal(simps(y, dx=0.5), 64)
+        assert_equal(simps(y, x=np.linspace(0, 4, 17)), 32)
+
+        y = np.arange(4)
+        x = 2**y
+        assert_equal(simps(y, x=x, even='avg'), 13.875)
+        assert_equal(simps(y, x=x, even='first'), 13.75)
+        assert_equal(simps(y, x=x, even='last'), 14)
 
 
 class TestCumtrapz(TestCase):
