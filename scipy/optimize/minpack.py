@@ -138,15 +138,15 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
 
     res = _root_hybr(func, x0, args, jac=fprime, **options)
     if full_output:
-        if res['status'] != 1:
-            msg = res['message']
-            warnings.warn(msg, RuntimeWarning)
         x = res['x']
         info = dict((k, res.get(k))
                     for k in ('nfev', 'njev', 'fjac', 'r', 'qtf') if k in res)
         info['fvec'] = res['fun']
         return x, info, res['status'], res['message']
     else:
+        if res['status'] != 1:
+            msg = res['message']
+            warnings.warn(msg, RuntimeWarning)
         return res['x']
 
 
