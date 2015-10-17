@@ -12,7 +12,7 @@ except ImportError:
 from .common import Benchmark
 
 
-def direct_diff(x,k=1,period=None):
+def direct_diff(x, k=1, period=None):
     fx = fft(x)
     n = len(fx)
     if period is None:
@@ -28,7 +28,7 @@ def direct_diff(x,k=1,period=None):
     return ifft(w*fx).real
 
 
-def direct_tilbert(x,h=1,period=None):
+def direct_tilbert(x, h=1, period=None):
     fx = fft(x)
     n = len(fx)
     if period is None:
@@ -48,7 +48,7 @@ def direct_hilbert(x):
     return ifft(w*fx)
 
 
-def direct_shift(x,a,period=None):
+def direct_shift(x, a, period=None):
     n = len(x)
     if period is None:
         k = fftfreq(n)*1j*n
@@ -81,7 +81,7 @@ class Bench(Benchmark):
         if soltype == 'fft':
             diff(self.f, 3)
         else:
-            direct_diff(self.f,3)
+            direct_diff(self.f, 3)
 
     def time_tilbert(self, size, soltype):
         if soltype == 'fft':
