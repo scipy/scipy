@@ -15,6 +15,7 @@ import numpy as np
 import numpy.matlib
 import scipy
 import math
+import itertools
 from scipy._lib._version import NumpyVersion
 
 # Whether Numpy has stacked matrix linear algebra
@@ -296,9 +297,23 @@ class SphericalVoronoi:
         )
 
         # calculate regions from triangulation
-        self.regions = [[k for k in range(0, len(self._tri.simplices))
-                         if n in self._tri.simplices[k]]
-                        for n in range(0, len(self.points))]
+        generator_indices = np.arange(self.points.shape[0])
+        filter_tuple = np.where((np.expand_dims(self._tri.simplices
+            , -1) == generator_indices).any(axis=1))
+            
+        list_tuples_associations = zip(filter_tuple[1],
+                filter_tuple[0]) 
+        list_tuples_associations = sorted(list_tuples_associations,
+                key = lambda t: t[0]) 
+        
+        #group by generator indices to produce 
+        #unsorted regions in nested list
+        groups = []
+        for k, g in itertools.groupby(list_tuples_associations,
+                lambda t : t[0]):
+            groups.append([element[1] for element in list(g)])
+
+        self.regions = groups
 
     def sort_vertices_of_regions(self):
         """
