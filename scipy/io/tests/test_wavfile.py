@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import sys
 import tempfile
 import warnings
 from io import BytesIO
@@ -20,7 +21,7 @@ def test_read_1():
     for mmap in [False, True]:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', wavfile.WavFileWarning)
-            rate, data = wavfile.read(datafile('test-44100-le-1ch-4bytes.wav'),
+            rate, data = wavfile.read(datafile('test-44100Hz-le-1ch-4bytes.wav'),
                                       mmap=mmap)
 
         assert_equal(rate, 44100)
@@ -32,11 +33,47 @@ def test_read_1():
 
 def test_read_2():
     for mmap in [False, True]:
-        rate, data = wavfile.read(datafile('test-8000-le-2ch-1byteu.wav'),
+        rate, data = wavfile.read(datafile('test-8000Hz-le-2ch-1byteu.wav'),
                                   mmap=mmap)
         assert_equal(rate, 8000)
         assert_(np.issubdtype(data.dtype, np.uint8))
         assert_equal(data.shape, (800, 2))
+
+        del data
+
+def test_read_3():
+    for mmap in [False, True]:
+        rate, data = wavfile.read(datafile('test-44100Hz-2ch-32bit-float-le.wav'),
+                                  mmap=mmap)
+        assert_equal(rate, 44100)
+        assert_(np.issubdtype(data.dtype, np.float32))
+        assert_equal(data.shape, (441, 2))
+
+        del data
+
+def test_read_4():
+    for mmap in [False, True]:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', wavfile.WavFileWarning)
+            rate, data = wavfile.read(datafile('test-48000Hz-2ch-64bit-float-le-wavex.wav'),
+                                      mmap=mmap)
+
+        assert_equal(rate, 48000)
+        assert_(np.issubdtype(data.dtype, np.float64))
+        assert_equal(data.shape, (480, 2))
+
+        del data
+
+
+def test_read_5():
+    for mmap in [False, True]:
+        rate, data = wavfile.read(datafile('test-44100Hz-2ch-32bit-float-be.wav'),
+                                  mmap=mmap)
+        assert_equal(rate, 44100)
+        assert_(np.issubdtype(data.dtype, np.float32))
+        assert_(data.dtype.byteorder == '>' or (sys.byteorder == 'big' and
+                                                data.dtype.byteorder == '='))
+        assert_equal(data.shape, (441, 2))
 
         del data
 
