@@ -93,16 +93,23 @@ class GridData(Benchmark):
 class Interpolate1d(Benchmark):
     param_names = ['n_samples', 'method']
     params = [
-        [10, 50, 100],
+        [10, 50, 100, 1000, 10000],
         ['linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic'],
     ]
 
     def setup(self, n_samples, method):
         self.x = np.arange(n_samples)
         self.y = np.exp(-self.x/3.0)
+        self.interpolator = interpolate.interp1d(self.x, self.y, kind=method)
+        self.xp = np.linspace(self.x[0], self.x[-1], 4*n_samples)
 
     def time_interpolate(self, n_samples, method):
+        """Time the construction overhead."""
         interpolate.interp1d(self.x, self.y, kind=method)
+
+    def time_interpolate_eval(self, n_samples, method):
+        """Time the evaluation."""
+        self.interpolator(self.xp)
 
 
 class Interpolate2d(Benchmark):
