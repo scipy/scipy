@@ -107,7 +107,7 @@ before_install:
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
-        travis_retry pip install matplotlib Sphinx
+        travis_retry pip install matplotlib Sphinx==1.2.3
     fi
   - python -V
   - popd
@@ -141,7 +141,7 @@ after_success:
         git config --global user.email "scipy-travis-bot@nomail"
         git config --global user.name "scipy-travis-bot"
         git config --global push.default simple
-        git add .
+        git add . > /dev/null
         git commit -m "Docs build of $TRAVIS_COMMIT"
         git push --set-upstream origin gh-pages --force
         popd
