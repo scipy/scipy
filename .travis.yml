@@ -118,7 +118,33 @@ script:
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" = "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
   - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE  |& tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
-  - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py --refguide-check; fi
+  - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
+after_success:
+  # Upload development docs, using deploy key from travis-ci encrypted file
+  # https://developer.github.com/guides/managing-deploy-keys/
+  # http://docs.travis-ci.com/user/encrypting-files/
+  - |
+    if [ "${REFGUIDE_CHECK}" == "1" -a "${TRAVIS_PULL_REQUEST}" == "false" -a "${TRAVIS_BRANCH}" == "master" ]; then
+        set -e
+        python -u $OPTIMIZE runtests.py -g --shell -- -c 'make -C doc html-scipyorg'
+        openssl aes-256-cbc -K $encrypted_35a522e29e4d_key -iv $encrypted_35a522e29e4d_iv -in tools/ci/devdocs-deploy.key.enc -out tools/ci/devdocs-deploy.key -d
+        chmod 600 tools/ci/devdocs-deploy.key
+        export GIT_SSH_COMMAND="ssh -i $PWD/tools/ci/devdocs-deploy.key"
+        git clone git@github.com:scipy/devdocs.git devdocs
+        pushd devdocs
+        (git checkout --orphan tmp && git branch -D gh-pages || true)
+        git checkout --orphan gh-pages
+        git reset --hard
+        cp -R ../doc/build/html-scipyorg/. .
+        touch .nojekyll
+        git config --global user.email "scipy-travis-bot@nomail"
+        git config --global user.name "scipy-travis-bot"
+        git config --global push.default simple
+        git add .
+        git commit -m "Docs build of $TRAVIS_COMMIT"
+        git push --set-upstream origin gh-pages --force
+        popd
+    fi
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
   # let's wait to see what people think before turning that on.
