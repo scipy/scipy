@@ -107,7 +107,6 @@ from scipy._lib.six import xrange
 
 from . import _distance_wrap
 from ..linalg import norm
-import collections
 
 
 def _copy_array_if_base_present(a):
@@ -1025,7 +1024,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
        Computes the Jaccard distance between the points. Given two
        vectors, ``u`` and ``v``, the Jaccard distance is the
        proportion of those elements ``u[i]`` and ``v[i]`` that
-       disagree where at least one of them is non-zero.
+       disagree.
 
     10. ``Y = pdist(X, 'chebyshev')``
 
@@ -1174,17 +1173,16 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     redundant square matrix.
 
     """
-
-#         21. Y = pdist(X, 'test_Y')
-#
-#           Computes the distance between all pairs of vectors in X
-#           using the distance metric Y but with a more succinct,
-#           verifiable, but less efficient implementation.
+    # You can also call this as:
+    #     Y = pdist(X, 'test_abc')
+    # where 'abc' is the metric being tested.  This computes the distance
+    # between all pairs of vectors in X using the distance metric 'abc' but with
+    # a more succinct, verifiable, but less efficient implementation.
 
     X = np.asarray(X, order='c')
 
     # The C code doesn't do striding.
-    [X] = _copy_arrays_if_base_present([_convert_to_double(X)])
+    X = _copy_arrays_if_base_present([X])[0]
 
     s = X.shape
     if len(s) != 2:
@@ -1214,6 +1212,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         else:
             dfun = metric
 
+        X = _convert_to_double(X)
+
         k = 0
         for i in xrange(0, m - 1):
             for j in xrange(i + 1, m):
@@ -1223,34 +1223,41 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        #if X.dtype != np.double and \
-        #       (mstr != 'hamming' and mstr != 'jaccard'):
-        #    TypeError('A double array must be passed.')
         if mstr in set(['euclidean', 'euclid', 'eu', 'e']):
-            _distance_wrap.pdist_euclidean_wrap(_convert_to_double(X), dm)
+            X = _convert_to_double(X)
+            _distance_wrap.pdist_euclidean_wrap(X, dm)
         elif mstr in set(['sqeuclidean', 'sqe', 'sqeuclid']):
-            _distance_wrap.pdist_sqeuclidean_wrap(_convert_to_double(X), dm)
+            X = _convert_to_double(X)
+            _distance_wrap.pdist_sqeuclidean_wrap(X, dm)
         elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
+            X = _convert_to_double(X)
             _distance_wrap.pdist_city_block_wrap(X, dm)
         elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
             if X.dtype == bool:
-                _distance_wrap.pdist_hamming_bool_wrap(_convert_to_bool(X), dm)
+                X = _convert_to_bool(X)
+                _distance_wrap.pdist_hamming_bool_wrap(X, dm)
             else:
-                _distance_wrap.pdist_hamming_wrap(_convert_to_double(X), dm)
+                X = _convert_to_double(X)
+                _distance_wrap.pdist_hamming_wrap(X, dm)
         elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
             if X.dtype == bool:
-                _distance_wrap.pdist_jaccard_bool_wrap(_convert_to_bool(X), dm)
+                X = _convert_to_bool(X)
+                _distance_wrap.pdist_jaccard_bool_wrap(X, dm)
             else:
-                _distance_wrap.pdist_jaccard_wrap(_convert_to_double(X), dm)
+                X = _convert_to_double(X)
+                _distance_wrap.pdist_jaccard_wrap(X, dm)
         elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
-            _distance_wrap.pdist_chebyshev_wrap(_convert_to_double(X), dm)
+            X = _convert_to_double(X)
+            _distance_wrap.pdist_chebyshev_wrap(X, dm)
         elif mstr in set(['minkowski', 'mi', 'm']):
-            _distance_wrap.pdist_minkowski_wrap(_convert_to_double(X), dm, p)
+            X = _convert_to_double(X)
+            _distance_wrap.pdist_minkowski_wrap(X, dm, p)
         elif mstr in wmink_names:
+            X = _convert_to_double(X)
             w = _convert_to_double(np.asarray(w))
-            _distance_wrap.pdist_weighted_minkowski_wrap(_convert_to_double(X),
-                                                         dm, p, w)
+            _distance_wrap.pdist_weighted_minkowski_wrap(X, dm, p, w)
         elif mstr in set(['seuclidean', 'se', 's']):
+            X = _convert_to_double(X)
             if V is not None:
                 V = np.asarray(V, order='c')
                 if type(V) != np.ndarray:
@@ -1268,11 +1275,13 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 [VV] = _copy_arrays_if_base_present([_convert_to_double(V)])
             else:
                 VV = np.var(X, axis=0, ddof=1)
-            _distance_wrap.pdist_seuclidean_wrap(_convert_to_double(X), VV, dm)
+            _distance_wrap.pdist_seuclidean_wrap(X, VV, dm)
         elif mstr in set(['cosine', 'cos']):
+            X = _convert_to_double(X)
             norms = _row_norms(X)
-            _distance_wrap.pdist_cosine_wrap(_convert_to_double(X), dm, norms)
+            _distance_wrap.pdist_cosine_wrap(X, dm, norms)
         elif mstr in set(['old_cosine', 'old_cos']):
+            X = _convert_to_double(X)
             norms = _row_norms(X)
             nV = norms.reshape(m, 1)
             # The numerator u * v
@@ -1283,12 +1292,12 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             dm[xrange(0, m), xrange(0, m)] = 0.0
             dm = squareform(dm)
         elif mstr in set(['correlation', 'co']):
+            X = _convert_to_double(X)
             X2 = X - X.mean(1)[:, np.newaxis]
             norms = _row_norms(X2)
-            _distance_wrap.pdist_cosine_wrap(_convert_to_double(X2),
-                                             _convert_to_double(dm),
-                                             _convert_to_double(norms))
+            _distance_wrap.pdist_cosine_wrap(X2, dm, norms)
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
+            X = _convert_to_double(X)
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI, order='c'))
                 if type(VI) != np.ndarray:
@@ -1308,30 +1317,37 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 V = np.atleast_2d(np.cov(X.T))
                 VI = _convert_to_double(np.linalg.inv(V).T.copy())
             # (u-v)V^(-1)(u-v)^T
-            _distance_wrap.pdist_mahalanobis_wrap(_convert_to_double(X),
-                                                  VI, dm)
+            _distance_wrap.pdist_mahalanobis_wrap(X, VI, dm)
         elif mstr == 'canberra':
-            _distance_wrap.pdist_canberra_wrap(_convert_to_double(X), dm)
+            X = _convert_to_double(X)
+            _distance_wrap.pdist_canberra_wrap(X, dm)
         elif mstr == 'braycurtis':
-            _distance_wrap.pdist_bray_curtis_wrap(_convert_to_double(X), dm)
+            X = _convert_to_double(X)
+            _distance_wrap.pdist_bray_curtis_wrap(X, dm)
         elif mstr == 'yule':
-            _distance_wrap.pdist_yule_bool_wrap(_convert_to_bool(X), dm)
+            X = _convert_to_bool(X)
+            _distance_wrap.pdist_yule_bool_wrap(X, dm)
         elif mstr == 'matching':
-            _distance_wrap.pdist_hamming_bool_wrap(_convert_to_bool(X), dm)
+            X = _convert_to_bool(X)
+            _distance_wrap.pdist_hamming_bool_wrap(X, dm)
         elif mstr == 'kulsinski':
-            _distance_wrap.pdist_kulsinski_bool_wrap(_convert_to_bool(X), dm)
+            X = _convert_to_bool(X)
+            _distance_wrap.pdist_kulsinski_bool_wrap(X, dm)
         elif mstr == 'dice':
-            _distance_wrap.pdist_dice_bool_wrap(_convert_to_bool(X), dm)
+            X = _convert_to_bool(X)
+            _distance_wrap.pdist_dice_bool_wrap(X, dm)
         elif mstr == 'rogerstanimoto':
-            _distance_wrap.pdist_rogerstanimoto_bool_wrap(_convert_to_bool(X),
-                                                          dm)
+            X = _convert_to_bool(X)
+            _distance_wrap.pdist_rogerstanimoto_bool_wrap(X, dm)
         elif mstr == 'russellrao':
-            _distance_wrap.pdist_russellrao_bool_wrap(_convert_to_bool(X), dm)
+            X = _convert_to_bool(X)
+            _distance_wrap.pdist_russellrao_bool_wrap(X, dm)
         elif mstr == 'sokalmichener':
-            _distance_wrap.pdist_sokalmichener_bool_wrap(_convert_to_bool(X),
-                                                         dm)
+            X = _convert_to_bool(X)
+            _distance_wrap.pdist_sokalmichener_bool_wrap(X, dm)
         elif mstr == 'sokalsneath':
-            _distance_wrap.pdist_sokalsneath_bool_wrap(_convert_to_bool(X), dm)
+            X = _convert_to_bool(X)
+            _distance_wrap.pdist_sokalsneath_bool_wrap(X, dm)
         elif metric == 'test_euclidean':
             dm = pdist(X, euclidean)
         elif metric == 'test_sqeuclidean':
@@ -2015,23 +2031,18 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
            [ 2.3]])
 
     """
-
-#         21. Y = cdist(XA, XB, 'test_Y')
-#
-#           Computes the distance between all pairs of vectors in X
-#           using the distance metric Y but with a more succint,
-#           verifiable, but less efficient implementation.
+    # You can also call this as:
+    #     Y = cdist(XA, XB, 'test_abc')
+    # where 'abc' is the metric being tested.  This computes the distance
+    # between all pairs of vectors in XA and XB using the distance metric 'abc'
+    # but with a more succinct, verifiable, but less efficient implementation.
 
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
 
-    #if np.issubsctype(X, np.floating) and not np.issubsctype(X, np.double):
-    #    raise TypeError('Floating point arrays must be 64-bit (got %r).' %
-    #    (X.dtype.type,))
-
     # The C code doesn't do striding.
-    [XA] = _copy_arrays_if_base_present([_convert_to_double(XA)])
-    [XB] = _copy_arrays_if_base_present([_convert_to_double(XB)])
+    XA = _copy_arrays_if_base_present([_convert_to_double(XA)])[0]
+    XB = _copy_arrays_if_base_present([_convert_to_double(XB)])[0]
 
     s = XA.shape
     sB = XB.shape
@@ -2073,46 +2084,52 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        #if XA.dtype != np.double and \
-        #       (mstr != 'hamming' and mstr != 'jaccard'):
-        #    TypeError('A double array must be passed.')
         if mstr in set(['euclidean', 'euclid', 'eu', 'e']):
-            _distance_wrap.cdist_euclidean_wrap(_convert_to_double(XA),
-                                                _convert_to_double(XB), dm)
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+            _distance_wrap.cdist_euclidean_wrap(XA, XB, dm)
         elif mstr in set(['sqeuclidean', 'sqe', 'sqeuclid']):
-            _distance_wrap.cdist_sqeuclidean_wrap(_convert_to_double(XA),
-                                                _convert_to_double(XB), dm)
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+            _distance_wrap.cdist_sqeuclidean_wrap(XA, XB, dm)
         elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
-            _distance_wrap.cdist_city_block_wrap(_convert_to_double(XA),
-                                                 _convert_to_double(XB), dm)
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+            _distance_wrap.cdist_city_block_wrap(XA, XB, dm)
         elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
             if XA.dtype == bool:
-                _distance_wrap.cdist_hamming_bool_wrap(_convert_to_bool(XA),
-                                                       _convert_to_bool(XB),
-                                                       dm)
+                XA = _convert_to_bool(XA)
+                XB = _convert_to_bool(XB)
+                _distance_wrap.cdist_hamming_bool_wrap(XA, XB, dm)
             else:
-                _distance_wrap.cdist_hamming_wrap(_convert_to_double(XA),
-                                                  _convert_to_double(XB), dm)
+                XA = _convert_to_double(XA)
+                XB = _convert_to_double(XB)
+                _distance_wrap.cdist_hamming_wrap(XA, XB, dm)
         elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
             if XA.dtype == bool:
                 _distance_wrap.cdist_jaccard_bool_wrap(_convert_to_bool(XA),
                                                        _convert_to_bool(XB),
                                                        dm)
             else:
-                _distance_wrap.cdist_jaccard_wrap(_convert_to_double(XA),
-                                                  _convert_to_double(XB), dm)
+                XA = _convert_to_double(XA)
+                XB = _convert_to_double(XB)
+                _distance_wrap.cdist_jaccard_wrap(XA, XB, dm)
         elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
-            _distance_wrap.cdist_chebyshev_wrap(_convert_to_double(XA),
-                                                _convert_to_double(XB), dm)
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+            _distance_wrap.cdist_chebyshev_wrap(XA, XB, dm)
         elif mstr in set(['minkowski', 'mi', 'm', 'pnorm']):
-            _distance_wrap.cdist_minkowski_wrap(_convert_to_double(XA),
-                                                _convert_to_double(XB), dm, p)
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+            _distance_wrap.cdist_minkowski_wrap(XA, XB, dm, p)
         elif mstr in set(['wminkowski', 'wmi', 'wm', 'wpnorm']):
-            _distance_wrap.cdist_weighted_minkowski_wrap(_convert_to_double(XA),
-                                                         _convert_to_double(XB),
-                                                         dm, p,
-                                                         _convert_to_double(w))
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+            w = _convert_to_double(w)
+            _distance_wrap.cdist_weighted_minkowski_wrap(XA, XB, dm, p, w)
         elif mstr in set(['seuclidean', 'se', 's']):
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
             if V is not None:
                 V = np.asarray(V, order='c')
                 if type(V) != np.ndarray:
@@ -2127,23 +2144,26 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                                      'dimension as the vectors on which the '
                                      'distances are computed.')
                 # The C code doesn't do striding.
-                [VV] = _copy_arrays_if_base_present([_convert_to_double(V)])
+                VV = _copy_arrays_if_base_present([_convert_to_double(V)])[0]
             else:
                 X = np.vstack([XA, XB])
                 VV = np.var(X, axis=0, ddof=1)
                 X = None
                 del X
-            _distance_wrap.cdist_seuclidean_wrap(_convert_to_double(XA),
-                                                 _convert_to_double(XB), VV, dm)
+            _distance_wrap.cdist_seuclidean_wrap(XA, XB, VV, dm)
         elif mstr in set(['cosine', 'cos']):
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
             _cosine_cdist(XA, XB, dm)
         elif mstr in set(['correlation', 'co']):
-            XA = np.array(XA, dtype=np.double, copy=True)
-            XB = np.array(XB, dtype=np.double, copy=True)
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
             XA -= XA.mean(axis=1)[:, np.newaxis]
             XB -= XB.mean(axis=1)[:, np.newaxis]
             _cosine_cdist(XA, XB, dm)
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI, order='c'))
                 if type(VI) != np.ndarray:
@@ -2165,44 +2185,49 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 V = np.atleast_2d(np.cov(X.T))
                 X = None
                 del X
-                VI = _convert_to_double(np.linalg.inv(V).T.copy())
+                VI = np.linalg.inv(V).T.copy()
             # (u-v)V^(-1)(u-v)^T
-            _distance_wrap.cdist_mahalanobis_wrap(_convert_to_double(XA),
-                                                  _convert_to_double(XB),
-                                                  VI, dm)
+            _distance_wrap.cdist_mahalanobis_wrap(XA, XB, VI, dm)
         elif mstr == 'canberra':
-            _distance_wrap.cdist_canberra_wrap(_convert_to_double(XA),
-                                               _convert_to_double(XB), dm)
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+            _distance_wrap.cdist_canberra_wrap(XA, XB, dm)
         elif mstr == 'braycurtis':
-            _distance_wrap.cdist_bray_curtis_wrap(_convert_to_double(XA),
-                                                  _convert_to_double(XB), dm)
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+            _distance_wrap.cdist_bray_curtis_wrap(XA, XB, dm)
         elif mstr == 'yule':
-            _distance_wrap.cdist_yule_bool_wrap(_convert_to_bool(XA),
-                                                _convert_to_bool(XB), dm)
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+            _distance_wrap.cdist_yule_bool_wrap(XA, XB, dm)
         elif mstr == 'matching':
-            _distance_wrap.cdist_hamming_bool_wrap(_convert_to_bool(XA),
-                                                   _convert_to_bool(XB), dm)
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+            _distance_wrap.cdist_hamming_bool_wrap(XA, XB, dm)
         elif mstr == 'kulsinski':
-            _distance_wrap.cdist_kulsinski_bool_wrap(_convert_to_bool(XA),
-                                                     _convert_to_bool(XB), dm)
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+            _distance_wrap.cdist_kulsinski_bool_wrap(XA, XB, dm)
         elif mstr == 'dice':
-            _distance_wrap.cdist_dice_bool_wrap(_convert_to_bool(XA),
-                                                _convert_to_bool(XB), dm)
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+            _distance_wrap.cdist_dice_bool_wrap(XA, XB, dm)
         elif mstr == 'rogerstanimoto':
-            _distance_wrap.cdist_rogerstanimoto_bool_wrap(_convert_to_bool(XA),
-                                                          _convert_to_bool(XB),
-                                                          dm)
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+            _distance_wrap.cdist_rogerstanimoto_bool_wrap(XA, XB, dm)
         elif mstr == 'russellrao':
-            _distance_wrap.cdist_russellrao_bool_wrap(_convert_to_bool(XA),
-                                                      _convert_to_bool(XB), dm)
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+            _distance_wrap.cdist_russellrao_bool_wrap(XA, XB, dm)
         elif mstr == 'sokalmichener':
-            _distance_wrap.cdist_sokalmichener_bool_wrap(_convert_to_bool(XA),
-                                                         _convert_to_bool(XB),
-                                                         dm)
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+            _distance_wrap.cdist_sokalmichener_bool_wrap(XA, XB, dm)
         elif mstr == 'sokalsneath':
-            _distance_wrap.cdist_sokalsneath_bool_wrap(_convert_to_bool(XA),
-                                                       _convert_to_bool(XB),
-                                                       dm)
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+            _distance_wrap.cdist_sokalsneath_bool_wrap(XA, XB, dm)
         elif metric == 'test_euclidean':
             dm = cdist(XA, XB, euclidean)
         elif metric == 'test_seuclidean':
