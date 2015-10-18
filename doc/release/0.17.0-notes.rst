@@ -31,7 +31,10 @@ linear sum assignment problem. It uses the Hungarian algorithm (Kuhn-Munkres).
 Deprecated features
 ===================
 
-``scipy.stats.threshold`` and ``scipy.mstats.threshold`` are being deprecated
+``scipy.stats.histogram`` is deprecated in favor of ``np.histogram``, which is
+faster and provides the same functionality.
+
+``scipy.stats.threshold`` and ``scipy.mstats.threshold`` are deprecated
 in favor of ``np.clip``. See issue #617 for details.
 
 ``scipy.stats.ss`` is deprecated. This is a support function, not meant to 

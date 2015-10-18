@@ -1989,6 +1989,8 @@ def histogram2(a, bins):
     return n[1:] - n[:-1]
 
 
+@np.deprecate(message=("scipy.stats.histogram is deprecated in scipy 0.17.0; "
+                       "use np.histogram instead"))
 def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
     Separates the range into several bins and returns the number of instances

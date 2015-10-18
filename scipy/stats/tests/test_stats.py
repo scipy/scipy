@@ -945,7 +945,10 @@ class TestHistogram(TestCase):
                                           -1.2222222222222223, 0.44444444444444448, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            given_results = stats.histogram(inputs)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                given_results = stats.histogram(inputs)
+
             assert_array_almost_equal(expected_results[0], given_results[0],
                                       decimal=2)
             for i in range(1, 4):
@@ -953,7 +956,9 @@ class TestHistogram(TestCase):
                                     decimal=2)
 
     def test_empty(self):
-        res = stats.histogram([])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            res = stats.histogram([])
 
         # expected values
         e_count = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
@@ -982,7 +987,10 @@ class TestHistogram(TestCase):
                                           -1.5, 1.0, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            given_results = stats.histogram(inputs, numbins=5)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                given_results = stats.histogram(inputs, numbins=5)
+
             assert_array_almost_equal(expected_results[0], given_results[0],
                                       decimal=2)
             for i in range(1, 4):
@@ -1017,7 +1025,10 @@ class TestHistogram(TestCase):
                                           -1.1052631578947367, 0.21052631578947367, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            given_results = stats.histogram(inputs, numbins=20)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                given_results = stats.histogram(inputs, numbins=20)
+
             assert_array_almost_equal(expected_results[0], given_results[0],
                                       decimal=2)
             for i in range(1, 4):
@@ -1025,7 +1036,10 @@ class TestHistogram(TestCase):
                                     decimal=2)
 
     def test_histogram_result_attributes(self):
-        res = stats.histogram(self.low_range, numbins=20)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            res = stats.histogram(self.low_range, numbins=20)
+
         attributes = ('count', 'lowerlimit', 'binsize', 'extrapoints')
         check_named_results(res, attributes)
 
