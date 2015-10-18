@@ -528,7 +528,7 @@ def least_squares(
     the algorithm proceeds in a normal way, i.e. robust loss functions are
     implemented as a simple wrapper over standard least-squares algorithms.
 
-    .. versionadded: 0.17.0
+    .. versionadded:: 0.17.0
 
     References
     ----------
