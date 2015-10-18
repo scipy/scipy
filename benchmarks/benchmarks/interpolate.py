@@ -84,7 +84,7 @@ class GridData(Benchmark):
         self.func = lambda x, y: x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
         self.grid_x, self.grid_y = np.mgrid[0:1:n_grids, 0:1:n_grids]
         self.points = np.random.rand(1000, 2)
-        self.values = self.func(self.points[:,0], self.points[:,1])
+        self.values = self.func(self.points[:, 0], self.points[:, 1])
 
     def time_evaluation(self, n_grids, method):
         interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y), method=method)
@@ -190,8 +190,8 @@ class BivariateSpline(Benchmark):
         ymin = y.min()-1
         ymax = y.max()+1
         s = 1.1
-        self.yknots = np.linspace(ymin+s,ymax-s,10)
-        self.xknots = np.linspace(xmin+s,xmax-s,10)
+        self.yknots = np.linspace(ymin+s, ymax-s, 10)
+        self.xknots = np.linspace(xmin+s, xmax-s, 10)
         self.z = np.sin(x) + 0.1*np.random.normal(size=x.shape)
         self.x = x
         self.y = y
@@ -223,5 +223,3 @@ class Interpolate(Benchmark):
             interpolate.interp1d(self.x, self.y, kind="linear")
         else:
             np.interp(self.z, self.x, self.y)
-
-
