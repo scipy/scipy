@@ -1512,17 +1512,56 @@ def test_filtfilt_gust():
 
 class TestDecimate(TestCase):
 
-    def test_basic(self):
-        x = np.arange(6)
-        assert_array_equal(signal.decimate(x, 2, n=1).round(), x[::2])
+    def test_basic_IIR(self):
+        x = np.arange(12)
+        y = signal.decimate(x, 2, n=1, ftype='iir', zero_phase=False).round()
+        assert_array_equal(y, x[::2])
+
+    def test_basic_FIR(self):
+        x = np.arange(12)
+        y = signal.decimate(x, 2, n=1, ftype='fir', zero_phase=False).round()
+        assert_array_equal(y, x[::2])
 
     def test_shape(self):
         # Regression test for ticket #1480.
-        z = np.zeros((10, 10))
-        d0 = signal.decimate(z, 2, axis=0)
-        assert_equal(d0.shape, (5, 10))
-        d1 = signal.decimate(z, 2, axis=1)
-        assert_equal(d1.shape, (10, 5))
+        z = np.zeros((30, 30))
+        d0 = signal.decimate(z, 2, axis=0, zero_phase=False)
+        assert_equal(d0.shape, (15, 30))
+        d1 = signal.decimate(z, 2, axis=1, zero_phase=False)
+        assert_equal(d1.shape, (30, 15))
+
+    def test_phaseshift(self):
+        # Set up downsample filter
+        q = 4
+        n = 8
+        wc = 0.8*np.pi/q
+        b, a = signal.cheby1(n, 0.05, wc/np.pi)
+        system = signal.lti(b, a)
+        # Create signal, expected response
+        wsig = 0.1
+        d = np.exp(1j*wsig*np.arange(1e5))
+        resp = np.angle(signal.freqz(b, a, wsig)[1][0])
+
+        # Decimate, see if response matches up
+        xdec = signal.decimate(d.real, q, n, system, zero_phase=False)
+        phase = np.mean(np.angle(d[::q].conj()*xdec))
+        assert_almost_equal(phase, resp, decimal=3)
+
+    def test_zero_phase(self):
+        # Set up downsample filter
+        q = 4
+        n = 8
+        wc = 0.8*np.pi/q
+        b, a = signal.cheby1(n, 0.05, wc/np.pi)
+        system = signal.lti(b, a)
+        # Create signal
+        wsig = 0.1
+        d = np.exp(1j*wsig*np.arange(1e5))
+
+        # Decimate, see if response is in phase with original
+        xdec = signal.decimate(d.real, q, n, system, zero_phase=True)
+        phase = np.mean(np.angle(d[::q].conj()*xdec))
+        assert_almost_equal(phase, 0, decimal=3)
 
 
 class TestHilbert(object):
