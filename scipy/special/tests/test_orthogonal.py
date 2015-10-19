@@ -308,7 +308,7 @@ def test_j_roots():
         100, atol=1e-11)
 
     vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 5)
-    vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 25, atol=1e-13)
+    vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 25, atol=1.5e-13)
     vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 100, atol=1e-12)
 
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), -1., 1., 5, atol=2e-13)
@@ -377,7 +377,7 @@ def test_js_roots():
     vgq(rf(0.5, 0.5), ef(0.5, 0.5), wf(0.5, 0.5), 0., 1., 100, atol=1e-12)
 
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 5)
-    vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 25, atol=1e-13)
+    vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 25, atol=1.5e-13)
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 100, atol=1e-12)
 
     vgq(rf(2, 0.9), ef(2, 0.9), wf(2, 0.9), 0., 1., 5)
@@ -393,7 +393,7 @@ def test_js_roots():
     vgq(rf(47.1, 0.2), ef(47.1, 0.2), wf(47.1, 0.2), 0., 1., 25, atol=1e-11)
     vgq(rf(47.1, 0.2), ef(47.1, 0.2), wf(47.1, 0.2), 0., 1., 100, atol=1e-10)
 
-    vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1., 5, atol=2e-14)
+    vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1., 5, atol=3.5e-14)
     vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1., 25, atol=2e-13)
     vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1.,
         100, atol=1e-12)
@@ -493,7 +493,7 @@ def test_cg_roots():
     rootf = lambda a: lambda n, mu: orth.cg_roots(n, a, mu)
     evalf = lambda a: lambda n, x: orth.eval_gegenbauer(n, a, x)
     weightf = lambda a: lambda x: (1 - x**2)**(a - 0.5)
-    
+
     vgq = verify_gauss_quad
     vgq(rootf(-0.25), evalf(-0.25), weightf(-0.25), -1., 1., 5)
     vgq(rootf(-0.25), evalf(-0.25), weightf(-0.25), -1., 1., 25, atol=1e-12)
