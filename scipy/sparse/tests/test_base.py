@@ -1103,6 +1103,7 @@ class _TestCommon:
         G = [1, 2, 3]
         H = np.ones((3, 4))
         J = H.T
+        K = array([[0]])
 
         # Rank 1 arrays can't be cast as spmatrices (A and C) so leave
         # them out.
@@ -1114,9 +1115,10 @@ class _TestCommon:
         Hspp = self.spmatrix(H[0,None])
         Jsp = self.spmatrix(J)
         Jspp = self.spmatrix(J[:,0,None])
+        Ksp = self.spmatrix(K)
 
-        matrices = [A, B, C, D, E, F, G, H, J]
-        spmatrices = [Bsp, Dsp, Esp, Fsp, Hsp, Hspp, Jsp, Jspp]
+        matrices = [A, B, C, D, E, F, G, H, J, K]
+        spmatrices = [Bsp, Dsp, Esp, Fsp, Hsp, Hspp, Jsp, Jspp, Ksp]
 
         # sparse/sparse
         for i in spmatrices:
