@@ -139,8 +139,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                'band': band,
                'eps': epsfcn,
                'factor': factor,
-               'diag': diag,
-               'full_output': full_output}
+               'diag': diag}
 
     res = _root_hybr(func, x0, args, jac=fprime, **options)
     if full_output:
@@ -150,12 +149,22 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         info['fvec'] = res['fun']
         return x, info, res['status'], res['message']
     else:
+        status = res['status']
+        msg = res['message']
+        if status == 0:
+            raise TypeError(msg)
+        elif status == 1:
+            pass
+        elif status in [2, 3, 4, 5]:
+            warnings.warn(msg, RuntimeWarning)
+        else:
+            raise TypeError(msg)
         return res['x']
 
 
 def _root_hybr(func, x0, args=(), jac=None,
                col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
-               factor=100, diag=None, full_output=0, **unknown_options):
+               factor=100, diag=None, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
     hybrj routines (modified Powell method).
@@ -220,39 +229,29 @@ def _root_hybr(func, x0, args=(), jac=None,
 
     x, status = retval[0], retval[-1]
 
-    errors = {0: ["Improper input parameters were entered.", TypeError],
-              1: ["The solution converged.", None],
-              2: ["The number of calls to function has "
-                  "reached maxfev = %d." % maxfev, ValueError],
-              3: ["xtol=%f is too small, no further improvement "
+    errors = {0: "Improper input parameters were entered.",
+              1: "The solution converged.",
+              2: "The number of calls to function has "
+                  "reached maxfev = %d." % maxfev,
+              3: "xtol=%f is too small, no further improvement "
                   "in the approximate\n  solution "
-                  "is possible." % xtol, ValueError],
-              4: ["The iteration is not making good progress, as measured "
+                  "is possible." % xtol,
+              4: "The iteration is not making good progress, as measured "
                   "by the \n  improvement from the last five "
-                  "Jacobian evaluations.", ValueError],
-              5: ["The iteration is not making good progress, "
+                  "Jacobian evaluations.",
+              5: "The iteration is not making good progress, "
                   "as measured by the \n  improvement from the last "
-                  "ten iterations.", ValueError],
-              'unknown': ["An error occurred.", TypeError]}
-
-    if status != 1 and not full_output:
-        if status in [2, 3, 4, 5]:
-            msg = errors[status][0]
-            warnings.warn(msg, RuntimeWarning)
-        else:
-            try:
-                raise errors[status][1](errors[status][0])
-            except KeyError:
-                raise errors['unknown'][1](errors['unknown'][0])
+                  "ten iterations.",
+              'unknown': "An error occurred."}
 
     info = retval[1]
     info['fun'] = info.pop('fvec')
     sol = OptimizeResult(x=x, success=(status == 1), status=status)
     sol.update(info)
     try:
-        sol['message'] = errors[status][0]
+        sol['message'] = errors[status]
     except KeyError:
-        info['message'] = errors['unknown'][0]
+        info['message'] = errors['unknown']
 
     return sol
 
