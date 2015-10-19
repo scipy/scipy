@@ -146,11 +146,14 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     else:
         status = res['status']
         msg = res['message']
-        if status != 1:
-            if status in [2, 3, 4, 5]:
-                warnings.warn(msg, RuntimeWarning)
-            else:
-                raise TypeError(msg)
+        if status == 0:
+            raise TypeError(msg)
+        elif status == 1:
+            pass
+        elif status in [2, 3, 4, 5]:
+            warnings.warn(msg, RuntimeWarning)
+        else:
+            raise TypeError(msg)
         return res['x']
 
 
