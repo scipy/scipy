@@ -2984,7 +2984,9 @@ loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
 
 def _lognorm_logpdf(x, s):
-    return -log(x)**2 / (2*s**2) + np.where(x == 0, 0, -log(s*x*sqrt(2*pi)))
+    return _lazywhere(x != 0, (x, s),
+                      lambda x, s: -log(x)**2 / (2*s**2) - log(s*x*sqrt(2*pi)),
+                      -np.inf)
 
 
 class lognorm_gen(rv_continuous):
