@@ -943,7 +943,9 @@ class TestSkellam(TestCase):
 class TestLognorm(TestCase):
     def test_pdf(self):
         # Regression test for Ticket #1471: avoid nan with 0/0 situation
-        with np.errstate(divide='ignore'):
+        # Also make sure there are no warnings at x=0, cf gh-5202
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', RuntimeWarning)
             pdf = stats.lognorm.pdf([0, 0.5, 1], 1)
             assert_array_almost_equal(pdf, [0.0, 0.62749608, 0.39894228])
 
