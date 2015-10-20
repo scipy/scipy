@@ -337,6 +337,9 @@ class TestCephes(TestCase):
     def test_gdtr(self):
         assert_equal(cephes.gdtr(1,1,0),0.0)
 
+    def test_gdtr_inf(self):
+        assert_equal(cephes.gdtr(1,1,np.inf),1.0)
+
     def test_gdtrc(self):
         assert_equal(cephes.gdtrc(1,1,0),1.0)
 
@@ -1623,6 +1626,14 @@ class TestFresnel(TestCase):
         frs = array(special.fresnel(.5))
         assert_array_almost_equal(frs,array([0.064732432859999287, 0.49234422587144644]),8)
 
+    def test_fresnel_inf1(self):
+        frs = special.fresnel(np.inf)
+        assert_equal(frs, (0.5, 0.5))
+
+    def test_fresnel_inf2(self):
+        frs = special.fresnel(-np.inf)
+        assert_equal(frs, (-0.5, -0.5))
+
     # values from pg 329  Table 7.11 of A & S
     #  slightly corrected in 4th decimal place
     def test_fresnel_zeros(self):
@@ -1678,6 +1689,10 @@ class TestGamma(TestCase):
         gama = special.gammainc(-1,0)
         assert_equal(gama,0.0)
 
+    def test_gammaincinf(self):
+        gama = special.gammainc(0.5, np.inf)
+        assert_equal(gama,1.0)
+
     def test_gammaincc(self):
         gicc = special.gammaincc(.5,.5)
         greal = 1 - special.gammainc(.5,.5)
@@ -1686,6 +1701,10 @@ class TestGamma(TestCase):
     def test_gammainccnan(self):
         gama = special.gammaincc(-1,1)
         assert_(isnan(gama))
+
+    def test_gammainccinf(self):
+        gama = special.gammaincc(0.5,np.inf)
+        assert_equal(gama,0.0)
 
     def test_gammainccinv(self):
         gccinv = special.gammainccinv(.5,.5)
@@ -3038,6 +3057,10 @@ class TestStruve(object):
 
 def test_chi2_smalldf():
     assert_almost_equal(special.chdtr(0.6,3), 0.957890536704110)
+
+
+def test_ch2_inf():
+    assert_equal(special.chdtr(0.7,np.inf), 1.0)
 
 
 def test_chi2c_smalldf():
