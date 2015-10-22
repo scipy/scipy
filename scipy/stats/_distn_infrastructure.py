@@ -973,8 +973,9 @@ class rv_generic(object):
             else:
                 if mu2 is None:
                     mu2 = self._munp(2, *goodargs)
-                # (mu2**1.5) breaks down for nan and inf
-                mu3 = g1 * np.power(mu2, 1.5)
+                if g2 is None:
+                    # (mu2**1.5) breaks down for nan and inf
+                    mu3 = g1 * np.power(mu2, 1.5)
 
             if 'm' in moments:
                 if mu is None:

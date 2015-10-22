@@ -684,6 +684,23 @@ class TestPearson3(TestCase):
 
 
 class TestPoisson(TestCase):
+
+    def test_pmf_basic(self):
+        # Basic case
+        ln2 = np.log(2)
+        vals = stats.poisson.pmf([0, 1, 2], ln2)
+        expected = [0.5, ln2/2, ln2**2/4]
+        assert_allclose(vals, expected)
+
+    def test_mu0(self):
+        # Edge case: mu=0
+        vals = stats.poisson.pmf([0, 1, 2], 0)
+        expected = [1, 0, 0]
+        assert_array_equal(vals, expected)
+
+        interval = stats.poisson.interval(0.95, 0)
+        assert_equal(interval, (0, 0))
+
     def test_rvs(self):
         vals = stats.poisson.rvs(0.5, size=(2, 50))
         assert_(numpy.all(vals >= 0))
@@ -699,6 +716,11 @@ class TestPoisson(TestCase):
         mu = 16.0
         result = stats.poisson.stats(mu, moments='mvsk')
         assert_allclose(result, [mu, mu, np.sqrt(1.0/mu), 1.0/mu])
+
+        mu = np.array([0.0, 1.0, 2.0])
+        result = stats.poisson.stats(mu, moments='mvsk')
+        expected = (mu, mu, [np.inf, 1, 1/np.sqrt(2)], [np.inf, 1, 0.5])
+        assert_allclose(result, expected)
 
 
 class TestZipf(TestCase):
