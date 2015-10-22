@@ -6,13 +6,14 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.linalg
 from scipy.misc import doccer
-from scipy.special import gammaln, psi, multigammaln
+from scipy.special import gammaln, psi, multigammaln, xlogy
 from scipy._lib._util import check_random_state
 
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
            'dirichlet',
+           'multinomial',
            'wishart',
            'invwishart',
            'special_ortho_group',
@@ -2645,6 +2646,7 @@ for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs']:
         method.__doc__, wishart_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_params)
 
+
 class special_ortho_group_gen(multi_rv_generic):
     r"""
     A matrix-valued SO(N) random variable.
@@ -2799,6 +2801,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.dim, size, random_state)
 
+
 class ortho_group_gen(multi_rv_generic):
     r"""
     A matrix-valued O(N) random variable.
@@ -2904,3 +2907,291 @@ class ortho_group_gen(multi_rv_generic):
         return H
 
 ortho_group = ortho_group_gen()
+
+
+_doc_multinom_callparam = """\
+n : int
+    Number of trials
+p : array_like, shape (k,)
+    Probabilities. These should sum to one. If they do not, then
+    ``p[-1]`` is modified to account for the remaining probability so that
+    ``sum(p) == 1``.
+"""
+
+multinom_docdict_params = {
+    '_doc_multinom_callparam': _doc_multinom_callparam,
+    '_doc_random_state': _doc_random_state
+}
+
+class multinomial_gen(multi_rv_generic):
+    r"""Multinomial distribution.
+
+    The distribution is parameterized by an integer :math:`n` and a
+    k-dimensional vector of probabilities :math:`p`.
+
+    The support of the distribution is a set of k-dimensional vectors of
+    integer values :math:`\mathbf{x}`, such that :math:`\sum_{1}^{k} x_k = n`.
+
+    The probability mass function takes the form:
+
+    .. math::
+
+        P(\mathbf{x}) = \frac{n!}{x_1! \cdots x_{k}!} p_1^{x_1} \cdots p_k^{x_k}
+
+    .. versionadded:: 0.17
+
+    Parameters
+    ----------
+    n : int
+        Number of trials
+    p : array_like, shape (k,)
+        Probabilities. These should sum to one. If they do not, then
+        ``p[-1]`` is modified to account for the remaining probability so that
+        ``sum(p) == 1``.
+
+    %(_doc_random_state)s
+
+    Methods
+    -------
+    ``pmf(x, n, p)``
+    ``logpmf(x, n, p)``
+    ``rvs(n, p, size=1, random_state=None)``
+    ``mean(n, p)``
+    ``cov(n, p)``
+
+    Examples
+    --------
+
+    Draw random numbers from a multinomial distribution:
+
+    >>> n, p = 4, [0.3, 0.4, 0.4]
+    >>> from scipy.stats import multinomial
+    >>> r = multinomial.rvs(n, p, size=2, random_state=1234)
+    >>> r
+    array([[0, 2, 2],
+           [1, 1, 2]])
+
+    Note that if the probabilities do not sum to one, the last element of
+    the `p` array is assumed to account for the remaining probablity:
+
+    >>> n, p = 4, [0.3, 0.4, 0.0]
+    >>> r = multinomial.rvs(n, p, size=2, random_state=1234)
+    >>> r
+    array([[0, 2, 2],
+           [1, 1, 2]])
+
+    Compute the values of the probability mass function:
+
+    >>> multinomial.pmf(r, n, p)
+    array([ 0.0864,  0.1296])
+
+    Note that the ``pmf`` method accepts N-dimensional samples: 
+
+    >>> r = multinomial.rvs(n, p, random_state=1234, size=(4, 5, 6))
+    >>> r.shape
+    (4, 5, 6, 3)
+    >>> multinomial.pmf(r, n, p).shape
+    (4, 5, 6)
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the parameters `n` and `p`. This returns a "frozen" RV object
+    holding the given parameters fixed.
+
+    >>> dice = multinomial(n=20, p=[1./6]*6)
+    >>> dice.rvs(size=3, random_state=123) 
+    array([[4, 2, 2, 4, 5, 3],
+           [3, 7, 3, 2, 2, 3],
+           [3, 4, 3, 1, 4, 5]])
+
+    See Also
+    --------
+    numpy.random.multinomial
+    scipy.stats.binom
+
+    """
+    def __init__(self, seed=None):
+        super(multinomial_gen, self).__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__, multinom_docdict_params)
+
+    def _argcheck(self, n, p):
+        p = np.asarray(p)
+        p[-1] = 1. - p[:-1].sum()
+        if p.ndim != 1:
+            raise ValueError('p array must be 1D. Got p.ndim = %s' % p.ndim)
+
+        # flag for invalid parameters
+        flag = n <= 0 or np.any(p < 0) or np.any(p > 1.)
+        return n, p, flag
+
+    def rvs(self, n, p, size=1, random_state=None):
+        """ Draw random samples from the multinomial distribution.
+
+        Parameters
+        ----------
+        n : int
+            Number of trials
+        p : array_like, shape (k,)
+            Probabilities. These should sum to one. If they do not, then
+            ``p[-1]`` is modified to account for the remaining probability so
+            that ``sum(p) == 1``.
+        size : int or tuple of ints, optional
+            Number of samples to draw. Default is 1.
+        random_state : None or int or np.random.RandomState instance, optional
+            If int or RandomState, use it for drawing the random variates.
+            If None (or np.random), the global np.random state is used.
+            Default is None.
+
+        Returns
+        -------
+        rvs: ndarray
+            Random variates. If `size` is given, then the shape of the result
+            is ``(size, k)`` where ``k`` is the dimension of the random
+            variable. Otherwise, the shape is ``(k,)``. If `size` is a tuple,
+            e.g., ``(M, N, L)``, then the result has the shape ``(M, N, L, k)``.
+
+        """
+        random_state = self._get_random_state(random_state)
+        return random_state.multinomial(n, p, size)
+
+    def logpmf(self, x, n, p):
+        """Log of the multinomial probability mass function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles.
+        n : int
+            Number of trials
+        p : array_like, shape (k,)
+            Probabilities. These should sum to one. If they do not, then
+            ``p[-1]`` is modified to account for the remaining probability so
+            that ``sum(p) == 1``.
+
+        Returns
+        -------
+        logpmf : float
+            Log of the probability mass function evaluated at `x`. 
+
+        """
+        n, p, flag = self._argcheck(n, p)
+
+        if flag:
+            # parameters make no sense, bail out
+            out = np.empty(np.shape(x)[:-1])
+            out.fill(np.nan)
+            return out
+
+        x = np.asarray(x)
+        if p.shape[0] != x.shape[-1]:
+            raise ValueError("x & p shapes do not match.")
+
+        coef = gammaln(n + 1) - gammaln(x + 1.).sum(axis=-1)
+        val = coef + np.sum(xlogy(x, p), axis=-1)
+
+        # insist on that the support is a set of *integers*
+        mask = np.logical_and.reduce(np.mod(x, 1) == 0, axis=-1)
+
+        mask &= (x.sum(axis=-1) == n)
+        out = np.where(mask, val, -np.inf)
+        return out
+
+    def pmf(self, x, n, p):
+        """Multinomial probability mass function.
+
+        Parameters
+        ----------
+        x : array_like, shape(k,)
+            Quantiles.
+        n : int
+            Number of trials
+        p : array_like, shape (k,)
+            Probabilities. These should sum to one. If they do not, then
+            ``p[-1]`` is modified to account for the remaining probability so
+            that ``sum(p) == 1``.
+
+        Returns
+        -------
+        pmf : float
+            Probability mass function evaluated at `x`.
+
+        """
+        return np.exp(self.logpmf(x, n, p))
+
+    def mean(self, n, p):
+        """Mean of the multinomial distribution.
+
+        Parameters
+        ----------
+        n : int
+            Number of trials
+        p : array_like, shape (k,)
+            Probabilities. These should sum to one. If they do not, then
+            ``p[-1]`` is modified to account for the remaining probability so
+            that ``sum(p) == 1``.
+
+        Returns
+        -------
+        mean : ndarray, shape(k,)
+            Mean values of the multinomial distribution.
+
+        """
+        n, p, flag = self._argcheck(n, p)
+        return n * p
+
+    def cov(self, n, p):
+        """Covariance matrix of the multinomial distribution.
+
+        Parameters
+        ----------
+        n : int
+            Number of trials
+        p : array_like, shape (k,)
+            Probabilities. These should sum to one. If they do not, then
+            ``p[-1]`` is modified to account for the remaining probability so
+            that ``sum(p) == 1``.
+
+        Returns
+        -------
+        cov : ndarray, shape(k, k)
+            Covariance matrix of the multinomial distribution.
+
+        """
+        n, p, flag = self._argcheck(n, p)
+        out = -np.multiply.outer(p, p)
+        di = np.diag_indices_from(out)
+        out[di] += p
+        out *= n
+        return out
+
+    def __call__(self, n, p, seed=None):
+        return multinomial_frozen_gen(n, p, seed)
+
+multinomial = multinomial_gen()
+
+
+class multinomial_frozen_gen(multi_rv_frozen):
+    def __init__(self, n, p, seed=None):
+        self._dist = multinomial_gen(seed)
+        self.n, self.p, flag = self._dist._argcheck(n, p)
+        if flag:
+            raise ValueError('Bad parameters: n=%s, p=%s' % (n, p))
+
+        # monkey-patch self._dist
+        def _argcheck(n, p):
+            return self.n, self.p, False
+        self._dist._argcheck = _argcheck
+
+    def pmf(self, x):
+        return self._dist.pmf(x, self.n, self.p)
+
+    def logpmf(self, x):
+        return self._dist.logpmf(x, self.n, self.p)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.n, self.p, size, random_state)
+
+    def mean(self):
+        return self._dist.mean(self.n, self.p)
+
+    def cov(self):
+        return self._dist.cov(self.n, self.p)

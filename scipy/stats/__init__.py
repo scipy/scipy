@@ -124,6 +124,7 @@ Multivariate distributions
    multivariate_normal   -- Multivariate normal distribution
    matrix_normal         -- Matrix normal distribution
    dirichlet             -- Dirichlet
+   multinomial           -- Multinomial distribution
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
    special_ortho_group   -- SO(N) group

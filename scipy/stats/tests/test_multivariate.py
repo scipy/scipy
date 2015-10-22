@@ -5,11 +5,13 @@ Test functions for multivariate normal distributions.
 from __future__ import division, print_function, absolute_import
 
 import pickle
+import itertools
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_array_less, assert_raises,
-                           run_module_suite, TestCase)
+                           run_module_suite, TestCase, assert_,
+                           assert_raises, run_module_suite, TestCase, assert_)
 
 from test_continuous_basic import check_distribution_rvs
 
@@ -23,6 +25,7 @@ from scipy.stats import matrix_normal
 from scipy.stats import special_ortho_group, ortho_group
 from scipy.stats import dirichlet, beta
 from scipy.stats import wishart, invwishart, chi2, invgamma
+from scipy.stats import multinomial, binom
 from scipy.stats import norm
 from scipy.stats import ks_2samp
 
@@ -1092,6 +1095,7 @@ class TestSpecialOrthoGroup(TestCase):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+
 class TestOrthoGroup(TestCase):
     def test_reproducibility(self):
         np.random.seed(514)
@@ -1150,6 +1154,140 @@ class TestOrthoGroup(TestCase):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+
+class TestMultinom(object):
+    def test_rvs_np(self):
+        # test that .rvs agrees w/numpy
+        sc_rvs = multinomial.rvs(3, [1/4.]*3, size=7, random_state=123)
+        rndm = np.random.RandomState(123)
+        np_rvs = rndm.multinomial(3, [1/4.]*3, size=7)
+        assert_equal(sc_rvs, np_rvs)
+
+    def test_rvs_invalid(self):
+        # invalid input to rvs raises same exception as does numpy:
+        # * an integer is required for `n`
+        # * a 1D array required for `p`
+        # * sum(probabilities[::-1]) <= 1.0
+        assert_raises(TypeError, multinomial.rvs, [1, 2], [1./2, 1./2])
+        assert_raises(ValueError, multinomial.rvs, 2, [[1, 0], [0, 1]])
+        assert_raises(ValueError, multinomial.rvs, 2, [2., 1.])
+
+        # the last element of the pvals array is ignored:
+        multinomial.rvs(2, [1., 2.])   # this does not raise
+        assert_equal(multinomial.rvs(2, [1., 2], size=10000)[:, 1],
+                     np.zeros(10000))
+
+    def test_rvs_ndim(self):
+        # n-dim size argument is consistent with numpy
+        n, p = 4, [1/2., 1/4., 1/4.]
+        shape = (3, 4, 5)
+        assert_equal(multinomial.rvs(n, p, size=shape).shape,
+                     shape + (len(p),))
+
+    def test_pmf_invalid_param(self):
+        # invalid n: scalar only, n >= 0
+        x, p = [1, 1, 1], [0.5, 0.1, 0.4]
+        assert_raises(TypeError, multinomial.pmf, x, [1, 1], p)
+        assert_(np.isnan(multinomial.pmf(x, 0, p)))
+        assert_(np.isnan(multinomial.pmf(x, -1, p)))
+
+        # invalid p: 1D; sum(p) <= 1;  0 <= p <= 1
+        n, x = 3, [1, 1, 1]
+        assert_raises(ValueError, multinomial.pmf, x, n, [[0.1, 0.2, 0.3]])
+        assert_(np.isnan(multinomial.pmf(x, n, [0.9, 0.2, 0.0])))
+        assert_(np.isnan(multinomial.pmf(x, n, [0.9, -0.2, 0.0])))
+        assert_(np.isnan(multinomial.pmf(x, n, [1.1, 0.0, 0.0])))
+
+    def test_pmf_invalid_x(self):
+        # len(x) == n; each 0 <= x <= n; sum(x) == n
+        n, p = 4, [0.5, 0.1, 0.4]
+        assert_raises(ValueError, multinomial.pmf, [0, 0], n, p)
+
+        assert_equal(multinomial.pmf([-1, 2, 3], n, p), 0)   # x >= 0
+        assert_equal(multinomial.pmf([0, 5, 0], n, p), 0)    # x <= n
+        assert_equal(multinomial.pmf([1, 1, 1], n, p), 0)    # sum(x) == n
+
+        # n-D x w/some entries correct and some not.
+        x = [[0, 3, 0], [0, 4, 0], [0, 0, 0]]
+        assert_allclose(multinomial.pmf(x, n, p), [0, 0.1**4, 0], atol=1e-15)
+
+    def test_float_x(self):
+        # Test that non-integer values of `x` are treated as out of support
+        # of the distribution
+        n, p = 4, [0.5, 0.1, 0.4]
+        x = [[1.5, 2.5, 0], [0, 4, 0], [0.25, 0.25, 3.5]]
+        assert_allclose(multinomial.pmf(x, n, p), [0, 0.1**4, 0], atol=1e-15)
+
+    def test_pmf_logpmf(self):
+        n, p = 3, [1./2, 1./4, 1./4]
+        x = [1, 0, 0]
+        assert_allclose(multinomial.pmf(x, n, p),
+                        np.exp(multinomial.logpmf(x, n, p)), atol=1e-14)
+
+    def test_rvs_pmf(self):
+        # test that .pmf accepts the output of .rvs
+        n, p = 4, [0.5, 0.1, 0.4]
+        r = multinomial.rvs(n, p, size=(3, 4, 5))
+        vals = multinomial.pmf(r, n, p)
+        assert_equal(vals.shape, (3, 4, 5))
+
+    def test_binom(self):
+        n, p = 4, 0.5
+        x = np.arange(n+1)
+        xx = np.c_[x, n - x]
+        assert_allclose(binom.pmf(x, n, p),
+                        multinomial.pmf(xx, n, [p, 1.-p]), atol=1e-14)
+
+    def test_normalization(self):
+        n, p = 3, [1/4.]*4
+        supp = itertools.product(list(range(n+1)), repeat=len(p))
+        supp = np.array([x for x in supp if sum(x) == n])
+        assert_allclose(multinomial.pmf(supp, n, p).sum(), 1., atol=1e-14)
+
+    def test_R(self):
+        # test against the values produced by this R code
+        # (https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Multinom.html)
+        # X <- t(as.matrix(expand.grid(0:3, 0:3))); X <- X[, colSums(X) <= 3]
+        # X <- rbind(X, 3:3 - colSums(X)); dimnames(X) <- list(letters[1:3], NULL)
+        # X
+        # apply(X, 2, function(x) dmultinom(x, prob = c(1,2,5)))
+
+        n, p = 3, [1./8, 2./8, 5./8]
+        r_vals = {(0, 0, 3): 0.244140625, (1, 0, 2): 0.146484375,
+                  (2, 0, 1): 0.029296875, (3, 0, 0): 0.001953125,
+                  (0, 1, 2): 0.292968750, (1, 1, 1): 0.117187500,
+                  (2, 1, 0): 0.011718750, (0, 2, 1): 0.117187500,
+                  (1, 2, 0): 0.023437500, (0, 3, 0): 0.015625000}
+        for x in r_vals:
+            assert_allclose(multinomial.pmf(x, n, p), r_vals[x], atol=1e-14)
+
+    def test_mean_cov(self):
+        n, p = 3, [0.4, 0.6]
+        assert_allclose(multinomial.mean(n, p)[0],
+                        binom.mean(n, p[0]), atol=1e-15)
+        multinomial.cov(n, p)
+
+
+class TestMultinomFrozen(object):
+    n, p = 4, [0.2, 0.2, 0.2, 0.4]
+    x = [1, 1, 1, 1]
+    dist = multinomial(n, p)
+
+    def test_rvs(self):
+        assert_equal(self.dist.rvs(random_state=123),
+                     multinomial.rvs(self.n, self.p, random_state=123))
+
+    def test_pmf(self):
+        assert_allclose(self.dist.pmf(self.x),
+                        multinomial.pmf(self.x, self.n, self.p), atol=1e-14)
+
+    def test_mean_cov(self):
+        assert_allclose(self.dist.mean(),
+                        multinomial.mean(self.n, self.p), atol=1e-14)
+        assert_allclose(self.dist.cov(),
+                        multinomial.cov(self.n, self.p), atol=1e-14)
+
+
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles
     # pay special attention to the random_state property
@@ -1178,7 +1316,10 @@ def test_random_state_property():
         [multivariate_normal, ()],
         [dirichlet, (np.array([1.]), )],
         [wishart, (10, scale)],
-        [invwishart, (10, scale)]
+        [invwishart, (10, scale)],
+        [multinomial, (5, [0.5, 0.4, 0.1])],
+        [ortho_group, (2,)],
+        [special_ortho_group, (2,)]
     ]
     for distfn, args in dists:
         check_random_state_property(distfn, args)
