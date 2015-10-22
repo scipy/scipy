@@ -626,6 +626,21 @@ class _TestCommon:
         for m in mats:
             assert_equal(self.spmatrix(m).diagonal(),diag(m))        
 
+    def test_reshape(self):
+        # This first example is taken from the lil_matrix reshaping test.
+        x = self.spmatrix([[1, 0, 7], [0, 0, 0], [0, 3, 0], [0, 0, 5]])
+        for s in [(12,1),(1,12)]:
+            assert_array_equal(x.reshape(s).todense(),
+                               x.todense().reshape(s))
+
+        # This example is taken from the stackoverflow answer at
+        # http://stackoverflow.com/questions/16511879
+        x = self.spmatrix([[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]])
+        y = x.reshape((2, 6))
+        desired = [[0, 10, 0, 0, 0, 0], [0, 0, 0, 20, 30, 40]]
+        assert_equal(y.format, x.format)
+        assert_array_equal(y.A, desired)
+
     @dec.slow
     def test_setdiag(self):
         def dense_setdiag(a, v, k):
@@ -3489,17 +3504,6 @@ class TestLIL(sparse_test_class(minmax=False)):
         x = x*0
         assert_equal(x[0,0],0)
 
-    def test_reshape(self):
-        x = lil_matrix((4,3))
-        x[0,0] = 1
-        x[2,1] = 3
-        x[3,2] = 5
-        x[0,2] = 7
-
-        for s in [(12,1),(1,12)]:
-            assert_array_equal(x.reshape(s).todense(),
-                               x.todense().reshape(s))
-
     def test_inplace_ops(self):
         A = lil_matrix([[0,2,3],[4,0,6]])
         B = lil_matrix([[0,1,0],[0,2,3]])
@@ -3652,6 +3656,20 @@ class TestCOO(sparse_test_class(getset=False,
         coo = coo_matrix(([1,1,1,1], ([0,2,2,0], [0,1,1,0])))
         dok = coo.todok()
         assert_array_equal(dok.A, coo.A)
+
+    def test_reshape_copy(self):
+        arr = [[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]]
+        new_shape = (2, 6)
+        x = coo_matrix(arr)
+
+        y = x.reshape(new_shape)
+        assert_(y.data is x.data)
+
+        y = x.reshape(new_shape, copy=False)
+        assert_(y.data is x.data)
+
+        y = x.reshape(new_shape, copy=True)
+        assert_(not np.may_share_memory(y.data, x.data))
 
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,

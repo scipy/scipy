@@ -89,6 +89,11 @@ class spmatrix(object):
             raise ValueError('invalid shape')
 
         if (self._shape != shape) and (self._shape is not None):
+            raise NotImplementedError(
+                    'Changing the shape of a sparse matrix by directly '
+                    'modifying its .shape property is not currently '
+                    'supported.  Please consider using the .reshape() '
+                    'member function instead!')
             try:
                 self = self.reshape(shape)
             except NotImplementedError:
@@ -101,8 +106,8 @@ class spmatrix(object):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-    def reshape(self,shape):
-        raise NotImplementedError
+    def reshape(self, shape):
+        return self.tocoo().reshape(shape).asformat(self.format)
 
     def astype(self, t):
         return self.tocsr().astype(t).asformat(self.format)
@@ -661,7 +666,7 @@ class spmatrix(object):
         return self.tocsr().tobsr(blocksize=blocksize)
 
     def copy(self):
-        return self.__class__(self,copy=True)
+        return self.__class__(self, copy=True)
 
     def sum(self, axis=None):
         """Sum the matrix over the given axis.  If the axis is None, sum

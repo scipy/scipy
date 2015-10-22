@@ -141,6 +141,11 @@ class lil_matrix(spmatrix, IndexMixin):
             raise ValueError('invalid shape')
 
         if (self._shape != shape) and (self._shape is not None):
+            raise NotImplementedError(
+                    'Changing the shape of a sparse matrix by directly '
+                    'modifying its .shape property is not currently '
+                    'supported.  Please consider using the .reshape() '
+                    'member function instead!')
             try:
                 self = self.reshape(shape)
             except NotImplementedError:
@@ -343,15 +348,6 @@ class lil_matrix(spmatrix, IndexMixin):
         new.rows = deepcopy(self.rows)
         return new
 
-    def reshape(self,shape):
-        new = lil_matrix(shape, dtype=self.dtype)
-        j_max = self.shape[1]
-        for i,row in enumerate(self.rows):
-            for col,j in enumerate(row):
-                new_r,new_c = np.unravel_index(i*j_max + j,shape)
-                new[new_r,new_c] = self[i,j]
-        return new
-
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
         d = self._process_toarray_args(order, out)
@@ -372,22 +368,12 @@ class lil_matrix(spmatrix, IndexMixin):
     def tocsr(self):
         """ Return Compressed Sparse Row format arrays for this matrix.
         """
-
         lst = [len(x) for x in self.rows]
         idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
-        indptr = np.asarray(lst, dtype=idx_dtype)
-        indptr = np.concatenate((np.array([0], dtype=idx_dtype),
-                                 np.cumsum(indptr, dtype=idx_dtype)))
 
-        indices = []
-        for x in self.rows:
-            indices.extend(x)
-        indices = np.asarray(indices, dtype=idx_dtype)
-
-        data = []
-        for x in self.data:
-            data.extend(x)
-        data = np.asarray(data, dtype=self.dtype)
+        indptr = np.cumsum([0] + lst, dtype=idx_dtype)
+        indices = np.array([x for y in self.rows for x in y], dtype=idx_dtype)
+        data = np.array([x for y in self.data for x in y], dtype=self.dtype)
 
         from .csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
