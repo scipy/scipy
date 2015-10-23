@@ -444,11 +444,19 @@ class poisson_gen(rv_discrete):
     %(example)s
 
     """
+
+    # Override rv_discrete._argcheck to allow mu=0.
+    def _argcheck(self, *args):
+        cond = 1
+        for arg in args:
+            cond = np.logical_and(cond, (np.asarray(arg) >= 0))
+        return cond
+
     def _rvs(self, mu):
         return self._random_state.poisson(mu, self._size)
 
     def _logpmf(self, k, mu):
-        Pk = k*log(mu)-gamln(k+1) - mu
+        Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
         return Pk
 
     def _pmf(self, k, mu):
@@ -471,9 +479,11 @@ class poisson_gen(rv_discrete):
     def _stats(self, mu):
         var = mu
         tmp = np.asarray(mu)
-        g1 = sqrt(1.0 / tmp)
-        g2 = 1.0 / tmp
+        mu_nonzero = tmp > 0
+        g1 = _lazywhere(mu_nonzero, (tmp,), lambda x: sqrt(1.0/x), np.inf)
+        g2 = _lazywhere(mu_nonzero, (tmp,), lambda x: 1.0/x, np.inf)
         return mu, var, g1, g2
+
 poisson = poisson_gen(name="poisson", longname='A Poisson')
 
 
