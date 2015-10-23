@@ -508,7 +508,7 @@ class spmatrix(object):
 
     def __rxor__(self, other):  # self & other
         return self.tocsr().__rxor__(other)
-        
+
     def __getattr__(self, attr):
         if attr == 'A':
             return self.toarray()

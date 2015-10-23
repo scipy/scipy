@@ -358,7 +358,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def __radd__(self,other):
         return self.__add__(other)
 
-
     def __or__(self, other):
         # First check if argument is a scalar
         if self.dtype not in supported_bitwise_dtypes:
@@ -386,12 +385,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self.__or__(other)
 
     def __and__(self, other):
-        # First check if argument is a scalar        
+        # First check if argument is a scalar
         if self.dtype not in supported_bitwise_dtypes:
             raise TypeError("Unsupported dtype for 'and': %s " % self.dtype)
         if isscalarlike(other):
             if not other:
-                # Return empty array of current shape and dtype 
+                # Return empty array of current shape and dtype
                 return self.__class__(self.shape, self.dtype)
 
             else:  # Now we would add this scalar to every element.
@@ -424,7 +423,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return self._binopt(other, '_bxor_')
         elif isdense(other):
             return self.todense() ^ other
-        
+
         else:
             return NotImplemented
 

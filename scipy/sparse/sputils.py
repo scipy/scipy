@@ -18,7 +18,7 @@ from scipy._lib._version import NumpyVersion
 supported_dtypes = ['bool', 'int8','uint8','short','ushort','intc','uintc',
         'longlong','ulonglong','single','double','longdouble',
         'csingle','cdouble','clongdouble']
-bitwise_dtypes = ['bool', 'int8','uint8','short','ushort','intc','uintc',
+bitwise_dtypes = ['int8','uint8','short','ushort','intc','uintc',
         'longlong','ulonglong']
 supported_dtypes = [np.typeDict[x] for x in supported_dtypes]
 supported_bitwise_dtypes = [np.typeDict[x] for x in bitwise_dtypes]

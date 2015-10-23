@@ -86,8 +86,8 @@ csr_plus_csr        v iiIITIIT*I*I*T
 csr_minus_csr       v iiIITIIT*I*I*T
 csr_maximum_csr     v iiIITIIT*I*I*T
 csr_minimum_csr     v iiIITIIT*I*I*T
-csr_land_csr        v iiIITIIT*I*I*T 
-csr_lor_csr         v iiIITIIT*I*I*T 
+csr_land_csr        v iiIITIIT*I*I*T
+csr_lor_csr         v iiIITIIT*I*I*T
 csr_band_csr        v iiIITIIT*I*I*T bitwise
 csr_bor_csr         v iiIITIIT*I*I*T bitwise
 csr_bxor_csr         v iiIITIIT*I*I*T bitwise
@@ -162,12 +162,11 @@ T_TYPES = [
 
 # Integer types
 BITWISE_NPY_TYPES = set((
-    'NPY_BOOL',
     'NPY_BYTE',
     'NPY_UBYTE',
     'NPY_SHORT',
     'NPY_USHORT',
-    'NPY_INT', 
+    'NPY_INT',
     'NPY_UINT',
     'NPY_LONG',
     'NPY_ULONG',
@@ -211,7 +210,7 @@ def get_thunk_type_set():
 
     Returns
     -------
-    i_types : list [(j, I_typenum, None, I_type, None), ...] 
+    i_types : list [(j, I_typenum, None, I_type, None), ...]
          Pairing of index type numbers and the corresponding C++ types,
          and an unique index `j`. This is for routines that are parameterized
          only by I but not by T.
@@ -310,7 +309,6 @@ def parse_routine(name, args, types, bitwise=False):
     thunk_content = """int j = get_thunk_case(I_typenum, T_typenum);
     switch (j) {"""
     for j, I_typenum, T_typenum, I_type, T_type in types:
-        
         if bitwise and T_typenum not in BITWISE_NPY_TYPES:
             continue
         arglist = get_arglist(I_type, T_type)
@@ -376,7 +374,7 @@ def main():
                 name, args = line.split(None, 1)
             except ValueError:
                 raise ValueError("Malformed line: %r" % (line,))
-            
+
             bitwise = args.endswith("bitwise")
             if bitwise:
                 args = args.rsplit(None, 1)[0]

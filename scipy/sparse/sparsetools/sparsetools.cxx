@@ -45,8 +45,7 @@
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
 static const int n_supported_I_typenums = sizeof(supported_I_typenums) / sizeof(int);
 
-static const int supported_T_typenums[] = {NPY_BOOL,
-                                           NPY_BYTE, NPY_UBYTE,
+static const int supported_T_typenums[] = {NPY_BYTE, NPY_UBYTE,
                                            NPY_SHORT, NPY_USHORT,
                                            NPY_INT, NPY_UINT,
                                            NPY_LONG, NPY_ULONG,
@@ -106,7 +105,6 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     int T_typenum = -1;
     int VW_count = 0;
     int I_in_arglist = 0;
-    int J_in_arglist = 0;
     int T_in_arglist = 0;
     int next_is_output = 0;
     int j, k, arg_j;
@@ -446,7 +444,6 @@ static void *allocate_std_vector_typenum(int typenum)
     }
 
     try {
-        PROCESS(NPY_BOOL, npy_bool_wrapper);
         PROCESS(NPY_BYTE, npy_byte);
         PROCESS(NPY_UBYTE, npy_ubyte);
         PROCESS(NPY_SHORT, npy_short);
@@ -481,7 +478,6 @@ static void free_std_vector_typenum(int typenum, void *p)
         delete ((std::vector<ctype>*)p);                        \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
     PROCESS(NPY_BYTE, npy_byte);
     PROCESS(NPY_UBYTE, npy_ubyte);
     PROCESS(NPY_SHORT, npy_short);
@@ -517,7 +513,6 @@ static PyObject *array_from_std_vector_and_free(int typenum, void *p)
         return obj;                                             \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
     PROCESS(NPY_BYTE, npy_byte);
     PROCESS(NPY_UBYTE, npy_ubyte);
     PROCESS(NPY_SHORT, npy_short);

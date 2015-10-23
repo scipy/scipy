@@ -1079,13 +1079,13 @@ class _TestCommon:
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
-            
+
             a = dat.copy()
             a[0,2] = 2.0
             b = datsp
             c = a & b
             assert_array_equal(c, a & b.todense())
-             
+
     def test_or(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]
@@ -1096,7 +1096,7 @@ class _TestCommon:
             b = datsp
             c = b | a
             assert_array_equal(c, b.todense() | a)
-            
+
         for dtype in self.checked_bitwise_dtypes:
             yield check, dtype
 
@@ -1104,7 +1104,7 @@ class _TestCommon:
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
-            
+
             a = dat.copy()
             a[0,2] = 2.0
             b = datsp
@@ -1121,7 +1121,7 @@ class _TestCommon:
             b = datsp
             c = b ^ a
             assert_array_equal(c, b.todense() ^ a)
-            
+
         for dtype in self.checked_bitwise_dtypes:
             yield check, dtype
 
@@ -1129,13 +1129,12 @@ class _TestCommon:
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
-            
+
             a = dat.copy()
             a[0,2] = 2.0
             b = datsp
             c = a ^ b
             assert_array_equal(c, a ^ b.todense())
-
 
     def test_add0(self):
         def check(dtype):
