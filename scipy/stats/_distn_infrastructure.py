@@ -2990,7 +2990,7 @@ class rv_discrete(rv_generic):
         args = tuple(map(asarray, args))
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k <= self.b)
+        cond1 = (k >= self.a) & (k < self.b)
         cond2 = (k < self.a) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
@@ -3031,7 +3031,7 @@ class rv_discrete(rv_generic):
         args = tuple(map(asarray, args))
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k <= self.b)
+        cond1 = (k >= self.a) & (k < self.b)
         cond2 = (k < self.a) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
