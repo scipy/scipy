@@ -3227,11 +3227,7 @@ class rv_discrete(rv_generic):
         else:
             ub = ub - loc   # convert bound for standardized distribution
         if conditional:
-            if np.isposinf(ub)[()]:
-                # work around bug: stats.poisson.sf(stats.poisson.b, 2) is nan
-                invfac = 1 - self.cdf(lb-1, *args)
-            else:
-                invfac = 1 - self.cdf(lb-1, *args) - self.sf(ub, *args)
+            invfac = self.sf(lb-1, *args) - self.sf(ub, *args)
         else:
             invfac = 1.0
 
