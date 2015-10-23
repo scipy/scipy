@@ -326,7 +326,8 @@ def fftconvolve(in1, in2, mode="full"):
     >>> kernel = np.outer(signal.gaussian(70, 8), signal.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
 
-    >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(1, 3)
+    >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(3, 1,
+    ...                                                      figsize=(6, 15))
     >>> ax_orig.imshow(face, cmap='gray')
     >>> ax_orig.set_title('Original')
     >>> ax_orig.set_axis_off()
@@ -775,7 +776,8 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     >>> y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, (ax_orig, ax_template, ax_corr) = plt.subplots(1, 3)
+    >>> fig, (ax_orig, ax_template, ax_corr) = plt.subplots(3, 1,
+    ...                                                     figsize=(6, 15))
     >>> ax_orig.imshow(face, cmap='gray')
     >>> ax_orig.set_title('Original')
     >>> ax_orig.set_axis_off()
