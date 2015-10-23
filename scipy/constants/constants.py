@@ -121,7 +121,6 @@ micron = 1e-6
 au = astronomical_unit = 149597870691.0
 light_year = Julian_year * c
 parsec = au / arcsec
-hubble_length = 306593922 parsec
 
 # pressure in pascal
 atm = atmosphere = _cd('standard atmosphere')
