@@ -181,10 +181,7 @@ class BinopTester(object):
 class _TestCommon:
     """test common functionality shared by all sparse formats"""
     checked_dtypes = supported_dtypes
-    
-    @property
-    def checked_bitwise_dtypes(self):
-        return [x for x in self.checked_dtypes if x in supported_bitwise_dtypes]
+    checked_bitwise_dtypes = supported_bitwise_dtypes + [bool]
 
     def __init__(self):
         # Canonical data.
@@ -195,7 +192,7 @@ class _TestCommon:
         # dtype.
         self.dat_dtypes = {}
         self.datsp_dtypes = {}
-        for dtype in self.checked_dtypes:
+        for dtype in self.checked_dtypes + self.checked_bitwise_dtypes:
             self.dat_dtypes[dtype] = self.dat.astype(dtype)
             self.datsp_dtypes[dtype] = self.spmatrix(self.dat.astype(dtype))
 
@@ -1086,6 +1083,9 @@ class _TestCommon:
             c = a & b
             assert_array_equal(c, a & b.todense())
 
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
+
     def test_or(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]
@@ -1111,6 +1111,9 @@ class _TestCommon:
             c = a | b
             assert_array_equal(c, a | b.todense())
 
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
+
     def test_xor(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]
@@ -1135,6 +1138,9 @@ class _TestCommon:
             b = datsp
             c = a ^ b
             assert_array_equal(c, a ^ b.todense())
+
+        for dtype in self.checked_bitwise_dtypes:
+            yield check, dtype
 
     def test_add0(self):
         def check(dtype):

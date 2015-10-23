@@ -9,7 +9,8 @@ import sys
 import numpy as np
 
 from scipy._lib.six import xrange
-from .sputils import isdense, isscalarlike, isintlike
+from .sputils import (isdense, isscalarlike, isintlike, upcast,
+                      supported_bitwise_dtypes)
 
 
 class SparseWarning(Warning):
@@ -491,23 +492,53 @@ class spmatrix(object):
         else:
             raise NotImplementedError
 
+    def logical_and(self, other):
+        return self.tocsr().logical_and(other)
+
+    def logical_or(self, other):
+        return self.tocsr().logical_or(other)
+
+    def logical_xor(self, other):
+        return self.tocsr().logical_xor(other)
+
+    def bitwise_and(self, other):
+        return self.tocsr().bitwise_and(other)
+
+    def bitwise_or(self, other):
+        return self.tocsr().bitwise_or(other)
+
+    def bitwise_xor(self, other):
+        return self.tocsr().bitwise_xor(other)
+
+    def _bitwise_op(self, other, op):
+        # XXX: check the type of other, possibly return NotImplemented
+        res_dtype = upcast(self.dtype, other.dtype)
+        # bool types should use logical operations
+        if np.issubdtype(bool, res_dtype):
+            method = getattr(self, 'logical_' + op)
+        elif res_dtype in supported_bitwise_dtypes:
+            method = getattr(self, 'bitwise_' + op)
+        else:
+            raise TypeError("Unsupported dtype for '%s': %s" %
+                            (op, res_dtype))
+
+        try:
+            return method(other)
+        except NotImplementedError:
+            return NotImplemented
+
     def __and__(self, other):  # self & other
-        return self.tocsr().__and__(other)
+        return self._bitwise_op(other, 'and')
 
-    def __rand__(self, other):
-        return self.tocsr().__rand__(other)
+    def __or__(self, other):  # self | other
+        return self._bitwise_op(other, 'or')
 
-    def __or__(self, other):  # self & other
-        return self.tocsr().__or__(other)
+    def __xor__(self, other):  # self ^ other
+        return self._bitwise_op(other, 'xor')
 
-    def __ror__(self, other):  # self & other
-        return self.tocsr().__ror__(other)
-
-    def __xor__(self, other):  # self & other
-        return self.tocsr().__xor__(other)
-
-    def __rxor__(self, other):  # self & other
-        return self.tocsr().__rxor__(other)
+    __rand__ = __and__
+    __ror__ = __or__
+    __rxor__ = __xor__
 
     def __getattr__(self, attr):
         if attr == 'A':
