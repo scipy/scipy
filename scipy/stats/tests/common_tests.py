@@ -110,10 +110,12 @@ def check_edge_support(distfn, args):
         x = [distfn.a - 1, distfn.b]
 
     npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
-    npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
-
     npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
-    npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
+
+    if distfn.name not in ('skellam', 'dlaplace'):
+        # with a = -inf, log(0) generates warnings
+        npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
+        npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
 
     npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
     npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
