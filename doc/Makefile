@@ -31,7 +31,7 @@ help:
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 	@echo "  dist PYVER=... to make a distribution-ready tree"
-	@echo "  upload USER=...  to upload results to docs.scipy.org"
+	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
 
 clean:
 	-rm -rf build/* source/generated
@@ -51,6 +51,7 @@ clean:
 
 INSTALL_DIR = $(CURDIR)/build/inst-dist/
 INSTALL_PPH = $(INSTALL_DIR)/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/lib/python$(PYVER)/dist-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/dist-packages
+UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
 DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER)" SPHINXBUILD="LANG=C PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER) `which sphinx-build`"
 
@@ -66,8 +67,7 @@ real-dist: dist-build html html-scipyorg
 	cp -r build/html-scipyorg build/dist/reference
 	touch build/dist/index.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
-	cp build/latex/scipy*.pdf build/dist
-	-zip build/dist/scipy-chm.zip build/htmlhelp/scipy.chm
+	cp build/latex/scipy-ref.pdf build/dist
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
 	cd build/dist && tar czf ../dist.tar.gz *
@@ -78,6 +78,21 @@ dist-build:
 	install -d $(subst :, ,$(INSTALL_PPH))
 	$(PYTHON) `which easy_install` --prefix=$(INSTALL_DIR) ../dist/*.egg
 
+upload:
+	# SSH must be correctly configured for this to work.
+	# Assumes that ``make dist`` was already run
+	# Example usage: ``make upload USERNAME=rgommers RELEASE=0.17.0``
+	ssh $(USERNAME)@new.scipy.org mkdir $(UPLOAD_DIR)
+	scp build/dist.tar.gz $(USERNAME)@new.scipy.org:$(UPLOAD_DIR)
+	ssh $(USERNAME)@new.scipy.org tar xvC $(UPLOAD_DIR) \
+	    -zf $(UPLOAD_DIR)/dist.tar.gz
+	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-ref.pdf \
+	    $(UPLOAD_DIR)/scipy-ref-$(RELEASE).pdf
+	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-user.pdf \
+	    $(UPLOAD_DIR)/scipy-user-$(RELEASE).pdf
+	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-html.zip \
+	    $(UPLOAD_DIR)/scipy-html-$(RELEASE).zip
+	ssh $(USERNAME)@new.scipy.org /srv/bin/fixperm-scipy_org.sh
 
 #------------------------------------------------------------------------------
 # Basic Sphinx generation rules for different formats
