@@ -6,6 +6,11 @@ import numpy as np
 from scipy._lib.six import callable
 from collections import namedtuple
 
+
+BinnedStatisticResult = namedtuple('BinnedStatisticResult',
+                                   ('statistic', 'bin_edges', 'binnumber'))
+
+
 def binned_statistic(x, values, statistic='mean',
                      bins=10, range=None):
     """
@@ -146,9 +151,12 @@ def binned_statistic(x, values, statistic='mean',
     medians, edges, xy = binned_statistic_dd([x], values, statistic,
                                              bins, range)
 
-    BinnedStatisticResult = namedtuple('BinnedStatisticResult',
-                                       ('statistic', 'bin_edges', 'binnumber'))
     return BinnedStatisticResult(medians, edges[0], xy)
+
+
+BinnedStatistic2dResult = namedtuple('BinnedStatistic2dResult',
+                                     ('statistic', 'x_edge', 'y_edge',
+                                      'binnumber'))
 
 
 def binned_statistic_2d(x, y, values, statistic='mean',
@@ -238,10 +246,12 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     medians, edges, xy = binned_statistic_dd([x, y], values, statistic,
                                              bins, range)
 
-    BinnedStatistic2dResult = namedtuple('BinnedStatistic2dResult',
-                                         ('statistic', 'x_edge', 'y_edge',
-                                          'binnumber'))
     return BinnedStatistic2dResult(medians, edges[0], edges[1], xy)
+
+
+BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
+                                     ('statistic', 'bin_edges',
+                                      'binnumber'))
 
 
 def binned_statistic_dd(sample, values, statistic='mean',
@@ -449,7 +459,4 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if (result.shape != nbin - 2).any():
         raise RuntimeError('Internal Shape Error')
 
-    BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
-                                         ('statistic', 'bin_edges',
-                                          'binnumber'))
     return BinnedStatisticddResult(result, edges, xy)
