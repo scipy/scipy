@@ -189,12 +189,12 @@ class lil_matrix(spmatrix, IndexMixin):
         if axis < 0:
             axis += 2
         if axis == 0:
-            out = np.zeros(self.shape[1])
+            out = np.zeros(self.shape[1], dtype=np.intp)
             for row in self.rows:
                 out[row] += 1
             return out
         elif axis == 1:
-            return np.array([len(rowvals) for rowvals in self.data])
+            return np.array([len(rowvals) for rowvals in self.data], dtype=np.intp)
         else:
             raise ValueError('axis out of bounds')
     nnz = property(fget=getnnz)
