@@ -1,6 +1,6 @@
 """
-Low-level LAPACK functions
-==========================
+Low-level LAPACK functions (:mod:`scipy.linalg.lapack`)
+=======================================================
 
 This module contains low-level functions from the LAPACK library.
 
@@ -13,14 +13,14 @@ This module contains low-level functions from the LAPACK library.
    so prefer using the higher-level routines in `scipy.linalg`.
 
 Finding functions
-=================
+-----------------
 
 .. autosummary::
 
    get_lapack_funcs
 
 All functions
-=============
+-------------
 
 .. autosummary::
    :toctree: generated/
@@ -80,22 +80,22 @@ All functions
    dgelss
    cgelss
    zgelss
-   
+
    sgelss_lwork
    dgelss_lwork
    cgelss_lwork
    zgelss_lwork
-   
+
    sgelsd
    dgelsd
    cgelsd
    zgelsd
-   
+
    sgelsd_lwork
    dgelsd_lwork
    cgelsd_lwork
    zgelsd_lwork
-   
+
    sgelsy
    dgelsy
    cgelsy
@@ -105,7 +105,7 @@ All functions
    dgelsy_lwork
    cgelsy_lwork
    zgelsy_lwork
-   
+
    sgeqp3
    dgeqp3
    cgeqp3
@@ -189,7 +189,7 @@ All functions
 
    chegvx
    zhegvx
-   
+
    slarf
    dlarf
    clarf

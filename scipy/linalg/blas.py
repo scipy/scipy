@@ -1,6 +1,6 @@
 """
-Low-level BLAS functions
-========================
+Low-level BLAS functions (:mod:`scipy.linalg.blas`)
+===================================================
 
 This module contains low-level functions from the BLAS library.
 
@@ -13,7 +13,7 @@ This module contains low-level functions from the BLAS library.
    so prefer using the higher-level routines in `scipy.linalg`.
 
 Finding functions
-=================
+-----------------
 
 .. autosummary::
    :toctree: generated/
@@ -22,7 +22,7 @@ Finding functions
    find_best_blas_type
 
 BLAS Level 1 functions
-======================
+----------------------
 
 .. autosummary::
    :toctree: generated/
@@ -77,7 +77,7 @@ BLAS Level 1 functions
    zswap
 
 BLAS Level 2 functions
-======================
+----------------------
 
 .. autosummary::
    :toctree: generated/
@@ -112,7 +112,7 @@ BLAS Level 2 functions
    zher2
 
 BLAS Level 3 functions
-======================
+----------------------
 
 .. autosummary::
    :toctree: generated/

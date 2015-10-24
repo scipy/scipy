@@ -1,8 +1,7 @@
 r"""
 
-=================
 Nonlinear solvers
-=================
+-----------------
 
 .. currentmodule:: scipy.optimize
 
@@ -11,7 +10,7 @@ solvers.  These solvers find *x* for which *F(x) = 0*. Both *x*
 and *F* can be multidimensional.
 
 Routines
-========
+~~~~~~~~
 
 Large-scale nonlinear solvers:
 
@@ -37,10 +36,9 @@ Simple iterations:
 
 
 Examples
-========
+~~~~~~~~
 
-Small problem
--------------
+**Small problem**
 
 >>> def F(x):
 ...    return np.cos(x) + x[::-1] - [1, 2, 3, 4]
@@ -52,8 +50,7 @@ array([ 4.04674914,  3.91158389,  2.71791677,  1.61756251])
 array([ 1.,  2.,  3.,  4.])
 
 
-Large problem
--------------
+**Large problem**
 
 Suppose that we needed to solve the following integrodifferential
 equation on the square :math:`[0,1]\times[0,1]`:
