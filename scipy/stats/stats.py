@@ -585,6 +585,8 @@ def hmean(a, axis=0, dtype=None):
     else:
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
+ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+
 
 def mode(a, axis=0, nan_policy='propagate'):
     """
@@ -635,8 +637,6 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    ModeResult = namedtuple('ModeResult', ('mode', 'count'))
-
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
@@ -653,7 +653,6 @@ def mode(a, axis=0, nan_policy='propagate'):
         oldcounts = np.maximum(counts, oldcounts)
         oldmostfreq = mostfrequent
 
-    ModeResult = namedtuple('ModeResult', ('mode', 'count'))
     return ModeResult(mostfrequent, oldcounts)
 
 
@@ -1347,6 +1346,10 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     else:
         return vals
 
+DescribeResult = namedtuple('DescribeResult',
+                            ('nobs', 'minmax', 'mean', 'variance', 'skewness',
+                             'kurtosis'))
+
 
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """
@@ -1407,11 +1410,6 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
 
-    # Return namedtuple for clarity
-    DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
-                                                   'variance', 'skewness',
-                                                   'kurtosis'))
-
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
@@ -1436,6 +1434,8 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 #####################################
 #         NORMALITY TESTS           #
 #####################################
+
+SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 def skewtest(a, axis=0, nan_policy='propagate'):
@@ -1472,8 +1472,6 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
 
-    SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
-
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
@@ -1502,6 +1500,8 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
 
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
+KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
 def kurtosistest(a, axis=0, nan_policy='propagate'):
@@ -1538,8 +1538,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
 
-    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
-                                                           'pvalue'))
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
@@ -1577,6 +1575,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     # zprob uses upper tail, so Z needs to be positive
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
+NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 def normaltest(a, axis=0, nan_policy='propagate'):
     """
@@ -1618,8 +1617,6 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
     """
     a, axis = _chk_asarray(a, axis)
-
-    NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
@@ -1988,6 +1985,9 @@ def histogram2(a, bins):
     n = np.concatenate([n, [len(a)]])
     return n[1:] - n[:-1]
 
+HistogramResult = namedtuple('HistogramResult',
+                             ('count', 'lowerlimit', 'binsize', 'extrapoints'))
+
 
 @np.deprecate(message=("scipy.stats.histogram is deprecated in scipy 0.17.0; "
                        "use np.histogram instead"))
@@ -2064,9 +2064,11 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         warnings.warn("Points outside given histogram range = %s"
                       % extrapoints)
 
-    HistogramResult = namedtuple('HistogramResult', ('count', 'lowerlimit',
-                                                     'binsize', 'extrapoints'))
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
+
+CumfreqResult = namedtuple('CumfreqResult',
+                           ('cumcount', 'lowerlimit', 'binsize',
+                            'extrapoints'))
 
 
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -2143,10 +2145,11 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
     cumhist = np.cumsum(h * 1, axis=0)
-
-    CumfreqResult = namedtuple('CumfreqResult', ('cumcount', 'lowerlimit',
-                                                 'binsize', 'extrapoints'))
     return CumfreqResult(cumhist, l, b, e)
+
+RelfreqResult = namedtuple('RelfreqResult',
+                           ('frequency', 'lowerlimit', 'binsize',
+                            'extrapoints'))
 
 
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -2222,8 +2225,6 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
     h = h / float(a.shape[0])
 
-    RelfreqResult = namedtuple('RelfreqResult', ('frequency', 'lowerlimit',
-                                                 'binsize', 'extrapoints'))
     return RelfreqResult(h, l, b, e)
 
 
@@ -2572,6 +2573,8 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
     a[mask] = newval
     return a
 
+SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
+
 
 def sigmaclip(a, low=4., high=4.):
     """
@@ -2638,8 +2641,6 @@ def sigmaclip(a, low=4., high=4.):
         c = c[(c > critlower) & (c < critupper)]
         delta = size - c.size
 
-    SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower',
-                                                     'upper'))
     return SigmaclipResult(c, critlower, critupper)
 
 
@@ -2842,6 +2843,8 @@ def trim_mean(a, proportiontocut, axis=0):
     sl[axis] = slice(lowercut, uppercut)
     return np.mean(atmp[sl], axis=axis)
 
+F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
+
 
 def f_oneway(*args):
     """
@@ -2943,7 +2946,6 @@ def f_oneway(*args):
 
     prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
 
-    F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
     return F_onewayResult(f, prob)
 
 
@@ -3165,6 +3167,8 @@ def fisher_exact(table, alternative='two-sided'):
 
     return oddsratio, pvalue
 
+SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
+
 
 def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
@@ -3267,8 +3271,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
     a, axisout = _chk_asarray(a, axis)
 
-    SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
-
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
@@ -3312,6 +3314,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         return SpearmanrResult(rs[1, 0], prob[1, 0])
     else:
         return SpearmanrResult(rs, prob)
+
+PointbiserialrResult = namedtuple('PointbiserialrResult',
+                                  ('correlation', 'pvalue'))
 
 
 def pointbiserialr(x, y):
@@ -3395,10 +3400,10 @@ def pointbiserialr(x, y):
            [ 0.8660254,  1.       ]])
 
     """
-    PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
-                                                               'pvalue'))
     rpb, prob = pearsonr(x, y)
     return PointbiserialrResult(rpb, prob)
+
+KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
 def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
@@ -3470,8 +3475,6 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
     """
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
-
-    KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
     if x.size != y.size:
         raise ValueError("All inputs to `kendalltau` must be of the same size, "
@@ -3594,6 +3597,9 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
+Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+
+
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     """
     Calculates the T-test for the mean of ONE group of scores.
@@ -3654,7 +3660,6 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
 
-    Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
@@ -3709,6 +3714,8 @@ def _equal_var_ttest_denom(v1, n1, v2, n2):
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / float(df)
     denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
     return df, denom
+
+Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
@@ -3767,7 +3774,6 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
                                              std2**2, nobs2)
 
-    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
     res = _ttest_ind_from_stats(mean1, mean2, denom, df)
     return Ttest_indResult(*res)
 
@@ -3866,8 +3872,6 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     """
     a, b, axis = _chk2_asarray(a, b, axis)
 
-    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
-
     # check both a and b
     contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
                                 _contains_nan(b, nan_policy))
@@ -3893,6 +3897,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
 
     return Ttest_indResult(*res)
+
+Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
 def ttest_rel(a, b, axis=0, nan_policy='propagate'):
@@ -3955,8 +3961,6 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     """
     a, b, axis = _chk2_asarray(a, b, axis)
 
-    Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
-
     # check both a and b
     contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
                                 _contains_nan(b, nan_policy))
@@ -3983,6 +3987,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     t, prob = _ttest_finish(df, t)
 
     return Ttest_relResult(t, prob)
+
+KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
 
 
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
@@ -4112,8 +4118,6 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     if alternative == 'two_sided':
         alternative = 'two-sided'
 
-    KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
-
     if alternative in ['two-sided', 'greater']:
         Dplus = (np.arange(1.0, N + 1)/N - cdfvals).max()
         if alternative == 'greater':
@@ -4168,6 +4172,8 @@ def _count(a, axis=None):
             num = a.shape[axis]
     return num
 
+Power_divergenceResult = namedtuple('Power_divergenceResult',
+                                    ('statistic', 'pvalue'))
 
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     """
@@ -4374,8 +4380,6 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     ddof = asarray(ddof)
     p = distributions.chi2.sf(stat, num_obs - 1 - ddof)
 
-    Power_divergenceResult = namedtuple('Power_divergenceResult', ('statistic',
-                                                                   'pvalue'))
     return Power_divergenceResult(stat, p)
 
 
@@ -4493,6 +4497,8 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
                             lambda_="pearson")
 
+Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
+
 
 def ks_2samp(data1, data2):
     """
@@ -4572,9 +4578,9 @@ def ks_2samp(data1, data2):
     except:
         prob = 1.0
 
-    Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
     return Ks_2sampResult(d, prob)
 
+MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 def mannwhitneyu(x, y, use_continuity=True, alternative='two-sided'):
     """
@@ -4637,9 +4643,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative='two-sided'):
 
     z = z / sd
 
-    MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
-                                                           'pvalue'))
     return MannwhitneyuResult(u2, distributions.norm.sf(z) * fact2)
+
+RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
 def ranksums(x, y):
@@ -4685,8 +4691,9 @@ def ranksums(x, y):
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
     prob = 2 * distributions.norm.sf(abs(z))
 
-    RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
     return RanksumsResult(z, prob)
+
+KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
 def kruskal(*args, **kwargs):
@@ -4757,8 +4764,6 @@ def kruskal(*args, **kwargs):
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
-
     for arg in args:
         if arg.size == 0:
             return KruskalResult(np.nan, np.nan)
@@ -4772,8 +4777,6 @@ def kruskal(*args, **kwargs):
             nan_policy = kwargs['nan_policy']
     else:
         nan_policy = 'propagate'
-
-    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
     contains_nan = False
     for arg in args:
@@ -4808,6 +4811,10 @@ def kruskal(*args, **kwargs):
     h /= ties
 
     return KruskalResult(h, distributions.chi2.sf(h, df))
+
+
+FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
+                                     ('statistic', 'pvalue'))
 
 
 def friedmanchisquare(*args):
@@ -4872,8 +4879,6 @@ def friedmanchisquare(*args):
     ssbn = np.sum(data.sum(axis=0)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
-                                         ('statistic', 'pvalue'))
     return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
 
 
@@ -5116,6 +5121,9 @@ def f_value_multivariate(ER, EF, dfnum, dfden):
 #         SUPPORT FUNCTIONS         #
 #####################################
 
+RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
+
+
 def find_repeats(arr):
     """
     Find repeats and repeat counts.
@@ -5148,7 +5156,6 @@ def find_repeats(arr):
     RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2]))
 
     """
-    RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
     # Note: always copies.
     return RepeatedResults(*_find_repeats(np.array(arr, dtype=np.float64)))
 
