@@ -945,7 +945,10 @@ class TestHistogram(TestCase):
                                           -1.2222222222222223, 0.44444444444444448, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            given_results = stats.histogram(inputs)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                given_results = stats.histogram(inputs)
+
             assert_array_almost_equal(expected_results[0], given_results[0],
                                       decimal=2)
             for i in range(1, 4):
@@ -953,7 +956,9 @@ class TestHistogram(TestCase):
                                     decimal=2)
 
     def test_empty(self):
-        res = stats.histogram([])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            res = stats.histogram([])
 
         # expected values
         e_count = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
@@ -965,39 +970,6 @@ class TestHistogram(TestCase):
         assert_equal(res.lowerlimit, e_lowerlimit)
         assert_almost_equal(res.binsize, e_binsize)
         assert_equal(res.extrapoints, e_extrapoints)
-
-    def test_weighting(self):
-        # Tests that weights give expected histograms
-
-        # basic tests, with expected results, given a set of weights
-        # weights used (first n are used for each test, where n is len of array) (14 values)
-        weights = np.array([1., 3., 4.5, 0.1, -1.0, 0.0, 0.3, 7.0, 103.2, 2, 40, 0, 0, 1])
-        # results taken from the numpy version of histogram
-        basic_tests = ((self.low_values, (np.array([4.0, 0.0, 4.5, -0.9, 0.0,
-                                                      0.3,110.2, 0.0, 0.0, 42.0]),
-                                          0.2, 0.1, 0)),
-                       (self.high_range, (np.array([9.6, 0., -1., 0., 0.,
-                                                      0.,145.2, 0., 0.3, 7.]),
-                                          2.0, 9.3, 0)),
-                       (self.low_range, (np.array([2.4, 0., 0., 0., 0.,
-                                                    2., 40., 0., 103.2, 13.5]),
-                                         2.0, 0.11, 0)),
-                       (self.few_values, (np.array([4.5, 0., 0.1, 0., 0., 0.,
-                                                     0., 1., 0., 3.]),
-                                          -1., 0.4, 0)),
-
-                       )
-        for inputs, expected_results in basic_tests:
-            # use the first lot of weights for test
-            # default limits given to reproduce output of numpy's test better
-            given_results = stats.histogram(inputs, defaultlimits=(inputs.min(),
-                                                                   inputs.max()),
-                                            weights=weights[:len(inputs)])
-            assert_array_almost_equal(expected_results[0], given_results[0],
-                                      decimal=2)
-            for i in range(1, 4):
-                assert_almost_equal(expected_results[i], given_results[i],
-                                    decimal=2)
 
     def test_reduced_bins(self):
         # Tests that reducing the number of bins produces expected results
@@ -1015,7 +987,10 @@ class TestHistogram(TestCase):
                                           -1.5, 1.0, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            given_results = stats.histogram(inputs, numbins=5)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                given_results = stats.histogram(inputs, numbins=5)
+
             assert_array_almost_equal(expected_results[0], given_results[0],
                                       decimal=2)
             for i in range(1, 4):
@@ -1050,7 +1025,10 @@ class TestHistogram(TestCase):
                                           -1.1052631578947367, 0.21052631578947367, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            given_results = stats.histogram(inputs, numbins=20)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                given_results = stats.histogram(inputs, numbins=20)
+
             assert_array_almost_equal(expected_results[0], given_results[0],
                                       decimal=2)
             for i in range(1, 4):
@@ -1058,7 +1036,10 @@ class TestHistogram(TestCase):
                                     decimal=2)
 
     def test_histogram_result_attributes(self):
-        res = stats.histogram(self.low_range, numbins=20)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            res = stats.histogram(self.low_range, numbins=20)
+
         attributes = ('count', 'lowerlimit', 'binsize', 'extrapoints')
         check_named_results(res, attributes)
 
