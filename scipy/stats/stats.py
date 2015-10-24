@@ -591,6 +591,9 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
 
+ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+
+
 def mode(a, axis=0):
     """
     Returns an array of the modal (most common) value in the passed array.
@@ -646,7 +649,6 @@ def mode(a, axis=0):
         oldcounts = np.maximum(counts, oldcounts)
         oldmostfreq = mostfrequent
 
-    ModeResult = namedtuple('ModeResult', ('mode', 'count'))
     return ModeResult(mostfrequent, oldcounts)
 
 
@@ -1129,6 +1131,11 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
+DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
+                                               'variance', 'skewness',
+                                               'kurtosis'))
+
+
 def describe(a, axis=0, ddof=1):
     """
     Computes several descriptive statistics of the passed array.
@@ -1175,16 +1182,14 @@ def describe(a, axis=0, ddof=1):
     sk = skew(a, axis)
     kurt = kurtosis(a, axis)
 
-    # Return namedtuple for clarity
-    DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
-                                                   'variance', 'skewness',
-                                                   'kurtosis'))
-
     return DescribeResult(n, mm, m, v, sk, kurt)
 
 #####################################
 #         NORMALITY TESTS           #
 #####################################
+
+
+SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 def skewtest(a, axis=0):
@@ -1234,8 +1239,11 @@ def skewtest(a, axis=0):
     y = np.where(y == 0, 1, y)
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
 
-    SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
+
+KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
+                                                       'pvalue'))
 
 
 def kurtosistest(a, axis=0):
@@ -1293,9 +1301,10 @@ def kurtosistest(a, axis=0):
         Z = Z[()]
 
     # zprob uses upper tail, so Z needs to be positive
-    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
-                                                           'pvalue'))
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
+
+NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
 def normaltest(a, axis=0):
@@ -1338,7 +1347,6 @@ def normaltest(a, axis=0):
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
 
-    NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
     return NormaltestResult(k2, chisqprob(k2, 2))
 
 
@@ -1694,6 +1702,8 @@ def histogram2(a, bins):
     return n[1:] - n[:-1]
 
 
+HistogramResult = namedtuple('HistogramResult', ('count', 'lowerlimit',
+                                                 'binsize', 'extrapoints'))
 def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
     Separates the range into several bins and returns the number of instances
@@ -1763,9 +1773,11 @@ def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False
         warnings.warn("Points outside given histogram range = %s"
                       % extrapoints)
 
-    HistogramResult = namedtuple('HistogramResult', ('count', 'lowerlimit',
-                                                     'binsize', 'extrapoints'))
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
+
+
+CumfreqResult = namedtuple('CumfreqResult', ('cumcount', 'lowerlimit',
+                                             'binsize', 'extrapoints'))
 
 
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -1816,9 +1828,11 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
     cumhist = np.cumsum(h * 1, axis=0)
 
-    CumfreqResult = namedtuple('CumfreqResult', ('cumcount', 'lowerlimit',
-                                                 'binsize', 'extrapoints'))
     return CumfreqResult(cumhist, l, b, e)
+
+
+RelfreqResult = namedtuple('RelfreqResult', ('frequency', 'lowerlimit',
+                                             'binsize', 'extrapoints'))
 
 
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
@@ -1865,8 +1879,6 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
     h = np.array(h / float(np.array(a).shape[0]))
 
-    RelfreqResult = namedtuple('RelfreqResult', ('frequency', 'lowerlimit',
-                                                 'binsize', 'extrapoints'))
     return RelfreqResult(h, l, b, e)
 
 
@@ -2201,6 +2213,10 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
     return a
 
 
+SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower',
+                                                 'upper'))
+
+
 def sigmaclip(a, low=4., high=4.):
     """
     Iterative sigma-clipping of array elements.
@@ -2266,8 +2282,6 @@ def sigmaclip(a, low=4., high=4.):
         c = c[(c > critlower) & (c < critupper)]
         delta = size - c.size
 
-    SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower',
-                                                     'upper'))
     return SigmaclipResult(c, critlower, critupper)
 
 
@@ -2427,6 +2441,9 @@ def trim_mean(a, proportiontocut, axis=0):
     return np.mean(newa, axis=axis)
 
 
+F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
+
+
 def f_oneway(*args):
     """
     Performs a 1-way ANOVA.
@@ -2491,7 +2508,6 @@ def f_oneway(*args):
     f = msb / msw
     prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
 
-    F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
     return F_onewayResult(f, prob)
 
 
@@ -2714,6 +2730,9 @@ def fisher_exact(table, alternative='two-sided'):
     return oddsratio, pvalue
 
 
+SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
+
+
 def spearmanr(a, b=None, axis=0):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
@@ -2829,12 +2848,14 @@ def spearmanr(a, b=None, axis=0):
 
     prob = 2 * distributions.t.sf(np.abs(t), n-2)
 
-    SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
-
     if rs.shape == (2, 2):
         return SpearmanrResult(rs[1, 0], prob[1, 0])
     else:
         return SpearmanrResult(rs, prob)
+
+
+PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
+                                                           'pvalue'))
 
 
 def pointbiserialr(x, y):
@@ -2902,9 +2923,10 @@ def pointbiserialr(x, y):
     t = rpb * np.sqrt(df / ((1.0 - rpb + TINY)*(1.0 + rpb + TINY)))
     prob = betai(0.5*df, 0.5, df/(df+t*t))
 
-    PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
-                                                               'pvalue'))
     return PointbiserialrResult(rpb, prob)
+
+
+KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
 def kendalltau(x, y, initial_lexsort=True):
@@ -2967,8 +2989,6 @@ def kendalltau(x, y, initial_lexsort=True):
     """
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
-
-    KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
     if not x.size or not y.size:
         return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
@@ -3072,6 +3092,11 @@ def kendalltau(x, y, initial_lexsort=True):
     return KendalltauResult(tau, prob)
 
 
+LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
+                                                   'rvalue', 'pvalue',
+                                                   'stderr'))
+
+
 def linregress(x, y=None):
     """
     Calculate a regression line
@@ -3153,9 +3178,6 @@ def linregress(x, y=None):
     intercept = ymean - slope*xmean
     sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
-    LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                       'rvalue', 'pvalue',
-                                                       'stderr'))
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
 
@@ -3280,6 +3302,9 @@ def theilslopes(y, x=None, alpha=0.95):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
+Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+
+
 def ttest_1samp(a, popmean, axis=0):
     """
     Calculates the T-test for the mean of ONE group of scores.
@@ -3345,7 +3370,6 @@ def ttest_1samp(a, popmean, axis=0):
     t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
-    Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
     return Ttest_1sampResult(t, prob)
 
 
@@ -3384,6 +3408,9 @@ def _equal_var_ttest_denom(v1, n1, v2, n2):
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / float(df)
     denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
     return df, denom
+
+
+Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
@@ -3442,10 +3469,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
                                              std2**2, nobs2)
 
-    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
-
     res = _ttest_ind_from_stats(mean1, mean2, denom, df)
     return Ttest_indResult(*res)
+
+
+Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
 def ttest_ind(a, b, axis=0, equal_var=True):
@@ -3538,8 +3566,6 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     """
     a, b, axis = _chk2_asarray(a, b, axis)
 
-    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
-
     if a.size == 0 or b.size == 0:
         return Ttest_indResult(np.nan, np.nan)
 
@@ -3556,6 +3582,9 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     res = _ttest_ind_from_stats(np.mean(a, axis), np.mean(b, axis), denom, df)
 
     return Ttest_indResult(*res)
+
+
+Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
 def ttest_rel(a, b, axis=0):
@@ -3630,8 +3659,10 @@ def ttest_rel(a, b, axis=0):
     t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t)
 
-    Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
     return Ttest_relResult(t, prob)
+
+
+KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
 
 
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
@@ -3761,8 +3792,6 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='approx'):
     if alternative == 'two_sided':
         alternative = 'two-sided'
 
-    KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
-
     if alternative in ['two-sided', 'greater']:
         Dplus = (np.arange(1.0, N + 1)/N - cdfvals).max()
         if alternative == 'greater':
@@ -3816,6 +3845,10 @@ def _count(a, axis=None):
         else:
             num = a.shape[axis]
     return num
+
+
+Power_divergenceResult = namedtuple('Power_divergenceResult', ('statistic',
+                                                               'pvalue'))
 
 
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
@@ -4023,8 +4056,6 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     ddof = asarray(ddof)
     p = chisqprob(stat, num_obs - 1 - ddof)
 
-    Power_divergenceResult = namedtuple('Power_divergenceResult', ('statistic',
-                                                                   'pvalue'))
     return Power_divergenceResult(stat, p)
 
 
@@ -4143,6 +4174,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
                             lambda_="pearson")
 
 
+Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
+
+
 def ks_2samp(data1, data2):
     """
     Computes the Kolmogorov-Smirnov statistic on 2 samples.
@@ -4221,8 +4255,11 @@ def ks_2samp(data1, data2):
     except:
         prob = 1.0
 
-    Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
     return Ks_2sampResult(d, prob)
+
+
+MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
+                                                       'pvalue'))
 
 
 def mannwhitneyu(x, y, use_continuity=True):
@@ -4277,9 +4314,10 @@ def mannwhitneyu(x, y, use_continuity=True):
     else:
         z = abs((bigu - n1*n2/2.0) / sd)  # normal approximation for prob calc
 
-    MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
-                                                           'pvalue'))
     return MannwhitneyuResult(smallu, distributions.norm.sf(z))
+
+
+RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
 def ranksums(x, y):
@@ -4325,8 +4363,10 @@ def ranksums(x, y):
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
     prob = 2 * distributions.norm.sf(abs(z))
 
-    RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
     return RanksumsResult(z, prob)
+
+
+KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
 def kruskal(*args):
@@ -4388,8 +4428,11 @@ def kruskal(*args):
     df = na - 1
     h /= ties
 
-    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
     return KruskalResult(h, chisqprob(h, df))
+
+
+FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
+                                     ('statistic', 'pvalue'))
 
 
 def friedmanchisquare(*args):
@@ -4454,8 +4497,6 @@ def friedmanchisquare(*args):
     ssbn = np.sum(data.sum(axis=0)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
-                                         ('statistic', 'pvalue'))
     return FriedmanchisquareResult(chisq, chisqprob(chisq, k - 1))
 
 
