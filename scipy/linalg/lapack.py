@@ -348,6 +348,8 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['get_lapack_funcs']
 
+import numpy as _np
+
 from .blas import _get_funcs
 
 # Backward compatibility:
@@ -419,3 +421,33 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     return _get_funcs(names, arrays, dtype,
                       "LAPACK", _flapack, _clapack,
                       "flapack", "clapack", _lapack_alias)
+
+
+def _compute_lwork(routine, *args, **kwargs):
+    """
+    Round floating-point lwork returned by lapack to integer.
+
+    Several LAPACK routines compute optimal values for LWORK, which
+    they return in a floating-point variable. However, for large
+    values of LWORK, single-precision floating point is not sufficient
+    to hold the exact value --- some LAPACK versions (<= 3.5.0 at
+    least) truncate the returned integer to single precision and in
+    some cases this can be smaller than the required value.
+    """
+    lwork, info = routine(*args, **kwargs)
+    if info != 0:
+        raise ValueError("Internal work array size computation failed: %d" % (info,))
+
+    lwork = lwork.real
+
+    if getattr(routine, 'dtype', None) == _np.float32:
+        # Single-precision routine -- take next fp value to work
+        # around possible truncation in LAPACK code
+        lwork = _np.nextafter(_np.float32(lwork), _np.float32(_np.inf))
+
+    lwork = int(lwork)
+    if lwork < 0 or lwork > _np.iinfo(_np.int32).max:
+        raise ValueError("Too large work array required -- computation cannot "
+                         "be performed with standard 32-bit LAPACK.")
+
+    return lwork

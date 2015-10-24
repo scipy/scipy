@@ -13,7 +13,7 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 import numpy as np
 
 from .flinalg import get_flinalg_funcs
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _compute_lwork
 from .misc import LinAlgError, _datacopied
 from .decomp import _asarray_validated
 from . import decomp, decomp_svd
@@ -672,11 +672,7 @@ def inv(a, overwrite_a=False, check_finite=True):
                                                  (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info == 0:
-        lwork, info = getri_lwork(a1.shape[0])
-        if info != 0:
-            raise ValueError('internal getri work space query failed: %d' %
-                             (info,))
-        lwork = int(lwork.real)
+        lwork = _compute_lwork(getri_lwork, a1.shape[0])
 
         # XXX: the following line fixes curious SEGFAULT when
         # benchmarking 500x500 matrix inverse. This seems to

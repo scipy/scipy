@@ -24,7 +24,7 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
 from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
 from .misc import LinAlgError, _datacopied, norm
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _compute_lwork
 
 
 _I = cast['F'](1j)
@@ -159,13 +159,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     geev, geev_lwork = get_lapack_funcs(('geev', 'geev_lwork'), (a1,))
     compute_vl, compute_vr = left, right
 
-    lwork, info = geev_lwork(a1.shape[0],
-                             compute_vl=compute_vl,
-                             compute_vr=compute_vr)
-    if info != 0:
-        raise LinAlgError("internal *geev work array calculation failed: %d" %
-                          (info,))
-    lwork = int(lwork.real)
+    lwork = _compute_lwork(geev_lwork, a1.shape[0],
+                           compute_vl=compute_vl,
+                           compute_vr=compute_vr)
 
     if geev.typecode in 'cz':
         w, vl, vr, info = geev(a1, lwork=lwork,
@@ -822,11 +818,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
                          '(hessenberg)' % -info)
     n = len(a1)
 
-    lwork, info = gehrd_lwork(ba.shape[0], lo=lo, hi=hi)
-    if info != 0:
-        raise ValueError('failed to compute internal gehrd work array size. '
-                         'LAPACK info = %d ' % info)
-    lwork = int(lwork.real)
+    lwork = _compute_lwork(gehrd_lwork, ba.shape[0], lo=lo, hi=hi)
 
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:
@@ -838,11 +830,8 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
     # use orghr/unghr to compute q
     orghr, orghr_lwork = get_lapack_funcs(('orghr', 'orghr_lwork'), (a1,))
-    lwork, info = orghr_lwork(n, lo=lo, hi=hi)
-    if info != 0:
-        raise ValueError('failed to compute internal orghr work array size. '
-                         'LAPACK info = %d ' % info)
-    lwork = int(lwork.real)
+    lwork = _compute_lwork(orghr_lwork, n, lo=lo, hi=hi)
+
     q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal orghr '
