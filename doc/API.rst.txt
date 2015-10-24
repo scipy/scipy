@@ -105,7 +105,9 @@ change is made.
 * scipy.linalg
 
   - scipy.linalg.blas
+  - scipy.linalg.cython_blas
   - scipy.linalg.lapack
+  - scipy.linalg.cython_lapack
   - scipy.linalg.interpolative
 
 * scipy.misc
@@ -134,5 +136,5 @@ change is made.
   - distributions
   - mstats
 
-* scipy.weave
+* scipy.weave (deprecated)
 
