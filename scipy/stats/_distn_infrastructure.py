@@ -2991,7 +2991,7 @@ class rv_discrete(rv_generic):
         args = tuple(map(asarray, args))
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k <= self.b)
+        cond1 = (k >= self.a) & (k < self.b)
         cond2 = (k < self.a) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
@@ -3032,7 +3032,7 @@ class rv_discrete(rv_generic):
         args = tuple(map(asarray, args))
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
-        cond1 = (k >= self.a) & (k <= self.b)
+        cond1 = (k >= self.a) & (k < self.b)
         cond2 = (k < self.a) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
@@ -3228,11 +3228,7 @@ class rv_discrete(rv_generic):
         else:
             ub = ub - loc   # convert bound for standardized distribution
         if conditional:
-            if np.isposinf(ub)[()]:
-                # work around bug: stats.poisson.sf(stats.poisson.b, 2) is nan
-                invfac = 1 - self.cdf(lb-1, *args)
-            else:
-                invfac = 1 - self.cdf(lb-1, *args) - self.sf(ub, *args)
+            invfac = self.sf(lb-1, *args) - self.sf(ub, *args)
         else:
             invfac = 1.0
 
