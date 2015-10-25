@@ -91,9 +91,6 @@ try:
     # This is duplicated from setup.py
     if os.path.exists('.git'):
         GIT_REVISION = setup_py.git_version()
-    elif os.path.exists('scipy/version.py'):
-        # must be a source distribution, use existing version file
-        from numpy.version import git_revision as GIT_REVISION
     else:
         GIT_REVISION = "Unknown"
 
@@ -104,6 +101,13 @@ try:
             FULLVERSION += '.dev0+' + GIT_REVISION[:7]
 finally:
     sys.path.pop(0)
+
+try:
+    # Ensure sensible file permissions
+    os.umask(0o022)
+except AttributeError:
+    # No umask on non-posix
+    pass
 
 
 #-----------------------------------
@@ -316,7 +320,10 @@ def sdist():
     sh('git submodule init')
     sh('git submodule update')
 
-    # To be sure to bypass paver when building sdist... paver + numpy.distutils
+    # Fix file permissions
+    sh('chmod a+rX -R *')
+
+    # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
     # Cython is run over all Cython files in setup.py, so generated C files
     # will be included.
