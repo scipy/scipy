@@ -343,6 +343,23 @@ def sdist():
         target = os.path.join(options.installers.installersdir, tarball_name(t))
         shutil.copy(source, target)
 
+@task
+def release(options):
+    """Automate everything to be done for a release with numpy-vendor"""
+    # Source tarballs
+    sdist()
+
+    # Windows .exe installers
+    options.python_version = '2.7'
+    bdist_superpack(options)
+    options.python_version = '3.4'
+    bdist_superpack(options)
+    options.python_version = '3.3'
+    bdist_superpack(options)
+
+    # README (gpg signed) and Changelog
+    write_release_and_log()
+
 
 #---------------------------------------
 # Windows installers (Wine-based builds)
