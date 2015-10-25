@@ -42,7 +42,14 @@ class TestCtypesQuad(TestCase):
             file = 'libm.dylib'
         else:
             file = 'libm.so'
-        self.lib = ctypes.CDLL(file)
+
+        try:
+            self.lib = ctypes.CDLL(file)
+        except OSError:
+            # This test doesn't work on some Linux platforms (Fedora for
+            # example) that put an ld script in libm.so - see gh-5370
+            self.skipTest("Ctypes can't import libm.so")
+
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
         for name in ['sin', 'cos', 'tan']:
