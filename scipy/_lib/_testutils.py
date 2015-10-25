@@ -9,8 +9,12 @@ import os
 import sys
 from numpy.testing import dec
 
+from nose import SkipTest
 
-__all__ = ['knownfailure_overridable', 'suppressed_stdout']
+from scipy._lib.decorator import decorator
+
+
+__all__ = ['knownfailure_overridable', 'suppressed_stdout', 'xslow']
 
 
 def knownfailure_overridable(msg=None):
@@ -40,3 +44,15 @@ def suppressed_stdout(f):
             sys.stdout.close()
             sys.stdout = oldstdout
     return nose.tools.make_decorator(f)(pwrapper)
+
+
+@decorator
+def xslow(func, *a, **kw):
+    try:
+        v = int(os.environ.get('SCIPY_XSLOW', '0'))
+        if not v:
+            raise ValueError()
+    except ValueError:
+        raise SkipTest("very slow test; set environment variable "
+                       "SCIPY_XSLOW=1 to run it")
+    return func(*a, **kw)

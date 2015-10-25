@@ -12,19 +12,7 @@ from numpy.testing import assert_raises, assert_equal, dec, run_module_suite, as
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse.sputils import supported_dtypes
-from scipy._lib.decorator import decorator
-
-
-@decorator
-def xslow(func, *a, **kw):
-    try:
-        v = int(os.environ.get('SCIPY_XSLOW', '0'))
-        if not v:
-            raise ValueError()
-    except ValueError:
-        raise SkipTest("very slow test; set environment variable "
-                       "SCIPY_XSLOW=1 to run it")
-    return func(*a, **kw)
+from scipy._lib._testutils import xslow
 
 
 def test_exception():

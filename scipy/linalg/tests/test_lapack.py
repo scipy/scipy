@@ -5,6 +5,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
+import subprocess
+import time
+
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_almost_equal, assert_, assert_raises, assert_allclose, \
     assert_almost_equal
@@ -14,6 +18,7 @@ import numpy as np
 from scipy.linalg import _flapack as flapack
 from scipy.linalg import inv
 from scipy.linalg import svd
+from scipy._lib._testutils import xslow
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -468,6 +473,42 @@ def test_larfg_larf():
         
         assert_allclose(a[:,0], expected, atol=1e-5)
         assert_allclose(a[0,:], expected, atol=1e-5)
+
+
+@xslow
+def test_sgesdd_lwork_bug_workaround():
+    # Test that SGESDD lwork is sufficiently large for LAPACK.
+    #
+    # This checks that workaround around an apparent LAPACK bug
+    # actually works. cf. gh-5401
+    #
+    # xslow: requires 1GB+ of memory
+
+    p = subprocess.Popen([sys.executable, '-c',
+                          'import numpy as np; '
+                          'from scipy.linalg import svd; '
+                          'a = np.zeros([9537, 9537], dtype=np.float32); '
+                          'svd(a)'],
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+
+    # Check if it an error occurred within 5 sec; the computation can
+    # take substantially longer, and we will not wait for it to finish
+    for j in range(50):
+        time.sleep(0.1)
+        if p.poll() is not None:
+            returncode = p.returncode
+            break
+    else:
+        # Didn't exit in time -- probably entered computation.  The
+        # error is raised before entering computation, so things are
+        # probably OK.
+        returncode = 0
+        p.terminate()
+
+    assert_equal(returncode, 0,
+                 "Code apparently failed: " + p.stdout.read())
+
 
 if __name__ == "__main__":
     run_module_suite()
