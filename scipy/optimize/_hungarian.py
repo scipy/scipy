@@ -83,6 +83,13 @@ def linear_sum_assignment(cost_matrix):
         raise ValueError("expected a matrix (2-d array), got a %r array"
                          % (cost_matrix.shape,))
 
+    # The algorithm expects more columns than rows in the cost matrix.
+    if cost_matrix.shape[1] < cost_matrix.shape[0]:
+        cost_matrix = cost_matrix.T
+        transposed = True
+    else:
+        transposed = False
+
     state = _Hungary(cost_matrix)
 
     # No need to bother with assignments if one of the dimensions
@@ -92,7 +99,11 @@ def linear_sum_assignment(cost_matrix):
     while step is not None:
         step = step(state)
 
-    return np.where(state.marked == 1)
+    if transposed:
+        marked = state.marked.T
+    else:
+        marked = state.marked
+    return np.where(marked == 1)
 
 
 class _Hungary(object):
@@ -101,17 +112,12 @@ class _Hungary(object):
     Parameters
     ----------
     cost_matrix : 2D matrix
-        The cost matrix. Does not have to be square.
+        The cost matrix. Must have shape[1] >= shape[0].
     """
 
     def __init__(self, cost_matrix):
-        # The algorithm expects more columns than rows in the cost matrix.
-        if cost_matrix.shape[1] < cost_matrix.shape[0]:
-            self.C = (cost_matrix.T).copy()
-        else:
-            self.C = cost_matrix.copy()
+        self.C = cost_matrix.copy()
 
-        # At this point, m >= n.
         n, m = self.C.shape
         self.row_uncovered = np.ones(n, dtype=bool)
         self.col_uncovered = np.ones(m, dtype=bool)

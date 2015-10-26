@@ -44,9 +44,11 @@ def test_linear_sum_assignment():
         assert_array_equal(row_ind, np.sort(row_ind))
         assert_array_equal(expected_cost, cost_matrix[row_ind, col_ind])
 
-        row_ind, col_ind = linear_sum_assignment(cost_matrix.T)
+        cost_matrix = cost_matrix.T
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
         assert_array_equal(row_ind, np.sort(row_ind))
-        assert_array_equal(expected_cost, cost_matrix[row_ind, col_ind])
+        assert_array_equal(np.sort(expected_cost),
+                           np.sort(cost_matrix[row_ind, col_ind]))
 
 
 def test_linear_sum_assignment_input_validation():
