@@ -95,9 +95,11 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         calculating the gradient
     iprint : int, optional
         Controls the frequency of output. ``iprint < 0`` means no output;
-        ``iprint == 0`` means write messages to stdout; ``iprint > 1`` in
-        addition means write logging information to a file named
-        ``iterate.dat`` in the current working directory.
+        ``iprint = 0``    print only one line at the last iteration;
+        ``0 < iprint < 99`` print also f and ``|proj g|`` every iprint iterations;
+        ``iprint = 99``   print details of every iteration except n-vectors;
+        ``iprint = 100``  print also the changes of active set and final x;
+        ``iprint > 100``  print details of every iteration including x and g.
     disp : int, optional
         If zero, then no output.  If a positive number, then this over-rides
         `iprint` (i.e., `iprint` gets the value of `disp`).
