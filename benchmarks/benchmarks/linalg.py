@@ -26,7 +26,7 @@ class Bench(Benchmark):
     ]
     param_names = ['size', 'contiguous', 'module']
 
-    def __init__(self):
+    def __init__(self, a, b):
         self.a = a
         self.b = b
 
@@ -80,7 +80,7 @@ class Norm(Benchmark):
     ]
     param_names = ['shape', 'contiguous', 'module']
 
-    def __init__(self):
+    def __init__(self, a):
         self.a = a
 
     def setup(self, shape, contig, module):
