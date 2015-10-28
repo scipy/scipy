@@ -26,19 +26,20 @@ class Bench(Benchmark):
     ]
     param_names = ['size', 'contiguous', 'module']
 
+    def __init__(self):
+        self.a = a
+        self.b = b
+
     def setup(self, size, contig, module):
-        a = random([size,size])
+        a = random([size, size])
         # larger diagonal ensures non-singularity:
         for i in range(size):
-            a[i,i] = 10*(.1+a[i,i])
+            a[i, i] = 10*(.1+a[i, i])
         b = random([size])
 
         if contig != 'contig':
-            a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
+            a = a[-1::-1, -1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
-
-        self.a = a
-        self.b = b
 
     def time_solve(self, size, contig, module):
         if module == 'numpy':
@@ -79,12 +80,14 @@ class Norm(Benchmark):
     ]
     param_names = ['shape', 'contiguous', 'module']
 
+    def __init__(self):
+        self.a = a
+
     def setup(self, shape, contig, module):
         a = np.random.randn(*shape)
         if contig != 'contig':
-            a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
+            a = a[-1::-1, -1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
-        self.a = a
 
     def time_1_norm(self, size, contig, module):
         if module == 'numpy':
