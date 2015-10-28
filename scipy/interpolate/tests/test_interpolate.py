@@ -309,14 +309,13 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
-    @dec.knownfailureif(True, "zero-order splines fail for the last point")
     def test_zero(self):
         # Check the actual implementation of zero-order spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='zero')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
-                                  np.array([2., 6., 6.]))
+                                  np.array([2., 5., 6.]))
 
     def _bounds_check(self, kind='linear'):
         # Test that our handling of out-of-bounds input is correct.
@@ -573,7 +572,8 @@ class TestInterp1D(object):
             assert_array_almost_equal(z(x2).shape, b, err_msg=kind)
 
     def test_nd(self):
-        for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest'):
+        for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest',
+                     'zero'):
             self._nd_check_interp(kind)
             self._nd_check_shape(kind)
 
@@ -598,14 +598,6 @@ class TestInterp1D(object):
                      'zero'):
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
-
-    @dec.knownfailureif(True, "zero-order splines fail for the last point")
-    def test_nd_zero_spline(self):
-        # zero-order splines don't get the last point right,
-        # see test_zero above
-        #yield self._nd_check_interp, 'zero'
-        #yield self._nd_check_interp, 'zero'
-        pass
 
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
