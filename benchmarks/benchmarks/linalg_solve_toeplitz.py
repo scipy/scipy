@@ -20,6 +20,12 @@ class SolveToeplitz(Benchmark):
     )
     param_names = ('dtype', 'n', 'solver')
 
+    def __init__(self, T, y, r, c):
+        self.T = scipy.linalg.toeplitz(c, r=r)
+        self.y = y
+        self.r = r
+        self.c = c
+
     def setup(self, dtype, n, soltype):
         random = np.random.RandomState(1234)
 
@@ -33,11 +39,6 @@ class SolveToeplitz(Benchmark):
             c = c + 1j*random.rand(n)
             r = r + 1j*random.rand(n)
             y = y + 1j*random.rand(n)
-
-        self.c = c
-        self.r = r
-        self.y = y
-        self.T = scipy.linalg.toeplitz(c, r=r)
 
     def time_solve_toeplitz(self, dtype, n, soltype):
         if soltype == 'toeplitz':
