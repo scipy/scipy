@@ -171,7 +171,7 @@ class BenchSmoothUnbounded(Benchmark):
         b = _BenchOptimizers("Rosenbrock function",
                              fun=rosen, der=rosen_der, hess=rosen_hess)
         for i in range(10):
-            b.bench_run(np.random.uniform(-3,3,3), methods=methods)
+            b.bench_run(np.random.uniform(-3, 3, 3), methods=methods)
         return b
 
     def run_rosenbrock_tight(self, methods=None):
@@ -179,7 +179,7 @@ class BenchSmoothUnbounded(Benchmark):
                              fun=rosen, der=rosen_der, hess=rosen_hess,
                              tol=1e-8)
         for i in range(10):
-            b.bench_run(np.random.uniform(-3,3,3), methods=methods)
+            b.bench_run(np.random.uniform(-3, 3, 3), methods=methods)
         return b
 
     def run_simple_quadratic(self, methods=None):
@@ -188,7 +188,7 @@ class BenchSmoothUnbounded(Benchmark):
         b = _BenchOptimizers("simple quadratic function",
                              fun=s.fun, der=s.der, hess=s.hess)
         for i in range(10):
-            b.bench_run(np.random.uniform(-2,2,3), methods=methods)
+            b.bench_run(np.random.uniform(-2, 2, 3), methods=methods)
         return b
 
     def run_asymmetric_quadratic(self, methods=None):
@@ -197,7 +197,7 @@ class BenchSmoothUnbounded(Benchmark):
         b = _BenchOptimizers("function sum(x**2) + x[0]",
                              fun=s.fun, der=s.der, hess=s.hess)
         for i in range(10):
-            b.bench_run(np.random.uniform(-2,2,3), methods=methods)
+            b.bench_run(np.random.uniform(-2, 2, 3), methods=methods)
         return b
 
     def run_sin_1d(self, methods=None):
@@ -206,7 +206,7 @@ class BenchSmoothUnbounded(Benchmark):
         b = _BenchOptimizers("1d sin function",
                              fun=fun, der=der, hess=None)
         for i in range(10):
-            b.bench_run(np.random.uniform(-2,2,1), methods=methods)
+            b.bench_run(np.random.uniform(-2, 2, 1), methods=methods)
         return b
 
     def run_booth(self, methods=None):
@@ -215,7 +215,7 @@ class BenchSmoothUnbounded(Benchmark):
         b = _BenchOptimizers("Booth's function",
                              fun=s.fun, der=s.der, hess=None)
         for i in range(10):
-            b.bench_run(np.random.uniform(0,10,2), methods=methods)
+            b.bench_run(np.random.uniform(0, 10, 2), methods=methods)
         return b
 
     def run_beale(self, methods=None):
@@ -224,17 +224,18 @@ class BenchSmoothUnbounded(Benchmark):
         b = _BenchOptimizers("Beale's function",
                              fun=s.fun, der=s.der, hess=None)
         for i in range(10):
-            b.bench_run(np.random.uniform(0,10,2), methods=methods)
+            b.bench_run(np.random.uniform(0, 10, 2), methods=methods)
         return b
 
     def run_LJ(self, methods=None):
         s = funcs.LJ()
-        #    print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient, np.random.uniform(-2,2,3*4))
+        # print "checking gradient", scipy.optimize.check_grad(s.get_energy, s.get_gradient,
+        # np.random.uniform(-2,2,3*4))
         natoms = 4
         b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
                              fun=s.fun, der=s.der, hess=None)
         for i in range(10):
-            b.bench_run(np.random.uniform(-2,2,natoms*3), methods=methods)
+            b.bench_run(np.random.uniform(-2, 2, natoms*3), methods=methods)
         return b
 
 
