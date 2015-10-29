@@ -159,10 +159,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     **Unconstrained minimization**
 
     Method :ref:`Nelder-Mead <optimize.minimize-neldermead>` uses the
-    Simplex algorithm [1]_, [2]_. This algorithm has been successful
-    in many applications but other algorithms using the first and/or
-    second derivatives information might be preferred for their better
-    performances and robustness in general.
+    Simplex algorithm [1]_, [2]_. This algorithm is robust in many
+    applications. However, if numerical computation of derivative can be
+    trusted, other algorithms using the first and/or second derivatives
+    information might be preferred for their better performance in
+    general.
 
     Method :ref:`Powell <optimize.minimize-powell>` is a modification
     of Powell's method [3]_, [4]_ which is a conjugate direction
