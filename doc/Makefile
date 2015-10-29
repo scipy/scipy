@@ -91,7 +91,7 @@ upload:
 	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-html.zip \
 	    $(UPLOAD_DIR)/scipy-html-$(RELEASE).zip
 	ssh $(USERNAME)@new.scipy.org rm $(UPLOAD_DIR)/dist.tar.gz
-	ssh $(USERNAME)@new.scipy.org cp -r $(UPLOAD_DIR)/* /srv/docs_scipy_org/doc/scipy
+	ssh $(USERNAME)@new.scipy.org ln -snf scipy-$(RELEASE) /srv/docs_scipy_org/doc/scipy
 	ssh $(USERNAME)@new.scipy.org /srv/bin/fixperm-scipy_org.sh
 
 #------------------------------------------------------------------------------
