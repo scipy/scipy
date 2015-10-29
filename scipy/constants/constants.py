@@ -346,6 +346,183 @@ def K2F(K):
     """
     return C2F(K2C(_np.asanyarray(K)))
 
+
+def C2R(C):
+    """
+    Convert Celsius to Rankine
+
+    Parameters
+    ----------
+    C : array_like
+        Celsius temperature(s) to be converted.
+
+    Returns
+    -------
+    Ra : float or array of floats
+        Equivalent Rankine temperature(s).
+
+    Notes
+    -----
+    Computes ``Ra = 1.8 * (C + zero_Celsius)`` where `zero_Celsius` = 273.15,
+    i.e., (the absolute value of) temperature "absolute zero" as measured in
+    Celsius.
+
+    Examples
+    --------
+    >>> from scipy.constants import C2R
+    >>> C2R(np.array([-40, 40.0]))
+    array([ 419.67,  563.67])
+
+    """
+    return 1.8 * (_np.asanyarray(C) + zero_Celsius)
+
+
+def K2R(K):
+    """
+    Convert Kelvin to Rankine
+
+    Parameters
+    ----------
+    K : array_like
+        Kelvin temperature(s) to be converted.
+
+    Returns
+    -------
+    Ra : float or array of floats
+        Equivalent Rankine temperature(s).
+
+    Notes
+    -----
+    Computes ``Ra = 1.8 * K``.
+
+    Examples
+    --------
+    >>> from scipy.constants import K2R
+    >>> K2R(np.array([273.15, 0.0]))
+    array([ 491.67,    0.  ])
+
+    """
+    return 1.8 * _np.asanyarray(K)
+
+
+def F2R(F):
+    """
+    Convert Fahrenheit to Rankine
+
+    Parameters
+    ----------
+    F : array_like
+        Fahrenheit temperature(s) to be converted.
+
+    Returns
+    -------
+    Ra : float or array of floats
+        Equivalent Rankine temperature(s).
+
+    Notes
+    -----
+    Computes ``Ra = F - 32 + 1.8 * zero_Celsius`` where `zero_Celsius` = 273.15, 
+    i.e., (the absolute value of) temperature "absolute zero" as measured in 
+    Celsius.
+
+    Examples
+    --------
+    >>> from scipy.constants import F2R
+    >>> F2R(np.array([100, 0.0]))
+    array([ 559.67,  459.67])
+
+    """
+    return K2R(F2K(_np.asanyarray(F)))
+
+
+def R2C(Ra):
+    """
+    Convert Rankine to Celsius
+
+    Parameters
+    ----------
+    Ra : array_like
+        Rankine temperature(s) to be converted.
+
+    Returns
+    -------
+    C : float or array of floats
+        Equivalent Celsius temperature(s).
+
+    Notes
+    -----
+    Computes ``C = Ra / 1.8 - zero_Celsius`` where `zero_Celsius` = 273.15, 
+    i.e., (the absolute value of) temperature "absolute zero" as measured in 
+    Celsius.
+
+    Examples
+    --------
+    >>> from scipy.constants import R2C
+    >>> R2C(np.array([459.67, 0.0]))
+    array([ -17.77777778, -273.15      ])
+
+    """
+    return _np.asanyarray(Ra) / 1.8 - zero_Celsius
+
+
+def R2K(Ra):
+    """
+    Convert Rankine to Kelvin
+
+    Parameters
+    ----------
+    Ra : array_like
+        Rankine temperature(s) to be converted.
+
+    Returns
+    -------
+    K : float or array of floats
+        Equivalent Kelvin temperature(s).
+
+    Notes
+    -----
+    Computes ``K = Ra / 1.8``.
+
+    Examples
+    --------
+    >>> from scipy.constants import R2K
+    >>> R2K(np.array([491.67, 0.0]))
+    array([ 273.15,    0.  ])
+
+    """
+    return _np.asanyarray(Ra) / 1.8
+    
+
+def R2F(Ra):
+    """
+    Convert Rankine to Fahrenheit
+
+    Parameters
+    ----------
+    Ra : array_like
+        Rankine temperature(s) to be converted.
+
+    Returns
+    -------
+    F : float or array of floats
+        Equivalent Fahrenheit temperature(s).
+
+    Notes
+    -----
+    Computes ``F = Ra + 32 - 1.8 * zero_Celsius`` where `zero_Celsius` = 273.15, 
+    i.e., (the absolute value of) temperature "absolute zero" as measured in 
+    Celsius.
+
+    Examples
+    --------
+    >>> from scipy.constants import R2F
+    >>> R2F(np.array([491.67, 559.67]))
+    array([ 32., 100.])
+
+    """
+    return C2F(R2C(_np.asanyarray(Ra)))
+
+
 # optics
 
 
