@@ -150,18 +150,12 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     if full_output:
         tcku, fp, ier, mesg = res
         (t, c, k), u = tcku
-    else:
-        (t, c, k), u = res
-
-    c = np.asarray(c)
-    sh = tuple(range(c.ndim))
-    c = c.transpose(sh[1:] + (0,))  # roll the first axis
-    spl = BSpline(t, c, k)
-
-    if full_output:
+        spl = BSpline(t, c, k, axis=1)
         return (spl, u), fp, ier, mesg
     else:
-        return (spl, u)
+        (t, c, k), u = res
+        spl = BSpline(t, c, k, axis=1)
+        return spl, u
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
@@ -367,7 +361,8 @@ def splev(x, tck, der=0, ext=0):
         # fitpack interpolates along the last axis
         sh = tuple(range(c.ndim))
         c = c.transpose(sh[1:] + (0,))  # roll the first axis
-        return _impl.splev(x, (t, c, k), der, ext)
+        res = _impl.splev(x, (t, c, k), der, ext)
+        return res
     else:
         return _impl.splev(x, tck, der, ext)
 
