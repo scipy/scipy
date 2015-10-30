@@ -23,13 +23,13 @@ def _sakurai(n):
         Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004) """
 
     A = scipy.sparse.eye(n, n)
-    d0 = array(r_[5,6*ones(n-2),5])
-    d1 = -4*ones(n)
+    d0 = array(r_[5, 6 * ones(n - 2), 5])
+    d1 = -4 * ones(n)
     d2 = ones(n)
-    B = scipy.sparse.spdiags([d2,d1,d0,d1,d2],[-2,-1,0,1,2],n,n)
+    B = scipy.sparse.spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
 
-    k = arange(1,n+1)
-    w_ex = sort(1./(16.*pow(cos(0.5*k*pi/(n+1)),4)))  # exact eigenvalues
+    k = arange(1, n + 1)
+    w_ex = sort(1. / (16. * pow(cos(0.5 * k * pi / (n + 1)), 4)))  # exact eigenvalues
 
     return A, B, w_ex
 
@@ -37,11 +37,11 @@ def _sakurai(n):
 def _mikota_pair(n):
     # Mikota pair acts as a nice test since the eigenvalues
     # are the squares of the integers n, n=1,2,...
-    x = arange(1,n+1)
-    B = diag(1./x)
-    y = arange(n-1,0,-1)
-    z = arange(2*n-1,0,-2)
-    A = diag(z)-diag(y,-1)-diag(y,1)
+    x = arange(1, n + 1)
+    B = diag(1. / x)
+    y = arange(n - 1, 0, -1)
+    z = arange(2 * n - 1, 0, -2)
+    A = diag(z) - diag(y, -1) - diag(y, 1)
     return A.astype(float), B.astype(float)
 
 
@@ -92,17 +92,17 @@ class Bench(Benchmark):
             X = orth(X)
             LorU, lower = cho_factor(self.A, lower=0, overwrite_a=0)
             M = LinearOperator(self.shape,
-                    matvec=partial(_precond, LorU, lower),
-                    matmat=partial(_precond, LorU, lower))
+                               matvec=partial(_precond, LorU, lower),
+                               matmat=partial(_precond, LorU, lower))
             eigs, vecs = lobpcg(self.A, X, self.B, M, tol=1e-4, maxiter=40)
         else:
-            eigh(self.A, self.B, eigvals_only=True, eigvals=(0, m-1))
+            eigh(self.A, self.B, eigvals_only=True, eigvals=(0, m - 1))
 
     def time_sakurai(self, n, solver):
         m = 3
         if solver == 'lobpcg':
             X = rand(n, m)
             eigs, vecs, resnh = lobpcg(self.A, X, self.B, tol=1e-6, maxiter=500,
-                    retResidualNormsHistory=1)
+                                       retResidualNormsHistory=1)
         else:
-            eigh(self.A_dense, self.B_dense, eigvals_only=True, eigvals=(0, m-1))
+            eigh(self.A_dense, self.B_dense, eigvals_only=True, eigvals=(0, m - 1))
