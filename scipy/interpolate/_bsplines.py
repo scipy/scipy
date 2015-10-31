@@ -44,6 +44,8 @@ class BSpline(object):
         If True, extrapolates the first and last polynomial pieces of b-spline
         functions active on the base interval.
         Default is True.
+    axis : int, optional
+        Interpolation axis. Default is zero.
 
     Attributes
     ----------
@@ -53,11 +55,13 @@ class BSpline(object):
         spline coefficients
     k : int
         spline degree
-    tck : tuple
-        A read-only equivalent of ``(self.t, self.c, self.k)``    
     extrapolate : bool
         If True, extrapolates the first and last polynomial pieces of b-spline
         functions active on the base interval.
+    axis : int
+        Interpolation axis.
+    tck : tuple
+        A read-only equivalent of ``(self.t, self.c, self.k)``    
 
     Methods
     -------
@@ -152,7 +156,7 @@ class BSpline(object):
     .. [2] Carl de Boor, A practical guide to splines, Springer, 2001.
 
     """
-    def __init__(self, t, c, k, extrapolate=True):
+    def __init__(self, t, c, k, extrapolate=True, axis=0):
         super(BSpline, self).__init__()
 
         self.k = int(k)
@@ -161,6 +165,18 @@ class BSpline(object):
         self.extrapolate = bool(extrapolate)
 
         n = self.t.shape[0] - self.k - 1
+
+        if not (0 <= axis < self.c.ndim):
+            raise ValueError("%s must be between 0 and %s" % (axis, c.ndim))
+
+        self.axis = axis
+        if axis != 0:
+            # roll the interpolation axis to be the first one in self.c
+            # More specifically, the target shape for self.c is (n, ...),
+            # and axis !=0 means that we have c.shape (..., n, ...)
+            #                                               ^
+            #                                              axis
+            self.c = np.rollaxis(self.c, axis)
 
         if k < 0:
             raise ValueError("Spline order cannot be negative.")
@@ -209,7 +225,7 @@ class BSpline(object):
             return tck[j]
 
     @classmethod
-    def _construct_fast(cls, t, c, k, extrapolate=True):
+    def _construct_fast(cls, t, c, k, extrapolate=True, axis=0):
         """Construct a spline without making checks.
 
         Accepts same parameters as the regular constructor. Input arrays
@@ -218,6 +234,7 @@ class BSpline(object):
         self = object.__new__(cls)
         self.t, self.c, self.k = t, c, k
         self.extrapolate = extrapolate
+        self.axis = axis
         return self
 
     @property
@@ -310,12 +327,18 @@ class BSpline(object):
         if extrapolate is None:
             extrapolate = self.extrapolate
         x = np.asarray(x)
-        x_shape = x.shape
+        x_shape, x_ndim = x.shape, x.ndim
         x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
         out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
         self._evaluate(x, nu, extrapolate, out)
-        return out.reshape(x_shape + self.c.shape[1:])
+        out = out.reshape(x_shape + self.c.shape[1:])
+        if self.axis != 0:
+            # transpose to move the calculated values to the interpolation axis
+            l = list(range(out.ndim))
+            l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
+            out = out.transpose(l)
+        return out
 
     def _evaluate(self, xp, nu, extrapolate, out):
         _bspl.evaluate_spline(self.t, self.c.reshape(self.c.shape[0], -1),
@@ -357,7 +380,8 @@ class BSpline(object):
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = _fitpack_impl.splder((self.t, c, self.k), nu)
-        return self._construct_fast(*tck, extrapolate=self.extrapolate)
+        return self._construct_fast(*tck, extrapolate=self.extrapolate,
+                                    axis=self.axis)
 
     def antiderivative(self, nu=1):
         """Return a b-spline representing the antiderivative.
@@ -383,7 +407,8 @@ class BSpline(object):
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = _fitpack_impl.splantider((self.t, c, self.k), nu)
-        return self._construct_fast(*tck, extrapolate=self.extrapolate)
+        return self._construct_fast(*tck, extrapolate=self.extrapolate,
+                                    axis=self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """Compute a definite integral of the spline.

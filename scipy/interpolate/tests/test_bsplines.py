@@ -331,6 +331,33 @@ class TestBSpline(TestCase):
         assert_equal(b.derivative().__class__, B)
         assert_equal(b.antiderivative().__class__, B)
 
+    def test_axis(self):
+        n, k = 22, 3
+        t = np.linspace(0, 1, n + k + 1)
+        sh0 = [6, 7, 8]
+        for axis in range(4):
+            sh = sh0[:]
+            sh.insert(axis, n)   # [22, 6, 7, 8] etc
+            c = np.random.random(size=sh)
+            b = BSpline(t, c, k, axis=axis)
+            assert_equal(b.c.shape,
+                         [sh[axis],] + sh[:axis] + sh[axis+1:])
+
+            xp = np.random.random((3, 4, 5))
+            assert_equal(b(xp).shape,
+                         sh[:axis] + list(xp.shape) + sh[axis+1:])
+
+            #0 <= axis < c.ndim
+            for ax in [-1, len(sh)+1]:
+                assert_raises(ValueError, BSpline, **dict(t=t, c=c, k=k, axis=ax))
+
+            # derivative, antiderivative keeps the axis
+            for b1 in [BSpline(t, c, k, axis=axis).derivative(),
+                       BSpline(t, c, k, axis=axis).derivative(2),
+                       BSpline(t, c, k, axis=axis).antiderivative(),
+                       BSpline(t, c, k, axis=axis).antiderivative(2)]:
+                assert_equal(b1.axis, b.axis)
+
     ### Test the tuple interface: for backwards-compatible interoperability
     ### with spl* functions, a BSpline instance needs to behave as a
     ### tuple (t, c, k). Specifically, support unpacking and indexing/slicing.
