@@ -1992,6 +1992,13 @@ HistogramResult = namedtuple('HistogramResult',
 @np.deprecate(message=("scipy.stats.histogram is deprecated in scipy 0.17.0; "
                        "use np.histogram instead"))
 def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
+    # _histogram is used in relfreq/cumfreq, so need to keep it
+    res = _histogram(a, numbins=numbins, defaultlimits=defaultlimits,
+                     weights=weights, printextras=printextras)
+    return res
+
+
+def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
     """
     Separates the range into several bins and returns the number of instances
     in each bin.
@@ -2143,7 +2150,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     >>> plt.show()
 
     """
-    h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
+    h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights)
     cumhist = np.cumsum(h * 1, axis=0)
     return CumfreqResult(cumhist, l, b, e)
 
@@ -2222,7 +2229,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 
     """
     a = np.asanyarray(a)
-    h, l, b, e = histogram(a, numbins, defaultreallimits, weights=weights)
+    h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights)
     h = h / float(a.shape[0])
 
     return RelfreqResult(h, l, b, e)
