@@ -517,7 +517,7 @@ def _as_float_array(x, check_finite=False):
 
 
 def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
-                       check_finite=True):
+                       axis=0, check_finite=True):
     """Compute the (coefficients of) interpolating B-spline.
 
     Parameters
@@ -539,6 +539,8 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     deriv_r : iterable of pairs (int, float) or None
         Derivatives known at ``x[-1]``.
         Default is None.
+    axis : int, optional
+        Interpolation axis. Default is 0.
     check_finite : bool, optional
         Whether to check that the input arrays contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -621,7 +623,7 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
             raise ValueError("Too much info for k=0.")
         t = np.r_[x, x[-1]]
         c = y
-        return BSpline(t, c, k)
+        return BSpline(t, c, k, axis=axis)
 
     # come up with a sensible knot vector, if needed
     if t is None:
@@ -643,10 +645,13 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     t = _as_float_array(t, check_finite)
     k = int(k)
 
+    axis = axis % y.ndim
+    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
     if x.shape[0] < k+1:
-        raise("Need more x points.")
+        raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
@@ -713,10 +718,10 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
     c = np.ascontiguousarray(c.reshape((nt,) + y.shape[1:]))
-    return BSpline._construct_fast(t, c, k)
+    return BSpline._construct_fast(t, c, k, axis=axis)
 
 
-def make_lsq_spline(x, y, t, k=3, w=None, check_finite=True):
+def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     r"""Compute the (coefficients of) an LSQ B-spline.
 
     The result is a linear combination
@@ -746,6 +751,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, check_finite=True):
         Weights for spline fitting. Must be positive. If ``None``,
         then weights are all equal.
         Default is ``None``.
+    axis : int, optional
+        Interpolation axis. Default is zero.
     check_finite : bool, optional
         Whether to check that the input arrays contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -828,6 +835,9 @@ def make_lsq_spline(x, y, t, k=3, w=None, check_finite=True):
         w = np.ones_like(x)
     k = int(k)
 
+    axis = axis % y.ndim
+    y = np.rollaxis(y, axis)    # now internally interp axis is zero
+
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
     if x.shape[0] < k+1:
@@ -865,5 +875,5 @@ def make_lsq_spline(x, y, t, k=3, w=None, check_finite=True):
                          check_finite=check_finite)
 
     c = np.ascontiguousarray(c)
-    return BSpline._construct_fast(t, c, k)
+    return BSpline._construct_fast(t, c, k, axis=axis)
 
