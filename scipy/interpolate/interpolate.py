@@ -16,7 +16,7 @@ import warnings
 import functools
 import operator
 
-from scipy._lib.six import xrange, integer_types
+from scipy._lib.six import xrange
 
 from . import fitpack
 from . import dfitpack
@@ -1393,7 +1393,9 @@ class BPoly(_PPolyBase):
         if orders is None:
             orders = [None] * m
         else:
-            if isinstance(orders, integer_types):
+            if hasattr(orders, '__iter__'):
+                pass
+            else:
                 orders = [orders] * m
             k = max(k, max(orders))
 
