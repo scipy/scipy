@@ -6,26 +6,80 @@ SciPy 0.17.0 Release Notes
 
 .. contents::
 
-SciPy 0.17.0 is the culmination of X months of hard work. It contains
+SciPy 0.17.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
 of bug-fixes and optimizations.  Moreover, our development attention
-will now shift to bug-fix releases on the 0.16.x branch, and on adding
+will now shift to bug-fix releases on the 0.17.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
+This release requires Python 2.6, 2.7 or 3.2-3.5 and NumPy 1.6.2 or greater.
+
+Release highlights:
+
+    - New functions for linear and nonlinear least squares optimization with
+      constraints: `scipy.optimize.lsq_linear` and
+      `scipy.linalg.least_squares`
+    - Support for fitting with bounds in `scipy.optimize.curve_fit`.
+    - Significant improvements to `scipy.stats`, providing many functions with
+      better handing of inputs which have NaNs or are empty, improved
+      documentation, and consistent behavior between `scipy.stats` and
+      `scipy.stats.mstats`.
 
 
 New features
 ============
 
-Linear assignment problem solver
--------------------------------
+`scipy.optimize` improvements
+-----------------------------
 
-``scipy.optimize.linear_sum_assignment`` is a new function for solving the
-linear sum assignment problem. It uses the Hungarian algorithm (Kuhn-Munkres).
+Linear assignment problem solver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`scipy.optimize.linear_sum_assignment` is a new function for solving the
+linear sum assignment problem.  It uses the Hungarian algorithm (Kuhn-Munkres).
+
+Least squares optimization
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A new function for *nonlinear* least squares optimization with constraints was
+added: `scipy.optimize.least_squares`.  It provides several methods:
+Levenberg-Marquardt for unconstrained problems, and two trust-region methods
+for constrained ones.  Furthermore it provides different loss functions.
+
+A new function for *linear* least squares optimization with constraints was
+added: `scipy.linalg.lsq_linear`.  It provides a trust-region method as well as
+an implementation of the Bounded-Variable Least-Squares (BVLS) algorithm.
+
+`scipy.optimize.curve_fit` now supports fitting with bounds.
+
+`scipy.signal` improvements
+--------------------------
+
+A ``mode`` keyword was added to `scipy.signal.spectrogram`, to let it return
+other spectrograms than power spectral density.
+
+`scipy.stats` improvements
+--------------------------
+
+Many functions in `scipy.stats` have gained a ``nan_policy`` keyword, which
+allows specifying how to treat input with NaNs in them: propagate the NaNs,
+raise an error, or omit the NaNs.
+
+Many functions in `scipy.stats` have been improved to correctly handle input
+arrays that are empty or contain infs/nans.
+
+A number of functions with the same name in `scipy.stats` and
+`scipy.stats.mstats` were changed to have matching signature and behavior.
+See `gh-5474 <https://github.com/scipy/scipy/issues/5474>`__ for details.
+
+`scipy.stats.binom_test` and `scipy.stats.mannwhitneyu` gained a keyword
+``alternative``, which allows specifying the hypothesis to test for.
+Eventually all hypothesis testing functions will get this keyword.
+
+For methods of many continuous distributions, complex input is now accepted.
 
 
 Deprecated features
@@ -55,6 +109,7 @@ should be used instead.
 ``scipy.stats.betai`` is deprecated. This is an alias for ``special.betainc`` 
 which should be used instead.
 
+
 Backwards incompatible changes
 ==============================
 
@@ -80,7 +135,15 @@ release. Use ``coo_matrix((m,n))`` instead.
 Other changes
 =============
 
-``scipy.constants`` is updated to the CODATA 2014 recommended values.
+Html and pdf documentation of development versions of Scipy is now
+automatically rebuilt after every merged pull request.
+
+`scipy.constants` is updated to the CODATA 2014 recommended values.
+
+Usage of `scipy.fftpack` functions within Scipy has been changed in such a
+way that `PyFFTW <http://hgomersall.github.io/pyFFTW/>`__ can easily replace
+`scipy.fftpack` functions (with improved performance).  See
+`gh-5295 <https://github.com/scipy/scipy/pull/5295>`__ for details.
 
 
 Authors
