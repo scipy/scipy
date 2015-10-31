@@ -1373,9 +1373,8 @@ class TestMode(TestCase):
         assert_equal(vals[1][0], 2)
 
     def test_objects(self):
-        """Python objects must be sortable (le + eq) and have ne defined
-        for np.unique to work. hash is for set.
-        """
+        # Python objects must be sortable (le + eq) and have ne defined
+        # for np.unique to work. hash is for set.
         class Point(object):
             def __init__(self, x):
                 self.x = x
@@ -1395,9 +1394,12 @@ class TestMode(TestCase):
         points = [Point(x) for x in [1, 2, 3, 4, 3, 2, 2, 2]]
         arr = np.empty((8,), dtype=object)
         arr[:] = points
-        assert len(set(points)) == 4
+        assert_(len(set(points)) == 4)
         assert_equal(np.unique(arr).shape, (4,))
-        vals = stats.mode(arr)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            vals = stats.mode(arr)
+
         assert_equal(vals[0][0], Point(2))
         assert_equal(vals[1][0], 4)
 
@@ -2097,7 +2099,8 @@ def test_chisquare_masked_arrays():
     # Empty arrays:
     # A data set with length 0 returns a masked scalar.
     with np.errstate(invalid='ignore'):
-        with warnings.catch_warnings(record=True):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
             chisq, p = stats.chisquare(np.ma.array([]))
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, ())
@@ -2114,8 +2117,10 @@ def test_chisquare_masked_arrays():
     # empty3.T is an array containing 3 data sets, each with length 0,
     # so an array of size (3,) is returned, with all values masked.
     with np.errstate(invalid='ignore'):
-        with warnings.catch_warnings(record=True):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
             chisq, p = stats.chisquare(empty3.T)
+
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, (3,))
     assert_(np.all(chisq.mask))
