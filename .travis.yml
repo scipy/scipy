@@ -41,6 +41,7 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=numpy
+        - USE_WHEEL=1
     - python: 3.4
       env:
         - TESTMODE=fast
@@ -105,6 +106,7 @@ before_install:
   - travis_retry pip install nose mpmath argparse Pillow
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
+  - if [ "${USE_WHEEL}" == "1" ]; then pip install wheel; fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.2.3
@@ -115,8 +117,15 @@ before_install:
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
-  - if [ "$NPY_RELAXED_STRIDES_CHECKING" = "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
-  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE  |& tee runtests.log
+  - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
+  - |
+    if [ "${USE_WHEEL}" == "1" ]; then
+        # Need verbose output or TravisCI will terminate after 10 minutes
+        pip wheel . -v
+        pip install wheelhouse/* -v
+        USE_WHEEL_BUILD="--no-build"
+    fi
+  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD |& tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
 after_success:
