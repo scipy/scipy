@@ -204,6 +204,11 @@ def setup_package():
     build_requires = []
     try:
         import numpy
+        if (len(sys.argv) >= 2 and sys.argv[1] == 'bdist_wheel' and
+                sys.platform == 'darwin'):
+            # We're ony building wheels for platforms where we know there's
+            # also a Numpy wheel, so do this unconditionally.  See gh-5184.
+            build_requires = ['numpy>=1.6.2']
     except:
         build_requires = ['numpy>=1.6.2']
 
