@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 import numpy as np
 
-from numpy.testing import (assert_equal, assert_raises,
+from numpy.testing import (assert_equal, assert_raises, assert_allclose,
                            assert_array_equal, TestCase, run_module_suite)
 
 import scipy.ndimage as sndi
@@ -18,6 +18,14 @@ def test_ticket_701():
     # The following raises an error unless ticket 701 is fixed
     res2 = sndi.generic_filter(arr, func, size=1)
     assert_equal(res, res2)
+
+
+def test_gh_5430():
+    x = np.zeros(1)
+    sigma = np.int64(1)
+    # The following raises an error unless gh-5430 is fixed
+    y = sndi.gaussian_filter(x, sigma)
+    assert_allclose(x, y)
 
 
 def test_orders_gauss():

@@ -1341,6 +1341,12 @@ class TestBPolyFromDerivatives(TestCase):
         pp = BPoly.from_derivatives(xi, yi)
         assert_equal(pp.c.shape, (2*k, m, 6, 7, 8))
 
+    def test_gh_5430(self):
+        orders = np.int64(1)
+        # The following raises an error unless gh-5430 is fixed
+        p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
+        assert_almost_equal(p(0), 0)
+
 
 class TestPpform(TestCase):
     def test_shape(self):
