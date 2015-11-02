@@ -763,6 +763,16 @@ class TestInteropSplPrep(TestCase):
         assert_allclose(self.b(self.u),
                         splev(self.u, self.b), atol=1e-15)
 
+    def test_splev_ext(self):
+        # splev's out-of-bounds options are richer that BSpline's. Test that
+        # they work with BSpline objects
+        tck_i, u_i = _impl.splprep([self.xx, self.ys, self.yc], s=0)
+        for ext in [0, 1, 3]:
+            assert_allclose(splev([-2, 2], self.b, ext=ext),
+                            _impl.splev([-2, 2], tck_i, ext=ext), atol=1e-15)
+
+        assert_raises(ValueError, splev, [-2, 2], self.b, **dict(ext=2))
+
     def test_splint(self):
         assert_allclose(self.b.integrate(0, 1),
                         splint(0, 1, self.b), atol=1e-15)
