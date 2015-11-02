@@ -780,12 +780,14 @@ class TestInteropSplPrep(TestCase):
     ## >>> splder((t, c[0], k)
     ## ValueError: operands could not be broadcast together
 
-    @knownfailureif(True, 'spalde')
     def test_spalde(self):
-        t, c, k = self.b
-        all_der = [[splev(0.1, (t, cc, k), j) for j in range(k+1)] for cc in c]
-        assert_allclose(spalde(0.1, (t, c, k)), all_der, atol=1e-13)      
-        assert_allclose(spalde(0.1, self.b), all_der, atol=1e-13)      
+        all_der = np.array([splev(0.1, self.b, j) for j in range(self.b.k+1)])
+        assert_allclose(spalde(0.1, self.b), all_der, atol=1e-15)
+
+        # also test array args
+        all_der = np.array([[splev(x, self.b, j) for j in range(self.b.k+1)]
+                                                 for x in self.u])
+        assert_allclose(spalde(self.u, self.b), all_der, atol=1e-12)
 
     def insert(self):
         b1 = insert(0.1, self.b)
