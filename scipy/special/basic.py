@@ -2125,10 +2125,13 @@ def comb(N, k, exact=False, repetition=False):
         k = int(k)
         if (k > N) or (N < 0) or (k < 0):
             return 0
-        val = 1
-        for j in xrange(min(k, N-k)):
-            val = (val*(N-j))//(j+1)
-        return val
+        numerator = 1
+        denominator = 1
+        M = N + 1
+        for j in xrange(1, min(k, N - k) + 1):
+            numerator *= M - j
+            denominator *= j
+        return numerator//denominator
     else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
