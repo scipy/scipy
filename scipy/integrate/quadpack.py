@@ -444,13 +444,6 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
                                     epsabs, epsrel, limit)
 
 
-def _infunc(x,func,gfun,hfun,more_args):
-    a = gfun(x)
-    b = hfun(x)
-    myargs = (x,) + more_args
-    return quad(func,a,b,args=myargs)[0]
-
-
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
     Compute a double integral.
@@ -500,15 +493,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     scipy.special : for coefficients and roots of orthogonal polynomials
 
     """
-    return quad(_infunc, a, b, (func, gfun, hfun, args),
-                epsabs=epsabs, epsrel=epsrel)
-
-
-def _infunc2(y,x,func,qfun,rfun,more_args):
-    a2 = qfun(x,y)
-    b2 = rfun(x,y)
-    myargs = (y,x) + more_args
-    return quad(func,a2,b2,args=myargs)[0]
+    return nquad(func, [lambda x: [gfun(x), hfun(x)], [a, b]], args=args)
 
 
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
@@ -566,8 +551,18 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     scipy.special: For coefficients and roots of orthogonal polynomials
 
     """
-    return dblquad(_infunc2, a, b, gfun, hfun, (func, qfun, rfun, args),
-                   epsabs=epsabs, epsrel=epsrel)
+    # f(z, y, x)
+    # qfun/rfun (x, y)
+    # gfun/hfun(x)
+    # nquad will hand (y, x, t0, ...) to ranges0
+    # nquad will hand (x, t0, ...) to ranges1
+    # Stupid different API...
+    def ranges0(*args):
+        return [qfun(args[1], args[0]), rfun(args[1], args[0])]
+    def ranges1(*args):
+        return [gfun(args[0]), hfun(args[0])]
+    ranges = [ranges0, ranges1, [a, b]]
+    return nquad(func, ranges, args=args)
 
 
 def nquad(func, ranges, args=None, opts=None, full_output=False):
@@ -700,7 +695,6 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         opts = [_OptFunc(opts)] * depth
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
-
     return _NQuad(func, ranges, opts, full_output).integrate(*args)
 
 
