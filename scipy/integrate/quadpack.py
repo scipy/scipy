@@ -557,10 +557,13 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     # nquad will hand (y, x, t0, ...) to ranges0
     # nquad will hand (x, t0, ...) to ranges1
     # Stupid different API...
+
     def ranges0(*args):
         return [qfun(args[1], args[0]), rfun(args[1], args[0])]
+
     def ranges1(*args):
         return [gfun(args[0]), hfun(args[0])]
+
     ranges = [ranges0, ranges1, [a, b]]
     return nquad(func, ranges, args=args)
 
@@ -601,18 +604,21 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         Each element of ranges may be either a sequence  of 2 numbers, or else
         a callable that returns such a sequence.  ``ranges[0]`` corresponds to
         integration over x0, and so on.  If an element of ranges is a callable,
-        then it will be called with all of the integration arguments available.
-        e.g. if ``func = f(x0, x1, x2)``, then ``ranges[0]`` may be defined as
-        either ``(a, b)`` or else as ``(a, b) = range0(x1, x2)``.
+        then it will be called with all of the integration arguments available,
+        as well as any parametric arguments. e.g. if 
+        ``func = f(x0, x1, x2, t0, t1)``, then ``ranges[0]`` may be defined as
+        either ``(a, b)`` or else as ``(a, b) = range0(x1, x2, t0, t1)``.
     args : iterable object, optional
-        Additional arguments ``t0, ..., tn``, required by `func`.
+        Additional arguments ``t0, ..., tn``, required by `func`, `ranges`, and
+        ``opts``.
     opts : iterable object or dict, optional
         Options to be passed to `quad`.  May be empty, a dict, or
         a sequence of dicts or functions that return a dict.  If empty, the
-        default options from scipy.integrate.quadare used.  If a dict, the same
+        default options from scipy.integrate.quad are used.  If a dict, the same
         options are used for all levels of integraion.  If a sequence, then each
         element of the sequence corresponds to a particular integration. e.g.
-        opts[0] corresponds to integration over x0, and so on. The available
+        opts[0] corresponds to integration over x0, and so on. If a callable, 
+        the signature must be the same as for ``ranges``. The available
         options together with their default values are:
 
           - epsabs = 1.49e-08
