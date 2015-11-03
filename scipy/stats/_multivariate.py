@@ -2938,7 +2938,7 @@ class multinomial_gen(multi_rv_generic):
 
         P(\mathbf{x}) = \frac{n!}{x_1! \cdots x_{k}!} p_1^{x_1} \cdots p_k^{x_k}
 
-    .. versionadded:: 0.17
+    .. versionadded:: 0.18.0
 
     Parameters
     ----------
@@ -2964,17 +2964,8 @@ class multinomial_gen(multi_rv_generic):
 
     Draw random numbers from a multinomial distribution:
 
-    >>> n, p = 4, [0.3, 0.4, 0.4]
+    >>> n, p = 4, [0.3, 0.4, 0.3]
     >>> from scipy.stats import multinomial
-    >>> r = multinomial.rvs(n, p, size=2, random_state=1234)
-    >>> r
-    array([[0, 2, 2],
-           [1, 1, 2]])
-
-    Note that if the probabilities do not sum to one, the last element of
-    the `p` array is assumed to account for the remaining probablity:
-
-    >>> n, p = 4, [0.3, 0.4, 0.0]
     >>> r = multinomial.rvs(n, p, size=2, random_state=1234)
     >>> r
     array([[0, 2, 2],
@@ -2993,9 +2984,22 @@ class multinomial_gen(multi_rv_generic):
     >>> multinomial.pmf(r, n, p).shape
     (4, 5, 6)
 
-    Alternatively, the distribution object can be called (as a function)
-    to fix the parameters `n` and `p`. This returns a "frozen" RV object
-    holding the given parameters fixed.
+    The input probabilities, `p`, should be normalized to sum to one. If they
+    do not, the last element of the `p` array is assumed to account for the
+    remaining probablity. For example, to simulate a biased coin which is
+    twice as likely to land on one side, you would use
+
+    >>> multinomial.rvs(n=100, p=[1./3, 2./3], random_state=1234)
+    array([[32, 68]])
+
+    and not
+
+    >>> multinomial.rvs(n=100, p=[1., 2.])    # Wrong!
+    array([[100, 0]])
+
+    The distribution object can be called (as a function) to fix the parameters
+    `n` and `p`. This returns a "frozen" RV object holding the given parameters
+    fixed.
 
     >>> dice = multinomial(n=20, p=[1./6]*6)
     >>> dice.rvs(size=3, random_state=123) 
