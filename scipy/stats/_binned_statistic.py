@@ -177,7 +177,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     ----------
     x : (N,) array_like
         A sequence of values to be binned along the first dimension.
-    y : (M,) array_like
+    y : (N,) array_like
         A sequence of values to be binned along the second dimension.
     values : (N,) array_like
         The values on which the statistic will be computed.  This must be
