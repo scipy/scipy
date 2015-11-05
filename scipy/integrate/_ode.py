@@ -106,14 +106,19 @@ class ode(object):
 
     Solve an equation system :math:`y'(t) = f(t,y)` with (optional) ``jac = df/dy``.
 
+    *Note*: The first two arguments of ``f(t, y, ...)`` are in the
+    opposite order of the arguments in the system definition function used
+    by `scipy.integrate.odeint`.
+
     Parameters
     ----------
     f : callable ``f(t, y, *f_args)``
-        Rhs of the equation. t is a scalar, ``y.shape == (n,)``.
+        Right-hand side of the differential equation. t is a scalar,
+        ``y.shape == (n,)``.
         ``f_args`` is set by calling ``set_f_params(*args)``.
         `f` should return a scalar, array or list (not a tuple).
     jac : callable ``jac(t, y, *jac_args)``, optional
-        Jacobian of the rhs, ``jac[i,j] = d f[i] / d y[j]``.
+        Jacobian of the right-hand side, ``jac[i,j] = d f[i] / d y[j]``.
         ``jac_args`` is set by calling ``set_f_params(*args)``.
 
     Attributes
