@@ -25,7 +25,7 @@ except ImportError:
 if not hasattr(Image, 'frombytes'):
     Image.frombytes = Image.fromstring
 
-__all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
+__all__ = ['fromimage', 'toimage', 'imread', 'imwrite', 'imsave', 'bytescale',
            'imrotate', 'imresize', 'imshow', 'imfilter']
 
 
@@ -126,10 +126,9 @@ def imread(name, flatten=0):
     im = Image.open(name)
     return fromimage(im, flatten=flatten)
 
-
-def imsave(name, arr, format=None):
+def imwrite(name, arr, format=None):
     """
-    Save an array as an image.
+    Write an array as an image.
 
     Parameters
     ----------
@@ -149,11 +148,11 @@ def imsave(name, arr, format=None):
     --------
     Construct an array of gradient intensity values and save to file:
 
-    >>> from scipy.misc import imsave
+    >>> from scipy.misc import imwrite
     >>> x = np.zeros((255, 255))
     >>> x = np.zeros((255, 255), dtype=np.uint8)
     >>> x[:] = np.arange(255)
-    >>> imsave('gradient.png', x)
+    >>> imwrite('gradient.png', x)
 
     Construct an array with three colour bands (R, G, B) and store to file:
 
@@ -161,7 +160,7 @@ def imsave(name, arr, format=None):
     >>> rgb[..., 0] = np.arange(255)
     >>> rgb[..., 1] = 55
     >>> rgb[..., 2] = 1 - np.arange(255)
-    >>> imsave('rgb_gradient.png', rgb)
+    >>> imwrite('rgb_gradient.png', rgb)
 
     """
     im = toimage(arr)
@@ -170,6 +169,15 @@ def imsave(name, arr, format=None):
     else:
         im.save(name, format)
     return
+
+def imsave(name, arr, format=None):
+    """ 
+
+    Deprecate in favor of imwrite to oppose to imread and similar to 
+    opencv and MATLAB
+
+    """
+    imwrite(name, arr, format)
 
 
 def fromimage(im, flatten=0):
