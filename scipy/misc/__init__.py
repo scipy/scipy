@@ -28,8 +28,9 @@ systems that don't have PIL installed.
    imread - Read an image file from a filename
    imresize - Resize an image
    imrotate - Rotate an image counter-clockwise
-   imsave - Save an array to an image file
+   imsave - Deprecated in favor of imwrite - Save an array to an image file
    imshow - Simple showing of an image through an external viewer
+   imwrite - Write an array to an image file
    info - Get help information for a function, class, or module
    lena - Get classic image processing example image Lena
    logsumexp - Compute the log of the sum of exponentials of input elements
