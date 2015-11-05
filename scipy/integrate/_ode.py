@@ -108,8 +108,7 @@ class ode(object):
 
     *Note*: The first two arguments of ``f(t, y, ...)`` are in the
     opposite order of the arguments in the system definition function used
-    by `scipy.integrate.odeint`.  The function `odeint` requires the function
-    to be defined as ``func(t, y, ...)``.
+    by `scipy.integrate.odeint`.
 
     Parameters
     ----------

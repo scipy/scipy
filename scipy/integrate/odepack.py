@@ -41,8 +41,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     *Note*: The first two arguments of ``func(y, t0, ...)`` are in the
     opposite order of the arguments in the system definition function used
-    by the `scipy.integrate.ode` class.  The `ode` solvers require the
-    function to be defined as ``func(t0, y, ...)``.
+    by the `scipy.integrate.ode` class.
 
     Parameters
     ----------
