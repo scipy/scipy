@@ -77,25 +77,25 @@ class TestProjectToSphere(TestCase):
 
 class TestSphericalVoronoi(TestCase):
 
-    points_unsymmetric = np.array([
-        [-0.78928481, -0.16341094, 0.59188373],
-        [-0.66839141, 0.73309634, 0.12578818],
-        [0.32535778, -0.92476944, -0.19734181],
-        [-0.90177102, -0.03785291, -0.43055335],
-        [0.71781344, 0.68428936, 0.12842096],
-        [-0.96064876, 0.23492353, -0.14820556],
-        [0.73181537, -0.22025898, -0.6449281],
-        [0.79979205, 0.54555747, 0.25039913]]
-    )
+    def setUp(self):
+        self.points = np.array([
+            [-0.78928481, -0.16341094, 0.59188373],
+            [-0.66839141, 0.73309634, 0.12578818],
+            [0.32535778, -0.92476944, -0.19734181],
+            [-0.90177102, -0.03785291, -0.43055335],
+            [0.71781344, 0.68428936, 0.12842096],
+            [-0.96064876, 0.23492353, -0.14820556],
+            [0.73181537, -0.22025898, -0.6449281],
+            [0.79979205, 0.54555747, 0.25039913]]
+        )
 
     def test_constructor(self):
-        generators = TestSphericalVoronoi.points_unsymmetric
         center = np.array([1, 2, 3])
         radius = 2
-        s1 = SphericalVoronoi(generators)
-        s2 = SphericalVoronoi(generators, radius)
-        s3 = SphericalVoronoi(generators, None, center)
-        s4 = SphericalVoronoi(generators, radius, center)
+        s1 = SphericalVoronoi(self.points)
+        s2 = SphericalVoronoi(self.points, radius)
+        s3 = SphericalVoronoi(self.points, None, center)
+        s4 = SphericalVoronoi(self.points, radius, center)
         assert_array_equal(s1.center, np.array([0, 0, 0]))
         self.assertEqual(s1.radius, 1)
         assert_array_equal(s2.center, np.array([0, 0, 0]))
@@ -106,34 +106,28 @@ class TestSphericalVoronoi(TestCase):
         self.assertEqual(s4.radius, radius)
 
     def test_vertices_regions_translation_invariance(self):
-        points = TestSphericalVoronoi.points_unsymmetric
-        sv_origin = SphericalVoronoi(points)
+        sv_origin = SphericalVoronoi(self.points)
         center = np.array([1, 1, 1])
-        points += center
-        sv_translated = SphericalVoronoi(points, None, center)
+        sv_translated = SphericalVoronoi(self.points + center, None, center)
         assert_array_equal(sv_origin.regions, sv_translated.regions)
         assert_array_almost_equal(sv_origin.vertices + center,
                                   sv_translated.vertices)
 
     def test_vertices_regions_scaling_invariance(self):
-        points = TestSphericalVoronoi.points_unsymmetric
-        sv_unit = SphericalVoronoi(points)
-        points *= 2
-        sv_scaled = SphericalVoronoi(points, 2)
+        sv_unit = SphericalVoronoi(self.points)
+        sv_scaled = SphericalVoronoi(self.points * 2, 2)
         assert_array_equal(sv_unit.regions, sv_scaled.regions)
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
 
     def test_sort_vertices_of_regions(self):
-        generators = TestSphericalVoronoi.points_unsymmetric
-        sv = SphericalVoronoi(generators)
+        sv = SphericalVoronoi(self.points)
         unsorted_regions = sv.regions
         sv.sort_vertices_of_regions()
         assert_array_equal(sorted(sv.regions), sorted(unsorted_regions))
 
     def test_voronoi_circles(self):
-        generators = TestSphericalVoronoi.points_unsymmetric
-        sv = spherical_voronoi.SphericalVoronoi(generators)
+        sv = spherical_voronoi.SphericalVoronoi(self.points)
         for vertex in sv.vertices:
             distances = scipy.spatial.distance.cdist(sv.points,
                                                      np.array([vertex]))
