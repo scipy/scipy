@@ -84,17 +84,19 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma', 
-    'dweibull', 'erlang', 'expon', 'exponnorm', 'exponpow', 'exponweib', 'f',
-    'fatiguelife', 'foldnorm', 'frechet_l', 'frechet_r', 'gamma', 'gausshyper',
-    'genexpon', 'genextreme', 'gengamma', 'genlogistic', 'gennorm', 'genpareto',
-    'gilbrat', 'gompertz', 'halfcauchy', 'halfgennorm', 'halflogistic',
-    'halfnorm', 'invgamma', 'invgauss', 'johnsonsb', 'johnsonsu', 'ksone',
-    'kstwobign', 'levy_l', 'loggamma', 'logistic', 'lognorm', 'lomax',
-    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norm', 'pearson3',
-    'powerlognorm', 'powernorm', 'rayleigh', 'recipinvgauss', 'rice', 't',
-    'truncexpon', 'truncnorm', 'tukeylambda', 'vonmises', 'vonmises_line',
-    'wald', 'weibull_min'])
+fails_cmplx = {'alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma',
+               'dweibull', 'erlang', 'expon', 'exponnorm', 'exponpow',
+               'exponweib', 'f', 'fatiguelife', 'foldnorm', 'frechet_l',
+               'frechet_r', 'gamma', 'gausshyper', 'genexpon', 'genextreme',
+               'gengamma', 'genlogistic', 'gennorm', 'genpareto', 'gilbrat',
+               'gompertz', 'halfcauchy', 'halfgennorm', 'halflogistic',
+               'halfnorm', 'invgamma', 'invgauss', 'johnsonsb', 'johnsonsu',
+               'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
+               'lognorm', 'lomax', 'maxwell', 'nakagami', 'ncf', 'nct',
+               'ncx2', 'norm', 'pearson3', 'powerlognorm', 'powernorm',
+               'rayleigh', 'recipinvgauss', 'rice', 't', 'truncexpon',
+               'truncnorm', 'tukeylambda', 'vonmises', 'vonmises_line',
+               'wald', 'weibull_min'}
 
 
 # NB: not needed anymore?
@@ -232,8 +234,8 @@ def test_moments():
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=integrate.IntegrationWarning)
         knf = npt.dec.knownfailureif
-        fail_normalization = set(['vonmises', 'ksone'])
-        fail_higher = set(['vonmises', 'ksone', 'ncf'])
+        fail_normalization = {'vonmises', 'ksone'}
+        fail_higher = {'vonmises', 'ksone', 'ncf'}
         for distname, arg in distcont[:]:
             if distname is 'levy_stable':
                 continue
