@@ -573,7 +573,7 @@ def test_save_dict():
         savemat(stream, {'dict': d})
         stream.seek(0)
         vals = loadmat(stream)['dict']
-        assert_equal(set(vals.dtype.names), set(['a', 'b']))
+        assert_equal(set(vals.dtype.names), {'a', 'b'})
         if is_ordered:  # Input was ordered, output in ab order
             assert_array_equal(vals, ab_exp)
         else:  # Not ordered input, either order output
@@ -1060,7 +1060,7 @@ def test_fieldnames():
     savemat(stream, {'a': {'a':1, 'b':2}})
     res = loadmat(stream)
     field_names = res['a'].dtype.names
-    assert_equal(set(field_names), set(('a', 'b')))
+    assert_equal(set(field_names), {'a', 'b'})
 
 
 def test_loadmat_varnames():

@@ -92,12 +92,8 @@ OTHER_MODULE_DOCS = {
 
 # these names are known to fail doctesting and we like to keep it that way
 # e.g. sometimes pseudocode is acceptable etc
-DOCTEST_SKIPLIST = set([
-    'scipy.stats.kstwobign', # inaccurate cdf or ppf
-    'scipy.stats.levy_stable',
-    'scipy.special.sinc', # comes from numpy
-    'scipy.misc.who', # comes from numpy
-])
+DOCTEST_SKIPLIST = {'scipy.stats.kstwobign', 'scipy.stats.levy_stable',
+                    'scipy.special.sinc', 'scipy.misc.who'}
 
 # these names are not required to be present in ALL despite being in
 # autosummary:: listing
@@ -277,12 +273,10 @@ def validate_rst_syntax(text, name, dots=True):
             output_dot('E')
         return False, "ERROR: %s: no documentation" % (name,)
 
-    ok_unknown_items = set([
-        'mod', 'currentmodule', 'autosummary', 'data',
-        'obj', 'versionadded', 'module', 'class',
-        'ref', 'func', 'toctree', 'moduleauthor',
-        'sectionauthor', 'codeauthor', 'eq',
-    ])
+    ok_unknown_items = {'mod', 'currentmodule', 'autosummary',
+                        'data', 'obj', 'versionadded', 'module',
+                        'class', 'ref', 'func', 'toctree', 'moduleauthor',
+                        'sectionauthor', 'codeauthor', 'eq'}
 
     # Run through docutils
     error_stream = io.StringIO()

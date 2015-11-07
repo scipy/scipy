@@ -441,15 +441,9 @@ def cast_order(c):
 
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.
-DANGEROUS_DOWNCAST = set([
-    ('F', 'i'), ('F', 'l'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
-    ('D', 'i'), ('D', 'l'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
-    ('G', 'i'), ('G', 'l'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
-    ('f', 'i'), ('f', 'l'),
-    ('d', 'i'), ('d', 'l'),
-    ('g', 'i'), ('g', 'l'),
-    ('l', 'i'),
-])
+DANGEROUS_DOWNCAST = {('F', 'i'), ('F', 'l'), ('F', 'f'), ('F', 'd'), ('F', 'g'), ('D', 'i'), ('D', 'l'), ('D', 'f'),
+                      ('D', 'd'), ('D', 'g'), ('G', 'i'), ('G', 'l'), ('G', 'f'), ('G', 'd'), ('G', 'g'), ('f', 'i'),
+                      ('f', 'l'), ('d', 'i'), ('d', 'l'), ('g', 'i'), ('g', 'l'), ('l', 'i')}
 
 NAN_VALUE = {
     'f': 'NPY_NAN',

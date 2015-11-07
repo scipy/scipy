@@ -1252,31 +1252,31 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         #if X.dtype != np.double and \
         #       (mstr != 'hamming' and mstr != 'jaccard'):
         #    TypeError('A double array must be passed.')
-        if mstr in set(['euclidean', 'euclid', 'eu', 'e']):
+        if mstr in {'euclidean', 'euclid', 'eu', 'e'}:
             _distance_wrap.pdist_euclidean_wrap(_convert_to_double(X), dm)
-        elif mstr in set(['sqeuclidean', 'sqe', 'sqeuclid']):
+        elif mstr in {'sqeuclidean', 'sqe', 'sqeuclid'}:
             _distance_wrap.pdist_sqeuclidean_wrap(_convert_to_double(X), dm)
-        elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
+        elif mstr in {'cityblock', 'cblock', 'cb', 'c'}:
             _distance_wrap.pdist_city_block_wrap(X, dm)
-        elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
+        elif mstr in {'hamming', 'hamm', 'ha', 'h'}:
             if X.dtype == bool:
                 _distance_wrap.pdist_hamming_bool_wrap(_convert_to_bool(X), dm)
             else:
                 _distance_wrap.pdist_hamming_wrap(_convert_to_double(X), dm)
-        elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
+        elif mstr in {'jaccard', 'jacc', 'ja', 'j'}:
             if X.dtype == bool:
                 _distance_wrap.pdist_jaccard_bool_wrap(_convert_to_bool(X), dm)
             else:
                 _distance_wrap.pdist_jaccard_wrap(_convert_to_double(X), dm)
-        elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
+        elif mstr in {'chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'}:
             _distance_wrap.pdist_chebyshev_wrap(_convert_to_double(X), dm)
-        elif mstr in set(['minkowski', 'mi', 'm']):
+        elif mstr in {'minkowski', 'mi', 'm'}:
             _distance_wrap.pdist_minkowski_wrap(_convert_to_double(X), dm, p)
         elif mstr in wmink_names:
             w = _convert_to_double(np.asarray(w))
             _distance_wrap.pdist_weighted_minkowski_wrap(_convert_to_double(X),
                                                          dm, p, w)
-        elif mstr in set(['seuclidean', 'se', 's']):
+        elif mstr in {'seuclidean', 'se', 's'}:
             if V is not None:
                 V = np.asarray(V, order='c')
                 if type(V) != np.ndarray:
@@ -1295,10 +1295,10 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             else:
                 VV = np.var(X, axis=0, ddof=1)
             _distance_wrap.pdist_seuclidean_wrap(_convert_to_double(X), VV, dm)
-        elif mstr in set(['cosine', 'cos']):
+        elif mstr in {'cosine', 'cos'}:
             norms = _row_norms(X)
             _distance_wrap.pdist_cosine_wrap(_convert_to_double(X), dm, norms)
-        elif mstr in set(['old_cosine', 'old_cos']):
+        elif mstr in {'old_cosine', 'old_cos'}:
             norms = _row_norms(X)
             nV = norms.reshape(m, 1)
             # The numerator u * v
@@ -1308,13 +1308,13 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             dm = 1.0 - (nm / de)
             dm[xrange(0, m), xrange(0, m)] = 0.0
             dm = squareform(dm)
-        elif mstr in set(['correlation', 'co']):
+        elif mstr in {'correlation', 'co'}:
             X2 = X - X.mean(1)[:, np.newaxis]
             norms = _row_norms(X2)
             _distance_wrap.pdist_cosine_wrap(_convert_to_double(X2),
                                              _convert_to_double(dm),
                                              _convert_to_double(norms))
-        elif mstr in set(['mahalanobis', 'mahal', 'mah']):
+        elif mstr in {'mahalanobis', 'mahal', 'mah'}:
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI, order='c'))
                 if type(VI) != np.ndarray:
@@ -2103,16 +2103,16 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         #if XA.dtype != np.double and \
         #       (mstr != 'hamming' and mstr != 'jaccard'):
         #    TypeError('A double array must be passed.')
-        if mstr in set(['euclidean', 'euclid', 'eu', 'e']):
+        if mstr in {'euclidean', 'euclid', 'eu', 'e'}:
             _distance_wrap.cdist_euclidean_wrap(_convert_to_double(XA),
                                                 _convert_to_double(XB), dm)
-        elif mstr in set(['sqeuclidean', 'sqe', 'sqeuclid']):
+        elif mstr in {'sqeuclidean', 'sqe', 'sqeuclid'}:
             _distance_wrap.cdist_sqeuclidean_wrap(_convert_to_double(XA),
                                                 _convert_to_double(XB), dm)
-        elif mstr in set(['cityblock', 'cblock', 'cb', 'c']):
+        elif mstr in {'cityblock', 'cblock', 'cb', 'c'}:
             _distance_wrap.cdist_city_block_wrap(_convert_to_double(XA),
                                                  _convert_to_double(XB), dm)
-        elif mstr in set(['hamming', 'hamm', 'ha', 'h']):
+        elif mstr in {'hamming', 'hamm', 'ha', 'h'}:
             if XA.dtype == bool:
                 _distance_wrap.cdist_hamming_bool_wrap(_convert_to_bool(XA),
                                                        _convert_to_bool(XB),
@@ -2120,7 +2120,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             else:
                 _distance_wrap.cdist_hamming_wrap(_convert_to_double(XA),
                                                   _convert_to_double(XB), dm)
-        elif mstr in set(['jaccard', 'jacc', 'ja', 'j']):
+        elif mstr in {'jaccard', 'jacc', 'ja', 'j'}:
             if XA.dtype == bool:
                 _distance_wrap.cdist_jaccard_bool_wrap(_convert_to_bool(XA),
                                                        _convert_to_bool(XB),
@@ -2128,18 +2128,18 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             else:
                 _distance_wrap.cdist_jaccard_wrap(_convert_to_double(XA),
                                                   _convert_to_double(XB), dm)
-        elif mstr in set(['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']):
+        elif mstr in {'chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'}:
             _distance_wrap.cdist_chebyshev_wrap(_convert_to_double(XA),
                                                 _convert_to_double(XB), dm)
-        elif mstr in set(['minkowski', 'mi', 'm', 'pnorm']):
+        elif mstr in {'minkowski', 'mi', 'm', 'pnorm'}:
             _distance_wrap.cdist_minkowski_wrap(_convert_to_double(XA),
                                                 _convert_to_double(XB), dm, p)
-        elif mstr in set(['wminkowski', 'wmi', 'wm', 'wpnorm']):
+        elif mstr in {'wminkowski', 'wmi', 'wm', 'wpnorm'}:
             _distance_wrap.cdist_weighted_minkowski_wrap(_convert_to_double(XA),
                                                          _convert_to_double(XB),
                                                          dm, p,
                                                          _convert_to_double(w))
-        elif mstr in set(['seuclidean', 'se', 's']):
+        elif mstr in {'seuclidean', 'se', 's'}:
             if V is not None:
                 V = np.asarray(V, order='c')
                 if type(V) != np.ndarray:
@@ -2162,15 +2162,15 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 del X
             _distance_wrap.cdist_seuclidean_wrap(_convert_to_double(XA),
                                                  _convert_to_double(XB), VV, dm)
-        elif mstr in set(['cosine', 'cos']):
+        elif mstr in {'cosine', 'cos'}:
             _cosine_cdist(XA, XB, dm)
-        elif mstr in set(['correlation', 'co']):
+        elif mstr in {'correlation', 'co'}:
             XA = np.array(XA, dtype=np.double, copy=True)
             XB = np.array(XB, dtype=np.double, copy=True)
             XA -= XA.mean(axis=1)[:, np.newaxis]
             XB -= XB.mean(axis=1)[:, np.newaxis]
             _cosine_cdist(XA, XB, dm)
-        elif mstr in set(['mahalanobis', 'mahal', 'mah']):
+        elif mstr in {'mahalanobis', 'mahal', 'mah'}:
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI, order='c'))
                 if type(VI) != np.ndarray:
