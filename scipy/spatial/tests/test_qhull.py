@@ -427,6 +427,10 @@ class TestDelaunay(object):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Delaunay, masked_array)
 
+    def test_array_with_nans_fails(self):
+        points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.double)
+        assert_raises(ValueError, qhull.Delaunay, points_with_nan)
+
     def test_nd_simplex(self):
         # simple smoke test: triangulate a n-dimensional simplex
         for nd in xrange(2, 8):
@@ -604,6 +608,10 @@ class TestConvexHull:
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
+
+    def test_array_with_nans_fails(self):
+        points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.double)
+        assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
 
     def test_hull_consistency_tri(self):
         # Check that a convex hull returned by qhull in ndim
