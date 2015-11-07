@@ -18,6 +18,14 @@ known to Gauss (1805) and was brought to light in its current form by Cooley
 and Tukey [CT65]_.  Press et al. [NR]_ provide an accessible introduction to
 Fourier analysis and its applications.
 
+.. note::
+
+   PyFFTW_ provides a way to replace a number of functions in `scipy.fftpack`
+   with its own functions, which are usually significantly faster, via
+   pyfftw.interfaces_.  Because PyFFTW_ relies on the GPL-licensed FFTW_ it
+   cannot be included in Scipy.  Users for whom the speed of FFT routines is
+   critical should consider installing PyFFTW_.
+
 
 Fast Fourier transforms
 -----------------------
@@ -492,3 +500,8 @@ References
 .. [WPC] http://en.wikipedia.org/wiki/Discrete_cosine_transform
 
 .. [WPS] http://en.wikipedia.org/wiki/Discrete_sine_transform
+
+
+.. _FFTW: http://www.fftw.org/
+.. _PyFFTW: http://hgomersall.github.io/pyFFTW/index.html
+.. _pyfftw.interfaces: http://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html
