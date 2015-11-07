@@ -2292,7 +2292,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         # If the node is a leaf node but corresponds to a non-single cluster,
         # its label is either the empty string or the number of original
         # observations belonging to cluster i.
-        if i < 2*n - p and i >= n:
+        if 2 * n - p > i >= n:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,

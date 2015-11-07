@@ -329,7 +329,7 @@ class Arg(object):
                 np.logspace(5, np.log10(self.b), 1 + n3//4),
                 ]
             v4 = np.logspace(1, 5, 1 + n3//2)
-        elif self.a < 0 and self.b > 0:
+        elif self.a < 0 < self.b:
             v3 = np.r_[
                 np.logspace(-30, -1, 2 + n3//8),
                 np.logspace(5, np.log10(self.b), 1 + n3//8),

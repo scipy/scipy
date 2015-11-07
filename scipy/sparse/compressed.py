@@ -851,7 +851,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         indices = []
 
         for ind in xrange(self.indptr[i], self.indptr[i+1]):
-            if self.indices[ind] >= start and self.indices[ind] < stop:
+            if start <= self.indices[ind] < stop:
                 indices.append(ind)
 
         index = self.indices[indices] - start

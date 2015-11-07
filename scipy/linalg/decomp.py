@@ -387,7 +387,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         raise LinAlgError("unrecoverable internal error.")
 
     # The algorithm failed to converge.
-    elif info > 0 and info <= b1.shape[0]:
+    elif 0 < info <= b1.shape[0]:
         if eigvals is not None:
             raise LinAlgError("the eigenvectors %s failed to"
                               " converge." % nonzero(ifail)-1)
