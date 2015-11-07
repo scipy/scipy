@@ -4,24 +4,23 @@ from .c_spec import common_base_converter
 from .c_spec import num_to_c_types
 import numpy
 
-num_typecode = {}
-num_typecode['?'] = 'PyArray_BOOL'
-num_typecode['b'] = 'PyArray_BYTE'
-num_typecode['B'] = 'PyArray_UBYTE'
-num_typecode['h'] = 'PyArray_SHORT'
-num_typecode['H'] = 'PyArray_USHORT'
-num_typecode['i'] = 'PyArray_INT'
-num_typecode['I'] = 'PyArray_UINT'
-num_typecode['l'] = 'PyArray_LONG'
-num_typecode['L'] = 'PyArray_ULONG'
-num_typecode['q'] = 'PyArray_LONGLONG'
-num_typecode['Q'] = 'PyArray_ULONGLONG'
-num_typecode['f'] = 'PyArray_FLOAT'
-num_typecode['d'] = 'PyArray_DOUBLE'
-num_typecode['g'] = 'PyArray_LONGDOUBLE'
-num_typecode['F'] = 'PyArray_CFLOAT'
-num_typecode['D'] = 'PyArray_CDOUBLE'
-num_typecode['G'] = 'PyArray_CLONGDOUBLE'
+num_typecode = {'?': 'PyArray_BOOL',
+                'b': 'PyArray_BYTE',
+                'B': 'PyArray_UBYTE',
+                'h': 'PyArray_SHORT',
+                'H': 'PyArray_USHORT',
+                'i': 'PyArray_INT',
+                'I': 'PyArray_UINT',
+                'l': 'PyArray_LONG',
+                'L': 'PyArray_ULONG',
+                'q': 'PyArray_LONGLONG',
+                'Q': 'PyArray_ULONGLONG',
+                'f': 'PyArray_FLOAT',
+                'd': 'PyArray_DOUBLE',
+                'g': 'PyArray_LONGDOUBLE',
+                'F': 'PyArray_CFLOAT',
+                'D': 'PyArray_CDOUBLE',
+                'G': 'PyArray_CLONGDOUBLE'}
 
 type_check_code = \
 """

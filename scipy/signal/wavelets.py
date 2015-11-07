@@ -167,8 +167,7 @@ def cascade(hk, J=7):
     if sm < 0:  # need scaling function to integrate to 1
         v = -v
         sm = -sm
-    bitdic = {}
-    bitdic['0'] = v / sm
+    bitdic = {'0': v / sm}
     bitdic['1'] = np.dot(m[0, 1], bitdic['0'])
     step = 1 << J
     phi[::step] = bitdic['0']
