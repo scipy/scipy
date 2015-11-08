@@ -224,9 +224,9 @@ class CheckOptimizeParameterized(CheckOptimize):
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Nelder-mead', options=opts)
-            params, fopt, numiter, func_calls, warnflag = (
+            params, fopt, numiter, func_calls, warnflag, final_simplex = (
                     res['x'], res['fun'], res['nit'], res['nfev'],
-                    res['status'])
+                    res['status'], res['final_simplex'])
         else:
             retval = optimize.fmin(self.func, self.startparams,
                                         args=(), maxiter=self.maxiter,
