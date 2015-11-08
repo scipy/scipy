@@ -110,5 +110,57 @@ def test_fromimage():
 decorate_methods(TestPILUtil, _pilskip)
 
 
+@_pilskip
+def test_imread_1bit():
+    # box1.png is a 48x48 grayscale image with bit depth 1.
+    # The border pixels are 1 and the rest are 0.
+    filename = os.path.join(datapath, 'data', 'box1.png')
+    with open(filename, 'rb') as f:
+        im = misc.imread(f)
+    assert_equal(im.dtype, np.uint8)
+    expected = np.zeros((48, 48), dtype=np.uint8)
+    # When scaled up from 1 bit to 8 bits, 1 becomes 255.
+    expected[:, 0] = 255
+    expected[:, -1] = 255
+    expected[0, :] = 255
+    expected[-1, :] = 255
+    assert_equal(im, expected)
+
+
+@_pilskip
+def test_imread_2bit():
+    # blocks2bit.png is a 12x12 grayscale image with bit depth 2.
+    # The pattern is 4 square subblocks of size 6x6.  Upper left
+    # is all 0, upper right is all 1, lower left is all 2, lower
+    # right is all 3.
+    # When scaled up to 8 bits, the values become [0, 85, 170, 255].
+    filename = os.path.join(datapath, 'data', 'blocks2bit.png')
+    with open(filename, 'rb') as f:
+        im = misc.imread(f)
+    assert_equal(im.dtype, np.uint8)
+    expected = np.zeros((12, 12), dtype=np.uint8)
+    expected[:6, 6:] = 85
+    expected[6:, :6] = 170
+    expected[6:, 6:] = 255
+    assert_equal(im, expected)
+
+
+@_pilskip
+def test_imread_4bit():
+    # pattern4bit.png is a 12(h) x 31(w) grayscale image with bit depth 4.
+    # The value in row j and column i is maximum(j, i) % 16.
+    # When scaled up to 8 bits, the values become [0, 17, 34, ..., 255].
+    filename = os.path.join(datapath, 'data', 'pattern4bit.png')
+    with open(filename, 'rb') as f:
+        im = misc.imread(f)
+    assert_equal(im.dtype, np.uint8)
+    # When the oldest supported version of numpy is 1.7, the following
+    # line can be change to
+    #   j, i = np.meshgrid(np.arange(12), np.arange(31), indexing='ij')
+    j, i = [k.T for k in np.meshgrid(np.arange(12), np.arange(31))]
+    expected = 17*(np.maximum(j, i) % 16).astype(np.uint8)
+    assert_equal(im, expected)
+
+
 if __name__ == "__main__":
     run_module_suite()
