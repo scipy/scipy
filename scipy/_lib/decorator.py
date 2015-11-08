@@ -378,6 +378,7 @@ def dispatch_on(*dispatch_args):
             Decorator to register an implementation for the given types
             """
             check(types)
+
             def dec(f):
                 check(getfullargspec(f).args, operator.lt, ' in ' + f.__name__)
                 typemap[types] = f
