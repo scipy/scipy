@@ -2657,16 +2657,33 @@ def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std,
     dat = np.asarray(a).ravel()
     delta = 1
 
+    iters = int(iters) # Force it to integer
+
     while delta:
-        dat_std = stdfunc(dat)
-        dat_mean = dat.mean()
+        # Calculate mean and standard deviation using user defined functions
+        dat_std = stdfunc(dat, axis=axis)
+        dat_mean = cenfunc(dat, axis=axis)
         size = dat.size
+        # Calculate cutoffs
         critlower = dat_mean - dat_std*low
         critupper = dat_mean + dat_std*high
+        # Throw away outliers
         dat = dat[(dat > critlower) & (dat < critupper)]
+        # delta = 0 when convergence is achieved
         delta = size - dat.size
 
+<<<<<<< ca6c668af03a18368b8caca3fbe659f593a05bc6
     return SigmaclipResult(c, critlower, critupper)
+=======
+        if iters is not None:
+            iters = iters - 1
+            if iters == 0:  # Stop after `iters` iterations
+                delta = 0
+
+    SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower',
+                                                     'upper'))
+    return SigmaclipResult(dat, critlower, critupper)
+>>>>>>> Done with the initial changes, need to add docs and tests
 
 
 def trimboth(a, proportiontocut, axis=0):
