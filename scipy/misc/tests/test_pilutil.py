@@ -5,6 +5,7 @@ import tempfile
 import shutil
 import numpy as np
 import warnings
+import glob
 
 from numpy.testing import (assert_, assert_equal, dec, decorate_methods,
                            TestCase, run_module_suite, assert_allclose)
@@ -65,30 +66,31 @@ class TestPILUtil(TestCase):
         assert_equal(res_lowhigh, [10, 16, 33, 56, 85, 143])
         res_cmincmax = misc.bytescale(x, cmin=60, cmax=300)
         assert_equal(res_cmincmax, [0, 0, 64, 149, 255, 255])
-
         assert_equal(misc.bytescale(np.array([3, 3, 3]), low=4), [4, 4, 4])
 
     def test_imsave(self):
-        with warnings.catch_warnings(record=True):  # PIL ResourceWarning
-            img = misc.imread(os.path.join(datapath, 'data', 'icon.png'))
-        tmpdir = tempfile.mkdtemp()
-        try:
-            fn1 = os.path.join(tmpdir, 'test.png')
-            fn2 = os.path.join(tmpdir, 'testimg')
+        picdir = os.path.join(datapath, "data")
+        for png in glob.iglob(picdir + "/*.png"):
             with warnings.catch_warnings(record=True):  # PIL ResourceWarning
-                misc.imsave(fn1, img)
-                misc.imsave(fn2, img, 'PNG')
+                img = misc.imread(png)
+            tmpdir = tempfile.mkdtemp()
+            try:
+                fn1 = os.path.join(tmpdir, 'test.png')
+                fn2 = os.path.join(tmpdir, 'testimg')
+                with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+                    misc.imsave(fn1, img)
+                    misc.imsave(fn2, img, 'PNG')
 
-            with warnings.catch_warnings(record=True):  # PIL ResourceWarning
-                data1 = misc.imread(fn1)
-                data2 = misc.imread(fn2)
-
-            assert_allclose(data1, img)
-            assert_allclose(data2, img)
-        finally:
-            shutil.rmtree(tmpdir)
-
-
+                with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+                    data1 = misc.imread(fn1)
+                    data2 = misc.imread(fn2)
+                assert_allclose(data1, img)
+                assert_allclose(data2, img)
+                assert_equal(data1.shape, img.shape)
+                assert_equal(data2.shape, img.shape)
+            finally:
+                shutil.rmtree(tmpdir)
+        
 def tst_fromimage(filename, irange):
     fp = open(filename, "rb")
     img = misc.fromimage(PIL.Image.open(fp))
