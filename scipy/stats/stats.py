@@ -2583,7 +2583,8 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 
-def sigmaclip(a, low=4., high=4.):
+def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std,
+        axis=None):
     """
     Iterative sigma-clipping of array elements.
 
@@ -2604,6 +2605,22 @@ def sigmaclip(a, low=4., high=4.):
         Lower bound factor of sigma clipping. Default is 4.
     high : float, optional
         Upper bound factor of sigma clipping. Default is 4.
+    iters : bool, optional
+        Number of iterations to run sigma clipping. Default is `None`. 
+        `None` will clip until convergence is achieved, i.e., continue until
+        the last iteration clips nothing.
+    cenfunc : callable, optional
+        The function used to compute the central value for clipping. Default
+        is `np.mean`.
+    stdfunc : callable, optional
+        The function used to compute the standard deviation about the center.
+        Default is `np.std`.
+    axis : int or `None`, optional
+        If not `None`, clip along the given axis.  For this case,
+        ``axis`` will be passed on to ``cenfunc`` and ``stdfunc``, which
+        are expected to return an array with the axis dimension removed
+        (like the numpy functions).  If `None`, clip over all axes.
+        Defaults to `None`.
 
     Returns
     -------
@@ -2637,16 +2654,17 @@ def sigmaclip(a, low=4., high=4.):
     True
 
     """
-    c = np.asarray(a).ravel()
+    dat = np.asarray(a).ravel()
     delta = 1
+
     while delta:
-        c_std = c.std()
-        c_mean = c.mean()
-        size = c.size
-        critlower = c_mean - c_std*low
-        critupper = c_mean + c_std*high
-        c = c[(c > critlower) & (c < critupper)]
-        delta = size - c.size
+        dat_std = stdfunc(dat)
+        dat_mean = dat.mean()
+        size = dat.size
+        critlower = dat_mean - dat_std*low
+        critupper = dat_mean + dat_std*high
+        dat = dat[(dat > critlower) & (dat < critupper)]
+        delta = size - dat.size
 
     return SigmaclipResult(c, critlower, critupper)
 
