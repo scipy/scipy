@@ -13,7 +13,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
     assert_)
 
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
-    ClusterError)
+    ClusterError, _krandinit)
 from scipy.cluster import _vq
 
 
@@ -248,6 +248,13 @@ class TestKMean(TestCase):
         data1 = data[:, 0]
         kmeans2(data1, 2, iter=1)
 
+    def test_kmeans2_high_dim(self):
+        # test kmeans2 when the number of dimensions exceeds the number
+        # of input points
+        data = TESTDATA_2D
+        data = data.reshape((20, 20))[:10]
+        kmeans2(data, 2)
+
     def test_kmeans2_init(self):
         data = TESTDATA_2D
 
@@ -260,6 +267,17 @@ class TestKMean(TestCase):
                         message="One of the clusters is empty. Re-run")
             kmeans2(data, 3, minit='random')
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
+
+    def test_krandinit(self):
+        data = TESTDATA_2D
+        datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
+        k = int(1e6)
+        for data in datas:
+            np.random.seed(1234)
+            init = _krandinit(data, k)
+            orig_cov = np.cov(data, rowvar=0)
+            init_cov = np.cov(init, rowvar=0)
+            assert_allclose(orig_cov, init_cov, atol=1e-2)
 
     def test_kmeans2_empty(self):
         # Regression test for gh-1032.
