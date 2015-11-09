@@ -192,7 +192,7 @@ def imsave(name, arr, format=None):
     >>> imsave('rgb_gradient.png', rgb)
 
     """
-    im = toimage(arr)
+    im = toimage(arr, channel_axis=2)
     if format is None:
         im.save(name)
     else:
