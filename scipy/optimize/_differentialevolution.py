@@ -426,6 +426,9 @@ class DifferentialEvolutionSolver(object):
             order = rng.permutation(range(self.num_population_members))
             self.population[:, j] = samples[order, j]
 
+        # whenever the population is initialised reset nfev counter
+        self._nfev = 0
+
     def init_population_random(self):
         """
         Initialises the population at random.  This type of initialization
@@ -433,6 +436,9 @@ class DifferentialEvolutionSolver(object):
         """
         rng = self.random_number_generator
         self.population = rng.random_sample(self.population_shape)
+
+        # whenever the population is initialised reset nfev counter
+        self._nfev = 0
 
     @property
     def x(self):
@@ -462,7 +468,7 @@ class DifferentialEvolutionSolver(object):
             then OptimizeResult also contains the ``jac`` attribute.
         """
 
-        nfev, nit, warning_flag = 0, 0, False
+        self._nfev, nit, warning_flag = 0, 0, False
         status_message = _status_message['success']
 
         # calculate energies to start with
@@ -470,9 +476,9 @@ class DifferentialEvolutionSolver(object):
             parameters = self._scale_parameters(candidate)
             self.population_energies[index] = self.func(parameters,
                                                         *self.args)
-            nfev += 1
+            self._nfev += 1
 
-            if nfev > self.maxfun:
+            if self._nfev > self.maxfun:
                 warning_flag = True
                 status_message = _status_message['maxfev']
                 break
@@ -490,47 +496,15 @@ class DifferentialEvolutionSolver(object):
             return OptimizeResult(
                            x=self.x,
                            fun=self.population_energies[0],
-                           nfev=nfev,
+                           nfev=self._nfev,
                            nit=nit,
                            message=status_message,
                            success=(warning_flag is not True))
 
         # do the optimisation.
         for nit in range(1, self.maxiter + 1):
-            if self.dither is not None:
-                self.scale = self.random_number_generator.rand(
-                ) * (self.dither[1] - self.dither[0]) + self.dither[0]
-
-            for candidate in range(self.num_population_members):
-                if nfev > self.maxfun:
-                    warning_flag = True
-                    status_message = _status_message['maxfev']
-                    break
-
-                # create a trial solution
-                trial = self._mutate(candidate)
-
-                # ensuring that it's in the range [0, 1)
-                self._ensure_constraint(trial)
-
-                # scale from [0, 1) to the actual parameter value
-                parameters = self._scale_parameters(trial)
-
-                # determine the energy of the objective function
-                energy = self.func(parameters, *self.args)
-                nfev += 1
-
-                # if the energy of the trial candidate is lower than the
-                # original population member then replace it
-                if energy < self.population_energies[candidate]:
-                    self.population[candidate] = trial
-                    self.population_energies[candidate] = energy
-
-                    # if the trial candidate also has a lower energy than the
-                    # best solution then replace that as well
-                    if energy < self.population_energies[0]:
-                        self.population_energies[0] = energy
-                        self.population[0] = trial
+            # evolve the population by a generation
+            self.evolve()
 
             # stop when the fractional s.d. of the population is less than tol
             # of the mean energy
@@ -562,7 +536,7 @@ class DifferentialEvolutionSolver(object):
         DE_result = OptimizeResult(
             x=self.x,
             fun=self.population_energies[0],
-            nfev=nfev,
+            nfev=self._nfev,
             nit=nit,
             message=status_message,
             success=(warning_flag is not True))
@@ -574,8 +548,8 @@ class DifferentialEvolutionSolver(object):
                               bounds=self.limits.T,
                               args=self.args)
 
-            nfev += result.nfev
-            DE_result.nfev = nfev
+            self._nfev += result.nfev
+            DE_result.nfev = self._nfev
 
             if result.fun < DE_result.fun:
                 DE_result.fun = result.fun
@@ -586,6 +560,48 @@ class DifferentialEvolutionSolver(object):
                 self.population[0] = self._unscale_parameters(result.x)
 
         return DE_result
+
+    def evolve(self):
+        """
+        Evolve the population by a single generation.
+        """
+        while True:
+            if self.dither is not None:
+                self.scale = self.random_number_generator.rand(
+                ) * (self.dither[1] - self.dither[0]) + self.dither[0]
+
+            for candidate in range(self.num_population_members):
+                if nfev > self.maxfun:
+                    warning_flag = True
+                    status_message = _status_message['maxfev']
+                    break
+
+                # create a trial solution
+                trial = self._mutate(candidate)
+
+                # ensuring that it's in the range [0, 1)
+                self._ensure_constraint(trial)
+
+                # scale from [0, 1) to the actual parameter value
+                parameters = self._scale_parameters(trial)
+
+                # determine the energy of the objective function
+                energy = self.func(parameters, *self.args)
+                self._nfev += 1
+
+                # if the energy of the trial candidate is lower than the
+                # original population member then replace it
+                if energy < self.population_energies[candidate]:
+                    self.population[candidate] = trial
+                    self.population_energies[candidate] = energy
+
+                    # if the trial candidate also has a lower energy than the
+                    # best solution then replace that as well
+                    if energy < self.population_energies[0]:
+                        self.population_energies[0] = energy
+                        self.population[0] = trial
+
+            yield self.x
 
     def _scale_parameters(self, trial):
         """
