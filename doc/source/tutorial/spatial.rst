@@ -263,8 +263,8 @@ points is closest to this one", and define the regions that way:
    ...     simplex = np.asarray(simplex)
    ...     if np.any(simplex < 0):
    ...         i = simplex[simplex >= 0][0] # finite end Voronoi vertex
-   ...         t = points[pointidx[1]] - points[pointidx[0]] # tangent
-   ...         t /= np.linalg.norm(t)
+   ...         t = points[pointidx[1]] - points[pointidx[0]]  # tangent
+   ...         t = t / np.linalg.norm(t)
    ...         n = np.array([-t[1], t[0]]) # normal
    ...         midpoint = points[pointidx].mean(axis=0)
    ...         far_point = vor.vertices[i] + np.sign(np.dot(midpoint - center, n)) * n * 100
