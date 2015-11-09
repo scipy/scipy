@@ -120,6 +120,7 @@ Multivariate distributions
    :toctree: generated/
 
    multivariate_normal   -- Multivariate normal distribution
+   matrix_normal         -- Matrix normal distribution
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
