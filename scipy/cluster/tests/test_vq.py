@@ -214,6 +214,13 @@ class TestKMean(TestCase):
         data1 = data[:, 0]
         kmeans2(data1, 2, iter=1)
 
+    def test_kmeans2_high_dim(self):
+        # test kmeans2 when the number of dimensions exceeds the number
+        # of input points
+        data = np.fromfile(DATAFILE1, sep=", ")
+        data = data.reshape((20, 20))[:10]
+        kmeans2(data, 2)
+
     def test_kmeans2_init(self):
         data = np.fromfile(DATAFILE1, sep=", ")
         data = data.reshape((200, 2))
