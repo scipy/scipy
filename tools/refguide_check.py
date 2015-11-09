@@ -811,7 +811,14 @@ def main(argv):
 
     if not args.skip_tutorial:
         tut_path = os.path.join(os.getcwd(), 'doc', 'source', 'tutorial', '*.rst')
+        sys.stderr.write('\n Checking tutorial files at %s\n' % tut_path)
+        sys.stderr.flush()
         for filename in glob.glob(tut_path):
+            if dots:
+                sys.stderr.write('\n')
+                sys.stderr.write(os.path.split(filename)[1] + ' ')
+                sys.stderr.flush()
+
             tut_results = check_doctests_testfile(filename, (args.verbose >= 2),
                     dots=dots, doctest_warnings=args.doctest_warnings)
 
