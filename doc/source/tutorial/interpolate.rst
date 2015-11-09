@@ -469,7 +469,6 @@ This example shows how to interpolate scattered 2d data.
     >>> ZI = rbf(XI, YI)
 
     >>> # plot the result
-    >>> n = plt.normalize(-2., 2.)
     >>> plt.subplot(1, 1, 1)
     >>> plt.pcolor(XI, YI, ZI, cmap=cm.jet)
     >>> plt.scatter(x, y, 100, z, cmap=cm.jet)
