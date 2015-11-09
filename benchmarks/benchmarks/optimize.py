@@ -9,7 +9,6 @@ import numpy as np
 try:
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
-    from scipy.optimize import leastsq
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
                                 OptimizeResult)
 except ImportError:
@@ -398,7 +397,7 @@ class BenchGlobal(Benchmark):
 
     def track_all(self, name, ret_value, solver):
         klass = self._functions[name]
-        numtrials = 1
+        numtrials = 100
 
         f = klass()
         b = _BenchOptimizers.from_funcobj(name, f)
