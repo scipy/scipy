@@ -634,9 +634,20 @@ def _krandinit(data, k):
         x = np.dot(x, np.linalg.cholesky(cov).T) + mu
         return x
 
+    def init_rank_def(data):
+        # initialize when the covariance matrix is rank deficient
+        mu = np.mean(data, axis=0)
+        _, s, vh = np.linalg.svd(data - mu, full_matrices=False)
+        x = np.random.randn(k, s.size)
+        sVh = s[:,None] * vh
+        x = np.dot(x, sVh) + mu
+        return x
+
     nd = np.ndim(data)
     if nd == 1:
         return init_rank1(data)
+    elif data.shape[1] > data.shape[0]:
+        return init_rank_def(data)
     else:
         return init_rankn(data)
 
