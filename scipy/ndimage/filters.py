@@ -609,7 +609,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     origin : array_like, optional
         The `origin` parameter controls the placement of the filter, 
         relative to the centre of the current element of the input.  
-        Default of 0 is equivalent to (0,0).
+        Default of 0 is equivalent to (0,)*input.ndim.
 
     Returns
     -------
