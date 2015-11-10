@@ -42,7 +42,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
         .. versionadded:: 0.14.0
-    cKDTree_options : dict, optional
+    tree_options : dict, optional
         Options passed to the underlying ``cKDTree``.
         .. versionadded:: 0.17.0
 
@@ -53,11 +53,13 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, x, y, rescale=False, cKDTree_options=dict()):
+    def __init__(self, x, y, rescale=False, tree_options=None):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
                                     need_values=False)
-        self.tree = cKDTree(self.points, **cKDTree_options)
+        if tree_options is None:
+            tree_options = dict()
+        self.tree = cKDTree(self.points, **tree_options)
         self.values = y
 
     def __call__(self, *args):
