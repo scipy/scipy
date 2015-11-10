@@ -127,6 +127,11 @@ class TestConstructUtils(TestCase):
                                                           [1, 0, 0,14, 0],
                                                           [0, 2, 0, 0,15]]))
 
+        # too long arrays are OK
+        cases.append(([a], [0], (1, 1), [[1]]))
+        cases.append(([a[:3],b], [0,2], (3, 3), [[1, 0, 6], [0, 2, 0], [0, 0, 3]]))
+        cases.append((np.array([[1, 2, 3], [4, 5, 6]]), [0,-1], (3, 3), [[1, 0, 0], [4, 2, 0], [0, 5, 3]]))
+
         # scalar case: broadcasting
         cases.append(([1,-2,1], [1,0,-1], (3, 3), [[-2, 1, 0],
                                                     [1, -2, 1],
@@ -137,11 +142,11 @@ class TestConstructUtils(TestCase):
                 assert_equal(construct.diags(d, o, shape=shape).todense(),
                              result)
 
-                if shape[0] == shape[1] and hasattr(d[0], '__len__'):
+                if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
                     # should be able to find the shape automatically
                     assert_equal(construct.diags(d, o).todense(), result)
             except:
-                print("%r %r %r" % (d, o, shape))
+                print("%r %r %r %r" % (d, o, shape, result))
                 raise
 
     def test_diags_default(self):
@@ -159,8 +164,6 @@ class TestConstructUtils(TestCase):
 
         cases = []
         cases.append(([a[:0]], 0, (1, 1)))
-        cases.append(([a], [0], (1, 1)))
-        cases.append(([a[:3],b], [0,2], (3, 3)))
         cases.append(([a[:4],b,c[:3]], [-1,0,1], (5, 5)))
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], (6, 5)))
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], None))
