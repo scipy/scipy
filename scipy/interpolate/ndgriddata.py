@@ -42,10 +42,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
         .. versionadded:: 0.14.0
-    kd_tree_compact_nodes : bool, optional
-        If True, the underlying kd-tree is built to shrink the hyperrectangles to the actual data range. This usually gives a more compact tree and faster queries at the expense of longer build time. Default: True.
-    kd_tree_balanced : bool, optional
-        If True, the median is used to split the hyperrectangles instead of the midpoint at the underlying kd-tree. This usually gives a more compact tree and faster queries at the expense of longer build time. Default: True.
+    cKDTree_options : dict, optional
+        Options passed to the underlying ``cKDTree``.
+        .. versionadded:: 0.17.0
 
 
     Notes
@@ -54,11 +53,11 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, x, y, rescale=False, kd_tree_compact_nodes=True, kd_tree_balanced=True):
+    def __init__(self, x, y, rescale=False, cKDTree_options=dict()):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
                                     need_values=False)
-        self.tree = cKDTree(self.points, compact_nodes=kd_tree_compact_nodes, balanced_tree=kd_tree_balanced)
+        self.tree = cKDTree(self.points, **cKDTree_options)
         self.values = y
 
     def __call__(self, *args):
