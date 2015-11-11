@@ -10,6 +10,7 @@ import numpy as np
 import scipy.sparse
 
 cimport numpy as np
+from numpy.math cimport isinf, INFINITY
     
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from libc.string cimport memset, memcpy
@@ -24,9 +25,7 @@ cdef extern from "limits.h":
 
 cdef extern from "ckdtree_methods.h":
     int number_of_processors
-    np.float64_t infinity
     
-infinity = np.inf
 number_of_processors = cpu_count()
 
 from libcpp.vector cimport vector
@@ -557,7 +556,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     
     @cython.boundscheck(False)
     def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
-              np.float64_t p=2, np.float64_t distance_upper_bound=infinity,
+              np.float64_t p=2, np.float64_t distance_upper_bound=INFINITY,
               np.intp_t n_jobs=1):
         """
         query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, n_jobs=1)
@@ -628,7 +627,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         n = <np.intp_t> np.prod(retshape)
         xx = np.ascontiguousarray(x_arr).reshape(n, self.m)
         dd = np.empty((n,k),dtype=np.float64)
-        dd.fill(infinity)
+        dd.fill(INFINITY)
         ii = np.empty((n,k),dtype=np.intp)
         ii.fill(self.n)
 
@@ -1068,9 +1067,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
-        if p != infinity:
+        if not isinf(p):
             for i in range(n_queries):
-                if real_r[i] != infinity:
+                if not isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
 
         results = np.zeros(n_queries, dtype=np.intp)
