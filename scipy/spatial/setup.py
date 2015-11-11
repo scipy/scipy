@@ -48,7 +48,7 @@ def configuration(parent_package='', top_path=None):
     
     ckdtree_headers = ['ckdtree_decl.h', 
                        'cpp_exc.h', 
-                       'query_methods.h',
+                       'ckdtree_methods.h',
                        'cpp_utils.h',
                        'rectangle.h',
                        'distance.h',
