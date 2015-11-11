@@ -736,10 +736,10 @@ class test_sparse_distance_matrix_compiled(sparse_distance_matrix_consistency):
         for i,j in r.keys():
             dist[i,j] = r[(i,j)]
         assert_array_almost_equal(ref, dist, decimal=14)
-        # test return type 'recarray'
+        # test return type 'ndarray'
         dist = np.zeros((self.n,self.n))
         r = self.T1.sparse_distance_matrix(self.T2, self.r, 
-            output_type='recarray')
+            output_type='ndarray')
         for k in range(r.shape[0]):
             i = r['i'][k]
             j = r['j'][k]
