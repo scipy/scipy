@@ -2657,7 +2657,13 @@ def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std,
     dat = np.asarray(a).ravel()
     delta = 1
 
-    iters = int(iters) # Force it to integer
+    if iters is not None:
+        try:
+            iters = int(iters) # Force it to integer
+        except TypeError:
+            # Input isn't None but cannot be converted to int, so shout about
+            # it.
+            raise TypeError ("The input `iters` must be of type ``int``")
 
     while delta:
         # Calculate mean and standard deviation using user defined functions
