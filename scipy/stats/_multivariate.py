@@ -701,20 +701,24 @@ class matrix_normal_gen(multi_rv_generic):
     %(_matnorm_doc_callparams_note)s
 
     The covariance matrices `rowcov` and `colcov` must be (symmetric) positive
-    definite matrices. If the samples in `X` are :math:`m \times n`, then
-    `rowcov` must be :math:`m \times m` and `colcov` must be
-    :math:`n \times n`. `mean` must be the same shape as `X`.
+    definite. If the samples in `X` are :math:`m \times n`, then `rowcov`
+    must be :math:`m \times m` and `colcov` must be :math:`n \times n`.
+    `mean` must be the same shape as `X`.
 
     The probability density function for `matrix_normal` is
 
     .. math::
 
         f(X) = (2 \pi)^{-\frac{mn}{2}}|U|^{-\frac{n}{2}} |V|^{-\frac{m}{2}}
-               \exp\left( -\frac{1}{2} \trace\left[ U^{-1} (X-M) V^{-1}
+               \exp\left( -\frac{1}{2} \mathrm{Tr}\left[ U^{-1} (X-M) V^{-1}
                (X-M)^T \right] \right),
 
     where :math:`M` is the mean, :math:`U` the among-row covariance matrix,
     :math:`V` the among-column covariance matrix.
+
+    The ``allow_singular'' behaviour of the ``multivariate_normal''
+    distribution is not currently supported. Covariance matrices must be
+    full rank.
 
     .. versionadded:: 0.17.0
 
@@ -960,6 +964,36 @@ class matrix_normal_gen(multi_rv_generic):
             out = out.reshape(mean.shape)
         return out
 
+    def equivalent_multivariate_normal(self, mean=None, rowcov=1, colcov=1,
+                                       random_state=None):
+        """
+        Return an equivalent frozen multivariate_normal object, representing
+        the the distribution of vectorised samples from the specified matrix
+        normal distribution.
+        See https://en.wikipedia.org/wiki/Matrix_normal_distribution
+
+        Parameters
+        ----------
+        %(_matnorm_doc_default_callparams)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        mvn : frozen multivariate_normal distribution
+
+        Notes
+        -----
+        %(_matnorm_doc_callparams_note)s
+        """
+        dims, mean, rowcov, colcov = self._process_parameters(mean, rowcov,
+                                                              colcov)
+        mvn_cov = np.kron(colcov, rowcov)
+        mvn_mean = mean.T.flatten()
+        return multivariate_normal(mean=mvn_mean, cov=mvn_cov,
+                                   seed=random_state)
+
 matrix_normal = matrix_normal_gen()
 
 
@@ -1010,10 +1044,13 @@ class matrix_normal_frozen(multi_rv_frozen):
         return self._dist.rvs(self.mean, self.rowcov, self.colcov, size,
                               random_state)
 
+    def equivalent_multivariate_normal(self, random_state=None):
+        return self._dist.equivalent_multivariate_normal(self.mean,
+                                        self.rowcov, self.colcov, random_state)
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ['logpdf', 'pdf', 'rvs', 'equivalent_multivariate_normal']:
     method = matrix_normal_gen.__dict__[name]
     method_frozen = matrix_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__, matnorm_docdict_noparams)
