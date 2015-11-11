@@ -2,8 +2,11 @@
 #include <cstring>
 #include <Python.h>
 
-#include "ckdtree_cpp_decl.h"
-#include "ckdtree_cpp_exc.h"
+#include "ordered_pair.h"
+#include "ckdtree_decl.h"
+#include "cpp_exc.h"
+#include "coo_entries.h"
+
 
 #if PY_MAJOR_VERSION < 3
     #define ckdtree_PyBytes_FromStringAndSize(v,len) PyString_FromStringAndSize(v,len)
@@ -28,6 +31,37 @@ inline ckdtreenode*
 tree_buffer_root(std::vector<ckdtreenode> *buf)
 {
     std::vector<ckdtreenode> &tmp = *buf;
+    return &tmp[0];
+}
+
+inline ordered_pair *
+ordered_pair_vector_buf(std::vector<ordered_pair> *buf)
+{
+    std::vector<ordered_pair> &tmp = *buf;
+    return &tmp[0];
+}
+
+
+typedef std::vector<npy_intp> *intvector_ptr_t;
+
+inline npy_intp *
+npy_intp_vector_buf(std::vector<npy_intp> *buf)
+{
+    std::vector<npy_intp> &tmp = *buf;
+    return &tmp[0];
+}
+
+inline npy_float64 *
+npy_float64_vector_buf(std::vector<npy_float64> *buf)
+{
+    std::vector<npy_float64> &tmp = *buf;
+    return &tmp[0];
+}
+
+inline coo_entry *
+coo_entry_vector_buf(std::vector<coo_entry> *buf)
+{
+    std::vector<coo_entry> &tmp = *buf;
     return &tmp[0];
 }
 

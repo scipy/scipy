@@ -15,9 +15,13 @@ extern int number_of_processors;
 #endif
 
 #include <cmath>
-#include <numpy/npy_math.h>
+#include "numpy/npy_math.h"
+#include <vector>
+#include "ordered_pair.h"
+
 
 #if defined(__GNUC__)
+
 inline void 
 prefetch_datapoint(const npy_float64 *x, const npy_intp m) 
 {
@@ -29,9 +33,13 @@ prefetch_datapoint(const npy_float64 *x, const npy_intp m)
         cur += cache_line;
     }
 }
+
 #else
+
 #if defined(_WIN32)
+
 #include <xmmintrin.h>
+
 inline void
 prefetch_datapoint(const npy_float64 *x, const npy_intp m)
 {
@@ -43,10 +51,14 @@ prefetch_datapoint(const npy_float64 *x, const npy_intp m)
         cur += cache_line;
     }
 }
+
 #else
+
 #define prefetch_datapoint(x,y)
-#endif
-#endif
+
+#endif // _WIN32
+#endif // __GNUC__
+
 
 /*
  * Utility functions
@@ -90,14 +102,12 @@ dabs(const npy_float64 x)
  * ===================
  */
 
-
 inline npy_float64
-sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
-                            npy_intp n)
+sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp n)
 {
     npy_float64 s;
     npy_intp i;
-    /* manually unrolled loop, might be vectorized */
+    // manually unrolled loop, might be vectorized
     npy_float64 acc[4] = {0., 0., 0., 0.};
     for (i = 0; i < n/4; i += 4) {
         npy_float64 _u[4] = {u[i], u[i + 1], u[i + 2], u[i + 3]};
@@ -120,7 +130,7 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v,
     }
     return s;
 } 
- 
+
  
 inline npy_float64 
 _distance_p(const npy_float64 *x, const npy_float64 *y,
@@ -172,8 +182,9 @@ _distance_p(const npy_float64 *x, const npy_float64 *y,
     return r;
 } 
 
-// k-nearest neighbor query
-          
+
+/* Query methods in C++ for better speed and GIL release */
+
 CKDTREE_EXTERN PyObject*
 query_knn(const ckdtree     *self, 
           npy_float64       *dd, 
@@ -185,8 +196,49 @@ query_knn(const ckdtree     *self,
           const npy_float64  p, 
           const npy_float64  distance_upper_bound);
           
+CKDTREE_EXTERN PyObject*
+query_pairs(const ckdtree *self, 
+            const npy_float64 r, 
+            const npy_float64 p, 
+            const npy_float64 eps,
+            std::vector<ordered_pair> *results);
+            
+CKDTREE_EXTERN PyObject*
+count_neighbors(const ckdtree *self,
+                const ckdtree *other,
+                npy_intp n_queries,
+                npy_float64 *real_r,
+                npy_intp *results,
+                npy_intp *idx, 
+                const npy_float64 p);
+                               
+CKDTREE_EXTERN PyObject*
+query_ball_point(const ckdtree *self,
+                 const npy_float64 *x,
+                 const npy_float64 r,
+                 const npy_float64 p,
+                 const npy_float64 eps,
+                 const npy_intp n_queries,
+                 std::vector<npy_intp> **results);
+                 
+CKDTREE_EXTERN PyObject*                
+query_ball_tree(const ckdtree *self,
+                const ckdtree *other,
+                const npy_float64 r,
+                const npy_float64 p,
+                const npy_float64 eps,
+                std::vector<npy_intp> **results);                
 
-// Other query methods can follow here when they are implemented
-          
+CKDTREE_EXTERN PyObject*                 
+sparse_distance_matrix(const ckdtree *self,
+                       const ckdtree *other,
+                       const npy_float64 p,
+                       const npy_float64 max_distance,
+                       std::vector<npy_intp> *results_i,
+                       std::vector<npy_intp> *results_j,
+                       std::vector<npy_float64> *results_v);
+
+                  
 #endif
+
 
