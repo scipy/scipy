@@ -10,7 +10,7 @@ import numpy as np
 import scipy.sparse
 
 cimport numpy as np
-from numpy.math cimport isinf, INFINITY
+from numpy.math cimport INFINITY
     
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from libc.string cimport memset, memcpy
@@ -321,6 +321,8 @@ cdef extern from "ckdtree_methods.h":
 
     # External build and query methods in C++. These will internally
     # release the GIL to avoid locking up the interpreter.
+    
+    int ckdtree_isinf(np.float64_t x)
     
     object build_ckdtree(ckdtree *self, 
                          np.intp_t start_idx, 
@@ -1067,9 +1069,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
-        if not isinf(p):
+        if not ckdtree_isinf(p):
             for i in range(n_queries):
-                if not isinf(real_r[i]):
+                if not ckdtree_isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
 
         results = np.zeros(n_queries, dtype=np.intp)
