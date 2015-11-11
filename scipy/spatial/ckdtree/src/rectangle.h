@@ -18,7 +18,6 @@
 #define NPY_LIKELY(x) (x)
 #endif
 
-extern npy_float64 infinity;
 
 /* Interval arithmetic
  * ===================
@@ -61,6 +60,7 @@ struct Rectangle {
     
 };
 
+#include "ckdtree_methods.h"
 #include "distance.h"
 #include "distance_box.h"
 
@@ -138,9 +138,6 @@ template<typename MinMaxDist>
                  const npy_float64 _upper_bound)
         : tree(_tree), rect1(_rect1), rect2(_rect2), stack_arr(8) {
     
-        const npy_float64 infinity = ::infinity; 
-        //FIXME: Why is this line not in other member functions?
-
         if (rect1.m != rect2.m) {
             const char *msg = "rect1 and rect2 have different dimensions";
             throw std::invalid_argument(msg); // raises ValueError
@@ -151,7 +148,7 @@ template<typename MinMaxDist>
         /* internally we represent all distances as distance ** p */
         if (NPY_LIKELY(p == 2.0))
             upper_bound = _upper_bound * _upper_bound;
-        else if ((p != infinity) && (_upper_bound != infinity))
+        else if ((!ckdtree_isinf(p)) && (!ckdtree_isinf(_upper_bound)))
             upper_bound = std::pow(_upper_bound,p);
         else
             upper_bound = _upper_bound;
@@ -163,7 +160,7 @@ template<typename MinMaxDist>
         }
         else if (eps == 0.)
             epsfac = 1.;
-        else if (p == infinity) 
+        else if (ckdtree_isinf(p)) 
             epsfac = 1. / (1. + eps);
         else
             epsfac = 1. / std::pow((1. + eps), p);

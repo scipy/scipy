@@ -9,7 +9,6 @@
 struct ckdtree;
 #endif 
 
-extern npy_float64 infinity;
 extern int number_of_processors;
 
 #ifndef NPY_LIKELY
@@ -22,6 +21,7 @@ extern int number_of_processors;
 
 #include <cmath>
 #include <vector>
+#include "numpy/npy_math.h"
 #include "ordered_pair.h"
 #include "coo_entries.h"
 
@@ -64,11 +64,12 @@ prefetch_datapoint(const npy_float64 *x, const npy_intp m)
 #endif // _WIN32
 #endif // __GNUC__
 
-
 /*
  * Utility functions
  * =================
  */
+ 
+#define ckdtree_isinf(x) (x == NPY_INFINITY)
  
 inline npy_float64 
 dmax(const npy_float64 x, const npy_float64 y) 
@@ -159,10 +160,9 @@ const inline npy_float64 side_distance_from_min_max(
     const npy_float64 min,
     const npy_float64 max,
     const npy_float64 p,
-    const npy_float64 infinity,
     const npy_float64 hb,
-    const npy_float64 fb
-) {
+    const npy_float64 fb) 
+{
     npy_float64 s, t, tmin, tmax;
 
     if (NPY_LIKELY(fb <= 0)) {
@@ -193,7 +193,8 @@ const inline npy_float64 side_distance_from_min_max(
             }
             if(tmax < hb) {
                 /* both edges are less than half a box. */
-                /* no wrapping, use the closer edge */ s = tmin;
+                /* no wrapping, use the closer edge */ 
+                s = tmin;
             } else if(tmin > hb) {
                 /* both edge are more than half a box. */
                 /* wrapping on both edge, use the 
@@ -213,13 +214,10 @@ const inline npy_float64 side_distance_from_min_max(
             s = 0; 
         }
     }
-#if 0
-    printf("sdfmm: s %g t %g x %g min %g max %g\n", s, t, x, min, max);
-#endif 
 
-    if (NPY_UNLIKELY(p == 1 || p == infinity)) {
+    if (NPY_UNLIKELY(p == 1. || ckdtree_isinf(p))) {
         s = dabs(s);
-    } else if (NPY_LIKELY(p == 2)) {
+    } else if (NPY_LIKELY(p == 2.)) {
         s = s * s;
     } else {
         s = std::pow(s,p);

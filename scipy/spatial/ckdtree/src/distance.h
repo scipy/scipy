@@ -21,6 +21,7 @@ struct Dist1D {
         return dabs(x[k] - y[k]);
     }
 };
+
 template <typename Dist1D>
 struct BaseMinkowskiDistP1 {
 
@@ -240,10 +241,8 @@ struct BaseMinkowskiDistP2 {
 };
 
 typedef BaseMinkowskiDistPp<Dist1D> MinkowskiDistPp;
-//typedef BaseMinkowskiDistP2<Dist1D> MinkowskiDistP2;
 typedef BaseMinkowskiDistPinf<Dist1D> MinkowskiDistPinf;
 typedef BaseMinkowskiDistP1<Dist1D> MinkowskiDistP1;
-
 typedef BaseMinkowskiDistP2<Dist1D> NonOptimizedMinkowskiDistP2;
 
 struct MinkowskiDistP2: NonOptimizedMinkowskiDistP2 {

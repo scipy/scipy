@@ -73,7 +73,7 @@ traverse(const ckdtree *self, const ckdtree *other,
                     if (d <= tub) {
                         if (NPY_LIKELY(p == 2.0))
                             d = std::sqrt(d);
-                        else if ((p != 1) && (p != infinity))
+                        else if ((p != 1) && (!ckdtree_isinf(p)))
                             d = std::pow(d, 1. / p);
                          
                         coo_entry e = {sindices[i], oindices[j], d};
@@ -151,13 +151,13 @@ sparse_distance_matrix(const ckdtree *self, const ckdtree *other,
             if(NPY_LIKELY(self->raw_boxsize_data == NULL)) {
                 HANDLE(NPY_LIKELY(p == 2), MinkowskiDistP2)
                 HANDLE(p == 1, MinkowskiDistP1)
-                HANDLE(p == infinity, MinkowskiDistPinf)
+                HANDLE(ckdtree_isinf(p), MinkowskiDistPinf)
                 HANDLE(1, MinkowskiDistPp) 
                 {}
             } else {
                 HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
                 HANDLE(p == 1, BoxMinkowskiDistP1)
-                HANDLE(p == infinity, BoxMinkowskiDistPinf)
+                HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
                 HANDLE(1, BoxMinkowskiDistPp) 
                 {}
             }                                               

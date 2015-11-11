@@ -183,8 +183,8 @@ struct nodeinfo_pool {
 inline const npy_float64 adjust_min_distance(const npy_float64 min_distance, 
         const npy_float64 old_side_distance, 
         const npy_float64 new_side_distance,
-        const npy_float64 p, const npy_float64 infinity) {
-    if (NPY_UNLIKELY(p == infinity)) {
+        const npy_float64 p) {
+    if (NPY_UNLIKELY(ckdtree_isinf(p))) {
         return dmax(min_distance, dabs(new_side_distance));
     } else {
         return min_distance - old_side_distance
@@ -202,8 +202,7 @@ query_single_point(const ckdtree *self,
                    const npy_intp     k, 
                    const npy_float64  eps, 
                    const npy_float64  p, 
-                   npy_float64  distance_upper_bound,
-                   const npy_float64 infinity)
+                   npy_float64  distance_upper_bound)
 {                
     /* memory pool to allocate and automatically reclaim nodeinfo structs */
     nodeinfo_pool nipool(self->m);
@@ -256,13 +255,13 @@ query_single_point(const ckdtree *self,
         }
         inf->side_distances()[i] = side_distance_from_min_max(
             x[i], inf->mins()[i], inf->maxes()[i], 
-            p, infinity, hb, fb);
+            p, hb, fb);
     }
     
     /* compute first distance */
     min_distance = 0.;
     for (i=0; i<m; ++i) {
-        if (NPY_UNLIKELY(p == infinity))
+        if (NPY_UNLIKELY(ckdtree_isinf(p)))
             min_distance = dmax(min_distance,inf->side_distances()[i]);
         else
             min_distance += inf->side_distances()[i];
@@ -275,7 +274,7 @@ query_single_point(const ckdtree *self,
     }
     else if (eps == 0.)
         epsfac = 1.;
-    else if (p == infinity)
+    else if (ckdtree_isinf(p))
         epsfac = 1. / (1. + eps);
     else
         epsfac = 1. / std::pow((1. + eps), p);
@@ -285,7 +284,7 @@ query_single_point(const ckdtree *self,
         npy_float64 tmp = distance_upper_bound;
         distance_upper_bound = tmp*tmp;
     }
-    else if ((p != infinity) && (distance_upper_bound != infinity))
+    else if ((!ckdtree_isinf(p)) && (!ckdtree_isinf(distance_upper_bound)))
         distance_upper_bound = std::pow(distance_upper_bound,p);
 
     for(;;) {
@@ -385,7 +384,7 @@ query_single_point(const ckdtree *self,
                 }
              
             } else {
-                std::memcpy(inf2->buf, inf->buf, sizeof(npy_float64) * ( 3 * m)); 
+                std::memcpy(inf2->buf, inf->buf, sizeof(npy_float64) * (3 * m)); 
                 /* 
                  * for periodic queries, we do not know which node is closer.
                  * thus re-claculate inf.
@@ -397,12 +396,14 @@ query_single_point(const ckdtree *self,
                         x[split_dim],
                         inf->mins()[split_dim],
                         inf->maxes()[split_dim],
-                        p, infinity, self->raw_boxsize_data[m + split_dim], self->raw_boxsize_data[split_dim]);
+                        p, 
+                        self->raw_boxsize_data[m + split_dim], 
+                        self->raw_boxsize_data[split_dim]);
 
                 inf_min_distance = adjust_min_distance(min_distance, 
                             inf_old_side_distance, 
                             inf->side_distances()[split_dim],
-                            p, infinity);
+                            p);
 
                 inf2->mins()[split_dim] = split;
                 inf2->node = inode->greater;
@@ -411,7 +412,9 @@ query_single_point(const ckdtree *self,
                         x[split_dim],
                         inf2->mins()[split_dim],
                         inf2->maxes()[split_dim],
-                        p, infinity, self->raw_boxsize_data[m + split_dim], self->raw_boxsize_data[split_dim]);
+                        p,
+                        self->raw_boxsize_data[m + split_dim], 
+                        self->raw_boxsize_data[split_dim]);
 
             }
  
@@ -422,7 +425,7 @@ query_single_point(const ckdtree *self,
             inf2_min_distance = adjust_min_distance(min_distance, 
                         inf_old_side_distance, 
                         inf2->side_distances()[split_dim],
-                        p, infinity);
+                        p);
 
             /* Ensure inf is closer than inf2 */
             if (inf_min_distance > inf2_min_distance) {
@@ -431,15 +434,14 @@ query_single_point(const ckdtree *self,
                     inf2_min_distance = inf_min_distance;
                     inf_min_distance = tmp;
                 }
-                {   nodeinfo * tmp; tmp = inf; inf = inf2; inf2 = tmp;}
+                {   
+                    nodeinfo *tmp; 
+                    tmp = inf; 
+                    inf = inf2; 
+                    inf2 = tmp;
+                }
             }
-#if 0
-            printf("sd inf1: %g inf2: %g inf: %g\n", inf1->side_distances[split_dim], 
-                                                     inf2->side_distances[split_dim],
-                                                     inf->side_distances[split_dim]
-                        );
-            printf("inf1: %g inf2: %g inf: %g\n", inf1_min_distance, inf2_min_distance, min_distance);
-#endif
+
             /*
              * near child is at the same or closer than the distance as the current node
              * we're going here next, so no point pushing it on the queue
@@ -466,7 +468,7 @@ query_single_point(const ckdtree *self,
         result_indices[i] = neighbor.contents.intdata;
         if (NPY_LIKELY(p == 2.0))
             result_distances[i] = std::sqrt(-neighbor.priority);
-        else if ((p == 1.) || (p == infinity))
+        else if ((p == 1.) || (ckdtree_isinf(p)))
             result_distances[i] = -neighbor.priority;
         else
             result_distances[i] = std::pow((-neighbor.priority),(1./p));
@@ -489,7 +491,7 @@ query_knn(const ckdtree      *self,
 {
 #define HANDLE(cond, kls) \
     if(cond) { \
-        query_single_point<kls>(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound, ::infinity); \
+        query_single_point<kls>(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound); \
     } else
 
     npy_intp m = self->m;
@@ -506,7 +508,7 @@ query_knn(const ckdtree      *self,
                     const npy_float64 *xx_row = xx + (i*m);                
                     HANDLE(NPY_LIKELY(p == 2), MinkowskiDistP2)
                     HANDLE(p == 1, MinkowskiDistP1)
-                    HANDLE(p == infinity, MinkowskiDistPinf)
+                    HANDLE(ckdtree_isinf(p), MinkowskiDistPinf)
                     HANDLE(1, MinkowskiDistPp) 
                     {}
                 }    
@@ -523,7 +525,7 @@ query_knn(const ckdtree      *self,
                     }
                     HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
                     HANDLE(p == 1, BoxMinkowskiDistP1)
-                    HANDLE(p == infinity, BoxMinkowskiDistPinf)
+                    HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
                     HANDLE(1, BoxMinkowskiDistPp) {}
                 }    
 
