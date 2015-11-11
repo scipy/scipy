@@ -1006,37 +1006,34 @@ def test_ckdtree_view():
 
 def test_ckdtree_box():
     # check ckdtree periodic boundary
-    #
-    self = lambda x : None
-    self.n = 2000
-    self.m = 2
-    self.k = 3
+    n = 2000
+    m = 2
+    k = 3
     np.random.seed(1234)
-    data = np.random.uniform(size=(self.n, self.m))
+    data = np.random.uniform(size=(n, m))
     kdtree = cKDTree(data, leafsize=1, boxsize=1.0)
 
     # use the standard python KDTree for the simulated periodic box
     kdtree2 = cKDTree(data, leafsize=1)
-#    data = data[1:2]
 
-    dd, ii = kdtree.query(data, self.k)
+    dd, ii = kdtree.query(data, k)
 
-    dd1, ii1 = kdtree.query(data + 1.0, self.k)
+    dd1, ii1 = kdtree.query(data + 1.0, k)
     assert_almost_equal(dd, dd1)
     assert_equal(ii, ii1)
     
-    dd1, ii1 = kdtree.query(data - 1.0, self.k)
+    dd1, ii1 = kdtree.query(data - 1.0, k)
     assert_almost_equal(dd, dd1)
     assert_equal(ii, ii1)
 
-    dd2, ii2 = simulate_periodic_box(kdtree2, data, self.k, boxsize=1.0)
+    dd2, ii2 = simulate_periodic_box(kdtree2, data, k, boxsize=1.0)
     assert_almost_equal(dd, dd2)
     assert_equal(ii, ii2)
 
 def test_ckdtree_box_upper_bounds():
     data = np.linspace(0, 2, 10).reshape(-1, 1)
     try:
-        tree = cKDTree(data, leafsize=1, boxsize=1.0)
+        cKDTree(data, leafsize=1, boxsize=1.0)
     except ValueError:
         return
     raise AssertionError("ValueError is not raised")
@@ -1044,7 +1041,7 @@ def test_ckdtree_box_upper_bounds():
 def test_ckdtree_box_lower_bounds():
     data = np.linspace(-1, 1, 10)
     try:
-        tree = cKDTree(data, leafsize=1, boxsize=1.0)
+        cKDTree(data, leafsize=1, boxsize=1.0)
     except ValueError:
         return
     raise AssertionError("ValueError is not raised")
