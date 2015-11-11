@@ -669,7 +669,7 @@ class matrix_normal_gen(multi_rv_generic):
     A matrix normal random variable.
 
     The `mean` keyword specifies the mean. The `rowcov` keyword specifies the
-    among-row covariance matrix. The 'colcov' keyword specified the
+    among-row covariance matrix. The 'colcov' keyword specifies the
     among-column covariance matrix.
 
     Methods
@@ -700,21 +700,35 @@ class matrix_normal_gen(multi_rv_generic):
     -----
     %(_matnorm_doc_callparams_note)s
 
-    The covariance matrices `rowcov` and `colcov` must be (symmetric) positive
-    definite matrices. If the samples in `X` are :math:`m \times n`, then
-    `rowcov` must be :math:`m \times m` and `colcov` must be
-    :math:`n \times n`. `mean` must be the same shape as `X`.
+    The covariance matrices specified by `rowcov` and `colcov` must be
+    (symmetric) positive definite. If the samples in `X` are
+    :math:`m \times n`, then `rowcov` must be :math:`m \times m` and
+    `colcov` must be :math:`n \times n`. `mean` must be the same shape as `X`.
 
     The probability density function for `matrix_normal` is
 
     .. math::
 
         f(X) = (2 \pi)^{-\frac{mn}{2}}|U|^{-\frac{n}{2}} |V|^{-\frac{m}{2}}
-               \exp\left( -\frac{1}{2} \trace\left[ U^{-1} (X-M) V^{-1}
+               \exp\left( -\frac{1}{2} \mathrm{Tr}\left[ U^{-1} (X-M) V^{-1}
                (X-M)^T \right] \right),
 
     where :math:`M` is the mean, :math:`U` the among-row covariance matrix,
     :math:`V` the among-column covariance matrix.
+
+    The `allow_singular` behaviour of the `multivariate_normal`
+    distribution is not currently supported. Covariance matrices must be
+    full rank.
+
+    The `matrix_normal` distribution is closely related to the
+    `multivariate_normal` distribution. Specifically, :math:`\mathrm{Vec}(X)`
+    (the vector formed by concatenating the columns  of :math:`X`) has a
+    multivariate normal distribution with mean :math:`\mathrm{Vec}(M)` 
+    and covariance :math:`V \otimes U` (where :math:`\otimes` is the Kronecker
+    product). Sampling and pdf evaluation are
+    :math:`\mathcal{O}(m^3 + n^3 + m^2 n + m n^2)` for the matrix normal, but
+    :math:`\mathcal{O}(m^3 n^3)` for the equivalent multivariate normal,
+    making this equivalent form algorithmically inefficient.
 
     .. versionadded:: 0.17.0
 
@@ -739,6 +753,14 @@ class matrix_normal_gen(multi_rv_generic):
            [ 2.1,  3.1],
            [ 4.1,  5.1]])
     >>> matrix_normal.pdf(X, mean=M, rowcov=U, colcov=V)
+    0.023410202050005054
+       
+    >>> # Equivalent multivariate normal
+    >>> from scipy.stats import multivariate_normal
+    >>> vectorised_X = X.T.flatten()
+    >>> equiv_mean = M.T.flatten()
+    >>> equiv_cov = np.kron(V,U)
+    >>> multivariate_normal.pdf(vectorised_X, mean=equiv_mean, cov=equiv_cov)
     0.023410202050005054
     """
 
