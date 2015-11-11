@@ -716,7 +716,7 @@ class matrix_normal_gen(multi_rv_generic):
     where :math:`M` is the mean, :math:`U` the among-row covariance matrix,
     :math:`V` the among-column covariance matrix.
 
-    The ``allow_singular'' behaviour of the ``multivariate_normal''
+    The `allow_singular` behaviour of the `multivariate_normal`
     distribution is not currently supported. Covariance matrices must be
     full rank.
 
