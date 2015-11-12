@@ -761,7 +761,10 @@ class TestLstsq(TestCase):
                     out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                 overwrite_a=overwrite, overwrite_b=overwrite)
                     x = out[0]
-                    residuals = out[1]
+                    if lapack_driver == 'gelsy':
+                        residuals = np.sum((b - a.dot(x))**2)
+                    else:
+                        residuals = out[1]
                     r = out[2]
                     assert_(r == 2, 'unexpected efficient rank')
                     assert_allclose(abs((dot(a,x) - b)**2).sum(axis=0),
@@ -771,7 +774,7 @@ class TestLstsq(TestCase):
                                     err_msg="driver: %s" % lapack_driver)
                     assert_allclose(x, (-0.428571428571429, 0.85714285714285),
                                     rtol=25 * np.finfo(a1.dtype).eps,
-                                    atol= 25 * np.finfo(a1.dtype).eps,
+                                    atol=25 * np.finfo(a1.dtype).eps,
                                     err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet_complex(self):
@@ -786,7 +789,11 @@ class TestLstsq(TestCase):
                     out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                 overwrite_a=overwrite, overwrite_b=overwrite)
                     x = out[0]
-                    residuals = out[1]
+                    if lapack_driver == 'gelsy':
+                        res = b - a.dot(x)
+                        residuals = np.sum(res * res.conj())
+                    else:
+                        residuals = out[1]
                     r = out[2]
                     assert_(r == 2, 'unexpected efficient rank')
                     assert_allclose(abs((dot(a,x) - b)**2).sum(axis=0),
@@ -886,7 +893,7 @@ class TestLstsq(TestCase):
             for (n,m) in ((20,15), (200,2)):
                 for lapack_driver in TestLstsq.lapack_drivers:
                     for overwrite in (True, False):
-                        a = np.asarray(random([n,m]) ,dtype=dtype)
+                        a = np.asarray(random([n,m]), dtype=dtype)
                         for i in range(m):
                             a[i,i] = 20 * (0.1 + a[i,i])
                         for i in range(4):

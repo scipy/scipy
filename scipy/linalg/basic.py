@@ -784,7 +784,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         faster on many problems.  ``'gelss'`` was used historically.  It is
         generally slow but uses less memory.
 
-        .. versionadded:: 0.16.0
+        .. versionadded:: 0.17.0
 
     Returns
     -------
@@ -842,6 +842,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     lapack_func, lapack_func_lwork_query = get_lapack_funcs((lapack_driver,
                                         '%s_lwork' % lapack_driver), (a1, b1))
+    # the dtype isn't necessarily the dtype needed for lapack.  It's the 
+    # result of np.find_common_type on the array inputs. 
+    if lapack_func.dtype.char not in 'fdFD':
+        lapack_func.dtype = np.dtype('d')
     real_data = True if (lapack_func.dtype.kind == 'f') else False
 
     if m < n:
@@ -880,11 +884,23 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                 work,iwork,info = lapack_func_lwork_query(m, n, nrhs, cond)
                 lwork = np.int(np.real(work))
                 iwork_size = iwork
+                if iwork_size == 0:
+                    # this is LAPACK bug 0038: dgelsd does not provide the
+                    # size of the iwork array in query mode.  This bug was
+                    # fixed in LAPACK 3.2.2, released July 21, 2010.
+                    raise LinAlgError("internal gelsd driver lwork query error,"
+                                     "required iwork dimension not returned. "
+                                     "This is likely the result of LAPACK bug "
+                                     "0038, fixed in LAPACK 3.2.2 (released "
+                                     "July 21, 2010). Use a different "
+                                     "lapack_driver when calling lstsq or "
+                                     "upgrade LAPACK.")
+
                 if info != 0:
                     raise ValueError("internal gelsd driver lwork query error"
                                      ", info is %i " % info)
 
-                x, s, rank, work, iwork, info = lapack_func(a1, b1, lwork,
+                x, s, rank, info = lapack_func(a1, b1, lwork,
                                             iwork_size, cond, False, False)
             else:  # complex data
                 # Request of sizes
@@ -896,7 +912,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                     raise ValueError("internal gelsd driver lwork query error"
                                      ", info is %i " % info)
 
-                x, s, rank, work, rwork, iwork, info = lapack_func(a1, b1,
+                x, s, rank, info = lapack_func(a1, b1,
                             lwork,rwork_size, iwork_size, cond, False, False)
         if info > 0:
             raise LinAlgError("SVD did not converge in Linear Least Squares")
@@ -924,7 +940,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
         jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
 
-        v,x,j,rank,work,info = lapack_func(a1, b1, jptv, cond,
+        v, x, j, rank, info = lapack_func(a1, b1, jptv, cond,
                                            lwork, False, False)
 
         if info < 0:
