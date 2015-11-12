@@ -434,20 +434,27 @@ def _compute_lwork(routine, *args, **kwargs):
     least) truncate the returned integer to single precision and in
     some cases this can be smaller than the required value.
     """
-    lwork, info = routine(*args, **kwargs)
+    wi = routine(*args, **kwargs)
+    if len(wi) < 2:
+        raise ValueError('')
+    info = wi[-1]
     if info != 0:
-        raise ValueError("Internal work array size computation failed: %d" % (info,))
+        raise ValueError("Internal work array size computation failed: "
+                         "%d" % (info,))
 
-    lwork = lwork.real
+    lwork = [w.real for w in wi[:-1]] 
 
-    if getattr(routine, 'dtype', None) == _np.float32:
+    dtype = getattr(routine, 'dtype', None)
+    if dtype == _np.float32 or dtype == _np.complex64:
         # Single-precision routine -- take next fp value to work
         # around possible truncation in LAPACK code
-        lwork = _np.nextafter(_np.float32(lwork), _np.float32(_np.inf))
+        lwork = _np.nextafter(lwork, _np.inf, dtype=_np.float32)
 
-    lwork = int(lwork)
-    if lwork < 0 or lwork > _np.iinfo(_np.int32).max:
+    lwork = _np.array(lwork, _np.int64)
+    if _np.any(_np.logical_or(lwork < 0, lwork > _np.iinfo(_np.int32).max)):
         raise ValueError("Too large work array required -- computation cannot "
                          "be performed with standard 32-bit LAPACK.")
-
+    lwork = lwork.astype(_np.int32)
+    if lwork.size == 1:
+        return lwork[0]
     return lwork
