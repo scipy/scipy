@@ -29,10 +29,10 @@ def binned_statistic(x, values, statistic='mean',
     ----------
     x : (N,) array_like
         A sequence of values to be binned.
-    values : (N,) array_like or list of (N,) array_like
+    values : (N,) array_like or set of (N,) array_like
         The data on which the statistic will be computed.  This must be
-        the same shape as `x`, or a list of sequences - each the same shape as
-        `x`.  If `values` is a list of sequences, the statistic will be computed
+        the same shape as `x`, or a set of sequences - each the same shape as
+        `x`.  If `values` is a set of sequences, the statistic will be computed
         on each independently.
     statistic : string or callable, optional
         The statistic to compute (default is 'mean').
@@ -73,7 +73,8 @@ def binned_statistic(x, values, statistic='mean',
         Return the bin edges ``(length(statistic)+1)``.
     binnumbers: 1-D ndarray of ints
         Indices of the bins (corresponding to `bin_edges`) in which each value
-        of `x` belongs.  Same length as `values`.
+        of `x` belongs.  Same length as `values`.  A binnumber of `i` means the
+        corresponding value is between (bin_edges[i-1], bin_edges[i]).
 
     See Also
     --------
@@ -93,7 +94,22 @@ def binned_statistic(x, values, statistic='mean',
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
-    First a basic example:
+    First some basic examples:
+
+    Create two evenly spaced bins in the range of the given sample, and sum the
+    corresponding values in each of those bins:
+
+    >>> values = [1.0, 1.0, 2.0, 1.5, 3.0]
+    >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
+    (array([ 4. ,  4.5]), array([ 1.,  4.,  7.]), array([1, 1, 1, 2, 2]))
+
+    Multiple sets of values can also be passed.  The statistic is calculated on
+    each set independently:
+
+    >>> values = [[1.0, 1.0, 2.0, 1.5, 3.0], [2.0, 2.0, 4.0, 3.0, 6.0]]
+    >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
+    (array([[ 4. ,  4.5], [ 8. ,  9. ]]), array([ 1.,  4.,  7.]),
+        array([1, 1, 1, 2, 2]))
 
     >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean',
     ...                        bins=3)
@@ -228,7 +244,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         'True': the returned `binnumbers` is 'unraveled' into a shape (2,N)
         ndarray, where each row gives the bin numbers in the corresponding
         dimension.
-        See the `binnumbers` returned value.
+        See the `binnumbers` returned value, and the `Examples` section.
 
     Returns
     -------
@@ -248,7 +264,9 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         If 'True': The returned `binnumbers` is a shape (2,N) ndarray where
         each row indicates where the elements of `sample` should be inserted,
         into the `x_edges` and `y_edges` arrays respectively, so as to keep
-        the arrays sorted.
+        the arrays sorted.  In each dimension, a binnumber of `i` means the
+        corresponding value is between (D_edges[i-1], D_edges[i]), where 'D' is
+        either 'x' or 'y'.
 
 
     See Also
@@ -259,6 +277,39 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     -----
 
     .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    Calculate the counts with explicit bin-edges:
+
+    >>> x = [0.1, 0.1, 0.1, 0.6]
+    >>> y = [2.1, 2.6, 2.1, 2.1]
+    >>> binx = [0.0, 0.5, 1.0]
+    >>> biny = [2.0, 2.5, 3.0]
+    >>> ret = stats.binned_statistic_2d(x, y, None, 'count', bins=[binx,biny])
+    >>> ret.statistic
+    array([[ 2.,  1.],
+           [ 1.,  0.]])
+
+    The bin in which each sample is placed is given by the `binnumbers`
+    returned parameter.  By default, these are the linearized bin indices:
+
+    >>> ret.binnumbers
+    array([5, 6, 5, 9])
+
+    The bin indices can also be expanded into separate entries for each
+    dimension using the `expand_binnumbers` parameter:
+
+    >>> ret = stats.binned_statistic_2d(x, y, None, 'count', bins=[binx,biny],
+    ...                                 expand_binnumbers=True)
+    >>> ret.binnumbers
+    array([[1, 1, 1, 2],
+           [1, 2, 1, 1]])
+
+    Which shows that the first three elements belong in the xbin 1, and the
+    fourth into xbin 2; and so on for y.
 
     """
 
@@ -299,9 +350,11 @@ def binned_statistic_dd(sample, values, statistic='mean',
     sample : array_like
         Data to histogram passed as a sequence of D arrays of length N, or
         as an (N,D) array.
-    values : array_like
-        The values on which the statistic will be computed.  This must be
-        the same shape as x.
+    values : (N,) array_like or list of (N,) array_like
+        The data on which the statistic will be computed.  This must be
+        the same shape as `x`, or a list of sequences - each with the same
+        shape as `x`.  If `values` is such a list, the statistic will be
+        computed on each independently.
     statistic : string or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
@@ -338,7 +391,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
         'True': the returned `binnumbers` is 'unraveled' into a shape (D,N)
         ndarray, where each row gives the bin numbers in the corresponding
         dimension.
-        See the `binnumbers` returned value.
+        See the `binnumbers` returned value, and the `Examples` section of
+        `binned_statistic_2d`.
 
     Returns
     -------
@@ -357,7 +411,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         If 'True': The returned `binnumbers` is a shape (D,N) ndarray where
         each row indicates where the elements of `sample` should be inserted
         into the corresponding `bin_edges` array so as to keep the array
-        sorted.
+        sorted.  In each dimension, a binnumber of `i` means the
+        corresponding value is between (D_edges[i-1], D_edges[i]), where 'D' is
+        either 'x' or 'y'.
 
     See Also
     --------
@@ -393,8 +449,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
         Vdim, Vlen = values.shape
 
     # Make sure `values` match `sample`
-    if(Vlen != Dlen):
-        raise AttributeError('The number of `values` elements must match the'
+    if(statistic is not 'count' and Vlen != Dlen):
+        raise AttributeError('The number of `values` elements must match the '
                              'length of each `sample` dimension.')
 
     nbin = np.empty(Ndim, int)    # Number of bins in each dimension
