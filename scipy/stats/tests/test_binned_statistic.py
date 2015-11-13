@@ -18,6 +18,7 @@ class TestBinnedStatistic(object):
         cls.y = np.random.random(100)
         cls.v = np.random.random(100)
         cls.X = np.random.random((100, 3))
+        cls.w = np.random.random(100)
 
     def test_1d_count(self):
         x = self.x
@@ -34,7 +35,7 @@ class TestBinnedStatistic(object):
         v = self.v
 
         res = binned_statistic(x, v, 'count', bins=10)
-        attributes = ('statistic', 'bin_edges', 'binnumber')
+        attributes = ('statistic', 'bin_edges', 'binnumbers')
         check_named_results(res, attributes)
 
     def test_1d_sum(self):
@@ -105,6 +106,22 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(mean, mean_range2)
         assert_array_almost_equal(bins, bins_range2)
 
+    def test_1d_multi_values(self):
+        x = self.x
+        v = self.v
+        w = self.w
+
+        stat1v, edges1v, bc1v = binned_statistic(x, v, 'mean', bins=10)
+        stat1w, edges1w, bc1w = binned_statistic(x, w, 'mean', bins=10)
+        stat2, edges2, bc2 = binned_statistic(x, [v, w], 'mean', bins=10)
+
+        assert_array_almost_equal(stat2[0], stat1v)
+        assert_array_almost_equal(stat2[1], stat1w)
+        assert_array_almost_equal(edges1v, edges2)
+        assert_array_almost_equal(bc1v, bc2)
+
+
+
     def test_2d_count(self):
         x = self.x
         y = self.y
@@ -123,7 +140,7 @@ class TestBinnedStatistic(object):
         v = self.v
 
         res = binned_statistic_2d(x, y, v, 'count', bins=5)
-        attributes = ('statistic', 'x_edge', 'y_edge', 'binnumber')
+        attributes = ('statistic', 'x_edges', 'y_edges', 'binnumbers')
         check_named_results(res, attributes)
 
     def test_2d_sum(self):
@@ -199,6 +216,58 @@ class TestBinnedStatistic(object):
         count1adj = count1[count1.nonzero()]
         assert_array_almost_equal(bcount, count1adj)
 
+    def test_2d_multi_values(self):
+        x = self.x
+        y = self.y
+        v = self.v
+        w = self.w
+
+        stat1v, binx1v, biny1v, bc1v = binned_statistic_2d(
+            x, y, v, 'mean', bins=8)
+        stat1w, binx1w, biny1w, bc1w = binned_statistic_2d(
+            x, y, w, 'mean', bins=8)
+        stat2, binx2, biny2, bc2 = binned_statistic_2d(
+            x, y, [v, w], 'mean', bins=8)
+
+        assert_array_almost_equal(stat2[0], stat1v)
+        assert_array_almost_equal(stat2[1], stat1w)
+        assert_array_almost_equal(binx1v, binx2)
+        assert_array_almost_equal(biny1w, biny2)
+        assert_array_almost_equal(bc1v, bc2)
+
+    def test_2d_binnumbers_unraveled(self):
+        x = self.x
+        y = self.y
+        v = self.v
+
+        stat, edgesx, bcx = binned_statistic(x, v, 'mean', bins=10)
+        stat, edgesy, bcy = binned_statistic(y, v, 'mean', bins=10)
+
+        stat2, edgesx2, edgesy2, bc2 = binned_statistic_2d(
+            x, y, v, 'mean', bins=10, expand_binnumbers=True)
+
+        bcx3 = np.searchsorted(edgesx, x, side='right')
+        bcy3 = np.searchsorted(edgesy, y, side='right')
+
+        # `numpy.searchsorted` is non-inclusive on right-edge, compensate
+        bcx3[x == x.max()] -= 1
+        bcy3[y == y.max()] -= 1
+
+        bcx4 = np.digitize(x, edgesx, right=True)
+        bcy4 = np.digitize(y, edgesy, right=True)
+
+        # `numpy.digitize` is non-inclusive on left-edge, compensate
+        bcx4[x == x.min()] += 1
+        bcy4[y == y.min()] += 1
+
+        assert_array_almost_equal(bcx, bc2[0])
+        assert_array_almost_equal(bcy, bc2[1])
+        assert_array_almost_equal(bcx4, bc2[0])
+        assert_array_almost_equal(bcy4, bc2[1])
+        assert_array_almost_equal(bcx3, bc2[0])
+        assert_array_almost_equal(bcy3, bc2[1])
+
+
     def test_dd_count(self):
         X = self.X
         v = self.v
@@ -214,7 +283,7 @@ class TestBinnedStatistic(object):
         v = self.v
 
         res = binned_statistic_dd(X, v, 'count', bins=3)
-        attributes = ('statistic', 'bin_edges', 'binnumber')
+        attributes = ('statistic', 'bin_edges', 'binnumbers')
         check_named_results(res, attributes)
 
     def test_dd_sum(self):
@@ -271,6 +340,35 @@ class TestBinnedStatistic(object):
         count1adj = count1[count1.nonzero()]
         assert_array_almost_equal(bcount, count1adj)
 
+    def test_dd_multi_values(self):
+        X = self.X
+        v = self.v
+        w = self.w
+
+        stat1v, edges1v, bc1v = binned_statistic_dd(X, v, np.std, bins=8)
+        stat1w, edges1w, bc1w = binned_statistic_dd(X, w, np.std, bins=8)
+        stat2, edges2, bc2 = binned_statistic_dd(X, [v, w], np.std, bins=8)
+
+        assert_array_almost_equal(stat2[0], stat1v)
+        assert_array_almost_equal(stat2[1], stat1w)
+        assert_array_almost_equal(edges1v, edges2)
+        assert_array_almost_equal(edges1w, edges2)
+        assert_array_almost_equal(bc1v, bc2)
+
+    def test_dd_binnumbers_unraveled(self):
+        X = self.X
+        v = self.v
+
+        stat, edgesx, bcx = binned_statistic(X[:, 0], v, 'mean', bins=10)
+        stat, edgesy, bcy = binned_statistic(X[:, 1], v, 'mean', bins=10)
+        stat, edgesz, bcz = binned_statistic(X[:, 2], v, 'mean', bins=10)
+
+        stat2, edges2, bc2 = binned_statistic_dd(
+            X, v, 'mean', bins=10, expand_binnumbers=True)
+
+        assert_array_almost_equal(bcx, bc2[0])
+        assert_array_almost_equal(bcy, bc2[1])
+        assert_array_almost_equal(bcz, bc2[2])
 
 if __name__ == "__main__":
     run_module_suite()
