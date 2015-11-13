@@ -525,14 +525,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(np.nan)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
-        for vv in xrange(Vdim):
+        for vv in range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
-        for vv in xrange(Vdim):
+        for vv in range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             flatsum2 = np.bincount(binnumbers, values[vv] ** 2)
             result[vv, a] = np.sqrt(flatsum2[a] / flatcount[a] -
@@ -544,14 +544,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result[:, a] = flatcount[np.newaxis, :]
     elif statistic == 'sum':
         result.fill(0)
-        for vv in xrange(Vdim):
+        for vv in range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             a = np.arange(len(flatsum))
             result[vv, a] = flatsum
     elif statistic == 'median':
         result.fill(np.nan)
         for i in np.unique(binnumbers):
-            for vv in xrange(Vdim):
+            for vv in range(Vdim):
                 result[vv, i] = np.median(values[vv, binnumbers == i])
     elif callable(statistic):
         with warnings.catch_warnings():
@@ -565,7 +565,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             np.seterr(**old)
         result.fill(null)
         for i in np.unique(binnumbers):
-            for vv in xrange(Vdim):
+            for vv in range(Vdim):
                 result[vv, i] = statistic(values[vv, binnumbers == i])
 
     # Shape into a proper matrix

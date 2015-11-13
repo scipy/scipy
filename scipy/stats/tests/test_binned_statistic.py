@@ -120,8 +120,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(edges1v, edges2)
         assert_array_almost_equal(bc1v, bc2)
 
-
-
     def test_2d_count(self):
         x = self.x
         y = self.y
@@ -266,7 +264,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(bcy4, bc2[1])
         assert_array_almost_equal(bcx3, bc2[0])
         assert_array_almost_equal(bcy3, bc2[1])
-
 
     def test_dd_count(self):
         X = self.X
