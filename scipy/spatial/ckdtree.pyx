@@ -1067,6 +1067,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         "N-body problems in statistical learning", and the code here is based
         on their algorithm.
 
+        If not None, data points are weighted by `self_weights` and `other_weights`. 
+
         Parameters
         ----------
         other : cKDTree instance
@@ -1084,8 +1086,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         Returns
         -------
-        result : int or 1-D array of ints
-            The number of pairs.
+        result : scalar or 1-D array
+            The number of pairs. For unweighted counts, the result is integer.
+            For weighted counts, the result is float.
         """
         cdef: 
             int r_ndim
@@ -1124,6 +1127,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         idx = np.arange(n_queries, dtype=np.intp)
         
         if self_weights is None and other_weights is None:
+            # unweighted, use the integer arithmetics
             iresults = np.zeros(n_queries, dtype=np.intp)
 
             count_neighbors_unweighted(<ckdtree*> self, <ckdtree*> other, n_queries,
@@ -1137,6 +1141,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             else:
                 return iresults
         else:
+            # weighted / half weighted, use the floating point arithmetics
             if self_weights is not None:
                 w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
                 w1n = self.build_weights(w1)
