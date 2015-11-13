@@ -34,6 +34,13 @@ tree_buffer_root(std::vector<ckdtreenode> *buf)
     return &tmp[0];
 }
 
+inline npy_intp
+tree_buffer_size(std::vector<ckdtreenode> *buf)
+{
+    std::vector<ckdtreenode> &tmp = *buf;
+    return tmp.size();
+}
+
 inline ordered_pair *
 ordered_pair_vector_buf(std::vector<ordered_pair> *buf)
 {

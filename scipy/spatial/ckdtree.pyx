@@ -79,6 +79,7 @@ cdef extern from "cpp_utils.h":
     object pickle_tree_buffer(vector[ckdtreenode] *buf)    
     object unpickle_tree_buffer(vector[ckdtreenode] *buf, object src)
     ckdtreenode *tree_buffer_root(vector[ckdtreenode] *buf)
+    np.intp_t tree_buffer_size(vector[ckdtreenode] *buf)
     ordered_pair *ordered_pair_vector_buf(vector[ordered_pair] *buf)
     coo_entry *coo_entry_vector_buf(vector[coo_entry] *buf)
     void *tree_buffer_pointer(vector[ckdtreenode] *buf)
@@ -331,6 +332,10 @@ cdef extern from "ckdtree_methods.h":
                          np.float64_t *mins, 
                          int _median, 
                          int _compact)
+
+    object build_weights(ckdtree *self, 
+                         np.float64_t *node_weights,
+                         np.float64_t *weights)
        
     object query_knn(const ckdtree *self, 
                      np.float64_t *dd, 
@@ -348,11 +353,23 @@ cdef extern from "ckdtree_methods.h":
                        const np.float64_t eps,
                        vector[ordered_pair] *results)
                        
-    object count_neighbors(const ckdtree *self,
+    object count_neighbors_unweighted(const ckdtree *self,
                            const ckdtree *other,
                            np.intp_t     n_queries,
                            np.float64_t  *real_r,
                            np.intp_t     *results,
+                           np.intp_t     *idx,
+                           const np.float64_t p)
+
+    object count_neighbors_weighted(const ckdtree *self,
+                           const ckdtree *other,
+                           np.float64_t  *self_weights,
+                           np.float64_t  *other_weights,
+                           np.float64_t  *self_node_weights,
+                           np.float64_t  *other_node_weights,
+                           np.intp_t     n_queries,
+                           np.float64_t  *real_r,
+                           np.float64_t     *results,
                            np.intp_t     *idx,
                            const np.float64_t p)
                            
@@ -1013,15 +1030,33 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         else:
             raise ValueError("Invalid output type") 
 
+    @cython.boundscheck(False)
+    def build_weights(cKDTree self, object weights):
+        cdef np.intp_t num_of_nodes
+        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] node_weights;
+        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] _weights
+
+        num_of_nodes = tree_buffer_size(self.tree_buffer);
+        node_weights = np.empty(num_of_nodes, dtype=np.float64)
+        _weights = np.ascontiguousarray(weights, dtype=np.float64)
+
+        if len(_weights) != self.n:
+            raise ValueError('Number of weights differ from the number of data points')
+
+        build_weights(<ckdtree*> self, <np.float64_t*>np.PyArray_DATA(node_weights),
+                            <np.float64_t*> np.PyArray_DATA(weights))
+                    
+        return node_weights
 
     # ---------------
     # count_neighbors
     # ---------------
 
     @cython.boundscheck(False)
-    def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.):
+    def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2., 
+                        object self_weights=None, object other_weights=None):
         """
-        count_neighbors(self, other, r, p=2.)
+        count_neighbors(self, other, r, p=2., self_weights=None, other_weights=None)
 
         Count how many nearby pairs can be formed.
 
@@ -1042,6 +1077,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         p : float, optional 
             1<=p<=infinity, default 2.0
             Which Minkowski p-norm to use
+        self_weights : array_like
+            weight of each data point in self. None is unweighted.
+        other_weights : array_like
+            weight of each data point in other. None is unweighted.
 
         Returns
         -------
@@ -1052,7 +1091,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             int r_ndim
             np.intp_t n_queries, i
             np.ndarray[np.float64_t, ndim=1, mode="c"] real_r
-            np.ndarray[np.intp_t, ndim=1, mode="c"] results, idx
+            np.ndarray[np.float64_t, ndim=1, mode="c"] results
+            np.ndarray[np.intp_t, ndim=1, mode="c"] iresults
+            np.ndarray[np.intp_t, ndim=1, mode="c"] idx
+            np.ndarray[np.float64_t, ndim=1, mode="c"] w1, w1n
+            np.ndarray[np.float64_t, ndim=1, mode="c"] w2, w2n
+            np.float64_t *w1p
+            np.float64_t *w1np
+            np.float64_t *w2p
+            np.float64_t *w2np
 
         # Make sure trees are compatible
         if self.m != other.m:
@@ -1074,21 +1121,50 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 if not ckdtree_isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
 
-        results = np.zeros(n_queries, dtype=np.intp)
         idx = np.arange(n_queries, dtype=np.intp)
         
-        count_neighbors(<ckdtree*> self, <ckdtree*> other, n_queries,
-                        &real_r[0], &results[0], &idx[0], p)
+        if self_weights is None and other_weights is None:
+            iresults = np.zeros(n_queries, dtype=np.intp)
+
+            count_neighbors_unweighted(<ckdtree*> self, <ckdtree*> other, n_queries,
+                            &real_r[0], &iresults[0], &idx[0], p)
         
-        if r_ndim == 0:
-            if results[0] <= <np.intp_t> LONG_MAX:
-                return int(results[0])
+            if r_ndim == 0:
+                if iresults[0] <= <np.intp_t> LONG_MAX:
+                    return int(iresults[0])
+                else:
+                    return iresults[0]
             else:
-                return results[0]
+                return iresults
         else:
-            return results
+            if self_weights is not None:
+                w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
+                w1n = self.build_weights(w1)
+                w1p = <np.float64_t*> np.PyArray_DATA(w1)
+                w1np = <np.float64_t*> np.PyArray_DATA(w1n)
+            else:
+                w1p = NULL
+                w1np = NULL
+            if other_weights is not None:
+                w2 = np.ascontiguousarray(other_weights, dtype=np.float64)
+                w2n = other.build_weights(w2)
+                w2p = <np.float64_t*> np.PyArray_DATA(w2)
+                w2np = <np.float64_t*> np.PyArray_DATA(w2n)
+            else:
+                w2p = NULL
+                w2np = NULL
 
+            results = np.zeros(n_queries, dtype=np.float64)
 
+            count_neighbors_weighted(<ckdtree*> self, <ckdtree*> other,
+                                    w1p, w2p, w1np, w2np,
+                                    n_queries,
+                                    &real_r[0], &results[0], &idx[0], p)
+            if r_ndim == 0:
+                return results[0]
+            else:
+                return results
+    
     # ----------------------
     # sparse_distance_matrix
     # ----------------------
