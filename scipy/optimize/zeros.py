@@ -42,6 +42,13 @@ class RootResults(object):
         except KeyError:
             self.flag = 'unknown error %d' % (flag,)
 
+    def __repr__(self):
+        attrs = ['converged', 'flag', 'function_calls',
+                 'iterations', 'root']
+        m = max(map(len, attrs)) + 1
+        return '\n'.join([a.rjust(m) + ': ' + repr(getattr(self, a))
+                          for a in attrs])
+
 
 def results_c(full_output, r):
     if full_output:

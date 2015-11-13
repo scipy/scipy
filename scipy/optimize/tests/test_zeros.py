@@ -4,7 +4,8 @@ from __future__ import division, print_function, absolute_import
 from math import sqrt, exp, sin, cos
 
 from numpy.testing import (TestCase, assert_almost_equal, assert_warns,
-                           assert_, run_module_suite, assert_allclose)
+                           assert_, run_module_suite, assert_allclose,
+                           assert_equal)
 
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros
@@ -56,6 +57,18 @@ class TestBasic(TestCase):
         func = lambda x: x**2
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
+
+
+class TestRootResults:
+    def test_repr(self):
+        r = zeros.RootResults(root=1.0,
+                              iterations=44,
+                              function_calls=46,
+                              flag=0)
+        expected_repr = ("      converged: True\n           flag: 'converged'"
+                         "\n function_calls: 46\n     iterations: 44\n"
+                         "           root: 1.0")
+        assert_equal(repr(r), expected_repr)
 
 
 if __name__ == '__main__':
