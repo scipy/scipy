@@ -35,7 +35,7 @@ class TestBinnedStatistic(object):
         v = self.v
 
         res = binned_statistic(x, v, 'count', bins=10)
-        attributes = ('statistic', 'bin_edges', 'binnumbers')
+        attributes = ('statistic', 'bin_edges', 'binnumber')
         check_named_results(res, attributes)
 
     def test_1d_sum(self):
@@ -120,8 +120,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(edges1v, edges2)
         assert_array_almost_equal(bc1v, bc2)
 
-
-
     def test_2d_count(self):
         x = self.x
         y = self.y
@@ -140,7 +138,7 @@ class TestBinnedStatistic(object):
         v = self.v
 
         res = binned_statistic_2d(x, y, v, 'count', bins=5)
-        attributes = ('statistic', 'x_edges', 'y_edges', 'binnumbers')
+        attributes = ('statistic', 'x_edge', 'y_edge', 'binnumber')
         check_named_results(res, attributes)
 
     def test_2d_sum(self):
@@ -267,7 +265,6 @@ class TestBinnedStatistic(object):
         assert_array_almost_equal(bcx3, bc2[0])
         assert_array_almost_equal(bcy3, bc2[1])
 
-
     def test_dd_count(self):
         X = self.X
         v = self.v
@@ -283,7 +280,7 @@ class TestBinnedStatistic(object):
         v = self.v
 
         res = binned_statistic_dd(X, v, 'count', bins=3)
-        attributes = ('statistic', 'bin_edges', 'binnumbers')
+        attributes = ('statistic', 'bin_edges', 'binnumber')
         check_named_results(res, attributes)
 
     def test_dd_sum(self):

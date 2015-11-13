@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from scipy._lib.six import callable
+from scipy._lib.six import callable, xrange
 from collections import namedtuple
 
 __all__ = ['binned_statistic',
@@ -12,7 +12,7 @@ __all__ = ['binned_statistic',
 
 
 BinnedStatisticResult = namedtuple('BinnedStatisticResult',
-                                   ('statistic', 'bin_edges', 'binnumbers'))
+                                   ('statistic', 'bin_edges', 'binnumber'))
 
 
 def binned_statistic(x, values, statistic='mean',
@@ -29,7 +29,7 @@ def binned_statistic(x, values, statistic='mean',
     ----------
     x : (N,) array_like
         A sequence of values to be binned.
-    values : (N,) array_like or set of (N,) array_like
+    values : (N,) array_like or list of (N,) array_like
         The data on which the statistic will be computed.  This must be
         the same shape as `x`, or a set of sequences - each the same shape as
         `x`.  If `values` is a set of sequences, the statistic will be computed
@@ -103,8 +103,8 @@ def binned_statistic(x, values, statistic='mean',
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
     (array([ 4. ,  4.5]), array([ 1.,  4.,  7.]), array([1, 1, 1, 2, 2]))
 
-    Multiple sets of values can also be passed.  The statistic is calculated on
-    each set independently:
+    Multiple arrays of values can also be passed.  The statistic is calculated
+    on each set independently:
 
     >>> values = [[1.0, 1.0, 2.0, 1.5, 3.0], [2.0, 2.0, 4.0, 3.0, 6.0]]
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
@@ -113,7 +113,8 @@ def binned_statistic(x, values, statistic='mean',
 
     >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean',
     ...                        bins=3)
-    (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]), array([1, 2, 1, 2, 3]))
+    (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]),
+        array([1, 2, 1, 2, 3]))
 
     As a second example, we now generate some random data of sailing boat speed
     as a function of wind speed, and then determine how fast our boat is for
@@ -149,8 +150,8 @@ def binned_statistic(x, values, statistic='mean',
     >>> bin_centers = bin_edges[1:] - bin_width/2
 
     >>> plt.figure()
-    >>> plt.hist(samples, bins=50, normed=True, histtype='stepfilled', alpha=0.2,
-    ...          label='histogram of data')
+    >>> plt.hist(samples, bins=50, normed=True, histtype='stepfilled',
+    ...          alpha=0.2, label='histogram of data')
     >>> plt.plot(x, x_pdf, 'r-', label='analytical pdf')
     >>> plt.hlines(bin_means, bin_edges[:-1], bin_edges[1:], colors='g', lw=2,
     ...            label='binned statistic of data')
@@ -178,8 +179,8 @@ def binned_statistic(x, values, statistic='mean',
 
 
 BinnedStatistic2dResult = namedtuple('BinnedStatistic2dResult',
-                                     ('statistic', 'x_edges', 'y_edges',
-                                      'binnumbers'))
+                                     ('statistic', 'x_edge', 'y_edge',
+                                      'binnumber'))
 
 
 def binned_statistic_2d(x, y, values, statistic='mean',
@@ -226,11 +227,11 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
           * the number of bins for the two dimensions (nx = ny = bins),
           * the number of bins in each dimension (nx, ny = bins),
-          * the bin edges for the two dimensions (x_edges = y_edges = bins),
-          * the bin edges in each dimension (x_edges, y_edges = bins).
+          * the bin edges for the two dimensions (x_edge = y_edge = bins),
+          * the bin edges in each dimension (x_edge, y_edge = bins).
 
         If the bin edges are specified, the number of bins will be,
-        (nx = len(x_edges)-1, ny = len(y_edges)-1).
+        (nx = len(x_edge)-1, ny = len(y_edge)-1).
 
     range : (2,2) array_like, optional
         The leftmost and rightmost edges of the bins along each dimension
@@ -250,23 +251,14 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     -------
     statistic : (nx, ny) ndarray
         The values of the selected statistic in each two-dimensional bin.
-    x_edges : (nx + 1) ndarray
+    x_edge : (nx + 1) ndarray
         The bin edges along the first dimension.
-    y_edges : (ny + 1) ndarray
+    y_edge : (ny + 1) ndarray
         The bin edges along the second dimension.
-    binnumbers : (N,) array of ints or (D,N) ndarray of ints
+    binnumbers : (N,) array of ints or (2,N) ndarray of ints
         This assigns to each element of `sample` an integer that represents the
         bin in which this observation falls.  The representation depends on the
-        `expand_binnumbers` argument.
-        If 'False' (default): The returned `binnumbers` is a shape (N,) array
-        of linearized indices mapping each element of `sample` to its
-        corresponding bin (using row-major ordering).
-        If 'True': The returned `binnumbers` is a shape (2,N) ndarray where
-        each row indicates where the elements of `sample` should be inserted,
-        into the `x_edges` and `y_edges` arrays respectively, so as to keep
-        the arrays sorted.  In each dimension, a binnumber of `i` means the
-        corresponding value is between (D_edges[i-1], D_edges[i]), where 'D' is
-        either 'x' or 'y'.
+        `expand_binnumbers` argument.  See `Notes` for details.
 
 
     See Also
@@ -275,6 +267,22 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
     Notes
     -----
+    Binedges:
+    All but the last (righthand-most) bin is half-open.  In other words, if
+    `bins` is ``[1, 2, 3, 4]``, then the first bin is ``[1, 2)`` (including 1,
+    but excluding 2) and the second ``[2, 3)``.  The last bin, however, is
+    ``[3, 4]``, which *includes* 4.
+
+    `binnumbers`:
+    This returned argument assigns to each element of `sample` an integer that
+    represents the bin in which it belongs.  The representation depends on the
+    `expand_binnumbers` argument. If 'False' (default): The returned
+    `binnumbers` is a shape (N,) array of linearized indices mapping each
+    element of `sample` to its corresponding bin (using row-major ordering).
+    If 'True': The returned `binnumbers` is a shape (2,N) ndarray where
+    each row indicates bin placements for each dimension respectively.  In each
+    dimension, a binnumber of `i` means the corresponding value is between
+    (D_edge[i-1], D_edge[i]), where 'D' is either 'x' or 'y'.
 
     .. versionadded:: 0.11.0
 
@@ -332,7 +340,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
 BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
                                      ('statistic', 'bin_edges',
-                                      'binnumbers'))
+                                      'binnumber'))
 
 
 def binned_statistic_dd(sample, values, statistic='mean',
@@ -404,16 +412,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
     binnumbers : (N,) array of ints or (D,N) ndarray of ints
         This assigns to each element of `sample` an integer that represents the
         bin in which this observation falls.  The representation depends on the
-        `expand_binnumbers` argument.
-        If 'False' (default): The returned `binnumbers` is a shape (N,) array
-        of linearized indices mapping each element of `sample` to its
-        corresponding bin (using row-major ordering).
-        If 'True': The returned `binnumbers` is a shape (D,N) ndarray where
-        each row indicates where the elements of `sample` should be inserted
-        into the corresponding `bin_edges` array so as to keep the array
-        sorted.  In each dimension, a binnumber of `i` means the
-        corresponding value is between (D_edges[i-1], D_edges[i]), where 'D' is
-        either 'x' or 'y'.
+        `expand_binnumbers` argument.  See `Notes` for details.
+
 
     See Also
     --------
@@ -421,6 +421,22 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     Notes
     -----
+    Binedges:
+    All but the last (righthand-most) bin is half-open in each dimension.  In
+    other words, if `bins` is ``[1, 2, 3, 4]``, then the first bin is
+    ``[1, 2)`` (including 1, but excluding 2) and the second ``[2, 3)``.  The
+    last bin, however, is ``[3, 4]``, which *includes* 4.
+
+    `binnumbers`:
+    This returned argument assigns to each element of `sample` an integer that
+    represents the bin in which it belongs.  The representation depends on the
+    `expand_binnumbers` argument. If 'False' (default): The returned
+    `binnumbers` is a shape (N,) array of linearized indices mapping each
+    element of `sample` to its corresponding bin (using row-major ordering).
+    If 'True': The returned `binnumbers` is a shape (D,N) ndarray where
+    each row indicates bin placements for each dimension respectively.  In each
+    dimension, a binnumber of `i` means the corresponding value is between
+    (bin_edges[D][i-1], bin_edges[D][i]), for each dimension 'D'.
 
     .. versionadded:: 0.11.0
 
@@ -440,13 +456,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         sample = np.atleast_2d(sample).T
         Dlen, Ndim = sample.shape
 
-    try:
-        # `values` is an ND-array.
-        Vdim, Vlen = values.shape
-    except (AttributeError, ValueError):
-        # Sample is a sequence of 1D arrays.
-        values = np.atleast_2d(values)
-        Vdim, Vlen = values.shape
+    initVdim = np.ndim(values)
+    values = np.atleast_2d(values)
+    Vdim, Vlen = values.shape
 
     # Make sure `values` match `sample`
     if(statistic is not 'count' and Vlen != Dlen):
@@ -473,17 +485,17 @@ def binned_statistic_dd(sample, values, statistic='mean',
     else:
         smin = np.zeros(Ndim)
         smax = np.zeros(Ndim)
-        for i in np.arange(Ndim):
+        for i in xrange(Ndim):
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.
-    for i in np.arange(len(smin)):
+    for i in xrange(len(smin)):
         if smin[i] == smax[i]:
             smin[i] = smin[i] - .5
             smax[i] = smax[i] + .5
 
     # Create edge arrays
-    for i in np.arange(Ndim):
+    for i in xrange(Ndim):
         if np.isscalar(bins[i]):
             nbin[i] = bins[i] + 2  # +2 for outlier bins
             edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1)
@@ -496,13 +508,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     # Compute the bin number each sample falls into, in each dimension
     sampBin = {}
-    for i in np.arange(Ndim):
+    for i in xrange(Ndim):
         sampBin[i] = np.digitize(sample[:, i], edges[i])
 
     # Using `digitize`, values that fall on an edge are put in the right bin.
     # For the rightmost bin, we want values equal to the right
     # edge to be counted in the last bin, and not as an outlier.
-    for i in np.arange(Ndim):
+    for i in xrange(Ndim):
         # Find the rounding precision
         decimal = int(-np.log10(dedges[i].min())) + 6
         # Find which points are on the rightmost edge.
@@ -515,7 +527,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     ni = nbin.argsort()
     # `binnumbers` is which bin (in linearized `Ndim` space) each sample goes
     binnumbers = np.zeros(Dlen, int)
-    for i in np.arange(0, Ndim - 1):
+    for i in xrange(0, Ndim - 1):
         binnumbers += sampBin[ni[i]] * nbin[ni[i + 1:]].prod()
     binnumbers += sampBin[ni[-1]]
 
@@ -571,7 +583,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     # Shape into a proper matrix
     result = result.reshape(np.append(Vdim, np.sort(nbin)))
 
-    for i in np.arange(nbin.size):
+    for i in xrange(nbin.size):
         j = ni.argsort()[i]
         # Accomodate the extra `Vdim` dimension-zero with `+1`
         result = result.swapaxes(i+1, j+1)
@@ -588,7 +600,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if np.any(result.shape[1:] != nbin - 2):
         raise RuntimeError('Internal Shape Error')
 
-    # Remove excess dimension-zero if ``Vdim == 1``
-    result = result.squeeze()
+    # Remove excess dimension-zero if `values` was 1-D
+    if(initVdim == 1):
+        result = result.reshape(*(nbin-2))
 
     return BinnedStatisticddResult(result, edges, binnumbers)
