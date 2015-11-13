@@ -12,7 +12,7 @@ __all__ = ['binned_statistic',
 
 
 BinnedStatisticResult = namedtuple('BinnedStatisticResult',
-                                   ('statistic', 'bin_edges', 'binnumbers))
+                                   ('statistic', 'bin_edges', 'binnumbers'))
 
 
 def binned_statistic(x, values, statistic='mean',
@@ -155,8 +155,8 @@ def binned_statistic(x, values, statistic='mean',
         if len(range) == 2:
             range = [range]
 
-    medians, edges, binnumbers = binned_statistic_dd([x], values, statistic,
-                                                    bins, range)
+    medians, edges, binnumbers = binned_statistic_dd(
+        [x], values, statistic, bins, range)
 
     return BinnedStatisticResult(medians, edges[0], binnumbers)
 
@@ -272,8 +272,9 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         xedges = yedges = np.asarray(bins, float)
         bins = [xedges, yedges]
 
-    medians, edges, binnumbers = binned_statistic_dd([x, y], values, statistic,
-                                                    bins, range)
+    medians, edges, binnumbers = binned_statistic_dd(
+        [x, y], values, statistic, bins, range,
+        expand_binnumbers=expand_binnumbers)
 
     return BinnedStatistic2dResult(medians, edges[0], edges[1], binnumbers)
 
