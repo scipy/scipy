@@ -30,7 +30,7 @@ def binned_statistic(x, values, statistic='mean',
     ----------
     x : (N,) array_like
         A sequence of values to be binned.
-    values : (N,) array_like or set of (N,) array_like
+    values : (N,) array_like or list of (N,) array_like
         The data on which the statistic will be computed.  This must be
         the same shape as `x`, or a set of sequences - each the same shape as
         `x`.  If `values` is a set of sequences, the statistic will be computed
@@ -104,7 +104,7 @@ def binned_statistic(x, values, statistic='mean',
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
     (array([ 4. ,  4.5]), array([ 1.,  4.,  7.]), array([1, 1, 1, 2, 2]))
 
-    Multiple sets of values can also be passed.  The statistic is calculated on
+    Multiple arrays of values can also be passed.  The statistic is calculated on
     each set independently:
 
     >>> values = [[1.0, 1.0, 2.0, 1.5, 3.0], [2.0, 2.0, 4.0, 3.0, 6.0]]
@@ -256,19 +256,10 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         The bin edges along the first dimension.
     y_edge : (ny + 1) ndarray
         The bin edges along the second dimension.
-    binnumbers : (N,) array of ints or (D,N) ndarray of ints
+    binnumbers : (N,) array of ints or (2,N) ndarray of ints
         This assigns to each element of `sample` an integer that represents the
         bin in which this observation falls.  The representation depends on the
-        `expand_binnumbers` argument.
-        If 'False' (default): The returned `binnumbers` is a shape (N,) array
-        of linearized indices mapping each element of `sample` to its
-        corresponding bin (using row-major ordering).
-        If 'True': The returned `binnumbers` is a shape (2,N) ndarray where
-        each row indicates where the elements of `sample` should be inserted,
-        into the `x_edge` and `y_edge` arrays respectively, so as to keep
-        the arrays sorted.  In each dimension, a binnumber of `i` means the
-        corresponding value is between (D_edge[i-1], D_edge[i]), where 'D' is
-        either 'x' or 'y'.
+        `expand_binnumbers` argument.  See `Notes` for details.
 
 
     See Also
@@ -277,6 +268,22 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
     Notes
     -----
+    Binedges:
+    All but the last (righthand-most) bin is half-open.  In other words, if
+    `bins` is ``[1, 2, 3, 4]``, then the first bin is ``[1, 2)`` (including 1,
+    but excluding 2) and the second ``[2, 3)``.  The last bin, however, is
+    ``[3, 4]``, which *includes* 4.
+
+    `binnumbers`:
+    This returned argument assigns to each element of `sample` an integer that
+    represents the bin in which it belongs.  The representation depends on the
+    `expand_binnumbers` argument. If 'False' (default): The returned
+    `binnumbers` is a shape (N,) array of linearized indices mapping each
+    element of `sample` to its corresponding bin (using row-major ordering).
+    If 'True': The returned `binnumbers` is a shape (2,N) ndarray where
+    each row indicates bin placements for each dimension respectively.  In each
+    dimension, a binnumber of `i` means the corresponding value is between
+    (D_edge[i-1], D_edge[i]), where 'D' is either 'x' or 'y'.
 
     .. versionadded:: 0.11.0
 
@@ -406,16 +413,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
     binnumbers : (N,) array of ints or (D,N) ndarray of ints
         This assigns to each element of `sample` an integer that represents the
         bin in which this observation falls.  The representation depends on the
-        `expand_binnumbers` argument.
-        If 'False' (default): The returned `binnumbers` is a shape (N,) array
-        of linearized indices mapping each element of `sample` to its
-        corresponding bin (using row-major ordering).
-        If 'True': The returned `binnumbers` is a shape (D,N) ndarray where
-        each row indicates where the elements of `sample` should be inserted
-        into the corresponding `bin_edges` array so as to keep the array
-        sorted.  In each dimension, a binnumber of `i` means the
-        corresponding value is between (D_edges[i-1], D_edges[i]), where 'D' is
-        either 'x' or 'y'.
+        `expand_binnumbers` argument.  See `Notes` for details.
+
 
     See Also
     --------
@@ -423,6 +422,22 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     Notes
     -----
+    Binedges:
+    All but the last (righthand-most) bin is half-open in each dimension.  In
+    other words, if `bins` is ``[1, 2, 3, 4]``, then the first bin is
+    ``[1, 2)`` (including 1, but excluding 2) and the second ``[2, 3)``.  The
+    last bin, however, is ``[3, 4]``, which *includes* 4.
+
+    `binnumbers`:
+    This returned argument assigns to each element of `sample` an integer that
+    represents the bin in which it belongs.  The representation depends on the
+    `expand_binnumbers` argument. If 'False' (default): The returned
+    `binnumbers` is a shape (N,) array of linearized indices mapping each
+    element of `sample` to its corresponding bin (using row-major ordering).
+    If 'True': The returned `binnumbers` is a shape (D,N) ndarray where
+    each row indicates bin placements for each dimension respectively.  In each
+    dimension, a binnumber of `i` means the corresponding value is between
+    (bin_edges[D][i-1], bin_edges[D][i]), for each dimension 'D'.
 
     .. versionadded:: 0.11.0
 
