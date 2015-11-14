@@ -13,7 +13,7 @@ __all__ = ['binned_statistic',
 
 
 BinnedStatisticResult = namedtuple('BinnedStatisticResult',
-                                   ('statistic', 'bin_edges', 'binnumbers'))
+                                   ('statistic', 'bin_edges', 'binnumber'))
 
 
 def binned_statistic(x, values, statistic='mean',
@@ -114,7 +114,8 @@ def binned_statistic(x, values, statistic='mean',
 
     >>> stats.binned_statistic([1, 2, 1, 2, 4], np.arange(5), statistic='mean',
     ...                        bins=3)
-    (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]), array([1, 2, 1, 2, 3]))
+    (array([ 1.,  2.,  4.]), array([ 1.,  2.,  3.,  4.]),
+        array([1, 2, 1, 2, 3]))
 
     As a second example, we now generate some random data of sailing boat speed
     as a function of wind speed, and then determine how fast our boat is for
@@ -150,8 +151,8 @@ def binned_statistic(x, values, statistic='mean',
     >>> bin_centers = bin_edges[1:] - bin_width/2
 
     >>> plt.figure()
-    >>> plt.hist(samples, bins=50, normed=True, histtype='stepfilled', alpha=0.2,
-    ...          label='histogram of data')
+    >>> plt.hist(samples, bins=50, normed=True, histtype='stepfilled',
+    ...          alpha=0.2, label='histogram of data')
     >>> plt.plot(x, x_pdf, 'r-', label='analytical pdf')
     >>> plt.hlines(bin_means, bin_edges[:-1], bin_edges[1:], colors='g', lw=2,
     ...            label='binned statistic of data')
@@ -179,8 +180,8 @@ def binned_statistic(x, values, statistic='mean',
 
 
 BinnedStatistic2dResult = namedtuple('BinnedStatistic2dResult',
-                                     ('statistic', 'x_edges', 'y_edges',
-                                      'binnumbers'))
+                                     ('statistic', 'x_edge', 'y_edge',
+                                      'binnumber'))
 
 
 def binned_statistic_2d(x, y, values, statistic='mean',
@@ -227,11 +228,11 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
           * the number of bins for the two dimensions (nx = ny = bins),
           * the number of bins in each dimension (nx, ny = bins),
-          * the bin edges for the two dimensions (x_edges = y_edges = bins),
-          * the bin edges in each dimension (x_edges, y_edges = bins).
+          * the bin edges for the two dimensions (x_edge = y_edge = bins),
+          * the bin edges in each dimension (x_edge, y_edge = bins).
 
         If the bin edges are specified, the number of bins will be,
-        (nx = len(x_edges)-1, ny = len(y_edges)-1).
+        (nx = len(x_edge)-1, ny = len(y_edge)-1).
 
     range : (2,2) array_like, optional
         The leftmost and rightmost edges of the bins along each dimension
@@ -251,9 +252,9 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     -------
     statistic : (nx, ny) ndarray
         The values of the selected statistic in each two-dimensional bin.
-    x_edges : (nx + 1) ndarray
+    x_edge : (nx + 1) ndarray
         The bin edges along the first dimension.
-    y_edges : (ny + 1) ndarray
+    y_edge : (ny + 1) ndarray
         The bin edges along the second dimension.
     binnumbers : (N,) array of ints or (D,N) ndarray of ints
         This assigns to each element of `sample` an integer that represents the
@@ -264,9 +265,9 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         corresponding bin (using row-major ordering).
         If 'True': The returned `binnumbers` is a shape (2,N) ndarray where
         each row indicates where the elements of `sample` should be inserted,
-        into the `x_edges` and `y_edges` arrays respectively, so as to keep
+        into the `x_edge` and `y_edge` arrays respectively, so as to keep
         the arrays sorted.  In each dimension, a binnumber of `i` means the
-        corresponding value is between (D_edges[i-1], D_edges[i]), where 'D' is
+        corresponding value is between (D_edge[i-1], D_edge[i]), where 'D' is
         either 'x' or 'y'.
 
 
@@ -333,7 +334,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
 BinnedStatisticddResult = namedtuple('BinnedStatisticddResult',
                                      ('statistic', 'bin_edges',
-                                      'binnumbers'))
+                                      'binnumber'))
 
 
 def binned_statistic_dd(sample, values, statistic='mean',
