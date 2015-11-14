@@ -104,8 +104,8 @@ def binned_statistic(x, values, statistic='mean',
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
     (array([ 4. ,  4.5]), array([ 1.,  4.,  7.]), array([1, 1, 1, 2, 2]))
 
-    Multiple arrays of values can also be passed.  The statistic is calculated on
-    each set independently:
+    Multiple arrays of values can also be passed.  The statistic is calculated
+    on each set independently:
 
     >>> values = [[1.0, 1.0, 2.0, 1.5, 3.0], [2.0, 2.0, 4.0, 3.0, 6.0]]
     >>> stats.binned_statistic([1, 1, 2, 5, 7], values, 'sum', bins=2)
@@ -457,6 +457,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
         sample = np.atleast_2d(sample).T
         Dlen, Ndim = sample.shape
 
+    initVdim = np.ndim(values)
     values = np.atleast_2d(values)
     Vdim, Vlen = values.shape
 
@@ -600,7 +601,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if np.any(result.shape[1:] != nbin - 2):
         raise RuntimeError('Internal Shape Error')
 
-    # Remove excess dimension-zero if ``Vdim == 1``
-    result = result.squeeze()
+    # Remove excess dimension-zero if `values` was 1-D
+    if(initVdim == 1):
+        result = result.reshape(*(nbin-2))
 
     return BinnedStatisticddResult(result, edges, binnumbers)
