@@ -963,26 +963,51 @@ class TestBoxcox(TestCase):
         lmbda = 2.5
         x = stats.norm.rvs(loc=10, size=50000)
         x_inv = (x * lmbda + 1)**(-lmbda)
-        xt, maxlog = stats.boxcox(x_inv)
-
-        assert_almost_equal(maxlog, -1 / lmbda, decimal=2)
+        for method in None, 'pearsonr', 'mle', 'mle-newton':
+            for guess in None, 0, -2, 1, 3:
+                if guess is None or method is not None:
+                    xt, maxlog = stats.boxcox(
+                            x_inv, lmbda=guess, lmbda_estimation=method)
+                    assert_almost_equal(maxlog, -1 / lmbda, decimal=2)
 
     def test_alpha(self):
         np.random.seed(1234)
-        x = stats.loggamma.rvs(5, size=50) + 5
 
         # Some regular values for alpha, on a small sample size
-        _, _, interval = stats.boxcox(x, alpha=0.75)
-        assert_allclose(interval, [4.004485780226041, 5.138756355035744])
-        _, _, interval = stats.boxcox(x, alpha=0.05)
-        assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
+        x = stats.loggamma.rvs(5, size=50) + 5
+        for lmbda_estimation in 'mle', 'mle-newton':
+            _, _, interval = stats.boxcox(x, alpha=0.75,
+                    lmbda_estimation=lmbda_estimation)
+            assert_allclose(interval, [4.004485780226041, 5.138756355035744])
+        _, _, interval = stats.boxcox(x, alpha=0.75,
+                lmbda_estimation='mle-newton', conf_method='asy')
+        assert_allclose(interval, [4.0006983648056895, 5.13488829287531])
+
+        for lmbda_estimation in 'mle', 'mle-newton':
+            _, _, interval = stats.boxcox(x, alpha=0.05,
+                    lmbda_estimation=lmbda_estimation)
+            assert_allclose(interval, [1.2138178554857557, 8.209033272375663])
+        _, _, interval = stats.boxcox(x, alpha=0.05,
+                lmbda_estimation='mle-newton', conf_method='asy')
+        assert_allclose(interval, [1.0795686114244423, 8.056018046256556])
 
         # Try some extreme values, see we don't hit the N=500 limit
         x = stats.loggamma.rvs(7, size=500) + 15
-        _, _, interval = stats.boxcox(x, alpha=0.001)
-        assert_allclose(interval, [0.3988867, 11.40553131])
-        _, _, interval = stats.boxcox(x, alpha=0.999)
-        assert_allclose(interval, [5.83316246, 5.83735292])
+        for lmbda_estimation in 'mle', 'mle-newton':
+            _, _, interval = stats.boxcox(x, alpha=0.001,
+                    lmbda_estimation=lmbda_estimation)
+            assert_allclose(interval, [0.3988867, 11.40553131])
+        _, _, interval = stats.boxcox(x, alpha=0.001,
+                lmbda_estimation='mle-newton', conf_method='asy')
+        assert_allclose(interval, [0.3343090536432474, 11.336206306262202])
+
+        for lmbda_estimation in 'mle', 'mle-newton':
+            _, _, interval = stats.boxcox(x, alpha=0.999,
+                    lmbda_estimation=lmbda_estimation)
+            assert_allclose(interval, [5.83316246, 5.83735292])
+        _, _, interval = stats.boxcox(x, alpha=0.999,
+                lmbda_estimation='mle-newton', conf_method='asy')
+        assert_allclose(interval, [5.8331624474718664, 5.837352912433583])
 
     def test_boxcox_bad_arg(self):
         # Raise ValueError if any data value is negative.
@@ -1010,9 +1035,14 @@ class TestBoxcoxNormmax(TestCase):
         _, maxlog_boxcox = stats.boxcox(self.x)
         assert_allclose(maxlog_boxcox, maxlog)
 
+    def test_mle_newton(self):
+        maxlog = stats.boxcox_normmax(self.x, method='mle-newton')
+        assert_allclose(maxlog, 1.758101, rtol=1e-6)
+
     def test_all(self):
-        maxlog_all = stats.boxcox_normmax(self.x, method='all')
-        assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
+        actual = stats.boxcox_normmax(self.x, method='all')
+        desired = [1.804465, 1.758101, 1.758101]
+        assert_allclose(actual, desired, rtol=1e-6)
 
 
 class TestBoxcoxNormplot(TestCase):
