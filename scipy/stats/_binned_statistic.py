@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import __builtin__
 
 import numpy as np
 from scipy._lib.six import callable
@@ -473,17 +474,17 @@ def binned_statistic_dd(sample, values, statistic='mean',
     else:
         smin = np.zeros(Ndim)
         smax = np.zeros(Ndim)
-        for i in np.arange(Ndim):
+        for i in __builtin__.range(Ndim):
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.
-    for i in np.arange(len(smin)):
+    for i in __builtin__.range(len(smin)):
         if smin[i] == smax[i]:
             smin[i] = smin[i] - .5
             smax[i] = smax[i] + .5
 
     # Create edge arrays
-    for i in np.arange(Ndim):
+    for i in __builtin__.range(Ndim):
         if np.isscalar(bins[i]):
             nbin[i] = bins[i] + 2  # +2 for outlier bins
             edges[i] = np.linspace(smin[i], smax[i], nbin[i] - 1)
@@ -496,13 +497,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     # Compute the bin number each sample falls into, in each dimension
     sampBin = {}
-    for i in np.arange(Ndim):
+    for i in __builtin__.range(Ndim):
         sampBin[i] = np.digitize(sample[:, i], edges[i])
 
     # Using `digitize`, values that fall on an edge are put in the right bin.
     # For the rightmost bin, we want values equal to the right
     # edge to be counted in the last bin, and not as an outlier.
-    for i in np.arange(Ndim):
+    for i in __builtin__.range(Ndim):
         # Find the rounding precision
         decimal = int(-np.log10(dedges[i].min())) + 6
         # Find which points are on the rightmost edge.
@@ -515,7 +516,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     ni = nbin.argsort()
     # `binnumbers` is which bin (in linearized `Ndim` space) each sample goes
     binnumbers = np.zeros(Dlen, int)
-    for i in np.arange(0, Ndim - 1):
+    for i in __builtin__.range(0, Ndim - 1):
         binnumbers += sampBin[ni[i]] * nbin[ni[i + 1:]].prod()
     binnumbers += sampBin[ni[-1]]
 
@@ -525,14 +526,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result.fill(np.nan)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
-        for vv in range(Vdim):
+        for vv in __builtin__.range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             result[vv, a] = flatsum[a] / flatcount[a]
     elif statistic == 'std':
         result.fill(0)
         flatcount = np.bincount(binnumbers, None)
         a = flatcount.nonzero()
-        for vv in range(Vdim):
+        for vv in __builtin__.range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             flatsum2 = np.bincount(binnumbers, values[vv] ** 2)
             result[vv, a] = np.sqrt(flatsum2[a] / flatcount[a] -
@@ -544,14 +545,14 @@ def binned_statistic_dd(sample, values, statistic='mean',
         result[:, a] = flatcount[np.newaxis, :]
     elif statistic == 'sum':
         result.fill(0)
-        for vv in range(Vdim):
+        for vv in __builtin__.range(Vdim):
             flatsum = np.bincount(binnumbers, values[vv])
             a = np.arange(len(flatsum))
             result[vv, a] = flatsum
     elif statistic == 'median':
         result.fill(np.nan)
         for i in np.unique(binnumbers):
-            for vv in range(Vdim):
+            for vv in __builtin__.range(Vdim):
                 result[vv, i] = np.median(values[vv, binnumbers == i])
     elif callable(statistic):
         with warnings.catch_warnings():
@@ -565,13 +566,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
             np.seterr(**old)
         result.fill(null)
         for i in np.unique(binnumbers):
-            for vv in range(Vdim):
+            for vv in __builtin__.range(Vdim):
                 result[vv, i] = statistic(values[vv, binnumbers == i])
 
     # Shape into a proper matrix
     result = result.reshape(np.append(Vdim, np.sort(nbin)))
 
-    for i in np.arange(nbin.size):
+    for i in __builtin__.range(nbin.size):
         j = ni.argsort()[i]
         # Accomodate the extra `Vdim` dimension-zero with `+1`
         result = result.swapaxes(i+1, j+1)
