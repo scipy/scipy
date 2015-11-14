@@ -457,13 +457,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
         sample = np.atleast_2d(sample).T
         Dlen, Ndim = sample.shape
 
-    try:
-        # `values` is an ND-array.
-        Vdim, Vlen = values.shape
-    except (AttributeError, ValueError):
-        # Sample is a sequence of 1D arrays.
-        values = np.atleast_2d(values)
-        Vdim, Vlen = values.shape
+    values = np.atleast_2d(values)
+    Vdim, Vlen = values.shape
 
     # Make sure `values` match `sample`
     if(statistic is not 'count' and Vlen != Dlen):
