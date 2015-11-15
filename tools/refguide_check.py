@@ -411,11 +411,16 @@ def check_rest(module, names, dots=True):
 ### Doctest helpers ####
 
 # the namespace to run examples in
-_namespace = {'np': np,
+DEFAULT_NAMESPACE = {'np': np}
+
+# the namespace to do checks in
+CHECK_NAMESPACE = {
+      'np': np,
       'assert_allclose': np.testing.assert_allclose,
       'assert_equal': np.testing.assert_equal,
       # recognize numpy repr's
       'array': np.array,
+      'matrix': np.matrix,
       'int64': np.int64,
       'uint64': np.uint64,
       'int8': np.int8,
@@ -470,14 +475,15 @@ class Checker(doctest.OutputChecker):
                  '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim',
                  '# reformatted'}
 
-    def __init__(self, ns=_namespace, parse_namedtuples=True,
-                 atol=1e-8, rtol=1e-2):
+    def __init__(self, parse_namedtuples=True, ns=None, atol=1e-8, rtol=1e-2):
         self.parse_namedtuples = parse_namedtuples
         self.atol, self.rtol = atol, rtol
-        self.ns = ns
+        if ns is None:
+            self.ns = dict(CHECK_NAMESPACE)
+        else:
+            self.ns = ns
 
     def check_output(self, want, got, optionflags):
-
         # cut it short if they are equal
         if want == got:
             return True
@@ -601,16 +607,18 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
     return success, output
 
 
-def check_doctests(module, verbose, ns=_namespace,
+def check_doctests(module, verbose, ns=None,
                    dots=True, doctest_warnings=False):
     """Check code in docstrings of the module's public symbols.
 
     Returns: list of [(item_name, success_flag, output), ...]
     """
+    if ns is None:
+        ns = dict(DEFAULT_NAMESPACE)
+
     # Loop over non-deprecated items
     results = []
 
-    all_success = True
     for name in get_all_dict(module)[0]:
         full_name = module.__name__ + '.' + name
 
@@ -651,7 +659,7 @@ def check_doctests(module, verbose, ns=_namespace,
     return results
 
 
-def check_doctests_testfile(fname, verbose, ns=_namespace,
+def check_doctests_testfile(fname, verbose, ns=None,
                    dots=True, doctest_warnings=False):
     """Check code in a text file.
 
@@ -687,6 +695,9 @@ def check_doctests_testfile(fname, verbose, ns=_namespace,
 
     """
     results = []
+
+    if ns is None:
+        ns = dict(DEFAULT_NAMESPACE)
 
     _, short_name = os.path.split(fname)
     if short_name in DOCTEST_SKIPLIST:
