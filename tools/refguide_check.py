@@ -820,11 +820,14 @@ def main(argv):
 
         results.append((module, mod_results))
 
+    if dots:
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+
     if not args.skip_tutorial:
         tut_path = os.path.join(os.getcwd(), 'doc', 'source', 'tutorial', '*.rst')
-        sys.stderr.write('\n Checking tutorial files at %s\n' % tut_path)
-        sys.stderr.flush()
-        for filename in glob.glob(tut_path):
+        print('\nChecking tutorial files at %s:' % tut_path)
+        for filename in sorted(glob.glob(tut_path)):
             if dots:
                 sys.stderr.write('\n')
                 sys.stderr.write(os.path.split(filename)[1] + ' ')
@@ -837,9 +840,9 @@ def main(argv):
             scratch.__name__ = filename
             results.append((scratch, tut_results))
 
-    if dots:
-        sys.stderr.write("\n")
-        sys.stderr.flush()
+        if dots:
+            sys.stderr.write("\n")
+            sys.stderr.flush()
 
     # Report results
     all_success = True
