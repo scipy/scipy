@@ -239,13 +239,14 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         [[xmin, xmax], [ymin, ymax]]. All values outside of this range will be
         considered outliers and not tallied in the histogram.
     expand_binnumbers : bool, optional
-        .. versionadded:: 0.17.0
         'False' (default): the returned `binnumber` is a shape (N,) array of
         linearized bin indices.
         'True': the returned `binnumber` is 'unraveled' into a shape (2,N)
         ndarray, where each row gives the bin numbers in the corresponding
         dimension.
         See the `binnumber` returned value, and the `Examples` section.
+
+        .. versionadded:: 0.17.0
 
     Returns
     -------
@@ -393,7 +394,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
         not given explicitely in `bins`. Defaults to the minimum and maximum
         values along each dimension.
     expand_binnumbers : bool, optional
-        .. versionadded:: 0.17.0
         'False' (default): the returned `binnumber` is a shape (N,) array of
         linearized bin indices.
         'True': the returned `binnumber` is 'unraveled' into a shape (D,N)
@@ -401,6 +401,8 @@ def binned_statistic_dd(sample, values, statistic='mean',
         dimension.
         See the `binnumber` returned value, and the `Examples` section of
         `binned_statistic_2d`.
+
+        .. versionadded:: 0.17.0
 
     Returns
     -------
