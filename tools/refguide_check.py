@@ -393,6 +393,13 @@ def check_rest(module, names, dots=True):
                                 traceback.format_exc()))
                 continue
 
+        m = re.search("([\x00-\x09\x0b-\x1f])", text)
+        if m:
+            msg = ("Docstring contains a non-printable character %r! "
+                   "Maybe forgot r\"\"\"?" % (m.group(1),))
+            results.append((full_name, False, msg))
+            continue
+
         try:
             src_file = short_path(inspect.getsourcefile(obj))
         except TypeError:
