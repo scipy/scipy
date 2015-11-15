@@ -113,6 +113,9 @@ REFGUIDE_ALL_SKIPLIST = [
 ]
 
 
+HAVE_MATPLOTLIB = False
+
+
 def short_path(path, cwd=None):
     """
     Return relative or absolute path name, whichever is shortest.
@@ -604,16 +607,6 @@ def check_doctests(module, verbose, ns=_namespace,
 
     Returns: list of [(item_name, success_flag, output), ...]
     """
-
-    # if MPL is available, use display-less backend
-    try:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        have_matplotlib = True
-    except ImportError:
-        have_matplotlib = False
-
     # Loop over non-deprecated items
     results = []
 
@@ -651,8 +644,9 @@ def check_doctests(module, verbose, ns=_namespace,
 
         results.append((full_name, success, "".join(output)))
 
-    if have_matplotlib:
-        plt.close('all')
+        if HAVE_MATPLOTLIB:
+            import matplotlib.pyplot as plt
+            plt.close('all')
 
     return results
 
@@ -692,15 +686,6 @@ def check_doctests_testfile(fname, verbose, ns=_namespace,
     5
 
     """
-    # if MPL is available, use display-less backend
-    try:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        have_matplotlib = True
-    except ImportError:
-        have_matplotlib = False
-
     results = []
 
     _, short_name = os.path.split(fname)
@@ -739,10 +724,22 @@ def check_doctests_testfile(fname, verbose, ns=_namespace,
 
     results.append((full_name, success, "".join(output)))
 
-    if have_matplotlib:
+    if HAVE_MATPLOTLIB:
+        import matplotlib.pyplot as plt
         plt.close('all')
 
     return results
+
+
+def init_matplotlib():
+    global HAVE_MATPLOTLIB
+
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        HAVE_MATPLOTLIB = True
+    except ImportError:
+        HAVE_MATPLOTLIB = False
 
 
 def main(argv):
@@ -785,6 +782,9 @@ def main(argv):
     results = []
 
     print("Running checks for %d modules:" % (len(modules),))
+
+    if args.doctests or not args.skip_tutorial:
+        init_matplotlib()
 
     for module in modules:
         if dots:
