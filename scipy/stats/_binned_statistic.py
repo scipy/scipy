@@ -71,7 +71,7 @@ def binned_statistic(x, values, statistic='mean',
         The values of the selected statistic in each bin.
     bin_edges : array of dtype float
         Return the bin edges ``(length(statistic)+1)``.
-    binnumbers: 1-D ndarray of ints
+    binnumber: 1-D ndarray of ints
         Indices of the bins (corresponding to `bin_edges`) in which each value
         of `x` belongs.  Same length as `values`.  A binnumber of `i` means the
         corresponding value is between (bin_edges[i-1], bin_edges[i]).
@@ -122,7 +122,7 @@ def binned_statistic(x, values, statistic='mean',
 
     >>> windspeed = 8 * np.random.rand(500)
     >>> boatspeed = .3 * windspeed**.5 + .2 * np.random.rand(500)
-    >>> bin_means, bin_edges, binnumbers= stats.binned_statistic(windspeed,
+    >>> bin_means, bin_edges, binnumber = stats.binned_statistic(windspeed,
     ...                 boatspeed, statistic='median', bins=[1,2,3,4,5,6,7])
     >>> plt.figure()
     >>> plt.plot(windspeed, boatspeed, 'b.', label='raw data')
@@ -130,12 +130,12 @@ def binned_statistic(x, values, statistic='mean',
     ...            label='binned statistic of data')
     >>> plt.legend()
 
-    Now we can use ``binnumbers`` to select all datapoints with a windspeed
+    Now we can use ``binnumber`` to select all datapoints with a windspeed
     below 1:
 
-    >>> low_boatspeed = boatspeed[binnumbers == 0]
+    >>> low_boatspeed = boatspeed[binnumber == 0]
 
-    As a final example, we will use ``bin_edges`` and ``binnumbers`` to make a
+    As a final example, we will use ``bin_edges`` and ``binnumber`` to make a
     plot of a distribution that shows the mean and distribution around that
     mean per bin, on top of a regular histogram and the probability
     distribution function:
@@ -144,7 +144,7 @@ def binned_statistic(x, values, statistic='mean',
     >>> x_pdf = stats.maxwell.pdf(x)
     >>> samples = stats.maxwell.rvs(size=10000)
 
-    >>> bin_means, bin_edges, binnumbers = stats.binned_statistic(x, x_pdf,
+    >>> bin_means, bin_edges, binnumber = stats.binned_statistic(x, x_pdf,
     ...         statistic='mean', bins=25)
     >>> bin_width = (bin_edges[1] - bin_edges[0])
     >>> bin_centers = bin_edges[1:] - bin_width/2
@@ -155,7 +155,7 @@ def binned_statistic(x, values, statistic='mean',
     >>> plt.plot(x, x_pdf, 'r-', label='analytical pdf')
     >>> plt.hlines(bin_means, bin_edges[:-1], bin_edges[1:], colors='g', lw=2,
     ...            label='binned statistic of data')
-    >>> plt.plot((binnumbers - 0.5) * bin_width, x_pdf, 'g.', alpha=0.5)
+    >>> plt.plot((binnumber - 0.5) * bin_width, x_pdf, 'g.', alpha=0.5)
     >>> plt.legend(fontsize=10)
     >>> plt.show()
 
@@ -240,12 +240,12 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         considered outliers and not tallied in the histogram.
     expand_binnumbers : bool, optional
         .. versionadded:: 0.17.0
-        'False' (default): the returned `binnumbers` is a shape (N,) array of
+        'False' (default): the returned `binnumber` is a shape (N,) array of
         linearized bin indices.
-        'True': the returned `binnumbers` is 'unraveled' into a shape (2,N)
+        'True': the returned `binnumber` is 'unraveled' into a shape (2,N)
         ndarray, where each row gives the bin numbers in the corresponding
         dimension.
-        See the `binnumbers` returned value, and the `Examples` section.
+        See the `binnumber` returned value, and the `Examples` section.
 
     Returns
     -------
@@ -255,7 +255,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
         The bin edges along the first dimension.
     y_edge : (ny + 1) ndarray
         The bin edges along the second dimension.
-    binnumbers : (N,) array of ints or (2,N) ndarray of ints
+    binnumber : (N,) array of ints or (2,N) ndarray of ints
         This assigns to each element of `sample` an integer that represents the
         bin in which this observation falls.  The representation depends on the
         `expand_binnumbers` argument.  See `Notes` for details.
@@ -273,13 +273,13 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     but excluding 2) and the second ``[2, 3)``.  The last bin, however, is
     ``[3, 4]``, which *includes* 4.
 
-    `binnumbers`:
+    `binnumber`:
     This returned argument assigns to each element of `sample` an integer that
     represents the bin in which it belongs.  The representation depends on the
     `expand_binnumbers` argument. If 'False' (default): The returned
-    `binnumbers` is a shape (N,) array of linearized indices mapping each
+    `binnumber` is a shape (N,) array of linearized indices mapping each
     element of `sample` to its corresponding bin (using row-major ordering).
-    If 'True': The returned `binnumbers` is a shape (2,N) ndarray where
+    If 'True': The returned `binnumber` is a shape (2,N) ndarray where
     each row indicates bin placements for each dimension respectively.  In each
     dimension, a binnumber of `i` means the corresponding value is between
     (D_edge[i-1], D_edge[i]), where 'D' is either 'x' or 'y'.
@@ -301,10 +301,10 @@ def binned_statistic_2d(x, y, values, statistic='mean',
     array([[ 2.,  1.],
            [ 1.,  0.]])
 
-    The bin in which each sample is placed is given by the `binnumbers`
+    The bin in which each sample is placed is given by the `binnumber`
     returned parameter.  By default, these are the linearized bin indices:
 
-    >>> ret.binnumbers
+    >>> ret.binnumber
     array([5, 6, 5, 9])
 
     The bin indices can also be expanded into separate entries for each
@@ -312,7 +312,7 @@ def binned_statistic_2d(x, y, values, statistic='mean',
 
     >>> ret = stats.binned_statistic_2d(x, y, None, 'count', bins=[binx,biny],
     ...                                 expand_binnumbers=True)
-    >>> ret.binnumbers
+    >>> ret.binnumber
     array([[1, 1, 1, 2],
            [1, 2, 1, 1]])
 
@@ -394,12 +394,12 @@ def binned_statistic_dd(sample, values, statistic='mean',
         values along each dimension.
     expand_binnumbers : bool, optional
         .. versionadded:: 0.17.0
-        'False' (default): the returned `binnumbers` is a shape (N,) array of
+        'False' (default): the returned `binnumber` is a shape (N,) array of
         linearized bin indices.
-        'True': the returned `binnumbers` is 'unraveled' into a shape (D,N)
+        'True': the returned `binnumber` is 'unraveled' into a shape (D,N)
         ndarray, where each row gives the bin numbers in the corresponding
         dimension.
-        See the `binnumbers` returned value, and the `Examples` section of
+        See the `binnumber` returned value, and the `Examples` section of
         `binned_statistic_2d`.
 
     Returns
@@ -409,7 +409,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     bin_edges : list of ndarrays
         A list of D arrays describing the (nxi + 1) bin edges for each
         dimension.
-    binnumbers : (N,) array of ints or (D,N) ndarray of ints
+    binnumber : (N,) array of ints or (D,N) ndarray of ints
         This assigns to each element of `sample` an integer that represents the
         bin in which this observation falls.  The representation depends on the
         `expand_binnumbers` argument.  See `Notes` for details.
@@ -427,13 +427,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
     ``[1, 2)`` (including 1, but excluding 2) and the second ``[2, 3)``.  The
     last bin, however, is ``[3, 4]``, which *includes* 4.
 
-    `binnumbers`:
+    `binnumber`:
     This returned argument assigns to each element of `sample` an integer that
     represents the bin in which it belongs.  The representation depends on the
     `expand_binnumbers` argument. If 'False' (default): The returned
-    `binnumbers` is a shape (N,) array of linearized indices mapping each
+    `binnumber` is a shape (N,) array of linearized indices mapping each
     element of `sample` to its corresponding bin (using row-major ordering).
-    If 'True': The returned `binnumbers` is a shape (D,N) ndarray where
+    If 'True': The returned `binnumber` is a shape (D,N) ndarray where
     each row indicates bin placements for each dimension respectively.  In each
     dimension, a binnumber of `i` means the corresponding value is between
     (bin_edges[D][i-1], bin_edges[D][i]), for each dimension 'D'.
