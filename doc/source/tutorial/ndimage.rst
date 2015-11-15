@@ -513,7 +513,7 @@ also be written in C and passed using a :ctype:`PyCObject` (see
     follows::
 
         >>> def fnc(buffer):
-        ...     return (buffer * array([1, 3])).sum()
+        ...     return (buffer * np.array([1, 3])).sum()
         ...
         >>> from scipy.ndimage import generic_filter
         >>> generic_filter(a, fnc, footprint = [[1, 0], [0, 1]])
@@ -577,7 +577,7 @@ additionally prints the current coordinates:
     ...         self.coordinates = [0] * len(shape)
     ...
     ...     def filter(self, buffer):
-    ...         result = (buffer * array([1, 3])).sum()
+    ...         result = (buffer * np.array([1, 3])).sum()
     ...         print self.coordinates
     ...         # calculate the next coordinates:
     ...         axes = range(len(self.shape))
@@ -1202,10 +1202,10 @@ Segmentation is the process of separating objects of interest from
 the background. The most simple approach is probably intensity
 thresholding, which is easily done with :mod:`numpy` functions::
 
-    >>> a = array([[1,2,2,1,1,0],
-    ...            [0,2,3,1,2,0],
-    ...            [1,1,1,3,3,2],
-    ...            [1,1,1,1,2,1]])
+    >>> a = np.array([[1,2,2,1,1,0],
+    ...               [0,2,3,1,2,0],
+    ...               [1,1,1,3,3,2],
+    ...               [1,1,1,1,2,1]])
     >>> np.where(a > 1, 1, 0)
     array([[0, 1, 1, 0, 0, 0],
            [0, 1, 1, 0, 1, 0],
@@ -1224,7 +1224,7 @@ an array where each object is assigned a unique number:
     is defined by a structuring element. For instance, in two
     dimensions using a four-connected structuring element gives::
 
-        >>> a = array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
+        >>> a = np.array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
         >>> s = [[0, 1, 0], [1,1,1], [0,1,0]]
         >>> from scipy.ndimage import label
         >>> label(a, s)
@@ -1238,7 +1238,7 @@ an array where each object is assigned a unique number:
     with both objects. However, an 8-connected structuring element
     results in only a single object::
 
-        >>> a = array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
+        >>> a = np.array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
         >>> s = [[1,1,1], [1,1,1], [1,1,1]]
         >>> label(a, s)[0]
         array([[0, 1, 1, 0, 0, 0],
@@ -1287,20 +1287,20 @@ containing initial markers for the objects:
     applied, and an array of markers that designate the objects by a
     unique label, where any non-zero value is a marker. For instance::
 
-        >>> input = array([[0, 0, 0, 0, 0, 0, 0],
-        ...                [0, 1, 1, 1, 1, 1, 0],
-        ...                [0, 1, 0, 0, 0, 1, 0],
-        ...                [0, 1, 0, 0, 0, 1, 0],
-        ...                [0, 1, 0, 0, 0, 1, 0],
-        ...                [0, 1, 1, 1, 1, 1, 0],
-        ...                [0, 0, 0, 0, 0, 0, 0]], np.uint8)
-        >>> markers = array([[1, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 2, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0]], np.int8)
+        >>> input = np.array([[0, 0, 0, 0, 0, 0, 0],
+        ...                   [0, 1, 1, 1, 1, 1, 0],
+        ...                   [0, 1, 0, 0, 0, 1, 0],
+        ...                   [0, 1, 0, 0, 0, 1, 0],
+        ...                   [0, 1, 0, 0, 0, 1, 0],
+        ...                   [0, 1, 1, 1, 1, 1, 0],
+        ...                   [0, 0, 0, 0, 0, 0, 0]], np.uint8)
+        >>> markers = np.array([[1, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 2, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0]], np.int8)
         >>> from scipy.ndimage import watershed_ift
         >>> watershed_ift(input, markers)
         array([[1, 1, 1, 1, 1, 1, 1],
@@ -1316,13 +1316,13 @@ containing initial markers for the objects:
     is arbitrary: moving the marker for the background to the lower
     right corner of the array yields a different result::
 
-        >>> markers = array([[0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 2, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 1]], np.int8)
+        >>> markers = np.array([[0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 2, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 1]], np.int8)
         >>> watershed_ift(input, markers)
         array([[1, 1, 1, 1, 1, 1, 1],
                [1, 1, 1, 1, 1, 1, 1],
@@ -1340,13 +1340,13 @@ containing initial markers for the objects:
     normal markers. For instance, replacing the first marker by a
     negative marker gives a result similar to the first example::
 
-        >>> markers = array([[0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 2, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, -1]], np.int8)
+        >>> markers = np.array([[0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 2, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, -1]], np.int8)
         >>> watershed_ift(input, markers)
         array([[-1, -1, -1, -1, -1, -1, -1],
                [-1, -1,  2,  2,  2, -1, -1],
@@ -1392,7 +1392,7 @@ smallest sub-array that fully contains the object:
     returns a list of slices that correspond to the smallest regions in
     the array that contains the object. For instance::
 
-        >>> a = array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
+        >>> a = np.array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
         >>> l, n = label(a)
         >>> from scipy.ndimage import find_objects
         >>> f = find_objects(l)
@@ -1421,7 +1421,7 @@ also be used to perform measurements on the individual objects. Say
 we want to find the sum of the intensities of an object in image::
 
     >>> image = np.arange(4 * 6).reshape(4, 6)
-    >>> mask = array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
+    >>> mask = np.array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
     >>> labels = label(mask)[0]
     >>> slices = find_objects(labels)
 

@@ -40,7 +40,7 @@ This could be computed using :obj:`quad`:
     >>> I
     1.117817938088701
 
-    >>> print abs(result[0]-I)
+    >>> print(abs(result[0]-I))
     1.03761443881e-11
 
 The first argument to quad is a "callable" Python object (*i.e.* a
@@ -121,15 +121,15 @@ integrand from the use of :obj:`quad` ). The integral in this case is
 
     I_{n}=\int_{0}^{\infty}\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.
 
->>> result = quad(lambda x: expint(3, x), 0, inf)
->>> print result
+>>> result = quad(lambda x: expint(3, x), 0, np.inf)
+>>> print(result)
 (0.33333333324560266, 2.8548934485373678e-09)
 
 >>> I3 = 1.0/3.0
->>> print I3
+>>> print(I3)
 0.333333333333
 
->>> print I3 - result[0]
+>>> print(I3 - result[0])
 8.77306560731e-11
 
 This last example shows that multiple integration can be handled using
@@ -149,13 +149,13 @@ An example of using double integration to compute several values of
 
     >>> from scipy.integrate import quad, dblquad
     >>> def I(n):
-    ...     return dblquad(lambda t, x: np.exp(-x*t)/t**n, 0, Inf, lambda x: 1, lambda x: Inf)
+    ...     return dblquad(lambda t, x: np.exp(-x*t)/t**n, 0, np.inf, lambda x: 1, lambda x: np.inf)
 
-    >>> print I(4)
+    >>> print(I(4))
     (0.25000000000435768, 1.0518245707751597e-09)
-    >>> print I(3)
+    >>> print(I(3))
     (0.33333333325010883, 2.8604069919261191e-09)
-    >>> print I(2)
+    >>> print(I(2))
     (0.49999999999857514, 1.8855523253868967e-09)
 
 
