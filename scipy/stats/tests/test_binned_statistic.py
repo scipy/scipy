@@ -256,17 +256,8 @@ class TestBinnedStatistic(object):
         bcx3[x == x.max()] -= 1
         bcy3[y == y.max()] -= 1
 
-        bcx4 = np.digitize(x, edgesx, right=True)
-        bcy4 = np.digitize(y, edgesy, right=True)
-
-        # `numpy.digitize` is non-inclusive on left-edge, compensate
-        bcx4[x == x.min()] += 1
-        bcy4[y == y.min()] += 1
-
         assert_allclose(bcx, bc2[0])
         assert_allclose(bcy, bc2[1])
-        assert_allclose(bcx4, bc2[0])
-        assert_allclose(bcy4, bc2[1])
         assert_allclose(bcx3, bc2[0])
         assert_allclose(bcy3, bc2[1])
 
