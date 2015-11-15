@@ -21,9 +21,24 @@ def test_ticket_701():
 
 
 def test_gh_5430():
+    # At least one of these raises an error unless gh-5430 is
+    # fixed. In py2k an int is implemented using a C long, so
+    # which one fails depends on your system. In py3k there is only
+    # one arbitrary precision integer type, so both should fail.
     x = np.zeros(1)
+    sigma = np.int32(1)
+    y = sndi.gaussian_filter(x, sigma)
+    assert_allclose(x, y)
     sigma = np.int64(1)
-    # The following raises an error unless gh-5430 is fixed
+    y = sndi.gaussian_filter(x, sigma)
+    assert_allclose(x, y)
+    sigma = 1
+    # This worked before; make sure it still works
+    y = sndi.gaussian_filter(x, sigma)
+    assert_allclose(x, y)
+    # This worked before; make sure it still works
+    x = np.zeros((2, 2))
+    sigma = [1, 1]
     y = sndi.gaussian_filter(x, sigma)
     assert_allclose(x, y)
 

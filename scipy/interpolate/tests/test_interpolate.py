@@ -1342,10 +1342,21 @@ class TestBPolyFromDerivatives(TestCase):
         assert_equal(pp.c.shape, (2*k, m, 6, 7, 8))
 
     def test_gh_5430(self):
-        orders = np.int64(1)
-        # The following raises an error unless gh-5430 is fixed
+        # At least one of these raises an error unless gh-5430 is
+        # fixed. In py2k an int is implemented using a C long, so
+        # which one fails depends on your system. In py3k there is only
+        # one arbitrary precision integer type, so both should fail.
+        orders = np.int32(1)
         p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
         assert_almost_equal(p(0), 0)
+        orders = np.int64(1)
+        p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
+        assert_almost_equal(p(0), 0)
+        orders = 1
+        # This worked before; make sure it still works
+        p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
+        assert_almost_equal(p(0), 0)
+        orders = 1
 
 
 class TestPpform(TestCase):
