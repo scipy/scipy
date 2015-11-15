@@ -215,7 +215,7 @@ def mvsdist(data):
 
 
 def kstat(data, n=2):
-    """
+    r"""
     Return the nth k-statistic (1<=n<=4 so far).
 
     The nth k-statistic k_n is the unique symmetric unbiased estimator of the
@@ -310,7 +310,7 @@ def kstat(data, n=2):
 
 
 def kstatvar(data, n=2):
-    """
+    r"""
     Returns an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.

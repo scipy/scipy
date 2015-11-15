@@ -575,7 +575,7 @@ class lti(object):
 
 
 class TransferFunction(lti):
-    """Linear Time Invariant system class in transfer function form.
+    r"""Linear Time Invariant system class in transfer function form.
 
     Represents the system as the transfer function
     :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j`, where :math:`b` are
