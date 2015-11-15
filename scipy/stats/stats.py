@@ -1029,7 +1029,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 def moment(a, moment=1, axis=0, nan_policy='propagate'):
-    """
+    r"""
     Calculates the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of points.
@@ -3327,7 +3327,7 @@ PointbiserialrResult = namedtuple('PointbiserialrResult',
 
 
 def pointbiserialr(x, y):
-    """
+    r"""
     Calculates a point biserial correlation coefficient and its p-value.
 
     The point biserial correlation is used to measure the relationship
