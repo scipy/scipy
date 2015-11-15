@@ -639,7 +639,7 @@ def _krandinit(data, k):
         mu = np.mean(data, axis=0)
         _, s, vh = np.linalg.svd(data - mu, full_matrices=False)
         x = np.random.randn(k, s.size)
-        sVh = s[:,None] * vh
+        sVh = s[:, None] * vh / np.sqrt(data.shape[0] - 1)
         x = np.dot(x, sVh) + mu
         return x
 
