@@ -25,22 +25,28 @@ def test_gh_5430():
     # fixed. In py2k an int is implemented using a C long, so
     # which one fails depends on your system. In py3k there is only
     # one arbitrary precision integer type, so both should fail.
-    x = np.zeros(1)
     sigma = np.int32(1)
-    y = sndi.gaussian_filter(x, sigma)
-    assert_allclose(x, y)
+    out = sndi._ni_support._normalize_sequence(sigma, 1)
+    assert_equal(out, [sigma])
     sigma = np.int64(1)
-    y = sndi.gaussian_filter(x, sigma)
-    assert_allclose(x, y)
+    out = sndi._ni_support._normalize_sequence(sigma, 1)
+    assert_equal(out, [sigma])
+    # This worked before; make sure it still works
     sigma = 1
+    out = sndi._ni_support._normalize_sequence(sigma, 1)
+    assert_equal(out, [sigma])
     # This worked before; make sure it still works
-    y = sndi.gaussian_filter(x, sigma)
-    assert_allclose(x, y)
-    # This worked before; make sure it still works
-    x = np.zeros((2, 2))
     sigma = [1, 1]
-    y = sndi.gaussian_filter(x, sigma)
-    assert_allclose(x, y)
+    out = sndi._ni_support._normalize_sequence(sigma, 2)
+    assert_equal(out, sigma)
+    # Also include the OPs original example to make sure we fixed the issue
+    x = np.random.normal(size=(256, 256))
+    perlin = np.zeros_like(x)
+    for i in 2**np.arange(6):
+        perlin += sndi.filters.gaussian_filter(x, i, mode="wrap") * i**2
+    # This also fixes gh-4106, show that the OPs example now runs.
+    x = np.int64(21)
+    sndi._ni_support._normalize_sequence(x, 0)
 
 
 def test_orders_gauss():
