@@ -607,8 +607,9 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
     origin : array_like, optional
-        The `origin` parameter controls the placement of the filter.
-        Default is 0.
+        The `origin` parameter controls the placement of the filter, 
+        relative to the centre of the current element of the input.  
+        Default of 0 is equivalent to (0,)*input.ndim.
 
     Returns
     -------
@@ -621,7 +622,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
 
     Notes
     -----
-    Each value in result is :math:`C_i = \\sum_j{I_{i+j-k} W_j}`, where
+    Each value in result is :math:`C_i = \\sum_j{I_{i+k-j} W_j}`, where
     W is the `weights` kernel,
     j is the n-D spatial index over :math:`W`,
     I is the `input` and k is the coordinate of the center of
