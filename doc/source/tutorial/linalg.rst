@@ -284,7 +284,7 @@ Examples:
     6
     >>> linalg.norm(A,-1)
     4
-    >>> linalg.norm(A,inf) # L inf norm (max row sum)
+    >>> linalg.norm(A,np.inf) # L inf norm (max row sum)
     7
 
 
@@ -735,11 +735,11 @@ The following example illustrates the schur decomposition:
            [ 0.00000000 +0.00000000e+00j,  0.00000000 +0.00000000e+00j,
              0.54993766 -8.99258408e-01j]])
     >>> abs(T1 - T2) # different
-    array([[  1.06604538e-14,   2.06969555e+00,   1.69375747e+00],
+    array([[  1.06604538e-14,   2.06969555e+00,   1.69375747e+00],  # may vary
            [  0.00000000e+00,   1.33688556e-15,   4.74146496e-01],
            [  0.00000000e+00,   0.00000000e+00,   1.13220977e-15]])
     >>> abs(Z1 - Z2) # different
-    array([[ 0.06833781,  0.88091091,  0.79568503],
+    array([[ 0.06833781,  0.88091091,  0.79568503],    # may vary
            [ 0.11857169,  0.44491892,  0.99594171],
            [ 0.12624999,  0.60264117,  0.77257633]])
     >>> T, Z, T1, Z1, T2, Z2 = map(np.mat,(T,Z,T1,Z1,T2,Z2))

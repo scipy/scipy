@@ -2920,7 +2920,7 @@ def f_oneway(*args):
     ...            0.0689]
     >>> tvarminne = [0.0703, 0.1026, 0.0956, 0.0973, 0.1039, 0.1045]
     >>> stats.f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
-    F_onewayResult(statistic=7.1210194716424473, pvalue=0.00028122423145345439)
+    (7.1210194716424473, 0.00028122423145345439)
 
     """
     args = [np.asarray(arg, dtype=float) for arg in args]

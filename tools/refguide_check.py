@@ -113,6 +113,9 @@ REFGUIDE_ALL_SKIPLIST = [
 ]
 
 
+HAVE_MATPLOTLIB = False
+
+
 def short_path(path, cwd=None):
     """
     Return relative or absolute path name, whichever is shortest.
@@ -408,11 +411,16 @@ def check_rest(module, names, dots=True):
 ### Doctest helpers ####
 
 # the namespace to run examples in
-_namespace = {'np': np,
+DEFAULT_NAMESPACE = {'np': np}
+
+# the namespace to do checks in
+CHECK_NAMESPACE = {
+      'np': np,
       'assert_allclose': np.testing.assert_allclose,
       'assert_equal': np.testing.assert_equal,
       # recognize numpy repr's
       'array': np.array,
+      'matrix': np.matrix,
       'int64': np.int64,
       'uint64': np.uint64,
       'int8': np.int8,
@@ -467,14 +475,15 @@ class Checker(doctest.OutputChecker):
                  '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim',
                  '# reformatted'}
 
-    def __init__(self, ns=_namespace, parse_namedtuples=True,
-                 atol=1e-8, rtol=1e-2):
+    def __init__(self, parse_namedtuples=True, ns=None, atol=1e-8, rtol=1e-2):
         self.parse_namedtuples = parse_namedtuples
         self.atol, self.rtol = atol, rtol
-        self.ns = ns
+        if ns is None:
+            self.ns = dict(CHECK_NAMESPACE)
+        else:
+            self.ns = ns
 
     def check_output(self, want, got, optionflags):
-
         # cut it short if they are equal
         if want == got:
             return True
@@ -598,26 +607,18 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
     return success, output
 
 
-def check_doctests(module, verbose, ns=_namespace,
+def check_doctests(module, verbose, ns=None,
                    dots=True, doctest_warnings=False):
     """Check code in docstrings of the module's public symbols.
 
     Returns: list of [(item_name, success_flag, output), ...]
     """
-
-    # if MPL is available, use display-less backend
-    try:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        have_matplotlib = True
-    except ImportError:
-        have_matplotlib = False
+    if ns is None:
+        ns = dict(DEFAULT_NAMESPACE)
 
     # Loop over non-deprecated items
     results = []
 
-    all_success = True
     for name in get_all_dict(module)[0]:
         full_name = module.__name__ + '.' + name
 
@@ -651,13 +652,14 @@ def check_doctests(module, verbose, ns=_namespace,
 
         results.append((full_name, success, "".join(output)))
 
-    if have_matplotlib:
-        plt.close('all')
+        if HAVE_MATPLOTLIB:
+            import matplotlib.pyplot as plt
+            plt.close('all')
 
     return results
 
 
-def check_doctests_testfile(fname, verbose, ns=_namespace,
+def check_doctests_testfile(fname, verbose, ns=None,
                    dots=True, doctest_warnings=False):
     """Check code in a text file.
 
@@ -692,16 +694,10 @@ def check_doctests_testfile(fname, verbose, ns=_namespace,
     5
 
     """
-    # if MPL is available, use display-less backend
-    try:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        have_matplotlib = True
-    except ImportError:
-        have_matplotlib = False
-
     results = []
+
+    if ns is None:
+        ns = dict(DEFAULT_NAMESPACE)
 
     _, short_name = os.path.split(fname)
     if short_name in DOCTEST_SKIPLIST:
@@ -739,10 +735,22 @@ def check_doctests_testfile(fname, verbose, ns=_namespace,
 
     results.append((full_name, success, "".join(output)))
 
-    if have_matplotlib:
+    if HAVE_MATPLOTLIB:
+        import matplotlib.pyplot as plt
         plt.close('all')
 
     return results
+
+
+def init_matplotlib():
+    global HAVE_MATPLOTLIB
+
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        HAVE_MATPLOTLIB = True
+    except ImportError:
+        HAVE_MATPLOTLIB = False
 
 
 def main(argv):
@@ -786,6 +794,9 @@ def main(argv):
 
     print("Running checks for %d modules:" % (len(modules),))
 
+    if args.doctests or not args.skip_tutorial:
+        init_matplotlib()
+
     for module in modules:
         if dots:
             if module is not modules[0]:
@@ -809,11 +820,14 @@ def main(argv):
 
         results.append((module, mod_results))
 
+    if dots:
+        sys.stderr.write("\n")
+        sys.stderr.flush()
+
     if not args.skip_tutorial:
         tut_path = os.path.join(os.getcwd(), 'doc', 'source', 'tutorial', '*.rst')
-        sys.stderr.write('\n Checking tutorial files at %s\n' % tut_path)
-        sys.stderr.flush()
-        for filename in glob.glob(tut_path):
+        print('\nChecking tutorial files at %s:' % tut_path)
+        for filename in sorted(glob.glob(tut_path)):
             if dots:
                 sys.stderr.write('\n')
                 sys.stderr.write(os.path.split(filename)[1] + ' ')
@@ -826,9 +840,9 @@ def main(argv):
             scratch.__name__ = filename
             results.append((scratch, tut_results))
 
-    if dots:
-        sys.stderr.write("\n")
-        sys.stderr.flush()
+        if dots:
+            sys.stderr.write("\n")
+            sys.stderr.flush()
 
     # Report results
     all_success = True
