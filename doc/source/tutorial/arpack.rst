@@ -113,9 +113,9 @@ of ``X`` and compare them to the known results:
     >>> print evals_large
     [ 29.1446102   30.05821805  31.19467646]
     >>> print np.dot(evecs_large.T, evecs_all[:,-3:])
-    [[-1.  0.  0.]
-     [ 0.  1.  0.]
-     [-0.  0. -1.]]
+    array([[-1.  0.  0.],       # may vary (signs)
+           [ 0.  1.  0.],
+           [-0.  0. -1.]])
 
 The results are as expected.  ARPACK recovers the desired eigenvalues, and they
 match the previously known results.  Furthermore, the eigenvectors are
@@ -123,6 +123,8 @@ orthogonal, as we'd expect.  Now let's attempt to solve for the eigenvalues
 with smallest magnitude:
 
    >>> evals_small, evecs_small = eigsh(X, 3, which='SM')
+   Traceback (most recent call last):
+   ...
    scipy.sparse.linalg.eigen.arpack.arpack.ArpackNoConvergence:
    ARPACK error -1: No convergence (1001 iterations, 0/3 eigenvectors converged)
 
@@ -132,27 +134,27 @@ addressed.  We could increase the tolerance (``tol``) to lead to faster
 convergence:
 
     >>> evals_small, evecs_small = eigsh(X, 3, which='SM', tol=1E-2)
-    >>> print evals_all[:3]
-    [ 0.0003783   0.00122714  0.00715878]
-    >>> print evals_small
-    [ 0.00037831  0.00122714  0.00715881]
-    >>> print np.dot(evecs_small.T, evecs_all[:,:3])
-    [[ 0.99999999  0.00000024 -0.00000049]
-     [-0.00000023  0.99999999  0.00000056]
-     [ 0.00000031 -0.00000037  0.99999852]]
+    >>> evals_all[:3]
+    array([0.0003783, 0.00122714, 0.00715878])
+    >>> evals_small
+    array([0.00037831, 0.00122714, 0.00715881])
+    >>> np.dot(evecs_small.T, evecs_all[:,:3])
+    array([[ 0.99999999  0.00000024 -0.00000049],    # may vary (signs)
+           [-0.00000023  0.99999999  0.00000056],
+           [ 0.00000031 -0.00000037  0.99999852]])
 
 This works, but we lose the precision in the results.  Another option is
 to increase the maximum number of iterations (``maxiter``) from 1000 to 5000:
 
     >>> evals_small, evecs_small = eigsh(X, 3, which='SM', maxiter=5000)
-    >>> print evals_all[:3]
-    [ 0.0003783   0.00122714  0.00715878]
-    >>> print evals_small
-    [ 0.0003783   0.00122714  0.00715878]
-    >>> print np.dot(evecs_small.T, evecs_all[:,:3])
-    [[ 1.  0.  0.]
-     [-0.  1.  0.]
-     [ 0.  0. -1.]]
+    >>> evals_all[:3]
+    array([0.0003783, 0.00122714, 0.00715878])
+    >>> evals_small
+    array([0.0003783, 0.00122714, 0.00715878])
+    >>> np.dot(evecs_small.T, evecs_all[:,:3])
+    array([[ 1.  0.  0.],           # may vary (signs)
+           [-0.  1.  0.],
+           [ 0.  0. -1.]])
 
 We get the results we'd hoped for, but the computation time is much longer.
 Fortunately, ``ARPACK`` contains a mode that allows quick determination of
@@ -164,14 +166,14 @@ then satisfy :math:`\nu = 1/(\sigma - \lambda) = 1/\lambda`, so our
 small eigenvalues :math:`\lambda` become large eigenvalues :math:`\nu`.
 
     >>> evals_small, evecs_small = eigsh(X, 3, sigma=0, which='LM')
-    >>> print evals_all[:3]
-    [ 0.0003783   0.00122714  0.00715878]
-    >>> print evals_small
-    [ 0.0003783   0.00122714  0.00715878]
-    >>> print np.dot(evecs_small.T, evecs_all[:,:3])
-    [[ 1.  0.  0.]
-     [ 0. -1. -0.]
-     [-0. -0.  1.]]
+    >>> evals_all[:3]
+    array([0.0003783, 0.00122714, 0.00715878])
+    >>> evals_small
+    array([0.0003783, 0.00122714, 0.00715878])
+    >>> np.dot(evecs_small.T, evecs_all[:,:3])
+    array([[ 1.  0.  0.],    # may vary (signs)
+           [ 0. -1. -0.],
+           [-0. -0.  1.]])
 
 We get the results we were hoping for, with much less computational time.
 Note that the transformation from :math:`\nu \to \lambda` takes place
@@ -185,14 +187,14 @@ the rest:
 
     >>> evals_mid, evecs_mid = eigsh(X, 3, sigma=1, which='LM')
     >>> i_sort = np.argsort(abs(1. / (1 - evals_all)))[-3:]
-    >>> print evals_all[i_sort]
-    [ 1.16577199  0.85081388  1.06642272]
-    >>> print evals_mid
-    [ 0.85081388  1.06642272  1.16577199]
+    >>> evals_all[i_sort]
+    array([1.16577199, 0.85081388, 1.06642272])
+    >>> evals_mid
+    array([0.85081388, 1.06642272, 1.16577199])
     >>> print np.dot(evecs_mid.T, evecs_all[:,i_sort])
-    [[-0.  1.  0.]
-     [-0. -0.  1.]
-     [ 1.  0.  0.]]
+    array([[-0.  1.  0.],     # may vary (signs)
+           [-0. -0.  1.],
+           [ 1.  0.  0.]]
 
 The eigenvalues come out in a different order, but they're all there.
 Note that the shift-invert mode requires the internal solution of a matrix
