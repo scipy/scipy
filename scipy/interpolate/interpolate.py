@@ -1429,7 +1429,7 @@ class BPoly(_PPolyBase):
         if orders is None:
             orders = [None] * m
         else:
-            if isinstance(orders, integer_types):
+            if isinstance(orders, (integer_types, np.integer)):
                 orders = [orders] * m
             k = max(k, max(orders))
 
