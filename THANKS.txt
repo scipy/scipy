@@ -150,6 +150,7 @@ J.J. Green for interpolation bug fixes.
 François Magimel for documentation improvements.
 Josh Levy-Kramer for the log survival function of the hypergeometric distribution
 Will Monroe for bug fixes.
+Bernardo Sulzbach for bug fixes.
 
 
 Institutions
