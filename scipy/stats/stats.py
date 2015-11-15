@@ -3680,7 +3680,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     v = np.var(a, axis, ddof=1)
     denom = np.sqrt(v / float(n))
 
-    t = np.divide(d, denom)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
     return Ttest_1sampResult(t, prob)
@@ -3698,7 +3699,8 @@ def _ttest_finish(df, t):
 def _ttest_ind_from_stats(mean1, mean2, denom, df):
 
     d = mean1 - mean2
-    t = np.divide(d, denom)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
     return (t, prob)
@@ -3707,7 +3709,8 @@ def _ttest_ind_from_stats(mean1, mean2, denom, df):
 def _unequal_var_ttest_denom(v1, n1, v2, n2):
     vn1 = v1 / n1
     vn2 = v2 / n2
-    df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+    with np.errstate(divide='ignore', invalid='ignore'):
+        df = (vn1 + vn2)**2 / (vn1**2 / (n1 - 1) + vn2**2 / (n2 - 1))
 
     # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
     # Hence it doesn't matter what df is as long as it's not NaN.
@@ -3990,7 +3993,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     dm = np.mean(d, axis)
     denom = np.sqrt(v / float(n))
 
-    t = np.divide(dm, denom)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t)
 
     return Ttest_relResult(t, prob)
