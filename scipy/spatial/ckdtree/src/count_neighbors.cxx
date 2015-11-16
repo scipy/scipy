@@ -85,7 +85,7 @@ struct Unweighted {
 template <typename MinMaxDist, typename WeightType, typename ResultType> static void
 traverse(const ckdtree *self, const ckdtree *other,
          const traverse_weights *w,       
-         npy_intp n_queries, npy_float64 *r, ResultType *results, npy_intp *idx,
+         npy_intp start, npy_intp end, npy_float64 *r, ResultType *results,
          const ckdtreenode *node1, const ckdtreenode *node2,
          RectRectDistanceTracker<MinMaxDist> *tracker)
 {
@@ -93,33 +93,30 @@ traverse(const ckdtree *self, const ckdtree *other,
     const ckdtreenode *lnode1;
     const ckdtreenode *lnode2;
     npy_float64 d;
-    npy_intp *old_idx;
-    npy_intp old_n_queries, l, i, j;
+    npy_intp l, i, j;
     
     /* 
      * Speed through pairs of nodes all of whose children are close
      * and see if any work remains to be done
      */
     
-    old_idx = idx;
-    
-    std::vector<npy_intp> inner_idx(n_queries);
-    idx = &inner_idx[0];
-
-    old_n_queries = n_queries;
-    n_queries = 0;
-    
-    for (i=0; i<old_n_queries; ++i) {
-        if (tracker->max_distance < r[old_idx[i]]) {
-            results[old_idx[i]] += WeightType::get_node_weight(w, node1, node2);
-        }
-        else if (tracker->min_distance <= r[old_idx[i]]) {
-            idx[n_queries] = old_idx[i];
-            ++n_queries;
+    for (i=end - 1; i >= start; --i) {
+        if (tracker->max_distance <= r[i]) {
+            results[i] += WeightType::get_node_weight(w, node1, node2);
+        } else {
+            break;
         }
     }
+    end = i + 1;
+
+    for (i=start; i<end; ++i) {
+        if(tracker->min_distance <= r[i]) {
+            break;
+        }
+    }
+    start = i;
     
-    if (n_queries > 0) {
+    if (end - start > 0) {
         /* OK, need to probe a bit deeper */
         if (node1->split_dim == -1) {  /* 1 is leaf node */
             lnode1 = node1;
@@ -167,20 +164,20 @@ traverse(const ckdtree *self, const ckdtree *other,
                          * r's than to generate a distance array, sort it, then
                          * search for all r's via binary search
                          */
-                        for (l=0; l<n_queries; ++l) {
-                            if (d <= r[idx[l]]) results[idx[l]] += WeightType::get_weight(w, sindices[i], sindices[j]);
+                        for (l=start; l<end; ++l) {
+                            if (d <= r[l]) results[l] += WeightType::get_weight(w, sindices[i], sindices[j]);
                         }
                     }
                 }
             }
             else {  /* 1 is a leaf node, 2 is inner node */
                 tracker->push_less_of(2, node2);
-                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, n_queries, r, results, idx,
+                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, start, end, r, results,
                     node1, node2->less, tracker);
                 tracker->pop();
 
                 tracker->push_greater_of(2, node2);
-                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, n_queries, r, results, idx,
+                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, start, end, r, results,
                     node1, node2->greater, tracker);
                 tracker->pop();
             }
@@ -189,36 +186,36 @@ traverse(const ckdtree *self, const ckdtree *other,
             if (node2->split_dim == -1) {
                 /* 1 is an inner node, 2 is a leaf node */
                 tracker->push_less_of(1, node1);
-                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, n_queries, r, results, idx,
+                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, start, end, r, results,
                     node1->less, node2, tracker);
                 tracker->pop();
                 
                 tracker->push_greater_of(1, node1);
-                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, n_queries, r, results, idx,
+                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, start, end, r, results, 
                     node1->greater, node2, tracker);
                 tracker->pop();
             }
             else { /* 1 and 2 are inner nodes */
                 tracker->push_less_of(1, node1);
                 tracker->push_less_of(2, node2);
-                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, n_queries, r, results, idx,
+                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, start, end, r, results, 
                     node1->less, node2->less, tracker);
                 tracker->pop();
                     
                 tracker->push_greater_of(2, node2);
-                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, n_queries, r, results, idx,
+                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, start, end, r, results,
                     node1->less, node2->greater, tracker);
                 tracker->pop();
                 tracker->pop();
                     
                 tracker->push_greater_of(1, node1);
                 tracker->push_less_of(2, node2);
-                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, n_queries, r, results, idx,
+                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, start, end, r, results, 
                     node1->greater, node2->less, tracker);
                 tracker->pop();
                     
                 tracker->push_greater_of(2, node2);
-                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, n_queries, r, results, idx,
+                traverse<MinMaxDist, WeightType, ResultType>(self, other, w, start, end, r, results,
                     node1->greater, node2->greater, tracker);
                 tracker->pop();
                 tracker->pop();
@@ -231,13 +228,13 @@ template <typename WeightType, typename ResultType> PyObject*
 count_neighbors(const ckdtree *self, const ckdtree *other,
                 struct traverse_weights * w,
                 npy_intp n_queries, npy_float64 *real_r, ResultType *results,
-                npy_intp *idx, const npy_float64 p)
+                const npy_float64 p)
 {
 
 #define HANDLE(cond, kls) \
     if(cond) { \
         RectRectDistanceTracker<kls> tracker(self, r1, r2, p, 0.0, 0.0);\
-        traverse<kls, WeightType, ResultType>(self, other, w, n_queries, real_r, results, idx, \
+        traverse<kls, WeightType, ResultType>(self, other, w, 0, n_queries, real_r, results, \
                  self->ctree, other->ctree, &tracker); \
     } else
 
@@ -282,8 +279,8 @@ count_neighbors(const ckdtree *self, const ckdtree *other,
 extern "C" PyObject*
 count_neighbors_unweighted(const ckdtree *self, const ckdtree *other,
                 npy_intp n_queries, npy_float64 *real_r, npy_intp *results,
-                npy_intp *idx, const npy_float64 p) {
-    return count_neighbors<Unweighted, npy_intp>(self, other, NULL, n_queries, real_r, results, idx, p);
+                const npy_float64 p) {
+    return count_neighbors<Unweighted, npy_intp>(self, other, NULL, n_queries, real_r, results, p);
 }
 
 extern "C" PyObject*
@@ -291,7 +288,7 @@ count_neighbors_weighted(const ckdtree *self, const ckdtree *other,
                 npy_float64 *self_weights, npy_float64 *other_weights, 
                 npy_float64 *self_node_weights, npy_float64 *other_node_weights, 
                 npy_intp n_queries, npy_float64 *real_r, npy_float64 *results,
-                npy_intp *idx, const npy_float64 p) {
+                const npy_float64 p) {
 
     struct traverse_weights w = {0};
     if(self_weights) {
@@ -304,6 +301,6 @@ count_neighbors_weighted(const ckdtree *self, const ckdtree *other,
         w.other_weights = other_weights;
         w.other_node_weights = other_node_weights;
     }
-    return count_neighbors<Weighted, npy_float64>(self, other, &w, n_queries, real_r, results, idx, p);
+    return count_neighbors<Weighted, npy_float64>(self, other, &w, n_queries, real_r, results, p);
 }
 
