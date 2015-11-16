@@ -19,6 +19,40 @@
 #include "cpp_exc.h"
 #include "rectangle.h"
 
+static npy_intp 
+bsearch_last (npy_float64 v, npy_float64 * r, npy_intp start, npy_intp end) {
+/* find last ind inserting v before ind r is ordered */
+/* assert v >= r[start] and v < r[end] */
+    if(v < r[start]) return start;
+
+    while(end > start + 1) {
+        npy_intp mid = start + ((end - start) >> 1);
+        if( v < r[mid]) {
+            end = mid;
+        } else {
+            start = mid;
+        }
+    }
+    return end;
+
+}
+static npy_intp 
+bsearch_first (npy_float64 v, npy_float64 * r, npy_intp start, npy_intp end) {
+/* find first ind inserting v before ind r is ordered */
+/* assert v > r[start] and v <= r[end] */
+    if(v <= r[start]) return start;
+
+    while(end > start + 1) {
+        npy_intp mid = start + ((end - start) >> 1);
+        if( v <= r[mid]) {
+            end = mid;
+        } else {
+            start = mid;
+        }
+    }
+    return end;
+}
+
 struct traverse_weights
 {
     const ckdtreenode *self_root; /* to translate the pointer to node_index */
@@ -100,22 +134,14 @@ traverse(const ckdtree *self, const ckdtree *other,
      * and see if any work remains to be done
      */
     
-    for (i=end - 1; i >= start; --i) {
-        if (tracker->max_distance <= r[i]) {
-            results[i] += WeightType::get_node_weight(w, node1, node2);
-        } else {
-            break;
-        }
-    }
-    end = i + 1;
+    npy_intp old_end = end;
+    start = bsearch_first(tracker->min_distance, r, start, end);
+    end = bsearch_first(tracker->max_distance, r, start, end);
 
-    for (i=start; i<end; ++i) {
-        if(tracker->min_distance <= r[i]) {
-            break;
-        }
+    for (i=end; i <old_end; ++i) {
+        results[i] += WeightType::get_node_weight(w, node1, node2);
     }
-    start = i;
-    
+
     if (end - start > 0) {
         /* OK, need to probe a bit deeper */
         if (node1->split_dim == -1) {  /* 1 is leaf node */
