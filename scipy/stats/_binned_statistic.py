@@ -460,7 +460,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     # Store initial shape of `values` to preserve it in the output
     values = np.asarray(values)
-    inValuesShape = list(values.shape)
+    input_shape = list(values.shape)
     # Make sure that `values` is 2D to iterate over rows
     values = np.atleast_2d(values)
     Vdim, Vlen = values.shape
@@ -606,6 +606,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
         raise RuntimeError('Internal Shape Error')
 
     # Reshape to have output (`reulst`) match input (`values`) shape
-    result = result.reshape(inValuesShape[:-1] + list(nbin-2))
+    result = result.reshape(input_shape[:-1] + list(nbin-2))
 
     return BinnedStatisticddResult(result, edges, binnumbers)
