@@ -22,6 +22,7 @@ Functions
 
 import numpy
 from numpy import (Inf, sqrt, isinf)
+from math import copysign
 from .optimize import (vecnorm, wrap_function, _check_unknown_options, OptimizeResult, approx_fprime)
 
 __all__ = ['fmin_bfgs_h', '_minimize_bfgs_h']
@@ -37,8 +38,10 @@ _status_message = {'success': 'Optimization terminated successfully.',
                               'to precision loss.'}
 
 def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
-              H_reset=True, norm=Inf, epsilon=_epsilon, maxiter=None,
-              full_output=0, disp=True, retall=False, callback=None):
+              H_reset=True, norm=Inf, epsilon=_epsilon, MAX_BACKTRACK=30,
+              MIN_STEP=1E-7, MAX_STEP=0.2, reset=None, maxiter=None,
+              full_output=0, disp=True, retall=False, L2norm=False, 
+              BACKTRACK_EPS=1E-8, callback=None):
     """
     Gradient Minimization independent of target function using the BFGS
     algorithm while applying the inverse hessian directly to steps.  This
@@ -70,8 +73,22 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
         Order of norm (Inf is max, -Inf is min)
     epsilon : int or ndarray, optional
         If fprime is approximated, use this value for the step size.
+    MAX_BACKTRACK : int, optional
+        Maximum number of backtracking iterations allowed before precision
+        loss. Default is 30
+    BACKTRACK_EPS : float, optional
+        Allowable deviation before backtracking occurs. Default is 1E-8.
+    MIN_STEP : float, optional
+        Minimum step allowable until precision loss. Default is 1E-7.
+    MAX_STEP : float, optional
+        Maximum step allowable. Default is 0.2.
+    reset : int, optional
+        Reset alpha and inverse Hessian after this many iterations of no
+        backtracking. Default is None (ie. off)
     maxiter : int, optional
         Maximum number of iterations to perform.
+    L2norm : bool, optional
+        Change conditional gtol to be calculated by the L2norm. Default false.
     full_output : bool, optional
         If True,return fopt, func_calls, grad_calls, and warnflag
         in addition to xopt.
@@ -150,6 +167,12 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
             'H_reset': H_reset,
             'norm': norm,
             'eps': epsilon,
+            'MAX_BACKTRACK': MAX_BACKTRACK,
+            'BACKTRACK_EPS': BACKTRACK_EPS,
+            'MIN_STEP': MIN_STEP,
+            'MAX_STEP': MAX_STEP,
+            'reset': reset,
+            'L2norm': L2norm,
             'disp': disp,
             'maxiter': maxiter,
             'return_all': retall}
@@ -170,8 +193,9 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
 
 def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None, 
     gtol=1e-5, alpha=0.5, beta=0.7, H_reset=True, norm=Inf,
-    eps=_epsilon, maxiter=None, disp=False, return_all=False,
-    **unknown_options):
+    eps=_epsilon, MAX_BACKTRACK=30, MIN_STEP=1E-7, MAX_STEP=0.2,
+    reset=None, maxiter=None, disp=False, return_all=False,
+    L2norm=False, BACKTRACK_EPS=1E-8, **unknown_options):
     """
     Gradient Minimization independent of target function using the BFGS
     algorithm while applying the inverse hessian directly to steps.  This
@@ -195,6 +219,20 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         Order of norm (Inf is max, -Inf is min)
     eps : float or ndarray
         If `jac` is approximated, use this value for the step size.
+    MAX_BACKTRACK : int, optional
+        Maximum number of backtracking iterations allowed before precision
+        loss. Default is 30
+    BACKTRACK_EPS : float, optional
+        Allowable deviation before backtracking occurs. Default is 1E-8.
+    MIN_STEP : float, optional
+        Minimum step allowable until precision loss. Default is 1E-7.
+    MAX_STEP : float, optional
+        Maximum step allowable. Default is 0.2.
+    reset : int, optional
+        Reset alpha and inverse Hessian after this many iterations of no
+        backtracking. Default is None (ie. off)
+    L2norm : bool, optional
+        Change conditional gtol to be calculated by the L2norm. Default false.
     disp : bool
         Set to True to print convergence messages.
     maxiter : int
@@ -269,11 +307,11 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         grad_calls, myfprime = wrap_function(fprime, args)
     ##################################
 
-    if beta > 1:
-        if disp:
-            print("Warning - Unreasonable Beta (must be less than or\
-                        equal to 1). Setting to 1.")
-        beta = 1.0
+    #if beta > 1:
+    #    if disp:
+    #        print("Warning - Unreasonable Beta (must be less than or\
+    #                    equal to 1). Setting to 1.")
+    #    beta = 1.0
 
     # Get x0 as a flat array
     x0 = numpy.asarray(x0).flatten()
@@ -295,8 +333,14 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     xk = x0
 
     # Criteria on gradient for continuing simulation
-    gnorm = vecnorm(gfk, ord=norm)
-    
+    if L2norm:
+        def f_gnorm(x): 
+            return sum([numpy.linalg.norm(g)**2 for g in x])**0.5
+        gnorm = f_gnorm(gfk)
+    else:
+        f_gnorm = vecnorm
+        gnorm = f_gnorm(gfk, ord=norm)
+
     warnflag = 0
     if retall:
         allvecs = [x0]
@@ -305,9 +349,14 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         print("Alpha, Beta, H_reset = %lg, %lg, %s"
                    % (alpha,beta,str(H_reset)))
 
+    # Hold original values
+    ALPHA_CONST = alpha
+    BETA_CONST = beta
+    RESET_CONST = reset
+
     backtrack = 0
     while (gnorm > gtol) and (k < maxiter):
-        if backtrack >= 10:
+        if MAX_BACKTRACK is not None and backtrack > MAX_BACKTRACK:
             warnflag = 2
             break
         if disp:
@@ -315,13 +364,29 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         # Get your step direction
         pk = -numpy.dot(Hk, gfk)
 
+        # DEBUGGING _ PRINT STEP SIZE
+        #print("%lg" % numpy.linalg.norm(pk*alpha))
+
         # If we are doing unreasonably small step sizes, quit
-        if numpy.linalg.norm(pk*alpha) < 1E-7:
+        if numpy.linalg.norm(pk*alpha) < MIN_STEP:
             if disp:
                 print("Error - Step size unreasonable (%lg)" 
                             % numpy.linalg.norm(pk*alpha))
             warnflag = 2
             break
+
+        # If we have too large of a step size, set to max
+        if max([abs(p*alpha) for p in pk]) > MAX_STEP:
+            if disp:
+                print("Warning - Setting step to max step size"
+                            % numpy.linalg.norm(pk*alpha)),
+            for i,p in enumerate(pk):
+                if abs(p*alpha) > MAX_STEP:
+                    pk[i] = (MAX_STEP / alpha) * copysign(1, p)
+            # As we are changing values manually, this is no longer
+            # the BFGS(Hess) algorithm so reset the Inverse Hessian
+            if H_reset:
+                Hk = I
 
         # Hold new parameters
         xkp1 = xk + alpha * pk
@@ -335,7 +400,7 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         # Check if max has increased
         if f is not None:
             fval = f(xkp1, *args)
-        if f is not None and fval > old_fval:
+        if f is not None and (fval - old_fval) > BACKTRACK_EPS:
             # Step taken overstepped the minimum.  Lowering step size
             if disp:
                 print("\tResetting System as %lg > %lg!"
@@ -349,7 +414,29 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
             if H_reset:
                 Hk = I
             backtrack += 1
+            reset = RESET_CONST
             continue
+        # This allows for the edge case in which after decreasing alpha, a situation arises
+        # in which larger alphas are acceptable again. Thus, we reset to the original alpha
+        elif reset is not None:
+            reset -= 1
+            if reset < 0 and alpha < ALPHA_CONST:
+                if disp:
+                    print("\tResetting Alpha, Beta, Reset and Inverse Hessian")
+                alpha, beta, reset = ALPHA_CONST, BETA_CONST, RESET_CONST
+                if H_reset:
+                    Hk = I
+                continue
+            elif reset < 0 and alpha >= ALPHA_CONST:
+                if disp:
+                    print("\tIncreasing step size: %lg ->" % alpha),
+                alpha /= beta
+                if disp:
+                    print("%lg,\t" % alpha),
+                # Step size may still be reasonable so go anyways
+#                if H_reset:
+#                    Hk = I
+#                continue
         
         # Store new parameters, as it has passed the check
         # (fval < old_fval is True)
@@ -369,10 +456,13 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         gfk = gfkp1
 
         # Update the conditional check
-        gnorm = vecnorm(gfk, ord=norm)
+        if L2norm:
+            gnorm = f_gnorm(gfk)
+        else:
+            gnorm = f_gnorm(gfk, ord=norm)
 
         if disp:
-            print("gnorm %lg" % gnorm)
+            print("gnorm %lg, fval %lg" % (gnorm, fval))
 
         # If callback is desired
         if callback is not None:
@@ -380,7 +470,12 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
 
         # Increment the loop counter
         k += 1
-        gnorm = vecnorm(gfk, ord=norm)
+
+        if L2norm:
+            gnorm = f_gnorm(gfk)
+        else:
+            gnorm = f_gnorm(gfk, ord=norm)
+
         if (gnorm <= gtol):
             break
 
