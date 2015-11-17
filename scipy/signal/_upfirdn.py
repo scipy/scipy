@@ -35,7 +35,54 @@
 
 import numpy as np
 
-from ._upfirdn_apply import UpFIRDown, _output_len
+from ._upfirdn_apply import _output_len, _apply
+
+
+def _pad_h(h, up):
+    """Store coefficients in a transposed, flipped arrangement.
+
+    For example, suppose upRate is 3, and the
+    input number of coefficients is 10, represented as h[0], ..., h[9].
+
+    Then the internal buffer will look like this::
+
+       h[9], h[6], h[3], h[0],   // flipped phase 0 coefs
+       0,    h[7], h[4], h[1],   // flipped phase 1 coefs (zero-padded)
+       0,    h[8], h[5], h[2],   // flipped phase 2 coefs (zero-padded)
+
+    """
+    h_padlen = len(h) + (-len(h) % up)
+    h_full = np.zeros(h_padlen)
+    h_full[:len(h)] = h
+    h_full = h_full.reshape(-1, up).T[:, ::-1].ravel()
+    return h_full
+
+
+class UpFIRDown(object):
+    def __init__(self, h, up, down):
+        """Helper for resampling"""
+        h = np.asarray(h, np.float64)
+        if h.ndim != 1 or h.size == 0:
+            raise ValueError('h must be 1D with non-zero length')
+        self._up = int(up)
+        self._down = int(down)
+        if self._up < 1 or self._down < 1:
+            raise RuntimeError('Both up and down must be >= 1')
+        # This both transposes, and "flips" each phase for filtering
+        self._h_trans_flip = _pad_h(h, self._up)
+
+    def _output_len(self, len_x):
+        """Helper to get the output length given an input length"""
+        return _output_len(len_x + len(self._h_trans_flip) // self._up - 1,
+                           self._up, self._down, 0)
+
+    def apply(self, x):
+        """Apply the prepared filter to a 1D signal x"""
+        out = np.zeros(self._output_len(len(x)), dtype=np.float64)
+        _apply(np.asarray(x, np.float64), self._h_trans_flip, out,
+               self._up, self._down)
+        return out
+
 
 
 def upfirdn(x, h, up=1, down=1, axis=-1):
