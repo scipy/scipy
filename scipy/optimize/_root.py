@@ -4,10 +4,11 @@ Unified interfaces to root finding algorithms.
 Functions
 ---------
 - root : find a root of a vector function.
+- root_scalar : find the root of a vector function.
 """
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['root']
+__all__ = ['root', 'root_scalar']
 
 import numpy as np
 
@@ -19,7 +20,8 @@ from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from .minpack import _root_hybr, leastsq
 from ._spectral import _root_df_sane
 from . import nonlin
-
+from . import _zeros
+from .zeros import _iter, _xtol, _rtol, results_c
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):
@@ -637,3 +639,86 @@ def _root_krylov_doc():
             See `scipy.sparse.linalg.lgmres` for details.
     """
     pass
+
+
+def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
+                maxiter=_iter, full_output=False, disp=True):
+    """
+    Find a root of a function in a bracketing interval.
+
+    Parameters
+    ----------
+    f : function
+        Python function returning a number. Must be continuous and `f(a)` and
+        `f(b)` must have opposite signs.
+    a : number
+        One end of the bracketing interval `[a,b]`.
+    b : number
+        The other end of the bracketing interval `[a,b]`.
+    args : tuple, optional
+        Extra arguments for the function `f`. In the code `f` is called by
+        ``apply(f, (x)+args)``.
+    method: str, optional
+        Type of solver. Should be one of
+
+            - 'brentq'               (see :func:`brentq`)
+            - 'brenth'               (see :func:`brenth`)
+            - 'ridder'               (see :func:`ridder`)
+            - 'bisect'               (see :func:`bisect`)
+
+    xtol : number, optional
+        The routine converges when a root is known to lie within `xtol` of the
+        value return. Should be >= 0.  The routine modifies this to take into
+        account the relative precision of doubles.
+    rtol : number, optional
+        The routine converges when a root is known to lie within `rtol` times
+        the value returned of the value returned. Should be >= 0. Defaults to
+        ``np.finfo(float).eps * 2``.
+    maxiter : number, optional
+        If convergence is not achieved in `maxiter` iterations, an error is
+        raised.  Must be >= 0.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned.  If `full_output` is
+        True, the return value is ``(x, r)``, where ``x`` is the root,
+        and ``r`` is a ``RootResults`` object.
+    disp : bool, optional
+        If ``True``, raise RuntimeError if the algorithm didn't converge.
+
+    Returns
+    -------
+    x : float
+        Zero of `f` between `a` and `b`.
+    r : RootResults (present if ``full_output = True``)
+        Object containing information about the convergence.  In particular,
+        ``r.converged`` is ``True`` if the routine converged.
+
+    See Also
+    --------
+    newton : One-dimensional root finding with just an initial value.
+
+    Notes
+    -----
+    The function `f` must be continuous and `f(a)` and `f(b)` must have opposite signs.
+    
+    """
+    if not isinstance(args, tuple):
+        args = (args,)
+    if xtol <= 0:
+        raise ValueError("xtol too small (%g <= 0)" % xtol)
+    if rtol < _rtol:
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+    if method == 'brentq':
+        r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args,
+                           full_output, disp)
+    elif method == 'brenth':
+        r = _zeros._brenth(f, a, b, xtol, rtol, maxiter, args,
+                           full_output, disp)
+    elif method == 'ridder':
+        r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args,
+                           full_output, disp)
+    elif method == 'bisect':
+        r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args,
+                           full_output, disp)
+    else:
+        raise ValueError('Unknown solver %s' % method)
+    return results_c(full_output, r)
