@@ -8,7 +8,8 @@ import warnings
 import glob
 
 from numpy.testing import (assert_, assert_equal, dec, decorate_methods,
-                           TestCase, run_module_suite, assert_allclose)
+                           TestCase, run_module_suite, assert_allclose,
+                           assert_array_equal)
 
 from scipy import misc
 
@@ -90,26 +91,54 @@ class TestPILUtil(TestCase):
                 assert_equal(data2.shape, img.shape)
             finally:
                 shutil.rmtree(tmpdir)
+
+decorate_methods(TestPILUtil, _pilskip)
+
         
-def tst_fromimage(filename, irange):
+def tst_fromimage(filename, irange, shape):
     fp = open(filename, "rb")
     img = misc.fromimage(PIL.Image.open(fp))
     fp.close()
     imin,imax = irange
-    assert_(img.min() >= imin)
-    assert_(img.max() <= imax)
+    assert_equal(img.min(), imin)
+    assert_equal(img.max(), imax)
+    assert_equal(img.shape, shape)
 
 
 @_pilskip
 def test_fromimage():
     # Test generator for parametric tests
-    data = {'icon.png':(0,255),
-            'icon_mono.png':(0,2),
-            'icon_mono_flat.png':(0,1)}
-    for fn, irange in data.items():
-        yield tst_fromimage, os.path.join(datapath,'data',fn), irange
+    # Tuples in the list are (filename, (datamin, datamax), shape).
+    files = [('icon.png', (0, 255), (48, 48, 4)),
+             ('icon_mono.png', (0, 255), (48, 48, 4)),
+             ('icon_mono_flat.png', (0, 255), (48, 48, 3))]
+    for fn, irange, shape in files:
+        yield tst_fromimage, os.path.join(datapath, 'data', fn), irange, shape
 
-decorate_methods(TestPILUtil, _pilskip)
+
+@_pilskip
+def test_imread_indexed_png():
+    # The file `foo3x5x4indexed.png` was created with this array
+    # (3x5 is (height)x(width)):
+    data = np.array([[[127,   0, 255, 255],
+                      [127,   0, 255, 255],
+                      [127,   0, 255, 255],
+                      [127,   0, 255, 255],
+                      [127,   0, 255, 255]],
+                     [[192, 192, 255,   0],
+                      [192, 192, 255,   0],
+                      [  0,   0, 255,   0],
+                      [  0,   0, 255,   0],
+                      [  0,   0, 255,   0]],
+                     [[  0,  31, 255, 255],
+                      [  0,  31, 255, 255],
+                      [  0,  31, 255, 255],
+                      [  0,  31, 255, 255],
+                      [  0,  31, 255, 255]]], dtype=np.uint8)
+
+    filename = os.path.join(datapath, 'data', 'foo3x5x4indexed.png')
+    im = misc.imread(filename)
+    assert_array_equal(im, data)
 
 
 @_pilskip

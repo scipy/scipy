@@ -227,6 +227,15 @@ def fromimage(im, flatten=False, mode=None):
 
     if mode is not None:
         im = im.convert(mode)
+    elif im.mode == 'P':
+        # Mode 'P' means there is an indexed "palette".  If we leave the mode
+        # as 'P', then when we do `a = array(im)` below, `a` will be a 2-D
+        # containing the indices into the palette, and not a 3-D array
+        # containing the RGB or RGBA values.
+        if 'transparency' in im.info:
+            im = im.convert('RGBA')
+        else:
+            im = im.convert('RGB')
 
     if flatten:
         im = im.convert('F')
