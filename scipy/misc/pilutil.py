@@ -226,7 +226,8 @@ def fromimage(im, flatten=False, mode=None):
         raise TypeError("Input is not a PIL image.")
 
     if mode is not None:
-        im = im.convert(mode)
+        if mode != im.mode:
+            im = im.convert(mode)
     elif im.mode == 'P':
         # Mode 'P' means there is an indexed "palette".  If we leave the mode
         # as 'P', then when we do `a = array(im)` below, `a` will be a 2-D
