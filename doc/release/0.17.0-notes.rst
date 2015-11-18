@@ -48,6 +48,7 @@ A new function for *nonlinear* least squares optimization with constraints was
 added: `scipy.optimize.least_squares`.  It provides several methods:
 Levenberg-Marquardt for unconstrained problems, and two trust-region methods
 for constrained ones.  Furthermore it provides different loss functions.
+New trust-region methods also handle sparse Jacobians.
 
 A new function for *linear* least squares optimization with constraints was
 added: `scipy.linalg.lsq_linear`.  It provides a trust-region method as well as
@@ -80,6 +81,30 @@ See `gh-5474 <https://github.com/scipy/scipy/issues/5474>`__ for details.
 Eventually all hypothesis testing functions will get this keyword.
 
 For methods of many continuous distributions, complex input is now accepted.
+
+Matrix normal distribution has been implemented as `scipy.stats.matrix_normal`.
+
+`scipy.sparse` improvements
+--------------------------
+
+The `axis` keyword was added to sparse norms, `scipy.sparse.linalg.norm`.
+
+`scipy.interpolate` improvements
+--------------------------------
+
+Out-of-bounds behavior of `scipy.interpolate.interp1d` has been improved.
+Use a two-element tuple for the ``fill_value`` argument to specify separate
+fill values for input above and below the interpolation range.
+Linear and nearest interpolation kinds of `scipy.interpolate.interp1d` suport
+extrapolation via the ``fill_value="extrapolate"`` keyword.
+
+`scipy.linalg` improvements
+---------------------------
+
+The default algorithm for `scipy.linalg.leastsq` has been changed to use
+LAPACK's function ``*gelsd``. Users wanting to get the previous behavior
+can use a new keyword ``lapack_driver="gelss"`` (allowed values are 
+"gelss", "gelsd" and "gelsy").
 
 
 Deprecated features
