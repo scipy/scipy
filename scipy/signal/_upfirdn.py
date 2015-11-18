@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Code adapted from "upfirdn" python library with permission:
 #
 # Copyright (c) 2009, Motorola, Inc
@@ -37,6 +35,8 @@ import numpy as np
 
 from ._upfirdn_apply import _output_len, _apply
 
+__all__ = ['upfirdn', '_output_len']
+
 
 def _pad_h(h, up):
     """Store coefficients in a transposed, flipped arrangement.
@@ -52,61 +52,61 @@ def _pad_h(h, up):
 
     """
     h_padlen = len(h) + (-len(h) % up)
-    h_full = np.zeros(h_padlen)
+    h_full = np.zeros(h_padlen, h.dtype)
     h_full[:len(h)] = h
     h_full = h_full.reshape(-1, up).T[:, ::-1].ravel()
     return h_full
 
 
-class UpFIRDown(object):
-    def __init__(self, h, up, down):
+class _UpFIRDn(object):
+    def __init__(self, h, x_dtype, up, down):
         """Helper for resampling"""
-        h = np.asarray(h, np.float64)
+        h = np.asarray(h)
         if h.ndim != 1 or h.size == 0:
             raise ValueError('h must be 1D with non-zero length')
+        self._output_type = np.result_type(h.dtype, x_dtype, np.float32)
+        h = np.asarray(h, self._output_type)
         self._up = int(up)
         self._down = int(down)
         if self._up < 1 or self._down < 1:
-            raise RuntimeError('Both up and down must be >= 1')
+            raise ValueError('Both up and down must be >= 1')
         # This both transposes, and "flips" each phase for filtering
         self._h_trans_flip = _pad_h(h, self._up)
 
-    def _output_len(self, len_x):
-        """Helper to get the output length given an input length"""
-        return _output_len(len_x + len(self._h_trans_flip) // self._up - 1,
-                           self._up, self._down, 0)
-
-    def apply(self, x):
+    def apply_filter(self, x):
         """Apply the prepared filter to a 1D signal x"""
-        out = np.zeros(self._output_len(len(x)), dtype=np.float64)
-        _apply(np.asarray(x, np.float64), self._h_trans_flip, out,
+        output_len = _output_len(len(self._h_trans_flip), len(x),
+                                 self._up, self._down)
+        out = np.zeros(output_len, dtype=self._output_type)
+        _apply(np.asarray(x, self._output_type), self._h_trans_flip, out,
                self._up, self._down)
         return out
 
 
-
-def upfirdn(x, h, up=1, down=1, axis=-1):
+def upfirdn(h, x, up=1, down=1, axis=-1):
     """Upsample, FIR filter, and downsample
 
     Parameters
     ----------
-    x : array-like
-        Input signal array.
-    h : array-like
+    h : array_like
         1-dimensional FIR (finite-impulse response) filter coefficients.
-    up : int
-        Upsampling rate.
-    down : int
-        Downsampling rate.
-    axis : int
-        The axis of ``x`` to operate along.
+    x : array_like
+        Input signal array.
+    up : int, optional
+        Upsampling rate. Default is 1.
+    down : int, optional
+        Downsampling rate. Default is 1.
+    axis : int, optional
+        The axis of the input data array along which to apply the
+        linear filter. The filter is applied to each subarray along
+        this axis. Default is -1.
 
     Returns
     -------
     y : ndarray
-        The output signal array. Dimensions will be the same as ``x`` except
-        for along ``axis``, which will change size according to the ``h``,
-        ``up``,  and ``down`` parameters.
+        The output signal array. Dimensions will be the same as `x` except
+        for along `axis`, which will change size according to the `h`,
+        `up`,  and `down` parameters.
 
     Notes
     -----
@@ -121,29 +121,29 @@ def upfirdn(x, h, up=1, down=1, axis=-1):
     O(N*Q) per output sample. The polyphase implementation used here is
     O(N/P).
 
-    .. versionadded:: 0.17
+    .. versionadded:: 0.18
 
     Examples
     --------
     Simple operations:
 
     >>> from scipy.signal import upfirdn
-    >>> upfirdn([1,1,1], [1,1,1])   # FIR filter
+    >>> upfirdn([1, 1, 1], [1, 1, 1])   # FIR filter
     array([ 1.,  2.,  3.,  2.,  1.])
-    >>> upfirdn([1, 2, 3], [1], 3)  # upsampling with zeros insertion
+    >>> upfirdn([1], [1, 2, 3], 3)  # upsampling with zeros insertion
     array([ 1.,  0.,  0.,  2.,  0.,  0.,  3.,  0.,  0.])
-    >>> upfirdn([1,2,3], [1,1,1], 3)  # upsampling with sample-and-hold
+    >>> upfirdn([1, 1, 1], [1, 2, 3], 3)  # upsampling with sample-and-hold
     array([ 1.,  1.,  1.,  2.,  2.,  2.,  3.,  3.,  3.])
-    >>> upfirdn([1,1,1], [.5,1,.5], 2)  # linear interpolation
+    >>> upfirdn([.5, 1, .5], [1, 1, 1], 2)  # linear interpolation
     array([ 0.5,  1. ,  1. ,  1. ,  1. ,  1. ,  0.5,  0. ])
-    >>> upfirdn(np.arange(10), [1], 1, 3)  # decimation by 3
+    >>> upfirdn([1], np.arange(10), 1, 3)  # decimation by 3
     array([ 0.,  3.,  6.,  9.])
-    >>> upfirdn(np.arange(10), [.5,1,.5], 2, 3)  # linear interp, rate 2/3
+    >>> upfirdn([.5, 1, .5], np.arange(10), 2, 3)  # linear interp, rate 2/3
     array([ 0. ,  1. ,  2.5,  4. ,  5.5,  7. ,  8.5,  0. ])
 
     Apply a single filter to multiple signals:
 
-    >>> x = np.reshape(np.arange(8), (4,2))
+    >>> x = np.reshape(np.arange(8), (4, 2))
     >>> x
     array([[0, 1],
            [2, 3],
@@ -153,7 +153,7 @@ def upfirdn(x, h, up=1, down=1, axis=-1):
     Apply along the last dimension of ``x``:
 
     >>> h = [1, 1]
-    >>> upfirdn(x, h, 2)
+    >>> upfirdn(h, x, 2)
     array([[ 0.,  0.,  1.,  1.],
            [ 2.,  2.,  3.,  3.],
            [ 4.,  4.,  5.,  5.],
@@ -161,7 +161,7 @@ def upfirdn(x, h, up=1, down=1, axis=-1):
 
     Apply along the 0th dimension of ``x``:
 
-    >>> upfirdn(x, h, 2, axis=0)
+    >>> upfirdn(h, x, 2, axis=0)
     array([[ 0.,  1.],
            [ 0.,  1.],
            [ 2.,  3.],
@@ -172,5 +172,6 @@ def upfirdn(x, h, up=1, down=1, axis=-1):
            [ 6.,  7.]])
 
     """
-    ufd = UpFIRDown(h, up, down)
-    return np.apply_along_axis(ufd.apply, axis, x)
+    x = np.asarray(x)
+    ufd = _UpFIRDn(h, x.dtype, up, down)
+    return np.apply_along_axis(ufd.apply_filter, axis, x)

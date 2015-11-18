@@ -39,24 +39,26 @@ import numpy as np
 
 
 ctypedef double complex double_complex
+ctypedef float complex float_complex
 
 ctypedef fused DTYPE_t:
+    # Eventually we could add "object", too, but then we'd lose the "nogil"
+    # on the _apply_impl function.
+    float
+    float_complex
     double
     double_complex
 
 
-@cython.cdivision(True)
-def _output_len(Py_ssize_t in_len,
+def _output_len(Py_ssize_t len_h,
+                Py_ssize_t in_len,
                 Py_ssize_t up,
-                Py_ssize_t down,
-                Py_ssize_t len_h):
+                Py_ssize_t down):
     """The output length that results from a given input"""
     cdef Py_ssize_t np
-    if len_h != 0:  # figure out what the padding needs to be
-        # the modulo below is the C-equivalent of a Python modulo,
-        # i.e. -1 % 10 = 9
-        in_len = in_len + (len_h + ((-len_h % up) + up) % up) // up - 1
-    np = in_len * up
+    cdef Py_ssize_t in_len_copy
+    in_len_copy = in_len + (len_h + (-len_h % up)) // up - 1
+    np = in_len_copy * up
     cdef Py_ssize_t need = np // down
     if np % down > 0:
         need += 1
