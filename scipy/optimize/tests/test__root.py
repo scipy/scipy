@@ -3,7 +3,7 @@ Unit tests for optimization routines from _root.py.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, assert_almost_equal, assert_raises
+from numpy.testing import assert_, assert_raises
 import numpy as np
 
 from scipy.optimize import root, root_scalar
@@ -47,7 +47,8 @@ class TestRoot(object):
         root(func, [1.1, 1.1], args=1.5)
 
     def test_root_scalar(self):
-        f = lambda x : x**3
+        def f(x):
+            return x**3
         a, b = -1, 1
         # These should work
         for method in ['brentq', 'brenth', 'ridder', 'bisect']:

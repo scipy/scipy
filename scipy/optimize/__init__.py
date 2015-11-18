@@ -126,6 +126,7 @@ Scalar functions
 .. autosummary::
    :toctree: generated/
 
+   root_scalar - Unified interface for finding roots of scalar functions
    brentq - quadratic interpolation Brent method
    brenth - Brent method, modified by Harris with hyperbolic extrapolation
    ridder - Ridder's method
