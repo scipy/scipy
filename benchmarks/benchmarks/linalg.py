@@ -117,12 +117,14 @@ class Lstsq(Benchmark):
     hand side.  The complex matrix is the sum of real and imaginary matrices.
     """
 
-    param_names = ['lapack_driver', 'dtype', 'size']
-    params = [['gelss', 'gelsy', 'gelsd', 'numpy'],
-              [np.float64, np.complex128],
-              [500, 3500]]
+    param_names = ['dtype', 'size', 'driver']
+    params = [
+        [np.float64, np.complex128],
+        [10, 100, 1000],
+        ['gelss', 'gelsy', 'gelsd', 'numpy'],
+    ]
 
-    def setup(self, lapack_driver, dtype, size):
+    def setup(self, dtype, size, lapack_driver):
         np.random.seed(1234)
         n = math.ceil(2./3. * size)
         k = math.ceil(1./2. * size)
@@ -143,7 +145,7 @@ class Lstsq(Benchmark):
         self.A = A.dot(temp)
         self.b = b
 
-    def time_lstsq(self, lapack_driver, dtype, size):
+    def time_lstsq(self, dtype, size, lapack_driver):
         if lapack_driver == 'numpy':
             np.linalg.lstsq(self.A, self.b,
                             rcond=np.finfo(self.A.dtype).eps * 100)
