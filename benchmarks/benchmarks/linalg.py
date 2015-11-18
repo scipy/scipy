@@ -1,5 +1,7 @@
 from __future__ import division, absolute_import, print_function
 
+import math
+
 import numpy.linalg as nl
 
 import numpy as np
@@ -103,3 +105,49 @@ class Norm(Benchmark):
             nl.norm(self.a)
         else:
             sl.norm(self.a)
+
+
+class Lstsq(Benchmark):
+    """
+    Test the speed of four least-squares solvers on not full rank matrices.
+    Also check the difference in the solutions.
+
+    The matrix has the size ``(m, 2/3*m)``; the rank is ``1/2 * m``.
+    Matrix values are random in the range (-5, 5), the same is for the right
+    hand side.  The complex matrix is the sum of real and imaginary matrices.
+    """
+
+    param_names = ['lapack_driver', 'dtype', 'size']
+    params = [['gelss', 'gelsy', 'gelsd', 'numpy'],
+              [np.float64, np.complex128],
+              [500, 3500]]
+
+    def setup(self, lapack_driver, dtype, size):
+        np.random.seed(1234)
+        n = math.ceil(2./3. * size)
+        k = math.ceil(1./2. * size)
+        m = size
+
+        if dtype is np.complex128:
+            A = ((10 * np.random.rand(m,k) - 5) +
+                 1j*(10 * np.random.rand(m,k) - 5))
+            temp = ((10 * np.random.rand(k,n) - 5) +
+                    1j*(10 * np.random.rand(k,n) - 5))
+            b = ((10 * np.random.rand(m,1) - 5) +
+                 1j*(10 * np.random.rand(m,1) - 5))
+        else:
+            A = (10 * np.random.rand(m,k) - 5)
+            temp = 10 * np.random.rand(k,n) - 5
+            b = 10 * np.random.rand(m,1) - 5
+
+        self.A = A.dot(temp)
+        self.b = b
+
+    def time_lstsq(self, lapack_driver, dtype, size):
+        if lapack_driver == 'numpy':
+            np.linalg.lstsq(self.A, self.b,
+                            rcond=np.finfo(self.A.dtype).eps * 100)
+        else:
+            sl.lstsq(self.A, self.b, cond=None, overwrite_a=False,
+                     overwrite_b=False, check_finite=False,
+                     lapack_driver=lapack_driver)
