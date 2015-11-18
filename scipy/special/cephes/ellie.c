@@ -17,15 +17,15 @@
  * Approximates the integral
  *
  *
- *                phi
- *                 -
- *                | |
- *                |                   2
+ *                 phi
+ *                  -
+ *                 | |
+ *                 |                   2
  * E(phi_\m)  =    |    sqrt( 1 - m sin t ) dt
- *                |
- *              | |    
- *               -
- *                0
+ *                 |
+ *               | |    
+ *                -
+ *                 0
  *
  * of amplitude phi and modulus m, using the arithmetic -
  * geometric mean algorithm.

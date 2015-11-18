@@ -295,3 +295,37 @@ def test_open_append():
         assert_equal(f._attributes['Kilroy'], b'was here')
         assert_equal(f._attributes['naughty'], b'Zoot')
         f.close()
+
+
+def test_maskandscale():
+    t = np.linspace(20, 30, 15)
+    t[3] = np.nan
+    tm = np.ma.masked_invalid(t)
+    fname = pjoin(TEST_DATA_PATH, 'example_2.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        Temp = f.variables['Temperature']
+        assert_equal(Temp.missing_value, 9999)
+        assert_equal(Temp.add_offset, 20)
+        assert_equal(Temp.scale_factor, np.float32(0.01))
+        expected = np.round(tm.compressed(), 2)
+        assert_allclose(Temp[:].compressed(), expected)
+
+    with in_tempdir():
+        newfname = 'ms.nc'
+        f = netcdf_file(newfname, 'w', maskandscale=True)
+        f.createDimension('Temperature', len(tm))
+        temp = f.createVariable('Temperature', 'i', ('Temperature',))
+        temp.missing_value = 9999
+        temp.scale_factor = 0.01
+        temp.add_offset = 20
+        temp[:] = tm
+        f.close()
+
+        with netcdf_file(newfname, maskandscale=True) as f:
+            Temp = f.variables['Temperature']
+            assert_equal(Temp.missing_value, 9999)
+            assert_equal(Temp.add_offset, 20)
+            assert_equal(Temp.scale_factor, np.float32(0.01))
+            expected = np.round(tm.compressed(), 2)
+            assert_allclose(Temp[:].compressed(), expected)
+

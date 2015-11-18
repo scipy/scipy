@@ -137,11 +137,11 @@ through the ``jac`` parameter as illustrated below.
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 51
+             Iterations: 51                     # may vary
              Function evaluations: 63
              Gradient evaluations: 63
-    >>> print(res.x)
-    [ 1.  1.  1.  1.  1.]
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
 
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
@@ -222,12 +222,12 @@ the function using Newton-CG method is shown in the following example:
     ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 19
+             Iterations: 19                       # may vary
              Function evaluations: 22
              Gradient evaluations: 19
              Hessian evaluations: 19
-    >>> print(res.x)
-    [ 1.  1.  1.  1.  1.]
+    >>> res.x
+    array([1.,  1.,  1.,  1.,  1.])
 
 
 Hessian product example:
@@ -270,12 +270,12 @@ Rosenbrock function using :func:`minimize` follows:
     ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 20
+             Iterations: 20                    # may vary
              Function evaluations: 23
              Gradient evaluations: 20
              Hessian evaluations: 44
-    >>> print(res.x)
-    [ 1.  1.  1.  1.  1.]
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
 
 
 .. _tutorial-sqlsp:
@@ -349,7 +349,7 @@ Now an unconstrained optimization can be performed as:
     ...                method='SLSQP', options={'disp': True})
     Optimization terminated successfully.    (Exit mode 0)
                 Current function value: -2.0
-                Iterations: 4
+                Iterations: 4                       # may vary
                 Function evaluations: 5
                 Gradient evaluations: 4
     >>> print(res.x)
@@ -361,7 +361,7 @@ and a constrained optimization as:
     ...                constraints=cons, method='SLSQP', options={'disp': True})
     Optimization terminated successfully.    (Exit mode 0)
                 Current function value: -1.00000018311
-                Iterations: 9
+                Iterations: 9                           # may vary
                 Function evaluations: 14
                 Gradient evaluations: 9
     >>> print(res.x)
@@ -444,16 +444,21 @@ This is shown in the following example:
    ...     return p[0] * sin(2 * pi * p[1] * x + p[2])
 
    >>> p0 = [8, 1 / 2.3e-2, pi / 3]
-   >>> print(array(p0))
-   [  8.      43.4783   1.0472]
+   >>> array(p0)
+   array([8., 43.4783, 1.0472])
 
    >>> from scipy.optimize import leastsq
    >>> plsq = leastsq(residuals, p0, args=(y_meas, x))
-   >>> print(plsq[0])
-   [ 10.9437  33.3605   0.5834]
+   >>> plsq[0]
+   array([10.9437, 33.3605, 0.5834])  # may vary (periodicity)
 
-   >>> print(array([A, k, theta]))
-   [ 10.      33.3333   0.5236]
+   Notice that this example has multiple equivalent minima related by
+   :math:`\theta \to \theta + \pi` and :math:`A\to -A`. The optimization
+   process may converge to any of these minima, depending on the
+   initial guess.
+
+   >>> A, k, theta
+   (10., 33.3333, 0.5236)
 
    >>> import matplotlib.pyplot as plt
    >>> plt.plot(x, peval(x, plsq[0]),x,y_meas,'o',x,y_true)
@@ -483,7 +488,7 @@ function: `brent` and `golden`, but `golden` is included only for academic
 purposes and should rarely be used. These can be respectively selected
 through the `method` parameter in :func:`minimize_scalar`. The `brent`
 method uses Brent's algorithm for locating a minimum. Optimally a bracket
-(the `bs` parameter) should be given which contains the minimum desired. A
+(the `bracket` parameter) should be given which contains the minimum desired. A
 bracket is a triple :math:`\left( a, b, c \right)` such that :math:`f
 \left( a \right) > f \left( b \right) < f \left( c \right)` and :math:`a <
 b < c` . If this is not given, then alternatively two starting points can
@@ -509,7 +514,7 @@ before minimization occurs. The `bounded` method in :func:`minimize_scalar`
 is an example of a constrained minimization procedure that provides a
 rudimentary interval constraint for scalar functions. The interval
 constraint allows the minimization to occur only between two fixed
-endpoints, specified using the mandatory `bs` parameter.
+endpoints, specified using the mandatory `bounds` parameter.
 
 For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 :math:`x=5` , :func:`minimize_scalar` can be called using the interval
@@ -517,8 +522,8 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 :math:`x_{\textrm{min}}=5.3314` :
 
     >>> from scipy.special import j1
-    >>> res = minimize_scalar(j1, bs=(4, 7), method='bounded')
-    >>> print(res.x)
+    >>> res = minimize_scalar(j1, bounds=(4, 7), method='bounded')
+    >>> res.x
     5.33144184241
 
 
@@ -537,6 +542,7 @@ Let us consider an (admittedly rather virtual) need to use a trivial
 custom multivariate minimization method that will just search the
 neighborhood in each dimension independently with a fixed step size::
 
+    >>> from scipy.optimize import OptimizeResult
     >>> def custmin(fun, x0, args=(), maxfev=None, stepsize=0.1,
     ...         maxiter=100, callback=None, **options):
     ...     bestx = x0
@@ -570,7 +576,7 @@ neighborhood in each dimension independently with a fixed step size::
     >>> x0 = [1.35, 0.9, 0.8, 1.1, 1.2]
     >>> res = minimize(rosen, x0, method=custmin, options=dict(stepsize=0.05))
     >>> res.x
-    [ 1.  1.  1.  1.  1.]
+    array([1., 1., 1., 1., 1.])
 
 This will work just as well in case of univariate optimization::
 
@@ -601,6 +607,8 @@ This will work just as well in case of univariate optimization::
     ...
     ...     return OptimizeResult(fun=besty, x=bestx, nit=niter,
     ...                           nfev=funcalls, success=(niter > 1))
+    >>> def f(x):
+    ...    return (x - 2)**2 * (x + 2)**2
     >>> res = minimize_scalar(f, bracket=(-3.5, 0), method=custmin,
     ...                       options=dict(stepsize = 0.05))
     >>> res.x

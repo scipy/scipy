@@ -41,9 +41,11 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
+        
         .. versionadded:: 0.14.0
     tree_options : dict, optional
         Options passed to the underlying ``cKDTree``.
+
         .. versionadded:: 0.17.0
 
 

@@ -558,10 +558,14 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         else:
             data = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
+        data_dtype = self.dtype
+        if not np.can_cast(other.dtype, self.dtype):
+            data_dtype = upcast(self.dtype, other.dtype)
+
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
            self.indptr.astype(idx_dtype),
            self.indices.astype(idx_dtype),
-           np.ravel(self.data),
+           np.asarray(self.data, dtype=data_dtype).ravel(),
            other.indptr.astype(idx_dtype),
            other.indices.astype(idx_dtype),
            np.ravel(other.data),

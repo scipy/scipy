@@ -122,7 +122,7 @@ class OptimizeResult(dict):
         if self.keys():
             m = max(map(len, list(self.keys()))) + 1
             return '\n'.join([k.rjust(m) + ': ' + repr(v)
-                              for k, v in self.items()])
+                              for k, v in sorted(self.items())])
         else:
             return self.__class__.__name__ + "()"
 

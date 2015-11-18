@@ -272,6 +272,8 @@ cdef class _Qhull:
             raise ValueError("No points given")
         if self.ndim < 2:
             raise ValueError("Need at least 2-D data")
+        if np.isnan(points).any():
+            raise ValueError("Points cannot contain NaN")
 
         # Process options
         option_set = set()

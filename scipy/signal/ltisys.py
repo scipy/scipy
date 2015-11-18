@@ -575,11 +575,11 @@ class lti(object):
 
 
 class TransferFunction(lti):
-    """Linear Time Invariant system class in transfer function form.
+    r"""Linear Time Invariant system class in transfer function form.
 
     Represents the system as the transfer function
-    :math:`H(s)=\sum_i b[i] s^i / \sum_j a[j] s^i`, where :math:`a` are
-    elements of the numerator `num` and :math:`b` are the elements of the
+    :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j`, where :math:`b` are
+    elements of the numerator `num` and :math:`a` are the elements of the
     denominator `den`.
 
     Parameters
@@ -593,12 +593,32 @@ class TransferFunction(lti):
               `ZerosPolesGain`)
             * 2: array_like: (numerator, denominator)
 
+    See Also
+    --------
+    ZerosPolesGain, StateSpace, lti
+    tf2ss, tf2zpk, tf2sos
+
     Notes
     -----
     Changing the value of properties that are not part of the
     `TransferFunction` system representation (such as the `A`, `B`, `C`, `D`
     state-space matrices) is very inefficient and may lead to numerical
     inaccuracies.
+
+    Examples
+    --------
+    Construct the transfer function:
+
+    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+
+    >>> from scipy import signal
+    >>> num = [1, 3, 3]
+    >>> den = [1, 2, 1]
+    >>> signal.TransferFunction(num, den)
+    TransferFunction(
+    array([ 1.,  3.,  3.]),
+    array([ 1.,  2.,  1.])
+    )
 
     """
     def __new__(cls, *system):
@@ -723,6 +743,11 @@ class ZerosPolesGain(lti):
             * 1: `lti` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 3: array_like: (zeros, poles, gain)
+
+    See Also
+    --------
+    TransferFunction, StateSpace, lti
+    zpk2ss, zpk2tf, zpk2sos
 
     Notes
     -----
@@ -865,6 +890,11 @@ class StateSpace(lti):
             * 1: `lti` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 4: array_like: (A, B, C, D)
+
+    See Also
+    --------
+    TransferFunction, ZerosPolesGain, lti
+    ss2zpk, ss2tf, zpk2sos
 
     Notes
     -----
