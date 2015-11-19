@@ -475,6 +475,27 @@ class TestMatrixNormal(TestCase):
                 assert_allclose(pdf1, pdf2, rtol=1E-10)
                 assert_allclose(logpdf1, logpdf2, rtol=1E-10)
 
+    def test_equivalent_multivariate(self):
+        # Check that the equivalent multivariate distribution matches
+        for i in range(1,5):
+            for j in range(1,5):
+                M = 0.3 * np.ones((i,j))
+                U = 0.5 * np.identity(i) + 0.5 * np.ones((i,i))
+                V = 0.7 * np.identity(j) + 0.3 * np.ones((j,j))
+
+                frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
+                X = frozen.rvs(random_state=1234)
+                pdf1 = frozen.pdf(X)
+                logpdf1 = frozen.logpdf(X)
+
+                mvn = frozen.equivalent_multivariate_normal()
+                vecX = X.T.flatten()
+                pdf2 = mvn.pdf(vecX)
+                logpdf2 = mvn.logpdf(vecX)
+
+                assert_allclose(pdf1, pdf2, rtol=1E-10)
+                assert_allclose(logpdf1, logpdf2, rtol=1E-10)
+
     def test_array_input(self):
         # Check array of inputs has the same output as the separate entries.
         num_rows = 4
