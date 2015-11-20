@@ -382,9 +382,10 @@ def pearsonr(x,y):
     df = n-2
     if df < 0:
         return (masked, masked)
-
-    (mx, my) = (x.mean(), y.mean())
-    (xm, ym) = (x-mx, y-my)
+        
+    # Mask arrays to make same size
+    (xm, ym) = (ma.MaskedArray(x, m), ma.MaskedArray(y, m))
+    (xm, ym) = (x - x.mean(), y - y.mean())
 
     r_num = ma.add.reduce(xm*ym)
     r_den = ma.sqrt(ma.dot(xm,xm) * ma.dot(ym,ym))
