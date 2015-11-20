@@ -385,7 +385,7 @@ def pearsonr(x,y):
         
     # Mask arrays to make same size
     (xm, ym) = (ma.MaskedArray(x, m), ma.MaskedArray(y, m))
-    (xm, ym) = (x - x.mean(), y - y.mean())
+    (xm, ym) = (xm - xm.mean(), ym - ym.mean())
 
     r_num = ma.add.reduce(xm*ym)
     r_den = ma.sqrt(ma.dot(xm,xm) * ma.dot(ym,ym))
