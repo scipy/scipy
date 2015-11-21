@@ -123,15 +123,34 @@ Root finding
 
 Scalar functions
 ----------------
+
 .. autosummary::
    :toctree: generated/
 
-   root_scalar - Unified interface for finding roots of scalar functions
-   brentq - quadratic interpolation Brent method
-   brenth - Brent method, modified by Harris with hyperbolic extrapolation
-   ridder - Ridder's method
-   bisect - Bisection method
+   root_scalar - Unified interface for finding roots of scalar
+                 functions on an interval
    newton - Secant method or Newton's method
+
+The `root_scalar` function supports the following methods:
+
+.. toctree::
+
+   :ref:`brentq <root-scalar-brentq>`
+   :ref:`brenth <root-scalar-brenth>`
+   :ref:`ridder <root-scalar-ridder>`
+   :ref:`bisect <root-scalar-bisect>`
+
+The specific optimization method interfaces below in this subsection are
+not recommended for use in new scripts; all of these methods are accessible
+via the newer interface provided by `root_scalar`.
+
+.. autosummary::
+   :toctree: generated/
+
+   brentq - Brent's method
+   brenth - Brent's method, modified by Harris to use hyperbolic extrapolation
+   ridder - Ridders' method
+   bisect - Bisection method
 
 Fixed point finding:
 

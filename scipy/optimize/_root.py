@@ -4,7 +4,7 @@ Unified interfaces to root finding algorithms.
 Functions
 ---------
 - root : find a root of a vector function.
-- root_scalar : find the root of a vector function.
+- root_scalar : find the root of a scalar function.
 """
 from __future__ import division, print_function, absolute_import
 
@@ -20,8 +20,8 @@ from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from .minpack import _root_hybr, leastsq
 from ._spectral import _root_df_sane
 from . import nonlin
-from . import _zeros
-from .zeros import _iter, _xtol, _rtol, results_c
+from ._zeros import _brentq, _brenth, _ridder, _bisect
+
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):
@@ -641,16 +641,20 @@ def _root_krylov_doc():
     pass
 
 
+_iter = 100
+_xtol = 1e-12
+_rtol = np.finfo(float).eps * 2
+
 def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
-                maxiter=_iter, full_output=False, disp=True):
-    """
-    Find a root of a function in a bracketing interval.
+                maxiter=_iter, disp=True):
+    """Find a root of a function in a sign-changing interval.
 
     Parameters
     ----------
     f : function
-        Python function returning a number. Must be continuous and `f(a)` and
-        `f(b)` must have opposite signs.
+        Python function returning a number. The function must be
+        continuous and `f(a)` and `f(b)` must have opposite signs.
+
     a : number
         One end of the bracketing interval `[a,b]`.
     b : number
@@ -658,13 +662,13 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
     args : tuple, optional
         Extra arguments for the function `f`. In the code `f` is called by
         ``apply(f, (x)+args)``.
-    method: str, optional
+    method : str, optional
         Type of solver. Should be one of
 
-            - 'brentq'               (see :func:`brentq`)
-            - 'brenth'               (see :func:`brenth`)
-            - 'ridder'               (see :func:`ridder`)
-            - 'bisect'               (see :func:`bisect`)
+            - ``'brentq'`` :ref:`(see here) <root-scalar-brentq>`
+            - ``'brenth'`` :ref:`(see here) <root-scalar-brenth>`
+            - ``'ridder'`` :ref:`(see here) <root-scalar-ridder>`
+            - ``'bisect'`` :ref:`(see here) <root-scalar-bisect>`
 
     xtol : number, optional
         The routine converges when a root is known to lie within `xtol` of the
@@ -677,20 +681,18 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
     maxiter : number, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised.  Must be >= 0.
-    full_output : bool, optional
-        If `full_output` is False, the root is returned.  If `full_output` is
-        True, the return value is ``(x, r)``, where ``x`` is the root,
-        and ``r`` is a ``RootResults`` object.
     disp : bool, optional
-        If ``True``, raise RuntimeError if the algorithm didn't converge.
+        If ``True``, raise a RuntimeError if the algorithm didn't converge.
 
     Returns
     -------
-    x : float
-        Zero of `f` between `a` and `b`.
-    r : RootResults (present if ``full_output = True``)
-        Object containing information about the convergence.  In particular,
-        ``r.converged`` is ``True`` if the routine converged.
+    sol : OptimizeResult
+        The solution represented as a ``OptimizeResult`` object.
+        Attributes are: ``x``, a zero of `f` between `a` and `b`,
+        ``success``, a Boolean flag indicating if the algorithm exited
+        successfully, ``message``, which describes the cause of
+        termination, ``nit``, the number of iterations performed, and
+        ``function_calls``, the number of calls to `f`.
 
     See Also
     --------
@@ -698,9 +700,84 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
 
     Notes
     -----
-    The function `f` must be continuous and `f(a)` and `f(b)` must have opposite signs.
-    
+    This section describes the available solvers that can be selected
+    by the ``method`` parameter. The default is ``brentq``.
+
+    .. _root-scalar-brentq:
+
+    The method ``'brentq'`` uses the classic Brent's method, also
+    known as the van Winjngaarden-Dekker-Brent method, which is a safe
+    version of the secant method that combines root bracketing,
+    interval bisection, and inverse quadratic interpolation. In
+    [Brent1973]_ Brent claims convergence is guaranteed for functions
+    computable within the interval. It is generally considered the
+    best of the root-finding routines here.
+
+    The classic description of the algorithm is in
+    [Brent1973]_. Another description can be found in a recent edition
+    of Numerical Recipes, including [PressEtal1992]_, and yet another
+    at http://mathworld.wolfram.com/BrentsMethod.html. It should be
+    easy to understand the algorithm just by reading the code, which
+    diverges a bit from standard presentations in choosing a different
+    formula for the extrapolation step.
+
+    .. _root-scalar-brenth:
+
+    The method ``'brenth'`` is a variation on the classic Brent routine
+    that uses hyperbolic extrapolation instead of inverse quadratic
+    extrapolation. Generally on a par with ``'brentq'``, but not as
+    heavily tested. It is a safe version of the secant method. The
+    version here is by Chuck Harris.
+
+    .. _root-scalar-ridder:
+
+    The method ``'ridder'`` uses Ridders' method. Ridders' method is
+    faster than bisection, but not generally as fast as the Brent
+    rountines. The classic description and source of the algorithm is
+    in [Ridders1979]_. A description can also be found in any recent
+    edition of Numerical Recipes. The routine used here diverges
+    slightly from standard presentations in order to be a bit more
+    careful of tolerance.
+
+    .. _root-scalar-bisect:
+
+    The method ``'bisect'`` uses the bisection method.
+
+    References
+    ----------
+    .. [Brent1973]
+       Brent, R. P.,
+       *Algorithms for Minimization Without Derivatives*.
+       Englewood Cliffs, NJ: Prentice-Hall, 1973. Ch. 3-4.
+
+    .. [PressEtal1992]
+       Press, W. H.; Flannery, B. P.; Teukolsky, S. A.; and Vetterling, W. T.
+       *Numerical Recipes in FORTRAN: The Art of Scientific Computing*, 2nd ed.
+       Cambridge, England: Cambridge University Press, pp. 352-355, 1992.
+       Section 9.3:  "Van Wijngaarden-Dekker-Brent Method."
+
+    .. [Ridders1979]
+       Ridders, C. F. J. "A New Algorithm for Computing a
+       Single Root of a Real Continuous Function."
+       IEEE Trans. Circuits Systems 26, 979-980, 1979.
+
+    Examples
+    --------
+    The following finds a root of a function on `[-1, 1]` using bisection.
+
+    >>> def f(x):
+    ...     return (x - 0.1)**3
+
+    >>> sol = root_scalar(f, -1, 1, method='bisect')
+    >>> sol.x
+    0.0999999999994543
+
     """
+    CONVERGED = 'converged'
+    SIGNERR = 'sign error'
+    CONVERR = 'convergence error'
+    flag_map = {0: CONVERGED, -1: SIGNERR, -2: CONVERR}
+
     if not isinstance(args, tuple):
         args = (args,)
     if xtol <= 0:
@@ -708,17 +785,21 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     if method == 'brentq':
-        r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args,
-                           full_output, disp)
+        res = _brentq(f, a, b, xtol, rtol, maxiter, args, disp)
     elif method == 'brenth':
-        r = _zeros._brenth(f, a, b, xtol, rtol, maxiter, args,
-                           full_output, disp)
+        res = _brenth(f, a, b, xtol, rtol, maxiter, args, disp)
     elif method == 'ridder':
-        r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args,
-                           full_output, disp)
+        res = _ridder(f, a, b, xtol, rtol, maxiter, args, disp)
     elif method == 'bisect':
-        r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args,
-                           full_output, disp)
+        res = _bisect(f, a, b, xtol, rtol, maxiter, args, disp)
     else:
         raise ValueError('Unknown solver %s' % method)
-    return results_c(full_output, r)
+    x, function_calls, nit, flag = res
+    if flag == 0:
+        success = True
+    else:
+        success = False
+    message = flag_map[flag]
+    sol = OptimizeResult(x=x, nit=nit, success=success, message=message)
+    sol['function_calls'] = function_calls
+    return sol
