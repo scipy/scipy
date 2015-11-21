@@ -520,6 +520,20 @@ class TestFixedPoint(TestCase):
         assert_allclose(xxroot, np.exp(-2.0*xxroot)/2.0)
         assert_allclose(xxroot, lambertw(1)/2)
 
+    def test_no_acceleration(self):
+        # github issue 5460
+        ks = 2
+        kl = 6
+        m = 1.3
+        n0 = 1.001
+        i0 = ((m-1)/m)*(kl/ks/m)**(1/(m-1))
+
+        def func(n):
+            return np.log(kl/ks/n) / np.log((i0*n/(n - 1))) + 1
+
+        n = fixed_point(func, n0, method='iteration')
+        assert_allclose(n, m)
+
 
 if __name__ == "__main__":
     run_module_suite()
