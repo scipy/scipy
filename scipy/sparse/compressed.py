@@ -273,8 +273,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise NotImplementedError(" >= and <= don't work with 0.")
             elif op(0, other):
                 warn(bad_scalar_msg, SparseEfficiencyWarning)
-                dtype = upcast(self.dtype, np.result_type(other))
-                other_arr = np.empty(self.shape, dtype=dtype)
+                other_arr = np.empty(self.shape, dtype=np.result_type(other))
                 other_arr.fill(other)
                 other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, op_name)
@@ -1094,14 +1093,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             data = np.empty(maxnnz, dtype=upcast(self.dtype, other.dtype))
 
-        data_dtype = self.dtype
-        if not np.can_cast(other.dtype, self.dtype):
-            data_dtype = upcast(self.dtype, other.dtype)
-
         fn(self.shape[0], self.shape[1],
            np.asarray(self.indptr, dtype=idx_dtype),
            np.asarray(self.indices, dtype=idx_dtype),
-           np.asarray(self.data, dtype=data_dtype),
+           self.data,
            np.asarray(other.indptr, dtype=idx_dtype),
            np.asarray(other.indices, dtype=idx_dtype),
            other.data,
