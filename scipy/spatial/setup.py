@@ -33,21 +33,33 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('qhull',
                          sources=['qhull.c'] + qhull_src,
                          **cfg)
-    # cKDTree
-    ckdtree_src = ['ckdtree_query.cxx',
-                   'ckdtree_globals.cxx',
-                   'ckdtree_cpp_exc.cxx']
+    # cKDTree    
+    ckdtree_src = ['query.cxx', 
+                   'build.cxx',
+                   'globals.cxx',
+                   'cpp_exc.cxx',
+                   'query_pairs.cxx',
+                   'count_neighbors.cxx',
+                   'query_ball_point.cxx',
+                   'query_ball_tree.cxx',
+                   'sparse_distances.cxx']
+                   
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
     
     ckdtree_headers = ['ckdtree_decl.h', 
-                       'ckdtree_exc.h', 
+                       'cpp_exc.h', 
                        'ckdtree_methods.h',
-                       'ckdtree_utils.h']
+                       'cpp_utils.h',
+                       'rectangle.h',
+                       'distance.h',
+                       'distance_box.h',
+                       'ordered_pair.h']
+                       
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
-    
+        
     ckdtree_dep = ['ckdtree.cxx'] + ckdtree_headers + ckdtree_src
     config.add_extension('ckdtree',
-                         sources=[join('ckdtree', 'ckdtree.cxx')] + ckdtree_src,
+                         sources=['ckdtree.cxx'] + ckdtree_src,
                          depends=ckdtree_dep,
                          include_dirs=inc_dirs + [join('ckdtree','src')])
     # _distance_wrap
