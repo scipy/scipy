@@ -21,16 +21,32 @@ Release highlights:
 
     - New functions for linear and nonlinear least squares optimization with
       constraints: `scipy.optimize.lsq_linear` and
-      `scipy.linalg.least_squares`
+      `scipy.optimize.least_squares`
     - Support for fitting with bounds in `scipy.optimize.curve_fit`.
     - Significant improvements to `scipy.stats`, providing many functions with
       better handing of inputs which have NaNs or are empty, improved
       documentation, and consistent behavior between `scipy.stats` and
       `scipy.stats.mstats`.
+    - Significant performance improvements and new functionality in
+      `scipy.spatial.cKDTree`.
 
 
 New features
 ============
+
+`scipy.cluster` improvements
+----------------------------
+
+A new function `scipy.cluster.hierarchy.cut_tree`, which determines a cut tree
+from a linkage matrix, was added.
+
+`scipy.io` improvements
+-----------------------
+
+`scipy.io.mmwrite` gained support for symmetric sparse matrices.
+
+`scipy.io.netcdf` gained support for masking and scaling data based on data
+attributes.
 
 `scipy.optimize` improvements
 -----------------------------
@@ -51,8 +67,8 @@ for constrained ones.  Furthermore it provides different loss functions.
 New trust-region methods also handle sparse Jacobians.
 
 A new function for *linear* least squares optimization with constraints was
-added: `scipy.linalg.lsq_linear`.  It provides a trust-region method as well as
-an implementation of the Bounded-Variable Least-Squares (BVLS) algorithm.
+added: `scipy.optimize.lsq_linear`.  It provides a trust-region method as well
+as an implementation of the Bounded-Variable Least-Squares (BVLS) algorithm.
 
 `scipy.optimize.curve_fit` now supports fitting with bounds.
 
@@ -89,6 +105,20 @@ Matrix normal distribution has been implemented as `scipy.stats.matrix_normal`.
 
 The `axis` keyword was added to sparse norms, `scipy.sparse.linalg.norm`.
 
+`scipy.spatial` improvements
+----------------------------
+
+`scipy.spatial.cKDTree` was partly rewritten for improved performance and
+several new features were added to it:
+
+- the ``query_ball_point`` method became significantly faster
+- ``query`` and ``query_ball_point`` gained an ``n_jobs`` keyword for parallel
+  execution
+- build and query methods now release the GIL
+- full pickling support
+- support for periodic spaces
+- the ``sparse_distance_matrix`` method can now return and sparse matrix type
+
 `scipy.interpolate` improvements
 --------------------------------
 
@@ -106,7 +136,12 @@ LAPACK's function ``*gelsd``. Users wanting to get the previous behavior
 can use a new keyword ``lapack_driver="gelss"`` (allowed values are 
 "gelss", "gelsd" and "gelsy").
 
-``scipy.sparse`` matrices and linear operators now support the matmul operator when available (Python 3.5+). See [PEP 465](http://legacy.python.org/dev/peps/pep-0465/)
+``scipy.sparse`` matrices and linear operators now support the matmul (``@``)
+operator when available (Python 3.5+). See
+[PEP 465](http://legacy.python.org/dev/peps/pep-0465/)
+
+A new function `scipy.linalg.ordqz`, for QZ decomposition with reordering, has
+been added.
 
 
 Deprecated features
@@ -179,6 +214,13 @@ Usage of `scipy.fftpack` functions within Scipy has been changed in such a
 way that `PyFFTW <http://hgomersall.github.io/pyFFTW/>`__ can easily replace
 `scipy.fftpack` functions (with improved performance).  See
 `gh-5295 <https://github.com/scipy/scipy/pull/5295>`__ for details.
+
+The ``imread`` functions in `scipy.misc` and `scipy.ndimage` were unified, for
+which a ``mode`` argument was added to `scipy.misc.imread`.  Also, bugs for
+1-bit and indexed RGB image formats were fixed.
+
+``runtests.py``, the development script to build and test Scipy, now allows
+building in parallel with ``--parallel``.
 
 
 Authors
