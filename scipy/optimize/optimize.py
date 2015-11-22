@@ -853,7 +853,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     I = numpy.eye(N, dtype=int)
     Hk = I
     old_fval = f(x0)
-    old_old_fval = None
+    old_old_fval = old_fval + 5000
     xk = x0
     if retall:
         allvecs = [x0]
@@ -1163,7 +1163,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     k = 0
     xk = x0
     old_fval = f(xk)
-    old_old_fval = None
+    old_old_fval = old_fval + 5000
 
     if retall:
         allvecs = [xk]
