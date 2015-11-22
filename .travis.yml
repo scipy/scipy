@@ -21,7 +21,7 @@ matrix:
         - REFGUIDE_CHECK=1
         - COVERAGE=
         - NPY_RELAXED_STRIDES_CHECKING=1
-        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.1"
+        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.2rc1"
       addons:
         apt:
           packages:
