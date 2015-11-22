@@ -903,7 +903,7 @@ class TestSVD(TestCase):
         # The following is reported to raise "ValueError: On entry to DGESDD
         # parameter number 12 had an illegal value".
         # `interp1d([1,2,3,4], [1,2,3,4], kind='cubic')`
-        # This is reported to only show up on LAPACK 3.0.3. 
+        # This is reported to only show up on LAPACK 3.0.3.
         #
         # The matrix below is taken from the call to
         # `B = _fitpack._bsplmat(order, xk)` in interpolate._find_smoothest
@@ -2156,6 +2156,7 @@ def _check_orth(n):
 
 
 @dec.slow
+@dec.skipif(np.dtype(np.intp).itemsize < 8, "test only on 64-bit, else too slow")
 def test_orth_memory_efficiency():
     # Pick n so that 16*n bytes is reasonable but 8*n*n bytes is unreasonable.
     # Keep in mind that @dec.slow tests are likely to be running
