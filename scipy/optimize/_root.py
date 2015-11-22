@@ -647,7 +647,8 @@ _rtol = np.finfo(float).eps * 2
 
 def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
                 maxiter=_iter, disp=True):
-    """Find a root of a function in a sign-changing interval.
+    """
+    Find a root of a function in a sign-changing interval.
 
     Parameters
     ----------
@@ -768,7 +769,8 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
     >>> def f(x):
     ...     return (x - 0.1)**3
 
-    >>> sol = root_scalar(f, -1, 1, method='bisect')
+    >>> from scipy import optimize
+    >>> sol = optimize.root_scalar(f, -1, 1, method='bisect')
     >>> sol.x
     0.0999999999994543
 
