@@ -46,7 +46,7 @@ from scipy.cluster.hierarchy import (
     cophenet, fclusterdata, fcluster, is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette)
+    set_link_color_palette, cut_tree, _order_cluster_tree)
 from scipy.spatial.distance import pdist
 
 import hierarchy_test_data
@@ -903,6 +903,44 @@ def test_2x2_linkage():
     Z1 = linkage([1], method='single', metric='euclidean')
     Z2 = linkage([[0, 1], [0, 0]], method='single', metric='euclidean')
     assert_allclose(Z1, Z2)
+
+
+def test_node_compare():
+    np.random.seed(23)
+    nobs = 50
+    X = np.random.randn(nobs, 4)
+    Z = scipy.cluster.hierarchy.ward(X)
+    tree = to_tree(Z)
+    assert_(tree > tree.get_left())
+    assert_(tree.get_right() > tree.get_left())
+    assert_(tree.get_right() == tree.get_right())
+    assert_(tree.get_right() != tree.get_left())
+
+
+def test_cut_tree():
+    np.random.seed(23)
+    nobs = 50
+    X = np.random.randn(nobs, 4)
+    Z = scipy.cluster.hierarchy.ward(X)
+    cutree = cut_tree(Z)
+
+    assert_equal(cutree[:, 0], np.arange(nobs))
+    assert_equal(cutree[:, -1], np.zeros(nobs))
+    assert_equal(cutree.max(0), np.arange(nobs - 1, -1, -1))
+
+    assert_equal(cutree[:, [-5]], cut_tree(Z, n_clusters=5))
+    assert_equal(cutree[:, [-5, -10]], cut_tree(Z, n_clusters=[5, 10]))
+    assert_equal(cutree[:, [-10, -5]], cut_tree(Z, n_clusters=[10, 5]))
+
+    nodes = _order_cluster_tree(Z)
+    heights = np.array([node.dist for node in nodes])
+
+    assert_equal(cutree[:, np.searchsorted(heights, [5])],
+                 cut_tree(Z, height=5))
+    assert_equal(cutree[:, np.searchsorted(heights, [5, 10])],
+                 cut_tree(Z, height=[5, 10]))
+    assert_equal(cutree[:, np.searchsorted(heights, [10, 5])],
+                 cut_tree(Z, height=[10, 5]))
 
 
 if __name__ == "__main__":
