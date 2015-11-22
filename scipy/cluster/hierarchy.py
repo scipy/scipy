@@ -59,6 +59,7 @@ tree objects.
    ClusterNode
    leaves_list
    to_tree
+   cut_tree
 
 These are predicates for checking the validity of linkage and
 inconsistency matrices as well as for checking isomorphism of two
@@ -187,7 +188,7 @@ _cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(
     set(_cpy_euclid_methods.keys()))
 
 __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
-           'correspond', 'dendrogram', 'fcluster', 'fclusterdata',
+           'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
            'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
            'is_monotonic', 'is_valid_im', 'is_valid_linkage', 'leaders',
            'leaves_list', 'linkage', 'maxRstat', 'maxdists', 'maxinconsts',
@@ -889,32 +890,31 @@ def _order_cluster_tree(Z):
 
 def cut_tree(Z, n_clusters=None, height=None):
     """
-    Given a linkage Z, return the cut tree.
+    Given a linkage matrix Z, return the cut tree.
 
     Parameters
     ----------
     Z : scipy.cluster.linkage array
         The linkage matrix.
-    n_clusters : float, array-like, or None
+    n_clusters : array_like, optional
         Number of clusters in the tree at the cut point.
-    height : float, array-like, or None
-        The height at which to cut the tree. Only possible for ultrametric
+    height : array_like, optional
+        The height at which to cut the tree.  Only possible for ultrametric
         trees.
 
     Returns
     -------
     cutree : array
-        An array indicating group membership at each agglomeration step. I.e.,
+        An array indicating group membership at each agglomeration step.  I.e.,
         for a full cut tree, in the first column each data point is in its own
-        cluster. At the next step, two nodes are merged. Finally all singleton
-        and non-singleton clusters are in one group. If n_clusters or
-        height is give, the columnscorrepond to the columns of n_clusters or
-        height.
+        cluster.  At the next step, two nodes are merged.  Finally all singleton
+        and non-singleton clusters are in one group.  If `n_clusters` or
+        `height` is given, the columns correspond to the columns of `n_clusters` or
+        `height`.
 
     Examples
     --------
     >>> from scipy import cluster
-    >>> import numpy as np
     >>> np.random.seed(23)
     >>> X = np.random.randn(50, 4)
     >>> Z = cluster.hierarchy.ward(X)
