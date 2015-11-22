@@ -9,7 +9,7 @@ import sys
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_raises, rand, dec)
+    assert_allclose, assert_, assert_raises, assert_warns, rand, dec)
 from nose import SkipTest
 
 import numpy
@@ -1624,6 +1624,47 @@ class TestExpect(TestCase):
         assert_(np.isfinite(stats.rice.expect(lambda x: 1, args=(0.74,))))
         assert_(np.isfinite(stats.rice.expect(lambda x: 2, args=(0.74,))))
         assert_(np.isfinite(stats.rice.expect(lambda x: 3, args=(0.74,))))
+
+    def test_logser(self):
+        # test a discrete distribution with infinite support and loc
+        p, loc = 0.3, 3
+        res_0 = stats.logser.expect(lambda k: k, args=(p,))
+        # check against the correct answer (sum of a geom series)
+        assert_allclose(res_0,
+                        p / (p - 1.) / np.log(1. - p), atol=1e-15)
+
+        # now check it with `loc` 
+        res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
+        assert_allclose(res_l, res_0 + loc, atol=1e-15)
+
+    def test_skellam(self):
+        # Use a discrete distribution w/ bi-infinite support. Compute two first
+        # moments and compare to known values (cf skellam.stats)
+        p1, p2 = 18, 22
+        m1 = stats.skellam.expect(lambda x: x, args=(p1, p2))
+        m2 = stats.skellam.expect(lambda x: x**2, args=(p1, p2))
+        assert_allclose(m1, p1 - p2, atol=1e-12)
+        assert_allclose(m2 - m1**2, p1 + p2, atol=1e-12)
+
+    def test_randint(self):
+        # Use a discrete distribution w/ parameter-dependent support, which
+        # is larger than the default chunksize
+        lo, hi = 0, 113
+        res = stats.randint.expect(lambda x: x, (lo, hi))
+        assert_allclose(res,
+            sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
+
+    def test_zipf(self):
+        # Test that there is no infinite loop even if the sum diverges
+        assert_warns(RuntimeWarning, stats.zipf.expect,
+            lambda x: x**2, (2,))
+
+    def test_discrete_kwds(self):
+        # check that discrete expect accepts keywords to control the summation
+        n0 = stats.poisson.expect(lambda x: 1, args=(2,))
+        n1 = stats.poisson.expect(lambda x: 1, args=(2,),
+            maxcount=1001, chunksize=32, tolerance=1e-8)
+        assert_almost_equal(n0, n1, decimal=14)
 
 
 class TestNct(TestCase):
