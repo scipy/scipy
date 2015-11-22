@@ -1863,7 +1863,7 @@ def detrend(data, axis=-1, type='linear', bp=0):
     --------
     >>> from scipy import signal
     >>> randgen = np.random.RandomState(9)
-    >>> npoints = 1e3
+    >>> npoints = 1000
     >>> noise = randgen.randn(npoints)
     >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
     >>> (signal.detrend(x) - noise).max() < 0.01
