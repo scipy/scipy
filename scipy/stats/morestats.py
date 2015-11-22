@@ -106,7 +106,7 @@ def bayes_mvs(data, alpha=0.90):
     mean and standard deviation with 95% confidence intervals for those
     estimates:
 
-    >>> n_samples = 1e5
+    >>> n_samples = 100000
     >>> data = stats.norm.rvs(size=n_samples)
     >>> res_mean, res_var, res_std = stats.bayes_mvs(data, alpha=0.95)
 
@@ -510,7 +510,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
 
     >>> ax3 = plt.subplot(223)
     >>> x = stats.norm.rvs(loc=[0,5], scale=[1,1.5],
-    ...                    size=(nsample/2.,2)).ravel()
+    ...                    size=(nsample//2,2)).ravel()
     >>> res = stats.probplot(x, plot=plt)
 
     A standard normal distribution:
