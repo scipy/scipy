@@ -79,6 +79,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
 
     """
+    format = 'lil'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         spmatrix.__init__(self)
