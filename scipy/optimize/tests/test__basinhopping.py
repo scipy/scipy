@@ -179,12 +179,11 @@ class TestBasinHopping(TestCase):
 
     def test_jac(self):
         # test jacobian returned
-        i = 2
         minimizer_kwargs = self.kwargs.copy()
         # BFGS returns a Jacobian
         minimizer_kwargs["method"] = "BFGS"
 
-        res = basinhopping(func2d_easyderiv, np.array([0.0, 0.0]),
+        res = basinhopping(func2d_easyderiv, [0.0, 0.0],
                            minimizer_kwargs=minimizer_kwargs, niter=self.niter,
                            disp=self.disp)
 
