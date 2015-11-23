@@ -158,7 +158,7 @@ Usable from Cython via::
 
 This module provides Cython-level wrappers for all primary routines included
 in LAPACK 3.1.0 except for ``zcgesv`` since its interface is not consistent
-from LAPACK 3.1.0 to 3.5.0. It also provides some of the
+from LAPACK 3.1.0 to 3.6.0. It also provides some of the
 fixed-api auxiliary routines.
 
 These wrappers do not check for alignment of arrays.

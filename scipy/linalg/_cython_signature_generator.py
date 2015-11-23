@@ -108,7 +108,7 @@ if __name__ == '__main__':
         sigs_from_dir(src_dir, outfile, exclusions=['scabs1', 'xerbla'])
     elif libname.lower() == 'lapack':
         # Exclude all routines that do not have consistent interfaces from
-        # LAPACK 3.1.0 through 3.5.0.
+        # LAPACK 3.1.0 through 3.6.0.
         # Also exclude routines with string arguments to avoid
         # compatibility woes with different standards for string arguments.
         # Exclude sisnan and slaneg since they aren't currently included in
@@ -116,6 +116,13 @@ if __name__ == '__main__':
         exclusions = ['sisnan', 'csrot', 'zdrot', 'ilaenv', 'iparmq', 'lsamen',
                       'xerbla', 'zcgesv', 'dlaisnan', 'slaisnan', 'dlazq3',
                       'dlazq4', 'slazq3', 'slazq4', 'dlasq3', 'dlasq4',
-                      'slasq3', 'slasq4', 'dlasq5', 'slasq5', 'slaneg']
+                      'slasq3', 'slasq4', 'dlasq5', 'slasq5', 'slaneg',
+                      # Routines deprecated in LAPACK 3.6.0
+                      'cgegs', 'cgegv', 'cgelsx', 'cgeqpf', 'cggsvd', 'cggsvp',
+                      'clahrd', 'clatzm', 'ctzrqf', 'dgegs', 'dgegv', 'dgelsx',
+                      'dgeqpf', 'dggsvd', 'dggsvp', 'dlahrd', 'dlatzm', 'dtzrqf',
+                      'sgegs', 'sgegv', 'sgelsx', 'sgeqpf', 'sggsvd', 'sggsvp',
+                      'slahrd', 'slatzm', 'stzrqf', 'zgegs', 'zgegv', 'zgelsx',
+                      'zgeqpf', 'zggsvd', 'zggsvp', 'zlahrd', 'zlatzm', 'ztzrqf']
         sigs_from_dir(src_dir, outfile, manual_wrappers=lapack_manual_wrappers,
                       exclusions=exclusions)
