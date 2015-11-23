@@ -9,7 +9,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
 import numpy as np
 from numpy import cos, sin
 
-from scipy.optimize import basinhopping
+from scipy.optimize import (basinhopping, OptimizeResult)
 from scipy.optimize._basinhopping import (
     Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
 
@@ -38,6 +38,13 @@ def func2d(x):
     df[1] = 2. * x[1] + 0.2
     return f, df
 
+def func2d_easyderiv(x):
+    f = 2.0*x[0]**2 + 2.0*x[0]*x[1] + 2.0*x[1]**2 - 6.0*x[0]
+    df = np.zeros(2)
+    df[0] = 4.0*x[0] + 2.0*x[1] - 6.0
+    df[1] = 2.0*x[0] + 4.0*x[1]
+
+    return f, df
 
 class MyTakeStep1(RandomDisplacement):
     """use a copy of displace, but have it set a special parameter to
@@ -106,10 +113,9 @@ class TestBasinHopping(TestCase):
 
         Run tests based on the 1-D and 2-D functions described above.
         """
-        self.x0 = (1.0, [1.0, 1.0])
-        self.sol = (-0.195, np.array([-0.195, -0.1]))
-        self.upper = (3., [3., 3.])
-        self.lower = (-3., [-3., -3.])
+        self.x0 = (1.0, [1.0, 1.0], [0.0, 0.0])
+        self.sol = (-0.195, np.array([-0.195, -0.1]), np.array([2.0, -1.0]))
+
         self.tol = 3  # number of decimal places
 
         self.niter = 100
@@ -170,6 +176,23 @@ class TestBasinHopping(TestCase):
                            disp=self.disp)
         assert_(res.nfev > 0)
         assert_equal(res.nfev, res.njev)
+
+    def test_jac(self):
+        # test jacobian returned
+        i = 2
+        minimizer_kwargs = self.kwargs.copy()
+        # BFGS returns a Jacobian
+        minimizer_kwargs["method"] = "BFGS"
+
+        res = basinhopping(func2d_easyderiv, self.x0[i],
+                           minimizer_kwargs=minimizer_kwargs, niter=self.niter,
+                           disp=self.disp)
+
+        assert_(hasattr(res.lowest_optimization_result, "jac"))
+
+        #in this case, the jacobian is just [df/dx, df/dy]
+        _, jacobian = func2d_easyderiv(res.x)
+        assert_almost_equal(res.lowest_optimization_result.jac, jacobian, self.tol)
 
     def test_2d_nograd(self):
         # test 2d minimizations without gradient
@@ -273,20 +296,33 @@ class Test_Storage(TestCase):
     def setUp(self):
         self.x0 = np.array(1)
         self.f0 = 0
-        self.storage = Storage(self.x0, self.f0)
+
+        minres = OptimizeResult()
+        minres.x = self.x0
+        minres.fun = self.f0
+
+        self.storage = Storage(minres)
 
     def test_higher_f_rejected(self):
-        ret = self.storage.update(self.x0 + 1, self.f0 + 1)
-        x, f = self.storage.get_lowest()
-        assert_equal(self.x0, x)
-        assert_equal(self.f0, f)
+        new_minres = OptimizeResult()
+        new_minres.x = self.x0 + 1
+        new_minres.fun = self.f0 + 1
+
+        ret = self.storage.update(new_minres)
+        minres = self.storage.get_lowest()
+        assert_equal(self.x0, minres.x)
+        assert_equal(self.f0, minres.fun)
         assert_(not ret)
 
     def test_lower_f_accepted(self):
-        ret = self.storage.update(self.x0 + 1, self.f0 - 1)
-        x, f = self.storage.get_lowest()
-        assert_(self.x0 != x)
-        assert_(self.f0 != f)
+        new_minres = OptimizeResult()
+        new_minres.x = self.x0 + 1
+        new_minres.fun = self.f0 - 1
+
+        ret = self.storage.update(new_minres)
+        minres = self.storage.get_lowest()
+        assert_(self.x0 != minres.x)
+        assert_(self.f0 != minres.fun)
         assert_(ret)
 
 
