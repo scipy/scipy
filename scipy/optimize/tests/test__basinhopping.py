@@ -113,9 +113,9 @@ class TestBasinHopping(TestCase):
 
         Run tests based on the 1-D and 2-D functions described above.
         """
-        self.x0 = (1.0, [1.0, 1.0], [0.0, 0.0])
-        self.sol = (-0.195, np.array([-0.195, -0.1]), np.array([2.0, -1.0]))
-
+        self.x0 = (1.0, [1.0, 1.0])
+        self.sol = (-0.195, np.array([-0.195, -0.1]))
+        
         self.tol = 3  # number of decimal places
 
         self.niter = 100
@@ -184,7 +184,7 @@ class TestBasinHopping(TestCase):
         # BFGS returns a Jacobian
         minimizer_kwargs["method"] = "BFGS"
 
-        res = basinhopping(func2d_easyderiv, self.x0[i],
+        res = basinhopping(func2d_easyderiv, np.array([0.0, 0.0]),
                            minimizer_kwargs=minimizer_kwargs, niter=self.niter,
                            disp=self.disp)
 
