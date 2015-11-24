@@ -153,6 +153,7 @@ Will Monroe for bug fixes.
 Bernardo Sulzbach for bug fixes.
 Alexander Grigorevskiy for adding extra LAPACK least-square solvers and 
     modifying linalg.lstsq function accordingly.
+Sam Lewis for enhancements to the basinhopping module.
 
 Institutions
 ------------
