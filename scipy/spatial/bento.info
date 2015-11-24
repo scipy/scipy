@@ -3,8 +3,9 @@ HookFile: bscript
 Library:
     Extension: ckdtree
         Sources: 
-            ckdtree/ckdtree.cxx,
+            ckdtree.cxx,
             ckdtree/src/query.cxx,
+            ckdtree/src/build.cxx,
             ckdtree/src/globals.cxx,
             ckdtree/src/cpp_exc.cxx,
             ckdtree/src/query_pairs.cxx,
