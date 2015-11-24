@@ -22,7 +22,7 @@ Functions
 
 import numpy
 from numpy import (Inf, sqrt, isinf)
-from math import copysign
+from math import (copysign, fsum)
 from .optimize import (vecnorm, wrap_function, _check_unknown_options, OptimizeResult, approx_fprime)
 
 __all__ = ['fmin_bfgs_h', '_minimize_bfgs_h']
@@ -38,10 +38,10 @@ _status_message = {'success': 'Optimization terminated successfully.',
                               'to precision loss.'}
 
 def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
-              H_reset=True, norm=Inf, epsilon=_epsilon, MAX_BACKTRACK=30,
+            tau=1E-4, H_reset=True, norm=Inf, epsilon=_epsilon, MAX_BACKTRACK=30,
               MIN_STEP=1E-7, MAX_STEP=0.2, reset=None, maxiter=None,
               full_output=0, disp=True, retall=False, L2norm=False, 
-              BACKTRACK_EPS=1E-8, callback=None):
+              BACKTRACK_EPS=1E-8, linesearch='backtrack', callback=None):
     """
     Gradient Minimization independent of target function using the BFGS
     algorithm while applying the inverse hessian directly to steps.  This
@@ -67,6 +67,10 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
     beta : float, optional
         Adjustment to step size alpha whenever f(x0) indicates alpha is too
         large.
+    tau : float, optional
+        In armijo linesearch, this is a constant for describing the sensitivity
+        of the linesearch being true (larger values imply more likely to
+        backtrack). Default is 1E-4
     H_reset : bool, optional
         Reset inverse hessian to the identity if True.
     norm : float, optional
@@ -78,6 +82,9 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
         loss. Default is 30
     BACKTRACK_EPS : float, optional
         Allowable deviation before backtracking occurs. Default is 1E-8.
+    linesearch : string, optional
+        What method of linesearch is desired. By default is backtrack, but
+        can be armijo.
     MIN_STEP : float, optional
         Minimum step allowable until precision loss. Default is 1E-7.
     MAX_STEP : float, optional
@@ -161,14 +168,16 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
 
     .. versionadded:: 0.17.0
     """
-    opts = {'gtol': gtol,
-            'alpha': alpha,
-            'beta': beta,
+    opts = {'gtol': numpy.float64(gtol),
+            'alpha': numpy.float64(alpha),
+            'beta': numpy.float64(beta),
+            'tau': numpy.float64(tau),
             'H_reset': H_reset,
             'norm': norm,
             'eps': epsilon,
             'MAX_BACKTRACK': MAX_BACKTRACK,
-            'BACKTRACK_EPS': BACKTRACK_EPS,
+            'BACKTRACK_EPS': numpy.float64(BACKTRACK_EPS),
+            'linesearch': linesearch,
             'MIN_STEP': MIN_STEP,
             'MAX_STEP': MAX_STEP,
             'reset': reset,
@@ -192,10 +201,11 @@ def fmin_bfgs_h(f, x0, fprime=None, args=(), gtol=1e-5, alpha=0.5, beta=0.7,
             return res['x']
 
 def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None, 
-    gtol=1e-5, alpha=0.5, beta=0.7, H_reset=True, norm=Inf,
+    gtol=1e-5, alpha=0.5, beta=0.7, tau=1E-4, H_reset=True, norm=Inf,
     eps=_epsilon, MAX_BACKTRACK=30, MIN_STEP=1E-7, MAX_STEP=0.2,
     reset=None, maxiter=None, disp=False, return_all=False,
-    L2norm=False, BACKTRACK_EPS=1E-8, **unknown_options):
+    L2norm=False, BACKTRACK_EPS=1E-8, linesearch='backtrack',
+    **unknown_options):
     """
     Gradient Minimization independent of target function using the BFGS
     algorithm while applying the inverse hessian directly to steps.  This
@@ -213,6 +223,10 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     beta : float, optional
         Adjustment to step size alpha whenever f(x0) indicates alpha is too
         large.
+    tau : float, optional
+        In armijo linesearch, this is a constant for describing the sensitivity
+        of the linesearch being true (larger values imply more likely to
+        backtrack). Default is 1E-4
     H_reset : bool, optional
         Reset inverse hessian to the identity if True.
     norm : float, optional
@@ -224,6 +238,9 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         loss. Default is 30
     BACKTRACK_EPS : float, optional
         Allowable deviation before backtracking occurs. Default is 1E-8.
+    linesearch : string, optional
+        What method of linesearch is desired. By default is backtrack, but
+        can be armijo.
     MIN_STEP : float, optional
         Minimum step allowable until precision loss. Default is 1E-7.
     MAX_STEP : float, optional
@@ -335,7 +352,7 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     # Criteria on gradient for continuing simulation
     if L2norm:
         def f_gnorm(x): 
-            return sum([numpy.linalg.norm(g)**2 for g in x])**0.5
+            return numpy.sqrt(fsum([numpy.linalg.norm(g)**2 for g in x]))
         gnorm = f_gnorm(gfk)
     else:
         f_gnorm = vecnorm
@@ -354,6 +371,27 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
     BETA_CONST = beta
     RESET_CONST = reset
 
+    # Get function to describe linesearch
+    if linesearch is 'backtrack':
+        if disp:
+            print("Using backtrack method with backtrack epsilon %lg." %
+                BACKTRACK_EPS)
+
+        def check_backtrack(f1,f0,x,y):
+            return (f1-f0)/(abs(f1)+abs(f0)) > BACKTRACK_EPS
+
+    elif linesearch is 'armijo':
+        if disp:
+            print("Using armijo method with tau %lg." % tau)
+
+        def check_backtrack(f1,f0,pk,gk):
+            return f1-f0 > tau*alpha*np.dot(gk,pk)
+
+    else:
+        print("ERROR - Linesearch '%s' is not acceptable. Use 'backtrack'\
+            or 'armijo'")
+        sys.exit()
+
     backtrack = 0
     while (gnorm > gtol) and (k < maxiter):
         if MAX_BACKTRACK is not None and backtrack > MAX_BACKTRACK:
@@ -368,10 +406,11 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         #print("%lg" % numpy.linalg.norm(pk*alpha))
 
         # If we are doing unreasonably small step sizes, quit
-        if numpy.linalg.norm(pk*alpha) < MIN_STEP:
+        #if numpy.linalg.norm(pk*alpha) < MIN_STEP:
+        if abs(max(pk*alpha)) < MIN_STEP:
             if disp:
                 print("Error - Step size unreasonable (%lg)" 
-                            % numpy.linalg.norm(pk*alpha))
+                            % abs(max(pk*alpha))),
             warnflag = 2
             break
 
@@ -400,13 +439,16 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
         # Check if max has increased
         if f is not None:
             fval = f(xkp1, *args)
-        if f is not None and (fval - old_fval) > BACKTRACK_EPS:
+
+        if f is not None and check_backtrack(fval, old_fval, gfkp1, pk):
             # Step taken overstepped the minimum.  Lowering step size
             if disp:
                 print("\tResetting System as %lg > %lg!"
                         % (fval, old_fval))
                 print("\talpha: %lg" % alpha),
-            alpha *= float(beta)
+
+            alpha *= numpy.float64(beta)
+
             if disp:
                 print("-> %lg\n" % alpha)
 
@@ -525,12 +567,11 @@ def _minimize_bfgs_h(fun, x0, args=(), jac=None, callback=None,
             print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+        print(msg)
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % k)
+        print("         Function evaluations: %d" % func_calls[0])
+        print("         Gradient evaluations: %d" % grad_calls[0])
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
