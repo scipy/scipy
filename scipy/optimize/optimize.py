@@ -852,8 +852,12 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     N = len(x0)
     I = numpy.eye(N, dtype=int)
     Hk = I
+
+    # Sets the initial step guess to dx ~ 5000/|g|
+    # XXX: doesn't give scaling invariance
     old_fval = f(x0)
     old_old_fval = old_fval + 5000
+
     xk = x0
     if retall:
         allvecs = [x0]
@@ -1162,6 +1166,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     gfk = myfprime(x0)
     k = 0
     xk = x0
+
+    # Sets the initial step guess to dx ~ 5000/|g|
+    # XXX: doesn't give scaling invariance
     old_fval = f(xk)
     old_old_fval = old_fval + 5000
 

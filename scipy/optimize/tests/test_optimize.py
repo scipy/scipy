@@ -651,6 +651,28 @@ class TestOptimizeSimple(CheckOptimize):
         xinit = np.random.randn(len(c))
         optimize.minimize(Y, xinit, jac=dY_dx, args=(c), method="BFGS")
 
+    def test_initial_step_scaling(self):
+        # Check that optimizer initial step is not huge even if the
+        # function and gradients are
+        def f(x):
+            if abs(x).max() > 1e4:
+                raise AssertionError("Optimization stepped far away!")
+            return 1e8*(x[0] - 1)**2
+        def g(x):
+            return np.array([1e8*(x[0] - 1)])
+
+        for method in ['CG', 'BFGS', 'L-BFGS-B', 'Newton-CG', 'TNC']:
+            if method == 'CG':
+                options = dict(gtol=1e8*1e-6)
+            else:
+                options = dict()
+
+            x0 = [-1.0]
+            res = optimize.minimize(f, x0, jac=g, method=method,
+                                    options=options)
+            assert_(res.success, method)
+            assert_allclose(res.x, [1.0], err_msg=method)
+
 
 class TestLBFGSBBounds(TestCase):
     def setUp(self):
