@@ -579,8 +579,8 @@ class TransferFunction(lti):
 
     Represents the system as the transfer function
     :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j`, where :math:`b` are
-    elements of the numerator `num` and :math:`a` are the elements of the
-    denominator `den`.
+    elements of the numerator `num`, :math:`a` are elements of the denominator
+    `den`, and ``N == len(b) - 1``, ``M == len(a) - 1``.
 
     Parameters
     ----------
