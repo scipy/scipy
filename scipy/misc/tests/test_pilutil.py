@@ -7,8 +7,9 @@ import numpy as np
 import warnings
 import glob
 
-from numpy.testing import (assert_, assert_equal, dec, decorate_methods,
-                           TestCase, run_module_suite, assert_allclose)
+from numpy.testing import (assert_equal, dec, decorate_methods,
+                           TestCase, run_module_suite, assert_allclose,
+                           assert_array_equal)
 
 from scipy import misc
 
@@ -28,37 +29,37 @@ datapath = os.path.dirname(__file__)
 
 class TestPILUtil(TestCase):
     def test_imresize(self):
-        im = np.random.random((10,20))
+        im = np.random.random((10, 20))
         for T in np.sctypes['float'] + [float]:
             # 1.1 rounds to below 1.1 for float16, 1.101 works
-            im1 = misc.imresize(im,T(1.101))
-            assert_equal(im1.shape,(11,22))
+            im1 = misc.imresize(im, T(1.101))
+            assert_equal(im1.shape, (11, 22))
 
     def test_imresize2(self):
-        im = np.random.random((20,30))
-        im2 = misc.imresize(im, (30,40), interp='bicubic')
-        assert_equal(im2.shape, (30,40))
+        im = np.random.random((20, 30))
+        im2 = misc.imresize(im, (30, 40), interp='bicubic')
+        assert_equal(im2.shape, (30, 40))
 
     def test_imresize3(self):
-        im = np.random.random((15,30))
-        im2 = misc.imresize(im, (30,60), interp='nearest')
-        assert_equal(im2.shape, (30,60))
+        im = np.random.random((15, 30))
+        im2 = misc.imresize(im, (30, 60), interp='nearest')
+        assert_equal(im2.shape, (30, 60))
 
     def test_imresize4(self):
         im = np.array([[1, 2],
                        [3, 4]])
         # Check that resizing by target size, float and int are the same
-        im2 = misc.imresize(im, (4,4), mode='F')  # output size
+        im2 = misc.imresize(im, (4, 4), mode='F')  # output size
         im3 = misc.imresize(im, 2., mode='F')  # fraction
         im4 = misc.imresize(im, 200, mode='F')  # percentage
         assert_equal(im2, im3)
         assert_equal(im2, im4)
 
     def test_bytescale(self):
-        x = np.array([0,1,2], np.uint8)
-        y = np.array([0,1,2])
+        x = np.array([0, 1, 2], np.uint8)
+        y = np.array([0, 1, 2])
         assert_equal(misc.bytescale(x), x)
-        assert_equal(misc.bytescale(y), [0,127,255])
+        assert_equal(misc.bytescale(y), [0, 127, 255])
 
     def test_bytescale_keywords(self):
         x = np.array([40, 60, 120, 200, 300, 500])
@@ -77,11 +78,13 @@ class TestPILUtil(TestCase):
             try:
                 fn1 = os.path.join(tmpdir, 'test.png')
                 fn2 = os.path.join(tmpdir, 'testimg')
-                with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+                # PIL ResourceWarning
+                with warnings.catch_warnings(record=True):
                     misc.imsave(fn1, img)
                     misc.imsave(fn2, img, 'PNG')
 
-                with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+                # PIL ResourceWarning
+                with warnings.catch_warnings(record=True):
                     data1 = misc.imread(fn1)
                     data2 = misc.imread(fn2)
                 assert_allclose(data1, img)
@@ -90,26 +93,54 @@ class TestPILUtil(TestCase):
                 assert_equal(data2.shape, img.shape)
             finally:
                 shutil.rmtree(tmpdir)
-        
-def tst_fromimage(filename, irange):
+
+decorate_methods(TestPILUtil, _pilskip)
+
+
+def tst_fromimage(filename, irange, shape):
     fp = open(filename, "rb")
     img = misc.fromimage(PIL.Image.open(fp))
     fp.close()
-    imin,imax = irange
-    assert_(img.min() >= imin)
-    assert_(img.max() <= imax)
+    imin, imax = irange
+    assert_equal(img.min(), imin)
+    assert_equal(img.max(), imax)
+    assert_equal(img.shape, shape)
 
 
 @_pilskip
 def test_fromimage():
     # Test generator for parametric tests
-    data = {'icon.png':(0,255),
-            'icon_mono.png':(0,2),
-            'icon_mono_flat.png':(0,1)}
-    for fn, irange in data.items():
-        yield tst_fromimage, os.path.join(datapath,'data',fn), irange
+    # Tuples in the list are (filename, (datamin, datamax), shape).
+    files = [('icon.png', (0, 255), (48, 48, 4)),
+             ('icon_mono.png', (0, 255), (48, 48, 4)),
+             ('icon_mono_flat.png', (0, 255), (48, 48, 3))]
+    for fn, irange, shape in files:
+        yield tst_fromimage, os.path.join(datapath, 'data', fn), irange, shape
 
-decorate_methods(TestPILUtil, _pilskip)
+
+@_pilskip
+def test_imread_indexed_png():
+    # The file `foo3x5x4indexed.png` was created with this array
+    # (3x5 is (height)x(width)):
+    data = np.array([[[127, 0, 255, 255],
+                      [127, 0, 255, 255],
+                      [127, 0, 255, 255],
+                      [127, 0, 255, 255],
+                      [127, 0, 255, 255]],
+                     [[192, 192, 255, 0],
+                      [192, 192, 255, 0],
+                      [0, 0, 255, 0],
+                      [0, 0, 255, 0],
+                      [0, 0, 255, 0]],
+                     [[0, 31, 255, 255],
+                      [0, 31, 255, 255],
+                      [0, 31, 255, 255],
+                      [0, 31, 255, 255],
+                      [0, 31, 255, 255]]], dtype=np.uint8)
+
+    filename = os.path.join(datapath, 'data', 'foo3x5x4indexed.png')
+    im = misc.imread(filename)
+    assert_array_equal(im, data)
 
 
 @_pilskip
