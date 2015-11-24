@@ -633,11 +633,11 @@ class TestOptimizeSimple(CheckOptimize):
         sol_4 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], bounds=[(1, 10)])
         for sol in [sol_0, sol_1, sol_2, sol_3, sol_4]:
             assert_(sol.success)
-        assert_allclose(sol_0.x, 0, atol=1e-8)
-        assert_allclose(sol_1.x, 2, atol=1e-8)
-        assert_allclose(sol_2.x, 5, atol=1e-8)
-        assert_allclose(sol_3.x, 5, atol=1e-8)
-        assert_allclose(sol_4.x, 2, atol=1e-8)
+        assert_allclose(sol_0.x, 0, atol=1e-7)
+        assert_allclose(sol_1.x, 2, atol=1e-7)
+        assert_allclose(sol_2.x, 5, atol=1e-7)
+        assert_allclose(sol_3.x, 5, atol=1e-7)
+        assert_allclose(sol_4.x, 2, atol=1e-7)
 
     def test_minimize_coerce_args_param(self):
         # Regression test for gh-3503
@@ -654,16 +654,19 @@ class TestOptimizeSimple(CheckOptimize):
     def test_initial_step_scaling(self):
         # Check that optimizer initial step is not huge even if the
         # function and gradients are
+
+        scale = 1e50
+
         def f(x):
             if abs(x).max() > 1e4:
                 raise AssertionError("Optimization stepped far away!")
-            return 1e8*(x[0] - 1)**2
+            return scale*(x[0] - 1)**2
         def g(x):
-            return np.array([1e8*(x[0] - 1)])
+            return np.array([scale*(x[0] - 1)])
 
         for method in ['CG', 'BFGS', 'L-BFGS-B', 'Newton-CG', 'TNC']:
             if method == 'CG':
-                options = dict(gtol=1e8*1e-6)
+                options = dict(gtol=scale*1e-8)
             else:
                 options = dict()
 
