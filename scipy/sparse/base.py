@@ -387,6 +387,22 @@ class spmatrix(object):
                 tr = np.asarray(other).transpose()
             return (self.transpose() * tr).transpose()
 
+    #####################################
+    # matmul (@) operator (Python 3.5+) #
+    #####################################
+
+    def __matmul__(self, other):
+        if isscalarlike(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__mul__(other)
+
+    def __rmatmul__(self, other):
+        if isscalarlike(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__rmul__(other)
+
     ####################
     # Other Arithmetic #
     ####################

@@ -367,6 +367,18 @@ class LinearOperator(object):
                 raise ValueError('expected 1-d or 2-d array or matrix, got %r'
                                  % x)
 
+    def __matmul__(self, other):
+        if np.isscalar(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__mul__(other)
+
+    def __rmatmul__(self, other):
+        if np.isscalar(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__rmul__(other)
+
     def __rmul__(self, x):
         if np.isscalar(x):
             return _ScaledLinearOperator(self, x)

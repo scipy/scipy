@@ -106,6 +106,8 @@ LAPACK's function ``*gelsd``. Users wanting to get the previous behavior
 can use a new keyword ``lapack_driver="gelss"`` (allowed values are 
 "gelss", "gelsd" and "gelsy").
 
+``scipy.sparse`` matrices and linear operators now support the matmul operator when available (Python 3.5+). See [PEP 465](http://legacy.python.org/dev/peps/pep-0465/)
+
 
 Deprecated features
 ===================
