@@ -435,8 +435,10 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         1-D array of widths to use for calculating the CWT matrix. In general,
         this range should cover the expected width of peaks of interest.
     wavelet : callable, optional
-        Should take a single variable and return a 1-D array to convolve
-        with `vector`.  Should be normalized to unit area.
+        Should take two parameters and return a 1-D array to convolve
+        with `vector`. The first parameter determines the number of points 
+        of the returned wavelet array, the second parameter is the scale 
+        (`width`) of the wavelet. Should be normalized and symmetric.
         Default is the ricker wavelet.
     max_distances : ndarray, optional
         At each row, a ridge line is only connected if the relative max at
