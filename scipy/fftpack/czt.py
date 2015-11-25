@@ -110,7 +110,7 @@ def czt_points(m, w=None, a=1+0j, scale=None):
     """
     m = _validate_sizes(1, m)
 
-    k = arange(0, m)
+    k = arange(m)
 
     a = 1.0 * a  # at least float
 
@@ -121,7 +121,7 @@ def czt_points(m, w=None, a=1+0j, scale=None):
             # Nothing specified, default to FFT-like
             scale = 1
 
-        return a * np.exp(2j * pi * scale * arange(m) / m)
+        return a * np.exp(2j * pi * scale * k / m)
     else:
         # w specified
         w = 1.0 * w  # at least float
