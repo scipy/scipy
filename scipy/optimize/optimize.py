@@ -1077,9 +1077,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     >>> res1 = optimize.fmin_cg(f, x0, fprime=gradf, args=args)
     Optimization terminated successfully.
              Current function value: 1.617021
-             Iterations: 2
-             Function evaluations: 5
-             Gradient evaluations: 5
+             Iterations: 4
+             Function evaluations: 8
+             Gradient evaluations: 8
     >>> res1
     array([-1.80851064, -0.25531915])
 
@@ -1097,9 +1097,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     ...                          method='CG', options=opts)
     Optimization terminated successfully.
             Current function value: 1.617021
-            Iterations: 2
-            Function evaluations: 5
-            Gradient evaluations: 5
+            Iterations: 4
+            Function evaluations: 8
+            Gradient evaluations: 8
     >>> res2.x  # minimum found
     array([-1.80851064, -0.25531915])
 

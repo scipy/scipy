@@ -661,6 +661,7 @@ class TestOptimizeSimple(CheckOptimize):
             if abs(x).max() > 1e4:
                 raise AssertionError("Optimization stepped far away!")
             return scale*(x[0] - 1)**2
+
         def g(x):
             return np.array([scale*(x[0] - 1)])
 
