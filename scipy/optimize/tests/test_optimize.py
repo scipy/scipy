@@ -658,6 +658,8 @@ class TestOptimizeSimple(CheckOptimize):
         scale = 1e50
 
         def f(x):
+            if first_step_size[0] is None and x[0] != x0[0]:
+                first_step_size[0] = abs(x[0] - x0[0])
             if abs(x).max() > 1e4:
                 raise AssertionError("Optimization stepped far away!")
             return scale*(x[0] - 1)**2
@@ -665,17 +667,24 @@ class TestOptimizeSimple(CheckOptimize):
         def g(x):
             return np.array([scale*(x[0] - 1)])
 
-        for method in ['CG', 'BFGS', 'L-BFGS-B', 'Newton-CG', 'TNC']:
+        for method in ['CG', 'BFGS', 'L-BFGS-B', 'Newton-CG']:
             if method == 'CG':
                 options = dict(gtol=scale*1e-8)
             else:
                 options = dict()
 
             x0 = [-1.0]
+            first_step_size = [None]
             res = optimize.minimize(f, x0, jac=g, method=method,
                                     options=options)
             assert_(res.success, method)
             assert_allclose(res.x, [1.0], err_msg=method)
+
+            if method in ('CG', 'BFGS'):
+                assert_allclose(first_step_size[0], 1.01)
+            else:
+                assert_(first_step_size[0] > 0.5 and first_step_size[0] < 3,
+                        "{0}: {1}".format(method, first_step_size))
 
 
 class TestLBFGSBBounds(TestCase):
