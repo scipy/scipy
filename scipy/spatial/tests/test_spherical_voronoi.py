@@ -8,22 +8,6 @@ from scipy.spatial import SphericalVoronoi
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 
 
-class TestDeterminantFallback(TestCase):
-
-    def test_zero(self):
-        m = np.zeros((4, 4))
-        assert_almost_equal(spherical_voronoi.determinant_fallback(m), 0.0)
-
-    def test_unit(self):
-        m = np.eye(4)
-        assert_almost_equal(spherical_voronoi.determinant_fallback(m), 1.0)
-
-    def test_example(self):
-        m = np.array([[2, 5, -10, -7], [-7, -3, -1, 9],
-                      [8, -6, -4, 2], [-9, -4, -3, 4]])
-        assert_almost_equal(spherical_voronoi.determinant_fallback(m), 6528.0)
-
-
 class TestCircumcenters(TestCase):
 
     def test_circumcenters(self):

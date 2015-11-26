@@ -22,40 +22,6 @@ HAS_NUMPY_VEC_DET = (NumpyVersion(np.__version__) >= '1.8.0')
 
 __all__ = ['SphericalVoronoi']
 
-
-def determinant_fallback(m):
-    """
-    Calculates the determinant of m using Laplace expansion in the first row.
-    This function is used only as a fallback to ensure backwards compatibility
-    with Python 2.6.
-
-    m : an array of floats assumed to be of shape (4, 4)
-
-    returns : determinant of m
-    """
-
-    def det3(a):
-        """
-        Calculates the determinant of a using Sarrus' rule.
-
-        a : an array of floats assumed to be of shape (3, 3)
-
-        returns : determinant of a
-        """
-
-        return \
-            a[0][0] * a[1][1] * a[2][2] \
-            + a[0][1] * a[1][2] * a[2][0] \
-            + a[0][2] * a[1][0] * a[2][1] \
-            - a[0][2] * a[1][1] * a[2][0] \
-            - a[0][1] * a[1][0] * a[2][2] \
-            - a[0][0] * a[1][2] * a[2][1]
-
-    minors = [det3(np.delete(np.delete(m, 0, axis=0), k, axis=1))
-              for k in range(0, 4)]
-    return sum([(-1) ** k * m[0][k] * minors[k] for k in range(0, 4)])
-
-
 def calc_circumcenters(tetrahedrons):
     """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
 
@@ -90,10 +56,10 @@ def calc_circumcenters(tetrahedrons):
         dz = np.linalg.det(dz)
         a = np.linalg.det(a)
     else:
-        dx = np.array([determinant_fallback(m) for m in dx])
-        dy = -np.array([determinant_fallback(m) for m in dy])
-        dz = np.array([determinant_fallback(m) for m in dz])
-        a = np.array([determinant_fallback(m) for m in a])
+        dx = np.array([np.linalg.det(m) for m in dx])
+        dy = -np.array([np.linalg.det(m) for m in dy])
+        dz = np.array([np.linalg.det(m) for m in dz])
+        a = np.array([np.linalg.det(m) for m in a])
 
     nominator = np.vstack((dx, dy, dz))
     denominator = 2*a
