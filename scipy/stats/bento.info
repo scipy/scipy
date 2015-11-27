@@ -12,5 +12,3 @@ Library:
         Sources: mvn.pyf, mvndst.f
     Extension: vonmises_cython
         Sources: vonmises_cython.c
-    Extension: _rank
-        Sources: _rank.c
