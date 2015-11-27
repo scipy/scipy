@@ -368,7 +368,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     The solution is computed using Levinson-Durbin recursion, which is faster
     than generic least-squares methods, but can be less numerically stable.
     """
-    # If numerical stability of this algorithim is a problem, a future
+    # If numerical stability of this algorithm is a problem, a future
     # developer might consider implementing other O(N^2) Toeplitz solvers,
     # such as GKO (http://www.jstor.org/stable/2153371) or Bareiss.
     if isinstance(c_or_cr, tuple):
