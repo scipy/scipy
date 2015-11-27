@@ -10,6 +10,7 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinv2', 'pinvh']
 
+import warnings
 import numpy as np
 
 from .flinalg import get_flinalg_funcs
@@ -751,9 +752,12 @@ def det(a, overwrite_a=False, check_finite=True):
 
 ### Linear Least Squares
 
+class LstsqLapackError(LinAlgError):
+    pass
+
 
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
-          check_finite=True, lapack_driver='gelsd'):
+          check_finite=True, lapack_driver=None):
     """
     Compute least-squares solution to equation Ax = b.
 
@@ -826,11 +830,14 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     if m != b1.shape[0]:
         raise ValueError('incompatible dimensions')
 
-    if lapack_driver not in ('gelsd', 'gelsy', 'gelss'):
-        raise ValueError('LAPACK driver "%s"is not found' % lapack_driver)
+    driver = lapack_driver
+    if driver is None:
+        driver = lstsq.default_lapack_driver
+    if driver not in ('gelsd', 'gelsy', 'gelss'):
+        raise ValueError('LAPACK driver "%s" is not found' % driver)
 
-    lapack_func, lapack_lwork = get_lapack_funcs((lapack_driver,
-                                        '%s_lwork' % lapack_driver), (a1, b1))
+    lapack_func, lapack_lwork = get_lapack_funcs((driver,
+                                        '%s_lwork' % driver), (a1, b1))
     real_data = True if (lapack_func.dtype.kind == 'f') else False
 
     if m < n:
@@ -850,27 +857,38 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     if cond is None:
         cond = np.finfo(lapack_func.dtype).eps
 
-    if lapack_driver in ('gelss', 'gelsd'):
-        if lapack_driver == 'gelss':
+    if driver in ('gelss', 'gelsd'):
+        if driver == 'gelss':
             lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
             v, x, s, rank, work, info = lapack_func(a1, b1, cond, lwork,
                                                     overwrite_a=overwrite_a,
                                                     overwrite_b=overwrite_b)
 
-        elif lapack_driver == 'gelsd':
+        elif driver == 'gelsd':
             if real_data:
                 lwork, iwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
                 if iwork == 0:
                     # this is LAPACK bug 0038: dgelsd does not provide the
                     # size of the iwork array in query mode.  This bug was
                     # fixed in LAPACK 3.2.2, released July 21, 2010.
-                    raise LinAlgError("internal gelsd driver lwork query error,"
-                                      "required iwork dimension not returned. "
-                                      "This is likely the result of LAPACK bug "
-                                      "0038, fixed in LAPACK 3.2.2 (released "
-                                      "July 21, 2010). Use a different "
-                                      "lapack_driver when calling lstsq or "
-                                      "upgrade LAPACK.")
+                    mesg = ("internal gelsd driver lwork query error, "
+                           "required iwork dimension not returned. "
+                           "This is likely the result of LAPACK bug "
+                           "0038, fixed in LAPACK 3.2.2 (released "
+                           "July 21, 2010). ")
+                    
+                    if lapack_driver is None:
+                        # restart with gelss
+                        lstsq.default_lapack_driver='gelss'
+                        mesg += "Falling back to 'gelss' driver."
+                        warnings.warn(mesg, RuntimeWarning)
+                        return lstsq(a, b, cond, overwrite_a, overwrite_b,
+                                    check_finite, lapack_driver='gelss')
+
+                    # can't proceed, bail out
+                    mesg += ("Use a different lapack_driver when calling lstsq "
+                            "or upgrade LAPACK.")
+                    raise LstsqLapackError(mesg)
 
                 x, s, rank, info = lapack_func(a1, b1, lwork,
                                                iwork, cond, False, False)
@@ -892,7 +910,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             x = x1
         return x, resids, rank, s
 
-    elif lapack_driver == 'gelsy':
+    elif driver == 'gelsy':
         lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
         jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
         v, x, j, rank, info = lapack_func(a1, b1, jptv, cond,
@@ -904,7 +922,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             x1 = x[:n]
             x = x1
         return x, np.array([], x.dtype), rank, None
-
+lstsq.default_lapack_driver = 'gelsd'
 
 def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
