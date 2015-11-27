@@ -181,11 +181,10 @@ import scipy.spatial.distance as distance
 from scipy._lib.six import string_types
 from scipy._lib.six import xrange
 
-_cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
-                           'weighted': 6}
-_cpy_euclid_methods = {'centroid': 3, 'median': 4, 'ward': 5}
-_cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(
-    set(_cpy_euclid_methods.keys()))
+_LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
+                    'median': 4, 'ward': 5, 'weighted': 6}
+_EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
+
 
 __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
@@ -619,55 +618,53 @@ def linkage(y, method='single', metric='euclidean'):
     Z : ndarray
         The hierarchical clustering encoded as a linkage matrix.
 
+    Notes
+    -----
+    1. For method 'single' an optimized algorithm called SLINK is implemented,
+       which has :math:`O(n^2)` time complexity and :math:`O(n)` memory
+       complexity.
+       For methods 'complete', 'average', 'weighted' and 'ward' an algorithm
+       called nearest-neighbors chain is implemented, which has both time and
+       memory complexity as :math:`O(n^2)`.
+       For other methods a naive algorithm is implemented with :math:`O(n^3)`
+       and :math:`O(n^2)` time and memory complexity respectively.
+       Refer to [1]_ for details about the algorithms.
+    2. Methods 'centroid', 'median' and 'ward' are correctly defined only if
+       Euclidean pairwise metric is used. If `y` is passed as precomputed
+       pairwise distances, then it is user responsibility to assure that
+       these distances are in fact Euclidean, otherwise the produced result
+       will be meaningless.
+
+    References
+    ----------
+    .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
+           algorithms", `arXiv:1109.2378v1 <http://arxiv.org/abs/1109.2378v1>`_
+           , 2011.
     """
-    if not isinstance(method, string_types):
-        raise TypeError("Argument 'method' must be a string.")
+    if method not in _LINKAGE_METHODS:
+        raise ValueError("Invalid method: {0}".format(method))
 
     y = _convert_to_double(np.asarray(y, order='c'))
 
-    s = y.shape
-    if len(s) == 1:
+    if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
-        d = distance.num_obs_y(y)
-        if method not in _cpy_non_euclid_methods:
-            raise ValueError("Valid methods when the raw observations are "
-                             "omitted are 'single', 'complete', 'weighted', "
-                             "and 'average'.")
-        # Since the C code does not support striding using strides.
         [y] = _copy_arrays_if_base_present([y])
+    elif y.ndim == 2:
+        if method in _EUCLIDEAN_METHODS and metric != 'euclidean':
+            raise ValueError("Method '{0}' requires the distance metric "
+                             "to be Euclidean".format(method))
+        y = distance.pdist(y, metric)
+    else:
+        raise ValueError("`y` must be 1 or 2 dimensional.")
 
-        Z = np.zeros((d - 1, 4))
-
-        if method == 'single':
-            _hierarchy.slink(y, Z, int(d))
-        else:
-            _hierarchy.linkage(y, Z, int(d),
-                               int(_cpy_non_euclid_methods[method]))
-
-    elif len(s) == 2:
-        X = y
-        n = s[0]
-        if method not in _cpy_linkage_methods:
-            raise ValueError('Invalid method: %s' % method)
-        if method in _cpy_non_euclid_methods:
-            dm = distance.pdist(X, metric)
-            Z = np.zeros((n - 1, 4))
-
-            if method == 'single':
-                _hierarchy.slink(dm, Z, n)
-            else:
-                _hierarchy.linkage(dm, Z, n,
-                                   int(_cpy_non_euclid_methods[method]))
-
-        elif method in _cpy_euclid_methods:
-            if metric != 'euclidean':
-                raise ValueError(("Method '%s' requires the distance metric "
-                                 "to be euclidean") % method)
-            dm = distance.pdist(X, metric)
-            Z = np.zeros((n - 1, 4))
-            _hierarchy.linkage(dm, Z, n,
-                               int(_cpy_euclid_methods[method]))
-    return Z
+    n = int(distance.num_obs_y(y))
+    method_code = _LINKAGE_METHODS[method]
+    if method == 'single':
+        return _hierarchy.slink(y, n)
+    elif method in ['complete', 'average', 'weighted', 'ward']:
+        return _hierarchy.nn_chain(y, n, method_code)
+    else:
+        return _hierarchy.linkage(y, n, method_code)
 
 
 class ClusterNode:
