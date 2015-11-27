@@ -879,7 +879,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                     
                     if lapack_driver is None:
                         # restart with gelss
-                        lstsq.default_lapack_driver='gelss'
+                        lstsq.default_lapack_driver = 'gelss'
                         mesg += "Falling back to 'gelss' driver."
                         warnings.warn(mesg, RuntimeWarning)
                         return lstsq(a, b, cond, overwrite_a, overwrite_b,
