@@ -744,7 +744,13 @@ class TestLstsq(TestCase):
                                             overwrite_a=overwrite,
                                             overwrite_b=overwrite)
                             except LstsqLapackError:
-                                continue
+                                if lapack_driver is None:
+                                    mesg = ('LstsqLapackError raised with '
+                                            'lapack_driver being None.')
+                                    raise AssertionError(mesg)
+                                else:
+                                    # can't proceed, skip to the next iteration
+                                    continue
 
                             x = out[0]
                             r = out[2]
@@ -767,7 +773,14 @@ class TestLstsq(TestCase):
                         out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                     overwrite_a=overwrite, overwrite_b=overwrite)
                     except LstsqLapackError:
-                        continue
+                        if lapack_driver is None:
+                            mesg = ('LstsqLapackError raised with '
+                                    'lapack_driver being None.')
+                            raise AssertionError(mesg)
+                        else:
+                            # can't proceed, skip to the next iteration
+                            continue
+
                     x = out[0]
                     if lapack_driver == 'gelsy':
                         residuals = np.sum((b - a.dot(x))**2)
@@ -798,7 +811,14 @@ class TestLstsq(TestCase):
                         out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                     overwrite_a=overwrite, overwrite_b=overwrite)
                     except LstsqLapackError:
-                        continue
+                        if lapack_driver is None:
+                            mesg = ('LstsqLapackError raised with '
+                                    'lapack_driver being None.')
+                            raise AssertionError(mesg)
+                        else:
+                            # can't proceed, skip to the next iteration
+                            continue
+
                     x = out[0]
                     if lapack_driver == 'gelsy':
                         res = b - a.dot(x)
@@ -831,7 +851,14 @@ class TestLstsq(TestCase):
                         out = lstsq(a1, b1, lapack_driver=lapack_driver,
                                     overwrite_a=overwrite, overwrite_b=overwrite)
                     except LstsqLapackError:
-                        continue
+                        if lapack_driver is None:
+                            mesg = ('LstsqLapackError raised with '
+                                    'lapack_driver being None.')
+                            raise AssertionError(mesg)
+                        else:
+                            # can't proceed, skip to the next iteration
+                            continue
+
                     x = out[0]
                     r = out[2]
                     assert_(r == 2, 'unexpected efficient rank')
@@ -860,7 +887,13 @@ class TestLstsq(TestCase):
                                             overwrite_a=overwrite,
                                             overwrite_b=overwrite)
                             except LstsqLapackError:
-                                continue
+                                if lapack_driver is None:
+                                    mesg = ('LstsqLapackError raised with '
+                                            'lapack_driver being None.')
+                                    raise AssertionError(mesg)
+                                else:
+                                    # can't proceed, skip to the next iteration
+                                    continue
                             x = out[0]
                             r = out[2]
                             assert_(r == n, 'unexpected efficient rank')
@@ -925,7 +958,14 @@ class TestLstsq(TestCase):
                                             overwrite_a=overwrite,
                                             overwrite_b=overwrite)
                             except LstsqLapackError:
-                                continue
+                                if lapack_driver is None:
+                                    mesg = ('LstsqLapackError raised with '
+                                            'lapack_driver being None.')
+                                    raise AssertionError(mesg)
+                                else:
+                                    # can't proceed, skip to the next iteration
+                                    continue
+
                             x = out[0]
                             r = out[2]
                             assert_(r == m, 'unexpected efficient rank')
@@ -980,7 +1020,13 @@ class TestLstsq(TestCase):
                                                 overwrite_a=overwrite,
                                                 overwrite_b=overwrite)
                                 except LstsqLapackError:
-                                    continue
+                                    if lapack_driver is None:
+                                        mesg = ('LstsqLapackError raised with '
+                                                'lapack_driver being None.')
+                                        raise AssertionError(mesg)
+                                    else:
+                                        # can't proceed, skip to the next iteration
+                                        continue
                                 x = out[0]
                                 r = out[2]
                                 assert_(r == 2, 'unexpected efficient rank')
