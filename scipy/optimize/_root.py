@@ -641,28 +641,27 @@ def _root_krylov_doc():
     pass
 
 
-_iter = 100
-_xtol = 1e-12
 _rtol = np.finfo(float).eps * 2
 
-def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
-                maxiter=_iter, disp=True):
-    """
-    Find a root of a function in a sign-changing interval.
+def root_scalar(f, a, b, args=(), method='brentq', xtol=1e-12, rtol=_rtol,
+                maxiter=100):
+    """Find a root of a continuous function on a sign-changing interval, that
+    is, an interval :math:`[a, b]` so that :math:`f(a)` and
+    :math:`f(b)` have opposite signs.
 
     Parameters
     ----------
     f : function
         Python function returning a number. The function must be
-        continuous and `f(a)` and `f(b)` must have opposite signs.
-
+        continuous and :math:`f(a)` and math:`f(b)` must have opposite
+        signs.
     a : number
-        One end of the bracketing interval `[a,b]`.
+        One end of the sign-changing interval :math:`[a, b]`.
     b : number
-        The other end of the bracketing interval `[a,b]`.
+        The other end of the sign-changing interval :math:`[a, b]`.
     args : tuple, optional
-        Extra arguments for the function `f`. In the code `f` is called by
-        ``apply(f, (x)+args)``.
+        Extra arguments for the function :math:`f`. In the code
+        :math:`f` is called by ``apply(f, (x)+args)``.
     method : str, optional
         Type of solver. Should be one of
 
@@ -672,28 +671,29 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
             - ``'bisect'`` :ref:`(see here) <root-scalar-bisect>`
 
     xtol : number, optional
-        The routine converges when a root is known to lie within `xtol` of the
-        value return. Should be >= 0.  The routine modifies this to take into
-        account the relative precision of doubles.
+        The routine converges when a root is known to lie within
+        `xtol` of the value returned. Should be nonnegative.  The
+        routine modifies the value to take into account the relative
+        precision of doubles.
     rtol : number, optional
-        The routine converges when a root is known to lie within `rtol` times
-        the value returned of the value returned. Should be >= 0. Defaults to
+        The routine converges when a root is known to lie within
+        `rtol` times the value returned of the value returned. Should
+        be greater than or equal to the default value of
         ``np.finfo(float).eps * 2``.
     maxiter : number, optional
         If convergence is not achieved in `maxiter` iterations, an error is
         raised.  Must be >= 0.
-    disp : bool, optional
-        If ``True``, raise a RuntimeError if the algorithm didn't converge.
 
     Returns
     -------
     sol : OptimizeResult
         The solution represented as a ``OptimizeResult`` object.
-        Attributes are: ``x``, a zero of `f` between `a` and `b`,
-        ``success``, a Boolean flag indicating if the algorithm exited
-        successfully, ``message``, which describes the cause of
-        termination, ``nit``, the number of iterations performed, and
-        ``function_calls``, the number of calls to `f`.
+        Attributes are: ``x``, a zero of :math:`f` between :math:`a`
+        and :math:`b`, ``success``, a Boolean flag indicating if the
+        algorithm exited successfully, ``message``, which describes
+        the cause of termination, ``nit``, the number of iterations
+        performed, and ``function_calls``, the number of calls to
+        :math:`f`.
 
     See Also
     --------
@@ -704,23 +704,45 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
     This section describes the available solvers that can be selected
     by the ``method`` parameter. The default is ``brentq``.
 
+    .. _root-scalar-bisect:
+
+    The method ``'bisect'`` uses bisection. At each iteration
+    bisection begins with a sign-changing interval :math:`[a, b]`. A
+    new sign-changing interval is chosen by taking :math:`m = (a +
+    b)/2` and picking the sign-changing interval of :math:`[a, m]` and
+    :math:`[m, b]`. (Note that exactly one of these intervals will be
+    sign-changing unless :math:`f(m) = 0`, in which case the algorithm
+    returns :math:`m`.) Since the width of the search interval is cut
+    in half each time, it takes bisection about :math:`\log_2((b -
+    a)/\delta)` iterations to achieve a tolerance of :math:`2\delta`.
+
     .. _root-scalar-brentq:
 
-    The method ``'brentq'`` uses the classic Brent's method, also
-    known as the van Winjngaarden-Dekker-Brent method, which is a safe
-    version of the secant method that combines root bracketing,
-    interval bisection, and inverse quadratic interpolation. In
-    [Brent1973]_ Brent claims convergence is guaranteed for functions
-    computable within the interval. It is generally considered the
-    best of the root-finding routines here.
-
-    The classic description of the algorithm is in
-    [Brent1973]_. Another description can be found in a recent edition
-    of Numerical Recipes, including [PressEtal1992]_, and yet another
-    at http://mathworld.wolfram.com/BrentsMethod.html. It should be
-    easy to understand the algorithm just by reading the code, which
-    diverges a bit from standard presentations in choosing a different
-    formula for the extrapolation step.
+    The method ``'brentq'`` uses Brent's method, also known as the Van
+    Winjngaarden-Dekker-Brent method. Brent's method seeks to speed up
+    bisection by adding inverse linear and quadratic interpolation
+    steps. At each iteration the method begins with a sign-changing
+    interval :math:`[b, c]`, where :math:`b` is the current estimate
+    for the root. The algorithm computes a point :math:`b''` via
+    either interpolation (inverse quadratic interpolation if
+    :math:`b`, :math:`c`, and the previous value of :math:`b` are
+    distinct; inverse linear interpolation otherwise) or bisection. If
+    :math:`|b - b''| > \delta` (where as in bisection the desired
+    tolerance is :math:`2\delta`), then :math:`b''` is taken as the
+    next :math:`b`, otherwise the next :math:`b` is taken to be the
+    current value plus a step of size :math:`\delta` in the direction
+    of the root. The power of Brent's method comes from balancing the
+    use interpolation and bisection for computing :math:`b''` so that
+    interpolation is used as much as possible in an attempt to speed
+    up convergence while ensuring that enough bisection steps are
+    taken that the algorithm is never much slower than
+    bisection. Brent's algorithm will usually require less iterations
+    than bisection for sufficiently smooth functions, though it can
+    require more for non-smooth functions or functions with repeated
+    roots; in the worst case scenario the number of iterations can be
+    about :math:`[\log_2((b - a)/\delta)]^2`. The presentation here is
+    taken from [Atkinson1989]_; for the full technial details see
+    Brent's original work [Brent1973]_.
 
     .. _root-scalar-brenth:
 
@@ -740,12 +762,14 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
     slightly from standard presentations in order to be a bit more
     careful of tolerance.
 
-    .. _root-scalar-bisect:
-
-    The method ``'bisect'`` uses the bisection method.
-
     References
     ----------
+    .. [Atkinson1989]
+       Atkinson, K. E.
+       *An Introduction to Numerical Analysis*
+       University of Iowa: Wiley, pp. 91-94, 1989.
+       Section 2.8: Brent's Rootfinding Algorithm
+
     .. [Brent1973]
        Brent, R. P.,
        *Algorithms for Minimization Without Derivatives*.
@@ -779,6 +803,8 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
     SIGNERR = 'sign error'
     CONVERR = 'convergence error'
     flag_map = {0: CONVERGED, -1: SIGNERR, -2: CONVERR}
+    full_output = True
+    disp = False
 
     if not isinstance(args, tuple):
         args = (args,)
@@ -787,13 +813,13 @@ def root_scalar(f, a, b, args=(), method='brentq', xtol=_xtol, rtol=_rtol,
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     if method == 'brentq':
-        res = _brentq(f, a, b, xtol, rtol, maxiter, args, disp)
+        res = _brentq(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     elif method == 'brenth':
-        res = _brenth(f, a, b, xtol, rtol, maxiter, args, disp)
+        res = _brenth(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     elif method == 'ridder':
-        res = _ridder(f, a, b, xtol, rtol, maxiter, args, disp)
+        res = _ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     elif method == 'bisect':
-        res = _bisect(f, a, b, xtol, rtol, maxiter, args, disp)
+        res = _bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     else:
         raise ValueError('Unknown solver %s' % method)
     x, function_calls, nit, flag = res
