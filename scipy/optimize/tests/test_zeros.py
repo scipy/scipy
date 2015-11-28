@@ -3,9 +3,10 @@ from __future__ import division, print_function, absolute_import
 
 from math import sqrt, exp, sin, cos
 
-from numpy.testing import (TestCase, assert_almost_equal, assert_warns,
-                           assert_, run_module_suite, assert_allclose,
+from numpy.testing import (TestCase, assert_warns, assert_, 
+                           run_module_suite, assert_allclose,
                            assert_equal)
+from numpy import finfo
 
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros
@@ -18,10 +19,13 @@ class TestBasic(TestCase):
     def run_check(self, method, name):
         a = .5
         b = sqrt(3)
+        xtol = 4*finfo(float).eps
+        rtol = 4*finfo(float).eps
         for function, fname in zip(functions, fstrings):
-            zero, r = method(function, a, b, xtol=0.1e-12, full_output=True)
+            zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
+                             full_output=True)
             assert_(r.converged)
-            assert_almost_equal(zero, 1.0, decimal=12,
+            assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
                 err_msg='method %s, function %s' % (name, fname))
 
     def test_bisect(self):
@@ -57,6 +61,21 @@ class TestBasic(TestCase):
         func = lambda x: x**2
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
+
+
+def test_gh_5555():
+    root = 0.1
+
+    def f(x):
+        return x - root
+
+    methods = [cc.bisect, cc.ridder]
+    xtol = 4*finfo(float).eps
+    rtol = 4*finfo(float).eps
+    for method in methods:
+        res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
+        assert_allclose(root, res, atol=xtol, rtol=rtol,
+                        err_msg='method %s' % method.__name__)
 
 
 class TestRootResults:
