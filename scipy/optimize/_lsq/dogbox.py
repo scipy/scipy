@@ -265,7 +265,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
             f_new = fun(x_new)
             nfev += 1
 
-            step_h_norm = norm(step * scale)
+            step_h_norm = norm(step * scale, ord=np.inf)
 
             if not np.all(np.isfinite(f_new)):
                 Delta = 0.25 * step_h_norm
