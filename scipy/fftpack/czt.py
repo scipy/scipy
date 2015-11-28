@@ -15,8 +15,6 @@ CZT : callable (x, axis=-1) -> array
    define a chirp z-transform that can be applied to different signals
 ZoomFFT : callable (x, axis=-1) -> array
    define a Fourier transform on a range of frequencies
-ScaledFFT : callable (x, axis=-1) -> array
-   define a limited frequency FFT
 
 Functions
 ---------
@@ -25,8 +23,6 @@ czt : array
    compute the chirp z-transform for a signal
 zoomfft : array
    compute the Fourier transform on a range of frequencies
-scaledfft : array
-   compute a limited frequency FFT for a signal
 """
 
 from __future__ import division, absolute_import, print_function
@@ -35,11 +31,10 @@ import cmath
 
 import numpy as np
 from numpy import pi, arange
-from scipy.fftpack import fft, ifft, fftshift
+from scipy.fftpack import fft, ifft
 from scipy.fftpack.helper import _next_regular
 
-__all__ = ['czt', 'zoomfft', 'scaledfft', 'CZT', 'ZoomFFT', 'ScaledFFT',
-           'czt_points']
+__all__ = ['czt', 'zoomfft', 'CZT', 'ZoomFFT', 'czt_points']
 
 
 def _validate_sizes(n, m):
@@ -354,100 +349,6 @@ class ZoomFFT(CZT):
         a = cmath.exp(2j * pi * f1/Fs)
         CZT.__init__(self, n, m=m, a=a, scale=scale)
         self.f1, self.f2, self.Fs = f1, f2, Fs
-
-
-class ScaledFFT(CZT):
-    """
-    Create a scaled FFT transform function.
-
-    Similar to FFT, where the frequency range is scaled and divided
-    into m-1 equal steps.  Like the FFT, frequencies are arranged from
-    0 to scale*Fs/2-delta followed by -scale*Fs/2 to -delta, where delta
-    is the step size scale*Fs/m for sampling frequency Fs. The intended
-    use is in a convolution of two signals, each has its own sampling step.
-
-    This is equivalent to:
-
-        fftshift(zoomfft(x, [-scale, scale*(m-2.)/m], m=m))
-
-    Parameters
-    ----------
-    n : int
-        Size of the signal
-    m : int, optional
-        The size of the output. Default: m=n
-    scale : float, optional
-        Frequency scaling factor. Default: scale=1.0
-
-    Returns
-    -------
-    f : ScaledFFT
-        callable function ``f(x, axis=-1)`` for computing the scaled FFT on
-        `x`.
-
-    Examples
-    --------
-    Show the relationship between scaled FFT and zoom FFT:
-
-    >>> scale, m, n = 0.25, 200, 100
-    >>> v = np.zeros(n)
-    >>> v[[1, 5, 21]] = 1
-    >>> from scipy.fftpack import fft, fftshift as shift
-    >>> x = np.linspace(-0.5, 0.5 - 1./n, n)
-    >>> xz = np.linspace(-scale * 0.5, scale * 0.5 * (m - 2.) / m, m)
-    >>> import matplotlib.pyplot as plt
-    >>> plt.plot(x, shift(abs(fft(v))), label='fft')
-    >>> plt.plot(x, shift(abs(scaledfft(v))), 'g.', label='x1 scaled fft')
-    >>> plt.plot(xz, abs(zoomfft(v, [-scale, scale * (m - 2.) / m], m=m)),
-    ...          'b+', label='zoomfft')
-    >>> plt.plot(xz, shift(abs(scaledfft(v, m=m, scale=scale))),
-    ...          'rx', label='x' + str(scale) + ' scaled fft')
-    >>> plt.yscale('log')
-    >>> plt.legend(loc='best')
-    >>> plt.show()
-
-    """
-    def __init__(self, n, m=None, scale=1.0):
-        m = _validate_sizes(n, m)
-
-        w = np.exp(-2j * pi / m * scale)
-        a = w**((m+1)//2)
-
-        CZT.__init__(self, n=n, m=m, a=a, scale=scale)
-        self.scale = scale
-
-    def __call__(self, x, axis=-1):
-        return fftshift(CZT.__call__(self, x, axis), axes=(axis,))
-    __call__.__doc__ = CZT.__call__.__doc__
-
-
-def scaledfft(x, m=None, scale=1.0, axis=-1):
-    """
-    Limited frequency FFT.
-
-    See `ScaledFFT` doc for details
-
-    Parameters
-    ----------
-    x : array
-        input array
-    m : int, optional
-        The length of the output signal
-    scale : float, optional
-        A frequency scaling factor
-    axis : int, optional
-        The array dimension to operate over.  The default is the
-        final dimension.
-
-    Returns
-    -------
-    out : ndarray
-        An array of the same rank of `x`, but with the size of
-        the `axis` dimension set to `m`
-    """
-    x = np.asarray(x)
-    transform = ScaledFFT(x.shape[axis], m, scale)
-    return transform(x, axis)
 
 
 def czt(x, m=None, w=None, a=1+0j, scale=None, axis=-1):

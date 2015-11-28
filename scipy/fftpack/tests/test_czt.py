@@ -7,8 +7,7 @@ from __future__ import division, absolute_import, print_function
 
 from numpy.testing import (run_module_suite, assert_, assert_allclose,
                            assert_raises, dec)
-from scipy.fftpack.czt import (czt, zoomfft, scaledfft, czt_points, CZT,
-                               ZoomFFT, ScaledFFT)
+from scipy.fftpack.czt import (czt, zoomfft, czt_points, CZT, ZoomFFT)
 import numpy as np
 
 fft = np.fft.fft
@@ -58,21 +57,6 @@ def check_zoomfft(x):
     assert_(err < 1e-10, "error for subrange is %g" % (err,))
 
 
-def check_scaledfft(x):
-    # Test for unscaled equivalence with FFT
-    n = len(x)
-    assert_(norm(fft(x)-scaledfft(x)) < 2E-10)
-
-    # Check that scaled FFT matches
-    n = n//4 * 4
-    x = x[:n]
-    st = n//4
-    m = n//2
-    sliced_fft = fftshift(fft(x))[st:st+m]
-    scl_fft = fftshift(scaledfft(x, scale=0.5, m=m))
-    assert_(norm(sliced_fft-scl_fft) < 2E-10)
-
-
 def test_1D():
     # Test of 1D version of the transforms
 
@@ -84,7 +68,6 @@ def test_1D():
     for length in lengths:
         x = np.random.random(length)
         yield check_zoomfft, x
-        yield check_scaledfft, x
         yield check_czt, x
 
     # Gauss
@@ -128,10 +111,6 @@ def test_1D():
     x += 1j*np.linspace(0, 0.5, x.shape[0])
     check_zoomfft(x)
 
-    # Scaled FFT on complex sines
-    x += 1j*np.linspace(0, 0.5, x.shape[0])
-    check_scaledfft(x)
-
 
 def test_large_prime_lengths():
     np.random.seed(0)  # Deterministic randomness
@@ -153,13 +132,11 @@ def test_czt_vs_fft():
 
 def test_empty_input():
     assert_raises(ValueError, czt, [])
-    assert_raises(ValueError, scaledfft, [])
     assert_raises(ValueError, zoomfft, [], 0.5)
 
 
 def test_0_rank_input():
     assert_raises(IndexError, czt, 5)
-    assert_raises(IndexError, scaledfft, 5)
     assert_raises(IndexError, zoomfft, 5, 0.5)
 
 
@@ -220,7 +197,7 @@ def test_czt_points_errors():
 
 def test_invalid_size():
     # Data size doesn't match function's expected size
-    for myfunc in (CZT(100), ZoomFFT(100, 0.2), ScaledFFT(100)):
+    for myfunc in (CZT(100), ZoomFFT(100, 0.2)):
         assert_raises(ValueError, myfunc, np.arange(5))
 
     # Nonsense input and output sizes
@@ -228,13 +205,10 @@ def test_invalid_size():
     for size in (0, -5, 3.5):
         assert_raises(ValueError, CZT, size, 3)
         assert_raises(ValueError, ZoomFFT, size, 0.2, 3)
-        assert_raises(ValueError, ScaledFFT, size, 3)
         assert_raises(ValueError, CZT, 3, size)
         assert_raises(ValueError, ZoomFFT, 3, 0.2, size)
-        assert_raises(ValueError, ScaledFFT, 3, size)
         assert_raises(ValueError, czt, [1, 2, 3], size)
         assert_raises(ValueError, zoomfft, [1, 2, 3], 0.2, size)
-        assert_raises(ValueError, scaledfft, [1, 2, 3], size)
 
 
 def test_invalid_range():
