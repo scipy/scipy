@@ -212,8 +212,8 @@ class TestEig(object):
             length[i] = norm(vr[:, i])
         assert_array_almost_equal(length, np.ones(length.size), err_msg=msg)
 
+    @dec.knownfailureif(True, "See gh-2254.")
     def test_singular(self):
-        """Test singular pair"""
         # Example taken from
         # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
         A = array(([22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
