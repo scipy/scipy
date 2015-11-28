@@ -427,7 +427,7 @@ class rv_frozen(object):
         self.kwds = kwds
 
         # create a new instance
-        self.dist = dist.__class__(**dist._ctor_param)
+        self.dist = dist.__class__(**dist._updated_ctor_param())
 
         # a, b may be set in _argcheck, depending on *args, **kwds. Ouch.
         shapes, _, _ = self.dist._parse_args(*args, **kwds)
@@ -658,7 +658,7 @@ class rv_generic(object):
         self._random_state = check_random_state(seed)
 
     def __getstate__(self):
-        return self._ctor_param, self._random_state
+        return self._updated_ctor_param(), self._random_state
 
     def __setstate__(self, state):
         ctor_param, r = state
@@ -1522,6 +1522,22 @@ class rv_continuous(rv_generic):
             else:
                 dct = dict(distcont)
                 self._construct_doc(docdict, dct.get(self.name))
+
+    def _updated_ctor_param(self):
+        """ Return the current version of _ctor_param, possibly updated by user.
+
+            Used by freezing and pickling.
+            Keep this in sync with the signature of __init__.
+        """
+        dct = self._ctor_param.copy()
+        dct['a'] = self.a
+        dct['b'] = self.b
+        dct['xtol'] = self.xtol
+        dct['badvalue'] = self.badvalue
+        dct['name'] = self.name
+        dct['shapes'] = self.shapes
+        dct['extradoc'] = self.extradoc
+        return dct
 
     def _ppf_to_solve(self, x, q, *args):
         return self.cdf(*(x, )+args)-q
@@ -2776,6 +2792,23 @@ class rv_discrete(rv_generic):
             self.__doc__ = self.__doc__.replace(
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
+
+    def _updated_ctor_param(self):
+        """ Return the current version of _ctor_param, possibly updated by user.
+
+            Used by freezing and pickling.
+            Keep this in sync with the signature of __init__.
+        """
+        dct = self._ctor_param.copy()
+        dct['a'] = self.a
+        dct['b'] = self.b
+        dct['badvalue'] = self.badvalue
+        dct['moment_tol'] = self.moment_tol
+        dct['inc'] = self.inc
+        dct['name'] = self.name
+        dct['shapes'] = self.shapes
+        dct['extradoc'] = self.extradoc
+        return dct
 
     def _nonzero(self, k, *args):
         return floor(k) == k
