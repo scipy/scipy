@@ -3438,6 +3438,26 @@ class TestSigamClip(object):
         attributes = ('clipped', 'lower', 'upper')
         check_named_results(res, attributes)
 
+    def test_sigmaclip_iters(self):
+        a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
+        fact = 1.8
+        c, low, upp = sigmaclip(a, fact, fact, iters=2)
+        assert_(c.min() > low)
+        assert_(c.max() < upp)
+        assert_equal(c, np.linspace(9.5,10.5,11))
+
+    def test_sigmaclip_median(self):
+        a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
+        fact = 1.8
+        c, low, upp = sigmaclip(a, fact, fact, cenfunc=np.median)
+        assert_equal(low, c.mean() - fact*c.std())
+        assert_equal(upp, c.mean() + fact*c.std())
+        assert_(c.min() > low)
+        assert_(c.max() < upp)
+        assert_equal(c, np.linspace(9.5,10.5,11))
+
+
+
 class TestFOneWay(TestCase):
     def test_trivial(self):
         # A trivial test of stats.f_oneway, with F=0.

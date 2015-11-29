@@ -149,11 +149,16 @@ Fukumu Tsutsumi for bug fixes.
 J.J. Green for interpolation bug fixes.
 François Magimel for documentation improvements.
 Josh Levy-Kramer for the log survival function of the hypergeometric distribution
+<<<<<<< eb23777d3da2c664b6b646e321bdaa9783aa779f
 Will Monroe for bug fixes.
 Bernardo Sulzbach for bug fixes.
 Alexander Grigorevskiy for adding extra LAPACK least-square solvers and 
     modifying linalg.lstsq function accordingly.
 Sam Lewis for enhancements to the basinhopping module.
+=======
+Srikrishna Sekhar for work on scipy.stats.sigmaclip
+
+>>>>>>> Fixed up sigmaclip function - No axis argument
 
 Institutions
 ------------
