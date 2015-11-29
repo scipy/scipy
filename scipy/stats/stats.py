@@ -2571,8 +2571,7 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
     return a
 
 
-def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std,
-        axis=None):
+def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std):
     """
     Iterative sigma-clipping of array elements.
 
@@ -2594,7 +2593,7 @@ def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std,
     high : float, optional
         Upper bound factor of sigma clipping. Default is 4.
     iters : bool, optional
-        Number of iterations to run sigma clipping. Default is `None`. 
+        Number of iterations to run sigma clipping. Default is `None`.
         `None` will clip until convergence is achieved, i.e., continue until
         the last iteration clips nothing.
     cenfunc : callable, optional
@@ -2603,12 +2602,6 @@ def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std,
     stdfunc : callable, optional
         The function used to compute the standard deviation about the center.
         Default is `np.std`.
-    axis : int or `None`, optional
-        If not `None`, clip along the given axis.  For this case,
-        ``axis`` will be passed on to ``cenfunc`` and ``stdfunc``, which
-        are expected to return an array with the axis dimension removed
-        (like the numpy functions).  If `None`, clip over all axes.
-        Defaults to `None`.
 
     Returns
     -------
@@ -2647,16 +2640,16 @@ def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std,
 
     if iters is not None:
         try:
-            iters = int(iters) # Force it to integer
+            iters = int(iters)  # Force it to integer
         except TypeError:
             # Input isn't None but cannot be converted to int, so shout about
             # it.
-            raise TypeError ("The input `iters` must be of type ``int``")
+            raise TypeError("The input `iters` must be of type ``int``")
 
     while delta:
         # Calculate mean and standard deviation using user defined functions
-        dat_std = stdfunc(dat, axis=axis)
-        dat_mean = cenfunc(dat, axis=axis)
+        dat_std = stdfunc(dat)
+        dat_mean = cenfunc(dat)
         size = dat.size
         # Calculate cutoffs
         critlower = dat_mean - dat_std*low

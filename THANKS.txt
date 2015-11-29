@@ -149,6 +149,7 @@ Fukumu Tsutsumi for bug fixes.
 J.J. Green for interpolation bug fixes.
 François Magimel for documentation improvements.
 Josh Levy-Kramer for the log survival function of the hypergeometric distribution
+Srikrishna Sekhar for work on scipy.stats.sigmaclip
 
 
 Institutions
