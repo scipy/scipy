@@ -68,6 +68,15 @@ def jac_wrong_dimensions(x, a=0.0):
     return np.atleast_3d(jac_trivial(x, a=a))
 
 
+def fun_bvp(x):
+    n = int(np.sqrt(x.shape[0]))
+    u = np.zeros((n + 2, n + 2))
+    x = x.reshape((n, n))
+    u[1:-1, 1:-1] = x
+    y = u[:-2, 1:-1] + u[2:, 1:-1] + u[1:-1, :-2] + u[1:-1, 2:] - 4 * x + x**3
+    return y.ravel()
+
+
 class BroydenTridiagonal(object):
     def __init__(self, n=100, mode='sparse'):
         np.random.seed(0)
@@ -326,6 +335,23 @@ class BaseMixin(object):
         x0 = np.ones(4).reshape(2, 2)
         assert_raises(ValueError, least_squares, fun_trivial, x0,
                       method=self.method)
+
+    def test_bvp(self):
+        # This test was introduced with fix #5556. It turned out that
+        # dogbox solver had a bug with trust-region radius update, which
+        # could block its progress and create an infinite loop. And this
+        # discrete boundary value problem is the one which triggers it.
+        n = 10
+        x0 = np.ones(n**2)
+        if self.method == 'lm':
+            max_nfev = 5000  # To account for Jacobian estimation.
+        else:
+            max_nfev = 100
+        res = least_squares(fun_bvp, x0, ftol=1e-2, method=self.method,
+                            max_nfev=max_nfev)
+
+        assert_(res.nfev < max_nfev)
+        assert_(res.cost < 0.5)
 
 
 class BoundsMixin(object):
