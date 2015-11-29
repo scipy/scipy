@@ -39,6 +39,11 @@ __all__ = ['netcdf_file']
 import warnings
 import weakref
 from operator import mul
+try:
+    from collections import OrderedDict
+except ImportError:
+    OrderedDict = dict
+
 import mmap as mm
 
 import numpy as np
@@ -245,8 +250,8 @@ class netcdf_file(object):
         self.version_byte = version
         self.maskandscale = maskandscale
 
-        self.dimensions = {}
-        self.variables = {}
+        self.dimensions = OrderedDict()
+        self.variables = OrderedDict()
 
         self._dims = []
         self._recs = 0
@@ -258,7 +263,7 @@ class netcdf_file(object):
             self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
             self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
 
-        self._attributes = {}
+        self._attributes = OrderedDict()
 
         if mode in 'ra':
             self._read()
@@ -278,7 +283,7 @@ class netcdf_file(object):
             try:
                 self.flush()
             finally:
-                self.variables = {}
+                self.variables = OrderedDict()
                 if self._mm_buf is not None:
                     ref = weakref.ref(self._mm_buf)
                     self._mm_buf = None
@@ -610,7 +615,7 @@ class netcdf_file(object):
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
-        attributes = {}
+        attributes = OrderedDict()
         for attr in range(count):
             name = asstr(self._unpack_string())
             attributes[name] = self._read_values()
@@ -839,7 +844,7 @@ class netcdf_variable(object):
         self.dimensions = dimensions
         self.maskandscale = maskandscale
 
-        self._attributes = attributes or {}
+        self._attributes = attributes or OrderedDict()
         for k, v in self._attributes.items():
             self.__dict__[k] = v
 
