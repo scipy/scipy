@@ -28,13 +28,15 @@ import numpy.linalg as linalg
 
 from numpy.testing import (TestCase, rand, run_module_suite, assert_raises,
     assert_equal, assert_almost_equal, assert_array_almost_equal, assert_,
-    assert_allclose, assert_array_equal)
+    assert_allclose, assert_array_equal, dec)
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
         solve_banded, solveh_banded, solve_triangular, solve_circulant,
         circulant, LinAlgError)
 
 from scipy.linalg._testutils import assert_no_overwrite
+
+from scipy._lib._version import NumpyVersion
 
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
@@ -1072,6 +1074,20 @@ class TestVectorNorms(object):
         assert_equal(norm([1,0,3], 0), 2)
         assert_equal(norm([1,2,3], 0), 3)
 
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0')
+    def test_axis_kwd(self):
+        a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
+        assert_allclose(norm(a, axis=1), [[3.60555128, 4.12310563]] * 2)
+        assert_allclose(norm(a, 1, axis=1), [[5.] * 2] * 2)
+
+    @dec.skipif(NumpyVersion(np.__version__) < '1.10.0')
+    def test_keepdims_kwd(self):
+        a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
+        b = norm(a, axis=1, keepdims=True)
+        assert_allclose(b, [[[3.60555128, 4.12310563]]] * 2)
+        assert_(b.shape == (2, 1, 2))
+        assert_allclose(norm(a, 1, axis=2, keepdims=True), [[[3.],[7.]]] * 2)
+
 
 class TestMatrixNorms(object):
 
@@ -1094,6 +1110,32 @@ class TestMatrixNorms(object):
                     if not np.allclose(actual, desired):
                         desired = np.linalg.norm(A.astype(t_high), ord=order)
                         np.assert_allclose(actual, desired)
+
+    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0')
+    def test_axis_kwd(self):
+        a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
+        b = norm(a, ord=np.inf, axis=(1, 0))
+        c = norm(np.swapaxes(a, 0, 1), ord=np.inf, axis=(0, 1))
+        d = norm(a, ord=1, axis=(0, 1))
+        assert_allclose(b, c)
+        assert_allclose(c, d)
+        assert_allclose(b, d)
+        assert_(b.shape == c.shape == d.shape)
+        b = norm(a, ord=1, axis=(1, 0))
+        c = norm(np.swapaxes(a, 0, 1), ord=1, axis=(0, 1))
+        d = norm(a, ord=np.inf, axis=(0, 1))
+        assert_allclose(b, c)
+        assert_allclose(c, d)
+        assert_allclose(b, d)
+        assert_(b.shape == c.shape == d.shape)
+
+    @dec.skipif(NumpyVersion(np.__version__) < '1.10.0')
+    def test_keepdims_kwd(self):
+        a = np.arange(120, dtype='d').reshape(2, 3, 4, 5)
+        b = norm(a, ord=np.inf, axis=(1, 0), keepdims=True)
+        c = norm(a, ord=1, axis=(0, 1), keepdims=True)
+        assert_allclose(b, c)
+        assert_(b.shape == c.shape)
 
 
 class TestOverwrite(object):
