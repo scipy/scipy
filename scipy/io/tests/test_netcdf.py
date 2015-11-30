@@ -299,16 +299,18 @@ def test_open_append():
 
 def test_maskandscale():
     t = np.linspace(20, 30, 15)
-    t[3] = np.nan
-    tm = np.ma.masked_invalid(t)
+    t[3] = 100
+    tm = np.ma.masked_greater(t, 99)
     fname = pjoin(TEST_DATA_PATH, 'example_2.nc')
     with netcdf_file(fname, maskandscale=True) as f:
         Temp = f.variables['Temperature']
         assert_equal(Temp.missing_value, 9999)
         assert_equal(Temp.add_offset, 20)
         assert_equal(Temp.scale_factor, np.float32(0.01))
+        found = Temp[:].compressed()
+        del Temp  # Remove ref to mmap, so file can be closed.
         expected = np.round(tm.compressed(), 2)
-        assert_allclose(Temp[:].compressed(), expected)
+        assert_allclose(found, expected)
 
     with in_tempdir():
         newfname = 'ms.nc'
@@ -327,5 +329,7 @@ def test_maskandscale():
             assert_equal(Temp.add_offset, 20)
             assert_equal(Temp.scale_factor, np.float32(0.01))
             expected = np.round(tm.compressed(), 2)
-            assert_allclose(Temp[:].compressed(), expected)
+            found = Temp[:].compressed()
+            del Temp
+            assert_allclose(found, expected)
 
