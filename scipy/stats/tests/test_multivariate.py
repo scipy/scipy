@@ -4,6 +4,8 @@ Test functions for multivariate normal distributions.
 """
 from __future__ import division, print_function, absolute_import
 
+import pickle
+
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_raises, run_module_suite, TestCase)
@@ -1022,10 +1024,30 @@ class TestInvwishart(TestCase):
         assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
 
+def check_pickling(distfn, args):
+    # check that a distribution instance pickles and unpickles
+    # pay special attention to the random_state property
+
+    # save the random_state (restore later)
+    rndm = distfn.random_state
+
+    distfn.random_state = 1234
+    distfn.rvs(*args, size=8)
+    s = pickle.dumps(distfn)
+    r0 = distfn.rvs(*args, size=8)
+
+    unpickled = pickle.loads(s)
+    r1 = unpickled.rvs(*args, size=8)
+    assert_equal(r0, r1)
+
+    # restore the random_state
+    distfn.random_state = rndm
+
+
 def test_random_state_property():
     scale = np.eye(3)
-    scale[0,1] = 0.5
-    scale[1,0] = 0.5
+    scale[0, 1] = 0.5
+    scale[1, 0] = 0.5
     dists = [
         [multivariate_normal, ()],
         [dirichlet, (np.array([1.]), )],
@@ -1034,7 +1056,7 @@ def test_random_state_property():
     ]
     for distfn, args in dists:
         check_random_state_property(distfn, args)
-
+        check_pickling(distfn, args)
 
 if __name__ == "__main__":
     run_module_suite()
