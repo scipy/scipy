@@ -745,7 +745,8 @@ class TestLstsq(TestCase):
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == 2, 'unexpected efficient rank')
+                            assert_(r == 2,
+                                    'expected efficient rank 2, got %s' % r)
                             assert_allclose(dot(a, x), b,
                                             atol=25 * np.finfo(a1.dtype).eps,
                                             rtol=25 * np.finfo(a1.dtype).eps,
@@ -768,7 +769,7 @@ class TestLstsq(TestCase):
                     else:
                         residuals = out[1]
                     r = out[2]
-                    assert_(r == 2, 'unexpected efficient rank')
+                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
                     assert_allclose(abs((dot(a,x) - b)**2).sum(axis=0),
                                     residuals,
                                     rtol=25 * np.finfo(a1.dtype).eps,
@@ -797,7 +798,7 @@ class TestLstsq(TestCase):
                     else:
                         residuals = out[1]
                     r = out[2]
-                    assert_(r == 2, 'unexpected efficient rank')
+                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
                     assert_allclose(abs((dot(a,x) - b)**2).sum(axis=0),
                                         residuals,
                                         rtol=25 * np.finfo(a1.dtype).eps,
@@ -822,7 +823,7 @@ class TestLstsq(TestCase):
                                 overwrite_a=overwrite, overwrite_b=overwrite)
                     x = out[0]
                     r = out[2]
-                    assert_(r == 2, 'unexpected efficient rank')
+                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
                     assert_allclose(x, (-0.055555555555555, 0.111111111111111,
                                         0.277777777777777),
                             rtol=25 * np.finfo(a1.dtype).eps,
@@ -847,7 +848,8 @@ class TestLstsq(TestCase):
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'unexpected efficient rank')
+                            assert_(r == n, 'expected efficient rank %s, got '
+                                             '%s' % (n, r))
                             if dtype is np.float32:
                                 assert_allclose(dot(a, x), b,
                                           rtol=400 * np.finfo(a1.dtype).eps,
@@ -878,7 +880,8 @@ class TestLstsq(TestCase):
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'unexpected efficient rank')
+                            assert_(r == n, 'expected efficient rank %s, got '
+                                             '%s' % (n, r))
                             if dtype is np.complex64:
                                 assert_allclose(dot(a, x), b,
                                           rtol=400 * np.finfo(a1.dtype).eps,
@@ -908,7 +911,8 @@ class TestLstsq(TestCase):
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'unexpected efficient rank')
+                            assert_(r == m, 'expected efficient rank %s, got '
+                                             '%s' % (m, r))
                             assert_allclose(x, direct_lstsq(a, b, cmplx=0),
                                             rtol=25 * np.finfo(a1.dtype).eps,
                                             atol=25 * np.finfo(a1.dtype).eps,
@@ -934,7 +938,8 @@ class TestLstsq(TestCase):
                                             overwrite_b=overwrite)
                                 x = out[0]
                                 r = out[2]
-                                assert_(r == m, 'unexpected efficient rank')
+                                assert_(r == m, 'expected efficient rank %s, got '
+                                                 '%s' % (m, r))
                                 assert_allclose(x, direct_lstsq(a, b, cmplx=1),
                                                 rtol=25 * np.finfo(a1.dtype).eps,
                                                 atol=25 * np.finfo(a1.dtype).eps,
@@ -960,7 +965,8 @@ class TestLstsq(TestCase):
                                             overwrite_b=overwrite)
                                 x = out[0]
                                 r = out[2]
-                                assert_(r == 2, 'unexpected efficient rank')
+                                assert_(r == 2, 'expected efficient rank 2, '
+                                                'got %s' % r)
                                 assert_allclose(dot(a, x), b,
                                           rtol=25 * np.finfo(a.dtype).eps,
                                           atol=25 * np.finfo(a.dtype).eps,
