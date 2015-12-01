@@ -884,7 +884,7 @@ def test_ball_point_ints():
                  sorted(tree.query_ball_point((2, 0), 1)))
 
 def test_two_big_groups():
-    points = [(1.0,)] * 100000 + [(2.0,)] * 100000
+    points = np.zeros((200000, 1)); points[100000:] = 2.0;
     tree = KDTree(points)
     # It just must not fall
 
