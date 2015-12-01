@@ -34,6 +34,7 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
         solve_banded, solveh_banded, solve_triangular, solve_circulant,
         circulant, LinAlgError)
 
+from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
 
 from scipy._lib._version import NumpyVersion
@@ -724,7 +725,7 @@ def direct_lstsq(a,b,cmplx=0):
 
 class TestLstsq(TestCase):
 
-    lapack_drivers = ('gelsd', 'gelss', 'gelsy')
+    lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
 
     def setUp(self):
         np.random.seed(1234)
@@ -740,16 +741,26 @@ class TestLstsq(TestCase):
                             a1 = a.copy()
                             b = np.array(bt, dtype=dtype)
                             b1 = b.copy()
-                            out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                        overwrite_a=overwrite,
-                                        overwrite_b=overwrite)
+                            try:
+                                out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                            overwrite_a=overwrite,
+                                            overwrite_b=overwrite)
+                            except LstsqLapackError:
+                                if lapack_driver is None:
+                                    mesg = ('LstsqLapackError raised with '
+                                            'lapack_driver being None.')
+                                    raise AssertionError(mesg)
+                                else:
+                                    # can't proceed, skip to the next iteration
+                                    continue
+
                             x = out[0]
                             r = out[2]
                             assert_(r == 2, 'unexpected efficient rank')
                             assert_allclose(dot(a, x), b,
                                             atol=25 * np.finfo(a1.dtype).eps,
                                             rtol=25 * np.finfo(a1.dtype).eps,
-                                        err_msg="driver: %s" % lapack_driver)
+                                            err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet(self):
         for dtype in REAL_DTYPES:
@@ -760,8 +771,18 @@ class TestLstsq(TestCase):
                     # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                overwrite_a=overwrite, overwrite_b=overwrite)
+                    try:
+                        out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                    overwrite_a=overwrite, overwrite_b=overwrite)
+                    except LstsqLapackError:
+                        if lapack_driver is None:
+                            mesg = ('LstsqLapackError raised with '
+                                    'lapack_driver being None.')
+                            raise AssertionError(mesg)
+                        else:
+                            # can't proceed, skip to the next iteration
+                            continue
+
                     x = out[0]
                     if lapack_driver == 'gelsy':
                         residuals = np.sum((b - a.dot(x))**2)
@@ -788,8 +809,18 @@ class TestLstsq(TestCase):
                     # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                overwrite_a=overwrite, overwrite_b=overwrite)
+                    try:
+                        out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                    overwrite_a=overwrite, overwrite_b=overwrite)
+                    except LstsqLapackError:
+                        if lapack_driver is None:
+                            mesg = ('LstsqLapackError raised with '
+                                    'lapack_driver being None.')
+                            raise AssertionError(mesg)
+                        else:
+                            # can't proceed, skip to the next iteration
+                            continue
+
                     x = out[0]
                     if lapack_driver == 'gelsy':
                         res = b - a.dot(x)
@@ -818,8 +849,18 @@ class TestLstsq(TestCase):
                     # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
-                    out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                overwrite_a=overwrite, overwrite_b=overwrite)
+                    try:
+                        out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                                    overwrite_a=overwrite, overwrite_b=overwrite)
+                    except LstsqLapackError:
+                        if lapack_driver is None:
+                            mesg = ('LstsqLapackError raised with '
+                                    'lapack_driver being None.')
+                            raise AssertionError(mesg)
+                        else:
+                            # can't proceed, skip to the next iteration
+                            continue
+
                     x = out[0]
                     r = out[2]
                     assert_(r == 2, 'unexpected efficient rank')
@@ -842,9 +883,19 @@ class TestLstsq(TestCase):
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
-                            out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                        overwrite_a=overwrite,
-                                        overwrite_b=overwrite)
+                            try:
+                                out = lstsq(a1, b1,
+                                            lapack_driver=lapack_driver,
+                                            overwrite_a=overwrite,
+                                            overwrite_b=overwrite)
+                            except LstsqLapackError:
+                                if lapack_driver is None:
+                                    mesg = ('LstsqLapackError raised with '
+                                            'lapack_driver being None.')
+                                    raise AssertionError(mesg)
+                                else:
+                                    # can't proceed, skip to the next iteration
+                                    continue
                             x = out[0]
                             r = out[2]
                             assert_(r == n, 'unexpected efficient rank')
@@ -903,9 +954,20 @@ class TestLstsq(TestCase):
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
-                            out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                        overwrite_a=overwrite,
-                                        overwrite_b=overwrite)
+                            try:
+                                out = lstsq(a1, b1,
+                                            lapack_driver=lapack_driver,
+                                            overwrite_a=overwrite,
+                                            overwrite_b=overwrite)
+                            except LstsqLapackError:
+                                if lapack_driver is None:
+                                    mesg = ('LstsqLapackError raised with '
+                                            'lapack_driver being None.')
+                                    raise AssertionError(mesg)
+                                else:
+                                    # can't proceed, skip to the next iteration
+                                    continue
+
                             x = out[0]
                             r = out[2]
                             assert_(r == m, 'unexpected efficient rank')
@@ -953,11 +1015,20 @@ class TestLstsq(TestCase):
                                 # later
                                 a1 = a.copy()
                                 b1 = b.copy()
-
-                                out = lstsq(a1, b1, lapack_driver=lapack_driver,
-                                            check_finite=check_finite,
-                                            overwrite_a=overwrite,
-                                            overwrite_b=overwrite)
+                                try:
+                                    out = lstsq(a1, b1,
+                                                lapack_driver=lapack_driver,
+                                                check_finite=check_finite,
+                                                overwrite_a=overwrite,
+                                                overwrite_b=overwrite)
+                                except LstsqLapackError:
+                                    if lapack_driver is None:
+                                        mesg = ('LstsqLapackError raised with '
+                                                'lapack_driver being None.')
+                                        raise AssertionError(mesg)
+                                    else:
+                                        # can't proceed, skip to the next iteration
+                                        continue
                                 x = out[0]
                                 r = out[2]
                                 assert_(r == 2, 'unexpected efficient rank')
