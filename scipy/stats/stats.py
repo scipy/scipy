@@ -3262,6 +3262,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     0.24821309157521476
 
     """
+    from ._stats import _kendall_condis
+
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
@@ -3290,19 +3292,6 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         cnt = np.bincount(ranks).astype('int64')
         return (cnt * (cnt - 1) // 2).sum()
 
-    def bit_inc(arr, i):
-        while i < arr.size:
-            arr[i] += 1
-            i += i & -i
-
-    def bit_acc(arr, i):
-        out = 0
-        while i != 0:
-            out += arr[i]
-            i -= i & -i
-
-        return out
-
     x = rankdata(x, method='dense').astype(np.intp)
     y = rankdata(y, method='dense').astype(np.intp)
 
@@ -3310,18 +3299,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     perm = np.lexsort((y, x))
     x, y = x[perm], y[perm]
 
-    arr = np.zeros(y.max() + 1, dtype=np.int64)
-    con = dis = i = k = 0
-
-    while i < size:
-        while k < size and x[i] == x[k]:
-            con += bit_acc(arr, y[k] - 1)  # concordant
-            dis += i - bit_acc(arr, y[k])  # discordant
-            k += 1
-
-        while i < k:
-            bit_inc(arr, y[i])
-            i += 1
+    con, dis = _kendall_condis(x, y)
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.where(obs)[0]).astype('int64')

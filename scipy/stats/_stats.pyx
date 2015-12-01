@@ -2,6 +2,7 @@ from libc cimport math
 cimport cython
 cimport numpy as np
 from numpy.math cimport PI
+from numpy cimport ndarray, int64_t, intp_t
 
 import numpy as np
 import scipy.stats, scipy.special
@@ -103,3 +104,48 @@ def von_mises_cdf(k_obj, x_obj):
         return result + ix
     else:
         return (result + ix)[0]
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cdef inline void bit_inc(intp_t[:] arr, intp_t i):
+    cdef:
+        intp_t size = arr.size
+
+    while i < size:
+        arr[i] += 1
+        i += i & -i
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cdef inline intp_t bit_acc(intp_t[:] arr, intp_t i):
+    cdef:
+        intp_t out = 0
+
+    while i != 0:
+        out += arr[i]
+        i -= i & -i
+
+    return out
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _kendall_condis(ndarray[intp_t, ndim=1] x,
+                    ndarray[intp_t, ndim=1] y):
+    cdef:
+        ndarray[intp_t, ndim=1] arr = np.zeros(y.max() + 1, dtype=np.intp)
+        intp_t i = 0, k = 0, size = x.size
+        int64_t con = 0, dis = 0
+
+    while i < size:
+        while k < size and x[i] == x[k]:
+            con += bit_acc(arr, y[k] - 1)  # concordant
+            dis += i - bit_acc(arr, y[k])  # discordant
+            k += 1
+
+        while i < k:
+            bit_inc(arr, y[i])
+            i += 1
+
+    return con, dis
