@@ -446,11 +446,8 @@ class poisson_gen(rv_discrete):
     """
 
     # Override rv_discrete._argcheck to allow mu=0.
-    def _argcheck(self, *args):
-        cond = 1
-        for arg in args:
-            cond = np.logical_and(cond, (np.asarray(arg) >= 0))
-        return cond
+    def _argcheck(self, mu):
+        return mu >= 0
 
     def _rvs(self, mu):
         return self._random_state.poisson(mu, self._size)
