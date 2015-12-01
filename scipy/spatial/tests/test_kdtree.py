@@ -883,6 +883,11 @@ def test_ball_point_ints():
     assert_equal(sorted([4, 8, 9, 12]),
                  sorted(tree.query_ball_point((2, 0), 1)))
 
+def test_two_big_groups():
+    points = [(1.0,) for i in xrange(100000)] + [(2.0,) for i in xrange(100000)]
+    tree = KDTree(points)
+    # It just must not fall
+
 
 def test_kdtree_comparisons():
     # Regression test: node comparisons were done wrong in 0.12 w/Py3.

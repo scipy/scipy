@@ -299,9 +299,8 @@ class KDTree(object):
                 # _still_ zero? all must have the same value
                 if not np.all(data == data[0]):
                     raise ValueError("Troublesome data array: %s" % data)
-                split = data[0]
-                less_idx = np.arange(len(data)-1)
-                greater_idx = np.array([len(data)-1])
+                maxes[d] = mins[d] = data[0]
+                return self.__build(idx, maxes, mins)
 
             lessmaxes = np.copy(maxes)
             lessmaxes[d] = split
