@@ -1118,7 +1118,7 @@ class TestGMean(TestCase):
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])
         actual = stats.gmean(a)
-        assert_approx_equal(actual, 1e200, significant=14)
+        assert_approx_equal(actual, 1e200, significant=13)
 
 
 class TestHMean(TestCase):
