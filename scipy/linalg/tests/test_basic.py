@@ -903,8 +903,8 @@ class TestLstsq(TestCase):
                                              '%s' % (n, r))
                             if dtype is np.float32:
                                 assert_allclose(dot(a, x), b,
-                                          rtol=400 * np.finfo(a1.dtype).eps,
-                                          atol=400 * np.finfo(a1.dtype).eps,
+                                          rtol=500 * np.finfo(a1.dtype).eps,
+                                          atol=500 * np.finfo(a1.dtype).eps,
                                           err_msg="driver: %s" % lapack_driver)
                             else:
                                 assert_allclose(dot(a, x), b,
