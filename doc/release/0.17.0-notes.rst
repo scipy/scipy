@@ -159,6 +159,14 @@ to construct an all-zero matrix of shape ``(m,n)``. This functionality was
 deprecated since at least 2007 and was already broken in the previous SciPy
 release. Use ``coo_matrix((m,n))`` instead.
 
+The Cython wrappers in ``linalg.cython_lapack`` for the LAPACK routines
+``*gegs``, ``*gegv``, ``*gelsx``, ``*geqpf``, ``*ggsvd``, ``*ggsvp``,
+``*lahrd``, ``*latzm``, ``*tzrqf`` have been removed since these routines
+are no longer present in the latest LAPACK release. With the exception of
+the routines ``*ggsvd`` and ``*ggsvp``, these were all deprecated in favor
+of routines that are currently present in our Cython LAPACK wrappers.
+
+
 Other changes
 =============
 
