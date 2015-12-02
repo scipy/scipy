@@ -556,7 +556,7 @@ class LossFunctionMixin(object):
     def test_grad(self):
         # Test that res.grad is true gradient of loss function at the
         # solution. Use max_nfev = 1, to avoid reaching minimum.
-        x = 2.0  # res.x will be this.
+        x = np.array([2.0])  # res.x will be this.
 
         res = least_squares(fun_trivial, x, jac_trivial, loss='linear',
                             max_nfev=1, method=self.method)
