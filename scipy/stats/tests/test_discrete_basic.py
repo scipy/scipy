@@ -6,9 +6,11 @@ from scipy._lib.six import xrange
 
 from scipy import stats
 from common_tests import (check_normalization, check_moment, check_mean_expect,
-        check_var_expect, check_skew_expect, check_kurt_expect,
-        check_entropy, check_private_entropy, check_edge_support,
-        check_named_args, check_random_state_property, check_pickling)
+                          check_var_expect, check_skew_expect,
+                          check_kurt_expect, check_entropy,
+                          check_private_entropy, check_edge_support,
+                          check_named_args, check_random_state_property,
+                          check_pickling)
 from scipy.stats._distr_params import distdiscrete
 knf = npt.dec.knownfailureif
 
@@ -34,8 +36,8 @@ def test_discrete_basic():
         yield check_edge_support, distfn, arg
 
         alpha = 0.01
-        yield check_discrete_chisquare, distfn, arg, rvs, alpha, \
-                      distname + ' chisquare'
+        yield (check_discrete_chisquare, distfn, arg, rvs, alpha,
+               distname + ' chisquare')
 
     seen = set()
     for distname, arg in distdiscrete:
@@ -98,35 +100,36 @@ def check_cdf_ppf(distfn, arg, supp, msg):
                            supp, msg + '-roundtrip')
     supp1 = supp[supp < distfn.b]
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
-                     supp1 + distfn.inc, msg + 'ppf-cdf-next')
+                           supp1 + distfn.inc, msg + 'ppf-cdf-next')
     # -1e-8 could cause an error if pmf < 1e-8
 
 
 def check_pmf_cdf(distfn, arg, distname):
     startind = int(distfn.ppf(0.01, *arg) - 1)
     index = list(range(startind, startind + 10))
-    cdfs, pmfs_cum = distfn.cdf(index,*arg), distfn.pmf(index, *arg).cumsum()
+    cdfs = distfn.cdf(index, *arg)
+    pmfs_cum = distfn.pmf(index, *arg).cumsum()
 
     atol, rtol = 1e-10, 1e-10
     if distname == 'skellam':    # ncx2 accuracy
         atol, rtol = 1e-5, 1e-5
     npt.assert_allclose(cdfs - cdfs[0], pmfs_cum - pmfs_cum[0],
-            atol=atol, rtol=rtol)
+                        atol=atol, rtol=rtol)
 
 
 def check_moment_frozen(distfn, arg, m, k):
     npt.assert_allclose(distfn(*arg).moment(k), m,
-            atol=1e-10, rtol=1e-10)
+                        atol=1e-10, rtol=1e-10)
 
 
 def check_oth(distfn, arg, supp, msg):
     # checking other methods of distfn
     npt.assert_allclose(distfn.sf(supp, *arg), 1. - distfn.cdf(supp, *arg),
-            atol=1e-10, rtol=1e-10)
+                        atol=1e-10, rtol=1e-10)
 
     q = np.linspace(0.01, 0.99, 20)
     npt.assert_allclose(distfn.isf(q, *arg), distfn.ppf(1. - q, *arg),
-            atol=1e-10, rtol=1e-10)
+                        atol=1e-10, rtol=1e-10)
 
     median_sf = distfn.isf(0.5, *arg)
     npt.assert_(distfn.sf(median_sf - 1, *arg) > 0.5)
@@ -164,30 +167,31 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     distsupp = [max(distfn.a, -1000)]
     distmass = []
     for ii in distsupport:
-        current = distfn.cdf(ii,*arg)
-        if current - last >= wsupp-1e-14:
+        current = distfn.cdf(ii, *arg)
+        if current - last >= wsupp - 1e-14:
             distsupp.append(ii)
             distmass.append(current - last)
             last = current
-            if current > (1-wsupp):
+            if current > (1 - wsupp):
                 break
     if distsupp[-1] < distfn.b:
         distsupp.append(distfn.b)
-        distmass.append(1-last)
+        distmass.append(1 - last)
     distsupp = np.array(distsupp)
     distmass = np.array(distmass)
 
     # convert intervals to right-half-open as required by histogram
-    histsupp = distsupp+1e-8
+    histsupp = distsupp + 1e-8
     histsupp[0] = distfn.a
 
     # find sample frequencies and perform chisquare test
-    freq,hsupp = np.histogram(rvs,histsupp)
-    cdfs = distfn.cdf(distsupp,*arg)
-    (chis,pval) = stats.chisquare(np.array(freq),n*distmass)
+    freq, hsupp = np.histogram(rvs, histsupp)
+    cdfs = distfn.cdf(distsupp, *arg)
+    chis, pval = stats.chisquare(np.array(freq), n*distmass)
 
-    npt.assert_(pval > alpha, 'chisquare - test for %s'
-           ' at arg = %s with pval = %s' % (msg,str(arg),str(pval)))
+    npt.assert_(pval > alpha,
+                'chisquare - test for %s at arg = %s with pval = %s' %
+                (msg, str(arg), str(pval)))
 
 
 def check_scale_docstring(distfn):
