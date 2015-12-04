@@ -21,7 +21,7 @@ The module contains:
 
 2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`, :func:`differential_evolution`)
 
-3. Least-squares minimization (:func:`leastsq`) and curve fitting
+3. Least-squares minimization (:func:`least_squares`) and curve fitting
    (:func:`curve_fit`) algorithms
 
 4. Scalar univariate functions minimizers (:func:`minimize_scalar`) and
@@ -368,106 +368,54 @@ and a constrained optimization as:
     [ 1.00000009  1.        ]
 
 
-Least-square fitting (:func:`leastsq`)
---------------------------------------
+Least-squares minimization (:func:`least_squares`)
+--------------------------------------------------
 
-All of the previously-explained minimization procedures can be used to
-solve a least-squares problem provided the appropriate objective
-function is constructed. For example, suppose it is desired to fit a
-set of data :math:`\left\{\mathbf{x}_{i}, \mathbf{y}_{i}\right\}`
-to a known model,
-:math:`\mathbf{y}=\mathbf{f}\left(\mathbf{x},\mathbf{p}\right)`
-where :math:`\mathbf{p}` is a vector of parameters for the model that
-need to be found. A common method for determining which parameter
-vector gives the best fit to the data is to minimize the sum of squares
-of the residuals. The residual is usually defined for each observed
-data-point as
+SciPy is capable of solving robustified bound constrained nonlinear
+least-squares problems:
 
 .. math::
-   :nowrap:
+  \begin{align}
+  &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathrm{x})^2\right) \\
+  &\text{s. t. } \mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
+  \end{align}
 
-    e_{i}\left(\mathbf{p},\mathbf{y}_{i},\mathbf{x}_{i}\right)=\left\Vert \mathbf{y}_{i}-\mathbf{f}\left(\mathbf{x}_{i},\mathbf{p}\right)\right\Vert
+Here :math:`f_i(\mathbf{x})` are smooth functions from
+:math:`\mathbb{R}^n` to :math:`\mathbb{R}`, we refer to them as residuals.
+The purpose of a scalar valued function :math:`\rho(\cdot)` is to reduce
+influence of outlier residuals and contribute to robustness of the solution,
+we refer to it as a loss function. A linear loss function gives a standard 
+least-squares problem. Additionally, constraints in a form of lower and upper
+bounds on some of :math:`x_j` are allowed.
 
-An objective function to pass to any of the previous minimization
-algorithms to obtain a least-squares fit is.
+All methods specific to least-squares minimization utilize a :math:`m \times n`
+matrix of partial derivatives called Jacobian and defined as 
+:math:`J_{ij} = \partial f_i / \partial x_j`. It is highly recommended to
+compute this matrix analytically and pass it to :func:`least_squares`,
+otherwise it will be estimated by finite differences which takes a lot of
+additional time and can be very inaccurate in hard cases.
 
-.. math::
-   :nowrap:
+Function :func:`least_squares` can be used for fitting a function
+:math:`\varphi(t; \mathbf{x})` to empirical data :math:`\{(t_i, y_i), i = 1, \ldots, m\}`.
+To do this one should simply precompute residuals as 
+:math:`f_i(\mathbf{x}) = w_i (\varphi(t_i; \mathbf{x}) - y_i)`, where :math:`w_i`
+are weights assigned to each observation.
 
-    J\left(\mathbf{p}\right)=\sum_{i=0}^{N-1}e_{i}^{2}\left(\mathbf{p}\right).
+Three interactive examples below illustrate usage of :func:`least_squares` in
+a great detail:
 
+1. `Large-scale bundle adjustment in scipy <https://gist.github.com/nmayorov/6098a514cc3277d72dd7>`_
+   demonstrates large-scale capabilities of :func:`least_squares` and how to
+   efficiently compute finite difference approximation of sparse Jacobian.
+2. `Robust nonlinear regression in scipy <https://gist.github.com/nmayorov/dac97f3ed9d638043191>`_
+   shows how to handle outliers with a robust loss function in a nonlinear
+   regression.
+3. `Solving a discrete boundary-value problem in scipy <https://gist.github.com/nmayorov/a0bebb7e49741585a22e>`_
+   examines how to solve a large system of equations and use bounds to achieve
+   desired properties of the solution.
 
-
-The :obj:`leastsq` algorithm performs this squaring and summing of the
-residuals automatically. It takes as an input argument the vector
-function :math:`\mathbf{e}\left(\mathbf{p}\right)` and returns the
-value of :math:`\mathbf{p}` which minimizes
-:math:`J\left(\mathbf{p}\right)=\mathbf{e}^{T}\mathbf{e}`
-directly. The user is also encouraged to provide the Jacobian matrix
-of the function (with derivatives down the columns or across the
-rows). If the Jacobian is not provided, it is estimated.
-
-An example should clarify the usage. Suppose it is believed some
-measured data follow a sinusoidal pattern
-
-.. math::
-   :nowrap:
-
-    y_{i}=A\sin\left(2\pi kx_{i}+\theta\right)
-
-where the parameters :math:`A,` :math:`k` , and :math:`\theta` are unknown. The residual vector is
-
-.. math::
-   :nowrap:
-
-    e_{i}=\left|y_{i}-A\sin\left(2\pi kx_{i}+\theta\right)\right|.
-
-By defining a function to compute the residuals and (selecting an
-appropriate starting position), the least-squares fit routine can be
-used to find the best-fit parameters :math:`\hat{A},\,\hat{k},\,\hat{\theta}`.
-This is shown in the following example:
-
-.. plot::
-
-   >>> from numpy import arange, sin, pi, random, array
-   >>> x = arange(0, 6e-2, 6e-2 / 30)
-   >>> A, k, theta = 10, 1.0 / 3e-2, pi / 6
-   >>> y_true = A * sin(2 * pi * k * x + theta)
-   >>> y_meas = y_true + 2*random.randn(len(x))
-
-   >>> def residuals(p, y, x):
-   ...     A, k, theta = p
-   ...     err = y - A * sin(2 * pi * k * x + theta)
-   ...     return err
-
-   >>> def peval(x, p):
-   ...     return p[0] * sin(2 * pi * p[1] * x + p[2])
-
-   >>> p0 = [8, 1 / 2.3e-2, pi / 3]
-   >>> array(p0)
-   array([8., 43.4783, 1.0472])
-
-   >>> from scipy.optimize import leastsq
-   >>> plsq = leastsq(residuals, p0, args=(y_meas, x))
-   >>> plsq[0]
-   array([10.9437, 33.3605, 0.5834])  # may vary (periodicity)
-
-   Notice that this example has multiple equivalent minima related by
-   :math:`\theta \to \theta + \pi` and :math:`A\to -A`. The optimization
-   process may converge to any of these minima, depending on the
-   initial guess.
-
-   >>> A, k, theta
-   (10., 33.3333, 0.5236)
-
-   >>> import matplotlib.pyplot as plt
-   >>> plt.plot(x, peval(x, plsq[0]),x,y_meas,'o',x,y_true)
-   >>> plt.title('Least-squares fit to noisy data')
-   >>> plt.legend(['Fit', 'Noisy', 'True'])
-   >>> plt.show()
-
-..   :caption: Least-square fitting to noisy data using
-..             :obj:`scipy.optimize.leastsq`
+For the details about mathematical algorithms behind the implementation refer
+to documentation of :func:`least_squares`.
 
 
 Univariate function minimizers (:func:`minimize_scalar`)
