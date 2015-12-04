@@ -111,7 +111,7 @@ before_install:
   # Speed up install by not compiling Cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython==0.22
   - travis_retry pip install $NUMPYSPEC
-  - travis_retry pip install nose mpmath argparse Pillow
+  - travis_retry pip install nose mpmath argparse Pillow codecov
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
   - if [ "${USE_WHEEL}" == "1" ]; then pip install wheel; fi
@@ -172,6 +172,13 @@ after_success:
         pip install wheelhouse_uploader
         python -m wheelhouse_uploader upload --local-folder \
           ${TRAVIS_BUILD_DIR}/wheelhouse/ travis-dev-wheels
+    fi
+  # Upload coverage information
+  - if [ "${COVERAGE}" == "--coverage" ]; then
+        pushd build/testenv/lib/python*/site-packages/;
+        cp ../../../../test/.coverage .;
+        codecov;
+        popd;
     fi
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
