@@ -1151,7 +1151,7 @@ class TestVectorNorms(object):
         assert_equal(norm([1,0,3], 0), 2)
         assert_equal(norm([1,2,3], 0), 3)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0')
+    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_axis_kwd(self):
         a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
         assert_allclose(norm(a, axis=1), [[3.60555128, 4.12310563]] * 2)
@@ -1188,7 +1188,7 @@ class TestMatrixNorms(object):
                         desired = np.linalg.norm(A.astype(t_high), ord=order)
                         np.assert_allclose(actual, desired)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0')
+    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_axis_kwd(self):
         a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
         b = norm(a, ord=np.inf, axis=(1, 0))
