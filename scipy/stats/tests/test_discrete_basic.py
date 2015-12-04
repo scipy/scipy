@@ -153,18 +153,15 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
     result : bool
         0 if test passes, 1 if test fails
 
-    uses global variable debug for printing results
-
     """
-    n = len(rvs)
-    nsupp = 20
-    wsupp = 1.0/nsupp
+    wsupp = 0.05
 
-    # construct intervals with minimum mass 1/nsupp
+    # construct intervals with minimum mass `wsupp`.
     # intervals are left-half-open as in a cdf difference
-    distsupport = xrange(max(distfn.a, -1000), min(distfn.b, 1000) + 1)
+    lo = max(distfn.a, -1000)
+    distsupport = xrange(lo, min(distfn.b, 1000) + 1)
     last = 0
-    distsupp = [max(distfn.a, -1000)]
+    distsupp = [lo]
     distmass = []
     for ii in distsupport:
         current = distfn.cdf(ii, *arg)
@@ -186,7 +183,7 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     # find sample frequencies and perform chisquare test
     freq, hsupp = np.histogram(rvs, histsupp)
-    chis, pval = stats.chisquare(np.array(freq), n*distmass)
+    chis, pval = stats.chisquare(np.array(freq), len(rvs)*distmass)
 
     npt.assert_(pval > alpha,
                 'chisquare - test for %s at arg = %s with pval = %s' %
