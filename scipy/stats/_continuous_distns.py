@@ -615,7 +615,7 @@ bradford = bradford_gen(a=0.0, b=1.0, name='bradford')
 
 
 class burr_gen(rv_continuous):
-    """A Burr continuous random variable.
+    """A Burr (Type III) continuous random variable.
 
     %(before_notes)s
 
@@ -633,7 +633,15 @@ class burr_gen(rv_continuous):
 
     `burr` takes ``c`` and ``d`` as shape parameters.
 
+    This is the PDF corresponding to the third CDF given in Burr's list;
+    specifically, it is equation (11) in Burr's paper [1]_.
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Burr, I. W. "Cumulative frequency functions", Annals of
+       Mathematical Statistics, 13(2), pp 215-232 (1942).
 
     %(example)s
 
