@@ -128,15 +128,18 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] = matvec(work[slice1])
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
-            work[slice2] = rmatvec(work[slice1])
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*rmatvec(work[slice1])
         elif (ijob == 3):
             work[slice1] = psolve(work[slice2])
         elif (ijob == 4):
             work[slice1] = rpsolve(work[slice2])
         elif (ijob == 5):
-            work[slice2] = sclr1*matvec(x)
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(x)
         elif (ijob == 6):
             if ftflag:
                 info = -1
@@ -191,11 +194,13 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] = matvec(work[slice1])
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            work[slice2] -= matvec(x)
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(x)
         elif (ijob == 4):
             if ftflag:
                 info = -1
@@ -250,11 +255,13 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] = matvec(work[slice1])
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            work[slice2] -= matvec(x)
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(x)
         elif (ijob == 4):
             if ftflag:
                 info = -1
@@ -308,11 +315,13 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] = matvec(work[slice1])
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(work[slice1])
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            work[slice2] -= matvec(x)
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(x)
         elif (ijob == 4):
             if ftflag:
                 info = -1
@@ -456,7 +465,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
 
             break
         elif (ijob == 1):
-            work[slice2] -= matvec(x)
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(x)
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
             if not first_pass and old_ijob == 3:
@@ -464,7 +474,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
 
             first_pass = False
         elif (ijob == 3):
-            work[slice2] = matvec(work[slice1])
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*matvec(work[slice1])
             if resid_ready and callback is not None:
                 callback(resid)
                 resid_ready = False
@@ -601,10 +612,11 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] = A.matvec(work[slice1])
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*A.matvec(work[slice1])
         elif (ijob == 2):
             work[slice2] *= sclr2
-            work[slice2] += A.rmatvec(work[slice1])
+            work[slice2] += sclr1*A.rmatvec(work[slice1])
         elif (ijob == 3):
             work[slice1] = M1.matvec(work[slice2])
         elif (ijob == 4):
@@ -614,7 +626,8 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
         elif (ijob == 6):
             work[slice1] = M2.rmatvec(work[slice2])
         elif (ijob == 7):
-            work[slice2] = sclr1*A.matvec(x)
+            work[slice2] *= sclr2
+            work[slice2] += sclr1*A.matvec(x)
         elif (ijob == 8):
             if ftflag:
                 info = -1
