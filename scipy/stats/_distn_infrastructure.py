@@ -210,7 +210,7 @@ And compare the histogram:
 
 """
 
-_doc_default_locscale = """\  
+_doc_default_locscale = """\
 The probability density above is defined in the "standardized" form. To shift
 and/or scale the distribution use the ``loc`` and ``scale`` parameters.
 Specifically, ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
