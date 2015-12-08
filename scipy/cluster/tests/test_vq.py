@@ -6,11 +6,13 @@ from __future__ import division, print_function, absolute_import
 
 import os.path
 import warnings
+import sys
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
     TestCase, run_module_suite, assert_raises, assert_allclose, assert_equal,
     assert_)
+from numpy.testing.decorators import skipif
 
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
     ClusterError, _krandinit)
@@ -268,6 +270,7 @@ class TestKMean(TestCase):
             kmeans2(data, 3, minit='random')
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 
+    @skipif(sys.platform == 'win32', 'Fails with MemoryError in Wine.')
     def test_krandinit(self):
         data = TESTDATA_2D
         datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
