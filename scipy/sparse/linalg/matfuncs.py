@@ -209,6 +209,10 @@ class MatrixPowerOperator(LinearOperator):
         return X
 
     @property
+    def H(self):
+        return MatrixPowerOperator(self._A.H, self._p)
+
+    @property
     def T(self):
         return MatrixPowerOperator(self._A.T, self._p)
 
