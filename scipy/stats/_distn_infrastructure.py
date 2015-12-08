@@ -85,7 +85,7 @@ _doc_logcdf = """\
 """
 _doc_sf = """\
 ``sf(x, %(shapes)s, loc=0, scale=1)``
-    Survival function (``1 - cdf`` --- sometimes more accurate).
+    Survival function  (also defined as ``1 - cdf``, but `sf` is sometimes more accurate).
 """
 _doc_logsf = """\
 ``logsf(x, %(shapes)s, loc=0, scale=1)``
