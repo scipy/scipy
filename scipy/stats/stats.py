@@ -2671,9 +2671,6 @@ def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std):
         # delta = 0 when convergence is achieved
         delta = size - dat.size
 
-<<<<<<< ca6c668af03a18368b8caca3fbe659f593a05bc6
-    return SigmaclipResult(c, critlower, critupper)
-=======
         if iters is not None:
             iters = iters - 1
             if iters == 0:  # Stop after `iters` iterations
@@ -2682,7 +2679,6 @@ def sigmaclip(a, low=4., high=4., iters=None, cenfunc=np.mean, stdfunc=np.std):
     SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower',
                                                      'upper'))
     return SigmaclipResult(dat, critlower, critupper)
->>>>>>> Done with the initial changes, need to add docs and tests
 
 
 def trimboth(a, proportiontocut, axis=0):
