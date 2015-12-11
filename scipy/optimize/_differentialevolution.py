@@ -360,7 +360,10 @@ class DifferentialEvolutionSolver(object):
                              'real valued (min, max) pairs for each value'
                              ' in x')
 
-        self.maxiter = maxiter or 1000
+        self.maxiter = 1000
+        if maxiter is not None:
+            self.maxiter = maxiter
+
         self.maxfun = (maxfun or ((self.maxiter + 1) * popsize *
                                   np.size(self.limits, 1)))
 
