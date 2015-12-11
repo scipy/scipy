@@ -404,13 +404,13 @@ are weights assigned to each observation.
 Three interactive examples below illustrate usage of :func:`least_squares` in
 a great detail:
 
-1. `Large-scale bundle adjustment in scipy <https://gist.github.com/nmayorov/6098a514cc3277d72dd7>`_
+1. `Large-scale bundle adjustment in scipy <http://scipy-cookbook.readthedocs.org/items/bundle_adjustment.html>`_
    demonstrates large-scale capabilities of :func:`least_squares` and how to
    efficiently compute finite difference approximation of sparse Jacobian.
-2. `Robust nonlinear regression in scipy <https://gist.github.com/nmayorov/dac97f3ed9d638043191>`_
+2. `Robust nonlinear regression in scipy <http://scipy-cookbook.readthedocs.org/items/robust_regression.html>`_
    shows how to handle outliers with a robust loss function in a nonlinear
    regression.
-3. `Solving a discrete boundary-value problem in scipy <https://gist.github.com/nmayorov/a0bebb7e49741585a22e>`_
+3. `Solving a discrete boundary-value problem in scipy <http://scipy-cookbook.readthedocs.org/items/discrete_bvp.html>`_
    examines how to solve a large system of equations and use bounds to achieve
    desired properties of the solution.
 
