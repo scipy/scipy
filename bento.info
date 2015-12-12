@@ -38,7 +38,6 @@ DataFiles: tests
     SourceDir: scipy
     Files:
         **/tests/*.py,
-        cluster/tests/*.txt,
         fftpack/tests/*.npz,
         io/arff/tests/data/*.arff,
         io/matlab/tests/data/*.txt,
