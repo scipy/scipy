@@ -27,7 +27,7 @@ if sys.version_info >= (3, 4):
                 with path.open() as file:
                     assert_(all(not re.fullmatch(regexp, line)
                                 for line in file),
-                            "{} contains an import from fftpack".format(path))
+                            "{0} contains an import from fftpack".format(path))
 
     if __name__ == "__main__":
         run_module_suite(argv=sys.argv)
