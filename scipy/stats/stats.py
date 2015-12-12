@@ -5320,7 +5320,7 @@ def rankdata(a, method='average'):
     array([ 1,  2,  4,  3])
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
-        raise ValueError('unknown method "{0:}"'.format(method))
+        raise ValueError('unknown method "{0}"'.format(method))
 
     arr = np.ravel(np.asarray(a))
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'

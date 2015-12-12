@@ -483,7 +483,7 @@ def extract_lsq_problems():
                 hasattr(problem_class, 'INITIAL_GUESSES')):
             for i, x0 in enumerate(problem_class.INITIAL_GUESSES):
                 if len(problem_class.INITIAL_GUESSES) > 1:
-                    key_name = "{}_{}".format(name, i)
+                    key_name = "{0}_{1}".format(name, i)
                 else:
                     key_name = name
                 problems[key_name] = problem_class(x0)
