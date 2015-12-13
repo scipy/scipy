@@ -365,6 +365,14 @@ class TestDifferentialEvolutionSolver(TestCase):
         bounds = [(-5, 5), (-5, 5)]
         result = differential_evolution(rosen, bounds, popsize=1815, maxiter=1)
 
+    def test_maxiter_zero(self):
+        # if you set maxiter to 0, then you can just get the energies of the
+        # initial population (a crude search).
+        bounds = [(-5, 5), (-5, 5)]
+        result = differential_evolution(rosen, bounds, popsize=10, maxiter=0,
+                                        polish=False)
+        assert_equal(result.nfev, 20)
+
 
 if __name__ == '__main__':
     run_module_suite()
