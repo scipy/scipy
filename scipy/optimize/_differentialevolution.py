@@ -14,7 +14,7 @@ _MACHEPS = np.finfo(np.float64).eps
 
 
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
-                           maxiter=None, popsize=15, tol=0.01,
+                           maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube'):
@@ -313,7 +313,7 @@ class DifferentialEvolutionSolver(object):
                     'rand2exp': '_rand2'}
 
     def __init__(self, func, bounds, args=(),
-                 strategy='best1bin', maxiter=None, popsize=15,
+                 strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=None, callback=None, disp=False, polish=True,
                  init='latinhypercube'):
@@ -360,7 +360,8 @@ class DifferentialEvolutionSolver(object):
                              'real valued (min, max) pairs for each value'
                              ' in x')
 
-        self.maxiter = maxiter or 1000
+        self.maxiter = maxiter
+
         self.maxfun = (maxfun or ((self.maxiter + 1) * popsize *
                                   np.size(self.limits, 1)))
 
