@@ -589,7 +589,7 @@ class DifferentialEvolutionSolver(object):
 
             for candidate in range(self.num_population_members):
                 if self._nfev > self.maxfun:
-                    return self.x, self.population_energies[0]
+                    return
 
                 # create a trial solution
                 trial = self._mutate(candidate)
