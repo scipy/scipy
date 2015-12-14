@@ -8,7 +8,7 @@ import numpy as np
 from scipy.optimize import rosen
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
                            run_module_suite, assert_almost_equal,
-                           assert_string_equal)
+                           assert_string_equal, assert_raises)
 
 
 class TestDifferentialEvolutionSolver(TestCase):
@@ -279,9 +279,10 @@ class TestDifferentialEvolutionSolver(TestCase):
                         'Maximum number of iterations has been exceeded.')
 
     def test_maxfun_stops_solve(self):
-        #test that if the maximum number of function evaluations is exceeded
-        #during initialisation the solver stops
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1)
+        # test that if the maximum number of function evaluations is exceeded
+        # during initialisation the solver stops
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1,
+                                             polish=False)
         result = solver.solve()
 
         assert_equal(result.nfev, 2)
@@ -290,11 +291,11 @@ class TestDifferentialEvolutionSolver(TestCase):
                          'Maximum number of function evaluations has '
                               'been exceeded.')
 
-        #test that if the maximum number of function evaluations is exceeded
-        #during the actual minimisation, then the solver stops.
-        #Have to turn polishing off, as this will still occur even if maxfun
-        #is reached. For popsize=5 and len(bounds)=2, then there are only 10
-        #function evaluations during initialisation.
+        # test that if the maximum number of function evaluations is exceeded
+        # during the actual minimisation, then the solver stops.
+        # Have to turn polishing off, as this will still occur even if maxfun
+        # is reached. For popsize=5 and len(bounds)=2, then there are only 10
+        # function evaluations during initialisation.
         solver = DifferentialEvolutionSolver(rosen,
                                              self.bounds,
                                              popsize=5,
@@ -314,6 +315,7 @@ class TestDifferentialEvolutionSolver(TestCase):
                                              [(-100, 100)],
                                              tol=0.02)
         solver.solve()
+        assert_equal(np.argmin(solver.population_energies), 0)
 
     def test_quadratic_from_diff_ev(self):
         # test the quadratic function from differential_evolution function
@@ -364,6 +366,31 @@ class TestDifferentialEvolutionSolver(TestCase):
         # this test, we use maxiter=1 to reduce the testing time.
         bounds = [(-5, 5), (-5, 5)]
         result = differential_evolution(rosen, bounds, popsize=1815, maxiter=1)
+
+    def test_calculate_population_energies(self):
+        # if popsize is 2 then the overall generation has size (4,)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2)
+        solver._calculate_population_energies()
+
+        assert_equal(np.argmin(solver.population_energies), 0)
+
+        # initial calculation of the energies should require 4 nfev.
+        assert_equal(solver._nfev, 4)
+
+    def test_evolve_generator(self):
+        # if popsize is 2 then the overall generation has size (4,)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2,
+                                             maxfun=8)
+        evolver = solver.evolve()
+        x, fun = next(evolver)
+        assert_equal(np.size(x, 0), 2)
+
+        # 4 nfev are required for initial calculation of energies, 4 nfev are
+        # required for the evolution of the 4 population members.
+        assert_equal(solver._nfev, 8)
+
+        # the next generation should halt because it exceeds maxfun
+        assert_raises(StopIteration, next, evolver)
 
 
 if __name__ == '__main__':

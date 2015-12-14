@@ -382,6 +382,7 @@ class DifferentialEvolutionSolver(object):
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
+        self._nfev = 0
         if init == 'latinhypercube':
             self.init_population_lhs()
         elif init == 'random':
@@ -389,9 +390,6 @@ class DifferentialEvolutionSolver(object):
         else:
             raise ValueError("The population initialization method must be one"
                              "of 'latinhypercube' or 'random'")
-
-        self.population_energies = (np.ones(self.num_population_members)
-                                    * np.inf)
 
         self.disp = disp
 
@@ -426,7 +424,11 @@ class DifferentialEvolutionSolver(object):
             order = rng.permutation(range(self.num_population_members))
             self.population[:, j] = samples[order, j]
 
-        # whenever the population is initialised reset nfev counter
+        # reset population energies
+        self.population_energies = (np.ones(self.num_population_members)
+                                    * np.inf)
+
+        # reset number of function evaluations counter
         self._nfev = 0
 
     def init_population_random(self):
@@ -437,7 +439,11 @@ class DifferentialEvolutionSolver(object):
         rng = self.random_number_generator
         self.population = rng.random_sample(self.population_shape)
 
-        # whenever the population is initialised reset nfev counter
+        # reset population energies
+        self.population_energies = (np.ones(self.num_population_members)
+                                    * np.inf)
+
+        # reset number of function evaluations counter
         self._nfev = 0
 
     @property
@@ -447,7 +453,7 @@ class DifferentialEvolutionSolver(object):
 
         Returns
         -------
-        x - ndarray
+        x : ndarray
             The best solution from the solver.
         """
         return self._scale_parameters(self.population[0])
@@ -467,44 +473,19 @@ class DifferentialEvolutionSolver(object):
             was employed, and a lower minimum was obtained by the polishing,
             then OptimizeResult also contains the ``jac`` attribute.
         """
-
-        self._nfev, nit, warning_flag = 0, 0, False
+        nit, warning_flag = 0, False
         status_message = _status_message['success']
 
-        # calculate energies to start with
-        for index, candidate in enumerate(self.population):
-            parameters = self._scale_parameters(candidate)
-            self.population_energies[index] = self.func(parameters,
-                                                        *self.args)
-            self._nfev += 1
-
-            if self._nfev > self.maxfun:
+        # do the optimisation.
+        evolver = self.evolve()
+        for nit in range(1, self.maxiter + 1):
+            # evolve the population by a generation
+            try:
+                next(evolver)
+            except StopIteration:
                 warning_flag = True
                 status_message = _status_message['maxfev']
                 break
-
-        minval = np.argmin(self.population_energies)
-
-        # put the lowest energy into the best solution position.
-        lowest_energy = self.population_energies[minval]
-        self.population_energies[minval] = self.population_energies[0]
-        self.population_energies[0] = lowest_energy
-
-        self.population[[0, minval], :] = self.population[[minval, 0], :]
-
-        if warning_flag:
-            return OptimizeResult(
-                           x=self.x,
-                           fun=self.population_energies[0],
-                           nfev=self._nfev,
-                           nit=nit,
-                           message=status_message,
-                           success=(warning_flag is not True))
-
-        # do the optimisation.
-        for nit in range(1, self.maxiter + 1):
-            # evolve the population by a generation
-            self.evolve()
 
             # stop when the fractional s.d. of the population is less than tol
             # of the mean energy
@@ -561,20 +542,54 @@ class DifferentialEvolutionSolver(object):
 
         return DE_result
 
+    def _calculate_population_energies(self):
+        """
+        Calculate the energies of all the population members at the same time.
+        Puts the best member in first place. Useful if the population has just
+        been initialised.
+        """
+        for index, candidate in enumerate(self.population):
+            if self._nfev > self.maxfun:
+                break
+
+            parameters = self._scale_parameters(candidate)
+            self.population_energies[index] = self.func(parameters,
+                                                        *self.args)
+            self._nfev += 1
+
+        minval = np.argmin(self.population_energies)
+
+        # put the lowest energy into the best solution position.
+        lowest_energy = self.population_energies[minval]
+        self.population_energies[minval] = self.population_energies[0]
+        self.population_energies[0] = lowest_energy
+
+        self.population[[0, minval], :] = self.population[[minval, 0], :]
+
     def evolve(self):
         """
-        Evolve the population by a single generation.
+        Generator function that evolves the population by a single generation.
+
+        Returns
+        -------
+        x : ndarray
+            The best solution from the solver.
+        fun : float
+            Value of objective function obtained from the best solution.
         """
         while True:
+            # the population may have just been initialized (all entries are
+            # np.inf). If it has you have to calculate the initial energies
+            if np.all(np.isinf(self.population_energies)):
+                self._calculate_population_energies()
+
             if self.dither is not None:
                 self.scale = self.random_number_generator.rand(
                 ) * (self.dither[1] - self.dither[0]) + self.dither[0]
 
             for candidate in range(self.num_population_members):
-                if nfev > self.maxfun:
-                    warning_flag = True
-                    status_message = _status_message['maxfev']
-                    break
+                if self._nfev > self.maxfun:
+                    return self.x, self.population_energies[0]
 
                 # create a trial solution
                 trial = self._mutate(candidate)
@@ -601,11 +616,11 @@ class DifferentialEvolutionSolver(object):
                         self.population_energies[0] = energy
                         self.population[0] = trial
 
-            yield self.x
+            yield self.x, self.population_energies[0]
 
     def _scale_parameters(self, trial):
         """
-        scale from a number between 0 and 1 to parameters
+        scale from a number between 0 and 1 to parameters.
         """
         return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
 
