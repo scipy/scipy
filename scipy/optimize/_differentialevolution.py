@@ -14,7 +14,7 @@ _MACHEPS = np.finfo(np.float64).eps
 
 
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
-                           maxiter=None, popsize=15, tol=0.01,
+                           maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube'):
@@ -313,9 +313,9 @@ class DifferentialEvolutionSolver(object):
                     'rand2exp': '_rand2'}
 
     def __init__(self, func, bounds, args=(),
-                 strategy='best1bin', maxiter=None, popsize=15,
+                 strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
-                 maxfun=None, callback=None, disp=False, polish=True,
+                 maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube'):
 
         if strategy in self._binomial:
@@ -360,9 +360,8 @@ class DifferentialEvolutionSolver(object):
                              'real valued (min, max) pairs for each value'
                              ' in x')
 
-        self.maxiter = maxiter or 1000
-        self.maxfun = (maxfun or ((self.maxiter + 1) * popsize *
-                                  np.size(self.limits, 1)))
+        self.maxiter = maxiter
+        self.maxfun = maxfun
 
         # population is scaled to between [0, 1].
         # We have to scale between parameter <-> population
@@ -458,6 +457,20 @@ class DifferentialEvolutionSolver(object):
         """
         return self._scale_parameters(self.population[0])
 
+    @property
+    def convergence(self):
+        """
+        The convergence criterion.
+
+        Returns
+        -------
+        convergence : float
+            The standard deviation of the population energies divided by their
+            mean.
+        """
+        return (np.std(self.population_energies) /
+                np.abs(np.mean(self.population_energies) + _MACHEPS))
+
     def solve(self):
         """
         Runs the DifferentialEvolutionSolver.
@@ -476,27 +489,32 @@ class DifferentialEvolutionSolver(object):
         nit, warning_flag = 0, False
         status_message = _status_message['success']
 
+        # The population may have just been initialized (all entries are
+        # np.inf). If it has you have to calculate the initial energies.
+        # Although this is also done in the evolve generator it's possible
+        # that someone can set maxiter=0, at which point we still want the
+        # initial energies to be calculated (the following loop isn't run).
+        if np.all(np.isinf(self.population_energies)):
+            self._calculate_population_energies()
+
         # do the optimisation.
-        evolver = self.evolve()
         for nit in range(1, self.maxiter + 1):
             # evolve the population by a generation
             try:
-                next(evolver)
+                next(self)
             except StopIteration:
                 warning_flag = True
                 status_message = _status_message['maxfev']
                 break
 
-            # stop when the fractional s.d. of the population is less than tol
-            # of the mean energy
-            convergence = (np.std(self.population_energies) /
-                           np.abs(np.mean(self.population_energies) +
-                                  _MACHEPS))
-
             if self.disp:
                 print("differential_evolution step %d: f(x)= %g"
                       % (nit,
                          self.population_energies[0]))
+
+            # stop when the fractional s.d. of the population is less than tol
+            # of the mean energy
+            convergence = self.convergence
 
             if (self.callback and
                     self.callback(self._scale_parameters(self.population[0]),
@@ -566,9 +584,12 @@ class DifferentialEvolutionSolver(object):
 
         self.population[[0, minval], :] = self.population[[minval, 0], :]
 
-    def evolve(self):
+    def __iter__(self):
+        return self
+
+    def __next__(self):
         """
-        Generator function that evolves the population by a single generation.
+        Evolve the population by a single generation
 
         Returns
         -------
@@ -577,46 +598,59 @@ class DifferentialEvolutionSolver(object):
         fun : float
             Value of objective function obtained from the best solution.
         """
-        while True:
-            # the population may have just been initialized (all entries are
-            # np.inf). If it has you have to calculate the initial energies
-            if np.all(np.isinf(self.population_energies)):
-                self._calculate_population_energies()
+        return self.next()
 
-            if self.dither is not None:
-                self.scale = self.random_number_generator.rand(
-                ) * (self.dither[1] - self.dither[0]) + self.dither[0]
+    def next(self):
+        """
+        Evolve the population by a single generation
 
-            for candidate in range(self.num_population_members):
-                if self._nfev > self.maxfun:
-                    return
+        Returns
+        -------
+        x : ndarray
+            The best solution from the solver.
+        fun : float
+            Value of objective function obtained from the best solution.
+        """
 
-                # create a trial solution
-                trial = self._mutate(candidate)
+        # the population may have just been initialized (all entries are
+        # np.inf). If it has you have to calculate the initial energies
+        if np.all(np.isinf(self.population_energies)):
+            self._calculate_population_energies()
 
-                # ensuring that it's in the range [0, 1)
-                self._ensure_constraint(trial)
+        if self.dither is not None:
+            self.scale = self.random_number_generator.rand(
+            ) * (self.dither[1] - self.dither[0]) + self.dither[0]
 
-                # scale from [0, 1) to the actual parameter value
-                parameters = self._scale_parameters(trial)
+        for candidate in range(self.num_population_members):
+            if self._nfev > self.maxfun:
+                raise StopIteration
 
-                # determine the energy of the objective function
-                energy = self.func(parameters, *self.args)
-                self._nfev += 1
+            # create a trial solution
+            trial = self._mutate(candidate)
 
-                # if the energy of the trial candidate is lower than the
-                # original population member then replace it
-                if energy < self.population_energies[candidate]:
-                    self.population[candidate] = trial
-                    self.population_energies[candidate] = energy
+            # ensuring that it's in the range [0, 1)
+            self._ensure_constraint(trial)
 
-                    # if the trial candidate also has a lower energy than the
-                    # best solution then replace that as well
-                    if energy < self.population_energies[0]:
-                        self.population_energies[0] = energy
-                        self.population[0] = trial
+            # scale from [0, 1) to the actual parameter value
+            parameters = self._scale_parameters(trial)
 
-            yield self.x, self.population_energies[0]
+            # determine the energy of the objective function
+            energy = self.func(parameters, *self.args)
+            self._nfev += 1
+
+            # if the energy of the trial candidate is lower than the
+            # original population member then replace it
+            if energy < self.population_energies[candidate]:
+                self.population[candidate] = trial
+                self.population_energies[candidate] = energy
+
+                # if the trial candidate also has a lower energy than the
+                # best solution then replace that as well
+                if energy < self.population_energies[0]:
+                    self.population_energies[0] = energy
+                    self.population[0] = trial
+
+        return self.x, self.population_energies[0]
 
     def _scale_parameters(self, trial):
         """
