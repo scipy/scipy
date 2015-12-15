@@ -389,14 +389,18 @@ class TestOptimizeSimple(CheckOptimize):
 
         # First case: NaN from first call.
         func = lambda x: np.nan
-        result = optimize.minimize(func, 0)
+        with np.errstate(invalid='ignore'):
+            result = optimize.minimize(func, 0)
+
         assert_(np.isnan(result['fun']))
         assert_(result['success'] is False)
 
         # Second case: NaN from second call.
         func = lambda x: 0 if x == 0 else np.nan
         fprime = lambda x: np.ones_like(x)  # Steer away from zero.
-        result = optimize.minimize(func, 0, jac=fprime)
+        with np.errstate(invalid='ignore'):
+            result = optimize.minimize(func, 0, jac=fprime)
+
         assert_(np.isnan(result['fun']))
         assert_(result['success'] is False)
 

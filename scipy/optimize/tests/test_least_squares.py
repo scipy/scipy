@@ -540,7 +540,7 @@ class LossFunctionMixin(object):
         for loss in LOSSES:
             res = least_squares(fun_trivial, 2.0, loss=loss,
                                 method=self.method)
-            assert_allclose(res.x, 0)
+            assert_allclose(res.x, 0, atol=1e-15)
 
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       loss='hinge', method=self.method)
