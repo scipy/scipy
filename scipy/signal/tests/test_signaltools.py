@@ -112,6 +112,12 @@ class _TestConvolve(TestCase):
         assert_array_equal(convolve(big, small, 'valid'),
                            out_array[1:3, 1:3, 1:3])
 
+    def test_convolve_method(self):
+        x = np.random.rand(10)
+        h = np.random.rand(5)
+
+        assert_allclose(convolve(x, h, method='direct'), convolve(x, h, method='fft'))
+
 
 class TestConvolve(_TestConvolve):
 

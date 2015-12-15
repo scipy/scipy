@@ -378,7 +378,7 @@ def fftconvolve(in1, in2, mode="full"):
                          " 'same', or 'full'.")
 
 
-def convolve(in1, in2, mode='full'):
+def convolve(in1, in2, mode='full', method='auto'):
     """
     Convolve two N-dimensional arrays.
 
@@ -405,6 +405,18 @@ def convolve(in1, in2, mode='full'):
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
+    method : str {'direct', 'auto', 'fft'}, optional
+        A string indicating what method used to perform the convolution.
+
+        ``direct``
+           The convolution is determined directly from sums, the definition of
+           convolution (default).
+        ``fft``
+           The Fourier Transform method is used to perform the convolution by
+           calling `fftconvolve`.
+        ``auto``
+           A rough estimate to see which convolution method is faster (the
+           Fourier transform or direct method) and that method is chosen.
 
     Returns
     -------
@@ -450,6 +462,15 @@ def convolve(in1, in2, mode='full'):
     if _inputs_swap_needed(mode, volume.shape, kernel.shape):
         # Convolution is commutative; order doesn't have any effect on output
         volume, kernel = kernel, volume
+
+    # see whether the fourier transform convolution method or the direct
+    # convolution method is faster (discussed in scikit-image PR #1792)
+    big_O_constant = 1 / 40.032 if kernel.ndim > 1 else 1 / 1.5
+    direct_time = big_O_constant * np.prod(volume.shape + kernel.shape)
+    fft_time = np.sum([n*np.log(n) for n in volume.shape + kernel.shape])
+
+    if (fft_time < direct_time and method == 'auto') or method == 'fft':
+        return fftconvolve(volume, kernel, mode=mode)
 
     # fastpath to faster numpy 1d convolve (but numpy's 'same' mode uses the
     # size of the larger input, not the first.)
