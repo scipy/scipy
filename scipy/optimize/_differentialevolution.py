@@ -354,8 +354,8 @@ class DifferentialEvolutionSolver(object):
         # [(low_0, high_0), ..., (low_n, high_n]
         #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
         self.limits = np.array(bounds, dtype='float').T
-        if (np.size(self.limits, 0) != 2
-                or not np.all(np.isfinite(self.limits))):
+        if (np.size(self.limits, 0) != 2 or not
+                np.all(np.isfinite(self.limits))):
             raise ValueError('bounds should be a sequence containing '
                              'real valued (min, max) pairs for each value'
                              ' in x')
@@ -424,8 +424,8 @@ class DifferentialEvolutionSolver(object):
             self.population[:, j] = samples[order, j]
 
         # reset population energies
-        self.population_energies = (np.ones(self.num_population_members)
-                                    * np.inf)
+        self.population_energies = (np.ones(self.num_population_members) *
+                                    np.inf)
 
         # reset number of function evaluations counter
         self._nfev = 0
@@ -439,8 +439,8 @@ class DifferentialEvolutionSolver(object):
         self.population = rng.random_sample(self.population_shape)
 
         # reset population energies
-        self.population_energies = (np.ones(self.num_population_members)
-                                    * np.inf)
+        self.population_energies = (np.ones(self.num_population_members) *
+                                    np.inf)
 
         # reset number of function evaluations counter
         self._nfev = 0
@@ -682,8 +682,8 @@ class DifferentialEvolutionSolver(object):
 
         fill_point = rng.randint(0, self.parameter_count)
 
-        if (self.strategy == 'randtobest1exp'
-                or self.strategy == 'randtobest1bin'):
+        if (self.strategy == 'randtobest1exp' or
+                self.strategy == 'randtobest1bin'):
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
@@ -744,8 +744,8 @@ class DifferentialEvolutionSolver(object):
         """
         r0, r1, r2, r3 = samples[:4]
         bprime = (self.population[0] + self.scale *
-                  (self.population[r0] + self.population[r1]
-                   - self.population[r2] - self.population[r3]))
+                  (self.population[r0] + self.population[r1] -
+                   self.population[r2] - self.population[r3]))
 
         return bprime
 
