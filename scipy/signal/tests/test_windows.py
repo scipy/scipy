@@ -563,7 +563,7 @@ class TestGetWindow(object):
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2)
         assert_raises(ValueError, resample,
-                      (sig, len(sig) * osfactor), {'window': win})
+                      sig, len(sig) * osfactor, window=win)
 
 
 def test_windowfunc_basics():

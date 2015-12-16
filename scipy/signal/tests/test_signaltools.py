@@ -888,6 +888,47 @@ class TestResample(object):
         signal.resample(sig2, num, axis=-1, window=win)
         assert_(win.shape == (160,))
 
+    def test_rfft(self):
+        # Make sure the speed up using rfft gives the same result as the normal 
+        # way using fft
+
+        x = np.linspace(0, 10, 20, endpoint=False)
+        y = np.cos(-x**2/6.0)
+        y_complex = y.copy()+0j
+        # Upsample
+        assert_allclose(signal.resample(y, 100), signal.resample(y_complex, 100).real)
+        assert_allclose(signal.resample(y, 101), signal.resample(y_complex, 101).real)
+        # Downsample
+        assert_allclose(signal.resample(y, 11), signal.resample(y_complex, 11).real)
+        assert_allclose(signal.resample(y, 10), signal.resample(y_complex, 10).real)
+
+    def test_rfft_window(self):
+        # Make sure the speed up using rfft gives the same result as the normal 
+        # way using fft
+
+        x = np.linspace(0, 10, 20, endpoint=False)
+        y = np.cos(-x**2/6.0)
+        y_complex = y.copy()+0j
+        # Upsample
+        assert_allclose(signal.resample(y, 100, window='hamming'), signal.resample(y_complex, 100, window='hamming').real)
+        assert_allclose(signal.resample(y, 101, window='hamming'), signal.resample(y_complex, 101, window='hamming').real)
+        # Downsample
+        assert_allclose(signal.resample(y, 11, window='hamming'), signal.resample(y_complex, 11, window='hamming').real)
+        assert_allclose(signal.resample(y, 10, window='hamming'), signal.resample(y_complex, 10, window='hamming').real)
+
+    def test_axis(self):
+        # Make sure the speed up using rfft gives the same result as the normal 
+        # way using fft
+        
+        x = np.linspace(0, 10, 20, endpoint=False)
+        y1 = np.cos(-x**2/6.0)
+        y2 = np.sin(-x**2/6.0)
+        y = np.vstack((y1,y2))
+        y_complex = y.copy()+0j
+        # Upsample
+        assert_allclose(signal.resample(y, 100,axis=1), signal.resample(y_complex, 100, axis=1).real, atol=1e-9)
+        assert_allclose(signal.resample(y, 101,axis=1), signal.resample(y_complex, 101, axis=1).real, atol=1e-9)
+
     def test_fft(self):
         # Test FFT-based resampling
         self._test_data(method='fft')
@@ -1061,6 +1102,7 @@ class TestOrderFilt(object):
 
 
 class _TestLinearFilter(object):
+
     def generate(self, shape):
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
         return self.convert_dtype(x)
@@ -2273,6 +2315,7 @@ class TestHilbert2(object):
 
 
 class TestPartialFractionExpansion(object):
+
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
         r = [1]
