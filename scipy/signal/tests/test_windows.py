@@ -199,7 +199,7 @@ class TestGetWindow(object):
         sig = np.arange(128)
 
         win = signal.get_window(('kaiser', 8.0), osfactor // 2)
-        assert_raises(ValueError, signal.resample, (sig, len(sig) * osfactor), {'window': win})
+        assert_raises(ValueError, signal.resample, sig, len(sig) * osfactor, window=win)
 
 
 def test_windowfunc_basics():

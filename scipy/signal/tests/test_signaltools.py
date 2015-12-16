@@ -514,7 +514,7 @@ class TestResample(TestCase):
     def test_axis(self):
         # Make sure the speed up using rfft gives the same result as the normal 
         # way using fft
-
+        
         x = np.linspace(0, 10, 20, endpoint=False)
         y1 = np.cos(-x**2/6.0)
         y2 = np.sin(-x**2/6.0)
@@ -523,6 +523,7 @@ class TestResample(TestCase):
         # Upsample
         assert_array_almost_equal(signal.resample(y, 100,axis=1), signal.resample(y_complex, 100, axis=1).real)
         assert_array_almost_equal(signal.resample(y, 101,axis=1), signal.resample(y_complex, 101, axis=1).real)
+
 
 class TestCSpline1DEval(TestCase):
 

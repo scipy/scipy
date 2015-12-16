@@ -910,7 +910,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     a = np.atleast_1d(a)
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
-        # Any of b, a, x, or zi can set the dtype, but there is no default 
+        # Any of b, a, x, or zi can set the dtype, but there is no default
         # casting of other types; instead a NotImplementedError is raised.
         b = np.asarray(b)
         a = np.asarray(a)
@@ -1138,7 +1138,7 @@ def hilbert(x, N=None, axis=-1):
     ---------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
-        
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import hilbert, chirp
@@ -1148,15 +1148,15 @@ def hilbert(x, N=None, axis=-1):
     >>> samples = int(fs*duration)
     >>> t = np.arange(samples) / fs
 
-    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and 
+    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and
     apply an amplitude modulation.
-    
-    >>> signal = chirp(t, 20.0, t[-1], 100.0)    
+
+    >>> signal = chirp(t, 20.0, t[-1], 100.0)
     >>> signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
 
-    The amplitude envelope is given by magnitude of the analytic signal. The 
-    instantaneous frequency can be obtained by differentiating the instantaneous 
-    phase in respect to time. The instantaneous phase corresponds to the phase 
+    The amplitude envelope is given by magnitude of the analytic signal. The
+    instantaneous frequency can be obtained by differentiating the instantaneous
+    phase in respect to time. The instantaneous phase corresponds to the phase
     angle of the analytic signal.
 
     >>> analytic_signal = hilbert(signal)
@@ -1180,7 +1180,7 @@ def hilbert(x, N=None, axis=-1):
     .. [1] Wikipedia, "Analytic signal".
            http://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing, 
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing,
            Third Edition, 2009. Chapter 12. ISBN 13: 978-1292-02572-8
 
     """
@@ -1707,20 +1707,19 @@ def resample(x, num, t=None, axis=0, window=None):
     sample of the next cycle:
 
     >>> from scipy import signal
-    
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f = signal.resample(y, 100)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-    
+
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
     """
     x = asarray(x)
-    X = fftpack.fft(x, axis=axis)
     Nx = x.shape[axis]
+
     if window is not None:
         if callable(window):
             W = window(fftpack.fftfreq(Nx))
@@ -1730,23 +1729,65 @@ def resample(x, num, t=None, axis=0, window=None):
             W = window
         else:
             W = fftpack.ifftshift(get_window(window, Nx))
-        newshape = [1] * x.ndim
-        newshape[axis] = len(W)
-        W.shape = newshape
-        X = X * W
+
+        newshape_W = [1] * x.ndim
+        newshape_W[axis] = len(W)
+
     sl = [slice(None)] * len(x.shape)
     newshape = list(x.shape)
     newshape[axis] = num
-    N = int(np.minimum(num, Nx))
-    Y = zeros(newshape, 'D')
-    sl[axis] = slice(0, (N + 1) // 2)
-    Y[sl] = X[sl]
-    sl[axis] = slice(-(N - 1) // 2, None)
-    Y[sl] = X[sl]
-    y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
-    if x.dtype.char not in ['F', 'D']:
-        y = y.real
+    # Can we use faster real FFT?
+    if not np.issubdtype(x.dtype, complex) and (_rfft_mt_safe or _rfft_lock.acquire(False)):
+        try:
+            X = fftpack.rfft(x, axis=axis)
+            if window is not None:
+                # Reorder the window to fit the order rfft produces its output
+                W_real = W.copy()
+                for i in range(1, Nx//2):
+                    W_real[2*i] = W[i]
+                    W_real[2*i-1] = W[i]
+                # Deal with the differnet length for odd/even Nx
+                W_real[Nx-1:] = W[Nx//2]
+
+                X = X * W_real.reshape(newshape_W)
+            Y = zeros(newshape)
+
+            if num > Nx:
+                if Nx % 2:
+                    sl[axis] = slice(0, Nx)
+                    Y[sl] = X[sl]
+                else:
+                    # X[-1] is only the real part
+                    sl[axis] = slice(0, Nx-1)
+                    Y[sl] = X[sl]
+
+                    sl = [slice(None)] * len(x.shape)
+                    sl[axis] = slice(Nx-1, Nx)
+                    Y[sl] = 0.5*X[sl]
+            else:
+                sl[axis] = slice(0, num)
+                Y[sl] = X[sl]     
+
+            y = fftpack.irfft(Y, axis=axis) * (float(num) / float(Nx))
+
+        finally:
+            if not _rfft_mt_safe:
+                _rfft_lock.release()
+
+    # Full complex FFT
+    else:
+        X = fftpack.fft(x, axis=axis)
+        X = X if window is None else X * W.reshape(newshape_W)
+
+        N = int(np.minimum(num, Nx))
+        Y = zeros(newshape, 'D')
+        sl[axis] = slice(0, (N + 1) // 2)
+        Y[sl] = X[sl]
+        sl[axis] = slice(-(N - 1) // 2, None)
+        Y[sl] = X[sl]
+
+        y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
     if t is None:
         return y
