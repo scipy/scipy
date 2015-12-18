@@ -11,8 +11,19 @@ except ImportError:
 
 from .common import Benchmark
 
+class Resample(Benchmark):
 
+    def setup(self):
+        x = np.linspace(0, 10, 1e6, endpoint=False)
+        self.y = np.cos(-x**2/6.0)
+
+    def time_complex(self):
+        signal.resample(self.y+complex(0,0), 1e7)
+
+    def time_real(self):
+        signal.resample(self.y, 1e7)
 class CalculateWindowedFFT(Benchmark):
+
     def setup(self):
         np.random.seed(5678)
         # Create some long arrays for computation
@@ -23,7 +34,7 @@ class CalculateWindowedFFT(Benchmark):
 
     def time_welch(self):
         signal.welch(self.x)
-    
+
     def time_csd(self):
         signal.csd(self.x, self.y)
 
@@ -122,6 +133,7 @@ class Convolve(Benchmark):
 
 
 class LTI(Benchmark):
+
     def setup(self):
         self.system = signal.lti(1.0, [1, 0, 1])
         self.t = np.arange(0, 100, 0.5)
