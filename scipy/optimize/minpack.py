@@ -560,7 +560,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if covariance of the parameters can not be estimated.
 
     ValueError
-        if ydata and xdata contain NaNs.
+        if either `ydata` or `xdata` contain NaNs.
 
     See Also
     --------
