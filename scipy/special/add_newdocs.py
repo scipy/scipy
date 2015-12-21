@@ -5461,3 +5461,43 @@ add_newdoc("scipy.special", "_struve_bessel_series",
     -------
     v, err
     """)
+
+add_newdoc("scipy.special", "_spherical_jn",
+    """
+    Internal function, use `spherical_jn` instead.
+    """)
+
+add_newdoc("scipy.special", "_spherical_jn_d",
+    """
+    Internal function, use `spherical_jn` instead.
+    """)
+
+add_newdoc("scipy.special", "_spherical_yn",
+    """
+    Internal function, use `spherical_yn` instead.
+    """)
+
+add_newdoc("scipy.special", "_spherical_yn_d",
+    """
+    Internal function, use `spherical_yn` instead.
+    """)
+
+add_newdoc("scipy.special", "_spherical_in",
+    """
+    Internal function, use `spherical_in` instead.
+    """)
+
+add_newdoc("scipy.special", "_spherical_in_d",
+    """
+    Internal function, use `spherical_in` instead.
+    """)
+
+add_newdoc("scipy.special", "_spherical_kn",
+    """
+    Internal function, use `spherical_kn` instead.
+    """)
+
+add_newdoc("scipy.special", "_spherical_kn_d",
+    """
+    Internal function, use `spherical_kn` instead.
+    """)
