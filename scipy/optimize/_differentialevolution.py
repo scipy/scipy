@@ -460,13 +460,8 @@ class DifferentialEvolutionSolver(object):
     @property
     def convergence(self):
         """
-        The convergence criterion.
-
-        Returns
-        -------
-        convergence : float
-            The standard deviation of the population energies divided by their
-            mean.
+        The standard deviation of the population energies divided by their
+        mean.
         """
         return (np.std(self.population_energies) /
                 np.abs(np.mean(self.population_energies) + _MACHEPS))
@@ -598,28 +593,14 @@ class DifferentialEvolutionSolver(object):
         fun : float
             Value of objective function obtained from the best solution.
         """
-        return self.next()
-
-    def next(self):
-        """
-        Evolve the population by a single generation
-
-        Returns
-        -------
-        x : ndarray
-            The best solution from the solver.
-        fun : float
-            Value of objective function obtained from the best solution.
-        """
-
         # the population may have just been initialized (all entries are
         # np.inf). If it has you have to calculate the initial energies
         if np.all(np.isinf(self.population_energies)):
             self._calculate_population_energies()
 
         if self.dither is not None:
-            self.scale = self.random_number_generator.rand(
-            ) * (self.dither[1] - self.dither[0]) + self.dither[0]
+            self.scale = (self.random_number_generator.rand()
+                          * (self.dither[1] - self.dither[0]) + self.dither[0])
 
         for candidate in range(self.num_population_members):
             if self._nfev > self.maxfun:
@@ -651,6 +632,20 @@ class DifferentialEvolutionSolver(object):
                     self.population[0] = trial
 
         return self.x, self.population_energies[0]
+
+    def next(self):
+        """
+        Evolve the population by a single generation
+
+        Returns
+        -------
+        x : ndarray
+            The best solution from the solver.
+        fun : float
+            Value of objective function obtained from the best solution.
+        """
+        # next() is required for compatibility with Python2.7.
+        return self.__next__()
 
     def _scale_parameters(self, trial):
         """
