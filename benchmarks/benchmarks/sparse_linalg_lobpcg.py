@@ -23,13 +23,13 @@ def _sakurai(n):
         Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004) """
 
     A = scipy.sparse.eye(n, n)
-    d0 = array(r_[5, 6 * ones(n - 2), 5])
-    d1 = -4 * ones(n)
+    d0 = array(r_[5, 6*ones(n-2), 5])
+    d1 = -4*ones(n)
     d2 = ones(n)
     B = scipy.sparse.spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
 
-    k = arange(1, n + 1)
-    w_ex = sort(1. / (16. * pow(cos(0.5 * k * pi / (n + 1)), 4)))  # exact eigenvalues
+    k = arange(1, n+1)
+    w_ex = sort(1. / (16.*pow(cos(0.5*k*pi/(n+1)), 4)))  # exact eigenvalues
 
     return A, B, w_ex
 
