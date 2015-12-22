@@ -1,0 +1,47 @@
+==========================
+SciPy 0.18.0 Release Notes
+==========================
+
+.. note:: Scipy 0.18.0 is not released yet!
+
+.. contents::
+
+SciPy 0.18.0 is the culmination of X months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a number of deprecations and
+API changes in this release, which are documented below.  All users
+are encouraged to upgrade to this release, as there are a large number
+of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.17.x branch, and on adding
+new features on the master branch.
+
+This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
+
+
+New features
+============
+
+
+Deprecated features
+===================
+
+
+Backwards incompatible changes
+==============================
+
+
+Other changes
+=============
+
+
+Authors
+=======
+
+Issues closed
+-------------
+
+
+Pull requests
+-------------
+
+
