@@ -197,9 +197,16 @@ release. Use ``coo_matrix((m,n))`` instead.
 The Cython wrappers in ``linalg.cython_lapack`` for the LAPACK routines
 ``*gegs``, ``*gegv``, ``*gelsx``, ``*geqpf``, ``*ggsvd``, ``*ggsvp``,
 ``*lahrd``, ``*latzm``, ``*tzrqf`` have been removed since these routines
-are no longer present in the latest LAPACK release. With the exception of
+are not present in the new LAPACK 3.6.0 release. With the exception of
 the routines ``*ggsvd`` and ``*ggsvp``, these were all deprecated in favor
 of routines that are currently present in our Cython LAPACK wrappers.
+
+Because the LAPACK ``*gegv`` routines were removed in LAPACK 3.6.0. The
+corresponding Python wrappers in ``scipy.linalg.lapack`` are now
+deprecated and will be removed in a future release. The source files for
+these routines have been temporarily included as a part of ``scipy.linalg``
+so that SciPy can be built against LAPACK versions that do not provide
+these deprecated routines.
 
 
 Other changes
