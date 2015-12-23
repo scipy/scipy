@@ -14,7 +14,8 @@ __all__ = ['multivariate_normal',
            'matrix_normal',
            'dirichlet',
            'wishart',
-           'invwishart']
+           'invwishart',
+           'special_ortho_group']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -2642,3 +2643,155 @@ for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs']:
     method_frozen.__doc__ = doccer.docformat(
         method.__doc__, wishart_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_params)
+
+class special_ortho_group_gen(multi_rv_generic):
+    r"""
+    A matrix-valued SO(N) random variable.
+
+    Return a random rotation matrix, drawn from the Haar distribution
+    (the only uniform distribution on SO(n)).
+
+    The `dim` keyword specifies the dimension N.
+
+    Methods
+    -------
+    ``rvs(dim=None, size=1, random_state=None)``
+        Draw random samples from SO(N).
+
+    Parameters
+    ----------
+    dim : scalar
+        Dimension of matrices
+
+    Notes
+    ----------
+    This class is wrapping the random_rot code from the MDP Toolkit,
+    https://github.com/mdp-toolkit/mdp-toolkit
+
+    Return a random rotation matrix, drawn from the Haar distribution
+    (the only uniform distribution on SO(n)).
+    The algorithm is described in the paper
+    Stewart, G.W., "The efficient generation of random orthogonal
+    matrices with an application to condition estimators", SIAM Journal
+    on Numerical Analysis, 17(3), pp. 403-409, 1980.
+    For more information see
+    http://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
+
+    Examples
+    --------
+    >>> from scipy.stats import special_ortho_group
+    >>> x = special_ortho_group.rvs(3)
+
+    >>> np.dot(x, x.T)
+    array([[  1.00000000e+00,   1.13231364e-17,  -2.86852790e-16],
+           [  1.13231364e-17,   1.00000000e+00,  -1.46845020e-16],
+           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])
+
+    >>> import scipy.linalg
+    >>> scipy.linalg.det(x)
+    1.0
+
+    This generates one random matrix from SO(3). It is orthogonal and
+    has a determinant of 1.
+
+    """
+
+    def __init__(self, seed=None):
+        super(special_ortho_group_gen, self).__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__)
+
+    def __call__(self, dim=None, seed=None):
+        """
+        Create a frozen SO(N) distribution.
+
+        See `special_ortho_group_frozen` for more information.
+
+        """
+        return special_ortho_group_frozen(dim, seed=seed)
+
+    def _process_parameters(self, dim):
+        """
+        Dimension N must be specified; it cannot be inferred.
+        """
+
+        if dim is None or not np.isscalar(dim) or dim <= 1:
+            raise ValueError("""Dimension of rotation must be specified,
+                                and must be a scalar greater than 1.""")
+
+        return dim
+
+    def rvs(self, dim, size=1, random_state=None):
+        """
+        Draw random samples from SO(N).
+
+        Parameters
+        ----------
+        dim : integer
+            Dimension of rotation space (N).
+        size : integer, optional
+            Number of samples to draw (default 1).
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random size N-dimensional matrices, dimension (size, dim, dim)
+
+        """
+        size = int(size)
+        if size > 1:
+            return np.array([self.rvs(dim, size=1, random_state=random_state)
+                             for i in range(size)])
+
+        dim = self._process_parameters(dim)
+
+        random_state = self._get_random_state(random_state)
+
+        H = np.eye(dim)
+        D = np.ones((dim,))
+        for n in range(1, dim):
+            x = random_state.normal(size=(dim-n+1,))
+
+            D[n-1] = np.sign(x[0])
+            x[0] -= D[n-1]*np.sqrt((x*x).sum())
+            # Householder transformation
+            Hx = (np.eye(dim-n+1)
+                  - 2.*np.outer(x, x)/(x*x).sum())
+            mat = np.eye(dim)
+            mat[n-1:, n-1:] = Hx
+            H = np.dot(H, mat)
+            # Fix the last sign such that the determinant is 1
+        D[-1] = (-1)**(1-(dim % 2))*D.prod()
+        # Equivalent to np.dot(np.diag(D), H) but faster, apparently
+        H = (D*H.T).T
+        return H
+
+special_ortho_group = special_ortho_group_gen()
+
+class special_ortho_group_frozen(multi_rv_frozen):
+    def __init__(self, dim=None, seed=None):
+        """
+        Create a frozen SO(N) distribution.
+
+        Parameters
+        ----------
+        dim : scalar
+            Dimension of matrices
+        seed : None or int or np.random.RandomState instance, optional
+            This parameter defines the RandomState object to use for drawing
+            random variates.
+            If None (or np.random), the global np.random state is used.
+            If integer, it is used to seed the local RandomState instance
+            Default is None.
+
+        Examples
+        --------
+        >>> from scipy.stats import special_ortho_group
+        >>> g = special_ortho_group(5)
+        >>> x = g.rvs()
+
+        """
+        self._dist = special_ortho_group_gen(seed)
+        self.dim = self._dist._process_parameters(dim)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.dim, size, random_state)

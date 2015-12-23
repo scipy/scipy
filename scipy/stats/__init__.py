@@ -126,6 +126,7 @@ Multivariate distributions
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
+   special_ortho_group   -- SO(N) group
 
 Discrete distributions
 ======================
