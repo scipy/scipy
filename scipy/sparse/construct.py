@@ -622,6 +622,70 @@ def bmat(blocks, format=None, dtype=None):
 
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
+def _block_diag(mats, format=None, dtype=None):
+    """      
+    Build a block diagonal sparse matrix from equally shaped matrices.
+    Much faster than block_diag for big matrices
+
+    Parameters
+    ----------
+    mats : sequence of equally shaped matrices
+        Input matrices.
+    format : str, optional
+        The sparse format of the result (e.g. "csr").  If not given, the matrix
+        is returned in "coo" format.
+    dtype : dtype specifier, optional
+        The data-type of the output matrix.  If not given, the dtype is
+        determined from that of `blocks`.
+
+    Returns
+    -------
+    res : sparse matrix
+
+    Notes
+    -----
+
+    .. versionadded:: 0.18.0
+
+    See Also
+    --------
+    bmat, diags, block_diag
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_matrix, block_diag
+    >>> A = coo_matrix([[1, 2], [3, 4]])
+    >>> B = coo_matrix([[5, 6], [7, 8]])
+    >>> C = coo_matrix([[9, 10], [11,12]])
+    >>> _block_diag((A, B, C)).toarray()
+    array([[ 1,  2,  0,  0,  0,  0],
+           [ 3,  4,  0,  0,  0,  0],
+           [ 0,  0,  5,  6,  0,  0],
+           [ 0,  0,  7,  8,  0,  0],
+           [ 0,  0,  0,  0,  9, 10],
+           [ 0,  0,  0,  0, 11, 12]])
+
+    
+    """
+    n = len(mats)
+    shape = mats[0].shape
+    
+    if any([issparse(mat) for mat in mats]):
+        mats_ = []
+        for mat in mats : 
+            if issparse(mat): 
+                mats_.append(mat.todense())
+            else : 
+                mats_.append(mat)
+    else : 
+        mats_ = mats
+        
+    data = np.array(mats_,dtype).ravel() 
+    row_, col_ = np.indices(shape)   
+    row = (np.tile(row_.ravel(),n)+np.arange(n).repeat(shape[0]*shape[1])*shape[0]).ravel()
+    col = (np.tile(col_.ravel(),n)+np.arange(n).repeat(shape[0]*shape[1])*shape[1]).ravel()
+    
+    return coo_matrix((data,(row, col)), shape=(shape[0]*n,shape[1]*n)).asformat(format)
 
 def block_diag(mats, format=None, dtype=None):
     """
@@ -665,6 +729,10 @@ def block_diag(mats, format=None, dtype=None):
            [0, 0, 0, 7]])
 
     """
+    
+    if all([mat.shape == mats[-1].shape for mat in mats[:-1]] ):
+        return _block_diag(mats,format=format,dtype=dtype)
+        
     nmat = len(mats)
     rows = []
     for ia, a in enumerate(mats):
