@@ -730,7 +730,7 @@ def block_diag(mats, format=None, dtype=None):
 
     """
     
-    if all([mat.shape == mats[-1].shape for mat in mats[:-1]] ):
+    if all( hasattr(mat,'shape')and(mat.shape == mats[-1].shape) for mat in mats ): 
         return _block_diag(mats,format=format,dtype=dtype)
         
     nmat = len(mats)
