@@ -897,6 +897,23 @@ class TestInterp(TestCase):
         assert_allclose([b(self.xx[0], 2), b(self.xx[-1], 2)], [0., 0.],
                 atol=1e-14)
 
+    def test_minimum_points_and_deriv(self):
+        # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and 
+        # f'(0) = 0, f'(1) = 3.
+        k = 3
+        x = [0., 1.]
+        y = [0., 1.]
+        b = make_interp_spline(x, y, k, deriv_l=[(1, 0.)], deriv_r=[(1, 3.)])
+        
+        xx = np.linspace(0., 1.)
+        yy = xx**3
+        assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
+        
+        # If one of the derivatives is omitted, the spline definition is 
+        # incomplete:
+        assert_raises(ValueError, make_interp_spline, x, y, k, 
+                **dict(deriv_l=[(1, 0.)], deriv_r=None))
+
     def test_complex(self):
         k = 3
         xx = self.xx
