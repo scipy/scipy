@@ -667,25 +667,26 @@ def _block_diag(mats, format=None, dtype=None):
 
     
     """
+    
     n = len(mats)
     shape = mats[0].shape
-    
+
     if any([issparse(mat) for mat in mats]):
         mats_ = []
-        for mat in mats : 
-            if issparse(mat): 
+        for mat in mats:
+            if issparse(mat):
                 mats_.append(mat.todense())
-            else : 
+            else:
                 mats_.append(mat)
-    else : 
+    else:
         mats_ = mats
-        
-    data = np.array(mats_,dtype).ravel() 
-    row_, col_ = np.indices(shape)   
-    row = (np.tile(row_.ravel(),n)+np.arange(n).repeat(shape[0]*shape[1])*shape[0]).ravel()
-    col = (np.tile(col_.ravel(),n)+np.arange(n).repeat(shape[0]*shape[1])*shape[1]).ravel()
-    
-    return coo_matrix((data,(row, col)), shape=(shape[0]*n,shape[1]*n)).asformat(format)
+
+    data = np.array(mats_, dtype).ravel()
+    row_, col_ = np.indices(shape)
+    row = (np.tile(row_.ravel(), n) + np.arange(n).repeat(shape[0] * shape[1]) * shape[0]).ravel()
+    col = (np.tile(col_.ravel(), n) + np.arange(n).repeat(shape[0] * shape[1]) * shape[1]).ravel()
+
+    return coo_matrix((data, (row, col)), shape=(shape[0] * n, shape[1] * n)).asformat(format)
 
 def block_diag(mats, format=None, dtype=None):
     """
@@ -730,9 +731,9 @@ def block_diag(mats, format=None, dtype=None):
 
     """
     
-    if all( hasattr(mat,'shape')and(mat.shape == mats[-1].shape) for mat in mats ): 
-        return _block_diag(mats,format=format,dtype=dtype)
-        
+    if all(hasattr(mat, 'shape') and (mat.shape == mats[-1].shape) for mat in mats):
+        return _block_diag(mats, format=format, dtype=dtype)
+    
     nmat = len(mats)
     rows = []
     for ia, a in enumerate(mats):
