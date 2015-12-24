@@ -23,7 +23,7 @@ inline void*
 tree_buffer_pointer(std::vector<ckdtreenode> *buf)
 {
     std::vector<ckdtreenode> &tmp = *buf;
-    if (tmp.size() == 0)
+    if (NPY_UNLIKELY(tmp.size() == 0))
         return NULL;
     return (void*)&tmp[0];
 }
@@ -33,7 +33,7 @@ inline ckdtreenode*
 tree_buffer_root(std::vector<ckdtreenode> *buf)
 {
     std::vector<ckdtreenode> &tmp = *buf;
-    if (tmp.size() == 0)
+    if (NPY_UNLIKELY(tmp.size() == 0))
         return NULL;
     return &tmp[0];
 }
@@ -42,7 +42,7 @@ inline ordered_pair *
 ordered_pair_vector_buf(std::vector<ordered_pair> *buf)
 {
     std::vector<ordered_pair> &tmp = *buf;
-    if (tmp.size() == 0)
+    if (NPY_UNLIKELY(tmp.size() == 0))
         return NULL;
     return &tmp[0];
 }
@@ -54,7 +54,7 @@ inline npy_intp *
 npy_intp_vector_buf(std::vector<npy_intp> *buf)
 {
     std::vector<npy_intp> &tmp = *buf;
-    if (tmp.size() == 0)
+    if (NPY_UNLIKELY(tmp.size() == 0))
         return NULL;
     return &tmp[0];
 }
@@ -63,7 +63,7 @@ inline npy_float64 *
 npy_float64_vector_buf(std::vector<npy_float64> *buf)
 {
     std::vector<npy_float64> &tmp = *buf;
-    if (tmp.size() == 0)
+    if (NPY_UNLIKELY(tmp.size() == 0))
         return NULL;
     return &tmp[0];
 }
@@ -72,7 +72,7 @@ inline coo_entry *
 coo_entry_vector_buf(std::vector<coo_entry> *buf)
 {
     std::vector<coo_entry> &tmp = *buf;
-    if (tmp.size() == 0)
+    if (NPY_UNLIKELY(tmp.size() == 0))
         return NULL;
     return &tmp[0];
 }
