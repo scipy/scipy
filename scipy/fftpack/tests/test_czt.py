@@ -166,13 +166,6 @@ def test_int_args():
     assert_allclose(czt_points(11, w=2), 1/(2**np.arange(11)))
 
 
-def test_conflicting_args():
-    # Cannot specify scale and w at the same time
-    assert_raises(ValueError, czt, x=np.ones(8),
-                  w=0.70710678118654746+1j*0.70710678118654746,
-                  scale=1)
-
-
 def test_czt_points():
     for N in (1, 2, 3, 8, 11, 100, 101, 10007):
         assert_allclose(czt_points(N), np.exp(2j*np.pi*np.arange(N)/N))
@@ -189,10 +182,6 @@ def test_czt_points_errors():
     assert_raises(ValueError, czt_points, 0)
     assert_raises(ValueError, czt_points, -11)
     assert_raises(ValueError, czt_points, 5.5)
-
-    # Cannot specify scale and w at the same time
-    assert_raises(ValueError, czt_points, 5,
-                  0.70710678118654746+1j*0.70710678118654746, 1, 1)
 
 
 def test_invalid_size():
