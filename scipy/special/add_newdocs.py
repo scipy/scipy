@@ -73,25 +73,57 @@ add_newdoc("scipy.special", "_lambertw",
     """)
 
 add_newdoc("scipy.special", "airy",
-    """
+    r"""
     airy(z)
 
     Airy functions and their derivatives.
 
     Parameters
     ----------
-    z : float or complex
-        Argument.
+    z : array_like
+        Real or complex argument.
 
     Returns
     -------
-    Ai, Aip, Bi, Bip
-        Airy functions Ai and Bi, and their derivatives Aip and Bip
+    Ai, Aip, Bi, Bip : ndarrays
+        Airy functions Ai and Bi, and their derivatives Aip and Bip.
 
     Notes
     -----
-    The Airy functions Ai and Bi are two independent solutions of y''(x) = x y.
+    The Airy functions Ai and Bi are two independent solutions of
 
+    .. math:: y''(x) = x y(x).
+
+    For real `z` in [-10, 10], the computation is carried out by calling
+    the Cephes [1]_ `airy` routine, which uses power series summation
+    for small `z` and rational minimax approximations for large `z`.
+
+    Outside this range, the AMOS [2]_ `zairy` and `zbiry` routines are
+    employed.  They are computed using power series for :math:`|z| < 1` and
+    the following relations to modified Bessel functions for larger `z`
+    (where :math:`t \equiv 2 z^{3/2}/3`):
+
+    .. math::
+
+        Ai(z) = \frac{1}{\pi \sqrt{3}} K_{1/3}(t)
+
+        Ai'(z) = -\frac{z}{\pi \sqrt{3}} K_{2/3}(t)
+
+        Bi(z) = \sqrt{\frac{z}{3}} \left(I_{-1/3}(t) + I_{1/3}(t) \right)
+
+        Bi'(z) = \frac{z}{\sqrt{3}} \left(I_{-2/3}(t) + I_{2/3}(t)\right)
+
+    See also
+    --------
+    airye : exponentially scaled Airy functions.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/.org/amos/
     """)
 
 add_newdoc("scipy.special", "airye",
@@ -109,14 +141,27 @@ add_newdoc("scipy.special", "airye",
 
     Parameters
     ----------
-    z : float or complex
-        Argument.
+    z : array_like
+        Real or complex argument.
 
     Returns
     -------
-    eAi, eAip, eBi, eBip
+    eAi, eAip, eBi, eBip : array_like
         Airy functions Ai and Bi, and their derivatives Aip and Bip
 
+    Notes
+    -----
+    Wrapper for the AMOS [1]_ routines `zairy` and `zbiry`.
+
+    See also
+    --------
+    airy
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "bdtr",
@@ -627,12 +672,40 @@ add_newdoc("scipy.special", "ellipe",
     E : ndarray
         Value of the elliptic integral.
 
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `ellpe`.
+
+    For `m > 0` the computation uses the approximation,
+
+    .. math:: E(m) \\approx P(1-m) - (1-m) \\log(1-m) Q(1-m),
+
+    where :math:`P` and :math:`Q` are tenth-order polynomials.  For
+    `m < 0`, the relation
+
+    .. math:: E(m) = E(m/(m - 1)) \\sqrt(1-m)
+
+    is used.
+
+    Accuracy:
+
+    ==========   ======     ========     =======     =======
+    arithmetic   domain     # trials      peak         rms
+    ==========   ======     ========     =======     =======
+       IEEE       0, 1       10000       2.1e-16     7.3e-17
+    ==========   ======     ========     =======     =======
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipeinc : Incomplete elliptic integral of the second kind
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
     """)
 
 add_newdoc("scipy.special", "ellipeinc",
@@ -658,12 +731,32 @@ add_newdoc("scipy.special", "ellipeinc",
     E : ndarray
         Value of the elliptic integral.
 
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `ellie`.
+
+    Computation uses arithmetic-geometric means algorithm.
+
+    Accuracy tested at random arguments with `phi` in [-10, 10] and `m` in
+    [0, 1].
+
+    ==========   ======     ========     =======     =======
+    arithmetic   domain      trials       peak         rms
+    ==========   ======     ========     =======     =======
+       IEEE      -10,10      150000      3.3e-15     1.4e-16
+    ==========   ======     ========     =======     =======
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
     ellipk : Complete elliptic integral of the first kind
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
     """)
 
 add_newdoc("scipy.special", "ellipj",
@@ -673,23 +766,65 @@ add_newdoc("scipy.special", "ellipj",
     Jacobian elliptic functions
 
     Calculates the Jacobian elliptic functions of parameter `m` between
-    0 and 1, and real `u`.
+    0 and 1, and real argument `u`.
 
     Parameters
     ----------
-    m, u
-        Parameters
+    m : array_like
+        Parameter.
+    u : array_like
+        Argument.
 
     Returns
     -------
-    sn, cn, dn, ph
+    sn, cn, dn, ph : ndarrays
         The returned functions::
 
             sn(u|m), cn(u|m), dn(u|m)
 
-        The value ``ph`` is such that if ``u = ellik(ph, m)``,
-        then ``sn(u|m) = sin(ph)`` and ``cn(u|m) = cos(ph)``.
+        The value `ph` is such that if `u = ellipk(ph, m)`,
+        then `sn(u|m) = sin(ph)` and `cn(u|m) = cos(ph)`.
 
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `ellpj`.
+
+    These functions are periodic, with quarter-period on the real axis
+    equal to the complete elliptic integral `ellipk(m)`.
+
+    Relation to incomplete elliptic integral: If `u = ellipk(phi,m)`, then
+    `sn(u|m) = sin(phi)`, and `cn(u|m) = cos(phi)`.  The `phi` is called
+    the amplitude of `u`.
+
+    Computation is by means of the arithmetic-geometric mean algorithm,
+    except when `m` is within 1e-9 of 0 or 1.  In the latter case with `m`
+    close to 1, the approximation applies only for `phi < pi/2`.
+
+    Accuracy tested at random points with `u` between 0 and 10, m between 0
+    and 1. Absolute error (* = relative error):
+
+    ==========  ==========  ========  ===========    ========
+    arithmetic   function   # trials      peak         rms
+    ==========  ==========  ========  ===========    ========
+       IEEE      phi         10000       9.2e-16*    1.4e-16*
+       IEEE      sn          50000       4.1e-15     4.6e-16
+       IEEE      cn          40000       3.6e-15     4.4e-16
+       IEEE      dn          10000       1.3e-12     1.8e-14
+    ==========  ==========  ========  ===========    ========
+
+    Peak error observed in consistency check using addition theorem for
+    `sn(u+v)` was 4e-16 (absolute).  Also tested by the above relation to
+    the incomplete elliptic integral. Accuracy deteriorates when `u` is
+    large.
+
+    See also
+    --------
+    ellipk : Complete elliptic integral of the first kind.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
     """)
 
 add_newdoc("scipy.special", "ellipkm1",
@@ -707,12 +842,37 @@ add_newdoc("scipy.special", "ellipkm1",
     Parameters
     ----------
     p : array_like
-        Defines the parameter of the elliptic integral as `m` = 1 - p.
+        Defines the parameter of the elliptic integral as `m = 1 - p`.
 
     Returns
     -------
     K : ndarray
         Value of the elliptic integral.
+
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `ellpk`.
+
+    For `p <= 1`, computation uses the approximation,
+
+    .. math:: K(p) \\approx P(p) - \\log(p) Q(p),
+
+    where :math:`P` and :math:`Q` are tenth-order polynomials.  The
+    argument `p` is used internally rather than `m` so that the logarithmic
+    singularity at `m = 1` will be shifted to the origin; this preserves
+    maximum accuracy.  For `p > 1`, the identity
+
+    .. math:: K(p) = K(1/p)/\\sqrt(p)
+
+    is used.
+
+    Accuracy (relative error):
+
+    ==========   ======     ========     =======     =======
+    arithmetic   domain     # trials      peak         rms
+    ==========   ======     ========     =======     =======
+       IEEE       0,1        30000       2.5e-16     6.8e-17
+    ==========   ======     ========     =======     =======
 
     See Also
     --------
@@ -720,6 +880,11 @@ add_newdoc("scipy.special", "ellipkm1",
     ellipkinc : Incomplete elliptic integral of the first kind
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
@@ -731,6 +896,8 @@ add_newdoc("scipy.special", "ellipkinc",
     This function is defined as
 
     .. math:: K(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{-1/2} dt
+
+    This function is also called `F(phi, m)`.
 
     Parameters
     ----------
@@ -747,7 +914,17 @@ add_newdoc("scipy.special", "ellipkinc",
 
     Notes
     -----
-    This function is also called ``F(phi, m)``.
+    Wrapper for the Cephes [1]_ routine `ellik`.  The computation is
+    carried out using the arithmetic-geometric mean algorithm.
+
+    Accuracy tested at random points with `m` in [0, 1] and `phi` as
+    indicated. Relative error:
+
+    ==========  =======    =========     =======     =======
+    arithmetic   domain      trials       peak         rms
+    ==========  =======    =========     =======     =======
+       IEEE     -10,10       200000      7.4e-16     1.0e-16
+    ==========  =======    =========     =======     =======
 
     See Also
     --------
@@ -756,6 +933,10 @@ add_newdoc("scipy.special", "ellipkinc",
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
 
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
     """)
 
 add_newdoc("scipy.special", "entr",
@@ -1431,22 +1612,49 @@ add_newdoc("scipy.special", "gdtrix",
     """)
 
 add_newdoc("scipy.special", "hankel1",
-    """
+    r"""
     hankel1(v, z)
 
     Hankel function of the first kind
 
     Parameters
     ----------
-    v : float
-        Order
-    z : float or complex
-        Argument
+    v : array_like
+        Order (float).
+    z : array_like
+        Argument (float or complex).
 
+    Returns
+    -------
+    out : Values of the Hankel function of the first kind.
+
+    Notes
+    -----
+    A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
+    computation using the relation,
+
+    .. math:: H^{(1)}_v(z) = \frac{2}{\imath\pi} \exp(-\imath \pi v/2) K_v(z \exp(-\imath\pi/2))
+
+    where :math:`K_v` is the modified Bessel function of the second kind.
+    For negative orders, the relation
+
+    .. math:: H^{(1)}_{-v}(z) = H^{(1)}_v(z) \exp(\imath\pi v)
+
+    is used.
+
+    See also
+    --------
+    hankel1e : this function with leading exponential behavior stripped off.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "hankel1e",
-    """
+    r"""
     hankel1e(v, z)
 
     Exponentially scaled Hankel function of the first kind
@@ -1457,43 +1665,119 @@ add_newdoc("scipy.special", "hankel1e",
 
     Parameters
     ----------
-    v : float
-        Order
-    z : complex
-        Argument
+    v : array_like
+        Order (float).
+    z : array_like
+        Argument (float or complex).
+
+    Returns
+    -------
+    out : Values of the exponentially scaled Hankel function.
+
+    Notes
+    -----
+    A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
+    computation using the relation,
+
+    .. math:: H^{(1)}_v(z) = \frac{2}{\imath\pi} \exp(-\imath \pi v/2) K_v(z \exp(-\imath\pi/2))
+
+    where :math:`K_v` is the modified Bessel function of the second kind.
+    For negative orders, the relation
+
+    .. math:: H^{(1)}_{-v}(z) = H^{(1)}_v(z) \exp(\imath\pi v)
+
+    is used.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "hankel2",
-    """
+    r"""
     hankel2(v, z)
 
     Hankel function of the second kind
 
     Parameters
     ----------
-    v : float
-        Order
-    z : complex
-        Argument
+    v : array_like
+        Order (float).
+    z : array_like
+        Argument (float or complex).
 
+    Returns
+    -------
+    out : Values of the Hankel function of the second kind.
+
+    Notes
+    -----
+    A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
+    computation using the relation,
+
+    .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi} \exp(\imath \pi v/2) K_v(z \exp(\imath\pi/2))
+
+    where :math:`K_v` is the modified Bessel function of the second kind.
+    For negative orders, the relation
+
+    .. math:: H^{(2)}_{-v}(z) = H^{(2)}_v(z) \exp(-\imath\pi v)
+
+    is used.
+
+    See also
+    --------
+    hankel2e : this function with leading exponential behavior stripped off.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "hankel2e",
-    """
+    r"""
     hankel2e(v, z)
 
     Exponentially scaled Hankel function of the second kind
 
     Defined as::
 
-        hankel1e(v, z) = hankel1(v, z) * exp(1j * z)
+        hankel2e(v, z) = hankel2(v, z) * exp(1j * z)
 
     Parameters
     ----------
-    v : float
-        Order
-    z : complex
-        Argument
+    v : array_like
+        Order (float).
+    z : array_like
+        Argument (float or complex).
+
+    Returns
+    -------
+    out : Values of the exponentially scaled Hankel function of the second kind.
+
+    Notes
+    -----
+    A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
+    computation using the relation,
+
+    .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi} \exp(\frac{\imath \pi v}{2}) K_v(z exp(\frac{\imath\pi}{2}))
+
+    where :math:`K_v` is the modified Bessel function of the second kind.
+    For negative orders, the relation
+
+    .. math:: H^{(2)}_{-v}(z) = H^{(2)}_v(z) \exp(-\imath\pi v)
+
+    is used.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
+
     """)
 
 add_newdoc("scipy.special", "huber",
@@ -1672,15 +1956,37 @@ add_newdoc("scipy.special", "itairy",
 
     Integrals of Airy functions
 
-    Calculates the integral of Airy functions from 0 to `x`
+    Calculates the integrals of Airy functions from 0 to `x`.
+
+    Parameters
+    ----------
+
+    x: array_like
+        Upper limit of integration (float).
 
     Returns
     -------
-    Apt, Bpt
-        Integrals for positive arguments
-    Ant, Bnt
-        Integrals for negative arguments
+    Apt
+        Integral of Ai(t) from 0 to x.
+    Bpt
+        Integral of Bi(t) from 0 to x.
+    Ant
+        Integral of Ai(-t) from 0 to x.
+    Bnt
+        Integral of Bi(-t) from 0 to x.
 
+    Notes
+    -----
+
+    Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
+    Jin [1]_.
+
+    References
+    ----------
+
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
     """)
 
 add_newdoc("scipy.special", "iti0k0",
@@ -1736,22 +2042,65 @@ add_newdoc("scipy.special", "itstruve0",
     """)
 
 add_newdoc("scipy.special", "iv",
-    """
+    r"""
     iv(v, z)
 
-    Modified Bessel function of the first kind  of real order
+    Modified Bessel function of the first kind of real order.
 
     Parameters
     ----------
-    v
-        Order. If `z` is of real type and negative, `v` must be integer valued.
-    z
+    v : array_like
+        Order. If `z` is of real type and negative, `v` must be integer
+        valued.
+    z : array_like of float or complex
         Argument.
 
+    Returns
+    -------
+    out : ndarray
+        Values of the modified Bessel function.
+
+    Notes
+    -----
+    For real `z` and :math:`v \in [-50, 50]`, the evaluation is carried out
+    using Temme's method [1]_.  For larger orders, uniform asymptotic
+    expansions are applied.
+
+    For complex `z` and positive `v`, the AMOS [2]_ `zbesi` routine is
+    called. It uses a power series for small `z`, the asymptitic expansion
+    for large `abs(z)`, the Miller algorithm normalized by the Wronskian
+    and a Neumann series for intermediate magnitudes, and the uniform
+    asymptitic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
+    orders.  Backward recurrence is used to generate sequences or reduce
+    orders when necessary.
+
+    The calculations above are done in the right half plane and continued
+    into the left half plane by the formula,
+
+    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\pi v) I_v(z)
+
+    (valid when the real part of `z` is positive).  For negative `v`, the
+    formula
+
+    .. math:: I_{-v}(z) = I_v(z) + \frac{2}{\pi} \sin(\pi v) K_v(z)
+
+    is used, where :math:`K_v(z)` is the modified Bessel function of the
+    second kind, evaluated using the AMOS routine `zbesk`.
+
+    See also
+    --------
+    kve : This function with leading exponential behavior stripped off.
+
+    References
+    ----------
+    .. [1] Temme, Journal of Computational Physics, vol 21, 343 (1976)
+    .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "ive",
-    """
+    r"""
     ive(v, z)
 
     Exponentially scaled modified Bessel function of the first kind
@@ -1759,6 +2108,47 @@ add_newdoc("scipy.special", "ive",
     Defined as::
 
         ive(v, z) = iv(v, z) * exp(-abs(z.real))
+
+    Parameters
+    ----------
+    v : array_like of float
+        Order.
+    z : array_like of float or complex
+        Argument.
+
+    Returns
+    -------
+    out : ndarray
+        Values of the exponentially scaled modified Bessel function.
+
+    Notes
+    -----
+    For positive `v`, the AMOS [1]_ `zbesi` routine is called. It uses a
+    power series for small `z`, the asymptitic expansion for large
+    `abs(z)`, the Miller algorithm normalized by the Wronskian and a
+    Neumann series for intermediate magnitudes, and the uniform asymptitic
+    expansions for :math:`I_v(z)` and :math:`J_v(z)` for large orders.
+    Backward recurrence is used to generate sequences or reduce orders when
+    necessary.
+
+    The calculations above are done in the right half plane and continued
+    into the left half plane by the formula,
+
+    .. math:: I_v(z \exp(\pm\imath\pi)) = \exp(\pm\pi v) I_v(z)
+
+    (valid when the real part of `z` is positive).  For negative `v`, the
+    formula
+
+    .. math:: I_{-v}(z) = I_v(z) + \frac{2}{\pi} \sin(\pi v) K_v(z)
+
+    is used, where :math:`K_v(z)` is the modified Bessel function of the
+    second kind, evaluated using the AMOS routine `zbesk`.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "j0",
@@ -1779,30 +2169,114 @@ add_newdoc("scipy.special", "jn",
     """
     jn(n, x)
 
-    Bessel function of the first kind of integer order `n`.
+    Bessel function of the first kind of integer order and real argument.
 
     Notes
     -----
     `jn` is an alias of `jv`.
 
+    See also
+    --------
+    jv
+
     """)
 
 add_newdoc("scipy.special", "jv",
-    """
+    r"""
     jv(v, z)
 
-    Bessel function of the first kind of real order `v`
+    Bessel function of the first kind of real order and complex argument.
+
+    Parameters
+    ----------
+    v : array_like
+        Order (float).
+    z : array_like
+        Argument (float or complex).
+
+    Returns
+    -------
+    J : ndarray
+        Value of the Bessel function, :math:`J_v(z)`.
+
+    Notes
+    -----
+    For positive `v` values, the computation is carried out using the AMOS
+    [1]_ `zbesj` routine, which exploits the connection to the modified
+    Bessel function :math:`I_v`,
+
+    .. math::
+        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+
+        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+
+    For negative `v` values the formula,
+
+    .. math:: J_{-v}(z) = J_v(z) \cos(\pi v) - Y_v(z) \sin(\pi v)
+
+    is used, where :math:`Y_v(z)` is the Bessel function of the second
+    kind, computed using the AMOS routine `zbesy`.  Note that the second
+    term is exactly zero for integer `v`; to improve accuracy the second
+    term is explicitly omitted for `v` values such that `v = floor(v)`.
+
+    See also
+    --------
+    jve : :math:`J_v` with leading exponential behavior stripped off.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "jve",
-    """
+    r"""
     jve(v, z)
 
-    Exponentially scaled Bessel function of order `v`
+    Exponentially scaled Bessel function of order `v`.
 
     Defined as::
 
         jve(v, z) = jv(v, z) * exp(-abs(z.imag))
+
+    Parameters
+    ----------
+    v : array_like
+        Order (float).
+    z : array_like
+        Argument (float or complex).
+
+    Returns
+    -------
+    J : ndarray
+        Value of the exponentially scaled Bessel function.
+
+    Notes
+    -----
+    For positive `v` values, the computation is carried out using the AMOS
+    [1]_ `zbesj` routine, which exploits the connection to the modified
+    Bessel function :math:`I_v`,
+
+    .. math::
+        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+
+        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+
+    For negative `v` values the formula,
+
+    .. math:: J_{-v}(z) = J_v(z) \cos(\pi v) - Y_v(z) \sin(\pi v)
+
+    is used, where :math:`Y_v(z)` is the Bessel function of the second
+    kind, computed using the AMOS routine `zbesy`.  Note that the second
+    term is exactly zero for integer `v`; to improve accuracy the second
+    term is explicitly omitted for `v` values such that `v = floor(v)`.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "k0",
@@ -1921,7 +2395,7 @@ add_newdoc("scipy.special", "kl_div",
     """)
 
 add_newdoc("scipy.special", "kn",
-    """
+    r"""
     kn(n, x)
 
     Modified Bessel function of the second kind of integer order `n`
@@ -1944,10 +2418,24 @@ add_newdoc("scipy.special", "kn",
     out : ndarray
         The results
 
+    Notes
+    -----
+    Wrapper for AMOS [1]_ routine `zbesk`.  For a discussion of the
+    algorithm used, see [2]_ and the references therein.
+
     See Also
     --------
     kv : Same function, but accepts real order and complex argument
     kvp : Derivative of this function
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
+    .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
+           functions of a complex argument and nonnegative order", ACM
+           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
 
     Examples
     --------
@@ -2016,9 +2504,24 @@ add_newdoc("scipy.special", "kv",
         The results. Note that input must be of complex type to get complex
         output, e.g. ``kv(3, -2+0j)`` instead of ``kv(3, -2)``.
 
+    Notes
+    -----
+    Wrapper for AMOS [1]_ routine `zbesk`.  For a discussion of the
+    algorithm used, see [2]_ and the references therein.
+
     See Also
     --------
+    kve : This function with leading exponential behavior stripped off.
     kvp : Derivative of this function
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
+    .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
+           functions of a complex argument and nonnegative order", ACM
+           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
 
     Examples
     --------
@@ -2042,7 +2545,7 @@ add_newdoc("scipy.special", "kv",
     """)
 
 add_newdoc("scipy.special", "kve",
-    """
+    r"""
     kve(v, z)
 
     Exponentially scaled modified Bessel function of the second kind.
@@ -2052,6 +2555,32 @@ add_newdoc("scipy.special", "kve",
     complex `z`::
 
         kve(v, z) = kv(v, z) * exp(z)
+
+    Parameters
+    ----------
+    v : array_like of float
+        Order of Bessel functions
+    z : array_like of complex
+        Argument at which to evaluate the Bessel functions
+
+    Returns
+    -------
+    out : ndarray
+        The exponentially scaled modified Bessel function of the second kind.
+
+    Notes
+    -----
+    Wrapper for AMOS [1]_ routine `zbesk`.  For a discussion of the
+    algorithm used, see [2]_ and the references therein.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
+    .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
+           functions of a complex argument and nonnegative order", ACM
+           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     """)
 
 add_newdoc("scipy.special", "log1p",
@@ -3315,36 +3844,143 @@ add_newdoc("scipy.special", "y1",
     """)
 
 add_newdoc("scipy.special", "yn",
-    """
+    r"""
     yn(n, x)
 
-    Bessel function of the second kind of integer order
+    Bessel function of the second kind of integer order and real argument.
 
-    Returns the Bessel function of the second kind of integer order `n`
-    at `x`.
+    Parameters
+    ----------
+    n : array_like
+        Order (integer).
+    z : array_like
+        Argument (float).
+
+    Returns
+    -------
+    Y : ndarray
+        Value of the Bessel function, :math:`Y_n(x)`.
+
+    Notes
+    -----
+    Wrapper for the Cephes [1]_ routine `yn`.
+
+    The function is evaluated by forward recurrence on `n`, starting with
+    values computed by the Cephes routines `y0` and `y1`. If `n = 0` or 1,
+    the routine for `y0` or `y1` is called directly.
+
+    Accuracy (absolute error, except relative when y > 1):
+
+    ==========   ======     ========     =======     =======
+    arithmetic   domain      trials       peak         rms
+    ==========   ======     ========     =======     =======
+       IEEE      0, 30       30000       3.4e-15     4.3e-16
+    ==========   ======     ========     =======     =======
+
+    Spot checked against tables for x, n between 0 and 100.
+
+    See also
+    --------
+    yv : For real order and real or complex argument.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
     """)
 
 add_newdoc("scipy.special", "yv",
-    """
+    r"""
     yv(v, z)
 
-    Bessel function of the second kind of real order
+    Bessel function of the second kind of real order and complex argument.
 
-    Returns the Bessel function of the second kind of real order `v` at
-    complex `z`.
+    Parameters
+    ----------
+    v : array_like
+        Order (float).
+    z : array_like
+        Argument (float or complex).
+
+    Returns
+    -------
+    Y : ndarray
+        Value of the Bessel function of the second kind, :math:`Y_v(x)`.
+
+    Notes
+    -----
+    For positive `v` values, the computation is carried out using the
+    AMOS [1]_ `zbesy` routine, which exploits the connection to the Hankel
+    Bessel functions :math:`H_v^{(1)}` and :math:`H_v^{(2)}`,
+
+    .. math:: Y_v(z) = \frac{1}{2\imath} (H_v^{(1)} - H_v^{(2)}).
+
+    For negative `v` values the formula,
+
+    .. math:: Y_{-v}(z) = Y_v(z) \cos(\pi v) + J_v(z) \sin(\pi v)
+
+    is used, where :math:`J_v(z)` is the Bessel function of the first kind,
+    computed using the AMOS routine `zbesj`.  Note that the second term is
+    exactly zero for integer `v`; to improve accuracy the second term is
+    explicitly omitted for `v` values such that `v = floor(v)`.
+
+    See also
+    --------
+    yve : :math:`Y_v` with leading exponential behavior stripped off.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
+
     """)
 
 add_newdoc("scipy.special", "yve",
-    """
+    r"""
     yve(v, z)
 
-    Exponentially scaled Bessel function of the second kind of real order
+    Exponentially scaled Bessel function of the second kind of real order.
 
     Returns the exponentially scaled Bessel function of the second
     kind of real order `v` at complex `z`::
 
         yve(v, z) = yv(v, z) * exp(-abs(z.imag))
 
+    Parameters
+    ----------
+    v : array_like
+        Order (float).
+    z : array_like
+        Argument (float or complex).
+
+    Returns
+    -------
+    Y : ndarray
+        Value of the exponentially scaled Bessel function.
+
+    Notes
+    -----
+    For positive `v` values, the computation is carried out using the
+    AMOS [1]_ `zbesy` routine, which exploits the connection to the Hankel
+    Bessel functions :math:`H_v^{(1)}` and :math:`H_v^{(2)}`,
+
+    .. math:: Y_v(z) = \frac{1}{2\imath} (H_v^{(1)} - H_v^{(2)}).
+
+    For negative `v` values the formula,
+
+    .. math:: Y_{-v}(z) = Y_v(z) \cos(\pi v) + J_v(z) \sin(\pi v)
+
+    is used, where :math:`J_v(z)` is the Bessel function of the first kind,
+    computed using the AMOS routine `zbesj`.  Note that the second term is
+    exactly zero for integer `v`; to improve accuracy the second term is
+    explicitly omitted for `v` values such that `v = floor(v)`.
+
+    References
+    ----------
+    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
+           of a Complex Argument and Nonnegative Order",
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "zeta",
