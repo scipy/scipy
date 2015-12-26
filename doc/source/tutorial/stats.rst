@@ -89,7 +89,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats,d), stats.rv_discrete)]
     >>> print 'number of continuous distributions:', len(dist_continu)
-    number of continuous distributions: 89
+    number of continuous distributions: 90
     >>> print 'number of discrete distributions:  ', len(dist_discrete)
     number of discrete distributions:   13
 
