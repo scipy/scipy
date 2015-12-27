@@ -158,9 +158,9 @@ class CZT(object):
     equivalent zero-padded FFT, with differences on the order of 1e-7 from the
     direct transform rather than 1e-15 as seen with zero-padding.
 
-    Its most common application is computing large prime-length Fourier
-    transforms in O(N log N) time, rather than the O(N**2) time required by
-    the direct DFT calculation used in `fft`.
+    As this CZT is implemented using the Bluestein algorithm, it can compute
+    large prime-length Fourier transforms in O(N log N) time, rather than the
+    O(N**2) time required by the direct DFT calculation used in `fft`.
 
     References
     ----------
