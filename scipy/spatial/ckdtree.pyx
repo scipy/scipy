@@ -548,7 +548,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         return 0
         
 
-    def __deallocate__(cKDTree self):
+    def __dealloc__(cKDTree self):
         if self.tree_buffer != NULL:
             del self.tree_buffer
 
