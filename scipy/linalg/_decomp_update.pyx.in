@@ -646,6 +646,8 @@ cdef int thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
     # original system, not the new system.
 
     s = <blas_t*>libc.stdlib.malloc(2*(n+p_eco)*sizeof(blas_t))
+    if not s:
+        return MEMORY_ERROR
 
     for j in range(p_eco):
         rc = rcond[0]
@@ -1965,6 +1967,8 @@ RCONDS = ['&frc', '&drc', '<float_complex*>&frc', '<double_complex*>&drc']
             raise LinAlgError("One of the columns of u lies in the span of Q. "
                               "Found reciprocal condition number of %s for Q "
                               "augmented with u/||u||." % str(drc))
+        elif info == MEMORY_ERROR:
+            raise MemoryError("Unable to allocate memory for array")
         return qnew, rnew
     else:
         if (not cnp.PyArray_ISONESEGMENT(q1)) or u1.ndim == 2:
