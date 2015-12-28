@@ -16,7 +16,7 @@ from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
 
 from numpy import (where, arange, putmask, ravel, sum, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
-                   tanh, cos, cosh, sinh, where)
+                   tanh, cos, cosh, sinh)
 
 from numpy import polyval, place, extract, any, asarray, nan, inf, pi
 
@@ -4096,48 +4096,51 @@ class skew_normal_gen(rv_continuous):
     
     Notes
     -----
+    The pdf is
+
+    skewnormal.pdf(x, a) = 2*norm.pdf(x)*norm.cdf(ax)
+    
     `skewnormal` takes ``a`` as a skewness parameter
     When a=0 the distribution is identical to a normal.
-    rvs implements the method of http://azzalini.stat.unipd.it/SN/faq-r.html
+    rvs implements the method of 
+   
     %(after_notes)s
     
     %(example)s
     
-    >>>import matplotlib.pyplot as plt
-    >>>x = np.linspace(-5,5,100)
-    >>>plt.hist(stats.skewnormal.rvs(a=4, size=1e6), bins=50, normed=True, color='red') 
-    >>>plt.hist(stats.skewnormal.rvs(a=-4, size=1e6), bins=50, normed=True, color='green') 
-    >>>plt.hist(stats.skewnormal.rvs(a=0, size=1e6), bins=50, normed=True, color='blue') 
-    >>>plt.plot(x, stats.skewnormal.pdf(x,a=4), 'r')
-    >>>plt.plot(x, stats.skewnormal.pdf(x,a=-4), 'g')
-    >>>plt.plot(x, stats.skewnormal.pdf(x,a=0), 'b')
-    >>>plt.show()
+    
+    References
+    ----------
+    
+    A. Azzalini and A. Capitanio (1999). Statistical applications of the multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
+   
+    http://azzalini.stat.unipd.it/SN/faq-r.html
     """
 
     def _argcheck(self, a):
-        return True
+        return np.isfinite(a)
         
     def _pdf(self, x, a):
         return 2.*_norm_pdf(x)*_norm_cdf(a*x)
         
-    def _rvs(self,a):
-        [u0,v] = norm.rvs(size=(2,self._size))
-        d = a/sqrt(1+a**2)
-        u1 = d*u0+sqrt(1-d**2)*v
-        return where(u0 >= 0, u1, -u1)
+    def _rvs(self, a):
+        [u0, v] = norm.rvs(size=(2, ) + self._size)
+        d = a/np.sqrt(1 + a**2)
+        u1 = d*u0 + v*np.sqrt(1 - d**2)
+        return np.where(u0 >= 0, u1, -u1)
         
     def _stats(self, a, moments='mvsk'):
         output = [None, None, None, None]
-        const = sqrt(2/pi)*a/sqrt(1+a**2)
+        const = np.sqrt(2/pi) * a/np.sqrt(1 + a**2)
         
         if 'm' in moments:
             output[0] = const
         if 'v' in moments:
             output[1] = 1 - const**2 
         if 's' in moments:
-            output[2] = ((4-pi)/2) * (const/sqrt(1-const**2))**3         
+            output[2] = ((4 - pi)/2) * (const/np.sqrt(1 - const**2))**3         
         if 'k' in moments:
-            output[3] = (2*(pi-3)) * (const**4/(1-const**2)**2)   
+            output[3] = (2*(pi - 3)) * (const**4/(1 - const**2)**2)   
             
         return output
         
