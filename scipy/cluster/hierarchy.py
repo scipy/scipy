@@ -184,8 +184,9 @@ from scipy._lib.six import xrange
 _cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
                            'weighted': 6}
 _cpy_euclid_methods = {'centroid': 3, 'median': 4, 'ward': 5}
-_cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(
-    set(_cpy_euclid_methods.keys()))
+_cpy_methods = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
+                'median': 4, 'ward': 5, 'weighted': 6}
+_cpy_linkage_methods = set(_cpy_methods.keys())
 
 __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
@@ -623,15 +624,19 @@ def linkage(y, method='single', metric='euclidean'):
     if not isinstance(method, string_types):
         raise TypeError("Argument 'method' must be a string.")
 
+    if method not in _cpy_linkage_methods:
+        raise ValueError('Invalid method: %s' % method)
+
     y = _convert_to_double(np.asarray(y, order='c'))
 
     s = y.shape
     if len(s) == 1:
         distance.is_valid_y(y, throw=True, name='y')
         d = distance.num_obs_y(y)
-        if method not in _cpy_non_euclid_methods:
-            raise ValueError("Valid methods when the raw observations are "
-                             "omitted are 'single', 'complete', 'weighted', "
+        if method in _cpy_euclid_methods and metric != "euclidean":
+            raise ValueError("Valid methods for non euclidean metric "
+                             "when the raw observations are omitted are "
+                             "'single', 'complete', 'weighted', "
                              "and 'average'.")
         # Since the C code does not support striding using strides.
         [y] = _copy_arrays_if_base_present([y])
@@ -641,14 +646,11 @@ def linkage(y, method='single', metric='euclidean'):
         if method == 'single':
             _hierarchy.slink(y, Z, int(d))
         else:
-            _hierarchy.linkage(y, Z, int(d),
-                               int(_cpy_non_euclid_methods[method]))
+            _hierarchy.linkage(y, Z, int(d), int(_cpy_methods[method]))
 
     elif len(s) == 2:
         X = y
         n = s[0]
-        if method not in _cpy_linkage_methods:
-            raise ValueError('Invalid method: %s' % method)
         if method in _cpy_non_euclid_methods:
             dm = distance.pdist(X, metric)
             Z = np.zeros((n - 1, 4))
