@@ -906,8 +906,8 @@ class TestBessel(TestCase):
 
         # 1-order filter is same for all types
         b, a = bessel(1, 1, analog=True)
-        assert_array_equal(b, [1])
-        assert_array_equal(a, [1, 1])
+        assert_allclose(b, [1], rtol=1e-15)
+        assert_allclose(a, [1, 1], rtol=1e-15)
 
         z, p, k = bessel(1, 0.3, analog=True, output='zpk')
         assert_array_equal(z, [])

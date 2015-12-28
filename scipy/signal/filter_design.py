@@ -3152,7 +3152,8 @@ def _aberth(f, fp, x0, tol=1e-15, maxiter=50):
 
         x += alpha / (1 + alpha * beta)
 
-        assert all(np.isfinite(x)), 'Root-finding calculation failed'
+        if not all(np.isfinite(x)):
+            raise RuntimeError('Root-finding calculation failed')
 
         # Mekwi: The iterative process can be stopped when |hn| has become
         # less than the largest error one is willing to permit in the root.
@@ -3197,7 +3198,8 @@ def _bessel_zeros(N):
     x = np.mean((x, x[::-1].conj()), 0)
 
     # Zeros should sum to -1
-    assert abs(np.sum(x) + 1) < 1e-15, 'Generated zeros are inaccurate'
+    if abs(np.sum(x) + 1) > 1e-15:
+        raise RuntimeError('Generated zeros are inaccurate')
 
     return x
 
@@ -3212,13 +3214,14 @@ def _norm_factor(a):
     First 10 values are listed in "Bessel Scale Factors" table,
     "Bessel Filters Polynomials, Poles and Circuit Elements 2003, C. Bond."
     """
-    # TODO: This is inaccurate at high orders.  Evaluate using SOS when that
-    # is implemented for analog filters.
+    a = asarray(a, dtype=float)
 
     def G(w):
         """
         Gain of filter
         """
+        # TODO: This is inaccurate at high orders.  Evaluate using SOS when
+        # that is implemented for analog filters.
         return abs(a[-1]/npp_polyval(1j*w, a[::-1]))
 
     def cutoff(w):
