@@ -4123,7 +4123,7 @@ class skew_normal_gen(rv_continuous):
         return 2.*_norm_pdf(x)*_norm_cdf(a*x)
         
     def _rvs(self, a):
-        (u0, v) = (norm.rvs(size=self._size), norm.rvs(size=self._size))
+        (u0, v) = (self._random_state.normal(size=self._size), self._random_state.normal(size=self._size))
         d = a/np.sqrt(1 + a**2)
         u1 = d*u0 + v*np.sqrt(1 - d**2)
         return np.where(u0 >= 0, u1, -u1)
