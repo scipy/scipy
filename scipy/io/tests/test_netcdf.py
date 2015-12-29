@@ -351,6 +351,11 @@ def test_maskandscale():
             del Temp
             assert_allclose(found, expected)
 
+
+# ------------------------------------------------------------------------
+# Test reading with masked values (_FillValue / missing_value)
+# ------------------------------------------------------------------------
+
 def test_read_withValuesNearFillValue():
     # Regression test for ticket #5626
     fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
@@ -383,6 +388,12 @@ def test_read_withMissingValue():
     fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
     with netcdf_file(fname, maskandscale=True) as f:
         vardata = f.variables['var4_missingValue'][:]
+        assert_mask_matches(vardata, [False, True, False])
+
+def test_read_withFillValNaN():
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var5_fillvalNaN'][:]
         assert_mask_matches(vardata, [False, True, False])
 
 def test_read_withMaskAndScaleFalse():
