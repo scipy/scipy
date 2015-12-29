@@ -1014,7 +1014,7 @@ class netcdf_variable(object):
         else:
             try:
                 missing_value_isnan = np.isnan(missing_value)
-            except TypeError:
+            except (TypeError, NotImplementedError):
                 # some data types (e.g., characters) cannot be tested for NaN
                 missing_value_isnan = False
 
