@@ -1072,7 +1072,11 @@ def simulate_periodic_box(kdtree, data, k, boxsize):
     
 def test_ckdtree_memuse():
     # unit test adaptation of gh-5630
-    import resource
+    try:
+        import resource
+    except ImportError:
+        # resource is not available on Windows with Python 2.6
+        return
     # Make some data
     dx, dy = 0.05, 0.05
     y, x = np.mgrid[slice(1, 5 + dy, dy),
