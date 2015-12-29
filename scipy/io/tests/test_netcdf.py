@@ -62,7 +62,6 @@ def assert_mask_matches(arr, expected_mask):
     assert_equal(mask, expected_mask)
 
 
-
 def test_read_write_files():
     # test round trip for example file
     cwd = os.getcwd()
