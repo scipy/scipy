@@ -946,7 +946,7 @@ class netcdf_variable(object):
                 self._attributes.get('missing_value') or
                 self._attributes.get('_FillValue'))
         if missing_value is not None:
-            data = np.ma.masked_values(data, missing_value)
+            data = np.ma.masked_equal(data, missing_value)
         scale_factor = self._attributes.get('scale_factor')
         add_offset = self._attributes.get('add_offset')
         if add_offset is not None or scale_factor is not None:
