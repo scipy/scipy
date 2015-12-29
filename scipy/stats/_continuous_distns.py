@@ -4090,7 +4090,7 @@ semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
 class skew_normal_gen(rv_continuous):
-    """A skew-normal random variable
+    """A skew-normal random variable.
     
     %(before_notes)s
     
@@ -4101,8 +4101,8 @@ class skew_normal_gen(rv_continuous):
     skewnormal.pdf(x, a) = 2*norm.pdf(x)*norm.cdf(ax)
     
     `skewnormal` takes ``a`` as a skewness parameter
-    When a=0 the distribution is identical to a normal.
-    rvs implements the method of 
+    When a=0 the distribution is identical to a normal distribution.
+    rvs implements the method of [1].
    
     %(after_notes)s
     
@@ -4112,9 +4112,8 @@ class skew_normal_gen(rv_continuous):
     References
     ----------
     
-    A. Azzalini and A. Capitanio (1999). Statistical applications of the multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-   
-    http://azzalini.stat.unipd.it/SN/faq-r.html
+    [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
+          http://azzalini.stat.unipd.it/SN/faq-r.html
     """
 
     def _argcheck(self, a):
@@ -4124,7 +4123,7 @@ class skew_normal_gen(rv_continuous):
         return 2.*_norm_pdf(x)*_norm_cdf(a*x)
         
     def _rvs(self, a):
-        [u0, v] = norm.rvs(size=(2, ) + self._size)
+        (u0, v) = (norm.rvs(size=self._size), norm.rvs(size=self._size))
         d = a/np.sqrt(1 + a**2)
         u1 = d*u0 + v*np.sqrt(1 - d**2)
         return np.where(u0 >= 0, u1, -u1)
