@@ -3311,7 +3311,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     olderr = np.seterr(divide='ignore')  # rs can have elements equal to 1
     try:
-        t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
+        # clip the small negative values possibly caused by rounding
+        # errors before taking the square root
+        t = rs * np.sqrt(((n-2)/((rs+1.0)*(1.0-rs))).clip(0))
     finally:
         np.seterr(**olderr)
 
