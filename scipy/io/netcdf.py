@@ -1019,9 +1019,11 @@ class netcdf_variable(object):
                 missing_value_isnan = False
 
             if (missing_value_isnan):
-                newdata = np.ma.masked_where(np.isnan(data), data)
+                mymask = np.isnan(data)
             else:
-                newdata = np.ma.masked_equal(data, missing_value)
+                mymask = (data == missing_value)
+
+            newdata = np.ma.masked_where(mymask, data)
 
         return newdata
 
