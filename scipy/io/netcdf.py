@@ -991,13 +991,13 @@ class netcdf_variable(object):
         """
 
         if ('_FillValue' in self._attributes):
-            fillval = self._attributes['_FillValue']
+            missing_value = self._attributes['_FillValue']
         elif ('missing_value' in self._attributes):
-            fillval = self._attributes['missing_value']
+            missing_value = self._attributes['missing_value']
         else:
-            fillval = None
+            missing_value = None
 
-        return fillval
+        return missing_value
 
     @staticmethod
     def _apply_missing_value(data, missing_value):
