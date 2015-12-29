@@ -13,6 +13,7 @@ from contextlib import contextmanager
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_raises,
     assert_equal, run_module_suite)
+from numpy.ma.testutils import assert_mask_equal
 
 from scipy.io.netcdf import netcdf_file
 
@@ -334,6 +335,12 @@ def test_maskandscale():
             del Temp
             assert_allclose(found, expected)
 
+def test_mask_withValuesNearFillValue():
+    # Regression test for ticket #5626
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var1_fillval0'][:]
+        assert_mask_equal(vardata.mask, [False, True, False])
 
 if __name__ == "__main__":
     run_module_suite()
