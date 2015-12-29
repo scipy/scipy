@@ -942,9 +942,7 @@ class netcdf_variable(object):
             return self.data[index]
 
         data = self.data[index].copy()
-        missing_value = (
-                self._attributes.get('missing_value') or
-                self._attributes.get('_FillValue'))
+        missing_value = self._get_fillval_attribute()
         if missing_value is not None:
             data = np.ma.masked_equal(data, missing_value)
         scale_factor = self._attributes.get('scale_factor')
@@ -961,8 +959,7 @@ class netcdf_variable(object):
     def __setitem__(self, index, data):
         if self.maskandscale:
             missing_value = (
-                    self._attributes.get('missing_value') or
-                    self._attributes.get('_FillValue') or
+                    self._get_fillval_attribute() or
                     getattr(data, 'fill_value', 999999))
             self._attributes.setdefault('missing_value', missing_value)
             self._attributes.setdefault('_FillValue', missing_value)
@@ -986,6 +983,23 @@ class netcdf_variable(object):
                 shape = (recs,) + self._shape[1:]
                 self.data.resize(shape)
         self.data[index] = data
+
+    def _get_fillval_attribute(self):
+        """
+        Returns the value of the attribute specifying a fill value for this
+        variable (_FillValue or missing_value).
+
+        If this variable does not have a fill value, returns None.
+        """
+
+        if ('_FillValue' in self._attributes):
+            fillval = self._attributes['_FillValue']
+        elif ('missing_value' in self._attributes):
+            fillval = self._attributes['missing_value']
+        else:
+            fillval = None
+
+        return fillval
 
 
 NetCDFFile = netcdf_file

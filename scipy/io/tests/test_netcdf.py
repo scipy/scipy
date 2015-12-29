@@ -13,7 +13,6 @@ from contextlib import contextmanager
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_raises,
     assert_equal, run_module_suite)
-from numpy.ma.testutils import assert_mask_equal
 
 from scipy.io.netcdf import netcdf_file
 
@@ -45,6 +44,23 @@ def check_simple(ncfileobj):
     assert_equal(time.units, b'days since 2008-01-01')
     assert_equal(time.shape, (N_EG_ELS,))
     assert_equal(time[-1], N_EG_ELS-1)
+
+def assert_mask_matches(arr, expected_mask):
+    '''
+    Asserts that the mask of arr1 is effectively the same as expected_mask.
+
+    In contrast to numpy.ma.testutils.assert_mask_equal, this function allows
+    testing the 'mask' of a standard numpy array (the mask in this case is treated
+    as all False).
+
+    Arguments:
+    arr: array to test (can be a numpy array or a numpy.ma array)
+    expected_mask: list of booleans giving the expected mask
+    '''
+
+    mask = np.ma.getmaskarray(arr)
+    assert_equal(mask, expected_mask)
+
 
 
 def test_read_write_files():
@@ -335,12 +351,39 @@ def test_maskandscale():
             del Temp
             assert_allclose(found, expected)
 
-def test_mask_withValuesNearFillValue():
+def test_read_withValuesNearFillValue():
     # Regression test for ticket #5626
     fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
     with netcdf_file(fname, maskandscale=True) as f:
         vardata = f.variables['var1_fillval0'][:]
-        assert_mask_equal(vardata.mask, [False, True, False])
+        assert_mask_matches(vardata, [False, True, False])
+
+def test_read_withNoFillValue():
+    # For a variable with no fill value, reading data with maskandscale=True
+    # should return unmasked data
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var2_noFillval'][:]
+        assert_mask_matches(vardata, [False, False, False])
+        assert_equal(vardata, [1,2,3])
+
+def test_read_withFillValueAndMissingValue():
+    # For a variable with both _FillValue and missing_value, the _FillValue
+    # should be used
+    IRRELEVANT_VALUE = 9999
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var3_fillvalAndMissingValue'][:]
+        assert_mask_matches(vardata, [True, False, False])
+        assert_equal(vardata, [IRRELEVANT_VALUE, 2, 3])
+
+def test_read_withMissingValue():
+    # For a variable with missing_value but not _FillValue, the missing_value
+    # should be used
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var4_missingValue'][:]
+        assert_mask_matches(vardata, [False, True, False])
 
 if __name__ == "__main__":
     run_module_suite()
