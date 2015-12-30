@@ -73,7 +73,7 @@ as an implementation of the Bounded-Variable Least-Squares (BVLS) algorithm.
 `scipy.optimize.curve_fit` now supports fitting with bounds.
 
 `scipy.signal` improvements
---------------------------
+---------------------------
 
 A ``mode`` keyword was added to `scipy.signal.spectrogram`, to let it return
 other spectrograms than power spectral density.
@@ -101,7 +101,7 @@ For methods of many continuous distributions, complex input is now accepted.
 Matrix normal distribution has been implemented as `scipy.stats.matrix_normal`.
 
 `scipy.sparse` improvements
---------------------------
+---------------------------
 
 The `axis` keyword was added to sparse norms, `scipy.sparse.linalg.norm`.
 
@@ -476,7 +476,7 @@ Pull requests for 0.17.0
 - `#5086 <https://github.com/scipy/scipy/pull/5086>`__: Use solve() instead of inv() for gaussian_kde
 - `#5090 <https://github.com/scipy/scipy/pull/5090>`__: MAINT: stats: add explicit _sf, _isf to gengamma distribution
 - `#5094 <https://github.com/scipy/scipy/pull/5094>`__: ENH: scipy.interpolate.NearestNDInterpolator: cKDTree configurable
-- `#5098 <https://github.com/scipy/scipy/pull/5098>`__: DOC: special: fix typesetting in *_roots quadrature functions
+- `#5098 <https://github.com/scipy/scipy/pull/5098>`__: DOC: special: fix typesetting in ``*_roots quadrature`` functions
 - `#5099 <https://github.com/scipy/scipy/pull/5099>`__: DOC: make the docstring of stats.moment raw
 - `#5104 <https://github.com/scipy/scipy/pull/5104>`__: DOC/ENH fixes and micro-optimizations for scipy.linalg
 - `#5105 <https://github.com/scipy/scipy/pull/5105>`__: enh: made l-bfgs-b parameter for the maximum number of line search...
