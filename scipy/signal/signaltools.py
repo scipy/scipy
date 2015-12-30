@@ -1747,10 +1747,9 @@ def resample(x, num, t=None, axis=0, window=None):
                 for i in range(1, Nx//2):
                     W_real[2*i] = W[i]
                     W_real[2*i-1] = W[i]
-                # Deal with the differnet length for odd/even Nx
+                # Deal with the different length for odd/even Nx
                 W_real[Nx-1:] = W[Nx//2]
-
-                X = X * W_real.reshape(newshape_W)
+                X *= W_real.reshape(newshape_W)
             Y = zeros(newshape)
 
             if num > Nx:
@@ -1761,7 +1760,8 @@ def resample(x, num, t=None, axis=0, window=None):
                     # X[-1] is only the real part
                     sl[axis] = slice(0, Nx-1)
                     Y[sl] = X[sl]
-
+                    
+                    # Do something with np.take here
                     sl = [slice(None)] * len(x.shape)
                     sl[axis] = slice(Nx-1, Nx)
                     Y[sl] = 0.5*X[sl]
@@ -1769,7 +1769,8 @@ def resample(x, num, t=None, axis=0, window=None):
                 sl[axis] = slice(0, num)
                 Y[sl] = X[sl]     
 
-            y = fftpack.irfft(Y, axis=axis) * (float(num) / float(Nx))
+            y = fftpack.irfft(Y, axis=axis, overwrite_x=True) 
+            y *= (float(num) / float(Nx))
 
         finally:
             if not _rfft_mt_safe:
@@ -1778,7 +1779,8 @@ def resample(x, num, t=None, axis=0, window=None):
     # Full complex FFT
     else:
         X = fftpack.fft(x, axis=axis)
-        X = X if window is None else X * W.reshape(newshape_W)
+        if window is not None:
+            X *= W.reshape(newshape_W)
 
         N = int(np.minimum(num, Nx))
         Y = zeros(newshape, 'D')
@@ -1787,7 +1789,8 @@ def resample(x, num, t=None, axis=0, window=None):
         sl[axis] = slice(-(N - 1) // 2, None)
         Y[sl] = X[sl]
 
-        y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
+        y = fftpack.ifft(Y, axis=axis, overwrite_x=True) 
+        y *= (float(num) / float(Nx))
 
     if t is None:
         return y
