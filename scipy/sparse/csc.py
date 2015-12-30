@@ -106,6 +106,7 @@ class csc_matrix(_cs_matrix, IndexMixin):
            [2, 3, 6]])
 
     """
+    format = 'csc'
 
     def transpose(self, copy=False):
         from .csr import csr_matrix

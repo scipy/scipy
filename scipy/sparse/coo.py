@@ -113,6 +113,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
            [0, 0, 0, 1]])
 
     """
+    format = 'coo'
+
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
