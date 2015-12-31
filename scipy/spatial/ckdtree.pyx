@@ -688,43 +688,41 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             query_knn(<ckdtree*>self, &dd[0,0], &ii[0,0], &xx[0,0], 
                 n, k, eps, p, distance_upper_bound)
                 
-        if single:
-            if k == 1:
-                if sizeof(long) < sizeof(np.intp_t):
-                    # ... e.g. Windows 64
-                    if ii[0,0] <= <np.intp_t>LONG_MAX:
-                        return dd[0,0], int(ii[0,0])
-                    else:
-                        return dd[0,0], ii[0,0]
-                else:
-                    # ... most other platforms
-                    return dd[0,0], ii[0,0]
+        # massage the output in conformabity to the documented behavior
+
+        if sizeof(long) < sizeof(np.intp_t):
+            # ... e.g. Windows 64
+            overflown = False
+            for i in range(n):
+                for j in range(k):
+                    if ii[i,j] > <np.intp_t>LONG_MAX:
+                        # C long overlow, return array of dtype=np.int_p
+                        overflown = True
+                        break
+                if overflown: 
+                    break
+
+            if overflown:
+                ddret = np.reshape(dd,retshape+(k,))
+                iiret = np.reshape(ii,retshape+(k,))
             else:
-                return dd[0], ii[0]
+                ddret = np.reshape(dd,retshape+(k,))
+                iiret = np.reshape(ii,retshape+(k,)).astype(int) 
+                        
         else:
-            if sizeof(long) < sizeof(np.intp_t):
-                # ... e.g. Windows 64
-                for i in range(n):
-                    for j in range(k):
-                        if ii[i,j] > <np.intp_t>LONG_MAX:
-                            # C long overlow, return array of dtype=np.int_p
-                            if k==1:
-                                return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
-                            else:
-                                return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
+            # ... most other platforms
+            ddret = np.reshape(dd,retshape+(k,))
+            iiret = np.reshape(ii,retshape+(k,))
 
-                # no C long overlow, return array of dtype=int
-                if k==1:
-                    return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape).astype(int)
-                else:
-                    return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,)).astype(int)     
-
-            else:
-                # ... most other platforms
-                if k==1:
-                    return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
-                else:
-                    return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
+        if k == 1:
+            ddret = ddret[..., 0]
+            iiret = iiret[..., 0]
+            # the only case where we return a python scalar
+            if single:
+                ddret = float(ddret)
+                iiret = int(iiret)
+            
+        return ddret, iiret
 
     # ----------------
     # query_ball_point
