@@ -352,7 +352,9 @@ cdef extern from "ckdtree_methods.h":
                      np.intp_t    *ii, 
                      const np.float64_t *xx,
                      const np.intp_t    n,
-                     const np.intp_t    k, 
+                     const np.intp_t    *k, 
+                     const np.intp_t    nk, 
+                     const np.intp_t    kmax, 
                      const np.float64_t eps, 
                      const np.float64_t p, 
                      const np.float64_t distance_upper_bound) 
@@ -572,7 +574,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # -----
     
     @cython.boundscheck(False)
-    def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
+    def query(cKDTree self, object x, object k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=INFINITY,
               np.intp_t n_jobs=1):
         """
@@ -584,8 +586,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         ----------
         x : array_like, last dimension self.m
             An array of points to query.
-        k : integer
-            The number of nearest neighbors to return.
+        k : list of integer or integer
+            The list of k-th nearest neighbors to return. If k is an 
+            integer it is treated as a list of [1, ... k] (range(1, k+1)).
+            Note that the counting starts from 1.
         eps : non-negative float
             Return approximate nearest neighbors; the k-th returned value 
             is guaranteed to be no further than (1+eps) times the 
@@ -608,11 +612,11 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         -------
         d : array of floats
             The distances to the nearest neighbors. 
-            If x has shape tuple+(self.m,), then d has shape tuple+(k,).
+            If x has shape tuple+(self.m,), then d has shape tuple+(len(k),).
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
             The locations of the neighbors in self.data.
-            If `x` has shape tuple+(self.m,), then `i` has shape tuple+(k,).
+            If `x` has shape tuple+(self.m,), then `i` has shape tuple+(len(k),).
             Missing neighbors are indicated with self.n.
 
         Notes
@@ -638,12 +642,18 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         else:
             single = False
 
+        nearest = False
+        if np.isscalar(k):
+            if k == 1:
+                nearest = True
+            k = np.arange(1, k + 1)
+    
         retshape = np.shape(x)[:-1]
         n = <np.intp_t> np.prod(retshape)
         xx = np.ascontiguousarray(x_arr).reshape(n, self.m)
-        dd = np.empty((n,k),dtype=np.float64)
+        dd = np.empty((n,len(k)),dtype=np.float64)
         dd.fill(INFINITY)
-        ii = np.empty((n,k),dtype=np.intp)
+        ii = np.empty((n,len(k)),dtype=np.intp)
         ii.fill(self.n)
 
         # Do the query in an external C++ function. 
@@ -653,9 +663,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 np.ndarray[np.intp_t,ndim=2] _ii = ii
                 np.ndarray[np.float64_t,ndim=2] _dd = dd
                 np.ndarray[np.float64_t,ndim=2] _xx = xx
+                np.ndarray[np.intp_t,ndim=1] _k = np.array(k, dtype=np.intp)
             
+            kmax = np.max(k)
+
             query_knn(<ckdtree*>self, &_dd[start,0], &_ii[start,0], 
-                &_xx[start,0], stop-start, k, eps, p, distance_upper_bound)
+                &_xx[start,0], stop-start, &_k[0], len(k), kmax, eps, p, distance_upper_bound)
         
         if (n_jobs == -1): 
             n_jobs = number_of_processors
@@ -687,7 +700,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             # ... e.g. Windows 64
             overflown = False
             for i in range(n):
-                for j in range(k):
+                for j in range(len(k)):
                     if ii[i,j] > <np.intp_t>LONG_MAX:
                         # C long overlow, return array of dtype=np.int_p
                         overflown = True
@@ -696,18 +709,18 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                     break
 
             if overflown:
-                ddret = np.reshape(dd,retshape+(k,))
-                iiret = np.reshape(ii,retshape+(k,))
+                ddret = np.reshape(dd,retshape+(len(k),))
+                iiret = np.reshape(ii,retshape+(len(k),))
             else:
-                ddret = np.reshape(dd,retshape+(k,))
-                iiret = np.reshape(ii,retshape+(k,)).astype(int) 
+                ddret = np.reshape(dd,retshape+(len(k),))
+                iiret = np.reshape(ii,retshape+(len(k),)).astype(int) 
                         
         else:
             # ... most other platforms
-            ddret = np.reshape(dd,retshape+(k,))
-            iiret = np.reshape(ii,retshape+(k,))
+            ddret = np.reshape(dd,retshape+(len(k),))
+            iiret = np.reshape(ii,retshape+(len(k),))
 
-        if k == 1:
+        if nearest:
             ddret = ddret[..., 0]
             iiret = iiret[..., 0]
             # the only case where we return a python scalar
