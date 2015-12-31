@@ -623,10 +623,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         """
         
         cdef:
-            np.ndarray[np.intp_t, ndim=2] ii
-            np.ndarray[np.float64_t, ndim=2] dd
-            np.ndarray[np.float64_t, ndim=2] xx      
-            np.intp_t c, n, i, j, CHUNK
+            np.intp_t n, i, j
+            int overflown
         
         x_arr = np.asarray(x, dtype=np.float64)
         if x_arr.ndim == 0 or x_arr.shape[x_arr.ndim - 1] != self.m:
@@ -650,33 +648,29 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.
+        def _thread_func(self, np.intp_t start, np.intp_t stop):
+            cdef: 
+                np.ndarray[np.intp_t,ndim=2] _ii = ii
+                np.ndarray[np.float64_t,ndim=2] _dd = dd
+                np.ndarray[np.float64_t,ndim=2] _xx = xx
+            
+            query_knn(<ckdtree*>self, &_dd[start,0], &_ii[start,0], 
+                &_xx[start,0], stop-start, k, eps, p, distance_upper_bound)
         
         if (n_jobs == -1): 
             n_jobs = number_of_processors
         
         if n_jobs > 1:
             # static scheduling without load balancing is good enough
-            CHUNK = n//n_jobs if n//n_jobs else n
                              
-            def _thread_func(self, _dd, _ii, _xx, _j, n, CHUNK, p, k, eps, dub):
-                cdef: 
-                    np.intp_t j = _j
-                    np.ndarray[np.intp_t,ndim=2] ii = _ii
-                    np.ndarray[np.float64_t,ndim=2] dd = _dd
-                    np.ndarray[np.float64_t,ndim=2] xx = _xx
-                    np.intp_t start = j*CHUNK
-                    np.intp_t stop = start + CHUNK
-                stop = n if stop > n else stop
-                if start < n:
-                    query_knn(<ckdtree*>self, &dd[start,0], &ii[start,0], 
-                        &xx[start,0], stop-start, k, eps, p, dub)
+            ranges = [(j * n // n_jobs, (j + 1) * n // n_jobs)
+                            for j in range(n_jobs)]
             
             # There might be n_jobs+1 threads spawned here, but only n_jobs of 
             # them will do significant work.
             threads = [threading.Thread(target=_thread_func,
-                                        args=(self, dd, ii, xx, j, n, CHUNK, p,
-                                              k, eps, distance_upper_bound))
-                             for j in range(1+(n//CHUNK))]
+                                args=(self, start, stop)) for start, stop in ranges]
+
             # Set the daemon flag so the process can be aborted, 
             # start all threads and wait for completion.
             for t in threads:
@@ -685,8 +679,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             for t in threads: 
                 t.join()
         else:
-            query_knn(<ckdtree*>self, &dd[0,0], &ii[0,0], &xx[0,0], 
-                n, k, eps, p, distance_upper_bound)
+            _thread_func(self, 0, n)
                 
         # massage the output in conformabity to the documented behavior
 
