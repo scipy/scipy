@@ -988,11 +988,15 @@ class netcdf_variable(object):
         Returns the value denoting "no data" for this variable.
 
         If this variable does not have a missing/fill value, returns None.
+
+        If both _FillValue and missing_value are given, give precedence to
+        _FillValue. The netCDF standard gives special meaning to _FillValue;
+        missing_value is  just used for compatibility with old datasets.
         """
 
-        if ('_FillValue' in self._attributes):
+        if '_FillValue' in self._attributes:
             missing_value = self._attributes['_FillValue']
-        elif ('missing_value' in self._attributes):
+        elif 'missing_value' in self._attributes:
             missing_value = self._attributes['missing_value']
         else:
             missing_value = None
@@ -1018,7 +1022,7 @@ class netcdf_variable(object):
                 # some data types (e.g., characters) cannot be tested for NaN
                 missing_value_isnan = False
 
-            if (missing_value_isnan):
+            if missing_value_isnan:
                 mymask = np.isnan(data)
             else:
                 mymask = (data == missing_value)
