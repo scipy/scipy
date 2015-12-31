@@ -41,6 +41,9 @@ cdef extern from *:
     
     struct ckdtree:
         pass
+        
+    int NPY_LIKELY(int)
+    int NPY_UNLIKELY(int)
 
        
 cdef extern from "ckdtree_decl.h":
@@ -115,21 +118,26 @@ cdef class coo_entries:
     def ndarray(coo_entries self):    
         cdef: 
             coo_entry *pr
-            np.uintp_t uintptr            
-        pr = coo_entry_vector_buf(self.buf) 
-        uintptr = <np.uintp_t> (<void*> pr)
+            np.uintp_t uintptr
+            np.intp_t n
+        _dtype = [('i',np.intp),('j',np.intp),('v',np.float64)]
+        res_dtype = np.dtype(_dtype, align = True)
         n = <np.intp_t> self.buf.size()
-        dtype = np.dtype(np.uint8)               
-        self.__array_interface__ = dict(
-            data = (uintptr, False),
-            descr = dtype.descr,
-            shape = (n*sizeof(coo_entry),),
-            strides = (dtype.itemsize,),
-            typestr = dtype.str,
-            version = 3,
-        )
-        res_dtype = np.dtype([('i',np.intp), ('j',np.intp), ('v',np.float64)]) 
-        return np.asarray(self).view(dtype=res_dtype)
+        if NPY_LIKELY(n > 0):
+            pr = coo_entry_vector_buf(self.buf) 
+            uintptr = <np.uintp_t> (<void*> pr)
+            dtype = np.dtype(np.uint8)               
+            self.__array_interface__ = dict(
+                data = (uintptr, False),
+                descr = dtype.descr,
+                shape = (n*sizeof(coo_entry),),
+                strides = (dtype.itemsize,),
+                typestr = dtype.str,
+                version = 3,
+            ) 
+            return np.asarray(self).view(dtype=res_dtype)
+        else:
+            return np.empty(shape=(0,), dtype=res_dtype)
         
     def dict(coo_entries self):
         cdef:
@@ -137,15 +145,18 @@ cdef class coo_entries:
             np.float64_t v
             coo_entry *pr
             dict res_dict
-        pr = coo_entry_vector_buf(self.buf)
         n = <np.intp_t> self.buf.size()
-        res_dict = dict()           
-        for k in range(n):                    
-            i = pr[k].i
-            j = pr[k].j
-            v = pr[k].v                    
-            res_dict[(i,j)] = v
-        return res_dict
+        if NPY_LIKELY(n > 0):
+            pr = coo_entry_vector_buf(self.buf)        
+            res_dict = dict()           
+            for k in range(n):                    
+                i = pr[k].i
+                j = pr[k].j
+                v = pr[k].v                    
+                res_dict[(i,j)] = v
+            return res_dict
+        else:
+            return {}
     
     def coo_matrix(coo_entries self, m, n):
         res_arr = self.ndarray()
@@ -182,20 +193,24 @@ cdef class ordered_pairs:
     def ndarray(ordered_pairs self):
         cdef: 
             ordered_pair *pr
-            np.uintp_t uintptr            
-        pr = ordered_pair_vector_buf(self.buf) 
-        uintptr = <np.uintp_t> (<void*> pr)
+            np.uintp_t uintptr 
+            np.intp_t n            
         n = <np.intp_t> self.buf.size()
-        dtype = np.dtype(np.intp)               
-        self.__array_interface__ = dict(
-            data = (uintptr, False),
-            descr = dtype.descr,
-            shape = (n,2),
-            strides = (2*dtype.itemsize,dtype.itemsize),
-            typestr = dtype.str,
-            version = 3,
-        )
-        return np.asarray(self)
+        if NPY_LIKELY(n > 0):
+            pr = ordered_pair_vector_buf(self.buf) 
+            uintptr = <np.uintp_t> (<void*> pr)       
+            dtype = np.dtype(np.intp)               
+            self.__array_interface__ = dict(
+                data = (uintptr, False),
+                descr = dtype.descr,
+                shape = (n,2),
+                strides = (2*dtype.itemsize,dtype.itemsize),
+                typestr = dtype.str,
+                version = 3,
+            )
+            return np.asarray(self)
+        else:
+            return np.empty(shape=(0,2), dtype=np.intp)
         
     def set(ordered_pairs self):        
         cdef: 
@@ -789,10 +804,11 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 query_ball_point(<ckdtree*> self, &xx[0], r, p, eps, 1, &vres)
                 n = <np.intp_t> vres.size()
                 tmp = n * [None]
-                cur = npy_intp_vector_buf(vres)
-                for i in range(n):
-                    tmp[i] = cur[0]
-                    cur += 1
+                if NPY_LIKELY(n > 0):
+                    cur = npy_intp_vector_buf(vres)
+                    for i in range(n):
+                        tmp[i] = cur[0]
+                        cur += 1
                 result = tmp
             
             else:
@@ -859,12 +875,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 i = 0
                 for c in np.ndindex(retshape):
                     m = <np.intp_t> (vvres[i].size())
-                    tmp = m * [None]
-                    cur = npy_intp_vector_buf(vvres[i])
-                    for j in range(m):
-                        tmp[j] = cur[0]
-                        cur += 1
-                    result[c] = sorted(tmp)
+                    if NPY_LIKELY(m > 0):
+                        tmp = m * [None]
+                        cur = npy_intp_vector_buf(vvres[i])
+                        for j in range(m):
+                            tmp[j] = cur[0]
+                            cur += 1
+                        result[c] = sorted(tmp)
+                    else:
+                        result[c] = []
                     i += 1
         
         finally:
@@ -950,12 +969,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             results = n * [None]
             for i in range(n):
                 m = <np.intp_t> (vvres[i].size())
-                tmp = m * [None]
-                cur = npy_intp_vector_buf(vvres[i]) 
-                for j in range(m):
-                    tmp[j] = cur[0]
-                    cur += 1
-                results[i] = sorted(tmp)       
+                if NPY_LIKELY(m > 0):
+                    tmp = m * [None]
+                    cur = npy_intp_vector_buf(vvres[i]) 
+                    for j in range(m):
+                        tmp[j] = cur[0]
+                        cur += 1
+                    results[i] = sorted(tmp)
+                else:
+                    results[i] = []    
                                   
         finally:
             if vvres != NULL:
