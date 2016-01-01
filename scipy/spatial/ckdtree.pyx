@@ -613,16 +613,48 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         d : array of floats
             The distances to the nearest neighbors. 
             If x has shape tuple+(self.m,), then d has shape tuple+(len(k),).
+            When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
             The locations of the neighbors in self.data.
             If `x` has shape tuple+(self.m,), then `i` has shape tuple+(len(k),).
+            When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with self.n.
 
         Notes
         -----
         If the KD-Tree is periodic, the position :py:code:`x` is wrapped into the
         box.
+        
+        When the input k is a list, a query for arange(max(k)) is performed, but
+        only columns that store the requested values of k are preserved. This is 
+        implemented in a manner that reduces memory usage.
+
+        Examples
+        --------
+        
+        >>> tree = cKDTree(data)
+
+        To query the nearest neighbours and return squeezed result, use
+
+        >>> dd, ii = tree.query(x, k=1)
+
+        To query the nearest neighbours and return unsqueezed result, use
+
+        >>> dd, ii = tree.query(x, k=[1])
+
+        To query the second nearest neighbours and return unsqueezed result, use
+
+        >>> dd, ii = tree.query(x, k=[2])
+
+        To query the first and second nearest neighbours, use
+
+        >>> dd, ii = tree.query(x, k=2)
+
+        or, be more specific
+
+        >>> dd, ii = tree.query(x, k=[1, 2])
+
 
         """
         
