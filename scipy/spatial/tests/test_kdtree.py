@@ -1141,6 +1141,23 @@ def test_ckdtree_weights ():
                 self_weights=w1, other_weights=w1)
 
         assert_array_equal(c1, c2)
+
+def test_ckdtree_count_neighbous_multiple_r():
+    # check ckdtree periodic boundary
+    import itertools
+    n = 2000
+    m = 2
+    np.random.seed(1234)
+    data = np.random.normal(size=(n, m))
+    kdtree = cKDTree(data, leafsize=1)
+    r0 = [0, 0.01, 0.02, 0.05]
+    i0 = np.arange(len(r0))
+    n0 = kdtree.count_neighbors(kdtree, r0)
+    for i, r in zip(itertools.permutations(i0), 
+                    itertools.permutations(r0)):
+        # permute n0 by i and it shall agree 
+        n = kdtree.count_neighbors(kdtree, r)
+        assert_array_equal(n, n0[list(i)])
     
 def test_len0_arrays():
     # make sure len-0 arrays are handled correctly
