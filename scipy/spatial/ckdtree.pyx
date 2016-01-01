@@ -1114,7 +1114,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             int r_ndim
             np.intp_t n_queries, i
             np.ndarray[np.float64_t, ndim=1, mode="c"] real_r
-            np.ndarray[np.float64_t, ndim=1, mode="c"] results
+            np.ndarray[np.float64_t, ndim=1, mode="c"] fresults
             np.ndarray[np.intp_t, ndim=1, mode="c"] iresults
             np.ndarray[np.float64_t, ndim=1, mode="c"] w1, w1n
             np.ndarray[np.float64_t, ndim=1, mode="c"] w2, w2n
@@ -1135,6 +1135,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             raise ValueError("r must be either a single value or a "
                              "one-dimensional array of values")
         real_r = np.array(r, ndmin=1, dtype=np.float64, copy=True)
+        real_r, inverse = np.unique(real_r, return_inverse=True)
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
@@ -1145,18 +1146,21 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         if self_weights is None and other_weights is None:
             # unweighted, use the integer arithmetics
-            iresults = np.zeros(n_queries, dtype=np.intp)
+            results = np.zeros(n_queries, dtype=np.intp)
 
+            iresults = results
             count_neighbors_unweighted(<ckdtree*> self, <ckdtree*> other, n_queries,
                             &real_r[0], &iresults[0], p)
         
+            results = results[inverse]
+
             if r_ndim == 0:
-                if iresults[0] <= <np.intp_t> LONG_MAX:
-                    return int(iresults[0])
+                if results[0] <= <np.intp_t> LONG_MAX:
+                    return int(results[0])
                 else:
-                    return iresults[0]
+                    return results[0]
             else:
-                return iresults
+                return results
         else:
             # weighted / half weighted, use the floating point arithmetics
             if self_weights is not None:
@@ -1177,11 +1181,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 w2np = NULL
 
             results = np.zeros(n_queries, dtype=np.float64)
-
+            fresults = results
             count_neighbors_weighted(<ckdtree*> self, <ckdtree*> other,
                                     w1p, w2p, w1np, w2np,
                                     n_queries,
-                                    &real_r[0], &results[0], p)
+                                    &real_r[0], &fresults[0], p)
+            results = results[inverse]
             if r_ndim == 0:
                 return results[0]
             else:
