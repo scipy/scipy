@@ -1760,8 +1760,6 @@ def resample(x, num, t=None, axis=0, window=None):
                     # X[-1] is only the real part
                     sl[axis] = slice(0, Nx-1)
                     Y[sl] = X[sl]
-                    
-                    # Do something with np.take here
                     sl = [slice(None)] * len(x.shape)
                     sl[axis] = slice(Nx-1, Nx)
                     Y[sl] = 0.5*X[sl]
@@ -1792,6 +1790,9 @@ def resample(x, num, t=None, axis=0, window=None):
         y = fftpack.ifft(Y, axis=axis, overwrite_x=True) 
         y *= (float(num) / float(Nx))
 
+        if not np.issubdtype(x.dtype, complex):
+            y = y.real
+              
     if t is None:
         return y
     else:
