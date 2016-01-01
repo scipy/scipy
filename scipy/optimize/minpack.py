@@ -9,6 +9,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    all, where, isscalar, asarray, inf, abs,
                    finfo, inexact, issubdtype, dtype)
 from scipy.linalg import svd
+from scipy._lib._util import _asarray_validated, _lazywhere
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 from ._lsq.common import make_strictly_feasible
@@ -35,6 +36,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                 msg += " '%s'." % func_name
             else:
                 msg += "."
+            msg += 'Shape should be %s but it is %s.' % (output_shape, shape(res))
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
@@ -558,7 +560,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if covariance of the parameters can not be estimated.
 
     ValueError
-        if ydata and xdata contain NaNs.
+        if either `ydata` or `xdata` contain NaNs.
 
     See Also
     --------
@@ -720,7 +722,33 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     return (good, err)
 
 
-def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
+def _del2(p0, p1, d):
+    return p0 - np.square(p1 - p0) / d
+
+
+def _relerr(actual, desired):
+    return (actual - desired) / desired
+
+
+def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
+    p0 = x0
+    for i in range(maxiter):
+        p1 = func(p0, *args)
+        if use_accel:
+            p2 = func(p1, *args)
+            d = p2 - 2.0 * p1 + p0
+            p = _lazywhere(d != 0, (p0, p1, d), f=_del2, fillvalue=p2)
+        else:
+            p = p1
+        relerr = _lazywhere(p0 != 0, (p, p0), f=_relerr, fillvalue=p)
+        if np.all(np.abs(relerr) < xtol):
+            return p
+        p0 = p
+    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    raise RuntimeError(msg)
+
+
+def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
     """
     Find a fixed point of the function.
 
@@ -739,11 +767,16 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
         Convergence tolerance, defaults to 1e-08.
     maxiter : int, optional
         Maximum number of iterations, defaults to 500.
+    method : {"del2", "iteration"}, optional
+        Method of finding the fixed-point, defaults to "del2"
+        which uses Steffensen's Method with Aitken's ``Del^2``
+        convergence acceleration [1]_. The "iteration" method simply iterates
+        the function until convergence is detected, without attempting to
+        accelerate the convergence.
 
-    Notes
-    -----
-    Uses Steffensen's Method using Aitken's ``Del^2`` convergence acceleration.
-    See Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
+    References
+    ----------
+    .. [1] Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
 
     Examples
     --------
@@ -756,34 +789,6 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     array([ 1.4920333 ,  1.37228132])
 
     """
-    if not isscalar(x0):
-        x0 = asarray(x0)
-        p0 = x0
-        for iter in range(maxiter):
-            p1 = func(p0, *args)
-            p2 = func(p1, *args)
-            d = p2 - 2.0 * p1 + p0
-            p = where(d == 0, p2, p0 - (p1 - p0)*(p1 - p0) / d)
-            relerr = where(p0 == 0, p, (p-p0)/p0)
-            if all(abs(relerr) < xtol):
-                return p
-            p0 = p
-    else:
-        p0 = x0
-        for iter in range(maxiter):
-            p1 = func(p0, *args)
-            p2 = func(p1, *args)
-            d = p2 - 2.0 * p1 + p0
-            if d == 0.0:
-                return p2
-            else:
-                p = p0 - (p1 - p0)*(p1 - p0) / d
-            if p0 == 0:
-                relerr = p
-            else:
-                relerr = (p - p0)/p0
-            if abs(relerr) < xtol:
-                return p
-            p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
+    use_accel = {'del2': True, 'iteration': False}[method]
+    x0 = _asarray_validated(x0, as_inexact=True)
+    return _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel)

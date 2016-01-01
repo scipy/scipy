@@ -68,10 +68,6 @@ cdef void cgeev(char *jobvl, char *jobvr, int *n, c *a, int *lda, c *w, c *vl, i
 
 cdef void cgeevx(char *balanc, char *jobvl, char *jobvr, char *sense, int *n, c *a, int *lda, c *w, c *vl, int *ldvl, c *vr, int *ldvr, int *ilo, int *ihi, s *scale, s *abnrm, s *rconde, s *rcondv, c *work, int *lwork, s *rwork, int *info) nogil
 
-cdef void cgegs(char *jobvsl, char *jobvsr, int *n, c *a, int *lda, c *b, int *ldb, c *alpha, c *beta, c *vsl, int *ldvsl, c *vsr, int *ldvsr, c *work, int *lwork, s *rwork, int *info) nogil
-
-cdef void cgegv(char *jobvl, char *jobvr, int *n, c *a, int *lda, c *b, int *ldb, c *alpha, c *beta, c *vl, int *ldvl, c *vr, int *ldvr, c *work, int *lwork, s *rwork, int *info) nogil
-
 cdef void cgehd2(int *n, int *ilo, int *ihi, c *a, int *lda, c *tau, c *work, int *info) nogil
 
 cdef void cgehrd(int *n, int *ilo, int *ihi, c *a, int *lda, c *tau, c *work, int *lwork, int *info) nogil
@@ -86,8 +82,6 @@ cdef void cgelsd(int *m, int *n, int *nrhs, c *a, int *lda, c *b, int *ldb, s *s
 
 cdef void cgelss(int *m, int *n, int *nrhs, c *a, int *lda, c *b, int *ldb, s *s, s *rcond, int *rank, c *work, int *lwork, s *rwork, int *info) nogil
 
-cdef void cgelsx(int *m, int *n, int *nrhs, c *a, int *lda, c *b, int *ldb, int *jpvt, s *rcond, int *rank, c *work, s *rwork, int *info) nogil
-
 cdef void cgelsy(int *m, int *n, int *nrhs, c *a, int *lda, c *b, int *ldb, int *jpvt, s *rcond, int *rank, c *work, int *lwork, s *rwork, int *info) nogil
 
 cdef void cgeql2(int *m, int *n, c *a, int *lda, c *tau, c *work, int *info) nogil
@@ -95,8 +89,6 @@ cdef void cgeql2(int *m, int *n, c *a, int *lda, c *tau, c *work, int *info) nog
 cdef void cgeqlf(int *m, int *n, c *a, int *lda, c *tau, c *work, int *lwork, int *info) nogil
 
 cdef void cgeqp3(int *m, int *n, c *a, int *lda, int *jpvt, c *tau, c *work, int *lwork, s *rwork, int *info) nogil
-
-cdef void cgeqpf(int *m, int *n, c *a, int *lda, int *jpvt, c *tau, c *work, s *rwork, int *info) nogil
 
 cdef void cgeqr2(int *m, int *n, c *a, int *lda, c *tau, c *work, int *info) nogil
 
@@ -149,10 +141,6 @@ cdef void cgglse(int *m, int *n, int *p, c *a, int *lda, c *b, int *ldb, c *c, c
 cdef void cggqrf(int *n, int *m, int *p, c *a, int *lda, c *taua, c *b, int *ldb, c *taub, c *work, int *lwork, int *info) nogil
 
 cdef void cggrqf(int *m, int *p, int *n, c *a, int *lda, c *taua, c *b, int *ldb, c *taub, c *work, int *lwork, int *info) nogil
-
-cdef void cggsvd(char *jobu, char *jobv, char *jobq, int *m, int *n, int *p, int *k, int *l, c *a, int *lda, c *b, int *ldb, s *alpha, s *beta, c *u, int *ldu, c *v, int *ldv, c *q, int *ldq, c *work, s *rwork, int *iwork, int *info) nogil
-
-cdef void cggsvp(char *jobu, char *jobv, char *jobq, int *m, int *p, int *n, c *a, int *lda, c *b, int *ldb, s *tola, s *tolb, int *k, int *l, c *u, int *ldu, c *v, int *ldv, c *q, int *ldq, int *iwork, s *rwork, c *tau, c *work, int *info) nogil
 
 cdef void cgtcon(char *norm, int *n, c *dl, c *d, c *du, c *du2, int *ipiv, s *anorm, s *rcond, c *work, int *info) nogil
 
@@ -300,8 +288,6 @@ cdef void clahqr(bint *wantt, bint *wantz, int *n, int *ilo, int *ihi, c *h, int
 
 cdef void clahr2(int *n, int *k, int *nb, c *a, int *lda, c *tau, c *t, int *ldt, c *y, int *ldy) nogil
 
-cdef void clahrd(int *n, int *k, int *nb, c *a, int *lda, c *tau, c *t, int *ldt, c *y, int *ldy) nogil
-
 cdef void claic1(int *job, int *j, c *x, s *sest, c *w, c *gamma, s *sestpr, c *s, c *c) nogil
 
 cdef void clals0(int *icompq, int *nl, int *nr, int *sqre, int *nrhs, c *b, int *ldb, c *bx, int *ldbx, int *perm, int *givptr, int *givcol, int *ldgcol, s *givnum, int *ldgnum, s *poles, s *difl, s *difr, s *z, int *k, s *c, s *s, s *rwork, int *info) nogil
@@ -429,8 +415,6 @@ cdef void clatrd(char *uplo, int *n, int *nb, c *a, int *lda, s *e, c *tau, c *w
 cdef void clatrs(char *uplo, char *trans, char *diag, char *normin, int *n, c *a, int *lda, c *x, s *scale, s *cnorm, int *info) nogil
 
 cdef void clatrz(int *m, int *n, int *l, c *a, int *lda, c *tau, c *work) nogil
-
-cdef void clatzm(char *side, int *m, int *n, c *v, int *incv, c *tau, c *c1, c *c2, int *ldc, c *work) nogil
 
 cdef void clauu2(char *uplo, int *n, c *a, int *lda, int *info) nogil
 
@@ -606,8 +590,6 @@ cdef void ctrtri(char *uplo, char *diag, int *n, c *a, int *lda, int *info) nogi
 
 cdef void ctrtrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, c *a, int *lda, c *b, int *ldb, int *info) nogil
 
-cdef void ctzrqf(int *m, int *n, c *a, int *lda, c *tau, int *info) nogil
-
 cdef void ctzrzf(int *m, int *n, c *a, int *lda, c *tau, c *work, int *lwork, int *info) nogil
 
 cdef void cung2l(int *m, int *n, int *k, c *a, int *lda, c *tau, c *work, int *info) nogil
@@ -706,10 +688,6 @@ cdef void dgeev(char *jobvl, char *jobvr, int *n, d *a, int *lda, d *wr, d *wi, 
 
 cdef void dgeevx(char *balanc, char *jobvl, char *jobvr, char *sense, int *n, d *a, int *lda, d *wr, d *wi, d *vl, int *ldvl, d *vr, int *ldvr, int *ilo, int *ihi, d *scale, d *abnrm, d *rconde, d *rcondv, d *work, int *lwork, int *iwork, int *info) nogil
 
-cdef void dgegs(char *jobvsl, char *jobvsr, int *n, d *a, int *lda, d *b, int *ldb, d *alphar, d *alphai, d *beta, d *vsl, int *ldvsl, d *vsr, int *ldvsr, d *work, int *lwork, int *info) nogil
-
-cdef void dgegv(char *jobvl, char *jobvr, int *n, d *a, int *lda, d *b, int *ldb, d *alphar, d *alphai, d *beta, d *vl, int *ldvl, d *vr, int *ldvr, d *work, int *lwork, int *info) nogil
-
 cdef void dgehd2(int *n, int *ilo, int *ihi, d *a, int *lda, d *tau, d *work, int *info) nogil
 
 cdef void dgehrd(int *n, int *ilo, int *ihi, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil
@@ -724,8 +702,6 @@ cdef void dgelsd(int *m, int *n, int *nrhs, d *a, int *lda, d *b, int *ldb, d *s
 
 cdef void dgelss(int *m, int *n, int *nrhs, d *a, int *lda, d *b, int *ldb, d *s, d *rcond, int *rank, d *work, int *lwork, int *info) nogil
 
-cdef void dgelsx(int *m, int *n, int *nrhs, d *a, int *lda, d *b, int *ldb, int *jpvt, d *rcond, int *rank, d *work, int *info) nogil
-
 cdef void dgelsy(int *m, int *n, int *nrhs, d *a, int *lda, d *b, int *ldb, int *jpvt, d *rcond, int *rank, d *work, int *lwork, int *info) nogil
 
 cdef void dgeql2(int *m, int *n, d *a, int *lda, d *tau, d *work, int *info) nogil
@@ -733,8 +709,6 @@ cdef void dgeql2(int *m, int *n, d *a, int *lda, d *tau, d *work, int *info) nog
 cdef void dgeqlf(int *m, int *n, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil
 
 cdef void dgeqp3(int *m, int *n, d *a, int *lda, int *jpvt, d *tau, d *work, int *lwork, int *info) nogil
-
-cdef void dgeqpf(int *m, int *n, d *a, int *lda, int *jpvt, d *tau, d *work, int *info) nogil
 
 cdef void dgeqr2(int *m, int *n, d *a, int *lda, d *tau, d *work, int *info) nogil
 
@@ -787,10 +761,6 @@ cdef void dgglse(int *m, int *n, int *p, d *a, int *lda, d *b, int *ldb, d *c, d
 cdef void dggqrf(int *n, int *m, int *p, d *a, int *lda, d *taua, d *b, int *ldb, d *taub, d *work, int *lwork, int *info) nogil
 
 cdef void dggrqf(int *m, int *p, int *n, d *a, int *lda, d *taua, d *b, int *ldb, d *taub, d *work, int *lwork, int *info) nogil
-
-cdef void dggsvd(char *jobu, char *jobv, char *jobq, int *m, int *n, int *p, int *k, int *l, d *a, int *lda, d *b, int *ldb, d *alpha, d *beta, d *u, int *ldu, d *v, int *ldv, d *q, int *ldq, d *work, int *iwork, int *info) nogil
-
-cdef void dggsvp(char *jobu, char *jobv, char *jobq, int *m, int *p, int *n, d *a, int *lda, d *b, int *ldb, d *tola, d *tolb, int *k, int *l, d *u, int *ldu, d *v, int *ldv, d *q, int *ldq, int *iwork, d *tau, d *work, int *info) nogil
 
 cdef void dgtcon(char *norm, int *n, d *dl, d *d, d *du, d *du2, int *ipiv, d *anorm, d *rcond, d *work, int *iwork, int *info) nogil
 
@@ -875,8 +845,6 @@ cdef void dlagv2(d *a, int *lda, d *b, int *ldb, d *alphar, d *alphai, d *beta, 
 cdef void dlahqr(bint *wantt, bint *wantz, int *n, int *ilo, int *ihi, d *h, int *ldh, d *wr, d *wi, int *iloz, int *ihiz, d *z, int *ldz, int *info) nogil
 
 cdef void dlahr2(int *n, int *k, int *nb, d *a, int *lda, d *tau, d *t, int *ldt, d *y, int *ldy) nogil
-
-cdef void dlahrd(int *n, int *k, int *nb, d *a, int *lda, d *tau, d *t, int *ldt, d *y, int *ldy) nogil
 
 cdef void dlaic1(int *job, int *j, d *x, d *sest, d *w, d *gamma, d *sestpr, d *s, d *c) nogil
 
@@ -1065,8 +1033,6 @@ cdef void dlatrd(char *uplo, int *n, int *nb, d *a, int *lda, d *e, d *tau, d *w
 cdef void dlatrs(char *uplo, char *trans, char *diag, char *normin, int *n, d *a, int *lda, d *x, d *scale, d *cnorm, int *info) nogil
 
 cdef void dlatrz(int *m, int *n, int *l, d *a, int *lda, d *tau, d *work) nogil
-
-cdef void dlatzm(char *side, int *m, int *n, d *v, int *incv, d *tau, d *c1, d *c2, int *ldc, d *work) nogil
 
 cdef void dlauu2(char *uplo, int *n, d *a, int *lda, int *info) nogil
 
@@ -1352,8 +1318,6 @@ cdef void dtrtri(char *uplo, char *diag, int *n, d *a, int *lda, int *info) nogi
 
 cdef void dtrtrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, d *a, int *lda, d *b, int *ldb, int *info) nogil
 
-cdef void dtzrqf(int *m, int *n, d *a, int *lda, d *tau, int *info) nogil
-
 cdef void dtzrzf(int *m, int *n, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil
 
 cdef d dzsum1(int *n, z *cx, int *incx) nogil
@@ -1412,10 +1376,6 @@ cdef void sgeev(char *jobvl, char *jobvr, int *n, s *a, int *lda, s *wr, s *wi, 
 
 cdef void sgeevx(char *balanc, char *jobvl, char *jobvr, char *sense, int *n, s *a, int *lda, s *wr, s *wi, s *vl, int *ldvl, s *vr, int *ldvr, int *ilo, int *ihi, s *scale, s *abnrm, s *rconde, s *rcondv, s *work, int *lwork, int *iwork, int *info) nogil
 
-cdef void sgegs(char *jobvsl, char *jobvsr, int *n, s *a, int *lda, s *b, int *ldb, s *alphar, s *alphai, s *beta, s *vsl, int *ldvsl, s *vsr, int *ldvsr, s *work, int *lwork, int *info) nogil
-
-cdef void sgegv(char *jobvl, char *jobvr, int *n, s *a, int *lda, s *b, int *ldb, s *alphar, s *alphai, s *beta, s *vl, int *ldvl, s *vr, int *ldvr, s *work, int *lwork, int *info) nogil
-
 cdef void sgehd2(int *n, int *ilo, int *ihi, s *a, int *lda, s *tau, s *work, int *info) nogil
 
 cdef void sgehrd(int *n, int *ilo, int *ihi, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil
@@ -1430,8 +1390,6 @@ cdef void sgelsd(int *m, int *n, int *nrhs, s *a, int *lda, s *b, int *ldb, s *s
 
 cdef void sgelss(int *m, int *n, int *nrhs, s *a, int *lda, s *b, int *ldb, s *s, s *rcond, int *rank, s *work, int *lwork, int *info) nogil
 
-cdef void sgelsx(int *m, int *n, int *nrhs, s *a, int *lda, s *b, int *ldb, int *jpvt, s *rcond, int *rank, s *work, int *info) nogil
-
 cdef void sgelsy(int *m, int *n, int *nrhs, s *a, int *lda, s *b, int *ldb, int *jpvt, s *rcond, int *rank, s *work, int *lwork, int *info) nogil
 
 cdef void sgeql2(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info) nogil
@@ -1439,8 +1397,6 @@ cdef void sgeql2(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info) nog
 cdef void sgeqlf(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil
 
 cdef void sgeqp3(int *m, int *n, s *a, int *lda, int *jpvt, s *tau, s *work, int *lwork, int *info) nogil
-
-cdef void sgeqpf(int *m, int *n, s *a, int *lda, int *jpvt, s *tau, s *work, int *info) nogil
 
 cdef void sgeqr2(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info) nogil
 
@@ -1493,10 +1449,6 @@ cdef void sgglse(int *m, int *n, int *p, s *a, int *lda, s *b, int *ldb, s *c, s
 cdef void sggqrf(int *n, int *m, int *p, s *a, int *lda, s *taua, s *b, int *ldb, s *taub, s *work, int *lwork, int *info) nogil
 
 cdef void sggrqf(int *m, int *p, int *n, s *a, int *lda, s *taua, s *b, int *ldb, s *taub, s *work, int *lwork, int *info) nogil
-
-cdef void sggsvd(char *jobu, char *jobv, char *jobq, int *m, int *n, int *p, int *k, int *l, s *a, int *lda, s *b, int *ldb, s *alpha, s *beta, s *u, int *ldu, s *v, int *ldv, s *q, int *ldq, s *work, int *iwork, int *info) nogil
-
-cdef void sggsvp(char *jobu, char *jobv, char *jobq, int *m, int *p, int *n, s *a, int *lda, s *b, int *ldb, s *tola, s *tolb, int *k, int *l, s *u, int *ldu, s *v, int *ldv, s *q, int *ldq, int *iwork, s *tau, s *work, int *info) nogil
 
 cdef void sgtcon(char *norm, int *n, s *dl, s *d, s *du, s *du2, int *ipiv, s *anorm, s *rcond, s *work, int *iwork, int *info) nogil
 
@@ -1579,8 +1531,6 @@ cdef void slagv2(s *a, int *lda, s *b, int *ldb, s *alphar, s *alphai, s *beta, 
 cdef void slahqr(bint *wantt, bint *wantz, int *n, int *ilo, int *ihi, s *h, int *ldh, s *wr, s *wi, int *iloz, int *ihiz, s *z, int *ldz, int *info) nogil
 
 cdef void slahr2(int *n, int *k, int *nb, s *a, int *lda, s *tau, s *t, int *ldt, s *y, int *ldy) nogil
-
-cdef void slahrd(int *n, int *k, int *nb, s *a, int *lda, s *tau, s *t, int *ldt, s *y, int *ldy) nogil
 
 cdef void slaic1(int *job, int *j, s *x, s *sest, s *w, s *gamma, s *sestpr, s *s, s *c) nogil
 
@@ -1767,8 +1717,6 @@ cdef void slatrd(char *uplo, int *n, int *nb, s *a, int *lda, s *e, s *tau, s *w
 cdef void slatrs(char *uplo, char *trans, char *diag, char *normin, int *n, s *a, int *lda, s *x, s *scale, s *cnorm, int *info) nogil
 
 cdef void slatrz(int *m, int *n, int *l, s *a, int *lda, s *tau, s *work) nogil
-
-cdef void slatzm(char *side, int *m, int *n, s *v, int *incv, s *tau, s *c1, s *c2, int *ldc, s *work) nogil
 
 cdef void slauu2(char *uplo, int *n, s *a, int *lda, int *info) nogil
 
@@ -2052,8 +2000,6 @@ cdef void strtri(char *uplo, char *diag, int *n, s *a, int *lda, int *info) nogi
 
 cdef void strtrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, s *a, int *lda, s *b, int *ldb, int *info) nogil
 
-cdef void stzrqf(int *m, int *n, s *a, int *lda, s *tau, int *info) nogil
-
 cdef void stzrzf(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil
 
 cdef void zbdsqr(char *uplo, int *n, int *ncvt, int *nru, int *ncc, d *d, d *e, z *vt, int *ldvt, z *u, int *ldu, z *c, int *ldc, d *rwork, int *info) nogil
@@ -2098,10 +2044,6 @@ cdef void zgeev(char *jobvl, char *jobvr, int *n, z *a, int *lda, z *w, z *vl, i
 
 cdef void zgeevx(char *balanc, char *jobvl, char *jobvr, char *sense, int *n, z *a, int *lda, z *w, z *vl, int *ldvl, z *vr, int *ldvr, int *ilo, int *ihi, d *scale, d *abnrm, d *rconde, d *rcondv, z *work, int *lwork, d *rwork, int *info) nogil
 
-cdef void zgegs(char *jobvsl, char *jobvsr, int *n, z *a, int *lda, z *b, int *ldb, z *alpha, z *beta, z *vsl, int *ldvsl, z *vsr, int *ldvsr, z *work, int *lwork, d *rwork, int *info) nogil
-
-cdef void zgegv(char *jobvl, char *jobvr, int *n, z *a, int *lda, z *b, int *ldb, z *alpha, z *beta, z *vl, int *ldvl, z *vr, int *ldvr, z *work, int *lwork, d *rwork, int *info) nogil
-
 cdef void zgehd2(int *n, int *ilo, int *ihi, z *a, int *lda, z *tau, z *work, int *info) nogil
 
 cdef void zgehrd(int *n, int *ilo, int *ihi, z *a, int *lda, z *tau, z *work, int *lwork, int *info) nogil
@@ -2116,8 +2058,6 @@ cdef void zgelsd(int *m, int *n, int *nrhs, z *a, int *lda, z *b, int *ldb, d *s
 
 cdef void zgelss(int *m, int *n, int *nrhs, z *a, int *lda, z *b, int *ldb, d *s, d *rcond, int *rank, z *work, int *lwork, d *rwork, int *info) nogil
 
-cdef void zgelsx(int *m, int *n, int *nrhs, z *a, int *lda, z *b, int *ldb, int *jpvt, d *rcond, int *rank, z *work, d *rwork, int *info) nogil
-
 cdef void zgelsy(int *m, int *n, int *nrhs, z *a, int *lda, z *b, int *ldb, int *jpvt, d *rcond, int *rank, z *work, int *lwork, d *rwork, int *info) nogil
 
 cdef void zgeql2(int *m, int *n, z *a, int *lda, z *tau, z *work, int *info) nogil
@@ -2125,8 +2065,6 @@ cdef void zgeql2(int *m, int *n, z *a, int *lda, z *tau, z *work, int *info) nog
 cdef void zgeqlf(int *m, int *n, z *a, int *lda, z *tau, z *work, int *lwork, int *info) nogil
 
 cdef void zgeqp3(int *m, int *n, z *a, int *lda, int *jpvt, z *tau, z *work, int *lwork, d *rwork, int *info) nogil
-
-cdef void zgeqpf(int *m, int *n, z *a, int *lda, int *jpvt, z *tau, z *work, d *rwork, int *info) nogil
 
 cdef void zgeqr2(int *m, int *n, z *a, int *lda, z *tau, z *work, int *info) nogil
 
@@ -2179,10 +2117,6 @@ cdef void zgglse(int *m, int *n, int *p, z *a, int *lda, z *b, int *ldb, z *c, z
 cdef void zggqrf(int *n, int *m, int *p, z *a, int *lda, z *taua, z *b, int *ldb, z *taub, z *work, int *lwork, int *info) nogil
 
 cdef void zggrqf(int *m, int *p, int *n, z *a, int *lda, z *taua, z *b, int *ldb, z *taub, z *work, int *lwork, int *info) nogil
-
-cdef void zggsvd(char *jobu, char *jobv, char *jobq, int *m, int *n, int *p, int *k, int *l, z *a, int *lda, z *b, int *ldb, d *alpha, d *beta, z *u, int *ldu, z *v, int *ldv, z *q, int *ldq, z *work, d *rwork, int *iwork, int *info) nogil
-
-cdef void zggsvp(char *jobu, char *jobv, char *jobq, int *m, int *p, int *n, z *a, int *lda, z *b, int *ldb, d *tola, d *tolb, int *k, int *l, z *u, int *ldu, z *v, int *ldv, z *q, int *ldq, int *iwork, d *rwork, z *tau, z *work, int *info) nogil
 
 cdef void zgtcon(char *norm, int *n, z *dl, z *d, z *du, z *du2, int *ipiv, d *anorm, d *rcond, z *work, int *info) nogil
 
@@ -2330,8 +2264,6 @@ cdef void zlahqr(bint *wantt, bint *wantz, int *n, int *ilo, int *ihi, z *h, int
 
 cdef void zlahr2(int *n, int *k, int *nb, z *a, int *lda, z *tau, z *t, int *ldt, z *y, int *ldy) nogil
 
-cdef void zlahrd(int *n, int *k, int *nb, z *a, int *lda, z *tau, z *t, int *ldt, z *y, int *ldy) nogil
-
 cdef void zlaic1(int *job, int *j, z *x, d *sest, z *w, z *gamma, d *sestpr, z *s, z *c) nogil
 
 cdef void zlals0(int *icompq, int *nl, int *nr, int *sqre, int *nrhs, z *b, int *ldb, z *bx, int *ldbx, int *perm, int *givptr, int *givcol, int *ldgcol, d *givnum, int *ldgnum, d *poles, d *difl, d *difr, d *z, int *k, d *c, d *s, d *rwork, int *info) nogil
@@ -2459,8 +2391,6 @@ cdef void zlatrd(char *uplo, int *n, int *nb, z *a, int *lda, d *e, z *tau, z *w
 cdef void zlatrs(char *uplo, char *trans, char *diag, char *normin, int *n, z *a, int *lda, z *x, d *scale, d *cnorm, int *info) nogil
 
 cdef void zlatrz(int *m, int *n, int *l, z *a, int *lda, z *tau, z *work) nogil
-
-cdef void zlatzm(char *side, int *m, int *n, z *v, int *incv, z *tau, z *c1, z *c2, int *ldc, z *work) nogil
 
 cdef void zlauu2(char *uplo, int *n, z *a, int *lda, int *info) nogil
 
@@ -2633,8 +2563,6 @@ cdef void ztrti2(char *uplo, char *diag, int *n, z *a, int *lda, int *info) nogi
 cdef void ztrtri(char *uplo, char *diag, int *n, z *a, int *lda, int *info) nogil
 
 cdef void ztrtrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, z *a, int *lda, z *b, int *ldb, int *info) nogil
-
-cdef void ztzrqf(int *m, int *n, z *a, int *lda, z *tau, int *info) nogil
 
 cdef void ztzrzf(int *m, int *n, z *a, int *lda, z *tau, z *work, int *lwork, int *info) nogil
 

@@ -38,6 +38,9 @@ def configuration(parent_package='', top_path=None):
     # flapack:
     sources = ['flapack.pyf.src']
     sources += get_g77_abi_wrappers(lapack_opt)
+    dep_pfx = join('src', 'lapack_deprecations')
+    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
+    sources += deprecated_lapack_routines
 
     config.add_extension('_flapack',
                          sources=sources,

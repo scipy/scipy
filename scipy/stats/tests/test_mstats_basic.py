@@ -17,7 +17,7 @@ from numpy.testing import TestCase, run_module_suite
 from numpy.testing.decorators import skipif
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
-    assert_allclose, assert_raises)
+    assert_allclose, assert_raises, assert_array_equal)
 
 
 class TestMquantiles(TestCase):
@@ -411,7 +411,8 @@ class TestMoments(TestCase):
 
         # Check consistency between stats and mstats implementations
         assert_array_almost_equal_nulp(mstats.kurtosis(self.testcase_2d[2, :]),
-                                       stats.kurtosis(self.testcase_2d[2, :]))
+                                       stats.kurtosis(self.testcase_2d[2, :]),
+                                       nulp=4)
 
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
@@ -732,6 +733,17 @@ class TestTtest_rel():
         res3 = mstats.ttest_rel(outcome[:, :2], outcome[:, 2:])
         assert_allclose(res2, res3)
 
+    def test_fully_masked(self):
+        np.random.seed(1234567)
+        outcome = ma.masked_array(np.random.randn(3, 2),
+                                  mask=[[1, 1, 1], [0, 0, 0]])
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            assert_array_equal(mstats.ttest_rel(outcome[:, 0], outcome[:, 1]),
+                               (np.nan, np.nan))
+            assert_array_equal(mstats.ttest_rel([np.nan, np.nan], [1.0, 2.0]),
+                               (np.nan, np.nan))
+
     def test_result_attributes(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -753,6 +765,13 @@ class TestTtest_rel():
         res1 = mstats.ttest_rel([], [])
         assert_(np.all(np.isnan(res1)))
 
+    def test_zero_division(self):
+        t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            assert_equal((np.abs(t), p), (np.inf, 0))
+            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0]),
+                               (np.nan, np.nan))
 
 class TestTtest_ind():
     def test_vs_nonmasked(self):
@@ -784,6 +803,16 @@ class TestTtest_ind():
         res5 = mstats.ttest_ind(outcome[:, 0], outcome[:, 1], equal_var=False)
         assert_allclose(res4, res5)
 
+    def test_fully_masked(self):
+        np.random.seed(1234567)
+        outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            assert_array_equal(mstats.ttest_ind(outcome[:, 0], outcome[:, 1]),
+                               (np.nan, np.nan))
+            assert_array_equal(mstats.ttest_ind([np.nan, np.nan], [1.0, 2.0]),
+                               (np.nan, np.nan))
+
     def test_result_attributes(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -795,6 +824,22 @@ class TestTtest_ind():
     def test_empty(self):
         res1 = mstats.ttest_ind([], [])
         assert_(np.all(np.isnan(res1)))
+
+    def test_zero_division(self):
+        t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            assert_equal((np.abs(t), p), (np.inf, 0))
+            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0]),
+                               (np.nan, np.nan))
+
+        t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            assert_equal((np.abs(t), p), (np.inf, 0))
+            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0],
+                                                equal_var=False),
+                               (np.nan, np.nan))
 
 
 class TestTtest_1samp():
@@ -819,6 +864,16 @@ class TestTtest_1samp():
         res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
         assert_allclose(res2, res3)
 
+    def test_fully_masked(self):
+        np.random.seed(1234567)
+        outcome = ma.masked_array(np.random.randn(3), mask=[1, 1, 1])
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            assert_array_equal(mstats.ttest_1samp(outcome, 0.0),
+                               (np.nan, np.nan))
+            assert_array_equal(mstats.ttest_1samp((np.nan, np.nan), 0.0),
+                               (np.nan, np.nan))
+
     def test_result_attributes(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -830,6 +885,14 @@ class TestTtest_1samp():
     def test_empty(self):
         res1 = mstats.ttest_1samp([], 1)
         assert_(np.all(np.isnan(res1)))
+
+    def test_zero_division(self):
+        t, p = mstats.ttest_1samp([0, 0, 0], 1)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+            assert_equal((np.abs(t), p), (np.inf, 0))
+            assert_array_equal(mstats.ttest_1samp([0, 0, 0], 0),
+                               (np.nan, np.nan))
 
 
 class TestCompareWithStats(TestCase):

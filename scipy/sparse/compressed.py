@@ -192,21 +192,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Boolean comparisons #
     #######################
 
-    def _copy_with_const(self, const):
-        """Copy data, with all nonzeros replaced with constant for binopt
-
-        Adopts the dtype of const to avoid removing sign or magnitude before
-        comparison.
-
-        Warning: does not make a copy of indices and indptr
+    def _scalar_binopt(self, other, op):
+        """Scalar version of self._binopt, for cases in which no new nonzeros
+        are added. Produces a new spmatrix in canonical form.
         """
         try:
             self.sum_duplicates()
         except NotImplementedError:
             pass
-        data = np.empty(self.data.shape, dtype=np.asarray(const).dtype)
-        data.fill(const)
-        return self.__class__((data, self.indices, self.indptr), shape=self.shape)
+        res = self._with_data(op(self.data, other), copy=True)
+        res.eliminate_zeros()
+        return res
 
     def __eq__(self, other):
         # Scalar other.
@@ -214,16 +210,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if np.isnan(other):
                 return self.__class__(self.shape, dtype=np.bool_)
 
-            other_arr = self._copy_with_const(other)
-            res = self._binopt(other_arr,'_ne_')
             if other == 0:
                 warn("Comparing a sparse matrix with 0 using == is inefficient"
                         ", try using != instead.", SparseEfficiencyWarning)
                 all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
-                return all_true - res
+                inv = self._scalar_binopt(other, operator.ne)
+                return all_true - inv
             else:
-                sparsity_pattern = self._copy_with_const(True)
-                return sparsity_pattern - res
+                return self._scalar_binopt(other, operator.eq)
         # Dense other.
         elif isdense(other):
             return self.todense() == other
@@ -254,11 +248,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 warn("Comparing a sparse matrix with a nonzero scalar using !="
                      " is inefficient, try using == instead.", SparseEfficiencyWarning)
                 all_true = self.__class__(np.ones(self.shape), dtype=np.bool_)
-                res = (self == other)
-                return all_true - res
+                inv = self._scalar_binopt(other, operator.eq)
+                return all_true - inv
             else:
-                other_arr = self._copy_with_const(other)
-                return self._binopt(other_arr,'_ne_')
+                return self._scalar_binopt(other, operator.ne)
         # Dense other.
         elif isdense(other):
             return self.todense() != other
@@ -280,13 +273,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise NotImplementedError(" >= and <= don't work with 0.")
             elif op(0, other):
                 warn(bad_scalar_msg, SparseEfficiencyWarning)
-                other_arr = np.empty(self.shape, dtype=np.asarray(other).dtype)
+                other_arr = np.empty(self.shape, dtype=np.result_type(other))
                 other_arr.fill(other)
                 other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, op_name)
             else:
-                other_arr = self._copy_with_const(other)
-                return self._binopt(other_arr, op_name)
+                return self._scalar_binopt(other, op)
         # Dense other.
         elif isdense(other):
             return op(self.todense(), other)
@@ -851,7 +843,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         indices = []
 
         for ind in xrange(self.indptr[i], self.indptr[i+1]):
-            if self.indices[ind] >= start and self.indices[ind] < stop:
+            if start <= self.indices[ind] < stop:
                 indices.append(ind)
 
         index = self.indices[indices] - start

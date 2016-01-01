@@ -1,5 +1,5 @@
 Name: scipy
-Version: 0.17.0.dev0
+Version: 0.18.0.dev0
 Summary: SciPy: Scientific Library for Python
 Url: http://www.scipy.org
 DownloadUrl: https://github.com/scipy/scipy/releases
@@ -38,7 +38,6 @@ DataFiles: tests
     SourceDir: scipy
     Files:
         **/tests/*.py,
-        cluster/tests/*.txt,
         fftpack/tests/*.npz,
         io/arff/tests/data/*.arff,
         io/matlab/tests/data/*.txt,

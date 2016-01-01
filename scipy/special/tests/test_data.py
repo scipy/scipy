@@ -191,7 +191,7 @@ def sph_harm_(m, n, theta, phi):
 def test_boost():
     TESTS = [
         data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1, rtol=5e-13),
-        data(arccosh, 'acosh_data_ipp-acosh_data', 0j, 1, rtol=5e-14),
+        data(arccosh, 'acosh_data_ipp-acosh_data', 0j, 1, rtol=5e-13),
 
         data(arcsinh, 'asinh_data_ipp-asinh_data', 0, 1, rtol=1e-11),
         data(arcsinh, 'asinh_data_ipp-asinh_data', 0j, 1, rtol=1e-11),

@@ -22,35 +22,35 @@ except ImportError:
 from .common import Benchmark
 
 
-def random_sparse(m,n,nnz_per_row):
+def random_sparse(m, n, nnz_per_row):
     rows = numpy.arange(m).repeat(nnz_per_row)
-    cols = numpy.random.random_integers(low=0,high=n-1,size=nnz_per_row*m)
+    cols = numpy.random.random_integers(low=0, high=n-1, size=nnz_per_row*m)
     vals = numpy.random.random_sample(m*nnz_per_row)
-    return coo_matrix((vals,(rows,cols)),(m,n)).tocsr()
+    return coo_matrix((vals, (rows, cols)), (m, n)).tocsr()
 
 
 # TODO move this to a matrix gallery and add unittests
-def poisson2d(N,dtype='d',format=None):
+def poisson2d(N, dtype='d', format=None):
     """
     Return a sparse matrix for the 2D Poisson problem
     with standard 5-point finite difference stencil on a
     square N-by-N grid.
     """
     if N == 1:
-        diags = asarray([[4]],dtype=dtype)
-        return dia_matrix((diags,[0]), shape=(1,1)).asformat(format)
+        diags = asarray([[4]], dtype=dtype)
+        return dia_matrix((diags, [0]), shape=(1, 1)).asformat(format)
 
-    offsets = array([0,-N,N,-1,1])
+    offsets = array([0, -N, N, -1, 1])
 
-    diags = empty((5,N**2),dtype=dtype)
+    diags = empty((5, N**2), dtype=dtype)
 
     diags[0] = 4  # main diagonal
     diags[1:] = -1  # all offdiagonals
 
-    diags[3,N-1::N] = 0  # first lower diagonal
-    diags[4,N::N] = 0  # first upper diagonal
+    diags[3, N-1::N] = 0  # first lower diagonal
+    diags[4, N::N] = 0  # first upper diagonal
 
-    return dia_matrix((diags,offsets),shape=(N**2,N**2)).asformat(format)
+    return dia_matrix((diags, offsets), shape=(N**2, N**2)).asformat(format)
 
 
 class Arithmetic(Benchmark):
@@ -64,8 +64,8 @@ class Arithmetic(Benchmark):
     def setup(self, format, XY, op):
         self.matrices = {}
         # matrices.append( ('A','Identity', sparse.eye(500**2,format='csr')) )
-        self.matrices['A'] = poisson2d(250,format='csr')
-        self.matrices['B'] = poisson2d(250,format='csr')**2
+        self.matrices['A'] = poisson2d(250, format='csr')
+        self.matrices['B'] = poisson2d(250, format='csr')**2
 
         X, Y = XY
         vars = dict([(var, mat.asformat(format)) 
@@ -94,12 +94,12 @@ class Sort(Benchmark):
         N, K = self.matrices[matrix]
         N = int(float(N))
         K = int(float(K))
-        self.A = random_sparse(N,N,K)
+        self.A = random_sparse(N, N, K)
 
     def time_sort(self, matrix):
         """sort CSR column indices"""
         self.A.has_sorted_indices = False
-        self.A.indices[:2] = 2,1
+        self.A.indices[:2] = 2, 1
         self.A.sort_indices()
 
 
@@ -113,21 +113,21 @@ class Matvec(Benchmark):
     def _get_matrices(self):
         matrices = collections.OrderedDict()
 
-        matrices['Identity_dia'] = sparse.eye(10**4,10**4,format='dia')
-        matrices['Identity_csr'] = sparse.eye(10**4,10**4,format='csr')
-        matrices['Poisson5pt_lil'] = poisson2d(300,format='lil')
-        matrices['Poisson5pt_dok'] = poisson2d(300,format='dok')
-        matrices['Poisson5pt_dia'] = poisson2d(300,format='dia')
-        matrices['Poisson5pt_coo'] = poisson2d(300,format='coo')
-        matrices['Poisson5pt_csr'] = poisson2d(300,format='csr')
-        matrices['Poisson5pt_csc'] = poisson2d(300,format='csc')
-        matrices['Poisson5pt_bsr'] = poisson2d(300,format='bsr')
+        matrices['Identity_dia'] = sparse.eye(10**4, 10**4, format='dia')
+        matrices['Identity_csr'] = sparse.eye(10**4, 10**4, format='csr')
+        matrices['Poisson5pt_lil'] = poisson2d(300, format='lil')
+        matrices['Poisson5pt_dok'] = poisson2d(300, format='dok')
+        matrices['Poisson5pt_dia'] = poisson2d(300, format='dia')
+        matrices['Poisson5pt_coo'] = poisson2d(300, format='coo')
+        matrices['Poisson5pt_csr'] = poisson2d(300, format='csr')
+        matrices['Poisson5pt_csc'] = poisson2d(300, format='csc')
+        matrices['Poisson5pt_bsr'] = poisson2d(300, format='bsr')
 
-        A = sparse.kron(poisson2d(150),ones((2,2))).tobsr(blocksize=(2,2))
+        A = sparse.kron(poisson2d(150), ones((2, 2))).tobsr(blocksize=(2, 2))
         matrices['Block2x2_csr'] = A.tocsr()
         matrices['Block2x2_bsr'] = A
 
-        A = sparse.kron(poisson2d(100),ones((3,3))).tobsr(blocksize=(3,3))
+        A = sparse.kron(poisson2d(100), ones((3, 3))).tobsr(blocksize=(3, 3))
         matrices['Block3x3_csr'] = A.tocsr()
         matrices['Block3x3_bsr'] = A
         return matrices
@@ -150,11 +150,11 @@ class Matvecs(Benchmark):
 
     def setup(self, *args):
         self.matrices = {}
-        self.matrices['dia'] = poisson2d(300,format='dia')
-        self.matrices['coo'] = poisson2d(300,format='coo')
-        self.matrices['csr'] = poisson2d(300,format='csr')
-        self.matrices['csc'] = poisson2d(300,format='csc')
-        self.matrices['bsr'] = poisson2d(300,format='bsr')
+        self.matrices['dia'] = poisson2d(300, format='dia')
+        self.matrices['coo'] = poisson2d(300, format='coo')
+        self.matrices['csr'] = poisson2d(300, format='csr')
+        self.matrices['csc'] = poisson2d(300, format='csc')
+        self.matrices['bsr'] = poisson2d(300, format='bsr')
         A = self.matrices['dia']
         self.x = ones((A.shape[1], 10), dtype=A.dtype)
 
@@ -195,7 +195,7 @@ class Construction(Benchmark):
 
     def setup(self, name, format):
         self.matrices = {}
-        self.matrices['Empty'] = csr_matrix((10000,10000))
+        self.matrices['Empty'] = csr_matrix((10000, 10000))
         self.matrices['Identity'] = sparse.eye(10000)
         self.matrices['Poisson5pt'] = poisson2d(100)
         self.formats = {'lil': lil_matrix, 'dok': dok_matrix}
@@ -206,14 +206,14 @@ class Construction(Benchmark):
 
     def time_construction(self, name, format):
         T = self.cls(self.A.shape)
-        for i,j,v in zip(self.A.row,self.A.col,self.A.data):
-            T[i,j] = v
+        for i, j, v in zip(self.A.row, self.A.col, self.A.data):
+            T[i, j] = v
 
 
 class Conversion(Benchmark):
     params = [
-        ['csr','csc','coo','dia','lil','dok'],
-        ['csr','csc','coo','dia','lil','dok'],
+        ['csr', 'csc', 'coo', 'dia', 'lil', 'dok'],
+        ['csr', 'csc', 'coo', 'dia', 'lil', 'dok'],
     ]
     param_names = ['from_format', 'to_format']
 
@@ -221,7 +221,7 @@ class Conversion(Benchmark):
         self.A = poisson2d(100)
 
         A = self.A
-        base = getattr(A,'to' + fromfmt)()
+        base = getattr(A, 'to' + fromfmt)()
 
         try:
             self.fn = getattr(base, 'to' + tofmt)

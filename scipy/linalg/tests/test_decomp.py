@@ -13,15 +13,16 @@ Run tests if linalg is not installed:
 """
 
 import numpy as np
-from numpy.testing import (TestCase, assert_equal, assert_array_almost_equal,
-        assert_array_equal, assert_raises, assert_, assert_allclose,
-        run_module_suite, dec)
+from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+                           assert_array_almost_equal, assert_array_equal,
+                           assert_raises, assert_, assert_allclose,
+                           run_module_suite, dec)
 
 from scipy._lib.six import xrange
 
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
-     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth)
+     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -211,8 +212,8 @@ class TestEig(object):
             length[i] = norm(vr[:, i])
         assert_array_almost_equal(length, np.ones(length.size), err_msg=msg)
 
+    @dec.knownfailureif(True, "See gh-2254.")
     def test_singular(self):
-        """Test singular pair"""
         # Example taken from
         # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
         A = array(([22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
@@ -903,7 +904,7 @@ class TestSVD(TestCase):
         # The following is reported to raise "ValueError: On entry to DGESDD
         # parameter number 12 had an illegal value".
         # `interp1d([1,2,3,4], [1,2,3,4], kind='cubic')`
-        # This is reported to only show up on LAPACK 3.0.3. 
+        # This is reported to only show up on LAPACK 3.0.3.
         #
         # The matrix below is taken from the call to
         # `B = _fitpack._bsplmat(order, xk)` in interpolate._find_smoothest
@@ -1973,6 +1974,164 @@ class TestQZ(TestCase):
         assert_(all(diag(BB) >= 0))
 
 
+def _make_pos(X):
+    # the decompositions can have different signs than verified results
+    return np.sign(X)*X
+
+
+class TestOrdQZ(TestCase):
+    @classmethod
+    def setupClass(cls):
+        # http://www.nag.com/lapack-ex/node119.html
+        cls.A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
+                            7.5 + 0.5j],
+                           [-0.46 - 7.78j, -3.5 - 37.5j, -15.5 + 58.5j,
+                            -10.5 - 1.5j],
+                           [4.30 - 5.50j, 39.7 - 17.1j, -68.5 + 12.5j,
+                            -7.5 - 3.5j],
+                           [5.50 + 4.40j, 14.4 + 43.3j, -32.5 - 46.0j,
+                            -19.0 - 32.5j]])
+
+        cls.B1 = np.array([[1.0 - 5.0j, 1.6 + 1.2j, -3 + 0j, 0.0 - 1.0j],
+                           [0.8 - 0.6j, .0 - 5.0j, -4 + 3j, -2.4 - 3.2j],
+                           [1.0 + 0.0j, 2.4 + 1.8j, -4 - 5j, 0.0 - 3.0j],
+                           [0.0 + 1.0j, -1.8 + 2.4j, 0 - 4j, 4.0 - 5.0j]])
+
+        # http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
+        cls.A2 = np.array([[3.9, 12.5, -34.5, -0.5],
+                           [4.3, 21.5, -47.5, 7.5],
+                           [4.3, 21.5, -43.5, 3.5],
+                           [4.4, 26.0, -46.0, 6.0]])
+
+        cls.B2 = np.array([[1, 2, -3, 1],
+                           [1, 3, -5, 4],
+                           [1, 3, -4, 3],
+                           [1, 3, -4, 4]])
+
+        # example with the eigenvalues
+        # -0.33891648, 1.61217396+0.74013521j, 1.61217396-0.74013521j,
+        # 0.61244091
+        # thus featuring:
+        #  * one complex conjugate eigenvalue pair,
+        #  * one eigenvalue in the lhp
+        #  * 2 eigenvalues in the unit circle
+        #  * 2 non-real eigenvalues
+        cls.A3 = np.array([[5., 1., 3., 3.],
+                           [4., 4., 2., 7.],
+                           [7., 4., 1., 3.],
+                           [0., 4., 8., 7.]])
+        cls.B3 = np.array([[8., 10., 6., 10.],
+                           [7., 7., 2., 9.],
+                           [9., 1., 6., 6.],
+                           [5., 1., 4., 7.]])
+
+    def qz_decomp(self, sort):
+        retc = ordqz(self.A1, self.B1, sort=sort)
+        ret1 = ordqz(self.A2, self.B2, sort=sort)
+        ret2 = ordqz(self.A3, self.B3, sort=sort)
+        return retc, ret1, ret2
+
+    def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
+        I = np.eye(*A.shape)
+        # make sure Q and Z are orthogonal
+        assert_array_almost_equal(Q.dot(Q.T.conj()), I)
+        assert_array_almost_equal(Z.dot(Z.T.conj()), I)
+        # check factorization
+        assert_array_almost_equal(Q.dot(AA), A.dot(Z))
+        assert_array_almost_equal(Q.dot(BB), B.dot(Z))
+        # check shape of AA and BB
+        assert_array_equal(np.tril(AA, -2), np.zeros(AA.shape))
+        assert_array_equal(np.tril(BB, -1), np.zeros(BB.shape))
+        # check eigenvalues
+        for i in range(A.shape[0]):
+            # does the current diagonal element belong to a 2-by-2 block
+            # that was already checked?
+            if i > 0 and A[i, i - 1] != 0:
+                continue
+            # take care of 2-by-2 blocks
+            if i < AA.shape[0] - 1 and AA[i + 1, i] != 0:
+                evals, _ = eig(AA[i:i + 2, i:i + 2], BB[i:i + 2, i:i + 2])
+                # make sure the pair of complex conjugate eigenvalues
+                # is ordered consistently (positive imaginary part first)
+                if evals[0].imag < 0:
+                    evals = evals[[1, 0]]
+                tmp = alpha[i:i + 2]/beta[i:i + 2]
+                if tmp[0].imag < 0:
+                    tmp = tmp[[1, 0]]
+                assert_array_almost_equal(evals, tmp)
+            else:
+                assert_almost_equal(AA[i, i]/BB[i, i], alpha[i]/beta[i])
+        sortfun = sort
+        if sortfun == 'lhp':
+            sortfun = lambda x, y: (x/y).real < 0
+        if sortfun == 'rhp':
+            sortfun = lambda x, y: (x/y).real > 0
+        if sortfun == 'iuc':
+            sortfun = lambda x, y: np.abs(x/y) < 1
+        if sortfun == 'ouc':
+            sortfun = lambda x, y: np.abs(x/y) > 1
+        lastsort = True
+        for i in range(A.shape[0]):
+            cursort = sortfun(alpha[i], beta[i])
+            # once the sorting criterion was not matched all subsequent
+            # eigenvalues also shouldn't match
+            if not lastsort:
+                assert(not cursort)
+            lastsort = cursort
+
+    def test_lhp(self):
+        retc, ret1, ret2 = self.qz_decomp('lhp')
+
+        self.check(self.A1, self.B1, 'lhp', *retc)
+        self.check(self.A2, self.B2, 'lhp', *ret1)
+        self.check(self.A3, self.B3, 'lhp', *ret2)
+
+    def test_rhp(self):
+        retc, ret1, ret2 = self.qz_decomp('rhp')
+
+        self.check(self.A1, self.B1, 'rhp', *retc)
+        self.check(self.A2, self.B2, 'rhp', *ret1)
+        self.check(self.A3, self.B3, 'rhp', *ret2)
+
+    def test_iuc(self):
+        retc, ret1, ret2 = self.qz_decomp('iuc')
+
+        self.check(self.A1, self.B1, 'iuc', *retc)
+        self.check(self.A2, self.B2, 'iuc', *ret1)
+        self.check(self.A3, self.B3, 'iuc', *ret2)
+
+    def test_ouc(self):
+        retc, ret1, ret2 = self.qz_decomp('ouc')
+
+        self.check(self.A1, self.B1, 'ouc', *retc)
+        self.check(self.A2, self.B2, 'ouc', *ret1)
+        self.check(self.A3, self.B3, 'ouc', *ret2)
+
+    def test_ref(self):
+        # real eigenvalues first (top-left corner)
+        sort = lambda x, y: (x/y).imag == 0
+        retc, ret1, ret2 = self.qz_decomp(sort)
+
+        self.check(self.A1, self.B1, sort, *retc)
+        self.check(self.A2, self.B2, sort, *ret1)
+        self.check(self.A3, self.B3, sort, *ret2)
+
+    def test_cef(self):
+        # complex eigenvalues first (top-left corner)
+        sort = lambda x, y: (x/y).imag != 0
+        retc, ret1, ret2 = self.qz_decomp(sort)
+
+        self.check(self.A1, self.B1, sort, *retc)
+        self.check(self.A2, self.B2, sort, *ret1)
+        self.check(self.A3, self.B3, sort, *ret2)
+
+    def test_diff_input_types(self):
+        ret = ordqz(self.A1, self.B2, sort='lhp')
+        self.check(self.A1, self.B2, 'lhp', *ret)
+
+        ret = ordqz(self.B2, self.A1, sort='lhp')
+        self.check(self.B2, self.A1, 'lhp', *ret)
+
 class TestDatacopied(TestCase):
 
     def test_datacopied(self):
@@ -2156,6 +2315,7 @@ def _check_orth(n):
 
 
 @dec.slow
+@dec.skipif(np.dtype(np.intp).itemsize < 8, "test only on 64-bit, else too slow")
 def test_orth_memory_efficiency():
     # Pick n so that 16*n bytes is reasonable but 8*n*n bytes is unreasonable.
     # Keep in mind that @dec.slow tests are likely to be running

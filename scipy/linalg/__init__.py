@@ -79,6 +79,7 @@ Decompositions
    qr_insert - QR update on row or column insertion
    rq - RQ decomposition of a matrix
    qz - QZ decomposition of a pair of matrices
+   ordqz - QZ decomposition of a pair of matrices with reordering
    schur - Schur decomposition of a matrix
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix

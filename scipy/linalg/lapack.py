@@ -4,6 +4,10 @@ Low-level LAPACK functions (:mod:`scipy.linalg.lapack`)
 
 This module contains low-level functions from the LAPACK library.
 
+The `*gegv` family of routines have been removed from LAPACK 3.6.0
+and have been deprecated in SciPy 0.17.0. They will be removed in
+a future release.
+
 .. versionadded:: 0.12.0
 
 .. warning::
@@ -205,8 +209,8 @@ All functions
    clartg
    zlartg
 
-   dlasd4
    slasd4
+   dlasd4
 
    slaswp
    dlaswp
@@ -371,6 +375,23 @@ empty_module = None
 from scipy.linalg._flapack import *
 del empty_module
 
+_dep_message = """The `*gegv` family of routines has been deprecated in
+LAPACK 3.6.0 in favor of the `*ggev` family of routines.
+The corresponding wrappers will be removed from SciPy in
+a future release."""
+
+cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
+dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
+sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
+zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
+
+# Modyfy _flapack in this scope so the deprecation warnings apply to
+# functions returned by get_lapack_funcs.
+_flapack.cgegv = cgegv
+_flapack.dgegv = dgegv
+_flapack.sgegv = sgegv
+_flapack.zgegv = zgegv
+
 # some convenience alias for complex functions
 _lapack_alias = {
     'corghr': 'cunghr', 'zorghr': 'zunghr',
@@ -434,20 +455,27 @@ def _compute_lwork(routine, *args, **kwargs):
     least) truncate the returned integer to single precision and in
     some cases this can be smaller than the required value.
     """
-    lwork, info = routine(*args, **kwargs)
+    wi = routine(*args, **kwargs)
+    if len(wi) < 2:
+        raise ValueError('')
+    info = wi[-1]
     if info != 0:
-        raise ValueError("Internal work array size computation failed: %d" % (info,))
+        raise ValueError("Internal work array size computation failed: "
+                         "%d" % (info,))
 
-    lwork = lwork.real
+    lwork = [w.real for w in wi[:-1]]
 
-    if getattr(routine, 'dtype', None) == _np.float32:
+    dtype = getattr(routine, 'dtype', None)
+    if dtype == _np.float32 or dtype == _np.complex64:
         # Single-precision routine -- take next fp value to work
         # around possible truncation in LAPACK code
-        lwork = _np.nextafter(_np.float32(lwork), _np.float32(_np.inf))
+        lwork = _np.nextafter(lwork, _np.inf, dtype=_np.float32)
 
-    lwork = int(lwork)
-    if lwork < 0 or lwork > _np.iinfo(_np.int32).max:
+    lwork = _np.array(lwork, _np.int64)
+    if _np.any(_np.logical_or(lwork < 0, lwork > _np.iinfo(_np.int32).max)):
         raise ValueError("Too large work array required -- computation cannot "
                          "be performed with standard 32-bit LAPACK.")
-
+    lwork = lwork.astype(_np.int32)
+    if lwork.size == 1:
+        return lwork[0]
     return lwork

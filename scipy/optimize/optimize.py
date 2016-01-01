@@ -122,7 +122,7 @@ class OptimizeResult(dict):
         if self.keys():
             m = max(map(len, list(self.keys()))) + 1
             return '\n'.join([k.rjust(m) + ': ' + repr(v)
-                              for k, v in self.items()])
+                              for k, v in sorted(self.items())])
         else:
             return self.__class__.__name__ + "()"
 
@@ -541,7 +541,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     result = OptimizeResult(fun=fval, nit=iterations, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
-                            message=msg, x=x)
+                            message=msg, x=x, final_simplex=(sim, fsim))
     if retall:
         result['allvecs'] = allvecs
     return result

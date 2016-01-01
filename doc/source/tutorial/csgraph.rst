@@ -119,8 +119,8 @@ reconstruct this path::
     >>> path = []
     >>> i = i2
     >>> while i != i1:
-    >>>     path.append(word_list[i])
-    >>>     i = predecessors[i]
+    ...     path.append(word_list[i])
+    ...     i = predecessors[i]
     >>> path.append(word_list[i1])
     >>> print path[::-1]
     ['ape', 'apt', 'opt', 'oat', 'mat', 'man']
@@ -198,11 +198,11 @@ hand.  We can find the connecting list in the same way as above::
     >>> path = []
     >>> i = i2[0]
     >>> while i != i1[0]:
-    >>>     path.append(word_list[i])
-    >>>     i = predecessors[i1[0], i]
+    ...     path.append(word_list[i])
+    ...     i = predecessors[i1[0], i]
     >>> path.append(word_list[i1[0]])
     >>> print path[::-1]
-    ['imp', 'amp', 'asp', 'ask', 'ark', 'are', 'aye', 'rye', 'roe', 'woe', 'woo', 'who', 'oho', 'ohm']
+    ['imp', 'amp', 'asp', 'ass', 'ads', 'add', 'aid', 'mid', 'mod', 'moo', 'too', 'tho', 'oho', 'ohm']
 
 This gives us the path we desired to see.
 

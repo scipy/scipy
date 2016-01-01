@@ -18,8 +18,8 @@ General integration (:func:`quad`)
 The function :obj:`quad` is provided to integrate a function of one
 variable between two points. The points can be :math:`\pm\infty`
 (:math:`\pm` ``inf``) to indicate infinite limits. For example,
-suppose you wish to integrate a bessel function ``jv(2.5,x)`` along
-the interval :math:`[0,4.5].`
+suppose you wish to integrate a bessel function ``jv(2.5, x)`` along
+the interval :math:`[0, 4.5].`
 
 .. math::
 
@@ -28,16 +28,19 @@ the interval :math:`[0,4.5].`
 
 This could be computed using :obj:`quad`:
 
+    >>> import scipy.integrate as integrate
+    >>> import scipy.special as special
     >>> result = integrate.quad(lambda x: special.jv(2.5,x), 0, 4.5)
-    >>> print result
+    >>> result
     (1.1178179380783249, 7.8663172481899801e-09)
 
-    >>> I = sqrt(2/pi)*(18.0/27*sqrt(2)*cos(4.5)-4.0/27*sqrt(2)*sin(4.5)+
-        sqrt(2*pi)*special.fresnel(3/sqrt(pi))[0])
-    >>> print I
+    >>> from numpy import sqrt, sin, cos, pi
+    >>> I = sqrt(2/pi)*(18.0/27*sqrt(2)*cos(4.5) - 4.0/27*sqrt(2)*sin(4.5) +
+    ...                 sqrt(2*pi) * special.fresnel(3/sqrt(pi))[0])
+    >>> I
     1.117817938088701
 
-    >>> print abs(result[0]-I)
+    >>> print(abs(result[0]-I))
     1.03761443881e-11
 
 The first argument to quad is a "callable" Python object (*i.e.* a
@@ -97,16 +100,17 @@ is desired (and the fact that this integral can be computed as
 
     >>> from scipy.integrate import quad
     >>> def integrand(t, n, x):
-    ...     return exp(-x*t) / t**n
+    ...     return np.exp(-x*t) / t**n
 
     >>> def expint(n, x):
-    ...     return quad(integrand, 1, Inf, args=(n, x))[0]
+    ...     return quad(integrand, 1, np.inf, args=(n, x))[0]
 
-    >>> vec_expint = vectorize(expint)
+    >>> vec_expint = np.vectorize(expint)
 
-    >>> vec_expint(3,arange(1.0,4.0,0.5))
+    >>> vec_expint(3, np.arange(1.0, 4.0, 0.5))
     array([ 0.1097,  0.0567,  0.0301,  0.0163,  0.0089,  0.0049])
-    >>> special.expn(3,arange(1.0,4.0,0.5))
+    >>> import scipy.special as special
+    >>> special.expn(3, np.arange(1.0,4.0,0.5))
     array([ 0.1097,  0.0567,  0.0301,  0.0163,  0.0089,  0.0049])
 
 The function which is integrated can even use the quad argument (though the
@@ -117,15 +121,15 @@ integrand from the use of :obj:`quad` ). The integral in this case is
 
     I_{n}=\int_{0}^{\infty}\int_{1}^{\infty}\frac{e^{-xt}}{t^{n}}\, dt\, dx=\frac{1}{n}.
 
->>> result = quad(lambda x: expint(3, x), 0, inf)
->>> print result
+>>> result = quad(lambda x: expint(3, x), 0, np.inf)
+>>> print(result)
 (0.33333333324560266, 2.8548934485373678e-09)
 
 >>> I3 = 1.0/3.0
->>> print I3
+>>> print(I3)
 0.333333333333
 
->>> print I3 - result[0]
+>>> print(I3 - result[0])
 8.77306560731e-11
 
 This last example shows that multiple integration can be handled using
@@ -145,13 +149,13 @@ An example of using double integration to compute several values of
 
     >>> from scipy.integrate import quad, dblquad
     >>> def I(n):
-    ...     return dblquad(lambda t, x: exp(-x*t)/t**n, 0, Inf, lambda x: 1, lambda x: Inf)
+    ...     return dblquad(lambda t, x: np.exp(-x*t)/t**n, 0, np.inf, lambda x: 1, lambda x: np.inf)
 
-    >>> print I(4)
+    >>> print(I(4))
     (0.25000000000435768, 1.0518245707751597e-09)
-    >>> print I(3)
+    >>> print(I(3))
     (0.33333333325010883, 2.8604069919261191e-09)
-    >>> print I(2)
+    >>> print(I(2))
     (0.49999999999857514, 1.8855523253868967e-09)
 
 
@@ -188,7 +192,7 @@ can be calculated as
 >>> from scipy import integrate
 >>> N = 5
 >>> def f(t, x):
->>>    return np.exp(-x*t) / t**N
+...    return np.exp(-x*t) / t**N
 >>> integrate.nquad(f, [[1, np.inf],[0, np.inf]])
 (0.20000000000002294, 1.2239614263187945e-08)
 
@@ -208,11 +212,11 @@ can be evaluated by means of
 
 >>> from scipy import integrate
 >>> def f(x, y):
->>>     return x*y
+...     return x*y
 >>> def bounds_y():
->>>     return [0, 0.5]
+...     return [0, 0.5]
 >>> def bounds_x(y):
->>>     return [0, 1-2*y]
+...     return [0, 1-2*y]
 >>> integrate.nquad(f, [bounds_x, bounds_y])
 (0.010416666666666668, 4.101620128472366e-16)
 
@@ -263,15 +267,15 @@ if the function is a polynomial of order 3 or less. If the samples are not
 equally spaced, then the result is exact only if the function is a polynomial
 of order 2 or less.
 
->>> from scipy.integrate import simps
 >>> import numpy as np
->>> def f(x):
+>>> def f1(x):
 ...    return x**2
 >>> def f2(x):
 ...    return x**3
 >>> x = np.array([1,3,4])
 >>> y1 = f1(x)
->>> I1 = integrate.simps(y1, x)
+>>> from scipy.integrate import simps
+>>> I1 = simps(y1, x)
 >>> print(I1)
 21.0
 
@@ -341,8 +345,8 @@ into Python with `ctypes`.
 
 >>> import ctypes
 >>> from scipy import integrate
->>> lib = ctypes.CDLL('/**/testlib.so') # Use absolute path to testlib
->>> func = lib.f # Assign specific function to name func (for simplicity)
+>>> lib = ctypes.CDLL('/**/testlib.so')   # Use absolute path to testlib
+>>> func = lib.f   # Assign specific function to name func (for simplicity)
 >>> func.restype = ctypes.c_double
 >>> func.argtypes = (ctypes.c_int, ctypes.c_double)
 
@@ -352,7 +356,7 @@ regardless of the number of parameters, and ``restype`` will always be
 
 4.) Now integrate the library function as normally, here using `nquad`:
 
->>> integrate.nquad(func, [[0,10],[-10,0],[-1,1]])
+>>> integrate.nquad(func, [[0, 10], [-10, 0], [-1, 1]])
 (1000.0, 1.1102230246251565e-11)
 
 And the Python tuple is returned as expected in a reduced amount of time.  All 
@@ -446,20 +450,20 @@ usage of the *Dfun* option which allows the user to specify a gradient
     >>> def gradient(y, t):
     ...     return [[0,t], [1,0]]
 
-    >>> x = arange(0, 4.0, 0.01)
+    >>> x = np.arange(0, 4.0, 0.01)
     >>> t = x
     >>> ychk = airy(x)[0]
     >>> y = odeint(func, y0, t)
     >>> y2 = odeint(func, y0, t, Dfun=gradient)
 
-    >>> print ychk[:36:6]
-    [ 0.355028  0.339511  0.324068  0.308763  0.293658  0.278806]
+    >>> ychk[:36:6]
+    array([0.355028, 0.339511, 0.324068, 0.308763, 0.293658, 0.278806])
 
-    >>> print y[:36:6,1]
-    [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
+    >>> y[:36:6,1]
+    array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
 
-    >>> print y2[:36:6,1]
-    [ 0.355028  0.339511  0.324067  0.308763  0.293658  0.278806]
+    >>> y2[:36:6,1]
+    array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
 
 
 References

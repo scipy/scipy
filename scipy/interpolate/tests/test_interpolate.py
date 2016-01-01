@@ -132,6 +132,7 @@ class TestInterp1D(object):
         interp1d(self.x10, self.y10, kind='nearest')
         interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value="extrapolate")
+        interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
         interp1d(self.x10, self.y10, kind=0)
         interp1d(self.x10, self.y10, kind=1)
         interp1d(self.x10, self.y10, kind=2)
@@ -170,6 +171,8 @@ class TestInterp1D(object):
         assert_(np.isnan(interp1d(self.x10, self.y10).fill_value))
         assert_equal(interp1d(self.x10, self.y10, fill_value=3.0).fill_value,
                      3.0)
+        assert_equal(interp1d(self.x10, self.y10, fill_value=(1.0, 2.0)).fill_value,
+                     (1.0, 2.0))
         assert_equal(interp1d(self.x10, self.y10).axis, 0)
         assert_equal(interp1d(self.x10, self.y210).axis, 1)
         assert_equal(interp1d(self.x10, self.y102, axis=0).axis, 0)
@@ -269,7 +272,8 @@ class TestInterp1D(object):
                            np.array(self.fill_value),)
         assert_array_equal(extrap10._check_bounds(
                                np.array([-1.0, 0.0, 5.0, 9.0, 11.0])),
-                           np.array([True, False, False, False, True]))
+                           np.array([[True, False, False, False, False],
+                                     [False, False, False, False, True]]))
 
         raises_bounds_error = interp1d(self.x10, self.y10, bounds_error=True,
                                        kind=kind)
@@ -290,6 +294,26 @@ class TestInterp1D(object):
                      'slinear', 'zero', 'quadratic'):
             self._bounds_check(kind)
             self._bounds_check_int_nan_fill(kind)
+
+    def _check_fill_value(self, kind):
+        interp = interp1d(self.x10, self.y10, kind=kind,
+                          fill_value=(-100, 100), bounds_error=False)
+        assert_array_almost_equal(interp(10), 100)
+        assert_array_almost_equal(interp(-10), -100)
+        assert_array_almost_equal(interp([-10, 10]), [-100, 100])
+
+    def test_fill_value(self):
+        # test that two-element fill value works
+        for kind in ('linear', 'nearest', 'cubic', 'slinear', 'quadratic',
+                     'zero'):
+            self._check_fill_value(kind)
+
+    def test_fill_value_writeable(self):
+        # backwards compat: fill_value is a public writeable attribute
+        interp = interp1d(self.x10, self.y10, fill_value=123.0)
+        assert_equal(interp.fill_value, 123.0)
+        interp.fill_value = 321.0
+        assert_equal(interp.fill_value, 321.0)
 
     def _nd_check_interp(self, kind='linear'):
         # Check the behavior when the inputs and outputs are multidimensional.
@@ -1340,6 +1364,23 @@ class TestBPolyFromDerivatives(TestCase):
         yi = np.random.random((m+1, k, 6, 7, 8))
         pp = BPoly.from_derivatives(xi, yi)
         assert_equal(pp.c.shape, (2*k, m, 6, 7, 8))
+
+    def test_gh_5430(self):
+        # At least one of these raises an error unless gh-5430 is
+        # fixed. In py2k an int is implemented using a C long, so
+        # which one fails depends on your system. In py3k there is only
+        # one arbitrary precision integer type, so both should fail.
+        orders = np.int32(1)
+        p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
+        assert_almost_equal(p(0), 0)
+        orders = np.int64(1)
+        p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
+        assert_almost_equal(p(0), 0)
+        orders = 1
+        # This worked before; make sure it still works
+        p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
+        assert_almost_equal(p(0), 0)
+        orders = 1
 
 
 class TestPpform(TestCase):

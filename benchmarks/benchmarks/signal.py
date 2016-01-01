@@ -68,6 +68,7 @@ class Convolve2D(Benchmark):
                     continue
             signal.correlate2d(a, b, mode=mode, boundary=boundary)
 
+
 class FFTConvolve(Benchmark):
     param_names = ['mode']    
     params = [
@@ -89,6 +90,7 @@ class FFTConvolve(Benchmark):
             if b.shape[0] > a.shape[0]:
                 continue
             signal.fftconvolve(a, b, mode=mode)
+
 
 class Convolve(Benchmark):
     param_names = ['mode']    

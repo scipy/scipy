@@ -200,10 +200,9 @@ def _convert_codecs(template, byte_order):
 
 MDTYPES = {}
 for _bytecode in '<>':
-    _def = {}
-    _def['dtypes'] = convert_dtypes(mdtypes_template, _bytecode)
-    _def['classes'] = convert_dtypes(mclass_dtypes_template, _bytecode)
-    _def['codecs'] = _convert_codecs(codecs_template, _bytecode)
+    _def = {'dtypes': convert_dtypes(mdtypes_template, _bytecode),
+            'classes': convert_dtypes(mclass_dtypes_template, _bytecode),
+            'codecs': _convert_codecs(codecs_template, _bytecode)}
     MDTYPES[_bytecode] = _def
 
 

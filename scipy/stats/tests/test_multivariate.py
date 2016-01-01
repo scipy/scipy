@@ -4,6 +4,8 @@ Test functions for multivariate normal distributions.
 """
 from __future__ import division, print_function, absolute_import
 
+import pickle
+
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_raises, run_module_suite, TestCase)
@@ -16,6 +18,7 @@ import numpy as np
 import scipy.linalg
 from scipy.stats._multivariate import _PSD, _lnB
 from scipy.stats import multivariate_normal
+from scipy.stats import matrix_normal
 from scipy.stats import dirichlet, beta
 from scipy.stats import wishart, invwishart, chi2, invgamma
 from scipy.stats import norm
@@ -343,6 +346,181 @@ class TestMultivariateNormal(TestCase):
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
+class TestMatrixNormal(TestCase):
+
+    def test_bad_input(self):
+        # Check that bad inputs raise errors
+        num_rows = 4
+        num_cols = 3
+        M = 0.3 * np.ones((num_rows,num_cols))
+        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
+        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+
+        # Incorrect dimensions
+        assert_raises(ValueError, matrix_normal, np.zeros((5,4,3)))
+        assert_raises(ValueError, matrix_normal, M, np.zeros(10), V)
+        assert_raises(ValueError, matrix_normal, M, U, np.zeros(10))
+        assert_raises(ValueError, matrix_normal, M, U, U)
+        assert_raises(ValueError, matrix_normal, M, V, V)
+        assert_raises(ValueError, matrix_normal, M.T, U, V)
+        
+        # Singular covariance
+        e = np.linalg.LinAlgError
+        assert_raises(e, matrix_normal, M, U, np.ones((num_cols, num_cols)))
+        assert_raises(e, matrix_normal, M, np.ones((num_rows, num_rows)), V)
+        
+    def test_default_inputs(self):
+        # Check that default argument handling works
+        num_rows = 4
+        num_cols = 3
+        M = 0.3 * np.ones((num_rows,num_cols))
+        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
+        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        Z = np.zeros((num_rows, num_cols))
+        Zr = np.zeros((num_rows, 1))
+        Zc = np.zeros((1, num_cols))
+        Ir = np.identity(num_rows)
+        Ic = np.identity(num_cols)
+        I1 = np.identity(1)
+
+        assert_equal(matrix_normal.rvs(mean=M, rowcov=U, colcov=V).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_normal.rvs(mean=M).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_normal.rvs(rowcov=U).shape,
+                     (num_rows, 1))
+        assert_equal(matrix_normal.rvs(colcov=V).shape,
+                     (1, num_cols))
+        assert_equal(matrix_normal.rvs(mean=M, colcov=V).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_normal.rvs(mean=M, rowcov=U).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_normal.rvs(rowcov=U, colcov=V).shape,
+                     (num_rows, num_cols))
+
+        assert_equal(matrix_normal(mean=M).rowcov, Ir)
+        assert_equal(matrix_normal(mean=M).colcov, Ic)
+        assert_equal(matrix_normal(rowcov=U).mean, Zr)
+        assert_equal(matrix_normal(rowcov=U).colcov, I1)
+        assert_equal(matrix_normal(colcov=V).mean, Zc)
+        assert_equal(matrix_normal(colcov=V).rowcov, I1)
+        assert_equal(matrix_normal(mean=M, rowcov=U).colcov, Ic)
+        assert_equal(matrix_normal(mean=M, colcov=V).rowcov, Ir)
+        assert_equal(matrix_normal(rowcov=U, colcov=V).mean, Z)
+
+    def test_covariance_expansion(self):
+        # Check that covariance can be specified with scalar or vector
+        num_rows = 4
+        num_cols = 3
+        M = 0.3 * np.ones((num_rows,num_cols))
+        Uv = 0.2*np.ones(num_rows)
+        Us = 0.2
+        Vv = 0.1*np.ones(num_cols)
+        Vs = 0.1
+
+        Ir = np.identity(num_rows)
+        Ic = np.identity(num_cols)
+
+        assert_equal(matrix_normal(mean=M, rowcov=Uv, colcov=Vv).rowcov,
+                     0.2*Ir)
+        assert_equal(matrix_normal(mean=M, rowcov=Uv, colcov=Vv).colcov,
+                     0.1*Ic)
+        assert_equal(matrix_normal(mean=M, rowcov=Us, colcov=Vs).rowcov,
+                     0.2*Ir)
+        assert_equal(matrix_normal(mean=M, rowcov=Us, colcov=Vs).colcov,
+                     0.1*Ic)
+
+    def test_frozen_matrix_normal(self):
+        for i in range(1,5):
+            for j in range(1,5):
+                M = 0.3 * np.ones((i,j))
+                U = 0.5 * np.identity(i) + 0.5 * np.ones((i,i))
+                V = 0.7 * np.identity(j) + 0.3 * np.ones((j,j))
+
+                frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
+
+                rvs1 = frozen.rvs(random_state=1234)
+                rvs2 = matrix_normal.rvs(mean=M, rowcov=U, colcov=V,
+                                         random_state=1234)
+                assert_equal(rvs1, rvs2)
+
+                X = frozen.rvs(random_state=1234)
+
+                pdf1 = frozen.pdf(X)
+                pdf2 = matrix_normal.pdf(X, mean=M, rowcov=U, colcov=V)
+                assert_equal(pdf1, pdf2)
+
+                logpdf1 = frozen.logpdf(X)
+                logpdf2 = matrix_normal.logpdf(X, mean=M, rowcov=U, colcov=V)
+                assert_equal(logpdf1, logpdf2)
+
+    def test_matches_multivariate(self):
+        # Check that the pdfs match those obtained by vectorising and
+        # treating as a multivariate normal.
+        for i in range(1,5):
+            for j in range(1,5):
+                M = 0.3 * np.ones((i,j))
+                U = 0.5 * np.identity(i) + 0.5 * np.ones((i,i))
+                V = 0.7 * np.identity(j) + 0.3 * np.ones((j,j))
+
+                frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
+                X = frozen.rvs(random_state=1234)
+                pdf1 = frozen.pdf(X)
+                logpdf1 = frozen.logpdf(X)
+
+                vecX = X.T.flatten()
+                vecM = M.T.flatten()
+                cov = np.kron(V,U)
+                pdf2 = multivariate_normal.pdf(vecX, mean=vecM, cov=cov)
+                logpdf2 = multivariate_normal.logpdf(vecX, mean=vecM, cov=cov)
+
+                assert_allclose(pdf1, pdf2, rtol=1E-10)
+                assert_allclose(logpdf1, logpdf2, rtol=1E-10)
+
+    def test_array_input(self):
+        # Check array of inputs has the same output as the separate entries.
+        num_rows = 4
+        num_cols = 3
+        M = 0.3 * np.ones((num_rows,num_cols))
+        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
+        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        N = 10
+
+        frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
+        X1 = frozen.rvs(size=N, random_state=1234)
+        X2 = frozen.rvs(size=N, random_state=4321)
+        X = np.concatenate((X1[np.newaxis,:,:,:],X2[np.newaxis,:,:,:]), axis=0)
+        assert_equal(X.shape, (2, N, num_rows, num_cols))
+
+        array_logpdf = frozen.logpdf(X)
+        assert_equal(array_logpdf.shape, (2, N))
+        for i in range(2):
+            for j in range(N):
+                separate_logpdf = matrix_normal.logpdf(X[i,j], mean=M,
+                                                       rowcov=U, colcov=V)
+                assert_allclose(separate_logpdf, array_logpdf[i,j], 1E-10)
+
+    def test_moments(self):
+        # Check that the sample moments match the parameters
+        num_rows = 4
+        num_cols = 3
+        M = 0.3 * np.ones((num_rows,num_cols))
+        U = 0.5 * np.identity(num_rows) + 0.5 * np.ones((num_rows, num_rows))
+        V = 0.7 * np.identity(num_cols) + 0.3 * np.ones((num_cols, num_cols))
+        N = 1000
+
+        frozen = matrix_normal(mean=M, rowcov=U, colcov=V)
+        X = frozen.rvs(size=N, random_state=1234)
+
+        sample_mean = np.mean(X,axis=0)
+        assert_allclose(sample_mean, M, atol=0.1)
+
+        sample_colcov = np.cov(X.reshape(N*num_rows,num_cols).T)
+        assert_allclose(sample_colcov, V, atol=0.1)
+        
+        sample_rowcov = np.cov(np.swapaxes(X,1,2).reshape(
+                                                        N*num_cols,num_rows).T)
+        assert_allclose(sample_rowcov, U, atol=0.1)
 
 class TestDirichlet(TestCase):
 
@@ -846,10 +1024,30 @@ class TestInvwishart(TestCase):
         assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
 
+def check_pickling(distfn, args):
+    # check that a distribution instance pickles and unpickles
+    # pay special attention to the random_state property
+
+    # save the random_state (restore later)
+    rndm = distfn.random_state
+
+    distfn.random_state = 1234
+    distfn.rvs(*args, size=8)
+    s = pickle.dumps(distfn)
+    r0 = distfn.rvs(*args, size=8)
+
+    unpickled = pickle.loads(s)
+    r1 = unpickled.rvs(*args, size=8)
+    assert_equal(r0, r1)
+
+    # restore the random_state
+    distfn.random_state = rndm
+
+
 def test_random_state_property():
     scale = np.eye(3)
-    scale[0,1] = 0.5
-    scale[1,0] = 0.5
+    scale[0, 1] = 0.5
+    scale[1, 0] = 0.5
     dists = [
         [multivariate_normal, ()],
         [dirichlet, (np.array([1.]), )],
@@ -858,7 +1056,7 @@ def test_random_state_property():
     ]
     for distfn, args in dists:
         check_random_state_property(distfn, args)
-
+        check_pickling(distfn, args)
 
 if __name__ == "__main__":
     run_module_suite()

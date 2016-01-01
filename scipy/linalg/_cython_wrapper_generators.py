@@ -55,7 +55,7 @@ def arg_casts(arg):
     if arg in ['npy_complex64', 'npy_complex128', '_cselect1', '_cselect2',
                '_dselect2', '_dselect3', '_sselect2', '_sselect3',
                '_zselect1', '_zselect2']:
-        return '<{}*>'.format(arg)
+        return '<{0}*>'.format(arg)
     return ''
 
 
@@ -158,7 +158,7 @@ Usable from Cython via::
 
 This module provides Cython-level wrappers for all primary routines included
 in LAPACK 3.1.0 except for ``zcgesv`` since its interface is not consistent
-from LAPACK 3.1.0 to 3.5.0. It also provides some of the
+from LAPACK 3.1.0 to 3.6.0. It also provides some of the
 fixed-api auxiliary routines.
 
 These wrappers do not check for alignment of arrays.
@@ -543,7 +543,7 @@ def fort_subroutine_wrapper(name, ret_type, args):
     argnames = ', '.join(names)
 
     names = [process_fortran_name(n, name) for n in names]
-    argdecls = '\n        '.join('{} {}'.format(fortran_types[t], n)
+    argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
                                  for n, t in zip(names, types))
     return fortran_template.format(name=name, wrapper=wrapper,
                                    argnames=argnames, argdecls=argdecls,
@@ -557,7 +557,7 @@ def generate_fortran(func_sigs):
 def make_c_args(args):
     types, names = arg_names_and_types(args)
     types = [c_types[arg] for arg in types]
-    return ', '.join('{} *{}'.format(t, n) for t, n in zip(types, names))
+    return ', '.join('{0} *{1}'.format(t, n) for t, n in zip(types, names))
 
 c_func_template = "void F_FUNC({name}wrp, {upname}WRP)({return_type} *ret, {args});\n"
 

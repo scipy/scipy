@@ -141,15 +141,14 @@ class common_base_converter(base_converter):
         return new_spec
 
     def template_vars(self,inline=0):
-        d = {}
-        d['type_name'] = self.type_name
-        d['check_func'] = self.check_func
-        d['c_type'] = self.c_type
-        d['return_type'] = self.return_type
-        d['to_c_return'] = self.to_c_return
-        d['name'] = self.name
-        d['py_var'] = self.py_variable()
-        d['var_lookup'] = self.retrieve_py_variable(inline)
+        d = {'type_name': self.type_name,
+             'check_func': self.check_func,
+             'c_type': self.c_type,
+             'return_type': self.return_type,
+             'to_c_return': self.to_c_return,
+             'name': self.name,
+             'py_var': self.py_variable(),
+             'var_lookup': self.retrieve_py_variable(inline)}
         code = 'convert_to_%(type_name)s(%(py_var)s,"%(name)s")' % d
         d['var_convert'] = code
         if self.use_ref_count:
@@ -301,36 +300,27 @@ class file_converter(common_base_converter):
 #----------------------------------------------------------------------------
 # Standard Python numeric --> C type maps
 #----------------------------------------------------------------------------
-num_to_c_types = {}
-num_to_c_types[type(1)] = 'long'
-num_to_c_types[type(1.)] = 'double'
-num_to_c_types[type(1.+1.j)] = 'std::complex<double> '
-# !! hmmm. The following is likely unsafe...
-num_to_c_types[long] = 'npy_longlong'
+num_to_c_types = {type(1): 'long',
+                  type(1.): 'double',
+                  type(1. + 1.j): 'std::complex<double> ',
+                  long: 'npy_longlong',  # Likely unsafe...
+                  'T': 'T',
+                  'G': 'std::complex<longdouble> ',
+                  'F': 'std::complex<float> ',
+                  'D': 'std::complex<double> ',
+                  'g': 'npy_longdouble',
+                  'f': 'float',
+                  'd': 'double',
+                  'b': 'char', 'B': 'npy_ubyte',
+                  'h': 'short', 'H': 'npy_ushort',
+                  'i': 'int', 'I': 'npy_uint',
+                  '?': 'bool',
+                  'l': 'long', 'L': 'npy_ulong',
+                  'q': 'npy_longlong', 'Q': 'npy_ulonglong'}
 
 #----------------------------------------------------------------------------
 # Numeric array Python numeric --> C type maps
 #----------------------------------------------------------------------------
-num_to_c_types['T'] = 'T'  # for templates
-num_to_c_types['G'] = 'std::complex<longdouble> '
-num_to_c_types['F'] = 'std::complex<float> '
-num_to_c_types['D'] = 'std::complex<double> '
-num_to_c_types['g'] = 'npy_longdouble'
-num_to_c_types['f'] = 'float'
-num_to_c_types['d'] = 'double'
-num_to_c_types['b'] = 'char'
-num_to_c_types['B'] = 'npy_uchar'
-num_to_c_types['B'] = 'npy_ubyte'  # numpy
-num_to_c_types['h'] = 'short'
-num_to_c_types['H'] = 'npy_ushort'
-num_to_c_types['i'] = 'int'
-num_to_c_types['I'] = 'npy_uint'
-num_to_c_types['?'] = 'bool'
-num_to_c_types['l'] = 'long'
-num_to_c_types['L'] = 'npy_ulong'
-
-num_to_c_types['q'] = 'npy_longlong'
-num_to_c_types['Q'] = 'npy_ulonglong'
 
 
 class scalar_converter(common_base_converter):

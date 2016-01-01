@@ -217,15 +217,15 @@ class TestTrustRegion(object):
 
 
 def test_reflective_transformation():
-    lb = np.array([-1, -2])
-    ub = np.array([5, 3])
+    lb = np.array([-1, -2], dtype=float)
+    ub = np.array([5, 3], dtype=float)
 
     y = np.array([0, 0])
     x, g = reflective_transformation(y, lb, ub)
     assert_equal(x, y)
     assert_equal(g, np.ones(2))
 
-    y = np.array([-4, 4])
+    y = np.array([-4, 4], dtype=float)
 
     x, g = reflective_transformation(y, lb, np.array([np.inf, np.inf]))
     assert_equal(x, [2, 4])
@@ -241,7 +241,7 @@ def test_reflective_transformation():
 
     lb = np.array([-np.inf, -2])
     ub = np.array([5, np.inf])
-    y = np.array([10, 10])
+    y = np.array([10, 10], dtype=float)
     x, g = reflective_transformation(y, lb, ub)
     assert_equal(x, [0, 10])
     assert_equal(g, [-1, 1])

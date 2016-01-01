@@ -10,13 +10,17 @@ This module implements the Scientific.IO.NetCDF API to read and create
 NetCDF files. The same API is also used in the PyNIO and pynetcdf
 modules, allowing these modules to be used interchangeably when working
 with NetCDF files.
+
+Only NetCDF3 is supported here; for NetCDF4 see
+`netCDF4-python <http://unidata.github.io/netcdf4-python/>`__,
+which has a similar API.
+
 """
 
 from __future__ import division, print_function, absolute_import
 
 # TODO:
 # * properly implement ``_FillValue``.
-# * implement Jeff Whitaker's patch for masked variables.
 # * fix character variables.
 # * implement PAGESIZE for Python 2.6?
 
@@ -110,6 +114,9 @@ class netcdf_file(object):
         format* and 2 means *64-bit offset format*.  Default is 1.  See
         `here <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html>`__
         for more info.
+    maskandscale : bool, optional
+        Whether to automatically scale and/or mask data based on attributes.
+        Default is False.
 
     Notes
     -----
@@ -209,7 +216,8 @@ class netcdf_file(object):
     Created for a test
 
     """
-    def __init__(self, filename, mode='r', mmap=None, version=1):
+    def __init__(self, filename, mode='r', mmap=None, version=1,
+                 maskandscale=False):
         """Initialize netcdf_file from fileobj (str or file-like)."""
         if mode not in 'rwa':
             raise ValueError("Mode must be either 'r', 'w' or 'a'.")
@@ -235,6 +243,7 @@ class netcdf_file(object):
         self.use_mmap = mmap
         self.mode = mode
         self.version_byte = version
+        self.maskandscale = maskandscale
 
         self.dimensions = {}
         self.variables = {}
@@ -316,6 +325,9 @@ class netcdf_file(object):
         createVariable
 
         """
+        if length is None and self._dims:
+            raise ValueError("Only first dimension may be unlimited!")
+
         self.dimensions[name] = length
         self._dims.append(name)
 
@@ -359,7 +371,9 @@ class netcdf_file(object):
             raise ValueError("NetCDF 3 does not support type %s" % type)
 
         data = empty(shape_, dtype=type.newbyteorder("B"))  # convert to big endian always for NetCDF 3
-        self.variables[name] = netcdf_variable(data, typecode, size, shape, dimensions)
+        self.variables[name] = netcdf_variable(
+                data, typecode, size, shape, dimensions,
+                maskandscale=self.maskandscale)
         return self.variables[name]
 
     def flush(self):
@@ -663,7 +677,8 @@ class netcdf_file(object):
 
             # Add variable.
             self.variables[name] = netcdf_variable(
-                    data, typecode, size, shape, dimensions, attributes)
+                    data, typecode, size, shape, dimensions, attributes,
+                    maskandscale=self.maskandscale)
 
         if rec_vars:
             # Remove padding when only one record variable.
@@ -797,6 +812,9 @@ class netcdf_variable(object):
     attributes : dict, optional
         Attribute values (any type) keyed by string names.  These attributes
         become attributes for the netcdf_variable object.
+    maskandscale : bool, optional
+        Whether to automatically scale and/or mask data based on attributes.
+        Default is False.
 
 
     Attributes
@@ -811,12 +829,15 @@ class netcdf_variable(object):
     isrec, shape
 
     """
-    def __init__(self, data, typecode, size, shape, dimensions, attributes=None):
+    def __init__(self, data, typecode, size, shape, dimensions,
+                 attributes=None,
+                 maskandscale=False):
         self.data = data
         self._typecode = typecode
         self._size = size
         self._shape = shape
         self.dimensions = dimensions
+        self.maskandscale = maskandscale
 
         self._attributes = attributes or {}
         for k, v in self._attributes.items():
@@ -917,9 +938,40 @@ class netcdf_variable(object):
         return self._size
 
     def __getitem__(self, index):
-        return self.data[index]
+        if not self.maskandscale:
+            return self.data[index]
+
+        data = self.data[index].copy()
+        missing_value = (
+                self._attributes.get('missing_value') or
+                self._attributes.get('_FillValue'))
+        if missing_value is not None:
+            data = np.ma.masked_values(data, missing_value)
+        scale_factor = self._attributes.get('scale_factor')
+        add_offset = self._attributes.get('add_offset')
+        if add_offset is not None or scale_factor is not None:
+            data = data.astype(np.float64)
+        if scale_factor is not None:
+            data = data * scale_factor
+        if add_offset is not None:
+            data += add_offset
+
+        return data
 
     def __setitem__(self, index, data):
+        if self.maskandscale:
+            missing_value = (
+                    self._attributes.get('missing_value') or
+                    self._attributes.get('_FillValue') or
+                    getattr(data, 'fill_value', 999999))
+            self._attributes.setdefault('missing_value', missing_value)
+            self._attributes.setdefault('_FillValue', missing_value)
+            data = ((data - self._attributes.get('add_offset', 0.0)) /
+                    self._attributes.get('scale_factor', 1.0))
+            data = np.ma.asarray(data).filled(missing_value)
+            if self._typecode not in 'fd' and data.dtype.kind == 'f':
+                data = np.round(data)
+
         # Expand data for record vars?
         if self.isrec:
             if isinstance(index, tuple):

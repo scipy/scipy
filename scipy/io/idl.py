@@ -37,39 +37,37 @@ import zlib
 import warnings
 
 # Define the different data types that can be found in an IDL save file
-DTYPE_DICT = {}
-DTYPE_DICT[1] = '>u1'
-DTYPE_DICT[2] = '>i2'
-DTYPE_DICT[3] = '>i4'
-DTYPE_DICT[4] = '>f4'
-DTYPE_DICT[5] = '>f8'
-DTYPE_DICT[6] = '>c8'
-DTYPE_DICT[7] = '|O'
-DTYPE_DICT[8] = '|O'
-DTYPE_DICT[9] = '>c16'
-DTYPE_DICT[10] = '|O'
-DTYPE_DICT[11] = '|O'
-DTYPE_DICT[12] = '>u2'
-DTYPE_DICT[13] = '>u4'
-DTYPE_DICT[14] = '>i8'
-DTYPE_DICT[15] = '>u8'
+DTYPE_DICT = {1: '>u1',
+              2: '>i2',
+              3: '>i4',
+              4: '>f4',
+              5: '>f8',
+              6: '>c8',
+              7: '|O',
+              8: '|O',
+              9: '>c16',
+              10: '|O',
+              11: '|O',
+              12: '>u2',
+              13: '>u4',
+              14: '>i8',
+              15: '>u8'}
 
 # Define the different record types that can be found in an IDL save file
-RECTYPE_DICT = {}
-RECTYPE_DICT[0] = "START_MARKER"
-RECTYPE_DICT[1] = "COMMON_VARIABLE"
-RECTYPE_DICT[2] = "VARIABLE"
-RECTYPE_DICT[3] = "SYSTEM_VARIABLE"
-RECTYPE_DICT[6] = "END_MARKER"
-RECTYPE_DICT[10] = "TIMESTAMP"
-RECTYPE_DICT[12] = "COMPILED"
-RECTYPE_DICT[13] = "IDENTIFICATION"
-RECTYPE_DICT[14] = "VERSION"
-RECTYPE_DICT[15] = "HEAP_HEADER"
-RECTYPE_DICT[16] = "HEAP_DATA"
-RECTYPE_DICT[17] = "PROMOTE64"
-RECTYPE_DICT[19] = "NOTICE"
-RECTYPE_DICT[20] = "DESCRIPTION"
+RECTYPE_DICT = {0: "START_MARKER",
+                1: "COMMON_VARIABLE",
+                2: "VARIABLE",
+                3: "SYSTEM_VARIABLE",
+                6: "END_MARKER",
+                10: "TIMESTAMP",
+                12: "COMPILED",
+                13: "IDENTIFICATION",
+                14: "VERSION",
+                15: "HEAP_HEADER",
+                16: "HEAP_DATA",
+                17: "PROMOTE64",
+                19: "NOTICE",
+                20: "DESCRIPTION"}
 
 # Define a dictionary to contain structure definitions
 STRUCT_DICT = {}
@@ -319,8 +317,7 @@ def _read_array(f, typecode, array_desc):
 def _read_record(f):
     '''Function to read in a full record'''
 
-    record = {}
-    record['rectype'] = _read_long(f)
+    record = {'rectype': _read_long(f)}
 
     nextrec = _read_uint32(f)
     nextrec += _read_uint32(f) * 2**32
@@ -433,10 +430,7 @@ def _read_record(f):
 def _read_typedesc(f):
     '''Function to read in a type descriptor'''
 
-    typedesc = {}
-
-    typedesc['typecode'] = _read_long(f)
-    typedesc['varflags'] = _read_long(f)
+    typedesc = {'typecode': _read_long(f), 'varflags': _read_long(f)}
 
     if typedesc['varflags'] & 2 == 2:
         raise Exception("System variables not implemented")
@@ -456,9 +450,7 @@ def _read_typedesc(f):
 def _read_arraydesc(f):
     '''Function to read in an array descriptor'''
 
-    arraydesc = {}
-
-    arraydesc['arrstart'] = _read_long(f)
+    arraydesc = {'arrstart': _read_long(f)}
 
     if arraydesc['arrstart'] == 8:
 
@@ -566,9 +558,7 @@ def _read_structdesc(f):
 def _read_tagdesc(f):
     '''Function to read in a tag descriptor'''
 
-    tagdesc = {}
-
-    tagdesc['offset'] = _read_long(f)
+    tagdesc = {'offset': _read_long(f)}
 
     if tagdesc['offset'] == -1:
         tagdesc['offset'] = _read_uint64(f)

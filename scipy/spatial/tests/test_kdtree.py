@@ -1069,5 +1069,89 @@ def simulate_periodic_box(kdtree, data, k, boxsize):
     result['dd'][:] = dd
     result.sort(order='dd')
     return result['dd'][:, :k], result['ii'][:,:k]
+    
+def test_ckdtree_memuse():
+    # unit test adaptation of gh-5630
+    try:
+        import resource
+    except ImportError:
+        # resource is not available on Windows with Python 2.6
+        return
+    # Make some data
+    dx, dy = 0.05, 0.05
+    y, x = np.mgrid[slice(1, 5 + dy, dy),
+                    slice(1, 5 + dx, dx)]
+    z = np.sin(x)**10 + np.cos(10 + y*x) * np.cos(x)
+    z_copy = np.empty_like(z)
+    z_copy[:] = z
+    # Place FILLVAL in z_copy at random number of random locations
+    FILLVAL = 99.
+    mask = np.random.random_integers(0, z.size - 1, np.random.randint(50) + 5)
+    z_copy.flat[mask] = FILLVAL
+    igood = np.vstack(np.where(x != FILLVAL)).T
+    ibad = np.vstack(np.where(x == FILLVAL)).T
+    mem_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    # burn-in
+    for i in range(10):
+        tree = cKDTree(igood)
+    # count memleaks while constructing and querying cKDTree
+    num_leaks = 0
+    for i in range(100):
+        mem_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        tree = cKDTree(igood)
+        dist, iquery = tree.query(ibad, k=4, p=2)
+        new_mem_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        if new_mem_use > mem_use:
+            num_leaks += 1
+    # ideally zero leaks, but errors might accidentally happen
+    # outside cKDTree
+    assert_(num_leaks < 10)
+    
+def test_len0_arrays():
+    # make sure len-0 arrays are handled correctly
+    # in range queries (gh-5639)
+    np.random.seed(1234)
+    X = np.random.rand(10,2)
+    Y = np.random.rand(10,2)
+    tree = cKDTree(X)
+    # query_ball_point (single)
+    d,i = tree.query([.5, .5], k=1)
+    z = tree.query_ball_point([.5, .5], 0.1*d)
+    assert_array_equal(z, [])
+    # query_ball_point (multiple)
+    d,i = tree.query(Y, k=1)
+    mind = d.min()
+    z = tree.query_ball_point(Y, 0.1*mind)
+    y = np.empty(shape=(10,), dtype=object)
+    y.fill([])
+    assert_array_equal(y, z)
+    # query_ball_tree
+    other = cKDTree(Y)
+    y = tree.query_ball_tree(other, 0.1*mind)
+    assert_array_equal(10*[[]], y)
+    # count_neighbors
+    y = tree.count_neighbors(other, 0.1*mind)
+    assert_(y == 0)
+    # sparse_distance_matrix
+    y = tree.sparse_distance_matrix(other, 0.1*mind, output_type='dok_matrix')
+    assert_array_equal(y == np.zeros((10,10)), True)
+    y = tree.sparse_distance_matrix(other, 0.1*mind, output_type='coo_matrix')
+    assert_array_equal(y == np.zeros((10,10)), True)
+    y = tree.sparse_distance_matrix(other, 0.1*mind, output_type='dict')
+    assert_equal(y, {})
+    y = tree.sparse_distance_matrix(other,0.1*mind, output_type='ndarray')
+    _dtype = [('i',np.intp), ('j',np.intp), ('v',np.float64)]
+    res_dtype = np.dtype(_dtype, align=True)
+    z = np.empty(shape=(0,), dtype=res_dtype)
+    assert_array_equal(y, z)
+    # query_pairs
+    d,i = tree.query(X, k=2)
+    mind = d[:,-1].min()
+    y = tree.query_pairs(0.1*mind, output_type='set')
+    assert_equal(y, set())
+    y = tree.query_pairs(0.1*mind, output_type='ndarray')
+    z = np.empty(shape=(0,2), dtype=np.intp)
+    assert_array_equal(y, z)
+
 if __name__ == "__main__":
     run_module_suite()

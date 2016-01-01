@@ -115,6 +115,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
            [4, 4, 5, 5, 6, 6]])
 
     """
+    format = 'bsr'
+
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
 
@@ -561,7 +563,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
            self.indptr.astype(idx_dtype),
            self.indices.astype(idx_dtype),
-           np.ravel(self.data),
+           self.data,
            other.indptr.astype(idx_dtype),
            other.indices.astype(idx_dtype),
            np.ravel(other.data),

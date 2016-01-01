@@ -335,6 +335,7 @@ class TestUtilities(object):
 
         npoints = {2: 70, 3: 11, 4: 5, 5: 3}
 
+        _is_32bit_platform = np.intp(0).itemsize < 8
         for ndim in xrange(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
@@ -378,10 +379,13 @@ class TestUtilities(object):
             m = (np.random.rand(grid.shape[0]) < 0.2)
             grid[m,:] += 1e6*eps*(np.random.rand(*grid[m,:].shape) - 0.5)
 
-            tri = qhull.Delaunay(grid)
-            self._check_barycentric_transforms(tri, err_msg=err_msg,
-                                               unit_cube=True,
-                                               unit_cube_tol=1e7*eps)
+            if not _is_32bit_platform:
+                # test numerically unstable, and reported to fail on 32-bit
+                # installs
+                tri = qhull.Delaunay(grid)
+                self._check_barycentric_transforms(tri, err_msg=err_msg,
+                                                   unit_cube=True,
+                                                   unit_cube_tol=1e7*eps)
 
 
 class TestVertexNeighborVertices(object):
@@ -426,6 +430,10 @@ class TestDelaunay(object):
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Delaunay, masked_array)
+
+    def test_array_with_nans_fails(self):
+        points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.double)
+        assert_raises(ValueError, qhull.Delaunay, points_with_nan)
 
     def test_nd_simplex(self):
         # simple smoke test: triangulate a n-dimensional simplex
@@ -604,6 +612,10 @@ class TestConvexHull:
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
+
+    def test_array_with_nans_fails(self):
+        points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.double)
+        assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
 
     def test_hull_consistency_tri(self):
         # Check that a convex hull returned by qhull in ndim

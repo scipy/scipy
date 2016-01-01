@@ -1118,7 +1118,7 @@ class TestGMean(TestCase):
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])
         actual = stats.gmean(a)
-        assert_approx_equal(actual, 1e200, significant=14)
+        assert_approx_equal(actual, 1e200, significant=13)
 
 
 class TestHMean(TestCase):
@@ -1737,13 +1737,15 @@ class TestStudentTest(TestCase):
         np.random.seed(7654567)
         x = stats.norm.rvs(loc=5, scale=10, size=51)
         x[50] = np.nan
-        assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=RuntimeWarning)
+            assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
 
-        assert_array_almost_equal(stats.ttest_1samp(x, 5.0, nan_policy='omit'),
-                                  (-1.6412624074367159, 0.107147027334048005))
-        assert_raises(ValueError, stats.ttest_1samp, x, 5.0, nan_policy='raise')
-        assert_raises(ValueError, stats.ttest_1samp, x, 5.0,
-                      nan_policy='foobar')
+            assert_array_almost_equal(stats.ttest_1samp(x, 5.0, nan_policy='omit'),
+                                      (-1.6412624074367159, 0.107147027334048005))
+            assert_raises(ValueError, stats.ttest_1samp, x, 5.0, nan_policy='raise')
+            assert_raises(ValueError, stats.ttest_1samp, x, 5.0,
+                          nan_policy='foobar')
 
 
 def test_percentileofscore():
@@ -2351,20 +2353,22 @@ def test_ttest_rel():
     y = (stats.norm.rvs(loc=5, scale=10, size=501) +
          stats.norm.rvs(scale=0.2, size=501))
     y[500] = np.nan
-    assert_array_equal(stats.ttest_rel(x, x), (np.nan, np.nan))
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        assert_array_equal(stats.ttest_rel(x, x), (np.nan, np.nan))
 
-    assert_array_almost_equal(stats.ttest_rel(x, y, nan_policy='omit'),
-                              (0.25299925303978066, 0.8003729814201519))
-    assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='raise')
-    assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='foobar')
+        assert_array_almost_equal(stats.ttest_rel(x, y, nan_policy='omit'),
+                                  (0.25299925303978066, 0.8003729814201519))
+        assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='raise')
+        assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='foobar')
+
+        # test zero division problem
+        t, p = stats.ttest_rel([0, 0, 0], [1, 1, 1])
+        assert_equal((np.abs(t), p), (np.inf, 0))
+        assert_equal(stats.ttest_rel([0, 0, 0], [0, 0, 0]), (np.nan, np.nan))
 
     olderr = np.seterr(all='ignore')
     try:
-        # test zero division problem
-        t,p = stats.ttest_rel([0,0,0],[1,1,1])
-        assert_equal((np.abs(t),p), (np.inf, 0))
-        assert_equal(stats.ttest_rel([0,0,0], [0,0,0]), (np.nan, np.nan))
-
         # check that nan in input array result in nan output
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_rel(anan, np.zeros((2, 2))),
@@ -2436,29 +2440,30 @@ def test_ttest_ind():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
 
-    olderr = np.seterr(all='ignore')
-
     # check nan policy
     np.random.seed(12345678)
     x = stats.norm.rvs(loc=5, scale=10, size=501)
     x[500] = np.nan
     y = stats.norm.rvs(loc=5, scale=10, size=500)
 
-    assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))
 
-    assert_array_almost_equal(stats.ttest_ind(x, y, nan_policy='omit'),
-                              (0.24779670949091914, 0.80434267337517906))
-    assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='raise')
-    assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
+        assert_array_almost_equal(stats.ttest_ind(x, y, nan_policy='omit'),
+                                  (0.24779670949091914, 0.80434267337517906))
+        assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='raise')
+        assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
 
-    try:
         # test zero division problem
-        t,p = stats.ttest_ind([0,0,0],[1,1,1])
-        assert_equal((np.abs(t),p), (np.inf, 0))
-        assert_equal(stats.ttest_ind([0,0,0], [0,0,0]), (np.nan, np.nan))
+        t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
+        assert_equal((np.abs(t), p), (np.inf, 0))
+        assert_equal(stats.ttest_ind([0, 0, 0], [0, 0, 0]), (np.nan, np.nan))
 
+    olderr = np.seterr(all='ignore')
+    try:
         # check that nan in input array result in nan output
-        anan = np.array([[1,np.nan],[-1,1]])
+        anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2))),
                      ([0, np.nan], [1, np.nan]))
     finally:
@@ -2558,15 +2563,18 @@ def test_ttest_ind_with_uneq_var():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
 
+    # test zero division problem
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
+        assert_equal((np.abs(t), p), (np.inf, 0))
+        assert_equal(stats.ttest_ind([0, 0, 0], [0, 0, 0], equal_var=False),
+                     (np.nan, np.nan))
+
     olderr = np.seterr(all='ignore')
     try:
-        # test zero division problem
-        t,p = stats.ttest_ind([0,0,0],[1,1,1], equal_var=False)
-        assert_equal((np.abs(t),p), (np.inf, 0))
-        assert_equal(stats.ttest_ind([0,0,0], [0,0,0], equal_var=False), (np.nan, np.nan))
-
         # check that nan in input array result in nan output
-        anan = np.array([[1,np.nan],[-1,1]])
+        anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2)), equal_var=False),
                      ([0, np.nan], [1, np.nan]))
     finally:
@@ -2600,15 +2608,17 @@ def test_ttest_1samp_new():
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n1,n2))
 
+    # test zero division problem
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        t, p = stats.ttest_1samp([0, 0, 0], 1)
+        assert_equal((np.abs(t), p), (np.inf, 0))
+        assert_equal(stats.ttest_1samp([0, 0, 0], 0), (np.nan, np.nan))
+
     olderr = np.seterr(all='ignore')
     try:
-        # test zero division problem
-        t,p = stats.ttest_1samp([0,0,0], 1)
-        assert_equal((np.abs(t),p), (np.inf, 0))
-        assert_equal(stats.ttest_1samp([0,0,0], 0), (np.nan, np.nan))
-
         # check that nan in input array result in nan output
-        anan = np.array([[1,np.nan],[-1,1]])
+        anan = np.array([[1, np.nan],[-1, 1]])
         assert_equal(stats.ttest_1samp(anan, 0), ([0, np.nan], [1, np.nan]))
     finally:
         np.seterr(**olderr)

@@ -49,7 +49,7 @@ def diric(x, n):
 
         diric(x) = sin(x * n/2) / (n * sin(x / 2)),
 
-    where n is a positive integer.
+    where `n` is a positive integer.
 
     Parameters
     ----------
@@ -68,8 +68,8 @@ def diric(x, n):
     >>> import matplotlib.pyplot as plt
 
     >>> x = np.linspace(-8*np.pi, 8*np.pi, num=201)
-    >>> plt.figure(figsize=(8,8));
-    >>> for idx, n in enumerate([2,3,4,9]):
+    >>> plt.figure(figsize=(8, 8));
+    >>> for idx, n in enumerate([2, 3, 4, 9]):
     ...     plt.subplot(2, 2, idx+1)
     ...     plt.plot(x, special.diric(x, n))
     ...     plt.title('diric, n={}'.format(n))
@@ -144,7 +144,7 @@ def diric(x, n):
 
 
 def jnjnp_zeros(nt):
-    """Compute nt zeros of Bessel functions Jn and Jn'.
+    """Compute zeros of integer-order Bessel functions Jn and Jn'.
 
     Results are arranged in order of the magnitudes of the zeros.
 
@@ -187,7 +187,7 @@ def jnjnp_zeros(nt):
 def jnyn_zeros(n, nt):
     """Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
 
-    Returns 4 arrays of length nt, corresponding to the first nt zeros of
+    Returns 4 arrays of length `nt`, corresponding to the first `nt` zeros of
     Jn(x), Jn'(x), Yn(x), and Yn'(x), respectively.
 
     Parameters
@@ -216,7 +216,7 @@ def jnyn_zeros(n, nt):
 
 
 def jn_zeros(n, nt):
-    """Compute nt zeros of Bessel function Jn(x).
+    """Compute zeros of integer-order Bessel function Jn(x).
 
     Parameters
     ----------
@@ -236,7 +236,7 @@ def jn_zeros(n, nt):
 
 
 def jnp_zeros(n, nt):
-    """Compute nt zeros of Bessel function derivative Jn'(x).
+    """Compute zeros of integer-order Bessel function derivative Jn'(x).
 
     Parameters
     ----------
@@ -256,7 +256,7 @@ def jnp_zeros(n, nt):
 
 
 def yn_zeros(n, nt):
-    """Compute nt zeros of Bessel function Yn(x).
+    """Compute zeros of integer-order Bessel function Yn(x).
 
     Parameters
     ----------
@@ -276,7 +276,7 @@ def yn_zeros(n, nt):
 
 
 def ynp_zeros(n, nt):
-    """Compute nt zeros of Bessel function derivative Yn'(x).
+    """Compute zeros of integer-order Bessel function derivative Yn'(x).
 
     Parameters
     ----------
@@ -405,9 +405,10 @@ def y1p_zeros(nt, complex=False):
 
 def _bessel_diff_formula(v, z, n, L, phase):
     # from AMS55.
-    # L(v,z) = J(v,z), Y(v,z), H1(v,z), H2(v,z), phase = -1
-    # L(v,z) = I(v,z) or exp(v*pi*i)K(v,z), phase = 1
+    # L(v, z) = J(v, z), Y(v, z), H1(v, z), H2(v, z), phase = -1
+    # L(v, z) = I(v, z) or exp(v*pi*i)K(v, z), phase = 1
     # For K, you can pull out the exp((v-k)*pi*i) into the caller
+    v = asarray(v)
     p = 1.0
     s = L(v-n, z)
     for i in xrange(1, n+1):
@@ -421,7 +422,7 @@ bessel_diff_formula = np.deprecate(_bessel_diff_formula,
 
 
 def jvp(v, z, n=1):
-    """Compute nth derivative of Bessel function Jv(z) with respect to z.
+    """Compute nth derivative of Bessel function Jv(z) with respect to `z`.
 
     Parameters
     ----------
@@ -448,7 +449,7 @@ def jvp(v, z, n=1):
 
 
 def yvp(v, z, n=1):
-    """Compute nth derivative of Bessel function Yv(z) with respect to z.
+    """Compute nth derivative of Bessel function Yv(z) with respect to `z`.
 
     Parameters
     ----------
@@ -475,16 +476,24 @@ def yvp(v, z, n=1):
 
 
 def kvp(v, z, n=1):
-    """Compute nth derivative of modified Bessel function Kv(z) with respect to z.
+    """Compute nth derivative of real-order modified Bessel function Kv(z)
+
+    Kv(z) is the modified Bessel function of the second kind.
+    Derivative is calculated with respect to `z`.
 
     Parameters
     ----------
-    v : float
+    v : array_like of float
         Order of Bessel function
-    z : complex
+    z : array_like of complex
         Argument at which to evaluate the derivative
-    n : int, default 1
-        Order of derivative
+    n : int
+        Order of derivative.  Default is first derivative.
+
+    Returns
+    -------
+    out : ndarray
+        The results
 
     References
     ----------
@@ -502,13 +511,14 @@ def kvp(v, z, n=1):
 
 
 def ivp(v, z, n=1):
-    """Compute nth derivative of modified Bessel function Iv(z) with respect to z.
+    """Compute nth derivative of modified Bessel function Iv(z) with respect
+    to `z`.
 
     Parameters
     ----------
-    v : float
+    v : array_like of float
         Order of Bessel function
-    z : complex
+    z : array_like of complex
         Argument at which to evaluate the derivative
     n : int, default 1
         Order of derivative
@@ -518,6 +528,19 @@ def ivp(v, z, n=1):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            http://jin.ece.illinois.edu/specfunc.html
+
+    Examples
+    --------
+    Calculate multiple values at order 5:
+
+    >>> from scipy.special import kvp
+    >>> kvp(5, (1, 2, 3+5j))
+    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
+
+    Calculate for a single value at multiple orders:
+
+    >>> kvp((4, 4.5, 5), 1)
+    array([ -184.0309,  -568.9585, -1849.0354])
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -529,7 +552,7 @@ def ivp(v, z, n=1):
 
 
 def h1vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H1v(z) with respect to z.
+    """Compute nth derivative of Hankel function H1v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -556,7 +579,7 @@ def h1vp(v, z, n=1):
 
 
 def h2vp(v, z, n=1):
-    """Compute nth derivative of Hankel function H2v(z) with respect to z.
+    """Compute nth derivative of Hankel function H2v(z) with respect to `z`.
 
     Parameters
     ----------
@@ -1011,7 +1034,7 @@ def hyp0f1(v, z):
     -----
     This function is defined as:
 
-    .. math:: _0F_1(v,z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
+    .. math:: _0F_1(v, z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
 
     It's also the limit as q -> infinity of ``1F1(q;v;z/q)``, and satisfies
     the differential equation :math:`f''(z) + vf'(z) = f(z)`.
@@ -1509,9 +1532,10 @@ def ai_zeros(nt):
     """
     Compute `nt` zeros and values of the Airy function Ai and its derivative.
 
-    Computes the first nt zeros, a, of the Airy function Ai(x); first nt zeros,
-    a', of the derivative of the Airy function Ai'(x); the corresponding values
-    Ai(a'); and the corresponding values Ai'(a).
+    Computes the first `nt` zeros, `a`, of the Airy function Ai(x);
+    first `nt` zeros, `ap`, of the derivative of the Airy function Ai'(x);
+    the corresponding values Ai(a');
+    and the corresponding values Ai'(a).
 
     Parameters
     ----------
@@ -1521,13 +1545,13 @@ def ai_zeros(nt):
     Returns
     -------
     a : ndarray
-        First nt zeros of Ai(x)
+        First `nt` zeros of Ai(x)
     ap : ndarray
-        First nt zeros of Ai'(x)
+        First `nt` zeros of Ai'(x)
     ai : ndarray
-        Values of Ai(x) evaluated at first nt zeros of Ai'(x)
+        Values of Ai(x) evaluated at first `nt` zeros of Ai'(x)
     aip : ndarray
-        Values of Ai'(x) evaluated at first nt zeros of Ai(x)
+        Values of Ai'(x) evaluated at first `nt` zeros of Ai(x)
 
     References
     ----------
@@ -1546,9 +1570,10 @@ def bi_zeros(nt):
     """
     Compute `nt` zeros and values of the Airy function Bi and its derivative.
 
-    Computes the first nt zeros, b, of the Airy function Bi(x); first nt zeros,
-    b', of the derivative of the Airy function Bi'(x); the corresponding values
-    Bi(b'); and the corresponding values Bi'(b).
+    Computes the first `nt` zeros, b, of the Airy function Bi(x);
+    first `nt` zeros, b', of the derivative of the Airy function Bi'(x);
+    the corresponding values Bi(b');
+    and the corresponding values Bi'(b).
 
     Parameters
     ----------
@@ -1558,13 +1583,13 @@ def bi_zeros(nt):
     Returns
     -------
     b : ndarray
-        First nt zeros of Bi(x)
+        First `nt` zeros of Bi(x)
     bp : ndarray
-        First nt zeros of Bi'(x)
+        First `nt` zeros of Bi'(x)
     bi : ndarray
-        Values of Bi(x) evaluated at first nt zeros of Bi'(x)
+        Values of Bi(x) evaluated at first `nt` zeros of Bi'(x)
     bip : ndarray
-        Values of Bi'(x) evaluated at first nt zeros of Bi(x)
+        Values of Bi'(x) evaluated at first `nt` zeros of Bi(x)
 
     References
     ----------
@@ -1958,11 +1983,11 @@ def agm(a, b):
     a_{n+1} = (a_n+b_n)/2
     b_{n+1} = sqrt(a_n*b_n)
 
-    until a_n=b_n.   The result is agm(a,b)
+    until a_n=b_n.   The result is agm(a, b)
 
-    agm(a,b)=agm(b,a)
-    agm(a,a) = a
-    min(a,b) < agm(a,b) < max(a,b)
+    agm(a, b)=agm(b, a)
+    agm(a, a) = a
+    min(a, b) < agm(a, b) < max(a, b)
     """
     s = a + b + 0.0
     return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)
@@ -2112,7 +2137,7 @@ def factorial(n, exact=False):
     Examples
     --------
     >>> from scipy.special import factorial
-    >>> arr = np.array([3,4,5])
+    >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
     array([   6.,   24.,  120.])
     >>> factorial(5, exact=True)

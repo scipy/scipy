@@ -72,6 +72,7 @@ class dia_matrix(_data_matrix):
            [0, 0, 3, 4]])
 
     """
+    format = 'dia'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)

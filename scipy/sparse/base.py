@@ -67,11 +67,10 @@ class spmatrix(object):
     ndim = 2
 
     def __init__(self, maxprint=MAXPRINT):
-        self.format = self.__class__.__name__[:3]
         self._shape = None
-        if self.format == 'spm':
+        if self.__class__.__name__ == 'spmatrix':
             raise ValueError("This class is not intended"
-                            " to be instantiated directly.")
+                             " to be instantiated directly.")
         self.maxprint = maxprint
 
     def set_shape(self,shape):
@@ -148,18 +147,14 @@ class spmatrix(object):
             raise AttributeError("nnz not defined")
 
     def getformat(self):
-        try:
-            format = self.format
-        except AttributeError:
-            format = 'und'
-        return format
+        return getattr(self, 'format', 'und')
 
     def __repr__(self):
         nnz = self.getnnz()
-        format = self.getformat()
+        _, format_name = _formats[self.getformat()]
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements in %s format>" % \
-               (self.shape + (self.dtype.type, nnz, _formats[format][1]))
+               (self.shape + (self.dtype.type, nnz, format_name))
 
     def __str__(self):
         maxprint = self.getmaxprint()
@@ -386,6 +381,22 @@ class spmatrix(object):
             except AttributeError:
                 tr = np.asarray(other).transpose()
             return (self.transpose() * tr).transpose()
+
+    #####################################
+    # matmul (@) operator (Python 3.5+) #
+    #####################################
+
+    def __matmul__(self, other):
+        if isscalarlike(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__mul__(other)
+
+    def __rmatmul__(self, other):
+        if isscalarlike(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__rmul__(other)
 
     ####################
     # Other Arithmetic #

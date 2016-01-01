@@ -75,6 +75,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     ...         S[i, j] = i + j    # Update element
 
     """
+    format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         dict.__init__(self)

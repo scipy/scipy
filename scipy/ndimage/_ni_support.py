@@ -32,7 +32,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy
 
-from scipy._lib.six import integer_types, string_types
+from scipy._lib.six import string_types
 
 
 def _extend_mode_to_code(mode):
@@ -57,13 +57,13 @@ def _normalize_sequence(input, rank, array_type=None):
     rank by duplicating the input. If input is a sequence,
     check if its length is equal to the length of array.
     """
-    if isinstance(input, integer_types + (float,)):
-        normalized = [input] * rank
-    else:
+    if hasattr(input, '__iter__'):
         normalized = list(input)
         if len(normalized) != rank:
             err = "sequence argument must have length equal to input rank"
             raise RuntimeError(err)
+    else:
+        normalized = [input] * rank
     return normalized
 
 

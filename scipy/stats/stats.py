@@ -1029,7 +1029,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 def moment(a, moment=1, axis=0, nan_policy='propagate'):
-    """
+    r"""
     Calculates the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of points.
@@ -2920,7 +2920,7 @@ def f_oneway(*args):
     ...            0.0689]
     >>> tvarminne = [0.0703, 0.1026, 0.0956, 0.0973, 0.1039, 0.1045]
     >>> stats.f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
-    F_onewayResult(statistic=7.1210194716424473, pvalue=0.00028122423145345439)
+    (7.1210194716424473, 0.00028122423145345439)
 
     """
     args = [np.asarray(arg, dtype=float) for arg in args]
@@ -2963,11 +2963,11 @@ def pearsonr(x, y):
 
     The Pearson correlation coefficient measures the linear relationship
     between two datasets. Strictly speaking, Pearson's correlation requires
-    that each dataset be normally distributed. Like other correlation
-    coefficients, this one varies between -1 and +1 with 0 implying no
-    correlation. Correlations of -1 or +1 imply an exact linear
-    relationship. Positive correlations imply that as x increases, so does
-    y. Negative correlations imply that as x increases, y decreases.
+    that each dataset be normally distributed, and not necessarily zero-mean.
+    Like other correlation coefficients, this one varies between -1 and +1
+    with 0 implying no correlation. Correlations of -1 or +1 imply an exact
+    linear relationship. Positive correlations imply that as x increases, so
+    does y. Negative correlations imply that as x increases, y decreases.
 
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Pearson correlation at least as extreme
@@ -3311,7 +3311,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     olderr = np.seterr(divide='ignore')  # rs can have elements equal to 1
     try:
-        t = rs * np.sqrt((n-2) / ((rs+1.0)*(1.0-rs)))
+        # clip the small negative values possibly caused by rounding
+        # errors before taking the square root
+        t = rs * np.sqrt(((n-2)/((rs+1.0)*(1.0-rs))).clip(0))
     finally:
         np.seterr(**olderr)
 
@@ -3327,7 +3329,7 @@ PointbiserialrResult = namedtuple('PointbiserialrResult',
 
 
 def pointbiserialr(x, y):
-    """
+    r"""
     Calculates a point biserial correlation coefficient and its p-value.
 
     The point biserial correlation is used to measure the relationship
@@ -3680,7 +3682,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     v = np.var(a, axis, ddof=1)
     denom = np.sqrt(v / float(n))
 
-    t = np.divide(d, denom)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
     return Ttest_1sampResult(t, prob)
@@ -3698,7 +3701,8 @@ def _ttest_finish(df, t):
 def _ttest_ind_from_stats(mean1, mean2, denom, df):
 
     d = mean1 - mean2
-    t = np.divide(d, denom)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t)
 
     return (t, prob)
@@ -3707,7 +3711,8 @@ def _ttest_ind_from_stats(mean1, mean2, denom, df):
 def _unequal_var_ttest_denom(v1, n1, v2, n2):
     vn1 = v1 / n1
     vn2 = v2 / n2
-    df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+    with np.errstate(divide='ignore', invalid='ignore'):
+        df = (vn1 + vn2)**2 / (vn1**2 / (n1 - 1) + vn2**2 / (n2 - 1))
 
     # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
     # Hence it doesn't matter what df is as long as it's not NaN.
@@ -3990,7 +3995,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     dm = np.mean(d, axis)
     denom = np.sqrt(v / float(n))
 
-    t = np.divide(dm, denom)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = np.divide(dm, denom)
     t, prob = _ttest_finish(df, t)
 
     return Ttest_relResult(t, prob)
@@ -5316,7 +5322,7 @@ def rankdata(a, method='average'):
     array([ 1,  2,  4,  3])
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
-        raise ValueError('unknown method "{0:}"'.format(method))
+        raise ValueError('unknown method "{0}"'.format(method))
 
     arr = np.ravel(np.asarray(a))
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'

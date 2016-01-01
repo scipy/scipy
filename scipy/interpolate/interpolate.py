@@ -304,6 +304,16 @@ class interp2d(object):
         return array(z)
 
 
+def _duplicate(ab):
+    # ab is either a pair (a, b) or a single value. In the latter case,
+    # transform to a pair (a, a)
+    try:
+        a, b = ab
+    except TypeError:
+        a, b = ab, ab
+    return a, b
+
+
 class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function.
@@ -337,12 +347,17 @@ class interp1d(_Interpolator1D):
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised unless `fill_value="extrapolate"`.
-    fill_value : float or "extrapolate", optional
-        If provided, then this value will be used to fill in for requested
-        points outside of the data range. If not provided, then the default
-        is NaN.
-        If "extrapolate", then points outside the data range will be
-        extrapolated. ("nearest" and "linear" kinds only.)
+    fill_value : float or (float, float) or "extrapolate", optional
+        - if a single float, then this value will be used to fill in for requested
+          points outside of the data range. If not provided, then the default
+          is NaN.
+        - If a two-element tuple, then the first element is used as a fill value
+          for ``x_new < x[0]`` and the second element is used for
+          ``x_new > x[-1]``.
+          .. versionadded:: 0.17.0
+        - If "extrapolate", then points outside the data range will be
+          extrapolated. ("nearest" and "linear" kinds only.)
+          .. versionadded:: 0.17.0
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
         If True, `x` has to be an array of monotonically increasing values.
@@ -388,13 +403,19 @@ class interp1d(_Interpolator1D):
             if bounds_error:
                 raise ValueError("Cannot extrapolate and raise at the same time.")
             bounds_error = False
+            self._extrapolate = True
+        else:
+            # it's either a pair (_below_range, _above_range) or a single value
+            # for both above and below range
+            self._fill_value_below, self._fill_value_above = _duplicate(fill_value)
+            self._extrapolate = False
 
         if bounds_error is None:
             bounds_error = True
         self.bounds_error = bounds_error
 
         self.copy = copy
-        self.fill_value = fill_value
+        self._fill_value_orig = fill_value
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'nearest': 0, 'zero': 0,'slinear': 1,
@@ -462,6 +483,21 @@ class interp1d(_Interpolator1D):
         self.x = x
         self._y = y
 
+    @property
+    def fill_value(self):
+        # backwards compat: mimic a public attribute
+        return self._fill_value_orig
+
+    @fill_value.setter
+    def fill_value(self, value):
+        # backwards compat: fill_value was a public attr; make it writeable
+        self._fill_value_orig = value
+        if value == 'extrapolate':
+            self._extrapolate = True
+        else:
+            self._fill_value_below, self._fill_value_above = _duplicate(value)
+            self._extrapolate = False
+
     def _call_linear_np(self, x_new):
         # Note that out-of-bounds values are taken care of in self._evaluate
         return np.interp(x_new, self.x, self.y)
@@ -521,10 +557,11 @@ class interp1d(_Interpolator1D):
         #    The behavior is set by the bounds_error variable.
         x_new = asarray(x_new)
         y_new = self._call(self, x_new)
-        if self.fill_value != 'extrapolate':
-            out_of_bounds = self._check_bounds(x_new)
+        if not self._extrapolate:
+            below_bounds, above_bounds = self._check_bounds(x_new)
             if len(y_new) > 0:
-                y_new[out_of_bounds] = self.fill_value
+                y_new[below_bounds] = self._fill_value_below
+                y_new[above_bounds] = self._fill_value_above
         return y_new
 
     def _check_bounds(self, x_new):
@@ -556,8 +593,7 @@ class interp1d(_Interpolator1D):
 
         # !! Should we emit a warning if some values are out of bounds?
         # !! matlab does not.
-        out_of_bounds = logical_or(below_bounds, above_bounds)
-        return out_of_bounds
+        return below_bounds, above_bounds
 
 
 class _PPolyBase(object):
@@ -1393,7 +1429,7 @@ class BPoly(_PPolyBase):
         if orders is None:
             orders = [None] * m
         else:
-            if isinstance(orders, integer_types):
+            if isinstance(orders, (integer_types, np.integer)):
                 orders = [orders] * m
             k = max(k, max(orders))
 
