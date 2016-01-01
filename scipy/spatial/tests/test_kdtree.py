@@ -1106,6 +1106,41 @@ def test_ckdtree_memuse():
     # ideally zero leaks, but errors might accidentally happen
     # outside cKDTree
     assert_(num_leaks < 10)
+
+def test_ckdtree_weights ():
+
+    data = np.linspace(0, 1, 4).reshape(-1, 1)
+    tree1 = cKDTree(data, leafsize=1)
+    weights = np.ones(len(data))
+    nw = tree1.build_weights(weights)
+    assert_array_equal(nw, [4, 2, 1, 1, 2, 1, 1])
+
+    try:
+        tree1.build_weights(weights[:-1])
+        raise AssertionError("Excpetion is not raised for short weights list")
+    except ValueError:
+        pass
+
+    for i in range(10):
+        # since weights are uniform, these shall agree:
+        c1 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                self_weights=weights, other_weights=weights)
+        c2 = tree1.count_neighbors(tree1, np.linspace(0, 10, i))
+        assert_array_equal(c1, c2)
+
+    for i in range(len(data)):
+        # this tests removal of one data point by setting weight to 0
+        w1 = weights.copy()
+        w1[i] = 0
+        data2 = data[w1 != 0]
+        w2 = weights[w1 != 0]
+        tree2 = cKDTree(data2)
+        
+        c1 = tree2.count_neighbors(tree2, np.linspace(0, 10, 100))
+        c2 = tree1.count_neighbors(tree1, np.linspace(0, 10, 100), 
+                self_weights=w1, other_weights=w1)
+
+        assert_array_equal(c1, c2)
     
 def test_len0_arrays():
     # make sure len-0 arrays are handled correctly
