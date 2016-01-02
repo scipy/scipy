@@ -350,11 +350,12 @@ class CubicSpline(PPoly):
     Parameters
     ----------
     x : array_like, shape (n,)
-        1-d array containing increasing values of the independent variable.
+        1-d array containing values of the independent variable.
+        Values must be real, finite and in strictly increasing order.
     y : array_like
         Array containing values of the dependent variable. It can have
         arbitrary number of dimensions, but the length along `axis` (see below)
-        must match the length of `x`.
+        must match the length of `x`. Values must be finite.
     axis : int, optional
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
@@ -413,6 +414,9 @@ class CubicSpline(PPoly):
     """
     def __init__(self, x, y, axis=0, extrapolate=True):
         x, y = map(np.asarray, (x, y))
+        if np.issubdtype(x.dtype, np.complexfloating):
+            raise ValueError("`x` must contain real values.")
+
         axis = axis % y.ndim
         if x.ndim != 1:
             raise ValueError("`x` must be 1-dimensional.")
@@ -421,6 +425,7 @@ class CubicSpline(PPoly):
         if x.shape[0] != y.shape[axis]:
             raise ValueError("The length of `y` along `axis`={0} doesn't "
                              "match the length of `x`".format(axis))
+
         if not np.all(np.isfinite(x)):
             raise ValueError("`x` must contain only finite values.")
         if not np.all(np.isfinite(y)):
