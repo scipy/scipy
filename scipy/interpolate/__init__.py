@@ -26,6 +26,7 @@ Univariate interpolation
    krogh_interpolate
    pchip_interpolate
    Akima1DInterpolator
+   CubicSpline
    PPoly
    BPoly
 
