@@ -6,7 +6,7 @@ import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, TestCase, run_module_suite,
-    assert_allclose, assert_equal, assert_)
+    assert_allclose, assert_equal, assert_, assert_raises)
 
 from scipy.interpolate import (
     splrep, splev, KroghInterpolator, krogh_interpolate,
@@ -504,6 +504,19 @@ class TestCubicSpline(object):
         cs = CubicSpline(x, y)
         assert_allclose(cs(x), y, rtol=1e-12)
         self._check_continuity(cs)
+
+    def test_incorrect_inputs(self):
+        x = np.array([1, 2, 3])
+        y = np.array([1, 2, 3])
+        xc = np.array([1 + 1j, 2, 3])
+        xn = np.array([np.nan, 2, 3])
+        xo = np.array([2, 1, 3])
+        yn = np.array([np.nan, 2, 3])
+
+        assert_raises(ValueError, CubicSpline, xc, y)
+        assert_raises(ValueError, CubicSpline, xn, y)
+        assert_raises(ValueError, CubicSpline, x, yn)
+        assert_raises(ValueError, CubicSpline, xo, y)
 
 
 if __name__ == '__main__':
