@@ -4,13 +4,16 @@ import warnings
 
 import numpy as np
 
-from numpy.testing import (assert_almost_equal, assert_array_equal,
-        TestCase, run_module_suite, assert_allclose, assert_equal, assert_)
-from scipy.interpolate import (splrep, splev,
-        KroghInterpolator, krogh_interpolate,
-        BarycentricInterpolator, barycentric_interpolate,
-        approximate_taylor_polynomial, pchip, PchipInterpolator,
-        Akima1DInterpolator)
+from numpy.testing import (
+    assert_almost_equal, assert_array_equal, TestCase, run_module_suite,
+    assert_allclose, assert_equal, assert_)
+
+from scipy.interpolate import (
+    splrep, splev, KroghInterpolator, krogh_interpolate,
+    BarycentricInterpolator, barycentric_interpolate,
+    PiecewisePolynomial, piecewise_polynomial_interpolate,
+    approximate_taylor_polynomial, pchip, PchipInterpolator,
+    Akima1DInterpolator, CubicSpline)
 from scipy._lib.six import xrange
 
 
@@ -51,7 +54,7 @@ SHAPES = [(), (0,), (1,), (3, 2, 5)]
 
 def test_shapes():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip,
-               Akima1DInterpolator]:
+               Akima1DInterpolator, CubicSpline]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -97,8 +100,15 @@ def test_deriv_shapes():
     def akima_antideriv(x, y, axis=0):
         return Akima1DInterpolator(x, y, axis).antiderivative()
 
+    def cspline_deriv(x, y, axis=0):
+        return CubicSpline(x, y, axis).derivative()
+
+    def cspline_antideriv(x, y, axis=0):
+        return CubicSpline(x, y, axis).derivative()
+
     for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
-               pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv]:
+               pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv,
+               cspline_deriv, cspline_antideriv]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -113,7 +123,7 @@ def _check_complex(ip):
 
 
 def test_complex():
-    for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
+    for ip in [KroghInterpolator, BarycentricInterpolator, pchip, CubicSpline]:
         yield _check_complex, ip
 
 
@@ -406,6 +416,58 @@ class TestPCHIP(TestCase):
 
         xx = np.linspace(0, 9, 101)
         assert_equal(pch(xx), 0.)
+
+
+class TestCubicSpline(object):
+    def test_general(self):
+        x = np.array([-1, 0, 0.5, 2, 4, 4.5, 5.5, 9])
+        y = np.array([0, -0.5, 2, 3, 2.5, 1, 1, 0.5])
+
+        x_test = np.array([-0.5, 0.1, 1, 3, 4.1, 5, 7])
+        y_true = np.array([
+            -2.111801336869092, 0.019677035288960, 3.164826064645384,
+            3.384966086626085, 2.210195906837064, 0.464510284120531,
+            4.956649059572205])
+
+        cs = CubicSpline(x, y)
+        assert_allclose(cs(x_test), y_true)
+
+        Y = np.vstack((y, y)).T
+        cs = CubicSpline(x, Y)
+        Y_true = np.vstack((y_true, y_true)).T
+        assert_allclose(cs(x_test), Y_true)
+
+        Y = np.vstack((y, y))
+        cs = CubicSpline(x, Y, axis=1)
+        Y_true = np.vstack((y_true, y_true))
+        assert_allclose(cs(x_test), Y_true)
+
+        Y = np.empty((2, 2, 8))
+        Y[0, 0, :] = y
+        Y[0, 1, :] = y
+        Y[1, 0, :] = y
+        Y[1, 1, :] = y
+        cs = CubicSpline(x, Y, axis=-1)
+        Y_true = np.empty((2, 2, 7))
+        Y_true[0, 0, :] = y_true
+        Y_true[0, 1, :] = y_true
+        Y_true[1, 0, :] = y_true
+        Y_true[1, 1, :] = y_true
+        assert_allclose(cs(x_test), Y_true)
+
+    def test_corner_cases(self):
+        x = np.array([-1, 0, 1])
+        y = np.array([2, 0, 1])
+        x_test = np.array([-0.5, 0.5])
+        y_true = np.array([5/8, 1/8])
+        cs = CubicSpline(x, y)
+        assert_allclose(cs(x_test), y_true)
+
+        x = np.array([-1, 1])
+        y = np.array([-1, 3])
+        y_true = np.array([0, 2])
+        cs = CubicSpline(x, y)
+        assert_allclose(cs(x_test), y_true)
 
 
 if __name__ == '__main__':
