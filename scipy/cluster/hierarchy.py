@@ -621,19 +621,19 @@ def linkage(y, method='single', metric='euclidean'):
     Notes
     -----
     1. For method 'single' an optimized algorithm called SLINK is implemented,
-       which has :math:`O(n^2)` time complexity and :math:`O(n)` memory
-       complexity.
+       which has :math:`O(n^2)` time complexity.
        For methods 'complete', 'average', 'weighted' and 'ward' an algorithm
-       called nearest-neighbors chain is implemented, which has both time and
-       memory complexity as :math:`O(n^2)`.
+       called nearest-neighbors chain is implemented, which too has time
+       complexity :math:`O(n^2)`.
        For other methods a naive algorithm is implemented with :math:`O(n^3)`
-       and :math:`O(n^2)` time and memory complexity respectively.
+       time complexity.
+       All algorithms use :math:`O(n^2)` memory.
        Refer to [1]_ for details about the algorithms.
     2. Methods 'centroid', 'median' and 'ward' are correctly defined only if
        Euclidean pairwise metric is used. If `y` is passed as precomputed
-       pairwise distances, then it is user responsibility to assure that
+       pairwise distances, then it is a user responsibility to assure that
        these distances are in fact Euclidean, otherwise the produced result
-       will be meaningless.
+       will be incorrect.
 
     References
     ----------
