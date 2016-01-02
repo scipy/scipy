@@ -307,7 +307,7 @@ add_newdoc("scipy.special", "betaln",
 
     Natural logarithm of absolute value of beta function.
 
-    Computes ``ln(abs(beta(x)))``.
+    Computes ``ln(abs(beta(a, b)))``.
     """)
 
 add_newdoc("scipy.special", "boxcox",
