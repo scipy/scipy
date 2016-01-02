@@ -196,8 +196,12 @@ __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'to_mlab_linkage', 'to_tree', 'ward', 'weighted', 'distance']
 
 
+class ClusterWarning(UserWarning):
+    pass
+
+
 def _warning(s):
-    warnings.warn('scipy.cluster: %s' % s, stacklevel=3)
+    warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
 
 
 def _copy_array_if_base_present(a):
@@ -340,8 +344,8 @@ def centroid(y):
     """
     Performs centroid/UPGMC linkage.
 
-    See ``linkage`` for more information on the return structure
-    and algorithm.
+    See ``linkage`` for more information on the input matrix,
+    return structure, and algorithm.
 
     The following are common calling conventions:
 
@@ -360,7 +364,7 @@ def centroid(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -406,7 +410,7 @@ def median(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -428,7 +432,7 @@ def median(y):
 
 def ward(y):
     """
-    Performs Ward's linkage on a condensed or redundant distance matrix.
+    Performs Ward's linkage on a condensed distance matrix.
 
     See linkage for more information on the return structure
     and algorithm.
@@ -448,7 +452,7 @@ def ward(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -470,15 +474,18 @@ def ward(y):
 
 def linkage(y, method='single', metric='euclidean'):
     """
-    Performs hierarchical/agglomerative clustering on the condensed
-    distance matrix y.
+    Performs hierarchical/agglomerative clustering.
+    
+    The input y may be either a 1d compressed distance matrix
+    or a 2d array of observation vectors.
 
-    y must be a :math:`{n \\choose 2}` sized
+    If y is a 1d compressed distance matrix,
+    then y must be a :math:`{n \\choose 2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very
     similar to the MATLAB linkage function.
 
-    An :math:`(n-1)` by 4  matrix ``Z`` is returned. At the
+    A :math:`(n-1)` by 4 matrix ``Z`` is returned. At the
     :math:`i`-th iteration, clusters with indices ``Z[i, 0]`` and
     ``Z[i, 1]`` are combined to form cluster :math:`n + i`. A
     cluster with an index less than :math:`n` corresponds to one of
@@ -599,7 +606,7 @@ def linkage(y, method='single', metric='euclidean'):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed distance matrix
+        A condensed distance matrix. A condensed distance matrix
         is a flat array containing the upper triangular of the distance matrix.
         This is the form that ``pdist`` returns. Alternatively, a collection of
         :math:`m` observation vectors in n dimensions may be passed as an
@@ -645,6 +652,11 @@ def linkage(y, method='single', metric='euclidean'):
                                int(_cpy_non_euclid_methods[method]))
 
     elif len(s) == 2:
+        if s[0] == s[1] and np.allclose(np.diag(y), 0):
+            if np.all(y >= 0) and np.allclose(y, y.T):
+                _warning('the symmetric non-negative hollow observation '
+                        'matrix looks suspiciously like an uncondensed '
+                        'distance matrix')
         X = y
         n = s[0]
         if method not in _cpy_linkage_methods:
