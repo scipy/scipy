@@ -48,6 +48,7 @@ class PchipInterpolator(BPoly):
     --------
     Akima1DInterpolator
     CubicSpline
+    BPoly
 
     Notes
     -----
@@ -246,6 +247,7 @@ class Akima1DInterpolator(PPoly):
     --------
     PchipInterpolator
     CubicSpline
+    PPoly
 
     Notes
     -----
@@ -342,7 +344,7 @@ class CubicSpline(PPoly):
     """Cubic spline data interpolator.
 
     Interpolate data with a piecewise cubic polynomial which is twice
-    continuously differentiable. The result is represented as a `PPoly`
+    continuously differentiable [1]_. The result is represented as a `PPoly`
     instance with breakpoints matching the given data.
 
     Parameters
@@ -386,22 +388,28 @@ class CubicSpline(PPoly):
     --------
     Akima1DInterpolator
     PchipInterpolator
+    PPoly
 
     Notes
     -----
-    .. versionadded:: 0.18.0
-
     There are two additional equations required to determine all coefficients
-    of polynomials on each segment. They are formed from the conditions, that
+    of polynomials on each segment. They are formed from the conditions that
     at the first and the last interior knots the third derivative is
     continuous. It essentially means that the first and the second segments
     (on both ends) are described by the same cubic polynomial. These conditions
     are called "not-a-knot" and are known to give better interpolation accuracy
-    when nothing is known about end point derivatives [1]_.
+    when nothing is known about end point derivatives [2]_.
+
+    When n=2 or n=3, then the solution is sought as a linear/quadratic
+    function passing through the given points.
+
+    .. versionadded:: 0.18.0
 
     References
     ----------
-    .. [1] de Boor, C., "A Practical Guide to Splines, Springer-Verlag", 1978.
+    .. [1] William H. Press et. al., "Numerical Recipes. The Art of Scientific
+           Computing. 3rd edition", Sec. 3.3.
+    .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
     def __init__(self, x, y, axis=0, extrapolate=True):
         x, y = map(np.asarray, (x, y))
@@ -423,7 +431,9 @@ class CubicSpline(PPoly):
             raise ValueError("`x` must be strictly increasing sequence.")
 
         # Find derivative values at each x[i] by solving a tridiagonal system.
-        # Cases n=2 and n=3 are solved by linear and quadratic interpolation.
+        # If n=2 or n=3, "not-a-knot" condition is not enough to determine
+        # derivatives. In this case the solution is chosen to be a
+        # linear/quadratic function passing through the given points.
         n = x.shape[0]
         y = np.rollaxis(y, axis)
         dxr = dx.reshape((dx.shape[0],) + (1,)*(y.ndim-1))
