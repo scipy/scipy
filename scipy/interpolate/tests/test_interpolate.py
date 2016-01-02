@@ -681,10 +681,10 @@ class TestAkima1DInterpolator(TestCase):
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         ak = Akima1DInterpolator(x, y)
         try:
-            ak.extend()
+            ak.extend(None, None)
         except NotImplementedError as e:
             if str(e) != ("Extending a 1D Akima interpolator is not "
-                    "yet implemented"):
+                          "yet implemented"):
                 raise
         except:
             raise
