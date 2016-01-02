@@ -346,7 +346,7 @@ class CubicSpline(PPoly):
     instance with breakpoints matching the given data.
 
     Parameters
-    ---------
+    ----------
     x : array_like, shape (n,)
         1-d array containing increasing values of the independent variable.
     y : array_like
@@ -368,8 +368,8 @@ class CubicSpline(PPoly):
     c : ndarray, shape (4, n-1, ...)
         Coefficients of the polynomials on each segment. The trailing
         dimensions match the dimensions of `y`, excluding `axis`. For example,
-        if `y` is 1-d, then ``c[k, i]`` is a coefficient for ``x**(3-k)`` on
-        a segment between ``x[i]`` and ``x[i+1]``.
+        if `y` is 1-d, then ``c[k, i]`` is a coefficient for
+        ``(x-x[i])**(3-k)`` on the segment between ``x[i]`` and ``x[i+1]``.
     axis : int
         Interpolation axis. The same `axis` which was passed to the
         constructor.

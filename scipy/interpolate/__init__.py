@@ -164,7 +164,7 @@ from .rbf import Rbf
 
 from .polyint import *
 
-from ._monotone import *
+from ._cubic import *
 
 from .ndgriddata import *
 
