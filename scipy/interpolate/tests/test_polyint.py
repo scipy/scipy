@@ -104,7 +104,7 @@ def test_deriv_shapes():
         return CubicSpline(x, y, axis).derivative()
 
     def cspline_antideriv(x, y, axis=0):
-        return CubicSpline(x, y, axis).derivative()
+        return CubicSpline(x, y, axis).antiderivative()
 
     for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
                pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv,
@@ -420,6 +420,12 @@ class TestPCHIP(TestCase):
 
 class TestCubicSpline(object):
     def test_general(self):
+        # This test can be reproduced in Octave/MATLAB with the following code:
+        # x = [-1, 0, 0.5, 2, 4, 4.5, 5.5, 9];
+        # y = [0, -0.5, 2, 3, 2.5, 1, 1, 0.5];
+        # x_eval = [-0.5, 0.1, 1, 3, 4.1, 5, 7];
+        # y_true = spline(x, y, x_eval);
+
         x = np.array([-1, 0, 0.5, 2, 4, 4.5, 5.5, 9])
         y = np.array([0, -0.5, 2, 3, 2.5, 1, 1, 0.5])
 
@@ -430,17 +436,17 @@ class TestCubicSpline(object):
             4.956649059572205])
 
         cs = CubicSpline(x, y)
-        assert_allclose(cs(x_test), y_true)
+        assert_allclose(cs(x_test), y_true, rtol=1e-12)
 
         Y = np.vstack((y, y)).T
         cs = CubicSpline(x, Y)
         Y_true = np.vstack((y_true, y_true)).T
-        assert_allclose(cs(x_test), Y_true)
+        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
 
         Y = np.vstack((y, y))
         cs = CubicSpline(x, Y, axis=1)
         Y_true = np.vstack((y_true, y_true))
-        assert_allclose(cs(x_test), Y_true)
+        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
 
         Y = np.empty((2, 2, 8))
         Y[0, 0, :] = y
@@ -453,7 +459,7 @@ class TestCubicSpline(object):
         Y_true[0, 1, :] = y_true
         Y_true[1, 0, :] = y_true
         Y_true[1, 1, :] = y_true
-        assert_allclose(cs(x_test), Y_true)
+        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
 
     def test_corner_cases(self):
         x = np.array([-1, 0, 1])
@@ -461,13 +467,43 @@ class TestCubicSpline(object):
         x_test = np.array([-0.5, 0.5])
         y_true = np.array([5/8, 1/8])
         cs = CubicSpline(x, y)
-        assert_allclose(cs(x_test), y_true)
+        assert_allclose(cs(x_test), y_true, rtol=1e-12)
 
         x = np.array([-1, 1])
         y = np.array([-1, 3])
         y_true = np.array([0, 2])
         cs = CubicSpline(x, y)
-        assert_allclose(cs(x_test), y_true)
+        assert_allclose(cs(x_test), y_true, rtol=1e-12)
+
+    def _check_continuity(self, S, alpha=1e-8):
+        x = S.x
+        dx = -alpha * np.diff(x)
+        for i in range(3):
+            D = S.derivative()
+            t = S(x[1:]) + D(x[1:]) * dx
+            v = S(x[1:] + dx)
+            assert_allclose(t, v, rtol=alpha*1e3)
+            S = D
+
+    def test_dtypes(self):
+        x = np.array([0, 1, 2, 3], dtype=int)
+        y = np.array([-5, 2, 3, 1], dtype=int)
+        cs = CubicSpline(x, y)
+        assert_allclose(y, cs(x), rtol=1e-12)
+        self._check_continuity(cs)
+
+        y = np.array([-1+1j, 0.0, 1-1j, 0.5-1.5j])
+        cs = CubicSpline(x, y)
+        assert_allclose(y, cs(x), rtol=1e-12)
+        self._check_continuity(cs)
+
+    def test_small_dx(self):
+        rng = np.random.RandomState(0)
+        x = np.sort(rng.uniform(size=100))
+        y = 1e4 + rng.uniform(size=100)
+        cs = CubicSpline(x, y)
+        assert_allclose(cs(x), y, rtol=1e-12)
+        self._check_continuity(cs)
 
 
 if __name__ == '__main__':
