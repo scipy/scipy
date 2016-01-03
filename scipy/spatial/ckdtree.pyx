@@ -352,7 +352,9 @@ cdef extern from "ckdtree_methods.h":
                      np.intp_t    *ii, 
                      const np.float64_t *xx,
                      const np.intp_t    n,
-                     const np.intp_t    k, 
+                     const np.intp_t    *k, 
+                     const np.intp_t    nk, 
+                     const np.intp_t    kmax, 
                      const np.float64_t eps, 
                      const np.float64_t p, 
                      const np.float64_t distance_upper_bound) 
@@ -572,7 +574,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     # -----
     
     @cython.boundscheck(False)
-    def query(cKDTree self, object x, np.intp_t k=1, np.float64_t eps=0,
+    def query(cKDTree self, object x, object k=1, np.float64_t eps=0,
               np.float64_t p=2, np.float64_t distance_upper_bound=INFINITY,
               np.intp_t n_jobs=1):
         """
@@ -584,8 +586,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         ----------
         x : array_like, last dimension self.m
             An array of points to query.
-        k : integer
-            The number of nearest neighbors to return.
+        k : list of integer or integer
+            The list of k-th nearest neighbors to return. If k is an 
+            integer it is treated as a list of [1, ... k] (range(1, k+1)).
+            Note that the counting starts from 1.
         eps : non-negative float
             Return approximate nearest neighbors; the k-th returned value 
             is guaranteed to be no further than (1+eps) times the 
@@ -608,25 +612,55 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         -------
         d : array of floats
             The distances to the nearest neighbors. 
-            If x has shape tuple+(self.m,), then d has shape tuple+(k,).
+            If x has shape tuple+(self.m,), then d has shape tuple+(len(k),).
+            When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
             The locations of the neighbors in self.data.
-            If `x` has shape tuple+(self.m,), then `i` has shape tuple+(k,).
+            If `x` has shape tuple+(self.m,), then `i` has shape tuple+(len(k),).
+            When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with self.n.
 
         Notes
         -----
         If the KD-Tree is periodic, the position :py:code:`x` is wrapped into the
         box.
+        
+        When the input k is a list, a query for arange(max(k)) is performed, but
+        only columns that store the requested values of k are preserved. This is 
+        implemented in a manner that reduces memory usage.
+
+        Examples
+        --------
+        
+        >>> tree = cKDTree(data)
+
+        To query the nearest neighbours and return squeezed result, use
+
+        >>> dd, ii = tree.query(x, k=1)
+
+        To query the nearest neighbours and return unsqueezed result, use
+
+        >>> dd, ii = tree.query(x, k=[1])
+
+        To query the second nearest neighbours and return unsqueezed result, use
+
+        >>> dd, ii = tree.query(x, k=[2])
+
+        To query the first and second nearest neighbours, use
+
+        >>> dd, ii = tree.query(x, k=2)
+
+        or, be more specific
+
+        >>> dd, ii = tree.query(x, k=[1, 2])
+
 
         """
         
         cdef:
-            np.ndarray[np.intp_t, ndim=2] ii
-            np.ndarray[np.float64_t, ndim=2] dd
-            np.ndarray[np.float64_t, ndim=2] xx      
-            np.intp_t c, n, i, j, CHUNK
+            np.intp_t n, i, j
+            int overflown
         
         x_arr = np.asarray(x, dtype=np.float64)
         if x_arr.ndim == 0 or x_arr.shape[x_arr.ndim - 1] != self.m:
@@ -640,43 +674,48 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         else:
             single = False
 
+        nearest = False
+        if np.isscalar(k):
+            if k == 1:
+                nearest = True
+            k = np.arange(1, k + 1)
+    
         retshape = np.shape(x)[:-1]
         n = <np.intp_t> np.prod(retshape)
         xx = np.ascontiguousarray(x_arr).reshape(n, self.m)
-        dd = np.empty((n,k),dtype=np.float64)
+        dd = np.empty((n,len(k)),dtype=np.float64)
         dd.fill(INFINITY)
-        ii = np.empty((n,k),dtype=np.intp)
+        ii = np.empty((n,len(k)),dtype=np.intp)
         ii.fill(self.n)
 
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.
+        def _thread_func(self, np.intp_t start, np.intp_t stop):
+            cdef: 
+                np.ndarray[np.intp_t,ndim=2] _ii = ii
+                np.ndarray[np.float64_t,ndim=2] _dd = dd
+                np.ndarray[np.float64_t,ndim=2] _xx = xx
+                np.ndarray[np.intp_t,ndim=1] _k = np.array(k, dtype=np.intp)
+            
+            kmax = np.max(k)
+
+            query_knn(<ckdtree*>self, &_dd[start,0], &_ii[start,0], 
+                &_xx[start,0], stop-start, &_k[0], len(k), kmax, eps, p, distance_upper_bound)
         
         if (n_jobs == -1): 
             n_jobs = number_of_processors
         
         if n_jobs > 1:
             # static scheduling without load balancing is good enough
-            CHUNK = n//n_jobs if n//n_jobs else n
                              
-            def _thread_func(self, _dd, _ii, _xx, _j, n, CHUNK, p, k, eps, dub):
-                cdef: 
-                    np.intp_t j = _j
-                    np.ndarray[np.intp_t,ndim=2] ii = _ii
-                    np.ndarray[np.float64_t,ndim=2] dd = _dd
-                    np.ndarray[np.float64_t,ndim=2] xx = _xx
-                    np.intp_t start = j*CHUNK
-                    np.intp_t stop = start + CHUNK
-                stop = n if stop > n else stop
-                if start < n:
-                    query_knn(<ckdtree*>self, &dd[start,0], &ii[start,0], 
-                        &xx[start,0], stop-start, k, eps, p, dub)
+            ranges = [(j * n // n_jobs, (j + 1) * n // n_jobs)
+                            for j in range(n_jobs)]
             
             # There might be n_jobs+1 threads spawned here, but only n_jobs of 
             # them will do significant work.
             threads = [threading.Thread(target=_thread_func,
-                                        args=(self, dd, ii, xx, j, n, CHUNK, p,
-                                              k, eps, distance_upper_bound))
-                             for j in range(1+(n//CHUNK))]
+                                args=(self, start, stop)) for start, stop in ranges]
+
             # Set the daemon flag so the process can be aborted, 
             # start all threads and wait for completion.
             for t in threads:
@@ -685,46 +724,43 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             for t in threads: 
                 t.join()
         else:
-            query_knn(<ckdtree*>self, &dd[0,0], &ii[0,0], &xx[0,0], 
-                n, k, eps, p, distance_upper_bound)
+            _thread_func(self, 0, n)
                 
-        if single:
-            if k == 1:
-                if sizeof(long) < sizeof(np.intp_t):
-                    # ... e.g. Windows 64
-                    if ii[0,0] <= <np.intp_t>LONG_MAX:
-                        return dd[0,0], int(ii[0,0])
-                    else:
-                        return dd[0,0], ii[0,0]
-                else:
-                    # ... most other platforms
-                    return dd[0,0], ii[0,0]
+        # massage the output in conformabity to the documented behavior
+
+        if sizeof(long) < sizeof(np.intp_t):
+            # ... e.g. Windows 64
+            overflown = False
+            for i in range(n):
+                for j in range(len(k)):
+                    if ii[i,j] > <np.intp_t>LONG_MAX:
+                        # C long overlow, return array of dtype=np.int_p
+                        overflown = True
+                        break
+                if overflown: 
+                    break
+
+            if overflown:
+                ddret = np.reshape(dd,retshape+(len(k),))
+                iiret = np.reshape(ii,retshape+(len(k),))
             else:
-                return dd[0], ii[0]
+                ddret = np.reshape(dd,retshape+(len(k),))
+                iiret = np.reshape(ii,retshape+(len(k),)).astype(int) 
+                        
         else:
-            if sizeof(long) < sizeof(np.intp_t):
-                # ... e.g. Windows 64
-                for i in range(n):
-                    for j in range(k):
-                        if ii[i,j] > <np.intp_t>LONG_MAX:
-                            # C long overlow, return array of dtype=np.int_p
-                            if k==1:
-                                return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
-                            else:
-                                return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
+            # ... most other platforms
+            ddret = np.reshape(dd,retshape+(len(k),))
+            iiret = np.reshape(ii,retshape+(len(k),))
 
-                # no C long overlow, return array of dtype=int
-                if k==1:
-                    return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape).astype(int)
-                else:
-                    return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,)).astype(int)     
-
-            else:
-                # ... most other platforms
-                if k==1:
-                    return np.reshape(dd[...,0],retshape), np.reshape(ii[...,0],retshape)
-                else:
-                    return np.reshape(dd,retshape+(k,)), np.reshape(ii,retshape+(k,))
+        if nearest:
+            ddret = ddret[..., 0]
+            iiret = iiret[..., 0]
+            # the only case where we return a python scalar
+            if single:
+                ddret = float(ddret)
+                iiret = int(iiret)
+            
+        return ddret, iiret
 
     # ----------------
     # query_ball_point

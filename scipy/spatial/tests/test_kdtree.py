@@ -1004,6 +1004,40 @@ def test_ckdtree_view():
 # cKDTree is specialized to type double points, so no need to make
 # a unit test corresponding to test_ball_point_ints()
 
+def test_ckdtree_list_k():
+    # check ckdtree periodic boundary
+    n = 200
+    m = 2
+    klist = [1, 2, 3]
+    kint = 3
+
+    np.random.seed(1234)
+    data = np.random.uniform(size=(n, m))
+    kdtree = cKDTree(data, leafsize=1)
+
+    # check agreement between arange(1,k+1) and k
+    dd, ii = kdtree.query(data, klist)
+    dd1, ii1 = kdtree.query(data, kint)
+    assert_equal(dd, dd1)
+    assert_equal(ii, ii1)
+
+    # now check skipping one element
+    klist = np.array([1, 3])
+    kint = 3
+    dd, ii = kdtree.query(data, kint)
+    dd1, ii1 = kdtree.query(data, klist)
+    assert_equal(dd1, dd[..., klist - 1])
+    assert_equal(ii1, ii[..., klist - 1])
+
+    # check k == 1 special case
+    # and k == [1] non-special case
+    dd, ii = kdtree.query(data, 1)
+    dd1, ii1 = kdtree.query(data, [1])
+    assert_equal(len(dd.shape), 1)
+    assert_equal(len(dd1.shape), 2)
+    assert_equal(dd, np.ravel(dd1))
+    assert_equal(ii, np.ravel(ii1))
+
 def test_ckdtree_box():
     # check ckdtree periodic boundary
     n = 2000
