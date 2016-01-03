@@ -1207,13 +1207,14 @@ def test_len0_arrays():
 
 def test_ckdtree_duplicated_inputs():
     # check ckdtree with duplicated inputs
-    # it shall not divide more than m nodes.
     n = 1024 
     for m in range(1, 8):
         data = np.concatenate([
             np.ones((n // 2, m)) * 1,
             np.ones((n // 2, m)) * 2], axis=0)
 
+        # it shall not divide more than 3 nodes.
+        # root left (1), and right (2)
         kdtree = cKDTree(data, leafsize=1)
         assert_equal(kdtree.size, 3)
 
@@ -1221,7 +1222,8 @@ def test_ckdtree_duplicated_inputs():
         assert_equal(kdtree.size, 3)
 
         # if compact_nodes are disabled, the number
-        # of nodes is  n - 1
+        # of nodes is n (per leaf) + (m - 1)* 2 (splits per dimension) + 1
+        # and the root
         kdtree = cKDTree(data, compact_nodes=False, leafsize=1)
         assert_equal(kdtree.size, n + m * 2 - 1)
 
