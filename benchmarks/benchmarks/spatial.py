@@ -106,7 +106,7 @@ class Neighbors(Benchmark):
          (8,1000,1000),
          (16,1000,1000)],
         [0.2, 0.5],
-        ['KDTree', 'cKDTree'],
+        ['KDTree', 'cKDTree', 'cKDTree_weighted'],
     ]
     param_names = ['(m, n1, n2)', 'probe radius', 'class']
 
@@ -120,6 +120,9 @@ class Neighbors(Benchmark):
         data2 = np.concatenate((np.random.randn(n2//2,m),
                                 np.random.randn(n2-n2//2,m)+np.ones(m)))
 
+        self.w1 = np.ones(n1)
+        self.w2 = np.ones(n2)
+
         self.T1 = cls(data1)
         self.T2 = cls(data2)
 
@@ -131,9 +134,12 @@ class Neighbors(Benchmark):
         Count neighbors kd-tree
         dim | # points T1 | # points T2 | probe radius |  KDTree  | cKDTree
         """
-        self.T1.count_neighbors(self.T2, probe_radius)
+        if cls_str != 'cKDTree_weighted':
+            self.T1.count_neighbors(self.T2, probe_radius)
+        else:
+            self.T1.count_neighbors(self.T2, probe_radius, self_weights=self.w1, other_weights=self.w2)
 
-class CNeighborsDeep(Benchmark):
+class CNeighbors(Benchmark):
     params = [
         [
           (2,1000,1000),
@@ -149,7 +155,9 @@ class CNeighborsDeep(Benchmark):
 
         data1 = np.random.uniform(size=(n1, m))
         data2 = np.random.uniform(size=(n2, m))
-
+        self.w1 = np.ones(len(data1))
+        self.w2 = np.ones(len(data2))
+ 
         self.T1d = cKDTree(data1, leafsize=1)
         self.T2d = cKDTree(data2, leafsize=1)
         self.T1s = cKDTree(data1, leafsize=8)
@@ -169,3 +177,4 @@ class CNeighborsDeep(Benchmark):
         dim | # points T1 | # points T2 | Nr
         """
         self.T1s.count_neighbors(self.T2s, self.r)
+
