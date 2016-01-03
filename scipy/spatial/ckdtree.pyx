@@ -465,6 +465,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         is the boxsize along i-th dimension. The input data shall be wrapped 
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is 
         outside of this bound.
+
+    Attributes
+    ----------
+    size : int
+        The number of nodes in the tree.
+
     """
     cdef:
         vector[ckdtreenode]      *tree_buffer
@@ -484,6 +490,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         readonly object          boxsize
         np.ndarray               boxsize_data
         np.float64_t             *raw_boxsize_data
+
+    property size:
+        def __get__(self):
+            return self.tree_buffer.size()
 
     def __cinit__(cKDTree self):
         self.tree_buffer = NULL        

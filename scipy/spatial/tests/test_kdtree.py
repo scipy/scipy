@@ -1205,5 +1205,21 @@ def test_len0_arrays():
     z = np.empty(shape=(0,2), dtype=np.intp)
     assert_array_equal(y, z)
 
+def test_ckdtree_duplicated_inputs():
+    # check ckdtree with duplicated inputs
+    # it shall not divide more than m nodes.
+    
+    for m in range(1, 4):
+        data = np.concatenate([
+            np.ones((100000, m)) * 1,
+            np.ones((100000, m)) * 2], axis=0)
+
+        kdtree = cKDTree(data, leafsize=1)
+        assert_equal(kdtree.size, 3)
+
+        kdtree = cKDTree(data)
+
+        assert_equal(kdtree.size, 3)
+
 if __name__ == "__main__":
     run_module_suite()
