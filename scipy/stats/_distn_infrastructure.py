@@ -185,7 +185,7 @@ Display the probability density function (``pdf``):
 
 Alternatively, the distribution object can be called (as a function)
 to fix the shape, location and scale parameters. This returns a "frozen"
-RV object holding the given parameters fixed. 
+RV object holding the given parameters fixed.
 
 Freeze the distribution and display the frozen ``pdf``:
 
@@ -306,8 +306,8 @@ Display the probability mass function (``pmf``):
 >>> ax.vlines(x, 0, %(name)s.pmf(x, %(shapes)s), colors='b', lw=5, alpha=0.5)
 
 Alternatively, the distribution object can be called (as a function)
-to fix the shape and location. This returns a "frozen" RV object holding 
-the given parameters fixed. 
+to fix the shape and location. This returns a "frozen" RV object holding
+the given parameters fixed.
 
 Freeze the distribution and display the frozen ``pmf``:
 
@@ -1308,7 +1308,7 @@ class rv_continuous(rv_generic):
     Notes
     -----
     Public methods of an instance of a distribution class (e.g., ``pdf``,
-    ``cdf``) check their arguments and pass valid arguments to private, 
+    ``cdf``) check their arguments and pass valid arguments to private,
     computational methods (``_pdf``, ``_cdf``). For ``pdf(x)``, ``x`` is valid
     if it is within the support of a distribution, ``self.a <= x <= self.b``.
     Whether a shape parameter is valid is decided by an ``_argcheck`` method
@@ -1376,7 +1376,7 @@ class rv_continuous(rv_generic):
      - If you can't compute one of these, return it as None
      - Can also be defined with a keyword argument ``moments``, which is a
        string composed of "m", "v", "s", and/or "k".
-       Only the components appearing in string should be computed and 
+       Only the components appearing in string should be computed and
        returned in the order "m", "v", "s", or "k"  with missing values
        returned as None.
 
@@ -1402,7 +1402,7 @@ class rv_continuous(rv_generic):
     Note that above we defined a standard normal distribution, with zero mean
     and unit variance. Shifting and scaling of the distribution can be done
     by using ``loc`` and ``scale`` parameters: ``gaussian.pdf(x, loc, scale)``
-    essentially computes ``y = (x - loc) / scale`` and 
+    essentially computes ``y = (x - loc) / scale`` and
     ``gaussian._pdf(y) / scale``.
 
     """
@@ -1444,11 +1444,6 @@ class rv_continuous(rv_generic):
         self.vecentropy = vectorize(self._entropy, otypes='d')
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self._cdfvec.nin = self.numargs + 1
-
-        # backwards compat.  these were removed in 0.14.0, put back but
-        # deprecated in 0.14.1:
-        self.vecfunc = np.deprecate(self._ppfvec, "vecfunc")
-        self.veccdf = np.deprecate(self._cdfvec, "veccdf")
 
         self.extradoc = extradoc
         if momtype == 0:
@@ -2078,9 +2073,9 @@ class rv_continuous(rv_generic):
 
         Now we can fit all four parameters (``a``, ``b``, ``loc`` and ``scale``):
 
-        >>> a1, b1, loc1, scale1 = beta.fit(x)        
+        >>> a1, b1, loc1, scale1 = beta.fit(x)
 
-        We can also use some prior knowledge about the dataset: let's keep 
+        We can also use some prior knowledge about the dataset: let's keep
         ``loc`` and ``scale`` fixed:
 
         >>> a1, b1, loc1, scale1 = beta.fit(x, floc=0, fscale=1)
@@ -2588,7 +2583,7 @@ class rv_discrete(rv_generic):
 
     - the support of the distribution is a set of integers
     - instead of the probability density function, ``pdf`` (and the
-      corresponding private ``_pdf``), this class defines the 
+      corresponding private ``_pdf``), this class defines the
       *probability mass function*, `pmf` (and the corresponding
       private ``_pmf``.)
     - scale parameter is not defined.
@@ -2691,7 +2686,7 @@ class rv_discrete(rv_generic):
             self.moment_gen = instancemethod(_drv_moment_gen,
                                              self, rv_discrete)
 
-            self.shapes = ' '   # bypass inspection 
+            self.shapes = ' '   # bypass inspection
             self._construct_argparser(meths_to_inspect=[self._pmf],
                                       locscale_in='loc=0',
                                       # scale=1 for discrete RVs
@@ -2708,11 +2703,6 @@ class rv_discrete(rv_generic):
             _vec_generic_moment.nin = self.numargs + 2
             self.generic_moment = instancemethod(_vec_generic_moment,
                                                  self, rv_discrete)
-            # backwards compat.  was removed in 0.14.0, put back but
-            # deprecated in 0.14.1:
-            self.vec_generic_moment = np.deprecate(_vec_generic_moment,
-                                                   "vec_generic_moment",
-                                                   "generic_moment")
 
             # correct nin for ppf vectorization
             _vppf = vectorize(_drv2_ppfsingle, otypes='d')
@@ -3248,7 +3238,7 @@ class rv_discrete(rv_generic):
             if count > maxcount:
                 warnings.warn('expect(): sum did not converge', RuntimeWarning)
                 return tot / invfac
-        
+
         # iterate over [lb, x0)
         for x in _iter_chunked(x0-1, lb-1, chunksize=chunksize, inc=-self.inc):
             count += x.size
@@ -3268,7 +3258,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     x0 must be finite, x1 need not be. In the latter case, the iterator is infinite.
     Handles both x0 < x1 and x0 > x1. In the latter case, iterates downwards
     (make sure to set inc < 0.)
-    
+
     >>> [x for x in _iter_chunked(2, 5, inc=2)]
     [array([2, 4])]
     >>> [x for x in _iter_chunked(2, 11, inc=2)]
@@ -3286,7 +3276,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
 
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)
-    
+
     x = x0
     while (x - x1) * inc < 0:
         delta = min(stepsize, abs(x - x1))
