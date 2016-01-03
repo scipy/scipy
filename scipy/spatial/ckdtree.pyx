@@ -1084,9 +1084,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     @cython.boundscheck(False)
     def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2., 
-                        object self_weights=None, object other_weights=None):
+                        object self_weights=None, object other_weights=None, int cumulative=True):
         """
-        count_neighbors(self, other, r, p=2., self_weights=None, other_weights=None)
+        count_neighbors(self, other, r, p=2., self_weights=None, other_weights=None, cumulative=True)
 
         Count how many nearby pairs can be formed.
 
@@ -1118,12 +1118,16 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             weight of each data point in other. 
             If None, the pair-counting is unweighted (weighted by 1) for 'other'.
             Default: None
+        cumulative : boolean
+            Whether the returned counts are cumulative. 
 
         Returns
         -------
         result : scalar or 1-D array
             The number of pairs. For unweighted counts, the result is integer.
             For weighted counts, the result is float.
+            If cumulative is False, `result[i]` contains the counts with
+            `r[i-1] or -inf < R <= r[i]`
         """
         cdef: 
             int r_ndim
@@ -1150,7 +1154,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             raise ValueError("r must be either a single value or a "
                              "one-dimensional array of values")
         real_r = np.array(r, ndmin=1, dtype=np.float64, copy=True)
-        real_r, inverse = np.unique(real_r, return_inverse=True)
+        real_r, uind, inverse = np.unique(real_r, return_inverse=True, return_index=True)
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
@@ -1195,8 +1199,14 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                                     n_queries,
                                     &real_r[0], &fresults[0], p)
 
-        results = results.cumsum()
-        results = results[inverse]
+        if cumulative:
+            results = results.cumsum()
+            results = results[inverse]
+        else:
+            results2 = np.zeros_like(results)
+            results2[uind] = results[inverse][uind]
+            results = results2
+
         if r_ndim == 0:
             if int_result and results[0] <= <np.intp_t> LONG_MAX:
                 return int(results[0])
