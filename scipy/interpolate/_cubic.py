@@ -393,7 +393,7 @@ class CubicSpline(PPoly):
 
     Notes
     -----
-    There are two additional equations required to determine all coefficients
+    Two additional equations are required to determine all coefficients
     of polynomials on each segment. They are formed from the conditions that
     at the first and the last interior knots the third derivative is
     continuous. It essentially means that the first and the second segments
@@ -401,10 +401,32 @@ class CubicSpline(PPoly):
     are called "not-a-knot" and are known to give better interpolation accuracy
     when nothing is known about end point derivatives [2]_.
 
-    When n=2 or n=3, then the solution is sought as a linear/quadratic
-    function passing through the given points.
+    When n=2 or n=3, the solution is sought as a linear/quadratic function
+    passing through the given points.
 
     .. versionadded:: 0.18.0
+
+    Examples
+    --------
+    In this example the cubic spline is used to interpolate a sampled sinusoid.
+    You can see that the spline continuity property holds for the first and
+    second derivatives and violates only for the third derivative.
+
+    >>> from scipy.interpolate import CubicSpline
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.arange(10)
+    >>> y = np.sin(x)
+    >>> cs = CubicSpline(x, y)
+    >>> x_s = np.arange(-0.5, 9.6, 0.1)
+    >>> plt.figure(figsize=(6.5, 4))
+    >>> plt.plot(x, y, 'o', label='data')
+    >>> plt.plot(x_s, cs(x_s), label="S")
+    >>> plt.plot(x_s, cs(x_s, 1), label="S'")
+    >>> plt.plot(x_s, cs(x_s, 2), label="S''")
+    >>> plt.plot(x_s, cs(x_s, 3), label="S'''")
+    >>> plt.xlim(-0.5, 9.5)
+    >>> plt.legend(loc='lower left', ncol=2)
+    >>> plt.show()
 
     References
     ----------
