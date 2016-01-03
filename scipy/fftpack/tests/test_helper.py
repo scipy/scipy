@@ -12,15 +12,12 @@ Run tests if fftpack is not installed:
   python tests/test_helper.py [<level>]
 """
 
-from numpy.testing import (TestCase, assert_array_almost_equal, rand,
+from numpy.testing import (TestCase, assert_array_almost_equal,
                            run_module_suite)
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 
 from numpy import pi
-
-
-def random(size):
-    return rand(*size)
+from numpy.random import random
 
 
 class TestFFTShift(TestCase):

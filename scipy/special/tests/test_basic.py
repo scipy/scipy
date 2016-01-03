@@ -26,13 +26,13 @@ import itertools
 import warnings
 
 import numpy as np
-from numpy import array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp, \
-        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_
+from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
+        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_)
 
-from numpy.testing import assert_equal, assert_almost_equal, \
-        assert_array_equal, assert_array_almost_equal, assert_approx_equal, \
-        assert_, rand, dec, TestCase, run_module_suite, assert_allclose, \
-        assert_raises, assert_array_almost_equal_nulp
+from numpy.testing import (assert_equal, assert_almost_equal,
+        assert_array_equal, assert_array_almost_equal, assert_approx_equal,
+        assert_, dec, TestCase, run_module_suite, assert_allclose,
+        assert_raises, assert_array_almost_equal_nulp)
 
 from scipy import special
 import scipy.special._ufuncs as cephes
@@ -2170,8 +2170,8 @@ class TestBessel(TestCase):
         assert_almost_equal(o1ke,o1ker,8)
 
     def test_jacobi(self):
-        a = 5*rand() - 1
-        b = 5*rand() - 1
+        a = 5*np.random.random() - 1
+        b = 5*np.random.random() - 1
         P0 = special.jacobi(0,a,b)
         P1 = special.jacobi(1,a,b)
         P2 = special.jacobi(2,a,b)
@@ -2576,7 +2576,7 @@ class TestLaguerre(TestCase):
         assert_array_almost_equal(lag5.c,array([-1,25,-200,600,-600,120])/120.0,13)
 
     def test_genlaguerre(self):
-        k = 5*rand()-0.9
+        k = 5*np.random.random() - 0.9
         lag0 = special.genlaguerre(0,k)
         lag1 = special.genlaguerre(1,k)
         lag2 = special.genlaguerre(2,k)
