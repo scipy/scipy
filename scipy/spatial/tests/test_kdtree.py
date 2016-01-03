@@ -1107,7 +1107,7 @@ def test_ckdtree_memuse():
     # outside cKDTree
     assert_(num_leaks < 10)
 
-def test_ckdtree_weights ():
+def test_ckdtree_weights():
 
     data = np.linspace(0, 1, 4).reshape(-1, 1)
     tree1 = cKDTree(data, leafsize=1)
@@ -1117,7 +1117,7 @@ def test_ckdtree_weights ():
 
     try:
         tree1.build_weights(weights[:-1])
-        raise AssertionError("Excpetion is not raised for short weights list")
+        raise AssertionError("Exception is not raised for short weights list")
     except ValueError:
         pass
 

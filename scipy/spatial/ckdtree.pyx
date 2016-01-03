@@ -1099,9 +1099,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         p : float, optional 
             1<=p<=infinity, default 2.0
             Which Minkowski p-norm to use
-        self_weights : array_like
+        self_weights : array-like or None, optional
             weight of each data point in self. None is unweighted.
-        other_weights : array_like
+        other_weights : array-like or None, optional
             weight of each data point in other. None is unweighted.
 
         Returns
