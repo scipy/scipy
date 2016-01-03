@@ -1086,7 +1086,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         "N-body problems in statistical learning", and the code here is based
         on their algorithm.
 
-        If not None, data points are weighted by `self_weights` and `other_weights`. 
+        Data points on self and other are optionally weighted by 
+        `self_weights` and `other_weights`. 
 
         Parameters
         ----------
@@ -1099,9 +1100,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             1<=p<=infinity, default 2.0
             Which Minkowski p-norm to use
         self_weights : array-like or None, optional
-            weight of each data point in self. None is unweighted.
+            weight of each data point in self. 
+            If None, the pair-counting is unweighted (weighted by 1) for 'self'.
+            Default: None
         other_weights : array-like or None, optional
-            weight of each data point in other. None is unweighted.
+            weight of each data point in other. 
+            If None, the pair-counting is unweighted (weighted by 1) for 'other'.
+            Default: None
 
         Returns
         -------
