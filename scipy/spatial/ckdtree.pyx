@@ -1160,23 +1160,16 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                     real_r[i] = real_r[i] ** p
 
         if self_weights is None and other_weights is None:
+            int_result = True
             # unweighted, use the integer arithmetics
-            results = np.zeros(n_queries, dtype=np.intp)
+            results = np.zeros(n_queries + 1, dtype=np.intp)
 
             iresults = results
             count_neighbors_unweighted(<ckdtree*> self, <ckdtree*> other, n_queries,
                             &real_r[0], &iresults[0], p)
-        
-            results = results[inverse]
 
-            if r_ndim == 0:
-                if results[0] <= <np.intp_t> LONG_MAX:
-                    return int(results[0])
-                else:
-                    return results[0]
-            else:
-                return results
         else:
+            int_result = False
             # weighted / half weighted, use the floating point arithmetics
             if self_weights is not None:
                 w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
@@ -1195,17 +1188,22 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 w2p = NULL
                 w2np = NULL
 
-            results = np.zeros(n_queries, dtype=np.float64)
+            results = np.zeros(n_queries + 1, dtype=np.float64)
             fresults = results
             count_neighbors_weighted(<ckdtree*> self, <ckdtree*> other,
                                     w1p, w2p, w1np, w2np,
                                     n_queries,
                                     &real_r[0], &fresults[0], p)
-            results = results[inverse]
-            if r_ndim == 0:
-                return results[0]
+
+        results = results.cumsum()
+        results = results[inverse]
+        if r_ndim == 0:
+            if int_result and results[0] <= <np.intp_t> LONG_MAX:
+                return int(results[0])
             else:
-                return results
+                return results[0]
+        else:
+            return results
     
     # ----------------------
     # sparse_distance_matrix

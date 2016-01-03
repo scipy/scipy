@@ -138,8 +138,8 @@ traverse(const ckdtree *self, const ckdtree *other,
     start = bsearch_first(tracker->min_distance, r, start, end);
     end = bsearch_first(tracker->max_distance, r, start, end);
 
-    for (i=end; i <old_end; ++i) {
-        results[i] += WeightType::get_node_weight(w, node1, node2);
+    if(end - start == 0) {
+        results[start] += WeightType::get_node_weight(w, node1, node2);
     }
 
     if (end - start > 0) {
@@ -185,14 +185,9 @@ traverse(const ckdtree *self, const ckdtree *other,
                                 sdata + sindices[i] * m,
                                 odata + oindices[j] * m,
                                 p, m, tmd);
-                        /*
-                         * I think it's usually cheaper to test d against all 
-                         * r's than to generate a distance array, sort it, then
-                         * search for all r's via binary search
-                         */
-                        for (l=start; l<end; ++l) {
-                            if (d <= r[l]) results[l] += WeightType::get_weight(w, sindices[i], sindices[j]);
-                        }
+
+                        l = bsearch_first(d, r, start, end);
+                        results[l] += WeightType::get_weight(w, sindices[i], sindices[j]);   
                     }
                 }
             }
