@@ -51,15 +51,6 @@ Moments
     kurtosis
     normaltest
 
-Moments Handling NaN:
-
-.. autosummary::
-   :toctree: generated/
-
-    nanmean
-    nanmedian
-    nanstd
-
 Altered Versions
 ----------------
 .. autosummary::
@@ -202,8 +193,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
-           'ss', 'square_of_sums', 'fastsort', 'rankdata', 'nanmean',
-           'nanstd', 'nanmedian', 'combine_pvalues', ]
+           'ss', 'square_of_sums', 'fastsort', 'rankdata',
+           'combine_pvalues', ]
 
 
 def _chk_asarray(a, axis):
@@ -260,213 +251,6 @@ def _contains_nan(a, nan_policy='propagate'):
         raise ValueError("The input contains nan values")
 
     return (contains_nan, nan_policy)
-
-
-#######
-#  NAN friendly functions
-########
-
-
-@np.deprecate(message="scipy.stats.nanmean is deprecated in scipy 0.15.0 "
-                   "in favour of numpy.nanmean.")
-def nanmean(x, axis=0):
-    """
-    Compute the mean over the given axis ignoring nans.
-
-    Parameters
-    ----------
-    x : ndarray
-        Input array.
-    axis : int or None, optional
-        Axis along which the mean is computed. Default is 0.
-        If None, compute over the whole array `x`.
-
-    Returns
-    -------
-    m : float
-        The mean of `x`, ignoring nans.
-
-    See Also
-    --------
-    nanstd, nanmedian
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> a = np.linspace(0, 4, 3)
-    >>> a
-    array([ 0.,  2.,  4.])
-    >>> a[-1] = np.nan
-    >>> stats.nanmean(a)
-    1.0
-
-    """
-    x, axis = _chk_asarray(x, axis)
-    x = x.copy()
-    Norig = x.shape[axis]
-    mask = np.isnan(x)
-    factor = 1.0 - np.sum(mask, axis) / Norig
-
-    x[mask] = 0.0
-    return np.mean(x, axis) / factor
-
-
-@np.deprecate(message="scipy.stats.nanstd is deprecated in scipy 0.15 "
-                      "in favour of numpy.nanstd.\nNote that numpy.nanstd "
-                      "has a different signature.")
-def nanstd(x, axis=0, bias=False):
-    """
-    Compute the standard deviation over the given axis, ignoring nans.
-
-    Parameters
-    ----------
-    x : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which the standard deviation is computed. Default is 0.
-        If None, compute over the whole array `x`.
-    bias : bool, optional
-        If True, the biased (normalized by N) definition is used. If False
-        (default), the unbiased definition is used.
-
-    Returns
-    -------
-    s : float
-        The standard deviation.
-
-    See Also
-    --------
-    nanmean, nanmedian
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> a = np.arange(10, dtype=float)
-    >>> a[1:3] = np.nan
-    >>> np.std(a)
-    nan
-    >>> stats.nanstd(a)
-    2.9154759474226504
-    >>> stats.nanstd(a.reshape(2, 5), axis=1)
-    array([ 2.0817,  1.5811])
-    >>> stats.nanstd(a.reshape(2, 5), axis=None)
-    2.9154759474226504
-
-    """
-    x, axis = _chk_asarray(x, axis)
-    x = x.copy()
-    Norig = x.shape[axis]
-
-    mask = np.isnan(x)
-    Nnan = np.sum(mask, axis) * 1.0
-    n = Norig - Nnan
-
-    x[mask] = 0.0
-    m1 = np.sum(x, axis) / n
-
-    if axis:
-        d = x - np.expand_dims(m1, axis)
-    else:
-        d = x - m1
-
-    d *= d
-
-    m2 = np.sum(d, axis) - m1 * m1 * Nnan
-
-    if bias:
-        m2c = m2 / n
-    else:
-        m2c = m2 / (n - 1.0)
-
-    return np.sqrt(m2c)
-
-
-def _nanmedian(arr1d):  # This only works on 1d arrays
-    """Private function for rank a arrays. Compute the median ignoring Nan.
-
-    Parameters
-    ----------
-    arr1d : ndarray
-        Input array, of rank 1.
-
-    Results
-    -------
-    m : float
-        The median.
-    """
-    x = arr1d.copy()
-    c = np.isnan(x)
-    s = np.where(c)[0]
-    if s.size == x.size:
-        warnings.warn("All-NaN slice encountered", RuntimeWarning)
-        return np.nan
-    elif s.size != 0:
-        # select non-nans at end of array
-        enonan = x[-s.size:][~c[-s.size:]]
-        # fill nans in beginning of array with non-nans of end
-        x[s[:enonan.size]] = enonan
-        # slice nans away
-        x = x[:-s.size]
-    return np.median(x, overwrite_input=True)
-
-@np.deprecate(message="scipy.stats.nanmedian is deprecated in scipy 0.15 "
-                      "in favour of numpy.nanmedian.")
-def nanmedian(x, axis=0):
-    """
-    Compute the median along the given axis ignoring nan values.
-
-    Parameters
-    ----------
-    x : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which the median is computed. Default is 0.
-        If None, compute over the whole array `x`.
-
-    Returns
-    -------
-    m : float
-        The median of `x` along `axis`.
-
-    See Also
-    --------
-    nanstd, nanmean, numpy.nanmedian
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> a = np.array([0, 3, 1, 5, 5, np.nan])
-    >>> stats.nanmedian(a)
-    array(3.0)
-
-    >>> b = np.array([0, 3, 1, 5, 5, np.nan, 5])
-    >>> stats.nanmedian(b)
-    array(4.0)
-
-    Example with axis:
-
-    >>> c = np.arange(30.).reshape(5,6)
-    >>> idx = np.array([False, False, False, True, False] * 6).reshape(5,6)
-    >>> c[idx] = np.nan
-    >>> c
-    array([[  0.,   1.,   2.,  nan,   4.,   5.],
-           [  6.,   7.,  nan,   9.,  10.,  11.],
-           [ 12.,  nan,  14.,  15.,  16.,  17.],
-           [ nan,  19.,  20.,  21.,  22.,  nan],
-           [ 24.,  25.,  26.,  27.,  nan,  29.]])
-    >>> stats.nanmedian(c, axis=1)
-    array([  2. ,   9. ,  15. ,  20.5,  26. ])
-
-    """
-    x, axis = _chk_asarray(x, axis)
-    if x.ndim == 0:
-        return float(x.item())
-    if hasattr(np, 'nanmedian'):  # numpy 1.9 faster for some cases
-        return np.nanmedian(x, axis)
-    x = np.apply_along_axis(_nanmedian, axis, x)
-    if x.ndim == 0:
-        x = float(x.item())
-    return x
 
 
 #####################################
@@ -2385,7 +2169,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     Notes
     -----
     The default value for `ddof` is different to the default (0) used by other
-    ddof containing routines, such as np.std nd stats.nanstd.
+    ddof containing routines, such as np.std and np.nanstd.
 
     Examples
     --------
