@@ -280,7 +280,7 @@ Gamma and Related Functions
    :toctree: generated/
 
    gamma        -- Gamma function.
-   gammaln      -- Log of the absolute value of the gamma function.
+   gammaln      -- Log transformation of the gamma function.
    gammasgn     -- Sign of the gamma function.
    gammainc     -- Incomplete gamma integral.
    gammaincinv  -- Inverse of gammainc.
