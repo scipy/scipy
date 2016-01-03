@@ -132,3 +132,40 @@ class Neighbors(Benchmark):
         dim | # points T1 | # points T2 | probe radius |  KDTree  | cKDTree
         """
         self.T1.count_neighbors(self.T2, probe_radius)
+
+class CNeighborsDeep(Benchmark):
+    params = [
+        [
+          (2,1000,1000),
+          (8,1000,1000),
+          (16,1000,1000)
+        ],
+        [2, 10, 100, 400, 1000],
+    ]
+    param_names = ['(m, n1, n2)', 'Nr']
+
+    def setup(self, mn1n2, Nr):
+        m, n1, n2 = mn1n2
+
+        data1 = np.random.uniform(size=(n1, m))
+        data2 = np.random.uniform(size=(n2, m))
+
+        self.T1d = cKDTree(data1, leafsize=1)
+        self.T2d = cKDTree(data2, leafsize=1)
+        self.T1s = cKDTree(data1, leafsize=8)
+        self.T2s = cKDTree(data2, leafsize=8)
+        self.r = np.linspace(0, 0.5, Nr)
+
+    def time_count_neighbors_deep(self, mn1n2, Nr):
+        """
+        Count neighbors for a very deep kd-tree
+        dim | # points T1 | # points T2 | Nr
+        """
+        self.T1d.count_neighbors(self.T2d, self.r)
+
+    def time_count_neighbors_shallow(self, mn1n2, Nr):
+        """
+        Count neighbors for a shallow kd-tree
+        dim | # points T1 | # points T2 | Nr
+        """
+        self.T1s.count_neighbors(self.T2s, self.r)
