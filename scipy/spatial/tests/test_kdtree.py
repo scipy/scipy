@@ -1150,7 +1150,7 @@ def test_ckdtree_count_neighbous_multiple_r():
     np.random.seed(1234)
     data = np.random.normal(size=(n, m))
     kdtree = cKDTree(data, leafsize=1)
-    r0 = [0, 0.01, 0.02, 0.05]
+    r0 = [0, 0.01, 0.01, 0.02, 0.05]
     i0 = np.arange(len(r0))
     n0 = kdtree.count_neighbors(kdtree, r0)
     for i, r in zip(itertools.permutations(i0), 
