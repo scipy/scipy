@@ -10784,30 +10784,24 @@ C       -- Newton method for y_{N,L}
 C       XXX: should have a better initial guess for large N ~> 100 here
         X=X+PI+MAX((0.312d0+0.0852*N-0.000403*N**2)/L,0d0)
         IF (L.LT.NT) GO TO 20
+
 C       -- Newton method for y_{N,L}'
-        IF (N.LE.20) THEN
-           X=2.67257+1.16099*N
-        ELSE
-           X=N+1.8211*N**0.33333+0.94001/N**0.33333
-        ENDIF
-        L=0
-        XGUESS=X
-25      X0=X
-        CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
-        X=X-DYN/FYN
-        IF (DABS(X-X0).GT.1.0D-11) GO TO 25
-        IF (L.GE.1) THEN
-           IF (X.LE.RY1(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 25
-           END IF
-        END IF
-        L=L+1
-        RY1(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.197d0+0.0643*N-0.000286*N**2)/L,0d0)
-        IF (L.LT.NT) GO TO 25
+        DO 50 L = 1, NT
+C           Use the zero of Jn as the initial guess for the zero of Yn'
+            X = RJ0(L)
+C           Newton's method iterations.  The initial guess is pretty good,
+C           so 10 iterations should be more than enough for convergence.
+            DO 30 ITER = 1, 10
+                X0 = X
+                CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
+                X = X - DYN/FYN
+                IF (DABS(X-X0) .LE. 1.0D-11) GOTO 40
+30          CONTINUE
+C           If here, Newton's method failed to converge.
+C           Use NAN to indicate the failure.
+            X = DNAN()
+40          RY1(L) = X
+50      CONTINUE
         RETURN
         END
 
