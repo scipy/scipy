@@ -82,7 +82,6 @@ cdef extern from "cpp_utils.h":
     object pickle_tree_buffer(vector[ckdtreenode] *buf)    
     object unpickle_tree_buffer(vector[ckdtreenode] *buf, object src)
     ckdtreenode *tree_buffer_root(vector[ckdtreenode] *buf)
-    np.intp_t tree_buffer_size(vector[ckdtreenode] *buf)
     ordered_pair *ordered_pair_vector_buf(vector[ordered_pair] *buf)
     coo_entry *coo_entry_vector_buf(vector[coo_entry] *buf)
     void *tree_buffer_pointer(vector[ckdtreenode] *buf)
@@ -1056,7 +1055,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         cdef np.ndarray[np.float64_t, ndim=1, mode="c"] node_weights;
         cdef np.ndarray[np.float64_t, ndim=1, mode="c"] _weights
 
-        num_of_nodes = tree_buffer_size(self.tree_buffer);
+        num_of_nodes = self.tree_buffer.size();
         node_weights = np.empty(num_of_nodes, dtype=np.float64)
         _weights = np.ascontiguousarray(weights, dtype=np.float64)
 
