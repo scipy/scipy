@@ -450,8 +450,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         brute-force. Default: 16.
     compact_nodes : bool, optional    
         If True, the kd-tree is built to shrink the hyperrectangles to
-        the actual data range. This usually gives a more compact tree and 
-        faster queries at the expense of longer build time. Default: True.
+        the actual data range. This usually gives a more compact tree that 
+        is robust against degenerated input data and gives faster queries 
+        at the expense of longer build time. Default: True.
     copy_data : bool, optional
         If True the data is always copied to protect the kd-tree against 
         data corruption. Default: False.
