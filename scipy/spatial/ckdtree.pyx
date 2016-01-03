@@ -1088,14 +1088,14 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         """
         count_neighbors(self, other, r, p=2., self_weights=None, other_weights=None, cumulative=True)
 
-        Count how many nearby pairs can be formed.
+        Count how many nearby pairs can be formed. (pair-counting)
 
         Count the number of pairs (x1,x2) can be formed, with x1 drawn
         from self and x2 drawn from `other`, and where
         ``distance(x1, x2, p) <= r``.
         This is the "two-point correlation" described in Gray and Moore 2000,
         "N-body problems in statistical learning", and the code here is based
-        on their algorithm.
+        on their algorithm. 
 
         Data points on self and other are optionally weighted by 
         `self_weights` and `other_weights`. 
