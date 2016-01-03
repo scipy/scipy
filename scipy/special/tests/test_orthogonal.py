@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (rand, TestCase, assert_array_almost_equal,
+from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_almost_equal, assert_allclose, assert_raises,
                            run_module_suite)
 
@@ -78,7 +78,7 @@ class TestCheby(TestCase):
 class TestGegenbauer(TestCase):
 
     def test_gegenbauer(self):
-        a = 5*rand()-0.5
+        a = 5*np.random.random() - 0.5
         if np.any(a == 0):
             a = -0.2
         Ca0 = orth.gegenbauer(0,a)
@@ -218,8 +218,8 @@ class _test_sh_jacobi(TestCase):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
         conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)
         psub = np.poly1d([2,-1])
-        q = 4*rand()
-        p = q-1 + 2*rand()
+        q = 4 * np.random.random()
+        p = q-1 + 2*np.random.random()
         #print "shifted jacobi p,q = ", p, q
         G0 = orth.sh_jacobi(0,p,q)
         G1 = orth.sh_jacobi(1,p,q)

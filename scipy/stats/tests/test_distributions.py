@@ -10,7 +10,7 @@ import pickle
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_raises, assert_warns, rand, dec)
+    assert_allclose, assert_, assert_raises, assert_warns, dec)
 from nose import SkipTest
 
 import numpy
@@ -81,19 +81,19 @@ def test_all_distributions():
             alpha = 0.001
 
         if dist == 'frechet':
-            args = tuple(2*rand(1))+(0,)+tuple(2*rand(2))
+            args = tuple(2*np.random.random(1)) + (0,) + tuple(2*np.random.random(2))
         elif dist == 'triang':
-            args = tuple(rand(nargs))
+            args = tuple(np.random.random(nargs))
         elif dist == 'reciprocal':
-            vals = rand(nargs)
+            vals = np.random.random(nargs)
             vals[1] = vals[0] + 1.0
             args = tuple(vals)
         elif dist == 'vonmises':
             yield check_distribution, dist, (10,), alpha
             yield check_distribution, dist, (101,), alpha
-            args = tuple(1.0+rand(nargs))
+            args = tuple(1.0 + np.random.random(nargs))
         else:
-            args = tuple(1.0+rand(nargs))
+            args = tuple(1.0 + np.random.random(nargs))
 
         yield check_distribution, dist, args, alpha
 
