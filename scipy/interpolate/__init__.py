@@ -21,11 +21,9 @@ Univariate interpolation
    interp1d
    BarycentricInterpolator
    KroghInterpolator
-   PiecewisePolynomial
    PchipInterpolator
    barycentric_interpolate
    krogh_interpolate
-   piecewise_polynomial_interpolate
    pchip_interpolate
    Akima1DInterpolator
    PPoly
