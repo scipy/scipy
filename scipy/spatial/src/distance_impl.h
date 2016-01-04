@@ -176,19 +176,6 @@ yule_bool_distance_char(const char *u, const char *v, npy_intp n)
 }
 
 static NPY_INLINE double
-matching_distance_char(const char *u, const char *v, npy_intp n)
-{
-    npy_intp i;
-    npy_intp nft = 0, ntf = 0;
-
-    for (i = 0; i < n; i++) {
-        ntf += (u[i] && !v[i]);
-        nft += (!u[i] && v[i]);
-    }
-    return (double)(ntf + nft) / (double)(n);
-}
-
-static NPY_INLINE double
 dice_distance_char(const char *u, const char *v, npy_intp n)
 {
     npy_intp i;
@@ -610,7 +597,6 @@ DEFINE_CDIST(dice, char)
 DEFINE_CDIST(hamming, char)
 DEFINE_CDIST(jaccard, char)
 DEFINE_CDIST(kulsinski, char)
-DEFINE_CDIST(matching, char)
 DEFINE_CDIST(rogerstanimoto, char)
 DEFINE_CDIST(russellrao, char)
 DEFINE_CDIST(sokalmichener, char)
@@ -647,7 +633,6 @@ DEFINE_PDIST(dice, char)
 DEFINE_PDIST(hamming, char)
 DEFINE_PDIST(jaccard, char)
 DEFINE_PDIST(kulsinski, char)
-DEFINE_PDIST(matching, char)
 DEFINE_PDIST(rogerstanimoto, char)
 DEFINE_PDIST(russellrao, char)
 DEFINE_PDIST(sokalmichener, char)
