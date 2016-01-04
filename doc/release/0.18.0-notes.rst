@@ -64,6 +64,13 @@ The functions `sum`, `max`, `mean`, `min`, `transpose`, and `reshape` in
 `scipy.sparse` have had their signatures augmented with additional arguments
 and functionality so as to improve compatibility with analogously defined
 functions in `numpy`.
+=======
+This class implements a straightforward algorithm which determines coefficients
+of cubic polynomials on given segments from continuity of the first and second
+derivatives. It should be easier to understand and use than B-spline
+interpolation.
+
+>>>>>>> MAINT: Mention CubicSpline in 0.18.0-notes
 
 Deprecated features
 ===================
