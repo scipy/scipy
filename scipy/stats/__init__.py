@@ -172,9 +172,6 @@ which work for masked arrays.
    tmax              --
    tstd              --
    tsem              --
-   nanmean           -- Mean, ignoring NaN values
-   nanstd            -- Standard deviation, ignoring NaN values
-   nanmedian         -- Median, ignoring NaN values
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
@@ -289,7 +286,7 @@ Circular statistical functions
    circmean
    circvar
    circstd
-   
+
 Contingency table functions
 ===========================
 
