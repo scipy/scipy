@@ -687,14 +687,6 @@ add_newdoc("scipy.special", "ellipe",
 
     is used.
 
-    Accuracy:
-
-    ==========   ======     ========     =======     =======
-    arithmetic   domain     # trials      peak         rms
-    ==========   ======     ========     =======     =======
-       IEEE       0, 1       10000       2.1e-16     7.3e-17
-    ==========   ======     ========     =======     =======
-
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
@@ -736,15 +728,6 @@ add_newdoc("scipy.special", "ellipeinc",
     Wrapper for the Cephes [1]_ routine `ellie`.
 
     Computation uses arithmetic-geometric means algorithm.
-
-    Accuracy tested at random arguments with `phi` in [-10, 10] and `m` in
-    [0, 1].
-
-    ==========   ======     ========     =======     =======
-    arithmetic   domain      trials       peak         rms
-    ==========   ======     ========     =======     =======
-       IEEE      -10,10      150000      3.3e-15     1.4e-16
-    ==========   ======     ========     =======     =======
 
     See Also
     --------
@@ -800,23 +783,6 @@ add_newdoc("scipy.special", "ellipj",
     except when `m` is within 1e-9 of 0 or 1.  In the latter case with `m`
     close to 1, the approximation applies only for `phi < pi/2`.
 
-    Accuracy tested at random points with `u` between 0 and 10, m between 0
-    and 1. Absolute error (* = relative error):
-
-    ==========  ==========  ========  ===========    ========
-    arithmetic   function   # trials      peak         rms
-    ==========  ==========  ========  ===========    ========
-       IEEE      phi         10000       9.2e-16*    1.4e-16*
-       IEEE      sn          50000       4.1e-15     4.6e-16
-       IEEE      cn          40000       3.6e-15     4.4e-16
-       IEEE      dn          10000       1.3e-12     1.8e-14
-    ==========  ==========  ========  ===========    ========
-
-    Peak error observed in consistency check using addition theorem for
-    `sn(u+v)` was 4e-16 (absolute).  Also tested by the above relation to
-    the incomplete elliptic integral. Accuracy deteriorates when `u` is
-    large.
-
     See also
     --------
     ellipk : Complete elliptic integral of the first kind.
@@ -866,14 +832,6 @@ add_newdoc("scipy.special", "ellipkm1",
 
     is used.
 
-    Accuracy (relative error):
-
-    ==========   ======     ========     =======     =======
-    arithmetic   domain     # trials      peak         rms
-    ==========   ======     ========     =======     =======
-       IEEE       0,1        30000       2.5e-16     6.8e-17
-    ==========   ======     ========     =======     =======
-
     See Also
     --------
     ellipk : Complete elliptic integral of the first kind
@@ -916,15 +874,6 @@ add_newdoc("scipy.special", "ellipkinc",
     -----
     Wrapper for the Cephes [1]_ routine `ellik`.  The computation is
     carried out using the arithmetic-geometric mean algorithm.
-
-    Accuracy tested at random points with `m` in [0, 1] and `phi` as
-    indicated. Relative error:
-
-    ==========  =======    =========     =======     =======
-    arithmetic   domain      trials       peak         rms
-    ==========  =======    =========     =======     =======
-       IEEE     -10,10       200000      7.4e-16     1.0e-16
-    ==========  =======    =========     =======     =======
 
     See Also
     --------
@@ -3868,16 +3817,6 @@ add_newdoc("scipy.special", "yn",
     The function is evaluated by forward recurrence on `n`, starting with
     values computed by the Cephes routines `y0` and `y1`. If `n = 0` or 1,
     the routine for `y0` or `y1` is called directly.
-
-    Accuracy (absolute error, except relative when y > 1):
-
-    ==========   ======     ========     =======     =======
-    arithmetic   domain      trials       peak         rms
-    ==========   ======     ========     =======     =======
-       IEEE      0, 30       30000       3.4e-15     4.3e-16
-    ==========   ======     ========     =======     =======
-
-    Spot checked against tables for x, n between 0 and 100.
 
     See also
     --------
