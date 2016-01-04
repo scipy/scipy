@@ -1,7 +1,7 @@
 """
 Spherical Voronoi Code
 
-.. versionadded:: 0.17.0
+.. versionadded:: 0.18.0
 
 """
 #
@@ -91,7 +91,7 @@ def project_to_sphere(points, center, radius):
 class SphericalVoronoi:
     """ Voronoi diagrams on the surface of a sphere.
 
-    .. versionadded:: 0.17.0
+    .. versionadded:: 0.18.0
 
     Parameters
     ----------
