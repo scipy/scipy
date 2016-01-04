@@ -9,9 +9,8 @@ from numpy.testing import (
     assert_allclose, assert_equal, assert_, assert_raises)
 
 from scipy.interpolate import (
-    splrep, splev, KroghInterpolator, krogh_interpolate,
+    KroghInterpolator, krogh_interpolate,
     BarycentricInterpolator, barycentric_interpolate,
-    PiecewisePolynomial, piecewise_polynomial_interpolate,
     approximate_taylor_polynomial, pchip, PchipInterpolator,
     Akima1DInterpolator, CubicSpline)
 from scipy._lib.six import xrange
