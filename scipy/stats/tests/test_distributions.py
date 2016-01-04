@@ -873,12 +873,12 @@ class TestSkewNormal(TestCase):
         assert_equal(shape, x.shape)
         
     def test_moments(self):
-        X = stats.skewnormal.rvs(a=4, size=1e6, loc=5, scale=2)
+        X = stats.skewnormal.rvs(a=4, size=int(1e6), loc=5, scale=2)
         assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
                                    stats.skewnormal.stats(a=4, loc=5, scale=2, moments='mvsk'), 
                                    decimal=2)
         
-        X = stats.skewnormal.rvs(a=-4, size=1e6, loc=5, scale=2)
+        X = stats.skewnormal.rvs(a=-4, size=int(1e6), loc=5, scale=2)
         assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
                                    stats.skewnormal.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
                                    decimal=2)
