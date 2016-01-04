@@ -13,17 +13,14 @@ Run tests if fftpack is not installed:
 """
 
 from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
-                           assert_array_almost_equal, rand, run_module_suite)
+                           assert_array_almost_equal, run_module_suite)
 from scipy.fftpack import (diff, fft, ifft, tilbert, itilbert, hilbert,
                            ihilbert, shift, fftfreq, cs_diff, sc_diff,
                            ss_diff, cc_diff)
 
 import numpy as np
 from numpy import arange, sin, cos, pi, exp, tanh, sum, sign
-
-
-def random(size):
-    return rand(*size)
+from numpy.random import random
 
 
 def direct_diff(x,k=1,period=None):
