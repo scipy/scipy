@@ -446,9 +446,9 @@ various assert functions.
 
 .. _pyflakes: http://pypi.python.org/pypi/pyflakes
 
-.. _SciPy API: http://docs.scipy.org/doc/scipy/reference/api.html
+.. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
-.. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
+.. _git workflow: https://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
 
@@ -458,17 +458,17 @@ various assert functions.
 
 .. _Github: https://github.com/scipy/scipy
 
-.. _scipy.org: http://scipy.org/
+.. _scipy.org: https://scipy.org/
 
 .. _scipy.github.com: http://scipy.github.com/
 
 .. _scipy.org-new: https://github.com/scipy/scipy.org-new
 
-.. _documentation wiki: http://docs.scipy.org/scipy/Front%20Page/
+.. _documentation wiki: https://docs.scipy.org/scipy/Front%20Page/
 
 .. _SciPy Central: http://scipy-central.org/
 
-.. _license compatibility: http://www.scipy.org/License_Compatibility
+.. _license compatibility: https://www.scipy.org/License_Compatibility
 
 .. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
 

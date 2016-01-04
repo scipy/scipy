@@ -58,7 +58,7 @@ Major documentation improvements
 ================================
 
 SciPy documentation is greatly improved; you can view a HTML reference
-manual `online <http://docs.scipy.org/>`__ or download it as a PDF
+manual `online <https://docs.scipy.org/>`__ or download it as a PDF
 file. The new reference guide was built using the popular `Sphinx tool
 <http://sphinx.pocoo.org/>`__.
 
@@ -72,7 +72,7 @@ Nevertheless, more effort is needed on the documentation front.
 Luckily, contributing to Scipy documentation is now easier than
 before: if you find that a part of it requires improvements, and want
 to help us out, please register a user name in our web-based
-documentation editor at http://docs.scipy.org/ and correct the issues.
+documentation editor at https://docs.scipy.org/ and correct the issues.
 
 Running Tests
 =============

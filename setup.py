@@ -218,7 +218,7 @@ def setup_package():
         maintainer_email="scipy-dev@scipy.org",
         description=DOCLINES[0],
         long_description="\n".join(DOCLINES[2:]),
-        url="http://www.scipy.org",
+        url="https://www.scipy.org",
         download_url="https://github.com/scipy/scipy/releases",
         license='BSD',
         cmdclass=cmdclass,

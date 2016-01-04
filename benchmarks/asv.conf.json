@@ -7,7 +7,7 @@
     "project": "scipy",
 
     // The project's homepage
-    "project_url": "http://scipy.org/scipylib/",
+    "project_url": "https://scipy.org/scipylib/",
 
     // The URL of the source code repository for the project being
     // benchmarked

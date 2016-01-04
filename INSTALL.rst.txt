@@ -1,7 +1,7 @@
 Building and installing SciPy
 +++++++++++++++++++++++++++++
 
-See http://www.scipy.org/Installing_SciPy/
+See https://www.scipy.org/Installing_SciPy/
 for more extensive (and possibly more up-to-date) build instructions.
 
 .. Contents::
@@ -126,7 +126,7 @@ GETTING SCIPY
 
 For the latest information, see the web site:
 
-  http://www.scipy.org
+  https://www.scipy.org
 
 
 Development version from Git
