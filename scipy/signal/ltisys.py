@@ -22,8 +22,8 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 
-#np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
-#use scipy's qr until this is solved
+# np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
+# use scipy's qr until this is solved
 
 from scipy.linalg import qr as s_qr
 
@@ -1655,7 +1655,7 @@ def freqresp(system, w=None, n=10000):
 
     w : array_like, optional
         Array of frequencies (in rad/s). Magnitude and phase data is
-        calculated for every value in this array. If not given a reasonable
+        calculated for every value in this array. If not given, a reasonable
         set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
