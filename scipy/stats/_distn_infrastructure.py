@@ -2316,23 +2316,6 @@ class rv_continuous(rv_generic):
 ## Handlers for generic case where xk and pk are given
 ## The _drv prefix probably means discrete random variable.
 
-def _drv_pmf(self, xk, *args):
-    try:
-        return self.P[xk]
-    except KeyError:
-        return 0.0
-
-
-def _drv_cdf(self, xk, *args):
-    indx = argmax((self.xk > xk), axis=-1)-1
-    return self.F[self.xk[indx]]
-
-
-def _drv_ppf(self, q, *args):
-    indx = argmax((self.qvals >= q), axis=-1)
-    return self.Finv[self.qvals[indx]]
-
-
 def _drv_nonzero(self, k, *args):
     return 1
 
@@ -3228,7 +3211,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
 
 
 class rv_sample(rv_discrete):
-    """A 'sample' dicrete distribution defined by the support and values.
+    """A 'sample' discrete distribution defined by the support and values.
 
        The ctor ignores most of the arguments, only needs the `values` argument.
     """
@@ -3270,17 +3253,10 @@ class rv_sample(rv_discrete):
         self.pk = take(ravel(self.pk), indx, 0)
         self.a = self.xk[0]
         self.b = self.xk[-1]
-        self.P = dict(zip(self.xk, self.pk))
         self.qvals = np.cumsum(self.pk, axis=0)
         self.F = dict(zip(self.xk, self.qvals))
         decreasing_keys = sorted(self.F.keys(), reverse=True)
         self.Finv = dict((self.F[k], k) for k in decreasing_keys)
-        self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
-                                   self, rv_discrete)
-        self._pmf = instancemethod(vectorize(_drv_pmf, otypes='d'),
-                                   self, rv_discrete)
-        self._cdf = instancemethod(vectorize(_drv_cdf, otypes='d'),
-                                   self, rv_discrete)
         self._nonzero = instancemethod(_drv_nonzero, self, rv_discrete)
         self.generic_moment = instancemethod(_drv_moment,
                                              self, rv_discrete)
@@ -3319,7 +3295,31 @@ class rv_sample(rv_discrete):
             self.__doc__ = self.__doc__.replace(
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
-    
+
+    def _pmf(self, x):
+       return np.select([x == k for k in self.xk],
+                        [np.broadcast_arrays(p, x)[0] for p in self.pk], 0)
+
+    def _cdf(self, x):
+        xx, xxk = np.broadcast_arrays(x[:, None], self.xk)
+        indx = np.argmax(xxk > xx, axis=-1) - 1
+        return self.qvals[indx]
+
+    def _ppf(self, q):
+        qq, sqq = np.broadcast_arrays(q[:, None], self.qvals)
+        indx = argmax(sqq >= qq, axis=-1)
+        return self.xk[indx]
+
+    def _rvs(self):
+        # Need to define it explicitly, otherwise .rvs() with size=None
+        # fails due to explicit broadcasting 
+        U = self._random_state.random_sample(self._size)
+        if self._size is None:
+            U = np.array(U, ndmin=1)
+            Y = self._ppf(U)[0]
+        else:
+            Y = self._ppf(U)
+        return Y
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):

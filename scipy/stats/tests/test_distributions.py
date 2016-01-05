@@ -880,6 +880,51 @@ class TestRvDiscrete(TestCase):
         h = p.entropy()
         assert_equal(h, 0.0)
 
+    def test_pmf(self):
+        xk = [1, 2, 4]
+        pk = [0.5, 0.3, 0.2]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        x = [[1., 4.],
+             [3., 2]]
+        assert_allclose(rv.pmf(x),
+                        [[0.5, 0.2],
+                         [0., 0.3]], atol=1e-14)
+
+    def test_cdf(self):
+        xk = [1, 2, 4]
+        pk = [0.5, 0.3, 0.2]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        x_values = [-2, 1., 1.1, 1.5, 2.0, 3.0, 4, 5]
+        expected = [0, 0.5, 0.5, 0.5, 0.8, 0.8, 1, 1]
+        assert_allclose(rv.cdf(x_values), expected, atol=1e-14)
+
+        # also check scalar arguments
+        assert_allclose([rv.cdf(xx) for xx in x_values],
+                        expected, atol=1e-14)
+
+    def test_ppf(self):
+        xk = [1, 2, 4]
+        pk = [0.5, 0.3, 0.2]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        q_values = [0.1, 0.5, 0.6, 0.8, 0.9, 1.]
+        expected = [1, 1, 2, 2, 4, 4]
+        assert_allclose(rv.ppf(q_values), expected, atol=1e-14)
+
+        # also check scalar arguments
+        assert_allclose([rv.ppf(q) for q in q_values],
+                        expected, atol=1e-14)
+
+    def test_cdf_ppf_next(self):
+        # copied and special cased from test_discrete_basic
+        vals = ([1, 2, 4, 7, 8], [0.1, 0.2, 0.3, 0.3, 0.1])
+        rv = stats.rv_discrete(values=vals)
+
+        assert_array_equal(rv.ppf(rv.cdf(rv.xk[:-1]) + 1e-8),
+                           rv.xk[1:])
+
 
 class TestSkewNorm(TestCase):
 
