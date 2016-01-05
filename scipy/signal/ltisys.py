@@ -1319,7 +1319,7 @@ def _default_response_times(A, n):
 
     Parameters
     ----------
-    A : ndarray
+    A : array_like
         The system matrix, which is square.
     n : int
         The number of time samples to generate.

@@ -32,7 +32,7 @@ abs = absolute
 
 def findfreqs(num, den, N):
     """
-    Find an array of frequencies for computing the response of a filter.
+    Find array of frequencies for computing the response of an analog filter.
 
     Parameters
     ----------
@@ -94,9 +94,9 @@ def freqs(b, a, worN=None, plot=None):
 
     Parameters
     ----------
-    b : ndarray
+    b : array_like
         Numerator of a linear filter.
-    a : ndarray
+    a : array_like
         Denominator of a linear filter.
     worN : {None, int}, optional
         If None, then compute at 200 frequencies around the interesting parts
@@ -111,7 +111,7 @@ def freqs(b, a, worN=None, plot=None):
     Returns
     -------
     w : ndarray
-        The angular frequencies at which h was computed.
+        The angular frequencies at which `h` was computed.
     h : ndarray
         The frequency response.
 
@@ -172,9 +172,9 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
 
     Parameters
     ----------
-    b : ndarray
+    b : array_like
         numerator of a linear filter
-    a : ndarray
+    a : array_like
         denominator of a linear filter
     worN : {None, int, array_like}, optional
         If None (default), then compute at 512 frequencies equally spaced
@@ -194,7 +194,8 @@ def freqz(b, a=1, worN=None, whole=0, plot=None):
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which h was computed, in radians/sample.
+        The normalized frequencies at which `h` was computed, in
+        radians/sample.
     h : ndarray
         The frequency response.
 
@@ -881,7 +882,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
 
     >>> sos = signal.zpk2sos(z, p, k)
 
-    The coefficents of the numerators of the sections:
+    The coefficients of the numerators of the sections:
 
     >>> sos[:, :3]
     array([[ 0.0014154 ,  0.00248707,  0.0014154 ],
@@ -1523,9 +1524,9 @@ def _zpkbilinear(z, p, k, fs):
 
     Parameters
     ----------
-    z : ndarray
+    z : array_like
         Zeros of the analog IIR filter transfer function.
-    p : ndarray
+    p : array_like
         Poles of the analog IIR filter transfer function.
     k : float
         System gain of the analog IIR filter transfer function.
@@ -1573,9 +1574,9 @@ def _zpklp2lp(z, p, k, wo=1.0):
 
     Parameters
     ----------
-    z : ndarray
+    z : array_like
         Zeros of the analog IIR filter transfer function.
-    p : ndarray
+    p : array_like
         Poles of the analog IIR filter transfer function.
     k : float
         System gain of the analog IIR filter transfer function.
@@ -1626,9 +1627,9 @@ def _zpklp2hp(z, p, k, wo=1.0):
 
     Parameters
     ----------
-    z : ndarray
+    z : array_like
         Zeros of the analog IIR filter transfer function.
-    p : ndarray
+    p : array_like
         Poles of the analog IIR filter transfer function.
     k : float
         System gain of the analog IIR filter transfer function.
@@ -1685,9 +1686,9 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
 
     Parameters
     ----------
-    z : ndarray
+    z : array_like
         Zeros of the analog IIR filter transfer function.
-    p : ndarray
+    p : array_like
         Poles of the analog IIR filter transfer function.
     k : float
         System gain of the analog IIR filter transfer function.
@@ -1757,9 +1758,9 @@ def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
 
     Parameters
     ----------
-    z : ndarray
+    z : array_like
         Zeros of the analog IIR filter transfer function.
-    p : ndarray
+    p : array_like
         Poles of the analog IIR filter transfer function.
     k : float
         System gain of the analog IIR filter transfer function.
