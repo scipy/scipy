@@ -2592,6 +2592,16 @@ class rv_discrete(rv_generic):
     >>> R = custm.rvs(size=100)
 
     """
+    def __new__(cls, a=0, b=inf, name=None, badvalue=None,
+                 moment_tol=1e-8, values=None, inc=1, longname=None,
+                 shapes=None, extradoc=None, seed=None):
+
+        if values is not None:
+            # dispatch to a subclass
+            return super(rv_discrete, cls).__new__(rv_sample)
+        else:
+            # business as usual
+            return super(rv_discrete, cls).__new__(cls)
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
@@ -2622,53 +2632,25 @@ class rv_discrete(rv_generic):
         self.extradoc = extradoc
 
         if values is not None:
-            self.xk, self.pk = values
-            self.return_integers = 0
-            indx = argsort(ravel(self.xk))
-            self.xk = take(ravel(self.xk), indx, 0)
-            self.pk = take(ravel(self.pk), indx, 0)
-            self.a = self.xk[0]
-            self.b = self.xk[-1]
-            self.P = dict(zip(self.xk, self.pk))
-            self.qvals = np.cumsum(self.pk, axis=0)
-            self.F = dict(zip(self.xk, self.qvals))
-            decreasing_keys = sorted(self.F.keys(), reverse=True)
-            self.Finv = dict((self.F[k], k) for k in decreasing_keys)
-            self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
-                                       self, rv_discrete)
-            self._pmf = instancemethod(vectorize(_drv_pmf, otypes='d'),
-                                       self, rv_discrete)
-            self._cdf = instancemethod(vectorize(_drv_cdf, otypes='d'),
-                                       self, rv_discrete)
-            self._nonzero = instancemethod(_drv_nonzero, self, rv_discrete)
-            self.generic_moment = instancemethod(_drv_moment,
-                                                 self, rv_discrete)
-            self.moment_gen = instancemethod(_drv_moment_gen,
+            raise ValueError("rv_discrete.__init__(..., values != None, ...)")
+
+        self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
+                                  locscale_in='loc=0',
+                                  # scale=1 for discrete RVs
+                                  locscale_out='loc, 1')
+
+        # nin correction needs to be after we know numargs
+        # correct nin for generic moment vectorization
+        _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
+        _vec_generic_moment.nin = self.numargs + 2
+        self.generic_moment = instancemethod(_vec_generic_moment,
                                              self, rv_discrete)
 
-            self.shapes = ' '   # bypass inspection
-            self._construct_argparser(meths_to_inspect=[self._pmf],
-                                      locscale_in='loc=0',
-                                      # scale=1 for discrete RVs
-                                      locscale_out='loc, 1')
-        else:
-            self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
-                                      locscale_in='loc=0',
-                                      # scale=1 for discrete RVs
-                                      locscale_out='loc, 1')
-
-            # nin correction needs to be after we know numargs
-            # correct nin for generic moment vectorization
-            _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
-            _vec_generic_moment.nin = self.numargs + 2
-            self.generic_moment = instancemethod(_vec_generic_moment,
-                                                 self, rv_discrete)
-
-            # correct nin for ppf vectorization
-            _vppf = vectorize(_drv2_ppfsingle, otypes='d')
-            _vppf.nin = self.numargs + 2  # +1 is for self
-            self._ppfvec = instancemethod(_vppf,
-                                          self, rv_discrete)
+        # correct nin for ppf vectorization
+        _vppf = vectorize(_drv2_ppfsingle, otypes='d')
+        _vppf.nin = self.numargs + 2  # +1 is for self
+        self._ppfvec = instancemethod(_vppf,
+                                      self, rv_discrete)
 
         # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
@@ -3243,6 +3225,101 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
         supp = np.arange(x, x + step, inc)
         x += step
         yield supp
+
+
+class rv_sample(rv_discrete):
+    """A 'sample' dicrete distribution defined by the support and values.
+
+       The ctor ignores most of the arguments, only needs the `values` argument.
+    """
+    def __init__(self, a=0, b=inf, name=None, badvalue=None,
+                 moment_tol=1e-8, values=None, inc=1, longname=None,
+                 shapes=None, extradoc=None, seed=None):
+
+        super(rv_discrete, self).__init__(seed)
+
+        if values is None:
+            raise ValueError("rv_sample.__init__(..., values=None,...)")
+
+        # cf generic freeze
+        self._ctor_param = dict(
+            a=a, b=b, name=name, badvalue=badvalue,
+            moment_tol=moment_tol, values=values, inc=inc,
+            longname=longname, shapes=shapes, extradoc=extradoc, seed=seed)
+
+        if badvalue is None:
+            badvalue = nan
+        if name is None:
+            name = 'Distribution'
+        self.badvalue = badvalue
+        self.a = a
+        self.b = b
+        self.name = name
+        self.moment_tol = moment_tol
+        self.inc = inc
+        self._cdfvec = vectorize(self._cdf_single, otypes='d')
+        self.return_integers = 1
+        self.vecentropy = vectorize(self._entropy)
+        self.shapes = shapes
+        self.extradoc = extradoc
+
+        self.xk, self.pk = values
+        self.return_integers = 0
+        indx = argsort(ravel(self.xk))
+        self.xk = take(ravel(self.xk), indx, 0)
+        self.pk = take(ravel(self.pk), indx, 0)
+        self.a = self.xk[0]
+        self.b = self.xk[-1]
+        self.P = dict(zip(self.xk, self.pk))
+        self.qvals = np.cumsum(self.pk, axis=0)
+        self.F = dict(zip(self.xk, self.qvals))
+        decreasing_keys = sorted(self.F.keys(), reverse=True)
+        self.Finv = dict((self.F[k], k) for k in decreasing_keys)
+        self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
+                                   self, rv_discrete)
+        self._pmf = instancemethod(vectorize(_drv_pmf, otypes='d'),
+                                   self, rv_discrete)
+        self._cdf = instancemethod(vectorize(_drv_cdf, otypes='d'),
+                                   self, rv_discrete)
+        self._nonzero = instancemethod(_drv_nonzero, self, rv_discrete)
+        self.generic_moment = instancemethod(_drv_moment,
+                                             self, rv_discrete)
+        self.moment_gen = instancemethod(_drv_moment_gen,
+                                         self, rv_discrete)
+
+        self.shapes = ' '   # bypass inspection
+        self._construct_argparser(meths_to_inspect=[self._pmf],
+                                  locscale_in='loc=0',
+                                  # scale=1 for discrete RVs
+                                  locscale_out='loc, 1')
+
+        # now that self.numargs is defined, we can adjust nin
+        self._cdfvec.nin = self.numargs + 1
+
+        # generate docstring for subclass instances
+        if longname is None:
+            if name[0] in ['aeiouAEIOU']:
+                hstr = "An "
+            else:
+                hstr = "A "
+            longname = hstr + name
+
+        if sys.flags.optimize < 2:
+            # Skip adding docstrings if interpreter is run with -OO
+            if self.__doc__ is None:
+                self._construct_default_doc(longname=longname,
+                                            extradoc=extradoc,
+                                            docdict=docdict_discrete,
+                                            discrete='discrete')
+            else:
+                dct = dict(distdiscrete)
+                self._construct_doc(docdict_discrete, dct.get(self.name))
+
+            #discrete RV do not have the scale parameter, remove it
+            self.__doc__ = self.__doc__.replace(
+                '\n    scale : array_like, '
+                'optional\n        scale parameter (default=1)', '')
+    
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):
