@@ -893,7 +893,7 @@ def least_squares(
 
     if verbose >= 1:
         print(result.message)
-        print("Function evaluations: {0}, initial cost: {1:.4e}, final cost "
+        print("Function evaluations {0}, initial cost {1:.4e}, final cost "
               "{2:.4e}, first-order optimality {3:.2e}."
               .format(result.nfev, initial_cost, result.cost,
                       result.optimality))

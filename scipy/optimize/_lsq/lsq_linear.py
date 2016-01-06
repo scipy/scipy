@@ -297,7 +297,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if verbose > 0:
         print(res.message)
-        print("Number of iterations: {0}, initial cost: {1:.4e}, "
+        print("Number of iterations {0}, initial cost {1:.4e}, "
               "final cost {2:.4e}, first-order optimality {3:.2e}."
               .format(res.nit, res.initial_cost, res.cost, res.optimality))
 
