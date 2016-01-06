@@ -3095,19 +3095,8 @@ class rv_discrete(rv_generic):
         if hasattr(self, 'pk'):
             return entropy(self.pk)
         else:
-            mu = int(self.stats(*args, **{'moments': 'm'}))
-            val = self.pmf(mu, *args)
-            ent = entr(val)
-            k = 1
-            term = 1.0
-            while (abs(term) > _EPS):
-                val = self.pmf(mu+k, *args)
-                term = entr(val)
-                val = self.pmf(mu-k, *args)
-                term += entr(val)
-                k += 1
-                ent += term
-            return ent
+            return _expect(lambda x: entr(self.pmf(x, *args)),
+                           self.a, self.b, self.ppf(0.5, *args), self.inc)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
                conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
