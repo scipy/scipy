@@ -3224,8 +3224,6 @@ class rv_sample(rv_discrete):
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
-        self._cdfvec = vectorize(self._cdf_single, otypes='d')
-        self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
         self.extradoc = extradoc
 
@@ -3244,8 +3242,7 @@ class rv_sample(rv_discrete):
                                   # scale=1 for discrete RVs
                                   locscale_out='loc, 1')
 
-        # now that self.numargs is defined, we can adjust nin
-        self._cdfvec.nin = self.numargs + 1
+        self.vecentropy = self._entropy
 
         # generate docstring for subclass instances
         if longname is None:
@@ -3295,6 +3292,9 @@ class rv_sample(rv_discrete):
         else:
             Y = self._ppf(U)
         return Y
+
+    def _entropy(self):
+        return entropy(self.pk)
 
     def generic_moment(self, n):
         n = asarray(n)
