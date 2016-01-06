@@ -3221,28 +3221,22 @@ class rv_sample(rv_discrete):
         if name is None:
             name = 'Distribution'
         self.badvalue = badvalue
-        self.a = a
-        self.b = b
         self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
-        self.return_integers = 1
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
         self.extradoc = extradoc
 
         self.xk, self.pk = values
         self.return_integers = 0
-        indx = argsort(ravel(self.xk))
-        self.xk = take(ravel(self.xk), indx, 0)
-        self.pk = take(ravel(self.pk), indx, 0)
+        indx = np.argsort(np.ravel(self.xk))
+        self.xk = np.take(np.ravel(self.xk), indx, 0)
+        self.pk = np.take(np.ravel(self.pk), indx, 0)
         self.a = self.xk[0]
         self.b = self.xk[-1]
         self.qvals = np.cumsum(self.pk, axis=0)
-        self.F = dict(zip(self.xk, self.qvals))
-        decreasing_keys = sorted(self.F.keys(), reverse=True)
-        self.Finv = dict((self.F[k], k) for k in decreasing_keys)
 
         self.shapes = ' '   # bypass inspection
         self._construct_argparser(meths_to_inspect=[self._pmf],
@@ -3306,12 +3300,24 @@ class rv_sample(rv_discrete):
         n = asarray(n)
         return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
 
-
+    @np.deprecate(message="moment_gen method is not used anywhere any more "
+                          "and is deprecated in scipy 0.18.")
     def moment_gen(self, t):
         t = asarray(t)
         return np.sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
 
+    @property
+    @np.deprecate(message="F attribute is not used anywhere any longer and "
+                          "is deprecated in scipy 0.18.")
+    def F(self):
+        return dict(zip(self.xk, self.qvals))
 
+    @property
+    @np.deprecate(message="Finv attribute is not used anywhere any longer and "
+                          "is deprecated in scipy 0.18.")
+    def Finv(self):
+        decreasing_keys = sorted(self.F.keys(), reverse=True)
+        return dict((self.F[k], k) for k in decreasing_keys)
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):
