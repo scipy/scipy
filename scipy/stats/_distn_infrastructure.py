@@ -2316,10 +2316,6 @@ class rv_continuous(rv_generic):
 ## Handlers for generic case where xk and pk are given
 ## The _drv prefix probably means discrete random variable.
 
-def _drv_nonzero(self, k, *args):
-    return 1
-
-
 def _drv_moment(self, n, *args):
     n = asarray(n)
     return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
@@ -3257,7 +3253,6 @@ class rv_sample(rv_discrete):
         self.F = dict(zip(self.xk, self.qvals))
         decreasing_keys = sorted(self.F.keys(), reverse=True)
         self.Finv = dict((self.F[k], k) for k in decreasing_keys)
-        self._nonzero = instancemethod(_drv_nonzero, self, rv_discrete)
         self.generic_moment = instancemethod(_drv_moment,
                                              self, rv_discrete)
         self.moment_gen = instancemethod(_drv_moment_gen,
