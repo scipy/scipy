@@ -2224,12 +2224,6 @@ class rv_continuous(rv_generic):
             Shat = 1
         return Lhat, Shat
 
-    @np.deprecate
-    def est_loc_scale(self, data, *args):
-        """This function is deprecated, use self.fit_loc_scale(data) instead.
-        """
-        return self.fit_loc_scale(data, *args)
-
     def _entropy(self, *args):
         def integ(x):
             val = self._pdf(x, *args)
