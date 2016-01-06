@@ -29,11 +29,10 @@ from scipy import integrate
 # to approximate the pdf of a continuous distribution given its cdf
 from scipy.misc import derivative
 
-from numpy import (arange, putmask, ravel, take, ones, sum, shape,
-                   product, reshape, zeros, floor, logical_and, log, sqrt, exp,
-                   ndarray)
+from numpy import (arange, putmask, ravel, take, ones, shape, ndarray,
+                   product, reshape, zeros, floor, logical_and, log, sqrt, exp)
 
-from numpy import (place, any, argsort, argmax, vectorize,
+from numpy import (place, argsort, argmax, vectorize,
                    asarray, nan, inf, isinf, NINF, empty)
 
 import numpy as np
@@ -923,7 +922,7 @@ class rv_generic(object):
         default = valarray(shape(cond), self.badvalue)
 
         # Use only entries that are valid in calculation
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *(args+(scale, loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
 
@@ -1215,7 +1214,7 @@ class rv_generic(object):
 
         """
         alpha = asarray(alpha)
-        if any((alpha > 1) | (alpha < 0)):
+        if np.any((alpha > 1) | (alpha < 0)):
             raise ValueError("alpha must be between 0 and 1 inclusive")
         q1 = (1.0-alpha)/2
         q2 = (1.0+alpha)/2
@@ -1578,7 +1577,7 @@ class rv_continuous(rv_generic):
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
         putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((x,)+args+(scale,)))
             scale, goodargs = goodargs[-1], goodargs[:-1]
             place(output, cond, self._pdf(*goodargs) / scale)
@@ -1621,7 +1620,7 @@ class rv_continuous(rv_generic):
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
         putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((x,)+args+(scale,)))
             scale, goodargs = goodargs[-1], goodargs[:-1]
             place(output, cond, self._logpdf(*goodargs) - log(scale))
@@ -1663,7 +1662,7 @@ class rv_continuous(rv_generic):
         output = zeros(shape(cond), dtyp)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
         place(output, cond2, 1.0)
-        if any(cond):  # call only if at least 1 entry
+        if np.any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
             place(output, cond, self._cdf(*goodargs))
         if output.ndim == 0:
@@ -1705,7 +1704,7 @@ class rv_continuous(rv_generic):
         output.fill(NINF)
         place(output, (1-cond0)*(cond1 == cond1)+np.isnan(x), self.badvalue)
         place(output, cond2, 0.0)
-        if any(cond):  # call only if at least 1 entry
+        if np.any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((x,)+args))
             place(output, cond, self._logcdf(*goodargs))
         if output.ndim == 0:
@@ -1746,7 +1745,7 @@ class rv_continuous(rv_generic):
         output = zeros(shape(cond), dtyp)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
         place(output, cond2, 1.0)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((x,)+args))
             place(output, cond, self._sf(*goodargs))
         if output.ndim == 0:
@@ -1791,7 +1790,7 @@ class rv_continuous(rv_generic):
         output.fill(NINF)
         place(output, (1-cond0)+np.isnan(x), self.badvalue)
         place(output, cond2, 0.0)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((x,)+args))
             place(output, cond, self._logsf(*goodargs))
         if output.ndim == 0:
@@ -1835,7 +1834,7 @@ class rv_continuous(rv_generic):
         place(output, cond2, argsreduce(cond2, lower_bound)[0])
         place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
-        if any(cond):  # call only if at least 1 entry
+        if np.any(cond):  # call only if at least 1 entry
             goodargs = argsreduce(cond, *((q,)+args+(scale, loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
             place(output, cond, self._ppf(*goodargs) * scale + loc)
@@ -1880,7 +1879,7 @@ class rv_continuous(rv_generic):
         place(output, cond2, argsreduce(cond2, lower_bound)[0])
         place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(scale, loc)))
             scale, loc, goodargs = goodargs[-2], goodargs[-1], goodargs[:-2]
             place(output, cond, self._isf(*goodargs) * scale + loc)
@@ -1889,7 +1888,7 @@ class rv_continuous(rv_generic):
         return output
 
     def _nnlf(self, x, *args):
-        return -sum(self._logpdf(x, *args), axis=0)
+        return -np.sum(self._logpdf(x, *args), axis=0)
 
     def nnlf(self, theta, x):
         '''Return negative loglikelihood function.
@@ -1909,7 +1908,7 @@ class rv_continuous(rv_generic):
             return inf
         x = asarray((x-loc) / scale)
         cond0 = (x <= self.a) | (self.b <= x)
-        if (any(cond0)):
+        if np.any(cond0):
             return inf
         else:
             N = len(x)
@@ -1936,7 +1935,7 @@ class rv_continuous(rv_generic):
             Nbad = 0
         else:
             cond0 = (x <= self.a) | (self.b <= x)
-            Nbad = sum(cond0)
+            Nbad = np.sum(cond0)
             if Nbad > 0:
                 x = argsreduce(~cond0, x)[0]
 
@@ -2352,12 +2351,12 @@ def _drv_nonzero(self, k, *args):
 
 def _drv_moment(self, n, *args):
     n = asarray(n)
-    return sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+    return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
 
 
 def _drv_moment_gen(self, t, *args):
     t = asarray(t)
-    return sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
+    return np.sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
 
 
 def _drv2_moment(self, n, *args):
@@ -2485,16 +2484,16 @@ def entropy(pk, qk=None, base=None):
 
     """
     pk = asarray(pk)
-    pk = 1.0*pk / sum(pk, axis=0)
+    pk = 1.0*pk / np.sum(pk, axis=0)
     if qk is None:
         vec = entr(pk)
     else:
         qk = asarray(qk)
         if len(qk) != len(pk):
             raise ValueError("qk and pk must have same length.")
-        qk = 1.0*qk / sum(qk, axis=0)
+        qk = 1.0*qk / np.sum(qk, axis=0)
         vec = kl_div(pk, qk)
-    S = sum(vec, axis=0)
+    S = np.sum(vec, axis=0)
     if base is not None:
         S /= log(base)
     return S
@@ -2765,7 +2764,7 @@ class rv_discrete(rv_generic):
 
     def _cdf_single(self, k, *args):
         m = arange(int(self.a), k+1)
-        return sum(self._pmf(m, *args), axis=0)
+        return np.sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
         k = floor(x)
@@ -2830,7 +2829,7 @@ class rv_discrete(rv_generic):
         cond = cond0 & cond1
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output, cond, np.clip(self._pmf(*goodargs), 0, 1))
         if output.ndim == 0:
@@ -2867,7 +2866,7 @@ class rv_discrete(rv_generic):
         output = empty(shape(cond), 'd')
         output.fill(NINF)
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output, cond, self._logpmf(*goodargs))
         if output.ndim == 0:
@@ -2906,7 +2905,7 @@ class rv_discrete(rv_generic):
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2*(cond0 == cond0), 1.0)
 
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output, cond, np.clip(self._cdf(*goodargs), 0, 1))
         if output.ndim == 0:
@@ -2946,7 +2945,7 @@ class rv_discrete(rv_generic):
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2*(cond0 == cond0), 0.0)
 
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output, cond, self._logcdf(*goodargs))
         if output.ndim == 0:
@@ -2984,7 +2983,7 @@ class rv_discrete(rv_generic):
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2, 1.0)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output, cond, np.clip(self._sf(*goodargs), 0, 1))
         if output.ndim == 0:
@@ -3026,7 +3025,7 @@ class rv_discrete(rv_generic):
         output.fill(NINF)
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2, 0.0)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((k,)+args))
             place(output, cond, self._logsf(*goodargs))
         if output.ndim == 0:
@@ -3064,7 +3063,7 @@ class rv_discrete(rv_generic):
         # output type 'd' to handle nin and inf
         place(output, (q == 0)*(cond == cond), self.a-1)
         place(output, cond2, self.b)
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
             place(output, cond, self._ppf(*goodargs) + loc)
@@ -3108,7 +3107,7 @@ class rv_discrete(rv_generic):
         place(output, cond2, self.a-1)
 
         # call place only if at least 1 valid argument
-        if any(cond):
+        if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
             # PB same as ticket 766

@@ -14,11 +14,11 @@ from scipy import integrate
 from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
                            inv_boxcox, inv_boxcox1p, erfc, chndtr, chndtrix)
 
-from numpy import (where, arange, putmask, ravel, sum, shape,
+from numpy import (where, arange, putmask, ravel, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
                    tanh, cos, cosh, sinh)
 
-from numpy import polyval, place, extract, any, asarray, nan, inf, pi
+from numpy import polyval, place, extract, asarray, nan, inf, pi
 
 import numpy as np
 from . import vonmises_cython
@@ -1793,7 +1793,7 @@ class genextreme_gen(rv_continuous):
 
     def _munp(self, n, c):
         k = arange(0, n+1)
-        vals = 1.0/c**n * sum(
+        vals = 1.0/c**n * np.sum(
             comb(n, k) * (-1)**k * special.gamma(c*k + 1),
             axis=0)
         return where(c*n > -1, vals, inf)
@@ -3859,7 +3859,7 @@ class rdist_gen(rv_continuous):
         # There's an issue with hyp2f1, it returns nans near x = +-1, c > 100.
         # Use the generic implementation in that case.  See gh-1285 for
         # background.
-        if any(np.isnan(res)):
+        if np.any(np.isnan(res)):
             return rv_continuous._cdf(self, x, c)
         return res
 
@@ -4440,13 +4440,13 @@ class wrapcauchy_gen(rv_continuous):
         c2 = 1-c1
         xp = extract(c1, x)
         xn = extract(c2, x)
-        if (any(xn)):
+        if np.any(xn):
             valn = extract(c2, np.ones_like(x)*val)
             xn = 2*pi - xn
             yn = tan(xn/2.0)
             on = 1.0-1.0/pi*arctan(valn*yn)
             place(output, c2, on)
-        if (any(xp)):
+        if np.any(xp):
             valp = extract(c1, np.ones_like(x)*val)
             yp = tan(xp/2.0)
             op = 1.0/pi*arctan(valp*yp)
