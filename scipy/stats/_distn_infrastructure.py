@@ -2313,9 +2313,7 @@ class rv_continuous(rv_generic):
         return vals
 
 
-## Handlers for generic case where xk and pk are given
-## The _drv prefix probably means discrete random variable.
-
+# Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):
     """Non-central moment of discrete distribution."""
     def fun(x):
@@ -2586,19 +2584,15 @@ class rv_discrete(rv_generic):
 
         if badvalue is None:
             badvalue = nan
-        if name is None:
-            name = 'Distribution'
         self.badvalue = badvalue
         self.a = a
         self.b = b
-        self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
         self.return_integers = 1
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
-        self.extradoc = extradoc
 
         if values is not None:
             raise ValueError("rv_discrete.__init__(..., values != None, ...)")
@@ -2617,12 +2611,20 @@ class rv_discrete(rv_generic):
 
         # correct nin for ppf vectorization
         _vppf = vectorize(_drv2_ppfsingle, otypes='d')
-        _vppf.nin = self.numargs + 2  # +1 is for self
+        _vppf.nin = self.numargs + 2
         self._ppfvec = instancemethod(_vppf,
                                       self, rv_discrete)
 
         # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
+
+        self._construct_docstrings(name, longname, extradoc)
+
+    def _construct_docstrings(self, name, longname, extradoc):
+        if name is None:
+            name = 'Distribution'
+        self.name = name
+        self.extradoc = extradoc
 
         # generate docstring for subclass instances
         if longname is None:
@@ -2643,7 +2645,7 @@ class rv_discrete(rv_generic):
                 dct = dict(distdiscrete)
                 self._construct_doc(docdict_discrete, dct.get(self.name))
 
-            #discrete RV do not have the scale parameter, remove it
+            # discrete RV do not have the scale parameter, remove it
             self.__doc__ = self.__doc__.replace(
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
@@ -3218,14 +3220,11 @@ class rv_sample(rv_discrete):
 
         if badvalue is None:
             badvalue = nan
-        if name is None:
-            name = 'Distribution'
         self.badvalue = badvalue
-        self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
         self.shapes = shapes
-        self.extradoc = extradoc
+        self.vecentropy = self._entropy
 
         self.xk, self.pk = values
         self.return_integers = 0
@@ -3242,35 +3241,11 @@ class rv_sample(rv_discrete):
                                   # scale=1 for discrete RVs
                                   locscale_out='loc, 1')
 
-        self.vecentropy = self._entropy
-
-        # generate docstring for subclass instances
-        if longname is None:
-            if name[0] in ['aeiouAEIOU']:
-                hstr = "An "
-            else:
-                hstr = "A "
-            longname = hstr + name
-
-        if sys.flags.optimize < 2:
-            # Skip adding docstrings if interpreter is run with -OO
-            if self.__doc__ is None:
-                self._construct_default_doc(longname=longname,
-                                            extradoc=extradoc,
-                                            docdict=docdict_discrete,
-                                            discrete='discrete')
-            else:
-                dct = dict(distdiscrete)
-                self._construct_doc(docdict_discrete, dct.get(self.name))
-
-            #discrete RV do not have the scale parameter, remove it
-            self.__doc__ = self.__doc__.replace(
-                '\n    scale : array_like, '
-                'optional\n        scale parameter (default=1)', '')
+        self._construct_docstrings(name, longname, extradoc)
 
     def _pmf(self, x):
-       return np.select([x == k for k in self.xk],
-                        [np.broadcast_arrays(p, x)[0] for p in self.pk], 0)
+        return np.select([x == k for k in self.xk],
+                         [np.broadcast_arrays(p, x)[0] for p in self.pk], 0)
 
     def _cdf(self, x):
         xx, xxk = np.broadcast_arrays(x[:, None], self.xk)
