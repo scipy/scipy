@@ -925,6 +925,13 @@ class TestRvDiscrete(TestCase):
         assert_array_equal(rv.ppf(rv.cdf(rv.xk[:-1]) + 1e-8),
                            rv.xk[1:])
 
+    def test_expect(self):
+        xk = [1, 2, 4, 6, 7, 11]
+        pk = [0.1, 0.2, 0.2, 0.2, 0.2, 0.1]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
+
 
 class TestSkewNorm(TestCase):
 
