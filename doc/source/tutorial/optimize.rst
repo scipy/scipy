@@ -401,8 +401,83 @@ To do this one should simply precompute residuals as
 :math:`f_i(\mathbf{x}) = w_i (\varphi(t_i; \mathbf{x}) - y_i)`, where :math:`w_i`
 are weights assigned to each observation.
 
-Three interactive examples below illustrate usage of :func:`least_squares` in
-a great detail:
+Example of solving a fitting problem
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here we consider "Analysis of an Enzyme Reaction" problem formulated in [1]_.
+There are 11 residuals defined as
+
+.. math::
+    f_i(x) = \frac{x_0 (u_i^2 + u_i x_1)}{u_i^2 + u_i x_2 + x3} - y_i, \quad i = 0, \ldots, 10
+
+where :math:`y_i` are measurement values and :math:`u_i` are values of
+the independent variable. The unknown vector of parameters is
+:math:`\mathbf{x} = (x_0, x_1, x_2, x_3)^T`. As was said previously, it is
+recommended to compute Jacobian matrix in a closed form:
+
+.. math::
+    \begin{align}
+    &J_{i0} = \frac{\partial f_i}{\partial x_0} = \frac{u_i^2 + u_i x_1}{u_i^2 + u_i x_2 + x_3} \\
+    &J_{i1} = \frac{\partial f_i}{\partial x_1} = \frac{u_i x_0}{u_i^2 + u_i x_2 + x_3} \\
+    &J_{i2} = \frac{\partial f_i}{\partial x_2} = -\frac{x_0 (u_i^2 + u_i x_1) u_i}{(u_i^2 + u_i x_2 + x_3)^2} \\
+    &J_{i3} = \frac{\partial f_i}{\partial x_3} = -\frac{x_0 (u_i^2 + u_i x_1)}{(u_i^2 + u_i x_2 + x_3)^2}
+    \end{align}
+
+We are going to use "hard" starting point defined in [1]_. To find a physically
+meaningful solution, avoid potential division by zero and assure convergence to
+the global minimum we impose constraints :math:`0 \leq x_j \leq 100, j = 0, 1, 2, 3`.
+
+The code below implements least-squares estimation of :math:`\mathbf{x}` and
+finally plots the original data and the fitted model function:
+
+.. plot::
+
+    >>> from scipy.optimize import least_squares
+
+    >>> def model(x, u):
+    ...     return x[0] * (u ** 2 + x[1] * u) / (u ** 2 + x[2] * u + x[3])
+
+    >>> def fun(x, u, y):
+    ...     return model(x, u) - y
+
+    >>> def jac(x, u, y):
+    ...     J = np.empty((u.size, x.size))
+    ...     den = u ** 2 + x[2] * u + x[3]
+    ...     num = u ** 2 + x[1] * u
+    ...     J[:, 0] = num / den
+    ...     J[:, 1] = x[0] * u / den
+    ...     J[:, 2] = -x[0] * num * u / den ** 2
+    ...     J[:, 3] = -x[0] * num / den ** 2
+    ...     return J
+
+    >>> u = np.array([4.0, 2.0, 1.0, 5.0e-1, 2.5e-1, 1.67e-1, 1.25e-1, 1.0e-1,
+    ...               8.33e-2, 7.14e-2, 6.25e-2])
+    >>> y = np.array([1.957e-1, 1.947e-1, 1.735e-1, 1.6e-1, 8.44e-2, 6.27e-2,
+    ...               4.56e-2, 3.42e-2, 3.23e-2, 2.35e-2, 2.46e-2])
+    >>> x0 = np.array([2.5, 3.9, 4.15, 3.9])
+    >>> res = least_squares(fun, x0, jac=jac, bounds=(0, 100), args=(u, y), verbose=1)
+    `ftol` termination condition is satisfied.
+    Function evaluations 129, initial cost 4.4383e+00, final cost 1.5375e-04, first-order optimality 1.41e-05.
+    >>> res.x
+    array([ 0.19280849,  0.19124746,  0.12304994,  0.13604619])
+
+    >>> import matplotlib.pyplot as plt
+    >>> u_test = np.linspace(0, 5)
+    >>> y_test = model(res.x, u_test)
+    >>> plt.plot(u, y, 'o', markersize=4, label='data')
+    >>> plt.plot(u_test, y_test, label='fitted model')
+    >>> plt.xlabel("u")
+    >>> plt.ylabel("y")
+    >>> plt.legend(loc='lower right')
+    >>> plt.show()
+
+.. [1] Brett M. Averick et al., "The MINPACK-2 Test Problem Collection".
+
+Further examples
+^^^^^^^^^^^^^^^^
+
+Three interactive examples below illustrate usage of :func:`least_squares`: in
+greater detail.
 
 1. `Large-scale bundle adjustment in scipy <http://scipy-cookbook.readthedocs.org/items/bundle_adjustment.html>`_
    demonstrates large-scale capabilities of :func:`least_squares` and how to
