@@ -2316,16 +2316,6 @@ class rv_continuous(rv_generic):
 ## Handlers for generic case where xk and pk are given
 ## The _drv prefix probably means discrete random variable.
 
-def _drv_moment(self, n, *args):
-    n = asarray(n)
-    return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
-
-
-def _drv_moment_gen(self, t, *args):
-    t = asarray(t)
-    return np.sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
-
-
 def _drv2_moment(self, n, *args):
     """Non-central moment of discrete distribution."""
     def fun(x):
@@ -3253,10 +3243,6 @@ class rv_sample(rv_discrete):
         self.F = dict(zip(self.xk, self.qvals))
         decreasing_keys = sorted(self.F.keys(), reverse=True)
         self.Finv = dict((self.F[k], k) for k in decreasing_keys)
-        self.generic_moment = instancemethod(_drv_moment,
-                                             self, rv_discrete)
-        self.moment_gen = instancemethod(_drv_moment_gen,
-                                         self, rv_discrete)
 
         self.shapes = ' '   # bypass inspection
         self._construct_argparser(meths_to_inspect=[self._pmf],
@@ -3315,6 +3301,17 @@ class rv_sample(rv_discrete):
         else:
             Y = self._ppf(U)
         return Y
+
+    def generic_moment(self, n):
+        n = asarray(n)
+        return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+
+
+    def moment_gen(self, t):
+        t = asarray(t)
+        return np.sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
+
+
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):
