@@ -16,7 +16,7 @@ import warnings
 import functools
 import operator
 
-from scipy._lib.six import xrange, integer_types
+from scipy._lib.six import xrange, integer_types, string_types
 
 from . import fitpack
 from . import dfitpack
@@ -304,14 +304,27 @@ class interp2d(object):
         return array(z)
 
 
-def _duplicate(ab):
-    # ab is either a pair (a, b) or a single value. In the latter case,
-    # transform to a pair (a, a)
-    try:
-        a, b = ab
-    except TypeError:
-        a, b = ab, ab
-    return a, b
+def _check_broadcast_up_to(arr_from, shape_to, name):
+    """Helper to check that arr_from broadcasts up to shape_to"""
+    shape_from = arr_from.shape
+    if len(shape_to) >= len(shape_from):
+        for t, f in zip(shape_to[::-1], shape_from[::-1]):
+            if f != 1 and f != t:
+                break
+        else:  # all checks pass, do the upcasting that we need later
+            if arr_from.size != 1 and arr_from.shape != shape_to:
+                arr_from = np.ones(shape_to, arr_from.dtype) * arr_from
+            return arr_from.ravel()
+    # at least one check failed
+    raise ValueError('%s argument must be able to broadcast up '
+                     'to shape %s but had shape %s'
+                     % (name, shape_to, shape_from))
+
+
+def _do_extrapolate(fill_value):
+    """Helper to check if fill_value == "extrapolate" without warnings"""
+    return (isinstance(fill_value, string_types) and
+            fill_value == 'extrapolate')
 
 
 class interp1d(_Interpolator1D):
@@ -347,13 +360,17 @@ class interp1d(_Interpolator1D):
         a value outside of the range of x (where extrapolation is
         necessary). If False, out of bounds values are assigned `fill_value`.
         By default, an error is raised unless `fill_value="extrapolate"`.
-    fill_value : float or (float, float) or "extrapolate", optional
-        - if a single float, then this value will be used to fill in for requested
-          points outside of the data range. If not provided, then the default
-          is NaN.
-        - If a two-element tuple, then the first element is used as a fill value
-          for ``x_new < x[0]`` and the second element is used for
-          ``x_new > x[-1]``.
+    fill_value : array-like or (array-like, array_like) or "extrapolate", optional
+        - if a ndarray (or float), this value will be used to fill in for
+          requested points outside of the data range. If not provided, then
+          the default is NaN. The array-like must broadcast properly to the
+          dimensions of the non-interpolation axes.
+        - If a two-element tuple, then the first element is used as a
+          fill value for ``x_new < x[0]`` and the second element is used for
+          ``x_new > x[-1]``. Anything that is not a 2-element tuple (e.g.,
+          list or ndarray, regardless of shape) is taken to be a single
+          array-like argument meant to be used for both bounds as
+          ``below, above = fill_value, fill_value``.
           .. versionadded:: 0.17.0
         - If "extrapolate", then points outside the data range will be
           extrapolated. ("nearest" and "linear" kinds only.)
@@ -394,31 +411,11 @@ class interp1d(_Interpolator1D):
         """ Initialize a 1D linear interpolation class."""
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
-        # extrapolation only works for nearest neighbor and linear methods
-        if fill_value == "extrapolate":       
-            if kind not in ('nearest', 'linear'):
-                raise ValueError("Extrapolation does not work with "
-                                 "kind=%s" % kind)
-
-            if bounds_error:
-                raise ValueError("Cannot extrapolate and raise at the same time.")
-            bounds_error = False
-            self._extrapolate = True
-        else:
-            # it's either a pair (_below_range, _above_range) or a single value
-            # for both above and below range
-            self._fill_value_below, self._fill_value_above = _duplicate(fill_value)
-            self._extrapolate = False
-
-        if bounds_error is None:
-            bounds_error = True
-        self.bounds_error = bounds_error
-
+        self.bounds_error = bounds_error  # used by fill_value setter
         self.copy = copy
-        self._fill_value_orig = fill_value
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
-            order = {'nearest': 0, 'zero': 0,'slinear': 1,
+            order = {'nearest': 0, 'zero': 0, 'slinear': 1,
                      'quadratic': 2, 'cubic': 3}[kind]
             kind = 'spline'
         elif isinstance(kind, int):
@@ -449,7 +446,11 @@ class interp1d(_Interpolator1D):
 
         # Interpolation goes internally along the first axis
         self.y = y
-        y = self._reshape_yi(y)
+        self._y = self._reshape_yi(self.y)
+        self.x = x
+        del y, x  # clean up namespace to prevent misuse; use attributes
+        self._kind = kind
+        self.fill_value = fill_value  # calls the setter, can modify bounds_err
 
         # Adjust to interpolation kind; store reference to *unbound*
         # interpolation methods, in order to avoid circular references to self
@@ -460,28 +461,24 @@ class interp1d(_Interpolator1D):
             # axis.
             minval = 2
             if kind == 'nearest':
-                self.x_bds = (x[1:] + x[:-1]) / 2.0
+                self.x_bds = (self.x[1:] + self.x[:-1]) / 2.0
                 self._call = self.__class__._call_nearest
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
                 if (not np.issubdtype(self.y.dtype, np.complexfloating) and
                    self.y.ndim == 1 and
-                   fill_value != 'extrapolate'):
+                   not _do_extrapolate(fill_value)):
                     self._call = self.__class__._call_linear_np
                 else:
                     self._call = self.__class__._call_linear
         else:
             minval = order + 1
-            self._spline = splmake(x, y, order=order)
+            self._spline = splmake(self.x, self._y, order=order)
             self._call = self.__class__._call_spline
 
-        if len(x) < minval:
+        if len(self.x) < minval:
             raise ValueError("x and y arrays must have at "
                              "least %d entries" % minval)
-
-        self._kind = kind
-        self.x = x
-        self._y = y
 
     @property
     def fill_value(self):
@@ -489,14 +486,42 @@ class interp1d(_Interpolator1D):
         return self._fill_value_orig
 
     @fill_value.setter
-    def fill_value(self, value):
-        # backwards compat: fill_value was a public attr; make it writeable
-        self._fill_value_orig = value
-        if value == 'extrapolate':
+    def fill_value(self, fill_value):
+        # extrapolation only works for nearest neighbor and linear methods
+        if _do_extrapolate(fill_value):
+            if self._kind not in ('nearest', 'linear'):
+                raise ValueError("Extrapolation does not work with "
+                                 "kind=%s" % self._kind)
+
+            if self.bounds_error:
+                raise ValueError("Cannot extrapolate and raise "
+                                 "at the same time.")
+            self.bounds_error = False
             self._extrapolate = True
         else:
-            self._fill_value_below, self._fill_value_above = _duplicate(value)
+            broadcast_shape = (self.y.shape[:self.axis] +
+                               self.y.shape[self.axis + 1:])
+            if len(broadcast_shape) == 0:
+                broadcast_shape = (1,)
+            # it's either a pair (_below_range, _above_range) or a single value
+            # for both above and below range
+            if isinstance(fill_value, tuple) and len(fill_value) == 2:
+                below_above = [np.asarray(fill_value[0]),
+                               np.asarray(fill_value[1])]
+                names = ('fill_value (below)', 'fill_value (above)')
+                for ii in range(2):
+                    below_above[ii] = _check_broadcast_up_to(
+                        below_above[ii], broadcast_shape, names[ii])
+            else:
+                fill_value = np.asarray(fill_value)
+                below_above = [_check_broadcast_up_to(
+                    fill_value, broadcast_shape, 'fill_value')] * 2
+            self._fill_value_below, self._fill_value_above = below_above
             self._extrapolate = False
+            if self.bounds_error is None:
+                self.bounds_error = True
+        # backwards compat: fill_value was a public attr; make it writeable
+        self._fill_value_orig = fill_value
 
     def _call_linear_np(self, x_new):
         # Note that out-of-bounds values are taken care of in self._evaluate
@@ -560,6 +585,8 @@ class interp1d(_Interpolator1D):
         if not self._extrapolate:
             below_bounds, above_bounds = self._check_bounds(x_new)
             if len(y_new) > 0:
+                # Note fill_value must be broadcast up to the proper size
+                # and flattened to work here
                 y_new[below_bounds] = self._fill_value_below
                 y_new[above_bounds] = self._fill_value_above
         return y_new
