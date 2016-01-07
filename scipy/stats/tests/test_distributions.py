@@ -1691,6 +1691,16 @@ class TestExpect(TestCase):
             maxcount=1001, chunksize=32, tolerance=1e-8)
         assert_almost_equal(n0, n1, decimal=14)
 
+    def test_moment(self):
+        # test the .moment() method: compute a higher moment and compare to
+        # a known value
+        def poiss_moment5(mu):
+            return mu**5 + 10*mu**4 + 25*mu**3 + 15*mu**2 + mu
+
+        for mu in [5, 7]:
+            m5 = stats.poisson.moment(5, mu)
+            assert_allclose(m5, poiss_moment5(mu), rtol=1e-10)
+
 
 class TestNct(TestCase):
     def test_nc_parameter(self):

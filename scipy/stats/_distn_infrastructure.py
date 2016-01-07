@@ -2355,36 +2355,9 @@ def _drv_moment_gen(self, t, *args):
 
 def _drv2_moment(self, n, *args):
     """Non-central moment of discrete distribution."""
-    # many changes, originally not even a return
-    tot = 0.0
-    diff = 1e100
-    # pos = self.a
-    pos = max(0.0, 1.0*self.a)
-    count = 0
-    # handle cases with infinite support
-    ulimit = max(1000, (min(self.b, 1000) + max(self.a, -1000))/2.0)
-    llimit = min(-1000, (min(self.b, 1000) + max(self.a, -1000))/2.0)
-
-    while (pos <= self.b) and ((pos <= ulimit) or
-                               (diff > self.moment_tol)):
-        diff = np.power(pos, n) * self.pmf(pos, *args)
-        # use pmf because _pmf does not check support in randint and there
-        # might be problems ? with correct self.a, self.b at this stage
-        tot += diff
-        pos += self.inc
-        count += 1
-
-    if self.a < 0:  # handle case when self.a = -inf
-        diff = 1e100
-        pos = -self.inc
-        while (pos >= self.a) and ((pos >= llimit) or
-                                   (diff > self.moment_tol)):
-            diff = np.power(pos, n) * self.pmf(pos, *args)
-            # using pmf instead of _pmf, see above
-            tot += diff
-            pos -= self.inc
-            count += 1
-    return tot
+    def fun(x):
+        return np.power(x, n) * self._pmf(x, *args)
+    return _expect(fun, self.a, self.b, self.ppf(0.5, *args), self.inc)
 
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
@@ -3115,19 +3088,8 @@ class rv_discrete(rv_generic):
         if hasattr(self, 'pk'):
             return entropy(self.pk)
         else:
-            mu = int(self.stats(*args, **{'moments': 'm'}))
-            val = self.pmf(mu, *args)
-            ent = entr(val)
-            k = 1
-            term = 1.0
-            while (abs(term) > _EPS):
-                val = self.pmf(mu+k, *args)
-                term = entr(val)
-                val = self.pmf(mu-k, *args)
-                term += entr(val)
-                k += 1
-                ent += term
-            return ent
+            return _expect(lambda x: entr(self.pmf(x, *args)),
+                           self.a, self.b, self.ppf(0.5, *args), self.inc)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
                conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
@@ -3207,43 +3169,53 @@ class rv_discrete(rv_generic):
         else:
             invfac = 1.0
 
-        # short-circuit if the support size is small enough
-        if (ub - lb) <= chunksize:
-            supp = np.arange(lb, ub+1, self.inc)
-            vals = fun(supp)
-            return np.sum(vals) / invfac
-
-        # otherwise, iterate starting from median
+        # iterate over the support, starting from the median
         x0 = self.ppf(0.5, *args)
-        if x0 < lb:
-            x0 = lb
-        if x0 > ub:
-            x0 = ub
+        res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
+        return res / invfac
 
-        count, tot = 0, 0.
-        # iterate over [x0, ub] inclusive
-        for x in _iter_chunked(x0, ub+1, chunksize=chunksize, inc=self.inc):
-            count += x.size
-            delta = np.sum(fun(x))
-            tot += delta
-            if abs(delta) < tolerance * x.size:
-                break
-            if count > maxcount:
-                warnings.warn('expect(): sum did not converge', RuntimeWarning)
-                return tot / invfac
 
-        # iterate over [lb, x0)
-        for x in _iter_chunked(x0-1, lb-1, chunksize=chunksize, inc=-self.inc):
-            count += x.size
-            delta = np.sum(fun(x))
-            tot += delta
-            if abs(delta) < tolerance * x.size:
-                break
-            if count > maxcount:
-                warnings.warn('expect(): sum did not converge', RuntimeWarning)
-                break
+def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
+            chunksize=32):
+    """Helper for computing the expectation value of `fun`."""
 
-        return tot/invfac
+    # short-circuit if the support size is small enough
+    if (ub - lb) <= chunksize:
+        supp = np.arange(lb, ub+1, inc)
+        vals = fun(supp)
+        return np.sum(vals)
+
+    # otherwise, iterate starting from x0
+    if x0 < lb:
+        x0 = lb
+    if x0 > ub:
+        x0 = ub
+
+    count, tot = 0, 0.
+    # iterate over [x0, ub] inclusive
+    for x in _iter_chunked(x0, ub+1, chunksize=chunksize, inc=inc):
+        count += x.size
+        delta = np.sum(fun(x))
+        tot += delta
+        if abs(delta) < tolerance * x.size:
+            break
+        if count > maxcount:
+            warnings.warn('expect(): sum did not converge', RuntimeWarning)
+            return tot
+
+    # iterate over [lb, x0)
+    for x in _iter_chunked(x0-1, lb-1, chunksize=chunksize, inc=-inc):
+        count += x.size
+        delta = np.sum(fun(x))
+        tot += delta
+        if abs(delta) < tolerance * x.size:
+            break
+        if count > maxcount:
+            warnings.warn('expect(): sum did not converge', RuntimeWarning)
+            break
+
+    return tot
+
 
 def _iter_chunked(x0, x1, chunksize=4, inc=1):
     """Iterate from x0 to x1 in chunks of chunksize and steps inc.
