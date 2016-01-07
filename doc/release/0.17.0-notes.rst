@@ -651,3 +651,9 @@ Pull requests for 0.17.0
 - `#5602 <https://github.com/scipy/scipy/pull/5602>`__: Explicitly numbered replacement fields for maintainability
 - `#5605 <https://github.com/scipy/scipy/pull/5605>`__: MAINT: collection of small fixes to test suite
 - `#5614 <https://github.com/scipy/scipy/pull/5614>`__: Minor doc change.
+- `#5624 <https://github.com/scipy/scipy/pull/5624>`__: FIX: Fix interpolate
+- `#5625 <https://github.com/scipy/scipy/pull/5625>`__: BUG: msvc9 binaries crash when indexing std::vector of size 0
+- `#5635 <https://github.com/scipy/scipy/pull/5635>`__: BUG: misspelled __dealloc__ in cKDTree.
+- `#5642 <https://github.com/scipy/scipy/pull/5642>`__: STY: minor fixup of formatting of 0.17.0 release notes.
+- `#5643 <https://github.com/scipy/scipy/pull/5643>`__: BLD: fix a build issue in special/Faddeeva.cc with isnan.
+- `#5661 <https://github.com/scipy/scipy/pull/5661>`__: TST: linalg tests used stdlib random instead of numpy.random.
