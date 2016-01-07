@@ -667,6 +667,15 @@ class TestAkima1DInterpolator(TestCase):
         yi[:, 1, 1] = 4. * yi_
         assert_allclose(ak(xi), yi)
 
+    def test_degenerate_case_multidimensional(self):
+        # This test is for issue #5683.
+        x = np.array([0, 1, 2])
+        y = np.vstack((x, x**2)).T
+        ak = Akima1DInterpolator(x, y)
+        x_eval = np.array([0.5, 1.5])
+        y_eval = ak(x_eval)
+        assert_allclose(y_eval, np.vstack((x_eval, x_eval**2)).T)
+
     def test_extend(self):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
