@@ -106,6 +106,7 @@ class TestInterp2D(TestCase):
 class TestInterp1D(object):
 
     def setUp(self):
+        self.x5 = np.arange(5.)
         self.x10 = np.arange(10.)
         self.y10 = np.arange(10.)
         self.x25 = self.x10.reshape((2,5))
@@ -116,6 +117,10 @@ class TestInterp1D(object):
 
         self.y210 = np.arange(20.).reshape((2, 10))
         self.y102 = np.arange(20.).reshape((10, 2))
+        self.y225 = np.arange(20.).reshape((2, 2, 5))
+        self.y25 = np.arange(10.).reshape((2, 5))
+        self.y235 = np.arange(30.).reshape((2, 3, 5))
+        self.y325 = np.arange(30.).reshape((3, 2, 5))
 
         self.fill_value = -100.0
 
@@ -133,10 +138,26 @@ class TestInterp1D(object):
         interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
+        interp1d(self.x10, self.y10, kind='linear',
+                 fill_value=np.array([-1]))
+        interp1d(self.x10, self.y10, kind='linear',
+                 fill_value=(-1,))
+        interp1d(self.x10, self.y10, kind='linear',
+                 fill_value=-1)
+        interp1d(self.x10, self.y10, kind='linear',
+                 fill_value=(-1, -1))
         interp1d(self.x10, self.y10, kind=0)
         interp1d(self.x10, self.y10, kind=1)
         interp1d(self.x10, self.y10, kind=2)
         interp1d(self.x10, self.y10, kind=3)
+        interp1d(self.x10, self.y210, kind='linear', axis=-1,
+                 fill_value=(-1, -1))
+        interp1d(self.x2, self.y210, kind='linear', axis=0,
+                 fill_value=np.ones(10))
+        interp1d(self.x2, self.y210, kind='linear', axis=0,
+                 fill_value=(np.ones(10), np.ones(10)))
+        interp1d(self.x2, self.y210, kind='linear', axis=0,
+                 fill_value=(np.ones(10), -1))
 
         # extrapolation is only allowed for nearest & linear methods
         for kind in ('cubic', 'slinear', 'zero', 'quadratic'):
@@ -160,6 +181,26 @@ class TestInterp1D(object):
         assert_raises(ValueError, interp1d, self.x1, self.y10)
         assert_raises(ValueError, interp1d, self.x10, self.y1)
         assert_raises(ValueError, interp1d, self.x1, self.y1)
+
+        # Bad fill values
+        assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
+                      fill_value=(-1, -1, -1))  # doesn't broadcast
+        assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
+                      fill_value=[-1, -1, -1])  # doesn't broadcast
+        assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
+                      fill_value=np.array((-1, -1, -1)))  # doesn't broadcast
+        assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
+                      fill_value=[[-1]])  # doesn't broadcast
+        assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
+                      fill_value=[-1, -1])  # doesn't broadcast
+        assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
+                      fill_value=np.array([]))  # doesn't broadcast
+        assert_raises(ValueError, interp1d, self.x10, self.y10, kind='linear',
+                      fill_value=())  # doesn't broadcast
+        assert_raises(ValueError, interp1d, self.x2, self.y210, kind='linear',
+                      axis=0, fill_value=[-1, -1])  # doesn't broadcast
+        assert_raises(ValueError, interp1d, self.x2, self.y210, kind='linear',
+                      axis=0, fill_value=(0., [-1, -1]))  # above doesn't bc
 
     def test_init(self):
         # Check that the attributes are initialized appropriately by the
@@ -301,6 +342,160 @@ class TestInterp1D(object):
         assert_array_almost_equal(interp(10), 100)
         assert_array_almost_equal(interp(-10), -100)
         assert_array_almost_equal(interp([-10, 10]), [-100, 100])
+
+        # Proper broadcasting:
+        #    interp along axis of length 5
+        # other dim=(2, 3), (3, 2), (2, 2), or (2,)
+
+        # one singleton fill_value (works for all)
+        for y in (self.y235, self.y325, self.y225, self.y25):
+            interp = interp1d(self.x5, y, kind=kind, axis=-1,
+                              fill_value=100, bounds_error=False)
+            assert_array_almost_equal(interp(10), 100)
+            assert_array_almost_equal(interp(-10), 100)
+            assert_array_almost_equal(interp([-10, 10]), 100)
+
+            # singleton lower, singleton upper
+            interp = interp1d(self.x5, y, kind=kind, axis=-1,
+                              fill_value=(-100, 100), bounds_error=False)
+            assert_array_almost_equal(interp(10), 100)
+            assert_array_almost_equal(interp(-10), -100)
+            if y.ndim == 3:
+                result = [[[-100, 100]] * y.shape[1]] * y.shape[0]
+            else:
+                result = [[-100, 100]] * y.shape[0]
+            assert_array_almost_equal(interp([-10, 10]), result)
+
+        # one broadcastable (3,) fill_value
+        fill_value = [100, 200, 300]
+        for y in (self.y325, self.y225):
+            assert_raises(ValueError, interp1d, self.x5, y, kind=kind,
+                          axis=-1, fill_value=fill_value, bounds_error=False)
+        interp = interp1d(self.x5, self.y235, kind=kind, axis=-1,
+                          fill_value=fill_value, bounds_error=False)
+        assert_array_almost_equal(interp(10), [[100, 200, 300]] * 2)
+        assert_array_almost_equal(interp(-10), [[100, 200, 300]] * 2)
+        assert_array_almost_equal(interp([-10, 10]), [[[100, 100],
+                                                       [200, 200],
+                                                       [300, 300]]] * 2)
+
+        # one broadcastable (2,) fill_value
+        fill_value = [100, 200]
+        assert_raises(ValueError, interp1d, self.x5, self.y235, kind=kind,
+                      axis=-1, fill_value=fill_value, bounds_error=False)
+        for y in (self.y225, self.y325, self.y25):
+            interp = interp1d(self.x5, y, kind=kind, axis=-1,
+                              fill_value=fill_value, bounds_error=False)
+            result = [100, 200]
+            if y.ndim == 3:
+                result = [result] * y.shape[0]
+            assert_array_almost_equal(interp(10), result)
+            assert_array_almost_equal(interp(-10), result)
+            result = [[100, 100], [200, 200]]
+            if y.ndim == 3:
+                result = [result] * y.shape[0]
+            assert_array_almost_equal(interp([-10, 10]), result)
+
+        # broadcastable (3,) lower, singleton upper
+        fill_value = (np.array([-100, -200, -300]), 100)
+        for y in (self.y325, self.y225):
+            assert_raises(ValueError, interp1d, self.x5, y, kind=kind,
+                          axis=-1, fill_value=fill_value, bounds_error=False)
+        interp = interp1d(self.x5, self.y235, kind=kind, axis=-1,
+                          fill_value=fill_value, bounds_error=False)
+        assert_array_almost_equal(interp(10), 100)
+        assert_array_almost_equal(interp(-10), [[-100, -200, -300]] * 2)
+        assert_array_almost_equal(interp([-10, 10]), [[[-100, 100],
+                                                       [-200, 100],
+                                                       [-300, 100]]] * 2)
+
+        # broadcastable (2,) lower, singleton upper
+        fill_value = (np.array([-100, -200]), 100)
+        assert_raises(ValueError, interp1d, self.x5, self.y235, kind=kind,
+                      axis=-1, fill_value=fill_value, bounds_error=False)
+        for y in (self.y225, self.y325, self.y25):
+            interp = interp1d(self.x5, y, kind=kind, axis=-1,
+                              fill_value=fill_value, bounds_error=False)
+            assert_array_almost_equal(interp(10), 100)
+            result = [-100, -200]
+            if y.ndim == 3:
+                result = [result] * y.shape[0]
+            assert_array_almost_equal(interp(-10), result)
+            result = [[-100, 100], [-200, 100]]
+            if y.ndim == 3:
+                result = [result] * y.shape[0]
+            assert_array_almost_equal(interp([-10, 10]), result)
+
+        # broadcastable (3,) lower, broadcastable (3,) upper
+        fill_value = ([-100, -200, -300], [100, 200, 300])
+        for y in (self.y325, self.y225):
+            assert_raises(ValueError, interp1d, self.x5, y, kind=kind,
+                          axis=-1, fill_value=fill_value, bounds_error=False)
+        for ii in range(2):  # check ndarray as well as list here
+            if ii == 1:
+                fill_value = tuple(np.array(f) for f in fill_value)
+            interp = interp1d(self.x5, self.y235, kind=kind, axis=-1,
+                              fill_value=fill_value, bounds_error=False)
+            assert_array_almost_equal(interp(10), [[100, 200, 300]] * 2)
+            assert_array_almost_equal(interp(-10), [[-100, -200, -300]] * 2)
+            assert_array_almost_equal(interp([-10, 10]), [[[-100, 100],
+                                                           [-200, 200],
+                                                           [-300, 300]]] * 2)
+        # broadcastable (2,) lower, broadcastable (2,) upper
+        fill_value = ([-100, -200], [100, 200])
+        assert_raises(ValueError, interp1d, self.x5, self.y235, kind=kind,
+                      axis=-1, fill_value=fill_value, bounds_error=False)
+        for y in (self.y325, self.y225, self.y25):
+            interp = interp1d(self.x5, y, kind=kind, axis=-1,
+                              fill_value=fill_value, bounds_error=False)
+            result = [100, 200]
+            if y.ndim == 3:
+                result = [result] * y.shape[0]
+            assert_array_almost_equal(interp(10), result)
+            result = [-100, -200]
+            if y.ndim == 3:
+                result = [result] * y.shape[0]
+            assert_array_almost_equal(interp(-10), result)
+            result = [[-100, 100], [-200, 200]]
+            if y.ndim == 3:
+                result = [result] * y.shape[0]
+            assert_array_almost_equal(interp([-10, 10]), result)
+
+        # one broadcastable (2, 2) array-like
+        fill_value = [[100, 200], [1000, 2000]]
+        for y in (self.y235, self.y325, self.y25):
+            assert_raises(ValueError, interp1d, self.x5, y, kind=kind,
+                          axis=-1, fill_value=fill_value, bounds_error=False)
+        for ii in range(2):
+            if ii == 1:
+                fill_value = np.array(fill_value)
+            interp = interp1d(self.x5, self.y225, kind=kind, axis=-1,
+                              fill_value=fill_value, bounds_error=False)
+            assert_array_almost_equal(interp(10), [[100, 200], [1000, 2000]])
+            assert_array_almost_equal(interp(-10), [[100, 200], [1000, 2000]])
+            assert_array_almost_equal(interp([-10, 10]), [[[100, 100],
+                                                           [200, 200]],
+                                                          [[1000, 1000],
+                                                           [2000, 2000]]])
+
+        # broadcastable (2, 2) lower, broadcastable (2, 2) upper
+        fill_value = ([[-100, -200], [-1000, -2000]],
+                      [[100, 200], [1000, 2000]])
+        for y in (self.y235, self.y325, self.y25):
+            assert_raises(ValueError, interp1d, self.x5, y, kind=kind,
+                          axis=-1, fill_value=fill_value, bounds_error=False)
+        for ii in range(2):
+            if ii == 1:
+                fill_value = (np.array(fill_value[0]), np.array(fill_value[1]))
+            interp = interp1d(self.x5, self.y225, kind=kind, axis=-1,
+                              fill_value=fill_value, bounds_error=False)
+            assert_array_almost_equal(interp(10), [[100, 200], [1000, 2000]])
+            assert_array_almost_equal(interp(-10), [[-100, -200],
+                                                    [-1000, -2000]])
+            assert_array_almost_equal(interp([-10, 10]), [[[-100, 100],
+                                                           [-200, 200]],
+                                                          [[-1000, 1000],
+                                                           [-2000, 2000]]])
 
     def test_fill_value(self):
         # test that two-element fill value works
