@@ -339,6 +339,9 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     outside the boundaries of the input are filled according to the given
     mode.
 
+    Specifically, given an output image pixel index vector `o`, the pixel value
+    is determined from the input image at position `np.dot(matrix,o) + offset`.
+
     Parameters
     ----------
     input : ndarray
