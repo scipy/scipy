@@ -376,13 +376,13 @@ least-squares problems:
 
 .. math::
   \begin{align}
-  &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathrm{x})^2\right) \\
-  &\text{s. t. } \mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
+  &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
+  &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
   \end{align}
 
 Here :math:`f_i(\mathbf{x})` are smooth functions from
 :math:`\mathbb{R}^n` to :math:`\mathbb{R}`, we refer to them as residuals.
-The purpose of a scalar valued function :math:`\rho(\cdot)` is to reduce
+The purpose of a scalar valued function :math:`\rho(\cdot)` is to reduce the
 influence of outlier residuals and contribute to robustness of the solution,
 we refer to it as a loss function. A linear loss function gives a standard 
 least-squares problem. Additionally, constraints in a form of lower and upper
@@ -396,7 +396,7 @@ otherwise it will be estimated by finite differences which takes a lot of
 additional time and can be very inaccurate in hard cases.
 
 Function :func:`least_squares` can be used for fitting a function
-:math:`\varphi(t; \mathbf{x})` to empirical data :math:`\{(t_i, y_i), i = 1, \ldots, m\}`.
+:math:`\varphi(t; \mathbf{x})` to empirical data :math:`\{(t_i, y_i), i = 0, \ldots, m-1\}`.
 To do this one should simply precompute residuals as 
 :math:`f_i(\mathbf{x}) = w_i (\varphi(t_i; \mathbf{x}) - y_i)`, where :math:`w_i`
 are weights assigned to each observation.
@@ -408,7 +408,7 @@ Here we consider "Analysis of an Enzyme Reaction" problem formulated in [1]_.
 There are 11 residuals defined as
 
 .. math::
-    f_i(x) = \frac{x_0 (u_i^2 + u_i x_1)}{u_i^2 + u_i x_2 + x3} - y_i, \quad i = 0, \ldots, 10
+    f_i(x) = \frac{x_0 (u_i^2 + u_i x_1)}{u_i^2 + u_i x_2 + x3} - y_i, \quad i = 0, \ldots, 10,
 
 where :math:`y_i` are measurement values and :math:`u_i` are values of
 the independent variable. The unknown vector of parameters is
@@ -423,9 +423,10 @@ recommended to compute Jacobian matrix in a closed form:
     &J_{i3} = \frac{\partial f_i}{\partial x_3} = -\frac{x_0 (u_i^2 + u_i x_1)}{(u_i^2 + u_i x_2 + x_3)^2}
     \end{align}
 
-We are going to use "hard" starting point defined in [1]_. To find a physically
-meaningful solution, avoid potential division by zero and assure convergence to
-the global minimum we impose constraints :math:`0 \leq x_j \leq 100, j = 0, 1, 2, 3`.
+We are going to use the "hard" starting point defined in [1]_. To find a
+physically meaningful solution, avoid potential division by zero and assure
+convergence to the global minimum we impose constraints
+:math:`0 \leq x_j \leq 100, j = 0, 1, 2, 3`.
 
 The code below implements least-squares estimation of :math:`\mathbf{x}` and
 finally plots the original data and the fitted model function:
@@ -476,7 +477,7 @@ finally plots the original data and the fitted model function:
 Further examples
 ^^^^^^^^^^^^^^^^
 
-Three interactive examples below illustrate usage of :func:`least_squares`: in
+Three interactive examples below illustrate usage of :func:`least_squares` in
 greater detail.
 
 1. `Large-scale bundle adjustment in scipy <http://scipy-cookbook.readthedocs.org/items/bundle_adjustment.html>`_

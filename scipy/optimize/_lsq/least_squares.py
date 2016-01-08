@@ -237,7 +237,8 @@ def least_squares(
     Let f(x) be an m-dimensional function of n variables and rho(s) be a
     scalar function, `least_squares` finds a local minimum of::
 
-        F(x) = 0.5 * sum(rho(f_i(x)**2), i = 1, ..., m), lb <= x <= ub
+        F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
+        subject to lb <= x <= ub
 
     We call f(x) as a vector of residuals or simply residuals, and F(x) as a
     cost function or simply cost.
