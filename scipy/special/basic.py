@@ -7,6 +7,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
+import math
 from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
                    where, mgrid, sin, place, issubdtype, extract,
@@ -2145,12 +2146,7 @@ def factorial(n, exact=False):
 
     """
     if exact:
-        if n < 0:
-            return 0
-        val = 1
-        for k in xrange(1, n+1):
-            val *= k
-        return val
+        return math.factorial(n)
     else:
         n = asarray(n)
         vals = gamma(n+1)
