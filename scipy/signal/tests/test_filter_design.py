@@ -1422,6 +1422,39 @@ class TestBessel(TestCase):
             p2 = sorted(besselap(N)[1], key=np.imag)
             assert_allclose(p1, p2, rtol=1e-14)
 
+    def test_norm_phase(self):
+        # Test some orders and frequencies and see that they have the right
+        # phase at w0
+        for N in (1, 2, 3, 4, 5, 51, 72):
+            for w0 in (1, 100):
+                b, a = bessel(N, w0, analog=True, norm='phase')
+                w = np.linspace(0, w0, 100)
+                w, h = freqs(b, a, w)
+                phase = np.unwrap(np.angle(h))
+                assert_allclose(phase[[0, -1]], (0, -N*pi/4), rtol=1e-1)
+
+    def test_norm_mag(self):
+        # Test some orders and frequencies and see that they have the right
+        # mag at w0
+        for N in (1, 2, 3, 4, 5, 51, 72):
+            for w0 in (1, 100):
+                b, a = bessel(N, w0, analog=True, norm='mag')
+                w = (0, w0)
+                w, h = freqs(b, a, w)
+                mag = abs(h)
+                assert_allclose(mag, (1, 1/np.sqrt(2)))
+
+    def test_norm_delay(self):
+        # Test some orders and frequencies and see that they have the right
+        # delay at DC
+        for N in (1, 2, 3, 4, 5, 51, 72):
+            for w0 in (1, 100):
+                b, a = bessel(N, w0, analog=True, norm='delay')
+                w = np.linspace(0, 10*w0, 1000)
+                w, h = freqs(b, a, w)
+                delay = -np.diff(np.unwrap(np.angle(h)))/np.diff(w)
+                assert_allclose(delay[0], 1/w0, rtol=1e-4)
+
     def test_norm_factor(self):
         mpmath_values = {
             1: 1, 2: 1.361654128716130520, 3: 1.755672368681210649,
@@ -1603,7 +1636,7 @@ class TestButter(TestCase):
     def test_bandpass(self):
         z, p, k = butter(8, [0.25, 0.33], 'band', output='zpk')
         z2 = [1, 1, 1, 1, 1, 1, 1, 1,
-             -1, -1, -1, -1, -1, -1, -1, -1]
+              -1, -1, -1, -1, -1, -1, -1, -1]
         p2 = [
             4.979909925436156e-01 + 8.367609424799387e-01j,
             4.979909925436156e-01 - 8.367609424799387e-01j,
@@ -1743,10 +1776,10 @@ class TestCheby1(TestCase):
 
         b, a = cheby1(4, 1, [0.4, 0.7], btype='band')
         assert_array_almost_equal(b, [0.0084, 0, -0.0335, 0, 0.0502, 0,
-                                     -0.0335, 0, 0.0084], decimal=4)
+                                      -0.0335, 0, 0.0084], decimal=4)
         assert_array_almost_equal(a, [1.0, 1.1191, 2.862, 2.2986, 3.4137,
                                       1.8653, 1.8982, 0.5676, 0.4103],
-                                      decimal=4)
+                                  decimal=4)
 
         b2, a2 = cheby1(5, 3, 1, analog=True)
         assert_array_almost_equal(b2, [0.0626], decimal=4)
