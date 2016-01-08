@@ -856,31 +856,31 @@ class TestRvDiscrete(TestCase):
         assert_equal(h, 0.0)
 
 
-class TestSkewNormal(TestCase):
+class TestSkewNorm(TestCase):
 
     def test_normal(self):
         # When the skewness is 0 the distribution is normal
         x = np.linspace(-5, 5, 100)
-        assert_array_almost_equal(stats.skewnormal.pdf(x, a=0), 
+        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0), 
                                   stats.norm.pdf(x))
 
     def test_rvs(self):
         shape = (3, 4, 5)
-        x = stats.skewnormal.rvs(a=0.75, size=shape)
+        x = stats.skewnorm.rvs(a=0.75, size=shape)
         assert_equal(shape, x.shape)
         
-        x = stats.skewnormal.rvs(a=-3, size=shape)
+        x = stats.skewnorm.rvs(a=-3, size=shape)
         assert_equal(shape, x.shape)
         
     def test_moments(self):
-        X = stats.skewnormal.rvs(a=4, size=int(1e6), loc=5, scale=2)
+        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
         assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
-                                   stats.skewnormal.stats(a=4, loc=5, scale=2, moments='mvsk'), 
+                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'), 
                                    decimal=2)
         
-        X = stats.skewnormal.rvs(a=-4, size=int(1e6), loc=5, scale=2)
+        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
         assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
-                                   stats.skewnormal.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
+                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
                                    decimal=2)
 
 class TestExpon(TestCase):

@@ -76,7 +76,7 @@ fails_cmplx = set(['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma',
                    'levy_l', 'loggamma', 'logistic', 'lognorm', 'lomax',
                    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norm',
                    'pearson3', 'powerlognorm', 'powernorm', 'rayleigh',
-                   'recipinvgauss', 'rice', 'skewnormal', 't', 'truncexpon', 'truncnorm',
+                   'recipinvgauss', 'rice', 'skewnorm', 't', 'truncexpon', 'truncnorm',
                    'tukeylambda', 'vonmises', 'vonmises_line', 'wald',
                    'weibull_min'])
 

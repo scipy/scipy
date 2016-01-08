@@ -4089,7 +4089,7 @@ class semicircular_gen(rv_continuous):
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
-class skew_normal_gen(rv_continuous):
+class skew_norm_gen(rv_continuous):
     """A skew-normal random variable.
     
     %(before_notes)s
@@ -4098,9 +4098,9 @@ class skew_normal_gen(rv_continuous):
     -----
     The pdf is
 
-    skewnormal.pdf(x, a) = 2*norm.pdf(x)*norm.cdf(ax)
+    skewnorm.pdf(x, a) = 2*norm.pdf(x)*norm.cdf(ax)
     
-    `skewnormal` takes ``a`` as a skewness parameter
+    `skewnorm` takes ``a`` as a skewness parameter
     When a=0 the distribution is identical to a normal distribution.
     rvs implements the method of [1].
    
@@ -4143,7 +4143,7 @@ class skew_normal_gen(rv_continuous):
             
         return output
         
-skewnormal = skew_normal_gen(name='skewnormal')
+skewnorm = skew_norm_gen(name='skewnorm')
 
 class triang_gen(rv_continuous):
     """A triangular continuous random variable.

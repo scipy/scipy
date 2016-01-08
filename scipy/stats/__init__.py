@@ -100,7 +100,7 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
-   skewnormal        -- Skew normal
+   skewnorm        -- Skew normal
    t                 -- Student's T
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
