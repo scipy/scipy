@@ -1438,8 +1438,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         raise ValueError("stopband attenuation (rs) must be positive")
 
     # Get analog lowpass prototype
-    if typefunc in [buttap, besselap]:
+    if typefunc == buttap:
         z, p, k = typefunc(N)
+    elif typefunc == besselap:
+        z, p, k = typefunc(N, norm=bessel_norms[ftype])
     elif typefunc == cheb1ap:
         if rp is None:
             raise ValueError("passband ripple (rp) must be provided to "
@@ -2159,7 +2161,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
                      output=output, ftype='elliptic')
 
 
-def bessel(N, Wn, btype='low', analog=False, output='ba'):
+def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
     """Bessel/Thomson digital and analog filter design.
 
     Design an Nth order digital or analog Bessel filter and return the
@@ -2170,22 +2172,42 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     N : int
         The order of the filter.
     Wn : array_like
-        A scalar or length-2 sequence giving the critical frequencies.
-        For a Bessel filter, this is defined as the point at which the
-        asymptotes of the response are the same as a Butterworth filter of
-        the same order.
+        A scalar or length-2 sequence giving the critical frequencies (defined
+        by the `norm` parameter).
+        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
         For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
         Nyquist frequency, pi radians/sample.  (`Wn` is thus in
         half-cycles / sample.)
-        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
-        returned.
+        returned.  (See Notes.)
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
+    norm : str {'phase', 'delay', 'mag'}, optional
+        Critical frequency normalization:
+
+        ``phase``
+            The filter is normalized such that the phase response reaches its
+            midpoint at angular (e.g. rad/s) frequency `Wn`.  This happens for
+            both low-pass and high-pass filters, so this is the
+            "phase-matched" case.
+
+            The magnitude response asymptotes are the same as a Butterworth
+            filter of the same order with a cutoff of `Wn`.
+
+            This is the default, and matches MATLAB's implementation.
+
+        ``delay``
+            The filter is normalized such that the group delay in the passband
+            is 1/`Wn` (e.g. seconds).  This is the "natural" type obtained by
+            solving Bessel polynomials.
+
+        ``mag``
+            The filter is normalized such that the gain magnitude is -3 dB at
+            angular frequency `Wn`.
 
     Returns
     -------
@@ -2203,46 +2225,76 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     -----
     Also known as a Thomson filter, the analog Bessel filter has maximally
     flat group delay and maximally linear phase response, with very little
-    ringing in the step response.
+    ringing in the step response. [1]_
 
-    As order increases, the Bessel filter approaches a Gaussian filter.
+    The Bessel is inherently an analog filter.  This function generates digital
+    Bessel filters using the bilinear transform, which does not preserve the
+    phase response of the analog filter.  As such, it is only approximately
+    correct at frequencies below about fs/4.  To get maximally-flat group
+    delay at higher frequencies, the analog Bessel filter must be transformed
+    using phase-preserving techniques.
 
-    The digital Bessel filter is generated using the bilinear
-    transform, which does not preserve the phase response of the analog
-    filter. As such, it is only approximately correct at frequencies
-    below about fs/4.  To get maximally flat group delay at higher
-    frequencies, the analog Bessel filter must be transformed using
-    phase-preserving techniques.
-
-    For a given `Wn`, the lowpass and highpass filter have the same phase vs
-    frequency curves; they are "phase-matched".
+    See `besselap` for implementation details and references.
 
     The ``'sos'`` output parameter was added in 0.16.0.
 
     Examples
     --------
-    Plot the filter's frequency response, showing the flat group delay and
-    the relationship to the Butterworth's cutoff frequency:
+    Plot the phase-normalized frequency response, showing the relationship
+    to the Butterworth's cutoff frequency (green):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
     >>> b, a = signal.butter(4, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
-    >>> plt.plot(w, 20 * np.log10(np.abs(h)), color='silver', ls='dashed')
-    >>> b, a = signal.bessel(4, 100, 'low', analog=True)
+    >>> plt.semilogx(w, 20 * np.log10(np.abs(h)), color='silver', ls='dashed')
+    >>> b, a = signal.bessel(4, 100, 'low', analog=True, norm='phase')
     >>> w, h = signal.freqs(b, a)
     >>> plt.semilogx(w, 20 * np.log10(np.abs(h)))
-    >>> plt.title('Bessel filter frequency response (with Butterworth)')
+    >>> plt.title('Bessel filter magnitude response (with Butterworth)')
     >>> plt.xlabel('Frequency [radians / second]')
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.margins(0, 0.1)
     >>> plt.grid(which='both', axis='both')
-    >>> plt.axvline(100, color='green') # cutoff frequency
+    >>> plt.axvline(100, color='green')  # cutoff frequency
     >>> plt.show()
 
+    and the phase midpoint:
+
+    >>> plt.figure()
+    >>> plt.semilogx(w, np.unwrap(np.angle(h)))
+    >>> plt.axvline(100, color='green')  # cutoff frequency
+    >>> plt.axhline(-np.pi, color='red')  # phase midpoint
+    >>> plt.title('Bessel filter phase response')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Phase [radians]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
+
+    Plot the magnitude-normalized frequency response, showing the -3 dB cutoff:
+
+    >>> b, a = signal.bessel(3, 10, 'low', analog=True, norm='mag')
+    >>> w, h = signal.freqs(b, a)
+    >>> plt.semilogx(w, 20 * np.log10(np.abs(h)))
+    >>> plt.axhline(-3, color='red')  # -3 dB magnitude
+    >>> plt.axvline(10, color='green')  # cutoff frequency
+    >>> plt.title('Magnitude-normalized Bessel filter frequency response')
+    >>> plt.xlabel('Frequency [radians / second]')
+    >>> plt.ylabel('Amplitude [dB]')
+    >>> plt.margins(0, 0.1)
+    >>> plt.grid(which='both', axis='both')
+    >>> plt.show()
+
+    Plot the delay-normalized filter, showing the maximally-flat group delay
+    at 0.1 seconds:
+
+    >>> b, a = signal.bessel(5, 1/0.1, 'low', analog=True, norm='delay')
+    >>> w, h = signal.freqs(b, a)
     >>> plt.figure()
     >>> plt.semilogx(w[1:], -np.diff(np.unwrap(np.angle(h)))/np.diff(w))
+    >>> plt.axhline(0.1, color='red')  # 0.1 seconds group delay
     >>> plt.title('Bessel filter group delay')
     >>> plt.xlabel('Frequency [radians / second]')
     >>> plt.ylabel('Group delay [seconds]')
@@ -2250,9 +2302,15 @@ def bessel(N, Wn, btype='low', analog=False, output='ba'):
     >>> plt.grid(which='both', axis='both')
     >>> plt.show()
 
+    References
+    ----------
+    .. [1] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
+           Characteristics", Proceedings of the Institution of Electrical
+           Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
+
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
-                     output=output, ftype='bessel')
+                     output=output, ftype='bessel_'+norm)
 
 
 def maxflat():
@@ -3240,19 +3298,20 @@ def besselap(N, norm='phase'):
     Parameters
     ----------
     N : int
-        The order of the Bessel filter to return zeros, poles and gain for.
+        The order of the filter.
     norm : str {'phase', 'delay', 'mag'}, optional
         Frequency normalization:
 
         ``phase``
-            The filter is normalized such that the filter asymptotes are the
-            same as a Butterworth filter of the same order with an angular
-            (e.g. rad/s) cutoff frequency of 1.  This is default, and matches
-            Matlab's implementation.
+            The filter is normalized such that the phase response reaches its
+            midpoint at an angular (e.g. rad/s) cutoff frequency of 1.  This
+            happens for both low-pass and high-pass filters, so this is the
+            "phase-matched" case. [6]_
 
-            The phase reaches its midpoint at this cutoff frequency for both
-            low-pass and high-pass filters, so this is the "phase-matched"
-            case.
+            The magnitude response asymptotes are the same as a Butterworth
+            filter of the same order with a cutoff of `Wn`.
+
+            This is the default, and matches MATLAB's implementation.
 
         ``delay``
             The filter is normalized such that the group delay in the passband
@@ -3267,11 +3326,11 @@ def besselap(N, norm='phase'):
     Returns
     -------
     z : ndarray
-        Zeros. Is always an empty array.
+        Zeros of the transfer function. Is always an empty array.
     p : ndarray
-        Poles.
+        Poles of the transfer function.
     k : scalar
-        Gain. Always 1.
+        Gain of the transfer function.  For phase-normalized, this is always 1.
 
     Notes
     -----
@@ -3297,6 +3356,8 @@ def besselap(N, norm='phase'):
     .. [5] Ehrlich, "A modified Newton method for polynomials", Communications
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
            DOI:10.1145/363067.363115
+    .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
+           Others", RaneNote 147, 1998, http://www.rane.com/note147.html
 
     """
     if abs(int(N)) != N:
@@ -3338,6 +3399,9 @@ filter_dict = {'butter': [buttap, buttord],
                'ellip': [ellipap, ellipord],
 
                'bessel': [besselap],
+               'bessel_phase': [besselap],
+               'bessel_delay': [besselap],
+               'bessel_mag': [besselap],
 
                'cheby1': [cheb1ap, cheb1ord],
                'chebyshev1': [cheb1ap, cheb1ord],
@@ -3368,3 +3432,8 @@ band_dict = {'band': 'bandpass',
              'h': 'highpass',
              'hp': 'highpass',
              }
+
+bessel_norms = {'bessel': 'phase',
+                'bessel_phase': 'phase',
+                'bessel_delay': 'delay',
+                'bessel_mag': 'mag'}
