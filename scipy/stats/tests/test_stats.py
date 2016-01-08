@@ -2456,6 +2456,14 @@ def test_ttest_ind_with_uneq_var():
         np.seterr(**olderr)
 
 
+def test_gh5686():
+    mean1, mean2 = np.array([1, 2]), np.array([3, 4])
+    std1, std2 = np.array([5, 3]), np.array([4, 5])
+    nobs1, nobs2 = np.array([130, 140]), np.array([100, 150])
+    # This will raise a TypeError unless gh-5686 is fixed.
+    stats.ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2)
+
+
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
