@@ -390,6 +390,7 @@ class CubicSpline(PPoly):
     Akima1DInterpolator
     PchipInterpolator
     PPoly
+    InterpolatedUnivariateSpline
 
     Notes
     -----
@@ -403,6 +404,11 @@ class CubicSpline(PPoly):
 
     When n=2 or n=3, the solution is sought as a linear/quadratic function
     passing through the given points.
+
+    `InterpolatedUnivariateSpline` is another class for interpolation based
+    on B-splines. It gives the same interpolation curve, but it selects knots
+    (breakpoints) different from the given `x` and doesn't directly provide
+    coefficients of polynomials on each segment.
 
     .. versionadded:: 0.18.0
 
