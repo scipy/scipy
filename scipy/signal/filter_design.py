@@ -102,7 +102,7 @@ def freqs(b, a, worN=None, plot=None):
         Numerator of a linear filter.
     a : array_like
         Denominator of a linear filter.
-    worN : {None, int}, optional
+    worN : {None, int, array_like}, optional
         If None, then compute at 200 frequencies around the interesting parts
         of the response curve (determined by pole-zero locations).  If a single
         integer, then compute at that many frequencies.  Otherwise, compute the
@@ -1333,7 +1333,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     """
     IIR digital and analog filter design given order and critical points.
 
-    Design an Nth order digital or analog filter and return the filter
+    Design an Nth-order digital or analog filter and return the filter
     coefficients.
 
     Parameters
@@ -1831,7 +1831,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     """
     Butterworth digital and analog filter design.
 
-    Design an Nth order digital or analog Butterworth filter and return
+    Design an Nth-order digital or analog Butterworth filter and return
     the filter coefficients.
 
     Parameters
@@ -1905,7 +1905,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     """
     Chebyshev type I digital and analog filter design.
 
-    Design an Nth order digital or analog Chebyshev type I filter and
+    Design an Nth-order digital or analog Chebyshev type I filter and
     return the filter coefficients.
 
     Parameters
@@ -1991,7 +1991,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     """
     Chebyshev type II digital and analog filter design.
 
-    Design an Nth order digital or analog Chebyshev type II filter and
+    Design an Nth-order digital or analog Chebyshev type II filter and
     return the filter coefficients.
 
     Parameters
@@ -2072,7 +2072,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     """
     Elliptic (Cauer) digital and analog filter design.
 
-    Design an Nth order digital or analog elliptic filter and return
+    Design an Nth-order digital or analog elliptic filter and return
     the filter coefficients.
 
     Parameters
@@ -2164,7 +2164,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
 def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
     """Bessel/Thomson digital and analog filter design.
 
-    Design an Nth order digital or analog Bessel filter and return the
+    Design an Nth-order digital or analog Bessel filter and return the
     filter coefficients.
 
     Parameters
@@ -2923,7 +2923,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
 
 
 def buttap(N):
-    """Return (z,p,k) for analog prototype of Nth order Butterworth filter.
+    """Return (z,p,k) for analog prototype of Nth-order Butterworth filter.
 
     The filter will have an angular (e.g. rad/s) cutoff frequency of 1.
 
@@ -2940,7 +2940,7 @@ def buttap(N):
 
 def cheb1ap(N, rp):
     """
-    Return (z,p,k) for Nth order Chebyshev type I analog lowpass filter.
+    Return (z,p,k) for Nth-order Chebyshev type I analog lowpass filter.
 
     The returned filter prototype has `rp` decibels of ripple in the passband.
 
@@ -2974,7 +2974,7 @@ def cheb1ap(N, rp):
 
 def cheb2ap(N, rs):
     """
-    Return (z,p,k) for Nth order Chebyshev type I analog lowpass filter.
+    Return (z,p,k) for Nth-order Chebyshev type I analog lowpass filter.
 
     The returned filter prototype has `rs` decibels of ripple in the stopband.
 
@@ -3036,7 +3036,7 @@ def _kratio(m, k_ratio):
 
 
 def ellipap(N, rp, rs):
-    """Return (z,p,k) of Nth order elliptic analog lowpass filter.
+    """Return (z,p,k) of Nth-order elliptic analog lowpass filter.
 
     The filter is a normalized prototype that has `rp` decibels of ripple
     in the passband and a stopband `rs` decibels down.
@@ -3280,6 +3280,7 @@ def _norm_factor(a):
         """
         # TODO: This is inaccurate at high orders.  Evaluate using SOS when
         # that is implemented for analog filters.
+        # https://github.com/scipy/scipy/issues/5668
         return abs(a[-1]/npp_polyval(1j*w, a[::-1]))
 
     def cutoff(w):
@@ -3293,7 +3294,7 @@ def _norm_factor(a):
 
 def besselap(N, norm='phase'):
     """
-    Return (z,p,k) for analog prototype of an Nth order Bessel filter.
+    Return (z,p,k) for analog prototype of an Nth-order Bessel filter.
 
     Parameters
     ----------
