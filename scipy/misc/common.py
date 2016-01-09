@@ -61,7 +61,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         If return_sign is True, this will be an array of floating-point
         numbers matching res and +1, 0, or -1 depending on the sign
         of the result. If False, only one result is returned.
-        
+
     See Also
     --------
     numpy.logaddexp, numpy.logaddexp2
@@ -102,7 +102,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         if np.any(b == 0):
             a = a + 0.  # promote to at least float
             a[b == 0] = -np.inf
-    
+
     # keepdims is available in numpy.sum and numpy.amax since NumPy 1.7.0
     #
     # Because SciPy supports versions earlier than 1.7.0, we have to handle
@@ -231,7 +231,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
         Input function.
     x0 : float
         The point at which `n`-th derivative is found.
-    dx : int, optional
+    dx : float, optional
         Spacing.
     n : int, optional
         Order of the derivative. Default is 1.
