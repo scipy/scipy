@@ -234,45 +234,40 @@ def least_squares(
         kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
-    Let f(x) be an m-dimensional function of n variables and rho(s) be a
-    scalar function, `least_squares` finds a local minimum of::
+    Given f(x), an m-dimensional function of n variables (the residuals),
+    and rho(s), a scalar function (the loss function), `least_squares`
+    finds a local minimum of the cost function F(x)::
 
         F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
         subject to lb <= x <= ub
 
-    We call f(x) as a vector of residuals or simply residuals, and F(x) as a
-    cost function or simply cost.
-
-    We call rho(s) as a loss function, its purpose to reduce the influence
-    of outliers on the solution.
-
-    Partial derivatives of f with respect to x form m-by-n matrix called
-    Jacobian, where an element (i, j) equals the partial derivative of f[i]
-    with respect to x[j].
+    The purpose of the loss function rho(s) is to reduce the influence of
+    outliers on the solution.
 
     Parameters
     ----------
     fun : callable
-        Function which computes the vector of residuals with the signature
+        Function which computes the vector of residuals, with the signature
         ``fun(x, *args, **kwargs)``, i.e., the minimization proceeds with
-        respect to it's first argument. The argument ``x`` passed to this
-        function is ndarray of shape (n,) (never a scalar, even for n=1).
+        respect to its first argument. The argument ``x`` passed to this
+        function is an ndarray of shape (n,) (never a scalar, even for n=1).
         It must return a 1-d array_like of shape (m,) or a scalar.
     x0 : array_like with shape (n,) or float
         Initial guess on independent variables. If float, it will be treated
         as a 1-d array with one element.
     jac : {'2-point', '3-point', 'cs', callable}, optional
-        Method of computing the Jacobian matrix. The keywords select the
+        Method of computing the Jacobian matrix. The keywords select a
         finite difference scheme for numerical estimation. The scheme '3-point'
         is more accurate, but requires twice as much operations compared to
         '2-point' (default). The scheme 'cs' uses complex steps, and while
-        potentially the most accurate it is applicable only when `fun`
+        potentially the most accurate, it is applicable only when `fun`
         correctly handles complex inputs and can be analytically continued to
-        the complex plane. Method 'lm' always uses '2-point' scheme.
+        the complex plane. Method 'lm' always uses the '2-point' scheme.
         If callable, it is used as ``jac(x, *args, **kwargs)`` and should
         return a good approximation (or the exact value) for the Jacobian as
         an array_like (np.atleast_2d is applied), a sparse matrix or a
-        `scipy.sparse.linalg.LinearOperator`, all with shape  (m, n).
+        `scipy.sparse.linalg.LinearOperator`, all with shape (m, n) (element
+        (i, j) being the partial derivative of f[i] with respect to x[j]).
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must match the size of `x0` or be a scalar, in the latter
@@ -285,10 +280,10 @@ def least_squares(
               for large sparse problems with bounds. Generally robust method.
             * 'dogbox' : dogleg algorithm with rectangular trust regions,
               typical use case is small problems with bounds. Not recommended
-              to use in problems with rank-deficient Jacobian.
+              for problems with rank-deficient Jacobian.
             * 'lm' : Levenberg-Marquardt algorithm as implemented in MINPACK.
-              Doesn't handle bounds and sparse Jacobians. It is usually the
-              most efficient method for small unconstrained problems.
+              Doesn't handle bounds and sparse Jacobians. Usually the most
+              efficient method for small unconstrained problems.
 
         Default is 'trf'. See Notes for more information.
     ftol : float, optional
@@ -431,12 +426,12 @@ def least_squares(
     jac : ndarray, sparse matrix or LinearOperator, shape (m, n)
         Modified Jacobian matrix at the solution, in the sense that J^T J
         is a Gauss-Newton approximation of the Hessian of the cost function.
-        The type is the same as was used by the algorithm.
+        The type is the same as the one used by the algorithm.
     grad : ndarray, shape (m,)
         Gradient of the cost function at the solution.
     optimality : float
-        First-order optimality measure. In unconstrained problems it is always
-        the uniform norm of the gradient. In constrained problems it is the
+        First-order optimality measure. In unconstrained problems, it is always
+        the uniform norm of the gradient. In constrained problems, it is the
         quantity which was compared with `gtol` during iterations.
     active_mask : ndarray of int, shape (n,)
         Each component shows whether a corresponding constraint is active
@@ -446,7 +441,7 @@ def least_squares(
             * -1 : a lower bound is active.
             *  1 : an upper bound is active.
 
-        Might be somewhat arbitrary for 'trf' method as it does strictly
+        Might be somewhat arbitrary for 'trf' method as it only uses strictly
         feasible iterates and `active_mask` is determined within a tolerance
         threshold.
     nfev : int
@@ -480,7 +475,7 @@ def least_squares(
     Notes
     -----
     Method 'lm' (Levenberg-Marquardt) calls a wrapper over least-squares
-    algorithms implemented in MINPACK (lmder, lmdif). It runs
+    algorithms implemented in MINPACK (lmder, lmdif). It runs the
     Levenberg-Marquardt algorithm formulated as a trust-region type algorithm.
     The implementation is based on paper [JJMore]_, it is very robust and
     efficient with a lot of smart tricks. It should be your first choice
@@ -642,10 +637,10 @@ def least_squares(
     Let's also solve a curve fitting problem using robust loss function to
     take care of outliers in the data. Define the model function as
     ``y = a + b * exp(c * t)``, where t is a predictor variable, y is an
-    observation and  a, b, c are parameters to estimate.
+    observation and a, b, c are parameters to estimate.
 
-    First define the function which generates the data with noise and
-    outliers, define the model parameters and generate data:
+    First, define the function which generates the data with noise and
+    outliers, define the model parameters, and generate data:
 
     >>> def gen_data(t, a, b, c, noise=0, n_outliers=0, random_state=0):
     ...     y = a + b * np.exp(t * c)
@@ -691,7 +686,7 @@ def least_squares(
     And finally plot all the curves. We see that by selecting an appropriate
     `loss`  we can get estimates close to optimal even in the presence of
     strong outliers. But keep in mind that generally it is recommended to try
-    'soft_l1' or 'huber' losses first (if at all necessary) as other two
+    'soft_l1' or 'huber' losses first (if at all necessary) as the other two
     options may cause difficulties in optimization process.
 
     >>> t_test = np.linspace(t_min, t_max, n_points * 10)
