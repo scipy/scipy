@@ -234,9 +234,9 @@ def least_squares(
         kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
-    Given f(x), an m-dimensional function of n variables (the residuals),
-    and rho(s), a scalar function (the loss function), `least_squares`
-    finds a local minimum of the cost function F(x)::
+    Given the residuals f(x) (an m-dimensional function of n variables) and
+    the loss function rho(s) (a scalar function), `least_squares` finds a
+    local minimum of the cost function F(x)::
 
         F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
         subject to lb <= x <= ub
@@ -256,18 +256,19 @@ def least_squares(
         Initial guess on independent variables. If float, it will be treated
         as a 1-d array with one element.
     jac : {'2-point', '3-point', 'cs', callable}, optional
-        Method of computing the Jacobian matrix. The keywords select a
-        finite difference scheme for numerical estimation. The scheme '3-point'
-        is more accurate, but requires twice as much operations compared to
-        '2-point' (default). The scheme 'cs' uses complex steps, and while
-        potentially the most accurate, it is applicable only when `fun`
-        correctly handles complex inputs and can be analytically continued to
-        the complex plane. Method 'lm' always uses the '2-point' scheme.
-        If callable, it is used as ``jac(x, *args, **kwargs)`` and should
-        return a good approximation (or the exact value) for the Jacobian as
-        an array_like (np.atleast_2d is applied), a sparse matrix or a
-        `scipy.sparse.linalg.LinearOperator`, all with shape (m, n) (element
-        (i, j) being the partial derivative of f[i] with respect to x[j]).
+        Method of computing the Jacobian matrix (an m-by-n matrix, where
+        element (i, j) is the partial derivative of f[i] with respect to
+        x[j]). The keywords select a finite difference scheme for numerical
+        estimation. The scheme '3-point' is more accurate, but requires
+        twice as much operations compared to '2-point' (default). The
+        scheme 'cs' uses complex steps, and while potentially the most
+        accurate, it is applicable only when `fun` correctly handles
+        complex inputs and can be analytically continued to the complex
+        plane. Method 'lm' always uses the '2-point' scheme. If callable,
+        it is used as ``jac(x, *args, **kwargs)`` and should return a
+        good approximation (or the exact value) for the Jacobian as an
+        array_like (np.atleast_2d is applied), a sparse matrix or a
+        `scipy.sparse.linalg.LinearOperator`.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must match the size of `x0` or be a scalar, in the latter
@@ -341,17 +342,18 @@ def least_squares(
         ``rho_(f**2) = C**2 * rho(f**2 / C**2)``, where ``C`` is `loss_scale`,
         and ``rho`` is determined by `loss` parameter.
     scaling : array_like or 'jac', optional
-        Applies scaling to the variables to potentially improve the algorithm's
-        convergence. Default is 1.0, which means no scaling. Scaling should be
-        used to equalize the influence of each variable on the cost function.
-        Alternatively you can think of `scaling` as diagonal elements of
-        a matrix which determines the shape of a trust region. Use smaller
-        values for variables which have larger characteristic scale compared
-        to others. A scalar value won't affect the algorithm (except maybe
-        fixing/introducing numerical issues and changing termination criteria).
-        If 'jac', then scaling is proportional to the norms of columns of the
-        Jacobian matrix. If the algorithm converges poorly on your problem
-        try using this parameter.
+        Multiplicative scaling for the variables, to potentially improve
+        the algorithm's convergence. Should be set to the inverse of the
+        characteristic scale of each variable. Default is 1.0, which means
+        no scaling. Scaling equalizes the influence of each variable on
+        the cost function. Alternatively you can think of `scaling` as
+        diagonal elements of a matrix which determines the shape of a
+        trust region. A scalar value won't affect the algorithm (except
+        maybe fixing/introducing numerical issues and changing termination
+        criteria). If 'jac', then scaling is proportional to the norms
+        of columns of the Jacobian matrix and iteratively updated (as
+        described in [JJMore]_). If the algorithm converges poorly on your
+        problem, try using this parameter.
     max_nfev : None or int, optional
         Maximum number of function evaluations before the termination.
         If None (default), the value is chosen automatically:
@@ -441,9 +443,9 @@ def least_squares(
             * -1 : a lower bound is active.
             *  1 : an upper bound is active.
 
-        Might be somewhat arbitrary for 'trf' method as it only uses strictly
-        feasible iterates and `active_mask` is determined within a tolerance
-        threshold.
+        Might be somewhat arbitrary for 'trf' method as it generates a sequence
+        of strictly feasible iterates and `active_mask` is determined within a
+        tolerance threshold.
     nfev : int
         Number of function evaluations done. Methods 'trf' and 'dogbox' do not
         count function calls for numerical Jacobian approximation, as opposed
