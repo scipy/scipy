@@ -4155,6 +4155,64 @@ class semicircular_gen(rv_continuous):
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
+class skew_norm_gen(rv_continuous):
+    """A skew-normal random variable.
+    
+    %(before_notes)s
+    
+    Notes
+    -----
+    The pdf is
+
+    skewnorm.pdf(x, a) = 2*norm.pdf(x)*norm.cdf(ax)
+    
+    `skewnorm` takes ``a`` as a skewness parameter
+    When a=0 the distribution is identical to a normal distribution.
+    rvs implements the method of [1].
+   
+    %(after_notes)s
+    
+    %(example)s
+    
+    
+    References
+    ----------
+    
+    [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
+        multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
+        http://azzalini.stat.unipd.it/SN/faq-r.html
+    """
+
+    def _argcheck(self, a):
+        return np.isfinite(a)
+        
+    def _pdf(self, x, a):
+        return 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        
+    def _rvs(self, a):
+        u0 = self._random_state.normal(size=self._size)
+        v = self._random_state.normal(size=self._size)
+        d = a/np.sqrt(1 + a**2)
+        u1 = d*u0 + v*np.sqrt(1 - d**2)
+        return np.where(u0 >= 0, u1, -u1)
+        
+    def _stats(self, a, moments='mvsk'):
+        output = [None, None, None, None]
+        const = np.sqrt(2/pi) * a/np.sqrt(1 + a**2)
+        
+        if 'm' in moments:
+            output[0] = const
+        if 'v' in moments:
+            output[1] = 1 - const**2 
+        if 's' in moments:
+            output[2] = ((4 - pi)/2) * (const/np.sqrt(1 - const**2))**3         
+        if 'k' in moments:
+            output[3] = (2*(pi - 3)) * (const**4/(1 - const**2)**2)   
+            
+        return output
+        
+skewnorm = skew_norm_gen(name='skewnorm')
+
 class triang_gen(rv_continuous):
     """A triangular continuous random variable.
 
