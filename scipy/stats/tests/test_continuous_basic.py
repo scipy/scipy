@@ -65,7 +65,7 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma',
+fails_cmplx = set(['alpha', 'beta', 'betaprime', 'burr12', 'chi', 'chi2', 'dgamma',
                    'dweibull', 'erlang', 'expon', 'exponnorm', 'exponpow',
                    'exponweib', 'f', 'fatiguelife', 'foldnorm', 'frechet_l',
                    'frechet_r', 'gamma', 'gausshyper', 'genexpon',
