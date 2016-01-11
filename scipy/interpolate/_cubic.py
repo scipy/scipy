@@ -390,7 +390,6 @@ class CubicSpline(PPoly):
     Akima1DInterpolator
     PchipInterpolator
     PPoly
-    InterpolatedUnivariateSpline
 
     Notes
     -----
@@ -405,10 +404,8 @@ class CubicSpline(PPoly):
     When n=2 or n=3, the solution is sought as a linear/quadratic function
     passing through the given points.
 
-    `InterpolatedUnivariateSpline` is another class for interpolation based
-    on B-splines. It gives the same interpolation curve, but it selects knots
-    (breakpoints) different from the given `x` and doesn't directly provide
-    coefficients of polynomials on each segment.
+    `InterpolatedUnivariateSpline` and `splrep` (with ``s=0``) construct an
+    equivalent interpolation curve in the B-spline basis.
 
     .. versionadded:: 0.18.0
 
@@ -525,17 +522,3 @@ class CubicSpline(PPoly):
 
         super(CubicSpline, self).__init__(c, x, extrapolate=extrapolate)
         self.axis = axis
-
-    def extend(self, c, x, right=True):
-        raise NotImplementedError("Extending a CubicSpline is not yet "
-                                  "implemented.")
-
-    @classmethod
-    def from_spline(cls, tck, extrapolate=None):
-        raise NotImplementedError("Conversion from B-spline representation is "
-                                  "not yet implemented.")
-
-    @classmethod
-    def from_bernstein_basis(cls, bp, extrapolate=None):
-        raise NotImplementedError("This method does not make sense for "
-                                  "CubicSpline.")
