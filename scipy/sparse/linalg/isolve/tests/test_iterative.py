@@ -12,11 +12,13 @@ from numpy.testing import (TestCase, assert_equal, assert_array_equal,
      assert_, assert_allclose, assert_raises, run_module_suite)
 
 from numpy import zeros, arange, array, abs, max, ones, eye, iscomplexobj
-from scipy.linalg import norm
+from scipy.linalg import norm, get_blas_funcs
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres
+from scipy.sparse.linalg.isolve import (cg, cgs, bicg, bicgstab, gmres, qmr,
+    minres, lgmres)
+from scipy.sparse.linalg.isolve.iterative import axpby
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -356,6 +358,28 @@ class TestGMRES(TestCase):
         assert_allclose(r_x, x)
         assert_(r_info == info)
 
+def test_axpby():
+    sclr = [0, 1, -1, 2, -2]
+    for alpha in sclr:
+        for beta in sclr:
+            for dtype in 'dfDF':
+                yield check_axpby, alpha, beta, dtype
+
+def check_axpby(alpha, beta, dtype):
+    dtype = np.dtype(dtype)
+    a = dtype.type(alpha)
+    b = dtype.type(beta)
+    axpy = get_blas_funcs('axpy', dtype=dtype)
+    u = np.array([0, 1, 2, 3, 4, 5], dtype=dtype)
+    x = u[:3]
+    y = u[3:]
+
+    result = a*x + b*y
+    axpby(alpha, x, beta, y, axpy)
+
+    assert_equal(y, u[3:])
+    assert_equal(result, y)
+    
 
 if __name__ == "__main__":
     run_module_suite()
