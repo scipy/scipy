@@ -31,7 +31,7 @@ class PchipInterpolator(BPoly):
     axis : int, optional
         Axis in the y array corresponding to the x-coordinate values.
     extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
 
     Methods
