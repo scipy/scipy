@@ -433,8 +433,9 @@ class CubicSpline(PPoly):
 
     References
     ----------
-    .. [1] William H. Press et. al., "Numerical Recipes. The Art of Scientific
-           Computing. 3rd edition", Sec. 3.3.
+    .. [1] `Cubic Spline Interpolation
+            <https://en.wikiversity.org/wiki/Cubic_Spline_Interpolation>`_
+            on Wikiversity.
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
     def __init__(self, x, y, axis=0, extrapolate=True):
