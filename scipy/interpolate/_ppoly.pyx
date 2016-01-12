@@ -57,7 +57,7 @@ def evaluate(double_or_complex[:,:,::1] c,
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
     extrapolate : int, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
@@ -187,7 +187,7 @@ def integrate(double_or_complex[:,:,::1] c,
     b : double
         End point of integration.
     extrapolate : int, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (n,)
         Integral of the piecewise polynomial, assuming the polynomial
@@ -401,7 +401,7 @@ cdef int find_interval(double[::1] x,
         Interval where a previous point was found
     extrapolate : int, optional
         Whether to return the last of the first interval if the
-        point is ouf-of-bounds. 
+        point is out-of-bounds. 
 
     Returns
     -------
@@ -865,7 +865,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
     extrapolate : int, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
         Value of each polynomial at each of the input points.
