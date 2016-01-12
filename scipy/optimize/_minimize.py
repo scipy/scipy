@@ -49,8 +49,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     ``g_i(x)`` are the inequality constraints.
     ``h_j(x)`` are the equality constrains.
 
-    Optionally, the lower and upper bounds for each element in x can also be specified 
-    using the `bounds` argument.
+    Optionally, the lower and upper bounds for each element in x can also be
+    specified using the `bounds` argument.
 
     Parameters
     ----------
