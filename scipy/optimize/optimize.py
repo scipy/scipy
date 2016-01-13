@@ -127,7 +127,7 @@ class OptimizeResult(dict):
             return self.__class__.__name__ + "()"
 
     def __dir__(self):
-        return super(OptimizeResult, self).__dir__() + list(self.keys())
+        return list(self.keys())
 
 
 class OptimizeWarning(UserWarning):
