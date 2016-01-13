@@ -1059,7 +1059,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         """
                  
-        cdef ordered_pairs c
+        cdef ordered_pairs results
 
         results = ordered_pairs()
         query_pairs(<ckdtree*> self, r, p, eps, results.buf)
