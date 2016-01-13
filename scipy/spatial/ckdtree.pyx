@@ -1106,7 +1106,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             The other tree to draw points from.
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
-            a single tree traversal.
+            a single tree traversal. 
+            If the count is non-cumulative(``cumulative=False``), ``r`` defines 
+            the edges of the bins, and must be non-decreasing.
         p : float, optional 
             1<=p<=infinity, default 2.0
             Which Minkowski p-norm to use
@@ -1154,6 +1156,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             raise ValueError("r must be either a single value or a "
                              "one-dimensional array of values")
         real_r = np.array(r, ndmin=1, dtype=np.float64, copy=True)
+        if not cumulative:
+            if (real_r[:-1] > real_r[1:]).any():
+                raise ValueError("r must be non-decreasing for non-cumulative counting.");
         real_r, uind, inverse = np.unique(real_r, return_inverse=True, return_index=True)
         n_queries = real_r.shape[0]
 

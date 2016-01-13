@@ -1229,5 +1229,18 @@ def test_ckdtree_duplicated_inputs():
         kdtree = cKDTree(data, compact_nodes=False, leafsize=1)
         assert_equal(kdtree.size, n + m * 2 - 1)
 
+def test_ckdtree_noncumulative_nondecreasing():
+    # check ckdtree with duplicated inputs
+
+    # it shall not divide more than 3 nodes.
+    # root left (1), and right (2)
+    kdtree = cKDTree([[0]], leafsize=1)
+
+    try:
+        kdtree.count_neighbors(kdtree, [0.1, 0], cumulative=False)
+        raise AssertionError("valueerror not caught")
+    except ValueError:
+        pass
+
 if __name__ == "__main__":
     run_module_suite()
