@@ -311,9 +311,11 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Called after each iteration, as callback(xk), where xk is the
         current parameter vector.
     xtol : float, optional
-        Relative error in xopt acceptable for convergence.
+        Relative error in xopt acceptable for 
+        convergence(optimization halting).
     ftol : number, optional
-        Relative error in func(xopt) acceptable for convergence.
+        Relative error in  norm of func(xopt) acceptable for 
+        convergence(optimization halting).
     maxiter : int, optional
         Maximum number of iterations to perform.
     maxfun : number, optional
@@ -404,9 +406,11 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     disp : bool
         Set to True to print convergence messages.
     xtol : float
-        Relative error in solution `xopt` acceptable for convergence.
+        Relative error in solution `xopt` acceptable for 
+        convergence(optimization halting).
     ftol : float
-        Relative error in ``fun(xopt)`` acceptable for convergence.
+        Relative error in norm of ``fun(xopt)`` acceptable for 
+        convergence(optimization halting).
     maxiter : int
         Maximum number of iterations to perform.
     maxfev : int
