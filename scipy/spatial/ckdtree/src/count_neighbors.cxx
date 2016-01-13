@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include <vector>
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include <new>
@@ -18,40 +19,6 @@
 #include "ckdtree_methods.h"
 #include "cpp_exc.h"
 #include "rectangle.h"
-
-static npy_intp 
-bsearch_last (npy_float64 v, npy_float64 * r, npy_intp start, npy_intp end) {
-/* find last ind inserting v before ind r is ordered */
-/* assert v >= r[start] and v < r[end] */
-    if(v < r[start]) return start;
-
-    while(end > start + 1) {
-        npy_intp mid = start + ((end - start) >> 1);
-        if( v < r[mid]) {
-            end = mid;
-        } else {
-            start = mid;
-        }
-    }
-    return end;
-
-}
-static npy_intp 
-bsearch_first (npy_float64 v, npy_float64 * r, npy_intp start, npy_intp end) {
-/* find first ind inserting v before ind r is ordered */
-/* assert v > r[start] and v <= r[end] */
-    if(v <= r[start]) return start;
-
-    while(end > start + 1) {
-        npy_intp mid = start + ((end - start) >> 1);
-        if( v <= r[mid]) {
-            end = mid;
-        } else {
-            start = mid;
-        }
-    }
-    return end;
-}
 
 struct traverse_weights
 {
@@ -134,9 +101,8 @@ traverse(const ckdtree *self, const ckdtree *other,
      * and see if any work remains to be done
      */
     
-    npy_intp old_end = end;
-    start = bsearch_first(tracker->min_distance, r, start, end);
-    end = bsearch_first(tracker->max_distance, r, start, end);
+    start = std::lower_bound(r + start, r + end, tracker->min_distance) - r;
+    end = std::lower_bound(r + start, r + end, tracker->max_distance) - r;
 
     if(end - start == 0) {
         results[start] += WeightType::get_node_weight(w, node1, node2);
@@ -186,7 +152,7 @@ traverse(const ckdtree *self, const ckdtree *other,
                                 odata + oindices[j] * m,
                                 p, m, tmd);
 
-                        l = bsearch_first(d, r, start, end);
+                        l = std::lower_bound(r + start, r + end, d) - r;
                         results[l] += WeightType::get_weight(w, sindices[i], sindices[j]);   
                     }
                 }
