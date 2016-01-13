@@ -633,16 +633,16 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         -------
         d : array of floats
             The distances to the nearest neighbors. 
-            If x has shape tuple+(self.m,), then d has shape tuple+(k,).
+            If ``x`` has shape ``tuple+(self.m,)``, then ``d`` has shape ``tuple+(k,)``.
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
-            The locations of the neighbors in self.data.
-            If `x` has shape tuple+(self.m,), then `i` has shape tuple+(k,).
-            Missing neighbors are indicated with self.n.
+            The locations of the neighbors in ``self.data``.
+            If ``x`` has shape ``tuple+(self.m,)``, then ``i`` has shape ``tuple+(k,)``.
+            Missing neighbors are indicated with ``self.n``.
 
         Notes
         -----
-        If the KD-Tree is periodic, the position :py:code:`x` is wrapped into the
+        If the KD-Tree is periodic, the position ``x`` is wrapped into the
         box.
 
         """
@@ -1029,7 +1029,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         r : positive float
             The maximum distance.
         p : float, optional
-            Which Minkowski norm to use.  `p` has to meet the condition
+            Which Minkowski norm to use.  ``p`` has to meet the condition
             ``1 <= p <= infinity``.
         eps : float, optional
             Approximate search.  Branches of the tree are not explored
@@ -1091,14 +1091,14 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         Count how many nearby pairs can be formed. (pair-counting)
 
         Count the number of pairs (x1,x2) can be formed, with x1 drawn
-        from self and x2 drawn from `other`, and where
+        from self and x2 drawn from ``other``, and where
         ``distance(x1, x2, p) <= r``.
         This is the "two-point correlation" described in Gray and Moore 2000,
         "N-body problems in statistical learning", and the code here is based
         on their algorithm. 
 
         Data points on self and other are optionally weighted by 
-        `self_weights` and `other_weights`. 
+        ``self_weights`` and ``other_weights``. 
 
         Parameters
         ----------
@@ -1118,16 +1118,16 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             weight of each data point in other. 
             If None, the pair-counting is unweighted (weighted by 1) for 'other'.
             Default: None
-        cumulative : boolean
-            Whether the returned counts are cumulative. 
+        cumulative : bool, optional
+            Whether the returned counts are cumulative. Default: True
 
         Returns
         -------
         result : scalar or 1-D array
             The number of pairs. For unweighted counts, the result is integer.
             For weighted counts, the result is float.
-            If cumulative is False, `result[i]` contains the counts with
-            `r[i-1] or -inf < R <= r[i]`
+            If cumulative is False, ``result[i]`` contains the counts with
+            ``r[i-1] or -inf < R <= r[i]``
         """
         cdef: 
             int r_ndim
