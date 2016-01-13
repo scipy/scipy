@@ -4429,7 +4429,7 @@ cdef char *ufunc_expit_doc = (
     "-----\n"
     "As a ufunc expit takes a number of optional\n"
     "keyword arguments. For more information\n"
-    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
+    "see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
     "\n"
     ".. versionadded:: 0.10.0")
 ufunc_expit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
@@ -6880,7 +6880,7 @@ cdef char *ufunc_logit_doc = (
     "-----\n"
     "As a ufunc logit takes a number of optional\n"
     "keyword arguments. For more information\n"
-    "see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
+    "see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
     "\n"
     ".. versionadded:: 0.10.0")
 ufunc_logit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f

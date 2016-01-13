@@ -1,7 +1,7 @@
 Name: scipy
 Version: 0.18.0.dev0
 Summary: SciPy: Scientific Library for Python
-Url: http://www.scipy.org
+Url: https://www.scipy.org
 DownloadUrl: https://github.com/scipy/scipy/releases
 Description:
     SciPy (pronounced "Sigh Pie") is open-source software for mathematics,

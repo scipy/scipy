@@ -2520,16 +2520,16 @@ cryptic error report due to the fact that ``stdio.h`` also defines the name.
 ``weave`` should probably try and handle this in some way. Other things...
 
 .. _PyInline: http://pyinline.sourceforge.net/
-.. _SciPy: http://www.scipy.org
+.. _SciPy: https://www.scipy.org
 .. _mingw32: http://www.mingw.org%3Ewww.mingw.org
 .. _NumPy: http://numeric.scipy.org/
-.. _here: http://www.scipy.org/Weave
-.. _Python Cookbook: http://aspn.activestate.com/ASPN/Cookbook/Python
+.. _here: https://www.scipy.org/Weave
+.. _Python Cookbook: https://code.activestate.com/recipes/langs/python/
 .. _binary_search():
-    http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/81188
+    https://code.activestate.com/recipes/81188/
 .. _website: http://cxx.sourceforge.net/
 .. _This submission:
-    http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52306
+    https://code.activestate.com/recipes/52306/
 .. _blitz++ home page: http://www.oonumerics.org/blitz/
 
 ..

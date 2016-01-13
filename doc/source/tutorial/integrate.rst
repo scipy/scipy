@@ -471,4 +471,4 @@ References
 
 .. [WPR] http://en.wikipedia.org/wiki/Romberg's_method
 
-.. [NPT] http://docs.scipy.org/doc/numpy/reference/generated/numpy.trapz.html
+.. [NPT] https://docs.scipy.org/doc/numpy/reference/generated/numpy.trapz.html
