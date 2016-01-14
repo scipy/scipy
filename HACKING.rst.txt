@@ -277,6 +277,12 @@ Therefore if you copied existing code with such a license or made a direct
 translation to Python of it, your code can't be included.  See also `license
 compatibility`_.
 
+A special case is the Numerical Recipes book: it's a book with arguably
+excellent explanations of numerical algorithms, useful as a reference, and that
+also has software that we can't use. Therefore, it is fine to refer to its
+*text* in the documentation, but we cannot accept *code* derived from Numerical
+Recipes.
+
 
 *Why is SciPy under the BSD license and not, say, the GPL?*
 
