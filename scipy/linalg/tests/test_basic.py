@@ -25,8 +25,9 @@ import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
         float32)
 import numpy.linalg as linalg
+from numpy.random import random
 
-from numpy.testing import (TestCase, rand, run_module_suite, assert_raises,
+from numpy.testing import (TestCase, run_module_suite, assert_raises,
     assert_equal, assert_almost_equal, assert_array_almost_equal, assert_,
     assert_allclose, assert_array_equal, dec)
 
@@ -42,9 +43,6 @@ from scipy._lib._version import NumpyVersion
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
-
-def random(size):
-    return rand(*size)
 
 
 class TestSolveBanded(TestCase):

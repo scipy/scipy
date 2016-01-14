@@ -307,7 +307,7 @@ add_newdoc("scipy.special", "betaln",
 
     Natural logarithm of absolute value of beta function.
 
-    Computes ``ln(abs(beta(x)))``.
+    Computes ``ln(abs(beta(a, b)))``.
     """)
 
 add_newdoc("scipy.special", "boxcox",
@@ -1046,7 +1046,7 @@ add_newdoc('scipy.special', 'expit',
     -----
     As a ufunc expit takes a number of optional
     keyword arguments. For more information
-    see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+    see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 
     .. versionadded:: 0.10.0
 
@@ -1225,11 +1225,27 @@ add_newdoc("scipy.special", "gammaln",
     """
     gammaln(z)
 
-    Logarithm of absolute value of gamma function
+    Performs a logarithmic transformation of the
+    values of the gamma function in one of two
+    ways, depending on the input `z`:
 
-    Defined as::
+    1) `z` is not complex (i.e. `z` is a purely
+       real number *or* it is array_like and
+       contains purely real elements)
+
+    The natural logarithm of the absolute value of
+    gamma(z) is computed. Thus, it is defined as:
 
         ln(abs(gamma(z)))
+
+    2) `z` is complex (i.e. `z` is a complex
+       number *or* it is array_like and contains
+       at least one complex element)
+
+    The natural logarithm of gamma(z) is computed.
+    Thus, it is defined as:
+
+        ln((gamma(z))
 
     See Also
     --------
@@ -2086,7 +2102,7 @@ add_newdoc('scipy.special', 'logit',
     -----
     As a ufunc logit takes a number of optional
     keyword arguments. For more information
-    see `ufuncs <http://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+    see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 
     .. versionadded:: 0.10.0
 

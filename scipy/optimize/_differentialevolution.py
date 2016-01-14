@@ -14,7 +14,7 @@ _MACHEPS = np.finfo(np.float64).eps
 
 
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
-                           maxiter=None, popsize=15, tol=0.01,
+                           maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube'):
@@ -313,9 +313,9 @@ class DifferentialEvolutionSolver(object):
                     'rand2exp': '_rand2'}
 
     def __init__(self, func, bounds, args=(),
-                 strategy='best1bin', maxiter=None, popsize=15,
+                 strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
-                 maxfun=None, callback=None, disp=False, polish=True,
+                 maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube'):
 
         if strategy in self._binomial:
@@ -354,15 +354,14 @@ class DifferentialEvolutionSolver(object):
         # [(low_0, high_0), ..., (low_n, high_n]
         #     -> [[low_0, ..., low_n], [high_0, ..., high_n]]
         self.limits = np.array(bounds, dtype='float').T
-        if (np.size(self.limits, 0) != 2
-                or not np.all(np.isfinite(self.limits))):
+        if (np.size(self.limits, 0) != 2 or not
+                np.all(np.isfinite(self.limits))):
             raise ValueError('bounds should be a sequence containing '
                              'real valued (min, max) pairs for each value'
                              ' in x')
 
-        self.maxiter = maxiter or 1000
-        self.maxfun = (maxfun or ((self.maxiter + 1) * popsize *
-                                  np.size(self.limits, 1)))
+        self.maxiter = maxiter
+        self.maxfun = maxfun
 
         # population is scaled to between [0, 1].
         # We have to scale between parameter <-> population
@@ -382,6 +381,7 @@ class DifferentialEvolutionSolver(object):
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
+        self._nfev = 0
         if init == 'latinhypercube':
             self.init_population_lhs()
         elif init == 'random':
@@ -389,9 +389,6 @@ class DifferentialEvolutionSolver(object):
         else:
             raise ValueError("The population initialization method must be one"
                              "of 'latinhypercube' or 'random'")
-
-        self.population_energies = (np.ones(self.num_population_members)
-                                    * np.inf)
 
         self.disp = disp
 
@@ -426,6 +423,13 @@ class DifferentialEvolutionSolver(object):
             order = rng.permutation(range(self.num_population_members))
             self.population[:, j] = samples[order, j]
 
+        # reset population energies
+        self.population_energies = (np.ones(self.num_population_members) *
+                                    np.inf)
+
+        # reset number of function evaluations counter
+        self._nfev = 0
+
     def init_population_random(self):
         """
         Initialises the population at random.  This type of initialization
@@ -434,6 +438,13 @@ class DifferentialEvolutionSolver(object):
         rng = self.random_number_generator
         self.population = rng.random_sample(self.population_shape)
 
+        # reset population energies
+        self.population_energies = (np.ones(self.num_population_members) *
+                                    np.inf)
+
+        # reset number of function evaluations counter
+        self._nfev = 0
+
     @property
     def x(self):
         """
@@ -441,10 +452,19 @@ class DifferentialEvolutionSolver(object):
 
         Returns
         -------
-        x - ndarray
+        x : ndarray
             The best solution from the solver.
         """
         return self._scale_parameters(self.population[0])
+
+    @property
+    def convergence(self):
+        """
+        The standard deviation of the population energies divided by their
+        mean.
+        """
+        return (np.std(self.population_energies) /
+                np.abs(np.mean(self.population_energies) + _MACHEPS))
 
     def solve(self):
         """
@@ -461,87 +481,35 @@ class DifferentialEvolutionSolver(object):
             was employed, and a lower minimum was obtained by the polishing,
             then OptimizeResult also contains the ``jac`` attribute.
         """
-
-        nfev, nit, warning_flag = 0, 0, False
+        nit, warning_flag = 0, False
         status_message = _status_message['success']
 
-        # calculate energies to start with
-        for index, candidate in enumerate(self.population):
-            parameters = self._scale_parameters(candidate)
-            self.population_energies[index] = self.func(parameters,
-                                                        *self.args)
-            nfev += 1
-
-            if nfev > self.maxfun:
-                warning_flag = True
-                status_message = _status_message['maxfev']
-                break
-
-        minval = np.argmin(self.population_energies)
-
-        # put the lowest energy into the best solution position.
-        lowest_energy = self.population_energies[minval]
-        self.population_energies[minval] = self.population_energies[0]
-        self.population_energies[0] = lowest_energy
-
-        self.population[[0, minval], :] = self.population[[minval, 0], :]
-
-        if warning_flag:
-            return OptimizeResult(
-                           x=self.x,
-                           fun=self.population_energies[0],
-                           nfev=nfev,
-                           nit=nit,
-                           message=status_message,
-                           success=(warning_flag is not True))
+        # The population may have just been initialized (all entries are
+        # np.inf). If it has you have to calculate the initial energies.
+        # Although this is also done in the evolve generator it's possible
+        # that someone can set maxiter=0, at which point we still want the
+        # initial energies to be calculated (the following loop isn't run).
+        if np.all(np.isinf(self.population_energies)):
+            self._calculate_population_energies()
 
         # do the optimisation.
         for nit in range(1, self.maxiter + 1):
-            if self.dither is not None:
-                self.scale = self.random_number_generator.rand(
-                ) * (self.dither[1] - self.dither[0]) + self.dither[0]
-
-            for candidate in range(self.num_population_members):
-                if nfev > self.maxfun:
-                    warning_flag = True
-                    status_message = _status_message['maxfev']
-                    break
-
-                # create a trial solution
-                trial = self._mutate(candidate)
-
-                # ensuring that it's in the range [0, 1)
-                self._ensure_constraint(trial)
-
-                # scale from [0, 1) to the actual parameter value
-                parameters = self._scale_parameters(trial)
-
-                # determine the energy of the objective function
-                energy = self.func(parameters, *self.args)
-                nfev += 1
-
-                # if the energy of the trial candidate is lower than the
-                # original population member then replace it
-                if energy < self.population_energies[candidate]:
-                    self.population[candidate] = trial
-                    self.population_energies[candidate] = energy
-
-                    # if the trial candidate also has a lower energy than the
-                    # best solution then replace that as well
-                    if energy < self.population_energies[0]:
-                        self.population_energies[0] = energy
-                        self.population[0] = trial
-
-            # stop when the fractional s.d. of the population is less than tol
-            # of the mean energy
-            convergence = (np.std(self.population_energies) /
-                           np.abs(np.mean(self.population_energies) +
-                                  _MACHEPS))
+            # evolve the population by a generation
+            try:
+                next(self)
+            except StopIteration:
+                warning_flag = True
+                status_message = _status_message['maxfev']
+                break
 
             if self.disp:
                 print("differential_evolution step %d: f(x)= %g"
                       % (nit,
                          self.population_energies[0]))
+
+            # stop when the fractional s.d. of the population is less than tol
+            # of the mean energy
+            convergence = self.convergence
 
             if (self.callback and
                     self.callback(self._scale_parameters(self.population[0]),
@@ -562,7 +530,7 @@ class DifferentialEvolutionSolver(object):
         DE_result = OptimizeResult(
             x=self.x,
             fun=self.population_energies[0],
-            nfev=nfev,
+            nfev=self._nfev,
             nit=nit,
             message=status_message,
             success=(warning_flag is not True))
@@ -574,8 +542,8 @@ class DifferentialEvolutionSolver(object):
                               bounds=self.limits.T,
                               args=self.args)
 
-            nfev += result.nfev
-            DE_result.nfev = nfev
+            self._nfev += result.nfev
+            DE_result.nfev = self._nfev
 
             if result.fun < DE_result.fun:
                 DE_result.fun = result.fun
@@ -587,9 +555,101 @@ class DifferentialEvolutionSolver(object):
 
         return DE_result
 
+    def _calculate_population_energies(self):
+        """
+        Calculate the energies of all the population members at the same time.
+        Puts the best member in first place. Useful if the population has just
+        been initialised.
+        """
+        for index, candidate in enumerate(self.population):
+            if self._nfev > self.maxfun:
+                break
+
+            parameters = self._scale_parameters(candidate)
+            self.population_energies[index] = self.func(parameters,
+                                                        *self.args)
+            self._nfev += 1
+
+        minval = np.argmin(self.population_energies)
+
+        # put the lowest energy into the best solution position.
+        lowest_energy = self.population_energies[minval]
+        self.population_energies[minval] = self.population_energies[0]
+        self.population_energies[0] = lowest_energy
+
+        self.population[[0, minval], :] = self.population[[minval, 0], :]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        """
+        Evolve the population by a single generation
+
+        Returns
+        -------
+        x : ndarray
+            The best solution from the solver.
+        fun : float
+            Value of objective function obtained from the best solution.
+        """
+        # the population may have just been initialized (all entries are
+        # np.inf). If it has you have to calculate the initial energies
+        if np.all(np.isinf(self.population_energies)):
+            self._calculate_population_energies()
+
+        if self.dither is not None:
+            self.scale = (self.random_number_generator.rand()
+                          * (self.dither[1] - self.dither[0]) + self.dither[0])
+
+        for candidate in range(self.num_population_members):
+            if self._nfev > self.maxfun:
+                raise StopIteration
+
+            # create a trial solution
+            trial = self._mutate(candidate)
+
+            # ensuring that it's in the range [0, 1)
+            self._ensure_constraint(trial)
+
+            # scale from [0, 1) to the actual parameter value
+            parameters = self._scale_parameters(trial)
+
+            # determine the energy of the objective function
+            energy = self.func(parameters, *self.args)
+            self._nfev += 1
+
+            # if the energy of the trial candidate is lower than the
+            # original population member then replace it
+            if energy < self.population_energies[candidate]:
+                self.population[candidate] = trial
+                self.population_energies[candidate] = energy
+
+                # if the trial candidate also has a lower energy than the
+                # best solution then replace that as well
+                if energy < self.population_energies[0]:
+                    self.population_energies[0] = energy
+                    self.population[0] = trial
+
+        return self.x, self.population_energies[0]
+
+    def next(self):
+        """
+        Evolve the population by a single generation
+
+        Returns
+        -------
+        x : ndarray
+            The best solution from the solver.
+        fun : float
+            Value of objective function obtained from the best solution.
+        """
+        # next() is required for compatibility with Python2.7.
+        return self.__next__()
+
     def _scale_parameters(self, trial):
         """
-        scale from a number between 0 and 1 to parameters
+        scale from a number between 0 and 1 to parameters.
         """
         return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
 
@@ -617,8 +677,8 @@ class DifferentialEvolutionSolver(object):
 
         fill_point = rng.randint(0, self.parameter_count)
 
-        if (self.strategy == 'randtobest1exp'
-                or self.strategy == 'randtobest1bin'):
+        if (self.strategy == 'randtobest1exp' or
+                self.strategy == 'randtobest1bin'):
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
@@ -679,8 +739,8 @@ class DifferentialEvolutionSolver(object):
         """
         r0, r1, r2, r3 = samples[:4]
         bprime = (self.population[0] + self.scale *
-                  (self.population[r0] + self.population[r1]
-                   - self.population[r2] - self.population[r3]))
+                  (self.population[r0] + self.population[r1] -
+                   self.population[r2] - self.population[r3]))
 
         return bprime
 

@@ -51,7 +51,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-2014, The Scipy community'
+copyright = '2008-2016, The Scipy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -107,8 +107,8 @@ if os.path.isdir(themedir):
             "edit_link": True,
             "sidebar": "right",
             "scipy_org_logo": True,
-            "rootlinks": [("http://scipy.org/", "Scipy.org"),
-                          ("http://docs.scipy.org/", "Docs")]
+            "rootlinks": [("https://scipy.org/", "Scipy.org"),
+                          ("https://docs.scipy.org/", "Docs")]
         }
     else:
         # Default build
@@ -218,7 +218,7 @@ latex_use_modindex = False
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
         'http://docs.python.org/dev': None,
-        'http://docs.scipy.org/doc/numpy': None,
+        'https://docs.scipy.org/doc/numpy': None,
 }
 
 

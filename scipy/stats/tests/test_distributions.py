@@ -10,7 +10,7 @@ import pickle
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_raises, assert_warns, rand, dec)
+    assert_allclose, assert_, assert_raises, assert_warns, dec)
 from nose import SkipTest
 
 import numpy
@@ -81,19 +81,19 @@ def test_all_distributions():
             alpha = 0.001
 
         if dist == 'frechet':
-            args = tuple(2*rand(1))+(0,)+tuple(2*rand(2))
+            args = tuple(2*np.random.random(1)) + (0,) + tuple(2*np.random.random(2))
         elif dist == 'triang':
-            args = tuple(rand(nargs))
+            args = tuple(np.random.random(nargs))
         elif dist == 'reciprocal':
-            vals = rand(nargs)
+            vals = np.random.random(nargs)
             vals[1] = vals[0] + 1.0
             args = tuple(vals)
         elif dist == 'vonmises':
             yield check_distribution, dist, (10,), alpha
             yield check_distribution, dist, (101,), alpha
-            args = tuple(1.0+rand(nargs))
+            args = tuple(1.0 + np.random.random(nargs))
         else:
-            args = tuple(1.0+rand(nargs))
+            args = tuple(1.0 + np.random.random(nargs))
 
         yield check_distribution, dist, args, alpha
 
@@ -855,6 +855,33 @@ class TestRvDiscrete(TestCase):
         h = p.entropy()
         assert_equal(h, 0.0)
 
+
+class TestSkewNorm(TestCase):
+
+    def test_normal(self):
+        # When the skewness is 0 the distribution is normal
+        x = np.linspace(-5, 5, 100)
+        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0), 
+                                  stats.norm.pdf(x))
+
+    def test_rvs(self):
+        shape = (3, 4, 5)
+        x = stats.skewnorm.rvs(a=0.75, size=shape)
+        assert_equal(shape, x.shape)
+        
+        x = stats.skewnorm.rvs(a=-3, size=shape)
+        assert_equal(shape, x.shape)
+        
+    def test_moments(self):
+        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
+                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'), 
+                                   decimal=2)
+        
+        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
+                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
+                                   decimal=2)
 
 class TestExpon(TestCase):
     def test_zero(self):
@@ -1690,6 +1717,16 @@ class TestExpect(TestCase):
         n1 = stats.poisson.expect(lambda x: 1, args=(2,),
             maxcount=1001, chunksize=32, tolerance=1e-8)
         assert_almost_equal(n0, n1, decimal=14)
+
+    def test_moment(self):
+        # test the .moment() method: compute a higher moment and compare to
+        # a known value
+        def poiss_moment5(mu):
+            return mu**5 + 10*mu**4 + 25*mu**3 + 15*mu**2 + mu
+
+        for mu in [5, 7]:
+            m5 = stats.poisson.moment(5, mu)
+            assert_allclose(m5, poiss_moment5(mu), rtol=1e-10)
 
 
 class TestNct(TestCase):

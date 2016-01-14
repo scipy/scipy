@@ -33,7 +33,7 @@ from numpy import array, transpose, sometrue, diag, ones, linalg, \
      asarray, matrix, isfinite, all, ndarray, outer, eye, dtype, empty,\
      triu, tril
 
-from numpy.random import rand, normal, seed
+from numpy.random import normal, seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
 
@@ -71,7 +71,7 @@ def symrand(dim_or_eigv):
     """
     if isinstance(dim_or_eigv, int):
         dim = dim_or_eigv
-        d = (rand(dim)*2)-1
+        d = random(dim)*2 - 1
     elif (isinstance(dim_or_eigv, ndarray) and
           len(dim_or_eigv.shape) == 1):
         dim = dim_or_eigv.shape[0]
@@ -114,10 +114,6 @@ def random_rot(dim):
     D[-1] = -D.prod()
     H = (D*H.T).T
     return H
-
-
-def random(size):
-    return rand(*size)
 
 
 class TestEigVals(TestCase):
@@ -685,8 +681,8 @@ class TestLU(TestCase):
         self.cvrect = 1.j * array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 12, 12]])
 
         # Medium sizes matrices
-        self.med = rand(30, 40)
-        self.cmed = rand(30, 40) + 1.j * rand(30, 40)
+        self.med = random((30, 40))
+        self.cmed = random((30, 40)) + 1.j * random((30, 40))
 
     def _test_common(self, data):
         p,l,u = lu(data)

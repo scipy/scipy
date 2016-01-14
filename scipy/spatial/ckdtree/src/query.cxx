@@ -199,7 +199,9 @@ query_single_point(const ckdtree *self,
                    npy_float64   *result_distances, 
                    npy_intp      *result_indices, 
                    const npy_float64  *x, 
-                   const npy_intp     k, 
+                   const npy_intp     *k, 
+                   const npy_intp     nk, 
+                   const npy_intp     kmax, 
                    const npy_float64  eps, 
                    const npy_float64  p, 
                    npy_float64  distance_upper_bound)
@@ -223,7 +225,7 @@ query_single_point(const ckdtree *self,
      *   - distances between the nearest side of the cell and the target
      *     the head node of the cell
      */
-    heap neighbors(k);
+    heap neighbors(kmax);
     
     npy_intp      i;
     const npy_intp m = self->m;
@@ -312,14 +314,14 @@ query_single_point(const ckdtree *self,
 
                     if (d < distance_upper_bound) {
                         /* replace furthest neighbor */
-                        if (neighbors.n == k)
+                        if (neighbors.n == kmax)
                               neighbors.remove();
                         neighbor.priority = -d;
                         neighbor.contents.intdata = indices[i];
                         neighbors.push(neighbor);
     
                         /* adjust upper bound for efficiency */
-                        if (neighbors.n == k)
+                        if (neighbors.n == kmax)
                             distance_upper_bound = -neighbors.peek().priority;
                     }
                 }
@@ -463,15 +465,19 @@ query_single_point(const ckdtree *self,
         }
     }
     /* fill output arrays with sorted neighbors */
+    int j = nk - 1;
     for (i=neighbors.n-1; i>=0; --i) {
         neighbor = neighbors.pop();
-        result_indices[i] = neighbor.contents.intdata;
+        if(i + 1 != k[j]) continue;
+
+        result_indices[j] = neighbor.contents.intdata;
         if (NPY_LIKELY(p == 2.0))
-            result_distances[i] = std::sqrt(-neighbor.priority);
+            result_distances[j] = std::sqrt(-neighbor.priority);
         else if ((p == 1.) || (ckdtree_isinf(p)))
-            result_distances[i] = -neighbor.priority;
+            result_distances[j] = -neighbor.priority;
         else
-            result_distances[i] = std::pow((-neighbor.priority),(1./p));
+            result_distances[j] = std::pow((-neighbor.priority),(1./p));
+        --j;
     }
 
 }
@@ -484,14 +490,16 @@ query_knn(const ckdtree      *self,
           npy_intp           *ii, 
           const npy_float64  *xx,
           const npy_intp     n, 
-          const npy_intp     k, 
+          const npy_intp*     k, 
+          const npy_intp     nk, 
+          const npy_intp     kmax, 
           const npy_float64  eps, 
           const npy_float64  p, 
           const npy_float64  distance_upper_bound)
 {
 #define HANDLE(cond, kls) \
     if(cond) { \
-        query_single_point<kls>(self, dd_row, ii_row, xx_row, k, eps, p, distance_upper_bound); \
+        query_single_point<kls>(self, dd_row, ii_row, xx_row, k, nk, kmax, eps, p, distance_upper_bound); \
     } else
 
     npy_intp m = self->m;
@@ -503,8 +511,8 @@ query_knn(const ckdtree      *self,
         try {
             if(NPY_LIKELY(!self->raw_boxsize_data)) {
                 for (i=0; i<n; ++i) {
-                    npy_float64 *dd_row = dd + (i*k);
-                    npy_intp *ii_row = ii + (i*k);
+                    npy_float64 *dd_row = dd + (i*nk);
+                    npy_intp *ii_row = ii + (i*nk);
                     const npy_float64 *xx_row = xx + (i*m);                
                     HANDLE(NPY_LIKELY(p == 2), MinkowskiDistP2)
                     HANDLE(p == 1, MinkowskiDistP1)
@@ -517,8 +525,8 @@ query_knn(const ckdtree      *self,
                 npy_float64 * xx_row = &row[0];
                 int j;
                 for (i=0; i<n; ++i) {
-                    npy_float64 *dd_row = dd + (i*k);
-                    npy_intp *ii_row = ii + (i*k);
+                    npy_float64 *dd_row = dd + (i*nk);
+                    npy_intp *ii_row = ii + (i*nk);
                     const npy_float64 *old_xx_row = xx + (i*m);                
                     for(j=0; j<m; ++j) {
                         xx_row[j] = _wrap(old_xx_row[j], self->raw_boxsize_data[j]);

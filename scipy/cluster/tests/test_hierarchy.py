@@ -91,6 +91,11 @@ class TestLinkage(object):
         expectedZ = getattr(hierarchy_test_data, 'linkage_X_' + method)
         assert_allclose(Z, expectedZ, atol=1e-06)
 
+        y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
+                                         metric="euclidean")
+        Z = linkage(y, method)
+        assert_allclose(Z, expectedZ, atol=1e-06)
+
 
 class TestInconsistent(object):
     def test_inconsistent_tdist(self):
@@ -894,9 +899,9 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
 
 
 def test_euclidean_linkage_value_error():
-    for method in scipy.cluster.hierarchy._cpy_euclid_methods:
-        assert_raises(ValueError,
-                linkage, [[1, 1], [1, 1]], method=method, metric='cityblock')
+    for method in scipy.cluster.hierarchy._EUCLIDEAN_METHODS:
+        assert_raises(ValueError, linkage, [[1, 1], [1, 1]],
+                      method=method, metric='cityblock')
 
 
 def test_2x2_linkage():

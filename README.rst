@@ -41,7 +41,7 @@ Documentation
 
 Scipy documentation is available on the web:
 
-    http://docs.scipy.org
+    https://docs.scipy.org
 
 How to generate the HTML documentation, see ``doc/README.txt``.
 
@@ -51,7 +51,7 @@ Web sites
 
 The user's site is:
 
-    http://www.scipy.org/
+    https://www.scipy.org/
 
 
 Mailing Lists

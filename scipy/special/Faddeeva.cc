@@ -125,7 +125,7 @@ extern "C" {
 #include <cfloat>
 #include <cmath>
 
-using namespace std;
+#define complex std::complex
 
 /////////////////////////////////////////////////////////////////////////
 

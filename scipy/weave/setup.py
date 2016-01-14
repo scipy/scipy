@@ -22,5 +22,5 @@ if __name__ == '__main__':
           author="Eric Jones",
           author_email="eric@enthought.com",
           licence="SciPy License (BSD Style)",
-          url='http://www.scipy.org',
+          url='https://www.scipy.org',
           **configuration(top_path='').todict())

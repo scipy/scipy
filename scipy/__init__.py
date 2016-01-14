@@ -3,7 +3,7 @@ SciPy: A scientific computing package for Python
 ================================================
 
 Documentation is available in the docstrings and
-online at http://docs.scipy.org.
+online at https://docs.scipy.org.
 
 Contents
 --------
