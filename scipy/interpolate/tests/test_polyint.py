@@ -474,15 +474,15 @@ class TestCubicSpline(object):
         cs = CubicSpline(x, y)
         assert_allclose(cs(x_test), y_true, rtol=1e-12)
 
-    def _check_continuity(self, S, alpha=1e-8):
-        x = S.x
-        dx = -alpha * np.diff(x)
-        for i in range(3):
-            D = S.derivative()
-            t = S(x[1:]) + D(x[1:]) * dx
-            v = S(x[1:] + dx)
-            assert_allclose(t, v, rtol=alpha*1e3)
-            S = D
+    def _check_continuity(self, S, tol=1e-7):
+        c = S.c
+        dx = np.diff(S.x)[:-1]
+        assert_allclose(c[3, 1:], c[0, :-1] * dx**3 + c[1, :-1] * dx**2 +
+                        c[2, :-1] * dx + c[3, :-1], rtol=tol, atol=tol)
+        assert_allclose(c[2, 1:], 3 * c[0, :-1] * dx**2 + 2 * c[1, :-1] * dx +
+                        c[2, :-1], rtol=tol, atol=tol)
+        assert_allclose(c[1, 1:], 3 * c[0, :-1] * dx + c[1, :-1],
+                        rtol=tol, atol=tol)
 
     def test_dtypes(self):
         x = np.array([0, 1, 2, 3], dtype=int)
