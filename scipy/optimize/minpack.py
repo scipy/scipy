@@ -556,18 +556,22 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Raises
     ------
+    ValueError
+        if either `ydata` or `xdata` contain NaNs, or if incompatible options
+        are used.
+
+    RuntimeError
+        if the least-squares minimization fails.
+
     OptimizeWarning
         if covariance of the parameters can not be estimated.
-
-    ValueError
-        if either `ydata` or `xdata` contain NaNs.
 
     See Also
     --------
     least_squares : Minimize the sum of squares of nonlinear functions.
     stats.linregress : Calculate a linear least squares regression for two sets
                        of measurements.
-    
+
     Notes
     -----
     With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
@@ -576,7 +580,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
     the docstring of `least_squares` for more information.
-     
+
     Examples
     --------
     >>> import numpy as np
@@ -595,17 +599,17 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 2., 1.]))
 
-    """    
+    """
     if p0 is None:
         # determine number of parameters by inspecting the function
         from scipy._lib._util import getargspec_no_self as _getargspec
         args, varargs, varkw, defaults = _getargspec(f)
         if len(args) < 2:
-            raise ValueError("Unable to determine number of fit parameters.")                      
+            raise ValueError("Unable to determine number of fit parameters.")
         p0 = np.ones(len(args) - 1)
     else:
         p0 = np.atleast_1d(p0)
-    
+
     lb, ub = prepare_bounds(bounds, p0)
     bounded_problem = np.any((lb > -np.inf) | (ub < np.inf))
 
@@ -613,7 +617,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if bounded_problem:
             method = 'trf'
         else:
-            method = 'lm'    
+            method = 'lm'
 
     if method == 'lm' and bounded_problem:
         raise ValueError("Method 'lm' only works for unconstrained problems. "
