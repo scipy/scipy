@@ -474,7 +474,10 @@ class TestCubicSpline(object):
         cs = CubicSpline(x, y)
         assert_allclose(cs(x_test), y_true, rtol=1e-12)
 
-    def _check_continuity(self, S, tol=1e-7):
+    def _check_continuity(self, S, tol=1e-12):
+        # Check that spline coefficients satisfy the continuity conditions.
+        # Checking continuity by evaluations is not reliable as the tolerance
+        # will depend on derivative values.
         c = S.c
         dx = np.diff(S.x)[:-1]
         assert_allclose(c[3, 1:], c[0, :-1] * dx**3 + c[1, :-1] * dx**2 +
