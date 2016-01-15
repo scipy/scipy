@@ -958,6 +958,7 @@ class TestOptimizeResultAttributes(TestCase):
                     continue
 
                 assert_(hasattr(res, attribute))
+                assert_(attribute in dir(res))
 
 
 class TestBrute:

@@ -126,6 +126,9 @@ class OptimizeResult(dict):
         else:
             return self.__class__.__name__ + "()"
 
+    def __dir__(self):
+        return list(self.keys())
+
 
 class OptimizeWarning(UserWarning):
     pass
