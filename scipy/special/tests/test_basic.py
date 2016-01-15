@@ -1545,6 +1545,36 @@ class TestErf(TestCase):
         assert_equal(d,b)  # makes sure state was returned
         # assert_equal(d,1-a)
 
+    def test_erf_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -1, 1]
+        assert_allclose(special.erf(vals), expected, rtol=1e-15)
+
+    def test_erfc_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, 2, 0]
+        assert_allclose(special.erfc(vals), expected, rtol=1e-15)
+
+    def test_erfcx_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, np.inf, 0]
+        assert_allclose(special.erfcx(vals), expected, rtol=1e-15)
+
+    def test_erfi_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -np.inf, np.inf]
+        assert_allclose(special.erfi(vals), expected, rtol=1e-15)
+
+    def test_dawsn_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -0.0, 0.0]
+        assert_allclose(special.dawsn(vals), expected, rtol=1e-15)
+
+    def test_wofz_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan + np.nan * 1.j, 0.-0.j, 0.+0.j]
+        assert_allclose(special.wofz(vals), expected, rtol=1e-15)
+
 
 class TestEuler(TestCase):
     def test_euler(self):
