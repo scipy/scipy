@@ -453,6 +453,25 @@ class TestCurveFit(TestCase):
         assert_raises(ValueError, curve_fit, f, xdata, ydata, bounds=bounds,
                       method='lm')
 
+    def test_bounds_p0(self):
+        # This test is for issue #5719. The problem was that an initial guess
+        # was ignored when 'trf' or 'dogbox' methods were invoked.
+        def f(x, a, b):
+            return a * np.exp(-b*x)
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+        bounds = ([1., 0], [1.5, 3.])
+        p0 = [1.01, 2.9]
+        for method in [None, 'trf', 'dogbox']:
+            popt_1, _ = curve_fit(f, xdata, ydata, bounds=bounds,
+                                  method=method)
+            popt_2, _ = curve_fit(f, xdata, ydata, p0, bounds=bounds,
+                                  method=method)
+            # Test that popt_1 and popt_2 are not too close. A bit weird
+            # to test like this, but probably it's the only way.
+            assert_(not np.allclose(popt_1, popt_2, rtol=1e-8))
+
 
 class TestFixedPoint(TestCase):
 
