@@ -524,6 +524,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         to the number of parameters, or a scalar (in which case the bound is
         taken to be the same for all parameters.) Use ``np.inf`` with an
         appropriate sign to disable bounds on all or some parameters.
+
         .. versionadded:: 0.17
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization.  See `least_squares` for more details.
@@ -531,6 +532,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         provided. The method 'lm' won't work when the number of observations
         is less than the number of variables, use 'trf' or 'dogbox' in this
         case.
+
         .. versionadded:: 0.17
     kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
@@ -606,13 +608,16 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         args, varargs, varkw, defaults = _getargspec(f)
         if len(args) < 2:
             raise ValueError("Unable to determine number of fit parameters.")
-        p0 = np.ones(len(args) - 1)
+        n = len(args) - 1
     else:
         p0 = np.atleast_1d(p0)
+        n = p0.size
 
-    lb, ub = prepare_bounds(bounds, p0)
+    lb, ub = prepare_bounds(bounds, n)
+    if p0 is None:
+        p0 = _initialize_feasible(lb, ub)
+
     bounded_problem = np.any((lb > -np.inf) | (ub < np.inf))
-
     if method is None:
         if bounded_problem:
             method = 'trf'
@@ -621,7 +626,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     if method == 'lm' and bounded_problem:
         raise ValueError("Method 'lm' only works for unconstrained problems. "
-                         "Use method='trf' or 'dogbox' instead")
+                         "Use 'trf' or 'dogbox' instead.")
 
     # NaNs can not be handled
     if check_finite:
@@ -653,7 +658,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if ier not in [1, 2, 3, 4]:
             raise RuntimeError("Optimal parameters not found: " + errmsg)
     else:
-        p0 = _initialize_feasible(lb, ub)
         res = least_squares(func, p0, args=args, bounds=bounds, method=method,
                             **kwargs)
 
