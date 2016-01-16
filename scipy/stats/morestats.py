@@ -20,7 +20,7 @@ from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats
+from .stats import find_repeats, _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -2458,6 +2458,10 @@ def median_test(*args, **kwds):
         Cressie-Read power divergence family to be used instead.  See
         `power_divergence` for details.
         Default is 1 (Pearson's chi-squared statistic).
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -2554,6 +2558,7 @@ def median_test(*args, **kwds):
     ties = kwds.pop('ties', 'below')
     correction = kwds.pop('correction', True)
     lambda_ = kwds.pop('lambda_', None)
+    nan_policy = kwds.pop('nan_policy', 'propagate')
 
     if len(kwds) > 0:
         bad_kwd = kwds.keys()[0]
@@ -2580,11 +2585,18 @@ def median_test(*args, **kwds):
                              "samples must be one-dimensional sequences." %
                              (k + 1, d.ndim))
 
-    grand_median = np.median(np.concatenate(data))
+    cdata = np.concatenate(data)
+    contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
+    if contains_nan and nan_policy == 'propagate':
+        return (np.nan,)*4
+
+    grand_median = np.nanmedian(cdata)
 
     # Create the contingency table.
     table = np.zeros((2, len(data)), dtype=np.int64)
     for k, sample in enumerate(data):
+        sample = sample[~np.isnan(sample)]
+
         nabove = count_nonzero(sample > grand_median)
         nbelow = count_nonzero(sample < grand_median)
         nequal = sample.size - (nabove + nbelow)
