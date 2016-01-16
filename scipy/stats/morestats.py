@@ -2671,18 +2671,19 @@ def _circfuncs_common(samples, high, low):
 
 def circmean(samples, high=2*pi, low=0, axis=None):
     """
-    Compute the circular mean for samples in a range.
+    Compute the circular mean for samples assumed to be in the
+    range [low to high].
 
     Parameters
     ----------
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular mean range.  Default is ``2*pi``.
+        High boundary for the samples range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular mean range.  Default is 0.
+        Low boundary for the samples range. Default is 0.
     axis : int, optional
-        Axis along which means are computed.  The default is to compute
+        Axis along which means are computed. The default is to compute
         the mean of the flattened array.
 
     Returns
@@ -2700,21 +2701,27 @@ def circmean(samples, high=2*pi, low=0, axis=None):
         res[mask] = np.nan
     return res 
 
-def circvar(samples, high=2*pi, low=0, axis=None):
+
+def circvar(samples, high=2*pi, low=0, axis=None, normalize=False):
     """
-    Compute the circular variance for samples assumed to be in a range
+    Compute the circular variance for samples assumed to be in the
+    range [low to high].
 
     Parameters
     ----------
     samples : array_like
         Input array.
-    low : float or int, optional
-        Low boundary for circular variance range.  Default is 0.
     high : float or int, optional
-        High boundary for circular variance range.  Default is ``2*pi``.
+        High boundary for the samples range. Default is ``2*pi``.
+    low : float or int, optional
+        Low boundary for the samples range. Default is 0.
     axis : int, optional
-        Axis along which variances are computed.  The default is to compute
+        Axis along which variances are computed. The default is to compute
         the variance of the flattened array.
+    normalize : boolean, optional
+        If True, the returned value is bound in the interval [0, 1] and
+        doesn't depend on the variable units. If False (default), the
+        returned value is scaled by ``((high-low)/(2*pi))**2``.
 
     Returns
     -------
@@ -2723,18 +2730,26 @@ def circvar(samples, high=2*pi, low=0, axis=None):
 
     Notes
     -----
-    This uses a definition of circular variance that in the limit of small
-    angles returns a number close to the 'linear' variance.
+    This uses the following definition of circular variance: ``1-R``, where
+    ``R`` is the mean resultant vector. The returned value is in the range
+    [0, 1], 0 standing for no variance, and 1 for a large variance.
+
+    References
+    ----------
+    Fisher NI, Statistical analysis of circular data. Cambridge, 1993.
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).mean(axis=axis)
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
-    return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
+    res = 1. - R
+    if not normalize:
+        res *= ((high-low)/(2.*pi))**2
+    return res 
 
 
-def circstd(samples, high=2*pi, low=0, axis=None):
+def circstd(samples, high=2*pi, low=0, axis=None, normalize=False):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -2743,14 +2758,17 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     ----------
     samples : array_like
         Input array.
-    low : float or int, optional
-        Low boundary for circular standard deviation range.  Default is 0.
     high : float or int, optional
-        High boundary for circular standard deviation range.
-        Default is ``2*pi``.
+        High boundary for the samples range. Default is ``2*pi``.
+    low : float or int, optional
+        Low boundary for the samples range. Default is 0.
     axis : int, optional
-        Axis along which standard deviations are computed.  The default is
+        Axis along which standard deviations are computed. The default is
         to compute the standard deviation of the flattened array.
+    normalize : boolean, optional
+        If True, the returned value is equal to ``sqrt(-2*log(R))`` and does
+        not depend on the variable units. If False (default), the returned
+        value is scaled by ``((high-low)/(2*pi))``.
 
     Returns
     -------
@@ -2761,13 +2779,22 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     -----
     This uses a definition of circular standard deviation that in the limit of
     small angles returns a number close to the 'linear' standard deviation.
+    
+    References
+    ----------
+    Fisher NI, Statistical analysis of circular data. Cambridge, 1993.
+    Jammalamadaka SR and SenGupta A, Topics in circular statistics,
+    Singapore, 2001.
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).mean(axis=axis)
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
-    return ((high - low)/2.0/pi) * sqrt(-2*log(R))
+    res = sqrt(-2*log(R))
+    if not normalize:
+        res *= (high-low)/(2.*pi)
+    return res 
 
 
 # Tests to include (from R) -- some of these already in stats.

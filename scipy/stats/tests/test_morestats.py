@@ -1060,7 +1060,7 @@ class TestCircFuncs(TestCase):
         assert_allclose(M, Mval, rtol=1e-7)
 
         V = stats.circvar(x, high=360)
-        Vval = 42.51955609
+        Vval = 21.191086200
         assert_allclose(V, Vval, rtol=1e-7)
 
         S = stats.circstd(x, high=360)
@@ -1074,6 +1074,9 @@ class TestCircFuncs(TestCase):
         assert_allclose(M2, M1, rtol=1e-5)
 
         V1 = x.var()
+        # for small variations, circvar is approximatelly half the
+        # linear variance
+        V1 = V1 / 2.
         V2 = stats.circvar(x, high=360)
         assert_allclose(V2, V1, rtol=1e-4)
 
@@ -1134,7 +1137,7 @@ class TestCircFuncs(TestCase):
     def test_circfuncs_array_like(self):
         x = [355,5,2,359,10,350]
         assert_allclose(stats.circmean(x, high=360), 0.167690146, rtol=1e-7)
-        assert_allclose(stats.circvar(x, high=360), 42.51955609, rtol=1e-7)
+        assert_allclose(stats.circvar(x, high=360), 21.191086200, rtol=1e-7)
         assert_allclose(stats.circstd(x, high=360), 6.520702116, rtol=1e-7)
 
     def test_empty(self):
