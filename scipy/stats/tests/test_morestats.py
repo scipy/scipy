@@ -1234,6 +1234,9 @@ class TestMedianTest(TestCase):
     def test_bad_ties(self):
         assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5], ties="foo")
 
+    def test_bad_nan_policy(self):
+        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5], nan_policy='foobar')
+
     def test_bad_keyword(self):
         assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5], foo="foo")
 
@@ -1271,6 +1274,16 @@ class TestMedianTest(TestCase):
         stat, p, m, tbl = stats.median_test(x, y, z, ties="above")
         assert_equal(m, 5)
         assert_equal(tbl, [[0, 2, 3], [4, 0, 0]])
+
+    def test_nan_policy_options(self):
+        x = [1, 2, np.nan]
+        y = [4, 5, 6]
+        _, _, med, _ = stats.median_test(x, y, nan_policy='propagate')
+        _, _, med2, _ = stats.median_test(x, y, nan_policy='omit')
+
+        assert_equal(med, np.nan)
+        assert_equal(med2, 4.)
+        assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
 
     def test_basic(self):
         # median_test calls chi2_contingency to compute the test statistic
