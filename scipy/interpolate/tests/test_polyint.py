@@ -16,7 +16,8 @@ from scipy.interpolate import (
 from scipy._lib.six import xrange
 
 
-def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
+def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
+                extra_args={}):
     np.random.seed(1234)
 
     x = [-1, 0, 1]
@@ -29,7 +30,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
         return
 
     xi = np.zeros(x_shape)
-    yi = interpolator_cls(x, y, axis=axis)(xi)
+    yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
 
     target_shape = ((deriv_shape or ()) + y.shape[:axis]
                     + x_shape + y.shape[axis:][1:])
@@ -37,7 +38,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
 
     # check it works also with lists
     if x_shape and y.size > 0:
-        interpolator_cls(list(x), list(y), axis=axis)(list(xi))
+        interpolator_cls(list(x), list(y), axis=axis, **extra_args)(list(xi))
 
     # check also values
     if xi.size > 0 and deriv_shape is None:
@@ -57,8 +58,12 @@ def test_shapes():
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
-                    yield check_shape, ip, s1, s2, None, axis
-
+                    if ip != CubicSpline:
+                        yield check_shape, ip, s1, s2, None, axis
+                    else:
+                        for bc in [None, 'natural', 'clamped']:
+                            extra = {'bc_type': bc}
+                            yield check_shape, ip, s1, s2, None, axis, extra
 
 def test_derivs_shapes():
     def krogh_derivs(x, y, axis=0):
@@ -508,18 +513,73 @@ class TestCubicSpline(object):
         self._check_continuity(cs)
 
     def test_incorrect_inputs(self):
-        x = np.array([1, 2, 3])
-        y = np.array([1, 2, 3])
-        xc = np.array([1 + 1j, 2, 3])
-        xn = np.array([np.nan, 2, 3])
-        xo = np.array([2, 1, 3])
-        yn = np.array([np.nan, 2, 3])
+        x = np.array([1, 2, 3, 4])
+        y = np.array([1, 2, 3, 4])
+        xc = np.array([1 + 1j, 2, 3, 4])
+        xn = np.array([np.nan, 2, 3, 4])
+        xo = np.array([2, 1, 3, 4])
+        yn = np.array([np.nan, 2, 3, 4])
+        x3 = [1, 2, 3]
+        y3 = [1, 2, 3]
 
         assert_raises(ValueError, CubicSpline, xc, y)
         assert_raises(ValueError, CubicSpline, xn, y)
         assert_raises(ValueError, CubicSpline, x, yn)
         assert_raises(ValueError, CubicSpline, xo, y)
+        assert_raises(ValueError, CubicSpline, x, y3)
 
+        wrong = [('periodic', 'clamped'), ((1, 0), ), (0., 0.), 'not-a-typo']
+
+        for bc_type in wrong:
+            assert_raises(ValueError, CubicSpline, x, y, 0, True, bc_type)
+
+        # Shapes mismatch when giving arbitrary derivative values:
+        Y = np.c_[y, y]
+        bc1 = ('clamped', (1, 0))
+        bc2 = ('clamped', (1, [0, 0, 0]))
+        bc3 = ('clamped', (1, [[0, 0]]))
+        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc1)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc2)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc3)
+
+        # 3 values are not enough for a not-a-knot bc:
+        assert_raises(ValueError, CubicSpline, x3, y3, 0, True, 'not-a-knot')
+
+        # periodic condition, y[-1] must be equal to y[0]:
+        assert_raises(ValueError, CubicSpline, x, y, 0, True, 'periodic')
+
+    def test_bc_type(self):
+        # Testing imposed derivatives. We interpolate the y=x**3 on the segment
+        # 0<=x<=1. y'=3*x**2. y''=6*x
+        tol = 1e-15
+
+        x = np.linspace(0, 1)
+        y = x**3
+
+        def eval_degree_3_polynom(bc_type):
+            cs = CubicSpline([0, 1], [0, 1], bc_type=bc_type)
+            assert_allclose(y, cs(x), rtol=tol, atol=tol)
+
+        eval_degree_3_polynom(((1, 0), (1, 3)))
+        eval_degree_3_polynom(((2, 0), (1, 3)))
+        eval_degree_3_polynom(((1, 0), (2, 6)))
+        eval_degree_3_polynom(((2, 0), (2, 6)))
+        eval_degree_3_polynom(('clamped', (1, 3)))
+        eval_degree_3_polynom(('natural', (1, 3)))
+
+        # Test the periodic bc_type:
+        t = np.linspace(0, 2 * np.pi, 5)
+        ys = np.cos(t)
+        cs = CubicSpline(t, ys, bc_type='periodic')
+        # make sure the first and second derivatives are the same near the
+        # periodicity point:
+        assert_allclose(cs(0, 1), cs(2 * np.pi, 1), rtol=tol, atol=tol)
+        assert_allclose(cs(0, 2), cs(2 * np.pi, 2), rtol=tol, atol=tol)
+        # Test again with a different y shape:
+        Ys = np.c_[ys, ys]
+        cs = CubicSpline(t, Ys, bc_type='periodic')
+        assert_allclose(cs(0, 1), cs(2 * np.pi, 1), rtol=tol, atol=tol)
+        assert_allclose(cs(0, 2), cs(2 * np.pi, 2), rtol=tol, atol=tol)
 
 if __name__ == '__main__':
     run_module_suite()

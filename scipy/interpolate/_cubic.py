@@ -4,6 +4,8 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
+from scipy._lib.six import string_types
+
 from . import BPoly, PPoly
 from .polyint import _isscalar
 from scipy._lib._util import _asarray_validated
@@ -158,7 +160,7 @@ class PchipInterpolator(BPoly):
         dk[1:-1][condition] = 0.0
         dk[1:-1][~condition] = 1.0 / whmean[~condition]
 
-        # special case endpoints, as suggested in 
+        # special case endpoints, as suggested in
         # Cleve Moler, Numerical Computing with MATLAB, Chap 3.4
         dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1])
         dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2])
@@ -363,6 +365,42 @@ class CubicSpline(PPoly):
     extrapolate : bool, optional
         Whether to extrapolate to out-of-bounds points based on first and last
         intervals, or to return NaNs. Default is True.
+    bc_type : string or a 2-values tuple, optional
+        Boundary condition type. Two additional equations, given by the
+        boundary conditions, are required to determine all coefficients of
+        polynomials on each segment.
+
+        If `bc_type` is a string, then the specified condition will be applied
+        at both ends. Available conditions are:
+
+        * 'not-a-knot' -- The first and second segment at a curve end are the
+          same polynomial. It is a good default when there is no information
+          on boundary conditions. See Notes below for more information. n must
+          be > 3.
+        * 'periodic' -- The interpolated functions is assumed to be periodic
+          of period ``x[-1] - x[0]``. The first and last value of `y` must be
+          identical: ``y[0] == y[-1]``. This boundary condition will result in
+          ``y'[0] == y'[-1]`` and ``y''[0] == y''[-1]``.
+        * 'clamped' -- The first derivative at curves ends are zero. Assuming
+          a 1D `y`, ``bc_type=((1, 0.0), (1, 0.0))`` is the same condition.
+        * 'natural' -- The second derivative at curve ends are zero. Assuming
+          a 1D `y`, ``bc_type=((2, 0.0), (2, 0.0))`` is the same condition.
+
+        If `bc_type` is a 2-tuple, the first and the second value will be
+        applied at the curve start and end respectively. The tuple values can
+        be one of the previously mentionned strings (except 'periodic') or a
+        tuple `(order, deriv_value)` allowing to specify arbitrary
+        derivatives at curve ends. In that tuple, `order` is an int (1 or 2)
+        corresponding the derivative order and `deriv_value` is an array_like
+        holding the actual derivative values. `deriv_value` must have one
+        dimension less (the one corresponding to `axis`) than `y`. For
+        example, if `y` is 1D, the derivative value will be a scalar. If `y`
+        is 3D with the shape `(n0, n1, n2)` and `axis`=2, then the
+        `deriv_value` must be 2D and have the shape `(n0, n1)`.
+
+        If ``bc_type=None``, the boundary conditions will be 'not-a-knot' if
+        n>3. If n=2 or n=3, the solution is sought as a linear/quadratic
+        function passing through the given points. Default is None.
 
     Attributes
     ----------
@@ -393,19 +431,16 @@ class CubicSpline(PPoly):
 
     Notes
     -----
-    Two additional equations are required to determine all coefficients
-    of polynomials on each segment. They are formed from the conditions that
-    at the first and the last interior knots the third derivative is
-    continuous. It essentially means that the first and the second segments
-    (on both ends) are described by the same cubic polynomial. These conditions
-    are called "not-a-knot" and are known to give better interpolation accuracy
-    when nothing is known about end point derivatives [2]_.
+    The 'not-a-knot' boundary condition imposes that, at the first and the last
+    interior knots, the third derivative is continuous. It essentially means
+    that the first and the second segments (on both ends) are described by the
+    same cubic polynomial. This boundary condition is known to give better
+    interpolation accuracy when nothing is known about end point derivatives
+    [2]_.
 
-    When n=2 or n=3, the solution is sought as a linear/quadratic function
-    passing through the given points.
-
-    `InterpolatedUnivariateSpline` and `splrep` (with ``s=0``) construct an
-    equivalent interpolation curve in the B-spline basis.
+    When ``bc_type='not-a-knot'``, `InterpolatedUnivariateSpline` and `splrep`
+    (with ``s=0``) construct an equivalent interpolation curve in the B-spline
+    basis.
 
     .. versionadded:: 0.18.0
 
@@ -431,6 +466,41 @@ class CubicSpline(PPoly):
     >>> plt.legend(loc='lower left', ncol=2)
     >>> plt.show()
 
+    In the second example, the unit circle is interpolated with a spline. A
+    periodic boundary condition is used. You can see that the first derivative
+    values, ds/dx=0, ds/dy=1 at the periodic point (1, 0) are correctly
+    computed. Note that a circle cannot be exactly represented by a cubic
+    spline. To increase precision, more breakpoints would be required.
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import CubicSpline
+    >>> import matplotlib.pyplot as plt
+    >>> theta = 2 * np.pi * np.linspace(0, 1, 5)
+    >>> y = np.c_[np.cos(theta), np.sin(theta)]
+    >>> cs = CubicSpline(theta, y, bc_type='periodic')
+    >>> print("ds/dx=%.1f ds/dy=%.1f" % (cs(0, 1)[0], cs(0, 1)[1]))
+    >>> xs = 2 * np.pi * np.linspace(0, 1, 100)
+    >>> plt.figure(figsize=(6.5, 4))
+    >>> plt.plot(np.cos(xs), np.sin(xs), label='true')
+    >>> plt.plot(y[:,0], y[:,1], 'o', label='breakpoints')
+    >>> plt.plot(cs(xs)[:,0], cs(xs)[:,1], label='spline')
+    >>> plt.axes().set_aspect('equal')
+    >>> plt.legend(loc='center')
+    >>> plt.show()
+
+    The third example is the interpolation of a the polynomial y=x**3 on the
+    interval 0<=x<=1. A cubic spline can represent that function exactly. The
+    minimal set of information is given: start and endpoints as well as start
+    and end slopes (first order derivatives). Note that y'=3*x**2 and thus
+    y'(0)=0 and y'(1)=3.
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import CubicSpline
+    >>> cs = CubicSpline([0, 1], [0, 1], bc_type=((1, 0), (1, 3)))
+    >>> x = np.linspace(0, 1)
+    >>> np.allclose(x**3, cs(x))
+    True
+
     References
     ----------
     .. [1] `Cubic Spline Interpolation
@@ -438,7 +508,7 @@ class CubicSpline(PPoly):
             on Wikiversity.
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
-    def __init__(self, x, y, axis=0, extrapolate=True):
+    def __init__(self, x, y, axis=0, extrapolate=True, bc_type=None):
         x, y = map(np.asarray, (x, y))
         if np.issubdtype(x.dtype, np.complexfloating):
             raise ValueError("`x` must contain real values.")
@@ -461,57 +531,216 @@ class CubicSpline(PPoly):
         if np.any(dx <= 0):
             raise ValueError("`x` must be strictly increasing sequence.")
 
-        # Find derivative values at each x[i] by solving a tridiagonal system.
-        # If n=2 or n=3, "not-a-knot" condition is not enough to determine
-        # derivatives. In this case the solution is chosen to be a
-        # linear/quadratic function passing through the given points.
         n = x.shape[0]
         y = np.rollaxis(y, axis)
+        expected_deriv_shape = y.shape[1:]
+
+        if bc_type is None:
+            if n < 4:
+                bc_type = (None, )
+            else:
+                bc_type = ('not-a-knot', 'not-a-knot')
+        elif isinstance(bc_type, string_types):
+            if bc_type == 'periodic':
+                if n == 2:
+                    raise ValueError("At least 3 points are required for "
+                                     "'periodic' `bc_type`.")
+
+                if not np.allclose(np.take(y, 0, axis), np.take(y, -1, axis),
+                                   rtol=1e-15):
+                        raise ValueError("The first and last `y` point along "
+                            "axis `axis` must be identical (within machine "
+                            "precision) when `bc_type`='periodic' is used.")
+
+            bc_type = (bc_type, bc_type)
+
+        else:
+            if len(bc_type) != 2:
+                raise ValueError("len(bc_type) must be 2 in order to specify "
+                                 "start and end conditions.")
+
+            if 'periodic' in bc_type:
+                raise ValueError("`bc_type` 'periodic' specifies both curve "
+                    "ends and cannot be used with other boundary conditions.")
+
+        validated_bc = ()
+        for bc in bc_type:
+            if bc is None:
+                validated_bc = None
+            elif isinstance(bc, string_types):
+                if bc == 'clamped':
+                    validated_bc += ((1, np.zeros(expected_deriv_shape)),)
+                elif bc == 'natural':
+                    validated_bc += ((2, np.zeros(expected_deriv_shape)),)
+                elif bc == 'not-a-knot':
+                    if n < 4:
+                        raise ValueError("At least 4 points are required to "
+                                         "use the 'not-a-knot' `bc_type`")
+                    validated_bc += (bc,)
+                elif bc == 'periodic':
+                    validated_bc += (bc,)
+                else:
+                    raise ValueError("`bc_type`=%s is not allowed." % (bc))
+            else:
+                try:
+                    deriv_order, deriv_value = bc
+                except Exception:
+                    raise ValueError("A specified derivative value must be "
+                                     "given in the form (order, value).")
+
+                deriv_order = int(deriv_order)
+                if deriv_order not in [1, 2]:
+                    raise ValueError("The specified derivative order must "
+                                     "be 1 or 2.")
+
+                deriv_value = np.asarray(deriv_value)
+                if deriv_value.shape != expected_deriv_shape:
+                    raise ValueError("`deriv_value` shape %s is not the "
+                                     "expected one: %s" % (
+                                     deriv_value.shape, expected_deriv_shape))
+
+                validated_bc += ((deriv_order, deriv_value),)
+
         dxr = dx.reshape((dx.shape[0],) + (1,)*(y.ndim-1))
         slope = np.diff(y, axis=0) / dxr
-        if n == 2:
-            s = np.empty((2,) + y.shape[1:], dtype=y.dtype)
-            s[0] = slope
-            s[1] = slope
-        elif n == 3:
-            A = np.zeros((3, 3))  # This is a standard matrix.
-            b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
 
-            A[0, 0] = 1
-            A[0, 1] = 1
-            A[1, 0] = dx[1]
-            A[1, 1] = 2 * (dx[0] + dx[1])
-            A[1, 2] = dx[0]
-            A[2, 1] = 1
-            A[2, 2] = 1
+        if validated_bc is None:
+            # special case for bc_type=None and n=2 or n=3:
+            if n == 2:
+                s = np.empty((2,) + y.shape[1:], dtype=y.dtype)
+                s[0] = slope
+                s[1] = slope
+            elif n == 3:
+                A = np.zeros((3, 3))  # This is a standard matrix.
+                b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
 
-            b[0] = 2 * slope[0]
-            b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
-            b[2] = 2 * slope[1]
+                A[0, 0] = 1
+                A[0, 1] = 1
+                A[1, 0] = dx[1]
+                A[1, 1] = 2 * (dx[0] + dx[1])
+                A[1, 2] = dx[0]
+                A[2, 1] = 1
+                A[2, 2] = 1
 
-            s = solve(A, b, overwrite_a=True, overwrite_b=True,
-                      check_finite=False)
+                b[0] = 2 * slope[0]
+                b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
+                b[2] = 2 * slope[1]
+
+                s = solve(A, b, overwrite_a=True, overwrite_b=True,
+                          check_finite=False)
         else:
+            # Find derivative values at each x[i] by solving a tridiagonal
+            # system.
             A = np.zeros((3, n))  # This is a banded matrix representation.
             b = np.empty((n,) + y.shape[1:], dtype=y.dtype)
 
-            A[1, 0] = dx[1]
-            A[1, -1] = dx[-2]
-            A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])
-            A[0, 1] = x[2] - x[0]
-            A[0, 2:] = dx[:-1]
-            A[-1, -2] = x[-1] - x[-3]
-            A[-1:, :-2] = dx[1:]
+            # Filling the system for i=1..n-2
+            #                         (x[i-1] - x[i]) * s[i-1] +\
+            # 2 * ((x[i] - x[i-1]) + (x[i+1] - x[i])) * s[i]   +\
+            #                         (x[i] - x[i-1]) * s[i+1] =\
+            #       3 * ((x[i+1] - x[i])*(y[i] - y[i-1])/(x[i] - x[i-1]) +\
+            #           (x[i] - x[i-1])*(y[i+1] - y[i])/(x[i+1] - x[i]))
 
-            d = x[2] - x[0]
-            b[0] = ((dxr[0] + 2*d)*dxr[1]*slope[0] + dxr[0]**2*slope[1]) / d
+            A[1, 1:-1] = 2 * (dx[:-1] + dx[1:]) # The diagonal
+            A[0, 2:] = dx[:-1]                  # The upper diagonal
+            A[-1:, :-2] = dx[1:]                # The lower diagonal
+
             b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
-            d = x[-1] - x[-3]
-            b[-1] = ((dxr[-1]**2*slope[-2] +
-                      (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
 
-            s = solve_banded((1, 1), A, b, overwrite_ab=True, overwrite_b=True,
-                             check_finite=False)
+            bc_start, bc_end = validated_bc
+
+            if bc_start == 'periodic':
+                # Due to the periodicity, and because y[-1] = y[0], the linear
+                # system has (n-1) unknowns/equations instead of n:
+                A = A[:, 0:-1]
+                A[1, 0] = 2 * (dx[-1] + dx[0])
+                A[0, 1] = dx[-1]
+
+                b = b[0:-1]
+
+                # Also, due to the periodicity, the system is not tri-diagonal.
+                # We need to compute a "condensed" matrix of shape (n-2, n-2).
+                # See http://www.cfm.brown.edu/people/gk/chap6/node14.html for
+                # more explanations.
+                # The condensed matrix is obtained by removing the last column
+                # and last row of the (n-1, n-1) system matrix. The removed
+                # values are saved in scalar variables with the (n-1, n-1)
+                # system matrix indices forming their names:
+                a_m1_0 = dx[-2] # lower left corner value: A[-1, 0]
+                a_m1_m2 = dx[-1]
+                a_m1_m1 = 2 * (dx[-1] + dx[-2])
+                a_m2_m1 = dx[-2]
+                a_0_m1 = dx[0]
+
+                b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
+                b[-1] = 3 * (dxr[-1] * slope[-2] + dxr[-2] * slope[-1])
+
+                Ac = A[:, 0:-1]
+                b1 = b[0:-1]
+                b2 = np.zeros(b1.shape, b1.dtype)
+                b2[0] = -a_0_m1
+                b2[-1] = -a_m2_m1
+
+                # s1 and s2 are the solutions of (n-2, n-2) system
+                s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
+                                 overwrite_b=False, check_finite=False)
+
+                s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
+                                 overwrite_b=False, check_finite=False)
+
+                # computing the s[n-2] solution:
+                s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
+                         (a_m1_m1 + a_m1_0 * s2[0] + a_m1_m2 * s2[-1]))
+
+                # s is the solution of the (n, n) system:
+                s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+                s[0:-2] = s1 + s_m1 * s2
+                s[-2] = s_m1
+                s[-1] = s[0]
+
+            else:
+                if bc_start == 'not-a-knot':
+                    A[1, 0] = dx[1]
+                    A[0, 1] = x[2] - x[0]
+
+                    d = x[2] - x[0]
+                    b[0] = ((dxr[0] + 2*d) * dxr[1] * slope[0] +
+                             dxr[0]**2 * slope[1]) / d
+
+                if bc_end == 'not-a-knot':
+                    A[1, -1] = dx[-2]
+                    A[-1, -2] = x[-1] - x[-3]
+
+                    d = x[-1] - x[-3]
+                    b[-1] = ((dxr[-1]**2*slope[-2] +
+                             (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
+
+                # 1st order derivative imposed at start:
+                if bc_start[0] == 1:
+                    A[1, 0] = 1
+                    A[0, 1] = 0
+                    b[0] = bc_start[1]
+
+                # 1st order derivative imposed at end:
+                if bc_end[0] == 1:
+                    A[1, -1] = 1
+                    A[-1, -2] = 0
+                    b[-1] = bc_end[1]
+
+                # 2nd order derivative imposed at start:
+                if bc_start[0] == 2:
+                    A[1, 0] = 2 * dx[0]
+                    A[0, 1] = dx[0]
+                    b[0] = - bc_start[1]/2 * dx[0]**2 + 3 * (y[1] - y[0])
+
+                # 2nd order derivative imposed at end:
+                if bc_end[0] == 2:
+                    A[1, -1] = 2 * dx[-1]
+                    A[-1, -2] = dx[-1]
+                    b[-1] = bc_end[1]/2 * dx[-1]**2 + 3 * (y[-1] - y[-2])
+
+                s = solve_banded((1, 1), A, b, overwrite_ab=True,
+                                 overwrite_b=True, check_finite=False)
 
         # Compute coefficients in PPoly form.
         c0 = (s[:-1] + s[1:] - 2 * slope) / dxr**2
