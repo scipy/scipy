@@ -89,13 +89,13 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
         active_mask=active_mask, nfev=nfev, njev=njev, status=status)
 
 
-def prepare_bounds(bounds, x0):
+def prepare_bounds(bounds, n):
     lb, ub = [np.asarray(b, dtype=float) for b in bounds]
     if lb.ndim == 0:
-        lb = np.resize(lb, x0.shape)
+        lb = np.resize(lb, n)
 
     if ub.ndim == 0:
-        ub = np.resize(ub, x0.shape)
+        ub = np.resize(ub, n)
 
     return lb, ub
 
@@ -742,7 +742,7 @@ def least_squares(
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
-    lb, ub = prepare_bounds(bounds, x0)
+    lb, ub = prepare_bounds(bounds, x0.shape[0])
 
     if method == 'lm' and not np.all((lb == -np.inf) & (ub == np.inf)):
         raise ValueError("Method 'lm' doesn't support bounds.")
