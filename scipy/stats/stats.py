@@ -4630,14 +4630,13 @@ def tiecorrect(rankvals):
 
     """
     arr = np.sort(rankvals)
-    idx = np.nonzero(np.r_[True, arr[1:] != arr[:-1], True])[0]
-    cnt = np.diff(idx).astype(np.int64)
-
-    if (np.int64(1 << 20) < cnt).any():  # guard overflow
-        cnt = cnt.astype(np.float64)
-
     size = np.float64(arr.size)
-    return 1.0 if size < 2 else 1.0 - (cnt**3 - cnt).sum() / (size**3 - size)
+    if size < 2:
+        return 1.
+    idx = np.nonzero(np.r_[True, arr[1:] != arr[:-1], True])[0]
+    cnt = np.diff(idx)
+    return (1.0 - ((cnt ** 3).sum(dtype=float) - cnt.sum(dtype=float)) /
+                  (size ** 3 - size))
 
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
