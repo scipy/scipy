@@ -176,8 +176,6 @@ from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 
-from ._rank import tiecorrect
-
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
@@ -4376,6 +4374,56 @@ def ks_2samp(data1, data2):
         prob = 1.0
 
     return Ks_2sampResult(d, prob)
+
+
+def tiecorrect(rankvals):
+    """
+    Tie correction factor for ties in the Mann-Whitney U and
+    Kruskal-Wallis H tests.
+
+    Parameters
+    ----------
+    rankvals : array_like
+        A 1-D sequence of ranks.  Typically this will be the array
+        returned by `stats.rankdata`.
+
+    Returns
+    -------
+    factor : float
+        Correction factor for U or H.
+
+    See Also
+    --------
+    rankdata : Assign ranks to the data
+    mannwhitneyu : Mann-Whitney rank test
+    kruskal : Kruskal-Wallis H test
+
+    References
+    ----------
+    .. [1] Siegel, S. (1956) Nonparametric Statistics for the Behavioral
+           Sciences.  New York: McGraw-Hill.
+
+    Examples
+    --------
+    >>> from scipy.stats import tiecorrect, rankdata
+    >>> tiecorrect([1, 2.5, 2.5, 4])
+    0.9
+    >>> ranks = rankdata([1, 3, 2, 4, 5, 7, 2, 8, 4])
+    >>> ranks
+    array([ 1. ,  4. ,  2.5,  5.5,  7. ,  8. ,  2.5,  9. ,  5.5])
+    >>> tiecorrect(ranks)
+    0.9833333333333333
+
+    """
+    arr = np.sort(rankvals)
+    size = np.float64(arr.size)
+    if size < 2:
+        return 1.
+    idx = np.nonzero(np.r_[True, arr[1:] != arr[:-1], True])[0]
+    cnt = np.diff(idx)
+    return (1.0 - ((cnt ** 3).sum(dtype=float) - cnt.sum(dtype=float)) /
+                  (size ** 3 - size))
+
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 

@@ -66,6 +66,13 @@ class TestTieCorrect(TestCase):
         expected = 1.0 - ((T1**3 - T1) + (T2**3 - T2)) / (N**3 - N)
         assert_equal(c, expected)
 
+    def test_overflow(self):
+        ntie, k = 2000, 5
+        a = np.repeat(np.arange(k), ntie)
+        n = a.size  # ntie * k
+        out = tiecorrect(rankdata(a))
+        assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
+
 
 class TestRankData(TestCase):
 
