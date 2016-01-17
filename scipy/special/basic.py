@@ -1606,7 +1606,14 @@ def bi_zeros(nt):
 
 
 def lmbda(v, x):
-    """Jahnke-Emden Lambda function, Lambdav(x).
+    r"""Jahnke-Emden Lambda function, Lambdav(x).
+
+    This function is defined as [2]_,
+
+    .. math:: \Lambda_v(x) = \Gamma(v+1) \frac{J_v(x)}{(x/2)^v},
+
+    where :math:`\Gamma` is the gamma function and :math:`J_v` is the
+    Bessel function of the first kind.
 
     Parameters
     ----------
@@ -1627,7 +1634,8 @@ def lmbda(v, x):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
-
+    .. [2] Jahnke, E. and Emde, F. "Tables of Functions with Formulae and
+           Curves" (4th ed.), Dover, 1945
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -1962,7 +1970,8 @@ def ellipk(m):
 
     Notes
     -----
-    For more precision around point m = 1, use `ellipkm1`.
+    For more precision around point m = 1, use `ellipkm1`, which this
+    function calls.
 
     See Also
     --------
