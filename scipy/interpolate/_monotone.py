@@ -297,11 +297,12 @@ class Akima1DInterpolator(PPoly):
         f1 = dm[2:]
         f2 = dm[:-2]
         f12 = f1 + f2
-        # These are the indices where the the slope at breakpoint is defined:
-        id_ = np.nonzero(f12 > 1e-9 * np.max(f12))[0]
-        # set the slope at breakpoint
-        t[id_] = (f1[id_] * m[id_ + 1] + f2[id_] * m[id_ + 2]) / f12[id_]
-
+        # These are the mask of where the the slope at breakpoint is defined:
+        ind = np.nonzero(f12 > 1e-9 * np.max(f12))
+        x_ind, y_ind = ind[0], ind[1:]
+        # Set the slope at breakpoint
+        t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
+                  f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
         # calculate the higher order coefficients
         c = (3. * m[2:-2] - 2. * t[:-1] - t[1:]) / dx
         d = (t[:-1] + t[1:] - 2. * m[2:-2]) / dx ** 2
