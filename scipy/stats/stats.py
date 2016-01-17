@@ -172,6 +172,7 @@ import numpy as np
 from . import distributions, mstats_basic, _stats
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
+from ._stats import _kendall_condis
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -1315,7 +1316,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     -----
     Valid only for n>20.  The Z-score is set to 0 for bad entries.
     This function uses the method described in [1]_.
-    
+
     References
     ----------
     .. [1] see e.g. F. J. Anscombe, W. J. Glynn, "Distribution of the kurtosis
@@ -3262,8 +3263,6 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     0.24821309157521476
 
     """
-    from ._stats import _kendall_condis
-
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
@@ -3289,20 +3288,22 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         warnings.warn('"initial_lexsort" is gone!')
 
     def count_rank_tie(ranks):
-        cnt = np.bincount(ranks).astype('int64')
+        cnt = np.bincount(ranks).astype('int64', copy=False)
         return (cnt * (cnt - 1) // 2).sum()
 
-    x = rankdata(x, method='dense').astype(np.intp)
-    y = rankdata(y, method='dense').astype(np.intp)
+    y = rankdata(y, method='dense').astype(np.intp, copy=False)
 
     size = x.size
     perm = np.lexsort((y, x))
     x, y = x[perm], y[perm]
 
+    # convert x to dense ranks
+    x = np.r_[True, (x[1:] != x[:-1])].cumsum(dtype=np.intp)
+
     con, dis = _kendall_condis(x, y)
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
-    cnt = np.diff(np.where(obs)[0]).astype('int64')
+    cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
     xtie = count_rank_tie(x) - ntie      # ties only in x

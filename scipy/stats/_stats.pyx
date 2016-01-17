@@ -107,7 +107,7 @@ def von_mises_cdf(k_obj, x_obj):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef inline void bit_inc(intp_t[:] arr, intp_t i):
+cdef inline void bit_inc(intp_t[::1] arr, intp_t i):
     cdef:
         intp_t size = arr.size
 
@@ -118,7 +118,7 @@ cdef inline void bit_inc(intp_t[:] arr, intp_t i):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef inline intp_t bit_acc(intp_t[:] arr, intp_t i):
+cdef inline intp_t bit_acc(intp_t[::1] arr, intp_t i):
     cdef:
         intp_t out = 0
 
@@ -131,10 +131,9 @@ cdef inline intp_t bit_acc(intp_t[:] arr, intp_t i):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _kendall_condis(ndarray[intp_t, ndim=1] x,
-                    ndarray[intp_t, ndim=1] y):
+def _kendall_condis(intp_t[:] x, intp_t[:] y):
     cdef:
-        ndarray[intp_t, ndim=1] arr = np.zeros(y.max() + 1, dtype=np.intp)
+        intp_t[::1] arr = np.zeros(np.max(y) + 1, dtype=np.intp)
         intp_t i = 0, k = 0, size = x.size
         int64_t con = 0, dis = 0
 
