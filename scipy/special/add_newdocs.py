@@ -601,10 +601,24 @@ add_newdoc("scipy.special", "dawsn",
 
         exp(-x**2) * integral(exp(t**2), t=0..x).
 
+    See Also
+    --------
+    wofz, erf, erfc, erfcx, erfi
+
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> x = np.linspace(-15, 15, num=1000)
+    >>> plt.plot(x, special.dawsn(x))
+    >>> plt.xlabel('$x$')
+    >>> plt.ylabel('$dawsn(x)$')
+    >>> plt.show()
+
     """)
 
 add_newdoc("scipy.special", "ellipe",
@@ -808,7 +822,7 @@ add_newdoc("scipy.special", "erf",
 
     See Also
     --------
-    erfc, erfinv, erfcinv
+    erfc, erfinv, erfcinv, wofz, erfcx, erfi
 
     Notes
     -----
@@ -825,18 +839,40 @@ add_newdoc("scipy.special", "erf",
     .. [3] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
 
+    Examples
+    --------
+    >>> from scipy import special
+    >>> x = np.linspace(-3, 3)
+    >>> plt.plot(x, special.erf(x))
+    >>> plt.xlabel('$x$')
+    >>> plt.ylabel('$erf(x)$')
+    >>> plt.show()
+
     """)
 
 add_newdoc("scipy.special", "erfc",
     """
     erfc(x)
 
-    Complementary error function, 1 - erf(x).
+    Complementary error function, ``1 - erf(x)``.
+
+    See Also
+    --------
+    erf, erfi, erfcx, dawsn, wofz
 
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> x = np.linspace(-3, 3)
+    >>> plt.plot(x, special.erfc(x))
+    >>> plt.xlabel('$x$')
+    >>> plt.ylabel('$erfc(x)$')
+    >>> plt.show()
 
     """)
 
@@ -844,7 +880,11 @@ add_newdoc("scipy.special", "erfi",
     """
     erfi(z)
 
-    Imaginary error function, -i erf(i z).
+    Imaginary error function, ``-i erf(i z)``.
+
+    See Also
+    --------
+    erf, erfc, erfcx, dawsn, wofz
 
     Notes
     -----
@@ -855,6 +895,15 @@ add_newdoc("scipy.special", "erfi",
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> x = np.linspace(-3, 3)
+    >>> plt.plot(x, special.erfi(x))
+    >>> plt.xlabel('$x$')
+    >>> plt.ylabel('$erfi(x)$')
+    >>> plt.show()
 
     """)
 
@@ -862,7 +911,11 @@ add_newdoc("scipy.special", "erfcx",
     """
     erfcx(x)
 
-    Scaled complementary error function, exp(x^2) erfc(x).
+    Scaled complementary error function, ``exp(x**2) * erfc(x)``.
+
+    See Also
+    --------
+    erf, erfc, erfi, dawsn, wofz
 
     Notes
     -----
@@ -873,6 +926,15 @@ add_newdoc("scipy.special", "erfcx",
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> x = np.linspace(-3, 3)
+    >>> plt.plot(x, special.erfcx(x))
+    >>> plt.xlabel('$x$')
+    >>> plt.ylabel('$erfcx(x)$')
+    >>> plt.show()
 
     """)
 
@@ -3254,12 +3316,26 @@ add_newdoc("scipy.special", "wofz",
 
     Returns the value of the Faddeeva function for complex argument::
 
-        exp(-z**2)*erfc(-i*z)
+        exp(-z**2) * erfc(-i*z)
+
+    See Also
+    --------
+    dawsn, erf, erfc, erfcx, erfi
 
     References
     ----------
     .. [1] Steven G. Johnson, Faddeeva W function implementation.
        http://ab-initio.mit.edu/Faddeeva
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> x = np.linspace(-3, 3)
+    >>> plt.plot(x, special.wofz(x))
+    >>> plt.xlabel('$x$')
+    >>> plt.ylabel('$wofz(x)$')
+    >>> plt.show()
+
     """)
 
 add_newdoc("scipy.special", "xlogy",
