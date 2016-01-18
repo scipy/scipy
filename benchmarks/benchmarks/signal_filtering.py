@@ -26,6 +26,5 @@ class Lfilter(Benchmark):
         self.sig = np.sin(2*np.pi*500*t) + 0.3 * np.sin(2*np.pi*11e3*t)
         self.coeff = firwin(numtaps, cutoff_hz/nyq_rate)
 
-
     def time_lfilter(self, n_samples, numtaps):
         lfilter(self.coeff, 1.0, self.sig)
