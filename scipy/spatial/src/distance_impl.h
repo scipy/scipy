@@ -167,26 +167,27 @@ yule_bool_distance_char(const char *u, const char *v, npy_intp n)
     npy_intp ntt = 0, nff = 0, nft = 0, ntf = 0;
 
     for (i = 0; i < n; i++) {
-        ntt += (u[i] && v[i]);
-        ntf += (u[i] && !v[i]);
-        nft += (!u[i] && v[i]);
-        nff += (!u[i] && !v[i]);
+        npy_bool x = (u[i] != 0), y = (v[i] != 0);
+        ntt += x & y;
+        ntf += x & (!y);
+        nft += (!x) & y;
     }
-    return (2.0 * ntf * nft) / ((double)ntt * nff + (double)ntf * nft);  
+    nff = n - ntt - ntf - nft;
+    return (2. * ntf * nft) / ((double)ntt * nff + (double)ntf * nft);
 }
 
 static NPY_INLINE double
 dice_distance_char(const char *u, const char *v, npy_intp n)
 {
     npy_intp i;
-    npy_intp ntt = 0, nft = 0, ntf = 0;
+    npy_intp ntt = 0, ndiff = 0;
 
     for (i = 0; i < n; i++) {
-        ntt += (u[i] && v[i]);
-        ntf += (u[i] && !v[i]);
-        nft += (!u[i] && v[i]);
+        npy_bool x = (u[i] != 0), y = (v[i] != 0);
+        ntt += x & y;
+        ndiff += (x != y);
     }
-    return (double)(nft + ntf) / (2.0 * ntt + ntf + nft);
+    return ndiff / (2. * ntt + ndiff);
 }
 
 
@@ -194,15 +195,14 @@ static NPY_INLINE double
 rogerstanimoto_distance_char(const char *u, const char *v, npy_intp n)
 {
     npy_intp i;
-    npy_intp ntt = 0, nff = 0, nft = 0, ntf = 0;
+    npy_intp ntt = 0, ndiff = 0;
 
     for (i = 0; i < n; i++) {
-        ntt += (u[i] && v[i]);
-        ntf += (u[i] && !v[i]);
-        nft += (!u[i] && v[i]);
-        nff += (!u[i] && !v[i]);
+        npy_bool x = (u[i] != 0), y = (v[i] != 0);
+        ntt += x & y;
+        ndiff += (x != y);
     }
-    return (2.0 * (ntf + nft)) / ((double)ntt + nff + (2.0 * (ntf + nft)));
+    return (2. * ndiff) / ((double)n + ndiff);
 }
 
 static NPY_INLINE double
@@ -212,7 +212,7 @@ russellrao_distance_char(const char *u, const char *v, npy_intp n)
     npy_intp ntt = 0;
 
     for (i = 0; i < n; i++) {
-        ntt += (u[i] && v[i]);
+        ntt += (u[i] != 0) & (v[i] != 0);
     }
     return (double)(n - ntt) / n;
 }
@@ -220,71 +220,71 @@ russellrao_distance_char(const char *u, const char *v, npy_intp n)
 static NPY_INLINE double
 kulsinski_distance_char(const char *u, const char *v, npy_intp n)
 {
-    npy_intp _i;
-    npy_intp ntt = 0, nft = 0, ntf = 0, nff = 0;
+    npy_intp i;
+    npy_intp ntt = 0, ndiff = 0;
 
-    for (_i = 0; _i < n; _i++) {
-        ntt += (u[_i] && v[_i]);
-        ntf += (u[_i] && !v[_i]);
-        nft += (!u[_i] && v[_i]);
-        nff += (!u[_i] && !v[_i]);
+    for (i = 0; i < n; i++) {
+        npy_bool x = (u[i] != 0), y = (v[i] != 0);
+        ntt += x & y;
+        ndiff += (x != y);
     }
-    return (double)(ntf + nft - ntt + n) / (double)(ntf + nft + n);
+    return ((double)ndiff - ntt + n) / ((double)ndiff + n);
 }
 
 static NPY_INLINE double
 sokalsneath_distance_char(const char *u, const char *v, npy_intp n)
 {
-    npy_intp _i;
-    npy_intp ntt = 0, nft = 0, ntf = 0;
+    npy_intp i;
+    npy_intp ntt = 0, ndiff = 0;
 
-    for (_i = 0; _i < n; _i++) {
-        ntt += (u[_i] && v[_i]);
-        ntf += (u[_i] && !v[_i]);
-        nft += (!u[_i] && v[_i]);
+    for (i = 0; i < n; i++) {
+        npy_bool x = (u[i] != 0), y = (v[i] != 0);
+        ntt += x & y;
+        ndiff += (x != y);
     }
-    return (2.0 * (ntf + nft)) / (2.0 * (ntf + nft) + ntt);
+    return (2. * ndiff) / (2. * ndiff + ntt);
 }
 
 static NPY_INLINE double
 sokalmichener_distance_char(const char *u, const char *v, npy_intp n)
 {
     npy_intp i;
-    npy_intp ntt = 0, nft = 0, ntf = 0, nff = 0;
+    npy_intp ntt = 0, ndiff = 0;
 
     for (i = 0; i < n; i++) {
-        ntt += (u[i] && v[i]);
-        nff += (!u[i] && !v[i]);
-        ntf += (u[i] && !v[i]);
-        nft += (!u[i] && v[i]);
+        npy_bool x = (u[i] != 0), y = (v[i] != 0);
+        ntt += x & y;
+        ndiff += (x != y);
     }
-    return (2.0 * (ntf + nft)) / (2.0 * (ntf + nft) + ntt + nff);
+    return (2. * ndiff) / ((double)ndiff + n);
 }
 
 static NPY_INLINE double
 jaccard_distance_double(const double *u, const double *v, npy_intp n)
 {
-    double denom = 0.0, num = 0.0;
+    npy_intp denom = 0, num = 0;
     npy_intp i;
 
     for (i = 0; i < n; i++) {
-        num += (u[i] != v[i]) & ((u[i] != 0.0) | (v[i] != 0.0));
-        denom += (u[i] != 0.0) | (v[i] != 0.0);
+        double x = u[i], y = v[i];
+        num += (x != y) & ((x != 0.0) | (y != 0.0));
+        denom += (x != 0.0) | (y != 0.0);
     }
-    return num / denom;
+    return (double)num / denom;
 }
 
 static NPY_INLINE double
 jaccard_distance_char(const char *u, const char *v, npy_intp n)
 {
-    double num = 0.0, denom = 0.0;
+    npy_intp num = 0, denom = 0;
     npy_intp i;
 
     for (i = 0; i < n; i++) {
-        num += (u[i] != v[i]) & ((u[i] != 0) | (v[i] != 0));
-        denom += (u[i] != 0) | (v[i] != 0);
+        npy_bool x = (u[i] != 0), y = (v[i] != 0);
+        num += (x != y);
+        denom += x | y;
     }
-    return num / denom;
+    return (double)num / denom;
 }
 
 /* XXX shouldn't we use BLAS for this? */
@@ -309,7 +309,7 @@ seuclidean_distance(const double *var, const double *u, const double *v,
 
     for (i = 0; i < n; i++) {
         d = u[i] - v[i];
-        s = s + (d * d) / var[i];
+        s += (d * d) / var[i];
     }
     return sqrt(s);
 }
@@ -335,7 +335,7 @@ minkowski_distance(const double *u, const double *v, npy_intp n, double p)
 
     for (i = 0; i < n; i++) {
         d = fabs(u[i] - v[i]);
-        s = s + pow(d, p);
+        s += pow(d, p);
     }
     return pow(s, 1.0 / p);
 }
