@@ -84,13 +84,14 @@ chebyshev_distance_double(const double *u, const double *v, npy_intp n)
 static NPY_INLINE double
 canberra_distance_double(const double *u, const double *v, npy_intp n)
 {
-    double snum = 0.0, sdenom = 0.0, tot = 0.0;
+    double tot = 0.;
     npy_intp i;
 
     for (i = 0; i < n; i++) {
-        snum = fabs(u[i] - v[i]);
-        sdenom = fabs(u[i]) + fabs(v[i]);
-        if (sdenom > 0.0) {
+        double x = u[i], y = v[i];
+        double snum = fabs(x - y);
+        double sdenom = fabs(x) + fabs(y);
+        if (sdenom > 0.) {
             tot += snum / sdenom;
         }
     }
@@ -110,54 +111,63 @@ bray_curtis_distance_double(const double *u, const double *v, npy_intp n)
     return s1 / s2;
 }
 
+/*
+ * Timings with various BLAS implementations (gh-5657) have shown that using
+ * OpenBLAS's cblas_ddot here can give some speedup, but only for high-d data
+ * and an untuned ATLAS is slower than rolling our own.
+ */
+static NPY_INLINE double
+dot_product(const double *u, const double *v, npy_intp n)
+{
+    double s = 0.0;
+    npy_intp i;
+
+    for (i = 0; i < n; i++) {
+        s += u[i] * v[i];
+    }
+    return s;
+}
+
 static NPY_INLINE double
 mahalanobis_distance(const double *u, const double *v, const double *covinv,
                      double *dimbuf1, double *dimbuf2, npy_intp n)
 {
-    const double *covrow = covinv;
-    double s;
-    npy_intp i, j;
+    npy_intp i;
 
     for (i = 0; i < n; i++) {
         dimbuf1[i] = u[i] - v[i];
     }
+    /*
+     * Note: matrix-vector multiplication (GEMV). Again, OpenBLAS can speed
+     * this up for high-d data.
+     */
     for (i = 0; i < n; i++) {
-        covrow = covinv + (i * n);
-        s = 0.0;
-        for (j = 0; j < n; j++) {
-            s += dimbuf1[j] * covrow[j];
-        }
-        dimbuf2[i] = s;
+        const double *covrow = covinv + (i * n);
+        dimbuf2[i] = dot_product(dimbuf1, covrow, n);
     }
-    s = 0.0;
-    for (i = 0; i < n; i++) {
-        s += dimbuf1[i] * dimbuf2[i];
-    }
-    return sqrt(s);
+    return sqrt(dot_product(dimbuf1, dimbuf2, n));
 }
 
 static NPY_INLINE double
 hamming_distance_double(const double *u, const double *v, npy_intp n)
 {
-    double s = 0.0;
-    npy_intp i;
+    npy_intp i, s = 0;
 
     for (i = 0; i < n; i++) {
         s += (u[i] != v[i]);
     }
-    return s / n;
+    return (double)s / n;
 }
 
 static NPY_INLINE double
 hamming_distance_char(const char *u, const char *v, npy_intp n)
 {
-    double s = 0.0;
-    npy_intp i;
+    npy_intp i, s = 0;
 
     for (i = 0; i < n; i++) {
         s += (u[i] != v[i]);
     }
-    return s / n;
+    return (double)s / n;
 }
 
 static NPY_INLINE double
@@ -188,7 +198,6 @@ dice_distance_char(const char *u, const char *v, npy_intp n)
     }
     return (double)(nft + ntf) / (2.0 * ntt + ntf + nft);
 }
-
 
 static NPY_INLINE double
 rogerstanimoto_distance_char(const char *u, const char *v, npy_intp n)
@@ -287,19 +296,6 @@ jaccard_distance_char(const char *u, const char *v, npy_intp n)
     return num / denom;
 }
 
-/* XXX shouldn't we use BLAS for this? */
-static NPY_INLINE double
-dot_product(const double *u, const double *v, npy_intp n)
-{
-    double s = 0.0;
-    npy_intp i;
-
-    for (i = 0; i < n; i++) {
-        s += u[i] * v[i];
-    }
-    return s;
-}
-
 static NPY_INLINE double
 seuclidean_distance(const double *var, const double *u, const double *v,
                     npy_intp n)
@@ -309,7 +305,7 @@ seuclidean_distance(const double *var, const double *u, const double *v,
 
     for (i = 0; i < n; i++) {
         d = u[i] - v[i];
-        s = s + (d * d) / var[i];
+        s += (d * d) / var[i];
     }
     return sqrt(s);
 }
@@ -317,12 +313,11 @@ seuclidean_distance(const double *var, const double *u, const double *v,
 static NPY_INLINE double
 city_block_distance_double(const double *u, const double *v, npy_intp n)
 {
-    double s = 0.0, d;
+    double s = 0.0;
     npy_intp i;
 
     for (i = 0; i < n; i++) {
-        d = fabs(u[i] - v[i]);
-        s = s + d;
+        s += fabs(u[i] - v[i]);
     }
     return s;
 }
@@ -335,7 +330,7 @@ minkowski_distance(const double *u, const double *v, npy_intp n, double p)
 
     for (i = 0; i < n; i++) {
         d = fabs(u[i] - v[i]);
-        s = s + pow(d, p);
+        s += pow(d, p);
     }
     return pow(s, 1.0 / p);
 }
@@ -344,13 +339,13 @@ static NPY_INLINE double
 weighted_minkowski_distance(const double *u, const double *v, npy_intp n,
                             double p, const double *w)
 {
-  npy_intp i = 0;
-  double s = 0.0, d;
-  for (i = 0; i < n; i++) {
-    d = fabs(u[i] - v[i]) * w[i];
-    s = s + pow(d, p);
-  }
-  return pow(s, 1.0 / p);
+    npy_intp i = 0;
+    double s = 0.0, d;
+    for (i = 0; i < n; i++) {
+        d = fabs(u[i] - v[i]) * w[i];
+        s += pow(d, p);
+    }
+    return pow(s, 1.0 / p);
 }
 
 #if 0   /* XXX unused */
@@ -392,7 +387,6 @@ pdist_mahalanobis(const double *X, const double *covinv, double *dimbuf,
             *dm = mahalanobis_distance(u, v, covinv, dimbuf1, dimbuf2, n);
         }
     }
-    dimbuf2 = 0;
 }
 
 static NPY_INLINE void
@@ -515,7 +509,6 @@ cdist_mahalanobis(const double *XA, const double *XB,
             *dm = mahalanobis_distance(u, v, covinv, dimbuf1, dimbuf2, n);
         }
     }
-    dimbuf2 = 0;
 }
 
 static NPY_INLINE void
