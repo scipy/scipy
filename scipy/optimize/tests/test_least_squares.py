@@ -215,18 +215,18 @@ class BaseMixin(object):
                                 method=self.method)
             assert_allclose(res.x, 0, atol=1e-4)
 
-    def test_scaling_options(self):
-        for scaling in [1.0, np.array([2.0]), 'jac']:
-            res = least_squares(fun_trivial, 2.0, scaling=scaling)
+    def test_x_scale_options(self):
+        for x_scale in [1.0, np.array([0.5]), 'jac']:
+            res = least_squares(fun_trivial, 2.0, x_scale=x_scale)
             assert_allclose(res.x, 0)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, scaling='auto', method=self.method)
+                      2.0, x_scale='auto', method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, scaling=-1.0, method=self.method)
+                      2.0, x_scale=-1.0, method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, scaling=None, method=self.method)
+                      2.0, x_scale=None, method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, scaling=1.0+2.0j, method=self.method)
+                      2.0, x_scale=1.0+2.0j, method=self.method)
 
     def test_diff_step(self):
         # res1 and res2 should be equivalent.
@@ -295,11 +295,11 @@ class BaseMixin(object):
         x_opt = [1, 1]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            for jac, scaling, tr_solver in product(
+            for jac, x_scale, tr_solver in product(
                     ['2-point', '3-point', 'cs', jac_rosenbrock],
-                    [1.0, np.array([1.0, 5.0]), 'jac'],
+                    [1.0, np.array([1.0, 0.2]), 'jac'],
                     ['exact', 'lsmr']):
-                res = least_squares(fun_rosenbrock, x0, jac, scaling=scaling,
+                res = least_squares(fun_rosenbrock, x0, jac, x_scale=x_scale,
                                     tr_solver=tr_solver, method=self.method)
                 assert_allclose(res.x, x_opt)
 
@@ -309,12 +309,12 @@ class BaseMixin(object):
             assert_raises(ValueError, least_squares, fun_rosenbrock_cropped,
                           x0, method='lm')
         else:
-            for jac, scaling, tr_solver in product(
+            for jac, x_scale, tr_solver in product(
                     ['2-point', '3-point', 'cs', jac_rosenbrock_cropped],
-                    [1.0, np.array([1.0, 5.0]), 'jac'],
+                    [1.0, np.array([1.0, 0.2]), 'jac'],
                     ['exact', 'lsmr']):
                 res = least_squares(
-                    fun_rosenbrock_cropped, x0, jac, scaling=scaling,
+                    fun_rosenbrock_cropped, x0, jac, x_scale=x_scale,
                     tr_solver=tr_solver, method=self.method)
                 assert_allclose(res.cost, 0, atol=1e-14)
 
@@ -418,12 +418,12 @@ class BoundsMixin(object):
             (x0_5, ([-50.0, 0.0], [0.5, 100]))
         ]
         for x0, bounds in problems:
-            for jac, scaling, tr_solver in product(
+            for jac, x_scale, tr_solver in product(
                     ['2-point', '3-point', 'cs', jac_rosenbrock],
-                    [1.0, [1.0, 2.0], 'jac'],
+                    [1.0, [1.0, 0.5], 'jac'],
                     ['exact', 'lsmr']):
                 res = least_squares(fun_rosenbrock, x0, jac, bounds,
-                                    scaling=scaling, tr_solver=tr_solver,
+                                    x_scale=x_scale, tr_solver=tr_solver,
                                     method=self.method)
                 assert_allclose(res.optimality, 0.0, atol=1e-5)
 
@@ -524,15 +524,15 @@ class SparseMixin(object):
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
                       method=self.method, tr_solver='exact')
 
-    def test_scaling(self):
+    def test_x_scale_jac_scale(self):
         p = BroydenTridiagonal()
         res = least_squares(p.fun, p.x0, p.jac, method=self.method,
-                            scaling='jac')
+                            x_scale='jac')
         assert_allclose(res.cost, 0.0, atol=1e-20)
 
         p = BroydenTridiagonal(mode='operator')
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
-                      method=self.method, scaling='jac')
+                      method=self.method, x_scale='jac')
 
 
 class LossFunctionMixin(object):
@@ -609,7 +609,7 @@ class LossFunctionMixin(object):
         # Now let's apply `loss_scale` to turn the residual into an inlier.
         # The loss function becomes linear.
         res = least_squares(fun_trivial, x, jac_trivial, loss='huber',
-                            loss_scale=10, max_nfev=1)
+                            f_scale=10, max_nfev=1)
         assert_equal(res.jac, 2 * x)
 
         # 'soft_l1' always gives a positive scaling.
@@ -625,7 +625,7 @@ class LossFunctionMixin(object):
 
         # Now use scaling to turn the residual to inlier.
         res = least_squares(fun_trivial, x, jac_trivial, loss='cauchy',
-                            loss_scale=10, max_nfev=1, method=self.method)
+                            f_scale=10, max_nfev=1, method=self.method)
         fs = f / 10
         assert_allclose(res.jac, 2 * x * (1 - fs**2)**0.5 / (1 + fs**2))
 
@@ -636,7 +636,7 @@ class LossFunctionMixin(object):
 
         # Turn to inlier.
         res = least_squares(fun_trivial, x, jac_trivial, loss='arctan',
-                            loss_scale=20.0, max_nfev=1, method=self.method)
+                            f_scale=20.0, max_nfev=1, method=self.method)
         fs = f / 20
         assert_allclose(res.jac, 2 * x * (1 - 3 * fs**4)**0.5 / (1 + fs**4))
 
@@ -647,7 +647,7 @@ class LossFunctionMixin(object):
 
         # Turn to inlier.
         res = least_squares(fun_trivial, x, jac_trivial,
-                            loss=cubic_soft_l1, loss_scale=6, max_nfev=1)
+                            loss=cubic_soft_l1, f_scale=6, max_nfev=1)
         fs = f / 6
         assert_allclose(res.jac,
                         2 * x * (1 - fs**2 / 3)**0.5 * (1 + fs**2)**(-5/6))
@@ -664,7 +664,7 @@ class LossFunctionMixin(object):
                     if loss == 'linear':
                         continue
                     res_robust = least_squares(
-                        p.fun, p.p0, jac=jac, loss=loss, loss_scale=noise,
+                        p.fun, p.p0, jac=jac, loss=loss, f_scale=noise,
                         method=self.method)
                     assert_allclose(res_robust.optimality, 0, atol=1e-2)
                     assert_(norm(res_robust.x - p.p_opt) <
