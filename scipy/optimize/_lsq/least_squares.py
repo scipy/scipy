@@ -38,7 +38,7 @@ FROM_MINPACK_TO_COMMON = {
 }
 
 
-def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
+def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step):
     n = x0.size
 
     if diff_step is None:
@@ -46,8 +46,12 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
     else:
         epsfcn = diff_step**2
 
-    if isinstance(scaling, string_types) and scaling == 'jac':
-        scaling = None
+    # Compute MINPACK's `diag`, which is inverse of our `x_scale` and
+    # ``x_scale='jac'`` corresponds to ``diag=None``.
+    if isinstance(x_scale, string_types) and x_scale == 'jac':
+        diag = None
+    else:
+        diag = 1 / x_scale
 
     full_output = True
     col_deriv = False
@@ -59,13 +63,13 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, scaling, diff_step):
             max_nfev = 100 * n * (n + 1)
         x, info, status = _minpack._lmdif(
             fun, x0, (), full_output, ftol, xtol, gtol,
-            max_nfev, epsfcn, factor, scaling)
+            max_nfev, epsfcn, factor, diag)
     else:
         if max_nfev is None:
             max_nfev = 100 * n
         x, info, status = _minpack._lmder(
             fun, jac, x0, (), full_output, col_deriv,
-            ftol, xtol, gtol, max_nfev, factor, scaling)
+            ftol, xtol, gtol, max_nfev, factor, diag)
 
     f = info['fvec']
 
@@ -115,27 +119,27 @@ def check_tolerance(ftol, xtol, gtol):
     return ftol, xtol, gtol
 
 
-def check_scaling(scaling, x0):
-    if isinstance(scaling, string_types) and scaling == 'jac':
-        return scaling
+def check_x_scale(x_scale, x0):
+    if isinstance(x_scale, string_types) and x_scale == 'jac':
+        return x_scale
 
     try:
-        scaling = np.asarray(scaling, dtype=float)
-        valid = np.all(np.isfinite(scaling)) and np.all(scaling > 0)
+        x_scale = np.asarray(x_scale, dtype=float)
+        valid = np.all(np.isfinite(x_scale)) and np.all(x_scale > 0)
     except (ValueError, TypeError):
         valid = False
 
     if not valid:
-        raise ValueError("`scaling` must be 'jac' or array_like with "
+        raise ValueError("`x_scale` must be 'jac' or array_like with "
                          "positive numbers.")
 
-    if scaling.ndim == 0:
-        scaling = np.resize(scaling, x0.shape)
+    if x_scale.ndim == 0:
+        x_scale = np.resize(x_scale, x0.shape)
 
-    if scaling.shape != x0.shape:
-        raise ValueError("Inconsistent shapes between `scaling` and `x0`.")
+    if x_scale.shape != x0.shape:
+        raise ValueError("Inconsistent shapes between `x_scale` and `x0`.")
 
-    return scaling
+    return x_scale
 
 
 def check_jac_sparsity(jac_sparsity, m, n):
@@ -229,7 +233,7 @@ def construct_loss_function(m, loss, loss_scale):
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, loss='linear',
-        loss_scale=1.0, scaling=1.0, diff_step=None, tr_solver=None,
+        loss_scale=1.0, x_scale=1.0, diff_step=None, tr_solver=None,
         tr_options={}, jac_sparsity=None, max_nfev=None, verbose=0, args=(),
         kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
@@ -298,9 +302,9 @@ def least_squares(
         checked depends on the `method` used:
 
             * For 'trf' and 'dogbox' : ``norm(dx) < xtol * (xtol + norm(x))``
-            * For 'lm' : ``Delta < xtol * norm(scaled_x)``, where ``Delta`` is
-              a trust-region radius and ``scaled_x`` is the value of ``x``
-              scaled according to `scaling` parameter (see below).
+            * For 'lm' : ``Delta < xtol * norm(xs)``, where ``Delta`` is
+              a trust-region radius and ``xs`` is the value of ``x``
+              scaled according to `x_scale` parameter (see below).
 
     gtol : float, optional
         Tolerance for termination by the norm of the gradient. Default is
@@ -341,19 +345,16 @@ def least_squares(
         is 1.0. The loss function is evaluated as follows
         ``rho_(f**2) = C**2 * rho(f**2 / C**2)``, where ``C`` is `loss_scale`,
         and ``rho`` is determined by `loss` parameter.
-    scaling : array_like or 'jac', optional
-        Multiplicative scaling for the variables, to potentially improve
-        the algorithm's convergence. Should be set to the inverse of the
-        characteristic scale of each variable. Default is 1.0, which means
-        no scaling. Scaling equalizes the influence of each variable on
-        the cost function. Alternatively you can think of `scaling` as
-        diagonal elements of a matrix which determines the shape of a
-        trust region. A scalar value won't affect the algorithm (except
-        maybe fixing/introducing numerical issues and changing termination
-        criteria). If 'jac', then scaling is proportional to the norms
-        of columns of the Jacobian matrix and iteratively updated (as
-        described in [JJMore]_). If the algorithm converges poorly on your
-        problem, try using this parameter.
+    x_scale : array_like or 'jac', optional
+        Characteristic scale of each variable. Setting `x_scale` is equivalent
+        to reformulating the problem in scaled variables ``xs = x / x_scale``.
+        An alternative view is that the size of a trust-region along j-th
+        dimension is proportional to ``x_scale[j]``. Improved convergence may
+        be achieved by setting `x_scale` such that a step of a given length
+        along any of the scaled variables has a similar effect on the cost
+        function. If set to 'jac', the scale is iteratively updated using the
+        inverse norms of the columns of the Jacobian matrix (as described in
+        [JJMore]_).
     max_nfev : None or int, optional
         Maximum number of function evaluations before the termination.
         If None (default), the value is chosen automatically:
@@ -754,7 +755,7 @@ def least_squares(
     if not in_bounds(x0, lb, ub):
         raise ValueError("`x0` is infeasible.")
 
-    scaling = check_scaling(scaling, x0)
+    x_scale = check_x_scale(x_scale, x0)
 
     ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol)
 
@@ -855,9 +856,9 @@ def least_squares(
                     "tr_solver='exact' works only with dense "
                     "Jacobian matrices.")
 
-        jac_scaling = isinstance(scaling, string_types) and scaling == 'jac'
-        if isinstance(J0, LinearOperator) and jac_scaling:
-            raise ValueError("scaling='jac' can't be used when `jac` "
+        jac_scale = isinstance(x_scale, string_types) and x_scale == 'jac'
+        if isinstance(J0, LinearOperator) and jac_scale:
+            raise ValueError("x_scale='jac' can't be used when `jac` "
                              "returns LinearOperator.")
 
         if tr_solver is None:
@@ -868,11 +869,11 @@ def least_squares(
 
     if method == 'lm':
         result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
-                              max_nfev, scaling, diff_step)
+                              max_nfev, x_scale, diff_step)
 
     elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
-                     gtol, max_nfev, scaling, loss_function, tr_solver,
+                     gtol, max_nfev, x_scale, loss_function, tr_solver,
                      tr_options.copy(), verbose)
 
     elif method == 'dogbox':
@@ -883,7 +884,7 @@ def least_squares(
             del tr_options['regularize']
 
         result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
-                        xtol, gtol, max_nfev, scaling, loss_function,
+                        xtol, gtol, max_nfev, x_scale, loss_function,
                         tr_solver, tr_options, verbose)
 
     result.message = TERMINATION_MESSAGES[result.status]

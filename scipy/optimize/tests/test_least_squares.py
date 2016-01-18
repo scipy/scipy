@@ -215,18 +215,18 @@ class BaseMixin(object):
                                 method=self.method)
             assert_allclose(res.x, 0, atol=1e-4)
 
-    def test_scaling_options(self):
-        for scaling in [1.0, np.array([2.0]), 'jac']:
-            res = least_squares(fun_trivial, 2.0, scaling=scaling)
+    def test_x_scale_options(self):
+        for x_scale in [1.0, np.array([0.5]), 'jac']:
+            res = least_squares(fun_trivial, 2.0, x_scale=x_scale)
             assert_allclose(res.x, 0)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, scaling='auto', method=self.method)
+                      2.0, x_scale='auto', method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, scaling=-1.0, method=self.method)
+                      2.0, x_scale=-1.0, method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, scaling=None, method=self.method)
+                      2.0, x_scale=None, method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, scaling=1.0+2.0j, method=self.method)
+                      2.0, x_scale=1.0+2.0j, method=self.method)
 
     def test_diff_step(self):
         # res1 and res2 should be equivalent.
@@ -295,11 +295,11 @@ class BaseMixin(object):
         x_opt = [1, 1]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            for jac, scaling, tr_solver in product(
+            for jac, x_scale, tr_solver in product(
                     ['2-point', '3-point', 'cs', jac_rosenbrock],
-                    [1.0, np.array([1.0, 5.0]), 'jac'],
+                    [1.0, np.array([1.0, 0.2]), 'jac'],
                     ['exact', 'lsmr']):
-                res = least_squares(fun_rosenbrock, x0, jac, scaling=scaling,
+                res = least_squares(fun_rosenbrock, x0, jac, x_scale=x_scale,
                                     tr_solver=tr_solver, method=self.method)
                 assert_allclose(res.x, x_opt)
 
@@ -309,12 +309,12 @@ class BaseMixin(object):
             assert_raises(ValueError, least_squares, fun_rosenbrock_cropped,
                           x0, method='lm')
         else:
-            for jac, scaling, tr_solver in product(
+            for jac, x_scale, tr_solver in product(
                     ['2-point', '3-point', 'cs', jac_rosenbrock_cropped],
-                    [1.0, np.array([1.0, 5.0]), 'jac'],
+                    [1.0, np.array([1.0, 0.2]), 'jac'],
                     ['exact', 'lsmr']):
                 res = least_squares(
-                    fun_rosenbrock_cropped, x0, jac, scaling=scaling,
+                    fun_rosenbrock_cropped, x0, jac, x_scale=x_scale,
                     tr_solver=tr_solver, method=self.method)
                 assert_allclose(res.cost, 0, atol=1e-14)
 
@@ -418,12 +418,12 @@ class BoundsMixin(object):
             (x0_5, ([-50.0, 0.0], [0.5, 100]))
         ]
         for x0, bounds in problems:
-            for jac, scaling, tr_solver in product(
+            for jac, x_scale, tr_solver in product(
                     ['2-point', '3-point', 'cs', jac_rosenbrock],
-                    [1.0, [1.0, 2.0], 'jac'],
+                    [1.0, [1.0, 0.5], 'jac'],
                     ['exact', 'lsmr']):
                 res = least_squares(fun_rosenbrock, x0, jac, bounds,
-                                    scaling=scaling, tr_solver=tr_solver,
+                                    x_scale=x_scale, tr_solver=tr_solver,
                                     method=self.method)
                 assert_allclose(res.optimality, 0.0, atol=1e-5)
 
@@ -524,15 +524,15 @@ class SparseMixin(object):
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
                       method=self.method, tr_solver='exact')
 
-    def test_scaling(self):
+    def test_x_scale_jac_scale(self):
         p = BroydenTridiagonal()
         res = least_squares(p.fun, p.x0, p.jac, method=self.method,
-                            scaling='jac')
+                            x_scale='jac')
         assert_allclose(res.cost, 0.0, atol=1e-20)
 
         p = BroydenTridiagonal(mode='operator')
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
-                      method=self.method, scaling='jac')
+                      method=self.method, x_scale='jac')
 
 
 class LossFunctionMixin(object):
