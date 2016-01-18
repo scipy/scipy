@@ -280,6 +280,7 @@ Authors
 * Charles Harris
 * Jörn Hees +
 * Ian Henriksen
+* Derek Homeier +
 * David Menéndez Hurtado
 * Gert-Ludwig Ingold
 * Aakash Jain +
