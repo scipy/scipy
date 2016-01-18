@@ -401,7 +401,14 @@ Issues closed for 0.17.0
 - `#5539 <https://github.com/scipy/scipy/issues/5539>`__: lstsq related test failures on windows binaries from numpy-vendor
 - `#5560 <https://github.com/scipy/scipy/issues/5560>`__: doc: scipy.stats.burr pdf issue
 - `#5571 <https://github.com/scipy/scipy/issues/5571>`__: lstsq test failure after lapack_driver change
+- `#5577 <https://github.com/scipy/scipy/issues/5577>`__: ordqz segfault on Python 3.4 in Wine
 - `#5578 <https://github.com/scipy/scipy/issues/5578>`__: scipy.linalg test failures on python 3 in Wine
+- `#5607 <https://github.com/scipy/scipy/issues/5607>`__: Overloaded ‘isnan(double&)’ is ambiguous when compiling with...
+- `#5629 <https://github.com/scipy/scipy/issues/5629>`__: Test for lstsq randomly failed
+- `#5630 <https://github.com/scipy/scipy/issues/5630>`__: memory leak with scipy 0.16 spatial cKDEtree
+- `#5689 <https://github.com/scipy/scipy/issues/5689>`__: isnan errors compiling scipy/special/Faddeeva.cc with clang++
+- `#5694 <https://github.com/scipy/scipy/issues/5694>`__: fftpack test failure in test_import
+- `#5719 <https://github.com/scipy/scipy/issues/5719>`__: curve_fit(method!="lm") ignores initial guess
 
 
 Pull requests for 0.17.0
@@ -658,3 +665,9 @@ Pull requests for 0.17.0
 - `#5642 <https://github.com/scipy/scipy/pull/5642>`__: STY: minor fixup of formatting of 0.17.0 release notes.
 - `#5643 <https://github.com/scipy/scipy/pull/5643>`__: BLD: fix a build issue in special/Faddeeva.cc with isnan.
 - `#5661 <https://github.com/scipy/scipy/pull/5661>`__: TST: linalg tests used stdlib random instead of numpy.random.
+- `#5682 <https://github.com/scipy/scipy/pull/5682>`__: backports for 0.17.0
+- `#5696 <https://github.com/scipy/scipy/pull/5696>`__: Minor improvements to least_squares' docstring.
+- `#5697 <https://github.com/scipy/scipy/pull/5697>`__: BLD: fix for isnan/isinf issues in special/Faddeeva.cc
+- `#5720 <https://github.com/scipy/scipy/pull/5720>`__: TST: fix for file opening error in fftpack test_import.py
+- `#5722 <https://github.com/scipy/scipy/pull/5722>`__: BUG: Make curve_fit respect an initial guess with bounds
+- `#5726 <https://github.com/scipy/scipy/pull/5726>`__: Backports for v0.17.0rc2
