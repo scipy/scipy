@@ -746,36 +746,11 @@ def yule(u, v):
 
 def matching(u, v):
     """
-    Computes the Matching dissimilarity between two boolean 1-D arrays.
+    Computes the Hamming distance between two boolean 1-D arrays.
 
-    The Matching dissimilarity between two boolean 1-D arrays
-    `u` and `v`, is defined as
-
-    .. math::
-
-       \\frac{c_{TF} + c_{FT}}{n}
-
-    where :math:`c_{ij}` is the number of occurrences of
-    :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
-    :math:`k < n`.
-
-    Parameters
-    ----------
-    u : (N,) array_like, bool
-        Input array.
-    v : (N,) array_like, bool
-        Input array.
-
-    Returns
-    -------
-    matching : double
-        The Matching dissimilarity between vectors `u` and `v`.
-
+    This is a deprecated synonym for :func:`hamming`.
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(nft + ntf) / float(len(u))
+    return hamming(u, v)
 
 
 def dice(u, v):
@@ -1100,8 +1075,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
     15. ``Y = pdist(X, 'matching')``
 
-       Computes the matching distance between each pair of boolean
-       vectors. (see matching function documentation)
+       Synonym for 'hamming'.
 
     16. ``Y = pdist(X, 'dice')``
 
@@ -1343,7 +1317,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         elif mstr == 'yule':
             _distance_wrap.pdist_yule_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'matching':
-            _distance_wrap.pdist_matching_bool_wrap(_convert_to_bool(X), dm)
+            _distance_wrap.pdist_hamming_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'kulsinski':
             _distance_wrap.pdist_kulsinski_bool_wrap(_convert_to_bool(X), dm)
         elif mstr == 'dice':
@@ -1902,8 +1876,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     15. ``Y = cdist(XA, XB, 'matching')``
 
-       Computes the matching distance between the boolean
-       vectors. (see `matching` function documentation)
+       Synonym for 'hamming'.
 
     16. ``Y = cdist(XA, XB, 'dice')``
 
@@ -2207,8 +2180,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             _distance_wrap.cdist_yule_bool_wrap(_convert_to_bool(XA),
                                                 _convert_to_bool(XB), dm)
         elif mstr == 'matching':
-            _distance_wrap.cdist_matching_bool_wrap(_convert_to_bool(XA),
-                                                    _convert_to_bool(XB), dm)
+            _distance_wrap.cdist_hamming_bool_wrap(_convert_to_bool(XA),
+                                                   _convert_to_bool(XB), dm)
         elif mstr == 'kulsinski':
             _distance_wrap.cdist_kulsinski_bool_wrap(_convert_to_bool(XA),
                                                      _convert_to_bool(XB), dm)
