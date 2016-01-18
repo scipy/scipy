@@ -2582,14 +2582,16 @@ def median_test(*args, **kwds):
 
     cdata = np.concatenate(data)
     contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
-    if contains_nan and nan_policy == 'omit':
-        grand_median = np.nanmedian(cdata)
-    else:
-        grand_median = np.median(cdata)
+    if contains_nan and nan_policy == 'propagate':
+        return (np.nan,)*4
+
+    grand_median = np.nanmedian(cdata)
 
     # Create the contingency table.
     table = np.zeros((2, len(data)), dtype=np.int64)
     for k, sample in enumerate(data):
+        sample = sample[~np.isnan(sample)]
+
         nabove = count_nonzero(sample > grand_median)
         nbelow = count_nonzero(sample < grand_median)
         nequal = sample.size - (nabove + nbelow)

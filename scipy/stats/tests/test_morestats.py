@@ -1278,11 +1278,14 @@ class TestMedianTest(TestCase):
     def test_nan_policy_options(self):
         x = [1, 2, np.nan]
         y = [4, 5, 6]
-        _, _, med, _ = stats.median_test(x, y, nan_policy='propagate')
-        _, _, med2, _ = stats.median_test(x, y, nan_policy='omit')
+        mt1 = stats.median_test(x, y, nan_policy='propagate')
+        s, p, m, t = stats.median_test(x, y, nan_policy='omit')
 
-        assert_equal(med, np.nan)
-        assert_equal(med2, 4.)
+        assert_equal(mt1, (np.nan, np.nan, np.nan, np.nan))
+        assert_allclose(s, 0.31250000000000006)
+        assert_allclose(p, 0.57615012203057869)
+        assert_equal(m, 4.0)
+        assert_equal(t, np.array([[0, 2],[2, 1]]))
         assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
 
     def test_basic(self):
