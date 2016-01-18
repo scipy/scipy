@@ -609,7 +609,7 @@ class LossFunctionMixin(object):
         # Now let's apply `loss_scale` to turn the residual into an inlier.
         # The loss function becomes linear.
         res = least_squares(fun_trivial, x, jac_trivial, loss='huber',
-                            loss_scale=10, max_nfev=1)
+                            f_scale=10, max_nfev=1)
         assert_equal(res.jac, 2 * x)
 
         # 'soft_l1' always gives a positive scaling.
@@ -625,7 +625,7 @@ class LossFunctionMixin(object):
 
         # Now use scaling to turn the residual to inlier.
         res = least_squares(fun_trivial, x, jac_trivial, loss='cauchy',
-                            loss_scale=10, max_nfev=1, method=self.method)
+                            f_scale=10, max_nfev=1, method=self.method)
         fs = f / 10
         assert_allclose(res.jac, 2 * x * (1 - fs**2)**0.5 / (1 + fs**2))
 
@@ -636,7 +636,7 @@ class LossFunctionMixin(object):
 
         # Turn to inlier.
         res = least_squares(fun_trivial, x, jac_trivial, loss='arctan',
-                            loss_scale=20.0, max_nfev=1, method=self.method)
+                            f_scale=20.0, max_nfev=1, method=self.method)
         fs = f / 20
         assert_allclose(res.jac, 2 * x * (1 - 3 * fs**4)**0.5 / (1 + fs**4))
 
@@ -647,7 +647,7 @@ class LossFunctionMixin(object):
 
         # Turn to inlier.
         res = least_squares(fun_trivial, x, jac_trivial,
-                            loss=cubic_soft_l1, loss_scale=6, max_nfev=1)
+                            loss=cubic_soft_l1, f_scale=6, max_nfev=1)
         fs = f / 6
         assert_allclose(res.jac,
                         2 * x * (1 - fs**2 / 3)**0.5 * (1 + fs**2)**(-5/6))
@@ -664,7 +664,7 @@ class LossFunctionMixin(object):
                     if loss == 'linear':
                         continue
                     res_robust = least_squares(
-                        p.fun, p.p0, jac=jac, loss=loss, loss_scale=noise,
+                        p.fun, p.p0, jac=jac, loss=loss, f_scale=noise,
                         method=self.method)
                     assert_allclose(res_robust.optimality, 0, atol=1e-2)
                     assert_(norm(res_robust.x - p.p_opt) <
