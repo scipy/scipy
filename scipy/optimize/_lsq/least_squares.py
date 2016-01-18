@@ -201,7 +201,7 @@ IMPLEMENTED_LOSSES = dict(linear=None, huber=huber, soft_l1=soft_l1,
                           cauchy=cauchy, arctan=arctan)
 
 
-def construct_loss_function(m, loss, loss_scale):
+def construct_loss_function(m, loss, f_scale):
     if loss == 'linear':
         return None
 
@@ -210,21 +210,21 @@ def construct_loss_function(m, loss, loss_scale):
         rho = np.empty((3, m))
 
         def loss_function(f, cost_only=False):
-            z = (f / loss_scale) ** 2
+            z = (f / f_scale) ** 2
             loss(z, rho, cost_only=cost_only)
             if cost_only:
-                return 0.5 * loss_scale**2 * np.sum(rho[0])
-            rho[0] *= loss_scale**2
-            rho[2] /= loss_scale**2
+                return 0.5 * f_scale ** 2 * np.sum(rho[0])
+            rho[0] *= f_scale ** 2
+            rho[2] /= f_scale ** 2
             return rho
     else:
         def loss_function(f, cost_only=False):
-            z = (f / loss_scale) ** 2
+            z = (f / f_scale) ** 2
             rho = loss(z)
             if cost_only:
-                return 0.5 * loss_scale**2 * np.sum(rho[0])
-            rho[0] *= loss_scale**2
-            rho[2] /= loss_scale**2
+                return 0.5 * f_scale ** 2 * np.sum(rho[0])
+            rho[0] *= f_scale ** 2
+            rho[2] /= f_scale ** 2
             return rho
 
     return loss_function
@@ -232,8 +232,8 @@ def construct_loss_function(m, loss, loss_scale):
 
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
-        ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, loss='linear',
-        loss_scale=1.0, x_scale=1.0, diff_step=None, tr_solver=None,
+        ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, x_scale=1.0,
+        loss='linear', f_scale=1.0, diff_step=None, tr_solver=None,
         tr_options={}, jac_sparsity=None, max_nfev=None, verbose=0, args=(),
         kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
@@ -320,6 +320,16 @@ def least_squares(
               between columns of the Jacobian and the residual vector is less
               than `gtol`, or the residual vector is zero.
 
+    x_scale : array_like or 'jac', optional
+        Characteristic scale of each variable. Setting `x_scale` is equivalent
+        to reformulating the problem in scaled variables ``xs = x / x_scale``.
+        An alternative view is that the size of a trust-region along j-th
+        dimension is proportional to ``x_scale[j]``. Improved convergence may
+        be achieved by setting `x_scale` such that a step of a given length
+        along any of the scaled variables has a similar effect on the cost
+        function. If set to 'jac', the scale is iteratively updated using the
+        inverse norms of the columns of the Jacobian matrix (as described in
+        [JJMore]_).
     loss : str or callable, optional
         Determines the loss function. The following keyword values are allowed:
 
@@ -339,21 +349,13 @@ def least_squares(
         array_like with shape (3, m) where row 0 contains function values,
         row 1 contains first derivatives and row 2 contains second
         derivatives. Method 'lm' supports only 'linear' loss.
-    loss_scale : float, optional
+    f_scale : float, optional
         Value of soft margin between inlier and outlier residuals, default
         is 1.0. The loss function is evaluated as follows
-        ``rho_(f**2) = C**2 * rho(f**2 / C**2)``, where ``C`` is `loss_scale`,
-        and ``rho`` is determined by `loss` parameter.
-    x_scale : array_like or 'jac', optional
-        Characteristic scale of each variable. Setting `x_scale` is equivalent
-        to reformulating the problem in scaled variables ``xs = x / x_scale``.
-        An alternative view is that the size of a trust-region along j-th
-        dimension is proportional to ``x_scale[j]``. Improved convergence may
-        be achieved by setting `x_scale` such that a step of a given length
-        along any of the scaled variables has a similar effect on the cost
-        function. If set to 'jac', the scale is iteratively updated using the
-        inverse norms of the columns of the Jacobian matrix (as described in
-        [JJMore]_).
+        ``rho_(f**2) = C**2 * rho(f**2 / C**2)``, where ``C`` is `f_scale`,
+        and ``rho`` is determined by `loss` parameter. This parameter has
+        no effect with ``loss='linear'``, but for other `loss` values it is
+        of crucial importance.
     max_nfev : None or int, optional
         Maximum number of function evaluations before the termination.
         If None (default), the value is chosen automatically:
@@ -677,12 +679,12 @@ def least_squares(
     >>> res_lsq = least_squares(fun, x0, args=(t_train, y_train))
 
     Now compute two solutions with two different robust loss functions. The
-    parameter `loss_scale` is set to 0.1, meaning that inlier residuals should
+    parameter `f_scale` is set to 0.1, meaning that inlier residuals should
     not significantly exceed 0.1 (the noise level used).
 
-    >>> res_soft_l1 = least_squares(fun, x0, loss='soft_l1', loss_scale=0.1,
+    >>> res_soft_l1 = least_squares(fun, x0, loss='soft_l1', f_scale=0.1,
     ...                             args=(t_train, y_train))
-    >>> res_log = least_squares(fun, x0, loss='cauchy', loss_scale=0.1,
+    >>> res_log = least_squares(fun, x0, loss='cauchy', f_scale=0.1,
     ...                         args=(t_train, y_train))
 
     And finally plot all the curves. We see that by selecting an appropriate
@@ -779,7 +781,7 @@ def least_squares(
         raise ValueError("Method 'lm' doesn't work when the number of "
                          "residuals is less than the number of variables.")
 
-    loss_function = construct_loss_function(m, loss, loss_scale)
+    loss_function = construct_loss_function(m, loss, f_scale)
     if callable(loss):
         rho = loss_function(f0)
         if rho.shape != (3, m):
