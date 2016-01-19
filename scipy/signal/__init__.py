@@ -187,7 +187,7 @@ LTI Representations
    sos2tf        -- second-order-sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
    place_poles   -- pole placement.
-   
+
 Waveforms
 =========
 
@@ -263,6 +263,7 @@ Spectral Analysis
    periodogram    -- Compute a (modified) periodogram
    welch          -- Compute a periodogram using Welch's method
    csd            -- Compute the cross spectral density, using Welch's method
+   tfestimate     -- Compute the transfer function estimate, using Welch's method
    coherence      -- Compute the magnitude squared coherence, using Welch's method
    spectrogram    -- Compute the spectrogram
    lombscargle    -- Computes the Lomb-Scargle periodogram

@@ -13,7 +13,7 @@ import warnings
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram']
+           'spectrogram', 'tfestimate']
 
 
 def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
@@ -398,6 +398,112 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
     return freqs, Pxy
+
+
+def tfestimate(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
+        nfft=None, detrend='constant', return_onesided=True, scaling='density',
+        axis=-1):
+    """
+    Estimate the transfer function, Txy = Pyx / Pxx, using Welch's method.
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values from an input signal
+    y : array_like
+        Time series of measurement values from an output signal
+    fs : float, optional
+        Sampling frequency of the `x` and `y` time series. Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to 'hanning'.
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256.
+    noverlap: int, optional
+        Number of points to overlap between segments. If None,
+        ``noverlap = nperseg // 2``.  Defaults to None.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        the FFT length is `nperseg`. Defaults to None.
+    detrend : str or function or False, optional
+        Specifies how to detrend each segment. If `detrend` is a string,
+        it is passed as the ``type`` argument to `detrend`.  If it is a
+        function, it takes a segment and returns a detrended segment.
+        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+    return_onesided : bool, optional
+        If True, return a one-sided spectrum for real data. If False return
+        a two-sided spectrum. Note that for complex data, a two-sided
+        spectrum is always returned.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the cross spectral density ('density')
+        where `Pxy` has units of V**2/Hz and computing the cross spectrum
+        ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
+        measured in V and fs is measured in Hz.  Defaults to 'density'
+    axis : int, optional
+        Axis along which the CSD is computed for both inputs; the default is
+        over the last axis (i.e. ``axis=-1``).
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    Txy : ndarray
+        Transfer function estimate, Pyx / Pxx, from input x to output y.
+
+    See Also
+    --------
+    welch: Power spectral density by Welch's method.
+    csd: Cross spectral density by Welch's method.
+
+    Notes
+    --------
+    By convention, Pxy is computed with the conjugate FFT of X multiplied by
+    the FFT of Y.
+
+    If the input series differ in length, the shorter series will be
+    zero-padded to match.
+
+    An appropriate amount of overlap will depend on the choice of window
+    and on your requirements.  For the default 'hanning' window an
+    overlap of 50\% is a reasonable trade off between accurately estimating
+    the signal power, while not over counting any of the data.  Narrower
+    windows may require a larger overlap.
+
+    .. versionadded:: 0.18.0
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    Generate a test signal and filter with a Butterworth filter.
+
+    >>> fs = 10e3
+    >>> N = 1e5
+    >>> noise_power = 0.001 * fs / 2
+    >>> time = np.arange(N) / fs
+    >>> x = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> b, a = signal.butter(2, 0.5, 'low')
+    >>> y = signal.lfilter(b, a, x)
+
+    Compute and plot the magnitude of the transfer function estimate to obtain
+    the power of the Butterworth filter's finite impulse response.
+
+    >>> f, Tf = signal.tfestimate(x, y, fs=fs)
+    >>> plt.semilogy(f, np.abs(Tf))
+    >>> plt.xlabel('frequency [Hz]')
+    >>> plt.ylabel('Pyx / Pxx')
+    >>> plt.show()
+    """
+
+    freqs, Pyx = csd(y, x, fs, window, nperseg, noverlap, nfft, detrend,
+                     return_onesided, scaling, axis)
+    _, Pxx = welch(x, fs, window, nperseg, noverlap, nfft, detrend,
+                   return_onesided, scaling, axis)
+
+    return freqs, Pyx / Pxx
 
 
 def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
