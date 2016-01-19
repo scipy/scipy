@@ -408,6 +408,15 @@ class TestDifferentialEvolutionSolver(TestCase):
         solver.solve()
         assert_(solver.convergence < 0.2)
 
+    def test_maxiter_none_GH5731(self):
+        # Pre 0.17 the previous default for maxiter and maxfun was None.
+        # the numerical defaults are now 1000 and np.inf. However, some scripts
+        # will still supply None for both of those, this will raise a TypeError
+        # in the solve method.
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxiter=None,
+                                             maxfun=None)
+        solver.solve()
+
 
 if __name__ == '__main__':
     run_module_suite()
