@@ -527,6 +527,18 @@ def test_kaiser_derived():
     # Test for Princen-Bradley condition
     assert_allclose(w[:M//2]**2 + w[-M//2:]**2, 1.)
 
+    assert_allclose(
+        signal.kaiser_derived(2, beta=np.pi/2)[:1],
+        np.sqrt(2) / 2)
+
+    assert_allclose(
+        signal.kaiser_derived(4, beta=np.pi/2)[:2],
+        [0.518562710536, 0.855039598640])
+
+    assert_allclose(
+        signal.kaiser_derived(6, beta=np.pi/2)[:3],
+        [0.436168993154, 0.707106781187, 0.899864772847])
+
     # Assert ValueError for odd window length
     assert_raises(ValueError, signal.kaiser_derived, M + 1, beta=4.)
 

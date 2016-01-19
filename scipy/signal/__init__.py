@@ -242,6 +242,7 @@ Window functions
    hann              -- Hann window
    hanning           -- Hann window
    kaiser            -- Kaiser window
+   kaiser_derived    -- Kaiser-Bessel derived window
    nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
    parzen            -- Parzen window
    slepian           -- Slepian window
