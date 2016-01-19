@@ -814,7 +814,8 @@ class TestTfestimate:
 
 class TestCoherence:
     def test_identical_input(self):
-        x = np.random.randn(20)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(20)
         y = np.copy(x)  # So `y is x` -> False
 
         f = np.linspace(0, 0.5, 6)
@@ -825,7 +826,8 @@ class TestCoherence:
         assert_allclose(C, C1)
 
     def test_phase_shifted_input(self):
-        x = np.random.randn(20)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(20)
         y = -x
 
         f = np.linspace(0, 0.5, 6)
@@ -838,7 +840,8 @@ class TestCoherence:
 
 class TestSpectrogram:
     def test_average_all_segments(self):
-        x = np.random.randn(1024)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(1024)
 
         fs = 1.0
         window = ('tukey', 0.25)
@@ -865,8 +868,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -897,8 +900,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
