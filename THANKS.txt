@@ -151,10 +151,11 @@ François Magimel for documentation improvements.
 Josh Levy-Kramer for the log survival function of the hypergeometric distribution
 Will Monroe for bug fixes.
 Bernardo Sulzbach for bug fixes.
-Alexander Grigorevskiy for adding extra LAPACK least-square solvers and 
+Alexander Grigorevskiy for adding extra LAPACK least-square solvers and
     modifying linalg.lstsq function accordingly.
 Sam Lewis for enhancements to the basinhopping module.
 Tadeusz Pudlik for documentation and vectorizing spherical Bessel functions.
+Philip DeBoer for wrapping random SO(N) matrix code in scipy.stats.
 
 Institutions
 ------------
