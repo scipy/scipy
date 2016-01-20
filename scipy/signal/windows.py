@@ -1634,10 +1634,10 @@ def get_window(window, Nx, fftbins=True):
 
         `boxcar`, `triang`, `blackman`, `hamming`, `hann`, `bartlett`,
         `flattop`, `parzen`, `bohman`, `blackmanharris`, `nuttall`,
-        `barthann`, `kaiser` (needs beta), `gaussian` (needs std),
-        `general_gaussian` (needs power, width), `slepian` (needs width),
-        `chebwin` (needs attenuation), `exponential` (needs decay scale),
-        `tukey` (needs taper fraction)
+        `barthann`, `kaiser` (needs beta), `gaussian` (needs standard
+        deviation), `general_gaussian` (needs power, width), `slepian`
+        (needs width), `chebwin` (needs attenuation), `exponential`
+        (needs decay scale), `tukey` (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
 
