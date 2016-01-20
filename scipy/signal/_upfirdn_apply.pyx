@@ -65,6 +65,56 @@ def _output_len(Py_ssize_t len_h,
     return need
 
 
+@cython.cdivision(True)  # faster modulo
+@cython.boundscheck(False)  # designed to stay within bounds
+@cython.wraparound(False)  # we don't use negative indexing
+def _rat(x, tol=None):
+    """Calculate the continued fraction representation of x"""
+    # Adapted from https://en.wikipedia.org/wiki/Continued_fraction
+    x = float(x)
+    if not np.isfinite(x):
+        raise RuntimeError('x must be finite')
+    if tol is None:
+        tol = np.abs(x) * 1e-12
+    else:
+        tol = float(tol)
+    cdef double use_tol = tol
+    cdef double sign = np.sign(x)
+    cdef double use_x = x * sign
+    cdef double next_ = use_x
+    # compute the convergents (ck) for each step
+    cdef int n = 0
+    cdef int hks[2][2]
+    cdef int next_hk[2]
+    cdef double frac_part
+    cdef int integer_part
+
+    n = 0
+    while True:
+        integer_part = int(next_)
+        if n > 1:
+            next_hk[0] = integer_part * hks[0][0] + hks[1][0]
+            next_hk[1] = integer_part * hks[0][1] + hks[1][1]
+        elif n == 1:
+            next_hk[0] = integer_part * hks[0][0] + 1
+            next_hk[1] = integer_part
+        elif n == 0:
+            next_hk[0] = integer_part
+            next_hk[1] = 1
+        hks[1][0] = hks[0][0]
+        hks[1][1] = hks[0][1]
+        hks[0][0] = next_hk[0]
+        hks[0][1] = next_hk[1]
+        frac_part = next_ - integer_part
+        if frac_part == 0 or abs(hks[0][0] / float(hks[0][1]) - use_x) < use_tol:
+            break
+        next_ = 1. / frac_part
+        n += 1
+    if sign < 0:
+        hks[0][0] *= -1
+    return np.array(hks[0])
+
+
 def _apply(DTYPE_t [:] x, DTYPE_t [:] h_trans_flip, DTYPE_t [:] out,
                  Py_ssize_t up, Py_ssize_t down):
     _apply_impl(x, h_trans_flip, out, up, down)

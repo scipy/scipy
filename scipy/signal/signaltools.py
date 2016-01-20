@@ -7,7 +7,9 @@ import warnings
 import threading
 
 from . import sigtools
-from scipy._lib.six import callable
+from ._upfirdn import _UpFIRDn, _output_len
+from ._upfirdn_apply import _rat
+from scipy._lib.six import callable, string_types
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
 from numpy import (allclose, angle, arange, argsort, array, asarray,
@@ -1691,13 +1693,18 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     return b, a
 
 
-def resample(x, num, t=None, axis=0, window=None):
+def resample(x, num, t=None, axis=0, window='auto', method='fft'):
     """
-    Resample `x` to `num` samples using Fourier method along the given axis.
+    Resample `x` to `num` samples along the given axis.
+
+    Resampling can be performed using either the Fourier method, or
+    polyphase filtering.
 
     The resampled signal starts at the same value as `x` but is sampled
-    with a spacing of ``len(x) / num * (spacing of x)``.  Because a
-    Fourier method is used, the signal is assumed to be periodic.
+    with a spacing of ``len(x) / num * (spacing of x)``.  When the
+    Fourier (``fft``) method is used, the signal is assumed to be periodic.
+    When the ``polyphase`` method is used, values beyond the boundary
+    of the signal are assumed to be zero.
 
     Parameters
     ----------
@@ -1706,13 +1713,20 @@ def resample(x, num, t=None, axis=0, window=None):
     num : int
         The number of samples in the resampled signal.
     t : array_like, optional
-        If `t` is given, it is assumed to be the sample positions
-        associated with the signal data in `x`.
+        If `t` is given, it is assumed to be the regularly spaced
+        sample positions associated with the signal data in `x`.
     axis : int, optional
         The axis of `x` that is resampled.  Default is 0.
     window : array_like, callable, string, float, or tuple, optional
         Specifies the window applied to the signal in the Fourier
-        domain.  See below for details.
+        domain, or window to be used in FIR filter design.
+        See below for details. If ``'auto'``, then ``None`` is used
+        for FFT-based resampling and ``('kaiser', 5.0)`` is used
+        for polyphase resampling.
+    method : str
+        Resampling method to use. Can be "fft" (default) or "polyphase".
+
+        .. versionadded:: 0.18
 
     Returns
     -------
@@ -1723,20 +1737,33 @@ def resample(x, num, t=None, axis=0, window=None):
 
     Notes
     -----
-    The argument `window` controls a Fourier-domain window that tapers
-    the Fourier spectrum before zero-padding to alleviate ringing in
-    the resampled values for sampled signals you didn't intend to be
-    interpreted as band-limited.
+    When ``method == 'fft'``, FFT transformations of the data are used.
+    This can be very slow if the number of input or output samples is
+    large and prime; see `scipy.fftpack.fft` for details.
 
-    If `window` is a function, then it is called with a vector of inputs
-    indicating the frequency bins (i.e. fftfreq(x.shape[axis]) ).
+    For ``method == 'fft'``, the argument `window` controls a
+    Fourier-domain window that tapers the Fourier spectrum before
+    zero-padding to alleviate ringing in the resampled values for
+    sampled signals you didn't intend to be interpreted as band-limited:
 
-    If `window` is an array of the same length as `x.shape[axis]` it is
-    assumed to be the window to be applied directly in the Fourier
-    domain (with dc and low-frequency first).
+        * If `window` is a function, then it is called with a vector of inputs
+          indicating the frequency bins (i.e. fftfreq(x.shape[axis]) ).
 
-    For any other type of `window`, the function `scipy.signal.get_window`
-    is called to generate the window.
+        * If `window` is an array of the same length as `x.shape[axis]` it is
+          assumed to be the window to be applied directly in the Fourier
+          domain (with dc and low-frequency first).
+
+        * For any other type of `window`, the function
+          `scipy.signal.get_window` is called to generate the window.
+
+    When ``method == 'polyphase'``, polyphase filtering is used.
+    This method will likely be faster than the Fourier method when
+    the number of samples is large and prime, or when the number of
+    samples is large and the number of output samples and input samples
+    share a large greatest common denominator.
+
+    For ``method == 'polyphase'``, the ``window`` argument is passed
+    directly to `scipy.signal.firwin` to design a low-pass filter.
 
     The first sample of the returned vector is the same as the first
     sample of the input vector.  The spacing between samples is changed
@@ -1746,56 +1773,102 @@ def resample(x, num, t=None, axis=0, window=None):
     and the new sample positions will be returned as well as the new
     samples.
 
-    As noted, `resample` uses FFT transformations, which can be very
-    slow if the number of input or output samples is large and prime;
-    see `scipy.fftpack.fft`.
-
     Examples
     --------
     Note that the end of the resampled data rises to meet the first
-    sample of the next cycle:
+    sample of the next cycle for the FFT method, and gets closer to zero
+    for the polyphase method:
 
     >>> from scipy import signal
     
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
-    >>> f = signal.resample(y, 100)
+    >>> f_fft = signal.resample(y, 100)
+    >>> f_poly = signal.resample(y, 100, method='polyphase')
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
     
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
-    >>> plt.legend(['data', 'resampled'], loc='best')
+    >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
+    >>> plt.plot(x, y, 'ko-')
+    >>> plt.plot(10, y[0], 'bo', 10, 0., 'ro')  # boundaries
+    >>> plt.legend(['resamp$_{fft}$', 'resamp$_{poly}$', 'data'], loc='best')
     >>> plt.show()
     """
     x = asarray(x)
-    X = fftpack.fft(x, axis=axis)
     Nx = x.shape[axis]
-    if window is not None:
-        if callable(window):
-            W = window(fftpack.fftfreq(Nx))
-        elif isinstance(window, ndarray):
-            if window.shape != (Nx,):
-                raise ValueError('window must have the same length as data')
-            W = window
-        else:
-            W = fftpack.ifftshift(get_window(window, Nx))
-        newshape = [1] * x.ndim
-        newshape[axis] = len(W)
-        W.shape = newshape
-        X = X * W
-    sl = [slice(None)] * len(x.shape)
-    newshape = list(x.shape)
-    newshape[axis] = num
-    N = int(np.minimum(num, Nx))
-    Y = zeros(newshape, 'D')
-    sl[axis] = slice(0, (N + 1) // 2)
-    Y[sl] = X[sl]
-    sl[axis] = slice(-(N - 1) // 2, None)
-    Y[sl] = X[sl]
-    y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
+    if not isinstance(method, string_types):
+        raise TypeError('method must be a string')
+    if method not in ('fft', 'polyphase'):
+        raise ValueError('method must be "fft" or "polyphase", not %s'
+                         % method)
+    if isinstance(window, string_types) and window == 'auto':
+        window = None if method == 'fft' else ('kaiser', 5.0)
 
-    if x.dtype.char not in ['F', 'D']:
-        y = y.real
+    if method == 'polyphase':  # upfirdn
+        # Determine our up and down factors
+        # Use a rational approimation to save computation time on really long
+        # signals
+        up, down = _rat(num / float(Nx))
+        if up == down == 1:
+            return x.copy()
+
+        # Design a linear-phase low-pass FIR filter
+        if window is not None:
+            max_rate = max(up, down)
+            f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
+            half_len = 10 * max_rate  # reasonable cutoff for sinc
+            h = firwin(2 * half_len + 1, f_c, window=window)
+        else:
+            half_len = 0
+            h = np.array([1], x.dtype)
+        h *= up
+
+        # Zero-pad our filter to put the output samples at the center
+        n_pre_pad = (down - half_len % down)
+        n_post_pad = 0
+        n_pre_remove = (half_len + n_pre_pad) // down
+        # We should rarely need to do this given our filter lengths...
+        while _output_len(len(h) + n_pre_pad + n_post_pad, x.shape[axis],
+                          up, down) < num + n_pre_remove:
+            n_post_pad += 1
+        h = np.concatenate((np.zeros(n_pre_pad), h, np.zeros(n_post_pad)))
+        ufd = _UpFIRDn(h, x.dtype, up, down)
+        n_pre_remove_end = n_pre_remove + num
+
+        def apply_remove(x):
+            """Apply the upfirdn filter and remove excess"""
+            return ufd.apply_filter(x)[n_pre_remove:n_pre_remove_end]
+
+        y = np.apply_along_axis(apply_remove, axis, x)
+    else:
+        X = fftpack.fft(x, axis=axis)
+        if window is not None:
+            if callable(window):
+                W = window(fftpack.fftfreq(Nx))
+            elif isinstance(window, ndarray):
+                if window.shape != (Nx,):
+                    raise ValueError('window must have the same length as '
+                                     'data')
+                W = window
+            else:
+                W = fftpack.ifftshift(get_window(window, Nx))
+            newshape = [1] * x.ndim
+            newshape[axis] = len(W)
+            W.shape = newshape
+            X = X * W
+        sl = [slice(None)] * len(x.shape)
+        newshape = list(x.shape)
+        newshape[axis] = num
+        N = int(np.minimum(num, Nx))
+        Y = zeros(newshape, 'D')
+        sl[axis] = slice(0, (N + 1) // 2)
+        Y[sl] = X[sl]
+        sl[axis] = slice(-(N - 1) // 2, None)
+        Y[sl] = X[sl]
+        y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
+
+        if x.dtype.char not in ['F', 'D']:
+            y = y.real
 
     if t is None:
         return y
