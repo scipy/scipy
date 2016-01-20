@@ -12,7 +12,7 @@ better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
 of bug-fixes and optimizations.  Moreover, our development attention
-will now shift to bug-fix releases on the 0.17.x branch, and on adding
+will now shift to bug-fix releases on the 0.18.x branch, and on adding
 new features on the master branch.
 
 This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
@@ -21,6 +21,13 @@ This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
 New features
 ============
 
+Random matrices
+~~~~~~~~~~~~~~~
+
+`scipy.stats.special_ortho_group` and `scipy.stats.ortho_group` provide
+generators of random matrices in the SO(N) and O(N) groups, respectively. They
+generate matrices in the Haar distribution, the only uniform distribution on
+these group manifolds.
 
 Deprecated features
 ===================
@@ -43,5 +50,3 @@ Issues closed
 
 Pull requests
 -------------
-
-
