@@ -4,6 +4,7 @@ import numpy as np
 
 try:
     from scipy.spatial import cKDTree, KDTree
+    from scipy.spatial.distance import pdist, cdist
 except ImportError:
     pass
 
@@ -132,3 +133,28 @@ class Neighbors(Benchmark):
         dim | # points T1 | # points T2 | probe radius |  KDTree  | cKDTree
         """
         self.T1.count_neighbors(self.T2, probe_radius)
+
+
+class Distance(Benchmark):
+    params = [
+            [(10, 2), (100, 2), (100, 20), (400, 2), (400, 20), (400, 200)],
+            ['euclidean', 'mahalanobis'],
+            ]
+    param_names = ['shape', 'metric']
+
+    def setup(self, shape, function_string):
+        np.random.seed(1234)
+        self.XA = np.random.randn(*shape)
+        self.XB = np.random.randn(*shape)
+
+    def time_pdist(self, shape, metric):
+        pdist(self.XA, metric=metric)
+
+    def time_cdist(self, shape, metric):
+        cdist(self.XA, self.XB, metric=metric)
+
+    def peakmem_pdist(self, shape, metric):
+        pdist(self.XA, metric=metric)
+
+    def peakmem_cdist(self, shape, metric):
+        cdist(self.XA, self.XB, metric=metric)

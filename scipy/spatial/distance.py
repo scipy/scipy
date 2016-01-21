@@ -106,7 +106,7 @@ from scipy._lib.six import callable, string_types
 from scipy._lib.six import xrange
 
 from . import _distance_wrap
-from ..linalg import norm
+from ..linalg import norm, pinvh, svd, get_blas_funcs
 import collections
 
 
@@ -157,6 +157,31 @@ def _validate_vector(u, dtype=None):
     if u.ndim > 1:
         raise ValueError("Input vector should be 1-D.")
     return u
+
+
+def _gram_form_edm_operator(G):
+    # NOTE: This could be rewritten using LAPACK syr2k.
+    d = np.diag(G)
+    return d[:, None] + d[None, :] - 2 * G
+
+
+def _psd_pseudo_reciprocal(x, tol=1e-14):
+    i = (x < tol)
+    return np.where(i, 0, 1/np.where(i, 1, x))
+
+
+def _hat_matrix_helper(X, tol=1e-14):
+    U, s, Vt = svd(X.T, full_matrices=False)
+    return X.dot(U * _psd_pseudo_reciprocal(s, tol=tol))
+
+
+def _hat_matrix(X, tol=1e-14):
+    # Compute X * (X.T * X).I * X.T using the SVD,
+    # where .T is the transpose, .I is the Moore-Penrose pseudo-inverse,
+    # and * is matrix multiplication.
+    # NOTE: This could be rewritten using LAPACK syrk.
+    H = _hat_matrix_helper(X, tol)
+    return H.dot(H.T)
 
 
 def minkowski(u, v, p):
@@ -1289,6 +1314,11 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                                              _convert_to_double(dm),
                                              _convert_to_double(norms))
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
+            if w is not None:
+                raise NotImplementedError('The weighted Mahalanobis distance '
+                                          'is not implemented.')
+            if VI is None and V is not None:
+                VI = pinvh(V)
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI, order='c'))
                 if type(VI) != np.ndarray:
@@ -1296,20 +1326,18 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 if VI.dtype != np.double:
                     raise TypeError('The array must contain 64-bit floats.')
                 [VI] = _copy_arrays_if_base_present([VI])
+                # (u-v)V^(-1)(u-v)^T
+                _distance_wrap.pdist_mahalanobis_wrap(_convert_to_double(X),
+                                                      VI, dm)
             else:
-                if m <= n:
-                    # There are fewer observations than the dimension of
-                    # the observations.
-                    raise ValueError("The number of observations (%d) is too "
-                                     "small; the covariance matrix is "
-                                     "singular. For observations with %d "
-                                     "dimensions, at least %d observations "
-                                     "are required." % (m, n, n + 1))
-                V = np.atleast_2d(np.cov(X.T))
-                VI = _convert_to_double(np.linalg.inv(V).T.copy())
-            # (u-v)V^(-1)(u-v)^T
-            _distance_wrap.pdist_mahalanobis_wrap(_convert_to_double(X),
-                                                  VI, dm)
+                ddof = 1
+                X = X - np.mean(X, axis=0)
+                H = _hat_matrix(X)
+                D = _gram_form_edm_operator(H)
+                # The D matrix is mathematically symmetric by construction
+                # but not necessarily numerically symmetric.
+                checks = False
+                dm = np.sqrt(squareform(D, checks=checks) * (m - ddof))
         elif mstr == 'canberra':
             _distance_wrap.pdist_canberra_wrap(_convert_to_double(X), dm)
         elif mstr == 'braycurtis':
@@ -2144,32 +2172,29 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             XB -= XB.mean(axis=1)[:, np.newaxis]
             _cosine_cdist(XA, XB, dm)
         elif mstr in set(['mahalanobis', 'mahal', 'mah']):
-            if VI is not None:
-                VI = _convert_to_double(np.asarray(VI, order='c'))
-                if type(VI) != np.ndarray:
-                    raise TypeError('VI must be a numpy array.')
-                if VI.dtype != np.double:
-                    raise TypeError('The array must contain 64-bit floats.')
-                [VI] = _copy_arrays_if_base_present([VI])
+            if VI is not None or V is not None:
+                if VI is not None:
+                    VI = _convert_to_double(np.asarray(VI, order='c'))
+                    if type(VI) != np.ndarray:
+                        raise TypeError('VI must be a numpy array.')
+                    if VI.dtype != np.double:
+                        raise TypeError('The array must contain 64-bit floats.')
+                    [VI] = _copy_arrays_if_base_present([VI])
+                else:
+                    X = np.vstack([XA, XB])
+                    V = np.atleast_2d(np.cov(X.T))
+                    VI = _convert_to_double(np.linalg.inv(V).T.copy())
+                _distance_wrap.cdist_mahalanobis_wrap(_convert_to_double(XA),
+                                                      _convert_to_double(XB),
+                                                      VI, dm)
             else:
-                m = mA + mB
-                if m <= n:
-                    # There are fewer observations than the dimension of
-                    # the observations.
-                    raise ValueError("The number of observations (%d) is too "
-                                     "small; the covariance matrix is "
-                                     "singular. For observations with %d "
-                                     "dimensions, at least %d observations "
-                                     "are required." % (m, n, n + 1))
+                ddof = 1
                 X = np.vstack([XA, XB])
-                V = np.atleast_2d(np.cov(X.T))
-                X = None
-                del X
-                VI = _convert_to_double(np.linalg.inv(V).T.copy())
-            # (u-v)V^(-1)(u-v)^T
-            _distance_wrap.cdist_mahalanobis_wrap(_convert_to_double(XA),
-                                                  _convert_to_double(XB),
-                                                  VI, dm)
+                X = X - np.mean(X, axis=0)
+                XW = _hat_matrix_helper(X)
+                d = (XW * XW).sum(axis=1)
+                D = d[:mA, None] + d[None, mA:] - 2*XW[:mA].dot(XW[mA:].T)
+                dm = np.sqrt(D * (mA + mB - ddof))
         elif mstr == 'canberra':
             _distance_wrap.cdist_canberra_wrap(_convert_to_double(XA),
                                                _convert_to_double(XB), dm)
