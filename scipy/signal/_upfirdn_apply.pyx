@@ -88,6 +88,7 @@ def _rat(x, tol=None):
     cdef int next_hk[2]
     cdef double frac_part
     cdef int integer_part
+    cdef double min_frac = 1. / 2147483647
 
     n = 0
     while True:
@@ -106,7 +107,11 @@ def _rat(x, tol=None):
         hks[0][0] = next_hk[0]
         hks[0][1] = next_hk[1]
         frac_part = next_ - integer_part
-        if frac_part == 0 or abs(hks[0][0] / float(hks[0][1]) - use_x) < use_tol:
+        if (frac_part == 0 or
+            abs(hks[0][0] / float(hks[0][1]) - use_x) < use_tol or
+            frac_part <= min_frac):
+            break
+        if n > 10000:
             break
         next_ = 1. / frac_part
         n += 1
