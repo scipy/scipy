@@ -2,8 +2,6 @@
 SciPy 0.17.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.17.0 is not released yet!
-
 .. contents::
 
 SciPy 0.17.0 is the culmination of 6 months of hard work. It contains
@@ -671,3 +669,4 @@ Pull requests for 0.17.0
 - `#5720 <https://github.com/scipy/scipy/pull/5720>`__: TST: fix for file opening error in fftpack test_import.py
 - `#5722 <https://github.com/scipy/scipy/pull/5722>`__: BUG: Make curve_fit respect an initial guess with bounds
 - `#5726 <https://github.com/scipy/scipy/pull/5726>`__: Backports for v0.17.0rc2
+- `#5727 <https://github.com/scipy/scipy/pull/5727>`__: API: Changes to least_squares API
