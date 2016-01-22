@@ -1697,6 +1697,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
 def resample(x, num, t=None, axis=0, window=None):
     """
     Resample `x` to `num` samples using Fourier method along the given axis.
+
     The resampled signal starts at the same value as `x` but is sampled
     with a spacing of ``len(x) / num * (spacing of x)``.  Because a
     Fourier method is used, the signal is assumed to be periodic.
@@ -1744,6 +1745,7 @@ def resample(x, num, t=None, axis=0, window=None):
 
     For any other type of `window`, the function `scipy.signal.get_window`
     is called to generate the window.
+
     The first sample of the returned vector is the same as the first
     sample of the input vector.  The spacing between samples is changed
     from ``dx`` to ``dx * len(x) / num``.
@@ -1760,6 +1762,7 @@ def resample(x, num, t=None, axis=0, window=None):
     --------
     Note that the end of the resampled data rises to meet the first
     sample of the next cycle:
+
     >>> from scipy import signal
     
     >>> x = np.linspace(0, 10, 20, endpoint=False)
@@ -1815,8 +1818,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
 
     The signal `x` is upsampled by the factor `up`, a zero-phase low-pass
     FIR filter is applied, and then it is downsampled by the factor `down`.
-    Values beyond the boundary of the signal are assumed to be zero during
-    the filtering step.
+    The resulting sample rate is ``up / down`` times the original sample
+    rate. Values beyond the boundary of the signal are assumed to be zero
+    during the filtering step.
 
     Parameters
     ----------
@@ -1848,7 +1852,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     This polyphase method will likely be faster than the Fourier method
     in `scipy.signal.resample` when the number of samples is large and
     prime, or when the number of samples is large and `up` and `down`
-    share a large greatest common denominator.
+    share a large greatest common denominator. The length of the FIR
+    filter used will depend on ``max(up, down) // gcd(up, down)``, and
+    the number of operations during polyphase filtering will depend on
+    the filter length and `down` (see `scipy.signal.upfirdn` for details).
 
     The `window` argument is passed directly to `scipy.signal.firwin`
     to design a low-pass filter.
@@ -1875,7 +1882,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
     >>> plt.plot(x, y, 'ko-')
     >>> plt.plot(10, y[0], 'bo', 10, 0., 'ro')  # boundaries
-    >>> plt.legend(['resamp$_{fft}$', 'resamp$_{poly}$', 'data'], loc='best')
+    >>> plt.legend(['resample', 'resamp_poly', 'data'], loc='best')
     >>> plt.show()
     """
     x = asarray(x)
