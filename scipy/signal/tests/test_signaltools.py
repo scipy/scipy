@@ -486,8 +486,8 @@ class TestResample(TestCase):
         assert_raises(ValueError, signal.resample, sig, num, window=win)
 
         # Other degenerate conditions
-        assert_raises(TypeError, signal.resample, sig, num, method=1)
-        assert_raises(ValueError, signal.resample, sig, num, method='foo')
+        assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
+        assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
 
     def test_fft(self):
         # Test FFT-based resampling
@@ -507,26 +507,35 @@ class TestResample(TestCase):
         freqs = np.array((1., 10., 40.))[:, np.newaxis]
         x = np.sin(2 * np.pi * freqs * t) * np.hanning(rate)
 
+        print(method)
         for rate_to in rates_to:
             t_to = np.arange(rate_to) / float(rate_to)
             y_tos = np.sin(2 * np.pi * freqs * t_to) * np.hanning(rate_to)
-            y_resamps = signal.resample(x, rate_to, method=method, axis=-1)
+            if method == 'fft':
+                y_resamps = signal.resample(x, rate_to, axis=-1)
+            else:
+                y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1)
             for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
                 if freq >= 0.5 * rate_to:
                     y_to.fill(0.)  # mostly low-passed away
                     assert_allclose(y_resamp, y_to, atol=1e-3)
                 else:
+                    assert_array_equal(y_to.shape, y_resamp.shape)
                     corr = np.corrcoef(y_to, y_resamp)[0, 1]
                     assert_(corr > 0.99, msg=corr)
 
         # Random data
         rng = np.random.RandomState(0)
-        rand = np.hanning(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
+        x = np.hanning(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
         for rate_to in rates_to:
             # random data
             t_to = np.arange(rate_to) / float(rate_to)
-            y_to = np.interp(t_to, t, rand)
-            y_resamp = signal.resample(rand, rate_to, method=method)
+            y_to = np.interp(t_to, t, x)
+            if method == 'fft':
+                y_resamp = signal.resample(x, rate_to)
+            else:
+                y_resamp = signal.resample_poly(x, rate_to, rate)
+            assert_array_equal(y_to.shape, y_resamp.shape)
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
 
