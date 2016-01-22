@@ -465,7 +465,7 @@ def test_local():
         data_local(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
         data_local(ellipkm1, 'ellipkm1', 0, 1),
         data_local(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
-        data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3)),
+        data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3), rtol=1e-14),
         data_local(cexpm1, 'log1p_expm1_complex', (0,1), (4,5), rtol=1e-14),
     ]
 

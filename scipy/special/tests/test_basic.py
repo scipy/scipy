@@ -320,7 +320,6 @@ class TestCephes(TestCase):
         assert_equal(expm1(complex(np.inf, np.nan)), complex(np.inf, np.nan))
         assert_equal(expm1(complex(0, np.nan)), complex(np.nan, np.nan))
         assert_equal(expm1(complex(1, np.nan)), complex(np.nan, np.nan))
-        assert_equal(expm1(complex(np.nan, 0)), complex(np.nan, 0))
         assert_equal(expm1(complex(np.nan, 1)), complex(np.nan, np.nan))
         assert_equal(expm1(complex(np.nan, np.nan)), complex(np.nan, np.nan))
  
