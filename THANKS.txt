@@ -156,6 +156,7 @@ Alexander Grigorevskiy for adding extra LAPACK least-square solvers and
 Sam Lewis for enhancements to the basinhopping module.
 Tadeusz Pudlik for documentation and vectorizing spherical Bessel functions.
 Philip DeBoer for wrapping random SO(N) matrix code in scipy.stats.
+Sebastiano Vigna for Kendall's tau (and variants) in scipy.stats.
 
 Institutions
 ------------

@@ -561,10 +561,18 @@ class TestCorrSpearmanrTies(TestCase):
 
 
 def test_kendalltau():
+    # without ties
+    x1 = [12, 2, 1, 11, 3]
+    x2 = [1, 4, 7, 2, 0]
+    expected = (-0.59999999999999987, 0.14164470089041584)
+    res = stats.kendalltau(x1, x2)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
     # with some ties
     x1 = [12, 2, 1, 12, 2]
     x2 = [1, 4, 7, 1, 0]
-    expected = (-0.47140452079103173, 0.24821309157521476)
+    expected = (-0.47140452079103173, np.nan)
     res = stats.kendalltau(x1, x2)
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])

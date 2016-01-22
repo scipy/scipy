@@ -3199,14 +3199,15 @@ def pointbiserialr(x, y):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
+def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
     """
     Calculates Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
-    strong disagreement.  This is the tau-b version of Kendall's tau which
-    accounts for ties.
+    strong disagreement.  This is the 1945 "tau-b" version of Kendall's
+    tau, which can accounts for ties and which reduces to the 1938 "tau-a"
+    version in absence of ties.
 
     Parameters
     ----------
@@ -3214,15 +3215,13 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
         Arrays of rankings, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
     initial_lexsort : bool, optional
-        Whether to use lexsort or quicksort as the sorting method for the
-        initial sort of the inputs. Default is lexsort (True), for which
-        `kendalltau` is of complexity O(n log(n)). If False, the complexity is
-        O(n^2), but with a smaller pre-factor (so quicksort may be faster for
-        small arrays).
+        Unused.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        values. Default is 'propagate'. Note that if the input contains nan
+        'omit' delegates to mstats_basic.kendalltau(), which has a different
+        implementation.
 
     Returns
     -------
@@ -3230,7 +3229,8 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
        The tau statistic.
     pvalue : float
        The two-sided p-value for a hypothesis test whose null hypothesis is
-       an absence of association, tau = 0.
+       an absence of association, tau = 0. Currently not computed (nan) in
+       case of ties.
 
     See also
     --------
@@ -3248,11 +3248,20 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
     `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
     added to either T or U.
 
+    The code is derived from the LAW library (http://law.di.unimi.it/).
+
     References
     ----------
+    Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
+    Vol. 30, No. 1/2, pp. 81-93, 1938.
+    Maurice G. Kendall, "The treatment of ties in ranking problems", Biometrika
+    Vol. 33, No. 3, pp. 239-251. 1945.
     W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
     Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
     No. 314, Part 1, pp. 436-439, 1966.
+    Paolo Boldi, Massimo Santini, and Sebastiano Vigna. Paradoxical effects in
+    PageRank incremental computations. Internet Math., Vol. 2, No. 3,
+    pp. 387-404, 2005.
 
     Examples
     --------
@@ -3272,7 +3281,7 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
     if x.size != y.size:
         raise ValueError("All inputs to `kendalltau` must be of the same size, "
                          "found x-size %s and y-size %s" % (x.size, y.size))
-    elif not x.size or not y.size:
+    elif not x.size:
         return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # check both x and y
@@ -3293,51 +3302,54 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
     # elements of y[perm[]] using temp[] as support
     # returns the number of swaps required by an equivalent bubble sort
 
-    def mergesort(offs, length):
+    def mergesort(offset, length):
         exchcnt = 0
-        if length == 1:
-            return 0
-        if length == 2:
-            if y[perm[offs]] <= y[perm[offs+1]]:
-                return 0
-            t = perm[offs]
-            perm[offs] = perm[offs+1]
-            perm[offs+1] = t
-            return 1
+
+        # We use insertion sort on small arrays
+        if length < 32:
+            end = offset + length
+            for i in xrange(offset + 1, end):
+                t = perm[i]
+                j = i
+                u = perm[j - 1]
+                while y[t] < y[u]:
+                    exchcnt += 1
+                    perm[j] = u
+                    j -= 1
+                    if offset == j:
+                        break
+                    u = perm[j - 1]
+
+                perm[j] = t
+            return exchcnt
+
         length0 = length // 2
         length1 = length - length0
-        middle = offs + length0
-        exchcnt += mergesort(offs, length0)
+        middle = offset + length0
+        exchcnt += mergesort(offset, length0)
         exchcnt += mergesort(middle, length1)
         if y[perm[middle - 1]] < y[perm[middle]]:
             return exchcnt
 
         # merging
         i = j = k = 0
-        while j < length0 or k < length1:
-            if k >= length1 or (j < length0 and y[perm[offs + j]] <=
-                                                y[perm[middle + k]]):
-                temp[i] = perm[offs + j]
-                d = i - j
+        while j < length0 and k < length1:
+            if y[perm[offset + j]] <= y[perm[middle + k]]:
+                temp[i] = perm[offset + j]
                 j += 1
             else:
                 temp[i] = perm[middle + k]
-                d = (offs + i) - (middle + k)
                 k += 1
-            if d > 0:
-                exchcnt += d
+                exchcnt += length0 - j
             i += 1
-        perm[offs:offs+length] = temp[0:length]
+
+        perm[offset+i:offset+i+length0-j] = perm[offset+j:offset+length0]
+        perm[offset:offset+i] = temp[0:i]
         return exchcnt
 
     # initial sort on values of x and, if tied, on values of y
-    if initial_lexsort:
-        # sort implemented as mergesort, worst case: O(n log(n))
-        perm = np.lexsort((y, x))
-    else:
-        # sort implemented as quicksort, 30% faster but with worst case: O(n^2)
-        perm = list(range(n))
-        perm.sort(key=lambda a: (x[a], y[a]))
+    perm = list(range(n))
+    perm.sort(key=lambda a: (x[a],y[a]))
 
     # compute joint ties
     first = 0
@@ -3375,15 +3387,18 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
 
     # Prevent overflow; equal to np.sqrt((tot - u) * (tot - v))
     denom = np.exp(0.5 * (np.log(tot - u) + np.log(tot - v)))
-    tau = ((tot - (v + u - t)) - 2.0 * exchanges) / denom
+    # Limit range to fix computational errors
+    tau = min(1, max(-1, ((tot - (v + u - t)) - 2.0 * exchanges) / denom))
 
-    # what follows reproduces the ending of Gary Strangman's original
-    # stats.kendalltau() in SciPy
-    svar = (4.0 * n + 10.0) / (9.0 * n * (n - 1))
-    z = tau / np.sqrt(svar)
-    prob = special.erfc(np.abs(z) / 1.4142136)
+    if u == 0 and v == 0:
+        # what follows reproduces the ending of Gary Strangman's original
+        # stats.kendalltau() in SciPy
+        svar = (4.0 * n + 10.0) / (9.0 * n * (n - 1))
+        z = tau / np.sqrt(svar)
+        prob = special.erfc(np.abs(z) / 1.4142136)
+        return KendalltauResult(tau, prob)
 
-    return KendalltauResult(tau, prob)
+    return KendalltauResult(tau, np.nan)
 
 
 #####################################
