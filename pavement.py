@@ -119,7 +119,7 @@ RELEASE = 'doc/release/0.17.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v0.16.0'
-LOG_END = 'v0.17.0rc2'
+LOG_END = 'v0.17.0'
 
 
 #-------------------------------------------------------
