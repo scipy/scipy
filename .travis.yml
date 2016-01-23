@@ -74,7 +74,7 @@ matrix:
       env:
         - TESTMODE=fast
         - OPTIMIZE=-OO
-        - NUMPYSPEC="numpy==1.6.2"
+        - NUMPYSPEC="numpy==1.7.2"
 addons:
   apt:
     packages:

@@ -550,13 +550,8 @@ def _build_mpkg(pyver):
     numver = parse_numpy_version(MPKG_PYTHON[pyver])
     numverstr = ".".join(["%i" % i for i in numver])
     if pyver < "3.3":
-        # Numpy < 1.7 doesn't support Python 3.3
-        if not numver == (1, 6, 2):
-            raise ValueError("Scipy 0.17.x should be built against numpy "
-                             "1.6.2, (detected %s)" % numverstr)
-    else:
         if not numver == (1, 7, 2):
-            raise ValueError("Scipy 0.17.x should be built against numpy "
+            raise ValueError("Scipy 0.18.x should be built against numpy "
                              "1.7.2, (detected %s) for Python >= 3.3" % numverstr)
 
     prepare_static_gfortran_runtime("build")
