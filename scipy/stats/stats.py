@@ -3266,13 +3266,20 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
     Examples
     --------
     >>> from scipy import stats
+    >>> x1 = [12, 2, 1, 11, 3]
+    >>> x2 = [1, 4, 7, 2, 0]
+    >>> tau, p_value = stats.kendalltau(x1, x2)
+    >>> tau
+    -0.59999999999999987
+    >>> p_value
+    0.14164470089041584
     >>> x1 = [12, 2, 1, 12, 2]
     >>> x2 = [1, 4, 7, 1, 0]
     >>> tau, p_value = stats.kendalltau(x1, x2)
     >>> tau
     -0.47140452079103173
     >>> p_value
-    0.24821309157521476
+    nan
 
     """
     x = np.asarray(x).ravel()
