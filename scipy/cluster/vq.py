@@ -211,13 +211,7 @@ def vq(obs, code_book, check_finite=True):
     code_book = _asarray_validated(code_book, check_finite=check_finite)
     ct = common_type(obs, code_book)
 
-    # avoid copying when dtype is the same
-    # should be replaced with c_obs = astype(ct, copy=False)
-    # when we get to numpy 1.7.0
-    if obs.dtype != ct:
-        c_obs = obs.astype(ct)
-    else:
-        c_obs = obs
+    c_obs = obs.astype(ct, copy=False)
 
     if code_book.dtype != ct:
         c_code_book = code_book.astype(ct)
