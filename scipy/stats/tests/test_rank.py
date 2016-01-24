@@ -5,7 +5,6 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, dec
 
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._version import NumpyVersion
 
 
 class TestTieCorrect(TestCase):
@@ -116,7 +115,6 @@ class TestRankData(TestCase):
         r = rankdata(a2d)
         assert_array_equal(r, expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0')
     def test_rankdata_object_string(self):
         min_rank = lambda a: [1 + sum(i < j for i in a) for j in a]
         max_rank = lambda a: [sum(i <= j for i in a) for j in a]

@@ -1031,13 +1031,7 @@ class rv_generic(object):
         output = zeros(shape(cond0), 'd')
         place(output, (1-cond0), self.badvalue)
         goodargs = argsreduce(cond0, *args)
-        # np.vectorize doesn't work when numargs == 0 in numpy 1.6.2.  Once the
-        # lowest supported numpy version is >= 1.7.0, this special case can be
-        # removed (see gh-4314).
-        if self.numargs == 0:
-            place(output, cond0, self._entropy() + log(scale))
-        else:
-            place(output, cond0, self.vecentropy(*goodargs) + log(scale))
+        place(output, cond0, self.vecentropy(*goodargs) + log(scale))
         return output
 
     def moment(self, n, *args, **kwds):
