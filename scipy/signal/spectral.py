@@ -445,9 +445,8 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     axis : int, optional
         Axis along which the spectrogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
-    mode : str, optional
-        Defines what kind of return values are expected. Options are ['psd',
-        'complex', 'magnitude', 'angle', 'phase'].
+    mode: str {'psd', 'complex'}, optional
+        Defines what kind of return values are expected.
 
     Returns
     -------
@@ -473,6 +472,14 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     data stream is averaged over, one may wish to use a smaller overlap (or
     perhaps none at all) when computing a spectrogram, to maintain some
     statistical independence between individual segments.
+
+    Care must be taken when using the 'complex' mode, as one cannot expect
+    input signals to be coherent over each windowed segment, leading to the
+    complex phase at each frequency to vary substantially. However, one can use
+    this mode to their advantage if one desires a "cross-spectrogram", or if
+    many cross-spectra of a large set of signals are desired and one wants to
+    avoid many redudant calls to signal.csd, as the relative phase between the
+    complex spectrograms will be preserved.
 
     .. versionadded:: 0.16.0
 
@@ -506,6 +513,25 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
+
+    Generate a second test signal.
+
+    >>> y = amp * np.cos(2*np.pi*freq*time)
+    >>> y += np.random.normal(scale=2*np.sqrt(noise_power), size=time.shape)
+
+    Compute the complex spectrograms, and produce the "cross-spectrogram".
+
+    >>> _, _, Hxx = signal.spectrogram(x, fs, mode='complex')
+    >>> _, _, Hyy = signal.spectrogram(y, fs, mode='complex')
+    >>> Hxy = Hxx.conj() * Hyy
+
+    Plot the phase of the cross-spectrogram
+
+    >>> plt.pcolormesh(t, f, np.angle(Hxy))
+    >>> plt.ylabel('Frequency [Hz]')
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.show()
+
     """
     # Less overlap than welch, so samples are more statisically independent
     if noverlap is None:
@@ -681,9 +707,8 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     axis : int, optional
         Axis along which the periodogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
-    mode : str, optional
-        Defines what kind of return values are expected. Options are ['psd',
-        'complex', 'magnitude', 'angle', 'phase'].
+    mode: str {'psd', 'complex'}, optional
+        Defines what kind of return values are expected.
 
     Returns
     -------
@@ -707,10 +732,9 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
 
     .. versionadded:: 0.16.0
     """
-    if mode not in ['psd', 'complex', 'magnitude', 'angle', 'phase']:
+    if mode not in ['psd', 'complex']:
         raise ValueError("Unknown value for mode %s, must be one of: "
-                         "'default', 'psd', 'complex', "
-                         "'magnitude', 'angle', 'phase'" % mode)
+                         "{'psd', 'complex'}" % mode)
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
@@ -826,8 +850,13 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
             scale = 1.0 / win.sum()**2
         else:
             raise ValueError('Unknown scaling: %r' % scaling)
-    else:
-        scale = 1
+    elif mode == 'complex':
+        if scaling == 'density':
+            scale = np.sqrt(1.0 / (fs * (win*win).sum()))
+        elif scaling == 'spectrum':
+            scale = 1.0 / win.sum()
+        else:
+            raise ValueError('Unknown scaling: %r' % scaling)
 
     if return_onesided is True:
         if np.iscomplexobj(x):
@@ -860,30 +889,27 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         result = np.conjugate(result) * result_y
     elif mode == 'psd':
         result = np.conjugate(result) * result
-    elif mode == 'magnitude':
-        result = np.absolute(result)
-    elif mode == 'angle' or mode == 'phase':
-        result = np.angle(result)
     elif mode == 'complex':
         pass
 
     result *= scale
     if sides == 'onesided':
+        if mode == 'psd':
+            foldfactor = 2
+        elif mode == 'complex':
+            foldfactor = np.sqrt(2)
+
         if nfft % 2:
-            result[...,1:] *= 2
+            result[...,1:] *= foldfactor
         else:
             # Last point is unpaired Nyquist freq point, don't double
-            result[...,1:-1] *= 2
+            result[...,1:-1] *= foldfactor
 
     t = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1, nperseg - noverlap)/float(fs)
 
     if sides != 'twosided' and not nfft % 2:
         # get the last value correctly, it is negative otherwise
         freqs[-1] *= -1
-
-    # we unwrap the phase here to handle the onesided vs. twosided case
-    if mode == 'phase':
-        result = np.unwrap(result, axis=-1)
 
     result = result.astype(outdtype)
 
