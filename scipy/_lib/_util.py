@@ -190,11 +190,7 @@ def _asarray_validated(a, check_finite=True,
             raise ValueError('object arrays are not supported')
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
-            try:
-                a = toarray(a, dtype=np.float_)
-            except TypeError:
-                # for compatibility with numpy 1.6
-                a = toarray(a).astype(np.float_)
+            a = toarray(a, dtype=np.float_)
     return a
 
 
