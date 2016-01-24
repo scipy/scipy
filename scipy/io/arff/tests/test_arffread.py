@@ -19,7 +19,6 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
 
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
-from scipy._lib._version import NumpyVersion
 
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
@@ -180,13 +179,9 @@ class HeaderTest(TestCase):
 
 
 class DateAttributeTest(TestCase):
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "No np.datetime64 in Numpy < 1.7.0")
     def setUp(self):
         self.data, self.meta = loadarff(test7)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "No np.datetime64 in Numpy < 1.7.0")
     def test_year_attribute(self):
         expected = np.array([
             '1999',
@@ -199,8 +194,6 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_year"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "No np.datetime64 in Numpy < 1.7.0")
     def test_month_attribute(self):
         expected = np.array([
             '1999-01',
@@ -213,8 +206,6 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_month"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "No np.datetime64 in Numpy < 1.7.0")
     def test_date_attribute(self):
         expected = np.array([
             '1999-01-31',
@@ -227,8 +218,6 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_date"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "No np.datetime64 in Numpy < 1.7.0")
     def test_datetime_local_attribute(self):
         expected = np.array([
             datetime.datetime(year=1999, month=1, day=31, hour=0, minute=1),
@@ -241,8 +230,6 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_datetime_local"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "No np.datetime64 in Numpy < 1.7.0")
     def test_datetime_missing(self):
         expected = np.array([
             'nat',
