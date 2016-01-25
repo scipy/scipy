@@ -1,4 +1,4 @@
-/**
+/*
  * Author: Damian Eads
  * Date:   September 22, 2007 (moved to new file on June 8, 2008)
  *
@@ -31,6 +31,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <math.h>
+#include <numpy/npy_math.h>
+
+#if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
+#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+/* enable auto-vectorizer */
+#pragma GCC optimize("tree-vectorize")
+/* float associativity required to vectorize reductions */
+#pragma GCC optimize("unsafe-math-optimizations")
+/* maybe 5% gain, manual unrolling with more accumulators would be better */
+#pragma GCC optimize("unroll-loops")
+#endif
+#endif
 
 static NPY_INLINE double
 sqeuclidean_distance_double(const double *u, const double *v, npy_intp n)
@@ -161,7 +175,7 @@ hamming_distance_char(const char *u, const char *v, npy_intp n)
 }
 
 static NPY_INLINE double
-yule_bool_distance_char(const char *u, const char *v, npy_intp n)
+yule_distance_char(const char *u, const char *v, npy_intp n)
 {
     npy_intp i;
     npy_intp ntt = 0, nff = 0, nft = 0, ntf = 0;
@@ -376,26 +390,6 @@ compute_mean_vector(double *res, const double *X, npy_intp m, npy_intp n)
 #endif
 
 static NPY_INLINE void
-pdist_mahalanobis(const double *X, const double *covinv, double *dimbuf,
-                  double *dm, npy_intp m, npy_intp n)
-{
-    npy_intp i, j;
-    const double *u, *v;
-
-    double *dimbuf1 = dimbuf;
-    double *dimbuf2 = dimbuf + n;
-
-    for (i = 0; i < m; i++) {
-        for (j = i + 1; j < m; j++, dm++) {
-            u = X + (n * i);
-            v = X + (n * j);
-            *dm = mahalanobis_distance(u, v, covinv, dimbuf1, dimbuf2, n);
-        }
-    }
-    dimbuf2 = 0;
-}
-
-static NPY_INLINE void
 pdist_cosine(const double *X, double *dm, npy_intp m, npy_intp n,
              const double *norms)
 {
@@ -413,53 +407,6 @@ pdist_cosine(const double *X, double *dm, npy_intp m, npy_intp n,
                 cosine = npy_copysign(1, cosine);
             }
             *dm = 1. - cosine;
-        }
-    }
-}
-
-static NPY_INLINE void
-pdist_seuclidean(const double *X, const double *var, double *dm,
-                 npy_intp m, npy_intp n)
-{
-    const double *u, *v;
-    npy_intp i, j;
-
-    for (i = 0; i < m; i++) {
-        for (j = i + 1; j < m; j++, dm++) {
-            u = X + (n * i);
-            v = X + (n * j);
-            *dm = seuclidean_distance(var, u, v, n);
-        }
-    }
-}
-
-static NPY_INLINE void
-pdist_minkowski(const double *X, double *dm, npy_intp m, npy_intp n, double p)
-{
-    const double *u, *v;
-    npy_intp i, j;
-
-    for (i = 0; i < m; i++) {
-        for (j = i + 1; j < m; j++, dm++) {
-            u = X + (n * i);
-            v = X + (n * j);
-            *dm = minkowski_distance(u, v, n, p);
-        }
-    }
-}
-
-static NPY_INLINE void
-pdist_weighted_minkowski(const double *X, double *dm, npy_intp m, npy_intp n,
-                         double p, const double *w)
-{
-    const double *u, *v;
-    npy_intp i, j;
-
-    for (i = 0; i < m; i++) {
-        for (j = i + 1; j < m; j++, dm++) {
-            u = X + (n * i);
-            v = X + (n * j);
-            *dm = weighted_minkowski_distance(u, v, n, p, w);
         }
     }
 }
@@ -493,148 +440,3 @@ dist_to_vector_from_squareform(const double *M, double *v, npy_intp n)
         }
     }
 }
-
-
-/** cdist */
-
-static NPY_INLINE void
-cdist_mahalanobis(const double *XA, const double *XB,
-                  const double *covinv, double *dimbuf,
-                  double *dm, npy_intp mA, npy_intp mB, npy_intp n)
-{
-    npy_intp i, j;
-    const double *u, *v;
-
-    double *dimbuf1 = dimbuf;
-    double *dimbuf2 = dimbuf + n;
-
-    for (i = 0; i < mA; i++) {
-        for (j = 0; j < mB; j++, dm++) {
-            u = XA + (n * i);
-            v = XB + (n * j);
-            *dm = mahalanobis_distance(u, v, covinv, dimbuf1, dimbuf2, n);
-        }
-    }
-    dimbuf2 = 0;
-}
-
-static NPY_INLINE void
-cdist_seuclidean(const double *XA, const double *XB, const double *var,
-                 double *dm, npy_intp mA, npy_intp mB, npy_intp n)
-{
-    const double *u, *v;
-    npy_intp i, j;
-
-    for (i = 0; i < mA; i++) {
-        for (j = 0; j < mB; j++, dm++) {
-            u = XA + (n * i);
-            v = XB + (n * j);
-            *dm = seuclidean_distance(var, u, v, n);
-        }
-    }
-}
-
-static NPY_INLINE void
-cdist_minkowski(const double *XA, const double *XB, double *dm,
-                npy_intp mA, npy_intp mB, npy_intp n, double p)
-{
-    const double *u, *v;
-    npy_intp i, j;
-
-    for (i = 0; i < mA; i++) {
-        for (j = 0; j < mB; j++, dm++) {
-            u = XA + (n * i);
-            v = XB + (n * j);
-            *dm = minkowski_distance(u, v, n, p);
-        }
-    }
-}
-
-static NPY_INLINE void
-cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
-                         npy_intp mA, npy_intp mB, npy_intp n, double p,
-                         const double *w)
-{
-    npy_intp i, j;
-    const double *u, *v;
-
-    for (i = 0; i < mA; i++) {
-        for (j = 0; j < mB; j++, dm++) {
-            u = XA + (n * i);
-            v = XB + (n * j);
-            *dm = weighted_minkowski_distance(u, v, n, p, w);
-        }
-    }
-}
-
-#define DEFINE_CDIST(name, type) \
-    static void cdist_ ## name ## _ ## type(const type *XA, const type *XB, \
-                                            double *dm,                     \
-                                            npy_intp mA, npy_intp mB,       \
-                                            npy_intp n)                     \
-    {                                                                       \
-        Py_ssize_t i, j;                                                    \
-        const type *u, *v;                                                  \
-        for (i = 0; i < mA; i++) {                                          \
-            for (j = 0; j < mB; j++, dm++) {                                \
-                u = XA + n * i;                                             \
-                v = XB + n * j;                                             \
-                *dm = name ## _distance_ ## type(u, v, n);                  \
-            }                                                               \
-        }                                                                   \
-    }
-
-DEFINE_CDIST(bray_curtis, double)
-DEFINE_CDIST(canberra, double)
-DEFINE_CDIST(chebyshev, double)
-DEFINE_CDIST(city_block, double)
-DEFINE_CDIST(euclidean, double)
-DEFINE_CDIST(hamming, double)
-DEFINE_CDIST(jaccard, double)
-DEFINE_CDIST(sqeuclidean, double)
-
-DEFINE_CDIST(dice, char)
-DEFINE_CDIST(hamming, char)
-DEFINE_CDIST(jaccard, char)
-DEFINE_CDIST(kulsinski, char)
-DEFINE_CDIST(rogerstanimoto, char)
-DEFINE_CDIST(russellrao, char)
-DEFINE_CDIST(sokalmichener, char)
-DEFINE_CDIST(sokalsneath, char)
-DEFINE_CDIST(yule_bool, char)
-
-
-#define DEFINE_PDIST(name, type) \
-    static void pdist_ ## name ## _ ## type(const type *X, double *dm,      \
-                                            npy_intp m, npy_intp n)         \
-    {                                                                       \
-        Py_ssize_t i, j;                                                    \
-        const type *u, *v;                                                  \
-        double *it = dm;                                                    \
-        for (i = 0; i < m; i++) {                                           \
-            for (j = i + 1; j < m; j++, it++) {                             \
-                u = X + n * i;                                              \
-                v = X + n * j;                                              \
-                *it = name ## _distance_ ## type(u, v, n);                  \
-            }                                                               \
-        }                                                                   \
-    }
-
-DEFINE_PDIST(bray_curtis, double)
-DEFINE_PDIST(canberra, double)
-DEFINE_PDIST(chebyshev, double)
-DEFINE_PDIST(city_block, double)
-DEFINE_PDIST(euclidean, double)
-DEFINE_PDIST(hamming, double)
-DEFINE_PDIST(jaccard, double)
-DEFINE_PDIST(sqeuclidean, double)
-
-DEFINE_PDIST(dice, char)
-DEFINE_PDIST(hamming, char)
-DEFINE_PDIST(jaccard, char)
-DEFINE_PDIST(kulsinski, char)
-DEFINE_PDIST(rogerstanimoto, char)
-DEFINE_PDIST(russellrao, char)
-DEFINE_PDIST(sokalmichener, char)
-DEFINE_PDIST(sokalsneath, char)
-DEFINE_PDIST(yule_bool, char)

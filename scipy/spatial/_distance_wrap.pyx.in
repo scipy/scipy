@@ -1,0 +1,345 @@
+# Python wrappers for distance functions (cdist/pdist).
+#
+# Cython translation of an earlier C module, which carried the following
+# message:
+#
+# Copyright (c) 2007, Damian Eads. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#   - Redistributions of source code must retain the above
+#     copyright notice, this list of conditions and the
+#     following disclaimer.
+#   - Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer
+#     in the documentation and/or other materials provided with the
+#     distribution.
+#   - Neither the name of the author nor the names of its
+#     contributors may be used to endorse or promote products derived
+#     from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from libc.stdlib cimport calloc, free
+cimport numpy as np
+
+
+np.import_array()
+
+
+{{py:
+
+# Vector type, empty string or "_bool" (for legacy reasons), list of supported
+# distances.
+distance_kernels = [
+    ("double", "", [
+        "bray_curtis",
+        "canberra",
+        "chebyshev",
+        "city_block",
+        "euclidean",
+        "hamming",
+        "jaccard",
+        "sqeuclidean",
+    ]),
+    ("char", "_bool", [
+        "dice",
+        "hamming",
+        "jaccard",
+        "kulsinski",
+        "rogerstanimoto",
+        "russellrao",
+        "sokalmichener",
+        "sokalsneath",
+        "yule",
+    ]),
+]
+
+}}
+
+
+cdef extern from "src/distance_impl.h":
+    void dist_to_squareform_from_vector(double *, const double *,
+                                        np.intp_t) nogil
+    void dist_to_vector_from_squareform(const double *, double *,
+                                        np.intp_t) nogil
+
+    {{for typ, _, names in distance_kernels}}
+    {{for name in names}}
+    double {{name}}_distance_{{typ}}(const {{typ}} *, const {{typ}} *,
+                                     np.intp_t) nogil
+    {{endfor}}
+    {{endfor}}
+
+    # Functions with additional arguments.
+    double mahalanobis_distance(const double *, const double *, const double *,
+                                double *, double *, np.intp_t) nogil
+    double minkowski_distance(const double *, const double *, np.intp_t,
+                              double) nogil
+    double seuclidean_distance(const double *, const double *, const double *,
+                               np.intp_t) nogil
+    double weighted_minkowski_distance(const double *, const double *,
+                                       np.intp_t, double, const double *) nogil
+
+    # This one only exists as a pdist. The cdist version is in distance.py.
+    void pdist_cosine(const double *, double *, np.intp_t, np.intp_t,
+                      const double *) nogil
+
+
+# The [cp]dist functions below closely follow the original C code and hence
+# mess with pointers a lot. Maybe refactor to use memoryviews?
+
+{{for typ, typname, names in distance_kernels}}
+{{for name in names}}
+
+def cdist_{{name}}{{typname}}_wrap(np.ndarray A, np.ndarray B, np.ndarray dm):
+    cdef np.intp_t i, j, mA, mB, n
+    cdef const {{typ}} *u
+    cdef const {{typ}} *v
+    cdef double *out
+
+    with nogil:
+        mA = A.shape[0]
+        mB = B.shape[0]
+        n = A.shape[1]
+        out = <double *>dm.data
+
+        for i in range(mA):
+            for j in range(mB):
+                u = <const {{typ}} *>A.data + n * i
+                v = <const {{typ}} *>B.data + n * j
+                out[0] = {{name}}_distance_{{typ}}(u, v, n)
+                out += 1
+
+
+def pdist_{{name}}{{typname}}_wrap(np.ndarray X, np.ndarray dm):
+    cdef np.intp_t i, j, m, n
+    cdef const {{typ}} *u
+    cdef const {{typ}} *v
+    cdef double *out
+
+    with nogil:
+        m = X.shape[0]
+        n = X.shape[1]
+        out = <double *>dm.data
+
+        for i in range(m):
+            for j in range(i + 1, m):
+                u = <const {{typ}} *>X.data + n * i
+                v = <const {{typ}} *>X.data + n * j
+                out[0] = {{name}}_distance_{{typ}}(u, v, n)
+                out += 1
+
+{{endfor}}
+{{endfor}}
+
+
+def pdist_cosine_wrap(np.ndarray X, np.ndarray dm, np.ndarray norms):
+    with nogil:
+        pdist_cosine(<const double *>X.data, <double *>dm.data,
+                     X.shape[0], X.shape[1], <const double *>norms.data)
+
+
+cdef inline double *mahalanobis_dimbuf(ssize_t n) except NULL:
+    cdef double *dimbuf = <double *>calloc(n, 2 * sizeof(double))
+    if dimbuf == NULL:
+        raise MemoryError("could not allocate %d * %d bytes",
+                          n, 2 * sizeof(double))
+    return dimbuf
+
+
+def cdist_mahalanobis_wrap(np.ndarray A, np.ndarray B, np.ndarray covinv,
+                           np.ndarray dm):
+    cdef np.intp_t i, j, mA, mB, n
+    cdef const double *u
+    cdef const double *v
+    cdef double *out
+
+    n = A.shape[1]
+    cdef double *dimbuf1 = mahalanobis_dimbuf(n)
+    cdef double *dimbuf2 = dimbuf1 + n
+
+    with nogil:
+        mA = A.shape[0]
+        mB = B.shape[0]
+        out = <double *>dm.data
+
+        for i in range(mA):
+            for j in range(mB):
+                u = <const double *>A.data + n * i
+                v = <const double *>B.data + n * j
+                out[0] = mahalanobis_distance(u, v, <double *>covinv.data,
+                                              dimbuf1, dimbuf2, n)
+                out += 1
+
+        free(dimbuf1)
+
+
+def pdist_mahalanobis_wrap(np.ndarray X, np.ndarray covinv, np.ndarray dm):
+    cdef np.intp_t i, j, m, n
+    cdef const double *u
+    cdef const double *v
+    cdef double *out
+
+    n = X.shape[1]
+    cdef double *dimbuf1 = mahalanobis_dimbuf(n)
+    cdef double *dimbuf2 = dimbuf1 + n
+
+    with nogil:
+        m = X.shape[0]
+        out = <double *>dm.data
+
+        for i in range(m):
+            for j in range(i + 1, m):
+                u = <const double *>X.data + n * i
+                v = <const double *>X.data + n * j
+                out[0] = mahalanobis_distance(u, v, <double *>covinv.data,
+                                              dimbuf1, dimbuf2, n)
+                out += 1
+
+        free(dimbuf1)
+
+
+def cdist_minkowski_wrap(np.ndarray A, np.ndarray B, np.ndarray dm, double p):
+    cdef np.intp_t i, j, mA, mB, n
+    cdef const double *u
+    cdef const double *v
+    cdef double *out
+
+    with nogil:
+        mA = A.shape[0]
+        mB = B.shape[0]
+        n = A.shape[1]
+        out = <double *>dm.data
+
+        for i in range(mA):
+            for j in range(mB):
+                u = <const double *>A.data + n * i
+                v = <const double *>B.data + n * j
+                out[0] = minkowski_distance(u, v, n, p)
+                out += 1
+
+
+def pdist_minkowski_wrap(np.ndarray X, np.ndarray dm, double p):
+    cdef np.intp_t i, j, m, n
+    cdef const double *u
+    cdef const double *v
+    cdef double *out
+
+    with nogil:
+        m = X.shape[0]
+        n = X.shape[1]
+        out = <double *>dm.data
+
+        for i in range(m):
+            for j in range(i + 1, m):
+                u = <const double *>X.data + n * i
+                v = <const double *>X.data + n * j
+                out[0] = minkowski_distance(u, v, n, p)
+                out += 1
+
+
+def cdist_seuclidean_wrap(np.ndarray A, np.ndarray B, np.ndarray var,
+                          np.ndarray dm):
+    cdef np.intp_t i, j, mA, mB, n
+    cdef const double *u
+    cdef const double *v
+    cdef double *out
+
+    with nogil:
+        mA = A.shape[0]
+        mB = B.shape[0]
+        n = A.shape[1]
+        out = <double *>dm.data
+
+        for i in range(mA):
+            for j in range(mB):
+                u = <const double *>A.data + n * i
+                v = <const double *>B.data + n * j
+                out[0] = seuclidean_distance(<const double *>var.data, u, v, n)
+                out += 1
+
+
+def pdist_seuclidean_wrap(np.ndarray X, np.ndarray var, np.ndarray dm):
+    cdef np.intp_t i, j, m, n
+    cdef const double *u
+    cdef const double *v
+    cdef double *out
+
+    with nogil:
+        m = X.shape[0]
+        n = X.shape[1]
+        out = <double *>dm.data
+
+        for i in range(m):
+            for j in range(i + 1, m):
+                u = <const double *>X.data + n * i
+                v = <const double *>X.data + n * j
+                out[0] = seuclidean_distance(<const double *>var.data, u, v, n)
+                out += 1
+
+
+def cdist_weighted_minkowski_wrap(np.ndarray A, np.ndarray B, np.ndarray dm,
+                                  double p, np.ndarray w):
+    cdef np.intp_t i, j, mA, mB, n
+    cdef const double *u
+    cdef const double *v
+    cdef double *out
+
+    with nogil:
+        mA = A.shape[0]
+        mB = B.shape[0]
+        n = A.shape[1]
+        out = <double *>dm.data
+
+        for i in range(mA):
+            for j in range(mB):
+                u = <const double *>A.data + n * i
+                v = <const double *>B.data + n * j
+                out[0] = weighted_minkowski_distance(u, v, n, p,
+                                                     <const double *>w.data)
+                out += 1
+
+
+def pdist_weighted_minkowski_wrap(np.ndarray X, np.ndarray dm,
+                                  double p, np.ndarray w):
+    cdef np.intp_t i, j, m, n
+    cdef const double *u
+    cdef const double *v
+    cdef double *out
+
+    with nogil:
+        m = X.shape[0]
+        n = X.shape[1]
+        out = <double *>dm.data
+
+        for i in range(m):
+            for j in range(i + 1, m):
+                u = <const double *>X.data + n * i
+                v = <const double *>X.data + n * j
+                out[0] = weighted_minkowski_distance(u, v, n, p,
+                                                     <const double *>w.data)
+                out += 1
+
+
+def to_squareform_from_vector_wrap(np.ndarray M, np.ndarray v):
+    with nogil:
+        dist_to_squareform_from_vector(<double *>M.data,
+                                       <const double *>v.data, M.shape[0])
+
+
+def to_vector_from_squareform_wrap(np.ndarray M, np.ndarray v):
+    with nogil:
+        dist_to_vector_from_squareform(<const double *>M.data,
+                                       <double *>v.data, M.shape[0])

@@ -14,7 +14,7 @@ Library:
             ckdtree/src/query_ball_tree.cxx,
             ckdtree/src/sparse_distances.cxx
     Extension: _distance_wrap
-        Sources: src/distance_wrap.c
+        Sources: _distance_wrap.c
     Extension: qhull
         Sources:
             qhull.c,

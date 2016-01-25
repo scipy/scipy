@@ -195,6 +195,8 @@ scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.cxx
 scipy/spatial/ckdtree.h
+scipy/spatial/_distance_wrap.c
+scipy/spatial/_distance_wrap.pyx
 scipy/spatial/qhull.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h

@@ -64,7 +64,7 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=inc_dirs + [join('ckdtree','src')])
     # _distance_wrap
     config.add_extension('_distance_wrap',
-        sources=[join('src', 'distance_wrap.c')],
+        sources=['_distance_wrap.c'],
         depends=[join('src', 'distance_impl.h')],
         include_dirs=[get_numpy_include_dirs()],
         extra_info=get_misc_info("npymath"))
