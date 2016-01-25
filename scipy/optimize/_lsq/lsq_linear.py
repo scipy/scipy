@@ -64,7 +64,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
               the number of variables.
             * 'bvls' : Bounded-Variable Least-Squares algorithm. This is
               an active set method, which requires the number of iterations
-              comparable to the number of variables. Can’t be used when `A` is
+              comparable to the number of variables. Can't be used when `A` is
               sparse or LinearOperator.
 
         Default is 'trf'.
@@ -127,7 +127,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             * -1 : a lower bound is active.
             *  1 : an upper bound is active.
 
-        Might be somewhat arbitrary for ‘trf’ method as it generates a sequence
+        Might be somewhat arbitrary for `trf` method as it generates a sequence
         of strictly feasible iterates and active_mask is determined within a
         tolerance threshold.
     nit : int
