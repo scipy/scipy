@@ -177,6 +177,7 @@ from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 
 from ._rank import tiecorrect
+from ._stats import _kendalltau
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -3196,8 +3197,8 @@ def pointbiserialr(x, y):
     rpb, prob = pearsonr(x, y)
     return PointbiserialrResult(rpb, prob)
 
-KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
+KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
     """
@@ -3282,14 +3283,14 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
     nan
 
     """
-    x = np.asarray(x).ravel()
-    y = np.asarray(y).ravel()
 
-    if x.size != y.size:
+    if len(x) != len(y):
         raise ValueError("All inputs to `kendalltau` must be of the same size, "
-                         "found x-size %s and y-size %s" % (x.size, y.size))
-    elif not x.size:
+                         "found x-size %s and y-size %s" % (len(x), len(y)))
+    elif not len(x):
         return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
+    elif len(x) >= 2**32:
+        raise ValueError("Inputs to `kendalltau` must have less than 2^32 elements")
 
     # check both x and y
     contains_nan, nan_policy = (_contains_nan(x, nan_policy) or
@@ -3299,113 +3300,11 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
         return KendalltauResult(np.nan, np.nan)
 
     elif contains_nan and nan_policy == 'omit':
-        x = ma.masked_invalid(x)
-        y = ma.masked_invalid(y)
+        x = ma.masked_invalid(np.asarray(x).ravel())
+        y = ma.masked_invalid(np.asarray(y).ravel())
         return mstats_basic.kendalltau(x, y)
 
-    n = np.int64(len(x))
-    temp = list(range(n))  # support structure used by mergesort
-    # this closure recursively sorts sections of perm[] by comparing
-    # elements of y[perm[]] using temp[] as support
-    # returns the number of swaps required by an equivalent bubble sort
-
-    def mergesort(offset, length):
-        exchcnt = 0
-
-        # We use insertion sort on small arrays
-        if length < 32:
-            end = offset + length
-            for i in xrange(offset + 1, end):
-                t = perm[i]
-                j = i
-                u = perm[j - 1]
-                while y[t] < y[u]:
-                    exchcnt += 1
-                    perm[j] = u
-                    j -= 1
-                    if offset == j:
-                        break
-                    u = perm[j - 1]
-
-                perm[j] = t
-            return exchcnt
-
-        length0 = length // 2
-        length1 = length - length0
-        middle = offset + length0
-        exchcnt += mergesort(offset, length0)
-        exchcnt += mergesort(middle, length1)
-        if y[perm[middle - 1]] < y[perm[middle]]:
-            return exchcnt
-
-        # merging
-        i = j = k = 0
-        while j < length0 and k < length1:
-            if y[perm[offset + j]] <= y[perm[middle + k]]:
-                temp[i] = perm[offset + j]
-                j += 1
-            else:
-                temp[i] = perm[middle + k]
-                k += 1
-                exchcnt += length0 - j
-            i += 1
-
-        perm[offset+i:offset+i+length0-j] = perm[offset+j:offset+length0]
-        perm[offset:offset+i] = temp[0:i]
-        return exchcnt
-
-    # initial sort on values of x and, if tied, on values of y
-    perm = list(range(n))
-    perm.sort(key=lambda a: (x[a],y[a]))
-
-    # compute joint ties
-    first = 0
-    t = 0
-    for i in xrange(1, n):
-        if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
-            t += ((i - first) * (i - first - 1)) // 2
-            first = i
-    t += ((n - first) * (n - first - 1)) // 2
-
-    # compute ties in x
-    first = 0
-    u = 0
-    for i in xrange(1, n):
-        if x[perm[first]] != x[perm[i]]:
-            u += ((i - first) * (i - first - 1)) // 2
-            first = i
-    u += ((n - first) * (n - first - 1)) // 2
-
-    # count exchanges
-    exchanges = mergesort(0, n)
-    # compute ties in y after mergesort with counting
-    first = 0
-    v = 0
-    for i in xrange(1, n):
-        if y[perm[first]] != y[perm[i]]:
-            v += ((i - first) * (i - first - 1)) // 2
-            first = i
-    v += ((n - first) * (n - first - 1)) // 2
-
-    tot = (n * (n - 1)) // 2
-    if tot == u or tot == v:
-        # Special case for all ties in both ranks
-        return KendalltauResult(np.nan, np.nan)
-
-    # Prevent overflow; equal to np.sqrt((tot - u) * (tot - v))
-    denom = np.exp(0.5 * (np.log(tot - u) + np.log(tot - v)))
-    # Limit range to fix computational errors
-    tau = min(1, max(-1, ((tot - (v + u - t)) - 2.0 * exchanges) / denom))
-
-    if u == 0 and v == 0:
-        # what follows reproduces the ending of Gary Strangman's original
-        # stats.kendalltau() in SciPy
-        svar = (4.0 * n + 10.0) / (9.0 * n * (n - 1))
-        z = tau / np.sqrt(svar)
-        prob = special.erfc(np.abs(z) / 1.4142136)
-        return KendalltauResult(tau, prob)
-
-    return KendalltauResult(tau, np.nan)
+    return _kendalltau(np.asarray(x).ravel(), np.asarray(y).ravel())
 
 
 #####################################
