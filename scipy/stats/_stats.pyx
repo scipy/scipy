@@ -36,7 +36,7 @@ def _kendalltau(ordered[:] x, ordered[:] y):
     def mergesort(uint64_t offset, uint64_t length):
         cdef uint64_t exchcnt = 0, end, t, i, j, k, u
         # We use insertion sort on small arrays
-        if length < 32:
+        if length < 16:
             end = offset + length;
             for i in xrange(offset + 1, end):
                 t = perm[i]
