@@ -1728,13 +1728,10 @@ def _cosine_cdist(XA, XB, dm):
     XA = _convert_to_double(XA)
     XB = _convert_to_double(XB)
 
-    normsA = _row_norms(XA)
-    normsB = _row_norms(XB)
-
     np.dot(XA, XB.T, out=dm)
 
-    dm /= normsA.reshape(-1, 1)
-    dm /= normsB
+    dm /= _row_norms(XA).reshape(-1, 1)
+    dm /= _row_norms(XB)
     dm *= -1
     dm += 1
 
