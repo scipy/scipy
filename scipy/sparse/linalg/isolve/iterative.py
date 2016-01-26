@@ -10,6 +10,8 @@ from scipy.sparse.linalg.interface import LinearOperator
 from scipy._lib.decorator import decorator
 from .utils import make_system
 from scipy._lib._util import _aligned_zeros
+from scipy import linalg
+import numpy as np
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
@@ -86,6 +88,17 @@ def non_reentrant(func, *a, **kw):
     finally:
         d['__entered'] = False
 
+def axpby(a, x, b, y, axpy):
+    "perform y = b*y + a*x in place, handling special cases"
+    if b == 0:
+        if a == 1:
+            y[:] = x
+        else:
+            np.multiply(a, x, y)
+        return
+    elif b != 1:
+        np.multiply(b, y, y)
+    axpy(x,y,a=a)
 
 @set_docstring('Use BIConjugate Gradient iteration to solve A x = b',
                'The real or complex N-by-N matrix of the linear system\n'
@@ -104,6 +117,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'bicgrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
+    axpy = linalg.get_blas_funcs('axpy', dtype=x.dtype)
 
     resid = tol
     ndx1 = 1
@@ -128,18 +142,15 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
+            axpby(sclr1, matvec(work[slice1]), sclr2, work[slice2], axpy)
         elif (ijob == 2):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*rmatvec(work[slice1])
+            axpby(sclr1, rmatvec(work[slice1]), sclr2, work[slice2], axpy)
         elif (ijob == 3):
             work[slice1] = psolve(work[slice2])
         elif (ijob == 4):
             work[slice1] = rpsolve(work[slice2])
         elif (ijob == 5):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
+            axpby(sclr1, matvec(x), sclr2, work[slice2], axpy)
         elif (ijob == 6):
             if ftflag:
                 info = -1
@@ -170,6 +181,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'bicgstabrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
+    axpy = linalg.get_blas_funcs('axpy', dtype=x.dtype)
 
     resid = tol
     ndx1 = 1
@@ -194,13 +206,11 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
+            axpby(sclr1, matvec(work[slice1]), sclr2, work[slice2], axpy)
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
+            axpby(sclr1, matvec(x), sclr2, work[slice2], axpy)
         elif (ijob == 4):
             if ftflag:
                 info = -1
@@ -231,6 +241,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'cgrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
+    axpy = linalg.get_blas_funcs('axpy', dtype=x.dtype)
 
     resid = tol
     ndx1 = 1
@@ -255,13 +266,11 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
+            axpby(sclr1, matvec(work[slice1]), sclr2, work[slice2], axpy)
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
+            axpby(sclr1, matvec(x), sclr2, work[slice2], axpy)
         elif (ijob == 4):
             if ftflag:
                 info = -1
@@ -291,6 +300,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'cgsrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
+    axpy = linalg.get_blas_funcs('axpy', dtype=x.dtype)
 
     resid = tol
     ndx1 = 1
@@ -315,13 +325,11 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
+            axpby(sclr1, matvec(work[slice1]), sclr2, work[slice2], axpy)
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
         elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
+            axpby(sclr1, matvec(x), sclr2, work[slice2], axpy)
         elif (ijob == 4):
             if ftflag:
                 info = -1
@@ -434,6 +442,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'gmresrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
+    axpy = linalg.get_blas_funcs('axpy', dtype=x.dtype)
 
     resid = tol
     ndx1 = 1
@@ -465,8 +474,9 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
 
             break
         elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
+            #work[slice2] *= sclr2
+            #work[slice2] += sclr1*matvec(x)
+            axpby(sclr1, matvec(x), sclr2, work[slice2], axpy)
         elif (ijob == 2):
             work[slice1] = psolve(work[slice2])
             if not first_pass and old_ijob == 3:
@@ -476,6 +486,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
         elif (ijob == 3):
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
+            #axpby(sclr1, matvec(work[slice1]), sclr2, work[slice2], axpy)
             if resid_ready and callback is not None:
                 callback(resid)
                 resid_ready = False
@@ -588,6 +599,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     ltr = _type_conv[x.dtype.char]
     revcom = getattr(_iterative, ltr + 'qmrrevcom')
     stoptest = getattr(_iterative, ltr + 'stoptest2')
+    axpy = linalg.get_blas_funcs('axpy', dtype=x.dtype)
 
     resid = tol
     ndx1 = 1
@@ -612,11 +624,9 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
                 callback(x)
             break
         elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*A.matvec(work[slice1])
+            axpby(sclr1, A.matvec(work[slice1]), sclr2, work[slice2], axpy)
         elif (ijob == 2):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*A.rmatvec(work[slice1])
+            axpby(sclr1, A.rmatvec(work[slice1]), sclr2, work[slice2], axpy)
         elif (ijob == 3):
             work[slice1] = M1.matvec(work[slice2])
         elif (ijob == 4):
@@ -626,8 +636,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
         elif (ijob == 6):
             work[slice1] = M2.rmatvec(work[slice2])
         elif (ijob == 7):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*A.matvec(x)
+            axpby(sclr1, A.matvec(x), sclr2, work[slice2], axpy)
         elif (ijob == 8):
             if ftflag:
                 info = -1
