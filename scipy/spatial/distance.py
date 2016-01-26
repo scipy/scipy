@@ -2118,10 +2118,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 # The C code doesn't do striding.
                 VV = _copy_array_if_base_present(_convert_to_double(V))
             else:
-                X = np.vstack([XA, XB])
-                VV = np.var(X, axis=0, ddof=1)
-                X = None
-                del X
+                VV = np.var(np.vstack([XA, XB]), axis=0, ddof=1)
             _distance_wrap.cdist_seuclidean_wrap(XA, XB, VV, dm)
         elif mstr in set(['cosine', 'cos']):
             XA = _convert_to_double(XA)
@@ -2151,7 +2148,6 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                                      "are required." % (m, n, n + 1))
                 X = np.vstack([XA, XB])
                 V = np.atleast_2d(np.cov(X.T))
-                X = None
                 del X
                 VI = np.linalg.inv(V).T.copy()
             # (u-v)V^(-1)(u-v)^T
