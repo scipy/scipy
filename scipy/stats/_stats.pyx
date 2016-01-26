@@ -7,7 +7,15 @@ from collections import namedtuple
 cimport numpy as np
 cimport cython
 
-ctypedef fused ordered:
+ctypedef fused ordered0:
+    char
+    short
+    int
+    long
+    float
+    double
+
+ctypedef fused ordered1:
     char
     short
     int
@@ -24,7 +32,7 @@ KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _kendalltau(ordered[:] x, ordered[:] y):
+def _kendalltau(ordered0[:] x, ordered1[:] y):
 
     cdef uint64_t n = np.uint64(len(x))
     cdef long[:] temp = np.ndarray(n, dtype=long) # support structure used by mergesort
