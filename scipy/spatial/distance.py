@@ -121,17 +121,6 @@ def _copy_array_if_base_present(a):
         return a
 
 
-def _copy_arrays_if_base_present(T):
-    """
-    Accepts a tuple of arrays T. Copies the array T[i] if its base array
-    points to an actual array. Otherwise, the reference is just copied.
-    This is useful if the arrays are being passed to a C function that
-    does not do proper striding.
-    """
-    l = [_copy_array_if_base_present(a) for a in T]
-    return l
-
-
 def _convert_to_bool(X):
     if X.dtype != bool:
         X = X.astype(bool)
@@ -1182,7 +1171,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     X = np.asarray(X, order='c')
 
     # The C code doesn't do striding.
-    X = _copy_arrays_if_base_present([X])[0]
+    X = _copy_array_if_base_present(X)
 
     s = X.shape
     if len(s) != 2:
@@ -1260,8 +1249,6 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             X = _convert_to_double(X)
             if V is not None:
                 V = np.asarray(V, order='c')
-                if type(V) != np.ndarray:
-                    raise TypeError('Variance vector V must be a numpy array')
                 if V.dtype != np.double:
                     raise TypeError('Variance vector V must contain doubles.')
                 if len(V.shape) != 1:
@@ -1272,7 +1259,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                             'dimension as the vectors on which the distances '
                             'are computed.')
                 # The C code doesn't do striding.
-                [VV] = _copy_arrays_if_base_present([_convert_to_double(V)])
+                VV = _copy_array_if_base_present(_convert_to_double(V))
             else:
                 VV = np.var(X, axis=0, ddof=1)
             _distance_wrap.pdist_seuclidean_wrap(X, VV, dm)
@@ -1300,11 +1287,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             X = _convert_to_double(X)
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI, order='c'))
-                if type(VI) != np.ndarray:
-                    raise TypeError('VI must be a numpy array.')
-                if VI.dtype != np.double:
-                    raise TypeError('The array must contain 64-bit floats.')
-                [VI] = _copy_arrays_if_base_present([VI])
+                VI = _copy_array_if_base_present(VI)
             else:
                 if m <= n:
                     # There are fewer observations than the dimension of
@@ -1364,7 +1347,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 VI = np.linalg.inv(V)
             else:
                 VI = np.asarray(VI, order='c')
-            [VI] = _copy_arrays_if_base_present([VI])
+            VI = _copy_array_if_base_present(VI)
             # (u-v)V^(-1)(u-v)^T
             dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
         elif metric == 'test_canberra':
@@ -1461,9 +1444,6 @@ def squareform(X, force="no", checks=True):
 
     X = _convert_to_double(np.asarray(X, order='c'))
 
-    if not np.issubsctype(X, np.double):
-        raise TypeError('A double array must be passed.')
-
     s = X.shape
 
     if force.lower() == 'tomatrix':
@@ -1495,7 +1475,7 @@ def squareform(X, force="no", checks=True):
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
-        [X] = _copy_arrays_if_base_present([X])
+        X = _copy_array_if_base_present(X)
 
         # Fill in the values of the distance matrix.
         _distance_wrap.to_squareform_from_vector_wrap(M, X)
@@ -1519,7 +1499,7 @@ def squareform(X, force="no", checks=True):
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
-        [X] = _copy_arrays_if_base_present([X])
+        X = _copy_array_if_base_present(X)
 
         # Convert the vector to squareform.
         _distance_wrap.to_vector_from_squareform_wrap(X, v)
@@ -1653,12 +1633,6 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     y = np.asarray(y, order='c')
     valid = True
     try:
-        if type(y) != np.ndarray:
-            if name:
-                raise TypeError(('\'%s\' passed as a condensed distance '
-                                 'matrix is not a numpy array.') % name)
-            else:
-                raise TypeError('Variable is not a numpy array.')
         if y.dtype != np.double:
             if name:
                 raise TypeError(('Condensed distance matrix \'%s\' must '
@@ -1746,7 +1720,7 @@ def num_obs_y(Y):
 
 
 def _row_norms(X):
-    norms = np.einsum('ij,ij->i', X, X)
+    norms = np.einsum('ij,ij->i', X, X, dtype=np.double)
     return np.sqrt(norms, out=norms)
 
 
@@ -2041,8 +2015,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     XB = np.asarray(XB, order='c')
 
     # The C code doesn't do striding.
-    XA = _copy_arrays_if_base_present([_convert_to_double(XA)])[0]
-    XB = _copy_arrays_if_base_present([_convert_to_double(XB)])[0]
+    XA = _copy_array_if_base_present(_convert_to_double(XA))
+    XB = _copy_array_if_base_present(_convert_to_double(XB))
 
     s = XA.shape
     sB = XB.shape
@@ -2132,8 +2106,6 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             XB = _convert_to_double(XB)
             if V is not None:
                 V = np.asarray(V, order='c')
-                if type(V) != np.ndarray:
-                    raise TypeError('Variance vector V must be a numpy array')
                 if V.dtype != np.double:
                     raise TypeError('Variance vector V must contain doubles.')
                 if len(V.shape) != 1:
@@ -2144,7 +2116,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                                      'dimension as the vectors on which the '
                                      'distances are computed.')
                 # The C code doesn't do striding.
-                VV = _copy_arrays_if_base_present([_convert_to_double(V)])[0]
+                VV = _copy_array_if_base_present(_convert_to_double(V))
             else:
                 X = np.vstack([XA, XB])
                 VV = np.var(X, axis=0, ddof=1)
@@ -2166,11 +2138,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             XB = _convert_to_double(XB)
             if VI is not None:
                 VI = _convert_to_double(np.asarray(VI, order='c'))
-                if type(VI) != np.ndarray:
-                    raise TypeError('VI must be a numpy array.')
-                if VI.dtype != np.double:
-                    raise TypeError('The array must contain 64-bit floats.')
-                [VI] = _copy_arrays_if_base_present([VI])
+                VI = _copy_array_if_base_present(VI)
             else:
                 m = mA + mB
                 if m <= n:
@@ -2249,7 +2217,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 del X
             else:
                 VI = np.asarray(VI, order='c')
-            [VI] = _copy_arrays_if_base_present([VI])
+            VI = _copy_array_if_base_present(VI)
             # (u-v)V^(-1)(u-v)^T
             dm = cdist(XA, XB, (lambda u, v: mahalanobis(u, v, VI)))
         elif metric == 'test_canberra':
