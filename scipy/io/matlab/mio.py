@@ -75,7 +75,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     ----------
     file_name : str
        Name of the mat file (do not need .mat extension if
-       appendmat==True) Can also pass open file-like object.
+       appendmat==True). Can also pass open file-like object.
     mdict : dict, optional
         Dictionary in which to insert matfile variables.
     appendmat : bool, optional
