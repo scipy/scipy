@@ -302,7 +302,7 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
                 const T * A = Ax + jj*RN;
                 const T * B = Bx + kk*NC;
 
-                gemm(R, C, N, A, B, mats[k]);
+                gemm(R, C, N, A, static_cast<T>(1), B, mats[k]);
             }
         }         
 
@@ -723,38 +723,42 @@ void bsr_minimum_bsr(const I n_row, const I n_col, const I R, const I C,
 
 template <class I, class T>
 void bsr_matvec(const I n_brow,
-	            const I n_bcol, 
-	            const I R, 
-	            const I C, 
-	            const I Ap[], 
-	            const I Aj[], 
-	            const T Ax[],
-	            const T Xx[],
-	                  T Yx[])
+                const I n_bcol,
+                const I R,
+                const I C,
+                const I Ap[],
+                const I Aj[],
+                const T Ax[],
+                const T alpha,
+                const T Xx[],
+                const T beta,
+                      T Yx[])
 {
     assert(R > 0 && C > 0);
 
     if( R == 1 && C == 1 ){
-        //use CSR for 1x1 blocksize 
-        csr_matvec(n_brow, n_bcol, Ap, Aj, Ax, Xx, Yx);
+        //use CSR for 1x1 blocksize
+        csr_matvec(n_brow, n_bcol, Ap, Aj, Ax, alpha, Xx, beta, Yx);
         return;
     }
 
     const npy_intp RC = (npy_intp)R*C;
     for(I i = 0; i < n_brow; i++){
         T * y = Yx + (npy_intp)R * i;
+        scal(R, beta, y);
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             const I j = Aj[jj];
             const T * A = Ax + RC * jj;
             const T * x = Xx + (npy_intp)C * j;
-            gemv(R, C, A, x, y); // y += A*x
+            gemv(R, C, A, alpha, x, y); // y += alpha*A*x 
         }
     }
 }
 
 
 /*
- * Compute Y += A*X for BSR matrix A and dense block vectors X,Y
+ * Compute Y = alpha*A*X + beta*Y for BSR matrix A and dense block vectors X,Y
+ * and scalars alpha and beta
  *
  *
  * Input Arguments:
@@ -766,7 +770,9 @@ void bsr_matvec(const I n_brow,
  *   I  Ap[n_brow+1]        - row pointer
  *   I  Aj[nblks(A)]        - column indices
  *   T  Ax[nnz(A)]          - nonzeros
+ *   T  alpha               - scalar factor multiplying A*X
  *   T  Xx[C*n_bcol,n_vecs] - input vector
+ *   T  beta                - scalar factor multiplying Y
  *
  * Output Arguments:
  *   T  Yx[R*n_brow,n_vecs] - output vector
@@ -774,21 +780,23 @@ void bsr_matvec(const I n_brow,
  */
 template <class I, class T>
 void bsr_matvecs(const I n_brow,
-	             const I n_bcol, 
+                 const I n_bcol,
                  const I n_vecs,
-	             const I R, 
-	             const I C, 
-	             const I Ap[], 
-	             const I Aj[], 
-	             const T Ax[],
-	             const T Xx[],
-	                   T Yx[])
+                 const I R,
+                 const I C,
+                 const I Ap[],
+                 const I Aj[],
+                 const T Ax[],
+                 const T alpha,
+                 const T Xx[],
+                 const T beta,
+                       T Yx[])
 {
     assert(R > 0 && C > 0);
 
     if( R == 1 && C == 1 ){
-        //use CSR for 1x1 blocksize 
-        csr_matvecs(n_brow, n_bcol, n_vecs, Ap, Aj, Ax, Xx, Yx);
+        //use CSR for 1x1 blocksize
+        csr_matvecs(n_brow, n_bcol, n_vecs, Ap, Aj, Ax, alpha, Xx, beta, Yx);
         return;
     }
 
@@ -798,11 +806,12 @@ void bsr_matvecs(const I n_brow,
 
     for(I i = 0; i < n_brow; i++){
         T * y = Yx + Y_bs * i;
+        scal(R * n_vecs, beta, y);
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             const I j = Aj[jj];
             const T * A = Ax + A_bs * jj;
             const T * x = Xx + X_bs * j;
-            gemm(R, n_vecs, C, A, x, y); // y += A*x
+            gemm(R, n_vecs, C, A, alpha, x, y); // y += A*x
         }
     }
 }

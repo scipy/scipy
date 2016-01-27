@@ -492,7 +492,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         #output array
         result = np.zeros(self.shape[0], dtype=upcast_char(self.dtype.char,
                                                             other.dtype.char))
-        coo_matvec(self.nnz, self.row, self.col, self.data, other, result)
+        coo_matvec(self.shape[0], self.nnz, self.row, self.col, self.data,
+                   1, other, 1, result)
         return result
 
     def _mul_multivector(self, other):

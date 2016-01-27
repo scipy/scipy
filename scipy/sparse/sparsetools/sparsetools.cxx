@@ -77,6 +77,7 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
  *
  *     'i': <integer> scalar
  *     'I': <integer> array
+ *     't': <data> scalar
  *     'T': <data> array
  *     'V': std::vector<integer>
  *     'W': std::vector<data>
@@ -154,7 +155,8 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             --arg_j;
             continue;
         case 'i':
-            /* Integer scalars */
+        case 't':
+            /* scalars */
             arg = PyTuple_GetItem(args, arg_j);
             if (arg == NULL) {
                 goto fail;
@@ -295,6 +297,27 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
                                 "could not convert integer scalar");
                 goto fail;
             }
+            continue;
+        }
+        else if (*p == 't') {
+            /* data scalars */
+            PyObject *a;
+            PyArrayObject *arr;
+            a = PyArray_FROMANY(arg_arrays[j], T_typenum, 0, 1, 0);
+            if (!a) {
+                PyErr_SetString(PyExc_ValueError,
+                                "could not convert data scalar");
+                goto fail;
+            }
+            arr = (PyArrayObject*)a;
+            if (PyArray_SIZE(arr) != 1) {
+                PyErr_SetString(PyExc_ValueError,
+                                "data scalar too deep.");
+                 goto fail;
+            }
+            Py_DECREF(arg_arrays[j]);
+            arg_arrays[j] = a;
+            arg_list[j] = PyArray_DATA(arr);
             continue;
         }
         else if (*p == 'B') {

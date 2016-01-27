@@ -1060,7 +1060,8 @@ void csr_eliminate_zeros(const I n_row,
 
 
 /*
- * Compute Y += A*X for CSR matrix A and dense vectors X,Y
+ * Compute Y = alpha*A*X + beta*Y for CSR matrix A and dense vectors X,Y
+ * and scalars alpha and beta
  *
  *
  * Input Arguments:
@@ -1069,7 +1070,9 @@ void csr_eliminate_zeros(const I n_row,
  *   I  Ap[n_row+1]   - row pointer
  *   I  Aj[nnz(A)]    - column indices
  *   T  Ax[nnz(A)]    - nonzeros
+ *   T  alpha         - scalar factor multiplying A*X
  *   T  Xx[n_col]     - input vector
+ *   T  beta          - scalar factor multiplying Y
  *
  * Output Arguments:
  *   T  Yx[n_row]     - output vector
@@ -1078,29 +1081,46 @@ void csr_eliminate_zeros(const I n_row,
  *   Output array Yx must be preallocated
  *
  *   Complexity: Linear.  Specifically O(nnz(A) + n_row)
- * 
+ *
  */
 template <class I, class T>
 void csr_matvec(const I n_row,
-	            const I n_col, 
-	            const I Ap[], 
-	            const I Aj[], 
-	            const T Ax[],
-	            const T Xx[],
-	                  T Yx[])
+                const I n_col,
+                const I Ap[],
+                const I Aj[],
+                const T Ax[],
+                const T alpha,
+                const T Xx[],
+                const T beta,
+                      T Yx[])
 {
-    for(I i = 0; i < n_row; i++){
-        T sum = Yx[i];
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            sum += Ax[jj] * Xx[Aj[jj]];
+    if (alpha == 0) {
+        scal(n_row, beta, Yx);
+        return;
+    }
+    if (beta == 0) {
+        for(I i = 0; i < n_row; i++){
+            T sum = 0;
+            for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+                sum += Ax[jj] * Xx[Aj[jj]];
+            }
+            Yx[i] = alpha * sum;
         }
-        Yx[i] = sum;
+    }
+    else {
+        for(I i = 0; i < n_row; i++){
+            T sum = 0;
+            for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+                sum += Ax[jj] * Xx[Aj[jj]];
+            }
+            Yx[i] = alpha * sum + beta * Yx[i];
+        }
     }
 }
 
-
 /*
- * Compute Y += A*X for CSR matrix A and dense block vectors X,Y
+ * Compute Y = alpha*A*X + beta*Y for CSR matrix A and dense block vectors X,Y
+ * and scalars alpha and beta
  *
  *
  * Input Arguments:
@@ -1110,7 +1130,9 @@ void csr_matvec(const I n_row,
  *   I  Ap[n_row+1]      - row pointer
  *   I  Aj[nnz(A)]       - column indices
  *   T  Ax[nnz(A)]       - nonzeros
+ *   T  alpha            - scalar factor multiplying A*X
  *   T  Xx[n_col,n_vecs] - input vector
+ *   T  beta             - scalar factor multiplying Y
  *
  * Output Arguments:
  *   T  Yx[n_row,n_vecs] - output vector
@@ -1118,19 +1140,26 @@ void csr_matvec(const I n_row,
  */
 template <class I, class T>
 void csr_matvecs(const I n_row,
-	             const I n_col, 
+                 const I n_col,
                  const I n_vecs,
-	             const I Ap[], 
-	             const I Aj[], 
-	             const T Ax[],
-	             const T Xx[],
-	                   T Yx[])
+                 const I Ap[],
+                 const I Aj[],
+                 const T Ax[],
+                 const T alpha,
+                 const T Xx[],
+                 const T beta,
+                       T Yx[])
 {
+    if (alpha == 0) {
+        scal(n_row * n_vecs, beta, Yx);
+        return;
+    }
     for(I i = 0; i < n_row; i++){
         T * y = Yx + (npy_intp)n_vecs * i;
+        scal(n_vecs, beta, y);
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             const I j = Aj[jj];
-            const T a = Ax[jj];
+            const T a = alpha * Ax[jj];
             const T * x = Xx + (npy_intp)n_vecs * j;
             axpy(n_vecs, a, x, y);
         }
