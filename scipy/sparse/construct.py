@@ -729,7 +729,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     """
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
-    if dtype and (dtype not in [np.float32, np.float64, np.longdouble]):
+    dtype = np.dtype(dtype)
+    if dtype.char not in 'fdg':
         raise NotImplementedError("type %s not supported" % dtype)
 
     mn = m * n
