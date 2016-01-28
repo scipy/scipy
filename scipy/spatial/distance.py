@@ -936,6 +936,36 @@ def sokalsneath(u, v):
     return float(2.0 * (ntf + nft)) / denom
 
 
+# Registry of "simple" distance metrics' pdist and cdist implementations,
+# meaning the ones that accept one dtype and have no additional arguments.
+_SIMPLE_CDIST = {}
+_SIMPLE_PDIST = {}
+
+for names, wrap_name in [
+    (['braycurtis'], "bray_curtis"),
+    (['canberra'], "canberra"),
+    (['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'], "chebyshev"),
+    (["cityblock", "cblock", "cb", "c"], "city_block"),
+    (["euclidean", "euclid", "eu", "e"], "euclidean"),
+    (["sqeuclidean", "sqe", "sqeuclid"], "sqeuclidean"),
+]:
+    cdist_fn = getattr(_distance_wrap, "cdist_%s_wrap" % wrap_name)
+    pdist_fn = getattr(_distance_wrap, "pdist_%s_wrap" % wrap_name)
+    for name in names:
+        _SIMPLE_CDIST[name] = _convert_to_double, cdist_fn
+        _SIMPLE_PDIST[name] = _convert_to_double, pdist_fn
+
+for name in ["dice", "kulsinski", "matching", "rogerstanimoto", "russellrao",
+             "sokalmichener", "sokalsneath", "yule"]:
+    wrap_name = "hamming" if name == "matching" else name
+
+    cdist_fn = getattr(_distance_wrap, "cdist_%s_bool_wrap" % wrap_name)
+    _SIMPLE_CDIST[name] = _convert_to_bool, cdist_fn
+
+    pdist_fn = getattr(_distance_wrap, "pdist_%s_bool_wrap" % wrap_name)
+    _SIMPLE_PDIST[name] = _convert_to_bool, pdist_fn
+
+
 def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     """
     Pairwise distances between observations in n-dimensional space.
@@ -1212,16 +1242,15 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        if mstr in ['euclidean', 'euclid', 'eu', 'e']:
-            X = _convert_to_double(X)
-            _distance_wrap.pdist_euclidean_wrap(X, dm)
-        elif mstr in ['sqeuclidean', 'sqe', 'sqeuclid']:
-            X = _convert_to_double(X)
-            _distance_wrap.pdist_sqeuclidean_wrap(X, dm)
-        elif mstr in ['cityblock', 'cblock', 'cb', 'c']:
-            X = _convert_to_double(X)
-            _distance_wrap.pdist_city_block_wrap(X, dm)
-        elif mstr in ['hamming', 'hamm', 'ha', 'h']:
+        try:
+            validate, pdist_fn = _SIMPLE_PDIST[mstr]
+            X = validate(X)
+            pdist_fn(X, dm)
+            return dm
+        except KeyError:
+            pass
+
+        if mstr in ['hamming', 'hamm', 'ha', 'h']:
             if X.dtype == bool:
                 X = _convert_to_bool(X)
                 _distance_wrap.pdist_hamming_bool_wrap(X, dm)
@@ -1235,9 +1264,6 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             else:
                 X = _convert_to_double(X)
                 _distance_wrap.pdist_jaccard_wrap(X, dm)
-        elif mstr in ['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']:
-            X = _convert_to_double(X)
-            _distance_wrap.pdist_chebyshev_wrap(X, dm)
         elif mstr in ['minkowski', 'mi', 'm']:
             X = _convert_to_double(X)
             _distance_wrap.pdist_minkowski_wrap(X, dm, p)
@@ -1301,36 +1327,6 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                 VI = _convert_to_double(np.linalg.inv(V).T.copy())
             # (u-v)V^(-1)(u-v)^T
             _distance_wrap.pdist_mahalanobis_wrap(X, VI, dm)
-        elif mstr == 'canberra':
-            X = _convert_to_double(X)
-            _distance_wrap.pdist_canberra_wrap(X, dm)
-        elif mstr == 'braycurtis':
-            X = _convert_to_double(X)
-            _distance_wrap.pdist_bray_curtis_wrap(X, dm)
-        elif mstr == 'yule':
-            X = _convert_to_bool(X)
-            _distance_wrap.pdist_yule_bool_wrap(X, dm)
-        elif mstr == 'matching':
-            X = _convert_to_bool(X)
-            _distance_wrap.pdist_hamming_bool_wrap(X, dm)
-        elif mstr == 'kulsinski':
-            X = _convert_to_bool(X)
-            _distance_wrap.pdist_kulsinski_bool_wrap(X, dm)
-        elif mstr == 'dice':
-            X = _convert_to_bool(X)
-            _distance_wrap.pdist_dice_bool_wrap(X, dm)
-        elif mstr == 'rogerstanimoto':
-            X = _convert_to_bool(X)
-            _distance_wrap.pdist_rogerstanimoto_bool_wrap(X, dm)
-        elif mstr == 'russellrao':
-            X = _convert_to_bool(X)
-            _distance_wrap.pdist_russellrao_bool_wrap(X, dm)
-        elif mstr == 'sokalmichener':
-            X = _convert_to_bool(X)
-            _distance_wrap.pdist_sokalmichener_bool_wrap(X, dm)
-        elif mstr == 'sokalsneath':
-            X = _convert_to_bool(X)
-            _distance_wrap.pdist_sokalsneath_bool_wrap(X, dm)
         elif metric == 'test_euclidean':
             dm = pdist(X, euclidean)
         elif metric == 'test_sqeuclidean':
@@ -2055,19 +2051,16 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        if mstr in ['euclidean', 'euclid', 'eu', 'e']:
-            XA = _convert_to_double(XA)
-            XB = _convert_to_double(XB)
-            _distance_wrap.cdist_euclidean_wrap(XA, XB, dm)
-        elif mstr in ['sqeuclidean', 'sqe', 'sqeuclid']:
-            XA = _convert_to_double(XA)
-            XB = _convert_to_double(XB)
-            _distance_wrap.cdist_sqeuclidean_wrap(XA, XB, dm)
-        elif mstr in ['cityblock', 'cblock', 'cb', 'c']:
-            XA = _convert_to_double(XA)
-            XB = _convert_to_double(XB)
-            _distance_wrap.cdist_city_block_wrap(XA, XB, dm)
-        elif mstr in ['hamming', 'hamm', 'ha', 'h']:
+        try:
+            validate, cdist_fn = _SIMPLE_CDIST[mstr]
+            XA = validate(XA)
+            XB = validate(XB)
+            cdist_fn(XA, XB, dm)
+            return dm
+        except KeyError:
+            pass
+
+        if mstr in ['hamming', 'hamm', 'ha', 'h']:
             if XA.dtype == bool:
                 XA = _convert_to_bool(XA)
                 XB = _convert_to_bool(XB)
@@ -2085,10 +2078,6 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 XA = _convert_to_double(XA)
                 XB = _convert_to_double(XB)
                 _distance_wrap.cdist_jaccard_wrap(XA, XB, dm)
-        elif mstr in ['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch']:
-            XA = _convert_to_double(XA)
-            XB = _convert_to_double(XB)
-            _distance_wrap.cdist_chebyshev_wrap(XA, XB, dm)
         elif mstr in ['minkowski', 'mi', 'm', 'pnorm']:
             XA = _convert_to_double(XA)
             XB = _convert_to_double(XB)
@@ -2149,46 +2138,6 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 VI = np.linalg.inv(V).T.copy()
             # (u-v)V^(-1)(u-v)^T
             _distance_wrap.cdist_mahalanobis_wrap(XA, XB, VI, dm)
-        elif mstr == 'canberra':
-            XA = _convert_to_double(XA)
-            XB = _convert_to_double(XB)
-            _distance_wrap.cdist_canberra_wrap(XA, XB, dm)
-        elif mstr == 'braycurtis':
-            XA = _convert_to_double(XA)
-            XB = _convert_to_double(XB)
-            _distance_wrap.cdist_bray_curtis_wrap(XA, XB, dm)
-        elif mstr == 'yule':
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-            _distance_wrap.cdist_yule_bool_wrap(XA, XB, dm)
-        elif mstr == 'matching':
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-            _distance_wrap.cdist_hamming_bool_wrap(XA, XB, dm)
-        elif mstr == 'kulsinski':
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-            _distance_wrap.cdist_kulsinski_bool_wrap(XA, XB, dm)
-        elif mstr == 'dice':
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-            _distance_wrap.cdist_dice_bool_wrap(XA, XB, dm)
-        elif mstr == 'rogerstanimoto':
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-            _distance_wrap.cdist_rogerstanimoto_bool_wrap(XA, XB, dm)
-        elif mstr == 'russellrao':
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-            _distance_wrap.cdist_russellrao_bool_wrap(XA, XB, dm)
-        elif mstr == 'sokalmichener':
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-            _distance_wrap.cdist_sokalmichener_bool_wrap(XA, XB, dm)
-        elif mstr == 'sokalsneath':
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-            _distance_wrap.cdist_sokalsneath_bool_wrap(XA, XB, dm)
         elif metric == 'test_euclidean':
             dm = cdist(XA, XB, euclidean)
         elif metric == 'test_seuclidean':
