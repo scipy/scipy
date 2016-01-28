@@ -210,7 +210,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     >>> res = lsq_linear(A, b, bounds=(lb, ub), lsmr_tol='auto', verbose=1)
     # may vary
     The relative change of the cost function is less than `tol`.
-    Number of iterations 16, initial cost 1.5039e+04, final cost 1.1112e+04, first-order optimality 4.66e-08.
+    Number of iterations 16, initial cost 1.5039e+04, final cost 1.1112e+04,
+    first-order optimality 4.66e-08.
     """
     if method not in ['trf', 'bvls']:
         raise ValueError("`method` must be 'trf' or 'bvls'")
