@@ -1454,7 +1454,7 @@ def squareform(X, force="no", checks=True):
       Given a d*d(-1)/2 sized v for some integer d>=2 encoding distances
       as described, X=squareform(v) returns a d by d distance matrix X. The
       X[i, j] and X[j, i] values are set to
-      v[{n \\choose 2}-{n-i \\choose 2} + (j-u-1)] and all
+      v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)] and all
       diagonal elements are zero.
 
     """
