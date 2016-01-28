@@ -1715,23 +1715,23 @@ class Brent:
         self.funcalls = 0
 
     # need to rethink design of set_bracket (new options, etc)
-    def set_bracket(self, brack=None):
-        self.brack = brack
+    def set_bracket(self, bracket=None):
+        self.bracket = bracket
 
     def get_bracket_info(self):
         #set up
         func = self.func
         args = self.args
-        brack = self.brack
+        bracket = self.bracket
         ### BEGIN core bracket_info code ###
         ### carefully DOCUMENT any CHANGES in core ##
-        if brack is None:
+        if bracket is None:
             xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
-        elif len(brack) == 2:
-            xa, xb, xc, fa, fb, fc, funcalls = bracket(func, xa=brack[0],
-                                                       xb=brack[1], args=args)
-        elif len(brack) == 3:
-            xa, xb, xc = brack
+        elif len(bracket) == 2:
+            xa, xb, xc, fa, fb, fc, funcalls = bracket(func, xa=bracket[0],
+                                                       xb=bracket[1], args=args)
+        elif len(bracket) == 3:
+            xa, xb, xc = bracket
             if (xa > xc):  # swap so xa < xc can be assumed
                 xc, xa = xa, xc
             if not ((xa < xb) and (xb < xc)):
@@ -1864,7 +1864,7 @@ class Brent:
             return self.xmin
 
 
-def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
+def brent(func, args=(), bracket=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
@@ -1876,7 +1876,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         Objective function.
     args : tuple, optional
         Additional arguments (if present).
-    brack : tuple, optional
+    bracket : tuple, optional
         Either a triple (xa,xb,xc) where xa<xb<xc and func(xb) <
         func(xa), func(xc) or a pair (xa,xb) which are used as a
         starting interval for a downhill bracket search (see
@@ -1914,14 +1914,14 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     options = {'xtol': tol,
                'maxiter': maxiter}
-    res = _minimize_scalar_brent(func, brack, args, **options)
+    res = _minimize_scalar_brent(func, bracket, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nit'], res['nfev']
     else:
         return res['x']
 
 
-def _minimize_scalar_brent(func, brack=None, args=(),
+def _minimize_scalar_brent(func, bracket=None, args=(),
                            xtol=1.48e-8, maxiter=500,
                            **unknown_options):
     """
@@ -1945,14 +1945,14 @@ def _minimize_scalar_brent(func, brack=None, args=(),
 
     brent = Brent(func=func, args=args, tol=tol,
                   full_output=True, maxiter=maxiter)
-    brent.set_bracket(brack)
+    brent.set_bracket(bracket)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
     return OptimizeResult(fun=fval, x=x, nit=nit, nfev=nfev,
                           success=nit < maxiter)
 
 
-def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
+def golden(func, args=(), bracket=None, tol=_epsilon, full_output=0):
     """
     Return the minimum of a function of one variable.
 
@@ -1966,7 +1966,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         Objective function to minimize.
     args : tuple, optional
         Additional arguments (if present), passed to func.
-    brack : tuple, optional
+    bracket : tuple, optional
         Triple (a,b,c), where (a<b<c) and func(b) <
         func(a),func(c).  If bracket consists of two numbers (a,
         c), then they are assumed to be a starting interval for a
@@ -1989,14 +1989,14 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
 
     """
     options = {'xtol': tol}
-    res = _minimize_scalar_golden(func, brack, args, **options)
+    res = _minimize_scalar_golden(func, bracket, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nfev']
     else:
         return res['x']
 
 
-def _minimize_scalar_golden(func, brack=None, args=(),
+def _minimize_scalar_golden(func, bracket=None, args=(),
                             xtol=_epsilon, **unknown_options):
     """
     Options
@@ -2009,13 +2009,13 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     """
     _check_unknown_options(unknown_options)
     tol = xtol
-    if brack is None:
+    if bracket is None:
         xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
-    elif len(brack) == 2:
-        xa, xb, xc, fa, fb, fc, funcalls = bracket(func, xa=brack[0],
-                                                   xb=brack[1], args=args)
-    elif len(brack) == 3:
-        xa, xb, xc = brack
+    elif len(bracket) == 2:
+        xa, xb, xc, fa, fb, fc, funcalls = bracket(func, xa=bracket[0],
+                                                   xb=bracket[1], args=args)
+    elif len(bracket) == 3:
+        xa, xb, xc = bracket
         if (xa > xc):  # swap so xa < xc can be assumed
             xc, xa = xa, xc
         if not ((xa < xb) and (xb < xc)):

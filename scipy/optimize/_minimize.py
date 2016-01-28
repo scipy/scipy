@@ -487,9 +487,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     method : str or callable, optional
         Type of solver.  Should be one of
 
-            - 'Brent'     :ref:`(see here) <optimize.minimize_scalar-brent>`
-            - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
-            - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
+            - 'Brent'     :ref:`(see here) http://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-brent.html#optimize-minimize-scalar-brent `
+            - 'Bounded'   :ref:`(see here) http://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-bounded.html#optimize-minimize-scalar-bounded `
+            - 'Golden'    :ref:`(see here) http://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-golden.html#optimize-minimize-scalar-golden `
             - custom - a callable object (added in version 0.14.0),
               see below
     tol : float, optional
