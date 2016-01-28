@@ -395,7 +395,7 @@ def least_squares(
             * ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
               Additionally  ``method='trf'`` supports  'regularize' option
               (bool, default is True) which adds a regularization term to the
-              normal equation, which improves convergence if Jacobian is
+              normal equation, which improves convergence if the Jacobian is
               rank-deficient [Byrd]_ (eq. 3.4).
 
     jac_sparsity : {None, array_like, sparse matrix}, optional

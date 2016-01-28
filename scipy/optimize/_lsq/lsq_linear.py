@@ -59,8 +59,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Method to perform minimization.
 
             * 'trf' : Trust Region Reflective algorithm adapted for a linear
-              least-squares problem. This is an interior-point-like method,
-              which requires the number of iterations weakly correlated with
+              least-squares problem. This is an interior-point-like method
+              and the required number of iterations is weakly correlated with
               the number of variables.
             * 'bvls' : Bounded-Variable Least-Squares algorithm. This is
               an active set method, which requires the number of iterations
@@ -94,7 +94,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Tolerance parameters 'atol' and 'btol' for `scipy.sparse.linalg.lsmr`
         If None (default), it is set to ``1e-2 * tol``. If 'auto', the
         tolerance will be adjusted based on the optimality of the current
-        iterate, which can speed up the optimization process, but not always
+        iterate, which can speed up the optimization process, but is not always
         reliable.
     max_iter : None or int, optional
         Maximum number of iterations before termination. If None (default), it
@@ -127,9 +127,9 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             * -1 : a lower bound is active.
             *  1 : an upper bound is active.
 
-        Might be somewhat arbitrary for `trf` method as it generates a sequence
-        of strictly feasible iterates and active_mask is determined within a
-        tolerance threshold.
+        Might be somewhat arbitrary for the `trf` method as it generates a
+        sequence of strictly feasible iterates and active_mask is determined
+        within a tolerance threshold.
     nit : int
         Number of iterations. Zero if the unconstrained solution is optimal.
     status : int
