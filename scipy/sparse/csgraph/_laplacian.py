@@ -34,8 +34,9 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
 
     Returns
     -------
-    lap : ndarray
-        The N x N laplacian matrix of graph.
+    lap : ndarray or coo_matrix
+        The N x N laplacian matrix of csgraph. It will be a numpy array (dense)
+        if the input was dense, sparse (COO format) otherwise.
     diag : ndarray, optional
         The length-N diagonal of the Laplacian matrix.
         For the normalized Laplacian, this is the array of square roots
