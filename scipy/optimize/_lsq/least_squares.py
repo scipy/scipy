@@ -242,7 +242,7 @@ def least_squares(
     the loss function rho(s) (a scalar function), `least_squares` finds a
     local minimum of the cost function F(x)::
 
-        F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
+        minimize F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
         subject to lb <= x <= ub
 
     The purpose of the loss function rho(s) is to reduce the influence of
@@ -324,9 +324,9 @@ def least_squares(
     x_scale : array_like or 'jac', optional
         Characteristic scale of each variable. Setting `x_scale` is equivalent
         to reformulating the problem in scaled variables ``xs = x / x_scale``.
-        An alternative view is that the size of a trust-region along j-th
+        An alternative view is that the size of a trust region along j-th
         dimension is proportional to ``x_scale[j]``. Improved convergence may
-        be achieved by setting `x_scale` such that a step of a given length
+        be achieved by setting `x_scale` such that a step of a given size
         along any of the scaled variables has a similar effect on the cost
         function. If set to 'jac', the scale is iteratively updated using the
         inverse norms of the columns of the Jacobian matrix (as described in
@@ -386,7 +386,7 @@ def least_squares(
               least-squares problem and only requires matrix-vector product
               evaluations.
 
-        If None (default) the solver is chosen based on type of Jacobian
+        If None (default) the solver is chosen based on the type of Jacobian
         returned on the first iteration.
     tr_options : dict, optional
         Keyword options passed to trust-region solver.
@@ -395,17 +395,18 @@ def least_squares(
             * ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
               Additionally  ``method='trf'`` supports  'regularize' option
               (bool, default is True) which adds a regularization term to the
-              normal equations, which improves convergence if Jacobian is
+              normal equation, which improves convergence if the Jacobian is
               rank-deficient [Byrd]_ (eq. 3.4).
 
     jac_sparsity : {None, array_like, sparse matrix}, optional
         Defines the sparsity structure of the Jacobian matrix for finite
-        differences. If the Jacobian has only few non-zeros in *each* row,
-        providing the sparsity structure will greatly speed up the computations
-        [Curtis]_. Should have shape (m, n). A zero entry means that a
-        corresponding element in the Jacobian is identically zero. If provided,
-        forces the use of 'lsmr' trust-region solver. If None (default) then
-        dense differencing will be used. Has no effect for 'lm' method.
+        difference estimation, its shape must be (m, n). If the Jacobian has
+        only few non-zero elements in *each* row, providing the sparsity
+        structure will greatly speed up the computations [Curtis]_. A zero
+        entry means that a corresponding element in the Jacobian is identically
+        zero. If provided, forces the use of 'lsmr' trust-region solver.
+        If None (default) then dense differencing will be used. Has no effect
+        for 'lm' method.
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
