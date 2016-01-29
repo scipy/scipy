@@ -1177,6 +1177,13 @@ class TestMultinom(object):
         assert_equal(multinomial.rvs(2, [1., 2], size=10000)[:, 1],
                      np.zeros(10000))
 
+        # modifying the last element of pvals does not clobber the original
+        n, pvals = 3, np.array([0.5, 0.4, 0.8])
+        p_ini = pvals.copy()
+        r = multinomial.rvs(n, pvals)
+        multinomial.pmf(r, n, pvals)
+        assert_allclose(pvals, p_ini, atol=1e-14)
+
     def test_rvs_ndim(self):
         # n-dim size argument is consistent with numpy
         n, p = 4, [1/2., 1/4., 1/4.]

@@ -2914,8 +2914,8 @@ n : int
     Number of trials
 p : array_like, shape (k,)
     Probabilities. These should sum to one. If they do not, then
-    ``p[-1]`` is modified to account for the remaining probability so that
-    ``sum(p) == 1``.
+    the value of ``p[-1]`` is disregarded and assumed to account for the
+    remaining probability so that ``sum(p) == 1``.
 """
 
 multinom_docdict_params = {
@@ -2946,8 +2946,8 @@ class multinomial_gen(multi_rv_generic):
         Number of trials
     p : array_like, shape (k,)
         Probabilities. These should sum to one. If they do not, then
-        ``p[-1]`` is modified to account for the remaining probability so that
-        ``sum(p) == 1``.
+        the value of ``p[-1]`` is disregarded and assumed to account for the
+        remaining probability so that ``sum(p) == 1``.
 
     %(_doc_random_state)s
 
@@ -3018,7 +3018,7 @@ class multinomial_gen(multi_rv_generic):
         self.__doc__ = doccer.docformat(self.__doc__, multinom_docdict_params)
 
     def _argcheck(self, n, p):
-        p = np.asarray(p)
+        p = np.array(p, copy=True)
         p[-1] = 1. - p[:-1].sum()
         if p.ndim != 1:
             raise ValueError('p array must be 1D. Got p.ndim = %s' % p.ndim)
