@@ -1043,11 +1043,10 @@ def hyp0f1(v, z):
     v = atleast_1d(v)
     z = atleast_1d(z)
     v, z = np.broadcast_arrays(v, z)
-    if z.dtype == np.complex64 or z.dtype == np.complex128:
+    if np.iscomplexobj(z):
         res = np.empty_like(z)
     else:
         res = np.empty_like(z, dtype=np.float64)
-    # Poles when v is a negative integer
     poles = (v < 0) & (v == v.astype(int))
     zeros = (z == 0)
     pos = (z.real >= 0) & -zeros & -poles

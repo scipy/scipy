@@ -54,16 +54,17 @@ def test_expi_complex():
 #------------------------------------------------------------------------------
 
 def test_hyp0f1_gh5764():
-    # Do a small and somewhat systematic test that runs quickly.
-    axis = np.array([-99.5, -9.5, -0.5, 0.5, 9.5, 99.5])
-    v, x, y = np.meshgrid(axis, axis, axis)
-    z = x + 1J*y
-    res = sc.hyp0f1(v, z)
-    std = np.empty_like(z)
-    for index, z0 in np.ndenumerate(z):
-        v0 = v[index]
-        std[index] = complex(mpmath.hyp0f1(v0, z0))
-    assert_allclose(res, std, rtol=1e-13, atol=1e-13)
+    # Do a small and somewhat systematic test that runs quickly
+    pts = []
+    axis = [-99.5, -9.5, -0.5, 0.5, 9.5, 99.5]
+    for v in axis:
+        for x in axis:
+            for y in axis:
+                pts.append((v, x + 1J*y))
+    std = np.array([(complex(mpmath.hyp0f1(*p)),) for p in pts])
+    # Can't use FuncData because v should be real and z complex
+    res = np.array([sc.hyp0f1(*p) for p in pts])
+    assert_allclose(res, std, atol=1e-13, rtol=1e-13)
 
 #------------------------------------------------------------------------------
 # hyp2f1
