@@ -264,6 +264,15 @@ class TestSS2TF:
         assert_allclose(bb[0], b, rtol=1e-13)
         assert_allclose(aa, a, rtol=1e-13)
 
+    def test_zero_order_round_trip(self):
+        # See Issue #5760
+        tf = (2, 1)
+        ss = tf2ss(*tf)
+        assert_equal(ss, [[0], [0], [0], [2]])
+
+        tf = ss2tf(*ss)
+        assert_equal(tf, [[[2, 0]], [1, 0]])
+
     def test_multioutput(self):
         # Regression test for gh-2669.
 

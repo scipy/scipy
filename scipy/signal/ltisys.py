@@ -121,10 +121,10 @@ def tf2ss(num, den):
     if num.shape[-1] > 0:
         D = num[:, 0]
     else:
-        D = array([], float)
+        D = array([0], float)
 
     if K == 1:
-        return array([], float), array([], float), array([], float), D
+        return array([0], float), array([0], float), array([0], float), D
 
     frow = -array([den[1:]])
     A = r_[frow, eye(K - 2, K - 1)]
