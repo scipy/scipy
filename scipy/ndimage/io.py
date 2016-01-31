@@ -24,8 +24,8 @@ def imread(fname, flatten=False, mode=None):
         return _imread(fname, flatten, mode)
     raise ImportError("Could not import the Python Imaging Library (PIL)"
                       " required to load image files.  Please refer to"
-                      " http://pypi.python.org/pypi/PIL/ for installation"
-                      " instructions.")
+                      " http://pillow.readthedocs.org/en/latest/installation.html"
+                      " for installation instructions.")
 
 if _have_pil and _imread.__doc__ is not None:
     imread.__doc__ = _imread.__doc__.replace('name : str', 'fname : str')
