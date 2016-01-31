@@ -17,7 +17,7 @@ def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
     """
     Check each pole in P1 is close to a pole in P2 with a 1e-8
     relative tolerance or 1e-8 absolute tolerance (useful for zero poles).
-    These tolerance are very scrict but the systems tested are known to
+    These tolerances are very strict but the systems tested are known to
     accept these poles so we should not be far from what is requested.
     """
     P2 = P2.copy()
@@ -249,7 +249,7 @@ class TestSS2TF:
             yield self.tst_matrix_shapes, p, q, r
 
     def test_basic(self):
-        # Test a round trip through tf2ss and sst2f.
+        # Test a round trip through tf2ss and ss2tf.
         b = np.array([1.0, 3.0, 5.0])
         a = np.array([1.0, 2.0, 3.0])
 
