@@ -199,6 +199,10 @@ class KDTree(object):
             >>> import sys
             >>> sys.setrecursionlimit(10000)
 
+    See Also
+    --------
+    cKDTree : Implementation of `KDTree` in Cython
+
     Notes
     -----
     The algorithm used is described in Maneewongvatana and Mount 1999.
