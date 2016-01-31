@@ -21,6 +21,14 @@ This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
 New features
 ============
 
+`scipy.interpolate` improvements
+--------------------------------
+
+Cubic spline interpolation is now available via `scipy.interpolate.CubicSpline`.
+This class represents a piecewise cubic polynomial passing through given points
+and C2 continuous. It is represented in the standard polynomial basis on each
+segment.
+
 
 Deprecated features
 ===================
@@ -36,6 +44,7 @@ Other changes
 
 Authors
 =======
+* Nikolay Mayorov
 
 Issues closed
 -------------
