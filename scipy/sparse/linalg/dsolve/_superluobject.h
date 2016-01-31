@@ -24,12 +24,6 @@
 
 #define _CHECK_INTEGER(x) (PyArray_ISINTEGER(x) && (x)->descr->elsize == sizeof(int))
 
-/* PyArray_IS_C_CONTIGUOUS was introduced in numpy 1.6.0 */
-#if NPY_API_VERSION < 0x00000006
-    #define NPY_ARRAY_C_CONTIGUOUS    0x0001
-    #define PyArray_IS_C_CONTIGUOUS(m) PyArray_CHKFLAGS(m, NPY_ARRAY_C_CONTIGUOUS)
-#endif
-
 /*
  * SuperLUObject definition
  */

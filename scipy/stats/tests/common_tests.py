@@ -8,12 +8,8 @@ import numpy.testing as npt
 from numpy.testing import assert_allclose
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._version import NumpyVersion
 from scipy._lib._util import getargspec_no_self as _getargspec
 from scipy import stats
-
-
-NUMPY_BELOW_1_7 = NumpyVersion(np.__version__) < '1.7.0'
 
 
 def check_named_results(res, attributes, ma=False):

@@ -11,7 +11,7 @@ from scipy.special import betainc
 from common_tests import (check_normalization, check_moment, check_mean_expect,
                           check_var_expect, check_skew_expect,
                           check_kurt_expect, check_entropy,
-                          check_private_entropy, NUMPY_BELOW_1_7,
+                          check_private_entropy,
                           check_edge_support, check_named_args,
                           check_random_state_property,
                           check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
@@ -140,7 +140,7 @@ def test_cont_basic():
             yield check_entropy, distfn, arg, distname
 
             if distfn.numargs == 0:
-                yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
+                yield check_vecentropy, distfn, arg
             if distfn.__class__._entropy != stats.rv_continuous._entropy:
                 yield check_private_entropy, distfn, arg, stats.rv_continuous
 
@@ -205,7 +205,7 @@ def test_cont_basic_slow():
             yield skp(ks_cond)(check_entropy), distfn, arg, distname
 
             if distfn.numargs == 0:
-                yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
+                yield check_vecentropy, distfn, arg
             if distfn.__class__._entropy != stats.rv_continuous._entropy:
                 yield check_private_entropy, distfn, arg, stats.rv_continuous
 
@@ -363,7 +363,6 @@ def check_vecentropy(distfn, args):
     npt.assert_equal(distfn.vecentropy(*args), distfn._entropy(*args))
 
 
-@npt.dec.skipif(NUMPY_BELOW_1_7)
 def check_loc_scale(distfn, arg, m, v, msg):
     loc, scale = 10.0, 10.0
     mt, vt = distfn.stats(loc=loc, scale=scale, *arg)

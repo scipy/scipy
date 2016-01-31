@@ -10,7 +10,6 @@ from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
 from scipy._lib.six import xrange
-from scipy._lib._version import NumpyVersion
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
@@ -761,10 +760,9 @@ class TestPPolyCommon(TestCase):
             assert_equal(np.shape(p(0.5)), ())
             assert_equal(np.shape(p(np.array(0.5))), ())
 
-            if NumpyVersion(np.__version__) >= '1.7.0':
-                # can't use dtype=object (with any numpy; what fails is
-                # constructing the object array here for old numpy)
-                assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
+            # can't use dtype=object (with any numpy; what fails is
+            # constructing the object array here for old numpy)
+            assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]]))
 
     def test_complex_coef(self):
         np.random.seed(12345)
