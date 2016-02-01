@@ -35,7 +35,8 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_stats',
         sources=['_stats.c'],
     )
-    # add mvn module
+
+     # add mvn module
     config.add_extension('mvn',
         sources=['mvn.pyf','mvndst.f'],
     )

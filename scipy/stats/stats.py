@@ -2098,15 +2098,7 @@ def obrientransform(*args):
 
         arrays.append(t)
 
-    # If the arrays are not all the same shape, calling np.array(arrays)
-    # creates a 1-D array with dtype `object` in numpy 1.6+. In numpy
-    # 1.5.x, it raises an exception.  To work around this, we explicitly
-    # set the dtype to `object` when the arrays are not all the same shape.
-    if len(arrays) < 2 or all(x.shape == arrays[0].shape for x in arrays[1:]):
-        dt = None
-    else:
-        dt = object
-    return np.array(arrays, dtype=dt)
+    return np.array(arrays)
 
 
 @np.deprecate(message="scipy.stats.signaltonoise is deprecated in scipy 0.16.0")
@@ -4296,6 +4288,54 @@ def ks_2samp(data1, data2):
         prob = 1.0
 
     return Ks_2sampResult(d, prob)
+
+
+def tiecorrect(rankvals):
+    """
+    Tie correction factor for ties in the Mann-Whitney U and
+    Kruskal-Wallis H tests.
+
+    Parameters
+    ----------
+    rankvals : array_like
+        A 1-D sequence of ranks.  Typically this will be the array
+        returned by `stats.rankdata`.
+
+    Returns
+    -------
+    factor : float
+        Correction factor for U or H.
+
+    See Also
+    --------
+    rankdata : Assign ranks to the data
+    mannwhitneyu : Mann-Whitney rank test
+    kruskal : Kruskal-Wallis H test
+
+    References
+    ----------
+    .. [1] Siegel, S. (1956) Nonparametric Statistics for the Behavioral
+           Sciences.  New York: McGraw-Hill.
+
+    Examples
+    --------
+    >>> from scipy.stats import tiecorrect, rankdata
+    >>> tiecorrect([1, 2.5, 2.5, 4])
+    0.9
+    >>> ranks = rankdata([1, 3, 2, 4, 5, 7, 2, 8, 4])
+    >>> ranks
+    array([ 1. ,  4. ,  2.5,  5.5,  7. ,  8. ,  2.5,  9. ,  5.5])
+    >>> tiecorrect(ranks)
+    0.9833333333333333
+
+    """
+    arr = np.sort(rankvals)
+    idx = np.nonzero(np.r_[True, arr[1:] != arr[:-1], True])[0]
+    cnt = np.diff(idx).astype(np.float64)
+
+    size = np.float64(arr.size)
+    return 1.0 if size < 2 else 1.0 - (cnt**3 - cnt).sum() / (size**3 - size)
+
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 

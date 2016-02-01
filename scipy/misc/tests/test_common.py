@@ -6,8 +6,6 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
 
 from scipy.misc import pade, logsumexp, face, ascent
 
-from scipy._lib._version import NumpyVersion
-
 
 def test_pade_trivial():
     nump, denomp = pade([1.0], 0)
@@ -81,11 +79,10 @@ def test_logsumexp():
                               [[1e10], [-1e10]])
 
     # Test multiple axes
-    if NumpyVersion(np.__version__) >= NumpyVersion('1.7.0'):
-        assert_array_almost_equal(logsumexp([[1e10, 1e-10],
-                                             [-1e10, -np.inf]],
-                                            axis=(-1,-2)),
-                                  1e10)
+    assert_array_almost_equal(logsumexp([[1e10, 1e-10],
+                                         [-1e10, -np.inf]],
+                                        axis=(-1,-2)),
+                              1e10)
 
 
 def test_logsumexp_b():
@@ -139,23 +136,20 @@ def test_logsumexp_sign_shape():
     assert_equal(r.shape, s.shape)
     assert_equal(r.shape, (1,2,4))
 
-    if NumpyVersion(np.__version__) >= NumpyVersion('1.7.0'):
-        r, s = logsumexp(a, axis=(1,3), b=b, return_sign=True)
+    r, s = logsumexp(a, axis=(1,3), b=b, return_sign=True)
 
-        assert_equal(r.shape, s.shape)
-        assert_equal(r.shape, (1,3))
+    assert_equal(r.shape, s.shape)
+    assert_equal(r.shape, (1,3))
 
 def test_logsumexp_shape():
-    a = np.ones((1,2,3,4))
+    a = np.ones((1, 2, 3, 4))
     b = np.ones_like(a)
 
     r = logsumexp(a, axis=2, b=b)
+    assert_equal(r.shape, (1, 2, 4))
 
-    assert_equal(r.shape, (1,2,4))
-    if NumpyVersion(np.__version__) >= NumpyVersion('1.7.0'):
-        r = logsumexp(a, axis=(1,3), b=b)
-
-        assert_equal(r.shape, (1,3))
+    r = logsumexp(a, axis=(1, 3), b=b)
+    assert_equal(r.shape, (1, 3))
 
 def test_logsumexp_b_zero():
     a = [1,10000]

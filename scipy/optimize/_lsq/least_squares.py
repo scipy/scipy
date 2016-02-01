@@ -232,17 +232,16 @@ def construct_loss_function(m, loss, f_scale):
 
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
-        ftol=EPS**0.5, xtol=EPS**0.5, gtol=EPS**0.5, x_scale=1.0,
-        loss='linear', f_scale=1.0, diff_step=None, tr_solver=None,
-        tr_options={}, jac_sparsity=None, max_nfev=None, verbose=0, args=(),
-        kwargs={}):
+        ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=1.0, loss='linear',
+        f_scale=1.0, diff_step=None, tr_solver=None, tr_options={},
+        jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
     Given the residuals f(x) (an m-dimensional function of n variables) and
     the loss function rho(s) (a scalar function), `least_squares` finds a
     local minimum of the cost function F(x)::
 
-        F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
+        minimize F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
         subject to lb <= x <= ub
 
     The purpose of the loss function rho(s) is to reduce the influence of
@@ -292,14 +291,13 @@ def least_squares(
 
         Default is 'trf'. See Notes for more information.
     ftol : float, optional
-        Tolerance for termination by the change of the cost function.
-        Default is the square root of machine epsilon. The optimization process
-        is stopped when ``dF < ftol * F``, and there was an adequate agreement
-        between a local quadratic model and the true model in the last step.
+        Tolerance for termination by the change of the cost function. Default
+        is 1e-8. The optimization process is stopped when  ``dF < ftol * F``,
+        and there was an adequate agreement between a local quadratic model and
+        the true model in the last step.
     xtol : float, optional
         Tolerance for termination by the change of the independent variables.
-        Default is the square root of machine epsilon. The exact condition
-        checked depends on the `method` used:
+        Default is 1e-8. The exact condition depends on the `method` used:
 
             * For 'trf' and 'dogbox' : ``norm(dx) < xtol * (xtol + norm(x))``
             * For 'lm' : ``Delta < xtol * norm(xs)``, where ``Delta`` is
@@ -307,9 +305,8 @@ def least_squares(
               scaled according to `x_scale` parameter (see below).
 
     gtol : float, optional
-        Tolerance for termination by the norm of the gradient. Default is
-        the square root of machine epsilon. The exact condition depends
-        on a `method` used:
+        Tolerance for termination by the norm of the gradient. Default is 1e-8.
+        The exact condition depends on a `method` used:
 
             * For 'trf' : ``norm(g_scaled, ord=np.inf) < gtol``, where
               ``g_scaled`` is the value of the gradient scaled to account for
@@ -324,9 +321,9 @@ def least_squares(
     x_scale : array_like or 'jac', optional
         Characteristic scale of each variable. Setting `x_scale` is equivalent
         to reformulating the problem in scaled variables ``xs = x / x_scale``.
-        An alternative view is that the size of a trust-region along j-th
+        An alternative view is that the size of a trust region along j-th
         dimension is proportional to ``x_scale[j]``. Improved convergence may
-        be achieved by setting `x_scale` such that a step of a given length
+        be achieved by setting `x_scale` such that a step of a given size
         along any of the scaled variables has a similar effect on the cost
         function. If set to 'jac', the scale is iteratively updated using the
         inverse norms of the columns of the Jacobian matrix (as described in
@@ -386,7 +383,7 @@ def least_squares(
               least-squares problem and only requires matrix-vector product
               evaluations.
 
-        If None (default) the solver is chosen based on type of Jacobian
+        If None (default) the solver is chosen based on the type of Jacobian
         returned on the first iteration.
     tr_options : dict, optional
         Keyword options passed to trust-region solver.
@@ -395,17 +392,18 @@ def least_squares(
             * ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
               Additionally  ``method='trf'`` supports  'regularize' option
               (bool, default is True) which adds a regularization term to the
-              normal equations, which improves convergence if Jacobian is
+              normal equation, which improves convergence if the Jacobian is
               rank-deficient [Byrd]_ (eq. 3.4).
 
     jac_sparsity : {None, array_like, sparse matrix}, optional
         Defines the sparsity structure of the Jacobian matrix for finite
-        differences. If the Jacobian has only few non-zeros in *each* row,
-        providing the sparsity structure will greatly speed up the computations
-        [Curtis]_. Should have shape (m, n). A zero entry means that a
-        corresponding element in the Jacobian is identically zero. If provided,
-        forces the use of 'lsmr' trust-region solver. If None (default) then
-        dense differencing will be used. Has no effect for 'lm' method.
+        difference estimation, its shape must be (m, n). If the Jacobian has
+        only few non-zero elements in *each* row, providing the sparsity
+        structure will greatly speed up the computations [Curtis]_. A zero
+        entry means that a corresponding element in the Jacobian is identically
+        zero. If provided, forces the use of 'lsmr' trust-region solver.
+        If None (default) then dense differencing will be used. Has no effect
+        for 'lm' method.
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
@@ -577,9 +575,9 @@ def least_squares(
     >>> res_1.x
     array([ 1.,  1.])
     >>> res_1.cost
-    2.4651903288156619e-30
+    9.8669242910846867e-30
     >>> res_1.optimality
-    4.4408921315878507e-14
+    8.8928864934219529e-14
 
     We now constrain the variables, in such a way that the previous solution
     becomes infeasible. Specifically, we require that ``x[1] >= 1.5``, and
@@ -635,7 +633,7 @@ def least_squares(
     >>> res_3 = least_squares(fun_broyden, x0_broyden,
     ...                       jac_sparsity=sparsity_broyden(n))
     >>> res_3.cost
-    4.5687161966109073e-23
+    4.5687069299604613e-23
     >>> res_3.optimality
     1.1650454296851518e-11
 

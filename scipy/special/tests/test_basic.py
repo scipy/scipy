@@ -1848,6 +1848,13 @@ class TestHyper(TestCase):
         assert_raises(ValueError, special.hyp0f1,
                       np.row_stack([x1] * 3), [0, 1])
 
+    def test_hyp0f1_gh5764(self):
+        # Just checks the point that failed; there's a more systematic
+        # test in test_mpmath
+        res = special.hyp0f1(0.8, 0.5 + 0.5*1J)
+        # The expected value was generated using mpmath
+        assert_almost_equal(res, 1.6139719776441115 + 1J*0.80893054061790665)
+
     def test_hyp1f1(self):
         hyp1 = special.hyp1f1(.1,.1,.3)
         assert_almost_equal(hyp1, 1.3498588075760032,7)

@@ -1043,15 +1043,19 @@ def hyp0f1(v, z):
     v = atleast_1d(v)
     z = atleast_1d(z)
     v, z = np.broadcast_arrays(v, z)
-    arg = 2 * sqrt(abs(z))
-    old_err = np.seterr(all='ignore')  # for z=0, a<1 and num=inf, next lines
-    num = where(z.real >= 0, iv(v - 1, arg), jv(v - 1, arg))
-    den = abs(z)**((v - 1.0) / 2)
-    num *= gamma(v)
-    np.seterr(**old_err)
-    num[z == 0] = 1
-    den[z == 0] = 1
-    return num / den
+    if np.iscomplexobj(z):
+        res = np.empty_like(z)
+    else:
+        res = np.empty_like(z, dtype=np.float64)
+    poles = (v < 0) & (v == v.astype(int))
+    zeros = (z == 0)
+    pos = (z.real >= 0) & -zeros & -poles
+    neg = (z.real < 0) & -zeros & -poles
+    res[poles] = nan
+    res[zeros] = 1
+    res[pos] = z[pos]**((1.0 - v[pos])/2)*gamma(v[pos])*iv(v[pos] - 1, 2*sqrt(z[pos]))
+    res[neg] = (-z[neg])**((1.0 - v[neg])/2)*gamma(v[neg])*jv(v[neg] - 1, 2*sqrt(-z[neg]))
+    return res
 
 
 def assoc_laguerre(x, n, k=0.0):
