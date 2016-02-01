@@ -176,7 +176,6 @@ from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 
-from ._rank import tiecorrect
 from ._stats import _kendalltau
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',

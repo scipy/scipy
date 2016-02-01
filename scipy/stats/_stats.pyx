@@ -34,6 +34,20 @@ cdef inline double stat0(uint64_t l):
 cdef inline double stat1(uint64_t l):
     return l * (l - 1.) * (l - 2)
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _toranks(x):
+    cdef long[:] perm = np.argsort(x, kind='quicksort')
+    cdef long[:] rank = np.ndarray(len(perm), dtype=long)
+    cdef uint64_t i, j = 0
+    for i in xrange(len(x) - 1):
+        rank[perm[i]] = j
+        if x[perm[i]] != x[perm[i + 1]]:
+            j += 1
+
+    rank[perm[i + 1]] = j
+    return rank
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 @cython.wraparound(False)
