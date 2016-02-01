@@ -1997,7 +1997,6 @@ class TestNdimage:
                                            (8,),order=order)
             assert_array_almost_equal(out[::2], [0, 4, 1, 3])
 
-    @expectedFailure  # issue #1547; will be fixed in 0.18.0
     def test_affine_transform24(self):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = numpy.array([4, 1, 3, 2])
@@ -2008,7 +2007,6 @@ class TestNdimage:
                                                 order=order)
             assert_array_almost_equal(out1, out2)
 
-    @expectedFailure  # issue #1547; will be fixed in 0.18.0
     def test_affine_transform25(self):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = numpy.array([4, 1, 3, 2])
