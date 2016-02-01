@@ -141,7 +141,6 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
     v += pairs(n - first)
     v0 += stat0(n - first)
     v1 += stat1(n - first)
-    print v1
 
     tot = (n * (n - 1)) // 2
 
