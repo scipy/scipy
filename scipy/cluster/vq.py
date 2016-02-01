@@ -581,6 +581,11 @@ def _kpoints(data, k):
         row is one observation.
     k : int
         Number of samples to generate.
+   
+   Returns
+    -------
+    x : ndarray
+        A 'k' by 'N' containing the initial centroids
 
     """
     if data.ndim > 1:
@@ -608,6 +613,11 @@ def _krandinit(data, k):
         row is one observation.
     k : int
         Number of samples to generate.
+   
+    Returns
+    -------
+    x : ndarray
+        A 'k' by 'N' containing the initial centroids
 
     """
     def init_rank1(data):
@@ -645,7 +655,45 @@ def _krandinit(data, k):
     else:
         return init_rankn(data)
 
-_valid_init_meth = {'random': _krandinit, 'points': _kpoints}
+def _kpp(data, k):
+    """ Picks k points in data based on the kmeans++ method
+    
+    Parameters
+    ----------
+    data : ndarray
+        Expect a rank 1 or 2 array. Rank 1 are assumed to describe one
+        dimensional data, rank 2 multidimensional data, in which case one
+        row is one observation.
+    k : int
+        Number of samples to generate.
+   
+    Returns
+    -------
+    init : ndarray
+        A 'k' by 'N' containing the initial centroids
+   
+    Reference
+    ---------
+    D. Arthur and S. Vassilvitskii, "k-means++: the advantages of careful seeding"
+    
+    """
+
+    init = np.ndarray((k, data.shape[1]))
+    
+    for i in range(k):
+        if i == 0:
+            init[i] = data[randint(len(data))]
+               
+        else:
+            D2 = np.array([min([np.inner(init[j]-x, init[j]-x) for j in range(i)]) for x in data])
+            probs = D2/sum(D2)
+            cumprobs = probs.cumsum()
+            r = np.random.rand()
+            init[i] = data[np.searchsorted(cumprobs, r)]
+
+    return init
+    
+_valid_init_meth = {'random': _krandinit, 'points': _kpoints, '++': _kpp}
 
 
 def _missing_warn():
@@ -689,17 +737,17 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         (not used yet)
     minit : str, optional
         Method for initialization. Available methods are 'random',
-        'points', 'uniform', and 'matrix':
+        'points', '++' and 'matrix':
 
         'random': generate k centroids from a Gaussian with mean and
         variance estimated from the data.
 
         'points': choose k observations (rows) at random from data for
         the initial centroids.
-
-        'uniform': generate k observations from the data from a uniform
-        distribution defined by the data set (unsupported).
-
+         
+         '++': choose k observations accordingly to the kmeans++ method
+        (careful seeding)
+        
         'matrix': interpret the k parameter as a k by M (or length k
         array for one-dimensional data) array of initial centroids.
     missing : str, optional

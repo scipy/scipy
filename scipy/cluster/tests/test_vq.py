@@ -262,7 +262,10 @@ class TestKMean(TestCase):
 
         kmeans2(data, 3, minit='points')
         kmeans2(data[:, :1], 3, minit='points')  # special case (1-D)
-
+        
+        kmeans2(data, 3, minit='++')
+        kmeans2(data[:, :1], 3, minit='++')  # special case (1-D)
+        
         # minit='random' can give warnings, filter those
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore',
