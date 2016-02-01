@@ -275,6 +275,82 @@ def _lil_fancy_set_{{PYIDX}}_{{PYVALUE}}(cnp.npy_intp M, cnp.npy_intp N,
 {{define_dispatch_map2('_LIL_FANCY_SET_DISPATCH', '_lil_fancy_set', IDX_TYPES, VALUE_TYPES)}}
 
 
+def lil_get_row_ranges(cnp.npy_intp M, cnp.npy_intp N,
+                       object[:] rows, object[:] datas,
+                       object[:] new_rows, object[:] new_datas,
+                       object irows,
+                       cnp.npy_intp j_start,
+                       cnp.npy_intp j_stop,
+                       cnp.npy_intp j_stride,
+                       cnp.npy_intp nj):
+    """
+    Column-slicing fast path for LIL matrices.
+    Extracts values from rows/datas and inserts in to
+    new_rows/new_datas.
+    Parameters
+    ----------
+    M, N
+         Shape of input array
+    rows, datas
+         LIL data for input array, shape (M, N)
+    new_rows, new_datas
+         LIL data for output array, shape (len(irows), nj)
+    irows : iterator
+         Iterator yielding row indices
+    j_start, j_stop, j_stride
+         Column range(j_start, j_stop, j_stride) to get
+    nj : int
+         Number of columns corresponding to j_* variables.
+    """
+    cdef cnp.npy_intp nk, k, j, a, b, m, r, p
+    cdef list cur_row, cur_data, new_row, new_data
+
+    if j_stride == 0:
+        raise ValueError("cannot index with zero stride")
+
+    for nk, k in enumerate(irows):
+        if k >= M or k < -M:
+            raise ValueError("row index %d out of bounds" % (k,))
+        if k < 0:
+            k += M
+
+        if j_stride == 1 and nj == N:
+            # full row slice
+            new_rows[nk] = list(rows[k])
+            new_datas[nk] = list(datas[k])
+        else:
+            # partial row slice
+            cur_row = rows[k]
+            cur_data = datas[k]
+            new_row = new_rows[nk]
+            new_data = new_datas[nk]
+
+            if j_stride > 0:
+                a = bisect_left(cur_row, j_start)
+                for m in range(a, len(cur_row)):
+                    j = cur_row[m]
+                    if j >= j_stop:
+                        break
+                    r = (j - j_start) % j_stride
+                    if r != 0:
+                        continue
+                    p = (j - j_start) // j_stride
+                    new_row.append(p)
+                    new_data.append(cur_data[m])
+            else:
+                a = bisect_right(cur_row, j_stop)
+                for m in range(a, len(cur_row)):
+                    j = cur_row[m]
+                    if j > j_start:
+                        break
+                    r = (j - j_start) % j_stride
+                    if r != 0:
+                        continue
+                    p = (j - j_start) // j_stride
+                    new_row.insert(0, p)
+                    new_data.insert(0, cur_data[m])
+
+
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -309,6 +385,41 @@ cdef inline cnp.npy_intp bisect_left(list a, cnp.npy_intp x) except -1:
             lo = mid + 1
         else:
             hi = mid
+    return lo
+
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline cnp.npy_intp bisect_right(list a, cnp.npy_intp x) except -1:
+    """
+    Bisection search in a sorted list.
+
+    List is assumed to contain objects castable to integers.
+
+    Parameters
+    ----------
+    a
+        List to search in
+    x
+        Value to search for
+    Returns
+    -------
+    j : int
+        Index immediately at the right of the value (if present), or at
+        the point to which it can be inserted maintaining order.
+    """
+    cdef cnp.npy_intp hi = len(a)
+    cdef cnp.npy_intp lo = 0
+    cdef cnp.npy_intp mid, v
+
+    while lo < hi:
+        mid = (lo + hi) // 2
+        v = a[mid]
+        if x < v:
+            hi = mid
+        else:
+            lo = mid + 1
     return lo
 
 
