@@ -157,6 +157,52 @@ def todense(a):
         return a
     return a.todense()
 
+def sparse_gemm(a, b, c, alpha, beta):
+    assert_(isspmatrix(a), 'need a sparse matrix')
+
+    fmt = a.format
+    M, N = a.shape
+    n_vecs = 1
+
+    assert_(b.shape[0] == N)
+    assert_(c.shape[0] == M)
+    assert_(c.ndim == b.ndim)
+    if b.ndim == 2:
+        assert_(b.shape[1] == c.shape[1])
+        n_vecs = b.shape[1]
+
+    assert_(c.flags.c_contiguous)
+    assert_(a.dtype == b.dtype and a.dtype == c.dtype)
+
+    s = sparse._sparsetools
+    if n_vecs == 1:
+        if fmt == 'csr':
+            s.csr_matvec(M, N, a.indptr, a.indices, a.data, alpha, b.ravel(), beta, c.ravel())
+        elif fmt == 'csc':
+            s.csc_matvec(M, N, a.indptr, a.indices, a.data, alpha, b.ravel(), beta, c.ravel())
+        elif fmt == 'bsr':
+            R, C = a.blocksize
+            s.bsr_matvec(M//R, N//R, R, C, a.indptr, a.indices, a.data, alpha, b.ravel(),
+                         beta, c.ravel())
+        elif fmt == 'dia':
+            L = a.data.shape[1]
+            s.dia_matvec(M,N, len(a.offsets), L, a.offsets, a.data, alpha, b.ravel(), beta, c.ravel())
+        elif fmt == 'coo':
+            s.coo_matvec(M, a.nnz, a.row, a.col, a.data, alpha, b.ravel(), beta, c.ravel())
+        else:
+            assert_(False, 'unsupported type')
+    else:
+        if fmt == 'csr':
+            s.csr_matvecs(M, N, n_vecs, a.indptr, a.indices, a.data, alpha, b.ravel(), beta, c.ravel())
+        elif fmt == 'csc':
+            s.csc_matvecs(M, N, n_vecs, a.indptr, a.indices, a.data, alpha, b.ravel(), beta, c.ravel())
+        elif fmt == 'bsr':
+            R, C = a.blocksize
+            s.bsr_matvecs(M//R, N//R, n_vecs, R, C, a.indptr, a.indices, a.data, alpha, b.ravel(),
+                         beta, c.ravel())
+        else:
+            assert_(False, 'unsupported type')
+
 
 class BinopTester(object):
     # Custom type to test binary operations on sparse matrices.
@@ -2052,6 +2098,82 @@ class _TestInplaceArithmetic:
         assert_allclose(b.A, bp.A)
 
         assert_raises(TypeError, operator.ifloordiv, a, b)
+
+    def _check_inplace_gemm(self, dtype, a_shape, x_shape, y_shape):
+        if dtype == np.dtype('?'):
+            rnd = np.random.RandomState(1234)
+            A = np.zeros(a_shape, dtype)
+            ind = rnd.randint(np.prod(a_shape), size=a_shape[0])
+            A.flat[ind] = True
+            x = np.ones(x_shape, dtype)
+        else:
+            A = np.arange(np.prod(a_shape)).reshape(a_shape).astype(dtype)
+            x = np.arange(6, np.prod(x_shape)+6).reshape(x_shape).astype(dtype)
+
+            if dtype.kind == 'c':
+                A.imag = A.T.reshape(a_shape)
+                x.imag = x.real[::-1]
+
+        Asp = self.spmatrix(A)
+
+        # (0, 0)
+        y1 = np.ones(y_shape, dtype)
+        expect1 = np.zeros_like(y1)
+        sparse_gemm(Asp, x, y1, 0, 0)
+        assert_equal(y1, expect1)
+
+        # (1, 0)
+        y2 = np.ones(y_shape, dtype)
+        expect2 = np.dot(A, x)
+        sparse_gemm(Asp, x, y2, 1, 0)
+        assert_allclose(y2, expect2)
+
+        # when beta == 0, the values in the output array shouldn't matter.
+        if dtype.kind in ['f', 'c']:
+            y2a = np.zeros(y_shape, dtype)
+            fill_val = np.nan
+            if dtype.kind == 'c':
+                fill_val = complex(np.nan, np.nan)
+            y2a.fill(fill_val)
+            sparse_gemm(Asp, x, y2a, 1, 0)
+            assert_allclose(y2a, expect2)
+        
+        # (1, 1)
+        y3 = np.ones(y_shape, dtype)
+        expect3 = np.dot(A, x) + dtype.type(1)
+        sparse_gemm(Asp, x, y3, 1, 1)
+        assert_allclose(y3, expect3)
+
+        if dtype.kind != 'b':
+            # (2, 3)
+            y4 = np.ones(y_shape, dtype)
+            expect4 = 2*np.dot(A, x) + 3
+            sparse_gemm(Asp, x, y4, 2, 3)
+            assert_allclose(y4, expect4)
+
+            if dtype.kind != 'u':
+                # (-3, -2)
+                y5 = np.ones(y_shape, dtype)
+                expect5 = -3*np.dot(A, x) - 2
+                sparse_gemm(Asp, x, y5, -3, -2)
+                assert_allclose(y5, expect5)
+
+    def test_inplace_matvec(self):
+        a = self.spmatrix(np.eye(2))
+        if a.format in ['dok', 'lil']:
+            raise nose.SkipTest("feature not implemented")
+        for dtype in supported_dtypes:
+            dt = np.dtype(dtype)
+            yield self._check_inplace_gemm, dt, (3, 4), (4,), (3,)
+            yield self._check_inplace_gemm, dt, (3, 4), (4, 1), (3, 1)
+
+    def test_inplace_matvecs(self):
+        a = self.spmatrix(np.eye(2))
+        if a.format in ['dok', 'lil', 'dia', 'coo']:
+            raise nose.SkipTest("feature not implemented")
+        for dtype in supported_dtypes:
+            dt = np.dtype(dtype)
+            yield self._check_inplace_gemm, dt, (3, 4,), (4, 6), (3, 6)
 
 
 class _TestGetSet:
