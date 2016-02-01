@@ -3230,8 +3230,7 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
        The tau statistic.
     pvalue : float
        The two-sided p-value for a hypothesis test whose null hypothesis is
-       an absence of association, tau = 0. Currently not computed (nan) in
-       case of ties.
+       an absence of association, tau = 0.
 
     See also
     --------
@@ -3280,7 +3279,7 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
     >>> tau
     -0.47140452079103173
     >>> p_value
-    nan
+    0.2827454599327748
 
     """
 

@@ -572,7 +572,7 @@ def test_kendalltau():
     # with some ties
     x1 = [12, 2, 1, 12, 2]
     x2 = [1, 4, 7, 1, 0]
-    expected = (-0.47140452079103173, np.nan)
+    expected = (-0.47140452079103173, 0.2827454599327748)
     res = stats.kendalltau(x1, x2)
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
@@ -590,10 +590,6 @@ def test_kendalltau():
     # empty arrays provided as input
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
-    # check two different sort methods
-    assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
-                        stats.kendalltau(x1, x2, initial_lexsort=True)[1])
-
     # and with larger arrays
     np.random.seed(7546)
     x = np.array([np.random.normal(loc=1, scale=1, size=500),
@@ -601,7 +597,7 @@ def test_kendalltau():
     corr = [[1.0, 0.3],
             [0.3, 1.0]]
     x = np.dot(np.linalg.cholesky(corr), x)
-    expected = (0.19291382765531062, 1.1337108207276285e-10)
+    expected = (0.19291382765531062, 1.1337095377742629e-10)
     res = stats.kendalltau(x[0], x[1])
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])

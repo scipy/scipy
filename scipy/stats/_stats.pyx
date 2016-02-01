@@ -8,16 +8,12 @@ cimport numpy as np
 cimport cython
 
 ctypedef fused ordered0:
-    char
-    short
     int
     long
     float
     double
 
 ctypedef fused ordered1:
-    char
-    short
     int
     long
     float
@@ -27,6 +23,16 @@ ctypedef fused ordered1:
 @cython.boundscheck(False)
 cdef inline uint64_t pairs(uint64_t l):
     return (l * (l - 1)) // 2
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cdef inline double stat0(uint64_t l):
+    return l * (l - 1.) * (2*l + 5)
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cdef inline double stat1(uint64_t l):
+    return l * (l - 1.) * (l - 2)
 
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
@@ -101,38 +107,49 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
     # compute ties in x
     first = 0
     cdef uint64_t u = 0
+    cdef double u0 = 0, u1 = 0
+    
     for i in xrange(1, n):
         if x[perm[first]] != x[perm[i]]:
             u += pairs(i - first)
+            u0 += stat0(i - first)
+            u1 += stat1(i - first)
             first = i
+
+    if first == 0: # All ties
+        return KendalltauResult(np.nan, np.nan)
     u += pairs(n - first)
+    u0 += stat0(n - first)
+    u1 += stat1(n - first)
 
     # count exchanges
     cdef uint64_t exchanges = mergesort(0, n)
+
     # compute ties in y after mergesort with counting
     first = 0
     cdef uint64_t v = 0
-    
+    cdef double v0 = 0, v1 = 0
     for i in xrange(1, n):
         if y[perm[first]] != y[perm[i]]:
             v += pairs(i - first)
+            v0 += stat0(i - first)
+            v1 += stat1(i - first)
             first = i
+
+    if first == 0: # All ties
+        return KendalltauResult(np.nan, np.nan)
     v += pairs(n - first)
+    v0 += stat0(n - first)
+    v1 += stat1(n - first)
+    print v1
 
     tot = (n * (n - 1)) // 2
-    if tot == u or tot == v:
-        # Special case for all ties in one of the ranks
-        return KendalltauResult(np.nan, np.nan)
 
     # Limit range to fix computational errors
-    tau = min(1, max(-1, ((tot + t) - (v + u) - 2 * exchanges) / np.sqrt(tot - u) / np.sqrt(tot - v)))
-
-    # what follows reproduces the ending of Gary Strangman's original
-    # stats.kendalltau() in SciPy
-    if u == 0 and v == 0:
-        svar = (4.0 * n + 10.0) / (9.0 * n * (n - 1))
-        z = tau / np.sqrt(svar)
-        prob = special.erfc(np.abs(z) / 1.4142136)
-        return KendalltauResult(tau, prob)
-    
-    return KendalltauResult(tau, np.nan)
+    tau = min(1., max(-1., (tot - u - v + t - 2 * exchanges) / np.sqrt(tot - u) / np.sqrt(tot - v)))
+    # (conc - disc) is approximately normally distributed with this variance
+    var = (n * (n - 1) * (2*n + 5) - u0 - v0) / 18. + float(
+        2 * u * v) / (n * (n - 1)) + float(u1 * v1) / (9 * n * (n - 1) * (n - 2))
+    z = (tot - u - v + t - 2 * exchanges) / np.sqrt(var)
+    prob = special.erfc(np.abs(z)/np.sqrt(2))
+    return KendalltauResult(tau, prob)
