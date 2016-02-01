@@ -2418,8 +2418,8 @@ class _TestFancyIndexing:
         D = np.asmatrix(np.random.rand(M,N))
         D = np.multiply(D, D > 0.5)
 
-        I = np.random.random_integers(-M + 1, M - 1, size=NUM_SAMPLES)
-        J = np.random.random_integers(-N + 1, N - 1, size=NUM_SAMPLES)
+        I = np.random.randint(-M + 1, M, size=NUM_SAMPLES)
+        J = np.random.randint(-N + 1, N, size=NUM_SAMPLES)
 
         S = self.spmatrix(D)
 

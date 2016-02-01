@@ -610,9 +610,6 @@ class randint_gen(rv_discrete):
 
     `randint` takes ``low`` and ``high`` as shape parameters.
 
-    Note the difference to the numpy ``random_integers`` which
-    returns integers on a *closed* interval ``[low, high]``.
-
     %(after_notes)s
 
     %(example)s
