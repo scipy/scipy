@@ -171,9 +171,10 @@ class Data(object):
     Parameters
     ----------
     x : array_like
-        Input data for regression.
-    y : array_like, optional
-        Input data for regression.
+        Observed data for the independent variable of the regression
+    y : array_like or scalar, optional
+        If array_like, observed data for the dependent variable of the regression.
+        A scalar input implies that the model to be used on the data is implicit.
     we : array_like, optional
         If `we` is a scalar, then that value is used for all data points (and
         all dimensions of the response variable).
@@ -278,9 +279,10 @@ class RealData(Data):
     Parameters
     ----------
     x : array_like
-        x
-    y : array_like, optional
-        y
+        Observed data for the independent variable of the regression
+    y : array_like or scalar, optional
+        If array_like, observed data for the dependent variable of the regression.
+        A scalar input implies that the model to be used on the data is implicit.
     sx, sy : array_like, optional
         Standard deviations of `x`.
         `sx` are standard deviations of `x` and are converted to weights by
