@@ -314,23 +314,22 @@ class Getset(Benchmark):
 
 
 class NullSlice(Benchmark):
-    params = [[0.05, 0.01]]
-    param_names = ['density']
+    params = [[0.05, 0.01], ['csr', 'csc', 'lil']]
+    param_names = ['density', 'format']
 
-    def setup(self, density):
+    def setup(self, density, format):
         n = 100000
         k = 1000
-        format = 'csr'
         self.X = sparse.rand(n, k, format=format, density=density)
 
-    def time_3_rows(self, density):
+    def time_3_rows(self, density, format):
         self.X[[0, 100, 105], :]
 
-    def time_10000_rows(self, density):
+    def time_10000_rows(self, density, format):
         self.X[np.arange(10000), :]
 
-    def time_3_cols(self, density):
+    def time_3_cols(self, density, format):
         self.X[:, [0, 100, 105]]
 
-    def time_100_cols(self, density):
+    def time_100_cols(self, density, format):
         self.X[:, np.arange(100)]
