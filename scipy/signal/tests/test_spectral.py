@@ -9,7 +9,7 @@ from numpy.testing import assert_raises, assert_approx_equal, \
 from scipy import signal, fftpack
 from scipy._lib._version import NumpyVersion
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
-                          spectrogram)
+                          spectrogram, tfestimate)
 
 
 class TestPeriodogram(TestCase):
@@ -781,9 +781,41 @@ class TestCSD:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
+
+class TestTfestimate:
+    def test_identical_input(self):
+        fs = 10e3
+        N = 1e5
+        time = np.arange(N) / fs
+        x = np.sin(2 * np.pi * time)
+        f, Tf = signal.tfestimate(x, x, fs=fs)
+        assert_allclose(Tf, 1)
+
+    def test_exactmatch(self):
+        # Filter random noise x with a Butterworth filter
+        fs = 10e3
+        N = 1e6
+        noise_power = 0.001 * fs / 2
+        time = np.arange(N) / fs
+        rng = np.random.RandomState(1234)
+        x = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
+        b, a = signal.butter(2, 0.5, 'low')
+        y = signal.lfilter(b, a, x)
+
+        # Estimate the filter from x and y containing same number of samples
+        f, Tf = signal.tfestimate(x, y, fs=fs, nperseg=len(x))
+
+        # Compute the expected finite impulse response of the filter
+        delta = np.zeros(time.shape)
+        delta[0] = 1.0
+        Tf_act = np.fft.rfft(signal.lfilter(b, a, delta))
+        assert_allclose(np.abs(Tf), np.abs(Tf_act), atol=0.01)
+
+
 class TestCoherence:
     def test_identical_input(self):
-        x = np.random.randn(20)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(20)
         y = np.copy(x)  # So `y is x` -> False
 
         f = np.linspace(0, 0.5, 6)
@@ -794,7 +826,8 @@ class TestCoherence:
         assert_allclose(C, C1)
 
     def test_phase_shifted_input(self):
-        x = np.random.randn(20)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(20)
         y = -x
 
         f = np.linspace(0, 0.5, 6)
@@ -807,7 +840,8 @@ class TestCoherence:
 
 class TestSpectrogram:
     def test_average_all_segments(self):
-        x = np.random.randn(1024)
+        rng = np.random.RandomState(1234)
+        x = rng.randn(1024)
 
         fs = 1.0
         window = ('tukey', 0.25)
@@ -834,8 +868,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -866,8 +900,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        np.random.seed(2353425)
-        r = np.random.rand(nin)
+        rng = np.random.RandomState(2353425)
+        r = rng.rand(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times

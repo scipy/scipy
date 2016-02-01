@@ -21,6 +21,13 @@ This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
 New features
 ============
 
+`scipy.signal` improvements
+---------------------------
+
+Transfer function estimation is now available via `scipy.signal.tfestimate`.
+This class estimates the transfer function from an input signal ``x`` to an
+output signal ``y``, using Welch's method.
+
 
 Deprecated features
 ===================
@@ -36,6 +43,7 @@ Other changes
 
 Authors
 =======
+
 
 Issues closed
 -------------
