@@ -10,6 +10,12 @@ from scipy.odr import Data, Model, ODR, RealData, odr_stop
 
 class TestODR(TestCase):
 
+    # Bad Data for 'x'
+
+    def test_bad_data(self):
+        self.assertRaises(ValueError, Data, 2, 1)
+        self.assertRaises(ValueError, RealData, 2, 1)
+
     # Explicit Example
 
     def explicit_fcn(self, B, x):

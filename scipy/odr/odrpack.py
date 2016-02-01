@@ -243,6 +243,12 @@ class Data(object):
 
     def __init__(self, x, y=None, we=None, wd=None, fix=None, meta={}):
         self.x = _conv(x)
+
+        if not isinstance(self.x, numpy.ndarray):
+            raise ValueError(("Expected an 'ndarray' of data for 'x', "
+                              "but instead got data of type '{name}'").format(
+                    name=type(self.x).__name__))
+
         self.y = _conv(y)
         self.we = _conv(we)
         self.wd = _conv(wd)
@@ -350,6 +356,12 @@ class RealData(Data):
             self._ga_flags['we'] = 'covy'
 
         self.x = _conv(x)
+
+        if not isinstance(self.x, numpy.ndarray):
+            raise ValueError(("Expected an 'ndarray' of data for 'x', "
+                              "but instead got data of type '{name}'").format(
+                    name=type(self.x).__name__))
+
         self.y = _conv(y)
         self.sx = _conv(sx)
         self.sy = _conv(sy)
