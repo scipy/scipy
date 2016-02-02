@@ -125,7 +125,10 @@ def _asfarray(x):
     already an array with a float dtype, and do not cast complex types to
     real."""
     if hasattr(x, "dtype") and x.dtype.char in numpy.typecodes["AllFloat"]:
-        return x
+        # 'dtype' attribute does not ensure that the
+        # object is an ndarray (e.g. Series class
+        # from the pandas library)
+        return numpy.asarray(x, dtype=x.dtype)
     else:
         # We cannot use asfarray directly because it converts sequences of
         # complex to sequence of real
