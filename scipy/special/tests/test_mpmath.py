@@ -34,9 +34,9 @@ def mpmath_check(min_ver):
                       "mpmath version >= %s required" % min_ver)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # expi
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.10')
 def test_expi_complex():
@@ -49,10 +49,12 @@ def test_expi_complex():
 
     FuncData(sc.expi, dataset, 0, 1).check()
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # hyp0f1
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
+
+@mpmath_check('0.00')
 def test_hyp0f1_gh5764():
     # Do a small and somewhat systematic test that runs quickly
     pts = []
@@ -66,15 +68,15 @@ def test_hyp0f1_gh5764():
     res = np.array([sc.hyp0f1(*p) for p in pts])
     assert_allclose(res, std, atol=1e-13, rtol=1e-13)
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # hyp2f1
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.14')
 def test_hyp2f1_strange_points():
     pts = [
-        (2,-1,-1,0.7),
-        (2,-2,-2,0.7),
+        (2, -1, -1, 0.7),
+        (2, -2, -2, 0.7),
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
@@ -86,26 +88,26 @@ def test_hyp2f1_strange_points():
 @mpmath_check('0.13')
 def test_hyp2f1_real_some_points():
     pts = [
-        (1,2,3,0),
+        (1, 2, 3, 0),
         (1./3, 2./3, 5./6, 27./32),
         (1./4, 1./2, 3./4, 80./81),
-        (2,-2,-3,3),
-        (2,-3,-2,3),
-        (2,-1.5,-1.5,3),
-        (1,2,3,0),
+        (2,-2, -3, 3),
+        (2, -3, -2, 3),
+        (2, -1.5, -1.5, 3),
+        (1, 2, 3, 0),
         (0.7235, -1, -5, 0.3),
         (0.25, 1./3, 2, 0.999),
         (0.25, 1./3, 2, -1),
-        (2,3,5,0.99),
-        (3./2,-0.5,3,0.99),
-        (2,2.5,-3.25,0.999),
+        (2, 3, 5, 0.99),
+        (3./2, -0.5, 3, 0.99),
+        (2, 2.5, -3.25, 0.999),
         (-8, 18.016500331508873, 10.805295997850628, 0.90875647507000001),
-        (-10,900,-10.5,0.99),
-        (-10,900,10.5,0.99),
-        (-1,2,1,1.0),
-        (-1,2,1,-1.0),
-        (-3,13,5,1.0),
-        (-3,13,5,-1.0),
+        (-10, 900, -10.5, 0.99),
+        (-10, 900, 10.5, 0.99),
+        (-1, 2, 1, 1.0),
+        (-1, 2, 1, -1.0),
+        (-3, 13, 5, 1.0),
+        (-3, 13, 5, -1.0),
         (0.5, 1 - 270.5, 1.5, 0.999**2),  # from issue 1561
     ]
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
@@ -165,20 +167,18 @@ def test_hyp2f1_real_some():
 @mpmath_check('0.12')
 @dec.slow
 def test_hyp2f1_real_random():
-    dataset = []
-
     npoints = 500
     dataset = np.zeros((npoints, 5), np.float_)
 
     np.random.seed(1234)
-    dataset[:,0] = np.random.pareto(1.5, npoints)
-    dataset[:,1] = np.random.pareto(1.5, npoints)
-    dataset[:,2] = np.random.pareto(1.5, npoints)
-    dataset[:,3] = 2*np.random.rand(npoints) - 1
+    dataset[:, 0] = np.random.pareto(1.5, npoints)
+    dataset[:, 1] = np.random.pareto(1.5, npoints)
+    dataset[:, 2] = np.random.pareto(1.5, npoints)
+    dataset[:, 3] = 2*np.random.rand(npoints) - 1
 
-    dataset[:,0] *= (-1)**np.random.randint(2, npoints)
-    dataset[:,1] *= (-1)**np.random.randint(2, npoints)
-    dataset[:,2] *= (-1)**np.random.randint(2, npoints)
+    dataset[:, 0] *= (-1)**np.random.randint(2, npoints)
+    dataset[:, 1] *= (-1)**np.random.randint(2, npoints)
+    dataset[:, 2] *= (-1)**np.random.randint(2, npoints)
 
     for ds in dataset:
         if mpmath.__version__ < '0.14':
@@ -187,12 +187,11 @@ def test_hyp2f1_real_random():
                 ds[2] = abs(ds[:2]).max()
         ds[4] = float(mpmath.hyp2f1(*tuple(ds[:4])))
 
-    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
+    FuncData(sc.hyp2f1, dataset, (0, 1, 2, 3), 4, rtol=1e-9).check()
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # erf (complex)
-#------------------------------------------------------------------------------
-
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.14')
 def test_erf_complex():
@@ -202,7 +201,7 @@ def test_erf_complex():
         mpmath.mp.dps = 70
         x1, y1 = np.meshgrid(np.linspace(-10, 1, 31), np.linspace(-10, 1, 11))
         x2, y2 = np.meshgrid(np.logspace(-80, .8, 31), np.logspace(-80, .8, 11))
-        points = np.r_[x1.ravel(),x2.ravel()] + 1j*np.r_[y1.ravel(),y2.ravel()]
+        points = np.r_[x1.ravel(),x2.ravel()] + 1j*np.r_[y1.ravel(), y2.ravel()]
 
         assert_func_equal(sc.erf, lambda x: complex(mpmath.erf(x)), points,
                           vectorized=False, rtol=1e-13)
@@ -212,9 +211,9 @@ def test_erf_complex():
         mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # lpmv
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.15')
 def test_lpmv():
@@ -271,9 +270,9 @@ def test_lpmv():
         np.seterr(**olderr)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # beta
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.15')
 def test_beta():
@@ -310,9 +309,9 @@ def test_beta():
         mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Machinery for systematic tests
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 class Arg(object):
     """
@@ -467,9 +466,12 @@ class MpmathData(object):
             # in some cases.
             if np.issubdtype(argarr.dtype, np.complexfloating):
                 pytype = complex
-                mptype = lambda x: mpmath.mpc(complex(x))
+
+                def mptype(x):
+                    return mpmath.mpc(complex(x))
             else:
-                mptype = lambda x: mpmath.mpf(float(x))
+                def mptype(x):
+                    return mpmath.mpf(float(x))
 
                 def pytype(x):
                     if abs(x.imag) > 1e-16*(1 + abs(x.real)):
@@ -532,9 +534,9 @@ class _SystematicMeta(type):
         return type.__new__(cls, cls_name, bases, dct)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Dealing with mpmath quirks
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 def _trace_args(func):
     def tofloat(x):
@@ -639,9 +641,9 @@ def _inf_to_nan(func):
     return wrap
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Systematic tests
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 HYPERKW = dict(maxprec=200, maxterms=200)
 
@@ -961,13 +963,12 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
                             rtol=1e-11)
 
-        # Check cross-over reqion
+        # Check cross-over region
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
-                            (np.linspace(-50, 50, 171)[:,None]
-                             + np.r_[0, np.logspace(-3, 2, 61),
-                                       -np.logspace(-3, 2, 11)]*1j
-                             ).ravel(),
+                            (np.linspace(-50, 50, 171)[:, None] +
+                             np.r_[0, np.logspace(-3, 2, 61),
+                                   -np.logspace(-3, 2, 11)]*1j).ravel(),
                             rtol=1e-11)
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
