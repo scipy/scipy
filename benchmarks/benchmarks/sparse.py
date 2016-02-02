@@ -24,7 +24,7 @@ from .common import Benchmark
 
 def random_sparse(m, n, nnz_per_row):
     rows = numpy.arange(m).repeat(nnz_per_row)
-    cols = numpy.random.random_integers(low=0, high=n-1, size=nnz_per_row*m)
+    cols = numpy.random.randint(0, n, size=nnz_per_row*m)
     vals = numpy.random.random_sample(m*nnz_per_row)
     return coo_matrix((vals, (rows, cols)), (m, n)).tocsr()
 
