@@ -29,6 +29,14 @@ generators of random matrices in the SO(N) and O(N) groups, respectively. They
 generate matrices in the Haar distribution, the only uniform distribution on
 these group manifolds.
 
+`scipy.interpolate` improvements
+--------------------------------
+
+Cubic spline interpolation is now available via `scipy.interpolate.CubicSpline`.
+This class represents a piecewise cubic polynomial passing through given points
+and C2 continuous. It is represented in the standard polynomial basis on each
+segment.
+
 Deprecated features
 ===================
 
@@ -43,6 +51,7 @@ Other changes
 
 Authors
 =======
+* Nikolay Mayorov
 
 Issues closed
 -------------
