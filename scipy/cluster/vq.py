@@ -689,16 +689,13 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         (not used yet)
     minit : str, optional
         Method for initialization. Available methods are 'random',
-        'points', 'uniform', and 'matrix':
+        'points', and 'matrix':
 
         'random': generate k centroids from a Gaussian with mean and
         variance estimated from the data.
 
         'points': choose k observations (rows) at random from data for
         the initial centroids.
-
-        'uniform': generate k observations from the data from a uniform
-        distribution defined by the data set (unsupported).
 
         'matrix': interpret the k parameter as a k by M (or length k
         array for one-dimensional data) array of initial centroids.
