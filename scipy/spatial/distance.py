@@ -200,7 +200,7 @@ def wminkowski(u, v, p, w):
 
     .. math::
 
-       \\left(\\sum{(w_i |u_i - v_i|^p)}\\right)^{1/p}.
+       \\left(\\sum{(|w_i (u_i - v_i)|^p)}\\right)^{1/p}.
 
     Parameters
     ----------
