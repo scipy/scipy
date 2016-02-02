@@ -53,6 +53,7 @@ def test_expi_complex():
 # hyp0f1
 #------------------------------------------------------------------------------
 
+@mpmath_check('0.00')
 def test_hyp0f1_gh5764():
     # Do a small and somewhat systematic test that runs quickly
     pts = []
