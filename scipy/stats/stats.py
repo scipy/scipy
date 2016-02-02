@@ -82,6 +82,9 @@ Variability
     obrientransform
     signaltonoise
     sem
+    zmap
+    zscore
+    iqr
 
 Trimming Functions
 ------------------
@@ -165,6 +168,7 @@ import warnings
 
 # Scipy imports.
 from scipy._lib.six import callable, string_types, xrange
+from scipy._lib._version import NumpyVersion
 from numpy import array, asarray, ma, zeros
 import scipy.special as special
 import scipy.linalg as linalg
@@ -180,7 +184,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore', 'histogram',
            'histogram2', 'cumfreq', 'relfreq', 'obrientransform',
-           'signaltonoise', 'sem', 'zmap', 'zscore', 'threshold',
+           'signaltonoise', 'sem', 'zmap', 'zscore', 'iqr', 'threshold',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
@@ -1837,6 +1841,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=Fals
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
 
+
 CumfreqResult = namedtuple('CumfreqResult',
                            ('cumcount', 'lowerlimit', 'binsize',
                             'extrapoints'))
@@ -1917,6 +1922,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights)
     cumhist = np.cumsum(h * 1, axis=0)
     return CumfreqResult(cumhist, l, b, e)
+
 
 RelfreqResult = namedtuple('RelfreqResult',
                            ('frequency', 'lowerlimit', 'binsize',
@@ -2173,8 +2179,8 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
 
 def zscore(a, axis=0, ddof=0):
     """
-    Calculates the z score of each value in the sample, relative to the sample
-    mean and standard deviation.
+    Calculates the z score of each value in the sample, relative to the
+    sample mean and standard deviation.
 
     Parameters
     ----------
@@ -2190,26 +2196,26 @@ def zscore(a, axis=0, ddof=0):
     Returns
     -------
     zscore : array_like
-        The z-scores, standardized by mean and standard deviation of input
-        array `a`.
+        The z-scores, standardized by mean and standard deviation of
+        input array `a`.
 
     Notes
     -----
     This function preserves ndarray subclasses, and works also with
-    matrices and masked arrays (it uses `asanyarray` instead of `asarray`
-    for parameters).
+    matrices and masked arrays (it uses `asanyarray` instead of
+    `asarray` for parameters).
 
     Examples
     --------
-    >>> a = np.array([ 0.7972,  0.0767,  0.4383,  0.7866,  0.8091,  0.1954,
-    ...                0.6307, 0.6599,  0.1065,  0.0508])
+    >>> a = np.array([ 0.7972,  0.0767,  0.4383,  0.7866,  0.8091,
+    ...                0.1954,  0.6307,  0.6599,  0.1065,  0.0508])
     >>> from scipy import stats
     >>> stats.zscore(a)
     array([ 1.1273, -1.247 , -0.0552,  1.0923,  1.1664, -0.8559,  0.5786,
             0.6748, -1.1488, -1.3324])
 
-    Computing along a specified axis, using n-1 degrees of freedom (``ddof=1``)
-    to calculate the standard deviation:
+    Computing along a specified axis, using n-1 degrees of freedom
+    (``ddof=1``) to calculate the standard deviation:
 
     >>> b = np.array([[ 0.3148,  0.0478,  0.6243,  0.4608],
     ...               [ 0.7149,  0.0775,  0.6072,  0.9656],
@@ -2237,9 +2243,9 @@ def zmap(scores, compare, axis=0, ddof=0):
     """
     Calculates the relative z-scores.
 
-    Returns an array of z-scores, i.e., scores that are standardized to zero
-    mean and unit variance, where mean and variance are calculated from the
-    comparison array.
+    Returns an array of z-scores, i.e., scores that are standardized to
+    zero mean and unit variance, where mean and variance are calculated
+    from the comparison array.
 
     Parameters
     ----------
@@ -2264,8 +2270,8 @@ def zmap(scores, compare, axis=0, ddof=0):
     Notes
     -----
     This function preserves ndarray subclasses, and works also with
-    matrices and masked arrays (it uses `asanyarray` instead of `asarray`
-    for parameters).
+    matrices and masked arrays (it uses `asanyarray` instead of
+    `asarray` for parameters).
 
     Examples
     --------
@@ -2283,6 +2289,275 @@ def zmap(scores, compare, axis=0, ddof=0):
                 np.expand_dims(sstd, axis=axis))
     else:
         return (scores - mns) / sstd
+
+
+def _iqr_scale_to_num(scale):
+    """
+    A helper function to convert the 'scale' argument of `iqr` to a
+    number.
+
+    scale: str
+        If scale is one of ['raw', 'normal'], this function will map the
+        string to a value.
+
+    The concept for this function is borrowed heavily from the
+    `numpy.histogram` helper function `_hist_optim_numbins_estimator`.
+    """
+    # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    scale_conversions = {'raw': 1.0,
+                         'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
+    try:
+        return scale_conversions[scale.lower()]
+    except KeyError:
+        raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+
+
+def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
+           interpolation='linear', keepdims=False):
+    """
+    Compute the interquartile range of the data along the specified
+    axis.
+
+    The interquartile range (IQR) is the difference between the 75th and
+    25th percentile of the data. It is a measure of the dispersion
+    similar to standard deviation or variance, but is much more robust
+    against outliers [2]_.
+
+    The ``rng`` parameter allows this function to compute other
+    percentile ranges than the actual IQR. For example, setting
+    ``rng=(0, 100)`` is equivalent to `numpy.ptp`.
+
+    The IQR of an empty array is `np.nan`.
+
+    .. versionadded:: 0.18.0
+
+    Parameters
+    ----------
+    x : array_like
+        Input array or object that can be converted to an array.
+    axis : int or sequence of int, optional
+        Axis along which the range is computed. The default is to
+        compute the IQR for the entire array.
+    rng : Two-element sequence containing floats in range of [0,100] optional
+        Percentiles over which to compute the range. Each must be
+        between 0 and 100, inclusive. The default is the true IQR:
+        `(25, 75)`. The order of the elements is not important.
+    scale : scalar or str, optional
+        The numerical value of scale will be divided out of the final
+        result. The following string values are recognized:
+
+          'raw' : No scaling, just return the raw IQR.
+          'normal' : Scale by :math:`2 \\sqrt{2} erf^{-1}(\\frac{1}{2}) \\approx 1.349`.
+
+        The default is 'raw'. Array-like scale is also allowed, as long
+        as it broadcasts correctly to the output such that
+        ``out / scale`` is a valid operation. The output dimensions
+        depend on the input array, `x`, the `axis` argument, and the
+        `keepdims` flag.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate'
+        returns nan, 'raise' throws an error, 'omit' performs the
+        calculations ignoring nan values. Default is 'propagate'.
+    interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}, optional
+        Specifies the interpolation method to use when the percentile
+        boundaries lie between two data points `i` and `j`:
+
+          * 'linear' : `i + (j - i) * fraction`, where `fraction` is the
+              fractional part of the index surrounded by `i` and `j`.
+          * 'lower' : `i`.
+          * 'higher' : `j`.
+          * 'nearest' : `i` or `j` whichever is nearest.
+          * 'midpoint' : `(i + j) / 2`.
+
+        Default is 'linear'.
+    keepdims : bool, optional
+        If this is set to `True`, the reduced axes are left in the
+        result as dimensions with size one. With this option, the result
+        will broadcast correctly against the original array `x`.
+
+    Returns
+    -------
+    iqr : scalar or ndarray
+        If ``axis=None``, a scalar is returned. If the input contains
+        integers or floats of smaller precision than ``np.float64``, then the
+        output data-type is ``np.float64``. Otherwise, the output data-type is
+        the same as that of the input.
+
+    See Also
+    --------
+    numpy.std, numpy.var
+
+    Examples
+    --------
+    >>> from scipy.stats import iqr
+    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
+    >>> x
+    array([[10,  7,  4],
+           [ 3,  2,  1]])
+    >>> iqr(x)
+    4.0
+    >>> iqr(x, axis=0)
+    array([ 3.5,  2.5,  1.5])
+    >>> iqr(x, axis=1)
+    array([ 3.,  1.])
+    >>> iqr(x, axis=1, keepdims=True)
+    array([[ 3.],
+           [ 1.]])
+
+    Notes
+    -----
+    This function is heavily dependent on the version of `numpy` that is
+    installed. Versions greater than 1.11.0b3 are highly recommended, as they
+    include a number of enhancements and fixes to `numpy.percentile` and
+    `numpy.nanpercentile` that affect the operation of this function. The
+    following modifications apply:
+
+    Below 1.10.0 : `nan_policy` is poorly defined.
+        The default behavior of `numpy.percentile` is used for 'propagate'. This
+        is a hybrid of 'omit' and 'propagate' that mostly yields a skewed
+        version of 'omit' since NaNs are sorted to the end of the data. A
+        warning is raised if there are NaNs in the data.
+    Below 1.9.0: `numpy.nanpercentile` does not exist.
+        This means that `numpy.percentile` is used regardless of `nan_policy`
+        and a warning is issued. See previous item for a description of the
+        behavior.
+    Below 1.9.0: `keepdims` and `interpolation` are not supported.
+        The keywords get ignored with a warning if supplied with non-default
+        values. However, multiple axes are still supported.
+
+    References
+    ----------
+    .. [1] "Interquartile range" https://en.wikipedia.org/wiki/Interquartile_range
+    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    .. [3] "Quantile" https://en.wikipedia.org/wiki/Quantile
+    """
+    x = asarray(x)
+
+    # This check prevents percentile from raising an error later. Also, it is
+    # consistent with `np.var` and `np.std`.
+    if not x.size:
+        return np.nan
+
+    # An error may be raised here, so fail-fast, before doing lengthy
+    # computations, even though `scale` is not used until later
+    if isinstance(scale, string_types):
+        scale = _iqr_scale_to_num(scale)
+
+    # Select the percentile function to use based on nans and policy
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        percentile_func = _iqr_nanpercentile
+    else:
+        percentile_func = _iqr_percentile
+
+    if len(rng) != 2:
+        raise TypeError("quantile range must be two element sequence")
+
+    rng = sorted(rng)
+    pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
+                          keepdims=keepdims, contains_nan=contains_nan)
+    out = np.subtract(pct[1], pct[0])
+
+    if scale != 1.0:
+        out /= scale
+
+    return out
+
+
+def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
+    """
+    Private wrapper that works around older versions of `numpy`.
+
+    While this function is pretty much necessary for the moment, it
+    should be removed as soon as the minimum supported numpy version
+    allows.
+    """
+    if contains_nan and NumpyVersion(np.__version__) < '1.10.0a':
+        # I see no way to avoid the version check to ensure that the corrected
+        # NaN behavior has been implemented except to call `percentile` on a
+        # small array.
+        msg = "Keyword nan_policy='propagate' not correctly supported for " \
+              "numpy versions < 1.10.x. The default behavior of " \
+              "`numpy.percentile` will be used."
+        warnings.warn(msg, RuntimeWarning)
+
+    try:
+        result = np.percentile(x, q, axis=axis, keepdims=keepdims,
+                               interpolation=interpolation)
+    except TypeError:
+        if interpolation != 'linear' or keepdims:
+            # At time or writing, this means np.__version__ < 1.9.0
+            warnings.warn("Keywords interpolation and keepdims not supported "
+                          "for your version of numpy", RuntimeWarning)
+        try:
+            # Special processing if axis is an iterable
+            original_size = len(axis)
+            axis = np.unique(np.asarray(axis) % x.ndim)
+            if original_size > axis.size:
+                # mimic numpy if axes are duplicated
+                raise ValueError("duplicate value in axis")
+            if axis.size == x.ndim:
+                # axis includes all axes: revert to None
+                axis = None
+            elif axis.size == 1:
+                # no rolling necessary
+                axis = axis[0]
+            else:
+                # roll multiple axes to the end and flatten that part out
+                for ax in axis[::-1]:
+                    x = np.rollaxis(x, ax, x.ndim)
+                x = x.reshape(x.shape[:-axis.size] +
+                              (np.prod(x.shape[-axis.size:]),))
+                axis = -1
+        except TypeError:
+            # Axis is a scalar at this point
+            pass
+        result = np.percentile(x, q, axis=axis)
+
+    return result
+
+
+def _iqr_nanpercentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
+    """
+    Private wrapper that works around the following:
+
+      1. A bug in `np.nanpercentile` that was around until numpy version
+         1.11.0.
+      2. A bug in `np.percentile` NaN handling that was fixed in numpy
+         version 1.10.0.
+      3. The non-existence of `np.nanpercentile` before numpy version
+         1.9.0.
+
+    While this function is pretty much necessary for the moment, it
+    should be removed as soon as the minimum supported numpy version
+    allows.
+    """
+    if hasattr(np, 'nanpercentile'):
+        # At time or writing, this means np.__version__ < 1.9.0
+        result = np.nanpercentile(x, q, axis=axis,
+                                  interpolation=interpolation, keepdims=keepdims)
+        # If non-scalar result and nanpercentile does not do proper axis roll.
+        # I see no way of avoiding the version test since dimensions may just
+        # happen to match in the data.
+        if result.ndim > 1 and NumpyVersion(np.__version__) < '1.11.0a':
+            axis = np.asarray(axis)
+            if axis.size == 1:
+                # If only one axis specified, reduction happens along that dimension
+                if axis.ndim == 0:
+                    axis = axis[None]
+                result = np.rollaxis(result, axis[0])
+            else:
+                # If multiple axes, reduced dimeision is last
+                result = np.rollaxis(result, -1)
+    else:
+        msg = "Keyword nan_policy='omit' not correctly supported for numpy " \
+              "versions < 1.9.x. The default behavior of  numpy.percentile " \
+              "will be used."
+        warnings.warn(msg, RuntimeWarning)
+        result = _iqr_percentile(x, q, axis=axis)
+
+    return result
 
 
 #####################################
