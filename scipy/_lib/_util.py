@@ -177,7 +177,7 @@ def _asarray_validated(a, check_finite=True,
         import scipy.sparse
         if scipy.sparse.issparse(a):
             msg = ('Sparse matrices are not supported by this function. '
-                   'Perhaps one of the scipy.linalg.sparse functions '
+                   'Perhaps one of the scipy.sparse.linalg functions '
                    'would work instead.')
             raise ValueError(msg)
     if not mask_ok:
