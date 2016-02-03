@@ -45,7 +45,7 @@ class NumpyVersion():
     Examples
     --------
     >>> from scipy._lib._version import NumpyVersion
-    >>> if NumpyVersion(np.__version__) < '1.7.0'):
+    >>> if NumpyVersion(np.__version__) < '1.7.0':
     ...     print('skip')
     skip
 
