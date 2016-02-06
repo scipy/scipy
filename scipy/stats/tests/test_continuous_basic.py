@@ -47,12 +47,6 @@ distcont_extra = [
     ['genextreme', (3.3184017469423535,)],
 ]
 
-distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
-               'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
-               'cosine', 'kstwobign', 'truncnorm', 'mielke', 'recipinvgauss',
-               'levy', 'johnsonsu', 'levy_l', 'powernorm', 'wrapcauchy',
-               'johnsonsb', 'truncexpon', 'invgauss', 'invgamma',
-               'powerlognorm']
 
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
             'vonmises', 'vonmises_line', 'mielke', 'semicircular',
@@ -106,9 +100,9 @@ def test_cont_basic():
             yield check_pdf_logpdf, distfn, arg, distname
             yield check_cdf_logcdf, distfn, arg, distname
             yield check_sf_logsf, distfn, arg, distname
-            if distname in distmissing:
-                alpha = 0.01
-                yield check_distribution_rvs, distname, arg, alpha, rvs
+
+            alpha = 0.01
+            yield check_distribution_rvs, distname, arg, alpha, rvs
 
             locscale_defaults = (0, 1)
             meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
@@ -168,9 +162,9 @@ def test_cont_basic_slow():
             yield check_cdf_logcdf, distfn, arg, distname
             yield check_sf_logsf, distfn, arg, distname
             # yield check_oth, distfn, arg # is still missing
-            if distname in distmissing:
-                alpha = 0.01
-                yield check_distribution_rvs, distname, arg, alpha, rvs
+
+            alpha = 0.01
+            yield check_distribution_rvs, distname, arg, alpha, rvs
 
             locscale_defaults = (0, 1)
             meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
