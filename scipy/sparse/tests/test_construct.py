@@ -356,8 +356,8 @@ class TestConstructUtils(TestCase):
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """
-        A = coo_matrix([[1,2],[3,4]])
-        B = coo_matrix([[5],[6]])
+        A = coo_matrix([[1, 2], [3, 4]])
+        B = coo_matrix([[5], [6]])
         C = coo_matrix([[7]])
 
         expected = matrix([[1, 2, 0, 0],
@@ -371,7 +371,7 @@ class TestConstructUtils(TestCase):
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
         # one 1d matrix and a scalar
-        assert_array_equal(construct.block_diag([[2,3], 4]).toarray(),
+        assert_array_equal(construct.block_diag([[2, 3], 4]).toarray(),
                            [[2, 3, 0], [0, 0, 4]])
 
     def test_block_diag_1(self):

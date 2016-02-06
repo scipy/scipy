@@ -623,13 +623,14 @@ def bmat(blocks, format=None, dtype=None):
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
 def block_diag(mats, format=None, dtype=None):
-    """      
+    """
     Build a block diagonal sparse matrix from provided matrices.
 
     Parameters
     ----------
     mats : sequence of matrices
-        Input matrices. Can be any combination of lists, numpy.array, numpy.matrix or sparse matrix ("csr', 'coo"...)
+        Input matrices. Can be any combination of lists, numpy.array,
+         numpy.matrix or sparse matrix ("csr', 'coo"...)
     format : str, optional
         The sparse format of the result (e.g. "csr").  If not given, the matrix
         is returned in "coo" format.
@@ -643,7 +644,8 @@ def block_diag(mats, format=None, dtype=None):
 
     Notes
     -----
-    Providing a sequence of equally shaped matrices will provide marginally faster results
+    Providing a sequence of equally shaped matrices
+     will provide marginally faster results
 
     .. versionadded:: 0.18.0
 
@@ -657,7 +659,7 @@ def block_diag(mats, format=None, dtype=None):
     >>> A = coo_matrix([[1, 2], [3, 4]])
     >>> B = coo_matrix([[5, 6], [7, 8]])
     >>> C = coo_matrix([[9, 10], [11,12]])
-    >>> _block_diag((A, B, C)).toarray()
+    >>> block_diag((A, B, C)).toarray()
     array([[ 1,  2,  0,  0,  0,  0],
            [ 3,  4,  0,  0,  0,  0],
            [ 0,  0,  5,  6,  0,  0],
@@ -702,8 +704,10 @@ def block_diag(mats, format=None, dtype=None):
         shape = mats_[0].shape
         data = np.array(mats_, dtype).ravel()
         row_, col_ = np.indices(shape)
-        row = (np.tile(row_.ravel(), n) + np.arange(n).repeat(shape[0] * shape[1]) * shape[0]).ravel()
-        col = (np.tile(col_.ravel(), n) + np.arange(n).repeat(shape[0] * shape[1]) * shape[1]).ravel()
+        row = (np.tile(row_.ravel(), n) +
+               np.arange(n).repeat(shape[0] * shape[1]) * shape[0]).ravel()
+        col = (np.tile(col_.ravel(), n) +
+               np.arange(n).repeat(shape[0] * shape[1]) * shape[1]).ravel()
         total_shape = (shape[0] * n, shape[1] * n)
 
     return coo_matrix((data, (row, col)), shape=total_shape).asformat(format)
