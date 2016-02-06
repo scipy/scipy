@@ -54,7 +54,6 @@ distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
                'johnsonsb', 'truncexpon', 'invgauss', 'invgamma',
                'powerlognorm']
 
-distmiss = [[dist, args] for dist, args in distcont if dist in distmissing]
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
             'vonmises', 'vonmises_line', 'mielke', 'semicircular',
             'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
@@ -79,19 +78,6 @@ fails_cmplx = set(['alpha', 'beta', 'betaprime', 'burr12', 'chi', 'chi2', 'dgamm
                    'recipinvgauss', 'rice', 'skewnorm', 't', 'truncexpon', 'truncnorm',
                    'tukeylambda', 'vonmises', 'vonmises_line', 'wald',
                    'weibull_min'])
-
-
-# NB: not needed anymore?
-def _silence_fp_errors(func):
-    # warning: don't apply to test_ functions as is, then those will be skipped
-    def wrap(*a, **kw):
-        olderr = np.seterr(all='ignore')
-        try:
-            return func(*a, **kw)
-        finally:
-            np.seterr(**olderr)
-    wrap.__name__ = func.__name__
-    return wrap
 
 
 def test_cont_basic():
