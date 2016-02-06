@@ -297,6 +297,14 @@ class ArpackNoConvergence(ArpackError):
         self.eigenvectors = eigenvectors
 
 
+def choose_ncv(k):
+    """
+    Choose number of lanczos vectors based on target number
+    of singular/eigen values and vectors to compute, k.
+    """
+    return max(2 * k + 1, 20)
+
+
 class _ArpackParams(object):
     def __init__(self, n, k, tp, mode=1, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
@@ -327,7 +335,7 @@ class _ArpackParams(object):
             self.sigma = sigma
 
         if ncv is None:
-            ncv = max(2 * k + 1, 20)
+            ncv = choose_ncv(k)
         ncv = min(ncv, n)
 
         self.v = np.zeros((n, ncv), tp)  # holds Ritz vectors
