@@ -680,7 +680,7 @@ def block_diag(mats, format=None, dtype=None):
         col = []
         row = []
         origin = np.array([0, 0], dtype=np.int)
-        for mat in mats:
+        for mat in mats_:
             if issparse(mat):
                 data.append(mat.data)
                 row.append(mat.row + origin[0])
