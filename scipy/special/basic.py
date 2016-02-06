@@ -434,11 +434,17 @@ def jvp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.6.7 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.6.E7
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -461,11 +467,17 @@ def yvp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.6.7 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.6.E7
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -496,11 +508,30 @@ def kvp(v, z, n=1):
     out : ndarray
         The results
 
+    Examples
+    --------
+    Calculate multiple values at order 5:
+
+    >>> from scipy.special import kvp
+    >>> kvp(5, (1, 2, 3+5j))
+    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
+
+    Calculate for a single value at multiple orders:
+
+    >>> kvp((4, 4.5, 5), 1)
+    array([ -184.0309,  -568.9585, -1849.0354])
+
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.29.5 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.29.E5
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -524,24 +555,17 @@ def ivp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.29.5 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            http://jin.ece.illinois.edu/specfunc.html
-
-    Examples
-    --------
-    Calculate multiple values at order 5:
-
-    >>> from scipy.special import kvp
-    >>> kvp(5, (1, 2, 3+5j))
-    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
-
-    Calculate for a single value at multiple orders:
-
-    >>> kvp((4, 4.5, 5), 1)
-    array([ -184.0309,  -568.9585, -1849.0354])
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.29.E5
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -564,11 +588,17 @@ def h1vp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.6.7 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.6.E7
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -591,11 +621,17 @@ def h2vp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.6.7 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.6.E7
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -869,10 +905,14 @@ def sph_inkn(n, z):
 
 
 def riccati_jn(n, x):
-    """Compute Ricatti-Bessel function of the first kind and derivative.
+    r"""Compute Ricatti-Bessel function of the first kind and its derivative.
 
-    This function computes the value and first derivative of the function for
-    all orders up to and including n.
+    The Ricatti-Bessel function of the first kind is defined as :math:`x
+    j_n(x)`, where :math:`j_n` is the spherical Bessel function of the first
+    kind of order :math:`n`.
+
+    This function computes the value and first derivative of the
+    Ricatti-Bessel function for all orders up to and including `n`.
 
     Parameters
     ----------
@@ -888,11 +928,21 @@ def riccati_jn(n, x):
     jnp : ndarray
         First derivative j0'(x), ..., jn'(x)
 
+    Notes
+    -----
+    The computation is carried out via backward recurrence, using the
+    relation DLMF 10.51.1 [2]_.
+
+    Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
+    Jin [1]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -908,10 +958,14 @@ def riccati_jn(n, x):
 
 
 def riccati_yn(n, x):
-    """Compute Ricatti-Bessel function of the second kind and derivative.
+    """Compute Ricatti-Bessel function of the second kind and its derivative.
+
+    The Ricatti-Bessel function of the second kind is defined as :math:`x
+    y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
+    kind of order :math:`n`.
 
     This function computes the value and first derivative of the function for
-    all orders up to and including n.
+    all orders up to and including `n`.
 
     Parameters
     ----------
@@ -927,11 +981,21 @@ def riccati_yn(n, x):
     ynp : ndarray
         First derivative y0'(x), ..., yn'(x)
 
+    Notes
+    -----
+    The computation is carried out via ascending recurrence, using the
+    relation DLMF 10.51.1 [2]_.
+
+    Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
+    Jin [1]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
