@@ -97,6 +97,10 @@ class TestTrimmedStats(TestCase):
         assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
         assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
 
+        with self.assertRaisesRegexp(ValueError,
+                                     "'propagate', 'raise', 'omit'"):
+            stats.tmin(x, nan_policy='foo')
+
     def test_tmax(self):
         assert_equal(stats.tmax(4), 4)
 

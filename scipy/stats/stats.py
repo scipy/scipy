@@ -228,9 +228,10 @@ def _chk2_asarray(a, b, axis):
 
 
 def _contains_nan(a, nan_policy='propagate'):
-    if nan_policy not in ('propagate', 'raise', 'omit'):
-        raise ValueError("nan_policy must be either 'propagate', 'raise', or "
-                         "'ignore'")
+    policies = ['propagate', 'raise', 'omit']
+    if nan_policy not in policies:
+        raise ValueError("nan_policy must be one of {%s}" %
+                         ', '.join("'%s'" % s for s in policies))
     try:
         # Calling np.sum to avoid creating a huge array into memory
         # e.g. np.isnan(a).any()
