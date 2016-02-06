@@ -971,6 +971,7 @@ add_newdoc("scipy.special", "dawsn",
     Examples
     --------
     >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-15, 15, num=1000)
     >>> plt.plot(x, special.dawsn(x))
     >>> plt.xlabel('$x$')
@@ -1285,6 +1286,7 @@ add_newdoc("scipy.special", "erf",
     Examples
     --------
     >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
     >>> plt.plot(x, special.erf(x))
     >>> plt.xlabel('$x$')
@@ -1311,6 +1313,7 @@ add_newdoc("scipy.special", "erfc",
     Examples
     --------
     >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
     >>> plt.plot(x, special.erfc(x))
     >>> plt.xlabel('$x$')
@@ -1342,6 +1345,7 @@ add_newdoc("scipy.special", "erfi",
     Examples
     --------
     >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
     >>> plt.plot(x, special.erfi(x))
     >>> plt.xlabel('$x$')
@@ -1373,6 +1377,7 @@ add_newdoc("scipy.special", "erfcx",
     Examples
     --------
     >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
     >>> plt.plot(x, special.erfcx(x))
     >>> plt.xlabel('$x$')
@@ -5080,6 +5085,7 @@ add_newdoc("scipy.special", "wofz",
     Examples
     --------
     >>> from scipy import special
+    >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
     >>> plt.plot(x, special.wofz(x))
     >>> plt.xlabel('$x$')
