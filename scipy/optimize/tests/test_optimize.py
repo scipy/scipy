@@ -12,6 +12,7 @@ To run it in its simplest form::
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import itertools
 
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
@@ -655,7 +656,8 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that optimizer initial step is not huge even if the
         # function and gradients are
 
-        scale = 1e50
+        scales = [1e-50, 1, 1e50]
+        methods = ['CG', 'BFGS', 'L-BFGS-B', 'Newton-CG']
 
         def f(x):
             if first_step_size[0] is None and x[0] != x0[0]:
@@ -667,24 +669,40 @@ class TestOptimizeSimple(CheckOptimize):
         def g(x):
             return np.array([scale*(x[0] - 1)])
 
-        for method in ['CG', 'BFGS', 'L-BFGS-B', 'Newton-CG']:
-            if method == 'CG':
+        for scale, method in itertools.product(scales, methods):
+            if method in ('CG', 'BFGS'):
                 options = dict(gtol=scale*1e-8)
             else:
                 options = dict()
+
+            if scale < 1e-10 and method in ('L-BFGS-B', 'Newton-CG'):
+                # XXX: return initial point if they see small gradient
+                continue
 
             x0 = [-1.0]
             first_step_size = [None]
             res = optimize.minimize(f, x0, jac=g, method=method,
                                     options=options)
-            assert_(res.success, method)
-            assert_allclose(res.x, [1.0], err_msg=method)
 
-            if method in ('CG', 'BFGS'):
-                assert_allclose(first_step_size[0], 1.01)
+            err_msg = "{0} {1}: {2}: {3}".format(method, scale, first_step_size,
+                                                 res)
+
+            assert_(res.success, err_msg)
+            assert_allclose(res.x, [1.0], err_msg=err_msg)
+            assert_(res.nit <= 3, err_msg)
+
+            if scale > 1e-10:
+                if method in ('CG', 'BFGS'):
+                    assert_allclose(first_step_size[0], 1.01, err_msg=err_msg)
+                else:
+                    # Newton-CG and L-BFGS-B use different logic for the first step,
+                    # but are both scaling invariant with step sizes ~ 1
+                    assert_(first_step_size[0] > 0.5 and first_step_size[0] < 3,
+                            err_msg)
             else:
-                assert_(first_step_size[0] > 0.5 and first_step_size[0] < 3,
-                        "{0}: {1}".format(method, first_step_size))
+                # step size has upper bound of ||grad||, so line
+                # search makes many small steps
+                pass
 
 
 class TestLBFGSBBounds(TestCase):
