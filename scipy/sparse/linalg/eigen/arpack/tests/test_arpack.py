@@ -423,7 +423,7 @@ def test_symmetric_no_convergence():
     m = generate_matrix(30, hermitian=True, pos_definite=True)
     tol, rtol, atol = _get_test_tolerance('d')
     try:
-        w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)
+        w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol, ncv=9)
         raise AssertionError("Spurious no-error exit")
     except ArpackNoConvergence as err:
         k = len(err.eigenvalues)
@@ -620,9 +620,9 @@ def test_svd_maxiter():
     x = hilbert(6)
     # ARPACK shouldn't converge on such an ill-conditioned matrix with just
     # one iteration
-    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1)
+    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3)
     # but 100 iterations should be more than enough
-    u, s, vt = svds(x, 1, maxiter=100)
+    u, s, vt = svds(x, 1, maxiter=100, ncv=3)
     assert_allclose(s, [1.7], atol=0.5)
 
 
