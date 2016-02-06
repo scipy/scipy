@@ -622,15 +622,14 @@ def bmat(blocks, format=None, dtype=None):
 
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
-def _block_diag(mats, format=None, dtype=None):
+def block_diag(mats, format=None, dtype=None):
     """      
-    Build a block diagonal sparse matrix from equally shaped matrices.
-    Much faster than block_diag for big matrices
+    Build a block diagonal sparse matrix from provided matrices.
 
     Parameters
     ----------
-    mats : sequence of equally shaped matrices
-        Input matrices.
+    mats : sequence of matrices
+        Input matrices. Can be any combination of lists, numpy.array, numpy.matrix or sparse matrix ("csr', 'coo"...)
     format : str, optional
         The sparse format of the result (e.g. "csr").  If not given, the matrix
         is returned in "coo" format.
@@ -644,6 +643,7 @@ def _block_diag(mats, format=None, dtype=None):
 
     Notes
     -----
+    Providing a sequence of equally shaped matrices will provide marginally faster results
 
     .. versionadded:: 0.18.0
 
@@ -665,12 +665,17 @@ def _block_diag(mats, format=None, dtype=None):
            [ 0,  0,  0,  0,  9, 10],
            [ 0,  0,  0,  0, 11, 12]])
     """
-    
-    n = len(mats)
-    shape = mats[0].shape
 
-    if any(mat.shape != mats[-1].shape for mat in mats) or (
-            any(issparse(mat) for mat in mats)):
+    n = len(mats)
+    mats_ = [None] * n
+    for ia, a in enumerate(mats):
+        if hasattr(a, 'shape'):
+            mats_[ia] = a
+        else:
+            mats_[ia] = coo_matrix(a)
+
+    if any(mat.shape != mats_[-1].shape for mat in mats_) or (
+            any(issparse(mat) for mat in mats_)):
         data = []
         col = []
         row = []
@@ -694,7 +699,8 @@ def _block_diag(mats, format=None, dtype=None):
         row = np.hstack(row)
         total_shape = origin
     else:
-        data = np.array(mats, dtype).ravel()
+        shape = mats_[0].shape
+        data = np.array(mats_, dtype).ravel()
         row_, col_ = np.indices(shape)
         row = (np.tile(row_.ravel(), n) + np.arange(n).repeat(shape[0] * shape[1]) * shape[0]).ravel()
         col = (np.tile(col_.ravel(), n) + np.arange(n).repeat(shape[0] * shape[1]) * shape[1]).ravel()
@@ -702,62 +708,6 @@ def _block_diag(mats, format=None, dtype=None):
 
     return coo_matrix((data, (row, col)), shape=total_shape).asformat(format)
 
-def block_diag(mats, format=None, dtype=None):
-    """
-    Build a block diagonal sparse matrix from provided matrices.
-
-    Parameters
-    ----------
-    mats : sequence of matrices
-        Input matrices.
-    format : str, optional
-        The sparse format of the result (e.g. "csr").  If not given, the matrix
-        is returned in "coo" format.
-    dtype : dtype specifier, optional
-        The data-type of the output matrix.  If not given, the dtype is
-        determined from that of `blocks`.
-
-    Returns
-    -------
-    res : sparse matrix
-
-    Notes
-    -----
-
-    .. versionadded:: 0.11.0
-
-    See Also
-    --------
-    bmat, diags
-
-    Examples
-    --------
-    >>> from scipy.sparse import coo_matrix, block_diag
-    >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5], [6]])
-    >>> C = coo_matrix([[7]])
-    >>> block_diag((A, B, C)).toarray()
-    array([[1, 2, 0, 0],
-           [3, 4, 0, 0],
-           [0, 0, 5, 0],
-           [0, 0, 6, 0],
-           [0, 0, 0, 7]])
-
-    """
-    
-    if all(hasattr(mat, 'shape') for mat in mats):
-        return _block_diag(mats, format=format, dtype=dtype)
-    
-    nmat = len(mats)
-    rows = []
-    for ia, a in enumerate(mats):
-        row = [None]*nmat
-        if issparse(a):
-            row[ia] = a
-        else:
-            row[ia] = coo_matrix(a)
-        rows.append(row)
-    return bmat(rows, format=format, dtype=dtype)
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,

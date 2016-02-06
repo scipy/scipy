@@ -386,6 +386,21 @@ class TestConstructUtils(TestCase):
         assert_equal(construct.block_diag([1]).todense(),
                      matrix([[1]]))
 
+    def test_block_diag_equally_shaped(self):
+        """ basic test for equally shaped matrices """
+        A = coo_matrix([[1,2],[3,4]])
+        B = [[5,6],[7,8]]
+        C = np.array([[9,10],[11,12]])
+
+        expected = matrix([[1, 2, 0, 0, 0,  0],
+                           [3, 4, 0, 0, 0,  0],
+                           [0, 0, 5, 6, 0,  0],
+                           [0, 0, 7, 8, 0,  0],
+                           [0, 0, 0, 0, 9, 10],
+                           [0, 0, 0, 0, 11,12]])
+
+        assert_equal(construct.block_diag((A, B, C)).todense(), expected)
+
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
         for f in sprand, _sprandn:
