@@ -236,7 +236,7 @@ def rankdata(data, axis=None, use_missing=False):
     def _rank1d(data, use_missing=False):
         n = data.count()
         rk = np.empty(data.size, dtype=float)
-        idx = data.argsort()
+        idx = data.argsort(fill_value=ma.minimum_fill_value(data))
         rk[idx[:n]] = np.arange(1,n+1)
 
         if use_missing:
