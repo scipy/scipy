@@ -30,7 +30,7 @@ SciPy a try!
 Installation
 ------------
 
-For installation instructions, see ``INSTALL.txt``.
+For installation instructions, see ``INSTALL.rst.txt``.
 
 
 Documentation
