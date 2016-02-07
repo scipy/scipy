@@ -485,7 +485,7 @@ def order_filter(a, domain, rank):
     a : ndarray
         The N-dimensional input array.
     domain : array_like
-        A mask array with the same number of dimensions as `in`.
+        A mask array with the same number of dimensions as `a`.
         Each dimension should have an odd number of elements.
     rank : int
         A non-negative integer which selects the element from the
@@ -496,7 +496,7 @@ def order_filter(a, domain, rank):
     -------
     out : ndarray
         The results of the order filter in an array with the same
-        shape as `in`.
+        shape as `a`.
 
     Examples
     --------
