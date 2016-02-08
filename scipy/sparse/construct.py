@@ -622,6 +622,7 @@ def bmat(blocks, format=None, dtype=None):
 
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
+
 def block_diag(mats, format=None, dtype=None):
     """
     Build a block diagonal sparse matrix from provided matrices.
@@ -711,8 +712,6 @@ def block_diag(mats, format=None, dtype=None):
         total_shape = (shape[0] * n, shape[1] * n)
 
     return coo_matrix((data, (row, col)), shape=total_shape).asformat(format)
-
-
 
 def random(m, n, density=0.01, format='coo', dtype=None,
            random_state=None, data_rvs=None):
