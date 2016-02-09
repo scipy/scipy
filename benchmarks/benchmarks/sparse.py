@@ -75,14 +75,18 @@ class Arithmetic(Benchmark):
 
 
 class Sort(Benchmark):
-    params = [10, 25, 50, 100, 200]
-    param_names = ['k']
+    params = ['Rand10', 'Rand25', 'Rand50', 'Rand100', 'Rand200']
+    param_names = ['matrix']
 
-    def setup(self, k):
+    def setup(self, matrix):
         n = 10000
-        self.A = random_sparse(n, n, k)
-        self.A.has_sorted_indices = False
-        self.A.indices[:2] = 2, 1
+        if matrix.startswith('Rand'):
+            k = int(matrix[4:])
+            self.A = random_sparse(n, n, k)
+            self.A.has_sorted_indices = False
+            self.A.indices[:2] = 2, 1
+        else:
+            raise NotImplementedError()
 
     def time_sort(self, matrix):
         """sort CSR column indices"""
@@ -125,22 +129,19 @@ class Matvec(Benchmark):
 
 
 class Matvecs(Benchmark):
-    params = [[100, 300], ['dia', 'coo', 'csr', 'csc', 'bsr']]
-    param_names = ['n', 'format']
+    params = ['dia', 'coo', 'csr', 'csc', 'bsr']
+    param_names = ["format"]
 
-    def setup(self, n, format):
-        self.A = poisson2d(n, format=format)
+    def setup(self, format):
+        self.A = poisson2d(300, format=format)
         self.x = ones((self.A.shape[1], 10), dtype=self.A.dtype)
 
-    def time_matvecs(self, n,  format):
+    def time_matvecs(self, format):
         self.A * self.x
 
 
 class Matmul(Benchmark):
-    params = [['csr', 'csc'], ['csr', 'csc']]
-    param_names = ['formatA', 'formatB']
-
-    def setup(self, formatA, formatB):
+    def setup(self):
         H1, W1 = 1, 100000
         H2, W2 = W1, 1000
         C1 = 10
@@ -154,11 +155,12 @@ class Matmul(Benchmark):
             matrix1[random.randint(H1), random.randint(W1)] = random.rand()
         for i in range(C2):
             matrix2[random.randint(H2), random.randint(W2)] = random.rand()
-        self.matrix1 = matrix1.asformat(formatA)
-        self.matrix2 = matrix2.asformat(formatB)
+        self.matrix1 = matrix1.tocsr()
+        self.matrix2 = matrix2.tocsr()
 
-    def time_large(self, formatA, formatB):
-        self.matrix1 * self.matrix2
+    def time_large(self):
+        for i in range(100):
+            self.matrix1 * self.matrix2
 
 
 class Construction(Benchmark):
