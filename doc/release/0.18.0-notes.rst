@@ -37,6 +37,15 @@ This class represents a piecewise cubic polynomial passing through given points
 and C2 continuous. It is represented in the standard polynomial basis on each
 segment.
 
+`scipy.signal` improvements
+---------------------------
+
+Resampling using polyphase filtering has been implemented in the function
+`scipy.signal.resample_poly`. This method upsamples a signal, applies a
+zero-phase low-pass FIR filter, and downsamples using `scipy.signal.upfirdn`.
+This method can be faster than FFT-based filtering provided by
+`scipy.signal.resample` for some signals.
+
 Deprecated features
 ===================
 
