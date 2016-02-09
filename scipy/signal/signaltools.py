@@ -105,7 +105,7 @@ def _inputs_swap_needed(mode, shape1, shape2):
     return False
 
 
-def correlate(in1, in2, mode='full'):
+def correlate(in1, in2, mode='full', method='auto'):
     """
     Cross-correlate two N-dimensional arrays.
 
@@ -132,6 +132,19 @@ def correlate(in1, in2, mode='full'):
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
+    method : str {'auto', 'direct', 'fft'}, optional
+        A string indicating what method used to perform the correlation.
+
+        ``direct``
+           The correlation is determined directly from sums, the definition of
+           correlation.
+        ``fft``
+           The Fast Fourier Transform is used to perform the correlation more
+           quickly (only available for numerical arrays.)
+        ``auto``
+           A rough estimate to see which correlation method is faster (the
+           Fourier transform or direct method) and that method is chosen
+           (default). See notes for more detail.
 
     Returns
     -------
@@ -145,6 +158,10 @@ def correlate(in1, in2, mode='full'):
 
       z[...,k,...] = sum[..., i_l, ...]
                          x[..., i_l,...] * conj(y[..., i_l + k,...])
+
+    ``method='fft'`` only works for numerical arrays as it relies on
+    `fftconvolve`. In certain cases (i.e., arrays of objects or when
+    rounding integers can lose precision), ``method='direct'`` is always used.
 
     Examples
     --------
@@ -176,6 +193,11 @@ def correlate(in1, in2, mode='full'):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
+    if in1.ndim == in2.ndim == 0:
+        return in1 * in2
+    elif in1.ndim != in2.ndim:
+        raise ValueError("in1 and in2 should have the same dimensionality")
+
     # Don't use _valfrommode, since correlate should not accept numeric modes
     try:
         val = _modedict[mode]
@@ -183,10 +205,23 @@ def correlate(in1, in2, mode='full'):
         raise ValueError("Acceptable mode flags are 'valid',"
                          " 'same', or 'full'.")
 
-    if in1.ndim == in2.ndim == 0:
-        return in1 * in2
-    elif not in1.ndim == in2.ndim:
-        raise ValueError("in1 and in2 should have the same dimensionality")
+    if (in1.dtype.kind not in 'buifc' or in2.dtype.kind not in 'buifc'):
+        if method == 'fft':
+            raise ValueError('convolve can only be called with method=="fft" '
+                             'when arrays consist of numeric elements (i.e., '
+                             'int/float/etc)')
+        else:
+            method = 'direct'  # for non-numeric arrays
+    elif ((in1.dtype.kind in 'ui' or in2.dtype.kind in 'ui') and
+          in1.max() * in2.max() * max(in1.size, in2.size) > 2**52 - 1):
+        # catch when more precision required than float provides (representing
+        # a integer as float can lose precision if integer larger than 2**52)
+        method = 'direct'
+
+    # this either calls fftconvolve or this function with method=='direct'
+    if method in ('fft', 'auto'):
+        reverse = [slice(None, None, -1)] * in1.ndim
+        return convolve(in1, in2[reverse].conj(), mode, method)
 
     # numpy is significantly faster for 1d (but numpy's 'same' mode uses
     # the size of the larger input, not the first.)
@@ -405,18 +440,25 @@ def convolve(in1, in2, mode='full', method='auto'):
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
-    method : str {'direct', 'auto', 'fft'}, optional
+    method : str {'auto', 'direct', 'fft'}, optional
         A string indicating what method used to perform the convolution.
 
         ``direct``
            The convolution is determined directly from sums, the definition of
-           convolution (default).
+           convolution.
         ``fft``
-           The Fourier Transform method is used to perform the convolution by
-           calling `fftconvolve`.
+           The Fourier Transform is used to perform the convolution by calling
+           `fftconvolve`.
         ``auto``
            A rough estimate to see which convolution method is faster (the
-           Fourier transform or direct method) and that method is chosen.
+           Fourier transform or direct method) and that method is chosen
+           (default).
+
+    Notes
+    -----
+    ``method='fft'`` only works for numerical arrays as it relies on
+    scipy.signal.fftconvolve. In certain cases (i.e., arrays of objects or when
+    rounding integers can lose precision), ``method='direct'`` is always used.
 
     Returns
     -------
@@ -463,14 +505,23 @@ def convolve(in1, in2, mode='full', method='auto'):
         # Convolution is commutative; order doesn't have any effect on output
         volume, kernel = kernel, volume
 
+    out_shape = {'full':[n + k for n, k in zip(volume.shape, kernel.shape)],
+                 'same':volume.shape,
+                 'valid':[n - k + 1 for n, k in zip(volume.shape,
+                                                    kernel.shape)]}
+
     # see whether the fourier transform convolution method or the direct
     # convolution method is faster (discussed in scikit-image PR #1792)
-    big_O_constant = 1 / 40.032 if kernel.ndim > 1 else 1 / 1.5
-    direct_time = big_O_constant * np.prod(volume.shape + kernel.shape)
-    fft_time = np.sum([n*np.log(n) for n in volume.shape + kernel.shape])
+    big_O_constant = 5e-6 if volume.ndim > 1 else 4.81e-4
+    direct_time = big_O_constant * np.prod(volume.shape + kernel.shape +
+                                           tuple(out_shape[mode]))
+    fft_time = np.sum([n * np.log(n) for n in (volume.shape + kernel.shape +
+                                               tuple(out_shape[mode]))])
 
-    if (fft_time < direct_time and method == 'auto') or method == 'fft':
-        return fftconvolve(volume, kernel, mode=mode)
+    if ((fft_time < direct_time and method == 'auto') or method == 'fft') \
+            and volume.dtype.kind in 'buif' and kernel.dtype.kind in 'buif':
+        out = fftconvolve(volume, kernel, mode=mode)
+        return np.asarray(out, dtype=volume.dtype)
 
     # fastpath to faster numpy 1d convolve (but numpy's 'same' mode uses the
     # size of the larger input, not the first.)
@@ -482,7 +533,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     reverse = [slice(None, None, -1)] * kernel.ndim
 
     # .conj() does nothing to real arrays and is faster than iscomplexobj()
-    return correlate(volume, kernel[reverse].conj(), mode)
+    return correlate(volume, kernel[reverse].conj(), mode, 'direct')
 
 
 def order_filter(a, domain, rank):

@@ -112,13 +112,6 @@ class _TestConvolve(TestCase):
         assert_array_equal(convolve(big, small, 'valid'),
                            out_array[1:3, 1:3, 1:3])
 
-    def test_convolve_method(self):
-        x = np.random.rand(10)
-        h = np.random.rand(5)
-
-        assert_allclose(convolve(x, h, method='direct'), convolve(x, h, method='fft'))
-
-
 class TestConvolve(_TestConvolve):
 
     def test_valid_mode2(self):
@@ -161,6 +154,16 @@ class TestConvolve(_TestConvolve):
 
         self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
+
+    def test_convolve_method(self):
+        np.random.seed(42)
+        x = np.random.rand(100)
+        h = np.random.rand(50)
+
+        for mode in ['full', 'valid', 'same']:
+            assert_allclose(convolve(x, h, mode=mode, method='direct'),
+                            convolve(x, h, mode=mode, method='fft'))
+        assert_raises(ValueError, convolve, Decimal(3), Decimal(4), method='fft')
 
 
 class _TestConvolve2d(TestCase):
@@ -1050,6 +1053,20 @@ class _TestCorrelateReal(TestCase):
 
         y_r = np.array([0, 2, 5, 8, 3]).astype(self.dt)
         return a, b, y_r
+
+    def test_method(self):
+        if self.dt == Decimal:
+            assert_raises(ValueError, correlate, 2*[Decimal(3)], 
+                          2*[Decimal(4)], method='fft')
+        else:
+            a, b, y_r = self._setup_rank3()
+            y_fft = correlate(a, b, method='fft')
+            y_direct = correlate(a, b, method='direct')
+
+        assert_array_almost_equal(y_r, y_fft)
+        assert_array_almost_equal(y_r, y_direct)
+        assert_equal(y_fft.dtype, self.dt)
+        assert_equal(y_direct.dtype, self.dt)
 
     def test_rank1_valid(self):
         a, b, y_r = self._setup_rank1()
