@@ -413,7 +413,15 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     # Conversion methods #
     ######################
 
-    def tobsr(self,blocksize=None,copy=False):
+    def tobsr(self, blocksize=None, copy=False):
+        """Convert this matrix into Block Sparse Row Format.
+
+        With copy=False, the data/indices may be shared between this
+        matrix and the resultant bsr_matrix.
+
+        If blocksize=(R, C) is provided, it will be used for determining
+        block size of the bsr_matrix.
+        """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
         if copy:
@@ -421,14 +429,18 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         else:
             return self
 
-    def tocsr(self):
-        return self.tocoo(copy=False).tocsr()
+    def tocsr(self, copy=False):
+        return self.tocoo(copy=False).tocsr(copy=copy)
         # TODO make this more efficient
 
-    def tocsc(self):
-        return self.tocoo(copy=False).tocsc()
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
 
-    def tocoo(self,copy=True):
+    def tocsc(self, copy=False):
+        return self.tocoo(copy=False).tocsc(copy=copy)
+
+    tocsc.__doc__ = spmatrix.tocsc.__doc__
+
+    def tocoo(self, copy=True):
         """Convert this matrix to COOrdinate format.
 
         When copy=False the data array will be shared between

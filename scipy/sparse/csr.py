@@ -10,6 +10,8 @@ __all__ = ['csr_matrix', 'isspmatrix_csr']
 import numpy as np
 from scipy._lib.six import xrange
 
+from .base import spmatrix
+
 from ._sparsetools import csr_tocsc, csr_tobsr, csr_count_blocks, \
         get_csr_submatrix, csr_sample_values
 from .sputils import (upcast, isintlike, IndexMixin, issequence,
@@ -131,7 +133,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
         M,N = self.shape
         return csc_matrix((self.data,self.indices,self.indptr), shape=(N,M), copy=copy)
 
-    def tolil(self):
+    def tolil(self, copy=False):
         from .lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
@@ -147,13 +149,17 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         return lil
 
+    tolil.__doc__ = spmatrix.tolil.__doc__
+
     def tocsr(self, copy=False):
         if copy:
             return self.copy()
         else:
             return self
 
-    def tocsc(self):
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
+
+    def tocsc(self, copy=False):
         idx_dtype = get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, self.shape[0]))
         indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
@@ -172,6 +178,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
         A = csc_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A
+
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
 
     def tobsr(self, blocksize=None, copy=True):
         from .bsr import bsr_matrix
@@ -206,6 +214,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
                       indptr, indices, data.ravel())
 
             return bsr_matrix((data,indices,indptr), shape=self.shape)
+
+    tobsr.__doc__ = spmatrix.tobsr.__doc__
 
     # these functions are used by the parent class (_cs_matrix)
     # to remove redudancy between csc_matrix and csr_matrix

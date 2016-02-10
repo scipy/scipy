@@ -250,10 +250,13 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     B.ravel('A'), fortran)
         return B
 
-    def tocsc(self):
+    def tocsc(self, copy=False):
         """Return a copy of this matrix in Compressed Sparse Column format
 
         Duplicate entries will be summed together.
+
+        With copy=False, the data/indices may be shared between this matrix
+        and resultant csc_matrix.
 
         Examples
         --------
@@ -292,10 +295,13 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
             return A
 
-    def tocsr(self):
+    def tocsr(self, copy=False):
         """Return a copy of this matrix in Compressed Sparse Row format
 
         Duplicate entries will be summed together.
+
+        With copy=False, the data/indices may be shared between this matrix
+        and resultant csc_matrix.
 
         Examples
         --------
@@ -342,7 +348,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         else:
             return self
 
-    def todia(self):
+    tocoo.__doc__ = spmatrix.tocoo.__doc__
+
+    def todia(self, copy=False):
         from .dia import dia_matrix
 
         self.sum_duplicates()
@@ -363,7 +371,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         return dia_matrix((data,diags), shape=self.shape)
 
-    def todok(self):
+    todia.__doc__ = spmatrix.todia.__doc__
+
+    def todok(self, copy=False):
         from .dok import dok_matrix
 
         self.sum_duplicates()
@@ -371,6 +381,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         dok.update(izip(izip(self.row,self.col),self.data))
 
         return dok
+
+    todok.__doc__ = spmatrix.todok.__doc__
 
     def diagonal(self):
         diag = np.zeros(min(self.shape), dtype=self.dtype)
