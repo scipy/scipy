@@ -57,6 +57,9 @@ For data on a grid:
 
 .. seealso:: `scipy.ndimage.interpolation.map_coordinates`
 
+Tensor product polynomials:
+
+   NdPPoly
 
 1-D Splines
 ===========

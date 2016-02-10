@@ -2024,7 +2024,6 @@ class NdPPoly(object):
         else:
             extrapolate = bool(extrapolate)
         
-
         if not hasattr(ranges, '__len__') or len(ranges) != ndim:
             raise ValueError("Range not a sequence of correct length")
 
