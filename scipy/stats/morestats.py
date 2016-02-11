@@ -1994,6 +1994,8 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     p : float, optional
         The hypothesized probability of success.  0 <= p <= 1. The
         default value is p = 0.5
+    alternative : {'two-sided', 'greater', 'less'}, optional
+        indicates the alternative hypothesis.
 
     Returns
     -------
