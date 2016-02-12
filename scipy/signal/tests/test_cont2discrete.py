@@ -269,6 +269,38 @@ class TestC2D(TestCase):
 
         assert_allclose(yd2.ravel(), ymid, rtol=1e-4)
 
+    def test_simo_tf(self):
+        # See gh-5753
+        tf = ([[1, 0], [1, 1]], [1, 1])
+        num, den, dt = c2d(tf, 0.01)
+
+        self.assertEqual(dt, 0.01)  # sanity check
+        assert_allclose(den, [1, -0.990404983], rtol=1e-3)
+        assert_allclose(num, [[1, -1], [1, -0.99004983]], rtol=1e-3)
+
+    def test_multioutput(self):
+        ts = 0.01  # time step
+
+        tf = ([[1, -3], [1, 5]], [1, 1])
+        num, den, dt = c2d(tf, ts)
+
+        tf1 = (tf[0][0], tf[1])
+        num1, den1, dt1 = c2d(tf1, ts)
+
+        tf2 = (tf[0][1], tf[1])
+        num2, den2, dt2 = c2d(tf2, ts)
+
+        # Sanity checks
+        self.assertEqual(dt, dt1)
+        self.assertEqual(dt, dt2)
+
+        # Check that we get the same results
+        assert_allclose(num, np.vstack((num1, num2)), rtol=1e-13)
+
+        # Single input, so the denominator should
+        # not be multidimensional like the numerator
+        assert_allclose(den, den1, rtol=1e-13)
+        assert_allclose(den, den2, rtol=1e-13)
 
 if __name__ == "__main__":
     run_module_suite()
