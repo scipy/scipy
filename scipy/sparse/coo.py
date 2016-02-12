@@ -461,6 +461,16 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.data = np.add.reduceat(self.data, unique_inds, dtype=self.dtype)
         self.has_canonical_format = True
 
+    def eliminate_zeros(self):
+        """Remove zero entries from the matrix
+
+        This is an *in place* operation
+        """
+        mask = self.data != 0
+        self.data = self.data[mask]
+        self.row = self.row[mask]
+        self.col = self.col[mask]
+
     ###########################
     # Multiplication handlers #
     ###########################
