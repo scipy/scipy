@@ -62,16 +62,12 @@ class Arithmetic(Benchmark):
     ]
 
     def setup(self, format, XY, op):
-        self.matrices = {}
-        # matrices.append( ('A','Identity', sparse.eye(500**2,format='csr')) )
-        self.matrices['A'] = poisson2d(250, format='csr')
-        self.matrices['B'] = poisson2d(250, format='csr')**2
+        matrices = dict(A=poisson2d(250, format=format),
+                        B=poisson2d(250, format=format)**2)
 
-        X, Y = XY
-        vars = dict([(var, mat.asformat(format)) 
-                     for (var, mat) in self.matrices.items()])
-        self.x, self.y = vars[X], vars[Y]
-        self.fn = getattr(self.x, op)
+        x = matrices[XY[0]]
+        self.y = matrices[XY[1]]
+        self.fn = getattr(x, op)
         self.fn(self.y)  # warmup
 
     def time_arithmetic(self, format, XY, op):
@@ -83,64 +79,52 @@ class Sort(Benchmark):
     param_names = ['matrix']
 
     def setup(self, matrix):
-        matrices = []
-        matrices.append(('Rand10', (1e4, 10)))
-        matrices.append(('Rand25', (1e4, 25)))
-        matrices.append(('Rand50', (1e4, 50)))
-        matrices.append(('Rand100', (1e4, 100)))
-        matrices.append(('Rand200', (1e4, 200)))
-        self.matrices = dict(matrices)
-
-        N, K = self.matrices[matrix]
-        N = int(float(N))
-        K = int(float(K))
-        self.A = random_sparse(N, N, K)
+        n = 10000
+        if matrix.startswith('Rand'):
+            k = int(matrix[4:])
+            self.A = random_sparse(n, n, k)
+            self.A.has_sorted_indices = False
+            self.A.indices[:2] = 2, 1
+        else:
+            raise NotImplementedError()
 
     def time_sort(self, matrix):
         """sort CSR column indices"""
-        self.A.has_sorted_indices = False
-        self.A.indices[:2] = 2, 1
         self.A.sort_indices()
 
 
 class Matvec(Benchmark):
-    param_names = ['matrix']
+    params = [
+        ['Identity', 'Poisson5pt', 'Block2x2', 'Block3x3'],
+        ['dia', 'csr', 'csc', 'dok', 'lil', 'coo', 'bsr']
+    ]
+    param_names = ['matrix', 'format']
 
-    @property
-    def params(self):
-        return list(sorted(self._get_matrices().keys()))
+    def setup(self, matrix, format):
+        if matrix == 'Identity':
+            if format in ('lil', 'dok'):
+                raise NotImplementedError()
+            self.A = sparse.eye(10000, 10000, format=format)
+        elif matrix == 'Poisson5pt':
+            self.A = poisson2d(300, format=format)
+        elif matrix == 'Block2x2':
+            if format not in ('csr', 'bsr'):
+                raise NotImplementedError()
+            b = (2, 2)
+            self.A = sparse.kron(poisson2d(150),
+                                 ones(b)).tobsr(blocksize=b).asformat(format)
+        elif matrix == 'Block3x3':
+            if format not in ('csr', 'bsr'):
+                raise NotImplementedError()
+            b = (3, 3)
+            self.A = sparse.kron(poisson2d(100),
+                                 ones(b)).tobsr(blocksize=b).asformat(format)
+        else:
+            raise NotImplementedError()
 
-    def _get_matrices(self):
-        matrices = collections.OrderedDict()
-
-        matrices['Identity_dia'] = sparse.eye(10**4, 10**4, format='dia')
-        matrices['Identity_csr'] = sparse.eye(10**4, 10**4, format='csr')
-        matrices['Poisson5pt_lil'] = poisson2d(300, format='lil')
-        matrices['Poisson5pt_dok'] = poisson2d(300, format='dok')
-        matrices['Poisson5pt_dia'] = poisson2d(300, format='dia')
-        matrices['Poisson5pt_coo'] = poisson2d(300, format='coo')
-        matrices['Poisson5pt_csr'] = poisson2d(300, format='csr')
-        matrices['Poisson5pt_csc'] = poisson2d(300, format='csc')
-        matrices['Poisson5pt_bsr'] = poisson2d(300, format='bsr')
-
-        A = sparse.kron(poisson2d(150), ones((2, 2))).tobsr(blocksize=(2, 2))
-        matrices['Block2x2_csr'] = A.tocsr()
-        matrices['Block2x2_bsr'] = A
-
-        A = sparse.kron(poisson2d(100), ones((3, 3))).tobsr(blocksize=(3, 3))
-        matrices['Block3x3_csr'] = A.tocsr()
-        matrices['Block3x3_bsr'] = A
-        return matrices
-
-    def setup(self, matrix):
-        self.matrices = self._get_matrices()
-        self.x = ones(max(A.shape[1] for A in self.matrices.values()), 
-                      dtype=float)
-
-        self.A = self.matrices[matrix]
         self.x = ones(self.A.shape[1], dtype=float)
 
-    def time_matvec(self, matrix):
+    def time_matvec(self, matrix, format):
         self.A * self.x
 
 
@@ -148,19 +132,12 @@ class Matvecs(Benchmark):
     params = ['dia', 'coo', 'csr', 'csc', 'bsr']
     param_names = ["format"]
 
-    def setup(self, *args):
-        self.matrices = {}
-        self.matrices['dia'] = poisson2d(300, format='dia')
-        self.matrices['coo'] = poisson2d(300, format='coo')
-        self.matrices['csr'] = poisson2d(300, format='csr')
-        self.matrices['csc'] = poisson2d(300, format='csc')
-        self.matrices['bsr'] = poisson2d(300, format='bsr')
-        A = self.matrices['dia']
-        self.x = ones((A.shape[1], 10), dtype=A.dtype)
+    def setup(self, format):
+        self.A = poisson2d(300, format=format)
+        self.x = ones((self.A.shape[1], 10), dtype=self.A.dtype)
 
-    def time_matvecs(self, fmt):
-        A = self.matrices[fmt]
-        A*self.x
+    def time_matvecs(self, format):
+        self.A * self.x
 
 
 class Matmul(Benchmark):
@@ -194,15 +171,15 @@ class Construction(Benchmark):
     param_names = ['matrix', 'format']
 
     def setup(self, name, format):
-        self.matrices = {}
-        self.matrices['Empty'] = csr_matrix((10000, 10000))
-        self.matrices['Identity'] = sparse.eye(10000)
-        self.matrices['Poisson5pt'] = poisson2d(100)
-        self.formats = {'lil': lil_matrix, 'dok': dok_matrix}
+        if name == 'Empty':
+            self.A = coo_matrix((10000, 10000))
+        elif name == 'Identity':
+            self.A = sparse.eye(10000, format='coo')
+        else:
+            self.A = poisson2d(100, format='coo')
 
-        A = self.matrices[name]
-        self.cls = self.formats[format]
-        self.A = A.tocoo()
+        formats = {'lil': lil_matrix, 'dok': dok_matrix}
+        self.cls = formats[format]
 
     def time_construction(self, name, format):
         T = self.cls(self.A.shape)
@@ -218,10 +195,7 @@ class Conversion(Benchmark):
     param_names = ['from_format', 'to_format']
 
     def setup(self, fromfmt, tofmt):
-        self.A = poisson2d(100)
-
-        A = self.A
-        base = getattr(A, 'to' + fromfmt)()
+        base = poisson2d(100).asformat(fromfmt)
 
         try:
             self.fn = getattr(base, 'to' + tofmt)
@@ -287,8 +261,8 @@ class Getset(Benchmark):
             else:
                 m = self.m
             while True:
-                duration = timeit.timeit(lambda: kernel(m, self.i, self.j, self.v),
-                                         number=number)
+                duration = timeit.timeit(
+                    lambda: kernel(m, self.i, self.j, self.v), number=number)
                 if duration > 1e-5:
                     break
                 else:
@@ -304,13 +278,8 @@ class Getset(Benchmark):
             warnings.simplefilter('ignore', SparseEfficiencyWarning)
             return self._timeit(kernel, sparsity_pattern == 'different')
 
-    def track_fancy_getitem(self, N, sparsity_pattern, format):
-        def kernel(A, i, j, v):
-            A[i, j]
-
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', SparseEfficiencyWarning)
-            return self._timeit(kernel, sparsity_pattern == 'different')
+    def time_fancy_getitem(self, N, sparsity_pattern, format):
+        self.m[self.i, self.j]
 
 
 class NullSlice(Benchmark):
@@ -333,3 +302,18 @@ class NullSlice(Benchmark):
 
     def time_100_cols(self, density, format):
         self.X[:, np.arange(100)]
+
+
+class Diagonal(Benchmark):
+    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo', 'lil', 'dok']]
+    param_names = ['density', 'format']
+
+    def setup(self, density, format):
+        n = 1000
+        if format == 'dok' and n * density >= 500:
+            raise NotImplementedError()
+
+        self.X = sparse.rand(n, n, format=format, density=density)
+
+    def time_diagonal(self, density, format):
+        self.X.diagonal()
