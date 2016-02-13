@@ -3691,6 +3691,16 @@ class TestCOO(sparse_test_class(getset=False,
         dok = coo.todok()
         assert_array_equal(dok.A, coo.A)
 
+    def test_eliminate_zeros(self):
+        data = array([1, 0, 0, 0, 2, 0, 3, 0])
+        row = array([0, 0, 0, 1, 1, 1, 1, 1])
+        col = array([1, 2, 3, 4, 5, 6, 7, 8])
+        asp = coo_matrix((data, (row, col)), shape=(2,10))
+        bsp = asp.copy()
+        asp.eliminate_zeros()
+        assert_((asp.data != 0).all())
+        assert_array_equal(asp.A, bsp.A)
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
