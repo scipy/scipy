@@ -33,7 +33,6 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import math
 import sys
-from unittest import expectedFailure
 
 import numpy
 from numpy import fft
@@ -1997,7 +1996,7 @@ class TestNdimage:
                                            (8,),order=order)
             assert_array_almost_equal(out[::2], [0, 4, 1, 3])
 
-    @expectedFailure  # issue #1547; will be fixed in 0.18.0
+    @dec.knownfailureif(True,"Backwards-incomatible change will be fixed in 0.18.0")  # issue #1547;
     def test_affine_transform24(self):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = numpy.array([4, 1, 3, 2])
@@ -2008,7 +2007,7 @@ class TestNdimage:
                                                 order=order)
             assert_array_almost_equal(out1, out2)
 
-    @expectedFailure  # issue #1547; will be fixed in 0.18.0
+    @dec.knownfailureif(True,"Backwards-incomatible change will be fixed in 0.18.0")  # issue #1547;
     def test_affine_transform25(self):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = numpy.array([4, 1, 3, 2])
