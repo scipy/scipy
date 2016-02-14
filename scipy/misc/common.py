@@ -11,13 +11,9 @@ from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
                    zeros, eye, poly1d, r_, sum, fromstring, isfinite,
                    squeeze, amax, reshape, sign, broadcast_arrays)
 
-from scipy._lib._version import NumpyVersion
 
 __all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
            'ascent', 'face']
-
-
-_NUMPY_170 = (NumpyVersion(numpy.__version__) >= NumpyVersion('1.7.0'))
 
 
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
@@ -61,7 +57,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         If return_sign is True, this will be an array of floating-point
         numbers matching res and +1, 0, or -1 depending on the sign
         of the result. If False, only one result is returned.
-        
+
     See Also
     --------
     numpy.logaddexp, numpy.logaddexp2
@@ -102,79 +98,31 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         if np.any(b == 0):
             a = a + 0.  # promote to at least float
             a[b == 0] = -np.inf
-    
-    # keepdims is available in numpy.sum and numpy.amax since NumPy 1.7.0
-    #
-    # Because SciPy supports versions earlier than 1.7.0, we have to handle
-    # those old versions differently
 
-    if not _NUMPY_170:
-        # When support for Numpy < 1.7.0 is dropped, this implementation can be
-        # removed. This implementation is a bit hacky. Similarly to old NumPy's
-        # sum and amax functions, 'axis' must be an integer or None, tuples and
-        # lists are not supported. Although 'keepdims' is not supported by these
-        # old NumPy's functions, this function supports it.
+    a_max = amax(a, axis=axis, keepdims=True)
 
-        # Solve the shape of the reduced array
-        if axis is None:
-            sh_keepdims = (1,) * a.ndim
-        else:
-            sh_keepdims = list(a.shape)
-            sh_keepdims[axis] = 1
+    if a_max.ndim > 0:
+        a_max[~isfinite(a_max)] = 0
+    elif not isfinite(a_max):
+        a_max = 0
 
-        a_max = amax(a, axis=axis)
-
-        if a_max.ndim > 0:
-            a_max[~isfinite(a_max)] = 0
-        elif not isfinite(a_max):
-            a_max = 0
-
-        if b is not None:
-            tmp = b * exp(a - reshape(a_max, sh_keepdims))
-        else:
-            tmp = exp(a - reshape(a_max, sh_keepdims))
-
-        # suppress warnings about log of zero
-        with np.errstate(divide='ignore'):
-            s = sum(tmp, axis=axis)
-            if return_sign:
-                sgn = sign(s)
-                s *= sgn  # /= makes more sense but we need zero -> zero
-            out = log(s)
-
-        out += a_max
-
-        if keepdims:
-            # Put back the reduced axes with size one
-            out = reshape(out, sh_keepdims)
-            if return_sign:
-                sgn = reshape(sgn, sh_keepdims)
+    if b is not None:
+        b = asarray(b)
+        tmp = b * exp(a - a_max)
     else:
-        # This is a more elegant implementation, requiring NumPy >= 1.7.0
-        a_max = amax(a, axis=axis, keepdims=True)
+        tmp = exp(a - a_max)
 
-        if a_max.ndim > 0:
-            a_max[~isfinite(a_max)] = 0
-        elif not isfinite(a_max):
-            a_max = 0
+    # suppress warnings about log of zero
+    with np.errstate(divide='ignore'):
+        s = sum(tmp, axis=axis, keepdims=keepdims)
+        if return_sign:
+            sgn = sign(s)
+            s *= sgn  # /= makes more sense but we need zero -> zero
+        out = log(s)
 
-        if b is not None:
-            b = asarray(b)
-            tmp = b * exp(a - a_max)
-        else:
-            tmp = exp(a - a_max)
-
-        # suppress warnings about log of zero
-        with np.errstate(divide='ignore'):
-            s = sum(tmp, axis=axis, keepdims=keepdims)
-            if return_sign:
-                sgn = sign(s)
-                s *= sgn  # /= makes more sense but we need zero -> zero
-            out = log(s)
-
-        if not keepdims:
-            a_max = squeeze(a_max, axis=axis)
-        out += a_max
+    if not keepdims:
+        a_max = squeeze(a_max, axis=axis)
+    out += a_max
 
     if return_sign:
         return out, sgn
@@ -231,7 +179,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
         Input function.
     x0 : float
         The point at which `n`-th derivative is found.
-    dx : int, optional
+    dx : float, optional
         Spacing.
     n : int, optional
         Order of the derivative. Default is 1.

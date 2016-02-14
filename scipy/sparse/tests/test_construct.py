@@ -433,6 +433,11 @@ class TestConstructUtils(TestCase):
             assert_(np.any(np.less(x.data, 0)))
             assert_(np.any(np.less(1, x.data)))
 
+    def test_random_accept_str_dtype(self):
+        # anything that np.dtype can convert to a dtype should be accepted
+        # for the dtype
+        a = construct.random(10, 10, dtype='d')
+
 
 if __name__ == "__main__":
     run_module_suite()

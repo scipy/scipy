@@ -758,12 +758,10 @@ class _TestCommon:
             assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
             assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
             assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
-            if NumpyVersion(np.__version__) >= '1.7.0':
-                # np.matrix.sum with negative axis arg doesn't work for < 1.7
-                assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
-                assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
-                assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
-                assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
+            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
+            assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
+            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
+            assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
         for dtype in self.math_dtypes:
             for j in range(len(matrices)):
@@ -784,12 +782,10 @@ class _TestCommon:
             assert_equal(dat.mean(axis=0).dtype, datsp.mean(axis=0).dtype)
             assert_array_almost_equal(dat.mean(axis=1), datsp.mean(axis=1))
             assert_equal(dat.mean(axis=1).dtype, datsp.mean(axis=1).dtype)
-            if NumpyVersion(np.__version__) >= '1.7.0':
-                # np.matrix.sum with negative axis arg doesn't work for < 1.7
-                assert_array_almost_equal(dat.mean(axis=-2), datsp.mean(axis=-2))
-                assert_equal(dat.mean(axis=-2).dtype, datsp.mean(axis=-2).dtype)
-                assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
-                assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
+            assert_array_almost_equal(dat.mean(axis=-2), datsp.mean(axis=-2))
+            assert_equal(dat.mean(axis=-2).dtype, datsp.mean(axis=-2).dtype)
+            assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
+            assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
 
         for dtype in self.math_dtypes:
             yield check, dtype
@@ -2422,8 +2418,8 @@ class _TestFancyIndexing:
         D = np.asmatrix(np.random.rand(M,N))
         D = np.multiply(D, D > 0.5)
 
-        I = np.random.random_integers(-M + 1, M - 1, size=NUM_SAMPLES)
-        J = np.random.random_integers(-N + 1, N - 1, size=NUM_SAMPLES)
+        I = np.random.randint(-M + 1, M, size=NUM_SAMPLES)
+        J = np.random.randint(-N + 1, N, size=NUM_SAMPLES)
 
         S = self.spmatrix(D)
 
@@ -2928,12 +2924,7 @@ class _TestMinMax(object):
         D[2, 2] = -1
         X = self.spmatrix(D)
 
-        if NumpyVersion(np.__version__) >= '1.7.0':
-            # np.matrix.sum with negative axis arg doesn't work for < 1.7
-            axes = [-2, -1, 0, 1]
-        else:
-            axes = [0, 1]
-
+        axes = [-2, -1, 0, 1]
         for axis in axes:
             assert_array_equal(X.max(axis=axis).A, D.max(axis=axis).A)
             assert_array_equal(X.min(axis=axis).A, D.min(axis=axis).A)
@@ -2952,12 +2943,8 @@ class _TestMinMax(object):
             assert_array_equal(X.max(axis=axis).A, D.max(axis=axis).A)
             assert_array_equal(X.min(axis=axis).A, D.min(axis=axis).A)
 
-        if NumpyVersion(np.__version__) >= '1.7.0':
-            axes_even = [0, -2]
-            axes_odd = [1, -1]
-        else:
-            axes_even = [0]
-            axes_odd = [1]
+        axes_even = [0, -2]
+        axes_odd = [1, -1]
 
         # zero-size matrices
         D = np.zeros((0, 10))
@@ -2995,12 +2982,10 @@ class _TestGetNnzAxis(object):
         assert_in(datsp.getnnz(axis=0).dtype, accepted_return_dtypes)
         assert_array_equal(bool_dat.sum(axis=1), datsp.getnnz(axis=1))
         assert_in(datsp.getnnz(axis=1).dtype, accepted_return_dtypes)
-        if NumpyVersion(np.__version__) >= '1.7.0':
-            # np.matrix.sum with negative axis arg doesn't work for < 1.7
-            assert_array_equal(bool_dat.sum(axis=-2), datsp.getnnz(axis=-2))
-            assert_in(datsp.getnnz(axis=-2).dtype, accepted_return_dtypes)
-            assert_array_equal(bool_dat.sum(axis=-1), datsp.getnnz(axis=-1))
-            assert_in(datsp.getnnz(axis=-1).dtype, accepted_return_dtypes)
+        assert_array_equal(bool_dat.sum(axis=-2), datsp.getnnz(axis=-2))
+        assert_in(datsp.getnnz(axis=-2).dtype, accepted_return_dtypes)
+        assert_array_equal(bool_dat.sum(axis=-1), datsp.getnnz(axis=-1))
+        assert_in(datsp.getnnz(axis=-1).dtype, accepted_return_dtypes)
 
         assert_raises(ValueError, datsp.getnnz, axis=2)
 
@@ -3705,6 +3690,16 @@ class TestCOO(sparse_test_class(getset=False,
         coo = coo_matrix(([1,1,1,1], ([0,2,2,0], [0,1,1,0])))
         dok = coo.todok()
         assert_array_equal(dok.A, coo.A)
+
+    def test_eliminate_zeros(self):
+        data = array([1, 0, 0, 0, 2, 0, 3, 0])
+        row = array([0, 0, 0, 1, 1, 1, 1, 1])
+        col = array([1, 2, 3, 4, 5, 6, 7, 8])
+        asp = coo_matrix((data, (row, col)), shape=(2,10))
+        bsp = asp.copy()
+        asp.eliminate_zeros()
+        assert_((asp.data != 0).all())
+        assert_array_equal(asp.A, bsp.A)
 
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,

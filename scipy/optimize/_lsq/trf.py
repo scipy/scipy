@@ -59,7 +59,7 @@ differentiability), the parameter theta controls step back from the boundary
 The algorithm does another important trick. If the trust-region solution
 doesn't fit into the bounds, then a reflected (from a firstly encountered
 bound) search direction is considered. For motivation and analysis refer to
-[STIR]_ paper (and other papers of the authors). In practices it doesn't need
+[STIR]_ paper (and other papers of the authors). In practice it doesn't need
 a lot of justifications, the algorithm simply chooses the best step among
 three: a constrained trust-region step, a reflected step and a constrained
 Cauchy step (a minimizer along -g_h in "hat" space, or -D^2 g in the original
@@ -105,25 +105,24 @@ from .common import (
     make_strictly_feasible, intersect_trust_region, solve_lsq_trust_region,
     solve_trust_region_2d, minimize_quadratic_1d, build_quadratic_1d,
     evaluate_quadratic, right_multiplied_operator, regularized_lsq_operator,
-    CL_scaling_vector, compute_grad, compute_jac_scaling, check_termination,
+    CL_scaling_vector, compute_grad, compute_jac_scale, check_termination,
     update_tr_radius, scale_for_robust_loss_function, print_header_nonlinear,
     print_iteration_nonlinear)
 
 
-def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
+def trf(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
         loss_function, tr_solver, tr_options, verbose):
     # For efficiency it makes sense to run the simplified version of the
     # algorithm when no bounds are imposed. We decided to write the two
     # separate functions. It violates DRY principle, but the individual
     # functions are kept the most readable.
-
     if np.all(lb == -np.inf) and np.all(ub == np.inf):
         return trf_no_bounds(
-            fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev, scaling,
+            fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev, x_scale,
             loss_function, tr_solver, tr_options, verbose)
     else:
         return trf_bounds(
-            fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, scaling,
+            fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
             loss_function, tr_solver, tr_options, verbose)
 
 
@@ -205,7 +204,7 @@ def select_step(x, J_h, diag_h, g_h, p, p_h, d, Delta, lb, ub, theta):
 
 
 def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
-               scaling, loss_function, tr_solver, tr_options, verbose):
+               x_scale, loss_function, tr_solver, tr_options, verbose):
     x = x0.copy()
 
     f = f0
@@ -225,15 +224,15 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
     g = compute_grad(J, f)
 
-    jac_scaling = isinstance(scaling, string_types) and scaling == 'jac'
-    if jac_scaling:
-        scale, scale_inv = compute_jac_scaling(J)
+    jac_scale = isinstance(x_scale, string_types) and x_scale == 'jac'
+    if jac_scale:
+        scale, scale_inv = compute_jac_scale(J)
     else:
-        scale, scale_inv = scaling, 1 / scaling
+        scale, scale_inv = x_scale, 1 / x_scale
 
     v, dv = CL_scaling_vector(x, g, lb, ub)
-    v[dv != 0] *= scale[dv != 0]
-    Delta = norm(x0 * scale / v**0.5)
+    v[dv != 0] *= scale_inv[dv != 0]
+    Delta = norm(x0 * scale_inv / v**0.5)
     if Delta == 0:
         Delta = 1.0
 
@@ -274,21 +273,21 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
             break
 
         # Now compute variables in "hat" space. Here we also account for
-        # scaling introduced by `scaling` parameter. This part is a bit tricky,
+        # scaling introduced by `x_scale` parameter. This part is a bit tricky,
         # you have to write down the formulas and see how the trust-region
         # problem is formulated when the two types of scaling are applied.
-        # The idea is that first we apply `scaling` and then apply Coleman-Li
+        # The idea is that first we apply `x_scale` and then apply Coleman-Li
         # approach in the new variables.
 
-        # v is recomputed in the variables after applying `scaling`, note that
+        # v is recomputed in the variables after applying `x_scale`, note that
         # components which were identically 1 not affected.
-        v[dv != 0] *= scale[dv != 0]
+        v[dv != 0] *= scale_inv[dv != 0]
 
         # Here we apply two types of scaling.
-        d = v**0.5 * scale_inv
+        d = v**0.5 * scale
 
-        # C = diag(g / scale) Jv
-        diag_h = g * dv * scale_inv
+        # C = diag(g * scale) Jv
+        diag_h = g * dv * scale
 
         # After all this were done, we continue normally.
 
@@ -387,8 +386,8 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
             g = compute_grad(J, f)
 
-            if jac_scaling:
-                scale, scale_inv = compute_jac_scaling(J, scale)
+            if jac_scale:
+                scale, scale_inv = compute_jac_scale(J, scale_inv)
         else:
             step_norm = 0
             actual_reduction = 0
@@ -406,7 +405,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
 
 def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
-                  scaling, loss_function, tr_solver, tr_options, verbose):
+                  x_scale, loss_function, tr_solver, tr_options, verbose):
     x = x0.copy()
 
     f = f0
@@ -426,13 +425,13 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
 
     g = compute_grad(J, f)
 
-    jac_scaling = isinstance(scaling, string_types) and scaling == 'jac'
-    if jac_scaling:
-        scale, scale_inv = compute_jac_scaling(J)
+    jac_scale = isinstance(x_scale, string_types) and x_scale == 'jac'
+    if jac_scale:
+        scale, scale_inv = compute_jac_scale(J)
     else:
-        scale, scale_inv = scaling, 1 / scaling
+        scale, scale_inv = x_scale, 1 / x_scale
 
-    Delta = norm(x0 * scale)
+    Delta = norm(x0 * scale_inv)
     if Delta == 0:
         Delta = 1.0
 
@@ -466,7 +465,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
         if termination_status is not None or nfev == max_nfev:
             break
 
-        d = scale_inv
+        d = scale
         g_h = d * g
 
         if tr_solver == 'exact':
@@ -549,8 +548,8 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
 
             g = compute_grad(J, f)
 
-            if jac_scaling:
-                scale, scale_inv = compute_jac_scaling(J, scale)
+            if jac_scale:
+                scale, scale_inv = compute_jac_scale(J, scale_inv)
         else:
             step_norm = 0
             actual_reduction = 0

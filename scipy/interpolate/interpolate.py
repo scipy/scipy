@@ -770,7 +770,7 @@ class _PPolyBase(object):
         nu : int, optional
             Order of derivative to evaluate. Must be non-negative.
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
@@ -824,7 +824,7 @@ class PPoly(_PPolyBase):
         Polynomial breakpoints. These must be sorted in
         increasing order.
     extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
     axis : int, optional
         Interpolation axis. Default is zero.
@@ -969,7 +969,7 @@ class PPoly(_PPolyBase):
         b : float
             Upper integration bound
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs.
 
         Returns
@@ -1077,7 +1077,7 @@ class PPoly(_PPolyBase):
         tck
             A spline, as returned by `splrep`
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
 
         """
@@ -1101,7 +1101,7 @@ class PPoly(_PPolyBase):
         bp : BPoly
             A Bernstein basis polynomial, as created by BPoly
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
 
         """
@@ -1146,7 +1146,7 @@ class BPoly(_PPolyBase):
         Polynomial breakpoints. These must be sorted in
         increasing order.
     extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs. Default: True.
     axis : int, optional
         Interpolation axis. Default is zero.
@@ -1355,7 +1355,7 @@ class BPoly(_PPolyBase):
         pp : PPoly
             A piecewise polynomial in the power basis
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
 
         """
@@ -1390,7 +1390,7 @@ class BPoly(_PPolyBase):
             Specifies the degree of local polynomials. If not None, some
             derivatives are ignored.
         extrapolate : bool, optional
-            Whether to extrapolate to ouf-of-bounds points based on first
+            Whether to extrapolate to out-of-bounds points based on first
             and last intervals, or to return NaNs. Default: True.
 
         Notes

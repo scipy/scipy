@@ -6,8 +6,8 @@ from . import _zeros
 from numpy import finfo, sign, sqrt
 
 _iter = 100
-_xtol = 1e-12
-_rtol = finfo(float).eps * 2
+_xtol = 2e-12
+_rtol = 4*finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth']
 
@@ -204,13 +204,14 @@ def bisect(f, a, b, args=(),
     b : number
         The other end of the bracketing interval [a,b].
     xtol : number, optional
-        The routine converges when a root is known to lie within `xtol` of the
-        value return. Should be >= 0.  The routine modifies this to take into
-        account the relative precision of doubles.
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter must be nonnegative.
     rtol : number, optional
-        The routine converges when a root is known to lie within `rtol` times
-        the value returned of the value returned. Should be >= 0. Defaults to
-        ``np.finfo(float).eps * 2``.
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter cannot be smaller than its default value of
+        ``4*np.finfo(float).eps``.
     maxiter : number, optional
         if convergence is not achieved in `maxiter` iterations, an error is
         raised.  Must be >= 0.
@@ -265,13 +266,14 @@ def ridder(f, a, b, args=(),
     b : number
         The other end of the bracketing interval [a,b].
     xtol : number, optional
-        The routine converges when a root is known to lie within xtol of the
-        value return. Should be >= 0.  The routine modifies this to take into
-        account the relative precision of doubles.
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter must be nonnegative.
     rtol : number, optional
-        The routine converges when a root is known to lie within `rtol` times
-        the value returned of the value returned. Should be >= 0. Defaults to
-        ``np.finfo(float).eps * 2``.
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter cannot be smaller than its default value of
+        ``4*np.finfo(float).eps``.
     maxiter : number, optional
         if convergence is not achieved in maxiter iterations, an error is
         raised.  Must be >= 0.
@@ -331,13 +333,9 @@ def brentq(f, a, b, args=(),
            xtol=_xtol, rtol=_rtol, maxiter=_iter,
            full_output=False, disp=True):
     """
-    Find a root of a function in given interval.
+    Find a root of a function in a bracketing interval using Brent's method.
 
-    Return float, a zero of `f` between `a` and `b`.  `f` must be a continuous
-    function, and [a,b] must be a sign changing interval.
-
-    Description:
-    Uses the classic Brent (1973) method to find a zero of the function `f` on
+    Uses the classic Brent's method to find a zero of the function `f` on
     the sign changing interval [a , b].  Generally considered the best of the
     rootfinding routines here.  It is a safe version of the secant method that
     uses inverse quadratic extrapolation.  Brent's method combines root
@@ -356,20 +354,26 @@ def brentq(f, a, b, args=(),
     Parameters
     ----------
     f : function
-        Python function returning a number.  f must be continuous, and f(a) and
-        f(b) must have opposite signs.
+        Python function returning a number.  The function :math:`f`
+        must be continuous, and :math:`f(a)` and :math:`f(b)` must
+        have opposite signs.
     a : number
-        One end of the bracketing interval [a,b].
+        One end of the bracketing interval :math:`[a, b]`.
     b : number
-        The other end of the bracketing interval [a,b].
+        The other end of the bracketing interval :math:`[a, b]`.
     xtol : number, optional
-        The routine converges when a root is known to lie within xtol of the
-        value return. Should be >= 0.  The routine modifies this to take into
-        account the relative precision of doubles.
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter must be nonnegative. For nice functions, Brent's
+        method will often satisfy the above condition will ``xtol/2``
+        and ``rtol/2``. [Brent1973]_
     rtol : number, optional
-        The routine converges when a root is known to lie within `rtol` times
-        the value returned of the value returned. Should be >= 0. Defaults to
-        ``np.finfo(float).eps * 2``.
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter cannot be smaller than its default value of
+        ``4*np.finfo(float).eps``. For nice functions, Brent's
+        method will often satisfy the above condition will ``xtol/2``
+        and ``rtol/2``. [Brent1973]_
     maxiter : number, optional
         if convergence is not achieved in maxiter iterations, an error is
         raised.  Must be >= 0.
@@ -462,13 +466,18 @@ def brenth(f, a, b, args=(),
     b : number
         The other end of the bracketing interval [a,b].
     xtol : number, optional
-        The routine converges when a root is known to lie within xtol of the
-        value return. Should be >= 0.  The routine modifies this to take into
-        account the relative precision of doubles.
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter must be nonnegative. As with `brentq`, for nice
+        functions the method will often satisfy the above condition
+        will ``xtol/2`` and ``rtol/2``.
     rtol : number, optional
-        The routine converges when a root is known to lie within `rtol` times
-        the value returned of the value returned. Should be >= 0. Defaults to
-        ``np.finfo(float).eps * 2``.
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter cannot be smaller than its default value of
+        ``4*np.finfo(float).eps``. As with `brentq`, for nice functions
+        the method will often satisfy the above condition will
+        ``xtol/2`` and ``rtol/2``.
     maxiter : number, optional
         if convergence is not achieved in maxiter iterations, an error is
         raised.  Must be >= 0.

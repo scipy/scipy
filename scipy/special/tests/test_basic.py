@@ -1545,6 +1545,36 @@ class TestErf(TestCase):
         assert_equal(d,b)  # makes sure state was returned
         # assert_equal(d,1-a)
 
+    def test_erf_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -1, 1]
+        assert_allclose(special.erf(vals), expected, rtol=1e-15)
+
+    def test_erfc_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, 2, 0]
+        assert_allclose(special.erfc(vals), expected, rtol=1e-15)
+
+    def test_erfcx_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, np.inf, 0]
+        assert_allclose(special.erfcx(vals), expected, rtol=1e-15)
+
+    def test_erfi_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -np.inf, np.inf]
+        assert_allclose(special.erfi(vals), expected, rtol=1e-15)
+
+    def test_dawsn_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -0.0, 0.0]
+        assert_allclose(special.dawsn(vals), expected, rtol=1e-15)
+
+    def test_wofz_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan + np.nan * 1.j, 0.-0.j, 0.+0.j]
+        assert_allclose(special.wofz(vals), expected, rtol=1e-15)
+
 
 class TestEuler(TestCase):
     def test_euler(self):
@@ -1817,6 +1847,13 @@ class TestHyper(TestCase):
         assert_allclose(x, np.row_stack([expected] * 2), rtol=1e-12)
         assert_raises(ValueError, special.hyp0f1,
                       np.row_stack([x1] * 3), [0, 1])
+
+    def test_hyp0f1_gh5764(self):
+        # Just checks the point that failed; there's a more systematic
+        # test in test_mpmath
+        res = special.hyp0f1(0.8, 0.5 + 0.5*1J)
+        # The expected value was generated using mpmath
+        assert_almost_equal(res, 1.6139719776441115 + 1J*0.80893054061790665)
 
     def test_hyp1f1(self):
         hyp1 = special.hyp1f1(.1,.1,.3)

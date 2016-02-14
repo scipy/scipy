@@ -107,8 +107,8 @@ if os.path.isdir(themedir):
             "edit_link": True,
             "sidebar": "right",
             "scipy_org_logo": True,
-            "rootlinks": [("http://scipy.org/", "Scipy.org"),
-                          ("http://docs.scipy.org/", "Docs")]
+            "rootlinks": [("https://scipy.org/", "Scipy.org"),
+                          ("https://docs.scipy.org/", "Docs")]
         }
     else:
         # Default build
@@ -218,7 +218,7 @@ latex_use_modindex = False
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
         'http://docs.python.org/dev': None,
-        'http://docs.scipy.org/doc/numpy': None,
+        'https://docs.scipy.org/doc/numpy': None,
 }
 
 

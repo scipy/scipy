@@ -451,8 +451,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         Apply a m-d toroidal topology to the KDTree.. The topology is generated 
         by :math:`x_i + n_i L_i` where :math:`n_i` are integers and :math:`L_i`
         is the boxsize along i-th dimension. The input data shall be wrapped 
-        into :math:`[0, L_i)`. A ValueError is raised if any of the data is 
+        into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
+
+    See Also
+    --------
+    KDTree : Implementation of `cKDTree` in pure Python
+
     """
     cdef:
         vector[ckdtreenode]      *tree_buffer
@@ -1059,7 +1064,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         """
                  
-        cdef ordered_pairs c
+        cdef ordered_pairs results
 
         results = ordered_pairs()
         query_pairs(<ckdtree*> self, r, p, eps, results.buf)

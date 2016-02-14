@@ -12,7 +12,7 @@ import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
                    sqrt, ceil, floor, array, poly1d, compress,
-                   pi, exp, ravel, angle, count_nonzero)
+                   pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
 from numpy.testing.decorators import setastest
 
 from scipy._lib.six import string_types
@@ -474,7 +474,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
         pass
 
 
-def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
+def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     """
     Calculate quantiles for a probability plot, and optionally show the plot.
 
@@ -615,13 +615,14 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
                                title='Probability Plot')
 
         # Add R^2 value to the plot as text
-        xmin = amin(osm)
-        xmax = amax(osm)
-        ymin = amin(x)
-        ymax = amax(x)
-        posx = xmin + 0.70 * (xmax - xmin)
-        posy = ymin + 0.01 * (ymax - ymin)
-        plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
+        if rvalue:
+            xmin = amin(osm)
+            xmax = amax(osm)
+            ymin = amin(x)
+            ymax = amax(x)
+            posx = xmin + 0.70 * (xmax - xmin)
+            posy = ymin + 0.01 * (ymax - ymin)
+            plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
 
     if fit:
         return (osm, osr), (slope, intercept, r)
@@ -1930,7 +1931,7 @@ def levene(*args, **kwds):
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                         + "or 'trimmed'.")
+                        " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -1993,6 +1994,9 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     p : float, optional
         The hypothesized probability of success.  0 <= p <= 1. The
         default value is p = 0.5
+    alternative : {'two-sided', 'greater', 'less'}, optional
+        Indicates the alternative hypothesis. The default value is
+        'two-sided'.
 
     Returns
     -------
@@ -2151,7 +2155,7 @@ def fligner(*args, **kwds):
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                         + "or 'trimmed'.")
+                        " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2692,15 +2696,13 @@ def circmean(samples, high=2*pi, low=0, axis=None):
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
-    res = angle(np.mean(exp(1j * ang), axis=axis))
-    mask = res < 0
+    S = sin(ang).sum(axis=axis)
+    C = cos(ang).sum(axis=axis)
+    res = arctan2(S, C)*(high - low)/2.0/pi + low
+    mask = (S == .0) * (C == .0)
     if mask.ndim > 0:
-        res[mask] += 2*pi
-    elif mask:
-        res += 2*pi
-
-    return res*(high - low)/2.0/pi + low
-
+        res[mask] = np.nan
+    return res 
 
 def circvar(samples, high=2*pi, low=0, axis=None):
     """
@@ -2730,8 +2732,9 @@ def circvar(samples, high=2*pi, low=0, axis=None):
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
-    res = np.mean(exp(1j * ang), axis=axis)
-    R = abs(res)
+    S = sin(ang).mean(axis=axis)
+    C = cos(ang).mean(axis=axis)
+    R = hypot(S, C)
     return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
 
 
@@ -2765,8 +2768,9 @@ def circstd(samples, high=2*pi, low=0, axis=None):
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
-    res = np.mean(exp(1j * ang), axis=axis)
-    R = abs(res)
+    S = sin(ang).mean(axis=axis)
+    C = cos(ang).mean(axis=axis)
+    R = hypot(S, C)
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
 
 

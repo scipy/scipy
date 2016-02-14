@@ -278,7 +278,7 @@ def _read_array(f, typecode, array_desc):
         if typecode == 1:
             nbytes = _read_int32(f)
             if nbytes != array_desc['nbytes']:
-                raise Exception("Error occurred while reading byte array")
+                warnings.warn("Not able to verify number of bytes from header")
 
         # Read bytes as numpy array
         array = np.fromstring(f.read(array_desc['nbytes']),

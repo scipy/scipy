@@ -77,7 +77,7 @@ if __name__ == '__main__':
           author="Anne Archibald",
           maintainer_email="scipy-dev@scipy.org",
           description="Spatial algorithms and data structures",
-          url="http://www.scipy.org",
+          url="https://www.scipy.org",
           license="SciPy License (BSD Style)",
           **configuration(top_path='').todict()
           )

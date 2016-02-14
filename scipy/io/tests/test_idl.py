@@ -266,6 +266,11 @@ class TestStructures:
         assert_identical(s.fc.r, np.array([0], dtype=np.int16))
         assert_identical(s.fc.c, np.array([4], dtype=np.int16))
 
+    def test_arrays_corrupt_idl80(self):
+        """tests byte arrays with missing nbyte information from IDL 8.0 .sav file"""
+        s = readsav(path.join(DATA_PATH,'struct_arrays_byte_idl80.sav'), verbose=False)
+        assert_identical(s.y.x[0], np.array([55,66], dtype=np.uint8))
+
 
 class TestPointers:
     # Check that pointers in .sav files produce references to the same object in Python

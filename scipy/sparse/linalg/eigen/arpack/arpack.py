@@ -297,6 +297,14 @@ class ArpackNoConvergence(ArpackError):
         self.eigenvectors = eigenvectors
 
 
+def choose_ncv(k):
+    """
+    Choose number of lanczos vectors based on target number
+    of singular/eigen values and vectors to compute, k.
+    """
+    return max(2 * k + 1, 20)
+
+
 class _ArpackParams(object):
     def __init__(self, n, k, tp, mode=1, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
@@ -327,7 +335,7 @@ class _ArpackParams(object):
             self.sigma = sigma
 
         if ncv is None:
-            ncv = 2 * k + 1
+            ncv = choose_ncv(k)
         ncv = min(ncv, n)
 
         self.v = np.zeros((n, ncv), tp)  # holds Ritz vectors
@@ -1125,7 +1133,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ncv : int, optional
         The number of Lanczos vectors generated
         `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, 2*k + 1)``
+        Default: ``min(n, max(2*k + 1, 20))``
     which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI'], optional
         Which `k` eigenvectors and eigenvalues to find:
 
@@ -1371,7 +1379,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ncv : int, optional
         The number of Lanczos vectors generated ncv must be greater than k and
         smaller than n; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, 2*k + 1)``
+        Default: ``min(n, max(2*k + 1, 20))``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
         If A is a complex hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
@@ -1638,7 +1646,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         The number of Lanczos vectors generated
         ncv must be greater than k+1 and smaller than n;
         it is recommended that ncv > 2*k
-        Default: ``min(n, 2*k + 1)``
+        Default: ``min(n, max(2*k + 1, 20))``
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
     which : str, ['LM' | 'SM'], optional

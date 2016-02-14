@@ -45,6 +45,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxe
 from numpydoc.docscrape_sphinx import get_doc_object
 # Remove sphinx directives that don't run without Sphinx environment
 directives._directives.pop('versionadded', None)
+directives._directives.pop('versionchanged', None)
 directives._directives.pop('moduleauthor', None)
 directives._directives.pop('sectionauthor', None)
 directives._directives.pop('codeauthor', None)
@@ -285,7 +286,7 @@ def validate_rst_syntax(text, name, dots=True):
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
-        'obj', 'versionadded', 'module', 'class',
+        'obj', 'versionadded', 'versionchanged', 'module', 'class',
         'ref', 'func', 'toctree', 'moduleauthor',
         'sectionauthor', 'codeauthor', 'eq',
     ])

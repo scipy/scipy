@@ -35,9 +35,14 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                lsq_solver=None, lsmr_tol=None, max_iter=None, verbose=0):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
-    `lsq_linear` finds a minimum of the cost function 0.5 * ||A x - b||**2,
-    such that lb <= x <= ub. Where A is an m-by-n design matrix and b is a
-    target vector with m elements.
+    Given a m-by-n design matrix A and a target vector b with m elements,
+    `lsq_linear` solves the following optimization problem::
+
+        minimize 0.5 * ||A x - b||**2
+        subject to lb <= x <= ub
+
+    This optimization problem is convex, hence a found minimum (if iterations
+    have converged) is guaranteed to be global.
 
     Parameters
     ----------
@@ -58,12 +63,13 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
               and the required number of iterations is weakly correlated with
               the number of variables.
             * 'bvls' : Bounded-Variable Least-Squares algorithm. This is
-              an active set method, which requires the number iterations
-              comparable to the number of variables. Does not support sparse
-              matrices.
+              an active set method, which requires the number of iterations
+              comparable to the number of variables. Can't be used when `A` is
+              sparse or LinearOperator.
 
+        Default is 'trf'.
     tol : float, optional
-        Tolerance parameter. The algorithm terminates if the relative change
+        Tolerance parameter. The algorithm terminates if a relative change
         of the cost function is less than `tol` on the last iteration.
         Additionally the first-order optimality measure is considered:
 
@@ -71,7 +77,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
               scaled to account for the presence of the bounds, is less than
               `tol`.
             * ``method='bvls'`` terminates if Karush-Kuhn-Tucker conditions
-              are violated by less than `tol`.
+              are satisfied within `tol` tolerance.
 
     lsq_solver : {None, 'exact', 'lsmr'}, optional
         Method of solving unbounded least-squares problems throughout
@@ -85,10 +91,11 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         If None (default) the solver is chosen based on type of `A`.
     lsmr_tol : None, float or 'auto', optional
-        Tolerance parameters 'atol' and 'btol' for 'lsmr' solver. If None
-        (default), it is set to ``1e-2 * tol``. If 'auto', the tolerance will
-        be adjusted based on the optimality of the current iterate. It can
-        speed up the optimization process, but not always reliable.
+        Tolerance parameters 'atol' and 'btol' for `scipy.sparse.linalg.lsmr`
+        If None (default), it is set to ``1e-2 * tol``. If 'auto', the
+        tolerance will be adjusted based on the optimality of the current
+        iterate, which can speed up the optimization process, but is not always
+        reliable.
     max_iter : None or int, optional
         Maximum number of iterations before termination. If None (default), it
         is set to 100 for ``method='trf'`` or to the number of variables for
@@ -120,8 +127,9 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             * -1 : a lower bound is active.
             *  1 : an upper bound is active.
 
-        Somewhat arbitrary because it is determined within a tolerance
-        threshold.
+        Might be somewhat arbitrary for the `trf` method as it generates a
+        sequence of strictly feasible iterates and active_mask is determined
+        within a tolerance threshold.
     nit : int
         Number of iterations. Zero if the unconstrained solution is optimal.
     status : int
@@ -202,7 +210,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     >>> res = lsq_linear(A, b, bounds=(lb, ub), lsmr_tol='auto', verbose=1)
     # may vary
     The relative change of the cost function is less than `tol`.
-    Number of iterations: 16, initial cost: 1.5039e+04,final cost 1.1112e+04, first-order optimality 4.66e-08.
+    Number of iterations 16, initial cost 1.5039e+04, final cost 1.1112e+04,
+    first-order optimality 4.66e-08.
     """
     if method not in ['trf', 'bvls']:
         raise ValueError("`method` must be 'trf' or 'bvls'")
@@ -297,7 +306,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if verbose > 0:
         print(res.message)
-        print("Number of iterations: {0}, initial cost: {1:.4e}, "
+        print("Number of iterations {0}, initial cost {1:.4e}, "
               "final cost {2:.4e}, first-order optimality {3:.2e}."
               .format(res.nit, res.initial_cost, res.cost, res.optimality))
 

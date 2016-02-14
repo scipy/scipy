@@ -126,6 +126,9 @@ class OptimizeResult(dict):
         else:
             return self.__class__.__name__ + "()"
 
+    def __dir__(self):
+        return list(self.keys())
+
 
 class OptimizeWarning(UserWarning):
     pass
@@ -2501,7 +2504,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     of the objective function occurs.  If `finish` is None, that is the
     point returned.  When the global minimum occurs within (or not very far
     outside) the grid's boundaries, and the grid is fine enough, that
-    point will be in the neighborhood of the gobal minimum.
+    point will be in the neighborhood of the global minimum.
 
     However, users often employ some other optimization program to
     "polish" the gridpoint values, `i.e.`, to seek a more precise
@@ -2523,7 +2526,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     of the `finish` program, *not* the gridpoint ones.  Consequently,
     while `brute` confines its search to the input grid points,
     the `finish` program's results usually will not coincide with any
-    gridpoint, and may fall outside the grid's boundary.
+    gridpoint, and may fall outside the grid's boundary. Thus, if a
+    minimum only needs to be found over the provided grid points, make
+    sure to pass in `finish=None`.
 
     *Note 2*: The grid of points is a `numpy.mgrid` object.
     For `brute` the `ranges` and `Ns` inputs have the following effect.

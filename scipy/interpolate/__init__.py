@@ -26,6 +26,7 @@ Univariate interpolation
    krogh_interpolate
    pchip_interpolate
    Akima1DInterpolator
+   CubicSpline
    PPoly
    BPoly
 
@@ -163,7 +164,7 @@ from .rbf import Rbf
 
 from .polyint import *
 
-from ._monotone import *
+from ._cubic import *
 
 from .ndgriddata import *
 

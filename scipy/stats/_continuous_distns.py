@@ -621,7 +621,8 @@ class burr_gen(rv_continuous):
 
     See Also
     --------
-    fisk : a special case of `burr` with ``d = 1``
+    fisk : a special case of either `burr` or ``burr12`` with ``d = 1``
+    burr12 : Burr Type XII distribution
 
     Notes
     -----
@@ -647,18 +648,83 @@ class burr_gen(rv_continuous):
 
     """
     def _pdf(self, x, c, d):
-        return c*d*(x**(-c-1.0))*((1+x**(-c*1.0))**(-d-1.0))
+        return c * d * (x**(-c - 1.0)) * ((1 + x**(-c))**(-d - 1.0))
 
     def _cdf(self, x, c, d):
-        return (1+x**(-c*1.0))**(-d**1.0)
+        return (1 + x**(-c))**(-d)
 
     def _ppf(self, q, c, d):
-        return (q**(-1.0/d)-1)**(-1.0/c)
+        return (q**(-1.0/d) - 1)**(-1.0/c)
 
     def _munp(self, n, c, d):
         nc = 1. * n / c
         return d * special.beta(1.0 - nc, d + nc)
 burr = burr_gen(a=0.0, name='burr')
+
+
+class burr12_gen(rv_continuous):
+    """A Burr (Type XII) continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    fisk : a special case of either `burr` or ``burr12`` with ``d = 1``
+    burr : Burr Type III distribution
+
+    Notes
+    -----
+    The probability density function for `burr` is::
+
+        burr12.pdf(x, c, d) = c * d * x**(c-1) * (1+x**(c))**(-d-1)
+
+    for ``x > 0``.
+
+    `burr12` takes ``c`` and ``d`` as shape parameters.
+
+    This is the PDF corresponding to the twelfth CDF given in Burr's list;
+    specifically, it is equation (20) in Burr's paper [1]_.
+
+    %(after_notes)s
+
+    The Burr type 12 distribution is also sometimes referred to as
+    the Singh-Maddala distribution from NIST [2]_.
+
+    References
+    ----------
+    .. [1] Burr, I. W. "Cumulative frequency functions", Annals of
+       Mathematical Statistics, 13(2), pp 215-232 (1942).
+
+    .. [2] http://www.itl.nist.gov/div898/software/dataplot/refman2/auxillar/b12pdf.htm
+
+    %(example)s
+
+    """
+    def _pdf(self, x, c, d):
+        return np.exp(self._logpdf(x, c, d))
+
+    def _logpdf(self, x, c, d):
+        return log(c) + log(d) + special.xlogy(c-1, x) + special.xlog1py(-d-1, x**c)
+
+    def _cdf(self, x, c, d):
+        return 1 - self._sf(x, c, d)
+
+    def _logcdf(self, x, c, d):
+        return special.log1p(-(1 + x**c)**(-d))
+
+    def _sf(self, x, c, d):
+        return np.exp(self._logsf(x, c, d))
+
+    def _logsf(self, x, c, d):
+        return special.xlog1py(-d, x**c)
+
+    def _ppf(self, q, c, d):
+        return ((1 - q)**(-1.0/d) - 1)**(1.0/c)
+
+    def _munp(self, n, c, d):
+        nc = 1. * n / c
+        return d * special.beta(1.0 + nc, d - nc)
+burr12 = burr12_gen(a=0.0, name='burr12')
 
 
 class fisk_gen(burr_gen):
@@ -2539,7 +2605,7 @@ class invgauss_gen(rv_continuous):
 
     %(after_notes)s
 
-    When `mu` is too small, evaluating the cumulative density function will be
+    When `mu` is too small, evaluating the cumulative distribution function will be
     inaccurate due to ``cdf(mu -> 0) = inf * 0``.
     NaNs are returned for ``mu <= 0.0028``.
 
@@ -4088,6 +4154,64 @@ class semicircular_gen(rv_continuous):
         return 0.64472988584940017414
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
+
+class skew_norm_gen(rv_continuous):
+    """A skew-normal random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The pdf is
+
+    skewnorm.pdf(x, a) = 2*norm.pdf(x)*norm.cdf(ax)
+
+    `skewnorm` takes ``a`` as a skewness parameter
+    When a=0 the distribution is identical to a normal distribution.
+    rvs implements the method of [1].
+
+    %(after_notes)s
+
+    %(example)s
+
+
+    References
+    ----------
+
+    [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
+        multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
+        http://azzalini.stat.unipd.it/SN/faq-r.html
+    """
+
+    def _argcheck(self, a):
+        return np.isfinite(a)
+
+    def _pdf(self, x, a):
+        return 2.*_norm_pdf(x)*_norm_cdf(a*x)
+
+    def _rvs(self, a):
+        u0 = self._random_state.normal(size=self._size)
+        v = self._random_state.normal(size=self._size)
+        d = a/np.sqrt(1 + a**2)
+        u1 = d*u0 + v*np.sqrt(1 - d**2)
+        return np.where(u0 >= 0, u1, -u1)
+
+    def _stats(self, a, moments='mvsk'):
+        output = [None, None, None, None]
+        const = np.sqrt(2/pi) * a/np.sqrt(1 + a**2)
+
+        if 'm' in moments:
+            output[0] = const
+        if 'v' in moments:
+            output[1] = 1 - const**2
+        if 's' in moments:
+            output[2] = ((4 - pi)/2) * (const/np.sqrt(1 - const**2))**3
+        if 'k' in moments:
+            output[3] = (2*(pi - 3)) * (const**4/(1 - const**2)**2)
+
+        return output
+
+skewnorm = skew_norm_gen(name='skewnorm')
 
 class triang_gen(rv_continuous):
     """A triangular continuous random variable.

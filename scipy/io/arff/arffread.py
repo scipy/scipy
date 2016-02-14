@@ -614,22 +614,16 @@ def _loadarff(ofile):
         #   by % should be enough and faster, and for empty lines, same thing
         #   --> this does not seem to change anything.
 
-        # We do not abstract skipping comments and empty lines for performances
-        # reason.
-        raw = next(row_iter)
-        while r_empty.match(raw) or r_comment.match(raw):
-            raw = next(row_iter)
-
         # 'compiling' the range since it does not change
         # Note, I have already tried zipping the converters and
         # row elements and got slightly worse performance.
         elems = list(range(ni))
 
-        row = raw.split(delim)
-        yield tuple([convertors[i](row[i]) for i in elems])
         for raw in row_iter:
-            while r_comment.match(raw) or r_empty.match(raw):
-                raw = next(row_iter)
+            # We do not abstract skipping comments and empty lines for
+            # performance reasons.
+            if r_comment.match(raw) or r_empty.match(raw):
+                continue
             row = raw.split(delim)
             yield tuple([convertors[i](row[i]) for i in elems])
 

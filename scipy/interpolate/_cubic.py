@@ -1,3 +1,5 @@
+"""Interpolation algorithms using piecewise cubic polynomials."""
+
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
@@ -5,10 +7,11 @@ import numpy as np
 from . import BPoly, PPoly
 from .polyint import _isscalar
 from scipy._lib._util import _asarray_validated
+from scipy.linalg import solve_banded, solve
 
 
 __all__ = ["PchipInterpolator", "pchip_interpolate", "pchip",
-           "Akima1DInterpolator"]
+           "Akima1DInterpolator", "CubicSpline"]
 
 
 class PchipInterpolator(BPoly):
@@ -31,7 +34,7 @@ class PchipInterpolator(BPoly):
     axis : int, optional
         Axis in the y array corresponding to the x-coordinate values.
     extrapolate : bool, optional
-        Whether to extrapolate to ouf-of-bounds points based on first
+        Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
 
     Methods
@@ -44,6 +47,8 @@ class PchipInterpolator(BPoly):
     See Also
     --------
     Akima1DInterpolator
+    CubicSpline
+    BPoly
 
     Notes
     -----
@@ -241,6 +246,8 @@ class Akima1DInterpolator(PPoly):
     See Also
     --------
     PchipInterpolator
+    CubicSpline
+    PPoly
 
     Notes
     -----
@@ -297,11 +304,12 @@ class Akima1DInterpolator(PPoly):
         f1 = dm[2:]
         f2 = dm[:-2]
         f12 = f1 + f2
-        # These are the indices where the the slope at breakpoint is defined:
-        id_ = np.nonzero(f12 > 1e-9 * np.max(f12))[0]
-        # set the slope at breakpoint
-        t[id_] = (f1[id_] * m[id_ + 1] + f2[id_] * m[id_ + 2]) / f12[id_]
-
+        # These are the mask of where the the slope at breakpoint is defined:
+        ind = np.nonzero(f12 > 1e-9 * np.max(f12))
+        x_ind, y_ind = ind[0], ind[1:]
+        # Set the slope at breakpoint
+        t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
+                  f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
         # calculate the higher order coefficients
         c = (3. * m[2:-2] - 2. * t[:-1] - t[1:]) / dx
         d = (t[:-1] + t[1:] - 2. * m[2:-2]) / dx ** 2
@@ -315,7 +323,7 @@ class Akima1DInterpolator(PPoly):
         super(Akima1DInterpolator, self).__init__(coeff, x, extrapolate=False)
         self.axis = axis
 
-    def extend(self):
+    def extend(self, c, x, right=True):
         raise NotImplementedError("Extending a 1D Akima interpolator is not "
                                   "yet implemented")
 
@@ -330,3 +338,188 @@ class Akima1DInterpolator(PPoly):
     def from_bernstein_basis(cls, bp, extrapolate=None):
         raise NotImplementedError("This method does not make sense for "
                                   "an Akima interpolator.")
+
+
+class CubicSpline(PPoly):
+    """Cubic spline data interpolator.
+
+    Interpolate data with a piecewise cubic polynomial which is twice
+    continuously differentiable [1]_. The result is represented as a `PPoly`
+    instance with breakpoints matching the given data.
+
+    Parameters
+    ----------
+    x : array_like, shape (n,)
+        1-d array containing values of the independent variable.
+        Values must be real, finite and in strictly increasing order.
+    y : array_like
+        Array containing values of the dependent variable. It can have
+        arbitrary number of dimensions, but the length along `axis` (see below)
+        must match the length of `x`. Values must be finite.
+    axis : int, optional
+        Axis along which `y` is assumed to be varying. Meaning that for
+        ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
+        Default is 0.
+    extrapolate : bool, optional
+        Whether to extrapolate to out-of-bounds points based on first and last
+        intervals, or to return NaNs. Default is True.
+
+    Attributes
+    ----------
+    x : ndarray, shape (n,)
+        Breakpoints. The same `x` which was passed to the constructor.
+    c : ndarray, shape (4, n-1, ...)
+        Coefficients of the polynomials on each segment. The trailing
+        dimensions match the dimensions of `y`, excluding `axis`. For example,
+        if `y` is 1-d, then ``c[k, i]`` is a coefficient for
+        ``(x-x[i])**(3-k)`` on the segment between ``x[i]`` and ``x[i+1]``.
+    axis : int
+        Interpolation axis. The same `axis` which was passed to the
+        constructor.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    roots
+
+    See Also
+    --------
+    Akima1DInterpolator
+    PchipInterpolator
+    PPoly
+
+    Notes
+    -----
+    Two additional equations are required to determine all coefficients
+    of polynomials on each segment. They are formed from the conditions that
+    at the first and the last interior knots the third derivative is
+    continuous. It essentially means that the first and the second segments
+    (on both ends) are described by the same cubic polynomial. These conditions
+    are called "not-a-knot" and are known to give better interpolation accuracy
+    when nothing is known about end point derivatives [2]_.
+
+    When n=2 or n=3, the solution is sought as a linear/quadratic function
+    passing through the given points.
+
+    `InterpolatedUnivariateSpline` and `splrep` (with ``s=0``) construct an
+    equivalent interpolation curve in the B-spline basis.
+
+    .. versionadded:: 0.18.0
+
+    Examples
+    --------
+    In this example the cubic spline is used to interpolate a sampled sinusoid.
+    You can see that the spline continuity property holds for the first and
+    second derivatives and violates only for the third derivative.
+
+    >>> from scipy.interpolate import CubicSpline
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.arange(10)
+    >>> y = np.sin(x)
+    >>> cs = CubicSpline(x, y)
+    >>> x_s = np.arange(-0.5, 9.6, 0.1)
+    >>> plt.figure(figsize=(6.5, 4))
+    >>> plt.plot(x, y, 'o', label='data')
+    >>> plt.plot(x_s, cs(x_s), label="S")
+    >>> plt.plot(x_s, cs(x_s, 1), label="S'")
+    >>> plt.plot(x_s, cs(x_s, 2), label="S''")
+    >>> plt.plot(x_s, cs(x_s, 3), label="S'''")
+    >>> plt.xlim(-0.5, 9.5)
+    >>> plt.legend(loc='lower left', ncol=2)
+    >>> plt.show()
+
+    References
+    ----------
+    .. [1] `Cubic Spline Interpolation
+            <https://en.wikiversity.org/wiki/Cubic_Spline_Interpolation>`_
+            on Wikiversity.
+    .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
+    """
+    def __init__(self, x, y, axis=0, extrapolate=True):
+        x, y = map(np.asarray, (x, y))
+        if np.issubdtype(x.dtype, np.complexfloating):
+            raise ValueError("`x` must contain real values.")
+
+        axis = axis % y.ndim
+        if x.ndim != 1:
+            raise ValueError("`x` must be 1-dimensional.")
+        if x.shape[0] < 2:
+            raise ValueError("`x` must contain at least 2 elements.")
+        if x.shape[0] != y.shape[axis]:
+            raise ValueError("The length of `y` along `axis`={0} doesn't "
+                             "match the length of `x`".format(axis))
+
+        if not np.all(np.isfinite(x)):
+            raise ValueError("`x` must contain only finite values.")
+        if not np.all(np.isfinite(y)):
+            raise ValueError("`y` must contain only finite values.")
+
+        dx = np.diff(x)
+        if np.any(dx <= 0):
+            raise ValueError("`x` must be strictly increasing sequence.")
+
+        # Find derivative values at each x[i] by solving a tridiagonal system.
+        # If n=2 or n=3, "not-a-knot" condition is not enough to determine
+        # derivatives. In this case the solution is chosen to be a
+        # linear/quadratic function passing through the given points.
+        n = x.shape[0]
+        y = np.rollaxis(y, axis)
+        dxr = dx.reshape((dx.shape[0],) + (1,)*(y.ndim-1))
+        slope = np.diff(y, axis=0) / dxr
+        if n == 2:
+            s = np.empty((2,) + y.shape[1:], dtype=y.dtype)
+            s[0] = slope
+            s[1] = slope
+        elif n == 3:
+            A = np.zeros((3, 3))  # This is a standard matrix.
+            b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
+
+            A[0, 0] = 1
+            A[0, 1] = 1
+            A[1, 0] = dx[1]
+            A[1, 1] = 2 * (dx[0] + dx[1])
+            A[1, 2] = dx[0]
+            A[2, 1] = 1
+            A[2, 2] = 1
+
+            b[0] = 2 * slope[0]
+            b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
+            b[2] = 2 * slope[1]
+
+            s = solve(A, b, overwrite_a=True, overwrite_b=True,
+                      check_finite=False)
+        else:
+            A = np.zeros((3, n))  # This is a banded matrix representation.
+            b = np.empty((n,) + y.shape[1:], dtype=y.dtype)
+
+            A[1, 0] = dx[1]
+            A[1, -1] = dx[-2]
+            A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])
+            A[0, 1] = x[2] - x[0]
+            A[0, 2:] = dx[:-1]
+            A[-1, -2] = x[-1] - x[-3]
+            A[-1:, :-2] = dx[1:]
+
+            d = x[2] - x[0]
+            b[0] = ((dxr[0] + 2*d)*dxr[1]*slope[0] + dxr[0]**2*slope[1]) / d
+            b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
+            d = x[-1] - x[-3]
+            b[-1] = ((dxr[-1]**2*slope[-2] +
+                      (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
+
+            s = solve_banded((1, 1), A, b, overwrite_ab=True, overwrite_b=True,
+                             check_finite=False)
+
+        # Compute coefficients in PPoly form.
+        c0 = (s[:-1] + s[1:] - 2 * slope) / dxr**2
+        c = np.empty((4, n - 1) + y.shape[1:], dtype=c0.dtype)
+        c[0] = c0
+        c[1] = (slope - s[:-1]) / dxr - c0 * dxr
+        c[2] = s[:-1]
+        c[3] = y[:-1]
+
+        super(CubicSpline, self).__init__(c, x, extrapolate=extrapolate)
+        self.axis = axis
