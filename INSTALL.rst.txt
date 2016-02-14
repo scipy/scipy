@@ -109,14 +109,9 @@ Use the command::
 
   git clone https://github.com/scipy/scipy.git
 
-If you have an older version of Scipy installed and didn't install that with
-pip, you need to manually uninstall it first (remove from e.g. in
-/usr/lib/python3.4/site-packages/scipy or
-$HOME/lib/python3.4/site-packages/scipy).  Then type::
-
   cd scipy
   git clean -xdf
-  pip install . --user
+  python setup.py install --user
  
 Documentation
 -------------
@@ -130,12 +125,12 @@ From tarballs
 Unpack ``SciPy-<version>.tar.gz``, change to the ``SciPy-<version>/``
 directory, and run::
 
-  pip install . --user
+  python setup.py install --user
 
 This may take several minutes to half an hour depending on the speed of your
 computer.  To install to a user-specific location instead, run::
 
-  pip install . --prefix=$MYDIR
+  python setup.py install --prefix=$MYDIR
 
 where $MYDIR is, for example, $HOME or $HOME/usr.
 
@@ -178,6 +173,20 @@ BLAS and ATLAS libraries) are built with the same Fortran compiler. In most
 cases, if you mix compilers, you will not be able to import Scipy at best, have
 crashes and random results at worst.
 
+UNINSTALLING
+============
+
+When installing with ``python setup.py install`` or a variation on that, you do
+not get proper uninstall behavior for an older already installed Scipy version.
+In many cases that's not a problem, but if it turns out to be an issue, you
+need to manually uninstall it first (remove from e.g. in
+``/usr/lib/python3.4/site-packages/scipy`` or
+``$HOME/lib/python3.4/site-packages/scipy``).
+
+Alternatively, you can use ``pip install . --user`` instead of ``python
+setup.py install --user`` in order to get reliable uninstall behavior.
+The downside is that ``pip`` doesn't show you a build log and doesn't support
+incremental rebuilds (it copies the whole source tree to a tempdir).
 
 TROUBLESHOOTING
 ===============
@@ -228,7 +237,7 @@ in one command::
 
      python INSTALLDIR/numpy/distutils/system_info.py
 
-where INSTALLDIR is, for example, /usr/lib/python3.4/site-packages/.
+   where INSTALLDIR is, for example, /usr/lib/python3.4/site-packages/.
 
 8) Feel free to add any other relevant information.
    For example, the full output (both stdout and stderr) of the SciPy
