@@ -103,7 +103,7 @@ slaqgs(SuperMatrix *A, float *r, float *c,
     Aval = Astore->nzval;
     
     /* Initialize LARGE and SMALL. */
-    small = slamch_("Safe minimum") / slamch_("Precision");
+    small = smach("Safe minimum") / smach("Precision");
     large = 1. / small;
 
     if (rowcnd >= THRESH && amax >= small && amax <= large) {

@@ -59,7 +59,7 @@ csnode_bmod (
 
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (complex *) Glu->lusup;
     xlusup  = Glu->xlusup;
 
     nextlu = xlusup[jcol];
@@ -95,12 +95,6 @@ csnode_bmod (
 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
-#if SCIPY_FIX
-	if (nsupr < nsupc) {
-	    /* Invalid input to LAPACK: fail more gracefully */
-	    ABORT("superlu failure (singular matrix?)");
-	}
-#endif
 	ctrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );
 	cgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 

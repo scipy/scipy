@@ -298,9 +298,9 @@ cprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (complex *) Glu->lusup;
     xlusup  = Glu->xlusup;
-    ucol    = Glu->ucol;
+    ucol    = (complex *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     

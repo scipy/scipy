@@ -192,7 +192,9 @@ int check_perm(char *what, int n, int *perm)
 {
     register int i;
     int          *marker;
-    marker = (int *) calloc(n, sizeof(int));
+    /*marker = (int *) calloc(n, sizeof(int));*/
+    marker = (int *) malloc(n * sizeof(int));
+    for (i = 0; i < n; ++i) marker[i] = 0;
 
     for (i = 0; i < n; ++i) {
 	if ( marker[perm[i]] == 1 || perm[i] >= n ) {

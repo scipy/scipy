@@ -71,7 +71,6 @@
 
 #ifdef _CRAY
 #include <fortran.h>
-#include <string.h>
 #endif
 
 /* Define my integer type int_t */
@@ -79,31 +78,13 @@ typedef int int_t; /* default */
 
 #include <math.h>
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 #include "slu_Cnames.h"
 #include "supermatrix.h"
 #include "slu_util.h"
-
-
-
-typedef struct {
-    int     *xsup;    /* supernode and column mapping */
-    int     *supno;   
-    int     *lsub;    /* compressed L subscripts */
-    int	    *xlsub;
-    float  *lusup;   /* L supernodes */
-    int     *xlusup;
-    float  *ucol;    /* U columns */
-    int     *usub;
-    int	    *xusub;
-    int     nzlmax;   /* current max size of lsub */
-    int     nzumax;   /*    "    "    "      ucol */
-    int     nzlumax;  /*    "    "    "     lusup */
-    int     n;        /* number of columns in the matrix */
-    LU_space_t MemModel; /* 0 - system malloc'd; 1 - user provided */
-    int     num_expansions;
-    ExpHeader *expanders; /* Array of pointers to 4 types of memory */
-    LU_stack_t stack;     /* use user supplied memory */
-} GlobalLU_t;
 
 
 /* -------- Prototypes -------- */
@@ -121,7 +102,7 @@ sgssvx(superlu_options_t *, SuperMatrix *, int *, int *, int *,
        char *, float *, float *, SuperMatrix *, SuperMatrix *,
        void *, int, SuperMatrix *, SuperMatrix *,
        float *, float *, float *, float *,
-       mem_usage_t *, SuperLUStat_t *, int *);
+       GlobalLU_t *, mem_usage_t *, SuperLUStat_t *, int *);
     /* ILU */
 extern void
 sgsisv(superlu_options_t *, SuperMatrix *, int *, int *, SuperMatrix *,
@@ -130,7 +111,7 @@ extern void
 sgsisx(superlu_options_t *, SuperMatrix *, int *, int *, int *,
        char *, float *, float *, SuperMatrix *, SuperMatrix *,
        void *, int, SuperMatrix *, SuperMatrix *, float *, float *,
-       mem_usage_t *, SuperLUStat_t *, int *);
+       GlobalLU_t *, mem_usage_t *, SuperLUStat_t *, int *);
 
 
 /*! \brief Supernodal LU factor related */
@@ -159,7 +140,8 @@ extern void    fixupL (const int, const int *, GlobalLU_t *);
 extern void    sallocateA (int, int, float **, int **, int **);
 extern void    sgstrf (superlu_options_t*, SuperMatrix*,
                        int, int, int*, void *, int, int *, int *, 
-                       SuperMatrix *, SuperMatrix *, SuperLUStat_t*, int *);
+                       SuperMatrix *, SuperMatrix *, GlobalLU_t *,
+		       SuperLUStat_t*, int *);
 extern int     ssnode_dfs (const int, const int, const int *, const int *,
 			     const int *, int *, int *, GlobalLU_t *);
 extern int     ssnode_bmod (const int, const int, const int, float *,
@@ -190,7 +172,7 @@ extern void    sgstrs (trans_t, SuperMatrix *, SuperMatrix *, int *, int *,
 /* ILU */
 extern void    sgsitrf (superlu_options_t*, SuperMatrix*, int, int, int*,
 		        void *, int, int *, int *, SuperMatrix *, SuperMatrix *,
-                        SuperLUStat_t*, int *);
+                        GlobalLU_t *, SuperLUStat_t*, int *);
 extern int     sldperm(int, int, int, int [], int [], float [],
                         int [],	float [], float []);
 extern int     ilu_ssnode_dfs (const int, const int, const int *, const int *,
@@ -235,8 +217,7 @@ extern int     sp_sgemv (char *, float, SuperMatrix *, float *,
 extern int     sp_sgemm (char *, char *, int, int, int, float,
 			SuperMatrix *, float *, int, float, 
 			float *, int);
-extern         float slamch_(char *);
-
+extern         float smach(char *);   /* from C99 standard, in float.h */
 
 /*! \brief Memory-related */
 extern int     sLUMemInit (fact_t, void *, int, int, int, int, int,
@@ -253,15 +234,13 @@ extern int     sQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
 extern int     ilu_sQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
 
 /*! \brief Auxiliary routines */
-extern void    sreadhb(int *, int *, int *, float **, int **, int **);
+extern void    sreadhb(FILE *, int *, int *, int *, float **, int **, int **);
 extern void    sreadrb(int *, int *, int *, float **, int **, int **);
 extern void    sreadtriple(int *, int *, int *, float **, int **, int **);
 extern void    sCompRow_to_CompCol(int, int, int, float*, int*, int*,
 		                   float **, int **, int **);
 extern void    sfill (float *, int, float);
 extern void    sinf_norm_error (int, SuperMatrix *, float *);
-extern void    PrintPerf (SuperMatrix *, SuperMatrix *, mem_usage_t *,
-			 float, float, float *, float *, char *);
 extern float  sqselect(int, float *, int);
 
 
@@ -271,7 +250,19 @@ extern void    sPrint_SuperNode_Matrix(char *, SuperMatrix *);
 extern void    sPrint_Dense_Matrix(char *, SuperMatrix *);
 extern void    sprint_lu_col(char *, int, int, int *, GlobalLU_t *);
 extern int     print_double_vec(char *, int, double *);
-extern void    check_tempv(int, float *);
+extern void    scheck_tempv(int, float *);
+
+/*! \brief BLAS */
+
+extern int sgemm_(const char*, const char*, const int*, const int*, const int*,
+                  const float*, const float*, const int*, const float*,
+		  const int*, const float*, float*, const int*);
+extern int strsv_(char*, char*, char*, int*, float*, int*,
+                  float*, int*);
+extern int strsm_(char*, char*, char*, char*, int*, int*,
+                  float*, float*, int*, float*, int*);
+extern int sgemv_(char *, int *, int *, float *, float *a, int *,
+                  float *, int *, float *, float *, int *);
 
 #ifdef __cplusplus
   }
