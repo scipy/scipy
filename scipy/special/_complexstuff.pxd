@@ -64,3 +64,9 @@ cdef inline number_t zexp(number_t x) nogil:
     else:
         return libc.math.exp(x)
 
+cdef inline double_complex zpack(double zr, double zi) nogil:
+    cdef np.npy_cdouble z
+    z.real = zr
+    z.imag = zi
+    return (<double_complex*>&z)[0]
+

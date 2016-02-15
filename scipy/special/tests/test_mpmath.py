@@ -956,6 +956,16 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_(np.isinf(sc.exprel(np.inf)))
         assert_(sc.exprel(-np.inf) == 0)
 
+    def test_expm1_complex(self):
+        assert_mpmath_equal(sc.expm1,
+                            mpmath.expm1,
+                            [ComplexArg()])
+
+    def test_log1p_complex(self):
+        assert_mpmath_equal(sc.log1p,
+                            lambda x: mpmath.log(x+1),
+                            [ComplexArg()], dps=60)
+
     def test_e1_complex(self):
         # E_1 oscillates as Im[z] -> +- inf, so limit range
         assert_mpmath_equal(sc.exp1,

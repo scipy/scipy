@@ -1479,6 +1479,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef long double _func_expitl "expitl"(long double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_expm1 "expm1"(double) nogil
+from _cunity cimport cexpm1 as _func_cexpm1
+ctypedef double complex _proto_cexpm1_t(double complex) nogil
+cdef _proto_cexpm1_t *_proto_cexpm1_t_var = &_func_cexpm1
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_expn "expn"(int, double) nogil
 from _legacy cimport expn_unsafe as _func_expn_unsafe
@@ -1647,6 +1650,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesk_wrap_e "cbesk_wrap_e"(double, double complex) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_log1p "log1p"(double) nogil
+from _cunity cimport clog1p as _func_clog1p
+ctypedef double complex _proto_clog1p_t(double complex) nogil
+cdef _proto_clog1p_t *_proto_clog1p_t_var = &_func_clog1p
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_log_ndtr "log_ndtr"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1832,8 +1838,11 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_tukeylambdacdf "tukeylambdacdf"(double, double) nogil
 from _xlogy cimport xlog1py as _func_xlog1py
-ctypedef double _proto_xlog1py_t(double, double) nogil
-cdef _proto_xlog1py_t *_proto_xlog1py_t_var = &_func_xlog1py
+ctypedef double _proto_xlog1py_double__t(double, double) nogil
+cdef _proto_xlog1py_double__t *_proto_xlog1py_double__t_var = &_func_xlog1py[double]
+from _xlogy cimport xlog1py as _func_xlog1py
+ctypedef double complex _proto_xlog1py_double_complex__t(double complex, double complex) nogil
+cdef _proto_xlog1py_double_complex__t *_proto_xlog1py_double_complex__t_var = &_func_xlog1py[double_complex]
 from _xlogy cimport xlogy as _func_xlogy
 ctypedef double _proto_xlogy_double__t(double, double) nogil
 cdef _proto_xlogy_double__t *_proto_xlogy_double__t_var = &_func_xlogy[double]
@@ -4961,27 +4970,39 @@ ufunc_expit_data[1] = &ufunc_expit_ptr[2*1]
 ufunc_expit_data[2] = &ufunc_expit_ptr[2*2]
 expit = np.PyUFunc_FromFuncAndData(ufunc_expit_loops, ufunc_expit_data, ufunc_expit_types, 3, 1, 1, 0, "expit", ufunc_expit_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_expm1_loops[2]
-cdef void *ufunc_expm1_ptr[4]
-cdef void *ufunc_expm1_data[2]
-cdef char ufunc_expm1_types[4]
+cdef np.PyUFuncGenericFunction ufunc_expm1_loops[4]
+cdef void *ufunc_expm1_ptr[8]
+cdef void *ufunc_expm1_data[4]
+cdef char ufunc_expm1_types[8]
 cdef char *ufunc_expm1_doc = (
     "expm1(x)\n"
     "\n"
     "exp(x) - 1 for use when `x` is near zero.")
 ufunc_expm1_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_expm1_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_expm1_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc_expm1_loops[3] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
 ufunc_expm1_types[0] = <char>NPY_FLOAT
 ufunc_expm1_types[1] = <char>NPY_FLOAT
 ufunc_expm1_types[2] = <char>NPY_DOUBLE
 ufunc_expm1_types[3] = <char>NPY_DOUBLE
+ufunc_expm1_types[4] = <char>NPY_CFLOAT
+ufunc_expm1_types[5] = <char>NPY_CFLOAT
+ufunc_expm1_types[6] = <char>NPY_CDOUBLE
+ufunc_expm1_types[7] = <char>NPY_CDOUBLE
 ufunc_expm1_ptr[2*0] = <void*>_func_expm1
 ufunc_expm1_ptr[2*0+1] = <void*>(<char*>"expm1")
 ufunc_expm1_ptr[2*1] = <void*>_func_expm1
 ufunc_expm1_ptr[2*1+1] = <void*>(<char*>"expm1")
+ufunc_expm1_ptr[2*2] = <void*>_func_cexpm1
+ufunc_expm1_ptr[2*2+1] = <void*>(<char*>"expm1")
+ufunc_expm1_ptr[2*3] = <void*>_func_cexpm1
+ufunc_expm1_ptr[2*3+1] = <void*>(<char*>"expm1")
 ufunc_expm1_data[0] = &ufunc_expm1_ptr[2*0]
 ufunc_expm1_data[1] = &ufunc_expm1_ptr[2*1]
-expm1 = np.PyUFunc_FromFuncAndData(ufunc_expm1_loops, ufunc_expm1_data, ufunc_expm1_types, 2, 1, 1, 0, "expm1", ufunc_expm1_doc, 0)
+ufunc_expm1_data[2] = &ufunc_expm1_ptr[2*2]
+ufunc_expm1_data[3] = &ufunc_expm1_ptr[2*3]
+expm1 = np.PyUFunc_FromFuncAndData(ufunc_expm1_loops, ufunc_expm1_data, ufunc_expm1_types, 4, 1, 1, 0, "expm1", ufunc_expm1_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_expn_loops[3]
 cdef void *ufunc_expn_ptr[6]
@@ -8290,27 +8311,39 @@ ufunc_kve_data[2] = &ufunc_kve_ptr[2*2]
 ufunc_kve_data[3] = &ufunc_kve_ptr[2*3]
 kve = np.PyUFunc_FromFuncAndData(ufunc_kve_loops, ufunc_kve_data, ufunc_kve_types, 4, 2, 1, 0, "kve", ufunc_kve_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_log1p_loops[2]
-cdef void *ufunc_log1p_ptr[4]
-cdef void *ufunc_log1p_data[2]
-cdef char ufunc_log1p_types[4]
+cdef np.PyUFuncGenericFunction ufunc_log1p_loops[4]
+cdef void *ufunc_log1p_ptr[8]
+cdef void *ufunc_log1p_data[4]
+cdef char ufunc_log1p_types[8]
 cdef char *ufunc_log1p_doc = (
     "log1p(x)\n"
     "\n"
     "Calculates log(1+x) for use when `x` is near zero")
 ufunc_log1p_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_log1p_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_log1p_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc_log1p_loops[3] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
 ufunc_log1p_types[0] = <char>NPY_FLOAT
 ufunc_log1p_types[1] = <char>NPY_FLOAT
 ufunc_log1p_types[2] = <char>NPY_DOUBLE
 ufunc_log1p_types[3] = <char>NPY_DOUBLE
+ufunc_log1p_types[4] = <char>NPY_CFLOAT
+ufunc_log1p_types[5] = <char>NPY_CFLOAT
+ufunc_log1p_types[6] = <char>NPY_CDOUBLE
+ufunc_log1p_types[7] = <char>NPY_CDOUBLE
 ufunc_log1p_ptr[2*0] = <void*>_func_log1p
 ufunc_log1p_ptr[2*0+1] = <void*>(<char*>"log1p")
 ufunc_log1p_ptr[2*1] = <void*>_func_log1p
 ufunc_log1p_ptr[2*1+1] = <void*>(<char*>"log1p")
+ufunc_log1p_ptr[2*2] = <void*>_func_clog1p
+ufunc_log1p_ptr[2*2+1] = <void*>(<char*>"log1p")
+ufunc_log1p_ptr[2*3] = <void*>_func_clog1p
+ufunc_log1p_ptr[2*3+1] = <void*>(<char*>"log1p")
 ufunc_log1p_data[0] = &ufunc_log1p_ptr[2*0]
 ufunc_log1p_data[1] = &ufunc_log1p_ptr[2*1]
-log1p = np.PyUFunc_FromFuncAndData(ufunc_log1p_loops, ufunc_log1p_data, ufunc_log1p_types, 2, 1, 1, 0, "log1p", ufunc_log1p_doc, 0)
+ufunc_log1p_data[2] = &ufunc_log1p_ptr[2*2]
+ufunc_log1p_data[3] = &ufunc_log1p_ptr[2*3]
+log1p = np.PyUFunc_FromFuncAndData(ufunc_log1p_loops, ufunc_log1p_data, ufunc_log1p_types, 4, 1, 1, 0, "log1p", ufunc_log1p_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_log_ndtr_loops[2]
 cdef void *ufunc_log_ndtr_ptr[4]
@@ -11365,10 +11398,10 @@ ufunc_wofz_data[0] = &ufunc_wofz_ptr[2*0]
 ufunc_wofz_data[1] = &ufunc_wofz_ptr[2*1]
 wofz = np.PyUFunc_FromFuncAndData(ufunc_wofz_loops, ufunc_wofz_data, ufunc_wofz_types, 2, 1, 1, 0, "wofz", ufunc_wofz_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_xlog1py_loops[2]
-cdef void *ufunc_xlog1py_ptr[4]
-cdef void *ufunc_xlog1py_data[2]
-cdef char ufunc_xlog1py_types[6]
+cdef np.PyUFuncGenericFunction ufunc_xlog1py_loops[4]
+cdef void *ufunc_xlog1py_ptr[8]
+cdef void *ufunc_xlog1py_data[4]
+cdef char ufunc_xlog1py_types[12]
 cdef char *ufunc_xlog1py_doc = (
     "xlog1py(x, y)\n"
     "\n"
@@ -11392,19 +11425,33 @@ cdef char *ufunc_xlog1py_doc = (
     ".. versionadded:: 0.13.0")
 ufunc_xlog1py_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_xlog1py_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_xlog1py_loops[2] = <np.PyUFuncGenericFunction>loop_D_DD__As_FF_F
+ufunc_xlog1py_loops[3] = <np.PyUFuncGenericFunction>loop_D_DD__As_DD_D
 ufunc_xlog1py_types[0] = <char>NPY_FLOAT
 ufunc_xlog1py_types[1] = <char>NPY_FLOAT
 ufunc_xlog1py_types[2] = <char>NPY_FLOAT
 ufunc_xlog1py_types[3] = <char>NPY_DOUBLE
 ufunc_xlog1py_types[4] = <char>NPY_DOUBLE
 ufunc_xlog1py_types[5] = <char>NPY_DOUBLE
-ufunc_xlog1py_ptr[2*0] = <void*>_func_xlog1py
+ufunc_xlog1py_types[6] = <char>NPY_CFLOAT
+ufunc_xlog1py_types[7] = <char>NPY_CFLOAT
+ufunc_xlog1py_types[8] = <char>NPY_CFLOAT
+ufunc_xlog1py_types[9] = <char>NPY_CDOUBLE
+ufunc_xlog1py_types[10] = <char>NPY_CDOUBLE
+ufunc_xlog1py_types[11] = <char>NPY_CDOUBLE
+ufunc_xlog1py_ptr[2*0] = <void*>_func_xlog1py[double]
 ufunc_xlog1py_ptr[2*0+1] = <void*>(<char*>"xlog1py")
-ufunc_xlog1py_ptr[2*1] = <void*>_func_xlog1py
+ufunc_xlog1py_ptr[2*1] = <void*>_func_xlog1py[double]
 ufunc_xlog1py_ptr[2*1+1] = <void*>(<char*>"xlog1py")
+ufunc_xlog1py_ptr[2*2] = <void*>_func_xlog1py[double_complex]
+ufunc_xlog1py_ptr[2*2+1] = <void*>(<char*>"xlog1py")
+ufunc_xlog1py_ptr[2*3] = <void*>_func_xlog1py[double_complex]
+ufunc_xlog1py_ptr[2*3+1] = <void*>(<char*>"xlog1py")
 ufunc_xlog1py_data[0] = &ufunc_xlog1py_ptr[2*0]
 ufunc_xlog1py_data[1] = &ufunc_xlog1py_ptr[2*1]
-xlog1py = np.PyUFunc_FromFuncAndData(ufunc_xlog1py_loops, ufunc_xlog1py_data, ufunc_xlog1py_types, 2, 2, 1, 0, "xlog1py", ufunc_xlog1py_doc, 0)
+ufunc_xlog1py_data[2] = &ufunc_xlog1py_ptr[2*2]
+ufunc_xlog1py_data[3] = &ufunc_xlog1py_ptr[2*3]
+xlog1py = np.PyUFunc_FromFuncAndData(ufunc_xlog1py_loops, ufunc_xlog1py_data, ufunc_xlog1py_types, 4, 2, 1, 0, "xlog1py", ufunc_xlog1py_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_xlogy_loops[4]
 cdef void *ufunc_xlogy_ptr[8]

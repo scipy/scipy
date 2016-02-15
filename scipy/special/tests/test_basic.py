@@ -41,6 +41,7 @@ from scipy.special import ellipk
 from scipy.special._testutils import assert_tol_equal, with_special_errors, \
      assert_func_equal
 
+from scipy._lib._version import NumpyVersion
 
 class TestCephes(TestCase):
     def test_airy(self):
@@ -297,6 +298,51 @@ class TestCephes(TestCase):
 
     def test_expm1(self):
         assert_equal(cephes.expm1(0),0.0)
+        assert_equal(cephes.expm1(np.inf), np.inf)
+        assert_equal(cephes.expm1(-np.inf), -1)
+        assert_equal(cephes.expm1(np.nan), np.nan)
+    
+    # Earlier numpy version don't guarantee that npy_cexp conforms to C99.
+    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0')
+    def test_expm1_complex(self):
+        expm1 = cephes.expm1
+        assert_equal(expm1(0 + 0j), 0 + 0j)
+        assert_equal(expm1(complex(np.inf, 0)), complex(np.inf, 0))
+        assert_equal(expm1(complex(np.inf, 1)), complex(np.inf, np.inf))
+        assert_equal(expm1(complex(np.inf, 2)), complex(-np.inf, np.inf))
+        assert_equal(expm1(complex(np.inf, 4)), complex(-np.inf, -np.inf))
+        assert_equal(expm1(complex(np.inf, 5)), complex(np.inf, -np.inf))
+        assert_equal(expm1(complex(1, np.inf)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(0, np.inf)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(np.inf, np.inf)), complex(np.inf, np.nan))
+        assert_equal(expm1(complex(-np.inf, np.inf)), complex(-1, 0))
+        assert_equal(expm1(complex(-np.inf, np.nan)), complex(-1, 0))
+        assert_equal(expm1(complex(np.inf, np.nan)), complex(np.inf, np.nan))
+        assert_equal(expm1(complex(0, np.nan)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(1, np.nan)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(np.nan, 1)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(np.nan, np.nan)), complex(np.nan, np.nan))
+ 
+    @dec.knownfailureif(True, 'The real part of expm1(z) bad at these points')
+    def test_expm1_complex_hard(self):
+        # The real part of this function is difficult to evaluate when
+        # z.real = -log(cos(z.imag)).
+        y = np.array([0.1, 0.2, 0.3, 5, 11, 20])
+        x = -np.log(np.cos(y))
+        z = x + 1j*y
+        
+        # evaluate using mpmath.expm1 with dps=1000
+        expected = np.array([-5.5507901846769623e-17+0.10033467208545054j,
+                              2.4289354732893695e-18+0.20271003550867248j,
+                              4.5235500262585768e-17+0.30933624960962319j,
+                              7.8234305217489006e-17-3.3805150062465863j,
+                             -1.3685191953697676e-16-225.95084645419513j,
+                              8.7175620481291045e-17+2.2371609442247422j])
+        found = cephes.expm1(z)
+        # this passes.
+        assert_array_almost_equal_nulp(found.imag, expected.imag, 3)
+        # this fails.
+        assert_array_almost_equal_nulp(found.real, expected.real, 20)
 
     def test_fdtr(self):
         assert_equal(cephes.fdtr(1,1,0),0.0)
@@ -486,7 +532,30 @@ class TestCephes(TestCase):
         cephes.kve(1,1)
 
     def test_log1p(self):
-        assert_equal(cephes.log1p(0),0.0)
+        log1p = cephes.log1p
+        assert_equal(log1p(0), 0.0)
+        assert_equal(log1p(-1), -np.inf)
+        assert_equal(log1p(-2), np.nan)
+        assert_equal(log1p(np.inf), np.inf)
+
+    # earlier numpy version don't guarantee that npy_clog conforms to C99
+    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0')
+    def test_log1p_complex(self):
+        log1p = cephes.log1p
+        c = complex
+        assert_equal(log1p(0 + 0j), 0 + 0j)
+        assert_equal(log1p(c(-1, 0)), c(-np.inf, 0))
+        assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
+        assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
+        assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
+        assert_equal(log1p(c(np.inf, 1)), c(np.inf, 0))
+        assert_allclose(log1p(c(-np.inf, np.inf)), c(np.inf, 3*np.pi/4))
+        assert_allclose(log1p(c(np.inf, np.inf)), c(np.inf, np.pi/4))
+        assert_equal(log1p(c(np.inf, np.nan)), c(np.inf, np.nan))
+        assert_equal(log1p(c(-np.inf, np.nan)), c(np.inf, np.nan))
+        assert_equal(log1p(c(np.nan, np.inf)), c(np.inf, np.nan))
+        assert_equal(log1p(c(np.nan, 1)), c(np.nan, np.nan))
+        assert_equal(log1p(c(np.nan, np.nan)), c(np.nan, np.nan))
 
     def test_lpmv(self):
         assert_equal(cephes.lpmv(0,0,1),1.0)

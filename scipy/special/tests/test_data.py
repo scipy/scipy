@@ -188,6 +188,14 @@ def sph_harm_(m, n, theta, phi):
     y = sph_harm(m, n, theta, phi)
     return (y.real, y.imag)
 
+def cexpm1(x, y):
+    z = expm1(x + 1j*y)
+    return z.real, z.imag
+
+def clog1p(x, y):
+    z = log1p(x + 1j*y)
+    return z.real, z.imag
+
 def test_boost():
     TESTS = [
         data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1, rtol=5e-13),
@@ -457,6 +465,8 @@ def test_local():
         data_local(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
         data_local(ellipkm1, 'ellipkm1', 0, 1),
         data_local(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
+        data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3), rtol=1e-14),
+        data_local(cexpm1, 'log1p_expm1_complex', (0,1), (4,5), rtol=1e-14),
     ]
 
     for test in TESTS:
