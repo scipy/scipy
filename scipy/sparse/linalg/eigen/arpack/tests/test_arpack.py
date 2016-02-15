@@ -7,6 +7,7 @@ To run tests locally:
 """
 
 import warnings
+import threading
 
 import numpy as np
 
@@ -16,7 +17,7 @@ from numpy.testing import assert_allclose, \
 
 from numpy import dot, conj, random
 from scipy.linalg import eig, eigh
-from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
+from scipy.sparse import csc_matrix, csr_matrix, isspmatrix, diags
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
@@ -852,6 +853,43 @@ def test_svds_wrong_eigen_type():
                   [1, 0, 2],
                   [0, 0, 1]], float)
     assert_raises(ValueError, svds, x, 1, which='LA')
+
+
+def test_parallel_threads():
+    results = []
+    v0 = np.random.rand(50)
+
+    def worker():
+        x = diags([1, -2, 1], [-1, 0, 1], shape=(50, 50))
+        w, v = eigs(x, k=3, v0=v0)
+        results.append(w)
+
+        w, v = eigsh(x, k=3, v0=v0)
+        results.append(w)
+
+    threads = [threading.Thread(target=worker) for k in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    worker()
+
+    for r in results:
+        assert_allclose(r, results[-1])
+
+
+def test_reentering():
+    # Just some linear operator that calls eigs recursively
+    def A_matvec(x):
+        x = diags([1, -2, 1], [-1, 0, 1], shape=(50, 50))
+        w, v = eigs(x, k=1)
+        return v / w[0]
+    A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
+
+    # The Fortran code is not reentrant, so this fails (gracefully, not crashing)
+    assert_raises(RuntimeError, eigs, A, k=1)
+    assert_raises(RuntimeError, eigsh, A, k=1)
 
 
 if __name__ == "__main__":
