@@ -57,6 +57,11 @@ The convergence criterion for ``optimize.bisect``,
 ``optimize.brentq``, ``optimize.brenth``, and ``optimize.ridder`` now
 works the same as ``numpy.allclose``.
 
+The offset in ``ndimage.iterpolation.affine_transform``
+is now consistently added after the matrix is applied,
+independent of if the matrix is specified using a one-dimensional
+or a two-dimensional array.
+
 Other changes
 =============
 
