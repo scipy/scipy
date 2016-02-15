@@ -643,7 +643,10 @@ class _TestCommon:
         mats.append(kron(mats[3],[[1,2,3,4]]))
 
         for m in mats:
-            assert_equal(self.spmatrix(m).diagonal(),diag(m))        
+            assert_equal(self.spmatrix(m).diagonal(),diag(m))
+
+        # Test all-zero matrix.
+        assert_equal(self.spmatrix((40, 16130)).diagonal(), np.zeros(40))
 
     @dec.slow
     def test_setdiag(self):
