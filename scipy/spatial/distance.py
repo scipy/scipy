@@ -30,7 +30,7 @@ for computing the number of observations in a distance matrix.
    num_obs_dm  -- # of observations in a distance matrix
    num_obs_y   -- # of observations in a condensed distance matrix
 
-Distance functions between two vectors ``u`` and ``v``. Computing
+Distance functions between two numeric vectors ``u`` and ``v``. Computing
 distances over a large collection of vectors is inefficient for these
 functions. Use ``pdist`` for this purpose.
 
@@ -43,23 +43,32 @@ functions. Use ``pdist`` for this purpose.
    cityblock        -- the Manhattan distance.
    correlation      -- the Correlation distance.
    cosine           -- the Cosine distance.
-   dice             -- the Dice dissimilarity (boolean).
    euclidean        -- the Euclidean distance.
-   hamming          -- the Hamming distance (boolean).
-   jaccard          -- the Jaccard distance (boolean).
-   kulsinski        -- the Kulsinski distance (boolean).
    mahalanobis      -- the Mahalanobis distance.
-   matching         -- the matching dissimilarity (boolean).
    minkowski        -- the Minkowski distance.
-   rogerstanimoto   -- the Rogers-Tanimoto dissimilarity (boolean).
-   russellrao       -- the Russell-Rao dissimilarity (boolean).
    seuclidean       -- the normalized Euclidean distance.
-   sokalmichener    -- the Sokal-Michener dissimilarity (boolean).
-   sokalsneath      -- the Sokal-Sneath dissimilarity (boolean).
    sqeuclidean      -- the squared Euclidean distance.
    wminkowski       -- the weighted Minkowski distance.
-   yule             -- the Yule dissimilarity (boolean).
 
+Distance functions between two boolean vectors (representing sets) ``u`` and
+``v``.  As in the case of numerical vectors, ``pdist`` is more efficient for
+computing the distances between all pairs.
+
+.. autosummary::
+   :toctree: generated/
+
+   dice             -- the Dice dissimilarity.
+   hamming          -- the Hamming distance.
+   jaccard          -- the Jaccard distance.
+   kulsinski        -- the Kulsinski distance.
+   matching         -- the matching dissimilarity.
+   rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
+   russellrao       -- the Russell-Rao dissimilarity.
+   sokalmichener    -- the Sokal-Michener dissimilarity.
+   sokalsneath      -- the Sokal-Sneath dissimilarity.
+   yule             -- the Yule dissimilarity.
+
+:func:`hamming` also operates over discrete numerical vectors.
 """
 
 # Copyright (C) Damian Eads, 2007-2008. New BSD License.
