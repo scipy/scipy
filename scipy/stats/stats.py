@@ -1428,8 +1428,8 @@ def kurtosistest(a, axis=0):
     
     References
     ----------
-    .. [1] F. J. Anscombe, W. J. Glynn, "Distribution of the kurtosis statistic
-       b2 for normal samples", Biometrika, vol. 70, pp. 227-234, 1983.
+    .. [1] see e.g. F. J. Anscombe, W. J. Glynn, "Distribution of the kurtosis
+       statistic b2 for normal samples", Biometrika, vol. 70, pp. 227-234, 1983.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1444,8 +1444,8 @@ def kurtosistest(a, axis=0):
     b2 = kurtosis(a, axis, fisher=False)
 
     E = 3.0*(n-1) / (n+1)
-    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5)) # [1]_ Eq. 1
-    x = (b2-E) / np.sqrt(varb2) # [1]_ Eq. 4
+    varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
+    x = (b2-E) / np.sqrt(varb2)  # [1]_ Eq. 4
     # [1]_ Eq. 2:
     sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                         (n*(n-2)*(n-3)))
@@ -1455,7 +1455,7 @@ def kurtosistest(a, axis=0):
     denom = 1 + x*np.sqrt(2/(A-4.0))
     denom = np.where(denom < 0, 99, denom)
     term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom, 1/3.0))
-    Z = (term1 - term2) / np.sqrt(2/(9.0*A)) # [1]_ Eq. 5
+    Z = (term1 - term2) / np.sqrt(2/(9.0*A))  # [1]_ Eq. 5
     Z = np.where(denom == 99, 0, Z)
     if Z.ndim == 0:
         Z = Z[()]
