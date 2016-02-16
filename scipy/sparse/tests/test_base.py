@@ -1067,8 +1067,7 @@ class _TestCommon:
             assert_array_equal(datsp - A.todense(),dat - A.todense())
 
         for dtype in self.math_dtypes:
-            if (dtype == np.dtype('bool')) and (
-                    NumpyVersion(np.__version__) >= '1.9.0.dev'):
+            if dtype == np.dtype('bool'):
                 # boolean array subtraction deprecated in 1.9.0
                 continue
 
