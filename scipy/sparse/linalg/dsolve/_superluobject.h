@@ -42,6 +42,7 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
+    int jmpbuf_valid;
     jmp_buf jmpbuf;
     PyObject *memory_dict;
 } SuperLUGlobalObject;
@@ -69,6 +70,15 @@ void XDestroy_CompCol_Permuted(SuperMatrix *);
 void XStatFree(SuperLUStat_t *);
 
 jmp_buf *superlu_python_jmpbuf();
+
+
+/* Custom thread begin/end statements: Numpy versions < 1.9 are not safe
+ * vs. calling END_THREADS multiple times. Moreover, the _save variable needs to
+ * be volatile, due to the use of setjmp.
+ */
+#define SLU_BEGIN_THREADS_DEF volatile PyThreadState *_save = NULL
+#define SLU_BEGIN_THREADS do { if (_save == NULL) _save = PyEval_SaveThread(); } while (0)
+#define SLU_END_THREADS   do { if (_save) { PyEval_RestoreThread(_save); _save = NULL;} } while (0)
 
 /*
  * Definitions for other SuperLU data types than Z,

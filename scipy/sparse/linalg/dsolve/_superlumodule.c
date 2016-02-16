@@ -72,24 +72,21 @@ void XStatFree(SuperLUStat_t * stat)
 static PyObject *Py_gssv(PyObject * self, PyObject * args,
 			 PyObject * kwdict)
 {
-    PyObject *Py_B = NULL;
-    PyArrayObject *Py_X = NULL;
-    PyArrayObject *nzvals = NULL;
-    PyArrayObject *colind = NULL, *rowptr = NULL;
-    int N, nnz;
-    int info;
-    int csc = 0;
-    int *perm_r = NULL, *perm_c = NULL;
-    SuperMatrix A = { 0 }, B = {
-    0}, L = {
-    0}, U = {
-    0};
-    superlu_options_t options = { 0 };
-    SuperLUStat_t stat = { 0 };
-    PyObject *option_dict = NULL;
-    int type;
-    int npy_thread_ended = 1;
-    NPY_BEGIN_THREADS_DEF;
+    volatile PyObject *Py_B = NULL;
+    volatile PyArrayObject *Py_X = NULL;
+    volatile PyArrayObject *nzvals = NULL;
+    volatile PyArrayObject *colind = NULL, *rowptr = NULL;
+    volatile int N, nnz;
+    volatile int info;
+    volatile int csc = 0;
+    volatile int *perm_r = NULL, *perm_c = NULL;
+    volatile SuperMatrix A = { 0 }, B = { 0 }, L = { 0 }, U = { 0 };
+    volatile superlu_options_t options = { 0 };
+    volatile SuperLUStat_t stat = { 0 };
+    volatile PyObject *option_dict = NULL;
+    volatile int type;
+    volatile jmp_buf *jmpbuf_ptr;
+    SLU_BEGIN_THREADS_DEF;
 
     static char *kwlist[] = {
         "N", "nnz", "nzvals", "colind", "rowptr", "B", "csc",
@@ -161,11 +158,10 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 
     /* Setup options */
 
-    if (setjmp(*superlu_python_jmpbuf())) {
-        if (!npy_thread_ended) {
-            NPY_END_THREADS;
-            npy_thread_ended = 1;
-        }
+    jmpbuf_ptr = superlu_python_jmpbuf();
+    SLU_BEGIN_THREADS;
+    if (setjmp(*jmpbuf_ptr)) {
+        SLU_END_THREADS;
 	goto fail;
     }
     else {
@@ -174,11 +170,8 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 	StatInit(&stat);
 
 	/* Compute direct inverse of sparse Matrix */
-        NPY_BEGIN_THREADS;
-        npy_thread_ended = 0;
 	gssv(type, &options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
-        NPY_END_THREADS;
-        npy_thread_ended = 1;
+        SLU_END_THREADS;
     }
 
     SUPERLU_FREE(perm_r);

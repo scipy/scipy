@@ -49,6 +49,7 @@ static SuperLUGlobalObject *get_tls_global()
         return (SuperLUGlobalObject*)PyErr_NoMemory();
     }
     obj->memory_dict = PyDict_New();
+    obj->jmpbuf_valid = 0;
 
     PyDict_SetItemString(thread_dict, key, (PyObject *)obj);
 
@@ -58,10 +59,13 @@ static SuperLUGlobalObject *get_tls_global()
 
 jmp_buf *superlu_python_jmpbuf()
 {
-    SuperLUGlobalObject *g = get_tls_global();
+    SuperLUGlobalObject *g;
+
+    g = get_tls_global();
     if (g == NULL) {
         abort();
     }
+    g->jmpbuf_valid = 1;
     return &g->jmpbuf;
 }
 
@@ -80,6 +84,12 @@ void superlu_python_module_abort(char *msg)
         abort();
     }
     PyErr_SetString(PyExc_RuntimeError, msg);
+
+    if (!g->jmpbuf_valid) {
+        abort();
+    }
+
+    g->jmpbuf_valid = 0;
     NPY_DISABLE_C_API;
 
     longjmp(g->jmpbuf, -1);

@@ -22,19 +22,19 @@
 static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 			       PyObject * kwds)
 {
-    PyArrayObject *b, *x = NULL;
-    SuperMatrix B = { 0 };
+    volatile PyArrayObject *b, *x = NULL;
+    volatile SuperMatrix B = { 0 };
 #ifndef NPY_PY3K
-    char itrans = 'N';
+    volatile char itrans = 'N';
 #else
-    int itrans = 'N';
+    volatile int itrans = 'N';
 #endif
-    int info;
-    trans_t trans;
-    int npy_thread_ended = 1;
-    SuperLUStat_t stat = { 0 };
+    volatile int info;
+    volatile trans_t trans;
+    volatile SuperLUStat_t stat = { 0 };
     static char *kwlist[] = { "rhs", "trans", NULL };
-    NPY_BEGIN_THREADS_DEF;
+    volatile jmp_buf *jmpbuf_ptr;
+    SLU_BEGIN_THREADS_DEF;
 
     if (!CHECK_SLU_TYPE(self->type)) {
 	PyErr_SetString(PyExc_ValueError, "unsupported data type");
@@ -75,27 +75,27 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 	goto fail;
     }
 
-    if (setjmp(*superlu_python_jmpbuf())) {
-        if (!npy_thread_ended) {
-            NPY_END_THREADS;
-            npy_thread_ended = 1;
-        }
-	goto fail;
-    }
-
     if (DenseSuper_from_Numeric(&B, (PyObject *)x))
 	goto fail;
+
+    jmpbuf_ptr = superlu_python_jmpbuf();
+    if (setjmp(*jmpbuf_ptr)) {
+	goto fail;
+    }
 
     StatInit(&stat);
 
     /* Solve the system, overwriting vector x. */
-    NPY_BEGIN_THREADS;
-    npy_thread_ended = 0;
+    jmpbuf_ptr = superlu_python_jmpbuf();
+    SLU_BEGIN_THREADS;
+    if (setjmp(*jmpbuf_ptr)) {
+        SLU_END_THREADS;
+	goto fail;
+    }
     gstrs(self->type,
 	  trans, &self->L, &self->U, self->perm_c, self->perm_r, &B,
 	  &stat, &info);
-    NPY_END_THREADS;
-    npy_thread_ended = 1;
+    SLU_END_THREADS;
 
     if (info) {
 	PyErr_SetString(PyExc_SystemError,
@@ -281,8 +281,9 @@ PyTypeObject SuperLUType = {
 
 int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
 {
-    PyArrayObject *aX;
-    int m, n, ldx, nd;
+    volatile PyArrayObject *aX;
+    volatile int m, n, ldx, nd;
+    volatile jmp_buf *jmpbuf_ptr;
 
     if (!PyArray_Check(PyX)) {
         PyErr_SetString(PyExc_TypeError,
@@ -319,7 +320,8 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
         return -1;
     }
 
-    if (setjmp(*superlu_python_jmpbuf())) {
+    jmpbuf_ptr = superlu_python_jmpbuf();
+    if (setjmp(*jmpbuf_ptr)) {
 	return -1;
     }
     else {
@@ -337,7 +339,8 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 			   PyArrayObject * nzvals, PyArrayObject * colind,
 			   PyArrayObject * rowptr, int typenum)
 {
-    int ok = 0;
+    volatile int ok = 0;
+    volatile jmp_buf *jmpbuf_ptr;
 
     ok = (PyArray_EquivTypenums(PyArray_DESCR(nzvals)->type_num, typenum) &&
           PyArray_EquivTypenums(PyArray_DESCR(colind)->type_num, NPY_INT) &&
@@ -358,7 +361,8 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 	return -1;
     }
 
-    if (setjmp(*superlu_python_jmpbuf())) {
+    jmpbuf_ptr = superlu_python_jmpbuf();
+    if (setjmp(*jmpbuf_ptr)) {
 	return -1;
     }
     else {
@@ -381,7 +385,8 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 			   PyArrayObject * nzvals, PyArrayObject * rowind,
 			   PyArrayObject * colptr, int typenum)
 {
-    int ok = 0;
+    volatile int ok = 0;
+    volatile jmp_buf *jmpbuf_ptr;
 
     ok = (PyArray_EquivTypenums(PyArray_DESCR(nzvals)->type_num, typenum) &&
           PyArray_EquivTypenums(PyArray_DESCR(rowind)->type_num, NPY_INT) &&
@@ -402,8 +407,8 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 	return -1;
     }
 
-
-    if (setjmp(*superlu_python_jmpbuf())) {
+    jmpbuf_ptr = superlu_python_jmpbuf();
+    if (setjmp(*jmpbuf_ptr)) {
 	return -1;
     }
     else {
@@ -682,20 +687,20 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 {
 
     /* A must be in SLU_NC format used by the factorization routine. */
-    SuperLUObject *self;
-    SuperMatrix AC = { 0 };	/* Matrix postmultiplied by Pc */
-    int lwork = 0;
-    int *etree = NULL;
-    int info;
-    int n;
-    superlu_options_t options;
-    SuperLUStat_t stat = { 0 };
-    int panel_size, relax;
-    GlobalLU_t Glu;
-    static GlobalLU_t static_Glu;
-    GlobalLU_t *Glu_ptr;
-    int npy_thread_ended = 1;
-    NPY_BEGIN_THREADS_DEF;
+    volatile SuperLUObject *self;
+    volatile SuperMatrix AC = { 0 };	/* Matrix postmultiplied by Pc */
+    volatile int lwork = 0;
+    volatile int *etree = NULL;
+    volatile int info;
+    volatile int n;
+    volatile superlu_options_t options;
+    volatile SuperLUStat_t stat = { 0 };
+    volatile int panel_size, relax;
+    volatile GlobalLU_t Glu;
+    static volatile GlobalLU_t static_Glu;
+    volatile GlobalLU_t *Glu_ptr;
+    volatile jmp_buf *jmpbuf_ptr;
+    SLU_BEGIN_THREADS_DEF;
 
     n = A->ncol;
 
@@ -718,11 +723,8 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->cached_L = NULL;
     self->type = intype;
 
-    if (setjmp(*superlu_python_jmpbuf())) {
-        if (!npy_thread_ended) {
-            NPY_END_THREADS;
-            npy_thread_ended = 1;
-        }
+    jmpbuf_ptr = superlu_python_jmpbuf();
+    if (setjmp(*jmpbuf_ptr)) {
 	goto fail;
     }
 
@@ -748,8 +750,12 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     }
     else {
         Glu_ptr = &Glu;
-        NPY_BEGIN_THREADS;
-        npy_thread_ended = 0;
+        jmpbuf_ptr = superlu_python_jmpbuf();
+        SLU_BEGIN_THREADS;
+        if (setjmp(*jmpbuf_ptr)) {
+            SLU_END_THREADS;
+            goto fail;
+        }
     }
 
     if (ilu) {
@@ -765,8 +771,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 	      &self->L, &self->U, Glu_ptr, &stat, &info);
     }
 
-    NPY_END_THREADS;
-    npy_thread_ended = 1;
+    SLU_END_THREADS;
 
     if (info) {
 	if (info < 0)
