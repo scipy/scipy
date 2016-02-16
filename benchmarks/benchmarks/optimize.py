@@ -1,7 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
+import os
 import time
 import inspect
+import json
+import traceback
 from collections import defaultdict, OrderedDict
 
 import numpy as np
@@ -376,6 +379,18 @@ class BenchLeastSquares(Benchmark):
             raise NotImplementedError
 
 
+try:
+    slow = int(os.environ.get('SCIPY_XSLOW', 0))
+except ValueError:
+    pass
+
+
+_func_names = os.environ.get('SCIPY_GLOBAL_BENCH', [])
+if _func_names:
+    slow = 1
+    _func_names = [x.strip() for x in _func_names.split(',')]
+
+
 class BenchGlobal(Benchmark):
     """
     Benchmark the global optimizers using the go_benchmark_functions
@@ -388,26 +403,66 @@ class BenchGlobal(Benchmark):
             not item[0].startswith('Problem'))
     ])
 
+    if _func_names:
+        _functions = OrderedDict([
+            (name, _functions.get(name)) 
+            for name in _func_names
+            if name in _functions
+        ])
+    if not slow:
+        _functions = {'AMGM': None}
+
     params = [
-        _functions.keys(),
+        list(_functions.keys()),
         ["success%", "<nfev>"],
         ['DE', 'basinh.'],
     ]
     param_names = ["test function", "result type", "solver"]
 
-    def track_all(self, name, ret_value, solver):
-        klass = self._functions[name]
-        numtrials = 100
+    def __init__(self):
+        self.enabled = bool(slow)
 
-        f = klass()
-        b = _BenchOptimizers.from_funcobj(name, f)
-        with np.errstate(all='ignore'):
-            b.bench_run_global(methods=[solver], numtrials=numtrials)
-        av_results = b.average_results()
+    def setup(self, *a):
+        if not self.enabled:
+            print("BenchGlobal.track_all not enabled --- export SCIPY_XSLOW=1 to enable\n"
+                  "Note that it can take several hours to run; intermediate output\n"
+                  "can be found under benchmarks/global-bench-results.json\n"
+                  "You can specify functions to benchmark via SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...")
+            raise NotImplementedError()
+
+    def track_all(self, results, name, ret_value, solver):
+        av_results = results[name]
 
         if ret_value == 'success%':
-            return 100 * av_results[solver].nsuccess / numtrials
+            return 100 * av_results[solver]['nsuccess'] / av_results[solver]['ntrials']
         elif ret_value == '<nfev>':
-            return av_results[solver].mean_nfev
+            return av_results[solver]['mean_nfev']
         else:
             raise ValueError()
+
+    def setup_cache(self):
+        if not self.enabled:
+            return {}
+
+        numtrials = 100
+
+        results = {}
+        solvers = ['DE', 'basinh.']
+
+        for name, klass in sorted(self._functions.items()):
+            try:
+                f = klass()
+                b = _BenchOptimizers.from_funcobj(name, f)
+                with np.errstate(all='ignore'):
+                    b.bench_run_global(methods=solvers, numtrials=numtrials)
+
+                results[name] = b.average_results()
+            except:
+                results[name] = "\n".join(traceback.format_exc())
+                continue
+
+            dump_fn = os.path.join(os.path.dirname(__file__), '..', 'global-bench-results.json')
+            with open(dump_fn, 'w') as f:
+                json.dump(results, f, indent=2, sort_keys=True)
+
+        return results
