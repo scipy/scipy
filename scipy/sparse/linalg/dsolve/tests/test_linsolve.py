@@ -458,11 +458,8 @@ class TestSplu(object):
         check(np.complex64, True)
         check(np.complex128, True)
 
-
     def test_threads_parallel(self):
         oks = []
-
-        lock = threading.Lock()
 
         def worker():
             try:
