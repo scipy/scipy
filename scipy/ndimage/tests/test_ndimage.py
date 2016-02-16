@@ -1980,6 +1980,44 @@ class TestNdimage:
                                                      (2,), order=order)
             assert_array_almost_equal(out, [1, 9])
 
+    def test_affine_transform22(self):
+        # shift and offset interaction; see issue #1547
+        data = numpy.array([4, 1, 3, 2])
+        for order in range(0, 6):
+            out = ndimage.affine_transform(data, [[2]], [-1],
+                                           (3,),order=order)
+            assert_array_almost_equal(out, [0, 1, 2])
+
+    def test_affine_transform23(self):
+        # shift and offset interaction; see issue #1547
+        data = numpy.array([4, 1, 3, 2])
+        for order in range(0, 6):
+            out = ndimage.affine_transform(data, [[0.5]], [-1],
+                                           (8,),order=order)
+            assert_array_almost_equal(out[::2], [0, 4, 1, 3])
+
+    @dec.knownfailureif(True,"Backwards-incomatible change will be fixed in 0.18.0")  # issue #1547;
+    def test_affine_transform24(self):
+        # consistency between diagonal and non-diagonal case; see issue #1547
+        data = numpy.array([4, 1, 3, 2])
+        for order in range(0, 6):
+            out1 = ndimage.affine_transform(data, [2], -1,
+                                                order=order)
+            out2 = ndimage.affine_transform(data, [[2]], -1,
+                                                order=order)
+            assert_array_almost_equal(out1, out2)
+
+    @dec.knownfailureif(True,"Backwards-incomatible change will be fixed in 0.18.0")  # issue #1547;
+    def test_affine_transform25(self):
+        # consistency between diagonal and non-diagonal case; see issue #1547
+        data = numpy.array([4, 1, 3, 2])
+        for order in range(0, 6):
+            out1 = ndimage.affine_transform(data, [0.5], -1,
+                                                order=order)
+            out2 = ndimage.affine_transform(data, [[0.5]], -1,
+                                                order=order)
+            assert_array_almost_equal(out1, out2)
+
     def test_shift01(self):
         data = numpy.array([1])
         for order in range(0, 6):
