@@ -12,7 +12,6 @@
  */
 
 #include <Python.h>
-#include <setjmp.h>
 
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
 #include <numpy/arrayobject.h>
@@ -20,7 +19,6 @@
 #include "_superluobject.h"
 #include "numpy/npy_3kcompat.h"
 
-extern jmp_buf _superlu_py_jmpbuf;
 
 /*
  * NULL-safe deconstruction functions
@@ -90,7 +88,8 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     SuperLUStat_t stat = { 0 };
     PyObject *option_dict = NULL;
     int type;
-    int ssv_finished = 0;
+    int npy_thread_ended = 1;
+    NPY_BEGIN_THREADS_DEF;
 
     static char *kwlist[] = {
         "N", "nnz", "nzvals", "colind", "rowptr", "B", "csc",
@@ -162,7 +161,11 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 
     /* Setup options */
 
-    if (setjmp(_superlu_py_jmpbuf)) {
+    if (setjmp(*superlu_python_jmpbuf())) {
+        if (!npy_thread_ended) {
+            NPY_END_THREADS;
+            npy_thread_ended = 1;
+        }
 	goto fail;
     }
     else {
@@ -171,9 +174,12 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 	StatInit(&stat);
 
 	/* Compute direct inverse of sparse Matrix */
+        NPY_BEGIN_THREADS;
+        npy_thread_ended = 0;
 	gssv(type, &options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
+        NPY_END_THREADS;
+        npy_thread_ended = 1;
     }
-    ssv_finished = 1;
 
     SUPERLU_FREE(perm_r);
     SUPERLU_FREE(perm_c);
@@ -350,6 +356,11 @@ PyMODINIT_FUNC init_superlu(void)
 
     SuperLUType.ob_type = &PyType_Type;
     if (PyType_Ready(&SuperLUType) < 0) {
+	return;
+    }
+
+    SuperLUGlobalType.ob_type = &PyType_Type;
+    if (PyType_Ready(&SuperLUGlobalType) < 0) {
 	return;
     }
 

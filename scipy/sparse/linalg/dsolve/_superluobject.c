@@ -12,10 +12,8 @@
 
 #include "_superluobject.h"
 #include "numpy/npy_3kcompat.h"
-#include <setjmp.h>
 #include <ctype.h>
 
-extern jmp_buf _superlu_py_jmpbuf;
 
 /*********************************************************************** 
  * SuperLUObject methods
@@ -33,9 +31,10 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 #endif
     int info;
     trans_t trans;
+    int npy_thread_ended = 1;
     SuperLUStat_t stat = { 0 };
-
     static char *kwlist[] = { "rhs", "trans", NULL };
+    NPY_BEGIN_THREADS_DEF;
 
     if (!CHECK_SLU_TYPE(self->type)) {
 	PyErr_SetString(PyExc_ValueError, "unsupported data type");
@@ -76,8 +75,13 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 	goto fail;
     }
 
-    if (setjmp(_superlu_py_jmpbuf))
+    if (setjmp(*superlu_python_jmpbuf())) {
+        if (!npy_thread_ended) {
+            NPY_END_THREADS;
+            npy_thread_ended = 1;
+        }
 	goto fail;
+    }
 
     if (DenseSuper_from_Numeric(&B, (PyObject *)x))
 	goto fail;
@@ -85,9 +89,13 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     StatInit(&stat);
 
     /* Solve the system, overwriting vector x. */
+    NPY_BEGIN_THREADS;
+    npy_thread_ended = 0;
     gstrs(self->type,
 	  trans, &self->L, &self->U, self->perm_c, self->perm_r, &B,
 	  &stat, &info);
+    NPY_END_THREADS;
+    npy_thread_ended = 1;
 
     if (info) {
 	PyErr_SetString(PyExc_SystemError,
@@ -311,8 +319,9 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
         return -1;
     }
 
-    if (setjmp(_superlu_py_jmpbuf))
+    if (setjmp(*superlu_python_jmpbuf())) {
 	return -1;
+    }
     else {
 	Create_Dense_Matrix(aX->descr->type_num, X, m, n,
 			    aX->data, ldx, SLU_DN,
@@ -349,8 +358,9 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 	return -1;
     }
 
-    if (setjmp(_superlu_py_jmpbuf))
+    if (setjmp(*superlu_python_jmpbuf())) {
 	return -1;
+    }
     else {
 	if (!CHECK_SLU_TYPE(nzvals->descr->type_num)) {
 	    PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
@@ -393,8 +403,9 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     }
 
 
-    if (setjmp(_superlu_py_jmpbuf))
+    if (setjmp(*superlu_python_jmpbuf())) {
 	return -1;
+    }
     else {
 	if (!CHECK_SLU_TYPE(nzvals->descr->type_num)) {
 	    PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
@@ -680,6 +691,11 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     superlu_options_t options;
     SuperLUStat_t stat = { 0 };
     int panel_size, relax;
+    GlobalLU_t Glu;
+    static GlobalLU_t static_Glu;
+    GlobalLU_t *Glu_ptr;
+    int npy_thread_ended = 1;
+    NPY_BEGIN_THREADS_DEF;
 
     n = A->ncol;
 
@@ -702,8 +718,13 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->cached_L = NULL;
     self->type = intype;
 
-    if (setjmp(_superlu_py_jmpbuf))
+    if (setjmp(*superlu_python_jmpbuf())) {
+        if (!npy_thread_ended) {
+            NPY_END_THREADS;
+            npy_thread_ended = 1;
+        }
 	goto fail;
+    }
 
     /* Calculate and apply minimum degree ordering */
     etree = intMalloc(n);
@@ -720,18 +741,32 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 	PyErr_SetString(PyExc_ValueError, "Invalid type in SuperMatrix.");
 	goto fail;
     }
+
+    if (options.Fact == SamePattern || options.Fact == SamePattern_SameRowPerm) {
+        /* XXX: not nice, a better new API should be introduced for this */
+        Glu_ptr = &static_Glu;
+    }
+    else {
+        Glu_ptr = &Glu;
+        NPY_BEGIN_THREADS;
+        npy_thread_ended = 0;
+    }
+
     if (ilu) {
-	gsitrf(SLU_TYPECODE_TO_NPY(A->Dtype),
-	       &options, &AC, relax, panel_size,
-	       etree, NULL, lwork, self->perm_c, self->perm_r,
-	       &self->L, &self->U, &stat, &info);
+        gsitrf(SLU_TYPECODE_TO_NPY(A->Dtype),
+               &options, &AC, relax, panel_size,
+               etree, NULL, lwork, self->perm_c, self->perm_r,
+               &self->L, &self->U, Glu_ptr, &stat, &info);
     }
     else {
 	gstrf(SLU_TYPECODE_TO_NPY(A->Dtype),
 	      &options, &AC, relax, panel_size,
 	      etree, NULL, lwork, self->perm_c, self->perm_r,
-	      &self->L, &self->U, &stat, &info);
+	      &self->L, &self->U, Glu_ptr, &stat, &info);
     }
+
+    NPY_END_THREADS;
+    npy_thread_ended = 1;
 
     if (info) {
 	if (info < 0)

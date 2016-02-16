@@ -8,6 +8,7 @@
 #ifndef __SUPERLU_OBJECT
 #define __SUPERLU_OBJECT
 
+#include <setjmp.h>
 #include <Python.h>
 
 /* Undef a macro from Python which conflicts with superlu */
@@ -39,7 +40,14 @@ typedef struct {
     int type;
 } SuperLUObject;
 
+typedef struct {
+    PyObject_HEAD
+    jmp_buf jmpbuf;
+    PyObject *memory_dict;
+} SuperLUGlobalObject;
+
 extern PyTypeObject SuperLUType;
+extern PyTypeObject SuperLUGlobalType;
 
 int DenseSuper_from_Numeric(SuperMatrix *, PyObject *);
 int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
@@ -59,6 +67,8 @@ void XDestroy_SuperNode_Matrix(SuperMatrix *);
 void XDestroy_CompCol_Matrix(SuperMatrix *);
 void XDestroy_CompCol_Permuted(SuperMatrix *);
 void XStatFree(SuperLUStat_t *);
+
+jmp_buf *superlu_python_jmpbuf();
 
 /*
  * Definitions for other SuperLU data types than Z,
@@ -99,8 +109,8 @@ void XStatFree(SuperLUStat_t *);
     superlu_options_t *a, SuperMatrix *b,                           \
     int c, int d, int *e, void *f, int g,                           \
     int *h, int *i, SuperMatrix *j, SuperMatrix *k,                 \
-    SuperLUStat_t *l, int *m
-#define gstrf_ARGS_REF a,b,c,d,e,f,g,h,i,j,k,l,m
+    GlobalLU_t *l, SuperLUStat_t *m, int *n
+#define gstrf_ARGS_REF a,b,c,d,e,f,g,h,i,j,k,l,m,n
 
 #define gsitrf_ARGS gstrf_ARGS
 #define gsitrf_ARGS_REF gstrf_ARGS_REF
