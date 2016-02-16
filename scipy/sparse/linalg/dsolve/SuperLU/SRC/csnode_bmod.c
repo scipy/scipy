@@ -95,6 +95,12 @@ csnode_bmod (
 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
+#if SCIPY_FIX
+       if (nsupr < nsupc) {
+           /* Fail early rather than passing in invalid parameters to TRSV. */
+           ABORT("failed to factorize matrix");
+       }
+#endif
 	ctrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );
 	cgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 

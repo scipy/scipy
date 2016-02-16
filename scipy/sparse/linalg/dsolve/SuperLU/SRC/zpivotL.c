@@ -125,7 +125,16 @@ if ( jcol == MIN_COL ) {
     /* Test for singularity */
     if ( pivmax == 0.0 ) {
 #if 1
+#if SCIPY_FIX
+	if (pivptr < nsupr) {
+	    *pivrow = lsub_ptr[pivptr];
+	}
+	else {
+	    *pivrow = diagind;
+	}
+#else
 	*pivrow = lsub_ptr[pivptr];
+#endif
 	perm_r[*pivrow] = jcol;
 #else
 	perm_r[diagind] = jcol;
