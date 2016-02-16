@@ -37,30 +37,30 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     SLU_BEGIN_THREADS_DEF;
 
     if (!CHECK_SLU_TYPE(self->type)) {
-	PyErr_SetString(PyExc_ValueError, "unsupported data type");
-	return NULL;
+        PyErr_SetString(PyExc_ValueError, "unsupported data type");
+        return NULL;
     }
 
 #ifndef NPY_PY3K
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|c", kwlist,
-				     &PyArray_Type, &b, &itrans))
+                                     &PyArray_Type, &b, &itrans))
 #else
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|C", kwlist,
-				     &PyArray_Type, &b, &itrans))
+                                     &PyArray_Type, &b, &itrans))
 #endif
-	return NULL;
+        return NULL;
 
     /* solve transposed system: matrix was passed row-wise instead of
      * column-wise */
     if (itrans == 'n' || itrans == 'N')
-	trans = NOTRANS;
+        trans = NOTRANS;
     else if (itrans == 't' || itrans == 'T')
-	trans = TRANS;
+        trans = TRANS;
     else if (itrans == 'h' || itrans == 'H')
-	trans = CONJ;
+        trans = CONJ;
     else {
-	PyErr_SetString(PyExc_ValueError, "trans must be N, T, or H");
-	return NULL;
+        PyErr_SetString(PyExc_ValueError, "trans must be N, T, or H");
+        return NULL;
     }
 
     x = (PyArrayObject*)PyArray_FROMANY(
@@ -72,11 +72,11 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 
     if (x->dimensions[0] != self->n) {
         PyErr_SetString(PyExc_ValueError, "b is of incompatible size");
-	goto fail;
+        goto fail;
     }
 
     if (DenseSuper_from_Numeric(&B, (PyObject *)x))
-	goto fail;
+        goto fail;
 
     jmpbuf_ptr = superlu_python_jmpbuf();
     if (setjmp(*jmpbuf_ptr)) {
