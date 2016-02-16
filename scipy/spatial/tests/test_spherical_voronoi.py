@@ -4,7 +4,7 @@ from numpy.testing import (TestCase,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
-from scipy.spatial import SphericalVoronoi
+from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 
 
@@ -113,8 +113,7 @@ class TestSphericalVoronoi(TestCase):
     def test_voronoi_circles(self):
         sv = spherical_voronoi.SphericalVoronoi(self.points)
         for vertex in sv.vertices:
-            distances = scipy.spatial.distance.cdist(sv.points,
-                                                     np.array([vertex]))
+            distances = distance.cdist(sv.points,np.array([vertex]))
             closest = np.array(sorted(distances)[0:3])
             print(closest)
             assert_almost_equal(closest[0], closest[1], 7, str(vertex))
