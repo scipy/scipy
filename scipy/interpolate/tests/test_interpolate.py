@@ -14,11 +14,15 @@ from scipy._lib.six import xrange
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
-         RectBivariateSpline, interpn)
+         RectBivariateSpline, interpn, NdPPoly)
+
+from scipy.special import poch, gamma
 
 from scipy.interpolate import _ppoly
 
 from scipy._lib._gcutils import assert_deallocated
+
+from scipy.integrate import nquad
 
 
 class TestInterp2D(TestCase):
@@ -680,10 +684,10 @@ class TestAkima1DInterpolator(TestCase):
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         ak = Akima1DInterpolator(x, y)
         try:
-            ak.extend()
+            ak.extend(None, None)
         except NotImplementedError as e:
             if str(e) != ("Extending a 1D Akima interpolator is not "
-                    "yet implemented"):
+                          "yet implemented"):
                 raise
         except:
             raise
@@ -1028,6 +1032,20 @@ class TestPPoly(TestCase):
             assert_allclose(pp2(xi), splev(xi, spl2),
                             rtol=1e-7)
 
+    def test_antiderivative_continuity(self):
+        c = np.array([[2, 1, 2, 2], [2, 1, 3, 3]]).T
+        x = np.array([0, 0.5, 1])
+
+        p = PPoly(c, x)
+        ip = p.antiderivative()
+
+        # check continuity
+        assert_allclose(ip(0.5 - 1e-9), ip(0.5 + 1e-9), rtol=1e-8)
+
+        # check that only lowest order coefficients were changed
+        p2 = ip.derivative()
+        assert_allclose(p2.c, p.c)
+
     def test_integrate(self):
         np.random.seed(1234)
         x = np.sort(np.r_[0, np.random.rand(11), 1])
@@ -1070,6 +1088,31 @@ class TestPPoly(TestCase):
         assert_array_equal(pp.roots(),
                            [0.25, 0.4, np.nan, 0.6 + 0.25])
 
+        # ditto for p.solve(const) with sections identically equal const
+        const = 2.
+        c1 = c.copy()
+        c1[1, :] += const
+        pp1 = PPoly(c1, x)
+
+        assert_array_equal(pp1.solve(const),
+                           [0.25, 0.4, np.nan, 0.6 + 0.25])
+
+    def test_roots_all_zero(self):
+        # test the code path for the polynomial being identically zero everywhere
+        c = [[0], [0]]
+        x = [0, 1]
+        p = PPoly(c, x)
+        assert_array_equal(p.roots(), [0, np.nan])
+        assert_array_equal(p.solve(0), [0, np.nan])
+        assert_array_equal(p.solve(1), [])
+
+        c = [[0, 0], [0, 0]]
+        x = [0, 1, 2]
+        p = PPoly(c, x)
+        assert_array_equal(p.roots(), [0, np.nan, 1, np.nan])
+        assert_array_equal(p.solve(0), [0, np.nan, 1, np.nan])
+        assert_array_equal(p.solve(1), [])
+
     def test_roots_repeated(self):
         # Check roots repeated in multiple sections are reported only
         # once.
@@ -1090,6 +1133,13 @@ class TestPPoly(TestCase):
         assert_array_equal(pp.roots(), [0.5])
         assert_array_equal(pp.roots(discontinuity=False), [])
 
+        # ditto for a discontinuity across y:
+        assert_array_equal(pp.solve(0.5), [0.5])
+        assert_array_equal(pp.solve(0.5, discontinuity=False), [])
+
+        assert_array_equal(pp.solve(1.5), [])
+        assert_array_equal(pp.solve(1.5, discontinuity=False), [])
+
     def test_roots_random(self):
         # Check high-order polynomials with random coefficients
         np.random.seed(1234)
@@ -1102,19 +1152,21 @@ class TestPPoly(TestCase):
                 c = 2*np.random.rand(order+1, len(x)-1, 2, 3) - 1
 
                 pp = PPoly(c, x)
-                r = pp.roots(discontinuity=False, extrapolate=extrapolate)
+                for y in [0, np.random.random()]:
+                    r = pp.solve(y, discontinuity=False, extrapolate=extrapolate)
 
-                for i in range(2):
-                    for j in range(3):
-                        rr = r[i,j]
-                        if rr.size > 0:
-                            # Check that the reported roots indeed are roots
-                            num += rr.size
-                            val = pp(rr, extrapolate=extrapolate)[:,i,j]
-                            cmpval = pp(rr, nu=1, extrapolate=extrapolate)[:,i,j]
-                            assert_allclose(val/cmpval, 0, atol=1e-7,
-                                            err_msg="(%r) r = %s" % (extrapolate,
-                                                                     repr(rr),))
+                    for i in range(2):
+                        for j in range(3):
+                            rr = r[i,j]
+                            if rr.size > 0:
+                                # Check that the reported roots indeed are roots
+                                num += rr.size
+                                val = pp(rr, extrapolate=extrapolate)[:,i,j]
+                                cmpval = pp(rr, nu=1,
+                                            extrapolate=extrapolate)[:,i,j]
+                                msg = "(%r) r = %s" % (extrapolate, repr(rr),)
+                                assert_allclose((val-y) / cmpval, 0, atol=1e-7,
+                                                err_msg=msg)
 
         # Check that we checked a number of roots
         assert_(num > 100, repr(num))
@@ -1130,23 +1182,24 @@ class TestPPoly(TestCase):
                 # add a case with zero discriminant
                 c[:,0,0] = 1, 2, 1
 
-            w = np.empty(c.shape, dtype=complex)
-            _ppoly._croots_poly1(c, w)
+            for y in [0, np.random.random()]:
+                w = np.empty(c.shape, dtype=complex)
+                _ppoly._croots_poly1(c, w)
 
-            if k == 1:
-                assert_(np.isnan(w).all())
-                continue
+                if k == 1:
+                    assert_(np.isnan(w).all())
+                    continue
 
-            res = 0
-            cres = 0
-            for i in range(k):
-                res += c[i,None] * w**(k-1-i)
-                cres += abs(c[i,None] * w**(k-1-i))
-            with np.errstate(invalid='ignore'):
-                res /= cres
-            res = res.ravel()
-            res = res[~np.isnan(res)]
-            assert_allclose(res, 0, atol=1e-10)
+                res = 0
+                cres = 0
+                for i in range(k):
+                    res += c[i,None] * w**(k-1-i)
+                    cres += abs(c[i,None] * w**(k-1-i))
+                with np.errstate(invalid='ignore'):
+                    res /= cres
+                res = res.ravel()
+                res = res[~np.isnan(res)]
+                assert_allclose(res, 0, atol=1e-10)
 
     def test_extrapolate_attr(self):
         # [ 1 - x**2 ]
@@ -1598,6 +1651,220 @@ class TestPpform(TestCase):
             assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
 
 
+class TestNdPPoly(object):
+    def test_simple_1d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5)
+        x = np.linspace(0, 1, 5+1)
+
+        xi = np.random.rand(200)
+
+        p = NdPPoly(c, (x,))
+        v1 = p((xi,))
+
+        v2 = _ppoly_eval_1(c[:,:,None], x, xi).ravel()
+        assert_allclose(v1, v2)
+
+    def test_simple_2d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5, 6, 7)
+        x = np.linspace(0, 1, 6+1)
+        y = np.linspace(0, 1, 7+1)**2
+
+        xi = np.random.rand(200)
+        yi = np.random.rand(200)
+
+        v1 = np.empty([len(xi), 1], dtype=c.dtype)
+        v1.fill(np.nan)
+        _ppoly.evaluate_nd(c.reshape(4*5, 6*7, 1),
+                           (x, y),
+                           np.array([4, 5], dtype=np.intc),
+                           np.c_[xi, yi],
+                           np.array([0, 0], dtype=np.intc),
+                           1,
+                           v1)
+        v1 = v1.ravel()
+        v2 = _ppoly2d_eval(c, (x, y), xi, yi)
+        assert_allclose(v1, v2)
+
+        p = NdPPoly(c, (x, y))
+        for nu in (None, (0, 0), (0, 1), (1, 0), (2, 3), (9, 2)):
+            v1 = p(np.c_[xi, yi], nu=nu)
+            v2 = _ppoly2d_eval(c, (x, y), xi, yi, nu=nu)
+            assert_allclose(v1, v2, err_msg=repr(nu))
+
+    def test_simple_3d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5, 6, 7, 8, 9)
+        x = np.linspace(0, 1, 7+1)
+        y = np.linspace(0, 1, 8+1)**2
+        z = np.linspace(0, 1, 9+1)**3
+
+        xi = np.random.rand(40)
+        yi = np.random.rand(40)
+        zi = np.random.rand(40)
+
+        p = NdPPoly(c, (x, y, z))
+
+        for nu in (None, (0, 0, 0), (0, 1, 0), (1, 0, 0), (2, 3, 0),
+                   (6, 0, 2)):
+            v1 = p((xi, yi, zi), nu=nu)
+            v2 = _ppoly3d_eval(c, (x, y, z), xi, yi, zi, nu=nu)
+            assert_allclose(v1, v2, err_msg=repr(nu))
+
+    def test_simple_4d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5, 6, 7, 8, 9, 10, 11)
+        x = np.linspace(0, 1, 8+1)
+        y = np.linspace(0, 1, 9+1)**2
+        z = np.linspace(0, 1, 10+1)**3
+        u = np.linspace(0, 1, 11+1)**4
+
+        xi = np.random.rand(20)
+        yi = np.random.rand(20)
+        zi = np.random.rand(20)
+        ui = np.random.rand(20)
+
+        p = NdPPoly(c, (x, y, z, u))
+        v1 = p((xi, yi, zi, ui))
+
+        v2 = _ppoly4d_eval(c, (x, y, z, u), xi, yi, zi, ui)
+        assert_allclose(v1, v2)
+
+    def test_deriv_1d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5)
+        x = np.linspace(0, 1, 5+1)
+
+        p = NdPPoly(c, (x,))
+
+        # derivative
+        dp = p.derivative(nu=[1])
+        p1 = PPoly(c, x)
+        dp1 = p1.derivative()
+        assert_allclose(dp.c, dp1.c)
+
+        # antiderivative
+        dp = p.antiderivative(nu=[2])
+        p1 = PPoly(c, x)
+        dp1 = p1.antiderivative(2)
+        assert_allclose(dp.c, dp1.c)
+
+    def test_deriv_3d(self):
+        np.random.seed(1234)
+
+        c = np.random.rand(4, 5, 6, 7, 8, 9)
+        x = np.linspace(0, 1, 7+1)
+        y = np.linspace(0, 1, 8+1)**2
+        z = np.linspace(0, 1, 9+1)**3
+
+        p = NdPPoly(c, (x, y, z))
+
+        # differentiate vs x
+        p1 = PPoly(c.transpose(0, 3, 1, 2, 4, 5), x)
+        dp = p.derivative(nu=[2])
+        dp1 = p1.derivative(2)
+        assert_allclose(dp.c,
+                        dp1.c.transpose(0, 2, 3, 1, 4, 5))
+
+        # antidifferentiate vs y
+        p1 = PPoly(c.transpose(1, 4, 0, 2, 3, 5), y)
+        dp = p.antiderivative(nu=[0, 1, 0])
+        dp1 = p1.antiderivative(1)
+        assert_allclose(dp.c,
+                        dp1.c.transpose(2, 0, 3, 4, 1, 5))
+
+        # differentiate vs z
+        p1 = PPoly(c.transpose(2, 5, 0, 1, 3, 4), z)
+        dp = p.derivative(nu=[0, 0, 3])
+        dp1 = p1.derivative(3)
+        assert_allclose(dp.c,
+                        dp1.c.transpose(2, 3, 0, 4, 5, 1))
+
+    def test_deriv_3d_simple(self):
+        # Integrate to obtain function x y**2 z**4 / (2! 4!)
+
+        c = np.ones((1, 1, 1, 3, 4, 5))
+        x = np.linspace(0, 1, 3+1)**1
+        y = np.linspace(0, 1, 4+1)**2
+        z = np.linspace(0, 1, 5+1)**3
+
+        p = NdPPoly(c, (x, y, z))
+        ip = p.antiderivative((1, 0, 4))
+        ip = ip.antiderivative((0, 2, 0))
+
+        xi = np.random.rand(20)
+        yi = np.random.rand(20)
+        zi = np.random.rand(20)
+
+        assert_allclose(ip((xi, yi, zi)),
+                        xi * yi**2 * zi**4 / (gamma(3)*gamma(5)))
+
+    def test_integrate_2d(self):
+        np.random.seed(1234)
+        c = np.random.rand(4, 5, 16, 17)
+        x = np.linspace(0, 1, 16+1)**1
+        y = np.linspace(0, 1, 17+1)**2
+
+        # make continuously differentiable so that nquad() has an
+        # easier time
+        c = c.transpose(0, 2, 1, 3)
+        cx = c.reshape(c.shape[0], c.shape[1], -1).copy()
+        _ppoly.fix_continuity(cx, x, 2)
+        c = cx.reshape(c.shape)
+        c = c.transpose(0, 2, 1, 3)
+        c = c.transpose(1, 3, 0, 2)
+        cx = c.reshape(c.shape[0], c.shape[1], -1).copy()
+        _ppoly.fix_continuity(cx, y, 2)
+        c = cx.reshape(c.shape)
+        c = c.transpose(2, 0, 3, 1).copy()
+
+        # Check integration
+        p = NdPPoly(c, (x, y))
+
+        for ranges in [[(0, 1), (0, 1)],
+                       [(0, 0.5), (0, 1)],
+                       [(0, 1), (0, 0.5)],
+                       [(0.3, 0.7), (0.6, 0.2)]]:
+
+            ig = p.integrate(ranges)
+            ig2, err2 = nquad(lambda x, y: p((x, y)), ranges,
+                              opts=[dict(epsrel=1e-5, epsabs=1e-5)]*2)
+            assert_allclose(ig, ig2, rtol=1e-5, atol=1e-5,
+                            err_msg=repr(ranges))
+
+    def test_integrate_1d(self):
+        np.random.seed(1234)
+        c = np.random.rand(4, 5, 6, 16, 17, 18)
+        x = np.linspace(0, 1, 16+1)**1
+        y = np.linspace(0, 1, 17+1)**2
+        z = np.linspace(0, 1, 18+1)**3
+
+        # Check 1D integration
+        p = NdPPoly(c, (x, y, z))
+
+        u = np.random.rand(200)
+        v = np.random.rand(200)
+        a, b = 0.2, 0.7
+
+        px = p.integrate_1d(a, b, axis=0)
+        pax = p.antiderivative((1, 0, 0))
+        assert_allclose(px((u, v)), pax((b, u, v)) - pax((a, u, v)))
+
+        py = p.integrate_1d(a, b, axis=1)
+        pay = p.antiderivative((0, 1, 0))
+        assert_allclose(py((u, v)), pay((u, b, v)) - pay((u, a, v)))
+
+        pz = p.integrate_1d(a, b, axis=2)
+        paz = p.antiderivative((0, 0, 1))
+        assert_allclose(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
+
+
 def _ppoly_eval_1(c, x, xps):
     """Evaluate piecewise polynomial manually"""
     out = np.zeros((len(xps), c.shape[2]))
@@ -1635,6 +1902,139 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     res[mask] = values
     res.shape = saveshape
     return res
+
+
+def _dpow(x, y, n):
+    """
+    d^n (x**y) / dx^n
+    """
+    if n < 0:
+        raise ValueError("invalid derivative order")
+    elif n > y:
+        return 0
+    else:
+        return poch(y - n + 1, n) * x**(y - n)
+
+
+def _ppoly2d_eval(c, xs, xnew, ynew, nu=None):
+    """
+    Straightforward evaluation of 2D piecewise polynomial
+    """
+    if nu is None:
+        nu = (0, 0)
+
+    out = np.empty((len(xnew),), dtype=c.dtype)
+
+    nx, ny = c.shape[:2]
+
+    for jout, (x, y) in enumerate(zip(xnew, ynew)):
+        if not ((xs[0][0] <= x <= xs[0][-1]) and
+                (xs[1][0] <= y <= xs[1][-1])):
+            out[jout] = np.nan
+            continue
+
+        j1 = np.searchsorted(xs[0], x) - 1
+        j2 = np.searchsorted(xs[1], y) - 1
+
+        s1 = x - xs[0][j1]
+        s2 = y - xs[1][j2]
+
+        val = 0
+
+        for k1 in range(c.shape[0]):
+            for k2 in range(c.shape[1]):
+                val += (c[nx-k1-1,ny-k2-1,j1,j2]
+                        * _dpow(s1, k1, nu[0])
+                        * _dpow(s2, k2, nu[1]))
+
+        out[jout] = val
+
+    return out
+
+
+def _ppoly3d_eval(c, xs, xnew, ynew, znew, nu=None):
+    """
+    Straightforward evaluation of 3D piecewise polynomial
+    """
+    if nu is None:
+        nu = (0, 0, 0)
+
+    out = np.empty((len(xnew),), dtype=c.dtype)
+
+    nx, ny, nz = c.shape[:3]
+
+    for jout, (x, y, z) in enumerate(zip(xnew, ynew, znew)):
+        if not ((xs[0][0] <= x <= xs[0][-1]) and
+                (xs[1][0] <= y <= xs[1][-1]) and
+                (xs[2][0] <= z <= xs[2][-1])):
+            out[jout] = np.nan
+            continue
+
+        j1 = np.searchsorted(xs[0], x) - 1
+        j2 = np.searchsorted(xs[1], y) - 1
+        j3 = np.searchsorted(xs[2], z) - 1
+
+        s1 = x - xs[0][j1]
+        s2 = y - xs[1][j2]
+        s3 = z - xs[2][j3]
+
+        val = 0
+        for k1 in range(c.shape[0]):
+            for k2 in range(c.shape[1]):
+                for k3 in range(c.shape[2]):
+                    val += (c[nx-k1-1,ny-k2-1,nz-k3-1,j1,j2,j3]
+                            * _dpow(s1, k1, nu[0])
+                            * _dpow(s2, k2, nu[1])
+                            * _dpow(s3, k3, nu[2]))
+
+        out[jout] = val
+
+    return out
+
+
+def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
+    """
+    Straightforward evaluation of 4D piecewise polynomial
+    """
+    if nu is None:
+        nu = (0, 0, 0, 0)
+
+    out = np.empty((len(xnew),), dtype=c.dtype)
+
+    mx, my, mz, mu = c.shape[:4]
+
+    for jout, (x, y, z, u) in enumerate(zip(xnew, ynew, znew, unew)):
+        if not ((xs[0][0] <= x <= xs[0][-1]) and
+                (xs[1][0] <= y <= xs[1][-1]) and
+                (xs[2][0] <= z <= xs[2][-1]) and
+                (xs[3][0] <= u <= xs[3][-1])):
+            out[jout] = np.nan
+            continue
+
+        j1 = np.searchsorted(xs[0], x) - 1
+        j2 = np.searchsorted(xs[1], y) - 1
+        j3 = np.searchsorted(xs[2], z) - 1
+        j4 = np.searchsorted(xs[3], u) - 1
+
+        s1 = x - xs[0][j1]
+        s2 = y - xs[1][j2]
+        s3 = z - xs[2][j3]
+        s4 = u - xs[3][j4]
+
+        val = 0
+        for k1 in range(c.shape[0]):
+            for k2 in range(c.shape[1]):
+                for k3 in range(c.shape[2]):
+                    for k4 in range(c.shape[3]):
+                        val += (c[mx-k1-1,my-k2-1,mz-k3-1,mu-k4-1,j1,j2,j3,j4]
+                                * _dpow(s1, k1, nu[0])
+                                * _dpow(s2, k2, nu[1])
+                                * _dpow(s3, k3, nu[2])
+                                * _dpow(s4, k4, nu[3]))
+
+        out[jout] = val
+
+    return out
 
 
 class TestRegularGridInterpolator(TestCase):

@@ -430,15 +430,19 @@ fail:
     /*
      * Cleanup
      */
-    for (j = 0; j < MAX_ARGS; ++j) {
+    for (j = 0, p = spec; *p != '\0'; ++p, ++j) {
+        if (*p == '*') {
+            --j;
+            continue;
+        }
         Py_XDECREF(arg_arrays[j]);
-        if (spec[j] == 'i' && arg_list[j] != NULL) {
+        if (*p == 'i' && arg_list[j] != NULL) {
             std::free(arg_list[j]);
         }
-        else if (spec[j] == 'V' && arg_list[j] != NULL) {
+        else if (*p == 'V' && arg_list[j] != NULL) {
             free_std_vector_typenum(I_typenum, arg_list[j]);
         }
-        else if (spec[j] == 'W' && arg_list[j] != NULL) {
+        else if (*p == 'W' && arg_list[j] != NULL) {
             free_std_vector_typenum(T_typenum, arg_list[j]);
         }
     }
@@ -558,18 +562,18 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 {
     if (!is_output) {
         if (typenum == -1) {
-            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS);
+            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS|NPY_NOTSWAPPED);
         }
         else {
-            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS);
+            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS|NPY_NOTSWAPPED);
         }
     }
     else {
         if (typenum == -1) {
-            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY);
+            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_NOTSWAPPED);
         }
         else {
-            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY);
+            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_NOTSWAPPED);
         }
     }
 }

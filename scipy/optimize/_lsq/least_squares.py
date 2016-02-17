@@ -336,7 +336,7 @@ def least_squares(
             * 'soft_l1' : ``rho(z) = 2 * ((1 + z)**0.5 - 1)``. The smooth
               approximation of l1 (absolute value) loss. Usually a good
               choice for robust least squares.
-            * 'huber' : ``rho(z) = z if z <= 1 else z**0.5 - 1``. Works
+            * 'huber' : ``rho(z) = z if z <= 1 else 2*z**0.5 - 1``. Works
               similarly to 'soft_l1'.
             * 'cauchy' : ``rho(z) = ln(1 + z)``. Severely weakens outliers
               influence, but may cause difficulties in optimization process.

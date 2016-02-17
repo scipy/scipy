@@ -689,10 +689,10 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     -------
     freqs : ndarray
         Array of sample frequencies.
-    result : ndarray
-        Array of output data, contents dependant on *mode* kwarg.
     t : ndarray
         Array of times corresponding to each data segment
+    result : ndarray
+        Array of output data, contents dependant on *mode* kwarg.
 
     References
     ----------

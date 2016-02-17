@@ -66,6 +66,7 @@ Filtering
    decimate      -- Downsample a signal.
    detrend       -- Remove linear and/or constant trends from data.
    resample      -- Resample using Fourier method.
+   resample_poly -- Resample using polyphase filtering method.
    upfirdn       -- Upsample, apply FIR filter, downsample.
 
 Filter design

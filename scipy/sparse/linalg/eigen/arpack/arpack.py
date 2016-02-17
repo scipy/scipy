@@ -42,7 +42,6 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
-
 from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
@@ -51,6 +50,7 @@ from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
+from scipy._lib._threadsafety import ReentrancyLock
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -297,6 +297,14 @@ class ArpackNoConvergence(ArpackError):
         self.eigenvectors = eigenvectors
 
 
+def choose_ncv(k):
+    """
+    Choose number of lanczos vectors based on target number
+    of singular/eigen values and vectors to compute, k.
+    """
+    return max(2 * k + 1, 20)
+
+
 class _ArpackParams(object):
     def __init__(self, n, k, tp, mode=1, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
@@ -327,7 +335,7 @@ class _ArpackParams(object):
             self.sigma = sigma
 
         if ncv is None:
-            ncv = 2 * k + 1
+            ncv = choose_ncv(k)
         ncv = min(ncv, n)
 
         self.v = np.zeros((n, ncv), tp)  # holds Ritz vectors
@@ -1054,6 +1062,12 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
             return SpLuInv(OP.tocsc()).matvec
 
 
+# ARPACK is not threadsafe or reentrant (SAVE variables), so we need a
+# lock and a re-entering check.
+_ARPACK_LOCK = ReentrancyLock("Nested calls to eigs/eighs not allowed: "
+                              "ARPACK is not re-entrant")
+
+
 def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
          ncv=None, maxiter=None, tol=0, return_eigenvectors=True,
          Minv=None, OPinv=None, OPpart=None):
@@ -1125,7 +1139,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ncv : int, optional
         The number of Lanczos vectors generated
         `ncv` must be greater than `k`; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, 2*k + 1)``
+        Default: ``min(n, max(2*k + 1, 20))``
     which : str, ['LM' | 'SM' | 'LR' | 'SR' | 'LI' | 'SI'], optional
         Which `k` eigenvectors and eigenvalues to find:
 
@@ -1284,10 +1298,11 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
                                       M_matvec, Minv_matvec, sigma,
                                       ncv, v0, maxiter, which, tol)
 
-    while not params.converged:
-        params.iterate()
+    with _ARPACK_LOCK:
+        while not params.converged:
+            params.iterate()
 
-    return params.extract(return_eigenvectors)
+        return params.extract(return_eigenvectors)
 
 
 def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
@@ -1371,7 +1386,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     ncv : int, optional
         The number of Lanczos vectors generated ncv must be greater than k and
         smaller than n; it is recommended that ``ncv > 2*k``.
-        Default: ``min(n, 2*k + 1)``
+        Default: ``min(n, max(2*k + 1, 20))``
     which : str ['LM' | 'SM' | 'LA' | 'SA' | 'BE']
         If A is a complex hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
@@ -1585,10 +1600,11 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                                     M_matvec, Minv_matvec, sigma,
                                     ncv, v0, maxiter, which, tol)
 
-    while not params.converged:
-        params.iterate()
+    with _ARPACK_LOCK:
+        while not params.converged:
+            params.iterate()
 
-    return params.extract(return_eigenvectors)
+        return params.extract(return_eigenvectors)
 
 
 def _augmented_orthonormal_cols(x, k):
@@ -1638,7 +1654,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         The number of Lanczos vectors generated
         ncv must be greater than k+1 and smaller than n;
         it is recommended that ncv > 2*k
-        Default: ``min(n, 2*k + 1)``
+        Default: ``min(n, max(2*k + 1, 20))``
     tol : float, optional
         Tolerance for singular values. Zero (default) means machine precision.
     which : str, ['LM' | 'SM'], optional

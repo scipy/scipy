@@ -10,6 +10,7 @@ from scipy.sparse.linalg.interface import LinearOperator
 from scipy._lib.decorator import decorator
 from .utils import make_system
 from scipy._lib._util import _aligned_zeros
+from scipy._lib._threadsafety import non_reentrant
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
@@ -75,23 +76,11 @@ def set_docstring(header, Ainfo, footer=''):
     return combine
 
 
-@decorator
-def non_reentrant(func, *a, **kw):
-    d = func.__dict__
-    if d.get('__entered'):
-        raise RuntimeError("%s is not re-entrant" % func.__name__)
-    try:
-        d['__entered'] = True
-        return func(*a, **kw)
-    finally:
-        d['__entered'] = False
-
-
 @set_docstring('Use BIConjugate Gradient iteration to solve A x = b',
                'The real or complex N-by-N matrix of the linear system\n'
                'It is required that the linear operator can produce\n'
                '``Ax`` and ``A^T x``.')
-@non_reentrant
+@non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -157,7 +146,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
 @set_docstring('Use BIConjugate Gradient STABilized iteration to solve A x = b',
                'The real or complex N-by-N matrix of the linear system\n'
                '``A`` must represent a hermitian, positive definite matrix')
-@non_reentrant
+@non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -218,7 +207,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
 @set_docstring('Use Conjugate Gradient iteration to solve A x = b',
                'The real or complex N-by-N matrix of the linear system\n'
                '``A`` must represent a hermitian, positive definite matrix')
-@non_reentrant
+@non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -278,7 +267,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
 
 @set_docstring('Use Conjugate Gradient Squared iteration to solve A x = b',
                'The real-valued N-by-N matrix of the linear system')
-@non_reentrant
+@non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
 
@@ -336,7 +325,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
     return postprocess(x), info
 
 
-@non_reentrant
+@non_reentrant()
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=None, callback=None, restrt=None):
     """
     Use Generalized Minimal RESidual iteration to solve A x = b.
@@ -500,7 +489,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
     return postprocess(x), info
 
 
-@non_reentrant
+@non_reentrant()
 def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, callback=None):
     """Use Quasi-Minimal Residual iteration to solve A x = b
 

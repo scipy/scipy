@@ -380,16 +380,20 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         return dok
 
     def diagonal(self):
-        # Could be rewritten without the python loop.
-        # Data entries at the same (row, col) are summed.
-        n = min(self.shape)
-        ndata = self.data.shape[0]
-        d = np.zeros(n, dtype=self.dtype)
-        for i in xrange(ndata):
-            r = self.row[i]
-            if r == self.col[i]:
-                d[r] += self.data[i]
-        return d
+        diag = np.zeros(min(self.shape), dtype=self.dtype)
+        diag_mask = self.row == self.col
+
+        if self.has_canonical_format:
+            row = self.row[diag_mask]
+            data = self.data[diag_mask]
+        else:
+            row, _, data = self._sum_duplicates(self.row[diag_mask],
+                                                self.col[diag_mask],
+                                                self.data[diag_mask])
+        diag[row] = data
+
+        return diag
+
     diagonal.__doc__ = _data_matrix.diagonal.__doc__
 
     def _setdiag(self, values, k):
@@ -446,20 +450,38 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         This is an *in place* operation
         """
-        if self.has_canonical_format or len(self.data) == 0:
+        if self.has_canonical_format:
             return
-        order = np.lexsort((self.row,self.col))
-        self.row = self.row[order]
-        self.col = self.col[order]
-        self.data = self.data[order]
-        unique_mask = ((self.row[1:] != self.row[:-1]) |
-                       (self.col[1:] != self.col[:-1]))
-        unique_mask = np.append(True, unique_mask)
-        self.row = self.row[unique_mask]
-        self.col = self.col[unique_mask]
-        unique_inds, = np.nonzero(unique_mask)
-        self.data = np.add.reduceat(self.data, unique_inds, dtype=self.dtype)
+        summed = self._sum_duplicates(self.row, self.col, self.data)
+        self.row, self.col, self.data = summed
         self.has_canonical_format = True
+
+    def _sum_duplicates(self, row, col, data):
+        # Assumes (data, row, col) not in canonical format.
+        if len(data) == 0:
+            return row, col, data
+        order = np.lexsort((row, col))
+        row = row[order]
+        col = col[order]
+        data = data[order]
+        unique_mask = ((row[1:] != row[:-1]) |
+                       (col[1:] != col[:-1]))
+        unique_mask = np.append(True, unique_mask)
+        row = row[unique_mask]
+        col = col[unique_mask]
+        unique_inds, = np.nonzero(unique_mask)
+        data = np.add.reduceat(data, unique_inds, dtype=self.dtype)
+        return row, col, data
+
+    def eliminate_zeros(self):
+        """Remove zero entries from the matrix
+
+        This is an *in place* operation
+        """
+        mask = self.data != 0
+        self.data = self.data[mask]
+        self.row = self.row[mask]
+        self.col = self.col[mask]
 
     ###########################
     # Multiplication handlers #

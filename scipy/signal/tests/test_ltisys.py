@@ -17,7 +17,7 @@ def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
     """
     Check each pole in P1 is close to a pole in P2 with a 1e-8
     relative tolerance or 1e-8 absolute tolerance (useful for zero poles).
-    These tolerance are very scrict but the systems tested are known to
+    These tolerances are very strict but the systems tested are known to
     accept these poles so we should not be far from what is requested.
     """
     P2 = P2.copy()
@@ -249,7 +249,7 @@ class TestSS2TF:
             yield self.tst_matrix_shapes, p, q, r
 
     def test_basic(self):
-        # Test a round trip through tf2ss and sst2f.
+        # Test a round trip through tf2ss and ss2tf.
         b = np.array([1.0, 3.0, 5.0])
         a = np.array([1.0, 2.0, 3.0])
 
@@ -263,6 +263,15 @@ class TestSS2TF:
         bb, aa = ss2tf(A, B, C, D)
         assert_allclose(bb[0], b, rtol=1e-13)
         assert_allclose(aa, a, rtol=1e-13)
+
+    def test_zero_order_round_trip(self):
+        # See Issue #5760
+        tf = (2, 1)
+        ss = tf2ss(*tf)
+        assert_equal(ss, [[0], [0], [0], [2]])
+
+        tf = ss2tf(*ss)
+        assert_equal(tf, [[[2, 0]], [1, 0]])
 
     def test_multioutput(self):
         # Regression test for gh-2669.

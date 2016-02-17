@@ -20,7 +20,7 @@ import scipy.linalg
 from scipy.stats._multivariate import _PSD, _lnB
 from scipy.stats import multivariate_normal
 from scipy.stats import matrix_normal
-from scipy.stats import special_ortho_group
+from scipy.stats import special_ortho_group, ortho_group
 from scipy.stats import dirichlet, beta
 from scipy.stats import wishart, invwishart, chi2, invgamma
 from scipy.stats import norm
@@ -366,12 +366,12 @@ class TestMatrixNormal(TestCase):
         assert_raises(ValueError, matrix_normal, M, U, U)
         assert_raises(ValueError, matrix_normal, M, V, V)
         assert_raises(ValueError, matrix_normal, M.T, U, V)
-        
+
         # Singular covariance
         e = np.linalg.LinAlgError
         assert_raises(e, matrix_normal, M, U, np.ones((num_cols, num_cols)))
         assert_raises(e, matrix_normal, M, np.ones((num_rows, num_rows)), V)
-        
+
     def test_default_inputs(self):
         # Check that default argument handling works
         num_rows = 4
@@ -520,7 +520,7 @@ class TestMatrixNormal(TestCase):
 
         sample_colcov = np.cov(X.reshape(N*num_rows,num_cols).T)
         assert_allclose(sample_colcov, V, atol=0.1)
-        
+
         sample_rowcov = np.cov(np.swapaxes(X,1,2).reshape(
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
@@ -1040,6 +1040,7 @@ class TestSpecialOrthoGroup(TestCase):
         assert_raises(ValueError, special_ortho_group.rvs, None)
         assert_raises(ValueError, special_ortho_group.rvs, (2, 2))
         assert_raises(ValueError, special_ortho_group.rvs, 1)
+        assert_raises(ValueError, special_ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
         dim = 7
@@ -1075,6 +1076,64 @@ class TestSpecialOrthoGroup(TestCase):
         ks_prob = 0.39  # ...so don't expect much precision
         np.random.seed(514)
         xs = special_ortho_group.rvs(dim, size=samples)
+
+        # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
+        #   effectively picking off entries in the matrices of xs.
+        #   These projections should all have the same disribution,
+        #     establishing rotational invariance. We use the two-sided
+        #     KS test to confirm this.
+        #   We could instead test that angles between random vectors
+        #     are uniformly distributed, but the below is sufficient.
+        #   It is not feasible to consider all pairs, so pick a few.
+        els = ((0,0), (0,2), (1,4), (2,3))
+        #proj = {(er, ec): [x[er][ec] for x in xs] for er, ec in els}
+        proj = dict(((er, ec), sorted([x[er][ec] for x in xs])) for er, ec in els)
+        pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
+        ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
+        assert_array_less([ks_prob]*len(pairs), ks_tests)
+
+class TestOrthoGroup(TestCase):
+    def test_reproducibility(self):
+        np.random.seed(514)
+        x = ortho_group.rvs(3)
+        # Note this matrix has det -1, distinguishing O(N) from SO(N)
+        expected = np.array([[0.993945, -0.045279, 0.100114],
+                             [-0.048216, -0.998469, 0.02711],
+                             [-0.098734, 0.031773, 0.994607]])
+        assert_array_almost_equal(x, expected)
+        assert_almost_equal(np.linalg.det(x), -1)
+
+    def test_invalid_dim(self):
+        assert_raises(ValueError, ortho_group.rvs, None)
+        assert_raises(ValueError, ortho_group.rvs, (2, 2))
+        assert_raises(ValueError, ortho_group.rvs, 1)
+        assert_raises(ValueError, ortho_group.rvs, 2.5)
+
+    def test_det_and_ortho(self):
+        xs = [ortho_group.rvs(dim)
+              for dim in range(2,12)
+              for i in range(3)]
+
+        # Test that determinants are always +1
+        dets = [np.fabs(np.linalg.det(x)) for x in xs]
+        assert_allclose(dets, [1.]*30, rtol=1e-13)
+
+        # Test that these are orthogonal matrices
+        for x in xs:
+            assert_array_almost_equal(np.dot(x, x.T),
+                                      np.eye(x.shape[0]))
+
+    def test_haar(self):
+        # Test that the distribution is constant under rotation
+        # Every column should have the same distribution
+        # Additionally, the distribution should be invariant under another rotation
+
+        # Generate samples
+        dim = 5
+        samples = 1000  # Not too many, or the test takes too long
+        ks_prob = 0.39  # ...so don't expect much precision
+        np.random.seed(518)  # Note that the test is sensitive to seed too
+        xs = ortho_group.rvs(dim, size=samples)
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.

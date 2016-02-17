@@ -57,20 +57,15 @@ def test_api_regression():
 
 
 # check function for test generator
-
-
 def check_distribution(dist, args, alpha):
     D, pval = stats.kstest(dist, '', args=args, N=1000)
     if (pval < alpha):
         D, pval = stats.kstest(dist, '', args=args, N=1000)
-        # if (pval < alpha):
-        #    D,pval = stats.kstest(dist,'',args=args, N=1000)
         assert_(pval > alpha, msg="D = " + str(D) + "; pval = " + str(pval) +
                 "; alpha = " + str(alpha) + "\nargs = " + str(args))
 
+
 # nose test generator
-
-
 def test_all_distributions():
     for dist in dists:
         distfunc = getattr(stats, dist)
@@ -79,9 +74,7 @@ def test_all_distributions():
         if dist == 'fatiguelife':
             alpha = 0.001
 
-        if dist == 'frechet':
-            args = tuple(2*np.random.random(1)) + (0,) + tuple(2*np.random.random(2))
-        elif dist == 'triang':
+        if dist == 'triang':
             args = tuple(np.random.random(nargs))
         elif dist == 'reciprocal':
             vals = np.random.random(nargs)

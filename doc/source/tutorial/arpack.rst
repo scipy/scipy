@@ -123,7 +123,7 @@ orthogonal, as we'd expect.  Now let's attempt to solve for the eigenvalues
 with smallest magnitude:
 
    >>> evals_small, evecs_small = eigsh(X, 3, which='SM')
-   Traceback (most recent call last):
+   Traceback (most recent call last):       # may vary (convergence)
    ...
    scipy.sparse.linalg.eigen.arpack.arpack.ArpackNoConvergence:
    ARPACK error -1: No convergence (1001 iterations, 0/3 eigenvectors converged)

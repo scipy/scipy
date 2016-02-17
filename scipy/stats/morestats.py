@@ -474,7 +474,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
         pass
 
 
-def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
+def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     """
     Calculate quantiles for a probability plot, and optionally show the plot.
 
@@ -615,13 +615,14 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
                                title='Probability Plot')
 
         # Add R^2 value to the plot as text
-        xmin = amin(osm)
-        xmax = amax(osm)
-        ymin = amin(x)
-        ymax = amax(x)
-        posx = xmin + 0.70 * (xmax - xmin)
-        posy = ymin + 0.01 * (ymax - ymin)
-        plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
+        if rvalue:
+            xmin = amin(osm)
+            xmax = amax(osm)
+            ymin = amin(x)
+            ymax = amax(x)
+            posx = xmin + 0.70 * (xmax - xmin)
+            posy = ymin + 0.01 * (ymax - ymin)
+            plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
 
     if fit:
         return (osm, osr), (slope, intercept, r)
@@ -1993,6 +1994,9 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     p : float, optional
         The hypothesized probability of success.  0 <= p <= 1. The
         default value is p = 0.5
+    alternative : {'two-sided', 'greater', 'less'}, optional
+        Indicates the alternative hypothesis. The default value is
+        'two-sided'.
 
     Returns
     -------

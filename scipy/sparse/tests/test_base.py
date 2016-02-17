@@ -643,7 +643,10 @@ class _TestCommon:
         mats.append(kron(mats[3],[[1,2,3,4]]))
 
         for m in mats:
-            assert_equal(self.spmatrix(m).diagonal(),diag(m))        
+            assert_equal(self.spmatrix(m).diagonal(),diag(m))
+
+        # Test all-zero matrix.
+        assert_equal(self.spmatrix((40, 16130)).diagonal(), np.zeros(40))
 
     @dec.slow
     def test_setdiag(self):
@@ -1042,6 +1045,7 @@ class _TestCommon:
             datsp = self.datsp_dtypes[dtype]
 
             assert_array_equal((datsp - datsp).todense(),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
+            assert_array_equal((datsp - 0).todense(), dat)
 
             A = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
             assert_array_equal((datsp - A).todense(),dat - A.todense())
@@ -1057,6 +1061,7 @@ class _TestCommon:
 
             assert_array_equal((dat - datsp),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
             assert_array_equal((datsp - dat),[[0,0,0,0],[0,0,0,0],[0,0,0,0]])
+            assert_array_equal((0 - datsp).todense(), -dat)
 
             A = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
             assert_array_equal((dat - A),dat - A.todense())
@@ -1065,8 +1070,7 @@ class _TestCommon:
             assert_array_equal(datsp - A.todense(),dat - A.todense())
 
         for dtype in self.math_dtypes:
-            if (dtype == np.dtype('bool')) and (
-                    NumpyVersion(np.__version__) >= '1.9.0.dev'):
+            if dtype == np.dtype('bool'):
                 # boolean array subtraction deprecated in 1.9.0
                 continue
 
@@ -1177,6 +1181,14 @@ class _TestCommon:
         Asp = self.spmatrix(A)
         Bsp = self.spmatrix(B)
         assert_almost_equal(todense(Asp / Bsp), A/B)
+
+        # integer
+        A = array([[1,2,3],[-3,2,1]])
+        B = array([[0,1,2],[0,-2,3]])
+        Asp = self.spmatrix(A)
+        Bsp = self.spmatrix(B)
+        with np.errstate(divide='ignore'):
+            assert_array_equal(todense(Asp / Bsp), A / B)
 
     def test_pow(self):
         A = matrix([[1,0,2,0],[0,3,4,0],[0,5,0,0],[0,6,7,8]])
@@ -2418,8 +2430,8 @@ class _TestFancyIndexing:
         D = np.asmatrix(np.random.rand(M,N))
         D = np.multiply(D, D > 0.5)
 
-        I = np.random.random_integers(-M + 1, M - 1, size=NUM_SAMPLES)
-        J = np.random.random_integers(-N + 1, N - 1, size=NUM_SAMPLES)
+        I = np.random.randint(-M + 1, M, size=NUM_SAMPLES)
+        J = np.random.randint(-N + 1, N, size=NUM_SAMPLES)
 
         S = self.spmatrix(D)
 
@@ -3691,6 +3703,16 @@ class TestCOO(sparse_test_class(getset=False,
         dok = coo.todok()
         assert_array_equal(dok.A, coo.A)
 
+    def test_eliminate_zeros(self):
+        data = array([1, 0, 0, 0, 2, 0, 3, 0])
+        row = array([0, 0, 0, 1, 1, 1, 1, 1])
+        col = array([1, 2, 3, 4, 5, 6, 7, 8])
+        asp = coo_matrix((data, (row, col)), shape=(2,10))
+        bsp = asp.copy()
+        asp.eliminate_zeros()
+        assert_((asp.data != 0).all())
+        assert_array_equal(asp.A, bsp.A)
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
@@ -3778,6 +3800,12 @@ class TestBSR(sparse_test_class(getset=False,
         A = kron([[1,0,2,0],[0,1,0,0],[0,0,0,0]], [[0,1,2],[3,0,5]])
         assert_equal(bsr_matrix(A,blocksize=(2,3)).todense(),A)
 
+    def test_constructor3(self):
+        # construct from coo-like (data,(row,col)) format
+        arg = ([1,2,3], ([0,1,1], [0,0,1]))
+        A = array([[1,0],[2,3]])
+        assert_equal(bsr_matrix(arg, blocksize=(2,2)).todense(), A)
+
     def test_eliminate_zeros(self):
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
@@ -3793,11 +3821,13 @@ class TestBSR(sparse_test_class(getset=False,
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]).reshape(-1,1)
         assert_equal(A*x, A.todense()*x)
+        assert_equal(A.matvec(x), A.todense()*x)
 
     def test_bsr_matvecs(self):
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
+        assert_equal(A.matmat(x), A.todense()*x)
 
     @dec.knownfailureif(True, "BSR not implemented")
     def test_iterator(self):

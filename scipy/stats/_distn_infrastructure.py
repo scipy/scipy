@@ -76,11 +76,11 @@ _doc_logpmf = """\
 """
 _doc_cdf = """\
 ``cdf(x, %(shapes)s, loc=0, scale=1)``
-    Cumulative density function.
+    Cumulative distribution function.
 """
 _doc_logcdf = """\
 ``logcdf(x, %(shapes)s, loc=0, scale=1)``
-    Log of the cumulative density function.
+    Log of the cumulative distribution function.
 """
 _doc_sf = """\
 ``sf(x, %(shapes)s, loc=0, scale=1)``

@@ -15,7 +15,8 @@ __all__ = ['multivariate_normal',
            'dirichlet',
            'wishart',
            'invwishart',
-           'special_ortho_group']
+           'special_ortho_group',
+           'ortho_group']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -421,7 +422,7 @@ class multivariate_normal_gen(multi_rv_generic):
                 x = x[np.newaxis, :]
 
         return x
-    
+
     def _logpdf(self, x, mean, prec_U, log_det_cov, rank):
         """
         Parameters
@@ -724,7 +725,7 @@ class matrix_normal_gen(multi_rv_generic):
     The `matrix_normal` distribution is closely related to the
     `multivariate_normal` distribution. Specifically, :math:`\mathrm{Vec}(X)`
     (the vector formed by concatenating the columns  of :math:`X`) has a
-    multivariate normal distribution with mean :math:`\mathrm{Vec}(M)` 
+    multivariate normal distribution with mean :math:`\mathrm{Vec}(M)`
     and covariance :math:`V \otimes U` (where :math:`\otimes` is the Kronecker
     product). Sampling and pdf evaluation are
     :math:`\mathcal{O}(m^3 + n^3 + m^2 n + m n^2)` for the matrix normal, but
@@ -755,7 +756,7 @@ class matrix_normal_gen(multi_rv_generic):
            [ 4.1,  5.1]])
     >>> matrix_normal.pdf(X, mean=M, rowcov=U, colcov=V)
     0.023410202050005054
-       
+
     >>> # Equivalent multivariate normal
     >>> from scipy.stats import multivariate_normal
     >>> vectorised_X = X.T.flatten()
@@ -811,7 +812,7 @@ class matrix_normal_gen(multi_rv_generic):
         if rowshape[0] == 0:
             raise ValueError("Array `rowcov` has invalid shape.")
         numrows = rowshape[0]
-            
+
         # Process among-column covariance
         colcov = np.asarray(colcov, dtype=float)
         if colcov.ndim == 0:
@@ -829,7 +830,7 @@ class matrix_normal_gen(multi_rv_generic):
         if colshape[0] == 0:
             raise ValueError("Array `colcov` has invalid shape.")
         numcols = colshape[0]
-        
+
         # Ensure mean and covariances compatible
         if mean is not None:
             if meanshape[0] != numrows:
@@ -842,7 +843,7 @@ class matrix_normal_gen(multi_rv_generic):
             mean = np.zeros((numrows,numcols))
 
         dims = (numrows, numcols)
-        
+
         return dims, mean, rowcov, colcov
 
     def _process_quantiles(self, X, dims):
@@ -1021,8 +1022,8 @@ class matrix_normal_frozen(multi_rv_frozen):
 
     def logpdf(self, X):
         X = self._dist._process_quantiles(X, self.dims)
-        out = self._dist._logpdf(self.dims, X, self.mean, self.rowpsd.U, 
-                                 self.rowpsd.log_pdet, self.colpsd.U, 
+        out = self._dist._logpdf(self.dims, X, self.mean, self.rowpsd.U,
+                                 self.rowpsd.log_pdet, self.colpsd.U,
                                  self.colpsd.log_pdet)
         return _squeeze_output(out)
 
@@ -2677,6 +2678,8 @@ class special_ortho_group_gen(multi_rv_generic):
     For more information see
     http://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
 
+    See also the similar `ortho_group`.
+
     Examples
     --------
     >>> from scipy.stats import special_ortho_group
@@ -2714,7 +2717,7 @@ class special_ortho_group_gen(multi_rv_generic):
         Dimension N must be specified; it cannot be inferred.
         """
 
-        if dim is None or not np.isscalar(dim) or dim <= 1:
+        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
             raise ValueError("""Dimension of rotation must be specified,
                                 and must be a scalar greater than 1.""")
 
@@ -2795,3 +2798,109 @@ class special_ortho_group_frozen(multi_rv_frozen):
 
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.dim, size, random_state)
+
+class ortho_group_gen(multi_rv_generic):
+    r"""
+    A matrix-valued O(N) random variable.
+
+    Return a random orthogonal matrix, drawn from the O(N) Haar
+    distribution (the only uniform distribution on O(N)).
+
+    The `dim` keyword specifies the dimension N.
+
+    Methods
+    -------
+    ``rvs(dim=None, size=1, random_state=None)``
+        Draw random samples from O(N).
+
+    Parameters
+    ----------
+    dim : scalar
+        Dimension of matrices
+
+    Notes
+    ----------
+    This class is closely related to `special_ortho_group`.
+
+    Some care is taken to avoid numerical error, as per the paper by Mezzadri.
+
+    References
+    ----------
+    .. [1] F. Mezzadri, "How to generate random matrices from the classical
+           compact groups", arXiv:math-ph/0609050v2.
+
+    Examples
+    --------
+    >>> from scipy.stats import ortho_group
+    >>> x = ortho_group.rvs(3)
+
+    >>> np.dot(x, x.T)
+    array([[  1.00000000e+00,   1.13231364e-17,  -2.86852790e-16],
+           [  1.13231364e-17,   1.00000000e+00,  -1.46845020e-16],
+           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])
+
+    >>> import scipy.linalg
+    >>> np.fabs(scipy.linalg.det(x))
+    1.0
+
+    This generates one random matrix from O(3). It is orthogonal and
+    has a determinant of +1 or -1.
+
+    """
+
+    def __init__(self, seed=None):
+        super(ortho_group_gen, self).__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__)
+
+    def _process_parameters(self, dim):
+        """
+        Dimension N must be specified; it cannot be inferred.
+        """
+
+        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+            raise ValueError("Dimension of rotation must be specified,"
+                             "and must be a scalar greater than 1.")
+
+        return dim
+
+    def rvs(self, dim, size=1, random_state=None):
+        """
+        Draw random samples from O(N).
+
+        Parameters
+        ----------
+        dim : integer
+            Dimension of rotation space (N).
+        size : integer, optional
+            Number of samples to draw (default 1).
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random size N-dimensional matrices, dimension (size, dim, dim)
+
+        """
+        size = int(size)
+        if size > 1:
+            return np.array([self.rvs(dim, size=1, random_state=random_state)
+                             for i in range(size)])
+
+        dim = self._process_parameters(dim)
+
+        random_state = self._get_random_state(random_state)
+
+        H = np.eye(dim)
+        for n in range(1, dim):
+            x = random_state.normal(size=(dim-n+1,))
+            # random sign, 50/50, but chosen carefully to avoid roundoff error
+            D = np.sign(x[0])
+            x[0] += D*np.sqrt((x*x).sum())
+            # Householder transformation
+            Hx = -D*(np.eye(dim-n+1)
+                     - 2.*np.outer(x, x)/(x*x).sum())
+            mat = np.eye(dim)
+            mat[n-1:, n-1:] = Hx
+            H = np.dot(H, mat)
+        return H
+
+ortho_group = ortho_group_gen()
