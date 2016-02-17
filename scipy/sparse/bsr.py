@@ -496,13 +496,14 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         The is an *in place* operation
         """
+        if self.has_canonical_format:
+            return
         self.sort_indices()
         R, C = self.blocksize
         M, N = self.shape
 
         # port of _sparsetools.csr_sum_duplicates
         n_row = M // R
-        n_col = N // C
         nnz = 0
         row_end = 0
         for i in range(n_row):
@@ -521,6 +522,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             self.indptr[i+1] = nnz
 
         self.prune()  # nnz may have changed
+        self.has_canonical_format = True
 
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
