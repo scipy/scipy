@@ -42,7 +42,6 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
-
 from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
@@ -51,6 +50,7 @@ from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
+from scipy._lib._threadsafety import ReentrancyLock
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -1062,6 +1062,12 @@ def get_OPinv_matvec(A, M, sigma, symmetric=False, tol=0):
             return SpLuInv(OP.tocsc()).matvec
 
 
+# ARPACK is not threadsafe or reentrant (SAVE variables), so we need a
+# lock and a re-entering check.
+_ARPACK_LOCK = ReentrancyLock("Nested calls to eigs/eighs not allowed: "
+                              "ARPACK is not re-entrant")
+
+
 def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
          ncv=None, maxiter=None, tol=0, return_eigenvectors=True,
          Minv=None, OPinv=None, OPpart=None):
@@ -1292,10 +1298,11 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
                                       M_matvec, Minv_matvec, sigma,
                                       ncv, v0, maxiter, which, tol)
 
-    while not params.converged:
-        params.iterate()
+    with _ARPACK_LOCK:
+        while not params.converged:
+            params.iterate()
 
-    return params.extract(return_eigenvectors)
+        return params.extract(return_eigenvectors)
 
 
 def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
@@ -1593,10 +1600,11 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                                     M_matvec, Minv_matvec, sigma,
                                     ncv, v0, maxiter, which, tol)
 
-    while not params.converged:
-        params.iterate()
+    with _ARPACK_LOCK:
+        while not params.converged:
+            params.iterate()
 
-    return params.extract(return_eigenvectors)
+        return params.extract(return_eigenvectors)
 
 
 def _augmented_orthonormal_cols(x, k):
