@@ -1070,6 +1070,31 @@ class TestPPoly(TestCase):
         assert_array_equal(pp.roots(),
                            [0.25, 0.4, np.nan, 0.6 + 0.25])
 
+        # ditto for p.solve(const) with sections identically equal const
+        const = 2.
+        c1 = c.copy()
+        c1[1, :] += const
+        pp1 = PPoly(c1, x)
+
+        assert_array_equal(pp1.solve(const),
+                           [0.25, 0.4, np.nan, 0.6 + 0.25])
+
+    def test_roots_all_zero(self):
+        # test the code path for the polynomial being identically zero everywhere
+        c = [[0], [0]]
+        x = [0, 1]
+        p = PPoly(c, x)
+        assert_array_equal(p.roots(), [0, np.nan])
+        assert_array_equal(p.solve(0), [0, np.nan])
+        assert_array_equal(p.solve(1), [])
+
+        c = [[0, 0], [0, 0]]
+        x = [0, 1, 2]
+        p = PPoly(c, x)
+        assert_array_equal(p.roots(), [0, np.nan, 1, np.nan])
+        assert_array_equal(p.solve(0), [0, np.nan, 1, np.nan])
+        assert_array_equal(p.solve(1), [])
+
     def test_roots_repeated(self):
         # Check roots repeated in multiple sections are reported only
         # once.
@@ -1090,6 +1115,13 @@ class TestPPoly(TestCase):
         assert_array_equal(pp.roots(), [0.5])
         assert_array_equal(pp.roots(discontinuity=False), [])
 
+        # ditto for a discontinuity across y:
+        assert_array_equal(pp.solve(0.5), [0.5])
+        assert_array_equal(pp.solve(0.5, discontinuity=False), [])
+
+        assert_array_equal(pp.solve(1.5), [])
+        assert_array_equal(pp.solve(1.5, discontinuity=False), [])
+
     def test_roots_random(self):
         # Check high-order polynomials with random coefficients
         np.random.seed(1234)
@@ -1102,19 +1134,21 @@ class TestPPoly(TestCase):
                 c = 2*np.random.rand(order+1, len(x)-1, 2, 3) - 1
 
                 pp = PPoly(c, x)
-                r = pp.roots(discontinuity=False, extrapolate=extrapolate)
+                for y in [0, np.random.random()]:
+                    r = pp.solve(y, discontinuity=False, extrapolate=extrapolate)
 
-                for i in range(2):
-                    for j in range(3):
-                        rr = r[i,j]
-                        if rr.size > 0:
-                            # Check that the reported roots indeed are roots
-                            num += rr.size
-                            val = pp(rr, extrapolate=extrapolate)[:,i,j]
-                            cmpval = pp(rr, nu=1, extrapolate=extrapolate)[:,i,j]
-                            assert_allclose(val/cmpval, 0, atol=1e-7,
-                                            err_msg="(%r) r = %s" % (extrapolate,
-                                                                     repr(rr),))
+                    for i in range(2):
+                        for j in range(3):
+                            rr = r[i,j]
+                            if rr.size > 0:
+                                # Check that the reported roots indeed are roots
+                                num += rr.size
+                                val = pp(rr, extrapolate=extrapolate)[:,i,j]
+                                cmpval = pp(rr, nu=1,
+                                            extrapolate=extrapolate)[:,i,j]
+                                msg = "(%r) r = %s" % (extrapolate, repr(rr),)
+                                assert_allclose((val-y) / cmpval, 0, atol=1e-7,
+                                                err_msg=msg)
 
         # Check that we checked a number of roots
         assert_(num > 100, repr(num))
@@ -1130,23 +1164,24 @@ class TestPPoly(TestCase):
                 # add a case with zero discriminant
                 c[:,0,0] = 1, 2, 1
 
-            w = np.empty(c.shape, dtype=complex)
-            _ppoly._croots_poly1(c, w)
+            for y in [0, np.random.random()]:
+                w = np.empty(c.shape, dtype=complex)
+                _ppoly._croots_poly1(c, w)
 
-            if k == 1:
-                assert_(np.isnan(w).all())
-                continue
+                if k == 1:
+                    assert_(np.isnan(w).all())
+                    continue
 
-            res = 0
-            cres = 0
-            for i in range(k):
-                res += c[i,None] * w**(k-1-i)
-                cres += abs(c[i,None] * w**(k-1-i))
-            with np.errstate(invalid='ignore'):
-                res /= cres
-            res = res.ravel()
-            res = res[~np.isnan(res)]
-            assert_allclose(res, 0, atol=1e-10)
+                res = 0
+                cres = 0
+                for i in range(k):
+                    res += c[i,None] * w**(k-1-i)
+                    cres += abs(c[i,None] * w**(k-1-i))
+                with np.errstate(invalid='ignore'):
+                    res /= cres
+                res = res.ravel()
+                res = res[~np.isnan(res)]
+                assert_allclose(res, 0, atol=1e-10)
 
     def test_extrapolate_attr(self):
         # [ 1 - x**2 ]

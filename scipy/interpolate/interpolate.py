@@ -846,6 +846,7 @@ class PPoly(_PPolyBase):
     derivative
     antiderivative
     integrate
+    solve
     roots
     extend
     from_spline
@@ -998,12 +999,14 @@ class PPoly(_PPolyBase):
         range_int *= sign
         return range_int.reshape(self.c.shape[2:])
 
-    def roots(self, discontinuity=True, extrapolate=None):
+    def solve(self, y=0., discontinuity=True, extrapolate=None):
         """
-        Find real roots of the piecewise polynomial.
+        Find real solutions of the the equation ``pp(x) == y``.
 
         Parameters
         ----------
+        y : float, optional
+            Right-hand side. Default is zero.
         discontinuity : bool, optional
             Whether to report sign changes across discontinuities at
             breakpoints as roots.
@@ -1053,8 +1056,9 @@ class PPoly(_PPolyBase):
             raise ValueError("Root finding is only for "
                              "real-valued polynomials")
 
+        y = float(y)
         r = _ppoly.real_roots(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-                              self.x, bool(discontinuity),
+                              self.x, y, bool(discontinuity),
                               bool(extrapolate))
         if self.c.ndim == 2:
             return r[0]
@@ -1066,6 +1070,35 @@ class PPoly(_PPolyBase):
                 r2[ii] = root
 
             return r2.reshape(self.c.shape[2:])
+
+    def roots(self, discontinuity=True, extrapolate=None):
+        """
+        Find real roots of the the piecewise polynomial.
+
+        Parameters
+        ----------
+        discontinuity : bool, optional
+            Whether to report sign changes across discontinuities at
+            breakpoints as roots.
+        extrapolate : bool, optional
+            Whether to return roots from the polynomial extrapolated
+            based on first and last intervals.
+
+        Returns
+        -------
+        roots : ndarray
+            Roots of the polynomial(s).
+
+            If the PPoly object describes multiple polynomials, the
+            return value is an object array whose each element is an
+            ndarray containing the roots.
+
+        See Also
+        --------
+        PPoly.solve
+
+        """
+        return self.solve(0, discontinuity, extrapolate)
 
     @classmethod
     def from_spline(cls, tck, extrapolate=None):
