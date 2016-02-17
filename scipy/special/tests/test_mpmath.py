@@ -54,7 +54,7 @@ def test_expi_complex():
 # ------------------------------------------------------------------------------
 
 
-@mpmath_check('0.00')
+@mpmath_check('0.19')
 def test_hyp0f1_gh5764():
     # Do a small and somewhat systematic test that runs quickly
     pts = []
@@ -63,10 +63,20 @@ def test_hyp0f1_gh5764():
         for x in axis:
             for y in axis:
                 pts.append((v, x + 1J*y))
-    std = np.array([(complex(mpmath.hyp0f1(*p)),) for p in pts])
+    std = np.array([complex(mpmath.hyp0f1(*p)) for p in pts])
     # Can't use FuncData because v should be real and z complex
     res = np.array([sc.hyp0f1(*p) for p in pts])
     assert_allclose(res, std, atol=1e-13, rtol=1e-13)
+
+
+@mpmath_check('0.19')
+def test_hyp0f1_gh_1609():
+    # this is a regression test for gh-1609
+    vv = np.linspace(150, 180, 21)
+    af = sc.hyp0f1(vv, 0.5)
+    mf = np.array([mpmath.hyp0f1(v, 0.5) for v in vv])
+    assert_allclose(af, mf.astype(float), rtol=1e-12)
+
 
 # ------------------------------------------------------------------------------
 # hyp2f1
@@ -1221,17 +1231,25 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     # hurwitz: same as zeta
 
-    @nonfunctional_tooslow
     def test_hyp0f1(self):
+        # mpmath reports no convergence unless maxterms is large enough
+        KW = dict(maxprec=400, maxterms=1500)
         assert_mpmath_equal(sc.hyp0f1,
-                            _exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
-                            [Arg(), Arg()])
+                            lambda a, x: mpmath.hyp0f1(a, x, **KW),
+                            [Arg(-1e7, 1e7), Arg(0, 1e5)])
+        # NB: The range of the second parameter ("z") is limited from below
+        # because of an overflow in the intermediate calculations. The way
+        # for fix it is to implement an asymptotic expansion for Bessel J
+        # (similar to what is implemented for Bessel I here).
 
-    @nonfunctional_tooslow
     def test_hyp0f1_complex(self):
+        KW = dict(maxprec=400, maxterms=1500)
         assert_mpmath_equal(lambda a, z: sc.hyp0f1(a.real, z),
                             _exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
-                            [Arg(), ComplexArg()])
+                            [Arg(-25, 25), ComplexArg(complex(-120, -120), complex(120, 120))])
+        # NB: The range of the first parameter ("v") are limited by an overflow
+        # in the intermediate calculations. Can be fixed by implementing an
+        # asymptotic expansion for Bessel functions for large order.
 
     @knownfailure_overridable()
     def test_hyp1f1(self):
