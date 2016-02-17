@@ -1541,6 +1541,12 @@ cdef extern from "_ufuncs_defs.h":
 from _convex_analysis cimport huber as _func_huber
 ctypedef double _proto_huber_t(double, double) nogil
 cdef _proto_huber_t *_proto_huber_t_var = &_func_huber
+from _hyp0f1 cimport _hyp0f1_real as _func__hyp0f1_real
+ctypedef double _proto__hyp0f1_real_t(double, double) nogil
+cdef _proto__hyp0f1_real_t *_proto__hyp0f1_real_t_var = &_func__hyp0f1_real
+from _hyp0f1 cimport _hyp0f1_cmplx as _func__hyp0f1_cmplx
+ctypedef double complex _proto__hyp0f1_cmplx_t(double, double complex) nogil
+cdef _proto__hyp0f1_cmplx_t *_proto__hyp0f1_cmplx_t_var = &_func__hyp0f1_cmplx
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_hyp1f1_wrap "hyp1f1_wrap"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -6272,6 +6278,63 @@ ufunc_huber_ptr[2*1+1] = <void*>(<char*>"huber")
 ufunc_huber_data[0] = &ufunc_huber_ptr[2*0]
 ufunc_huber_data[1] = &ufunc_huber_ptr[2*1]
 huber = np.PyUFunc_FromFuncAndData(ufunc_huber_loops, ufunc_huber_data, ufunc_huber_types, 2, 2, 1, 0, "huber", ufunc_huber_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_hyp0f1_loops[4]
+cdef void *ufunc_hyp0f1_ptr[8]
+cdef void *ufunc_hyp0f1_data[4]
+cdef char ufunc_hyp0f1_types[12]
+cdef char *ufunc_hyp0f1_doc = (
+    "hyp0f1(v, x)\n"
+    "\n"
+    "Confluent hypergeometric limit function 0F1.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "v, z : array_like\n"
+    "    Input values.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "hyp0f1 : ndarray\n"
+    "    The confluent hypergeometric limit function.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "This function is defined as:\n"
+    "\n"
+    ".. math:: _0F_1(v, z) = \\sum_{k=0}^{\\infty}\\frac{z^k}{(v)_k k!}.\n"
+    "\n"
+    "It's also the limit as :math:`q \\to \\infty` of :math:`_1F_1(q; v; z/q)`,\n"
+    "and satisfies the differential equation :math:`f''(z) + vf'(z) = f(z)`.")
+ufunc_hyp0f1_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_hyp0f1_loops[1] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
+ufunc_hyp0f1_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_hyp0f1_loops[3] = <np.PyUFuncGenericFunction>loop_D_dD__As_dD_D
+ufunc_hyp0f1_types[0] = <char>NPY_FLOAT
+ufunc_hyp0f1_types[1] = <char>NPY_FLOAT
+ufunc_hyp0f1_types[2] = <char>NPY_FLOAT
+ufunc_hyp0f1_types[3] = <char>NPY_FLOAT
+ufunc_hyp0f1_types[4] = <char>NPY_CFLOAT
+ufunc_hyp0f1_types[5] = <char>NPY_CFLOAT
+ufunc_hyp0f1_types[6] = <char>NPY_DOUBLE
+ufunc_hyp0f1_types[7] = <char>NPY_DOUBLE
+ufunc_hyp0f1_types[8] = <char>NPY_DOUBLE
+ufunc_hyp0f1_types[9] = <char>NPY_DOUBLE
+ufunc_hyp0f1_types[10] = <char>NPY_CDOUBLE
+ufunc_hyp0f1_types[11] = <char>NPY_CDOUBLE
+ufunc_hyp0f1_ptr[2*0] = <void*>_func__hyp0f1_real
+ufunc_hyp0f1_ptr[2*0+1] = <void*>(<char*>"hyp0f1")
+ufunc_hyp0f1_ptr[2*1] = <void*>_func__hyp0f1_cmplx
+ufunc_hyp0f1_ptr[2*1+1] = <void*>(<char*>"hyp0f1")
+ufunc_hyp0f1_ptr[2*2] = <void*>_func__hyp0f1_real
+ufunc_hyp0f1_ptr[2*2+1] = <void*>(<char*>"hyp0f1")
+ufunc_hyp0f1_ptr[2*3] = <void*>_func__hyp0f1_cmplx
+ufunc_hyp0f1_ptr[2*3+1] = <void*>(<char*>"hyp0f1")
+ufunc_hyp0f1_data[0] = &ufunc_hyp0f1_ptr[2*0]
+ufunc_hyp0f1_data[1] = &ufunc_hyp0f1_ptr[2*1]
+ufunc_hyp0f1_data[2] = &ufunc_hyp0f1_ptr[2*2]
+ufunc_hyp0f1_data[3] = &ufunc_hyp0f1_ptr[2*3]
+hyp0f1 = np.PyUFunc_FromFuncAndData(ufunc_hyp0f1_loops, ufunc_hyp0f1_data, ufunc_hyp0f1_types, 4, 2, 1, 0, "hyp0f1", ufunc_hyp0f1_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_hyp1f1_loops[4]
 cdef void *ufunc_hyp1f1_ptr[8]
