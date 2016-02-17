@@ -13,8 +13,8 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
                    where, mgrid, sin, place, issubdtype, extract,
                    less, inexact, nan, zeros, atleast_1d, sinc)
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
-                      hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch,
-                      binom)
+                      hankel1, hankel2, yv, kv, gammaln, ndtri,
+                      errprint, poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 
@@ -1080,46 +1080,6 @@ def fresnel_zeros(nt):
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2, nt), specfun.fcszo(1, nt)
-
-
-def hyp0f1(v, z):
-    r"""Confluent hypergeometric limit function 0F1.
-
-    Parameters
-    ----------
-    v, z : array_like
-        Input values.
-
-    Returns
-    -------
-    hyp0f1 : ndarray
-        The confluent hypergeometric limit function.
-
-    Notes
-    -----
-    This function is defined as:
-
-    .. math:: _0F_1(v, z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
-
-    It's also the limit as q -> infinity of ``1F1(q;v;z/q)``, and satisfies
-    the differential equation :math:`f''(z) + vf'(z) = f(z)`.
-    """
-    v = atleast_1d(v)
-    z = atleast_1d(z)
-    v, z = np.broadcast_arrays(v, z)
-    if np.iscomplexobj(z):
-        res = np.empty_like(z)
-    else:
-        res = np.empty_like(z, dtype=np.float64)
-    poles = (v < 0) & (v == v.astype(int))
-    zeros = (z == 0)
-    pos = (z.real >= 0) & -zeros & -poles
-    neg = (z.real < 0) & -zeros & -poles
-    res[poles] = nan
-    res[zeros] = 1
-    res[pos] = z[pos]**((1.0 - v[pos])/2)*gamma(v[pos])*iv(v[pos] - 1, 2*sqrt(z[pos]))
-    res[neg] = (-z[neg])**((1.0 - v[neg])/2)*gamma(v[neg])*jv(v[neg] - 1, 2*sqrt(-z[neg]))
-    return res
 
 
 def assoc_laguerre(x, n, k=0.0):
