@@ -1,4 +1,4 @@
-from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, fabs, sin
+from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, fabs
 from numpy.math cimport NAN, isinf
 cimport numpy as np
 
@@ -19,7 +19,8 @@ cdef extern from "c_misc/misc.h":
 
 cdef extern from "amos_wrappers.h":
     np.npy_cdouble cbesi_wrap(double v, np.npy_cdouble z) nogil
-    np.npy_cdouble cbesj_wrap( double v, np.npy_cdouble z) nogil
+    np.npy_cdouble cbesj_wrap(double v, np.npy_cdouble z) nogil
+    double sin_pi(double x) nogil
 
 #
 # Real-valued kernel
@@ -91,7 +92,7 @@ cdef inline double _hyp0f1_asy(double v, double z) nogil:
     if v - 1 < 0:
         # DLMF 10.27.2: I_{-v} = I_{v} + (2/pi) sin(pi*v) K_v
         u_corr_k = 1.0 - u1/v1 + u2/(v1*v1) - u3/(v1*v1*v1)
-        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * sin(M_PI*v1) * u_corr_k
+        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * sin_pi(v1) * u_corr_k
 
     return result
 
