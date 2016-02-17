@@ -27,6 +27,8 @@ cdef extern from "blas_defs.h":
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
 
+DEF MAX_DIMS = 64
+
 #------------------------------------------------------------------------------
 # Piecewise power basis polynomials
 #------------------------------------------------------------------------------
@@ -88,7 +90,7 @@ def evaluate(double_or_complex[:,:,::1] c,
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval(x, xval, interval, extrapolate)
+        i = find_interval(&x[0], x.shape[0], xval, interval, extrapolate)
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
@@ -100,6 +102,159 @@ def evaluate(double_or_complex[:,:,::1] c,
         # Evaluate the local polynomial(s)
         for jp in range(c.shape[2]):
             out[ip, jp] = evaluate_poly1(xval - x[interval], c, interval, jp, dx)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def evaluate_nd(double_or_complex[:,:,::1] c,
+                tuple xs,
+                int[:] ks,
+                double[:,:] xp,
+                int[:] dx,
+                int extrapolate,
+                double_or_complex[:,::1] out):
+    """
+    Evaluate a piecewise tensor-product polynomial.
+
+    Parameters
+    ----------
+    c : ndarray, shape (k_1*...*k_d, m_1*...*m_d, n)
+        Coefficients local polynomials of order `k-1` in
+        `m_1`, ..., `m_d` intervals. There are `n` polynomials
+        in each interval.
+    ks : ndarray of int, shape (d,)
+        Orders of polynomials in each dimension
+    xs : d-tuple of ndarray of shape (m_d+1,) each
+        Breakpoints of polynomials
+    xp : ndarray, shape (r, d)
+        Points to evaluate the piecewise polynomial at.
+    dx : ndarray of int, shape (d,)
+        Orders of derivative to evaluate.  The derivative is evaluated
+        piecewise and may have discontinuities.
+    extrapolate : int, optional
+        Whether to extrapolate to out-of-bounds points based on first
+        and last intervals, or to return NaNs.
+    out : ndarray, shape (r, n)
+        Value of each polynomial at each of the input points.
+        For points outside the span ``x[0] ... x[-1]``,
+        ``nan`` is returned.
+        This argument is modified in-place.
+
+    """
+    cdef size_t ntot
+    cdef ssize_t strides[MAX_DIMS]
+    cdef ssize_t kstrides[MAX_DIMS]
+    cdef double* xx[MAX_DIMS]
+    cdef size_t nxx[MAX_DIMS]
+    cdef double[::1] y
+    cdef double_or_complex[:,:,::1] c2
+    cdef int ip, jp, k, ndim
+    cdef int interval[MAX_DIMS], pos, kpos, koutpos
+    cdef int out_of_range
+    cdef double xval
+
+    ndim = len(xs)
+
+    if ndim > MAX_DIMS:
+        raise ValueError("Too many dimensions (maximum: %d)" % (MAX_DIMS,))
+
+    # shape checks
+    if dx.shape[0] != ndim:
+        raise ValueError("dx has incompatible shape")
+    if xp.shape[1] != ndim:
+        raise ValueError("xp has incompatible shape")
+    if out.shape[0] != xp.shape[0]:
+        raise ValueError("out and xp have incompatible shapes")
+    if out.shape[1] != c.shape[2]:
+        raise ValueError("out and c have incompatible shapes")
+
+    # compute interval strides
+    ntot = 1
+    for ip in xrange(ndim-1, -1, -1):
+        if dx[ip] < 0:
+            raise ValueError("Order of derivative cannot be negative")
+
+        y = xs[ip]
+        if y.shape[0] < 2:
+            raise ValueError("each dimension must have >= 2 points")
+
+        strides[ip] = ntot
+        ntot *= y.shape[0] - 1
+
+        # grab array pointers
+        nxx[ip] = y.shape[0]
+        xx[ip] = <double*>&y[0]
+        y = None
+
+    if c.shape[1] != ntot:
+        raise ValueError("xs and c have incompatible shapes")
+
+    # compute order strides
+    ntot = 1
+    for ip in xrange(ndim):
+        kstrides[ip] = ntot
+        ntot *= ks[ip]
+
+    if c.shape[0] != ntot:
+        raise ValueError("ks and c have incompatible shapes")
+
+    # temporary storage
+    if double_or_complex is double:
+        c2 = np.zeros((c.shape[0], 1, 1), dtype=float)
+    else:
+        c2 = np.zeros((c.shape[0], 1, 1), dtype=complex)
+
+    # evaluate
+    for ip in xrange(ndim):
+        interval[ip] = 0
+
+    for ip in range(xp.shape[0]):
+        out_of_range = 0
+
+        # Find correct intervals
+        for k in range(ndim):
+            xval = xp[ip, k]
+
+            i = find_interval(xx[k],
+                              nxx[k],
+                              xval,
+                              interval[k],
+                              extrapolate)
+            if i < 0:
+                out_of_range = 1
+                break
+            else:
+                interval[k] = i
+
+        if out_of_range:
+            # xval was nan etc
+            for jp in range(c.shape[2]):
+                out[ip, jp] = nan
+            continue
+
+        pos = 0
+        for k in range(ndim):
+            pos += interval[k] * strides[k]
+
+        # Evaluate the local polynomials, via nested 1D polynomial evaluation
+        #
+        # sum_{ijk} c[kx-i,ky-j,kz-k] x**i y**j z**k = sum_i a[i] x**i
+        # a[i] = sum_j b[i,j] y**j
+        # b[i,j] = sum_k c[kx-i,ky-j,kz-k] z**k
+        #
+        # The array c2 is used to hold the intermediate sums a,b,...
+        for jp in range(c.shape[2]):
+            c2[:,0,0] = c[:,pos,jp]
+
+            for k in range(ndim-1, -1, -1):
+                xval = xp[ip, k] - xx[k][interval[k]]
+                kpos = 0
+                for koutpos in range(kstrides[k]):
+                    c2[koutpos,0,0] = evaluate_poly1(xval, c2[kpos:kpos+ks[k],:,:], 0, 0, dx[k])
+                    kpos += ks[k]
+
+            out[ip,jp] = c2[0,0,0]
 
 
 @cython.wraparound(False)
@@ -211,12 +366,12 @@ def integrate(double_or_complex[:,:,::1] c,
         raise ValueError("Integral bounds not in order")
 
     # find intervals
-    start_interval = find_interval(x, a, 0, extrapolate)
+    start_interval = find_interval(&x[0], x.shape[0], a, 0, extrapolate)
     if start_interval < 0:
         out[:] = nan
         return
 
-    end_interval = find_interval(x, b, 0, extrapolate)
+    end_interval = find_interval(&x[0], x.shape[0], b, 0, extrapolate)
     if end_interval < 0:
         out[:] = nan
         return
@@ -385,7 +540,8 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval(double[::1] x,
+cdef int find_interval(double *x,
+                       size_t nx,
                        double xval,
                        int prev_interval=0,
                        bint extrapolate=1) nogil:
@@ -416,10 +572,10 @@ cdef int find_interval(double[::1] x,
     cdef double a, b
 
     a = x[0]
-    b = x[x.shape[0]-1]
+    b = x[nx-1]
 
     interval = prev_interval
-    if interval < 0 or interval >= x.shape[0]:
+    if interval < 0 or interval >= nx:
         interval = 0
 
     if not (a <= xval <= b):
@@ -429,19 +585,19 @@ cdef int find_interval(double[::1] x,
             interval = 0
         elif xval > b and extrapolate:
             # above
-            interval = x.shape[0] - 2
+            interval = nx - 2
         else:
             # nan or no extrapolation
             interval = -1
     elif xval == b:
         # Make the interval closed from the right
-        interval = x.shape[0] - 2
+        interval = nx - 2
     else:
         # Find the interval the coordinate is in
         # (binary search with locality)
         if xval >= x[interval]:
             low = interval
-            high = x.shape[0]-2
+            high = nx - 2
         else:
             low = 0
             high = interval
@@ -919,7 +1075,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval(x, xval, interval, extrapolate)
+        i = find_interval(&x[0], x.shape[0], xval, interval, extrapolate)
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
