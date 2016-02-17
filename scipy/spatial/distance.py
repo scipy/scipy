@@ -302,7 +302,7 @@ def cosine(u, v):
 
     .. math::
 
-       1 - \\frac{u \\cdot v}
+       \\frac{u \\cdot v}
                 {||u||_2 ||v||_2}.
 
     where :math:`u \\cdot v` is the dot product of :math:`u` and
@@ -323,7 +323,7 @@ def cosine(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    dist = 1.0 - np.dot(u, v) / (norm(u) * norm(v))
+    dist = np.dot(u, v) / (norm(u) * norm(v))
     return dist
 
 
