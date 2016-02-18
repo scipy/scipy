@@ -763,7 +763,7 @@ def init_matplotlib():
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
-    parser.add_argument("module_names", metavar="SUBMODULES", default=list(PUBLIC_SUBMODULES),
+    parser.add_argument("module_names", metavar="SUBMODULES", default=[],
                         nargs='*', help="Submodules to check (default: all public)")
     parser.add_argument("--doctests", action="store_true", help="Run also doctests")
     parser.add_argument("-v", "--verbose", action="count", default=0)
@@ -775,6 +775,11 @@ def main(argv):
 
     modules = []
     names_dict = {}
+
+    if args.module_names:
+        args.skip_tutorial = True
+    else:
+        args.module_names = list(PUBLIC_SUBMODULES)
 
     os.environ['SCIPY_PIL_IMAGE_VIEWER'] = 'true'
 
