@@ -119,6 +119,8 @@ class norm_gen(rv_continuous):
 
         norm.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
 
+    Note that the Q-function is equivalent to ``norm.sf``.
+
     %(after_notes)s
 
     %(example)s
