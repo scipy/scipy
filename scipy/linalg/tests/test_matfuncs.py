@@ -12,7 +12,7 @@ import warnings
 import functools
 
 import numpy as np
-from numpy import array, identity, dot, sqrt, double
+from numpy import array, matrix, identity, dot, sqrt, double
 from numpy.testing import (TestCase, run_module_suite,
         assert_array_equal, assert_array_less, assert_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
@@ -573,6 +573,12 @@ class TestExpM(TestCase):
             a = array([[1j,1],[-1,-2j]])
             assert_array_almost_equal(expm(a), expm2(a))
             assert_array_almost_equal(expm(a), expm3(a))
+
+    def test_npmatrix(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            a = matrix([[3.,0],[0,-3.]])
+            assert_array_almost_equal(expm(a), expm2(a))
 
 
 class TestExpmFrechet(TestCase):
