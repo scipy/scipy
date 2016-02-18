@@ -507,7 +507,6 @@ class TestResample(TestCase):
         freqs = np.array((1., 10., 40.))[:, np.newaxis]
         x = np.sin(2 * np.pi * freqs * t) * np.hanning(rate)
 
-        print(method)
         for rate_to in rates_to:
             t_to = np.arange(rate_to) / float(rate_to)
             y_tos = np.sin(2 * np.pi * freqs * t_to) * np.hanning(rate_to)
