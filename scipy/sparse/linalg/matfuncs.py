@@ -746,7 +746,7 @@ def _fragment_2_1(X, T, s):
     # Form X = r_m(2^-s T)
     # Replace diag(X) by exp(2^-s diag(T)).
     n = X.shape[0]
-    diag_T = T.diagonal().copy()
+    diag_T = np.ravel(T.diagonal().copy())
 
     # Replace diag(X) by exp(2^-s diag(T)).
     scale = 2 ** -s
