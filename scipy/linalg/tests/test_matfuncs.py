@@ -580,6 +580,27 @@ class TestExpM(TestCase):
             a = matrix([[3.,0],[0,-3.]])
             assert_array_almost_equal(expm(a), expm2(a))
 
+    def test_single_elt(self):
+        # See gh-5853
+        from scipy.sparse import csc_matrix
+
+        vOne = -2.02683397006j
+        vTwo = -2.12817566856j
+
+        mOne = csc_matrix([[vOne]], dtype='complex')
+        mTwo = csc_matrix([[vTwo]], dtype='complex')
+
+        outOne = expm(mOne)
+        outTwo = expm(mTwo)
+
+        assert_equal(type(outOne), type(mOne))
+        assert_equal(type(outTwo), type(mTwo))
+
+        assert_allclose(outOne[0, 0], complex(-0.44039415155949196,
+                                              -0.8978045395698304))
+        assert_allclose(outTwo[0, 0], complex(-0.52896401032626006,
+                                              -0.84864425749518878))
+
 
 class TestExpmFrechet(TestCase):
 
