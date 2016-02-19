@@ -592,6 +592,17 @@ def _expm(A, use_exact_onenorm):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
 
+    # Trivial case
+    if A.shape == (1, 1):
+        out = [[np.exp(A[0, 0])]]
+
+        # Avoid indiscriminate casting to ndarray to
+        # allow for sparse or other strange arrays
+        if isspmatrix(A):
+            return A.__class__(out)
+
+        return np.array(out)
+
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
