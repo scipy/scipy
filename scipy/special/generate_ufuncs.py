@@ -188,8 +188,8 @@ hankel1 -- cbesh_wrap1: dD->D                              -- amos_wrappers.h
 hankel1e -- cbesh_wrap1_e: dD->D                           -- amos_wrappers.h
 hankel2 -- cbesh_wrap2: dD->D                              -- amos_wrappers.h
 hankel2e -- cbesh_wrap2_e: dD->D                           -- amos_wrappers.h
-ndtr -- ndtr: d->d                                         -- cephes.h
-log_ndtr -- log_ndtr: d->d                                 -- cephes.h
+ndtr -- ndtr: d->d, faddeeva_ndtr: D->D                    -- cephes.h, _faddeeva.h++
+log_ndtr -- log_ndtr: d->d, faddeeva_log_ndtr: D->D        -- cephes.h, _faddeeva.h++
 ndtri -- ndtri: d->d                                       -- cephes.h
 psi -- digamma: d->d, cdigamma: D->D                       -- _digamma.pxd, _digamma.pxd
 rgamma -- rgamma: d->d, crgamma: D->D                      -- cephes.h, _loggamma.pxd

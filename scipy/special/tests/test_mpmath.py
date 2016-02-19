@@ -1338,6 +1338,32 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.erfi,
                             [ComplexArg()], n=200)
 
+    def test_ndtr(self):
+        assert_mpmath_equal(sc.ndtr,
+                            _exception_to_nan(lambda z: mpmath.erfc(-mpmath.mpmathify(z/np.sqrt(2.)))/2.),
+                            [Arg()], n=200)
+
+    def test_ndtr_complex(self):
+        assert_mpmath_equal(sc.ndtr,
+                            lambda z: mpmath.erfc(-z/np.sqrt(2.))/2.,
+                            [ComplexArg(a=complex(-10000, -10000), b=complex(10000, 10000))], n=200)
+
+    def test_log_ndtr(self):
+        # limit the range of z > 0: in this regime log_ndtr(z) = log(1 - exponentially_small_correct),
+        # and this underflows. Use ndtrc / _norm_logsf directly to avoid loss of precision.
+        assert_mpmath_equal(sc.log_ndtr,
+                            _exception_to_nan(lambda z: mpmath.log(mpmath.erfc(-mpmath.mpmathify(z/np.sqrt(2.)))/2.)),
+                            [Arg(-10000, 6)], n=200)
+
+    def test_log_ndtr_complex(self):
+        # limit the range of Re(z)\to\infty and small Im(z): in this regime
+        # ndtr(z) = 1 - exponentially_small_correction, which underflows.
+        # Better use ndtrc to avoid loss of precision.
+        # Note that regime of Re(z)\to\infty and Im(z) > Re(z) is fine.
+        assert_mpmath_equal(sc.log_ndtr,
+                            lambda z: mpmath.log(mpmath.erfc(-z/np.sqrt(2.))/2.),
+                           [ComplexArg(a=complex(-10000, -10000), b=complex(5, 10000))])
+
     def test_eulernum(self):
         assert_mpmath_equal(lambda n: sc.euler(n)[-1],
                             mpmath.eulernum,
