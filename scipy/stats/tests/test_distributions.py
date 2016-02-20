@@ -16,7 +16,6 @@ from nose import SkipTest
 import numpy
 import numpy as np
 from numpy import typecodes, array
-from scipy._lib._version import NumpyVersion
 from scipy import special
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
@@ -58,20 +57,15 @@ def test_api_regression():
 
 
 # check function for test generator
-
-
 def check_distribution(dist, args, alpha):
     D, pval = stats.kstest(dist, '', args=args, N=1000)
     if (pval < alpha):
         D, pval = stats.kstest(dist, '', args=args, N=1000)
-        # if (pval < alpha):
-        #    D,pval = stats.kstest(dist,'',args=args, N=1000)
         assert_(pval > alpha, msg="D = " + str(D) + "; pval = " + str(pval) +
                 "; alpha = " + str(alpha) + "\nargs = " + str(args))
 
+
 # nose test generator
-
-
 def test_all_distributions():
     for dist in dists:
         distfunc = getattr(stats, dist)
@@ -80,9 +74,7 @@ def test_all_distributions():
         if dist == 'fatiguelife':
             alpha = 0.001
 
-        if dist == 'frechet':
-            args = tuple(2*np.random.random(1)) + (0,) + tuple(2*np.random.random(2))
-        elif dist == 'triang':
+        if dist == 'triang':
             args = tuple(np.random.random(nargs))
         elif dist == 'reciprocal':
             vals = np.random.random(nargs)
@@ -780,8 +772,6 @@ class TestDLaplace(TestCase):
 
 
 class TestInvGamma(TestCase):
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "assert_* funcs broken with inf/nan")
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
         # specific numbers checked w/ boost 1.54
@@ -855,6 +845,33 @@ class TestRvDiscrete(TestCase):
         h = p.entropy()
         assert_equal(h, 0.0)
 
+
+class TestSkewNorm(TestCase):
+
+    def test_normal(self):
+        # When the skewness is 0 the distribution is normal
+        x = np.linspace(-5, 5, 100)
+        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0), 
+                                  stats.norm.pdf(x))
+
+    def test_rvs(self):
+        shape = (3, 4, 5)
+        x = stats.skewnorm.rvs(a=0.75, size=shape)
+        assert_equal(shape, x.shape)
+        
+        x = stats.skewnorm.rvs(a=-3, size=shape)
+        assert_equal(shape, x.shape)
+        
+    def test_moments(self):
+        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
+                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'), 
+                                   decimal=2)
+        
+        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
+                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
+                                   decimal=2)
 
 class TestExpon(TestCase):
     def test_zero(self):
@@ -1092,8 +1109,6 @@ class TestEntropy(TestCase):
         assert_array_almost_equal(stats.entropy(pk, qk),
                                   [0.1933259, 0.18609809])
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "assert_* funcs broken with inf/nan")
     def test_entropy_2d_zero(self):
         pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
         qk = [[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]]

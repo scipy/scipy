@@ -597,19 +597,19 @@ def compute_grad(J, f):
         return J.T.dot(f)
 
 
-def compute_jac_scaling(J, old_scale=None):
-    """Compute variables scaling based on the Jacobian matrix."""
+def compute_jac_scale(J, scale_inv_old=None):
+    """Compute variables scale based on the Jacobian matrix."""
     if issparse(J):
-        scale = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
+        scale_inv = np.asarray(J.power(2).sum(axis=0)).ravel()**0.5
     else:
-        scale = np.sum(J**2, axis=0)**0.5
+        scale_inv = np.sum(J**2, axis=0)**0.5
 
-    if old_scale is None:
-        scale[scale == 0] = 1
+    if scale_inv_old is None:
+        scale_inv[scale_inv == 0] = 1
     else:
-        scale = np.maximum(scale, old_scale)
+        scale_inv = np.maximum(scale_inv, scale_inv_old)
 
-    return scale, 1 / scale
+    return 1 / scale_inv, scale_inv
 
 
 def left_multiplied_operator(J, d):

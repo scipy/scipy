@@ -163,6 +163,7 @@ scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
+scipy/signal/_upfirdn_apply.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c
 scipy/sparse/_csparsetools.c

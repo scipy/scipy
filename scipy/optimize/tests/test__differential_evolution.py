@@ -408,6 +408,38 @@ class TestDifferentialEvolutionSolver(TestCase):
         solver.solve()
         assert_(solver.convergence < 0.2)
 
+    def test_maxiter_none_GH5731(self):
+        # Pre 0.17 the previous default for maxiter and maxfun was None.
+        # the numerical defaults are now 1000 and np.inf. However, some scripts
+        # will still supply None for both of those, this will raise a TypeError
+        # in the solve method.
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxiter=None,
+                                             maxfun=None)
+        solver.solve()
+
+    def test_population_initiation(self):
+        # test the different modes of population initiation
+
+        # init must be either 'latinhypercube' or 'random'
+        # raising ValueError is something else is passed in
+        assert_raises(ValueError,
+                      DifferentialEvolutionSolver,
+                      *(rosen, self.bounds),
+                      **{'init': 'rubbish'})
+
+        solver = DifferentialEvolutionSolver(rosen, self.bounds)
+
+        # check that population initiation:
+        # 1) resets _nfev to 0
+        # 2) all population energies are np.inf
+        solver.init_population_random()
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+
+        solver.init_population_lhs()
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+
 
 if __name__ == '__main__':
     run_module_suite()

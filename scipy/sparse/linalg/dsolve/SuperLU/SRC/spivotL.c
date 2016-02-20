@@ -85,7 +85,7 @@ spivotL(
     /* Initialize pointers */
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = Glu->lusup;
+    lusup      = (float *) Glu->lusup;
     xlusup     = Glu->xlusup;
     fsupc      = (Glu->xsup)[(Glu->supno)[jcol]];
     nsupc      = jcol - fsupc;	        /* excluding jcol; nsupc >= 0 */

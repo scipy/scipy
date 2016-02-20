@@ -5,8 +5,10 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import threading
+from fractions import gcd
 
 from . import sigtools
+from ._upfirdn import _UpFIRDn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
@@ -27,7 +29,8 @@ __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
            'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
-           'residuez', 'resample', 'detrend', 'lfilter_zi', 'sosfilt_zi',
+           'residuez', 'resample', 'resample_poly', 'detrend',
+           'lfilter_zi', 'sosfilt_zi',
            'filtfilt', 'decimate', 'vectorstrength']
 
 
@@ -323,7 +326,8 @@ def fftconvolve(in1, in2, mode="full"):
     >>> kernel = np.outer(signal.gaussian(70, 8), signal.gaussian(70, 8))
     >>> blurred = signal.fftconvolve(face, kernel, mode='same')
 
-    >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(1, 3)
+    >>> fig, (ax_orig, ax_kernel, ax_blurred) = plt.subplots(3, 1,
+    ...                                                      figsize=(6, 15))
     >>> ax_orig.imshow(face, cmap='gray')
     >>> ax_orig.set_title('Original')
     >>> ax_orig.set_axis_off()
@@ -485,7 +489,7 @@ def order_filter(a, domain, rank):
     a : ndarray
         The N-dimensional input array.
     domain : array_like
-        A mask array with the same number of dimensions as `in`.
+        A mask array with the same number of dimensions as `a`.
         Each dimension should have an odd number of elements.
     rank : int
         A non-negative integer which selects the element from the
@@ -496,7 +500,7 @@ def order_filter(a, domain, rank):
     -------
     out : ndarray
         The results of the order filter in an array with the same
-        shape as `in`.
+        shape as `a`.
 
     Examples
     --------
@@ -677,15 +681,15 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     >>> from scipy import signal
     >>> from scipy import misc
-    >>> face = misc.face(gray=True)
+    >>> ascent = misc.ascent()
     >>> scharr = np.array([[ -3-3j, 0-10j,  +3 -3j],
     ...                    [-10+0j, 0+ 0j, +10 +0j],
     ...                    [ -3+3j, 0+10j,  +3 +3j]]) # Gx + j*Gy
-    >>> grad = signal.convolve2d(face, scharr, boundary='symm', mode='same')
+    >>> grad = signal.convolve2d(ascent, scharr, boundary='symm', mode='same')
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, (ax_orig, ax_mag, ax_ang) = plt.subplots(1, 3)
-    >>> ax_orig.imshow(face, cmap='gray')
+    >>> fig, (ax_orig, ax_mag, ax_ang) = plt.subplots(3, 1, figsize=(6, 15))
+    >>> ax_orig.imshow(ascent, cmap='gray')
     >>> ax_orig.set_title('Original')
     >>> ax_orig.set_axis_off()
     >>> ax_mag.imshow(np.absolute(grad), cmap='gray')
@@ -772,7 +776,8 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     >>> y, x = np.unravel_index(np.argmax(corr), corr.shape)  # find the match
 
     >>> import matplotlib.pyplot as plt
-    >>> fig, (ax_orig, ax_template, ax_corr) = plt.subplots(1, 3)
+    >>> fig, (ax_orig, ax_template, ax_corr) = plt.subplots(3, 1,
+    ...                                                     figsize=(6, 15))
     >>> ax_orig.imshow(face, cmap='gray')
     >>> ax_orig.set_title('Original')
     >>> ax_orig.set_axis_off()
@@ -878,6 +883,15 @@ def lfilter(b, a, x, axis=-1, zi=None):
         If `zi` is None, this is not returned, otherwise, `zf` holds the
         final filter delay values.
 
+    See Also
+    --------
+    lfiltic : Construct initial conditions for `lfilter`.
+    lfilter_zi : Compute initial state (steady state of step response) for
+                 `lfilter`.
+    filtfilt : A forward-backward filter, to obtain a filter with linear phase.
+    savgol_filter : A Savitzky-Golay filter.
+    sosfilt: Filter data using cascaded second-order sections.
+
     Notes
     -----
     The filter function is implemented as a direct II transposed structure.
@@ -906,11 +920,51 @@ def lfilter(b, a, x, axis=-1, zi=None):
                              -1               -na
                  a[0] + a[1]z  + ... + a[na] z
 
+    Examples
+    --------
+    Generate a noisy signal to be filtered:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> t = np.linspace(-1, 1, 201)
+    >>> x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) + 0.1*np.sin(2*np.pi*1.25*t + 1)
+    ...      + 0.18*np.cos(2*np.pi*3.85*t))
+    >>> xn = x + np.random.randn(len(t)) * 0.08
+
+    Create an order 3 lowpass butterworth filter:
+
+    >>> b, a = signal.butter(3, 0.05)
+
+    Apply the filter to xn.  Use lfilter_zi to choose the initial condition of
+    the filter:
+
+    >>> zi = signal.lfilter_zi(b, a)
+    >>> z, _ = signal.lfilter(b, a, xn, zi=zi*xn[0])
+
+    Apply the filter again, to have a result filtered at an order the same as
+    filtfilt:
+
+    >>> z2, _ = signal.lfilter(b, a, z, zi=zi*z[0])
+
+    Use filtfilt to apply the filter:
+
+    >>> y = signal.filtfilt(b, a, xn)
+
+    Plot the original signal and the various filtered versions:
+
+    >>> plt.figure
+    >>> plt.plot(t, xn, 'b', alpha=0.75)
+    >>> plt.plot(t, z, 'r--', t, z2, 'r', t, y, 'k')
+    >>> plt.legend(('noisy signal', 'lfilter, once', 'lfilter, twice',
+    ...             'filtfilt'), loc='best')
+    >>> plt.grid(True)
+    >>> plt.show()
+
     """
     a = np.atleast_1d(a)
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
-        # Any of b, a, x, or zi can set the dtype, but there is no default 
+        # Any of b, a, x, or zi can set the dtype, but there is no default
         # casting of other types; instead a NotImplementedError is raised.
         b = np.asarray(b)
         a = np.asarray(a)
@@ -1013,7 +1067,7 @@ def lfiltic(b, a, y, x=None):
 
     See Also
     --------
-    lfilter
+    lfilter, lfilter_zi
 
     """
     N = np.size(a) - 1
@@ -1138,7 +1192,7 @@ def hilbert(x, N=None, axis=-1):
     ---------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
-        
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import hilbert, chirp
@@ -1148,15 +1202,15 @@ def hilbert(x, N=None, axis=-1):
     >>> samples = int(fs*duration)
     >>> t = np.arange(samples) / fs
 
-    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and 
+    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and
     apply an amplitude modulation.
-    
-    >>> signal = chirp(t, 20.0, t[-1], 100.0)    
+
+    >>> signal = chirp(t, 20.0, t[-1], 100.0)
     >>> signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
 
-    The amplitude envelope is given by magnitude of the analytic signal. The 
-    instantaneous frequency can be obtained by differentiating the instantaneous 
-    phase in respect to time. The instantaneous phase corresponds to the phase 
+    The amplitude envelope is given by magnitude of the analytic signal. The
+    instantaneous frequency can be obtained by differentiating the instantaneous
+    phase in respect to time. The instantaneous phase corresponds to the phase
     angle of the analytic signal.
 
     >>> analytic_signal = hilbert(signal)
@@ -1180,7 +1234,7 @@ def hilbert(x, N=None, axis=-1):
     .. [1] Wikipedia, "Analytic signal".
            http://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing, 
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing,
            Third Edition, 2009. Chapter 12. ISBN 13: 978-1292-02572-8
 
     """
@@ -1672,6 +1726,11 @@ def resample(x, num, t=None, axis=0, window=None):
         containing the resampled array and the corresponding resampled
         positions.
 
+    See also
+    --------
+    decimate
+    resample_poly
+
     Notes
     -----
     The argument `window` controls a Fourier-domain window that tapers
@@ -1753,6 +1812,122 @@ def resample(x, num, t=None, axis=0, window=None):
     else:
         new_t = arange(0, num) * (t[1] - t[0]) * Nx / float(num) + t[0]
         return y, new_t
+
+
+def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
+    """
+    Resample `x` along the given axis using polyphase filtering.
+
+    The signal `x` is upsampled by the factor `up`, a zero-phase low-pass
+    FIR filter is applied, and then it is downsampled by the factor `down`.
+    The resulting sample rate is ``up / down`` times the original sample
+    rate. Values beyond the boundary of the signal are assumed to be zero
+    during the filtering step.
+
+    Parameters
+    ----------
+    x : array_like
+        The data to be resampled.
+    up : int
+        The upsampling factor.
+    down : int
+        The downsampling factor.
+    axis : int, optional
+        The axis of `x` that is resampled.  Default is 0.
+    window : string or tuple of string and parameter values
+        Desired window to use to design the low-pass filter. See
+        `scipy.signal.get_window` for a list of windows and required
+        parameters.
+
+    Returns
+    -------
+    resampled_x : array
+        The resampled array.
+
+    See also
+    --------
+    decimate
+    resample
+
+    Notes
+    -----
+    This polyphase method will likely be faster than the Fourier method
+    in `scipy.signal.resample` when the number of samples is large and
+    prime, or when the number of samples is large and `up` and `down`
+    share a large greatest common denominator. The length of the FIR
+    filter used will depend on ``max(up, down) // gcd(up, down)``, and
+    the number of operations during polyphase filtering will depend on
+    the filter length and `down` (see `scipy.signal.upfirdn` for details).
+
+    The `window` argument is passed directly to `scipy.signal.firwin`
+    to design a low-pass filter.
+
+    The first sample of the returned vector is the same as the first
+    sample of the input vector.  The spacing between samples is changed
+    from ``dx`` to ``dx * up / float(down)``.
+
+    Examples
+    --------
+    Note that the end of the resampled data rises to meet the first
+    sample of the next cycle for the FFT method, and gets closer to zero
+    for the polyphase method:
+
+    >>> from scipy import signal
+    
+    >>> x = np.linspace(0, 10, 20, endpoint=False)
+    >>> y = np.cos(-x**2/6.0)
+    >>> f_fft = signal.resample(y, 100)
+    >>> f_poly = signal.resample_poly(y, 100, 20)
+    >>> xnew = np.linspace(0, 10, 100, endpoint=False)
+    
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
+    >>> plt.plot(x, y, 'ko-')
+    >>> plt.plot(10, y[0], 'bo', 10, 0., 'ro')  # boundaries
+    >>> plt.legend(['resample', 'resamp_poly', 'data'], loc='best')
+    >>> plt.show()
+    """
+    x = asarray(x)
+    up = int(up)
+    down = int(down)
+    if up < 1 or down < 1:
+        raise ValueError('up and down must be >= 1')
+
+    # Determine our up and down factors
+    # Use a rational approimation to save computation time on really long
+    # signals
+    g_ = gcd(up, down)
+    up //= g_
+    down //= g_
+    if up == down == 1:
+        return x.copy()
+    n_out = (x.shape[axis] * up) // down
+
+    # Design a linear-phase low-pass FIR filter
+    max_rate = max(up, down)
+    f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
+    half_len = 10 * max_rate  # reasonable cutoff for our sinc-like function
+    h = firwin(2 * half_len + 1, f_c, window=window)
+    h *= up
+
+    # Zero-pad our filter to put the output samples at the center
+    n_pre_pad = (down - half_len % down)
+    n_post_pad = 0
+    n_pre_remove = (half_len + n_pre_pad) // down
+    # We should rarely need to do this given our filter lengths...
+    while _output_len(len(h) + n_pre_pad + n_post_pad, x.shape[axis],
+                      up, down) < n_out + n_pre_remove:
+        n_post_pad += 1
+    h = np.concatenate((np.zeros(n_pre_pad), h, np.zeros(n_post_pad)))
+    ufd = _UpFIRDn(h, x.dtype, up, down)
+    n_pre_remove_end = n_pre_remove + n_out
+
+    def apply_remove(x):
+        """Apply the upfirdn filter and remove excess"""
+        return ufd.apply_filter(x)[n_pre_remove:n_pre_remove_end]
+
+    y = np.apply_along_axis(apply_remove, axis, x)
+    return y
 
 
 def vectorstrength(events, period):
@@ -1934,6 +2109,10 @@ def lfilter_zi(b, a):
     -------
     zi : 1-D ndarray
         The initial state for the filter.
+
+    See Also
+    --------
+    lfilter, lfiltic, filtfilt
 
     Notes
     -----
@@ -2359,7 +2538,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     See Also
     --------
-    lfilter_zi, lfilter
+    lfilter_zi, lfilter, lfiltic, savgol_filter, sosfilt
 
     Notes
     -----
@@ -2656,10 +2835,10 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
     y : ndarray
         The down-sampled signal.
 
-    See also
+    See Also
     --------
     resample
-
+    resample_poly
     """
 
     if not isinstance(q, int):

@@ -27,8 +27,8 @@ extern void    user_bcopy      (char *, char *, int);
 
 /* Macros to manipulate stack */
 #define StackFull(x)         ( x + Glu->stack.used >= Glu->stack.size )
-#define NotDoubleAlign(addr) ( (long int)addr & 7 )
-#define DoubleAlign(addr)    ( ((long int)addr + 7) & ~7L )
+#define NotDoubleAlign(addr) ( (intptr_t)addr & 7 )
+#define DoubleAlign(addr)    ( ((intptr_t)addr + 7) & ~7L )	
 #define TempSpace(m, w)      ( (2*w + 4 + NO_MARKER) * m * sizeof(int) + \
 			      (w + 1) * m * sizeof(float) )
 #define Reduce(alpha)        ((alpha + 1) / 2)  /* i.e. (alpha-1)/2 + 1 */
@@ -197,8 +197,7 @@ sLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
     Glu->n    = n;
     Glu->num_expansions = 0;
 
-    if ( !Glu->expanders )	
-        Glu->expanders = (ExpHeader*)SUPERLU_MALLOC( NO_MEMTYPE *
+    Glu->expanders = (ExpHeader *) SUPERLU_MALLOC( NO_MEMTYPE *
                                                      sizeof(ExpHeader) );
     if ( !Glu->expanders ) ABORT("SUPERLU_MALLOC fails for expanders");
     
@@ -306,9 +305,9 @@ sLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
     Glu->supno   = supno;
     Glu->lsub    = lsub;
     Glu->xlsub   = xlsub;
-    Glu->lusup   = lusup;
+    Glu->lusup   = (void *) lusup;
     Glu->xlusup  = xlusup;
-    Glu->ucol    = ucol;
+    Glu->ucol    = (void *) ucol;
     Glu->usub    = usub;
     Glu->xusub   = xusub;
     Glu->nzlmax  = nzlmax;
@@ -443,11 +442,11 @@ sLUMemXpand(int jcol,
 
     switch ( mem_type ) {
       case LUSUP:
-	Glu->lusup   = (float *) new_mem;
+	Glu->lusup   = (void *) new_mem;
 	Glu->nzlumax = *maxlen;
 	break;
       case UCOL:
-	Glu->ucol   = (float *) new_mem;
+	Glu->ucol   = (void *) new_mem;
 	Glu->nzumax = *maxlen;
 	break;
       case LSUB:

@@ -942,11 +942,8 @@ class netcdf_variable(object):
             return self.data[index]
 
         data = self.data[index].copy()
-        missing_value = (
-                self._attributes.get('missing_value') or
-                self._attributes.get('_FillValue'))
-        if missing_value is not None:
-            data = np.ma.masked_values(data, missing_value)
+        missing_value = self._get_missing_value()
+        data = self._apply_missing_value(data, missing_value)
         scale_factor = self._attributes.get('scale_factor')
         add_offset = self._attributes.get('add_offset')
         if add_offset is not None or scale_factor is not None:
@@ -961,8 +958,7 @@ class netcdf_variable(object):
     def __setitem__(self, index, data):
         if self.maskandscale:
             missing_value = (
-                    self._attributes.get('missing_value') or
-                    self._attributes.get('_FillValue') or
+                    self._get_missing_value() or
                     getattr(data, 'fill_value', 999999))
             self._attributes.setdefault('missing_value', missing_value)
             self._attributes.setdefault('_FillValue', missing_value)
@@ -986,6 +982,54 @@ class netcdf_variable(object):
                 shape = (recs,) + self._shape[1:]
                 self.data.resize(shape)
         self.data[index] = data
+
+    def _get_missing_value(self):
+        """
+        Returns the value denoting "no data" for this variable.
+
+        If this variable does not have a missing/fill value, returns None.
+
+        If both _FillValue and missing_value are given, give precedence to
+        _FillValue. The netCDF standard gives special meaning to _FillValue;
+        missing_value is  just used for compatibility with old datasets.
+        """
+
+        if '_FillValue' in self._attributes:
+            missing_value = self._attributes['_FillValue']
+        elif 'missing_value' in self._attributes:
+            missing_value = self._attributes['missing_value']
+        else:
+            missing_value = None
+
+        return missing_value
+
+    @staticmethod
+    def _apply_missing_value(data, missing_value):
+        """
+        Applies the given missing value to the data array.
+
+        Returns a numpy.ma array, with any value equal to missing_value masked
+        out (unless missing_value is None, in which case the original array is
+        returned).
+        """
+
+        if missing_value is None:
+            newdata = data
+        else:
+            try:
+                missing_value_isnan = np.isnan(missing_value)
+            except (TypeError, NotImplementedError):
+                # some data types (e.g., characters) cannot be tested for NaN
+                missing_value_isnan = False
+
+            if missing_value_isnan:
+                mymask = np.isnan(data)
+            else:
+                mymask = (data == missing_value)
+
+            newdata = np.ma.masked_where(mymask, data)
+
+        return newdata
 
 
 NetCDFFile = netcdf_file

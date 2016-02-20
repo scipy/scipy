@@ -11,7 +11,7 @@ from scipy.special import betainc
 from common_tests import (check_normalization, check_moment, check_mean_expect,
                           check_var_expect, check_skew_expect,
                           check_kurt_expect, check_entropy,
-                          check_private_entropy, NUMPY_BELOW_1_7,
+                          check_private_entropy,
                           check_edge_support, check_named_args,
                           check_random_state_property,
                           check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
@@ -47,14 +47,7 @@ distcont_extra = [
     ['genextreme', (3.3184017469423535,)],
 ]
 
-distmissing = ['wald', 'gausshyper', 'genexpon', 'rv_continuous',
-               'loglaplace', 'rdist', 'semicircular', 'invweibull', 'ksone',
-               'cosine', 'kstwobign', 'truncnorm', 'mielke', 'recipinvgauss',
-               'levy', 'johnsonsu', 'levy_l', 'powernorm', 'wrapcauchy',
-               'johnsonsb', 'truncexpon', 'invgauss', 'invgamma',
-               'powerlognorm']
 
-distmiss = [[dist, args] for dist, args in distcont if dist in distmissing]
 distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
             'vonmises', 'vonmises_line', 'mielke', 'semicircular',
             'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
@@ -66,33 +59,15 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma',
-                   'dweibull', 'erlang', 'expon', 'exponnorm', 'exponpow',
-                   'exponweib', 'f', 'fatiguelife', 'foldnorm', 'frechet_l',
-                   'frechet_r', 'gamma', 'gausshyper', 'genexpon',
-                   'genextreme', 'gengamma', 'genlogistic', 'gennorm',
-                   'genpareto', 'gilbrat', 'gompertz', 'halfcauchy',
-                   'halfgennorm', 'halflogistic', 'halfnorm', 'invgamma',
-                   'invgauss', 'johnsonsb', 'johnsonsu', 'ksone', 'kstwobign',
-                   'levy_l', 'loggamma', 'logistic', 'lognorm', 'lomax',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norm',
-                   'pearson3', 'powerlognorm', 'powernorm', 'rayleigh',
-                   'recipinvgauss', 'rice', 't', 'truncexpon', 'truncnorm',
-                   'tukeylambda', 'vonmises', 'vonmises_line', 'wald',
-                   'weibull_min'])
-
-
-# NB: not needed anymore?
-def _silence_fp_errors(func):
-    # warning: don't apply to test_ functions as is, then those will be skipped
-    def wrap(*a, **kw):
-        olderr = np.seterr(all='ignore')
-        try:
-            return func(*a, **kw)
-        finally:
-            np.seterr(**olderr)
-    wrap.__name__ = func.__name__
-    return wrap
-
+                   'dweibull', 'erlang', 'exponnorm', 'f', 'fatiguelife',
+                   'foldnorm', 'gamma', 'gausshyper', 'gengamma',
+                   'gennorm', 'genpareto', 'gilbrat', 'halfgennorm',
+                   'halfnorm', 'invgamma', 'invgauss', 'johnsonsb', 'johnsonsu',
+                   'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
+                   'lognorm', 'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
+                   'norm', 'pearson3', 'powerlognorm', 'powernorm', 
+                   'recipinvgauss', 'rice', 'skewnorm', 't', 'truncnorm',
+                   'tukeylambda', 'vonmises', 'vonmises_line', 'wald'])
 
 def test_cont_basic():
     # this test skips slow distributions
@@ -120,9 +95,9 @@ def test_cont_basic():
             yield check_pdf_logpdf, distfn, arg, distname
             yield check_cdf_logcdf, distfn, arg, distname
             yield check_sf_logsf, distfn, arg, distname
-            if distname in distmissing:
-                alpha = 0.01
-                yield check_distribution_rvs, distname, arg, alpha, rvs
+
+            alpha = 0.01
+            yield check_distribution_rvs, distname, arg, alpha, rvs
 
             locscale_defaults = (0, 1)
             meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
@@ -140,7 +115,7 @@ def test_cont_basic():
             yield check_entropy, distfn, arg, distname
 
             if distfn.numargs == 0:
-                yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
+                yield check_vecentropy, distfn, arg
             if distfn.__class__._entropy != stats.rv_continuous._entropy:
                 yield check_private_entropy, distfn, arg, stats.rv_continuous
 
@@ -182,9 +157,9 @@ def test_cont_basic_slow():
             yield check_cdf_logcdf, distfn, arg, distname
             yield check_sf_logsf, distfn, arg, distname
             # yield check_oth, distfn, arg # is still missing
-            if distname in distmissing:
-                alpha = 0.01
-                yield check_distribution_rvs, distname, arg, alpha, rvs
+
+            alpha = 0.01
+            yield check_distribution_rvs, distname, arg, alpha, rvs
 
             locscale_defaults = (0, 1)
             meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
@@ -205,7 +180,7 @@ def test_cont_basic_slow():
             yield skp(ks_cond)(check_entropy), distfn, arg, distname
 
             if distfn.numargs == 0:
-                yield skp(NUMPY_BELOW_1_7)(check_vecentropy), distfn, arg
+                yield check_vecentropy, distfn, arg
             if distfn.__class__._entropy != stats.rv_continuous._entropy:
                 yield check_private_entropy, distfn, arg, stats.rv_continuous
 
@@ -363,7 +338,6 @@ def check_vecentropy(distfn, args):
     npt.assert_equal(distfn.vecentropy(*args), distfn._entropy(*args))
 
 
-@npt.dec.skipif(NUMPY_BELOW_1_7)
 def check_loc_scale(distfn, arg, m, v, msg):
     loc, scale = 10.0, 10.0
     mt, vt = distfn.stats(loc=loc, scale=scale, *arg)

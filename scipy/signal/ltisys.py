@@ -121,10 +121,14 @@ def tf2ss(num, den):
     if num.shape[-1] > 0:
         D = num[:, 0]
     else:
-        D = array([], float)
+        # We don't assign it an empty array because this system
+        # is not 'null'. It just doesn't have a non-zero D
+        # matrix. Thus, it should have a non-zero shape so that
+        # it can be operated on by functions like 'ss2tf'
+        D = array([0], float)
 
     if K == 1:
-        return array([], float), array([], float), array([], float), D
+        return array([0], float), array([0], float), array([0], float), D
 
     frow = -array([den[1:]])
     A = r_[frow, eye(K - 2, K - 1)]
@@ -1248,9 +1252,9 @@ def lsim(system, U, T, X0=None, interp=True):
     else:
         raise ValueError("Initial time must be nonnegative")
 
-    no_input = (U is None
-                or (isinstance(U, (int, float)) and U == 0.)
-                or not np.any(U))
+    no_input = (U is None or
+                (isinstance(U, (int, float)) and U == 0.) or
+                not np.any(U))
 
     if n_steps == 1:
         yout = squeeze(dot(xout, transpose(C)))

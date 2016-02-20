@@ -13,9 +13,9 @@ from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
 from .dia import dia_matrix
 from . import _sparsetools
-from .sputils import upcast, upcast_char, to_native, isdense, isshape, \
-     getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype, \
-     downcast_intp_index, _compat_unique
+from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
+     getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype,
+     downcast_intp_index)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -608,33 +608,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Getting and Setting #
     #######################
 
-    def __getitem__(self, key):
-        if isinstance(key, tuple):
-            row = key[0]
-            col = key[1]
-
-            # TODO implement CSR[ [1,2,3], X ] with sparse matmat
-            # TODO make use of sorted indices
-
-            if isintlike(row) and isintlike(col):
-                return self._get_single_element(row,col)
-            else:
-                major,minor = self._swap((row,col))
-                if isintlike(major) and isinstance(minor,slice):
-                    minor_shape = self._swap(self.shape)[1]
-                    start, stop, stride = minor.indices(minor_shape)
-                    out_shape = self._swap((1, stop-start))
-                    return self._get_slice(major, start, stop, stride, out_shape)
-                elif isinstance(row, slice) or isinstance(col, slice):
-                    return self._get_submatrix(row, col)
-                else:
-                    raise NotImplementedError
-
-        elif isintlike(key):
-            return self[key, :]
-        else:
-            raise IndexError("invalid index")
-
     def __setitem__(self, index, x):
         # Process arrays from IndexMixin
         i, j = self._unpack_index(index)
@@ -766,7 +739,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # Collate old and new in chunks by major index
         indices_parts = []
         data_parts = []
-        ui, ui_indptr = _compat_unique(i, return_index=True)
+        ui, ui_indptr = np.unique(i, return_index=True)
         ui_indptr = np.append(ui_indptr, len(j))
         new_nnzs = np.diff(ui_indptr)
         prev = 0
@@ -778,7 +751,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             data_parts.append(self.data[start:stop])
 
             # handle duplicate j: keep last setting
-            uj, uj_indptr = _compat_unique(j[js:je][::-1], return_index=True)
+            uj, uj_indptr = np.unique(j[js:je][::-1], return_index=True)
             if len(uj) == je - js:
                 indices_parts.append(j[js:je])
                 data_parts.append(x[js:je])
@@ -826,31 +799,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # can use np.add(..., where) from numpy 1.7
         return np.compress(minor_index == self.indices[start:end],
                            self.data[start:end]).sum(dtype=self.dtype)
-
-    def _get_slice(self, i, start, stop, stride, shape):
-        """Returns a copy of the elements
-            [i, start:stop:string] for row-oriented matrices
-            [start:stop:string, i] for column-oriented matrices
-        """
-        if stride != 1:
-            raise ValueError("slicing with step != 1 not supported")
-        if stop <= start:
-            raise ValueError("slice width must be >= 1")
-
-        # TODO make [i,:] faster
-        # TODO implement [i,x:y:z]
-
-        indices = []
-
-        for ind in xrange(self.indptr[i], self.indptr[i+1]):
-            if start <= self.indices[ind] < stop:
-                indices.append(ind)
-
-        index = self.indices[indices] - start
-        data = self.data[indices]
-        indptr = np.array([0, len(indices)])
-        return self.__class__((data, index, indptr), shape=shape,
-                              dtype=self.dtype)
 
     def _get_submatrix(self, slice0, slice1):
         """Return a submatrix of this matrix (new matrix is created)."""

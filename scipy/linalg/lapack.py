@@ -343,6 +343,8 @@ All functions
    clange
    zlange
 
+   ilaver
+
 """
 #
 # Author: Pearu Peterson, March 2002

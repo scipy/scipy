@@ -211,13 +211,7 @@ def vq(obs, code_book, check_finite=True):
     code_book = _asarray_validated(code_book, check_finite=check_finite)
     ct = common_type(obs, code_book)
 
-    # avoid copying when dtype is the same
-    # should be replaced with c_obs = astype(ct, copy=False)
-    # when we get to numpy 1.7.0
-    if obs.dtype != ct:
-        c_obs = obs.astype(ct)
-    else:
-        c_obs = obs
+    c_obs = obs.astype(ct, copy=False)
 
     if code_book.dtype != ct:
         c_code_book = code_book.astype(ct)
@@ -695,16 +689,13 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         (not used yet)
     minit : str, optional
         Method for initialization. Available methods are 'random',
-        'points', 'uniform', and 'matrix':
+        'points', and 'matrix':
 
         'random': generate k centroids from a Gaussian with mean and
         variance estimated from the data.
 
         'points': choose k observations (rows) at random from data for
         the initial centroids.
-
-        'uniform': generate k observations from the data from a uniform
-        distribution defined by the data set (unsupported).
 
         'matrix': interpret the k parameter as a k by M (or length k
         array for one-dimensional data) array of initial centroids.

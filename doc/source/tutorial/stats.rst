@@ -11,7 +11,7 @@ Introduction
 In this tutorial we discuss many, but certainly not all, features of
 ``scipy.stats``. The intention here is to provide a user with a
 working knowledge of this package. We refer to the `reference manual
-<http://docs.scipy.org/doc/scipy/reference/stats.html>`_ for further
+<https://docs.scipy.org/doc/scipy/reference/stats.html>`_ for further
 details.
 
 
@@ -89,7 +89,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats,d), stats.rv_discrete)]
     >>> print 'number of continuous distributions:', len(dist_continu)
-    number of continuous distributions: 89
+    number of continuous distributions: 91
     >>> print 'number of discrete distributions:  ', len(dist_discrete)
     number of discrete distributions:   13
 
@@ -347,7 +347,7 @@ i.e., the percent point function, requires a different definition:
     ppf(q) = min{x : cdf(x) >= q, x integer}
 
 For further info, see the docs `here
-<http://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
+<https://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
 
 
 We can look at the hypergeometric distribution as an example

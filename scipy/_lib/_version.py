@@ -45,7 +45,7 @@ class NumpyVersion():
     Examples
     --------
     >>> from scipy._lib._version import NumpyVersion
-    >>> if NumpyVersion(np.__version__) < '1.7.0'):
+    >>> if NumpyVersion(np.__version__) < '1.7.0':
     ...     print('skip')
     skip
 
@@ -151,5 +151,5 @@ class NumpyVersion():
     def __ge__(self, other):
         return self._compare(other) >= 0
 
-    def __repr(self):
+    def __repr__(self):
         return "NumpyVersion(%s)" % self.vstring

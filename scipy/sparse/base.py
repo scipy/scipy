@@ -127,24 +127,7 @@ class spmatrix(object):
             yield self[r,:]
 
     def getmaxprint(self):
-        try:
-            maxprint = self.maxprint
-        except AttributeError:
-            maxprint = MAXPRINT
-        return maxprint
-
-    # def typecode(self):
-    #    try:
-    #        typ = self.dtype.char
-    #    except AttributeError:
-    #        typ = None
-    #    return typ
-
-    def getnnz(self):
-        try:
-            return self.nnz
-        except AttributeError:
-            raise AttributeError("nnz not defined")
+        return self.maxprint
 
     def getformat(self):
         return getattr(self, 'format', 'und')

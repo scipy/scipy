@@ -97,6 +97,7 @@ fdtr -- fdtr: ddd->d                                       -- cephes.h
 fdtri -- fdtri: ddd->d                                     -- cephes.h
 gdtrc -- gdtrc: ddd->d                                     -- cephes.h
 gdtr -- gdtr: ddd->d                                       -- cephes.h
+hyp0f1 -- _hyp0f1_real: dd->d, _hyp0f1_cmplx: dD->D        -- _hyp0f1.pxd
 hyp2f1 -- hyp2f1: dddd->d, chyp2f1_wrap: dddD->D           -- cephes.h, specfun_wrappers.h
 hyp1f1 -- hyp1f1_wrap: ddd->d, chyp1f1_wrap: ddD->D        -- specfun_wrappers.h
 hyperu -- hypU_wrap: ddd->d                                -- specfun_wrappers.h
@@ -198,8 +199,8 @@ cosdg -- cosdg: d->d                                       -- cephes.h
 radian -- radian: ddd->d                                   -- cephes.h
 tandg -- tandg: d->d                                       -- cephes.h
 cotdg -- cotdg: d->d                                       -- cephes.h
-log1p -- log1p: d->d                                       -- cephes.h
-expm1 -- expm1: d->d                                       -- cephes.h
+log1p -- log1p: d->d, clog1p: D->D                         -- cephes.h, _cunity.pxd
+expm1 -- expm1: d->d, cexpm1: D->D                         -- cephes.h, _cunity.pxd
 cosm1 -- cosm1: d->d                                       -- cephes.h
 spence -- spence: d->d                                     -- cephes.h
 zetac -- zetac: d->d                                       -- cephes.h
@@ -290,7 +291,7 @@ dawsn -- faddeeva_dawsn: d->d, faddeeva_dawsn_complex: D->D -- _faddeeva.h++
 erfcx -- faddeeva_erfcx: d->d, faddeeva_erfcx_complex: D->D -- _faddeeva.h++
 erfi -- faddeeva_erfi: d->d, faddeeva_erfi_complex: D->D   -- _faddeeva.h++
 xlogy -- xlogy[double]: dd->d, xlogy[double_complex]: DD->D -- _xlogy.pxd
-xlog1py -- xlog1py: dd->d                                  -- _xlogy.pxd
+xlog1py -- xlog1py[double]: dd->d, xlog1py[double_complex]: DD->D   -- _xlogy.pxd
 poch -- poch: dd->d                                        -- c_misc/misc.h
 boxcox -- boxcox: dd->d                                    -- _boxcox.pxd
 boxcox1p -- boxcox1p: dd->d                                -- _boxcox.pxd

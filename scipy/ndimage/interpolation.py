@@ -339,6 +339,20 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     outside the boundaries of the input are filled according to the given
     mode.
 
+    Given an output image pixel index vector ``o``, the pixel value
+    is determined from the input image at position ``np.dot(matrix,o) + offset``.
+
+    A diagonal matrix can be specified by supplying a one-dimensional
+    array-like to the matrix parameter, in which case a more efficient
+    algorithm is applied.
+
+    .. versionchanged:: 0.18.0
+        Previously, the exact interpretation of the affine transformation
+        depended on whether the matrix was supplied as a one-dimensional or
+        two-dimensional array. If a one-dimensional array was supplied
+        to the matrix parameter, the output pixel value at index ``o``
+        was determined from the input image at position ``matrix * (o + offset)``.
+
     Parameters
     ----------
     input : ndarray
@@ -412,7 +426,12 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     if not offset.flags.contiguous:
         offset = offset.copy()
     if matrix.ndim == 1:
-        _nd_image.zoom_shift(filtered, matrix, offset, output, order,
+        warnings.warn(
+            "The behaviour of affine_transform with a one-dimensional "
+            "array supplied for the matrix parameter has changed in "
+            "scipy 0.18.0."
+        )
+        _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval)
     else:
         _geometric_transform(filtered, None, None, matrix, offset,

@@ -1,9 +1,6 @@
 .. image:: https://travis-ci.org/scipy/scipy.png?branch=master
    :target: https://travis-ci.org/scipy/scipy/
 
-.. image:: https://coveralls.io/repos/scipy/scipy/badge.png?branch=master
-   :target: https://coveralls.io/r/scipy/scipy?branch=master 
-
 =====
 SciPy
 =====
@@ -33,7 +30,7 @@ SciPy a try!
 Installation
 ------------
 
-For installation instructions, see ``INSTALL.txt``.
+For installation instructions, see ``INSTALL.rst.txt``.
 
 
 Documentation
@@ -41,7 +38,7 @@ Documentation
 
 Scipy documentation is available on the web:
 
-    http://docs.scipy.org
+    https://docs.scipy.org
 
 How to generate the HTML documentation, see ``doc/README.txt``.
 
@@ -51,7 +48,7 @@ Web sites
 
 The user's site is:
 
-    http://www.scipy.org/
+    https://www.scipy.org/
 
 
 Mailing Lists

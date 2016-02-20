@@ -8,6 +8,7 @@
 #ifndef __SUPERLU_OBJECT
 #define __SUPERLU_OBJECT
 
+#include <setjmp.h>
 #include <Python.h>
 
 /* Undef a macro from Python which conflicts with superlu */
@@ -24,12 +25,6 @@
 
 #define _CHECK_INTEGER(x) (PyArray_ISINTEGER(x) && (x)->descr->elsize == sizeof(int))
 
-/* PyArray_IS_C_CONTIGUOUS was introduced in numpy 1.6.0 */
-#if NPY_API_VERSION < 0x00000006
-    #define NPY_ARRAY_C_CONTIGUOUS    0x0001
-    #define PyArray_IS_C_CONTIGUOUS(m) PyArray_CHKFLAGS(m, NPY_ARRAY_C_CONTIGUOUS)
-#endif
-
 /*
  * SuperLUObject definition
  */
@@ -45,7 +40,15 @@ typedef struct {
     int type;
 } SuperLUObject;
 
+typedef struct {
+    PyObject_HEAD
+    int jmpbuf_valid;
+    jmp_buf jmpbuf;
+    PyObject *memory_dict;
+} SuperLUGlobalObject;
+
 extern PyTypeObject SuperLUType;
+extern PyTypeObject SuperLUGlobalType;
 
 int DenseSuper_from_Numeric(SuperMatrix *, PyObject *);
 int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
@@ -65,6 +68,17 @@ void XDestroy_SuperNode_Matrix(SuperMatrix *);
 void XDestroy_CompCol_Matrix(SuperMatrix *);
 void XDestroy_CompCol_Permuted(SuperMatrix *);
 void XStatFree(SuperLUStat_t *);
+
+jmp_buf *superlu_python_jmpbuf();
+
+
+/* Custom thread begin/end statements: Numpy versions < 1.9 are not safe
+ * vs. calling END_THREADS multiple times. Moreover, the _save variable needs to
+ * be volatile, due to the use of setjmp.
+ */
+#define SLU_BEGIN_THREADS_DEF volatile PyThreadState *_save = NULL
+#define SLU_BEGIN_THREADS do { if (_save == NULL) _save = PyEval_SaveThread(); } while (0)
+#define SLU_END_THREADS   do { if (_save) { PyEval_RestoreThread(_save); _save = NULL;} } while (0)
 
 /*
  * Definitions for other SuperLU data types than Z,
@@ -105,8 +119,8 @@ void XStatFree(SuperLUStat_t *);
     superlu_options_t *a, SuperMatrix *b,                           \
     int c, int d, int *e, void *f, int g,                           \
     int *h, int *i, SuperMatrix *j, SuperMatrix *k,                 \
-    SuperLUStat_t *l, int *m
-#define gstrf_ARGS_REF a,b,c,d,e,f,g,h,i,j,k,l,m
+    GlobalLU_t *l, SuperLUStat_t *m, int *n
+#define gstrf_ARGS_REF a,b,c,d,e,f,g,h,i,j,k,l,m,n
 
 #define gsitrf_ARGS gstrf_ARGS
 #define gsitrf_ARGS_REF gstrf_ARGS_REF

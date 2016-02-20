@@ -45,6 +45,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxe
 from numpydoc.docscrape_sphinx import get_doc_object
 # Remove sphinx directives that don't run without Sphinx environment
 directives._directives.pop('versionadded', None)
+directives._directives.pop('versionchanged', None)
 directives._directives.pop('moduleauthor', None)
 directives._directives.pop('sectionauthor', None)
 directives._directives.pop('codeauthor', None)
@@ -285,7 +286,7 @@ def validate_rst_syntax(text, name, dots=True):
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data',
-        'obj', 'versionadded', 'module', 'class',
+        'obj', 'versionadded', 'versionchanged', 'module', 'class',
         'ref', 'func', 'toctree', 'moduleauthor',
         'sectionauthor', 'codeauthor', 'eq',
     ])
@@ -762,7 +763,7 @@ def init_matplotlib():
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
-    parser.add_argument("module_names", metavar="SUBMODULES", default=list(PUBLIC_SUBMODULES),
+    parser.add_argument("module_names", metavar="SUBMODULES", default=[],
                         nargs='*', help="Submodules to check (default: all public)")
     parser.add_argument("--doctests", action="store_true", help="Run also doctests")
     parser.add_argument("-v", "--verbose", action="count", default=0)
@@ -774,6 +775,11 @@ def main(argv):
 
     modules = []
     names_dict = {}
+
+    if args.module_names:
+        args.skip_tutorial = True
+    else:
+        args.module_names = list(PUBLIC_SUBMODULES)
 
     os.environ['SCIPY_PIL_IMAGE_VIEWER'] = 'true'
 

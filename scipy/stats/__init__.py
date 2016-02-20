@@ -29,7 +29,8 @@ Continuous distributions
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
-   burr              -- Burr
+   burr              -- Burr (Type III)
+   burr12            -- Burr (Type XII)
    cauchy            -- Cauchy
    chi               -- Chi
    chi2              -- Chi-squared
@@ -100,6 +101,7 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   skewnorm          -- Skew normal
    t                 -- Student's T
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
@@ -124,6 +126,8 @@ Multivariate distributions
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
+   special_ortho_group   -- SO(N) group
+   ortho_group           -- O(N) group
 
 Discrete distributions
 ======================
