@@ -1,12 +1,12 @@
 
-/*! @file dlacon.c
+/*! @file dlacon2.c
  * \brief Estimates the 1-norm
  *
  * <pre>
- * -- SuperLU routine (version 2.0) --
+ * -- SuperLU routine (version 5.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * November 15, 1997
+ * July 25, 2015
  * </pre>
  */
 #include <math.h>
@@ -18,9 +18,17 @@
  *   Purpose   
  *   =======   
  *
- *   DLACON estimates the 1-norm of a square matrix A.   
+ *   DLACON2 estimates the 1-norm of a square matrix A.   
  *   Reverse communication is used for evaluating matrix-vector products. 
  * 
+ *   This is a thread safe version of DLACON, which uses the array ISAVE
+ *   in place of a STATIC variables, as follows:
+ *
+ *     DLACON     DLACON2
+ *      jump     isave[0]
+ *      j        isave[1]
+ *      iter     isave[2]
+ *
  *
  *   Arguments   
  *   =========   
@@ -50,8 +58,12 @@
  *          whether X should be overwritten by A * X  or A' * X.   
  *          On the final return from DLACON, KASE will again be 0.   
  *
+ *   isave  (input/output) int [3]
+ *          ISAVE is INTEGER array, dimension (3)
+ *          ISAVE is used to save variables between calls to DLACON2
+ *
  *   Further Details   
- *   ======= =======   
+ *   ===============   
  *
  *   Contributed by Nick Higham, University of Manchester.   
  *   Originally named CONEST, dated March 16, 1988.   
@@ -64,21 +76,17 @@
  */
 
 int
-dlacon_(int *n, double *v, double *x, int *isgn, double *est, int *kase)
-
+dlacon2_(int *n, double *v, double *x, int *isgn, double *est, int *kase, int isave[3])
 {
-
-
     /* Table of constant values */
     int c__1 = 1;
     double      zero = 0.0;
     double      one = 1.0;
     
     /* Local variables */
-    static int iter;
-    static int jump, jlast;
-    static double altsgn, estold;
-    static int i, j;
+    int jlast;
+    double altsgn, estold;
+    int i;
     double temp;
 #ifdef _CRAY
     extern int ISAMAX(int *, double *, int *);
@@ -98,11 +106,11 @@ dlacon_(int *n, double *v, double *x, int *isgn, double *est, int *kase)
 	    x[i] = 1. / (double) (*n);
 	}
 	*kase = 1;
-	jump = 1;
+	isave[0] = 1;	/* jump = 1; */
 	return 0;
     }
 
-    switch (jump) {
+    switch (isave[0]) {
 	case 1:  goto L20;
 	case 2:  goto L40;
 	case 3:  goto L70;
@@ -110,7 +118,7 @@ dlacon_(int *n, double *v, double *x, int *isgn, double *est, int *kase)
 	case 5:  goto L140;
     }
 
-    /*     ................ ENTRY   (JUMP = 1)   
+    /*     ................ ENTRY   (isave[0] = 1)   
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY A*X. */
   L20:
     if (*n == 1) {
@@ -130,29 +138,29 @@ dlacon_(int *n, double *v, double *x, int *isgn, double *est, int *kase)
 	isgn[i] = i_dnnt(x[i]);
     }
     *kase = 2;
-    jump = 2;
+    isave[0] = 2;  /* jump = 2; */
     return 0;
 
-    /*     ................ ENTRY   (JUMP = 2)   
+    /*     ................ ENTRY   (isave[0] = 2)
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
 L40:
 #ifdef _CRAY
-    j = ISAMAX(n, &x[0], &c__1);
+    isave[1] = ISAMAX(n, &x[0], &c__1);   /* j */
 #else
-    j = idamax_(n, &x[0], &c__1);
+    isave[1] = idamax_(n, &x[0], &c__1);  /* j */
 #endif
-    --j;
-    iter = 2;
+    --isave[1];  /* --j; */
+    isave[2] = 2;  /* iter = 2; */
 
     /*     MAIN LOOP - ITERATIONS 2,3,...,ITMAX. */
 L50:
     for (i = 0; i < *n; ++i) x[i] = zero;
-    x[j] = one;
+    x[isave[1]] = one;
     *kase = 1;
-    jump = 3;
+    isave[0] = 3;  /* jump = 3; */
     return 0;
 
-    /*     ................ ENTRY   (JUMP = 3)   
+    /*     ................ ENTRY   (isave[0] = 3)   
 	   X HAS BEEN OVERWRITTEN BY A*X. */
 L70:
 #ifdef _CRAY
@@ -183,21 +191,21 @@ L90:
 	isgn[i] = i_dnnt(x[i]);
     }
     *kase = 2;
-    jump = 4;
+    isave[0] = 4;  /* jump = 4; */
     return 0;
 
-    /*     ................ ENTRY   (JUMP = 4)   
+    /*     ................ ENTRY   (isave[0] = 4)   
 	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
 L110:
-    jlast = j;
+    jlast = isave[1];  /* j; */
 #ifdef _CRAY
-    j = ISAMAX(n, &x[0], &c__1);
+    isave[1] = ISAMAX(n, &x[0], &c__1);  /* j */
 #else
-    j = idamax_(n, &x[0], &c__1);
+    isave[1] = idamax_(n, &x[0], &c__1);  /* j */
 #endif
-    --j;
-    if (x[jlast] != fabs(x[j]) && iter < 5) {
-	++iter;
+    isave[1] = isave[1] - 1;  /* --j; */
+    if (x[jlast] != fabs(x[isave[1]]) && isave[2] < 5) {
+	isave[2] = isave[2] + 1;  /* ++iter; */
 	goto L50;
     }
 
@@ -209,10 +217,10 @@ L120:
 	altsgn = -altsgn;
     }
     *kase = 1;
-    jump = 5;
+    isave[0] = 5;  /* jump = 5; */
     return 0;
     
-    /*     ................ ENTRY   (JUMP = 5)   
+    /*     ................ ENTRY   (isave[0] = 5)   
 	   X HAS BEEN OVERWRITTEN BY A*X. */
 L140:
 #ifdef _CRAY

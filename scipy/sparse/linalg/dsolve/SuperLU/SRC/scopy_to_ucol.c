@@ -52,7 +52,7 @@ scopy_to_ucol(
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    ucol    = Glu->ucol;
+    ucol    = (float *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     nzumax  = Glu->nzumax;
@@ -76,7 +76,7 @@ scopy_to_ucol(
 		while ( new_next > nzumax ) {
 		    if (mem_error = sLUMemXpand(jcol, nextu, UCOL, &nzumax, Glu))
 			return (mem_error);
-		    ucol = Glu->ucol;
+		    ucol = (float *) Glu->ucol;
 		    if (mem_error = sLUMemXpand(jcol, nextu, USUB, &nzumax, Glu))
 			return (mem_error);
 		    usub = Glu->usub;

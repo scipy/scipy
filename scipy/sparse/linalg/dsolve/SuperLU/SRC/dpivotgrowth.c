@@ -62,7 +62,7 @@ dPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
     double   *luval;
    
     /* Get machine constants. */
-    smlnum = dlamch_("S");
+    smlnum = dmach("S");
     rpg = 1. / smlnum;
 
     Astore = A->Store;

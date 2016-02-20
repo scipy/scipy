@@ -60,7 +60,7 @@ spruneL(
     supno      = Glu->supno;
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = Glu->lusup;
+    lusup      = (float *) Glu->lusup;
     xlusup     = Glu->xlusup;
     
     /*
