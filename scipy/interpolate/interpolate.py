@@ -139,12 +139,7 @@ class interp2d(object):
         If provided, the value to use for points outside of the
         interpolation domain. If omitted (None), values outside
         the domain are extrapolated.
-
-    Returns
-    -------
-    values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
-        Interpolated values at input coordinates.
-
+	
     See Also
     --------
     RectBivariateSpline :
