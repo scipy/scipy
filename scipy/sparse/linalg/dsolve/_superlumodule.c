@@ -114,14 +114,14 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 	return NULL;
     }
 
-    if (!set_superlu_options_from_dict
-	(&options, 0, option_dict, NULL, NULL)) {
+    if (!set_superlu_options_from_dict((superlu_options_t*)&options, 0,
+                                       (PyObject*)option_dict, NULL, NULL)) {
 	return NULL;
     }
 
     /* Create Space for output */
     Py_X = (PyArrayObject*)PyArray_FROMANY(
-        Py_B, type, 1, 2,
+        (PyObject*)Py_B, type, 1, 2,
         NPY_F_CONTIGUOUS | NPY_ENSURECOPY);
     if (Py_X == NULL)
 	return NULL;
@@ -134,22 +134,24 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     }
 
     if (csc) {
-	if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr,
-				   type)) {
+	if (NCFormat_from_spMatrix((SuperMatrix*)&A, N, N, nnz,
+                                   (PyArrayObject *)nzvals, (PyArrayObject *)colind,
+                                   (PyArrayObject *)rowptr, type)) {
 	    Py_DECREF(Py_X);
 	    return NULL;
 	}
     }
     else {
-	if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr,
+	if (NRFormat_from_spMatrix((SuperMatrix*)&A, N, N, nnz, (PyArrayObject *)nzvals,
+                                   (PyArrayObject *)colind, (PyArrayObject *)rowptr,
 				   type)) {
 	    Py_DECREF(Py_X);
 	    return NULL;
 	}
     }
 
-    if (DenseSuper_from_Numeric(&B, Py_X)) {
-	Destroy_SuperMatrix_Store(&A);
+    if (DenseSuper_from_Numeric((SuperMatrix*)&B, (PyObject*)Py_X)) {
+	Destroy_SuperMatrix_Store((SuperMatrix*)&A);
 	Py_DECREF(Py_X);
 	return NULL;
     }
@@ -160,38 +162,40 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 
     jmpbuf_ptr = superlu_python_jmpbuf();
     SLU_BEGIN_THREADS;
-    if (setjmp(*jmpbuf_ptr)) {
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
         SLU_END_THREADS;
 	goto fail;
     }
     else {
 	perm_c = intMalloc(N);
 	perm_r = intMalloc(N);
-	StatInit(&stat);
+	StatInit((SuperLUStat_t*)&stat);
 
 	/* Compute direct inverse of sparse Matrix */
-	gssv(type, &options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
+	gssv(type, (superlu_options_t*)&options, (SuperMatrix*)&A, (int*)perm_c, (int*)perm_r,
+             (SuperMatrix*)&L, (SuperMatrix*)&U, (SuperMatrix*)&B, (SuperLUStat_t*)&stat,
+             (int*)&info);
         SLU_END_THREADS;
     }
 
-    SUPERLU_FREE(perm_r);
-    SUPERLU_FREE(perm_c);
-    Destroy_SuperMatrix_Store(&A);	/* holds just a pointer to the data */
-    Destroy_SuperMatrix_Store(&B);
-    Destroy_SuperNode_Matrix(&L);
-    Destroy_CompCol_Matrix(&U);
-    StatFree(&stat);
+    SUPERLU_FREE((void*)perm_r);
+    SUPERLU_FREE((void*)perm_c);
+    Destroy_SuperMatrix_Store((SuperMatrix*)&A);	/* holds just a pointer to the data */
+    Destroy_SuperMatrix_Store((SuperMatrix*)&B);
+    Destroy_SuperNode_Matrix((SuperMatrix*)&L);
+    Destroy_CompCol_Matrix((SuperMatrix*)&U);
+    StatFree((SuperLUStat_t*)&stat);
 
     return Py_BuildValue("Ni", Py_X, info);
 
   fail:
-    SUPERLU_FREE(perm_r);
-    SUPERLU_FREE(perm_c);
-    XDestroy_SuperMatrix_Store(&A);	/* holds just a pointer to the data */
-    XDestroy_SuperMatrix_Store(&B);
-    XDestroy_SuperNode_Matrix(&L);
-    XDestroy_CompCol_Matrix(&U);
-    XStatFree(&stat);
+    SUPERLU_FREE((void*)perm_r);
+    SUPERLU_FREE((void*)perm_c);
+    XDestroy_SuperMatrix_Store((SuperMatrix*)&A);	/* holds just a pointer to the data */
+    XDestroy_SuperMatrix_Store((SuperMatrix*)&B);
+    XDestroy_SuperNode_Matrix((SuperMatrix*)&L);
+    XDestroy_CompCol_Matrix((SuperMatrix*)&U);
+    XStatFree((SuperLUStat_t*)&stat);
     Py_XDECREF(Py_X);
     return NULL;
 }

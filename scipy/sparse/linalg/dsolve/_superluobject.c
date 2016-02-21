@@ -75,26 +75,26 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
         goto fail;
     }
 
-    if (DenseSuper_from_Numeric(&B, (PyObject *)x))
+    if (DenseSuper_from_Numeric((SuperMatrix*)&B, (PyObject *)x))
         goto fail;
 
     jmpbuf_ptr = superlu_python_jmpbuf();
-    if (setjmp(*jmpbuf_ptr)) {
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	goto fail;
     }
 
-    StatInit(&stat);
+    StatInit((SuperLUStat_t *)&stat);
 
     /* Solve the system, overwriting vector x. */
     jmpbuf_ptr = superlu_python_jmpbuf();
     SLU_BEGIN_THREADS;
-    if (setjmp(*jmpbuf_ptr)) {
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
         SLU_END_THREADS;
 	goto fail;
     }
     gstrs(self->type,
-	  trans, &self->L, &self->U, self->perm_c, self->perm_r, &B,
-	  &stat, &info);
+	  trans, &self->L, &self->U, self->perm_c, self->perm_r,
+          (SuperMatrix *)&B, (SuperLUStat_t *)&stat, (int *)&info);
     SLU_END_THREADS;
 
     if (info) {
@@ -104,13 +104,13 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     }
 
     /* free memory */
-    Destroy_SuperMatrix_Store(&B);
-    StatFree(&stat);
+    Destroy_SuperMatrix_Store((SuperMatrix *)&B);
+    StatFree((SuperLUStat_t *)&stat);
     return (PyObject *) x;
 
   fail:
-    XDestroy_SuperMatrix_Store(&B);
-    XStatFree(&stat);
+    XDestroy_SuperMatrix_Store((SuperMatrix *)&B);
+    XStatFree((SuperLUStat_t *)&stat);
     Py_XDECREF(x);
     return NULL;
 }
@@ -142,8 +142,9 @@ static void SuperLU_dealloc(SuperLUObject * self)
     PyObject_Del(self);
 }
 
-static PyObject *SuperLU_getter(SuperLUObject *self, void *data)
+static PyObject *SuperLU_getter(PyObject *selfp, void *data)
 {
+    SuperLUObject *self = (SuperLUObject *)selfp;
     char *name = (char*)data;
 
     if (strcmp(name, "shape") == 0) {
@@ -321,7 +322,7 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
     }
 
     jmpbuf_ptr = superlu_python_jmpbuf();
-    if (setjmp(*jmpbuf_ptr)) {
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	return -1;
     }
     else {
@@ -362,7 +363,7 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     }
 
     jmpbuf_ptr = superlu_python_jmpbuf();
-    if (setjmp(*jmpbuf_ptr)) {
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	return -1;
     }
     else {
@@ -408,7 +409,7 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     }
 
     jmpbuf_ptr = superlu_python_jmpbuf();
-    if (setjmp(*jmpbuf_ptr)) {
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	return -1;
     }
     else {
@@ -463,7 +464,7 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     }
 
     Ustore = (NCformat*)U->Store;
-    Lstore = (NCformat*)L->Store;
+    Lstore = (SCformat*)L->Store;
 
     type = SLU_TYPECODE_TO_NPY(L->Dtype);
 
@@ -573,18 +574,22 @@ LU_to_csc(SuperMatrix *L, SuperMatrix *U,
     SCformat *Lstore;
     NCformat *Ustore;
     npy_intp elsize;
-    int isup, icol, icolstart, icolend, ncols, irow, iptr, istart, iend, L_nrow;
+    int isup, icol, icolstart, icolend, iptr, istart, iend;
     char *src, *dst;
     int U_nnz, L_nnz;
 
     Ustore = (NCformat*)U->Store;
-    Lstore = (NCformat*)L->Store;
+    Lstore = (SCformat*)L->Store;
 
     switch (dtype) {
     case SLU_S: elsize = 4; break;
     case SLU_D: elsize = 8; break;
     case SLU_C: elsize = 8; break;
     case SLU_Z: elsize = 16; break;
+    default:
+        /* shouldn't occur */
+        PyErr_SetString(PyExc_ValueError, "unknown dtype");
+        return -1;
     }
     
 #define IS_ZERO(p)                                                      \
@@ -704,8 +709,8 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 
     n = A->ncol;
 
-    if (!set_superlu_options_from_dict(&options, ilu, option_dict,
-				       &panel_size, &relax)) {
+    if (!set_superlu_options_from_dict((superlu_options_t*)&options, ilu, option_dict,
+				       (int*)&panel_size, (int*)&relax)) {
 	return NULL;
     }
 
@@ -724,7 +729,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->type = intype;
 
     jmpbuf_ptr = superlu_python_jmpbuf();
-    if (setjmp(*jmpbuf_ptr)) {
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	goto fail;
     }
 
@@ -732,11 +737,14 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     etree = intMalloc(n);
     self->perm_r = intMalloc(n);
     self->perm_c = intMalloc(n);
-    StatInit(&stat);
+    StatInit((SuperLUStat_t *)&stat);
 
-    get_perm_c(options.ColPerm, A, self->perm_c);	/* calc column permutation */
-    sp_preorder(&options, A, self->perm_c, etree, &AC);	/* apply column
-							 * permutation */
+    /* calc column permutation */
+    get_perm_c(options.ColPerm, A, self->perm_c);	
+
+    /* apply column permutation */
+    sp_preorder((superlu_options_t*)&options, A, self->perm_c, (int*)etree,
+                (SuperMatrix*)&AC);
 
     /* Perform factorization */
     if (!CHECK_SLU_TYPE(SLU_TYPECODE_TO_NPY(A->Dtype))) {
@@ -752,7 +760,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
         Glu_ptr = &Glu;
         jmpbuf_ptr = superlu_python_jmpbuf();
         SLU_BEGIN_THREADS;
-        if (setjmp(*jmpbuf_ptr)) {
+        if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
             SLU_END_THREADS;
             goto fail;
         }
@@ -760,15 +768,17 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 
     if (ilu) {
         gsitrf(SLU_TYPECODE_TO_NPY(A->Dtype),
-               &options, &AC, relax, panel_size,
-               etree, NULL, lwork, self->perm_c, self->perm_r,
-               &self->L, &self->U, Glu_ptr, &stat, &info);
+               (superlu_options_t*)&options, (SuperMatrix*)&AC, relax, panel_size,
+               (int*)etree, NULL, lwork, self->perm_c, self->perm_r,
+               (SuperMatrix*)&self->L, (SuperMatrix*)&self->U, (GlobalLU_t*)Glu_ptr,
+               (SuperLUStat_t*)&stat, (int*)&info);
     }
     else {
 	gstrf(SLU_TYPECODE_TO_NPY(A->Dtype),
-	      &options, &AC, relax, panel_size,
-	      etree, NULL, lwork, self->perm_c, self->perm_r,
-	      &self->L, &self->U, Glu_ptr, &stat, &info);
+	      (superlu_options_t*)&options, (SuperMatrix*)&AC, relax, panel_size,
+	      (int*)etree, NULL, lwork, self->perm_c, self->perm_r,
+	      (SuperMatrix*)&self->L, (SuperMatrix*)&self->U, (GlobalLU_t*)Glu_ptr,
+              (SuperLUStat_t*)&stat, (int*)&info);
     }
 
     SLU_END_THREADS;
@@ -788,16 +798,16 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     }
 
     /* free memory */
-    SUPERLU_FREE(etree);
-    Destroy_CompCol_Permuted(&AC);
-    StatFree(&stat);
+    SUPERLU_FREE((void*)etree);
+    Destroy_CompCol_Permuted((SuperMatrix*)&AC);
+    StatFree((SuperLUStat_t*)&stat);
 
     return (PyObject *) self;
 
   fail:
-    SUPERLU_FREE(etree);
-    XDestroy_CompCol_Permuted(&AC);
-    XStatFree(&stat);
+    SUPERLU_FREE((void*)etree);
+    XDestroy_CompCol_Permuted((SuperMatrix*)&AC);
+    XStatFree((SuperLUStat_t*)&stat);
     Py_DECREF(self);
     return NULL;
 }
@@ -1041,7 +1051,7 @@ static int droprule_cvt(PyObject * input, int *value)
     /* OR multiple values together */
     for (i = 0; i < PySequence_Size(seq); ++i) {
 	PyObject *item;
-	int one_value;
+	int one_value = 0;
 
 	item = PySequence_ITEM(seq, i);
 	if (item == NULL) {
