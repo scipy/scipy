@@ -792,7 +792,7 @@ class TestInteropSplPrep(TestCase):
 
     def test_spalde(self):
         all_der = np.array([splev(0.1, self.b, j) for j in range(self.b.k+1)])
-        assert_allclose(spalde(0.1, self.b), all_der, atol=1e-15)
+        assert_allclose(spalde(0.1, self.b), all_der, atol=1e-12)
 
         # also test array args
         all_der = np.array([[splev(x, self.b, j) for j in range(self.b.k+1)]
