@@ -1677,6 +1677,122 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             dps=60,
                             rtol=1e-13)
 
+    def test_spherical_jn(self):
+        def mp_spherical_jn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselj(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_jn(int(n), z),
+                            _exception_to_nan(mp_spherical_jn),
+                            [IntArg(0, 200), Arg(-1e8, 1e8)],
+                            dps=300)
+
+    def test_spherical_jn_complex(self):
+        def mp_spherical_jn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselj(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_jn(int(n.real), z),
+                            _exception_to_nan(mp_spherical_jn),
+                            [IntArg(0, 200), ComplexArg()])
+
+    def test_spherical_yn(self):
+        def mp_spherical_yn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.bessely(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_yn(int(n), z),
+                            _exception_to_nan(mp_spherical_yn),
+                            [IntArg(0, 200), Arg(-1e10, 1e10)],
+                            dps=100)
+
+    def test_spherical_yn_complex(self):
+        def mp_spherical_yn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.bessely(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_yn(int(n.real), z),
+                            _exception_to_nan(mp_spherical_yn),
+                            [IntArg(0, 200), ComplexArg()])
+
+    def test_spherical_in(self):
+        def mp_spherical_in(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besseli(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_in(int(n), z),
+                            _exception_to_nan(mp_spherical_in),
+                            [IntArg(0, 200), Arg()],
+                            dps=200, atol=10**(-278))
+
+    def test_spherical_in_complex(self):
+        def mp_spherical_in(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besseli(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_in(int(n.real), z),
+                            _exception_to_nan(mp_spherical_in),
+                            [IntArg(0, 200), ComplexArg()])
+
+    def test_spherical_kn(self):
+        def mp_spherical_kn(n, z):
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, z) *
+                   mpmath.sqrt(mpmath.pi/(2*mpmath.mpmathify(z))))
+            if mpmath.mpmathify(z).imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_kn(int(n), z),
+                            _exception_to_nan(mp_spherical_kn),
+                            [IntArg(0, 150), Arg()],
+                            dps=100)
+
+    @knownfailure_overridable("Accuracy issues near z = -1 inherited from kv.")
+    def test_spherical_kn_complex(self):
+        def mp_spherical_kn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_kn(int(n.real), z),
+                            _exception_to_nan(mp_spherical_kn),
+                            [IntArg(0, 200), ComplexArg()],
+                            dps=200)
 
 if __name__ == "__main__":
     run_module_suite()

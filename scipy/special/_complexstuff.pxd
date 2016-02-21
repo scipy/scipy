@@ -90,4 +90,3 @@ cdef inline double_complex zpack(double zr, double zi) nogil:
     z.real = zr
     z.imag = zi
     return (<double_complex*>&z)[0]
-

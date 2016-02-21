@@ -18,7 +18,7 @@ from scipy.special import (
     nbdtrik, pdtrik,
     mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
-    ellip_harm, ellip_harm_2
+    ellip_harm, ellip_harm_2, spherical_jn, spherical_yn,
 )
 from scipy.integrate import IntegrationWarning
 
@@ -180,6 +180,12 @@ def poch_minus(z, m):
 
 def sph_jn_(n, x):
     return sph_jn(n.astype('l'), x)[0][-1]
+
+def spherical_jn_(n, x):
+    return spherical_jn(n.astype('l'), x)
+
+def spherical_yn_(n, x):
+    return spherical_yn(n.astype('l'), x)
 
 def sph_yn_(n, x):
     return sph_yn(n.astype('l'), x)[0][-1]
@@ -420,6 +426,9 @@ def test_boost():
                            lambda p: np.ones(p.shape, '?'),
                            lambda p: np.logical_and(p < 2*np.pi, p >= 0),
                            lambda p: np.logical_and(p < np.pi, p >= 0))),
+
+        data(spherical_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2, rtol=1e-13),
+        data(spherical_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2, rtol=8e-15),
 
         # -- not used yet (function does not exist in scipy):
         # 'ellint_pi2_data_ipp-ellint_pi2_data',
