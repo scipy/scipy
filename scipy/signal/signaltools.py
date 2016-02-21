@@ -5,7 +5,11 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import threading
-from fractions import gcd
+import sys
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from math import gcd
+else:
+    from fractions import gcd
 
 from . import sigtools
 from ._upfirdn import _UpFIRDn, _output_len
