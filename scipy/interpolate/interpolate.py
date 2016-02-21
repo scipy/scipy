@@ -139,7 +139,7 @@ class interp2d(object):
         If provided, the value to use for points outside of the
         interpolation domain. If omitted (None), values outside
         the domain are extrapolated.
-	
+
     See Also
     --------
     RectBivariateSpline :
