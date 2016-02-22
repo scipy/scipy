@@ -43,13 +43,15 @@ build(ckdtree *self, npy_intp start_idx, npy_intp end_idx,
     node_index = self->tree_buffer->size() - 1;
     root = tree_buffer_root(self->tree_buffer);
     n = root + node_index;
-                
+    memset(n, 0, sizeof(n[0]));
+
+    n->start_idx = start_idx;
+    n->end_idx = end_idx;
+    n->children = end_idx - start_idx;
+    
     if (end_idx-start_idx <= self->leafsize) {
         /* below brute force limit, return leafnode */
         n->split_dim = -1;
-        n->children = end_idx - start_idx;
-        n->start_idx = start_idx;
-        n->end_idx = end_idx;
         return node_index;
     }
     else {
@@ -92,9 +94,6 @@ build(ckdtree *self, npy_intp start_idx, npy_intp end_idx,
              * return leafnode
              */
             n->split_dim = -1;
-            n->children = end_idx - start_idx;
-            n->start_idx = start_idx;
-            n->end_idx = end_idx;
             return node_index;
         }   
         
@@ -192,7 +191,6 @@ build(ckdtree *self, npy_intp start_idx, npy_intp end_idx,
         n->_greater = _greater;
         n->less = root + _less;
         n->greater = root + _greater;
-        n->children = n->less->children + n->greater->children;      
         n->split_dim = d;
         n->split = split;
         
