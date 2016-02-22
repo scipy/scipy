@@ -267,13 +267,13 @@ count_neighbors_weighted(const ckdtree *self, const ckdtree *other,
     params.r = real_r;
     params.results = (void*) results;
 
+    params.self.tree = self;
+    params.other.tree = other;
     if (self_weights) {
-        params.self.tree = self;
         params.self.weights = self_weights;
         params.self.node_weights = self_node_weights;
     }
     if (other_weights) {
-        params.other.tree = other;
         params.other.weights = other_weights;
         params.other.node_weights = other_node_weights;
     }
