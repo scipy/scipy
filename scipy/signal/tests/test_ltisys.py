@@ -4,12 +4,13 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
+                           assert_approx_equal,
                            assert_, assert_raises, TestCase, run_module_suite)
 from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                                  bode, freqresp, lsim, impulse, step,
                                  abcd_normalize, place_poles,
                                  TransferFunction, StateSpace, ZerosPolesGain)
-from scipy.signal.filter_design import BadCoefficients
+from scipy.signal.filter_design import BadCoefficients, butter
 import scipy.linalg as linalg
 
 
@@ -396,6 +397,14 @@ class TestLsim(object):
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
+    def test_07(self):
+        # Test chances of overflow in lsim
+        (z, p, k) = butter(22, 22029, analog=True, output='zpk')
+        t = np.linspace(0,10E-3,num=10000)
+        x1 = np.cos(2*np.pi*3500*t)
+        (t2, y2, x2) = lsim((z, p, k), x1, t)
+        assert_approx_equal(np.max(y2), 0.72, significant=2)
+
 
 class Test_lsim2(object):
 
@@ -471,6 +480,13 @@ class Test_lsim2(object):
         expected_x = (1.0 - tout) * np.exp(-tout)
         assert_almost_equal(x[:,0], expected_x)
 
+    def test_07(self):
+        # Test chances of overflow in lsim2
+        (z, p, k) = butter(22, 22029, analog=True, output='zpk')
+        t = np.linspace(0,10E-3,num=10000)
+        x1 = np.cos(2*np.pi*3500*t)
+        (t2, y2, x2) = lsim2((z, p, k), x1, t)
+        assert_approx_equal(np.max(y2), 0.72, significant=2)
 
 class _TestImpulseFuncs(object):
     # Common tests for impulse/impulse2 (= self.func)
