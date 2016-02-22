@@ -126,6 +126,9 @@ class OptimizeResult(dict):
         else:
             return self.__class__.__name__ + "()"
 
+    def __dir__(self):
+        return list(self.keys())
+
 
 class OptimizeWarning(UserWarning):
     pass
@@ -849,8 +852,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     N = len(x0)
     I = numpy.eye(N, dtype=int)
     Hk = I
+
+    # Sets the initial step guess to dx ~ 1
     old_fval = f(x0)
-    old_old_fval = None
+    old_old_fval = old_fval + np.linalg.norm(gfk) / 2
+
     xk = x0
     if retall:
         allvecs = [x0]
@@ -862,7 +868,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
-                                          old_fval, old_old_fval)
+                                          old_fval, old_old_fval, amin=1e-100, amax=1e100)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
@@ -1071,9 +1077,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     >>> res1 = optimize.fmin_cg(f, x0, fprime=gradf, args=args)
     Optimization terminated successfully.
              Current function value: 1.617021
-             Iterations: 2
-             Function evaluations: 5
-             Gradient evaluations: 5
+             Iterations: 4
+             Function evaluations: 8
+             Gradient evaluations: 8
     >>> res1
     array([-1.80851064, -0.25531915])
 
@@ -1091,9 +1097,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     ...                          method='CG', options=opts)
     Optimization terminated successfully.
             Current function value: 1.617021
-            Iterations: 2
-            Function evaluations: 5
-            Gradient evaluations: 5
+            Iterations: 4
+            Function evaluations: 8
+            Gradient evaluations: 8
     >>> res2.x  # minimum found
     array([-1.80851064, -0.25531915])
 
@@ -1159,8 +1165,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     gfk = myfprime(x0)
     k = 0
     xk = x0
+
+    # Sets the initial step guess to dx ~ 1
     old_fval = f(xk)
-    old_old_fval = None
+    old_old_fval = old_fval + np.linalg.norm(gfk) / 2
 
     if retall:
         allvecs = [xk]
@@ -1173,7 +1181,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c2=0.4)
+                                          old_old_fval, c2=0.4, amin=1e-100, amax=1e100)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
@@ -2501,7 +2509,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     of the objective function occurs.  If `finish` is None, that is the
     point returned.  When the global minimum occurs within (or not very far
     outside) the grid's boundaries, and the grid is fine enough, that
-    point will be in the neighborhood of the gobal minimum.
+    point will be in the neighborhood of the global minimum.
 
     However, users often employ some other optimization program to
     "polish" the gridpoint values, `i.e.`, to seek a more precise
@@ -2523,7 +2531,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     of the `finish` program, *not* the gridpoint ones.  Consequently,
     while `brute` confines its search to the input grid points,
     the `finish` program's results usually will not coincide with any
-    gridpoint, and may fall outside the grid's boundary.
+    gridpoint, and may fall outside the grid's boundary. Thus, if a
+    minimum only needs to be found over the provided grid points, make
+    sure to pass in `finish=None`.
 
     *Note 2*: The grid of points is a `numpy.mgrid` object.
     For `brute` the `ranges` and `Ns` inputs have the following effect.

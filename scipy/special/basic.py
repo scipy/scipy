@@ -13,8 +13,8 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
                    where, mgrid, sin, place, issubdtype, extract,
                    less, inexact, nan, zeros, atleast_1d, sinc)
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
-                      hankel1, hankel2, yv, kv, gammaln, ndtri, errprint, poch,
-                      binom)
+                      hankel1, hankel2, yv, kv, gammaln, ndtri,
+                      errprint, poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 
@@ -434,11 +434,17 @@ def jvp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.6.7 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.6.E7
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -461,11 +467,17 @@ def yvp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.6.7 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.6.E7
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -496,11 +508,30 @@ def kvp(v, z, n=1):
     out : ndarray
         The results
 
+    Examples
+    --------
+    Calculate multiple values at order 5:
+
+    >>> from scipy.special import kvp
+    >>> kvp(5, (1, 2, 3+5j))
+    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
+
+    Calculate for a single value at multiple orders:
+
+    >>> kvp((4, 4.5, 5), 1)
+    array([ -184.0309,  -568.9585, -1849.0354])
+
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.29.5 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.29.E5
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -524,24 +555,17 @@ def ivp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.29.5 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
            http://jin.ece.illinois.edu/specfunc.html
-
-    Examples
-    --------
-    Calculate multiple values at order 5:
-
-    >>> from scipy.special import kvp
-    >>> kvp(5, (1, 2, 3+5j))
-    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
-
-    Calculate for a single value at multiple orders:
-
-    >>> kvp((4, 4.5, 5), 1)
-    array([ -184.0309,  -568.9585, -1849.0354])
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.29.E5
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -564,11 +588,17 @@ def h1vp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.6.7 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.6.E7
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -591,11 +621,17 @@ def h2vp(v, z, n=1):
     n : int, default 1
         Order of derivative
 
+    Notes
+    -----
+    The derivative is computed using the relation DLFM 10.6.7 [2]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.6.E7
 
     """
     if not isinstance(n, int) or (n < 0):
@@ -606,6 +642,9 @@ def h2vp(v, z, n=1):
         return _bessel_diff_formula(v, z, n, hankel2, -1)
 
 
+@np.deprecate(message="scipy.special.sph_jn is deprecated in scipy 0.18.0. "
+                      "Use scipy.special.spherical_jn instead. "
+                      "Note that the new function has a different signature.")
 def sph_jn(n, z):
     """Compute spherical Bessel function jn(z) and derivative.
 
@@ -625,6 +664,10 @@ def sph_jn(n, z):
         Value of j0(z), ..., jn(z)
     jnp : ndarray
         First derivative j0'(z), ..., jn'(z)
+
+    See also
+    --------
+    spherical_jn
 
     References
     ----------
@@ -648,6 +691,9 @@ def sph_jn(n, z):
     return jn[:(n+1)], jnp[:(n+1)]
 
 
+@np.deprecate(message="scipy.special.sph_yn is deprecated in scipy 0.18.0. "
+                      "Use scipy.special.spherical_yn instead. "
+                      "Note that the new function has a different signature.")
 def sph_yn(n, z):
     """Compute spherical Bessel function yn(z) and derivative.
 
@@ -667,6 +713,10 @@ def sph_yn(n, z):
         Value of y0(z), ..., yn(z)
     ynp : ndarray
         First derivative y0'(z), ..., yn'(z)
+
+    See also
+    --------
+    spherical_yn
 
     References
     ----------
@@ -690,6 +740,10 @@ def sph_yn(n, z):
     return yn[:(n+1)], ynp[:(n+1)]
 
 
+@np.deprecate(message="scipy.special.sph_jnyn is deprecated in scipy 0.18.0. "
+                      "Use scipy.special.spherical_jn and "
+                      "scipy.special.spherical_yn instead. "
+                      "Note that the new function has a different signature.")
 def sph_jnyn(n, z):
     """Compute spherical Bessel functions jn(z) and yn(z) and derivatives.
 
@@ -714,6 +768,11 @@ def sph_jnyn(n, z):
     ynp : ndarray
         First derivative y0'(z), ..., yn'(z)
 
+    See also
+    --------
+    spherical_jn
+    spherical_yn
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -737,6 +796,9 @@ def sph_jnyn(n, z):
     return jn[:(n+1)], jnp[:(n+1)], yn[:(n+1)], ynp[:(n+1)]
 
 
+@np.deprecate(message="scipy.special.sph_in is deprecated in scipy 0.18.0. "
+                      "Use scipy.special.spherical_in instead. "
+                      "Note that the new function has a different signature.")
 def sph_in(n, z):
     """Compute spherical Bessel function in(z) and derivative.
 
@@ -756,6 +818,10 @@ def sph_in(n, z):
         Value of i0(z), ..., in(z)
     inp : ndarray
         First derivative i0'(z), ..., in'(z)
+
+    See also
+    --------
+    spherical_in
 
     References
     ----------
@@ -779,6 +845,9 @@ def sph_in(n, z):
     return In[:(n+1)], Inp[:(n+1)]
 
 
+@np.deprecate(message="scipy.special.sph_kn is deprecated in scipy 0.18.0. "
+                      "Use scipy.special.spherical_kn instead. "
+                      "Note that the new function has a different signature.")
 def sph_kn(n, z):
     """Compute spherical Bessel function kn(z) and derivative.
 
@@ -798,6 +867,10 @@ def sph_kn(n, z):
         Value of k0(z), ..., kn(z)
     knp : ndarray
         First derivative k0'(z), ..., kn'(z)
+
+    See also
+    --------
+    spherical_kn
 
     References
     ----------
@@ -821,6 +894,10 @@ def sph_kn(n, z):
     return kn[:(n+1)], knp[:(n+1)]
 
 
+@np.deprecate(message="scipy.special.sph_inkn is deprecated in scipy 0.18.0. "
+                      "Use scipy.special.spherical_in and "
+                      "scipy.special.spherical_kn instead. "
+                      "Note that the new function has a different signature.")
 def sph_inkn(n, z):
     """Compute spherical Bessel functions in(z), kn(z), and derivatives.
 
@@ -844,6 +921,11 @@ def sph_inkn(n, z):
         Value of k0(z), ..., kn(z)
     knp : ndarray
         First derivative k0'(z), ..., kn'(z)
+
+    See also
+    --------
+    spherical_in
+    spherical_kn
 
     References
     ----------
@@ -869,10 +951,14 @@ def sph_inkn(n, z):
 
 
 def riccati_jn(n, x):
-    """Compute Ricatti-Bessel function of the first kind and derivative.
+    r"""Compute Ricatti-Bessel function of the first kind and its derivative.
 
-    This function computes the value and first derivative of the function for
-    all orders up to and including n.
+    The Ricatti-Bessel function of the first kind is defined as :math:`x
+    j_n(x)`, where :math:`j_n` is the spherical Bessel function of the first
+    kind of order :math:`n`.
+
+    This function computes the value and first derivative of the
+    Ricatti-Bessel function for all orders up to and including `n`.
 
     Parameters
     ----------
@@ -888,11 +974,21 @@ def riccati_jn(n, x):
     jnp : ndarray
         First derivative j0'(x), ..., jn'(x)
 
+    Notes
+    -----
+    The computation is carried out via backward recurrence, using the
+    relation DLMF 10.51.1 [2]_.
+
+    Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
+    Jin [1]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -908,10 +1004,14 @@ def riccati_jn(n, x):
 
 
 def riccati_yn(n, x):
-    """Compute Ricatti-Bessel function of the second kind and derivative.
+    """Compute Ricatti-Bessel function of the second kind and its derivative.
+
+    The Ricatti-Bessel function of the second kind is defined as :math:`x
+    y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
+    kind of order :math:`n`.
 
     This function computes the value and first derivative of the function for
-    all orders up to and including n.
+    all orders up to and including `n`.
 
     Parameters
     ----------
@@ -927,11 +1027,21 @@ def riccati_yn(n, x):
     ynp : ndarray
         First derivative y0'(x), ..., yn'(x)
 
+    Notes
+    -----
+    The computation is carried out via ascending recurrence, using the
+    relation DLMF 10.51.1 [2]_.
+
+    Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
+    Jin [1]_.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           http://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -1016,42 +1126,6 @@ def fresnel_zeros(nt):
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
     return specfun.fcszo(2, nt), specfun.fcszo(1, nt)
-
-
-def hyp0f1(v, z):
-    r"""Confluent hypergeometric limit function 0F1.
-
-    Parameters
-    ----------
-    v, z : array_like
-        Input values.
-
-    Returns
-    -------
-    hyp0f1 : ndarray
-        The confluent hypergeometric limit function.
-
-    Notes
-    -----
-    This function is defined as:
-
-    .. math:: _0F_1(v, z) = \sum_{k=0}^{\inf}\frac{z^k}{(v)_k k!}.
-
-    It's also the limit as q -> infinity of ``1F1(q;v;z/q)``, and satisfies
-    the differential equation :math:`f''(z) + vf'(z) = f(z)`.
-    """
-    v = atleast_1d(v)
-    z = atleast_1d(z)
-    v, z = np.broadcast_arrays(v, z)
-    arg = 2 * sqrt(abs(z))
-    old_err = np.seterr(all='ignore')  # for z=0, a<1 and num=inf, next lines
-    num = where(z.real >= 0, iv(v - 1, arg), jv(v - 1, arg))
-    den = abs(z)**((v - 1.0) / 2)
-    num *= gamma(v)
-    np.seterr(**old_err)
-    num[z == 0] = 1
-    den[z == 0] = 1
-    return num / den
 
 
 def assoc_laguerre(x, n, k=0.0):
@@ -1606,7 +1680,14 @@ def bi_zeros(nt):
 
 
 def lmbda(v, x):
-    """Jahnke-Emden Lambda function, Lambdav(x).
+    r"""Jahnke-Emden Lambda function, Lambdav(x).
+
+    This function is defined as [2]_,
+
+    .. math:: \Lambda_v(x) = \Gamma(v+1) \frac{J_v(x)}{(x/2)^v},
+
+    where :math:`\Gamma` is the gamma function and :math:`J_v` is the
+    Bessel function of the first kind.
 
     Parameters
     ----------
@@ -1627,7 +1708,8 @@ def lmbda(v, x):
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            http://jin.ece.illinois.edu/specfunc.html
-
+    .. [2] Jahnke, E. and Emde, F. "Tables of Functions with Formulae and
+           Curves" (4th ed.), Dover, 1945
     """
     if not (isscalar(v) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
@@ -1962,7 +2044,8 @@ def ellipk(m):
 
     Notes
     -----
-    For more precision around point m = 1, use `ellipkm1`.
+    For more precision around point m = 1, use `ellipkm1`, which this
+    function calls.
 
     See Also
     --------

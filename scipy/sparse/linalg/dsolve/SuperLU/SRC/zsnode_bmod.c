@@ -59,7 +59,7 @@ zsnode_bmod (
 
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (doublecomplex *) Glu->lusup;
     xlusup  = Glu->xlusup;
 
     nextlu = xlusup[jcol];
@@ -96,10 +96,10 @@ zsnode_bmod (
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
 #if SCIPY_FIX
-	if (nsupr < nsupc) {
-	    /* Invalid input to LAPACK: fail more gracefully */
-	    ABORT("superlu failure (singular matrix?)");
-	}
+       if (nsupr < nsupc) {
+           /* Fail early rather than passing in invalid parameters to TRSV. */
+           ABORT("failed to factorize matrix");
+       }
 #endif
 	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );

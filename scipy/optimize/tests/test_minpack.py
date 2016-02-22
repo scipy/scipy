@@ -453,6 +453,23 @@ class TestCurveFit(TestCase):
         assert_raises(ValueError, curve_fit, f, xdata, ydata, bounds=bounds,
                       method='lm')
 
+    def test_bounds_p0(self):
+        # This test is for issue #5719. The problem was that an initial guess
+        # was ignored when 'trf' or 'dogbox' methods were invoked.
+        def f(x, a):
+            return np.sin(x + a)
+
+        xdata = np.linspace(-2*np.pi, 2*np.pi, 40)
+        ydata = np.sin(xdata)
+        bounds = (-3 * np.pi, 3 * np.pi)
+        for method in ['trf', 'dogbox']:
+            popt_1, _ = curve_fit(f, xdata, ydata, p0=2.1*np.pi)
+            popt_2, _ = curve_fit(f, xdata, ydata, p0=2.1*np.pi,
+                                  bounds=bounds, method=method)
+
+            # If the initial guess is ignored, then popt_2 would be close 0.
+            assert_allclose(popt_1, popt_2)
+
 
 class TestFixedPoint(TestCase):
 

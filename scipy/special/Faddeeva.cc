@@ -130,11 +130,22 @@ extern "C" {
 /////////////////////////////////////////////////////////////////////////
 
 // use numpy's versions, since std:: versions only available in C++11
-#define my_isinf npy_isinf
-#define my_isnan npy_isnan
 #define my_copysign npy_copysign
 #define Inf NPY_INFINITY
 #define NaN NPY_NAN
+
+/*
+ * portable isnan/isinf; in cmath only available in C++11 and npy_math
+ * versions don't work well (they get undef'd by cmath, see gh-5689)
+ * Implementation based on npy_math.h
+ */
+#define my_isnan(x) ((x) != (x))
+#ifdef _MSC_VER
+    #define my_isfinite(x) _finite((x))
+#else
+    #define my_isfinite(x) !my_isnan((x) + (-x))
+#endif
+#define my_isinf(x) (!my_isfinite(x) && !my_isnan(x))
 
 /////////////////////////////////////////////////////////////////////////
 // Auxiliary routines to compute other special functions based on w(z)

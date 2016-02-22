@@ -10,7 +10,7 @@ import time
 from distutils.version import LooseVersion
 
 import numpy as np
-from numpy.testing import dec, run_module_suite, assert_
+from numpy.testing import dec, run_module_suite, assert_, assert_allclose
 from numpy import pi
 
 import scipy.special as sc
@@ -34,9 +34,9 @@ def mpmath_check(min_ver):
                       "mpmath version >= %s required" % min_ver)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # expi
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.10')
 def test_expi_complex():
@@ -49,16 +49,44 @@ def test_expi_complex():
 
     FuncData(sc.expi, dataset, 0, 1).check()
 
+# ------------------------------------------------------------------------------
+# hyp0f1
+# ------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------
+
+@mpmath_check('0.19')
+def test_hyp0f1_gh5764():
+    # Do a small and somewhat systematic test that runs quickly
+    pts = []
+    axis = [-99.5, -9.5, -0.5, 0.5, 9.5, 99.5]
+    for v in axis:
+        for x in axis:
+            for y in axis:
+                pts.append((v, x + 1J*y))
+    std = np.array([complex(mpmath.hyp0f1(*p)) for p in pts])
+    # Can't use FuncData because v should be real and z complex
+    res = np.array([sc.hyp0f1(*p) for p in pts])
+    assert_allclose(res, std, atol=1e-13, rtol=1e-13)
+
+
+@mpmath_check('0.19')
+def test_hyp0f1_gh_1609():
+    # this is a regression test for gh-1609
+    vv = np.linspace(150, 180, 21)
+    af = sc.hyp0f1(vv, 0.5)
+    mf = np.array([mpmath.hyp0f1(v, 0.5) for v in vv])
+    assert_allclose(af, mf.astype(float), rtol=1e-12)
+
+
+# ------------------------------------------------------------------------------
 # hyp2f1
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.14')
 def test_hyp2f1_strange_points():
     pts = [
-        (2,-1,-1,0.7),
-        (2,-2,-2,0.7),
+        (2, -1, -1, 0.7),
+        (2, -2, -2, 0.7),
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
@@ -70,26 +98,26 @@ def test_hyp2f1_strange_points():
 @mpmath_check('0.13')
 def test_hyp2f1_real_some_points():
     pts = [
-        (1,2,3,0),
+        (1, 2, 3, 0),
         (1./3, 2./3, 5./6, 27./32),
         (1./4, 1./2, 3./4, 80./81),
-        (2,-2,-3,3),
-        (2,-3,-2,3),
-        (2,-1.5,-1.5,3),
-        (1,2,3,0),
+        (2,-2, -3, 3),
+        (2, -3, -2, 3),
+        (2, -1.5, -1.5, 3),
+        (1, 2, 3, 0),
         (0.7235, -1, -5, 0.3),
         (0.25, 1./3, 2, 0.999),
         (0.25, 1./3, 2, -1),
-        (2,3,5,0.99),
-        (3./2,-0.5,3,0.99),
-        (2,2.5,-3.25,0.999),
+        (2, 3, 5, 0.99),
+        (3./2, -0.5, 3, 0.99),
+        (2, 2.5, -3.25, 0.999),
         (-8, 18.016500331508873, 10.805295997850628, 0.90875647507000001),
-        (-10,900,-10.5,0.99),
-        (-10,900,10.5,0.99),
-        (-1,2,1,1.0),
-        (-1,2,1,-1.0),
-        (-3,13,5,1.0),
-        (-3,13,5,-1.0),
+        (-10, 900, -10.5, 0.99),
+        (-10, 900, 10.5, 0.99),
+        (-1, 2, 1, 1.0),
+        (-1, 2, 1, -1.0),
+        (-3, 13, 5, 1.0),
+        (-3, 13, 5, -1.0),
         (0.5, 1 - 270.5, 1.5, 0.999**2),  # from issue 1561
     ]
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
@@ -149,20 +177,18 @@ def test_hyp2f1_real_some():
 @mpmath_check('0.12')
 @dec.slow
 def test_hyp2f1_real_random():
-    dataset = []
-
     npoints = 500
     dataset = np.zeros((npoints, 5), np.float_)
 
     np.random.seed(1234)
-    dataset[:,0] = np.random.pareto(1.5, npoints)
-    dataset[:,1] = np.random.pareto(1.5, npoints)
-    dataset[:,2] = np.random.pareto(1.5, npoints)
-    dataset[:,3] = 2*np.random.rand(npoints) - 1
+    dataset[:, 0] = np.random.pareto(1.5, npoints)
+    dataset[:, 1] = np.random.pareto(1.5, npoints)
+    dataset[:, 2] = np.random.pareto(1.5, npoints)
+    dataset[:, 3] = 2*np.random.rand(npoints) - 1
 
-    dataset[:,0] *= (-1)**np.random.randint(2, npoints)
-    dataset[:,1] *= (-1)**np.random.randint(2, npoints)
-    dataset[:,2] *= (-1)**np.random.randint(2, npoints)
+    dataset[:, 0] *= (-1)**np.random.randint(2, npoints)
+    dataset[:, 1] *= (-1)**np.random.randint(2, npoints)
+    dataset[:, 2] *= (-1)**np.random.randint(2, npoints)
 
     for ds in dataset:
         if mpmath.__version__ < '0.14':
@@ -171,12 +197,11 @@ def test_hyp2f1_real_random():
                 ds[2] = abs(ds[:2]).max()
         ds[4] = float(mpmath.hyp2f1(*tuple(ds[:4])))
 
-    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9).check()
+    FuncData(sc.hyp2f1, dataset, (0, 1, 2, 3), 4, rtol=1e-9).check()
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # erf (complex)
-#------------------------------------------------------------------------------
-
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.14')
 def test_erf_complex():
@@ -186,7 +211,7 @@ def test_erf_complex():
         mpmath.mp.dps = 70
         x1, y1 = np.meshgrid(np.linspace(-10, 1, 31), np.linspace(-10, 1, 11))
         x2, y2 = np.meshgrid(np.logspace(-80, .8, 31), np.logspace(-80, .8, 11))
-        points = np.r_[x1.ravel(),x2.ravel()] + 1j*np.r_[y1.ravel(),y2.ravel()]
+        points = np.r_[x1.ravel(),x2.ravel()] + 1j*np.r_[y1.ravel(), y2.ravel()]
 
         assert_func_equal(sc.erf, lambda x: complex(mpmath.erf(x)), points,
                           vectorized=False, rtol=1e-13)
@@ -196,9 +221,9 @@ def test_erf_complex():
         mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # lpmv
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.15')
 def test_lpmv():
@@ -255,9 +280,9 @@ def test_lpmv():
         np.seterr(**olderr)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # beta
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 @mpmath_check('0.15')
 def test_beta():
@@ -294,9 +319,9 @@ def test_beta():
         mpmath.mp.dps, mpmath.mp.prec = old_dps, old_prec
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Machinery for systematic tests
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 class Arg(object):
     """
@@ -451,9 +476,12 @@ class MpmathData(object):
             # in some cases.
             if np.issubdtype(argarr.dtype, np.complexfloating):
                 pytype = complex
-                mptype = lambda x: mpmath.mpc(complex(x))
+
+                def mptype(x):
+                    return mpmath.mpc(complex(x))
             else:
-                mptype = lambda x: mpmath.mpf(float(x))
+                def mptype(x):
+                    return mpmath.mpf(float(x))
 
                 def pytype(x):
                     if abs(x.imag) > 1e-16*(1 + abs(x.real)):
@@ -516,9 +544,9 @@ class _SystematicMeta(type):
         return type.__new__(cls, cls_name, bases, dct)
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Dealing with mpmath quirks
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 def _trace_args(func):
     def tofloat(x):
@@ -623,9 +651,9 @@ def _inf_to_nan(func):
     return wrap
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Systematic tests
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 HYPERKW = dict(maxprec=200, maxterms=200)
 
@@ -938,6 +966,16 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         assert_(np.isinf(sc.exprel(np.inf)))
         assert_(sc.exprel(-np.inf) == 0)
 
+    def test_expm1_complex(self):
+        assert_mpmath_equal(sc.expm1,
+                            mpmath.expm1,
+                            [ComplexArg()])
+
+    def test_log1p_complex(self):
+        assert_mpmath_equal(sc.log1p,
+                            lambda x: mpmath.log(x+1),
+                            [ComplexArg()], dps=60)
+
     def test_e1_complex(self):
         # E_1 oscillates as Im[z] -> +- inf, so limit range
         assert_mpmath_equal(sc.exp1,
@@ -945,13 +983,12 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
                             rtol=1e-11)
 
-        # Check cross-over reqion
+        # Check cross-over region
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
-                            (np.linspace(-50, 50, 171)[:,None]
-                             + np.r_[0, np.logspace(-3, 2, 61),
-                                       -np.logspace(-3, 2, 11)]*1j
-                             ).ravel(),
+                            (np.linspace(-50, 50, 171)[:, None] +
+                             np.r_[0, np.logspace(-3, 2, 61),
+                                   -np.logspace(-3, 2, 11)]*1j).ravel(),
                             rtol=1e-11)
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
@@ -1194,17 +1231,25 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
 
     # hurwitz: same as zeta
 
-    @nonfunctional_tooslow
     def test_hyp0f1(self):
+        # mpmath reports no convergence unless maxterms is large enough
+        KW = dict(maxprec=400, maxterms=1500)
         assert_mpmath_equal(sc.hyp0f1,
-                            _exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
-                            [Arg(), Arg()])
+                            lambda a, x: mpmath.hyp0f1(a, x, **KW),
+                            [Arg(-1e7, 1e7), Arg(0, 1e5)])
+        # NB: The range of the second parameter ("z") is limited from below
+        # because of an overflow in the intermediate calculations. The way
+        # for fix it is to implement an asymptotic expansion for Bessel J
+        # (similar to what is implemented for Bessel I here).
 
-    @nonfunctional_tooslow
     def test_hyp0f1_complex(self):
+        KW = dict(maxprec=400, maxterms=1500)
         assert_mpmath_equal(lambda a, z: sc.hyp0f1(a.real, z),
                             _exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
-                            [Arg(), ComplexArg()])
+                            [Arg(-25, 25), ComplexArg(complex(-120, -120), complex(120, 120))])
+        # NB: The range of the first parameter ("v") are limited by an overflow
+        # in the intermediate calculations. Can be fixed by implementing an
+        # asymptotic expansion for Bessel functions for large order.
 
     @knownfailure_overridable()
     def test_hyp1f1(self):
@@ -1632,6 +1677,122 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             dps=60,
                             rtol=1e-13)
 
+    def test_spherical_jn(self):
+        def mp_spherical_jn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselj(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_jn(int(n), z),
+                            _exception_to_nan(mp_spherical_jn),
+                            [IntArg(0, 200), Arg(-1e8, 1e8)],
+                            dps=300)
+
+    def test_spherical_jn_complex(self):
+        def mp_spherical_jn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselj(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_jn(int(n.real), z),
+                            _exception_to_nan(mp_spherical_jn),
+                            [IntArg(0, 200), ComplexArg()])
+
+    def test_spherical_yn(self):
+        def mp_spherical_yn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.bessely(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_yn(int(n), z),
+                            _exception_to_nan(mp_spherical_yn),
+                            [IntArg(0, 200), Arg(-1e10, 1e10)],
+                            dps=100)
+
+    def test_spherical_yn_complex(self):
+        def mp_spherical_yn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.bessely(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_yn(int(n.real), z),
+                            _exception_to_nan(mp_spherical_yn),
+                            [IntArg(0, 200), ComplexArg()])
+
+    def test_spherical_in(self):
+        def mp_spherical_in(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besseli(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_in(int(n), z),
+                            _exception_to_nan(mp_spherical_in),
+                            [IntArg(0, 200), Arg()],
+                            dps=200, atol=10**(-278))
+
+    def test_spherical_in_complex(self):
+        def mp_spherical_in(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besseli(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_in(int(n.real), z),
+                            _exception_to_nan(mp_spherical_in),
+                            [IntArg(0, 200), ComplexArg()])
+
+    def test_spherical_kn(self):
+        def mp_spherical_kn(n, z):
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, z) *
+                   mpmath.sqrt(mpmath.pi/(2*mpmath.mpmathify(z))))
+            if mpmath.mpmathify(z).imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_kn(int(n), z),
+                            _exception_to_nan(mp_spherical_kn),
+                            [IntArg(0, 150), Arg()],
+                            dps=100)
+
+    @knownfailure_overridable("Accuracy issues near z = -1 inherited from kv.")
+    def test_spherical_kn_complex(self):
+        def mp_spherical_kn(n, z):
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
+            if arg.imag == 0:
+                return out.real
+            else:
+                return out
+
+        assert_mpmath_equal(lambda n, z: sc.spherical_kn(int(n.real), z),
+                            _exception_to_nan(mp_spherical_kn),
+                            [IntArg(0, 200), ComplexArg()],
+                            dps=200)
 
 if __name__ == "__main__":
     run_module_suite()

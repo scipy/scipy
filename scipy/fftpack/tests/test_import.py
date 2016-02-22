@@ -14,6 +14,7 @@ import sys
 if sys.version_info >= (3, 4):
     from pathlib import Path
     import re
+    import tokenize
     from numpy.testing import TestCase, assert_, run_module_suite
     import scipy
 
@@ -24,7 +25,9 @@ if sys.version_info >= (3, 4):
             for path in base.rglob("*.py"):
                 if base / "fftpack" in path.parents:
                     continue
-                with path.open() as file:
+                # use tokenize to auto-detect encoding on systems where no
+                # default encoding is defined (e.g. LANG='C')
+                with tokenize.open(str(path)) as file:
                     assert_(all(not re.fullmatch(regexp, line)
                                 for line in file),
                             "{0} contains an import from fftpack".format(path))

@@ -41,7 +41,7 @@
     ===================================================================== 
 </pre>
 */  
-double dzsum1_(int *n, doublecomplex *cx, int *incx)
+double dzsum1_slu(int *n, doublecomplex *cx, int *incx)
 {
 
     /* Builtin functions */
@@ -90,5 +90,5 @@ L20:
 
     /*     End of DZSUM1 */
 
-} /* dzsum1_ */
+} /* dzsum1_slu */
 

@@ -1120,7 +1120,7 @@ def test_ckdtree_memuse():
     z_copy[:] = z
     # Place FILLVAL in z_copy at random number of random locations
     FILLVAL = 99.
-    mask = np.random.random_integers(0, z.size - 1, np.random.randint(50) + 5)
+    mask = np.random.randint(0, z.size, np.random.randint(50) + 5)
     z_copy.flat[mask] = FILLVAL
     igood = np.vstack(np.where(x != FILLVAL)).T
     ibad = np.vstack(np.where(x == FILLVAL)).T

@@ -40,7 +40,7 @@
     ===================================================================== 
 </pre>
 */
-double scsum1_(int *n, complex *cx, int *incx)
+double scsum1_slu(int *n, complex *cx, int *incx)
 {
     /* System generated locals */
     int i__1, i__2;
@@ -95,5 +95,5 @@ L20:
 
 /*     End of SCSUM1 */
 
-} /* scsum1_ */
+} /* scsum1_slu */
 

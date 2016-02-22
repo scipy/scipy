@@ -208,9 +208,9 @@ def setup_package():
                 sys.platform == 'darwin'):
             # We're ony building wheels for platforms where we know there's
             # also a Numpy wheel, so do this unconditionally.  See gh-5184.
-            build_requires = ['numpy>=1.6.2']
+            build_requires = ['numpy>=1.7.1']
     except:
-        build_requires = ['numpy>=1.6.2']
+        build_requires = ['numpy>=1.7.1']
 
     metadata = dict(
         name='scipy',

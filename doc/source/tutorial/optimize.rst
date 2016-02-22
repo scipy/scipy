@@ -458,9 +458,9 @@ finally plots the original data and the fitted model function:
     >>> x0 = np.array([2.5, 3.9, 4.15, 3.9])
     >>> res = least_squares(fun, x0, jac=jac, bounds=(0, 100), args=(u, y), verbose=1)
     `ftol` termination condition is satisfied.
-    Function evaluations 129, initial cost 4.4383e+00, final cost 1.5375e-04, first-order optimality 1.41e-05.
+    Function evaluations 130, initial cost 4.4383e+00, final cost 1.5375e-04, first-order optimality 4.92e-08.
     >>> res.x
-    array([ 0.19280849,  0.19124746,  0.12304994,  0.13604619])
+    array([ 0.19280596,  0.19130423,  0.12306063,  0.13607247])
 
     >>> import matplotlib.pyplot as plt
     >>> u_test = np.linspace(0, 5)

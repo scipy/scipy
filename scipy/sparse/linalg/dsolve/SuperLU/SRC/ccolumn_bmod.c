@@ -104,7 +104,7 @@ ccolumn_bmod (
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (complex *) Glu->lusup;
     xlusup  = Glu->xlusup;
     nzlumax = Glu->nzlumax;
     jcolp1 = jcol + 1;
@@ -285,7 +285,7 @@ ccolumn_bmod (
     while ( new_next > nzlumax ) {
 	if (mem_error = cLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu))
 	    return (mem_error);
-	lusup = Glu->lusup;
+	lusup = (complex *) Glu->lusup;
 	lsub = Glu->lsub;
     }
 

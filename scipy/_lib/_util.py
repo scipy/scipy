@@ -177,7 +177,7 @@ def _asarray_validated(a, check_finite=True,
         import scipy.sparse
         if scipy.sparse.issparse(a):
             msg = ('Sparse matrices are not supported by this function. '
-                   'Perhaps one of the scipy.linalg.sparse functions '
+                   'Perhaps one of the scipy.sparse.linalg functions '
                    'would work instead.')
             raise ValueError(msg)
     if not mask_ok:
@@ -190,11 +190,7 @@ def _asarray_validated(a, check_finite=True,
             raise ValueError('object arrays are not supported')
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
-            try:
-                a = toarray(a, dtype=np.float_)
-            except TypeError:
-                # for compatibility with numpy 1.6
-                a = toarray(a).astype(np.float_)
+            a = toarray(a, dtype=np.float_)
     return a
 
 
