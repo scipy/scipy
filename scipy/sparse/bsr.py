@@ -486,20 +486,43 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         self.data[:len(nonzero_blocks)] = self.data[nonzero_blocks]
 
-        from .csr import csr_matrix
-
         # modifies self.indptr and self.indices *in place*
-        # since CSR constructor may end up in making copies (in case
-        # our index arrays are invalid in some way), play it safe
-        proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M//R,N//C))
-        proxy.indices = self.indices
-        proxy.indptr = self.indptr
-        proxy.eliminate_zeros()
-
+        _sparsetools.csr_eliminate_zeros(M//R, N//C, self.indptr,
+                                         self.indices, mask)
         self.prune()
 
     def sum_duplicates(self):
-        raise NotImplementedError
+        """Eliminate duplicate matrix entries by adding them together
+
+        The is an *in place* operation
+        """
+        if self.has_canonical_format:
+            return
+        self.sort_indices()
+        R, C = self.blocksize
+        M, N = self.shape
+
+        # port of _sparsetools.csr_sum_duplicates
+        n_row = M // R
+        nnz = 0
+        row_end = 0
+        for i in range(n_row):
+            jj = row_end
+            row_end = self.indptr[i+1]
+            while jj < row_end:
+                j = self.indices[jj]
+                x = self.data[jj]
+                jj += 1
+                while jj < row_end and self.indices[jj] == j:
+                    x += self.data[jj]
+                    jj += 1
+                self.indices[nnz] = j
+                self.data[nnz] = x
+                nnz += 1
+            self.indptr[i+1] = nnz
+
+        self.prune()  # nnz may have changed
+        self.has_canonical_format = True
 
     def sort_indices(self):
         """Sort the indices of this matrix *in place*

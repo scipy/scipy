@@ -30,8 +30,13 @@ class _data_matrix(spmatrix):
         self.data.dtype = newtype
     dtype = property(fget=_get_dtype,fset=_set_dtype)
 
+    def _deduped_data(self):
+        if hasattr(self, 'sum_duplicates'):
+            self.sum_duplicates()
+        return self.data
+
     def __abs__(self):
-        return self._with_data(abs(self.data))
+        return self._with_data(abs(self._deduped_data()))
 
     def _real(self):
         return self._with_data(self.data.real)
@@ -58,7 +63,7 @@ class _data_matrix(spmatrix):
             return NotImplemented
 
     def astype(self, t):
-        return self._with_data(self.data.astype(t))
+        return self._with_data(self._deduped_data().astype(t))
 
     def conj(self):
         return self._with_data(self.data.conj())
@@ -76,21 +81,14 @@ class _data_matrix(spmatrix):
         
         dtype : If dtype is not specified, the current dtype will be preserved.
         """
-                
-        if isscalarlike(n):
-            if hasattr(self, "tocsr"):                
-                m = self.tocsr()  
-                m.sum_duplicates()
-                data = m.data
-                if dtype is not None:
-                    data = data.astype(dtype)
-                
-                return m._with_data(data ** n)
-            else:
-                raise TypeError("matrix cannot be convert to csr")            
-        else:
+        if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
-        
+
+        data = self._deduped_data()
+        if dtype is not None:
+            data = data.astype(dtype)
+        return self._with_data(data ** n)
+
     ###########################
     # Multiplication handlers #
     ###########################
@@ -157,7 +155,7 @@ class _minmax_mixin(object):
             zero = self.dtype.type(0)
             if self.nnz == 0:
                 return zero
-            m = min_or_max.reduce(self.data.ravel())
+            m = min_or_max.reduce(self._deduped_data().ravel())
             if self.nnz != np.product(self.shape):
                 m = min_or_max(zero, m)
             return m
