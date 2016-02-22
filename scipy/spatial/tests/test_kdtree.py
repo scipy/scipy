@@ -1157,10 +1157,20 @@ def test_ckdtree_weights():
 
     for i in range(10):
         # since weights are uniform, these shall agree:
-        c1 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
-                self_weights=weights, other_weights=weights)
-        c2 = tree1.count_neighbors(tree1, np.linspace(0, 10, i))
+        c1 = tree1.count_neighbors(tree1, np.linspace(0, 10, i))
+        c2 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                weights=(weights, weights))
+        c3 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                weights=(weights, None))
+        c4 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                weights=(None, weights))
+        c5 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                weights=weights)
+
         assert_array_equal(c1, c2)
+        assert_array_equal(c1, c3)
+        assert_array_equal(c1, c4)
+
 
     for i in range(len(data)):
         # this tests removal of one data point by setting weight to 0
@@ -1172,9 +1182,17 @@ def test_ckdtree_weights():
         
         c1 = tree2.count_neighbors(tree2, np.linspace(0, 10, 100))
         c2 = tree1.count_neighbors(tree1, np.linspace(0, 10, 100), 
-                self_weights=w1, other_weights=w1)
-
+                weights=(w1, w1))
         assert_array_equal(c1, c2)
+
+        try:
+            #this asserts for two different trees, singular weights
+            # crashes
+            tree1.count_neighbors(tree2, np.linspace(0, 10, 100), 
+                    weights=w1)
+            raise AssertionError("Exception is not caught")
+        except ValueError:
+            pass 
 
 def test_ckdtree_count_neighbous_multiple_r():
     import itertools

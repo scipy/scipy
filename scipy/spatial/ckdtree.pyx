@@ -1124,7 +1124,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     @cython.boundscheck(False)
     def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2., 
-                        object self_weights=None, object other_weights=None, int cumulative=True):
+                        object weights=None, int cumulative=True):
         """
         count_neighbors(self, other, r, p=2., self_weights=None, other_weights=None, cumulative=True)
 
@@ -1152,14 +1152,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         p : float, optional 
             1<=p<=infinity, default 2.0
             Which Minkowski p-norm to use
-        self_weights : array-like or None, optional
-            weight of each data point in self. 
-            If None, the pair-counting is unweighted (weighted by 1) for 'self'.
-            Default: None
-        other_weights : array-like or None, optional
-            weight of each data point in other. 
-            If None, the pair-counting is unweighted (weighted by 1) for 'other'.
-            Default: None
+        weights : tuple, array_like, or None, optional
+            If given as a tuple, weights[0] is the weights of points in self, and
+            weights[1] is the weights of points in other; either can be None to 
+            indicate the points are unweighted.
+            If given as an array_like, weights is the weights of points in self 
+            and other. If self and other are two different trees, an Error is raised.
+            If None, the pair-counting is unweighted.
         cumulative : bool, optional
             Whether the returned counts are cumulative. Default: True
 
@@ -1207,6 +1206,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             for i in range(n_queries):
                 if not ckdtree_isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
+
+        if weights is None:
+            self_weights = other_weights = None
+        elif isinstance(weights, tuple):
+            self_weights, other_weights = weights
+        else:
+            self_weights = other_weights = weights
+            if other is not self:
+                raise ValueError("Two different trees are used. Specify weights for both in a tuple.")
 
         if self_weights is None and other_weights is None:
             int_result = True
