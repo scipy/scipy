@@ -17,13 +17,13 @@
 #endif
 
 #include "SuperLU/SRC/slu_zdefs.h"
-#include "numpy/arrayobject.h"
+#include "numpy/ndarrayobject.h"
 #include "SuperLU/SRC/slu_util.h"
 #include "SuperLU/SRC/slu_dcomplex.h"
 #include "SuperLU/SRC/slu_scomplex.h"
 
 
-#define _CHECK_INTEGER(x) (PyArray_ISINTEGER(x) && (x)->descr->elsize == sizeof(int))
+#define _CHECK_INTEGER(x) (PyArray_ISINTEGER((PyArrayObject*)x) && PyArray_ITEMSIZE((PyArrayObject*)x) == sizeof(int))
 
 /*
  * SuperLUObject definition

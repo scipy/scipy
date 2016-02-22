@@ -11,6 +11,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from numpy.distutils.system_info import get_info
     from scipy._build_utils import get_sgemv_fix
+    from scipy._build_utils import numpy_nodepr_api
 
     config = Configuration('dsolve',parent_package,top_path)
     config.add_data_dir('tests')
@@ -47,6 +48,7 @@ def configuration(parent_package='',top_path=None):
                          libraries=['superlu_src'],
                          depends=(sources + headers),
                          extra_info=lapack_opt,
+                         **numpy_nodepr_api
                          )
 
     return config

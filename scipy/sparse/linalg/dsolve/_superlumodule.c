@@ -14,7 +14,7 @@
 #include <Python.h>
 
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
-#include <numpy/arrayobject.h>
+#include <numpy/ndarrayobject.h>
 
 #include "_superluobject.h"
 #include "numpy/npy_3kcompat.h"
@@ -107,7 +107,7 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 	return NULL;
     }
 
-    type = PyArray_TYPE(nzvals);
+    type = PyArray_TYPE((PyArrayObject*)nzvals);
     if (!CHECK_SLU_TYPE(type)) {
 	PyErr_SetString(PyExc_TypeError,
 			"nzvals is not of a type supported by SuperLU");
@@ -122,11 +122,11 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     /* Create Space for output */
     Py_X = (PyArrayObject*)PyArray_FROMANY(
         (PyObject*)Py_B, type, 1, 2,
-        NPY_F_CONTIGUOUS | NPY_ENSURECOPY);
+        NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ENSURECOPY);
     if (Py_X == NULL)
 	return NULL;
 
-    if (Py_X->dimensions[0] != N) {
+    if (PyArray_DIM((PyArrayObject*)Py_X, 0) != N) {
         PyErr_SetString(PyExc_ValueError,
                         "b array has invalid shape");
         Py_DECREF(Py_X);
@@ -160,7 +160,7 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 
     /* Setup options */
 
-    jmpbuf_ptr = superlu_python_jmpbuf();
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     SLU_BEGIN_THREADS;
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
         SLU_END_THREADS;
@@ -235,7 +235,7 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 	return NULL;
     }
 
-    type = PyArray_TYPE(nzvals);
+    type = PyArray_TYPE((PyArrayObject*)nzvals);
     if (!CHECK_SLU_TYPE(type)) {
 	PyErr_SetString(PyExc_TypeError,
 			"nzvals is not of a type supported by SuperLU");

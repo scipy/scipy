@@ -65,12 +65,12 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 
     x = (PyArrayObject*)PyArray_FROMANY(
         (PyObject*)b, self->type, 1, 2,
-        NPY_F_CONTIGUOUS | NPY_ENSURECOPY);
+        NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ENSURECOPY);
     if (x == NULL) {
         goto fail;
     }
 
-    if (x->dimensions[0] != self->n) {
+    if (PyArray_DIM((PyArrayObject*)x, 0) != self->n) {
         PyErr_SetString(PyExc_ValueError, "b is of incompatible size");
         goto fail;
     }
@@ -78,7 +78,7 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     if (DenseSuper_from_Numeric((SuperMatrix*)&B, (PyObject *)x))
         goto fail;
 
-    jmpbuf_ptr = superlu_python_jmpbuf();
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	goto fail;
     }
@@ -86,7 +86,7 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     StatInit((SuperLUStat_t *)&stat);
 
     /* Solve the system, overwriting vector x. */
-    jmpbuf_ptr = superlu_python_jmpbuf();
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     SLU_BEGIN_THREADS;
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
         SLU_END_THREADS;
@@ -164,7 +164,7 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
 	/* For ref counting of the memory */
-	PyArray_BASE(perm_r) = (PyObject*)self;
+	PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self);
 	Py_INCREF(self);
 	return perm_r;
     }
@@ -179,7 +179,7 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
 	/* For ref counting of the memory */
-	PyArray_BASE(perm_c) = (PyObject*)self;
+	PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self);
 	Py_INCREF(self);
 	return perm_c;
     }
@@ -294,26 +294,26 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
 
     aX = (PyArrayObject*)PyX;
 
-    if (!CHECK_SLU_TYPE(aX->descr->type_num)) {
+    if (!CHECK_SLU_TYPE(PyArray_TYPE((PyArrayObject*)aX))) {
         PyErr_SetString(PyExc_ValueError, "unsupported array data type");
         return -1;
     }
 
-    if (!(aX->flags & NPY_F_CONTIGUOUS)) {
+    if (!(PyArray_FLAGS((PyArrayObject*)aX) & NPY_ARRAY_F_CONTIGUOUS)) {
         PyErr_SetString(PyExc_ValueError, "array is not fortran contiguous");
         return -1;
     }
 
-    nd = aX->nd;
+    nd = PyArray_NDIM((PyArrayObject*)aX);
 
     if (nd == 1) {
-	m = aX->dimensions[0];
+	m = PyArray_DIM((PyArrayObject*)aX, 0);
 	n = 1;
 	ldx = m;
     }
     else if (nd == 2) {
-	m = aX->dimensions[0];
-	n = aX->dimensions[1];
+	m = PyArray_DIM((PyArrayObject*)aX, 0);
+	n = PyArray_DIM((PyArrayObject*)aX, 1);
 	ldx = m;
     }
     else {
@@ -321,14 +321,14 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
         return -1;
     }
 
-    jmpbuf_ptr = superlu_python_jmpbuf();
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	return -1;
     }
     else {
-	Create_Dense_Matrix(aX->descr->type_num, X, m, n,
-			    aX->data, ldx, SLU_DN,
-			    NPY_TYPECODE_TO_SLU(aX->descr->type_num),
+	Create_Dense_Matrix(PyArray_TYPE((PyArrayObject*)aX), X, m, n,
+			    PyArray_DATA((PyArrayObject*)aX), ldx, SLU_DN,
+			    NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)aX)),
 			    SLU_GE);
     }
     return 0;
@@ -343,9 +343,9 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
 
-    ok = (PyArray_EquivTypenums(PyArray_DESCR(nzvals)->type_num, typenum) &&
-          PyArray_EquivTypenums(PyArray_DESCR(colind)->type_num, NPY_INT) &&
-          PyArray_EquivTypenums(PyArray_DESCR(rowptr)->type_num, NPY_INT) &&
+    ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
+          PyArray_EquivTypenums(PyArray_TYPE(colind), NPY_INT) &&
+          PyArray_EquivTypenums(PyArray_TYPE(rowptr), NPY_INT) &&
           PyArray_NDIM(nzvals) == 1 &&
           PyArray_NDIM(colind) == 1 &&
           PyArray_NDIM(rowptr) == 1 &&
@@ -362,20 +362,21 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 	return -1;
     }
 
-    jmpbuf_ptr = superlu_python_jmpbuf();
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	return -1;
     }
     else {
-	if (!CHECK_SLU_TYPE(nzvals->descr->type_num)) {
+	if (!CHECK_SLU_TYPE(PyArray_TYPE(nzvals))) {
 	    PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
 	    return -1;
 	}
-	Create_CompRow_Matrix(nzvals->descr->type_num,
-			      A, m, n, nnz, nzvals->data,
-			      (int *) colind->data, (int *) rowptr->data,
+	Create_CompRow_Matrix(PyArray_TYPE(nzvals),
+			      A, m, n, nnz, PyArray_DATA((PyArrayObject*)nzvals),
+			      (int *) PyArray_DATA((PyArrayObject*)colind),
+                              (int *) PyArray_DATA((PyArrayObject*)rowptr),
 			      SLU_NR,
-			      NPY_TYPECODE_TO_SLU(nzvals->descr->type_num),
+			      NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)nzvals)),
 			      SLU_GE);
     }
 
@@ -389,9 +390,9 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
 
-    ok = (PyArray_EquivTypenums(PyArray_DESCR(nzvals)->type_num, typenum) &&
-          PyArray_EquivTypenums(PyArray_DESCR(rowind)->type_num, NPY_INT) &&
-          PyArray_EquivTypenums(PyArray_DESCR(colptr)->type_num, NPY_INT) &&
+    ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
+          PyArray_EquivTypenums(PyArray_TYPE(rowind), NPY_INT) &&
+          PyArray_EquivTypenums(PyArray_TYPE(colptr), NPY_INT) &&
           PyArray_NDIM(nzvals) == 1 &&
           PyArray_NDIM(rowind) == 1 &&
           PyArray_NDIM(colptr) == 1 &&
@@ -408,20 +409,20 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 	return -1;
     }
 
-    jmpbuf_ptr = superlu_python_jmpbuf();
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	return -1;
     }
     else {
-	if (!CHECK_SLU_TYPE(nzvals->descr->type_num)) {
+	if (!CHECK_SLU_TYPE(PyArray_TYPE(nzvals))) {
 	    PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
 	    return -1;
 	}
-	Create_CompCol_Matrix(nzvals->descr->type_num,
-			      A, m, n, nnz, nzvals->data,
-			      (int *) rowind->data, (int *) colptr->data,
+	Create_CompCol_Matrix(PyArray_TYPE(nzvals),
+			      A, m, n, nnz, PyArray_DATA(nzvals),
+			      (int *) PyArray_DATA(rowind), (int *) PyArray_DATA(colptr),
 			      SLU_NC,
-			      NPY_TYPECODE_TO_SLU(nzvals->descr->type_num),
+			      NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
 			      SLU_GE);
     }
 
@@ -489,12 +490,12 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     /* Copy data over */
     ok = LU_to_csc(
         L, U,
-        (int*)PyArray_DATA(L_indices),
-        (int*)PyArray_DATA(L_indptr),
-        (void*)PyArray_DATA(L_data),
-        (int*)PyArray_DATA(U_indices),
-        (int*)PyArray_DATA(U_indptr),
-        (void*)PyArray_DATA(U_data),
+        (int*)PyArray_DATA((PyArrayObject*)L_indices),
+        (int*)PyArray_DATA((PyArrayObject*)L_indptr),
+        (void*)PyArray_DATA((PyArrayObject*)L_data),
+        (int*)PyArray_DATA((PyArrayObject*)U_indices),
+        (int*)PyArray_DATA((PyArrayObject*)U_indptr),
+        (void*)PyArray_DATA((PyArrayObject*)U_data),
         L->Dtype
         );
 
@@ -728,7 +729,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->cached_L = NULL;
     self->type = intype;
 
-    jmpbuf_ptr = superlu_python_jmpbuf();
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
 	goto fail;
     }
@@ -758,7 +759,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     }
     else {
         Glu_ptr = &Glu;
-        jmpbuf_ptr = superlu_python_jmpbuf();
+        jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
         SLU_BEGIN_THREADS;
         if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
             SLU_END_THREADS;
