@@ -249,11 +249,17 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0.19572515, -0.63648426, 0.35838135]],
                         atol=1e-14, rtol=1e-7)
 
-    def test_neldermead_step(self):
+    @suppressed_stdout
+    def test_neldermead_initial_simplex(self):
         # Nelder-Mead simplex algorithm
+        simplex = np.zeros((4, 3))
+        simplex[...] = self.startparams
+        for j in range(3):
+            simplex[j+1,j] += 0.1
+
         if self.use_wrapper:
             opts = {'maxiter': self.maxiter, 'disp': False,
-                    'return_all': False, 'step': (0.1,0.1,0.1)}
+                    'return_all': False, 'initial_simplex': simplex}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Nelder-mead', options=opts)
             params, fopt, numiter, func_calls, warnflag = \
@@ -263,7 +269,7 @@ class CheckOptimizeParameterized(CheckOptimize):
             retval = optimize.fmin(self.func, self.startparams,
                                         args=(), maxiter=self.maxiter,
                                         full_output=True, disp=False, retall=False,
-                                        step=(0.1,0.1,0.1))
+                                        initial_simplex=simplex)
 
             (params, fopt, numiter, func_calls, warnflag) = retval
 
@@ -271,7 +277,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.15.0. Don't allow them to increase.
+        # Scipy 0.17.0. Don't allow them to increase.
         assert_(self.funccalls == 100, self.funccalls)
         assert_(self.gradcalls == 0, self.gradcalls)
 
