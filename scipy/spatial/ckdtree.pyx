@@ -520,7 +520,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         if boxsize is None:
             self.boxsize = None
-            self.raw_boxsize_data = NULL
             self.boxsize_data = None
         else:
             boxsize_arr = np.empty(2 * self.m, dtype=np.float64)
@@ -528,7 +527,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             boxsize_arr[self.m:] = 0.5 * boxsize_arr[:self.m]
             # FIXME: how to use a matching del if new is used?
             self.boxsize_data = boxsize_arr
-            self.raw_boxsize_data = <np.float64_t*> np.PyArray_DATA(boxsize_arr)
             self.boxsize = boxsize_arr[:self.m].copy()
             if (self.data >= self.boxsize[None, :]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
@@ -539,10 +537,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.mins = np.ascontiguousarray(np.amin(self.data,axis=0), dtype=np.float64)
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
 
-        self.raw_data = <np.float64_t*> np.PyArray_DATA(self.data)
-        self.raw_maxes = <np.float64_t*> np.PyArray_DATA(self.maxes)
-        self.raw_mins = <np.float64_t*> np.PyArray_DATA(self.mins)
-        self.raw_indices = <np.intp_t*> np.PyArray_DATA(self.indices)
+        self._pre_init()
 
         _compact = 1 if compact_nodes else 0
         _median = 1 if balanced_tree else 0
@@ -561,14 +556,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         finally:
             PyMem_Free(tmp)
 
-        # set the size attribute after tree_buffer is built
-        self.size = self.tree_buffer.size()
-                
         self._median_workspace = None
         
         # set up the tree structure pointers
-        self.ctree = tree_buffer_root(self.tree_buffer)
-        self._post_init(self.ctree)
+        self._post_init()
         
         # make the tree viewable from Python
         self.tree = cKDTreeNode()
@@ -577,9 +568,32 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.tree._indices = self.indices
         self.tree.level = 0
         self.tree._setup()
+
+    cdef int _pre_init(cKDTree self) except -1:
+
+        # finalize the pointers from array attributes
+
+        self.raw_data = <np.float64_t*> np.PyArray_DATA(self.data)
+        self.raw_maxes = <np.float64_t*> np.PyArray_DATA(self.maxes)
+        self.raw_mins = <np.float64_t*> np.PyArray_DATA(self.mins)
+        self.raw_indices = <np.intp_t*> np.PyArray_DATA(self.indices)
+
+        if self.boxsize_data is not None:
+            self.raw_boxsize_data = <np.float64_t*>np.PyArray_DATA(self.boxsize_data)
+
+        return 0        
+
+    cdef int _post_init(cKDTree self) except -1:
+        # finalize the tree points, this calls _post_init_traverse
         
-                
-    cdef int _post_init(cKDTree self, ckdtreenode *node) except -1:
+        self.ctree = tree_buffer_root(self.tree_buffer)
+
+        # set the size attribute after tree_buffer is built
+        self.size = self.tree_buffer.size()
+
+        return self._post_init_traverse(self.ctree)
+         
+    cdef int _post_init_traverse(cKDTree self, ckdtreenode *node) except -1:
         # recurse the tree and re-initialize
         # "less" and "greater" fields
         if node.split_dim == -1:
@@ -589,8 +603,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         else:
             node.less = self.ctree + node._less
             node.greater = self.ctree + node._greater
-            self._post_init(node.less)
-            self._post_init(node.greater)
+            self._post_init_traverse(node.less)
+            self._post_init_traverse(node.greater)
+                
         return 0
         
 
@@ -1352,21 +1367,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         # unpack the state
         (tree, self.data, self.n, self.m, self.leafsize, 
             self.maxes, self.mins, self.indices, self.boxsize, self.boxsize_data) = state
+
+        # set raw pointers
+        self._pre_init()
         
         # copy kd-tree buffer 
         unpickle_tree_buffer(self.tree_buffer, tree)    
         
-        # set raw pointers
-        self.raw_data = <np.float64_t*>np.PyArray_DATA(self.data)
-        self.raw_maxes = <np.float64_t*>np.PyArray_DATA(self.maxes)
-        self.raw_mins = <np.float64_t*>np.PyArray_DATA(self.mins)
-        self.raw_indices = <np.intp_t*>np.PyArray_DATA(self.indices)
-        if self.boxsize_data is not None:
-            self.raw_boxsize_data = <np.float64_t*>np.PyArray_DATA(self.boxsize_data)
- 
         # set up the tree structure pointers
-        self.ctree = tree_buffer_root(self.tree_buffer)
-        self._post_init(self.ctree)
+        self._post_init()
         
         # make the tree viewable from Python
         self.tree = cKDTreeNode()
