@@ -1106,6 +1106,10 @@ def simulate_periodic_box(kdtree, data, k, boxsize):
     
 def test_ckdtree_memuse():
     # unit test adaptation of gh-5630
+
+    # NOTE: this will fail when run via valgrind,
+    # because rss is no longer a reliable memory usage indicator.
+
     try:
         import resource
     except ImportError:
