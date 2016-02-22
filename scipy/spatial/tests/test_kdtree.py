@@ -1171,7 +1171,6 @@ def test_ckdtree_weights():
         assert_array_equal(c1, c3)
         assert_array_equal(c1, c4)
 
-
     for i in range(len(data)):
         # this tests removal of one data point by setting weight to 0
         w1 = weights.copy()
