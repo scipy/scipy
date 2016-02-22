@@ -497,10 +497,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         readonly object          boxsize
         np.ndarray               boxsize_data
         np.float64_t             *raw_boxsize_data
-
-    property size:
-        def __get__(self):
-            return self.tree_buffer.size()
+        readonly np.intp_t       size
 
     def __cinit__(cKDTree self):
         self.tree_buffer = NULL        
@@ -563,6 +560,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 _median, _compact)
         finally:
             PyMem_Free(tmp)
+
+        # set the size attribute after tree_buffer is built
+        self.size = self.tree_buffer.size()
                 
         self._median_workspace = None
         

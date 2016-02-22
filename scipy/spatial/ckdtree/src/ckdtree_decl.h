@@ -26,7 +26,6 @@ struct ckdtreenode {
 };
 
 #ifdef CKDTREE_METHODS_IMPL
-
 struct ckdtree {
     PyObject_HEAD
     // vtab pointer is present as long as cKDTree has cdef methods
@@ -51,7 +50,7 @@ struct ckdtree {
     const PyObject      *boxsize;
     const PyArrayObject *boxsize_data;
     const npy_float64   *raw_boxsize_data;
+    const npy_intp size;
 };
-
 #endif
 #endif
