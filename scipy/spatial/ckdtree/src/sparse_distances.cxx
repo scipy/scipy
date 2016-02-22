@@ -47,21 +47,21 @@ traverse(const ckdtree *self, const ckdtree *other,
             const npy_intp end2 = node2->end_idx;
                         
             prefetch_datapoint(sdata + sindices[start1] * m, m);
-            if (start1 < end1)
+            if (start1 < end1 - 1)
                prefetch_datapoint(sdata + sindices[start1+1] * m, m);                         
                         
             for (npy_intp i = start1; i < end1; ++i) {
             
-                if (i < end1-2)
+                if (i < end1 - 2)
                      prefetch_datapoint(sdata + sindices[i+2] * m, m);
             
                 prefetch_datapoint(odata + oindices[start2] * m, m);
-                if (start2 < end2)
+                if (start2 < end2 - 1)
                     prefetch_datapoint(sdata + oindices[start2+1] * m, m);
                     
                 for (npy_intp j = start2; j < end2; ++j) {
                 
-                    if (j < end2-2)
+                    if (j < end2 - 2)
                         prefetch_datapoint(odata + oindices[j+2] * m, m);
                 
                     npy_float64 d = MinMaxDist::distance_p(

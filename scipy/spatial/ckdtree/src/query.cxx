@@ -302,12 +302,12 @@ query_single_point(const ckdtree *self,
                 const npy_intp *indices = self->raw_indices;
                 
                 prefetch_datapoint(data+indices[start_idx]*m, m);
-                if (start_idx < end_idx)
+                if (start_idx < end_idx - 1)
                     prefetch_datapoint(data+indices[start_idx+1]*m, m);
                 
                 for (i=start_idx; i<end_idx; ++i) {
                        
-                    if (i < end_idx-2)
+                    if (i < end_idx - 2)
                         prefetch_datapoint(data+indices[i+2]*m, m);
                 
                     d = MinMaxDist::distance_p(self, data+indices[i]*m, x, p, m, distance_upper_bound);
