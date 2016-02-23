@@ -177,6 +177,7 @@ from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 
 from ._stats import _kendalltau
+from ._stats import _toranks
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -3303,7 +3304,14 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
         y = ma.masked_invalid(np.asarray(y).ravel())
         return mstats_basic.kendalltau(x, y)
 
-    return _kendalltau(np.asarray(x).ravel(), np.asarray(y).ravel())
+    x = np.asarray(x).ravel()
+    y = np.asarray(y).ravel()
+    # Reduce to ranks unsupported types
+    if not x.dtype in (np.int32, np.int64, np.float32, np.float64):
+        x = _toranks(x)
+    if not y.dtype in (np.int32, np.int64, np.float32, np.float64):
+        y = _toranks(y)
+    return _kendalltau(x, y)
 
 
 #####################################

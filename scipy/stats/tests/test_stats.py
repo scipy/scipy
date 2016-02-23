@@ -623,6 +623,17 @@ def test_kendalltau():
     y = np.arange(20.)
     assert_raises(ValueError, stats.kendalltau, x, y)
 
+    # test inputs requiring conversions to ranks
+    expected = (-0.33333333333333326, 0.60150814411369402)
+    res  = stats.kendalltau([0, 1, 2],["b","c","a"])
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+    res  = stats.kendalltau(["a","b","c"],[1, 2, 0])
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+    res  = stats.kendalltau(["a","b","c"],["b","c","a"])
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
 
 class TestFindRepeats(TestCase):
 
