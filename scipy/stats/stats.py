@@ -3307,9 +3307,9 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
     # Reduce to ranks unsupported types
-    if not x.dtype in (np.int32, np.int64, np.float32, np.float64):
+    if x.dtype not in (np.int32, np.int64, np.float32, np.float64):
         x = _toranks(x)
-    if not y.dtype in (np.int32, np.int64, np.float32, np.float64):
+    if y.dtype not in (np.int32, np.int64, np.float32, np.float64):
         y = _toranks(y)
     return _kendalltau(x, y)
 

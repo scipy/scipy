@@ -55,7 +55,7 @@ KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 def _kendalltau(ordered0[:] x, ordered1[:] y):
 
     cdef uint64_t n = np.uint64(len(x))
-    cdef long[:] temp = np.ndarray(n, dtype=long) # support structure used by mergesort
+    cdef long[:] temp = np.ndarray(n, dtype=long)  # support structure used by mergesort
 
     # this closure recursively sorts sections of perm[] by comparing
     # elements of y[perm[]] using temp[] as support
@@ -65,10 +65,10 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
         cdef uint64_t exchcnt = 0, end, t, i, j, k, u
         # We use insertion sort on small arrays
         if length < 16:
-            end = offset + length;
+            end = offset + length
             for i in xrange(offset + 1, end):
                 t = perm[i]
-                j = i;
+                j = i
                 u = perm[j - 1]
                 while y[t] < y[u]:
                     exchcnt += 1
@@ -79,7 +79,7 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
                     u = perm[j - 1] 
 
                 perm[j] = t
-            return exchcnt;
+            return exchcnt
 
         cdef uint64_t length0 = length // 2
         cdef uint64_t length1 = length - length0
@@ -98,7 +98,7 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
             else:
                 temp[i] = perm[middle + k]
                 k += 1
-                exchcnt += length0 - j;
+                exchcnt += length0 - j
             i += 1
 
         perm[offset+i:offset+i+length0-j] = perm[offset+j:offset+length0]
@@ -130,7 +130,7 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
             u1 += stat1(i - first)
             first = i
 
-    if first == 0: # All ties
+    if first == 0:  # All ties
         return KendalltauResult(np.nan, np.nan)
     u += pairs(n - first)
     u0 += stat0(n - first)
@@ -150,7 +150,7 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
             v1 += stat1(i - first)
             first = i
 
-    if first == 0: # All ties
+    if first == 0:  # All ties
         return KendalltauResult(np.nan, np.nan)
     v += pairs(n - first)
     v0 += stat0(n - first)
