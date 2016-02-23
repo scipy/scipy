@@ -1,21 +1,22 @@
-    ENH: sparse/dsolve: re-apply patches on top of SuperLU 4.3
-
-    - Hook up USER_* routines to Scipy
-
-    - Fix a dubious format string
-
-    - Sprinkle volatile into dlamc/slamc implementation to avoid an infinite loop
-
-    - Eliminate a crash for singular matrices for which pivoting fails
-
-    - Do not exit(1) when ILU decomposition encounters singularity;
-      instead call ABORT (which is hooked up in Scipy)
-
-    - Add missing declarations of dlamch_ (call without declaration to
-      functions returning floating point can cause NaN to appear later on, on i386).
-
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpanel_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpanel_bmod.c
+index f8f859d..4a73091 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpanel_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpanel_bmod.c
+@@ -425,6 +425,12 @@ cpanel_bmod (
+ 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		    if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		    }
++#endif
+ 		    ctrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
-index a14ea72..f60c4dc 100644
+index a71d87a..41e5f8e 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cpivotL.c
 @@ -125,7 +125,16 @@ if ( jcol == MIN_COL ) {
@@ -35,28 +36,51 @@ index a14ea72..f60c4dc 100644
  	perm_r[*pivrow] = jcol;
  #else
  	perm_r[diagind] = jcol;
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlamch.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlamch.c
-index 678ac35..e117915 100644
---- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlamch.c
-+++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlamch.c
-@@ -673,9 +673,13 @@ double dlamc3_(double *a, double *b)
- {
- /* >>Start of File<<   
-        System generated locals */
--    double ret_val;
-+    volatile double ret_val;
-+    volatile double x;
-+    volatile double y;
- 
--    ret_val = *a + *b;
-+    x = *a;
-+    y = *b;
-+    ret_val = x + y;
- 
-     return ret_val;
- 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/csnode_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/csnode_bmod.c
+index fa357c1..b2ea2f4 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/csnode_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/csnode_bmod.c
+@@ -95,6 +95,12 @@ csnode_bmod (
+ 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	ctrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	cgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpanel_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpanel_bmod.c
+index 6f44b47..b1f868b 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpanel_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpanel_bmod.c
+@@ -218,7 +218,7 @@ dpanel_bmod (
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #else
+-		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
++ 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, TriTmp, &incx );
+ #endif
+ #else		
+@@ -397,6 +397,12 @@ dpanel_bmod (
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		    if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		    }
++#endif
+ 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
-index bcfa96d..6a66068 100644
+index b306b02..6b078e9 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dpivotL.c
 @@ -124,7 +124,16 @@ if ( jcol == MIN_COL ) {
@@ -76,22 +100,25 @@ index bcfa96d..6a66068 100644
  	perm_r[*pivrow] = jcol;
  #else
  	perm_r[diagind] = jcol;
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
-index b6b0328..5a7203d 100644
---- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
-+++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
-@@ -17,6 +17,9 @@ int num_drop_U;
- #endif
- 
- extern void ccopy_(int *, complex [], int *, complex [], int *);
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dsnode_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dsnode_bmod.c
+index 1557675..f3116a9 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dsnode_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dsnode_bmod.c
+@@ -94,6 +94,12 @@ dsnode_bmod (
+ 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
 +#if SCIPY_FIX
-+extern double dlamch_(char *);
++	if (nsupr < nsupc) {
++	    /* Fail early rather than passing in invalid parameters to DTRSV. */
++	    ABORT("failed to factorize matrix");
++	}
 +#endif
- 
- #if 0
- static complex *A;  /* used in _compare_ only */
+ 	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	dgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
-index d806485..98991d7 100644
+index 4d1202c..e7efad9 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cpivotL.c
 @@ -136,9 +136,13 @@ ilu_cpivotL(
@@ -123,7 +150,7 @@ index d806485..98991d7 100644
  
  	    *pivrow = swap[icol];
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
-index 33c316d..0cbb21d 100644
+index 5edee72..410ec00 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dpivotL.c
 @@ -134,9 +134,13 @@ ilu_dpivotL(
@@ -154,22 +181,8 @@ index 33c316d..0cbb21d 100644
  	    }
  
  	    *pivrow = swap[icol];
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
-index 7e0e97c..b9fd387 100644
---- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
-+++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
-@@ -17,6 +17,9 @@ int num_drop_U;
- #endif
- 
- extern void scopy_(int *, float [], int *, float [], int *);
-+#if SCIPY_FIX
-+extern double dlamch_(char *);
-+#endif
- 
- #if 0
- static float *A;  /* used in _compare_ only */
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
-index 25b6b00..ff36657 100644
+index ad689f0..7cf038d 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_spivotL.c
 @@ -134,9 +134,13 @@ ilu_spivotL(
@@ -201,7 +214,7 @@ index 25b6b00..ff36657 100644
  
  	    *pivrow = swap[icol];
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
-index dafea2b..4ea86b1 100644
+index 9ed7c99..4a93280 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zpivotL.c
 @@ -136,9 +136,13 @@ ilu_zpivotL(
@@ -274,30 +287,8 @@ index 0000000..5afc93b
 +#endif
 +
 +#endif
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slamch.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slamch.c
-index ec3cd61..09cf6e2 100644
---- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slamch.c
-+++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slamch.c
-@@ -684,11 +684,13 @@ double slamc3_(float *a, float *b)
- 
- /* >>Start of File<<   
-        System generated locals */
--    float ret_val;
--
--
-+    volatile float ret_val;
-+    volatile float x;
-+    volatile float y;
- 
--    ret_val = *a + *b;
-+    x = *a;
-+    y = *b;
-+    ret_val = x + y;
- 
-     return ret_val;
- 
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
-index 7bcd1bc..80b8aa1 100644
+index 9f42608..7e51638 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_Cnames.h
 @@ -19,6 +19,7 @@
@@ -309,7 +300,7 @@ index 7bcd1bc..80b8aa1 100644
  #define ADD_       0
  #define ADD__      1
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
-index 30b5f9b..f41b4ca 100644
+index 4fa9537..d54c2cf 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_util.h
 @@ -22,6 +22,8 @@
@@ -321,8 +312,25 @@ index 30b5f9b..f41b4ca 100644
  /***********************************************************************
   * Macros
   ***********************************************************************/
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spanel_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spanel_bmod.c
+index 847c569..dbec42d 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spanel_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spanel_bmod.c
+@@ -397,6 +397,12 @@ spanel_bmod (
+ 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		    if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		    }
++#endif
+ 		    strsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
-index 2a6950c..a9f0de5 100644
+index 6bd8d74..0da781a 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/spivotL.c
 @@ -124,7 +124,16 @@ if ( jcol == MIN_COL ) {
@@ -342,21 +350,42 @@ index 2a6950c..a9f0de5 100644
  	perm_r[*pivrow] = jcol;
  #else
  	perm_r[diagind] = jcol;
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/util.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/util.c
-index 858fbbc..4c19e77 100644
---- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/util.c
-+++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/util.c
-@@ -29,7 +29,7 @@
- 
- void superlu_abort_and_exit(char* msg)
- {
--    fprintf(stderr, msg);
-+    fprintf(stderr, "%s\n", msg);
-     exit (-1);
- }
- 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ssnode_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ssnode_bmod.c
+index 153459c..9de8c0b 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ssnode_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ssnode_bmod.c
+@@ -94,6 +94,12 @@ ssnode_bmod (
+ 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	strsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	sgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpanel_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpanel_bmod.c
+index 7fcdb7c..d06ab07 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpanel_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpanel_bmod.c
+@@ -425,6 +425,12 @@ zpanel_bmod (
+ 		    CTRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #else
++#if SCIPY_FIX
++		    if (nsupr < segsze) {
++			/* Fail early rather than passing in invalid parameters to TRSV. */
++			ABORT("failed to factorize matrix");
++		    }
++#endif
+ 		    ztrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 			   &nsupr, tempv, &incx );
+ #endif
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
-index ce4f513..e134896 100644
+index e8996bc..a42aa3c 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zpivotL.c
 @@ -125,7 +125,16 @@ if ( jcol == MIN_COL ) {
@@ -376,3 +405,20 @@ index ce4f513..e134896 100644
  	perm_r[*pivrow] = jcol;
  #else
  	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zsnode_bmod.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zsnode_bmod.c
+index 0a107c9..17dc271 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zsnode_bmod.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zsnode_bmod.c
+@@ -95,6 +95,12 @@ zsnode_bmod (
+ 	CGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
+ 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+ #else
++#if SCIPY_FIX
++       if (nsupr < nsupc) {
++           /* Fail early rather than passing in invalid parameters to TRSV. */
++           ABORT("failed to factorize matrix");
++       }
++#endif
+ 	ztrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
+ 	      &lusup[ufirst], &incx );
+ 	zgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 

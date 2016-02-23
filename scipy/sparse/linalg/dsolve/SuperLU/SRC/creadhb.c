@@ -133,7 +133,7 @@ static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
     char tmp, buf[100];
     
     i = 0;
-    while (i < n) {
+    while (i <  n) {
 	fgets(buf, 100, fp);    /* read a line at a time */
 	for (j=0; j<perline && i<n; j++) {
 	    tmp = buf[(j+1)*persize];     /* save the char at that place */
@@ -180,18 +180,116 @@ int cReadValues(FILE *fp, int n, complex *destination, int perline, int persize)
     return 0;
 }
 
+/*! \brief
+ *
+ * <pre>
+ * On input, nonz/nzval/rowind/colptr represents lower part of a symmetric
+ * matrix. On exit, it represents the full matrix with lower and upper parts.
+ * </pre>
+ */
+static void
+FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
+{
+    register int i, j, k, col, new_nnz;
+    int *t_rowind, *t_colptr, *al_rowind, *al_colptr, *a_rowind, *a_colptr;
+    int *marker;
+    complex *t_val, *al_val, *a_val;
+
+    al_rowind = *rowind;
+    al_colptr = *colptr;
+    al_val = *nzval;
+
+    if ( !(marker =(int *) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+	ABORT("SUPERLU_MALLOC fails for marker[]");
+    if ( !(t_colptr = (int *) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+	ABORT("SUPERLU_MALLOC t_colptr[]");
+    if ( !(t_rowind = (int *) SUPERLU_MALLOC( *nonz * sizeof(int)) ) )
+	ABORT("SUPERLU_MALLOC fails for t_rowind[]");
+    if ( !(t_val = (complex*) SUPERLU_MALLOC( *nonz * sizeof(complex)) ) )
+	ABORT("SUPERLU_MALLOC fails for t_val[]");
+
+    /* Get counts of each column of T, and set up column pointers */
+    for (i = 0; i < n; ++i) marker[i] = 0;
+    for (j = 0; j < n; ++j) {
+	for (i = al_colptr[j]; i < al_colptr[j+1]; ++i)
+	    ++marker[al_rowind[i]];
+    }
+    t_colptr[0] = 0;
+    for (i = 0; i < n; ++i) {
+	t_colptr[i+1] = t_colptr[i] + marker[i];
+	marker[i] = t_colptr[i];
+    }
+
+    /* Transpose matrix A to T */
+    for (j = 0; j < n; ++j)
+	for (i = al_colptr[j]; i < al_colptr[j+1]; ++i) {
+	    col = al_rowind[i];
+	    t_rowind[marker[col]] = j;
+	    t_val[marker[col]] = al_val[i];
+	    ++marker[col];
+	}
+
+    new_nnz = *nonz * 2 - n;
+    if ( !(a_colptr = (int *) SUPERLU_MALLOC( (n+1) * sizeof(int)) ) )
+	ABORT("SUPERLU_MALLOC a_colptr[]");
+    if ( !(a_rowind = (int *) SUPERLU_MALLOC( new_nnz * sizeof(int)) ) )
+	ABORT("SUPERLU_MALLOC fails for a_rowind[]");
+    if ( !(a_val = (complex*) SUPERLU_MALLOC( new_nnz * sizeof(complex)) ) )
+	ABORT("SUPERLU_MALLOC fails for a_val[]");
+    
+    a_colptr[0] = 0;
+    k = 0;
+    for (j = 0; j < n; ++j) {
+      for (i = t_colptr[j]; i < t_colptr[j+1]; ++i) {
+	if ( t_rowind[i] != j ) { /* not diagonal */
+	  a_rowind[k] = t_rowind[i];
+	  a_val[k] = t_val[i];
+#ifdef DEBUG
+	  if ( fabs(a_val[k]) < 4.047e-300 )
+	      printf("%5d: %e\n", k, a_val[k]);
+#endif
+	  ++k;
+	}
+      }
+
+      for (i = al_colptr[j]; i < al_colptr[j+1]; ++i) {
+	a_rowind[k] = al_rowind[i];
+	a_val[k] = al_val[i];
+#ifdef DEBUG
+	if ( fabs(a_val[k]) < 4.047e-300 )
+	    printf("%5d: %e\n", k, a_val[k]);
+#endif
+	++k;
+      }
+      
+      a_colptr[j+1] = k;
+    }
+
+    printf("FormFullA: new_nnz = %d, k = %d\n", new_nnz, k);
+
+    SUPERLU_FREE(al_val);
+    SUPERLU_FREE(al_rowind);
+    SUPERLU_FREE(al_colptr);
+    SUPERLU_FREE(marker);
+    SUPERLU_FREE(t_val);
+    SUPERLU_FREE(t_rowind);
+    SUPERLU_FREE(t_colptr);
+
+    *nzval = a_val;
+    *rowind = a_rowind;
+    *colptr = a_colptr;
+    *nonz = new_nnz;
+}
 
 void
-creadhb(int *nrow, int *ncol, int *nonz,
+creadhb(FILE *fp, int *nrow, int *ncol, int *nonz,
 	complex **nzval, int **rowind, int **colptr)
 {
 
     register int i, numer_lines = 0, rhscrd = 0;
     int tmp, colnum, colsize, rownum, rowsize, valnum, valsize;
     char buf[100], type[4], key[10];
-    FILE *fp;
-
-    fp = stdin;
+    int sym;
 
     /* Line 1 */
     fgets(buf, 100, fp);
@@ -261,7 +359,11 @@ creadhb(int *nrow, int *ncol, int *nonz,
         cReadValues(fp, *nonz, *nzval, valnum, valsize);
     }
     
-    fclose(fp);
+    sym = (type[1] == 'S' || type[1] == 's');
+    if ( sym ) {
+	FormFullA(*ncol, nonz, nzval, rowind, colptr);
+    }
 
+    fclose(fp);
 }
 

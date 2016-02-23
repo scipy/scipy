@@ -1,12 +1,12 @@
 
-/*! @file clacon.c
+/*! @file clacon2.c
  * \brief Estimates the 1-norm
  *
  * <pre>
- * -- SuperLU routine (version 2.0) --
+ * -- SuperLU routine (version 5.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * November 15, 1997
+ * July 25, 2015
  * </pre>
  */
 #include <math.h>
@@ -19,9 +19,17 @@
  *   Purpose   
  *   =======   
  *
- *   CLACON estimates the 1-norm of a square matrix A.   
+ *   CLACON2 estimates the 1-norm of a square matrix A.   
  *   Reverse communication is used for evaluating matrix-vector products. 
  * 
+ *   This is a thread safe version of CLACON, which uses the array ISAVE
+ *   in place of a STATIC variables, as follows:
+ *
+ *     CLACON     CLACON2
+ *      jump     isave[0]
+ *      j        isave[1]
+ *      iter     isave[2]
+ *
  *
  *   Arguments   
  *   =========   
@@ -51,8 +59,12 @@
  *          whether X should be overwritten by A * X  or A' * X.   
  *          On the final return from CLACON, KASE will again be 0.   
  *
+ *   isave  (input/output) int [3]
+ *          ISAVE is INTEGER array, dimension (3)
+ *          ISAVE is used to save variables between calls to CLACON2
+ *
  *   Further Details   
- *   ======= =======   
+ *   ===============   
  *
  *   Contributed by Nick Higham, University of Manchester.   
  *   Originally named CONEST, dated March 16, 1988.   
@@ -65,11 +77,8 @@
  */
 
 int
-clacon_(int *n, complex *v, complex *x, float *est, int *kase)
-
+clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
 {
-
-
     /* Table of constant values */
     int c__1 = 1;
     complex      zero = {0.0, 0.0};
@@ -79,28 +88,27 @@ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
     float d__1;
     
     /* Local variables */
-    static int iter;
-    static int jump, jlast;
-    static float altsgn, estold;
-    static int i, j;
+    int jlast;
+    float altsgn, estold;
+    int i;
     float temp;
     float safmin;
-    extern float slamch_(char *);
-    extern int icmax1_(int *, complex *, int *);
-    extern double scsum1_(int *, complex *, int *);
+    extern float smach(char *);
+    extern int icmax1_slu(int *, complex *, int *);
+    extern double scsum1_slu(int *, complex *, int *);
 
-    safmin = slamch_("Safe minimum");
+    safmin = smach("Safe minimum");  /* lamch_("Safe minimum"); */
     if ( *kase == 0 ) {
 	for (i = 0; i < *n; ++i) {
 	    x[i].r = 1. / (float) (*n);
 	    x[i].i = 0.;
 	}
 	*kase = 1;
-	jump = 1;
+	isave[0] = 1;	/* jump = 1; */
 	return 0;
     }
 
-    switch (jump) {
+    switch (isave[0]) {
 	case 1:  goto L20;
 	case 2:  goto L40;
 	case 3:  goto L70;
@@ -108,7 +116,7 @@ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
 	case 5:  goto L140;
     }
 
-    /*     ................ ENTRY   (JUMP = 1)   
+    /*     ................ ENTRY   (isave[0] = 1)   
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY A*X. */
   L20:
     if (*n == 1) {
@@ -117,7 +125,7 @@ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
 	/*        ... QUIT */
 	goto L150;
     }
-    *est = scsum1_(n, x, &c__1);
+    *est = scsum1_slu(n, x, &c__1);
 
     for (i = 0; i < *n; ++i) {
 	d__1 = c_abs(&x[i]);
@@ -130,25 +138,25 @@ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
 	}
     }
     *kase = 2;
-    jump = 2;
+    isave[0] = 2;  /* jump = 2; */
     return 0;
 
-    /*     ................ ENTRY   (JUMP = 2)   
+    /*     ................ ENTRY   (isave[0] = 2)
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
 L40:
-    j = icmax1_(n, &x[0], &c__1);
-    --j;
-    iter = 2;
+    isave[1] = icmax1_slu(n, &x[0], &c__1);  /* j */
+    --isave[1];  /* --j; */
+    isave[2] = 2;  /* iter = 2; */
 
     /*     MAIN LOOP - ITERATIONS 2,3,...,ITMAX. */
 L50:
     for (i = 0; i < *n; ++i) x[i] = zero;
-    x[j] = one;
+    x[isave[1]] = one;
     *kase = 1;
-    jump = 3;
+    isave[0] = 3;  /* jump = 3; */
     return 0;
 
-    /*     ................ ENTRY   (JUMP = 3)   
+    /*     ................ ENTRY   (isave[0] = 3)   
 	   X HAS BEEN OVERWRITTEN BY A*X. */
 L70:
 #ifdef _CRAY
@@ -157,7 +165,7 @@ L70:
     ccopy_(n, x, &c__1, v, &c__1);
 #endif
     estold = *est;
-    *est = scsum1_(n, v, &c__1);
+    *est = scsum1_slu(n, v, &c__1);
 
 
 L90:
@@ -175,17 +183,17 @@ L90:
 	}
     }
     *kase = 2;
-    jump = 4;
+    isave[0] = 4;  /* jump = 4; */
     return 0;
 
-    /*     ................ ENTRY   (JUMP = 4)   
+    /*     ................ ENTRY   (isave[0] = 4)   
 	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
 L110:
-    jlast = j;
-    j = icmax1_(n, &x[0], &c__1);
-    --j;
-    if (x[jlast].r != (d__1 = x[j].r, fabs(d__1)) && iter < 5) {
-	++iter;
+    jlast = isave[1];  /* j; */
+    isave[1] = icmax1_slu(n, &x[0], &c__1);  /* j */
+    isave[1] = isave[1] - 1;  /* --j; */
+    if (x[jlast].r != (d__1 = x[isave[1]].r, fabs(d__1)) && isave[2] < 5) {
+	isave[2] = isave[2] + 1;  /* ++iter; */
 	goto L50;
     }
 
@@ -198,13 +206,13 @@ L120:
 	altsgn = -altsgn;
     }
     *kase = 1;
-    jump = 5;
+    isave[0] = 5;  /* jump = 5; */
     return 0;
     
-    /*     ................ ENTRY   (JUMP = 5)   
+    /*     ................ ENTRY   (isave[0] = 5)   
 	   X HAS BEEN OVERWRITTEN BY A*X. */
 L140:
-    temp = scsum1_(n, x, &c__1) / (float)(*n * 3) * 2.;
+    temp = scsum1_slu(n, x, &c__1) / (float)(*n * 3) * 2.;
     if (temp > *est) {
 #ifdef _CRAY
 	CCOPY(n, &x[0], &c__1, &v[0], &c__1);

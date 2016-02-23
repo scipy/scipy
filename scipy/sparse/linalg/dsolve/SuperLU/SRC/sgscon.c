@@ -3,10 +3,10 @@
  * \brief Estimates reciprocal of the condition number of a general matrix
  * 
  * <pre>
- * -- SuperLU routine (version 3.0) --
+ * -- SuperLU routine (version 5.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * October 15, 2003
+ * July 25, 2015
  *
  * Modified from lapack routines SGECON.
  * </pre> 
@@ -81,15 +81,16 @@ sgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
     float ainvnm;
     float *work;
     int    *iwork;
+    int    isave[3];
     extern int srscl_(int *, float *, float *, int *);
 
-    extern int slacon_(int *, float *, float *, int *, float *, int *);
+    extern int slacon2_(int *, float *, float *, int *, float *, int *, int []);
 
     
     /* Test the input parameters. */
     *info = 0;
-    onenrm = *(unsigned char *)norm == '1' || lsame_(norm, "O");
-    if (! onenrm && ! lsame_(norm, "I")) *info = -1;
+    onenrm = *(unsigned char *)norm == '1' || strncmp(norm, "O", 1)==0;
+    if (! onenrm && ! strncmp(norm, "I", 1)==0) *info = -1;
     else if (L->nrow < 0 || L->nrow != L->ncol ||
              L->Stype != SLU_SC || L->Dtype != SLU_S || L->Mtype != SLU_TRLU)
 	 *info = -2;
@@ -98,7 +99,7 @@ sgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
 	*info = -3;
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("sgscon", &i);
+	input_error("sgscon", &i);
 	return;
     }
 
@@ -123,7 +124,7 @@ sgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
     kase = 0;
 
     do {
-	slacon_(&L->nrow, &work[L->nrow], &work[0], &iwork[0], &ainvnm, &kase);
+	slacon2_(&L->nrow, &work[L->nrow], &work[0], &iwork[0], &ainvnm, &kase, isave);
 
 	if (kase == 0) break;
 

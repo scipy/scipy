@@ -119,6 +119,10 @@ class norm_gen(rv_continuous):
 
         norm.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
 
+    The survival function, ``norm.sf``, is also referred to as the
+    Q-function in some contexts (see, e.g.,
+    `Wikipedia's <https://en.wikipedia.org/wiki/Q-function>`_ definition).
+
     %(after_notes)s
 
     %(example)s

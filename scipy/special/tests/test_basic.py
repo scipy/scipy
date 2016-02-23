@@ -2995,12 +2995,16 @@ class TestRadian(TestCase):
 
 class TestRiccati(TestCase):
     def test_riccati_jn(self):
-        jnrl = (special.sph_jn(1,.2)[0]*.2,special.sph_jn(1,.2)[0]+special.sph_jn(1,.2)[1]*.2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            jnrl = (special.sph_jn(1,.2)[0]*.2,special.sph_jn(1,.2)[0]+special.sph_jn(1,.2)[1]*.2)
         ricjn = special.riccati_jn(1,.2)
         assert_array_almost_equal(ricjn,jnrl,8)
 
     def test_riccati_yn(self):
-        ynrl = (special.sph_yn(1,.2)[0]*.2,special.sph_yn(1,.2)[0]+special.sph_yn(1,.2)[1]*.2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            ynrl = (special.sph_yn(1,.2)[0]*.2,special.sph_yn(1,.2)[0]+special.sph_yn(1,.2)[1]*.2)
         ricyn = special.riccati_yn(1,.2)
         assert_array_almost_equal(ricyn,ynrl,8)
 
@@ -3064,7 +3068,9 @@ class TestSpherical(TestCase):
         pass
 
     def test_sph_in(self):
-        i1n = special.sph_in(1,.2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            i1n = special.sph_in(1,.2)
         inp0 = (i1n[0][1])
         inp1 = (i1n[0][0] - 2.0/0.2 * i1n[0][1])
         assert_array_almost_equal(i1n[0],array([1.0066800127054699381,
@@ -3072,27 +3078,33 @@ class TestSpherical(TestCase):
         assert_array_almost_equal(i1n[1],[inp0,inp1],12)
 
     def test_sph_inkn(self):
-        spikn = r_[special.sph_in(1,.2) + special.sph_kn(1,.2)]
-        inkn = r_[special.sph_inkn(1,.2)]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            spikn = r_[special.sph_in(1,.2) + special.sph_kn(1,.2)]
+            inkn = r_[special.sph_inkn(1,.2)]
         assert_array_almost_equal(inkn,spikn,10)
 
     def test_sph_in_kn_order0(self):
         x = 1.
-        sph_i0 = special.sph_in(0, x)
-        sph_i0_expected = np.array([np.sinh(x)/x,
-                                    np.cosh(x)/x-np.sinh(x)/x**2])
-        assert_array_almost_equal(r_[sph_i0], sph_i0_expected)
-        sph_k0 = special.sph_kn(0, x)
-        sph_k0_expected = np.array([0.5*pi*exp(-x)/x,
-                                    -0.5*pi*exp(-x)*(1/x+1/x**2)])
-        assert_array_almost_equal(r_[sph_k0], sph_k0_expected)
-        sph_i0k0 = special.sph_inkn(0, x)
-        assert_array_almost_equal(r_[sph_i0+sph_k0],
-                                  r_[sph_i0k0],
-                                  10)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            sph_i0 = special.sph_in(0, x)
+            sph_i0_expected = np.array([np.sinh(x)/x,
+                                        np.cosh(x)/x-np.sinh(x)/x**2])
+            assert_array_almost_equal(r_[sph_i0], sph_i0_expected)
+            sph_k0 = special.sph_kn(0, x)
+            sph_k0_expected = np.array([0.5*pi*exp(-x)/x,
+                                        -0.5*pi*exp(-x)*(1/x+1/x**2)])
+            assert_array_almost_equal(r_[sph_k0], sph_k0_expected)
+            sph_i0k0 = special.sph_inkn(0, x)
+            assert_array_almost_equal(r_[sph_i0+sph_k0],
+                                      r_[sph_i0k0],
+                                      10)
 
     def test_sph_jn(self):
-        s1 = special.sph_jn(2,.2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s1 = special.sph_jn(2,.2)
         s10 = -s1[0][1]
         s11 = s1[0][0]-2.0/0.2*s1[0][1]
         s12 = s1[0][1]-3.0/0.2*s1[0][2]
@@ -3102,12 +3114,16 @@ class TestSpherical(TestCase):
         assert_array_almost_equal(s1[1],[s10,s11,s12],12)
 
     def test_sph_jnyn(self):
-        jnyn = r_[special.sph_jn(1,.2) + special.sph_yn(1,.2)]  # tuple addition
-        jnyn1 = r_[special.sph_jnyn(1,.2)]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            jnyn = r_[special.sph_jn(1,.2) + special.sph_yn(1,.2)]  # tuple addition
+            jnyn1 = r_[special.sph_jnyn(1,.2)]
         assert_array_almost_equal(jnyn1,jnyn,9)
 
     def test_sph_kn(self):
-        kn = special.sph_kn(2,.2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            kn = special.sph_kn(2,.2)
         kn0 = -kn[0][1]
         kn1 = -kn[0][0]-2.0/0.2*kn[0][1]
         kn2 = -kn[0][1]-3.0/0.2*kn[0][2]
@@ -3117,9 +3133,11 @@ class TestSpherical(TestCase):
         assert_array_almost_equal(kn[1],[kn0,kn1,kn2],9)
 
     def test_sph_yn(self):
-        sy1 = special.sph_yn(2,.2)[0][2]
-        sy2 = special.sph_yn(0,.2)[0][0]
-        sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3  # correct derivative value
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            sy1 = special.sph_yn(2,.2)[0][2]
+            sy2 = special.sph_yn(0,.2)[0][0]
+            sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3  # correct derivative value
         assert_almost_equal(sy1,-377.52483,5)  # previous values in the system
         assert_almost_equal(sy2,-4.9003329,5)
         sy3 = special.sph_yn(1,.2)[1][1]

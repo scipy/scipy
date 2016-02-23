@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import threading
 
 import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
@@ -260,17 +261,19 @@ class TestSplu(object):
         A = A.astype(dtype)
         lu = spxlu(A)
 
+        rng = random.RandomState(1234)
+
         # Input shapes
         for k in [None, 1, 2, self.n, self.n+2]:
             msg = "k=%r" % (k,)
 
             if k is None:
-                b = random.rand(self.n)
+                b = rng.rand(self.n)
             else:
-                b = random.rand(self.n, k)
+                b = rng.rand(self.n, k)
 
             if np.issubdtype(dtype, np.complexfloating):
-                b = b + 1j*random.rand(*b.shape)
+                b = b + 1j*rng.rand(*b.shape)
             b = b.astype(dtype)
 
             x = lu.solve(b)
@@ -328,7 +331,8 @@ class TestSplu(object):
     def test_splu_basic(self):
         # Test basic splu functionality.
         n = 30
-        a = random.random((n, n))
+        rng = random.RandomState(12)
+        a = rng.rand(n, n)
         a[a < 0.95] = 0
         # First test with a singular matrix
         a[:, 0] = 0
@@ -453,6 +457,27 @@ class TestSplu(object):
         check(np.complex128)
         check(np.complex64, True)
         check(np.complex128, True)
+
+    def test_threads_parallel(self):
+        oks = []
+
+        def worker():
+            try:
+                self.test_splu_basic()
+                self.test_splu_smoketest()
+                self.test_spilu_smoketest()
+                oks.append(True)
+            except:
+                pass
+
+        threads = [threading.Thread(target=worker)
+                   for k in range(20)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert_equal(len(oks), 20)
 
 
 if __name__ == "__main__":

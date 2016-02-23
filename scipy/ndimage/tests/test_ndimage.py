@@ -2001,8 +2001,10 @@ class TestNdimage:
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = numpy.array([4, 1, 3, 2])
         for order in range(0, 6):
-            out1 = ndimage.affine_transform(data, [2], -1,
-                                                order=order)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                out1 = ndimage.affine_transform(data, [2], -1,
+                                                    order=order)
             out2 = ndimage.affine_transform(data, [[2]], -1,
                                                 order=order)
             assert_array_almost_equal(out1, out2)
@@ -2011,8 +2013,10 @@ class TestNdimage:
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = numpy.array([4, 1, 3, 2])
         for order in range(0, 6):
-            out1 = ndimage.affine_transform(data, [0.5], -1,
-                                                order=order)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                out1 = ndimage.affine_transform(data, [0.5], -1,
+                                                    order=order)
             out2 = ndimage.affine_transform(data, [[0.5]], -1,
                                                 order=order)
             assert_array_almost_equal(out1, out2)
@@ -2131,8 +2135,10 @@ class TestNdimage:
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = ndimage.affine_transform(data, [0.5, 0.5], 0,
-                                                     (6, 8), order=order)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                out = ndimage.affine_transform(data, [0.5, 0.5], 0,
+                                                        (6, 8), order=order)
             assert_array_almost_equal(out[::2, ::2], data)
 
     def test_zoom_infinity(self):

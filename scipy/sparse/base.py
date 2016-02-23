@@ -163,7 +163,7 @@ class spmatrix(object):
 
     def __bool__(self):  # Simple -- other ideas?
         if self.shape == (1, 1):
-            return True if self.nnz == 1 else False
+            return self.nnz != 0
         else:
             raise ValueError("The truth value of an array with more than one "
                              "element is ambiguous. Use a.any() or a.all().")

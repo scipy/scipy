@@ -3,12 +3,13 @@
  * \brief Improves computed solution to a system of inear equations
  * 
  * <pre>
- * -- SuperLU routine (version 3.0) --
+ * -- SuperLU routine (version 5.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
  * Modified from lapack routine ZGERFS
+ * Last modified: December 3, 2015
  * </pre>
  */
 /*
@@ -157,8 +158,9 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     doublecomplex   *work;
     double   *rwork;
     int      *iwork;
+    int      isave[3];
 
-    extern int zlacon_(int *, doublecomplex *, doublecomplex *, double *, int *);
+    extern int zlacon2_(int *, doublecomplex *, doublecomplex *, double *, int *, int []);
 #ifdef _CRAY
     extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
     extern int CSAXPY(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
@@ -198,7 +200,7 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	*info = -11;
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("zgsrfs", &i);
+	input_error("zgsrfs", &i);
 	return;
     }
 
@@ -211,8 +213,8 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	return;
     }
 
-    rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-    colequ = lsame_(equed, "C") || lsame_(equed, "B");
+    rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
+    colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
     
     /* Allocate working space */
     work = doublecomplexMalloc(2*A->nrow);
@@ -224,15 +226,19 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     if ( notran ) {
 	*(unsigned char *)transc = 'N';
         transt = TRANS;
-    } else {
+    } else if ( trans == TRANS ) {
 	*(unsigned char *)transc = 'T';
 	transt = NOTRANS;
-    }
+    } else if ( trans == CONJ ) {
+	*(unsigned char *)transc = 'C';
+	transt = NOTRANS;
+    }    
 
     /* NZ = maximum number of nonzero elements in each row of A, plus 1 */
     nz     = A->ncol + 1;
-    eps    = dlamch_("Epsilon");
-    safmin = dlamch_("Safe minimum");
+    eps    = dmach("Epsilon");
+    safmin = dmach("Safe minimum");
+
     /* Set SAFE1 essentially to be the underflow threshold times the
        number of additions in each row. */
     safe1  = nz * safmin;
@@ -290,13 +296,13 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	    for (i = 0; i < A->nrow; ++i) rwork[i] = z_abs1( &Bptr[i] );
 	    
 	    /* Compute abs(op(A))*abs(X) + abs(B). */
-	    if (notran) {
+	    if ( notran ) {
 		for (k = 0; k < A->ncol; ++k) {
 		    xk = z_abs1( &Xptr[k] );
 		    for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i)
 			rwork[Astore->rowind[i]] += z_abs1(&Aval[i]) * xk;
 		}
-	    } else {
+	    } else {  /* trans = TRANS or CONJ */
 		for (k = 0; k < A->ncol; ++k) {
 		    s = 0.;
 		    for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i) {
@@ -360,7 +366,7 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
           is incremented by SAFE1 if the i-th component of   
           abs(op(A))*abs(X) + abs(B) is less than SAFE2.   
 
-          Use ZLACON to estimate the infinity-norm of the matrix   
+          Use ZLACON2 to estimate the infinity-norm of the matrix   
              inv(op(A)) * diag(W),   
           where W = abs(R) + NZ*EPS*( abs(op(A))*abs(X)+abs(B) ))) */
 	
@@ -373,7 +379,7 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 		for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i)
 		    rwork[Astore->rowind[i]] += z_abs1(&Aval[i]) * xk;
 	    }
-	} else {
+	} else {  /* trans == TRANS or CONJ */
 	    for (k = 0; k < A->ncol; ++k) {
 		s = 0.;
 		for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i) {
@@ -393,8 +399,7 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    zlacon_(&A->nrow, &work[A->nrow], work,
-		    &ferr[j], &kase);
+	    zlacon2_(&A->nrow, &work[A->nrow], work, &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 
 	    if (kase == 1) {

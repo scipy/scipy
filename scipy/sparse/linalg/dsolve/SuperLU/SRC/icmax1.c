@@ -41,7 +41,7 @@
    ===================================================================== 
   </pre>
 */
-int icmax1_(int *n, complex *cx, int *incx)
+int icmax1_slu(int *n, complex *cx, int *incx)
 {
 /*
        NEXT LINE IS THE ONLY MODIFICATION.   
@@ -112,5 +112,5 @@ L40:
 
 /*     End of ICMAX1 */
 
-} /* icmax1_ */
+} /* icmax1_slu */
 

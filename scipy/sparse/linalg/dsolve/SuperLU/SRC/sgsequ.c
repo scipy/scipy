@@ -92,7 +92,7 @@ sgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     int i, j, irow;
     float rcmin, rcmax;
     float bignum, smlnum;
-    extern float slamch_(char *);
+    extern float smach(char *);
     
     /* Test the input parameters. */
     *info = 0;
@@ -101,7 +101,7 @@ sgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
 	*info = -1;
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("sgsequ", &i);
+	input_error("sgsequ", &i);
 	return;
     }
 
@@ -117,7 +117,7 @@ sgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
     Aval = Astore->nzval;
     
     /* Get machine constants. */
-    smlnum = slamch_("S");
+    smlnum = smach("S");  /* slamch_("S"); */
     bignum = 1. / smlnum;
 
     /* Compute row scale factors. */
