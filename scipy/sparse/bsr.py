@@ -145,7 +145,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 if (M % R) != 0 or (N % C) != 0:
                     raise ValueError('shape must be multiple of blocksize')
 
-                idx_dtype = get_index_dtype(maxval=N//C)
+                # Select index dtype large enough to pass array and
+                # scalar parameters to sparsetools
+                idx_dtype = get_index_dtype(maxval=max(M//R, N//C, R, C))
                 self.indices = np.zeros(0, dtype=idx_dtype)
                 self.indptr = np.zeros(M//R + 1, dtype=idx_dtype)
 
@@ -157,7 +159,16 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             elif len(arg1) == 3:
                 # (data,indices,indptr) format
                 (data, indices, indptr) = arg1
-                idx_dtype = get_index_dtype((indices, indptr), check_contents=True)
+
+                # Select index dtype large enough to pass array and
+                # scalar parameters to sparsetools
+                maxval = None
+                if shape is not None:
+                    maxval = max(shape)
+                if blocksize is not None:
+                    maxval = max(maxval, max(blocksize))
+                idx_dtype = get_index_dtype((indices, indptr), maxval=maxval, check_contents=True)
+
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = np.array(data, copy=copy, dtype=getdtype(dtype, data))
