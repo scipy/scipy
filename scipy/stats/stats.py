@@ -3255,14 +3255,16 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
     ----------
     Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
     Vol. 30, No. 1/2, pp. 81-93, 1938.
-    Maurice G. Kendall, "The treatment of ties in ranking problems", Biometrika
-    Vol. 33, No. 3, pp. 239-251. 1945.
+    Maurice G. Kendall, "The treatment of ties in ranking problems",
+    Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
     W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
     Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
     No. 314, Part 1, pp. 436-439, 1966.
-    Paolo Boldi, Massimo Santini, and Sebastiano Vigna. Paradoxical effects in
-    PageRank incremental computations. Internet Math., Vol. 2, No. 3,
+    Paolo Boldi, Massimo Santini, and Sebastiano Vigna. "Paradoxical effects
+    in PageRank incremental computations". Internet Math., Vol. 2, No. 3,
     pp. 387-404, 2005.
+    Gottfried E. Noether, "Elements of Nonparametric Statistics", John Wiley &
+    Sons, 1967.
 
     Examples
     --------

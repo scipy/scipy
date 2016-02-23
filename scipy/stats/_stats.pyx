@@ -161,6 +161,7 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
     # Limit range to fix computational errors
     tau = min(1., max(-1., (tot - u - v + t - 2 * exchanges) / np.sqrt(tot - u) / np.sqrt(tot - v)))
     # (tot - u - v + t - 2 * exchanges) is approximately normally distributed with this variance
+    # See Gottfried E. Noether, "Elements of Nonparametric Statistics", John Wiley & Sons (1967)
     var = (n * (n - 1) * (2*n + 5) - u0 - v0) / 18. + float(
         2 * u * v) / (n * (n - 1)) + float(u1 * v1) / (9 * n * (n - 1) * (n - 2))
     z = (tot - u - v + t - 2 * exchanges) / np.sqrt(var)
