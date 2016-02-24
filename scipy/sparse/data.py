@@ -72,9 +72,9 @@ class _data_matrix(spmatrix):
         return self._with_data(self.data.copy(), copy=True)
 
     def count_nonzero(self):
-        if self.has_canonical_format:
-            return np.count_nonzero(self.data)
-        return spmatrix.count_nonzero(self)
+        return np.count_nonzero(self._deduped_data())
+
+    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """

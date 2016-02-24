@@ -9,13 +9,13 @@ from warnings import warn
 
 import numpy as np
 
-from scipy._lib.six import xrange, zip as izip
+from scipy._lib.six import zip as izip
 
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from .base import isspmatrix, SparseEfficiencyWarning
+from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-        isintlike, get_index_dtype, downcast_intp_index)
+                      get_index_dtype, downcast_intp_index)
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -184,14 +184,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self._check()
 
     def getnnz(self, axis=None):
-        """Get the count of explicitly-stored values (nonzeros)
-
-        Parameters
-        ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole matrix, in
-            each column, or in each row.
-        """
         if axis is None:
             nnz = len(self.data)
             if nnz != len(self.row) or nnz != len(self.col):
@@ -214,11 +206,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                                minlength=self.shape[0])
         else:
             raise ValueError('axis out of bounds')
-    nnz = property(fget=getnnz)
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """
-        nnz = self.nnz
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
@@ -233,7 +225,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.col = np.asarray(self.col, dtype=idx_dtype)
         self.data = to_native(self.data)
 
-        if nnz > 0:
+        if self.nnz > 0:
             if self.row.max() >= self.shape[0]:
                 raise ValueError('row index exceeds matrix dimensions')
             if self.col.max() >= self.shape[1]:

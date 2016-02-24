@@ -177,14 +177,6 @@ class lil_matrix(spmatrix, IndexMixin):
     # row
 
     def getnnz(self, axis=None):
-        """Get the count of explicitly-stored values (nonzeros)
-
-        Parameters
-        ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole matrix, in
-            each column, or in each row.
-        """
         if axis is None:
             return sum([len(rowvals) for rowvals in self.data])
         if axis < 0:
@@ -198,10 +190,12 @@ class lil_matrix(spmatrix, IndexMixin):
             return np.array([len(rowvals) for rowvals in self.data], dtype=np.intp)
         else:
             raise ValueError('axis out of bounds')
-    nnz = property(fget=getnnz)
 
     def count_nonzero(self):
         return sum(np.count_nonzero(rowvals) for rowvals in self.data)
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
+    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
 
     def __str__(self):
         val = ''

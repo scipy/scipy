@@ -8,7 +8,7 @@ __all__ = ['dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
-from .base import isspmatrix, _formats
+from .base import isspmatrix, _formats, spmatrix
 from .data import _data_matrix
 from .sputils import isshape, upcast_char, getdtype, get_index_dtype
 from ._sparsetools import dia_matvec
@@ -145,12 +145,11 @@ class dia_matrix(_data_matrix):
             raise ValueError('offset array contains duplicate values')
 
     def __repr__(self):
-        nnz = self.getnnz()
-        format = self.getformat()
+        format = _formats[self.getformat()][1]
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements (%d diagonals) in %s format>" % \
-               (self.shape + (self.dtype.type, nnz, self.data.shape[0],
-                 _formats[format][1],))
+               (self.shape + (self.dtype.type, self.nnz, self.data.shape[0],
+                              format))
 
     def count_nonzero(self):
         num_rows, num_cols = self.shape
@@ -161,11 +160,10 @@ class dia_matrix(_data_matrix):
         mask &= (offset_inds < num_cols)
         return np.count_nonzero(self.data[mask])
 
-    def getnnz(self):
-        """number of nonzero values
-
-        explicit zero values are included in this number
-        """
+    def getnnz(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError("getnnz over an axis is not implemented "
+                                      "for DIA format")
         M,N = self.shape
         nnz = 0
         for k in self.offsets:
@@ -175,7 +173,8 @@ class dia_matrix(_data_matrix):
                 nnz += min(M+k,N)
         return int(nnz)
 
-    nnz = property(fget=getnnz)
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
+    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
 
     def _mul_vector(self, other):
         x = other

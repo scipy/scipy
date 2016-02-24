@@ -7,15 +7,15 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy._lib.six import xrange, zip as izip
+from scipy._lib.six import zip as izip
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
 from .dia import dia_matrix
 from . import _sparsetools
 from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
-     getdtype, isscalarlike, isintlike, IndexMixin, get_index_dtype,
-     downcast_intp_index)
+                      getdtype, isscalarlike, IndexMixin, get_index_dtype,
+                      downcast_intp_index)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -88,14 +88,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.check_format(full_check=False)
 
     def getnnz(self, axis=None):
-        """Get the count of explicitly-stored values (nonzeros)
-
-        Parameters
-        ----------
-        axis : {None, 0, 1}, optional
-            Select between the number of values across the whole matrix, in
-            each column, or in each row.
-        """
         if axis is None:
             return int(self.indptr[-1])
         else:
@@ -110,7 +102,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return np.diff(self.indptr)
             raise ValueError('axis out of bounds')
 
-    nnz = property(fget=getnnz)
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
 
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
