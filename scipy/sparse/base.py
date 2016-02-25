@@ -129,28 +129,64 @@ class spmatrix(object):
     def getmaxprint(self):
         return self.maxprint
 
+    def count_nonzero(self):
+        """Number of non-zero entries, equivalent to
+
+        np.count_nonzero(a.toarray())
+
+        Unlike getnnz() and the nnz property, which return the number of stored
+        entries (the length of the data attribute), this method counts the
+        actual number of non-zero entries in data.
+        """
+        raise NotImplementedError("count_nonzero not implemented for %s." %
+                                  self.__class__.__name__)
+
+    def getnnz(self, axis=None):
+        """Number of stored values, including explicit zeros.
+
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole matrix, in
+            each column, or in each row.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero entries
+        """
+        raise NotImplementedError("getnnz not implemented for %s." %
+                                  self.__class__.__name__)
+
+    @property
+    def nnz(self):
+        """Number of stored values, including explicit zeros.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero entries
+        """
+        return self.getnnz()
+
     def getformat(self):
         return getattr(self, 'format', 'und')
 
     def __repr__(self):
-        nnz = self.getnnz()
         _, format_name = _formats[self.getformat()]
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements in %s format>" % \
-               (self.shape + (self.dtype.type, nnz, format_name))
+               (self.shape + (self.dtype.type, self.nnz, format_name))
 
     def __str__(self):
         maxprint = self.getmaxprint()
 
         A = self.tocoo()
-        nnz = self.getnnz()
 
         # helper function, outputs "(i,j)  v"
         def tostr(row,col,data):
             triples = zip(list(zip(row,col)),data)
             return '\n'.join([('  %s\t%s' % t) for t in triples])
 
-        if nnz > maxprint:
+        if self.nnz > maxprint:
             half = maxprint // 2
             out = tostr(A.row[:half], A.col[:half], A.data[:half])
             out += "\n  :\t:\n"
@@ -173,9 +209,8 @@ class spmatrix(object):
     # perhaps it should be the number of rows?  But for some uses the number of
     # non-zeros is more important.  For now, raise an exception!
     def __len__(self):
-        # return self.getnnz()
         raise TypeError("sparse matrix length is ambiguous; use getnnz()"
-                         " or shape[0]")
+                        " or shape[0]")
 
     def asformat(self, format):
         """Return this matrix in a given sparse format

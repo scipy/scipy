@@ -11,8 +11,7 @@ import operator
 
 import numpy as np
 
-from scipy._lib.six import zip as izip, xrange
-from scipy._lib.six import iteritems
+from scipy._lib.six import zip as izip, xrange, iteritems, itervalues
 
 from .base import spmatrix, isspmatrix
 from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
@@ -112,9 +111,17 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             self.shape = arg1.shape
             self.dtype = d.dtype
 
-    def getnnz(self):
+    def getnnz(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError("getnnz over an axis is not implemented "
+                                      "for DOK format")
         return dict.__len__(self)
-    nnz = property(fget=getnnz)
+
+    def count_nonzero(self):
+        return sum(x != 0 for x in itervalues(self))
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
+    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
 
     def __len__(self):
         return dict.__len__(self)

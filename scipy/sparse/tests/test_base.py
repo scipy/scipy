@@ -572,6 +572,12 @@ class _TestCommon:
         # create empty matrices
         assert_equal(self.spmatrix((3,3)).todense(), np.zeros((3,3)))
         assert_equal(self.spmatrix((3,3)).nnz, 0)
+        assert_equal(self.spmatrix((3,3)).count_nonzero(), 0)
+
+    def test_count_nonzero(self):
+        expected = np.count_nonzero(self.datsp.toarray())
+        assert_equal(self.datsp.count_nonzero(), expected)
+        assert_equal(self.datsp.T.count_nonzero(), expected)
 
     def test_invalid_shapes(self):
         assert_raises(ValueError, self.spmatrix, (-1,3))
@@ -3779,6 +3785,10 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         assert_equal(m.offsets.dtype, np.int64)
         m.setdiag((3,), k=3)
         assert_equal(m.offsets.dtype, np.int64)
+
+    @dec.skipif(True, 'DIA stores extra zeros')
+    def test_getnnz_axis(self):
+        pass
 
 
 class TestBSR(sparse_test_class(getset=False,

@@ -12,7 +12,7 @@ import numpy as np
 
 from .data import _data_matrix, _minmax_mixin
 from .compressed import _cs_matrix
-from .base import isspmatrix, _formats
+from .base import isspmatrix, _formats, spmatrix
 from .sputils import isshape, getdtype, to_native, upcast, get_index_dtype
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_pass1,
@@ -277,18 +277,21 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         return self.data.shape[1:]
     blocksize = property(fget=_get_blocksize)
 
-    def getnnz(self):
+    def getnnz(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError("getnnz over an axis is not implemented "
+                                      "for BSR format")
         R,C = self.blocksize
         return int(self.indptr[-1] * R * C)
-    nnz = property(fget=getnnz)
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
 
     def __repr__(self):
-        nnz = self.getnnz()
-        format = self.getformat()
-        return "<%dx%d sparse matrix of type '%s'\n" \
-               "\twith %d stored elements (blocksize = %dx%d) in %s format>" % \
-               (self.shape + (self.dtype.type, nnz) + self.blocksize +
-                 (_formats[format][1],))
+        format = _formats[self.getformat()][1]
+        return ("<%dx%d sparse matrix of type '%s'\n"
+                "\twith %d stored elements (blocksize = %dx%d) in %s format>" %
+                (self.shape + (self.dtype.type, self.nnz) + self.blocksize +
+                 (format,)))
 
     def diagonal(self):
         """Returns the main diagonal of the matrix

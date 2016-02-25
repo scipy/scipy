@@ -71,6 +71,11 @@ class _data_matrix(spmatrix):
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
+    def count_nonzero(self):
+        return np.count_nonzero(self._deduped_data())
+
+    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+
     def power(self, n, dtype=None):
         """
         This function performs element-wise power.
