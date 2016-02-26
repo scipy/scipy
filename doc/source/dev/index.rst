@@ -2,6 +2,8 @@
 SciPy Developer Guide
 *********************
 
+.. include:: decisions.rst
+
 .. include:: github.rst
 
 .. include:: licensing.rst
