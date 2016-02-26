@@ -2,6 +2,7 @@
 SciPy Developer Guide
 *********************
 
+.. include:: github.rst
 
 .. include:: licensing.rst
 
@@ -12,3 +13,4 @@ SciPy Developer Guide
 .. include:: distributing.rst
 
 .. include:: releasing.rst
+
