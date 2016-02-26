@@ -2,9 +2,9 @@ Building and installing SciPy
 +++++++++++++++++++++++++++++
 
 See https://www.scipy.org/Installing_SciPy/
-for more extensive (and possibly more up-to-date) build instructions.
 
 .. Contents::
+
 
 INTRODUCTION
 ============
@@ -17,9 +17,13 @@ you are not familiar with compiling software from sources.
 Recommended distributions are:
 
   - Enthought Canopy (https://www.enthought.com/products/canopy/)
-  - Anaconda (https://store.continuum.io/cshop/anaconda)
-  - Python(x,y) (http://code.google.com/p/pythonxy/)
-  - WinPython (http://code.google.com/p/winpython/)
+  - Anaconda (https://www.continuum.io/anaconda)
+  - Python(x,y) (http://python-xy.github.io/)
+  - WinPython (https://winpython.github.io/)
+
+The rest of this install documentation does summarize how to build Scipy.  Note
+that more extensive (and possibly more up-to-date) build instructions are
+maintained at http://scipy.org/scipylib/building/index.html
 
 
 PREREQUISITES
@@ -27,22 +31,21 @@ PREREQUISITES
 
 SciPy requires the following software installed for your platform:
 
-1) Python__ 2.6.x or newer
+1) Python__ 2.7 or >= 3.4
 
 __ http://www.python.org
 
-2) NumPy__ 1.6.2 or newer (note: SciPy trunk at times requires latest NumPy
-   trunk).
+2) NumPy__ >= 1.7.1
 
 __ http://www.numpy.org/
 
-3) If you want to build the documentation: Sphinx__ 1.1.0 or newer
+3) If you want to build the documentation: Sphinx__ >= 1.2.1
 
 __ http://sphinx-doc.org/
 
 4) If you want to build SciPy master or other unreleased version from source
    (Cython-generated C sources are included in official releases):
-   Cython__ 0.22 or newer
+   Cython__ >= 0.22
 
 __ http://cython.org/
 
@@ -52,22 +55,15 @@ Windows
 Compilers
 ~~~~~~~~~
 
-It is recommended to use the mingw__ compilers on Windows: you will need gcc
-(C), g++ (C++) and g77 (Fortran) compilers.
+There are two ways to build Scipy on Windows:
 
-__ http://www.mingw.org
+1. Use Intel MKL, and Intel compilers or ifort + MSVC.  This is currently the
+   most robust method.
+2. Use MingwPy__.  This is a GCC toolchain that will be used in the future to
+   distribute Scipy binaries on PyPi.  See the MingwPy website for details.
 
-Blas/Lapack
-~~~~~~~~~~~
+__ https://mingwpy.github.io/ 
 
-Blas/Lapack are core routines for linear algebra (vector/matrix operations).
-You should use ATLAS__ with a full LAPACK, or simple BLAS/LAPACK built with g77
-from netlib__ sources. Building those libraries on windows may be difficult, as
-they assume a unix-style environment. Please use the binaries if you don't feel
-comfortable with cygwin, make and similar tools.
-
-__ http://math-atlas.sourceforge.net/
-__ http://www.netlib.org/lapack/
 
 Mac OS X
 --------
@@ -75,16 +71,14 @@ Mac OS X
 Compilers
 ~~~~~~~~~
 
-It is recommended to use gcc. gcc is available for free when installing
-`Xcode`_, the developer toolsuite on Mac OS X. You also need a fortran compiler,
-which is not included with Xcode: you should use gfortran from this page:
+It is recommended to use gcc or clang, both work fine. Gcc is available for
+free when installing Xcode, the developer toolsuite on Mac OS X. You also
+need a fortran compiler, which is not included with Xcode: you should use a
+recent gfortran from an OS X package manager (like Homebrew).
 
-   http://r.research.att.com/tools/
+Please do NOT use gfortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_,
+it is known to generate buggy scipy binaries.
 
-Please do NOT use gfortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_, it is known to generate
-buggy scipy binaries.
-
-.. _Xcode: http://developer.apple.com/TOOLS/xcode
 
 Blas/Lapack
 ~~~~~~~~~~~
@@ -95,34 +89,14 @@ intervention when building SciPy.
 Linux
 -----
 
-Most common distributions include all the dependencies. Here are some
-instructions for the most common ones:
+Most common distributions include all the dependencies.  You will need to
+install a BLAS/LAPACK (all of ATLAS, OpenBLAS, MKL work fine) including
+development headers, as well as development headers for Python itself.  Those
+are typically packaged as python-dev
 
-Ubuntu >= 8.10
-~~~~~~~~~~~~~~
 
-You can get all the dependencies as follows::
-
-        sudo apt-get install python python-dev libatlas-base-dev gcc gfortran g++
-
-Ubuntu < 8.10, Debian
-~~~~~~~~~~~~~~~~~~~~~
-
-You can get all the dependencies as follows::
-
-        sudo apt-get install python python-dev atlas3-base-dev gcc g77 g++
-
-OpenSuse >= 10
-~~~~~~~~~~~~~~
-
-RHEL 
-~~~~
-
-Fedora Core 
-~~~~~~~~~~~
-
-GETTING SCIPY
-=============
+INSTALLING SCIPY
+================
 
 For the latest information, see the web site:
 
@@ -135,41 +109,25 @@ Use the command::
 
   git clone https://github.com/scipy/scipy.git
 
-Before building and installing from git, remove the old installation
-(e.g. in /usr/lib/python3.4/site-packages/scipy or
-$HOME/lib/python3.4/site-packages/scipy).  Then type::
-
   cd scipy
   git clean -xdf
-  python setup.py install
+  python setup.py install --user
  
 Documentation
 -------------
 Type::
 
-  cd scipy
-  python setup.py build_sphinx
-
-INSTALLATION
-============
-
-First make sure that all SciPy prerequisites are installed and working
-properly.  Then be sure to remove any old SciPy installations (e.g.
-/usr/lib/python3.4/site-packages/scipy or $HOME/lib/python3.4/
-site-packages/scipy). On windows, if you installed scipy previously from a
-binary, use the remove facility from the add/remove software panel, or remote
-the scipy directory by hand if you installed from sources (e.g.
-C:\Python34\Lib\site-packages\scipy for python 3.4).
+  cd scipy/doc
+  make html
 
 From tarballs
 -------------
 Unpack ``SciPy-<version>.tar.gz``, change to the ``SciPy-<version>/``
-directory, and run
-::
+directory, and run::
 
-  python setup.py install
+  python setup.py install --user
 
-This may take several minutes to an hour depending on the speed of your
+This may take several minutes to half an hour depending on the speed of your
 computer.  To install to a user-specific location instead, run::
 
   python setup.py install --prefix=$MYDIR
@@ -178,7 +136,7 @@ where $MYDIR is, for example, $HOME or $HOME/usr.
 
         ** Note 1: On Unix, you should avoid installing in /usr, but rather in
         /usr/local or somewhere else. /usr is generally 'owned' by your package
-        manager, and you may overwrite a packaged scipy this way.
+        manager, and you may overwrite a packaged Scipy this way.
 
 TESTING
 =======
@@ -192,24 +150,14 @@ To run the full test suite use
 
    >>> scipy.test('full')
 
-Please note that you must have version 0.10 or later of the 'nose' test
+Please note that you must have version 1.0 or later of the 'nose' test
 framework installed in order to run the tests.  More information about nose is
 available on the website__.
 
-__ http://somethingaboutorange.com/mrl/projects/nose/
+__ https://nose.readthedocs.org/en/latest/
 
 COMPILER NOTES
 ==============
-
-Note that SciPy is developed mainly using GNU compilers. Compilers from
-other vendors such as Intel, Absoft, Sun, NAG, Compaq, Vast, Portland,
-Lahey, HP, IBM are supported in the form of community feedback.
-
-gcc__ compiler is recommended.  gcc 3.x and 4.x are known to work. 
-If building on OS X, you should use the provided gcc by xcode tools, and the
-gfortran compiler available here:
-
-http://r.research.att.com/tools/
 
 You can specify which Fortran compiler to use by using the following
 install command::
@@ -221,114 +169,24 @@ To see a valid list of <Vendor> names, run::
   python setup.py config_fc --help-fcompiler
 
 IMPORTANT: It is highly recommended that all libraries that scipy uses (e.g.
-blas and atlas libraries) are built with the same Fortran compiler. In most
-cases, if you mix compilers, you will not be able to import scipy at best, have
-crashes and random results at worse.
+BLAS and ATLAS libraries) are built with the same Fortran compiler. In most
+cases, if you mix compilers, you will not be able to import Scipy at best, have
+crashes and random results at worst.
 
-__ http://gcc.gnu.org/
+UNINSTALLING
+============
 
-Using non-GNU Fortran compiler with gcc/g77 compiled Atlas/Lapack libraries
----------------------------------------------------------------------------
+When installing with ``python setup.py install`` or a variation on that, you do
+not get proper uninstall behavior for an older already installed Scipy version.
+In many cases that's not a problem, but if it turns out to be an issue, you
+need to manually uninstall it first (remove from e.g. in
+``/usr/lib/python3.4/site-packages/scipy`` or
+``$HOME/lib/python3.4/site-packages/scipy``).
 
-When Atlas/Lapack libraries are compiled with GNU compilers but
-one wishes to build scipy with some non-GNU Fortran compiler then
-linking extension modules may require -lg2c. You can specify it
-in installation command line as follows::
-
-  python setup.py build build_ext -lg2c install
-
-If using non-GNU C compiler or linker, the location of g2c library can
-be specified in a similar manner using -L/path/to/libg2c.a after
-build_ext command.
-
-Intel Fortran Compiler
-----------------------
-
-Note that code compiled by the Intel Fortran Compiler (IFC) is not
-binary compatible with code compiled by g77. Therefore, when using IFC,
-all Fortran codes used in SciPy must be compiled with IFC. This also
-includes the LAPACK, BLAS, and ATLAS libraries. Using GCC for compiling
-C code is OK. IFC version 5.0 is not supported (because it has bugs that
-cause SciPy's tests to segfault).
-
-Minimum IFC flags for building LAPACK and ATLAS are
-::
-
-  -FI -w90 -w95 -cm -O3 -unroll
-
-Also consult 'ifc -help' for additional optimization flags suitable
-for your computers CPU.
-
-If you want to have the LAPACK tests pass the 'ieee' compliancy test, you have to
-use the -mp (='more precise') compiler option. Note that there's a significant hit
-on the resulting performance though, reducing it to almost GNU level, but not quite.
-
-When finishing LAPACK build, you must recompile ?lamch.f, xerbla.f
-with optimization disabled (otherwise infinite loops occur when using
-these routines)::
-
-  make lapacklib   # in /path/to/src/LAPACK/
-  cd SRC
-  ifc -FI -w90 -w95 -cm -O0 -c ?lamch.f xerbla.f
-  cd ..
-  make lapacklib
-
-
-KNOWN INSTALLATION PROBLEMS
-===========================
-
-BLAS sources shipped with LAPACK are incomplete
------------------------------------------------
-Some distributions (e.g. Redhat Linux 7.1) provide BLAS libraries that
-are built from such incomplete sources and therefore cause import
-errors like
-::
-
-  ImportError: .../fblas.so: undefined symbol: srotmg_
-
-Fix:
-  Use ATLAS or the official release of BLAS libraries.
-
-LAPACK library provided by ATLAS is incomplete
-----------------------------------------------
-You will notice it when getting import errors like
-::
-
-  ImportError: .../flapack.so : undefined symbol: sgesdd_
-
-To be sure that SciPy is built against a complete LAPACK, check the
-size of the file liblapack.a -- it should be about 6MB. The location
-of liblapack.a is shown by executing
-::
-
-    python /lib/python3.4/site-packages/numpy/distutils/system_info.py
-
-(or the appropriate installation directory).
-
-To fix: follow the instructions in
-
-    http://math-atlas.sourceforge.net/errata.html#completelp
-
-  to create a complete liblapack.a. Then copy liblapack.a to the same
-  location where libatlas.a is installed and retry with scipy build.
-
-Using non-GNU Fortran Compiler
-------------------------------
-If import scipy shows a message
-::
-
-  ImportError: undefined symbol: s_wsfe
-
-and you are using non-GNU Fortran compiler, then it means that any of
-the (may be system provided) Fortran libraries such as LAPACK or BLAS
-were compiled with g77. See also compilers notes above.
-
-Recommended fix: Recompile all Fortran libraries with the same Fortran
-compiler and rebuild/reinstall scipy.
-
-Another fix: See `Using non-GNU Fortran compiler with gcc/g77 compiled
-Atlas/Lapack libraries` section above.
-
+Alternatively, you can use ``pip install . --user`` instead of ``python
+setup.py install --user`` in order to get reliable uninstall behavior.
+The downside is that ``pip`` doesn't show you a build log and doesn't support
+incremental rebuilds (it copies the whole source tree to a tempdir).
 
 TROUBLESHOOTING
 ===============
@@ -379,7 +237,7 @@ in one command::
 
      python INSTALLDIR/numpy/distutils/system_info.py
 
-where INSTALLDIR is, for example, /usr/lib/python3.4/site-packages/.
+   where INSTALLDIR is, for example, /usr/lib/python3.4/site-packages/.
 
 8) Feel free to add any other relevant information.
    For example, the full output (both stdout and stderr) of the SciPy
@@ -393,9 +251,3 @@ where INSTALLDIR is, for example, /usr/lib/python3.4/site-packages/.
      ldd /path/to/ext_module.so
 
    can be useful.
-
-You may find the following notes useful:
-
-  http://www.tuxedo.org/~esr/faqs/smart-questions.html
-
-  http://www.chiark.greenend.org.uk/~sgtatham/bugs.html
