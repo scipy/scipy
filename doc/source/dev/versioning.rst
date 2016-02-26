@@ -1,7 +1,7 @@
 Version numbering
 =================
 Scipy version numbering complies to `PEP 440`_.  Released final versions, which
-are the only versions appearing on `PyPi`_, are numbered ``MAJOR.MINOR.MICRO``
+are the only versions appearing on `PyPI`_, are numbered ``MAJOR.MINOR.MICRO``
 where:
 
 - ``MAJOR`` is an integer indicating the major version.  It changes very
@@ -38,4 +38,3 @@ An installed Scipy version contains these version identifiers::
 
 
 .. _PEP 440: https://www.python.org/dev/peps/pep-0440
-.. _PyPi: https://pypi.python.org/pypi/scipy

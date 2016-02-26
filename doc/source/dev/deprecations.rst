@@ -1,5 +1,5 @@
 Deprecations
-------------
+============
 
 There are various reasons for wanting to remove existing functionality: it's
 buggy, the API isn't understandable, it's superceded by functionality with

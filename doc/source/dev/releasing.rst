@@ -17,10 +17,10 @@ steps.  In addition to those steps, which have to be performed by the release
 manager, here are descriptions of release-related activities and conventions of
 interest:
 
-- `Backporting changes to maintenance branches`_
-- `Using Labels and Milestones`_
+- `Backporting`_
+- `Labels and Milestones`_
 - `Version numbering`_
-- `Supported Numpy and Python versions`_
+- `Supported Python and Numpy versions`_
 - `Deprecations`_
 
 
@@ -117,42 +117,42 @@ scipy-wheels repo for more details.
 
 The TravisCI builds run the tests from the built wheels and if they pass upload
 the wheels to http://wheels.scipy.org/.  From there you can copy them for
-uploading to PyPi (see next section).
+uploading to PyPI (see next section).
 
 
 Uploading release artifacts
 ---------------------------
 For a release there are currently five places on the web to upload things to:
 
-- PyPi (tarballs, OS X wheels)
+- PyPI (tarballs, OS X wheels)
 - Github releases (tarballs, release notes, Changelog)
 - scipy.org (an announcement of the release)
 - docs.scipy.org (html/pdf docs)
 
-PyPi
-~~~~
+**PyPI:**
+
 ``twine upload -s <tarballs or wheels to upload>``
 
-Github Releases
-~~~~~~~~~~~~~~~
+**Github Releases:**
+
 Use GUI on https://github.com/scipy/scipy/releases to create release and
 upload all release artifacts.
 
-SourceForge
-~~~~~~~~~~~
-The main download sites are PyPi and Github Releases.  Older releases are stored
+**SourceForge:**
+
+The main download sites are PyPI and Github Releases.  Older releases are stored
 on SourceForce ( http://sourceforge.net/projects/scipy/files/scipy).  That
-download site has a "Latest" folder which redirects users to PyPi/GitHub, so
+download site has a "Latest" folder which redirects users to PyPI/GitHub, so
 it's not needed to upload anything to SourceForge for new releases.
 
-scipy.org
-~~~~~~~~~
+**scipy.org:**
+
 Sources for the site are in https://github.com/scipy/scipy.org.
 Update the News section in ``www/index.rst`` and then do
 ``make upload USERNAME=yourusername``.
 
-docs.scipy.org
-~~~~~~~~~~~~~~
+**docs.scipy.org:**
+
 First build the scipy docs, by running ``make dist`` in ``scipy/doc/``.  Verify
 that they look OK, then upload them to the doc server with
 ``make upload USERNAME=rgommers RELEASE=0.17.0``.  Note that SSH access to the

@@ -15,9 +15,11 @@ optional.  Scipy tries to keep its dependencies to a minimum; currently they
 are:
 
 *Unconditional run-time dependencies:*
+
 - Numpy_
 
 *Conditional run-time dependencies:*
+
 - nose_ (to run the test suite)
 - asv_ (to run the benchmarks)
 - matplotlib_ (for some functions that can produce plots)
@@ -26,12 +28,14 @@ are:
 - mpmath_ (for more extended tests in ``special``)
 
 *Unconditional build-time dependencies:*
+
 - Numpy_
 - A BLAS and LAPACK implementation (reference BLAS/LAPACK, ATLAS, OpenBLAS,
   MKL, Accelerate are all known to work)
 - (for development versions) Cython_
 
 *Conditional build-time dependencies:*
+
 - setuptools_
 - wheel_ (``python setup.py bdist_wheel``)
 - Sphinx_ (docs)
@@ -62,7 +66,7 @@ about this, we go in a bit of detail here.
 
 Scipy only reports its dependency on Numpy via ``install_requires`` if Numpy
 isn't installed at all on a system.  This will only change when there are
-either 32-bit and 64-bit Windows wheels for Numpy on PyPi or when
+either 32-bit and 64-bit Windows wheels for Numpy on PyPI or when
 ``pip upgrade`` becomes available (with sane behavior, unlike ``pip install
 -U``, see `this PR
 <https://github.com/pypa/pip/pull/3194>`_).  For more details, see
@@ -78,7 +82,7 @@ as "wontfix").
 
 Supported Python and Numpy versions
 -----------------------------------
-The Python_ versions that Scipy supports are listed in the list of PyPi
+The Python_ versions that Scipy supports are listed in the list of PyPI
 classifiers in ``setup.py``, and mentioned in the release notes for each
 release.  All newly released Python versions will be supported as soon as
 possible.  The general policy on dropping support for a Python version is that
@@ -113,7 +117,7 @@ Building binary installers
    `here <http://scipy.org/scipylib/building/index.html>`_.
 
 There are a number of things to take into consideration when building binaries
-and distributing them on PyPi_ or elsewhere.
+and distributing them on `PyPI`_ or elsewhere.
 
 **General**
 
@@ -178,7 +182,7 @@ Wheelhouse for wheels compatible with TravisCI is http://wheels.scipy.org.
 .. _setuptools: https://bitbucket.org/pypa/setuptools
 .. _wheel: wheel.readthedocs.org
 .. _pip: http://pip-installer.org
-.. _PyPi: http://pypi.python.org
+.. _PyPI: http://pypi.python.org/pypi/scipy
 .. _Python Packaging User Guide: https://packaging.python.org
 .. _Wheelhouse: https://pypi.python.org/pypi/Wheelhouse
 .. _MingwPy: https://mingwpy.github.io
