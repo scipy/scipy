@@ -139,7 +139,6 @@ class LinearOperator(object):
                 raise TypeError("LinearOperator subclass should implement"
                                 " at least one of _matvec and _matmat.")
 
-            obj.__init__(*args, **kwargs)
             return obj
 
     def __init__(self, dtype, shape):

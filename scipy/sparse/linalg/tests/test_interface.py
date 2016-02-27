@@ -284,6 +284,20 @@ def test_attributes():
         assert_(hasattr(op, "shape"))
         assert_(hasattr(op, "_matvec"))
 
+def matvec(x):
+    """ Needed for test_pickle as local functions are not pickleable """
+    return np.zeros(3)
+
+def test_pickle():
+    import pickle
+
+    for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+        A = interface.LinearOperator((3, 3), matvec)
+        s = pickle.dumps(A, protocol=protocol)
+        B = pickle.loads(s)
+
+        for k in A.__dict__:
+            assert_equal(getattr(A, k), getattr(B, k))
 
 def test_inheritance():
     class Empty(interface.LinearOperator):
