@@ -20,7 +20,6 @@ def configuration(parent_package='',top_path=None):
 
     arpack_sources = [join('ARPACK','SRC', '*.f')]
     arpack_sources.extend([join('ARPACK','UTIL', '*.f')])
-    arpack_sources.extend([join('ARPACK','LAPACK', '*.f')])
 
     arpack_sources += get_g77_abi_wrappers(lapack_opt)
 
