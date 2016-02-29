@@ -1511,6 +1511,10 @@ def test_filtfilt_gust():
 
 
 class TestDecimate(TestCase):
+    def test_bad_args(self):
+        x = np.arange(12)
+        assert_raises(TypeError, signal.decimate, x, q=0.5, n=1)
+        assert_raises(TypeError, signal.decimate, x, q=2, n=0.5)
 
     def test_basic_IIR(self):
         x = np.arange(12)
@@ -1530,38 +1534,62 @@ class TestDecimate(TestCase):
         d1 = signal.decimate(z, 2, axis=1, zero_phase=False)
         assert_equal(d1.shape, (30, 15))
 
-    def test_phaseshift(self):
-        # Set up downsample filter
-        q = 4
-        n = 8
-        wc = 0.8*np.pi/q
-        b, a = signal.cheby1(n, 0.05, wc/np.pi)
-        system = signal.lti(b, a)
-        # Create signal, expected response
-        wsig = 0.1
-        d = np.exp(1j*wsig*np.arange(1e5))
-        resp = np.angle(signal.freqz(b, a, wsig)[1][0])
+    def test_phaseshift_FIR(self):
+        self._test_phaseshift(method='fir', zero_phase=False)
 
-        # Decimate, see if response matches up
-        xdec = signal.decimate(d.real, q, n, system, zero_phase=False)
-        phase = np.mean(np.angle(d[::q].conj()*xdec))
-        assert_almost_equal(phase, resp, decimal=3)
+    def test_phaseshift_IIR(self):
+        self._test_phaseshift(method='iir', zero_phase=False)
 
-    def test_zero_phase(self):
-        # Set up downsample filter
-        q = 4
-        n = 8
-        wc = 0.8*np.pi/q
-        b, a = signal.cheby1(n, 0.05, wc/np.pi)
-        system = signal.lti(b, a)
-        # Create signal
-        wsig = 0.1
-        d = np.exp(1j*wsig*np.arange(1e5))
+    def test_zero_phase_IIR(self):
+        self._test_phaseshift(method='iir', zero_phase=True)
 
-        # Decimate, see if response is in phase with original
-        xdec = signal.decimate(d.real, q, n, system, zero_phase=True)
-        phase = np.mean(np.angle(d[::q].conj()*xdec))
-        assert_almost_equal(phase, 0, decimal=3)
+    def _test_phaseshift(self, method, zero_phase):
+        rate = 120
+        rates_to = [15, 20, 30, 40]  # q = 8, 6, 4, 3
+
+        t_tot = int(100)  # Need to let antialiasing filters settle
+        t = np.arange(rate*t_tot+1) / float(rate)
+
+        # Sinusoids at 0.8*nyquist, windowed to avoid edge artifacts
+        freqs = np.array(rates_to) * 0.8 / 2
+        d = (np.exp(1j * 2 * np.pi * freqs[:, np.newaxis] * t)
+             * signal.tukey(t.size, 0.1))
+
+        for rate_to in rates_to:
+            q = rate // rate_to
+            t_to = np.arange(rate_to*t_tot+1) / float(rate_to)
+            d_tos = (np.exp(1j * 2 * np.pi * freqs[:, np.newaxis] * t_to)
+                     * signal.tukey(t_to.size, 0.1))
+
+            # Set up downsampling filters, match v0.17 defaults
+            if method == 'fir':
+                n = 30
+                system = signal.lti(signal.firwin(n + 1, 1. / q,
+                                                  window='hamming'), 1.)
+            elif method == 'iir':
+                n = 8
+                wc = 0.8*np.pi/q
+                system = signal.lti(*signal.cheby1(n, 0.05, wc/np.pi))
+
+            # Calculate expected phase response, as unit complex vector
+            if zero_phase is False:
+                _, h_resps = signal.freqz(system.num, system.den,
+                                          freqs/rate*2*np.pi)
+                h_resps /= np.abs(h_resps)
+            else:
+                h_resps = np.ones_like(freqs)
+
+            y_resamps = signal.decimate(d.real, q, n, ftype=system,
+                                        zero_phase=zero_phase)
+
+            # Get phase from complex inner product, like CSD
+            h_resamps = np.sum(d_tos.conj() * y_resamps, axis=-1)
+            h_resamps /= np.abs(h_resamps)
+            subnyq = freqs < 0.5*rate_to
+
+            # Complex vectors should be aligned, only compare below nyquist
+            assert_allclose(np.angle(h_resps.conj()*h_resamps)[subnyq], 0,
+                            atol=1e-3, rtol=1e-3)
 
 
 class TestHilbert(object):
