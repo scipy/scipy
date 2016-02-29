@@ -756,23 +756,39 @@ class _TestCommon:
         matrices = [dat_1, dat_2, dat_3, dat_4, dat_5]
 
         def check(dtype, j):
+            if j == 1:
+                # At the lowest tested precision for floats and complex
+                # numbers, the sparse matrix sum method can lead to different
+                # results in the lower decimals from the dense matrix sum
+                # method. This necessitaties a more lenient comparison between
+                # the resulting matrices.
+                if dtype == np.complex64:
+                    decimal = 4
+                else:
+                    decimal = 5
+            else:
+                decimal = 7
             dat = np.matrix(matrices[j], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
-
-            assert_array_almost_equal(dat.sum(), datsp.sum())
+            assert_array_almost_equal(dat.sum(), datsp.sum(), decimal=decimal)
             assert_equal(dat.sum().dtype, datsp.sum().dtype)
-            assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None))
+            assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None),
+                                      decimal=decimal)
             assert_equal(dat.sum(axis=None).dtype, datsp.sum(axis=None).dtype)
-            assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
+            assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0),
+                                      decimal=decimal)
             assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
-            assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
+            assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1),
+                                      decimal=decimal)
             assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
-            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
+            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2),
+                                      decimal=decimal)
             assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
-            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
+            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1),
+                                      decimal=decimal)
             assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
-        for dtype in self.math_dtypes:
+        for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
                 yield check, dtype, j
 
@@ -796,8 +812,9 @@ class _TestCommon:
             assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
             assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
 
-        for dtype in self.math_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, dtype
+
 
     def test_expm(self):
         with warnings.catch_warnings():
@@ -3972,7 +3989,11 @@ class _NonCanonicalMixin(object):
         NC = construct(arg1, **kwargs)
 
         # check that result is valid
-        assert_allclose(NC.A, M.A)
+        if NC.dtype in [np.float32, np.complex64]:
+            rtol = 1e-04
+        else:
+            rtol = 1e-07
+        assert_allclose(NC.A, M.A, rtol=rtol)
 
         # check that at least one explicit zero
         if has_zeros:

@@ -705,11 +705,10 @@ class spmatrix(object):
         # Mimic numpy's casting.
         if np.issubdtype(self.dtype, np.float_):
             res_dtype = np.float_
-        elif (np.issubdtype(self.dtype, np.int_) or
-              np.issubdtype(self.dtype, np.bool_)):
-                res_dtype = np.int_
-        elif np.issubdtype(self.dtype, np.complex_):
-            res_dtype = np.complex_
+        elif self.dtype.kind in 'ib':
+            res_dtype = np.int_
+        elif self.dtype.kind == 'u':
+            res_dtype = np.uint
         else:
             res_dtype = self.dtype
 
@@ -734,16 +733,16 @@ class spmatrix(object):
         """
         # Mimic numpy's casting.
         if (np.issubdtype(self.dtype, np.float_) or
-                np.issubdtype(self.dtype, np.integer) or
-                np.issubdtype(self.dtype, np.bool_)):
+            np.issubdtype(self.dtype, np.integer) or
+            np.issubdtype(self.dtype, np.bool_)):
             res_dtype = np.float_
-        elif np.issubdtype(self.dtype, np.complex_):
-            res_dtype = np.complex_
         else:
             res_dtype = self.dtype
 
         if axis is None:
-            return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
+            m, n = self.shape
+            return self.astype(res_dtype).sum() / np.matrix(m * n,
+                                                            dtype=res_dtype)
 
         if axis < 0:
             axis += 2
