@@ -4,15 +4,16 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, assert_, run_module_suite
+from numpy.testing import TestCase, assert_, assert_allclose, assert_equal, run_module_suite
 
+import numpy as np
 from numpy import zeros, array, allclose
 from scipy.linalg import norm
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, eye, rand
 
 from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import splu
-from scipy.sparse.linalg.isolve import lgmres
+from scipy.sparse.linalg.isolve import lgmres, gmres
 
 
 Am = csr_matrix(array([[-2,1,0,0,0,9],
@@ -77,6 +78,22 @@ class TestLGMRES(TestCase):
         assert_(count_1 == 3, count_1)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
+
+    def test_arnoldi(self):
+        np.random.rand(1234)
+
+        A = eye(10000) + rand(10000,10000,density=1e-4)
+        b = np.random.rand(10000)
+
+        # The inner arnoldi should be equivalent to gmres
+        x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=15, maxiter=1)
+        x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
+
+        assert_equal(flag0, 1)
+        assert_equal(flag1, 1)
+        assert_(np.linalg.norm(A.dot(x0) - b) > 1e-3)
+
+        assert_allclose(x0, x1)
 
 
 if __name__ == "__main__":

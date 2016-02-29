@@ -237,19 +237,23 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             Q, R = qr_insert(Q2, R2, hcur, j-1, which='col',
                              overwrite_qru=True, check_finite=False)
 
-            # Solve least squares problem
-            # H y = Q R y = inner_res_0 * e_1
-            y, info = trtrs(R[:j,:j], Q[0,:j].conj())
-            if info != 0:
-                # Zero diagonal -> exact solution, but we catch that above
-                raise RuntimeError("QR solution failed")
-            y *= inner_res_0
+            # Transformed least squares problem
+            # || Q R y - inner_res_0 * e_1 ||_2 = min!
+            # Since R = [R'; 0], solution is y = inner_res_0 (R')^{-1} (Q^H)[:j,0]
 
-            inner_res = nrm2(np.dot(R, y) - inner_res_0*Q[0].conj())
+            # Residual is immediately known
+            inner_res = abs(Q[0,-1]) * inner_res_0
 
             # -- check for termination
             if inner_res < tol * inner_res_0:
                 break
+
+        # -- Get the LSQ problem solution
+        y, info = trtrs(R[:j,:j], Q[0,:j].conj())
+        if info != 0:
+            # Zero diagonal -> exact solution, but we handled that above
+            raise RuntimeError("QR solution failed")
+        y *= inner_res_0
 
         # -- GMRES terminated: eval solution
         dx = ws[0]*y[0]
