@@ -130,9 +130,7 @@ Jörg Dietrich for the k-sample Anderson Darling test.
 Blake Griffith for improvements to scipy.sparse.
 Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
-Nathan Woods for work on multivariate integration. His work from 31 Aug 2015
-    to the present is subject to the disclaimer at:
-    https://github.com/losalamos/Gazebo/blob/master/LICENSE.
+Nathan Woods for work on multivariate integration. 
 Brianna Laugher for bug fixes.
 Johannes Kulick for the Dirichlet distribution.
 Bastian Venthur for bug fixes.
