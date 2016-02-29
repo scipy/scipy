@@ -15,7 +15,7 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres
+from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -37,7 +37,7 @@ class Case(object):
 class IterativeParams(object):
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres]
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
         real_solvers = [minres]
@@ -157,10 +157,10 @@ def check_maxiter(solver, case):
     def callback(x):
         residuals.append(norm(b - case.A*x))
 
-    x, info = solver(A, b, x0=x0, tol=tol, maxiter=3, callback=callback)
+    x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
 
-    assert_equal(len(residuals), 3)
-    assert_equal(info, 3)
+    assert_equal(len(residuals), 1)
+    assert_equal(info, 1)
 
 
 def test_maxiter():
@@ -258,7 +258,7 @@ def test_gmres_basic():
 
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
-    reentrant = [lgmres, minres]
+    reentrant = [lgmres, minres, gcrotmk]
     for solver in reentrant + non_reentrant:
         yield _check_reentrancy, solver, solver in reentrant
 
