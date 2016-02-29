@@ -95,6 +95,42 @@ class TestLGMRES(TestCase):
 
         assert_allclose(x0, x1)
 
+    def test_cornercase(self):
+        np.random.seed(1234)
+
+        # Rounding error may prevent convergence with tol=0 --- ensure
+        # that the return values in this case are correct, and no
+        # exceptions are raised
+
+        for n in [3, 5, 10, 100]:
+            A = 2*eye(n)
+
+            b = np.ones(n)
+            x, info = lgmres(A, b, maxiter=10)
+            assert_equal(info, 0)
+            assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+
+            x, info = lgmres(A, b, tol=0, maxiter=10)
+            if info == 0:
+                assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+
+            b = np.random.rand(n)
+            x, info = lgmres(A, b, maxiter=10)
+            assert_equal(info, 0)
+            assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+
+            x, info = lgmres(A, b, tol=0, maxiter=10)
+            if info == 0:
+                assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+
+    def test_nans(self):
+        A = eye(3, format='lil')
+        A[1,1] = np.nan
+        b = np.ones(3)
+
+        x, info = lgmres(A, b, tol=0, maxiter=10)
+        assert_equal(info, 1)
+
 
 if __name__ == "__main__":
     run_module_suite()
