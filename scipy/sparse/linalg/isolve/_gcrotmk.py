@@ -4,20 +4,172 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from six.moves import xrange
-from scipy.linalg import (get_blas_funcs, get_lapack_funcs, qr, solve, svd,
-                          qr_insert)
+from numpy.linalg import LinAlgError
+from scipy._lib.six import xrange
+from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
 from scipy.sparse.linalg.isolve.utils import make_system
 
 
 __all__ = ['gcrotmk']
 
 
-def _inner_gmres():
+def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=()):
     """
-    (F)GMRES Arnoldi process
+    FGMRES Arnoldi process, with optional projection or augmentation
+
+    Parameters
+    ----------
+    matvec : callable
+        Operation A*x
+    v0 : ndarray
+        Initial vector, normalized to nrm2(v0) == 1
+    m : int
+        Number of GMRES rounds
+    atol : float
+        Absolute tolerance for early exit
+    lpsolve : callable
+        Left preconditioner L
+    rpsolve : callable
+        Right preconditioner R
+    CU : list of (ndarray, ndarray)
+        Columns of matrices C and U in GCROT
+    outer_v : list of ndarrays
+        Augmentation vectors in LGMRES
+
+    Raises
+    ------
+    LinAlgError
+        If nans encountered
+
+    Returns
+    -------
+    Q, R : ndarray
+        QR decomposition of the upper Hessenberg H=QR
+    B : ndarray
+        Projections corresponding to matrix C
+    vs : list of ndarray
+        Columns of matrix V
+    zs : list of ndarray
+        Columns of matrix Z
+    y : ndarray
+        Solution to ||H y - e_1||_2 = min!
+
     """
-    pass
+
+    if lpsolve is None:
+        lpsolve = lambda x: x
+    if rpsolve is None:
+        rpsolve = lambda x: x
+
+    axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (v0,))
+
+    vs = [v0]
+    zs = []
+    y = None
+
+    m = m + len(outer_v)
+
+    # Orthogonal projection coefficients
+    B = np.zeros((len(cs), m), dtype=v0.dtype)
+
+    # H is stored in QR factorized form
+    Q = np.ones((1, 1), dtype=v0.dtype)
+    R = np.zeros((1, 0), dtype=v0.dtype)
+
+    eps = np.finfo(v0.dtype).eps
+
+    breakdown = False
+
+    # FGMRES Arnoldi process
+    for j in xrange(m):
+        # L A Z = C B + V H
+
+        if j < len(outer_v):
+            z, w = outer_v[j]
+        elif j == len(outer_v):
+            z = rpsolve(v0)
+            w = None
+        else:
+            z = rpsolve(vs[-1])
+            w = None
+
+        if w is None:
+            w = lpsolve(matvec(z))
+        else:
+            # w is clobbered below
+            w = w.copy()
+
+        w_norm = nrm2(w)
+
+        # GCROT projection: L A -> (1 - C C^H) L A
+        # i.e. orthogonalize against C
+        for i, c in enumerate(cs):
+            alpha = dot(c, w)
+            B[i,j] = alpha
+            w = axpy(c, w, c.shape[0], -alpha)  # w -= alpha*c
+
+        # Orthogonalize against V
+        hcur = np.zeros(j+2, dtype=Q.dtype)
+        for i, v in enumerate(vs):
+            alpha = dot(v, w)
+            hcur[i] = alpha
+            w = axpy(v, w, v.shape[0], -alpha)  # w -= alpha*v
+        hcur[i+1] = nrm2(w)
+
+        with np.errstate(over='ignore', divide='ignore'):
+            # Careful with denormals
+            alpha = 1/hcur[-1]
+
+        if np.isfinite(alpha):
+            w = scal(alpha, w)
+
+        if not (hcur[-1] > eps * w_norm):
+            # w essentially in the span of previous vectors,
+            # or we have nans. Bail out after updating the QR
+            # solution.
+            breakdown = True
+
+        vs.append(w)
+        zs.append(z)
+
+        # Arnoldi LSQ problem
+
+        # Add new column to H=Q*R, padding other columns with zeros
+        Q2 = np.zeros((j+2, j+2), dtype=Q.dtype, order='F')
+        Q2[:j+1,:j+1] = Q
+        Q2[j+1,j+1] = 1
+
+        R2 = np.zeros((j+2, j), dtype=R.dtype, order='F')
+        R2[:j+1,:] = R
+
+        Q, R = qr_insert(Q2, R2, hcur, j, which='col',
+                         overwrite_qru=True, check_finite=False)
+
+        # Transformed least squares problem
+        # || Q R y - inner_res_0 * e_1 ||_2 = min!
+        # Since R = [R'; 0], solution is y = inner_res_0 (R')^{-1} (Q^H)[:j,0]
+
+        # Residual is immediately known
+        res = abs(Q[0,-1])
+
+        # Check for termination
+        if res < atol or breakdown:
+            break
+
+    if not np.isfinite(R[j,j]):
+        # nans encountered, bail out
+        raise LinAlgError()
+
+    # -- Get the LSQ problem solution
+
+    # The problem is triangular, but the condition number may be
+    # bad (or in case of breakdown the last diagonal entry may be
+    # zero), so use lstsq instead of trtrs.
+    y, _, _, _, = lstsq(R[:j+1,:j+1], Q[0,:j+1].conj())
+
+    B = B[:,:j+1]
+
+    return Q, R, B, vs, zs, y
 
 
 def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
@@ -101,7 +253,6 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     matvec = A.matvec
     psolve = M.matvec
-    nfev = 0
 
     if CU is None:
         CU = []
@@ -112,7 +263,6 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     axpy, dot, scal = None, None, None
 
     r = b - matvec(x)
-    nfev += 1
 
     axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
     trtrs = get_lapack_funcs('trtrs', (x, r))
@@ -138,7 +288,6 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             c, u = CU.pop(0)
             if c is None:
                 c = matvec(u)
-                nfev += 1
             C[:,j] = c
             j += 1
             us.append(u)
@@ -193,97 +342,22 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         if beta <= tol * b_norm:
             break
 
-        v0 = r/beta
-        vs = [v0]
-        zs = []
-        y = None
-
         ml = m + max(k - len(CU), 0)
 
-        # Orthogonal projection coefficients
-        B = np.zeros((len(CU), ml), dtype=r.dtype)
+        cs = [c for c, u in CU]
 
-        # H is stored in QR factorized form
-        Q = np.ones((1, 1), dtype=r.dtype)
-        R = np.zeros((1, 0), dtype=r.dtype)
-
-        # FGMRES Arnoldi process
-        for j in xrange(ml):
-            zj = psolve(vs[-1])
-            w = matvec(zj)
-            nfev += 1
-
-            # GCROT: A -> (1 - C C^H) A
-            # i.e. orthogonalize against C
-            for i, cu in enumerate(CU):
-                c, u = cu
-                alpha = dot(c, w)
-                B[i,j] = alpha
-                w = axpy(c, w, c.shape[0], -alpha)  # w -= alpha*c
-
-            # Orthogonalize against V
-            hcur = np.zeros(j+2, dtype=Q.dtype)
-            for i, v in enumerate(vs):
-                alpha = dot(v, w)
-                hcur[i] = alpha
-                w = axpy(v, w, v.shape[0], -alpha)  # w -= alpha*v
-            hcur[i+1] = nrm2(w)
-
-            with np.errstate(over='ignore', divide='ignore'):
-                # Careful with denormals
-                alpha = 1/hcur[-1]
-
-            if np.isfinite(alpha):
-                w = scal(alpha, w)
-            else:
-                # v_new either zero (solution in span of previous
-                # vectors) or we have nans.  If we already have
-                # previous vectors in R, we can discard the current
-                # vector and bail out.
-                if j > 0:
-                    j -= 1
-                    break
-
-            vs.append(w)
-            zs.append(zj)
-
-            # Arnoldi LSQ problem
-
-            # Add new column to H=Q*R, padding other columns with zeros
-            Q2 = np.zeros((j+2, j+2), dtype=Q.dtype, order='F')
-            Q2[:j+1,:j+1] = Q
-            Q2[j+1,j+1] = 1
-
-            R2 = np.zeros((j+2, j), dtype=R.dtype, order='F')
-            R2[:j+1,:] = R
-
-            Q, R = qr_insert(Q2, R2, hcur, j, which='col',
-                             overwrite_qru=True, check_finite=False)
-
-            # Transformed least squares problem
-            # || Q R y - inner_res_0 * e_1 ||_2 = min!
-            # Since R = [R'; 0], solution is y = inner_res_0 (R')^{-1} (Q^H)[:j,0]
-
-            # Residual is immediately known
-            res = abs(Q[0,-1]) * beta
-
-            # Check for termination
-            if res < tol * b_norm:
-                break
-
-        # -- Get the LSQ problem solution
-        y, info = trtrs(R[:j+1,:j+1], Q[0,:j+1].conj())
-        if info != 0:
-            # Zero diagonal -> exact solution, but we handled that above
-            raise RuntimeError("QR solution failed")
-        y *= beta
-
-        if not np.isfinite(y).all():
+        try:
+            Q, R, B, vs, zs, y = _fgmres(matvec,
+                                        r/beta,
+                                        ml,
+                                        rpsolve=psolve,
+                                        atol=tol*b_norm/beta,
+                                        cs=cs)
+            y *= beta
+        except LinAlgError:
             # Floating point over/underflow, non-finite result from
             # matmul etc. -- report failure.
-            return postprocess(x), k_outer + 1
-
-        B = B[:,:j+1]
+            return postprocess(x), j_outer + 1
 
         #
         # At this point,
@@ -337,7 +411,6 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         elif truncate == 'smallest':
             if len(CU) >= k:
                 # cf. [1]
-                Q, R = qr(hess, mode='economic')
                 D = solve(R.T, B.T).T
                 W, sigma, V = svd(D)
 
