@@ -205,21 +205,23 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         Default: 20
     k : int, optional
         Number of vectors to carry between inner FGMRES iterations.
-        According to [1]_, good values are around m.
+        According to [2]_, good values are around m.
         Default: m
     CU : list of tuples, optional
         List of tuples ``(c, u)`` which contain the columns of the matrices
-        C and U in the GCROT(m,k) algorithm. For details, see [1]_.
-        The list given is modified in-place. If not given, start from empty
-        matrices. The ``c`` elements in the tuples can be ``None``,
-        in which case the vectors are recomputed via ``c = A u``
-        on start and orthogonalized as described in [3]_.
+        C and U in the GCROT(m,k) algorithm. For details, see [2]_.
+        The list given and vectors contained in it are modified in-place.
+        If not given, start from empty matrices. The ``c`` elements in the
+        tuples can be ``None``, in which case the vectors are recomputed
+        via ``c = A u`` on start and orthogonalized as described in [3]_.
     discard_C : bool, optional
         Discard the C-vectors at the end. Useful if recycling Krylov subspaces
         for different linear systems.
     truncate : {'oldest', 'smallest'}, optional
         Truncation scheme to use. Drop: oldest vectors, or vectors with
-        smallest singular values. See [1]_ for details.
+        smallest singular values using the scheme discussed in [1,2].
+        See [2]_ for detailed comparison.
+        Default: 'oldest'
 
     Returns
     -------
@@ -233,11 +235,11 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     References
     ----------
-    .. [1] J.E. Hicken and D.W. Zingg, ''A simplified and flexible variant
+    .. [1] E. de Sturler, ''Truncation strategies for optimal Krylov subspace
+           methods'', SIAM J. Numer. Anal. 36, 864 (1999).
+    .. [2] J.E. Hicken and D.W. Zingg, ''A simplified and flexible variant
            of GCROT for solving nonsymmetric linear systems'',
            SIAM J. Sci. Comput. 32, 172 (2010).
-    .. [2] E. de Sturler, ''Truncation strategies for optimal Krylov subspace
-           methods'', SIAM J. Numer. Anal. 36, 864 (1999).
     .. [3] M.L. Parks, E. de Sturler, G. Mackey, D.D. Johnson, S. Maiti,
            ''Recycling Krylov subspaces for sequences of linear systems'',
            SIAM J. Sci. Comput. 28, 1651 (2006).
@@ -265,7 +267,6 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     r = b - matvec(x)
 
     axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
-    trtrs = get_lapack_funcs('trtrs', (x, r))
 
     b_norm = nrm2(b)
     if b_norm == 0:
@@ -339,7 +340,8 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         beta = nrm2(r)
 
         # -- check stopping condition
-        if beta <= tol * b_norm:
+        if beta <= max(tol, tol * b_norm):
+            j_outer = -1
             break
 
         ml = m + max(k - len(CU), 0)
@@ -357,7 +359,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         except LinAlgError:
             # Floating point over/underflow, non-finite result from
             # matmul etc. -- report failure.
-            return postprocess(x), j_outer + 1
+            break
 
         #
         # At this point,
@@ -395,9 +397,16 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         # Normalize cx, maintaining cx = A ux
         # This new cx is orthogonal to the previous C, by construction
-        alpha = nrm2(cx)
-        cx = scal(1.0/alpha, cx)
-        ux = scal(1.0/alpha, ux)
+        try:
+            alpha = 1/nrm2(cx)
+            if not np.isfinite(alpha):
+                raise FloatingPointError()
+        except (FloatingPointError, ZeroDivisionError):
+            # Cannot update, so skip it
+            continue
+
+        cx = scal(alpha, cx)
+        ux = scal(alpha, ux)
 
         # Update residual and solution
         gamma = dot(cx, r)
@@ -406,15 +415,15 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         # Truncate CU
         if truncate == 'oldest':
-            while len(CU) >= k:
+            while len(CU) >= k and CU:
                 del CU[0]
         elif truncate == 'smallest':
-            if len(CU) >= k:
-                # cf. [1]
-                D = solve(R.T, B.T).T
+            if len(CU) >= k and CU:
+                # cf. [1,2]
+                D = solve(R[:-1,:].T, B.T).T
                 W, sigma, V = svd(D)
 
-                # C := C W[:,:-1],  U := U W[:,:-1]
+                # C := C W[:,:k-1],  U := U W[:,:k-1]
                 new_CU = []
                 for j, w in enumerate(W[:,:k-1].T):
                     c, u = CU[0]
@@ -441,16 +450,10 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         # Add new vector to CU
         CU.append((cx, ux))
-    else:
-        # didn't converge ...
-        CU.append((None, x))
-        if discard_C:
-            CU[:] = [(None, u) for c, u in CU]
-        return postprocess(x), maxiter
 
     # Include the solution vector to the span
-    CU.append((None, x))
+    CU.append((None, x.copy()))
     if discard_C:
         CU[:] = [(None, uz) for cz, uz in CU]
 
-    return postprocess(x), 0
+    return postprocess(x), j_outer + 1
