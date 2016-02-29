@@ -2914,6 +2914,9 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     if not isinstance(q, int):
         raise TypeError("q must be an integer")
 
+    if n is not None and not isinstance(n, int):
+        raise TypeError("n must be an integer")
+
     if ftype == 'fir':
         if n is None:
             n = 30
@@ -2929,12 +2932,11 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
         raise ValueError('invalid ftype')
 
     if zero_phase is None:
-        warnings.warn("""
-                      Note: Decimate's zero_phase keyword argument will default
-                      to True in a future release.  Until then, decimate
-                      defaults to one-way filtering for backwards
-                      compatibility. Ideally, always set this argument
-                      explicitly.""", FutureWarning)
+        warnings.warn(" Note: Decimate's zero_phase keyword argument will "
+                      "default to True in a future release.  Until then, "
+                      "decimate defaults to 'one-way filtering for backwards "
+                      "compatibility. Ideally, always set this argument "
+                      "explicitly.", FutureWarning)
         zero_phase = False
 
     if zero_phase and ftype == 'fir':
