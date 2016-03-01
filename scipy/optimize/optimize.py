@@ -310,9 +310,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Initial guess.
     args : tuple, optional
         Extra arguments passed to func, i.e. ``f(x,*args)``.
-    callback : callable, optional
-        Called after each iteration, as callback(xk), where xk is the
-        current parameter vector.
     xtol : float, optional
         Relative error in xopt acceptable for convergence.
     ftol : number, optional
@@ -327,6 +324,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Set to True to print convergence messages.
     retall : bool, optional
         Set to True to return list of solutions at each iteration.
+    callback : callable, optional
+        Called after each iteration, as callback(xk), where xk is the
+        current parameter vector.
     initial_simplex : array_like of shape (N + 1, N), optional
         Initial simplex. If given, overrides `x0`.
         ``initial_simplex[j,:]`` should contain the coordinates of
