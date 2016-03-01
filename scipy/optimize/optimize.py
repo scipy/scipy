@@ -440,8 +440,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     nonzdelt = 0.05
     zdelt = 0.00025
 
+    x0 = asfarray(x0).flatten()
+
     if initial_simplex is None:
-        x0 = asfarray(x0).flatten()
         N = len(x0)
 
         sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
@@ -457,8 +458,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         sim = np.asfarray(initial_simplex).copy()
         if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
             raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
-        if np.asarray(x0).size != sim.shape[1]:
-            warnings.warn("Size of `initial_simplex` is not consistent with `x0`")
+        if len(x0) != sim.shape[1]:
+            raise ValueError("Size of `initial_simplex` is not consistent with `x0`")
         N = sim.shape[1]
 
     if retall:
