@@ -3972,7 +3972,11 @@ class _NonCanonicalMixin(object):
 
         # check that result is valid
         if NC.dtype in [np.float32, np.complex64]:
-            rtol = 1e-04
+            # For single-precision floats, the differences between M and NC
+            # that are introduced by the extra operations involved in the
+            # construction of NC necessitate a more lenient tolerance level
+            # than the default.
+            rtol = 1e-05
         else:
             rtol = 1e-07
         assert_allclose(NC.A, M.A, rtol=rtol)
