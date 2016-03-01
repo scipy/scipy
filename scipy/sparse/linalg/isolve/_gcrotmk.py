@@ -13,7 +13,8 @@ from scipy.sparse.linalg.isolve.utils import make_system
 __all__ = ['gcrotmk']
 
 
-def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=()):
+def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
+            prepend_outer_v=False):
     """
     FGMRES Arnoldi process, with optional projection or augmentation
 
@@ -35,6 +36,9 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=()):
         Columns of matrices C and U in GCROT
     outer_v : list of ndarrays
         Augmentation vectors in LGMRES
+    prepend_outer_v : bool, optional
+        Whether augmentation vectors come before or after 
+        Krylov iterates
 
     Raises
     ------
@@ -84,11 +88,13 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=()):
     for j in xrange(m):
         # L A Z = C B + V H
 
-        if j < len(outer_v):
+        if prepend_outer_v and j < len(outer_v):
             z, w = outer_v[j]
-        elif j == len(outer_v):
+        elif prepend_outer_v and j == len(outer_v):
             z = rpsolve(v0)
             w = None
+        elif not prepend_outer_v and j >= m - len(outer_v):
+            z, w = outer_v[j - (m - len(outer_v))]
         else:
             z = rpsolve(vs[-1])
             w = None
