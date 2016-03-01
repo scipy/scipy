@@ -798,7 +798,6 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             yield check, dtype
 
-
     def test_expm(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=SparseEfficiencyWarning)

@@ -733,8 +733,8 @@ class spmatrix(object):
         """
         # Mimic numpy's casting.
         if (np.issubdtype(self.dtype, np.float_) or
-            np.issubdtype(self.dtype, np.integer) or
-            np.issubdtype(self.dtype, np.bool_)):
+                np.issubdtype(self.dtype, np.integer) or
+                np.issubdtype(self.dtype, np.bool_)):
             res_dtype = np.float_
         else:
             res_dtype = self.dtype
