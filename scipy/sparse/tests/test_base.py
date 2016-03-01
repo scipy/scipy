@@ -749,43 +749,26 @@ class _TestCommon:
         dat_1 = np.matrix([[0, 1, 2],
                            [3, -4, 5],
                            [-6, 7, 9]])
-        dat_2 = np.random.rand(40, 40)
+        dat_2 = np.random.rand(5, 5)
         dat_3 = np.array([[]])
         dat_4 = np.zeros((40, 40))
-        dat_5 = sparse.rand(40, 40, density=1e-2).A
+        dat_5 = sparse.rand(5, 5, density=1e-2).A
         matrices = [dat_1, dat_2, dat_3, dat_4, dat_5]
 
         def check(dtype, j):
-            if j == 1:
-                # At the lowest tested precision for floats and complex
-                # numbers, the sparse matrix sum method can lead to different
-                # results in the lower decimals from the dense matrix sum
-                # method. This necessitaties a more lenient comparison between
-                # the resulting matrices.
-                if dtype == np.complex64:
-                    decimal = 4
-                else:
-                    decimal = 5
-            else:
-                decimal = 7
             dat = np.matrix(matrices[j], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
-            assert_array_almost_equal(dat.sum(), datsp.sum(), decimal=decimal)
+            assert_array_almost_equal(dat.sum(), datsp.sum())
             assert_equal(dat.sum().dtype, datsp.sum().dtype)
-            assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None),
-                                      decimal=decimal)
+            assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None))
             assert_equal(dat.sum(axis=None).dtype, datsp.sum(axis=None).dtype)
-            assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0),
-                                      decimal=decimal)
+            assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
             assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
-            assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1),
-                                      decimal=decimal)
+            assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
             assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
-            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2),
-                                      decimal=decimal)
+            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
             assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
-            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1),
-                                      decimal=decimal)
+            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
             assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
