@@ -269,6 +269,17 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
+    def test_linear_dtypes(self):
+        # regression test for gh-5898, where 1D linear interpolation has been
+        # delegated to numpy.interp for all float dtypes, and the latter was
+        # not handling e.g. np.float128.
+        for dtyp in np.sctypes["float"]:
+            x = np.arange(8, dtype=dtyp)
+            y = x
+            yp = interp1d(x, y, kind='linear')(x)
+            assert_equal(yp.dtype, dtyp)
+            assert_allclose(yp, y, atol=1e-15)
+
     def test_cubic(self):
         # Check the actual implementation of spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='cubic')

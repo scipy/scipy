@@ -366,9 +366,11 @@ class interp1d(_Interpolator1D):
           list or ndarray, regardless of shape) is taken to be a single
           array-like argument meant to be used for both bounds as
           ``below, above = fill_value, fill_value``.
+
           .. versionadded:: 0.17.0
         - If "extrapolate", then points outside the data range will be
           extrapolated. ("nearest" and "linear" kinds only.)
+
           .. versionadded:: 0.17.0
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
@@ -460,9 +462,11 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_nearest
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
-                if (not np.issubdtype(self.y.dtype, np.complexfloating) and
-                   self.y.ndim == 1 and
-                   not _do_extrapolate(fill_value)):
+                cond = self.x.dtype == np.float_ and self.y.dtype == np.float_
+                cond = cond and self.y.ndim == 1
+                cond = cond and not _do_extrapolate(fill_value)
+
+                if cond:
                     self._call = self.__class__._call_linear_np
                 else:
                     self._call = self.__class__._call_linear
