@@ -116,7 +116,7 @@ class BasinHoppingRunner(object):
         if hasattr(minres, "nhev"):
             self.res.nhev += minres.nhev
 
-        # accept the move based on self.accept_tests. If any test is false,
+        # accept the move based on self.accept_tests. If any test is False,
         # than reject the step.  If any test returns the special value, the
         # string 'force accept', accept the step regardless.  This can be used
         # to forcefully escape from a local minimum if normal basin hopping
@@ -125,16 +125,13 @@ class BasinHoppingRunner(object):
         for test in self.accept_tests:
             testres = test(f_new=energy_after_quench, x_new=x_after_quench,
                            f_old=self.energy, x_old=self.x)
-            if isinstance(testres, bool):
-                if not testres:
-                    accept = False
-            elif isinstance(testres, str):
-                if testres == "force accept":
-                    accept = True
-                    break
-                else:
-                    raise ValueError("accept test must return bool or string "
-                                     "'force accept'. Type is", type(testres))
+            if testres == 'force accept':
+                accept = True
+                break
+            if testres is True:
+                continue
+            if testres is False:
+                accept = False
             else:
                 raise ValueError("accept test must return bool or string "
                                  "'force accept'. Type is", type(testres))
