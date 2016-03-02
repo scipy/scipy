@@ -4,14 +4,15 @@ import warnings
 
 import numpy as np
 
-from numpy.testing import (assert_almost_equal, assert_array_equal,
-        TestCase, run_module_suite, assert_allclose, assert_equal, assert_)
-from scipy.interpolate import (splrep, splev,
-        KroghInterpolator, krogh_interpolate,
-        BarycentricInterpolator, barycentric_interpolate,
-        PiecewisePolynomial, piecewise_polynomial_interpolate,
-        approximate_taylor_polynomial, pchip, PchipInterpolator,
-        Akima1DInterpolator)
+from numpy.testing import (
+    assert_almost_equal, assert_array_equal, TestCase, run_module_suite,
+    assert_allclose, assert_equal, assert_, assert_raises)
+
+from scipy.interpolate import (
+    KroghInterpolator, krogh_interpolate,
+    BarycentricInterpolator, barycentric_interpolate,
+    approximate_taylor_polynomial, pchip, PchipInterpolator,
+    Akima1DInterpolator, CubicSpline)
 from scipy._lib.six import xrange
 
 
@@ -52,7 +53,7 @@ SHAPES = [(), (0,), (1,), (3, 2, 5)]
 
 def test_shapes():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip,
-               Akima1DInterpolator]:
+               Akima1DInterpolator, CubicSpline]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -98,8 +99,15 @@ def test_deriv_shapes():
     def akima_antideriv(x, y, axis=0):
         return Akima1DInterpolator(x, y, axis).antiderivative()
 
+    def cspline_deriv(x, y, axis=0):
+        return CubicSpline(x, y, axis).derivative()
+
+    def cspline_antideriv(x, y, axis=0):
+        return CubicSpline(x, y, axis).antiderivative()
+
     for ip in [krogh_deriv, pchip_deriv, pchip_deriv2, pchip_deriv_inplace,
-               pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv]:
+               pchip_antideriv, pchip_antideriv2, akima_deriv, akima_antideriv,
+               cspline_deriv, cspline_antideriv]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -114,7 +122,7 @@ def _check_complex(ip):
 
 
 def test_complex():
-    for ip in [KroghInterpolator, BarycentricInterpolator, pchip]:
+    for ip in [KroghInterpolator, BarycentricInterpolator, pchip, CubicSpline]:
         yield _check_complex, ip
 
 
@@ -309,148 +317,6 @@ class CheckBarycentric(TestCase):
         assert_almost_equal(P(self.test_xs),barycentric_interpolate(self.xs,self.ys,self.test_xs))
 
 
-class CheckPiecewise(TestCase):
-    def setUp(self):
-        self.tck = splrep([0,1,2,3,4,5], [0,10,-1,3,7,2], s=0)
-        self.test_xs = np.linspace(-1,6,100)
-        self.spline_ys = splev(self.test_xs, self.tck)
-        self.spline_yps = splev(self.test_xs, self.tck, der=1)
-        self.xi = np.unique(self.tck[0])
-        self.yi = [[splev(x, self.tck, der=j) for j in xrange(3)] for x in self.xi]
-
-    def test_construction(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi, self.yi, 3)
-
-        assert_almost_equal(P(self.test_xs), self.spline_ys)
-
-    def test_scalar(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi,self.yi,3)
-
-        assert_almost_equal(P(self.test_xs[0]),self.spline_ys[0])
-        assert_almost_equal(P.derivative(self.test_xs[0],1),self.spline_yps[0])
-        assert_almost_equal(P(np.array(self.test_xs[0])),self.spline_ys[0])
-        assert_almost_equal(P.derivative(np.array(self.test_xs[0]),1),
-                            self.spline_yps[0])
-
-    def test_derivative(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi,self.yi,3)
-
-        assert_almost_equal(P.derivative(self.test_xs,1),self.spline_yps)
-
-    def test_derivatives(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi,self.yi,3)
-
-        m = 4
-        r = P.derivatives(self.test_xs,m)
-        #print r.shape, r
-        for i in xrange(m):
-            assert_almost_equal(P.derivative(self.test_xs,i),r[i])
-
-    def test_vector(self):
-        xs = [0, 1, 2]
-        ys = [[[0,1]],[[1,0],[-1,-1]],[[2,1]]]
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(xs,ys)
-            Pi = [PiecewisePolynomial(xs,[[yd[i] for yd in y] for y in ys])
-                for i in xrange(len(ys[0][0]))]
-
-        test_xs = np.linspace(-1,3,100)
-        assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
-        assert_almost_equal(P.derivative(test_xs,1),
-                np.transpose(np.asarray([p.derivative(test_xs,1) for p in Pi]),
-                    (1,0)))
-
-    def test_incremental(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial([self.xi[0]], [self.yi[0]], 3)
-
-        for i in xrange(1,len(self.xi)):
-            P.append(self.xi[i],self.yi[i],3)
-        assert_almost_equal(P(self.test_xs),self.spline_ys)
-
-    def test_shapes_scalarvalue(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi,self.yi,4)
-
-        assert_array_equal(np.shape(P(0)), ())
-        assert_array_equal(np.shape(P(np.array(0))), ())
-        assert_array_equal(np.shape(P([0])), (1,))
-        assert_array_equal(np.shape(P([0,1])), (2,))
-
-    def test_shapes_scalarvalue_derivative(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi,self.yi,4)
-
-        n = 4
-        assert_array_equal(np.shape(P.derivative(0,1)), ())
-        assert_array_equal(np.shape(P.derivative(np.array(0),1)), ())
-        assert_array_equal(np.shape(P.derivative([0],1)), (1,))
-        assert_array_equal(np.shape(P.derivative([0,1],1)), (2,))
-
-    def test_shapes_vectorvalue(self):
-        yi = np.multiply.outer(np.asarray(self.yi),np.arange(3))
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi,yi,4)
-
-        assert_array_equal(np.shape(P(0)), (3,))
-        assert_array_equal(np.shape(P([0])), (1,3))
-        assert_array_equal(np.shape(P([0,1])), (2,3))
-
-    def test_shapes_vectorvalue_1d(self):
-        yi = np.multiply.outer(np.asarray(self.yi),np.arange(1))
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi,yi,4)
-
-        assert_array_equal(np.shape(P(0)), (1,))
-        assert_array_equal(np.shape(P([0])), (1,1))
-        assert_array_equal(np.shape(P([0,1])), (2,1))
-
-    def test_shapes_vectorvalue_derivative(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi, np.multiply.outer(self.yi,
-                                                               np.arange(3)),4)
-
-        n = 4
-        assert_array_equal(np.shape(P.derivative(0,1)), (3,))
-        assert_array_equal(np.shape(P.derivative([0],1)), (1,3))
-        assert_array_equal(np.shape(P.derivative([0,1],1)), (2,3))
-
-    def test_wrapper(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
-            P = PiecewisePolynomial(self.xi,self.yi)
-
-            assert_almost_equal(P(self.test_xs),
-                                piecewise_polynomial_interpolate(
-                                    self.xi, self.yi, self.test_xs))
-            assert_almost_equal(P.derivative(self.test_xs,2),
-                                piecewise_polynomial_interpolate(self.xi,
-                                                                 self.yi,
-                                                                 self.test_xs,
-                                                                 der=2))
-            assert_almost_equal(P.derivatives(self.test_xs,2),
-                                piecewise_polynomial_interpolate(self.xi,
-                                                                 self.yi,
-                                                                 self.test_xs,
-                                                                 der=[0,1]))
-
-
 class TestPCHIP(TestCase):
     def _make_random(self, npts=20):
         np.random.seed(1234)
@@ -491,6 +357,169 @@ class TestPCHIP(TestCase):
         curve1 = pchip(data1[0], data1[1])(xx)
 
         assert_allclose(curve, curve1, atol=1e-14, rtol=1e-14)
+
+    def test_nag(self):
+        # Example from NAG C implementation,
+        # http://nag.com/numeric/cl/nagdoc_cl25/html/e01/e01bec.html
+        # suggested in gh-5326 as a smoke test for the way the derivatives
+        # are computed (see also gh-3453)
+        from scipy._lib.six import StringIO
+        dataStr = '''
+          7.99   0.00000E+0
+          8.09   0.27643E-4
+          8.19   0.43750E-1
+          8.70   0.16918E+0
+          9.20   0.46943E+0
+         10.00   0.94374E+0
+         12.00   0.99864E+0
+         15.00   0.99992E+0
+         20.00   0.99999E+0
+        '''
+        data = np.loadtxt(StringIO(dataStr))
+        pch = pchip(data[:,0], data[:,1])
+
+        resultStr = '''
+           7.9900       0.0000
+           9.1910       0.4640
+          10.3920       0.9645
+          11.5930       0.9965
+          12.7940       0.9992
+          13.9950       0.9998
+          15.1960       0.9999
+          16.3970       1.0000
+          17.5980       1.0000
+          18.7990       1.0000
+          20.0000       1.0000
+        '''
+        result = np.loadtxt(StringIO(resultStr))
+        assert_allclose(result[:,1], pch(result[:,0]), rtol=0., atol=5e-5)
+
+    def test_endslopes(self):
+        # this is a smoke test for gh-3453: PCHIP interpolator should not
+        # set edge slopes to zero if the data do not suggest zero edge derivatives
+        x = np.array([0.0, 0.1, 0.25, 0.35])
+        y1 = np.array([279.35, 0.5e3, 1.0e3, 2.5e3])
+        y2 = np.array([279.35, 2.5e3, 1.50e3, 1.0e3])
+        for pp in (pchip(x, y1), pchip(x, y2)):
+            for t in (x[0], x[-1]):
+                assert_(pp(t, 1) != 0)
+
+    def test_all_zeros(self):
+        x = np.arange(10)
+        y = np.zeros_like(x)
+
+        # this should work and not generate any warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings('error')
+            pch = pchip(x, y)
+
+        xx = np.linspace(0, 9, 101)
+        assert_equal(pch(xx), 0.)
+
+
+class TestCubicSpline(object):
+    def test_general(self):
+        # This test can be reproduced in Octave/MATLAB with the following code:
+        # x = [-1, 0, 0.5, 2, 4, 4.5, 5.5, 9];
+        # y = [0, -0.5, 2, 3, 2.5, 1, 1, 0.5];
+        # x_eval = [-0.5, 0.1, 1, 3, 4.1, 5, 7];
+        # y_true = spline(x, y, x_eval);
+
+        x = np.array([-1, 0, 0.5, 2, 4, 4.5, 5.5, 9])
+        y = np.array([0, -0.5, 2, 3, 2.5, 1, 1, 0.5])
+
+        x_test = np.array([-0.5, 0.1, 1, 3, 4.1, 5, 7])
+        y_true = np.array([
+            -2.111801336869092, 0.019677035288960, 3.164826064645384,
+            3.384966086626085, 2.210195906837064, 0.464510284120531,
+            4.956649059572205])
+
+        cs = CubicSpline(x, y)
+        assert_allclose(cs(x_test), y_true, rtol=1e-12)
+
+        Y = np.vstack((y, y)).T
+        cs = CubicSpline(x, Y)
+        Y_true = np.vstack((y_true, y_true)).T
+        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
+
+        Y = np.vstack((y, y))
+        cs = CubicSpline(x, Y, axis=1)
+        Y_true = np.vstack((y_true, y_true))
+        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
+
+        Y = np.empty((2, 2, 8))
+        Y[0, 0, :] = y
+        Y[0, 1, :] = y
+        Y[1, 0, :] = y
+        Y[1, 1, :] = y
+        cs = CubicSpline(x, Y, axis=-1)
+        Y_true = np.empty((2, 2, 7))
+        Y_true[0, 0, :] = y_true
+        Y_true[0, 1, :] = y_true
+        Y_true[1, 0, :] = y_true
+        Y_true[1, 1, :] = y_true
+        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
+
+    def test_corner_cases(self):
+        x = np.array([-1, 0, 1])
+        y = np.array([2, 0, 1])
+        x_test = np.array([-0.5, 0.5])
+        y_true = np.array([5/8, 1/8])
+        cs = CubicSpline(x, y)
+        assert_allclose(cs(x_test), y_true, rtol=1e-12)
+
+        x = np.array([-1, 1])
+        y = np.array([-1, 3])
+        y_true = np.array([0, 2])
+        cs = CubicSpline(x, y)
+        assert_allclose(cs(x_test), y_true, rtol=1e-12)
+
+    def _check_continuity(self, S, tol=1e-12):
+        # Check that spline coefficients satisfy the continuity conditions.
+        # Checking continuity by evaluations is not reliable as the tolerance
+        # will depend on derivative values.
+        c = S.c
+        dx = np.diff(S.x)[:-1]
+        assert_allclose(c[3, 1:], c[0, :-1] * dx**3 + c[1, :-1] * dx**2 +
+                        c[2, :-1] * dx + c[3, :-1], rtol=tol, atol=tol)
+        assert_allclose(c[2, 1:], 3 * c[0, :-1] * dx**2 + 2 * c[1, :-1] * dx +
+                        c[2, :-1], rtol=tol, atol=tol)
+        assert_allclose(c[1, 1:], 3 * c[0, :-1] * dx + c[1, :-1],
+                        rtol=tol, atol=tol)
+
+    def test_dtypes(self):
+        x = np.array([0, 1, 2, 3], dtype=int)
+        y = np.array([-5, 2, 3, 1], dtype=int)
+        cs = CubicSpline(x, y)
+        assert_allclose(y, cs(x), rtol=1e-12)
+        self._check_continuity(cs)
+
+        y = np.array([-1+1j, 0.0, 1-1j, 0.5-1.5j])
+        cs = CubicSpline(x, y)
+        assert_allclose(y, cs(x), rtol=1e-12)
+        self._check_continuity(cs)
+
+    def test_small_dx(self):
+        rng = np.random.RandomState(0)
+        x = np.sort(rng.uniform(size=100))
+        y = 1e4 + rng.uniform(size=100)
+        cs = CubicSpline(x, y)
+        assert_allclose(cs(x), y, rtol=1e-12)
+        self._check_continuity(cs)
+
+    def test_incorrect_inputs(self):
+        x = np.array([1, 2, 3])
+        y = np.array([1, 2, 3])
+        xc = np.array([1 + 1j, 2, 3])
+        xn = np.array([np.nan, 2, 3])
+        xo = np.array([2, 1, 3])
+        yn = np.array([np.nan, 2, 3])
+
+        assert_raises(ValueError, CubicSpline, xc, y)
+        assert_raises(ValueError, CubicSpline, xn, y)
+        assert_raises(ValueError, CubicSpline, x, yn)
+        assert_raises(ValueError, CubicSpline, xo, y)
+
 
 if __name__ == '__main__':
     run_module_suite()

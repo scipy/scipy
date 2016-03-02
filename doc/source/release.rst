@@ -6,8 +6,11 @@ Release Notes
    :maxdepth: 1
 
    release.0.17.0
+   release.0.16.1
    release.0.16.0
+   release.0.15.1
    release.0.15.0
+   release.0.14.1
    release.0.14.0
    release.0.13.2
    release.0.13.1

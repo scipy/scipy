@@ -78,17 +78,6 @@ class TestSparseUtils(TestCase):
         assert_equal(sputils.isdense(np.array([1])),True)
         assert_equal(sputils.isdense(np.matrix([1])),True)
 
-    def test_compat_unique(self):
-        x = np.array([0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1,
-                      2, 2, 2, 2, 2, 2, 2, 3, 3,3, 3, 3, 3, 3,
-                      4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5,
-                      6, 6, 6, 6,6, 6, 6, 7, 7, 7, 7, 7, 7, 7,
-                      8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9,9],
-                     dtype=np.int32)
-        y, j1 = sputils._compat_unique_impl(x, return_index=True)
-        j2 = np.array([0, 7, 14, 21, 28, 35, 42, 49, 56, 63])
-        assert_array_equal(j1, j2)
-
 
 if __name__ == "__main__":
     run_module_suite()

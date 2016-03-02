@@ -33,6 +33,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import math
 import sys
+from unittest import expectedFailure
 
 import numpy
 from numpy import fft
@@ -1980,6 +1981,46 @@ class TestNdimage:
                                                      (2,), order=order)
             assert_array_almost_equal(out, [1, 9])
 
+    def test_affine_transform22(self):
+        # shift and offset interaction; see issue #1547
+        data = numpy.array([4, 1, 3, 2])
+        for order in range(0, 6):
+            out = ndimage.affine_transform(data, [[2]], [-1],
+                                           (3,),order=order)
+            assert_array_almost_equal(out, [0, 1, 2])
+
+    def test_affine_transform23(self):
+        # shift and offset interaction; see issue #1547
+        data = numpy.array([4, 1, 3, 2])
+        for order in range(0, 6):
+            out = ndimage.affine_transform(data, [[0.5]], [-1],
+                                           (8,),order=order)
+            assert_array_almost_equal(out[::2], [0, 4, 1, 3])
+
+    def test_affine_transform24(self):
+        # consistency between diagonal and non-diagonal case; see issue #1547
+        data = numpy.array([4, 1, 3, 2])
+        for order in range(0, 6):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                out1 = ndimage.affine_transform(data, [2], -1,
+                                                    order=order)
+            out2 = ndimage.affine_transform(data, [[2]], -1,
+                                                order=order)
+            assert_array_almost_equal(out1, out2)
+
+    def test_affine_transform25(self):
+        # consistency between diagonal and non-diagonal case; see issue #1547
+        data = numpy.array([4, 1, 3, 2])
+        for order in range(0, 6):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                out1 = ndimage.affine_transform(data, [0.5], -1,
+                                                    order=order)
+            out2 = ndimage.affine_transform(data, [[0.5]], -1,
+                                                order=order)
+            assert_array_almost_equal(out1, out2)
+
     def test_shift01(self):
         data = numpy.array([1])
         for order in range(0, 6):
@@ -2094,8 +2135,10 @@ class TestNdimage:
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
         for order in range(0, 6):
-            out = ndimage.affine_transform(data, [0.5, 0.5], 0,
-                                                     (6, 8), order=order)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                out = ndimage.affine_transform(data, [0.5, 0.5], 0,
+                                                        (6, 8), order=order)
             assert_array_almost_equal(out[::2, ::2], data)
 
     def test_zoom_infinity(self):

@@ -15,22 +15,22 @@ class Storage(object):
     """
     Class used to store the lowest energy structure
     """
-    def __init__(self, x, f):
-        self._add(x, f)
+    def __init__(self, minres):
+        self._add(minres)
 
-    def _add(self, x, f):
-        self.x = np.copy(x)
-        self.f = f
+    def _add(self, minres):
+        self.minres = minres
+        self.minres.x = np.copy(minres.x)
 
-    def update(self, x, f):
-        if f < self.f:
-            self._add(x, f)
+    def update(self, minres):
+        if minres.fun < self.minres.fun:
+            self._add(minres)
             return True
         else:
             return False
 
     def get_lowest(self):
-        return self.x, self.f
+        return self.minres
 
 
 class BasinHoppingRunner(object):
@@ -80,7 +80,7 @@ class BasinHoppingRunner(object):
             print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
         # initialize storage class
-        self.storage = Storage(self.x, self.energy)
+        self.storage = Storage(minres)
 
         if hasattr(minres, "nfev"):
             self.res.nfev = minres.nfev
@@ -108,6 +108,7 @@ class BasinHoppingRunner(object):
             self.res.minimization_failures += 1
             if self.disp:
                 print("warning: basinhopping: local minimization failure")
+
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
         if hasattr(minres, "njev"):
@@ -145,7 +146,7 @@ class BasinHoppingRunner(object):
                                     x_new=x_after_quench, f_old=self.energy,
                                     x_old=self.x)
 
-        return x_after_quench, energy_after_quench, accept
+        return accept, minres
 
     def one_cycle(self):
         """Do one cycle of the basinhopping algorithm
@@ -153,33 +154,33 @@ class BasinHoppingRunner(object):
         self.nstep += 1
         new_global_min = False
 
-        xtrial, energy_trial, accept = self._monte_carlo_step()
+        accept, minres = self._monte_carlo_step()
 
         if accept:
-            self.energy = energy_trial
-            self.x = np.copy(xtrial)
-            new_global_min = self.storage.update(self.x, self.energy)
+            self.energy = minres.fun
+            self.x = np.copy(minres.x)
+            new_global_min = self.storage.update(minres)
 
         # print some information
         if self.disp:
-            self.print_report(energy_trial, accept)
+            self.print_report(minres.fun, accept)
             if new_global_min:
                 print("found new global minimum on step %d with function"
                       " value %g" % (self.nstep, self.energy))
 
         # save some variables as BasinHoppingRunner attributes
-        self.xtrial = xtrial
-        self.energy_trial = energy_trial
+        self.xtrial = minres.x
+        self.energy_trial = minres.fun
         self.accept = accept
 
         return new_global_min
 
     def print_report(self, energy_trial, accept):
         """print a status update"""
-        xlowest, energy_lowest = self.storage.get_lowest()
+        minres = self.storage.get_lowest()
         print("basinhopping step %d: f %g trial_f %g accepted %d "
               " lowest_f %g" % (self.nstep, self.energy, energy_trial,
-                                accept, energy_lowest))
+                                accept, minres.fun))
 
 
 class AdaptiveStepsize(object):
@@ -370,7 +371,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         The optimization result represented as a ``OptimizeResult`` object.  Important
         attributes are: ``x`` the solution array, ``fun`` the value of the
         function at the solution, and ``message`` which describes the cause of
-        the termination. See `OptimizeResult` for a description of other attributes.
+        the termination. The ``OptimzeResult`` object returned by the selected
+        minimizer at the lowest minimum is also contained within this object
+        and can be accessed through the ``lowest_optimization_result`` attribute.
+        See `OptimizeResult` for a description of other attributes.
 
     See Also
     --------
@@ -630,10 +634,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
             break
 
     # prepare return object
-    lowest = bh.storage.get_lowest()
     res = bh.res
-    res.x = np.copy(lowest[0])
-    res.fun = lowest[1]
+    res.lowest_optimization_result = bh.storage.get_lowest()
+    res.x = np.copy(res.lowest_optimization_result.x)
+    res.fun = res.lowest_optimization_result.fun
     res.message = message
     res.nit = i + 1
     return res

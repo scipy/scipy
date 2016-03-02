@@ -12,6 +12,7 @@ To run it in its simplest form::
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import itertools
 
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
@@ -224,9 +225,9 @@ class CheckOptimizeParameterized(CheckOptimize):
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Nelder-mead', options=opts)
-            params, fopt, numiter, func_calls, warnflag = (
+            params, fopt, numiter, func_calls, warnflag, final_simplex = (
                     res['x'], res['fun'], res['nit'], res['nfev'],
-                    res['status'])
+                    res['status'], res['final_simplex'])
         else:
             retval = optimize.fmin(self.func, self.startparams,
                                         args=(), maxiter=self.maxiter,
@@ -389,14 +390,18 @@ class TestOptimizeSimple(CheckOptimize):
 
         # First case: NaN from first call.
         func = lambda x: np.nan
-        result = optimize.minimize(func, 0)
+        with np.errstate(invalid='ignore'):
+            result = optimize.minimize(func, 0)
+
         assert_(np.isnan(result['fun']))
         assert_(result['success'] is False)
 
         # Second case: NaN from second call.
         func = lambda x: 0 if x == 0 else np.nan
         fprime = lambda x: np.ones_like(x)  # Steer away from zero.
-        result = optimize.minimize(func, 0, jac=fprime)
+        with np.errstate(invalid='ignore'):
+            result = optimize.minimize(func, 0, jac=fprime)
+
         assert_(np.isnan(result['fun']))
         assert_(result['success'] is False)
 
@@ -629,11 +634,11 @@ class TestOptimizeSimple(CheckOptimize):
         sol_4 = optimize.minimize(f, x0, constraints=[{'type': 'ineq', 'fun': cons}], bounds=[(1, 10)])
         for sol in [sol_0, sol_1, sol_2, sol_3, sol_4]:
             assert_(sol.success)
-        assert_allclose(sol_0.x, 0, atol=1e-8)
-        assert_allclose(sol_1.x, 2, atol=1e-8)
-        assert_allclose(sol_2.x, 5, atol=1e-8)
-        assert_allclose(sol_3.x, 5, atol=1e-8)
-        assert_allclose(sol_4.x, 2, atol=1e-8)
+        assert_allclose(sol_0.x, 0, atol=1e-7)
+        assert_allclose(sol_1.x, 2, atol=1e-7)
+        assert_allclose(sol_2.x, 5, atol=1e-7)
+        assert_allclose(sol_3.x, 5, atol=1e-7)
+        assert_allclose(sol_4.x, 2, atol=1e-7)
 
     def test_minimize_coerce_args_param(self):
         # Regression test for gh-3503
@@ -646,6 +651,58 @@ class TestOptimizeSimple(CheckOptimize):
         c = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])
         xinit = np.random.randn(len(c))
         optimize.minimize(Y, xinit, jac=dY_dx, args=(c), method="BFGS")
+
+    def test_initial_step_scaling(self):
+        # Check that optimizer initial step is not huge even if the
+        # function and gradients are
+
+        scales = [1e-50, 1, 1e50]
+        methods = ['CG', 'BFGS', 'L-BFGS-B', 'Newton-CG']
+
+        def f(x):
+            if first_step_size[0] is None and x[0] != x0[0]:
+                first_step_size[0] = abs(x[0] - x0[0])
+            if abs(x).max() > 1e4:
+                raise AssertionError("Optimization stepped far away!")
+            return scale*(x[0] - 1)**2
+
+        def g(x):
+            return np.array([scale*(x[0] - 1)])
+
+        for scale, method in itertools.product(scales, methods):
+            if method in ('CG', 'BFGS'):
+                options = dict(gtol=scale*1e-8)
+            else:
+                options = dict()
+
+            if scale < 1e-10 and method in ('L-BFGS-B', 'Newton-CG'):
+                # XXX: return initial point if they see small gradient
+                continue
+
+            x0 = [-1.0]
+            first_step_size = [None]
+            res = optimize.minimize(f, x0, jac=g, method=method,
+                                    options=options)
+
+            err_msg = "{0} {1}: {2}: {3}".format(method, scale, first_step_size,
+                                                 res)
+
+            assert_(res.success, err_msg)
+            assert_allclose(res.x, [1.0], err_msg=err_msg)
+            assert_(res.nit <= 3, err_msg)
+
+            if scale > 1e-10:
+                if method in ('CG', 'BFGS'):
+                    assert_allclose(first_step_size[0], 1.01, err_msg=err_msg)
+                else:
+                    # Newton-CG and L-BFGS-B use different logic for the first step,
+                    # but are both scaling invariant with step sizes ~ 1
+                    assert_(first_step_size[0] > 0.5 and first_step_size[0] < 3,
+                            err_msg)
+            else:
+                # step size has upper bound of ||grad||, so line
+                # search makes many small steps
+                pass
 
 
 class TestLBFGSBBounds(TestCase):
@@ -954,6 +1011,7 @@ class TestOptimizeResultAttributes(TestCase):
                     continue
 
                 assert_(hasattr(res, attribute))
+                assert_(attribute in dir(res))
 
 
 class TestBrute:

@@ -35,7 +35,7 @@ if __name__ == '__main__':
           author="Eric Jones",
           maintainer_email="scipy-dev@scipy.org",
           description="Clustering Algorithms (Information Theory)",
-          url="http://www.scipy.org",
+          url="https://www.scipy.org",
           license="SciPy License (BSD Style)",
           **configuration(top_path='').todict()
           )

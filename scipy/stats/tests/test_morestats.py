@@ -91,6 +91,13 @@ class TestMvsdist(TestCase):
         data = [1]
         assert_raises(ValueError, stats.mvsdist, data)
 
+    def test_warns(self):
+        # regression test for gh-5270
+        # make sure there are no spurious divide-by-zero warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', RuntimeWarning)
+            [x.mean() for x in stats.mvsdist([1, 2, 3])]
+            [x.mean() for x in stats.mvsdist([1, 2, 3, 4, 5])]
 
 class TestShapiro(TestCase):
     def test_basic(self):

@@ -79,8 +79,6 @@
 
 extern double MACHEP;
 
-extern int sgngam;
-
 static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
@@ -316,6 +314,8 @@ double *loss;
 
     if (x > 0.9 && !(neg_int_a || neg_int_b)) {
 	if (fabs(d - id) > EPS) {
+	    int sgngam;
+
 	    /* test for integer c-a-b */
 	    /* Try the power series first */
 	    y = hys2f1(a, b, c, x, &err);
@@ -324,20 +324,20 @@ double *loss;
 	    /* If power series fails, then apply AMS55 #15.3.6 */
 	    q = hys2f1(a, b, 1.0 - d, s, &err);
             sign = 1;
-            w = lgam(d);
+            w = lgam_sgn(d, &sgngam);
             sign *= sgngam;
-            w -= lgam(c-a);
+            w -= lgam_sgn(c-a, &sgngam);
             sign *= sgngam;
-            w -= lgam(c-b);
+            w -= lgam_sgn(c-b, &sgngam);
             sign *= sgngam;
 	    q *= sign * exp(w);
 	    r = pow(s, d) * hys2f1(c - a, c - b, d + 1.0, s, &err1);
             sign = 1;
-            w = lgam(-d);
+            w = lgam_sgn(-d, &sgngam);
             sign *= sgngam;
-            w -= lgam(a);
-            sign *= sgngam;   
-            w -= lgam(b);
+            w -= lgam_sgn(a, &sgngam);
+            sign *= sgngam;
+            w -= lgam_sgn(b, &sgngam);
             sign *= sgngam;
 	    r *= sign * exp(w);
 	    y = q + r;

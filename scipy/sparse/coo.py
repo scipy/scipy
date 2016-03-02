@@ -9,13 +9,13 @@ from warnings import warn
 
 import numpy as np
 
-from scipy._lib.six import xrange, zip as izip
+from scipy._lib.six import zip as izip
 
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from .base import isspmatrix
+from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-        isintlike, get_index_dtype, downcast_intp_index)
+                      get_index_dtype, downcast_intp_index)
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -113,6 +113,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
            [0, 0, 0, 1]])
 
     """
+    format = 'coo'
+
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
@@ -149,18 +151,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.data = np.array(obj, copy=copy)
                 self.has_canonical_format = False
 
-        elif arg1 is None:
-            # Initialize an empty matrix.
-            if not isinstance(shape, tuple) or not isintlike(shape[0]):
-                raise TypeError('dimensions not understood')
-            warn('coo_matrix(None, shape=(M,N)) is deprecated, '
-                    'use coo_matrix( (M,N) ) instead', DeprecationWarning)
-            idx_dtype = get_index_dtype(maxval=max(shape))
-            self.shape = shape
-            self.data = np.array([], getdtype(dtype, default=float))
-            self.row = np.array([], dtype=idx_dtype)
-            self.col = np.array([], dtype=idx_dtype)
-            self.has_canonical_format = True
         else:
             if isspmatrix(arg1):
                 if isspmatrix_coo(arg1) and copy:
@@ -177,10 +167,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = False
             else:
                 #dense argument
-                try:
-                    M = np.atleast_2d(np.asarray(arg1))
-                except:
-                    raise TypeError('invalid input format')
+                M = np.atleast_2d(np.asarray(arg1))
 
                 if M.ndim != 2:
                     raise TypeError('expected dimension <= 2 array or matrix')
@@ -197,14 +184,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self._check()
 
     def getnnz(self, axis=None):
-        """Get the count of explicitly-stored values (nonzeros)
-
-        Parameters
-        ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole matrix, in
-            each column, or in each row.
-        """
         if axis is None:
             nnz = len(self.data)
             if nnz != len(self.row) or nnz != len(self.col):
@@ -227,11 +206,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                                minlength=self.shape[0])
         else:
             raise ValueError('axis out of bounds')
-    nnz = property(fget=getnnz)
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """
-        nnz = self.nnz
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
@@ -246,7 +225,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.col = np.asarray(self.col, dtype=idx_dtype)
         self.data = to_native(self.data)
 
-        if nnz > 0:
+        if self.nnz > 0:
             if self.row.max() >= self.shape[0]:
                 raise ValueError('row index exceeds matrix dimensions')
             if self.col.max() >= self.shape[1]:
@@ -366,20 +345,21 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def todia(self):
         from .dia import dia_matrix
 
+        self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
-        diags = np.unique(ks)
+        diags, diag_idx = np.unique(ks, return_inverse=True)
 
         if len(diags) > 100:
-            #probably undesired, should we do something?
-            #should todia() have a maxdiags parameter?
-            pass
+            # probably undesired, should todia() have a maxdiags parameter?
+            warn("Constructing a DIA matrix with %d diagonals "
+                 "is inefficient" % len(diags), SparseEfficiencyWarning)
 
         #initialize and fill in data array
         if self.data.size == 0:
             data = np.zeros((0, 0), dtype=self.dtype)
         else:
             data = np.zeros((len(diags), self.col.max()+1), dtype=self.dtype)
-            data[np.searchsorted(diags,ks), self.col] = self.data
+            data[diag_idx, self.col] = self.data
 
         return dia_matrix((data,diags), shape=self.shape)
 
@@ -393,16 +373,20 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         return dok
 
     def diagonal(self):
-        # Could be rewritten without the python loop.
-        # Data entries at the same (row, col) are summed.
-        n = min(self.shape)
-        ndata = self.data.shape[0]
-        d = np.zeros(n, dtype=self.dtype)
-        for i in xrange(ndata):
-            r = self.row[i]
-            if r == self.col[i]:
-                d[r] += self.data[i]
-        return d
+        diag = np.zeros(min(self.shape), dtype=self.dtype)
+        diag_mask = self.row == self.col
+
+        if self.has_canonical_format:
+            row = self.row[diag_mask]
+            data = self.data[diag_mask]
+        else:
+            row, _, data = self._sum_duplicates(self.row[diag_mask],
+                                                self.col[diag_mask],
+                                                self.data[diag_mask])
+        diag[row] = data
+
+        return diag
+
     diagonal.__doc__ = _data_matrix.diagonal.__doc__
 
     def _setdiag(self, values, k):
@@ -459,20 +443,38 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         This is an *in place* operation
         """
-        if self.has_canonical_format or len(self.data) == 0:
+        if self.has_canonical_format:
             return
-        order = np.lexsort((self.row,self.col))
-        self.row = self.row[order]
-        self.col = self.col[order]
-        self.data = self.data[order]
-        unique_mask = ((self.row[1:] != self.row[:-1]) |
-                       (self.col[1:] != self.col[:-1]))
-        unique_mask = np.append(True, unique_mask)
-        self.row = self.row[unique_mask]
-        self.col = self.col[unique_mask]
-        unique_inds, = np.nonzero(unique_mask)
-        self.data = np.add.reduceat(self.data, unique_inds, dtype=self.dtype)
+        summed = self._sum_duplicates(self.row, self.col, self.data)
+        self.row, self.col, self.data = summed
         self.has_canonical_format = True
+
+    def _sum_duplicates(self, row, col, data):
+        # Assumes (data, row, col) not in canonical format.
+        if len(data) == 0:
+            return row, col, data
+        order = np.lexsort((row, col))
+        row = row[order]
+        col = col[order]
+        data = data[order]
+        unique_mask = ((row[1:] != row[:-1]) |
+                       (col[1:] != col[:-1]))
+        unique_mask = np.append(True, unique_mask)
+        row = row[unique_mask]
+        col = col[unique_mask]
+        unique_inds, = np.nonzero(unique_mask)
+        data = np.add.reduceat(data, unique_inds, dtype=self.dtype)
+        return row, col, data
+
+    def eliminate_zeros(self):
+        """Remove zero entries from the matrix
+
+        This is an *in place* operation
+        """
+        mask = self.data != 0
+        self.data = self.data[mask]
+        self.row = self.row[mask]
+        self.col = self.col[mask]
 
     ###########################
     # Multiplication handlers #

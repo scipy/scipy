@@ -1,5 +1,5 @@
-"""Adaptation of Trust Region Reflective algorithm for a linear least-squares
-problem."""
+"""The adaptation of Trust Region Reflective algorithm for a linear
+least-squares problem."""
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import qr, solve_triangular
@@ -16,8 +16,7 @@ from .common import (
 
 
 def regularized_lsq_with_qr(m, n, R, QTb, perm, diag, copy_R=True):
-    """Efficiently solve a regularized least-squares problem provided
-    information from QR decomposition.
+    """Solve regularized least squares using information from QR-decomposition.
 
     The initial problem is to solve the following system in a least-squares
     sense:
@@ -69,6 +68,7 @@ def regularized_lsq_with_qr(m, n, R, QTb, perm, diag, copy_R=True):
 
 
 def backtracking(A, g, x, p, theta, p_dot_g, lb, ub):
+    """Find an appropriate step size using backtracking line search."""
     alpha = 1
     while True:
         x_new, _ = reflective_transformation(x + alpha * p, lb, ub)
@@ -88,6 +88,7 @@ def backtracking(A, g, x, p, theta, p_dot_g, lb, ub):
 
 
 def select_step(x, A_h, g_h, c_h, p, p_h, d, lb, ub, theta):
+    """Select the best step according to Trust Region Reflective algorithm."""
     if in_bounds(x + p, lb, ub):
         return p
 

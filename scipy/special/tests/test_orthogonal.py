@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (rand, TestCase, assert_array_almost_equal,
+from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_almost_equal, assert_allclose, assert_raises,
                            run_module_suite)
 
@@ -78,7 +78,7 @@ class TestCheby(TestCase):
 class TestGegenbauer(TestCase):
 
     def test_gegenbauer(self):
-        a = 5*rand()-0.5
+        a = 5*np.random.random() - 0.5
         if np.any(a == 0):
             a = -0.2
         Ca0 = orth.gegenbauer(0,a)
@@ -218,8 +218,8 @@ class _test_sh_jacobi(TestCase):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
         conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)
         psub = np.poly1d([2,-1])
-        q = 4*rand()
-        p = q-1 + 2*rand()
+        q = 4 * np.random.random()
+        p = q-1 + 2*np.random.random()
         #print "shifted jacobi p,q = ", p, q
         G0 = orth.sh_jacobi(0,p,q)
         G1 = orth.sh_jacobi(1,p,q)
@@ -308,7 +308,7 @@ def test_j_roots():
         100, atol=1e-11)
 
     vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 5)
-    vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 25, atol=1e-13)
+    vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 25, atol=1.5e-13)
     vgq(rf(0.5, -0.5), ef(0.5, -0.5), wf(0.5, -0.5), -1., 1., 100, atol=1e-12)
 
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), -1., 1., 5, atol=2e-13)
@@ -377,7 +377,7 @@ def test_js_roots():
     vgq(rf(0.5, 0.5), ef(0.5, 0.5), wf(0.5, 0.5), 0., 1., 100, atol=1e-12)
 
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 5)
-    vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 25, atol=1e-13)
+    vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 25, atol=1.5e-13)
     vgq(rf(1, 0.5), ef(1, 0.5), wf(1, 0.5), 0., 1., 100, atol=1e-12)
 
     vgq(rf(2, 0.9), ef(2, 0.9), wf(2, 0.9), 0., 1., 5)
@@ -393,7 +393,7 @@ def test_js_roots():
     vgq(rf(47.1, 0.2), ef(47.1, 0.2), wf(47.1, 0.2), 0., 1., 25, atol=1e-11)
     vgq(rf(47.1, 0.2), ef(47.1, 0.2), wf(47.1, 0.2), 0., 1., 100, atol=1e-10)
 
-    vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1., 5, atol=2e-14)
+    vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1., 5, atol=3.5e-14)
     vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1., 25, atol=2e-13)
     vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1.,
         100, atol=1e-12)
@@ -493,7 +493,7 @@ def test_cg_roots():
     rootf = lambda a: lambda n, mu: orth.cg_roots(n, a, mu)
     evalf = lambda a: lambda n, x: orth.eval_gegenbauer(n, a, x)
     weightf = lambda a: lambda x: (1 - x**2)**(a - 0.5)
-    
+
     vgq = verify_gauss_quad
     vgq(rootf(-0.25), evalf(-0.25), weightf(-0.25), -1., 1., 5)
     vgq(rootf(-0.25), evalf(-0.25), weightf(-0.25), -1., 1., 25, atol=1e-12)

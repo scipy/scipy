@@ -3,10 +3,12 @@
  * \brief Sparse BLAS 2, using some dense BLAS 2 operations
  *
  * <pre>
- * -- SuperLU routine (version 3.0) --
+ * -- SuperLU routine (version 5.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
+ *
+ * Last update: December 3, 2015
  * </pre>
  */
 /*
@@ -101,15 +103,16 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 
     /* Test the input parameters */
     *info = 0;
-    if ( !lsame_(uplo,"L") && !lsame_(uplo, "U") ) *info = -1;
-    else if ( !lsame_(trans, "N") && !lsame_(trans, "T") && 
-              !lsame_(trans, "C")) *info = -2;
-    else if ( !lsame_(diag, "U") && !lsame_(diag, "N") ) *info = -3;
+    if ( strncmp(uplo,"L", 1)!=0 && strncmp(uplo, "U", 1)!=0 ) *info = -1;
+    else if ( strncmp(trans, "N", 1)!=0 && strncmp(trans, "T", 1)!=0 && 
+              strncmp(trans, "C", 1)!=0) *info = -2;
+    else if ( strncmp(diag, "U", 1)!=0 && strncmp(diag, "N", 1)!=0 )
+         *info = -3;
     else if ( L->nrow != L->ncol || L->nrow < 0 ) *info = -4;
     else if ( U->nrow != U->ncol || U->nrow < 0 ) *info = -5;
     if ( *info ) {
 	i = -(*info);
-	xerbla_("sp_ctrsv", &i);
+	input_error("sp_ctrsv", &i);
 	return 0;
     }
 
@@ -122,9 +125,9 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     if ( !(work = complexCalloc(L->nrow)) )
 	ABORT("Malloc fails for work in sp_ctrsv().");
     
-    if ( lsame_(trans, "N") ) {	/* Form x := inv(A)*x. */
+    if ( strncmp(trans, "N", 1)==0 ) {	/* Form x := inv(A)*x. */
 	
-	if ( lsame_(uplo, "L") ) {
+	if ( strncmp(uplo, "L", 1)==0 ) {
 	    /* Form x := inv(L)*x */
     	    if ( L->nrow == 0 ) return 0; /* Quick return */
 	    
@@ -226,9 +229,9 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 	    } /* for k ... */
 	    
 	}
-    } else if ( lsame_(trans, "T") ) { /* Form x := inv(A')*x */
+    } else if ( strncmp(trans, "T", 1)==0 ) { /* Form x := inv(A')*x */
 	
-	if ( lsame_(uplo, "L") ) {
+	if ( strncmp(uplo, "L", 1)==0 ) {
 	    /* Form x := inv(L')*x */
     	    if ( L->nrow == 0 ) return 0; /* Quick return */
 	    
@@ -306,7 +309,7 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 	}
     } else { /* Form x := conj(inv(A'))*x */
 	
-	if ( lsame_(uplo, "L") ) {
+	if ( strncmp(uplo, "L", 1)==0 ) {
 	    /* Form x := conj(inv(L'))*x */
     	    if ( L->nrow == 0 ) return 0; /* Quick return */
 	    
@@ -413,7 +416,7 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  *            follows:   
  *               TRANS = 'N' or 'n'   y := alpha*A*x + beta*y.   
  *               TRANS = 'T' or 't'   y := alpha*A'*x + beta*y.   
- *               TRANS = 'C' or 'c'   y := alpha*A'*x + beta*y.   
+ *               TRANS = 'C' or 'c'   y := alpha*A^H*x + beta*y.   
  *
  *   ALPHA  - (input) complex
  *            On entry, ALPHA specifies the scalar alpha.   
@@ -468,18 +471,19 @@ sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x,
     complex comp_zero = {0.0, 0.0};
     complex comp_one = {1.0, 0.0};
 
-    notran = lsame_(trans, "N");
+    notran = ( strncmp(trans, "N", 1)==0 || strncmp(trans, "n", 1)==0 );
     Astore = A->Store;
     Aval = Astore->nzval;
     
     /* Test the input parameters */
     info = 0;
-    if ( !notran && !lsame_(trans, "T") && !lsame_(trans, "C")) info = 1;
+    if ( !notran && strncmp(trans, "T", 1)!=0 && strncmp(trans, "C", 1)!=0)
+        info = 1;
     else if ( A->nrow < 0 || A->ncol < 0 ) info = 3;
     else if (incx == 0) info = 5;
     else if (incy == 0)	info = 8;
     if (info != 0) {
-	xerbla_("sp_cgemv ", &info);
+	input_error("sp_cgemv ", &info);
 	return 0;
     }
 
@@ -489,10 +493,9 @@ sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x,
 	c_eq(&beta, &comp_one))
 	return 0;
 
-
     /* Set  LENX  and  LENY, the lengths of the vectors x and y, and set 
        up the start points in  X  and  Y. */
-    if (lsame_(trans, "N")) {
+    if ( notran ) {
 	lenx = A->ncol;
 	leny = A->nrow;
     } else {
@@ -549,7 +552,7 @@ sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x,
 	} else {
 	    ABORT("Not implemented.");
 	}
-    } else {
+    } else if (strncmp(trans, "T", 1) == 0 || strncmp(trans, "t", 1) == 0) {
 	/* Form  y := alpha*A'*x + y. */
 	jy = ky;
 	if (incx == 1) {
@@ -567,7 +570,29 @@ sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x,
 	} else {
 	    ABORT("Not implemented.");
 	}
+    } else { /* trans == 'C' or 'c' */
+	/* Form  y := alpha * conj(A) * x + y. */
+	complex temp2;
+	jy = ky;
+	if (incx == 1) {
+	    for (j = 0; j < A->ncol; ++j) {
+		temp = comp_zero;
+		for (i = Astore->colptr[j]; i < Astore->colptr[j+1]; ++i) {
+		    irow = Astore->rowind[i];
+		    temp2.r = Aval[i].r;
+		    temp2.i = -Aval[i].i;  /* conjugation */
+		    cc_mult(&temp1, &temp2, &x[irow]);
+		    c_add(&temp, &temp, &temp1);
+		}
+		cc_mult(&temp1, &alpha, &temp);
+		c_add(&y[jy], &y[jy], &temp1);
+		jy += incy;
+	    }
+	} else {
+	    ABORT("Not implemented.");
+	}
     }
+
     return 0;    
 } /* sp_cgemv */
 

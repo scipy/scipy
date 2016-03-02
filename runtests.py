@@ -101,13 +101,18 @@ def main(argv):
                         help="Start Unix shell with PYTHONPATH set")
     parser.add_argument("--debug", "-g", action="store_true",
                         help="Debug build")
+    parser.add_argument("--parallel", "-j", type=int, default=1,
+                        help="Number of parallel jobs during build (requires "
+                             "Numpy 1.10 or greater).")
     parser.add_argument("--show-build-log", action="store_true",
                         help="Show build output rather than using a log file")
     parser.add_argument("--bench", action="store_true",
                         help="Run benchmark suite instead of test suite")
-    parser.add_argument("--bench-compare", action="append", metavar="COMMIT",
-                        help=("Compare benchmark results to COMMIT. "
-                              "Note that you need to commit your changes first!"))
+    parser.add_argument("--bench-compare", action="append", metavar="BEFORE",
+                        help=("Compare benchmark results of current HEAD to BEFORE. "
+                              "Use an additional --bench-compare=COMMIT to override HEAD with COMMIT. "
+                              "Note that you need to commit your changes first!"
+                             ))
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     args = parser.parse_args(argv)
@@ -339,8 +344,10 @@ def build_project(args):
             env['F90'] = 'gfortran --coverage '
             env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
             env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) + ' --coverage'
-        cmd += ["build"]
 
+    cmd += ['build']
+    if args.parallel > 1:
+        cmd += ['-j', str(args.parallel)]
     cmd += ['install', '--prefix=' + dst_dir]
 
     log_filename = os.path.join(ROOT_DIR, 'build.log')
@@ -354,22 +361,26 @@ def build_project(args):
             p = subprocess.Popen(cmd, env=env, stdout=log, stderr=log,
                                  cwd=ROOT_DIR)
 
-        # Wait for it to finish, and print something to indicate the
-        # process is alive, but only if the log file has grown (to
-        # allow continuous integration environments kill a hanging
-        # process accurately if it produces no output)
-        last_blip = time.time()
-        last_log_size = os.stat(log_filename).st_size
-        while p.poll() is None:
-            time.sleep(0.5)
-            if time.time() - last_blip > 60:
-                log_size = os.stat(log_filename).st_size
-                if log_size > last_log_size:
-                    print("    ... build in progress")
-                    last_blip = time.time()
-                    last_log_size = log_size
+        try:
+            # Wait for it to finish, and print something to indicate the
+            # process is alive, but only if the log file has grown (to
+            # allow continuous integration environments kill a hanging
+            # process accurately if it produces no output)
+            last_blip = time.time()
+            last_log_size = os.stat(log_filename).st_size
+            while p.poll() is None:
+                time.sleep(0.5)
+                if time.time() - last_blip > 60:
+                    log_size = os.stat(log_filename).st_size
+                    if log_size > last_log_size:
+                        print("    ... build in progress")
+                        last_blip = time.time()
+                        last_log_size = log_size
 
-        ret = p.wait()
+            ret = p.wait()
+        except:
+            p.terminate()
+            raise
 
     if ret == 0:
         print("Build OK")

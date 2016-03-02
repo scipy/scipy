@@ -7,3 +7,5 @@ def pre_build(context):
 
     context.tweak_extension("ckdtree", features="c cxxshlib pyext bento",
                             includes="ckdtree/src")
+
+    context.tweak_extension("_distance_wrap", use="NPYMATH")

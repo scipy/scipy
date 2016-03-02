@@ -26,16 +26,6 @@ def configuration(parent_package='',top_path=None):
         sources=['vonmises_cython.c'],  # FIXME: use cython source
     )
 
-    # add _rank module
-    config.add_extension('_rank',
-        sources=['_rank.c'],          # FIXME: use cython source
-    )
-
-    # add futil module
-    config.add_extension('futil',
-        sources=['futil.f'],
-    )
-
     # add mvn module
     config.add_extension('mvn',
         sources=['mvn.pyf','mvndst.f'],

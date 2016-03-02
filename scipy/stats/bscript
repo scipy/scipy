@@ -12,5 +12,3 @@ def pre_build(context):
                              use="statlibimp CLIB")
     context.tweak_extension("mvn", features="c fc cshlib pyext bento f2py",
                           use="CLIB")
-    context.tweak_extension("futil", features="c fc cshlib pyext bento f2py f2py_fortran",
-                          use="CLIB")

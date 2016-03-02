@@ -169,14 +169,19 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     M = max(0, M)
     data_arr = np.zeros((len(offsets), M), dtype=dtype)
 
+    K = min(m, n)
+
     for j, diagonal in enumerate(diagonals):
         offset = offsets[j]
         k = max(0, offset)
-        length = min(m + offset, n - offset)
+        length = min(m + offset, n - offset, K)
         if length <= 0:
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
+        diagonal = np.asarray(diagonal)
+        if diagonal.ndim == 0:
+            diagonal = diagonal[None]
         try:
-            data_arr[j, k:k+length] = diagonal
+            data_arr[j, k:k+length] = diagonal[...,:length]
         except ValueError:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
@@ -724,7 +729,8 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     """
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
-    if dtype and (dtype not in [np.float32, np.float64, np.longdouble]):
+    dtype = np.dtype(dtype)
+    if dtype.char not in 'fdg':
         raise NotImplementedError("type %s not supported" % dtype)
 
     mn = m * n

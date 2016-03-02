@@ -10,16 +10,16 @@ cimport cython
 @cython.cdivision(True)  # faster modulo
 @cython.boundscheck(False)  # designed to stay within bounds
 @cython.wraparound(False)  # we don't use negative indexing
-def _max_len_seq_inner(np.ndarray[Py_ssize_t, ndim=1, mode='c'] taps,
-                       np.ndarray[np.int8_t, ndim=1, mode='c'] state,
+def _max_len_seq_inner(Py_ssize_t[::1] taps,
+                       np.int8_t[::1] state,
                        Py_ssize_t nbits, Py_ssize_t length,
-                       np.ndarray[np.int8_t, ndim=1, mode='c'] seq):
+                       np.int8_t[::1] seq):
     # Here we compute MLS using a shift register, indexed using a ring buffer
     # technique (faster than using something like np.roll to shift)
     cdef Py_ssize_t n_taps = taps.shape[0]
     cdef Py_ssize_t idx = 0
-    cdef Py_ssize_t fidx = 0
     cdef np.int8_t feedback
+    cdef Py_ssize_t i
     for i in range(length):
         feedback = state[idx]
         seq[i] = feedback

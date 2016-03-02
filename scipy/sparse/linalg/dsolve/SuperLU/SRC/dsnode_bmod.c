@@ -58,7 +58,7 @@ dsnode_bmod (
 
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (double *) Glu->lusup;
     xlusup  = Glu->xlusup;
 
     nextlu = xlusup[jcol];
@@ -96,8 +96,8 @@ dsnode_bmod (
 #else
 #if SCIPY_FIX
 	if (nsupr < nsupc) {
-	    /* Invalid input to LAPACK: fail more gracefully */
-	    ABORT("superlu failure (singular matrix?)");
+	    /* Fail early rather than passing in invalid parameters to DTRSV. */
+	    ABORT("failed to factorize matrix");
 	}
 #endif
 	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 

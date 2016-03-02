@@ -101,6 +101,17 @@ int num_drop_L;
  *	    storage scheme, i.e., U has types: Stype = SLU_NC,
  *	    Dtype = SLU_Z, Mtype = SLU_TRU.
  *
+ * Glu      (input/output) GlobalLU_t *
+ *          If options->Fact == SamePattern_SameRowPerm, it is an input;
+ *              The matrix A will be factorized assuming that a 
+ *              factorization of a matrix with the same sparsity pattern
+ *              and similar numerical values was performed prior to this one.
+ *              Therefore, this factorization will reuse both row and column
+ *		scaling factors R and C, both row and column permutation
+ *		vectors perm_r and perm_c, and the L & U data structures
+ *		set up from the previous factorization.
+ *          Otherwise, it is an output.
+ *
  * stat     (output) SuperLUStat_t*
  *	    Record the statistics on runtime and floating-point operation count.
  *	    See slu_util.h for the definition of 'SuperLUStat_t'.
@@ -165,7 +176,9 @@ int num_drop_L;
 void
 zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	int *etree, void *work, int lwork, int *perm_c, int *perm_r,
-	SuperMatrix *L, SuperMatrix *U, SuperLUStat_t *stat, int *info)
+	SuperMatrix *L, SuperMatrix *U, 
+    	GlobalLU_t *Glu, /* persistent to facilitate multiple factorizations */
+	SuperLUStat_t *stat, int *info)
 {
     /* Local working arrays */
     NCPformat *Astore;
@@ -194,7 +207,6 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     double    *amax; 
     doublecomplex    drop_sum;
     double alpha, omega;  /* used in MILU, mimicing DRIC */
-    static GlobalLU_t Glu; /* persistent to facilitate multiple factors. */
     double    *dwork2;	   /* used by the second dropping rule */
 
     /* Local scalars */
@@ -241,14 +253,14 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 
     /* Allocate storage common to the factor routines */
     *info = zLUMemInit(fact, work, lwork, m, n, Astore->nnz, panel_size,
-		       gamma, L, U, &Glu, &iwork, &zwork);
+		       gamma, L, U, Glu, &iwork, &zwork);
     if ( *info ) return;
 
-    xsup    = Glu.xsup;
-    supno   = Glu.supno;
-    xlsub   = Glu.xlsub;
-    xlusup  = Glu.xlusup;
-    xusub   = Glu.xusub;
+    xsup    = Glu->xsup;
+    supno   = Glu->supno;
+    xlsub   = Glu->xlsub;
+    xlusup  = Glu->xlusup;
+    xusub   = Glu->xusub;
 
     SetIWork(m, n, panel_size, iwork, &segrep, &parent, &xplore,
 	     &repfnz, &panel_lsub, &marker_relax, &marker);
@@ -339,7 +351,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		/* Drop small rows */
                 dtempv = (double *) tempv;
 		i = ilu_zdrop_row(options, first, last, tol_L, quota, &nnzLj,
-				  &fill_tol, &Glu, dtempv, dwork2, 0);
+				  &fill_tol, Glu, dtempv, dwork2, 0);
 		/* Reset the parameters */
 		if (drop_rule & DROP_DYNAMIC) {
 		    if (gamma * nnzAj * (1.0 - 0.5 * (last + 1.0) / m)
@@ -359,7 +371,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	     * -------------------------------------- */
 	    /* Determine the union of the row structure of the snode */
 	    if ( (*info = ilu_zsnode_dfs(jcol, kcol, asub, xa_begin, xa_end,
-					 marker, &Glu)) != 0 )
+					 marker, Glu)) != 0 )
 		return;
 
 	    nextu    = xusub[jcol];
@@ -367,9 +379,9 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	    jsupno   = supno[jcol];
 	    fsupc    = xsup[jsupno];
 	    new_next = nextlu + (xlsub[fsupc+1]-xlsub[fsupc])*(kcol-jcol+1);
-	    nzlumax = Glu.nzlumax;
+	    nzlumax = Glu->nzlumax;
 	    while ( new_next > nzlumax ) {
-		if ((*info = zLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, &Glu)))
+		if ((*info = zLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu)))
 		    return;
 	    }
 
@@ -393,7 +405,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		}
 
 		/* Numeric update within the snode */
-		zsnode_bmod(icol, jsupno, fsupc, dense, tempv, &Glu, stat);
+		zsnode_bmod(icol, jsupno, fsupc, dense, tempv, Glu, stat);
 
 		if (usepr) pivrow = iperm_r[icol];
 		fill_tol = pow(fill_ini, 1.0 - (double)icol / (double)min_mn);
@@ -401,7 +413,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 					  perm_r, iperm_c[icol], swap, iswap,
 					  marker_relax, &pivrow,
                                           amax[0] * fill_tol, milu, zero,
-                                          &Glu, stat)) ) {
+                                          Glu, stat)) ) {
 		    iinfo++;
 		    marker[pivrow] = kcol;
 		}
@@ -427,11 +439,11 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	    /* symbolic factor on a panel of columns */
 	    ilu_zpanel_dfs(m, panel_size, jcol, A, perm_r, &nseg1,
                           dense, amax, panel_lsub, segrep, repfnz,
-                          marker, parent, xplore, &Glu);
+                          marker, parent, xplore, Glu);
 
 	    /* numeric sup-panel updates in topological order */
 	    zpanel_bmod(m, panel_size, jcol, nseg1, dense,
-			tempv, segrep, repfnz, &Glu, stat);
+			tempv, segrep, repfnz, Glu, stat);
 
 	    /* Sparse LU within the panel, and below panel diagonal */
 	    for (jj = jcol; jj < jcol + panel_size; jj++) {
@@ -444,33 +456,33 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 
 		if ((*info = ilu_zcolumn_dfs(m, jj, perm_r, &nseg,
 					     &panel_lsub[k], segrep, &repfnz[k],
-					     marker, parent, xplore, &Glu)))
+					     marker, parent, xplore, Glu)))
 		    return;
 
 		/* Numeric updates */
 		if ((*info = zcolumn_bmod(jj, (nseg - nseg1), &dense[k],
 					  tempv, &segrep[nseg1], &repfnz[k],
-					  jcol, &Glu, stat)) != 0) return;
+					  jcol, Glu, stat)) != 0) return;
 
 		/* Make a fill-in position if the column is entirely zero */
 		if (xlsub[jj + 1] == xlsub[jj]) {
 		    register int i, row;
 		    int nextl;
-		    int nzlmax = Glu.nzlmax;
-		    int *lsub = Glu.lsub;
+		    int nzlmax = Glu->nzlmax;
+		    int *lsub = Glu->lsub;
 		    int *marker2 = marker + 2 * m;
 
 		    /* Allocate memory */
 		    nextl = xlsub[jj] + 1;
 		    if (nextl >= nzlmax) {
-			int error = zLUMemXpand(jj, nextl, LSUB, &nzlmax, &Glu);
+			int error = zLUMemXpand(jj, nextl, LSUB, &nzlmax, Glu);
 			if (error) { *info = error; return; }
-			lsub = Glu.lsub;
+			lsub = Glu->lsub;
 		    }
 		    xlsub[jj + 1]++;
 		    assert(xlusup[jj]==xlusup[jj+1]);
 		    xlusup[jj + 1]++;
-		    Glu.lusup[xlusup[jj]] = zero;
+		    ((doublecomplex *) Glu->lusup)[xlusup[jj]] = zero;
 
 		    /* Choose a row index (pivrow) for fill-in */
 		    for (i = jj; i < n; i++)
@@ -499,7 +511,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		if ((*info = ilu_zcopy_to_ucol(jj, nseg, segrep, &repfnz[k],
 					       perm_r, &dense[k], drop_rule,
 					       milu, amax[jj - jcol] * tol_U,
-					       quota, &drop_sum, &nnzUj, &Glu,
+					       quota, &drop_sum, &nnzUj, Glu,
 					       dwork2)) != 0)
 		    return;
 
@@ -522,7 +534,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 					  iperm_c[jj], swap, iswap,
 					  marker_relax, &pivrow,
 					  amax[jj - jcol] * fill_tol, milu,
-					  drop_sum, &Glu, stat)) ) {
+					  drop_sum, Glu, stat)) ) {
 		    iinfo++;
 		    marker[m + pivrow] = jj;
 		    marker[2 * m + pivrow] = jj;
@@ -558,7 +570,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		    /* Drop small rows */
                     dtempv = (double *) tempv;
 		    i = ilu_zdrop_row(options, first, last, tol_L, quota,
-				      &nnzLj, &fill_tol, &Glu, dtempv, dwork2,
+				      &nnzLj, &fill_tol, Glu, dtempv, dwork2,
 				      1);
 
 		    /* Reset the parameters */
@@ -594,10 +606,10 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	    }
     }
 
-    ilu_countnz(min_mn, &nnzL, &nnzU, &Glu);
-    fixupL(min_mn, perm_r, &Glu);
+    ilu_countnz(min_mn, &nnzL, &nnzU, Glu);
+    fixupL(min_mn, perm_r, Glu);
 
-    zLUWorkFree(iwork, zwork, &Glu); /* Free work space and compress storage */
+    zLUWorkFree(iwork, zwork, Glu); /* Free work space and compress storage */
 
     if ( fact == SamePattern_SameRowPerm ) {
 	/* L and U structures may have changed due to possibly different
@@ -605,25 +617,27 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 	   There could also be memory expansions, so the array locations
 	   may have changed, */
 	((SCformat *)L->Store)->nnz = nnzL;
-	((SCformat *)L->Store)->nsuper = Glu.supno[n];
-	((SCformat *)L->Store)->nzval = Glu.lusup;
-	((SCformat *)L->Store)->nzval_colptr = Glu.xlusup;
-	((SCformat *)L->Store)->rowind = Glu.lsub;
-	((SCformat *)L->Store)->rowind_colptr = Glu.xlsub;
+	((SCformat *)L->Store)->nsuper = Glu->supno[n];
+	((SCformat *)L->Store)->nzval = (doublecomplex *) Glu->lusup;
+	((SCformat *)L->Store)->nzval_colptr = Glu->xlusup;
+	((SCformat *)L->Store)->rowind = Glu->lsub;
+	((SCformat *)L->Store)->rowind_colptr = Glu->xlsub;
 	((NCformat *)U->Store)->nnz = nnzU;
-	((NCformat *)U->Store)->nzval = Glu.ucol;
-	((NCformat *)U->Store)->rowind = Glu.usub;
-	((NCformat *)U->Store)->colptr = Glu.xusub;
+	((NCformat *)U->Store)->nzval = (doublecomplex *) Glu->ucol;
+	((NCformat *)U->Store)->rowind = Glu->usub;
+	((NCformat *)U->Store)->colptr = Glu->xusub;
     } else {
-	zCreate_SuperNode_Matrix(L, A->nrow, min_mn, nnzL, Glu.lusup,
-				 Glu.xlusup, Glu.lsub, Glu.xlsub, Glu.supno,
-				 Glu.xsup, SLU_SC, SLU_Z, SLU_TRLU);
-	zCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU, Glu.ucol,
-			       Glu.usub, Glu.xusub, SLU_NC, SLU_Z, SLU_TRU);
+	zCreate_SuperNode_Matrix(L, A->nrow, min_mn, nnzL,
+              (doublecomplex *) Glu->lusup, Glu->xlusup,
+              Glu->lsub, Glu->xlsub, Glu->supno, Glu->xsup,
+	      SLU_SC, SLU_Z, SLU_TRLU);
+	zCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU,
+	      (doublecomplex *) Glu->ucol, Glu->usub, Glu->xusub,
+	      SLU_NC, SLU_Z, SLU_TRU);
     }
 
     ops[FACT] += ops[TRSV] + ops[GEMV];
-    stat->expansions = --(Glu.num_expansions);
+    stat->expansions = --(Glu->num_expansions);
 
     if ( iperm_r_allocated ) SUPERLU_FREE (iperm_r);
     SUPERLU_FREE (iperm_c);

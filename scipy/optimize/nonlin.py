@@ -1,8 +1,7 @@
 r"""
 
-=================
 Nonlinear solvers
-=================
+-----------------
 
 .. currentmodule:: scipy.optimize
 
@@ -11,7 +10,7 @@ solvers.  These solvers find *x* for which *F(x) = 0*. Both *x*
 and *F* can be multidimensional.
 
 Routines
-========
+~~~~~~~~
 
 Large-scale nonlinear solvers:
 
@@ -37,10 +36,9 @@ Simple iterations:
 
 
 Examples
-========
+~~~~~~~~
 
-Small problem
--------------
+**Small problem**
 
 >>> def F(x):
 ...    return np.cos(x) + x[::-1] - [1, 2, 3, 4]
@@ -52,8 +50,7 @@ array([ 4.04674914,  3.91158389,  2.71791677,  1.61756251])
 array([ 1.,  2.,  3.,  4.])
 
 
-Large problem
--------------
+**Large problem**
 
 Suppose that we needed to solve the following integrodifferential
 equation on the square :math:`[0,1]\times[0,1]`:
@@ -114,14 +111,14 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import numpy as np
-from scipy._lib.six import callable, exec_
-from scipy._lib.six import xrange
+from scipy._lib.six import callable, exec_, xrange
 from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
+from scipy._lib._util import getargspec_no_self as _getargspec
 from .linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 
@@ -1500,8 +1497,7 @@ def _nonlin_wrapper(name, jac):
     keyword arguments of `nonlin_solve`
 
     """
-    import inspect
-    args, varargs, varkw, defaults = inspect.getargspec(jac.__init__)
+    args, varargs, varkw, defaults = _getargspec(jac.__init__)
     kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:

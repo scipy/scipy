@@ -11,7 +11,8 @@ from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_raises, assert_equal
+from numpy.testing import (assert_, assert_allclose, assert_raises,
+    assert_equal, run_module_suite)
 
 from scipy.io.netcdf import netcdf_file
 
@@ -43,6 +44,25 @@ def check_simple(ncfileobj):
     assert_equal(time.units, b'days since 2008-01-01')
     assert_equal(time.shape, (N_EG_ELS,))
     assert_equal(time[-1], N_EG_ELS-1)
+
+def assert_mask_matches(arr, expected_mask):
+    '''
+    Asserts that the mask of arr is effectively the same as expected_mask.
+
+    In contrast to numpy.ma.testutils.assert_mask_equal, this function allows
+    testing the 'mask' of a standard numpy array (the mask in this case is treated
+    as all False).
+
+    Parameters
+    ----------
+    arr: ndarray or MaskedArray
+        Array to test.
+    expected_mask: array_like of booleans
+        A list giving the expected mask.
+    '''
+
+    mask = np.ma.getmaskarray(arr)
+    assert_equal(mask, expected_mask)
 
 
 def test_read_write_files():
@@ -295,3 +315,111 @@ def test_open_append():
         assert_equal(f._attributes['Kilroy'], b'was here')
         assert_equal(f._attributes['naughty'], b'Zoot')
         f.close()
+
+
+def test_maskandscale():
+    t = np.linspace(20, 30, 15)
+    t[3] = 100
+    tm = np.ma.masked_greater(t, 99)
+    fname = pjoin(TEST_DATA_PATH, 'example_2.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        Temp = f.variables['Temperature']
+        assert_equal(Temp.missing_value, 9999)
+        assert_equal(Temp.add_offset, 20)
+        assert_equal(Temp.scale_factor, np.float32(0.01))
+        found = Temp[:].compressed()
+        del Temp  # Remove ref to mmap, so file can be closed.
+        expected = np.round(tm.compressed(), 2)
+        assert_allclose(found, expected)
+
+    with in_tempdir():
+        newfname = 'ms.nc'
+        f = netcdf_file(newfname, 'w', maskandscale=True)
+        f.createDimension('Temperature', len(tm))
+        temp = f.createVariable('Temperature', 'i', ('Temperature',))
+        temp.missing_value = 9999
+        temp.scale_factor = 0.01
+        temp.add_offset = 20
+        temp[:] = tm
+        f.close()
+
+        with netcdf_file(newfname, maskandscale=True) as f:
+            Temp = f.variables['Temperature']
+            assert_equal(Temp.missing_value, 9999)
+            assert_equal(Temp.add_offset, 20)
+            assert_equal(Temp.scale_factor, np.float32(0.01))
+            expected = np.round(tm.compressed(), 2)
+            found = Temp[:].compressed()
+            del Temp
+            assert_allclose(found, expected)
+
+
+# ------------------------------------------------------------------------
+# Test reading with masked values (_FillValue / missing_value)
+# ------------------------------------------------------------------------
+
+def test_read_withValuesNearFillValue():
+    # Regression test for ticket #5626
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var1_fillval0'][:]
+        assert_mask_matches(vardata, [False, True, False])
+
+def test_read_withNoFillValue():
+    # For a variable with no fill value, reading data with maskandscale=True
+    # should return unmasked data
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var2_noFillval'][:]
+        assert_mask_matches(vardata, [False, False, False])
+        assert_equal(vardata, [1,2,3])
+
+def test_read_withFillValueAndMissingValue():
+    # For a variable with both _FillValue and missing_value, the _FillValue
+    # should be used
+    IRRELEVANT_VALUE = 9999
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var3_fillvalAndMissingValue'][:]
+        assert_mask_matches(vardata, [True, False, False])
+        assert_equal(vardata, [IRRELEVANT_VALUE, 2, 3])
+
+def test_read_withMissingValue():
+    # For a variable with missing_value but not _FillValue, the missing_value
+    # should be used
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var4_missingValue'][:]
+        assert_mask_matches(vardata, [False, True, False])
+
+def test_read_withFillValNaN():
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var5_fillvalNaN'][:]
+        assert_mask_matches(vardata, [False, True, False])
+
+def test_read_withChar():
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var6_char'][:]
+        assert_mask_matches(vardata, [False, True, False])
+
+def test_read_with2dVar():
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    with netcdf_file(fname, maskandscale=True) as f:
+        vardata = f.variables['var7_2d'][:]
+        assert_mask_matches(vardata, [[True, False], [False, False], [False, True]])
+
+def test_read_withMaskAndScaleFalse():
+    # If a variable has a _FillValue (or missing_value) attribute, but is read
+    # with maskandscale set to False, the result should be unmasked
+    fname = pjoin(TEST_DATA_PATH, 'example_3_maskedvals.nc')
+    # Open file with mmap=False to avoid problems with closing a mmap'ed file
+    # when arrays referring to its data still exist:
+    with netcdf_file(fname, maskandscale=False, mmap=False) as f:
+        vardata = f.variables['var3_fillvalAndMissingValue'][:]
+        assert_mask_matches(vardata, [False, False, False])
+        assert_equal(vardata, [1, 2, 3])
+
+if __name__ == "__main__":
+    run_module_suite()

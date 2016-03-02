@@ -3,12 +3,13 @@
  * \brief Improves computed solution to a system of inear equations
  * 
  * <pre>
- * -- SuperLU routine (version 3.0) --
+ * -- SuperLU routine (version 5.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * October 15, 2003
  *
  * Modified from lapack routine SGERFS
+ * Last modified: December 3, 2015
  * </pre>
  */
 /*
@@ -157,8 +158,9 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     float   *work;
     float   *rwork;
     int      *iwork;
+    int      isave[3];
 
-    extern int slacon_(int *, float *, float *, int *, float *, int *);
+    extern int slacon2_(int *, float *, float *, int *, float *, int *, int []);
 #ifdef _CRAY
     extern int SCOPY(int *, float *, int *, float *, int *);
     extern int SSAXPY(int *, float *, float *, int *, float *, int *);
@@ -198,7 +200,7 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	*info = -11;
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("sgsrfs", &i);
+	input_error("sgsrfs", &i);
 	return;
     }
 
@@ -211,8 +213,8 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	return;
     }
 
-    rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-    colequ = lsame_(equed, "C") || lsame_(equed, "B");
+    rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
+    colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
     
     /* Allocate working space */
     work = floatMalloc(2*A->nrow);
@@ -224,15 +226,19 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     if ( notran ) {
 	*(unsigned char *)transc = 'N';
         transt = TRANS;
-    } else {
+    } else if ( trans == TRANS ) {
 	*(unsigned char *)transc = 'T';
 	transt = NOTRANS;
-    }
+    } else if ( trans == CONJ ) {
+	*(unsigned char *)transc = 'C';
+	transt = NOTRANS;
+    }    
 
     /* NZ = maximum number of nonzero elements in each row of A, plus 1 */
     nz     = A->ncol + 1;
-    eps    = slamch_("Epsilon");
-    safmin = slamch_("Safe minimum");
+    eps    = smach("Epsilon");
+    safmin = smach("Safe minimum");
+
     /* Set SAFE1 essentially to be the underflow threshold times the
        number of additions in each row. */
     safe1  = nz * safmin;
@@ -290,13 +296,13 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	    for (i = 0; i < A->nrow; ++i) rwork[i] = fabs( Bptr[i] );
 	    
 	    /* Compute abs(op(A))*abs(X) + abs(B). */
-	    if (notran) {
+	    if ( notran ) {
 		for (k = 0; k < A->ncol; ++k) {
 		    xk = fabs( Xptr[k] );
 		    for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i)
 			rwork[Astore->rowind[i]] += fabs(Aval[i]) * xk;
 		}
-	    } else {
+	    } else {  /* trans = TRANS or CONJ */
 		for (k = 0; k < A->ncol; ++k) {
 		    s = 0.;
 		    for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i) {
@@ -362,7 +368,7 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
           is incremented by SAFE1 if the i-th component of   
           abs(op(A))*abs(X) + abs(B) is less than SAFE2.   
 
-          Use SLACON to estimate the infinity-norm of the matrix   
+          Use SLACON2 to estimate the infinity-norm of the matrix   
              inv(op(A)) * diag(W),   
           where W = abs(R) + NZ*EPS*( abs(op(A))*abs(X)+abs(B) ))) */
 	
@@ -375,7 +381,7 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 		for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i)
 		    rwork[Astore->rowind[i]] += fabs(Aval[i]) * xk;
 	    }
-	} else {
+	} else {  /* trans == TRANS or CONJ */
 	    for (k = 0; k < A->ncol; ++k) {
 		s = 0.;
 		for (i = Astore->colptr[k]; i < Astore->colptr[k+1]; ++i) {
@@ -396,8 +402,8 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    slacon_(&A->nrow, &work[A->nrow], work,
-		    &iwork[A->nrow], &ferr[j], &kase);
+	    slacon2_(&A->nrow, &work[A->nrow], work,
+		    &iwork[A->nrow], &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 
 	    if (kase == 1) {

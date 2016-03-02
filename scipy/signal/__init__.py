@@ -66,6 +66,8 @@ Filtering
    decimate      -- Downsample a signal.
    detrend       -- Remove linear and/or constant trends from data.
    resample      -- Resample using Fourier method.
+   resample_poly -- Resample using polyphase filtering method.
+   upfirdn       -- Upsample, apply FIR filter, downsample.
 
 Filter design
 =============
@@ -274,6 +276,7 @@ from __future__ import division, print_function, absolute_import
 from . import sigtools
 from .waveforms import *
 from ._max_len_seq import max_len_seq
+from ._upfirdn import upfirdn
 
 # The spline module (a C extension) provides:
 #     cspline2d, qspline2d, sepfir2d, symiirord1, symiirord2

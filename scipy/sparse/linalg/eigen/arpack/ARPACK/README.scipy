@@ -1,8 +1,8 @@
-This directory contains a bundled version of ARPACK-NG 3.1.2,
-http://forge.scilab.org/index.php/p/arpack-ng/
+This directory contains a bundled version of ARPACK-NG 3.3.0,
+https://github.com/opencollab/arpack-ng
 
 NOTE FOR VENDORS: it is in general safe to use a system version of ARPACK
-instead. Note, however, that earlier versions of ARPACK and ARPACK-NG had
+instead. Note, however, that ARPACK and early versions of ARPACK-NG have
 certain bugs, so using those over the bundled version is not recommended.
 
 The bundled version has the following patch applied:

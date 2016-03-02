@@ -6,12 +6,9 @@
  */
 
 #include <numpy/arrayobject.h>
-#include <iostream>
 
 template <class c_type, class npy_type>
 class complex_wrapper : public npy_type {
-    template<class x, class y> 
-        friend std::ostream& operator<<(std::ostream&, const complex_wrapper<x,y>& );
 
     public:
         /* Constructor */
@@ -159,14 +156,8 @@ class complex_wrapper : public npy_type {
         }
 };
 
-template<class x, class y> 
-inline std::ostream& operator<<(std::ostream& out, const complex_wrapper<x,y>& cw){
-    return out << cw.real << " " << cw.imag;
-}
-
 typedef complex_wrapper<float,npy_cfloat> npy_cfloat_wrapper;
 typedef complex_wrapper<double,npy_cdouble> npy_cdouble_wrapper;
 typedef complex_wrapper<long double,npy_clongdouble> npy_clongdouble_wrapper;
-
 
 #endif

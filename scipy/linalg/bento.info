@@ -9,7 +9,8 @@ Library:
             cblas.pyf.src
     Extension: _flapack
         Sources:
-            flapack.pyf.src
+            flapack.pyf.src,
+            src/lapack_deprecations/*.f
     Extension: _clapack
         Sources:
             clapack.pyf.src

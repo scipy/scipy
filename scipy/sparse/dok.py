@@ -11,8 +11,7 @@ import operator
 
 import numpy as np
 
-from scipy._lib.six import zip as izip, xrange
-from scipy._lib.six import iteritems
+from scipy._lib.six import zip as izip, xrange, iteritems, itervalues
 
 from .base import spmatrix, isspmatrix
 from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
@@ -75,6 +74,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     ...         S[i, j] = i + j    # Update element
 
     """
+    format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         dict.__init__(self)
@@ -111,9 +111,17 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             self.shape = arg1.shape
             self.dtype = d.dtype
 
-    def getnnz(self):
+    def getnnz(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError("getnnz over an axis is not implemented "
+                                      "for DOK format")
         return dict.__len__(self)
-    nnz = property(fget=getnnz)
+
+    def count_nonzero(self):
+        return sum(x != 0 for x in itervalues(self))
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
+    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
 
     def __len__(self):
         return dict.__len__(self)
@@ -136,6 +144,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         element.  If either i or j is a slice or sequence, return a new sparse
         matrix with just these elements.
         """
+        zero = self.dtype.type(0)
         i, j = self._unpack_index(index)
 
         i_intlike = isintlike(i)
@@ -153,7 +162,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 j += self.shape[1]
             if j < 0 or j >= self.shape[1]:
                 raise IndexError('index out of bounds')
-            return dict.get(self, (i,j), 0.)
+            return dict.get(self, (i,j), zero)
         elif ((i_intlike or isinstance(i, slice)) and
               (j_intlike or isinstance(j, slice))):
             # Fast path for slicing very sparse matrices
@@ -200,7 +209,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         for a in xrange(i.shape[0]):
             for b in xrange(i.shape[1]):
-                v = dict.get(self, (i[a,b], j[a,b]), 0.)
+                v = dict.get(self, (i[a,b], j[a,b]), zero)
                 if v != 0:
                     dict.__setitem__(newdok, (a, b), v)
 
@@ -301,8 +310,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             res_dtype = upcast(self.dtype, other.dtype)
             new = dok_matrix(self.shape, dtype=res_dtype)
             new.update(self)
-            for key in other.keys():
-                new[key] += other[key]
+            with np.errstate(over='ignore'):
+                for key in other.keys():
+                    new[key] += other[key]
         elif isspmatrix(other):
             csc = self.tocsc()
             new = csc + other

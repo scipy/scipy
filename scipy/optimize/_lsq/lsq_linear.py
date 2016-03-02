@@ -25,7 +25,7 @@ def prepare_bounds(bounds, n):
 TERMINATION_MESSAGES = {
     -1: "The algorithm was not able to make progress on the last iteration.",
     0: "The maximum number of iterations is exceeded.",
-    1: "The first-order optimality is less than `tol`.",
+    1: "The first-order optimality measure is less than `tol`.",
     2: "The relative change of the cost function is less than `tol`.",
     3: "The unconstrained solution is optimal."
 }
@@ -33,12 +33,16 @@ TERMINATION_MESSAGES = {
 
 def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                lsq_solver=None, lsmr_tol=None, max_iter=None, verbose=0):
-    r"""Solve a linear least-squares problem subject to bound constraints on
-    independent variables.
+    r"""Solve a linear least-squares problem with bounds on the variables.
 
-    `lsq_linear` finds a minimum of the cost function 0.5 * ||A x - b||**2,
-    such that lb <= x <= ub. Where `A` is an m-by-n design matrix and `b` is
-    a target vector with m elements.
+    Given a m-by-n design matrix A and a target vector b with m elements,
+    `lsq_linear` solves the following optimization problem::
+
+        minimize 0.5 * ||A x - b||**2
+        subject to lb <= x <= ub
+
+    This optimization problem is convex, hence a found minimum (if iterations
+    have converged) is guaranteed to be global.
 
     Parameters
     ----------
@@ -46,7 +50,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Design matrix. Can be `scipy.sparse.linalg.LinearOperator`.
     b : array_like, shape (m,)
         Target vector.
-    bounds : array_like or float, optional
+    bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must have shape (n,) or be a scalar, in the latter
         case a bound will be the same for all variables. Use ``np.inf`` with
@@ -59,12 +63,13 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
               and the required number of iterations is weakly correlated with
               the number of variables.
             * 'bvls' : Bounded-Variable Least-Squares algorithm. This is
-              an active set method, which requires the number iterations
-              comparable to the number of variables. Does not support sparse
-              matrices.
+              an active set method, which requires the number of iterations
+              comparable to the number of variables. Can't be used when `A` is
+              sparse or LinearOperator.
 
+        Default is 'trf'.
     tol : float, optional
-        Tolerance parameter. The algorithm terminates if the relative change
+        Tolerance parameter. The algorithm terminates if a relative change
         of the cost function is less than `tol` on the last iteration.
         Additionally the first-order optimality measure is considered:
 
@@ -72,7 +77,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
               scaled to account for the presence of the bounds, is less than
               `tol`.
             * ``method='bvls'`` terminates if Karush-Kuhn-Tucker conditions
-              are violated by less than `tol`.
+              are satisfied within `tol` tolerance.
 
     lsq_solver : {None, 'exact', 'lsmr'}, optional
         Method of solving unbounded least-squares problems throughout
@@ -86,14 +91,15 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         If None (default) the solver is chosen based on type of `A`.
     lsmr_tol : None, float or 'auto', optional
-        Tolerance parameters 'atol' and 'btol' for `lsmr` solver. If None
-        (default), it is set to ``1e-2 * tol``. If 'auto', the tolerance will
-        be adjusted based on the optimality of the current iterate. It can
-        speed up the optimization process, but not always reliable.
+        Tolerance parameters 'atol' and 'btol' for `scipy.sparse.linalg.lsmr`
+        If None (default), it is set to ``1e-2 * tol``. If 'auto', the
+        tolerance will be adjusted based on the optimality of the current
+        iterate, which can speed up the optimization process, but is not always
+        reliable.
     max_iter : None or int, optional
-        Maximum number of iterations before termination. Default is 100 for
-        ``method='trf'` and n for ``method='bvls'`` (not counting iterations
-        required for BVLS initialization).
+        Maximum number of iterations before termination. If None (default), it
+        is set to 100 for ``method='trf'`` or to the number of variables for
+        ``method='bvls'`` (not counting iterations for 'bvls' initialization).
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
@@ -111,9 +117,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     fun : ndarray, shape (m,)
         Vector of residuals at the solution.
     optimality : float
-        First-order optimality measure. The uniform norm of the gradient,
-        scaled as described in Notes if the unconstrained solution is not
-        optimal.
+        First-order optimality measure. The exact meaning depends on `method`,
+        refer to the description of `tol` parameter.
     active_mask : ndarray of int, shape (n,)
         Each component shows whether a corresponding constraint is active
         (that is, whether a variable is at the bound):
@@ -122,8 +127,9 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             * -1 : a lower bound is active.
             *  1 : an upper bound is active.
 
-        Somewhat arbitrary because it is determined within a tolerance
-        threshold.
+        Might be somewhat arbitrary for the `trf` method as it generates a
+        sequence of strictly feasible iterates and active_mask is determined
+        within a tolerance threshold.
     nit : int
         Number of iterations. Zero if the unconstrained solution is optimal.
     status : int
@@ -132,7 +138,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             * -1 : the algorithm was not able to make progress on the last
               iteration.
             *  0 : the maximum number of iterations is exceeded.
-            *  1 : the uniform norm of the scaled gradient is less than `tol`.
+            *  1 : the first-order optimality measure is less than `tol`.
             *  2 : the relative change of the cost function is less than `tol`.
             *  3 : the unconstrained solution is optimal.
 
@@ -143,48 +149,48 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     See Also
     --------
-    nnls : Linear least squares with non-negativity constraint
-    least_squares : Robust nonlinear least squares with bound constraints
-                    on independent variables.   
+    nnls : Linear least squares with non-negativity constraint.
+    least_squares : Nonlinear least squares with bounds on the variables.                    
 
     Notes
     -----
-    The algorithm first computes the unconstrained solution by
+    The algorithm first computes the unconstrained least-squares solution by
     `numpy.linalg.lstsq` or `scipy.sparse.linalg.lsmr` depending on
-    `lsq_solver`. This solution is returned as optimal if it fits within the
+    `lsq_solver`. This solution is returned as optimal if it lies within the
     bounds.
 
     Method 'trf' runs the adaptation of the algorithm described in [STIR]_ for
     a linear least-squares problem. The iterations are essentially the same as
-    in the nonlinear algorithm, but as the quadratic model is always accurate
-    we don't need to track or modify a trust-region radius. The line search
-    (backtracking) is used as a safety net when the step does not decrease
-    the cost function. Read more detailed description of the algorithm
-    in `scipy.optimize.least_squares`.
+    in the nonlinear least-squares algorithm, but as the quadratic function
+    model is always accurate, we don't need to track or modify the radius of
+    a trust region. The line search (backtracking) is used as a safety net
+    when a selected step does not decrease the cost function. Read more
+    detailed description of the algorithm in `scipy.optimize.least_squares`.
 
     Method 'bvls' runs a Python implementation of the algorithm described in
     [BVLS]_. The algorithm maintains active and free sets of variables, on
     each iteration chooses a new variable to move from the active set to the
-    free set and then solves an unconstrained least-squares problem on free
-    variables. This method gives very accurate solution but may require up to
-    n iterations. Additionally, an ad-hoc initialization procedure is
+    free set and then solves the unconstrained least-squares problem on free
+    variables. This algorithm is guaranteed to give an accurate solution
+    eventually, but may require up to n iterations for a problem with n
+    variables. Additionally, an ad-hoc initialization procedure is
     implemented, that determines which variables to set free or active
     initially. It takes some number of iterations before actual BVLS starts,
-    but can significantly reduce the number of iterations required by BVLS.
+    but can significantly reduce the number of further iterations.
 
     References
     ----------
     .. [STIR] M. A. Branch, T. F. Coleman, and Y. Li, "A Subspace, Interior,
-      and Conjugate Gradient Method for Large-Scale Bound-Constrained
-      Minimization Problems," SIAM Journal on Scientific Computing,
-      Vol. 21, Number 1, pp 1-23, 1999.
-    .. [BVLS] P. B. Start and R. L. Parker, "Bounded-variable least-squares:
-       an algorithm and applications", Computational Statistics, 10, 129-141,
-       1995.
+              and Conjugate Gradient Method for Large-Scale Bound-Constrained
+              Minimization Problems," SIAM Journal on Scientific Computing,
+              Vol. 21, Number 1, pp 1-23, 1999.
+    .. [BVLS] P. B. Start and R. L. Parker, "Bounded-Variable Least-Squares:
+              an Algorithm and Applications", Computational Statistics, 10,
+              129-141, 1995.
 
     Examples
     --------
-    In this example a problem with large sparse matrix and bounds on the
+    In this example a problem with a large sparse matrix and bounds on the
     variables is solved.
 
     >>> from scipy.sparse import rand
@@ -204,7 +210,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     >>> res = lsq_linear(A, b, bounds=(lb, ub), lsmr_tol='auto', verbose=1)
     # may vary
     The relative change of the cost function is less than `tol`.
-    Number of iterations: 16, initial cost: 1.5039e+04,final cost 1.1112e+04, first-order optimality 4.66e-08.
+    Number of iterations 16, initial cost 1.5039e+04, final cost 1.1112e+04,
+    first-order optimality 4.66e-08.
     """
     if method not in ['trf', 'bvls']:
         raise ValueError("`method` must be 'trf' or 'bvls'")
@@ -299,7 +306,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if verbose > 0:
         print(res.message)
-        print("Number of iterations: {0}, initial cost: {1:.4e}, "
+        print("Number of iterations {0}, initial cost {1:.4e}, "
               "final cost {2:.4e}, first-order optimality {3:.2e}."
               .format(res.nit, res.initial_cost, res.cost, res.optimality))
 

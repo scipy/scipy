@@ -106,6 +106,7 @@ class csc_matrix(_cs_matrix, IndexMixin):
            [2, 3, 6]])
 
     """
+    format = 'csc'
 
     def transpose(self, copy=False):
         from .csr import csr_matrix
@@ -163,12 +164,17 @@ class csc_matrix(_cs_matrix, IndexMixin):
         # Get row and col indices, from _cs_matrix.tocoo
         major_dim, minor_dim = self._swap(self.shape)
         minor_indices = self.indices
-        major_indices = np.empty(len(minor_indices), dtype=self.indptr.dtype)
+        major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
         row, col = self._swap((major_indices, minor_indices))
 
+        # Remove explicit zeros
+        nz_mask = self.data != 0
+        row = row[nz_mask]
+        col = col[nz_mask]
+
         # Sort them to be in C-style order
-        ind = np.lexsort((col, row))
+        ind = np.argsort(row, kind='mergesort')
         row = row[ind]
         col = col[ind]
 

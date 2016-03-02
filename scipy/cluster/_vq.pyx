@@ -10,11 +10,9 @@ Translated to Cython by David Warde-Farley, October 2009.
 cimport cython
 import numpy as np
 cimport numpy as np
-from cluster_blas cimport *
+from cluster_blas cimport f_dgemm, f_sgemm
 
-cdef extern from "math.h":
-    float sqrtf(float num)
-    double sqrt(double num)
+from libc.math cimport sqrt
 
 ctypedef np.float64_t float64_t
 ctypedef np.float32_t float32_t
@@ -32,13 +30,6 @@ DEF NFEATURES_CUTOFF=5
 
 # Initialize the NumPy C API
 np.import_array()
-
-
-cdef inline vq_type _sqrt(vq_type x):
-    if vq_type is float32_t:
-        return sqrtf(x)
-    else:
-        return sqrt(x)
 
 
 cdef inline vq_type vec_sqr(int n, vq_type *p):
@@ -66,9 +57,9 @@ cdef inline void cal_M(int nobs, int ncodes, int nfeat, vq_type *obs,
                 &alpha, code_book, &nfeat, obs, &nfeat, &beta, M, &ncodes)
 
 
-cdef void _vq(vq_type *obs, vq_type *code_book,
-              int ncodes, int nfeat, int nobs,
-              int32_t *codes, vq_type *low_dist):
+cdef int _vq(vq_type *obs, vq_type *code_book,
+             int ncodes, int nfeat, int nobs,
+             int32_t *codes, vq_type *low_dist) except -1:
     """
     The underlying function (template) of _vq.vq.
 
@@ -93,7 +84,7 @@ cdef void _vq(vq_type *obs, vq_type *code_book,
     # Naive algorithm is prefered when nfeat is small
     if nfeat < NFEATURES_CUTOFF:
         _vq_small_nf(obs, code_book, ncodes, nfeat, nobs, codes, low_dist)
-        return
+        return 0
 
     cdef np.npy_intp i, j
     cdef vq_type *p_obs
@@ -137,9 +128,11 @@ cdef void _vq(vq_type *obs, vq_type *code_book,
 
         # dist_sqr may be negative due to float point errors
         if low_dist[i] > 0:
-            low_dist[i] = _sqrt(low_dist[i])
+            low_dist[i] = sqrt(low_dist[i])
         else:
             low_dist[i] = 0
+
+    return 0
 
 
 cdef void _vq_small_nf(vq_type *obs, vq_type *code_book,
@@ -178,7 +171,7 @@ cdef void _vq_small_nf(vq_type *obs, vq_type *code_book,
                 codes[i] = j
                 low_dist[i] = dist_sqr
 
-        low_dist[i] = _sqrt(low_dist[i])
+        low_dist[i] = sqrt(low_dist[i])
 
         # Update the offset of the current observation
         obs_offset += nfeat
@@ -280,7 +273,7 @@ cdef np.ndarray _update_cluster_means(vq_type *obs, int32_t *labels,
     cdef np.ndarray[int, ndim=1] obs_count
 
     # Calculate the sums the numbers of obs in each cluster
-    obs_count = np.zeros(nc, np.int32)
+    obs_count = np.zeros(nc, np.intc)
     obs_p = obs
     for i in range(nobs):
         label = labels[i]
@@ -371,4 +364,3 @@ def update_cluster_means(np.ndarray obs, np.ndarray labels, int nc):
                                             obs.shape[0], nc, nfeat)
 
     return cb, has_members
-

@@ -8,7 +8,13 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    transpose, zeros, product, greater, array,
                    all, where, isscalar, asarray, inf, abs,
                    finfo, inexact, issubdtype, dtype)
+from scipy.linalg import svd
+from scipy._lib._util import _asarray_validated, _lazywhere
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
+from ._lsq import least_squares
+from ._lsq.common import make_strictly_feasible
+from ._lsq.least_squares import prepare_bounds
+
 
 error = _minpack.error
 
@@ -30,6 +36,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                 msg += " '%s'." % func_name
             else:
                 msg += "."
+            msg += 'Shape should be %s but it is %s.' % (output_shape, shape(res))
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
@@ -134,8 +141,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                'band': band,
                'eps': epsfcn,
                'factor': factor,
-               'diag': diag,
-               'full_output': full_output}
+               'diag': diag}
 
     res = _root_hybr(func, x0, args, jac=fprime, **options)
     if full_output:
@@ -145,12 +151,22 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         info['fvec'] = res['fun']
         return x, info, res['status'], res['message']
     else:
+        status = res['status']
+        msg = res['message']
+        if status == 0:
+            raise TypeError(msg)
+        elif status == 1:
+            pass
+        elif status in [2, 3, 4, 5]:
+            warnings.warn(msg, RuntimeWarning)
+        else:
+            raise TypeError(msg)
         return res['x']
 
 
 def _root_hybr(func, x0, args=(), jac=None,
                col_deriv=0, xtol=1.49012e-08, maxfev=0, band=None, eps=None,
-               factor=100, diag=None, full_output=0, **unknown_options):
+               factor=100, diag=None, **unknown_options):
     """
     Find the roots of a multivariate function using MINPACK's hybrd and
     hybrj routines (modified Powell method).
@@ -215,39 +231,29 @@ def _root_hybr(func, x0, args=(), jac=None,
 
     x, status = retval[0], retval[-1]
 
-    errors = {0: ["Improper input parameters were entered.", TypeError],
-              1: ["The solution converged.", None],
-              2: ["The number of calls to function has "
-                  "reached maxfev = %d." % maxfev, ValueError],
-              3: ["xtol=%f is too small, no further improvement "
+    errors = {0: "Improper input parameters were entered.",
+              1: "The solution converged.",
+              2: "The number of calls to function has "
+                  "reached maxfev = %d." % maxfev,
+              3: "xtol=%f is too small, no further improvement "
                   "in the approximate\n  solution "
-                  "is possible." % xtol, ValueError],
-              4: ["The iteration is not making good progress, as measured "
+                  "is possible." % xtol,
+              4: "The iteration is not making good progress, as measured "
                   "by the \n  improvement from the last five "
-                  "Jacobian evaluations.", ValueError],
-              5: ["The iteration is not making good progress, "
+                  "Jacobian evaluations.",
+              5: "The iteration is not making good progress, "
                   "as measured by the \n  improvement from the last "
-                  "ten iterations.", ValueError],
-              'unknown': ["An error occurred.", TypeError]}
-
-    if status != 1 and not full_output:
-        if status in [2, 3, 4, 5]:
-            msg = errors[status][0]
-            warnings.warn(msg, RuntimeWarning)
-        else:
-            try:
-                raise errors[status][1](errors[status][0])
-            except KeyError:
-                raise errors['unknown'][1](errors['unknown'][0])
+                  "ten iterations.",
+              'unknown': "An error occurred."}
 
     info = retval[1]
     info['fun'] = info.pop('fvec')
     sol = OptimizeResult(x=x, success=(status == 1), status=status)
     sol.update(info)
     try:
-        sol['message'] = errors[status][0]
+        sol['message'] = errors[status]
     except KeyError:
-        info['message'] = errors['unknown'][0]
+        info['message'] = errors['unknown']
 
     return sol
 
@@ -294,9 +300,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         in x0, otherwise the default `maxfev` is 200*(N+1).
     epsfcn : float, optional
         A variable used in determining a suitable step length for the forward-
-        difference approximation of the Jacobian (for Dfun=None). 
+        difference approximation of the Jacobian (for Dfun=None).
         Normally the actual step length will be sqrt(epsfcn)*x
-        If epsfcn is less than the machine precision, it is assumed that the 
+        If epsfcn is less than the machine precision, it is assumed that the
         relative errors are of the order of the machine precision.
     factor : float, optional
         A parameter determining the initial step bound
@@ -451,8 +457,26 @@ def _weighted_general_function(params, xdata, ydata, function, weights):
     return weights * (function(xdata, *params) - ydata)
 
 
+def _initialize_feasible(lb, ub):
+    p0 = np.ones_like(lb)
+    lb_finite = np.isfinite(lb)
+    ub_finite = np.isfinite(ub)
+
+    mask = lb_finite & ub_finite
+    p0[mask] = 0.5 * (lb[mask] + ub[mask])
+    
+    mask = lb_finite & ~ub_finite
+    p0[mask] = lb[mask] + 1
+    
+    mask = ~lb_finite & ub_finite
+    p0[mask] = ub[mask] - 1
+
+    return p0
+
+
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
-              check_finite=True, **kw):
+              check_finite=True, bounds=(-np.inf, np.inf), method=None,
+              **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -493,8 +517,26 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, check that the input arrays do not contain nans of infs,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
-        do contain nans.
-        Default is True.
+        do contain nans. Default is True.
+    bounds : 2-tuple of array_like, optional
+        Lower and upper bounds on independent variables. Defaults to no bounds.        
+        Each element of the tuple must be either an array with the length equal
+        to the number of parameters, or a scalar (in which case the bound is
+        taken to be the same for all parameters.) Use ``np.inf`` with an
+        appropriate sign to disable bounds on all or some parameters.
+
+        .. versionadded:: 0.17
+    method : {'lm', 'trf', 'dogbox'}, optional
+        Method to use for optimization.  See `least_squares` for more details.
+        Default is 'lm' for unconstrained problems and 'trf' if `bounds` are
+        provided. The method 'lm' won't work when the number of observations
+        is less than the number of variables, use 'trf' or 'dogbox' in this
+        case.
+
+        .. versionadded:: 0.17
+    kwargs
+        Keyword arguments passed to `leastsq` for ``method='lm'`` or
+        `least_squares` otherwise.
 
     Returns
     -------
@@ -509,22 +551,37 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         How the `sigma` parameter affects the estimated covariance
         depends on `absolute_sigma` argument, as described above.
 
+        If the Jacobian matrix at the solution doesn't have a full rank, then
+        'lm' method returns a matrix filled with ``np.inf``, on the other hand
+        'trf'  and 'dogbox' methods use Moore-Penrose pseudoinverse to compute
+        the covariance matrix.
+
     Raises
     ------
+    ValueError
+        if either `ydata` or `xdata` contain NaNs, or if incompatible options
+        are used.
+
+    RuntimeError
+        if the least-squares minimization fails.
+
     OptimizeWarning
         if covariance of the parameters can not be estimated.
 
-    ValueError
-        if ydata and xdata contain NaNs.
-
     See Also
     --------
-    leastsq
+    least_squares : Minimize the sum of squares of nonlinear functions.
+    stats.linregress : Calculate a linear least squares regression for two sets
+                       of measurements.
 
     Notes
     -----
-    The algorithm uses the Levenberg-Marquardt algorithm through `leastsq`.
-    Additional keyword arguments are passed directly to that algorithm.
+    With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
+    through `leastsq`. Note that this algorithm can only deal with
+    unconstrained problems.
+
+    Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
+    the docstring of `least_squares` for more information.
 
     Examples
     --------
@@ -539,28 +596,44 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata)
 
+    Constrain the optimization to the region of ``0 < a < 3``, ``0 < b < 2``
+    and ``0 < c < 1``:
+
+    >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 2., 1.]))
+
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
-        import inspect
-        args, varargs, varkw, defaults = inspect.getargspec(f)
+        from scipy._lib._util import getargspec_no_self as _getargspec
+        args, varargs, varkw, defaults = _getargspec(f)
         if len(args) < 2:
-            msg = "Unable to determine number of fit parameters."
-            raise ValueError(msg)
-        if 'self' in args:
-            p0 = [1.0] * (len(args)-2)
-        else:
-            p0 = [1.0] * (len(args)-1)
+            raise ValueError("Unable to determine number of fit parameters.")
+        n = len(args) - 1
+    else:
+        p0 = np.atleast_1d(p0)
+        n = p0.size
 
-    # Check input arguments
-    if isscalar(p0):
-        p0 = array([p0])
+    lb, ub = prepare_bounds(bounds, n)
+    if p0 is None:
+        p0 = _initialize_feasible(lb, ub)
+
+    bounded_problem = np.any((lb > -np.inf) | (ub < np.inf))
+    if method is None:
+        if bounded_problem:
+            method = 'trf'
+        else:
+            method = 'lm'
+
+    if method == 'lm' and bounded_problem:
+        raise ValueError("Method 'lm' only works for unconstrained problems. "
+                         "Use 'trf' or 'dogbox' instead.")
 
     # NaNs can not be handled
     if check_finite:
         ydata = np.asarray_chkfinite(ydata)
     else:
         ydata = np.asarray(ydata)
+
     if isinstance(xdata, (list, tuple, np.ndarray)):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
@@ -576,14 +649,31 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         func = _weighted_general_function
         args += (1.0 / asarray(sigma),)
 
-    # Remove full_output from kw, otherwise we're passing it in twice.
-    return_full = kw.pop('full_output', False)
-    res = leastsq(func, p0, args=args, full_output=1, **kw)
-    (popt, pcov, infodict, errmsg, ier) = res
+    if method == 'lm':
+        # Remove full_output from kwargs, otherwise we're passing it in twice.
+        return_full = kwargs.pop('full_output', False)
+        res = leastsq(func, p0, args=args, full_output=1, **kwargs)
+        popt, pcov, infodict, errmsg, ier = res
+        cost = np.sum(infodict['fvec'] ** 2)
+        if ier not in [1, 2, 3, 4]:
+            raise RuntimeError("Optimal parameters not found: " + errmsg)
+    else:
+        res = least_squares(func, p0, args=args, bounds=bounds, method=method,
+                            **kwargs)
 
-    if ier not in [1, 2, 3, 4]:
-        msg = "Optimal parameters not found: " + errmsg
-        raise RuntimeError(msg)
+        if not res.success:
+            raise RuntimeError("Optimal parameters not found: " + res.message)
+
+        cost = 2 * res.cost  # res.cost is half sum of squares!
+        popt = res.x
+
+        # Do Moore-Penrose inverse discarding zero singular values.
+        _, s, VT = svd(res.jac, full_matrices=False)
+        threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
+        s = s[s > threshold]
+        VT = VT[:s.size]
+        pcov = np.dot(VT.T / s**2, VT)
+        return_full = False
 
     warn_cov = False
     if pcov is None:
@@ -592,8 +682,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         pcov.fill(inf)
         warn_cov = True
     elif not absolute_sigma:
-        if len(ydata) > len(p0):
-            s_sq = (asarray(func(popt, *args))**2).sum() / (len(ydata) - len(p0))
+        if ydata.size > p0.size:
+            s_sq = cost / (ydata.size - p0.size)
             pcov = pcov * s_sq
         else:
             pcov.fill(inf)
@@ -601,7 +691,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     if warn_cov:
         warnings.warn('Covariance of the parameters could not be estimated',
-                category=OptimizeWarning)
+                      category=OptimizeWarning)
 
     if return_full:
         return popt, pcov, infodict, errmsg, ier
@@ -640,7 +730,33 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     return (good, err)
 
 
-def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
+def _del2(p0, p1, d):
+    return p0 - np.square(p1 - p0) / d
+
+
+def _relerr(actual, desired):
+    return (actual - desired) / desired
+
+
+def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
+    p0 = x0
+    for i in range(maxiter):
+        p1 = func(p0, *args)
+        if use_accel:
+            p2 = func(p1, *args)
+            d = p2 - 2.0 * p1 + p0
+            p = _lazywhere(d != 0, (p0, p1, d), f=_del2, fillvalue=p2)
+        else:
+            p = p1
+        relerr = _lazywhere(p0 != 0, (p, p0), f=_relerr, fillvalue=p)
+        if np.all(np.abs(relerr) < xtol):
+            return p
+        p0 = p
+    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    raise RuntimeError(msg)
+
+
+def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
     """
     Find a fixed point of the function.
 
@@ -659,11 +775,16 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
         Convergence tolerance, defaults to 1e-08.
     maxiter : int, optional
         Maximum number of iterations, defaults to 500.
+    method : {"del2", "iteration"}, optional
+        Method of finding the fixed-point, defaults to "del2"
+        which uses Steffensen's Method with Aitken's ``Del^2``
+        convergence acceleration [1]_. The "iteration" method simply iterates
+        the function until convergence is detected, without attempting to
+        accelerate the convergence.
 
-    Notes
-    -----
-    Uses Steffensen's Method using Aitken's ``Del^2`` convergence acceleration.
-    See Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
+    References
+    ----------
+    .. [1] Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
 
     Examples
     --------
@@ -676,34 +797,6 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     array([ 1.4920333 ,  1.37228132])
 
     """
-    if not isscalar(x0):
-        x0 = asarray(x0)
-        p0 = x0
-        for iter in range(maxiter):
-            p1 = func(p0, *args)
-            p2 = func(p1, *args)
-            d = p2 - 2.0 * p1 + p0
-            p = where(d == 0, p2, p0 - (p1 - p0)*(p1 - p0) / d)
-            relerr = where(p0 == 0, p, (p-p0)/p0)
-            if all(abs(relerr) < xtol):
-                return p
-            p0 = p
-    else:
-        p0 = x0
-        for iter in range(maxiter):
-            p1 = func(p0, *args)
-            p2 = func(p1, *args)
-            d = p2 - 2.0 * p1 + p0
-            if d == 0.0:
-                return p2
-            else:
-                p = p0 - (p1 - p0)*(p1 - p0) / d
-            if p0 == 0:
-                relerr = p
-            else:
-                relerr = (p - p0)/p0
-            if abs(relerr) < xtol:
-                return p
-            p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
+    use_accel = {'del2': True, 'iteration': False}[method]
+    x0 = _asarray_validated(x0, as_inexact=True)
+    return _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel)

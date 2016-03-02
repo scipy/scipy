@@ -63,7 +63,7 @@ ilu_dcopy_to_ucol(
     int       *usub, *xusub;
     int       nzumax;
     int       m; /* number of entries in the nonzero U-segments */
-    register double d_max = 0.0, d_min = 1.0 / dlamch_("Safe minimum");
+    register double d_max = 0.0, d_min = 1.0 / dmach("Safe minimum");
     register double tmp;
     double zero = 0.0;
     int i_1 = 1;
@@ -72,7 +72,7 @@ ilu_dcopy_to_ucol(
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    ucol    = Glu->ucol;
+    ucol    = (double *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     nzumax  = Glu->nzumax;

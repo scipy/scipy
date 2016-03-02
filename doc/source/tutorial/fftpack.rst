@@ -18,6 +18,14 @@ known to Gauss (1805) and was brought to light in its current form by Cooley
 and Tukey [CT65]_.  Press et al. [NR]_ provide an accessible introduction to
 Fourier analysis and its applications.
 
+.. note::
+
+   PyFFTW_ provides a way to replace a number of functions in `scipy.fftpack`
+   with its own functions, which are usually significantly faster, via
+   pyfftw.interfaces_.  Because PyFFTW_ relies on the GPL-licensed FFTW_ it
+   cannot be included in Scipy.  Users for whom the speed of FFT routines is
+   critical should consider installing PyFFTW_.
+
 
 Fast Fourier transforms
 -----------------------
@@ -45,11 +53,12 @@ respectively as shown in the following example.
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> y = fft(x)
 >>> y
-[ 4.50000000+0.j          2.08155948-1.65109876j -1.83155948+1.60822041j
- -1.83155948-1.60822041j  2.08155948+1.65109876j]
+array([ 4.50000000+0.j        ,  2.08155948-1.65109876j,
+       -1.83155948+1.60822041j, -1.83155948-1.60822041j,
+        2.08155948+1.65109876j])
 >>> yinv = ifft(y)
 >>> yinv
-[ 1.0+0.j  2.0+0.j  1.0+0.j -1.0+0.j  1.5+0.j]
+array([ 1.0+0.j,  2.0+0.j,  1.0+0.j, -1.0+0.j,  1.5+0.j])
 
 
 From the definition of the FFT it can be seen that
@@ -134,16 +143,17 @@ helper functions.
 The function :func:`fftfreq` returns the FFT sample frequency points.
 
 >>> from scipy.fftpack import fftfreq
->>> freq = fftfreq(np.arange(8), 0.125)
-[ 0.  1.  2.  3. -4. -3. -2. -1.]
+>>> freq = fftfreq(8, 0.125)
+>>> freq
+array([ 0., 1., 2., 3., -4., -3., -2., -1.])
 
 In a similar spirit, the function :func:`fftshift` allows swapping the lower
 and upper halves of a vector, so that it becomes suitable for display.
 
->>> from scipy.fftpack import fftfreq
+>>> from scipy.fftpack import fftshift
 >>> x = np.arange(8)
->>> sf.fftshift(x)
-[4 5 6 7 0 1 2 3]
+>>> fftshift(x)
+array([4, 5, 6, 7, 0, 1, 2, 3])
 
 The example below plots the FFT of two complex exponentials; note the
 asymmetric spectrum.
@@ -179,18 +189,22 @@ coefficients with this special ordering.
 >>> from scipy.fftpack import fft, rfft, irfft
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5, 1.0])
 >>> fft(x)
-[ 5.50+0.j          2.25-0.4330127j  -2.75-1.29903811j  1.50+0.j
- -2.75+1.29903811j  2.25+0.4330127j ]
+array([ 5.50+0.j        ,  2.25-0.4330127j , -2.75-1.29903811j,
+        1.50+0.j        , -2.75+1.29903811j,  2.25+0.4330127j ])
 >>> yr = rfft(x)
-[ 5.5         2.25       -0.4330127  -2.75       -1.29903811  1.5       ]
+>>> yr
+array([ 5.5       ,  2.25      , -0.4330127 , -2.75      , -1.29903811,
+        1.5       ])
 >>> irfft(yr)
-[ 1.   2.   1.  -1.   1.5  1. ]
+array([ 1. ,  2. ,  1. , -1. ,  1.5,  1. ])
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> fft(x)
-[ 4.50000000+0.j          2.08155948-1.65109876j -1.83155948+1.60822041j
- -1.83155948-1.60822041j  2.08155948+1.65109876j]
+array([ 4.50000000+0.j        ,  2.08155948-1.65109876j,
+       -1.83155948+1.60822041j, -1.83155948-1.60822041j,
+        2.08155948+1.65109876j])
 >>> yr = rfft(x)
-[ 4.5         2.08155948 -1.65109876 -1.83155948  1.60822041]
+>>> yr
+array([ 4.5       ,  2.08155948, -1.65109876, -1.83155948,  1.60822041])
 
 
 Two and n-dimensional discrete Fourier transforms
@@ -331,20 +345,19 @@ and normalizations.
 [1.0, 2.0, 1.0, -1.0, 1.5]
 >>>  # scaling factor 2*N = 10
 >>> idct(dct(x, type=2), type=2)
-[ 10.  20.  10. -10.  15.]
+array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
 >>> idct(dct(x, type=2, norm='ortho'), type=2, norm='ortho')
-[ 1.   2.   1.  -1.   1.5]
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*N = 10
 >>> idct(dct(x, type=3), type=3)
-[ 10.  20.  10. -10.  15.]
+array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
 >>> idct(dct(x, type=3, norm='ortho'), type=3, norm='ortho')
-[ 1.   2.   1.  -1.   1.5]
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*(N-1) = 8
 >>> idct(dct(x, type=1), type=1)
-[  8.  16.   8.  -8.  12.]
-
+array([  8.,  16.,   8.,  -8.,  12.])
 
 Example
 _______
@@ -446,19 +459,19 @@ and normalizations.
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>>  # scaling factor 2*N = 10
 >>> idst(dst(x, type=2), type=2)
-[ 10.  20.  10. -10.  15.]
+array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
 >>> idst(dst(x, type=2, norm='ortho'), type=2, norm='ortho')
-[ 1.   2.   1.  -1.   1.5]
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*N = 10
 >>> idst(dst(x, type=3), type=3)
-[ 10.  20.  10. -10.  15.]
+array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
 >>> idst(dst(x, type=3, norm='ortho'), type=3, norm='ortho')
-[ 1.   2.   1.  -1.   1.5]
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*(N+1) = 8
 >>> idst(dst(x, type=1), type=1)
-[  8.  16.   8.  -8.  12.]
+array([ 12.,  24.,  12., -12.,  18.])
 
 
 Cache Destruction
@@ -492,3 +505,8 @@ References
 .. [WPC] http://en.wikipedia.org/wiki/Discrete_cosine_transform
 
 .. [WPS] http://en.wikipedia.org/wiki/Discrete_sine_transform
+
+
+.. _FFTW: http://www.fftw.org/
+.. _PyFFTW: http://hgomersall.github.io/pyFFTW/index.html
+.. _pyfftw.interfaces: http://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html

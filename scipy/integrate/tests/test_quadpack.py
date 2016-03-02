@@ -42,7 +42,14 @@ class TestCtypesQuad(TestCase):
             file = 'libm.dylib'
         else:
             file = 'libm.so'
-        self.lib = ctypes.CDLL(file)
+
+        try:
+            self.lib = ctypes.CDLL(file)
+        except OSError:
+            # This test doesn't work on some Linux platforms (Fedora for
+            # example) that put an ld script in libm.so - see gh-5370
+            self.skipTest("Ctypes can't import libm.so")
+
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
         for name in ['sin', 'cos', 'tan']:
@@ -143,9 +150,9 @@ class TestQuad(TestCase):
     def test_singular(self):
         # 3) Singular points in region of integration.
         def myfunc(x):
-            if x > 0 and x < 2.5:
+            if 0 < x < 2.5:
                 return sin(x)
-            elif x >= 2.5 and x <= 5.0:
+            elif 2.5 <= x <= 5.0:
                 return exp(-x)
             else:
                 return 0.0

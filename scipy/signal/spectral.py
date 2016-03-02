@@ -402,7 +402,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
 
 def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
-                scaling='density', axis=-1):
+                scaling='density', axis=-1, mode='psd'):
     """
     Compute a spectrogram with consecutive Fourier transforms.
 
@@ -445,6 +445,9 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     axis : int, optional
         Axis along which the spectrogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
+    mode : str, optional
+        Defines what kind of return values are expected. Options are ['psd',
+        'complex', 'magnitude', 'angle', 'phase'].
 
     Returns
     -------
@@ -475,7 +478,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
 
     References
     ----------
-    ...[1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck "Discrete-Time
+    .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck "Discrete-Time
            Signal Processing", Prentice Hall, 1999.
 
     Examples
@@ -510,7 +513,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
 
     freqs, time, Pxy = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided, scaling,
-                                        axis, mode='psd')
+                                        axis, mode=mode)
 
     return freqs, time, Pxy
 
@@ -630,7 +633,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
                     noverlap=None, nfft=None, detrend='constant',
                     return_onesided=True, scaling='spectrum', axis=-1,
                     mode='psd'):
-    '''
+    """
     Calculate various forms of windowed FFTs for PSD, CSD, etc.
 
     This is a helper function that implements the commonality between the
@@ -686,24 +689,24 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
     -------
     freqs : ndarray
         Array of sample frequencies.
-    result : ndarray
-        Array of output data, contents dependant on *mode* kwarg.
     t : ndarray
         Array of times corresponding to each data segment
+    result : ndarray
+        Array of output data, contents dependant on *mode* kwarg.
 
     References
     ----------
-    stackoverflow: Rolling window for 1D arrays in Numpy?
-    <http://stackoverflow.com/a/6811241>
-    stackoverflow: Using strides for an efficient moving average filter
-    <http://stackoverflow.com/a/4947453>
+    .. [1] Stack Overflow, "Rolling window for 1D arrays in Numpy?",
+        http://stackoverflow.com/a/6811241
+    .. [2] Stack Overflow, "Using strides for an efficient moving average
+        filter", http://stackoverflow.com/a/4947453
 
     Notes
     -----
     Adapted from matplotlib.mlab
 
     .. versionadded:: 0.16.0
-    '''
+    """
     if mode not in ['psd', 'complex', 'magnitude', 'angle', 'phase']:
         raise ValueError("Unknown value for mode %s, must be one of: "
                          "'default', 'psd', 'complex', "
@@ -904,7 +907,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
 
 
 def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
-    '''
+    """
     Calculate windowed FFT, for internal use by scipy.signal._spectral_helper
 
     This is a helper function that does the main FFT calculation for
@@ -920,15 +923,15 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
 
     References
     ----------
-    stackoverflow: Repeat NumPy array without replicating data?
-    <http://stackoverflow.com/a/5568169>
+    .. [1] Stack Overflow, "Repeat NumPy array without replicating data?",
+        http://stackoverflow.com/a/5568169
 
     Notes
     -----
     Adapted from matplotlib.mlab
 
     .. versionadded:: 0.16.0
-    '''
+    """
     # Created strided array of data segments
     if nperseg == 1 and noverlap == 0:
         result = x[..., np.newaxis]

@@ -71,7 +71,7 @@ ODRPACK, in addition to the low-level `odr` function.
 
 Additional background information about ODRPACK can be found in the
 `ODRPACK User's Guide
-<http://docs.scipy.org/doc/external/odrpack_guide.pdf>`_, reading
+<https://docs.scipy.org/doc/external/odrpack_guide.pdf>`_, reading
 which is recommended.
 
 Basic usage

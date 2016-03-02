@@ -104,7 +104,7 @@ zcolumn_bmod (
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (doublecomplex *) Glu->lusup;
     xlusup  = Glu->xlusup;
     nzlumax = Glu->nzlumax;
     jcolp1 = jcol + 1;
@@ -287,7 +287,7 @@ zcolumn_bmod (
     while ( new_next > nzlumax ) {
 	if (mem_error = zLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu))
 	    return (mem_error);
-	lusup = Glu->lusup;
+	lusup = (doublecomplex *) Glu->lusup;
 	lsub = Glu->lsub;
     }
 

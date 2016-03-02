@@ -164,7 +164,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     dsave = np.zeros((13,), float)
     task = b'START'
 
-    maxiter = 30
+    maxiter = 100
     for i in xrange(maxiter):
         stp, phi1, derphi1, task = minpack2.dcsrch(alpha1, phi1, derphi1,
                                                    c1, c2, xtol, task,

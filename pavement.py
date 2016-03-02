@@ -91,19 +91,23 @@ try:
     # This is duplicated from setup.py
     if os.path.exists('.git'):
         GIT_REVISION = setup_py.git_version()
-    elif os.path.exists('scipy/version.py'):
-        # must be a source distribution, use existing version file
-        from numpy.version import git_revision as GIT_REVISION
     else:
         GIT_REVISION = "Unknown"
 
     if not setup_py.ISRELEASED:
         if GIT_REVISION == "Unknown":
-            FULLVERSION += '.dev0'
+            FULLVERSION += '.dev0+Unknown'
         else:
             FULLVERSION += '.dev0+' + GIT_REVISION[:7]
 finally:
     sys.path.pop(0)
+
+try:
+    # Ensure sensible file permissions
+    os.umask(0o022)
+except AttributeError:
+    # No umask on non-posix
+    pass
 
 
 #-----------------------------------
@@ -111,10 +115,10 @@ finally:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.17.0-notes.rst'
+RELEASE = 'doc/release/0.18.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.16.0'
+LOG_START = 'v0.17.0'
 LOG_END = 'master'
 
 
@@ -310,8 +314,19 @@ def tarball_name(type='gztar'):
 
 @task
 def sdist():
+    # First clean the repo and update submodules (for up-to-date doc html theme
+    # and Sphinx extensions)
+    sh('git clean -xdf')
+    sh('git submodule init')
+    sh('git submodule update')
+
+    # Fix file permissions
+    sh('chmod a+rX -R *')
+
     # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
+    # Cython is run over all Cython files in setup.py, so generated C files
+    # will be included.
     sh('python setup.py sdist --formats=gztar,zip')
     sh('python setup.py sdist --formats=tar')
     if os.path.exists(os.path.join('dist', tarball_name("xztar"))):
@@ -334,6 +349,21 @@ def sdist():
         source = os.path.join('dist', tarball_name(t))
         target = os.path.join(options.installers.installersdir, tarball_name(t))
         shutil.copy(source, target)
+
+@task
+def release(options):
+    """Automate everything to be done for a release with numpy-vendor"""
+    # Source tarballs
+    sdist()
+
+    # Windows .exe installers
+    options.python_version = '2.7'
+    bdist_superpack(options)
+    options.python_version = '3.4'
+    bdist_superpack(options)
+
+    # README (gpg signed) and Changelog
+    write_release_and_log()
 
 
 #---------------------------------------
@@ -518,13 +548,8 @@ def _build_mpkg(pyver):
     numver = parse_numpy_version(MPKG_PYTHON[pyver])
     numverstr = ".".join(["%i" % i for i in numver])
     if pyver < "3.3":
-        # Numpy < 1.7 doesn't support Python 3.3
-        if not numver == (1, 6, 2):
-            raise ValueError("Scipy 0.17.x should be built against numpy "
-                             "1.6.2, (detected %s)" % numverstr)
-    else:
         if not numver == (1, 7, 2):
-            raise ValueError("Scipy 0.17.x should be built against numpy "
+            raise ValueError("Scipy 0.18.x should be built against numpy "
                              "1.7.2, (detected %s) for Python >= 3.3" % numverstr)
 
     prepare_static_gfortran_runtime("build")

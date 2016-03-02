@@ -6,16 +6,16 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import re
 import sys
+import pickle
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_raises, rand, dec)
+    assert_allclose, assert_, assert_raises, assert_warns, dec)
 from nose import SkipTest
 
 import numpy
 import numpy as np
 from numpy import typecodes, array
-from scipy._lib._version import NumpyVersion
 from scipy import special
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
@@ -57,20 +57,15 @@ def test_api_regression():
 
 
 # check function for test generator
-
-
 def check_distribution(dist, args, alpha):
     D, pval = stats.kstest(dist, '', args=args, N=1000)
     if (pval < alpha):
         D, pval = stats.kstest(dist, '', args=args, N=1000)
-        # if (pval < alpha):
-        #    D,pval = stats.kstest(dist,'',args=args, N=1000)
         assert_(pval > alpha, msg="D = " + str(D) + "; pval = " + str(pval) +
                 "; alpha = " + str(alpha) + "\nargs = " + str(args))
 
+
 # nose test generator
-
-
 def test_all_distributions():
     for dist in dists:
         distfunc = getattr(stats, dist)
@@ -79,20 +74,18 @@ def test_all_distributions():
         if dist == 'fatiguelife':
             alpha = 0.001
 
-        if dist == 'frechet':
-            args = tuple(2*rand(1))+(0,)+tuple(2*rand(2))
-        elif dist == 'triang':
-            args = tuple(rand(nargs))
+        if dist == 'triang':
+            args = tuple(np.random.random(nargs))
         elif dist == 'reciprocal':
-            vals = rand(nargs)
+            vals = np.random.random(nargs)
             vals[1] = vals[0] + 1.0
             args = tuple(vals)
         elif dist == 'vonmises':
             yield check_distribution, dist, (10,), alpha
             yield check_distribution, dist, (101,), alpha
-            args = tuple(1.0+rand(nargs))
+            args = tuple(1.0 + np.random.random(nargs))
         else:
-            args = tuple(1.0+rand(nargs))
+            args = tuple(1.0 + np.random.random(nargs))
 
         yield check_distribution, dist, args, alpha
 
@@ -684,6 +677,23 @@ class TestPearson3(TestCase):
 
 
 class TestPoisson(TestCase):
+
+    def test_pmf_basic(self):
+        # Basic case
+        ln2 = np.log(2)
+        vals = stats.poisson.pmf([0, 1, 2], ln2)
+        expected = [0.5, ln2/2, ln2**2/4]
+        assert_allclose(vals, expected)
+
+    def test_mu0(self):
+        # Edge case: mu=0
+        vals = stats.poisson.pmf([0, 1, 2], 0)
+        expected = [1, 0, 0]
+        assert_array_equal(vals, expected)
+
+        interval = stats.poisson.interval(0.95, 0)
+        assert_equal(interval, (0, 0))
+
     def test_rvs(self):
         vals = stats.poisson.rvs(0.5, size=(2, 50))
         assert_(numpy.all(vals >= 0))
@@ -699,6 +709,11 @@ class TestPoisson(TestCase):
         mu = 16.0
         result = stats.poisson.stats(mu, moments='mvsk')
         assert_allclose(result, [mu, mu, np.sqrt(1.0/mu), 1.0/mu])
+
+        mu = np.array([0.0, 1.0, 2.0])
+        result = stats.poisson.stats(mu, moments='mvsk')
+        expected = (mu, mu, [np.inf, 1, 1/np.sqrt(2)], [np.inf, 1, 0.5])
+        assert_allclose(result, expected)
 
 
 class TestZipf(TestCase):
@@ -757,8 +772,6 @@ class TestDLaplace(TestCase):
 
 
 class TestInvGamma(TestCase):
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "assert_* funcs broken with inf/nan")
     def test_invgamma_inf_gh_1866(self):
         # invgamma's moments are only finite for a>n
         # specific numbers checked w/ boost 1.54
@@ -832,6 +845,33 @@ class TestRvDiscrete(TestCase):
         h = p.entropy()
         assert_equal(h, 0.0)
 
+
+class TestSkewNorm(TestCase):
+
+    def test_normal(self):
+        # When the skewness is 0 the distribution is normal
+        x = np.linspace(-5, 5, 100)
+        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0), 
+                                  stats.norm.pdf(x))
+
+    def test_rvs(self):
+        shape = (3, 4, 5)
+        x = stats.skewnorm.rvs(a=0.75, size=shape)
+        assert_equal(shape, x.shape)
+        
+        x = stats.skewnorm.rvs(a=-3, size=shape)
+        assert_equal(shape, x.shape)
+        
+    def test_moments(self):
+        X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
+                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'), 
+                                   decimal=2)
+        
+        X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
+                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
+                                   decimal=2)
 
 class TestExpon(TestCase):
     def test_zero(self):
@@ -943,7 +983,9 @@ class TestSkellam(TestCase):
 class TestLognorm(TestCase):
     def test_pdf(self):
         # Regression test for Ticket #1471: avoid nan with 0/0 situation
-        with np.errstate(divide='ignore'):
+        # Also make sure there are no warnings at x=0, cf gh-5202
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', RuntimeWarning)
             pdf = stats.lognorm.pdf([0, 0.5, 1], 1)
             assert_array_almost_equal(pdf, [0.0, 0.62749608, 0.39894228])
 
@@ -1067,8 +1109,6 @@ class TestEntropy(TestCase):
         assert_array_almost_equal(stats.entropy(pk, qk),
                                   [0.1933259, 0.18609809])
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0',
-                "assert_* funcs broken with inf/nan")
     def test_entropy_2d_zero(self):
         pk = [[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]]
         qk = [[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]]
@@ -1479,6 +1519,30 @@ class TestFrozen(TestCase):
         rndm = np.random.RandomState(1234)
         frozen.rvs(size=8, random_state=rndm)
 
+    def test_pickling(self):
+        # test that a frozen instance pickles and unpickles
+        # (this method is a clone of common_tests.check_pickling)
+        beta = stats.beta(2.3098496451481823, 0.62687954300963677)
+        poiss = stats.poisson(3.)
+        sample = stats.rv_discrete(values=([0, 1, 2, 3],
+                                           [0.1, 0.2, 0.3, 0.4]))
+
+        for distfn in [beta, poiss, sample]:
+            distfn.random_state = 1234
+            distfn.rvs(size=8)
+            s = pickle.dumps(distfn)
+            r0 = distfn.rvs(size=8)
+
+            unpickled = pickle.loads(s)
+            r1 = unpickled.rvs(size=8)
+            assert_equal(r0, r1)
+
+            # also smoke test some methods
+            medians = [distfn.ppf(0.5), unpickled.ppf(0.5)]
+            assert_equal(medians[0], medians[1])
+            assert_equal(distfn.cdf(medians[0]),
+                         unpickled.cdf(medians[1]))
+
     def test_expect(self):
         # smoke test the expect method of the frozen distribution
         # only take a gamma w/loc and scale and poisson with loc specified
@@ -1600,6 +1664,57 @@ class TestExpect(TestCase):
         assert_(np.isfinite(stats.rice.expect(lambda x: 1, args=(0.74,))))
         assert_(np.isfinite(stats.rice.expect(lambda x: 2, args=(0.74,))))
         assert_(np.isfinite(stats.rice.expect(lambda x: 3, args=(0.74,))))
+
+    def test_logser(self):
+        # test a discrete distribution with infinite support and loc
+        p, loc = 0.3, 3
+        res_0 = stats.logser.expect(lambda k: k, args=(p,))
+        # check against the correct answer (sum of a geom series)
+        assert_allclose(res_0,
+                        p / (p - 1.) / np.log(1. - p), atol=1e-15)
+
+        # now check it with `loc` 
+        res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
+        assert_allclose(res_l, res_0 + loc, atol=1e-15)
+
+    def test_skellam(self):
+        # Use a discrete distribution w/ bi-infinite support. Compute two first
+        # moments and compare to known values (cf skellam.stats)
+        p1, p2 = 18, 22
+        m1 = stats.skellam.expect(lambda x: x, args=(p1, p2))
+        m2 = stats.skellam.expect(lambda x: x**2, args=(p1, p2))
+        assert_allclose(m1, p1 - p2, atol=1e-12)
+        assert_allclose(m2 - m1**2, p1 + p2, atol=1e-12)
+
+    def test_randint(self):
+        # Use a discrete distribution w/ parameter-dependent support, which
+        # is larger than the default chunksize
+        lo, hi = 0, 113
+        res = stats.randint.expect(lambda x: x, (lo, hi))
+        assert_allclose(res,
+            sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
+
+    def test_zipf(self):
+        # Test that there is no infinite loop even if the sum diverges
+        assert_warns(RuntimeWarning, stats.zipf.expect,
+            lambda x: x**2, (2,))
+
+    def test_discrete_kwds(self):
+        # check that discrete expect accepts keywords to control the summation
+        n0 = stats.poisson.expect(lambda x: 1, args=(2,))
+        n1 = stats.poisson.expect(lambda x: 1, args=(2,),
+            maxcount=1001, chunksize=32, tolerance=1e-8)
+        assert_almost_equal(n0, n1, decimal=14)
+
+    def test_moment(self):
+        # test the .moment() method: compute a higher moment and compare to
+        # a known value
+        def poiss_moment5(mu):
+            return mu**5 + 10*mu**4 + 25*mu**3 + 15*mu**2 + mu
+
+        for mu in [5, 7]:
+            m5 = stats.poisson.moment(5, mu)
+            assert_allclose(m5, poiss_moment5(mu), rtol=1e-10)
 
 
 class TestNct(TestCase):

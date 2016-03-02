@@ -46,7 +46,7 @@ from scipy.cluster.hierarchy import (
     cophenet, fclusterdata, fcluster, is_isomorphic, single, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette)
+    set_link_color_palette, cut_tree, _order_cluster_tree)
 from scipy.spatial.distance import pdist
 
 import hierarchy_test_data
@@ -89,6 +89,11 @@ class TestLinkage(object):
         # Tests linkage(Y, method) on the Q data set.
         Z = linkage(hierarchy_test_data.X, method)
         expectedZ = getattr(hierarchy_test_data, 'linkage_X_' + method)
+        assert_allclose(Z, expectedZ, atol=1e-06)
+
+        y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
+                                         metric="euclidean")
+        Z = linkage(y, method)
         assert_allclose(Z, expectedZ, atol=1e-06)
 
 
@@ -775,12 +780,40 @@ class TestDendrogram(object):
                     'leaves': [2, 5, 1, 0, 3, 4]}
 
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        ax = fig.add_subplot(221)
 
         # test that dendrogram accepts ax keyword
         R1 = dendrogram(Z, ax=ax, orientation=orientation)
-        plt.close()
         assert_equal(R1, expected)
+
+        # test that dendrogram accepts and handle the leaf_font_size and
+        # leaf_rotation keywords
+        R1a = dendrogram(Z, ax=ax, orientation=orientation,
+                         leaf_font_size=20, leaf_rotation=90)
+        testlabel = (
+            ax.get_xticklabels()[0]
+            if orientation in ['top', 'bottom']
+            else ax.get_yticklabels()[0]
+        )
+        assert_equal(testlabel.get_rotation(), 90)
+        assert_equal(testlabel.get_size(), 20)
+        R1a = dendrogram(Z, ax=ax, orientation=orientation,
+                         leaf_rotation=90)
+        testlabel = (
+            ax.get_xticklabels()[0]
+            if orientation in ['top', 'bottom']
+            else ax.get_yticklabels()[0]
+        )
+        assert_equal(testlabel.get_rotation(), 90)
+        R1a = dendrogram(Z, ax=ax, orientation=orientation,
+                         leaf_font_size=20)
+        testlabel = (
+            ax.get_xticklabels()[0]
+            if orientation in ['top', 'bottom']
+            else ax.get_yticklabels()[0]
+        )
+        assert_equal(testlabel.get_size(), 20)
+        plt.close()
 
         # test plotting to gca (will import pylab)
         R2 = dendrogram(Z, orientation=orientation)
@@ -825,6 +858,9 @@ class TestDendrogram(object):
         color_list = R['color_list']
         assert_equal(color_list, ['c', 'm', 'g', 'g', 'g'])
 
+        # reset color palette (global list)
+        set_link_color_palette(None)
+
 
 def calculate_maximum_distances(Z):
     # Used for testing correctness of maxdists.
@@ -863,15 +899,53 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
 
 
 def test_euclidean_linkage_value_error():
-    for method in scipy.cluster.hierarchy._cpy_euclid_methods:
-        assert_raises(ValueError,
-                linkage, [[1, 1], [1, 1]], method=method, metric='cityblock')
+    for method in scipy.cluster.hierarchy._EUCLIDEAN_METHODS:
+        assert_raises(ValueError, linkage, [[1, 1], [1, 1]],
+                      method=method, metric='cityblock')
 
 
 def test_2x2_linkage():
     Z1 = linkage([1], method='single', metric='euclidean')
     Z2 = linkage([[0, 1], [0, 0]], method='single', metric='euclidean')
     assert_allclose(Z1, Z2)
+
+
+def test_node_compare():
+    np.random.seed(23)
+    nobs = 50
+    X = np.random.randn(nobs, 4)
+    Z = scipy.cluster.hierarchy.ward(X)
+    tree = to_tree(Z)
+    assert_(tree > tree.get_left())
+    assert_(tree.get_right() > tree.get_left())
+    assert_(tree.get_right() == tree.get_right())
+    assert_(tree.get_right() != tree.get_left())
+
+
+def test_cut_tree():
+    np.random.seed(23)
+    nobs = 50
+    X = np.random.randn(nobs, 4)
+    Z = scipy.cluster.hierarchy.ward(X)
+    cutree = cut_tree(Z)
+
+    assert_equal(cutree[:, 0], np.arange(nobs))
+    assert_equal(cutree[:, -1], np.zeros(nobs))
+    assert_equal(cutree.max(0), np.arange(nobs - 1, -1, -1))
+
+    assert_equal(cutree[:, [-5]], cut_tree(Z, n_clusters=5))
+    assert_equal(cutree[:, [-5, -10]], cut_tree(Z, n_clusters=[5, 10]))
+    assert_equal(cutree[:, [-10, -5]], cut_tree(Z, n_clusters=[10, 5]))
+
+    nodes = _order_cluster_tree(Z)
+    heights = np.array([node.dist for node in nodes])
+
+    assert_equal(cutree[:, np.searchsorted(heights, [5])],
+                 cut_tree(Z, height=5))
+    assert_equal(cutree[:, np.searchsorted(heights, [5, 10])],
+                 cut_tree(Z, height=[5, 10]))
+    assert_equal(cutree[:, np.searchsorted(heights, [10, 5])],
+                 cut_tree(Z, height=[10, 5]))
 
 
 if __name__ == "__main__":

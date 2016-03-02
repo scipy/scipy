@@ -102,6 +102,9 @@ double a, x;
 
     if ((x < 1.0) || (x < a))
 	return (1.0 - igam(a, x));
+    
+    if (cephes_isinf(x))
+    return 0.0;
 
     ax = a * log(x) - x - lgam(a);
     if (ax < -MAXLOG) {

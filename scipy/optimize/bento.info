@@ -1,5 +1,8 @@
 HookFile: bscript
 
+Recurse:
+    _lsq
+
 Library:
     CompiledLibrary: minpack
         Sources:
@@ -41,3 +44,6 @@ Library:
         Sources:
             slsqp/slsqp_optmz.f,
             slsqp/slsqp.pyf
+    Extension: _group_columns
+        Sources:
+            _group_columns.c

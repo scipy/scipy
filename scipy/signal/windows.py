@@ -4,8 +4,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from scipy import special, linalg
-from scipy.fftpack import fft
+from scipy import fftpack, linalg, special
 from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
@@ -1324,13 +1323,13 @@ def chebwin(M, at, sym=True):
     # Appropriate IDFT and filling up
     # depending on even/odd M
     if M % 2:
-        w = np.real(fft(p))
+        w = np.real(fftpack.fft(p))
         n = (M + 1) // 2
         w = w[:n]
         w = np.concatenate((w[n - 1:0:-1], w))
     else:
         p = p * np.exp(1.j * np.pi / M * np.r_[0:M])
-        w = np.real(fft(p))
+        w = np.real(fftpack.fft(p))
         n = M // 2 + 1
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
     w = w / max(w)
@@ -1619,8 +1618,10 @@ def get_window(window, Nx, fftbins=True):
     Nx : int
         The number of samples in the window.
     fftbins : bool, optional
-        If True, create a "periodic" window ready to use with `ifftshift`
-        and be multiplied by the result of an fft (SEE ALSO `fftfreq`).
+        If True (default), create a "periodic" window, ready to use with
+        `ifftshift` and be multiplied by the result of an FFT (see also
+        `fftpack.fftfreq`).
+        If False, create a "symmetric" window, for use in filter design.
 
     Returns
     -------
@@ -1631,11 +1632,12 @@ def get_window(window, Nx, fftbins=True):
     -----
     Window types:
 
-        boxcar, triang, blackman, hamming, hann, bartlett, flattop, parzen,
-        bohman, blackmanharris, nuttall, barthann, kaiser (needs beta),
-        gaussian (needs std), general_gaussian (needs power, width),
-        slepian (needs width), chebwin (needs attenuation)
-        exponential (needs decay scale), tukey (needs taper fraction)
+        `boxcar`, `triang`, `blackman`, `hamming`, `hann`, `bartlett`,
+        `flattop`, `parzen`, `bohman`, `blackmanharris`, `nuttall`,
+        `barthann`, `kaiser` (needs beta), `gaussian` (needs standard
+        deviation), `general_gaussian` (needs power, width), `slepian`
+        (needs width), `chebwin` (needs attenuation), `exponential`
+        (needs decay scale), `tukey` (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
 
@@ -1644,7 +1646,7 @@ def get_window(window, Nx, fftbins=True):
     arguments the needed parameters.
 
     If `window` is a floating point number, it is interpreted as the beta
-    parameter of the kaiser window.
+    parameter of the `kaiser` window.
 
     Each of the window types listed above is also the name of
     a function that can be called directly to create a window of

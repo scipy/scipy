@@ -9,6 +9,16 @@ scipy/io/matlab/tests/data/japanese_utf8.txt binary
 scipy/special/_ufuncs_cxx.pyx binary
 scipy/special/_ufuncs_cxx.pxd binary
 scipy/special/_ufuncs.pyx binary
+scipy/linalg/_blas_subroutine_wrappers.f binary
+scipy/linalg/_blas_subroutines.h binary
+scipy/linalg/_lapack_subroutine_wrappers.f binary
+scipy/linalg/_lapack_subroutines.h binary
+scipy/linalg/cython_blas.pxd binary
+scipy/linalg/cython_blas.pyx binary
+scipy/linalg/cython_blas_signatures.txt binary
+scipy/linalg/cython_lapack.pxd binary
+scipy/linalg/cython_lapack.pyx binary
+scipy/linalg/cython_lapack_signatures.txt binary
 
 # SWIG-generated files
 scipy/sparse/sparsetools/bsr.py binary

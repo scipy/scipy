@@ -136,15 +136,19 @@ The following example demonstrates this computation in SciPy
 
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> A = np.array([[1,2],[3,4]])
-    array([[1, 2],
-          [3, 4]])
+    >>> A = np.array([[1,3,5],[2,5,1],[2,3,8]])
+    >>> A
+    array([[1, 3, 5],
+          [2, 5, 1],
+          [2, 3, 8]])
     >>> linalg.inv(A)
-    array([[-2. ,  1. ],
-          [ 1.5, -0.5]])
+    array([[-1.48,  0.36,  0.88],
+          [ 0.56,  0.08, -0.36],
+          [ 0.16, -0.12,  0.04]])
     >>> A.dot(linalg.inv(A)) #double check
-    array([[  1.00000000e+00,   0.00000000e+00],
-          [  4.44089210e-16,   1.00000000e+00]])
+    array([[  1.00000000e+00,  -1.11022302e-16,  -5.55111512e-17],
+          [  3.05311332e-16,   1.00000000e+00,   1.87350135e-16],
+          [  2.22044605e-16,  -1.11022302e-16,   1.00000000e+00]])
 
 Solving linear system
 ^^^^^^^^^^^^^^^^^^^^^
@@ -176,24 +180,24 @@ same answer as shown in the following example:
 
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> A = np.array([[1,2],[3,4]])
+    >>> A = np.array([[1, 2], [3, 4]])
     >>> A
     array([[1, 2],
           [3, 4]])
-    >>> b = np.array([[5],[6]])
+    >>> b = np.array([[5], [6]])
     >>> b
     array([[5],
           [6]])
-    >>> linalg.inv(A).dot(b) #slow
-    array([[-4. ],
-          [ 4.5]]
-    >>> A.dot(linalg.inv(A).dot(b))-b #check
-    array([[  8.88178420e-16],
-          [  2.66453526e-15]])
-    >>> np.linalg.solve(A,b) #fast
+    >>> linalg.inv(A).dot(b)  # slow
     array([[-4. ],
           [ 4.5]])
-    >>> A.dot(np.linalg.solve(A,b))-b #check
+    >>> A.dot(linalg.inv(A).dot(b)) - b  # check
+    array([[  8.88178420e-16],
+          [  2.66453526e-15]])
+    >>> np.linalg.solve(A, b)  # fast
+    array([[-4. ],
+          [ 4.5]])
+    >>> A.dot(np.linalg.solve(A, b)) - b  # check
     array([[ 0.],
           [ 0.]])
 
@@ -283,7 +287,7 @@ Examples:
     6
     >>> linalg.norm(A,-1)
     4
-    >>> linalg.norm(A,inf) # L inf norm (max row sum)
+    >>> linalg.norm(A,np.inf) # L inf norm (max row sum)
     7
 
 
@@ -518,19 +522,19 @@ eigenvalues can then be found.
 
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> A = np.array([[1,2],[3,4]])
-    >>> la,v = linalg.eig(A)
-    >>> l1,l2 = la
-    >>> print l1, l2  #eigenvalues
+    >>> A = np.array([[1, 2], [3, 4]])
+    >>> la, v = linalg.eig(A)
+    >>> l1, l2 = la
+    >>> print l1, l2   # eigenvalues
     (-0.372281323269+0j) (5.37228132327+0j)
-    >>> print v[:,0]  #first eigenvector
+    >>> print v[:, 0]   # first eigenvector
     [-0.82456484  0.56576746]
-    >>> print v[:,1]  #second eigenvector
+    >>> print v[:, 1]   # second eigenvector
     [-0.41597356 -0.90937671]
-    >>> print np.sum(abs(v**2),axis=0) #eigenvectors are unitary
-    [ 1.  1. ]
-    >>> v1 = np.array(v[:,0]).T
-    >>> print linalg.norm(A.dot(v1)-l1*v1) #check the computation
+    >>> print np.sum(abs(v**2), axis=0)  # eigenvectors are unitary
+    [ 1.  1.]
+    >>> v1 = np.array(v[:, 0]).T
+    >>> print linalg.norm(A.dot(v1) - l1*v1)  # check the computation
     3.23682852457e-16
 
 
@@ -718,42 +722,42 @@ functions of matrices.
 The following example illustrates the schur decomposition:
 
     >>> from scipy import linalg
-    >>> A = mat('[1 3 2; 1 4 5; 2 3 6]')
-    >>> T,Z = linalg.schur(A)
-    >>> T1,Z1 = linalg.schur(A,'complex')
-    >>> T2,Z2 = linalg.rsf2csf(T,Z)
-    >>> print T
-    [[ 9.90012467  1.78947961 -0.65498528]
-     [ 0.          0.54993766 -1.57754789]
-     [ 0.          0.51260928  0.54993766]]
-    >>> print T2
-    [[ 9.90012467 +0.00000000e+00j -0.32436598 +1.55463542e+00j
-      -0.88619748 +5.69027615e-01j]
-     [ 0.00000000 +0.00000000e+00j  0.54993766 +8.99258408e-01j
-       1.06493862 +1.37016050e-17j]
-     [ 0.00000000 +0.00000000e+00j  0.00000000 +0.00000000e+00j
-       0.54993766 -8.99258408e-01j]]
-    >>> print abs(T1-T2) # different
-    [[  1.24357637e-14   2.09205364e+00   6.56028192e-01]
-     [  0.00000000e+00   4.00296604e-16   1.83223097e+00]
-     [  0.00000000e+00   0.00000000e+00   4.57756680e-16]]
-    >>> print abs(Z1-Z2) # different
-    [[ 0.06833781  1.10591375  0.23662249]
-     [ 0.11857169  0.5585604   0.29617525]
-     [ 0.12624999  0.75656818  0.22975038]]
-    >>> T,Z,T1,Z1,T2,Z2 = map(mat,(T,Z,T1,Z1,T2,Z2))
-    >>> print abs(A-Z*T*Z.H) # same
-    [[  1.11022302e-16   4.44089210e-16   4.44089210e-16]
-     [  4.44089210e-16   1.33226763e-15   8.88178420e-16]
-     [  8.88178420e-16   4.44089210e-16   2.66453526e-15]]
-    >>> print abs(A-Z1*T1*Z1.H) # same
-    [[  1.00043248e-15   2.22301403e-15   5.55749485e-15]
-     [  2.88899660e-15   8.44927041e-15   9.77322008e-15]
-     [  3.11291538e-15   1.15463228e-14   1.15464861e-14]]
-    >>> print abs(A-Z2*T2*Z2.H) # same
-    [[  3.34058710e-16   8.88611201e-16   4.18773089e-18]
-     [  1.48694940e-16   8.95109973e-16   8.92966151e-16]
-     [  1.33228956e-15   1.33582317e-15   3.55373104e-15]]
+    >>> A = np.mat('[1 3 2; 1 4 5; 2 3 6]')
+    >>> T, Z = linalg.schur(A)
+    >>> T1, Z1 = linalg.schur(A, 'complex')
+    >>> T2, Z2 = linalg.rsf2csf(T, Z)
+    >>> T
+    array([[ 9.90012467,  1.78947961, -0.65498528],
+           [ 0.        ,  0.54993766, -1.57754789],
+           [ 0.        ,  0.51260928,  0.54993766]])
+    >>> T2
+    array([[ 9.90012467 +0.00000000e+00j, -0.32436598 +1.55463542e+00j,
+            -0.88619748 +5.69027615e-01j],
+           [ 0.00000000 +0.00000000e+00j,  0.54993766 +8.99258408e-01j,
+             1.06493862 -5.80496735e-16j],
+           [ 0.00000000 +0.00000000e+00j,  0.00000000 +0.00000000e+00j,
+             0.54993766 -8.99258408e-01j]])
+    >>> abs(T1 - T2) # different
+    array([[  1.06604538e-14,   2.06969555e+00,   1.69375747e+00],  # may vary
+           [  0.00000000e+00,   1.33688556e-15,   4.74146496e-01],
+           [  0.00000000e+00,   0.00000000e+00,   1.13220977e-15]])
+    >>> abs(Z1 - Z2) # different
+    array([[ 0.06833781,  0.88091091,  0.79568503],    # may vary
+           [ 0.11857169,  0.44491892,  0.99594171],
+           [ 0.12624999,  0.60264117,  0.77257633]])
+    >>> T, Z, T1, Z1, T2, Z2 = map(np.mat,(T,Z,T1,Z1,T2,Z2))
+    >>> abs(A - Z*T*Z.H)  # same
+    matrix([[  5.55111512e-16,   1.77635684e-15,   2.22044605e-15],
+            [  0.00000000e+00,   3.99680289e-15,   8.88178420e-16],
+            [  1.11022302e-15,   4.44089210e-16,   3.55271368e-15]])
+    >>> abs(A - Z1*T1*Z1.H)  # same
+    matrix([[  4.26993904e-15,   6.21793362e-15,   8.00007092e-15],
+            [  5.77945386e-15,   6.21798014e-15,   1.06653681e-14],
+            [  7.16681444e-15,   8.90271058e-15,   1.77635764e-14]])
+    >>> abs(A - Z2*T2*Z2.H)  # same
+    matrix([[  6.02594127e-16,   1.77648931e-15,   2.22506907e-15],
+            [  2.46275555e-16,   3.99684548e-15,   8.91642616e-16],
+            [  8.88225111e-16,   8.88312432e-16,   4.44104848e-15]])
 
 
 Interpolative Decomposition
@@ -897,29 +901,30 @@ Finally, any arbitrary function that takes one complex number and
 returns a complex number can be called as a matrix function using the
 command :obj:`linalg.funm`. This command takes the matrix and an
 arbitrary Python function. It then implements an algorithm from Golub
-and Van Loan's book "Matrix Computations "to compute function applied
+and Van Loan's book "Matrix Computations" to compute function applied
 to the matrix using a Schur decomposition.  Note that *the function
 needs to accept complex numbers* as input in order to work with this
 algorithm. For example the following code computes the zeroth-order
 Bessel function applied to a matrix.
 
     >>> from scipy import special, random, linalg
-    >>> A = random.rand(3,3)
-    >>> B = linalg.funm(A,lambda x: special.jv(0,x))
-    >>> print A
-    [[ 0.72578091  0.34105276  0.79570345]
-     [ 0.65767207  0.73855618  0.541453  ]
-     [ 0.78397086  0.68043507  0.4837898 ]]
-    >>> print B
-    [[ 0.72599893 -0.20545711 -0.22721101]
-     [-0.27426769  0.77255139 -0.23422637]
-     [-0.27612103 -0.21754832  0.7556849 ]]
-    >>> print linalg.eigvals(A)
-    [ 1.91262611+0.j  0.21846476+0.j -0.18296399+0.j]
-    >>> print special.jv(0, linalg.eigvals(A))
-    [ 0.27448286+0.j  0.98810383+0.j  0.99164854+0.j]
-    >>> print linalg.eigvals(B)
-    [ 0.27448286+0.j  0.98810383+0.j  0.99164854+0.j]
+    >>> np.random.seed(1234)
+    >>> A = random.rand(3, 3)
+    >>> B = linalg.funm(A, lambda x: special.jv(0, x))
+    >>> A
+    array([[ 0.19151945,  0.62210877,  0.43772774],
+           [ 0.78535858,  0.77997581,  0.27259261],
+           [ 0.27646426,  0.80187218,  0.95813935]])
+    >>> B
+    array([[ 0.86511146, -0.19676526, -0.13856748],
+           [-0.17479869,  0.7259118 , -0.16606258],
+           [-0.19212044, -0.32052767,  0.73590704]])
+    >>> linalg.eigvals(A)
+    array([ 1.73881510+0.j, -0.20270676+0.j,  0.39352627+0.j])
+    >>> special.jv(0, linalg.eigvals(A))
+    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])
+    >>> linalg.eigvals(B)
+    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])
 
 Note how, by virtue of how matrix analytic functions are defined,
 the Bessel function has acted on the matrix eigenvalues.

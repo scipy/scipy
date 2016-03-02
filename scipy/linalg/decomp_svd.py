@@ -6,7 +6,7 @@ from numpy import zeros, r_, diag
 
 # Local imports.
 from .misc import LinAlgError, _datacopied
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
@@ -94,10 +94,8 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     gesdd, gesdd_lwork = get_lapack_funcs(('gesdd', 'gesdd_lwork'), (a1,))
 
     # compute optimal lwork
-    lwork, info = gesdd_lwork(a1.shape[0], a1.shape[1], compute_uv=compute_uv, full_matrices=full_matrices)
-    if info != 0:
-        raise ValueError('work array size computation for internal gesdd failed: %d' % info)
-    lwork = int(lwork.real)
+    lwork = _compute_lwork(gesdd_lwork, a1.shape[0], a1.shape[1],
+                           compute_uv=compute_uv, full_matrices=full_matrices)
 
     # perform decomposition
     u,s,v,info = gesdd(a1, compute_uv=compute_uv, lwork=lwork,

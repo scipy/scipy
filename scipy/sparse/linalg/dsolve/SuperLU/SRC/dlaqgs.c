@@ -103,7 +103,7 @@ dlaqgs(SuperMatrix *A, double *r, double *c,
     Aval = Astore->nzval;
     
     /* Initialize LARGE and SMALL. */
-    small = dlamch_("Safe minimum") / dlamch_("Precision");
+    small = dmach("Safe minimum") / dmach("Precision");
     large = 1. / small;
 
     if (rowcnd >= THRESH && amax >= small && amax <= large) {

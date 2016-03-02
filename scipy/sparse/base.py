@@ -67,11 +67,10 @@ class spmatrix(object):
     ndim = 2
 
     def __init__(self, maxprint=MAXPRINT):
-        self.format = self.__class__.__name__[:3]
         self._shape = None
-        if self.format == 'spm':
+        if self.__class__.__name__ == 'spmatrix':
             raise ValueError("This class is not intended"
-                            " to be instantiated directly.")
+                             " to be instantiated directly.")
         self.maxprint = maxprint
 
     def set_shape(self,shape):
@@ -101,8 +100,9 @@ class spmatrix(object):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-    def reshape(self,shape):
-        raise NotImplementedError
+    def reshape(self, shape):
+        raise NotImplementedError("Reshaping not implemented for %s." %
+                                  self.__class__.__name__)
 
     def astype(self, t):
         return self.tocsr().astype(t).asformat(self.format)
@@ -127,51 +127,66 @@ class spmatrix(object):
             yield self[r,:]
 
     def getmaxprint(self):
-        try:
-            maxprint = self.maxprint
-        except AttributeError:
-            maxprint = MAXPRINT
-        return maxprint
+        return self.maxprint
 
-    # def typecode(self):
-    #    try:
-    #        typ = self.dtype.char
-    #    except AttributeError:
-    #        typ = None
-    #    return typ
+    def count_nonzero(self):
+        """Number of non-zero entries, equivalent to
 
-    def getnnz(self):
-        try:
-            return self.nnz
-        except AttributeError:
-            raise AttributeError("nnz not defined")
+        np.count_nonzero(a.toarray())
+
+        Unlike getnnz() and the nnz property, which return the number of stored
+        entries (the length of the data attribute), this method counts the
+        actual number of non-zero entries in data.
+        """
+        raise NotImplementedError("count_nonzero not implemented for %s." %
+                                  self.__class__.__name__)
+
+    def getnnz(self, axis=None):
+        """Number of stored values, including explicit zeros.
+
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole matrix, in
+            each column, or in each row.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero entries
+        """
+        raise NotImplementedError("getnnz not implemented for %s." %
+                                  self.__class__.__name__)
+
+    @property
+    def nnz(self):
+        """Number of stored values, including explicit zeros.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero entries
+        """
+        return self.getnnz()
 
     def getformat(self):
-        try:
-            format = self.format
-        except AttributeError:
-            format = 'und'
-        return format
+        return getattr(self, 'format', 'und')
 
     def __repr__(self):
-        nnz = self.getnnz()
-        format = self.getformat()
+        _, format_name = _formats[self.getformat()]
         return "<%dx%d sparse matrix of type '%s'\n" \
                "\twith %d stored elements in %s format>" % \
-               (self.shape + (self.dtype.type, nnz, _formats[format][1]))
+               (self.shape + (self.dtype.type, self.nnz, format_name))
 
     def __str__(self):
         maxprint = self.getmaxprint()
 
         A = self.tocoo()
-        nnz = self.getnnz()
 
         # helper function, outputs "(i,j)  v"
         def tostr(row,col,data):
             triples = zip(list(zip(row,col)),data)
             return '\n'.join([('  %s\t%s' % t) for t in triples])
 
-        if nnz > maxprint:
+        if self.nnz > maxprint:
             half = maxprint // 2
             out = tostr(A.row[:half], A.col[:half], A.data[:half])
             out += "\n  :\t:\n"
@@ -184,7 +199,7 @@ class spmatrix(object):
 
     def __bool__(self):  # Simple -- other ideas?
         if self.shape == (1, 1):
-            return True if self.nnz == 1 else False
+            return self.nnz != 0
         else:
             raise ValueError("The truth value of an array with more than one "
                              "element is ambiguous. Use a.any() or a.all().")
@@ -194,9 +209,8 @@ class spmatrix(object):
     # perhaps it should be the number of rows?  But for some uses the number of
     # non-zeros is more important.  For now, raise an exception!
     def __len__(self):
-        # return self.getnnz()
         raise TypeError("sparse matrix length is ambiguous; use getnnz()"
-                         " or shape[0]")
+                        " or shape[0]")
 
     def asformat(self, format):
         """Return this matrix in a given sparse format
@@ -386,6 +400,22 @@ class spmatrix(object):
                 tr = np.asarray(other).transpose()
             return (self.transpose() * tr).transpose()
 
+    #####################################
+    # matmul (@) operator (Python 3.5+) #
+    #####################################
+
+    def __matmul__(self, other):
+        if isscalarlike(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__mul__(other)
+
+    def __rmatmul__(self, other):
+        if isscalarlike(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__rmul__(other)
+
     ####################
     # Other Arithmetic #
     ####################
@@ -489,7 +519,7 @@ class spmatrix(object):
         elif isscalarlike(other):
             raise ValueError('exponent must be an integer')
         else:
-            raise NotImplementedError
+            return NotImplemented
 
     def __getattr__(self, attr):
         if attr == 'A':

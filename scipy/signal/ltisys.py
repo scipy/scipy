@@ -22,8 +22,8 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 
-#np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
-#use scipy's qr until this is solved
+# np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
+# use scipy's qr until this is solved
 
 from scipy.linalg import qr as s_qr
 
@@ -47,13 +47,14 @@ __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
 
 
 def tf2ss(num, den):
-    """Transfer function to state-space representation.
+    r"""Transfer function to state-space representation.
 
     Parameters
     ----------
     num, den : array_like
-        Sequences representing the numerator and denominator polynomials.
-        The denominator needs to be at least as long as the numerator.
+        Sequences representing the coefficients of the numerator and
+        denominator polynomials, in order of descending degree. The
+        denominator needs to be at least as long as the numerator.
 
     Returns
     -------
@@ -61,6 +62,38 @@ def tf2ss(num, den):
         State space representation of the system, in controller canonical
         form.
 
+    Examples
+    --------
+    Convert the transfer function:
+
+    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+
+    >>> num = [1, 3, 3]
+    >>> den = [1, 2, 1]
+
+    to the state-space representation:
+
+    .. math::
+
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} -2 & -1 \\ 1 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 1 \\ 0 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 1 & 2 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 1 \end{bmatrix} \textbf{u}(t)
+
+    >>> from scipy.signal import tf2ss
+    >>> A, B, C, D = tf2ss(num, den)
+    >>> A
+    array([[-2., -1.],
+           [ 1.,  0.]])
+    >>> B
+    array([[ 1.],
+           [ 0.]])
+    >>> C
+    array([[ 1.,  2.]])
+    >>> D
+    array([ 1.])
     """
     # Controller canonical state-space representation.
     #  if M+1 = len(num) and K+1 = len(den) then we must have M <= K
@@ -88,10 +121,14 @@ def tf2ss(num, den):
     if num.shape[-1] > 0:
         D = num[:, 0]
     else:
-        D = array([], float)
+        # We don't assign it an empty array because this system
+        # is not 'null'. It just doesn't have a non-zero D
+        # matrix. Thus, it should have a non-zero shape so that
+        # it can be operated on by functions like 'ss2tf'
+        D = array([0], float)
 
     if K == 1:
-        return array([], float), array([], float), array([], float), D
+        return array([0], float), array([0], float), array([0], float), D
 
     frow = -array([den[1:]])
     A = r_[frow, eye(K - 2, K - 1)]
@@ -146,6 +183,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     ----------
     A, B, C, D : array_like, optional
         State-space matrices. All of them are None (missing) by default.
+        See `ss2tf` for format.
 
     Returns
     -------
@@ -181,14 +219,23 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
 
 
 def ss2tf(A, B, C, D, input=0):
-    """State-space to transfer function.
+    r"""State-space to transfer function.
+
+    A, B, C, D defines a linear state-space system with `p` inputs,
+    `q` outputs, and `n` state variables.
 
     Parameters
     ----------
-    A, B, C, D : ndarray
-        State-space representation of linear system.
+    A : array_like
+        State (or system) matrix of shape ``(n, n)``
+    B : array_like
+        Input matrix of shape ``(n, p)``
+    C : array_like
+        Output matrix of shape ``(q, n)``
+    D : array_like
+        Feedthrough (or feedforward) matrix of shape ``(q, p)``
     input : int, optional
-        For multiple-input systems, the input to use.
+        For multiple-input systems, the index of the input to use.
 
     Returns
     -------
@@ -200,9 +247,34 @@ def ss2tf(A, B, C, D, input=0):
         Denominator of the resulting transfer function(s).  `den` is a sequence
         representation of the denominator polynomial.
 
+    Examples
+    --------
+    Convert the state-space representation:
+
+    .. math::
+
+        \dot{\textbf{x}}(t) =
+        \begin{bmatrix} -2 & -1 \\ 1 & 0 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 1 \\ 0 \end{bmatrix} \textbf{u}(t) \\
+
+        \textbf{y}(t) = \begin{bmatrix} 1 & 2 \end{bmatrix} \textbf{x}(t) +
+        \begin{bmatrix} 1 \end{bmatrix} \textbf{u}(t)
+
+    >>> A = [[-2, -1], [1, 0]]
+    >>> B = [[1], [0]]  # 2-dimensional column vector
+    >>> C = [[1, 2]]    # 2-dimensional row vector
+    >>> D = 1
+
+    to the transfer function:
+
+    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+
+    >>> from scipy.signal import ss2tf
+    >>> ss2tf(A, B, C, D)
+    (array([[1, 3, 3]]), array([ 1.,  2.,  1.]))
     """
     # transfer function is C (sI - A)**(-1) B + D
-    A, B, C, D = map(asarray, (A, B, C, D))
+
     # Check consistency and make them all rank-2 arrays
     A, B, C, D = abcd_normalize(A, B, C, D)
 
@@ -210,7 +282,7 @@ def ss2tf(A, B, C, D, input=0):
     if input >= nin:
         raise ValueError("System does not have the input specified.")
 
-    # make MOSI from possibly MOMI system.
+    # make SIMO from possibly MIMO system.
     B = B[:, input:input + 1]
     D = D[:, input:input + 1]
 
@@ -258,12 +330,21 @@ def zpk2ss(z, p, k):
 def ss2zpk(A, B, C, D, input=0):
     """State-space representation to zero-pole-gain representation.
 
+    A, B, C, D defines a linear state-space system with `p` inputs,
+    `q` outputs, and `n` state variables.
+
     Parameters
     ----------
-    A, B, C, D : ndarray
-        State-space representation of linear system.
+    A : array_like
+        State (or system) matrix of shape ``(n, n)``
+    B : array_like
+        Input matrix of shape ``(n, p)``
+    C : array_like
+        Output matrix of shape ``(q, n)``
+    D : array_like
+        Feedthrough (or feedforward) matrix of shape ``(q, p)``
     input : int, optional
-        For multiple-input systems, the input to use.
+        For multiple-input systems, the index of the input to use.
 
     Returns
     -------
@@ -298,6 +379,10 @@ class lti(object):
     `lti` instances do not exist directly. Instead, `lti` creates an instance
     of one of its subclasses: `StateSpace`, `TransferFunction` or
     `ZerosPolesGain`.
+
+    If (numerator, denominator) is passed in for ``*system``, coefficients for
+    both the numerator and denominator should be specified in descending
+    exponent order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
     Changing the value of properties that are not directly part of the current
     system representation (such as the `zeros` of a `StateSpace` system) is
@@ -390,7 +475,7 @@ class lti(object):
 
     @property
     def A(self):
-        """A matrix of the `StateSpace` system."""
+        """State matrix of the `StateSpace` system."""
         return self.to_ss().A
 
     @A.setter
@@ -402,7 +487,7 @@ class lti(object):
 
     @property
     def B(self):
-        """B matrix of the `StateSpace` system."""
+        """Input matrix of the `StateSpace` system."""
         return self.to_ss().B
 
     @B.setter
@@ -414,7 +499,7 @@ class lti(object):
 
     @property
     def C(self):
-        """C matrix of the `StateSpace` system."""
+        """Output matrix of the `StateSpace` system."""
         return self.to_ss().C
 
     @C.setter
@@ -426,7 +511,7 @@ class lti(object):
 
     @property
     def D(self):
-        """D matrix of the `StateSpace` system."""
+        """Feedthrough matrix of the `StateSpace` system."""
         return self.to_ss().D
 
     @D.setter
@@ -499,12 +584,12 @@ class lti(object):
 
 
 class TransferFunction(lti):
-    """Linear Time Invariant system class in transfer function form.
+    r"""Linear Time Invariant system class in transfer function form.
 
     Represents the system as the transfer function
-    :math:`H(s)=\sum_i b[i] s^i / \sum_j a[j] s^i`, where :math:`a` are
-    elements of the numerator `num` and :math:`b` are the elements of the
-    denominator `den`.
+    :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j`, where :math:`b` are
+    elements of the numerator `num`, :math:`a` are elements of the denominator
+    `den`, and ``N == len(b) - 1``, ``M == len(a) - 1``.
 
     Parameters
     ----------
@@ -517,12 +602,36 @@ class TransferFunction(lti):
               `ZerosPolesGain`)
             * 2: array_like: (numerator, denominator)
 
+    See Also
+    --------
+    ZerosPolesGain, StateSpace, lti
+    tf2ss, tf2zpk, tf2sos
+
     Notes
     -----
     Changing the value of properties that are not part of the
     `TransferFunction` system representation (such as the `A`, `B`, `C`, `D`
     state-space matrices) is very inefficient and may lead to numerical
     inaccuracies.
+
+    If (numerator, denominator) is passed in for ``*system``, coefficients
+    for both the numerator and denominator should be specified in descending
+    exponent order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
+
+    Examples
+    --------
+    Construct the transfer function:
+
+    .. math:: H(s) = \frac{s^2 + 3s + 3}{s^2 + 2s + 1}
+
+    >>> from scipy import signal
+    >>> num = [1, 3, 3]
+    >>> den = [1, 2, 1]
+    >>> signal.TransferFunction(num, den)
+    TransferFunction(
+    array([ 1.,  3.,  3.]),
+    array([ 1.,  2.,  1.])
+    )
 
     """
     def __new__(cls, *system):
@@ -556,6 +665,7 @@ class TransferFunction(lti):
 
     @property
     def num(self):
+        """Numerator of the `TransferFunction` system."""
         return self._num
 
     @num.setter
@@ -571,6 +681,7 @@ class TransferFunction(lti):
 
     @property
     def den(self):
+        """Denominator of the `TransferFunction` system."""
         return self._den
 
     @den.setter
@@ -646,6 +757,11 @@ class ZerosPolesGain(lti):
               `ZerosPolesGain`)
             * 3: array_like: (zeros, poles, gain)
 
+    See Also
+    --------
+    TransferFunction, StateSpace, lti
+    zpk2ss, zpk2tf, zpk2sos
+
     Notes
     -----
     Changing the value of properties that are not part of the
@@ -687,6 +803,7 @@ class ZerosPolesGain(lti):
 
     @property
     def zeros(self):
+        """Zeros of the `ZerosPolesGain` system."""
         return self._zeros
 
     @zeros.setter
@@ -702,6 +819,7 @@ class ZerosPolesGain(lti):
 
     @property
     def poles(self):
+        """Poles of the `ZerosPolesGain` system."""
         return self._poles
 
     @poles.setter
@@ -710,6 +828,7 @@ class ZerosPolesGain(lti):
 
     @property
     def gain(self):
+        """Gain of the `ZerosPolesGain` system."""
         return self._gain
 
     @gain.setter
@@ -785,6 +904,11 @@ class StateSpace(lti):
               `ZerosPolesGain`)
             * 4: array_like: (A, B, C, D)
 
+    See Also
+    --------
+    TransferFunction, ZerosPolesGain, lti
+    ss2zpk, ss2tf, zpk2sos
+
     Notes
     -----
     Changing the value of properties that are not part of the
@@ -827,6 +951,7 @@ class StateSpace(lti):
 
     @property
     def A(self):
+        """State matrix of the `StateSpace` system."""
         return self._A
 
     @A.setter
@@ -835,6 +960,7 @@ class StateSpace(lti):
 
     @property
     def B(self):
+        """Input matrix of the `StateSpace` system."""
         return self._B
 
     @B.setter
@@ -844,6 +970,7 @@ class StateSpace(lti):
 
     @property
     def C(self):
+        """Output matrix of the `StateSpace` system."""
         return self._C
 
     @C.setter
@@ -853,6 +980,7 @@ class StateSpace(lti):
 
     @property
     def D(self):
+        """Feedthrough matrix of the `StateSpace` system."""
         return self._D
 
     @D.setter
@@ -971,6 +1099,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     given to `lsim2` are passed on to `odeint`.  See the documentation
     for `scipy.integrate.odeint` for the full list of arguments.
 
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
+
     """
     if isinstance(system, lti):
         sys = system.to_ss()
@@ -1077,6 +1209,12 @@ def lsim(system, U, T, X0=None, interp=True):
     xout : ndarray
         Time evolution of the state vector.
 
+    Notes
+    -----
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
+
     Examples
     --------
     Simulate a double integrator y'' = u, with a constant input u = 1
@@ -1114,9 +1252,9 @@ def lsim(system, U, T, X0=None, interp=True):
     else:
         raise ValueError("Initial time must be nonnegative")
 
-    no_input = (U is None
-                or (isinstance(U, (int, float)) and U == 0.)
-                or not np.any(U))
+    no_input = (U is None or
+                (isinstance(U, (int, float)) and U == 0.) or
+                not np.any(U))
 
     if n_steps == 1:
         yout = squeeze(dot(xout, transpose(C)))
@@ -1204,7 +1342,7 @@ def _default_response_times(A, n):
 
     Parameters
     ----------
-    A : ndarray
+    A : array_like
         The system matrix, which is square.
     n : int
         The number of time samples to generate.
@@ -1255,6 +1393,12 @@ def impulse(system, X0=None, T=None, N=None):
     yout : ndarray
         A 1-D array containing the impulse response of the system (except for
         singularities at zero).
+
+    Notes
+    -----
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
     """
     if isinstance(system, lti):
@@ -1321,6 +1465,10 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     -----
     The solution is generated by calling `scipy.signal.lsim2`, which uses
     the differential equation solver `scipy.integrate.odeint`.
+
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
     .. versionadded:: 0.8.0
 
@@ -1389,6 +1537,12 @@ def step(system, X0=None, T=None, N=None):
     --------
     scipy.signal.step2
 
+    Notes
+    -----
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
+
     """
     if isinstance(system, lti):
         sys = system.to_ss()
@@ -1448,6 +1602,10 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
     Notes
     -----
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
+
     .. versionadded:: 0.8.0
     """
     if isinstance(system, lti):
@@ -1499,6 +1657,9 @@ def bode(system, w=None, n=100):
 
     Notes
     -----
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
     .. versionadded:: 0.11.0
 
@@ -1540,7 +1701,7 @@ def freqresp(system, w=None, n=10000):
 
     w : array_like, optional
         Array of frequencies (in rad/s). Magnitude and phase data is
-        calculated for every value in this array. If not given a reasonable
+        calculated for every value in this array. If not given, a reasonable
         set will be calculated.
     n : int, optional
         Number of frequency points to compute if `w` is not given. The `n`
@@ -1553,6 +1714,12 @@ def freqresp(system, w=None, n=10000):
         Frequency array [rad/s]
     H : 1D ndarray
         Array of complex magnitude values
+
+    Notes
+    -----
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
     Examples
     --------
@@ -2029,18 +2196,19 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             requested_poles : 1-D ndarray
                 The poles the algorithm was asked to place sorted as above,
                 they may differ from what was achieved.
-            X : 2D ndarray
+            X : 2-D ndarray
                 The transfer matrix such as ``X * diag(poles) = (A - B*K)*X``
                 (see Notes)
             rtol : float
                 The relative tolerance achieved on ``det(X)`` (see Notes).
-                `rtol` will be NaN if the optimisation algorithms can not run,
-                i.e when ``B.shape[1] == 1``, or 0 when the solution is unique.
+                `rtol` will be NaN if it is possible to solve the system
+                ``diag(poles) = (A - B*K)``, or 0 when the optimization
+                algorithms can't do anything i.e when ``B.shape[1] == 1``.
             nb_iter : int
                 The number of iterations performed before converging.
-                `nb_iter` will be NaN if the optimisation algorithms can
-                not run, i.e when ``B.shape[1] == 1``, or 0 when the solution
-                is unique.
+                `nb_iter` will be NaN if it is possible to solve the system
+                ``diag(poles) = (A - B*K)``, or 0 when the optimization
+                algorithms can't do anything i.e when ``B.shape[1] == 1``.
 
     Notes
     -----
@@ -2164,9 +2332,9 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     update_loop, poles = _valid_inputs(A, B, poles, method, rtol, maxiter)
 
     # The current value of the relative tolerance we achieved
-    cur_rtol = np.nan
+    cur_rtol = 0
     # The number of iterations needed before converging
-    nb_iter = np.nan
+    nb_iter = 0
 
     # Step A: QR decomposition of B page 1132 KN
     # to debug with numpy qr uncomment the line below
@@ -2177,13 +2345,17 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     u1 = u[:, rankB:]
     z = z[:rankB, :]
 
-    # If the solution is unique
+    # If we can use the identity matrix as X the solution is obvious
     if B.shape[0] == rankB:
         # if B is square and full rank there is only one solution
-        # such as (A+BK)=diag(P) i.e BK=diag(P)-A
-        # if B has as many lines as its rank (but not square) the solution
-        # is the same as above using least squares
-        # => use lstsq in both cases
+        # such as (A+BK)=inv(X)*diag(P)*X with X=eye(A.shape[0])
+        # i.e K=inv(B)*(diag(P)-A)
+        # if B has as many lines as its rank (but not square) there are many
+        # solutions and we can choose one using least squares
+        # => use lstsq in both cases.
+        # In both cases the transfer matrix X will be eye(A.shape[0]) and I
+        # can hardly think of a better one so there is nothing to optimize
+        #
         # for complex poles we use the following trick
         #
         # |a -b| has for eigenvalues a+b and a-b
@@ -2207,8 +2379,8 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             idx += 1
         gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
         transfer_matrix = np.eye(A.shape[0])
-        cur_rtol = 0
-        nb_iter = 0
+        cur_rtol = np.nan
+        nb_iter = np.nan
     else:
         # step A (p1144 KNV) and begining of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
@@ -2238,18 +2410,21 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
             ker_pole_j = Q[:, pole_space_j.shape[1]:]
 
             # We want to select one vector in ker_pole_j to build the transfer
-            # matrix, however qr returns sometimes vectors with zeros on the same
-            # line for each pole and this yields very long convergence times.
+            # matrix, however qr returns sometimes vectors with zeros on the
+            # same line for each pole and this yields very long convergence
+            # times.
             # Or some other times a set of vectors, one with zero imaginary
             # part and one (or several) with imaginary parts. After trying
             # many ways to select the best possible one (eg ditch vectors
             # with zero imaginary part for complex poles) I ended up summing
-            # all vectors in ker_pole_j, this solves 100% of the problems and is
-            # still a valid choice for transfer_matrix. Indeed for complex poles
-            # we are sure to have a non zero imaginary part that way, and the
-            # problem of lines full of zeros in transfer_matrix is solved too as
-            # when a vector from ker_pole_j has a zero the other one(s)
-            # (when ker_pole_j.shape[1]>1) for sure won't have a zero there.
+            # all vectors in ker_pole_j, this solves 100% of the problems and
+            # is a valid choice for transfer_matrix.
+            # This way for complex poles we are sure to have a non zero
+            # imaginary part that way, and the problem of lines full of zeros
+            # in transfer_matrix is solved too as when a vector from
+            # ker_pole_j has a zero the other one(s) when
+            # ker_pole_j.shape[1]>1) for sure won't have a zero there.
+
             transfer_matrix_j = np.sum(ker_pole_j, axis=1)[:, np.newaxis]
             transfer_matrix_j = (transfer_matrix_j /
                                  np.linalg.norm(transfer_matrix_j))

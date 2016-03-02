@@ -35,11 +35,11 @@ def find(A):
 
     """
 
-    A = coo_matrix(A).tocsr()  # sums duplicates
-    A.eliminate_zeros()        # removes explicit zeros
-    A = A.tocoo(copy=False)    # (cheaply) convert to COO
-
-    return A.row,A.col,A.data
+    A = coo_matrix(A, copy=True)
+    A.sum_duplicates()
+    # remove explicit zeros
+    nz_mask = A.data != 0
+    return A.row[nz_mask], A.col[nz_mask], A.data[nz_mask]
 
 
 def tril(A, k=0, format=None):
@@ -99,14 +99,8 @@ def tril(A, k=0, format=None):
 
     # convert to COOrdinate format where things are easy
     A = coo_matrix(A, copy=False)
-
     mask = A.row + k >= A.col
-
-    row = A.row[mask]
-    col = A.col[mask]
-    data = A.data[mask]
-
-    return coo_matrix((data,(row,col)), shape=A.shape).asformat(format)
+    return _masked_coo(A, mask).asformat(format)
 
 
 def triu(A, k=0, format=None):
@@ -166,11 +160,12 @@ def triu(A, k=0, format=None):
 
     # convert to COOrdinate format where things are easy
     A = coo_matrix(A, copy=False)
-
     mask = A.row + k <= A.col
+    return _masked_coo(A, mask).asformat(format)
 
+
+def _masked_coo(A, mask):
     row = A.row[mask]
     col = A.col[mask]
     data = A.data[mask]
-
-    return coo_matrix((data,(row,col)), shape=A.shape).asformat(format)
+    return coo_matrix((data, (row, col)), shape=A.shape, dtype=A.dtype)

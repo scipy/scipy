@@ -57,16 +57,16 @@ typedef int shortint;
     int i__1;
 
     /* Local variables */
-    static int mdeg, ehead, i, mdlmt, mdnode;
-    extern /* Subroutine */ int mmdelm_(int *, int *, shortint *, 
+    int mdeg, ehead, i, mdlmt, mdnode;
+    extern /* Subroutine */ int slu_mmdelm_(int *, int *, shortint *, 
 	    shortint *, shortint *, shortint *, shortint *, shortint *, 
-	    shortint *, int *, int *), mmdupd_(int *, int *, 
+	    shortint *, int *, int *), slu_mmdupd_(int *, int *, 
 	    int *, shortint *, int *, int *, shortint *, shortint 
 	    *, shortint *, shortint *, shortint *, shortint *, int *, 
-	    int *), mmdint_(int *, int *, shortint *, shortint *, 
+	    int *), slu_mmdint_(int *, int *, shortint *, shortint *, 
 	    shortint *, shortint *, shortint *, shortint *, shortint *), 
-	    mmdnum_(int *, shortint *, shortint *, shortint *);
-    static int nextmd, tag, num;
+	    slu_mmdnum_(int *, shortint *, shortint *, shortint *);
+    int nextmd, tag, num;
 
 
 /* *************************************************************** */
@@ -93,7 +93,7 @@ typedef int shortint;
 /*        INITIALIZATION FOR THE MINIMUM DEGREE ALGORITHM. */
 /*        ------------------------------------------------ */
     *nofsub = 0;
-    mmdint_(neqns, &xadj[1], &adjncy[1], &dhead[1], &invp[1], &perm[1], &
+    slu_mmdint_(neqns, &xadj[1], &adjncy[1], &dhead[1], &invp[1], &perm[1], &
 	    qsize[1], &llist[1], &marker[1]);
 
 /*        ---------------------------------------------- */
@@ -183,7 +183,7 @@ L600:
 /* L700: */
     }
 L800:
-    mmdelm_(&mdnode, &xadj[1], &adjncy[1], &dhead[1], &invp[1], &perm[1], &
+    slu_mmdelm_(&mdnode, &xadj[1], &adjncy[1], &dhead[1], &invp[1], &perm[1], &
 	    qsize[1], &llist[1], &marker[1], maxint, &tag);
     num += qsize[mdnode];
     llist[mdnode] = ehead;
@@ -199,13 +199,13 @@ L900:
     if (num > *neqns) {
 	goto L1000;
     }
-    mmdupd_(&ehead, neqns, &xadj[1], &adjncy[1], delta, &mdeg, &dhead[1], &
+    slu_mmdupd_(&ehead, neqns, &xadj[1], &adjncy[1], delta, &mdeg, &dhead[1], &
 	    invp[1], &perm[1], &qsize[1], &llist[1], &marker[1], maxint, &tag)
 	    ;
     goto L300;
 
 L1000:
-    mmdnum_(neqns, &perm[1], &invp[1], &qsize[1]);
+    slu_mmdnum_(neqns, &perm[1], &invp[1], &qsize[1]);
     return 0;
 
 } /* genmmd_ */
@@ -235,7 +235,7 @@ L1000:
 
 /* *************************************************************** */
 
-/* Subroutine */ int mmdint_(int *neqns, int *xadj, shortint *adjncy, 
+/* Subroutine */ int slu_mmdint_(int *neqns, int *xadj, shortint *adjncy, 
 	shortint *dhead, shortint *dforw, shortint *dbakw, shortint *qsize, 
 	shortint *llist, shortint *marker)
 {
@@ -243,7 +243,7 @@ L1000:
     int i__1;
 
     /* Local variables */
-    static int ndeg, node, fnode;
+    int ndeg, node, fnode;
 
 
 /* *************************************************************** */
@@ -287,7 +287,7 @@ L1000:
     }
     return 0;
 
-} /* mmdint_ */
+} /* slu_mmdint_ */
 
 /* *************************************************************** */
 /* *************************************************************** */
@@ -319,7 +319,7 @@ L1000:
 
 /* *************************************************************** */
 
-/* Subroutine */ int mmdelm_(int *mdnode, int *xadj, shortint *adjncy,
+/* Subroutine */ int slu_mmdelm_(int *mdnode, int *xadj, shortint *adjncy,
 	 shortint *dhead, shortint *dforw, shortint *dbakw, shortint *qsize, 
 	shortint *llist, shortint *marker, int *maxint, int *tag)
 {
@@ -327,8 +327,8 @@ L1000:
     int i__1, i__2;
 
     /* Local variables */
-    static int node, link, rloc, rlmt, i, j, nabor, rnode, elmnt, xqnbr, 
-	    istop, jstop, istrt, jstrt, nxnode, pvnode, nqnbrs, npv;
+    int node, link, rloc, rlmt, i, j, nabor, rnode, elmnt, xqnbr, 
+	istop, jstop, istrt, jstrt, nxnode, pvnode, nqnbrs, npv;
 
 
 /* *************************************************************** */
@@ -533,7 +533,7 @@ L1700:
 L1800:
     return 0;
 
-} /* mmdelm_ */
+} /* slu_mmdelm_ */
 
 /* *************************************************************** */
 /* *************************************************************** */
@@ -566,7 +566,7 @@ L1800:
 
 /* *************************************************************** */
 
-/* Subroutine */ int mmdupd_(int *ehead, int *neqns, int *xadj, 
+/* Subroutine */ int slu_mmdupd_(int *ehead, int *neqns, int *xadj, 
 	shortint *adjncy, int *delta, int *mdeg, shortint *dhead, 
 	shortint *dforw, shortint *dbakw, shortint *qsize, shortint *llist, 
 	shortint *marker, int *maxint, int *tag)
@@ -575,7 +575,7 @@ L1800:
     int i__1, i__2;
 
     /* Local variables */
-    static int node, mtag, link, mdeg0, i, j, enode, fnode, nabor, elmnt, 
+    int node, mtag, link, mdeg0, i, j, enode, fnode, nabor, elmnt, 
 	    istop, jstop, q2head, istrt, jstrt, qxhead, iq2, deg, deg0;
 
 
@@ -891,7 +891,7 @@ L2300:
     elmnt = llist[elmnt];
     goto L100;
 
-} /* mmdupd_ */
+} /* slu_mmdupd_ */
 
 /* *************************************************************** */
 /* *************************************************************** */
@@ -922,14 +922,14 @@ L2300:
 
 /* *************************************************************** */
 
-/* Subroutine */ int mmdnum_(int *neqns, shortint *perm, shortint *invp, 
+/* Subroutine */ int slu_mmdnum_(int *neqns, shortint *perm, shortint *invp, 
 	shortint *qsize)
 {
     /* System generated locals */
     int i__1;
 
     /* Local variables */
-    static int node, root, nextf, father, nqsize, num;
+    int node, root, nextf, father, nqsize, num;
 
 
 /* *************************************************************** */
@@ -1008,5 +1008,5 @@ L500:
     }
     return 0;
 
-} /* mmdnum_ */
+} /* slu_mmdnum_ */
 

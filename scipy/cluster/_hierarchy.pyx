@@ -44,7 +44,7 @@ cdef inline void set_visited(uchar *bitset, int i):
     bitset[i >> 3] |= 1 << (i & 7)
 
 
-cpdef calculate_cluster_sizes(double[:, :] Z, double[:] cs, int n):
+cpdef void calculate_cluster_sizes(double[:, :] Z, double[:] cs, int n):
     """
     Calculate the size of each cluster. The result is the fourth column of
     the linkage matrix.
@@ -142,8 +142,8 @@ def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
     cluster_maxclust_monocrit(Z, max_dists, T, n, mc)
 
 
-def cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
-                              int n, int max_nc):
+cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
+                                     int n, int max_nc):
     """
     Form flat clusters by maxclust_monocrit criterion.
 
@@ -163,15 +163,12 @@ def cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     """
     cdef int i, k, i_lc, i_rc, root, nc, lower_idx, upper_idx
     cdef double thresh
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
     if not visited:
         raise MemoryError
-
-    max_illegal = -1
-    min_legal = MC[n - 2]
 
     lower_idx = 0
     upper_idx = n - 1
@@ -231,8 +228,8 @@ def cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     cluster_monocrit(Z, MC, T, MC[upper_idx], n)
 
 
-cpdef cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
-                       double cutoff, int n):
+cpdef void cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
+                            double cutoff, int n):
     """
     Form flat clusters by monocrit criterion.
 
@@ -252,7 +249,7 @@ cpdef cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
         The number of observations.
     """
     cdef int k, i_lc, i_rc, root, n_cluster = 0, cluster_leader = -1
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -315,9 +312,9 @@ def cophenetic_distances(double[:, :] Z, double[:] d, int n):
     """
     cdef int i, j, k, root, i_lc, i_rc, n_lc, n_rc, right_start
     cdef double dist
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
-    cdef int[:] members = np.ndarray(n, dtype=np.int32)
-    cdef int[:] left_start = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
+    cdef int[:] members = np.ndarray(n, dtype=np.intc)
+    cdef int[:] left_start = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -364,7 +361,7 @@ def cophenetic_distances(double[:, :] Z, double[:] d, int n):
         right_start = left_start[k] + n_lc
         for i in range(left_start[k], right_start):
             for j in range(right_start, right_start + n_rc):
-                d[condensed_index(n, members[i], members[j])] = dist 
+                d[condensed_index(n, members[i], members[j])] = dist
 
         k -= 1  # back to parent node
 
@@ -389,7 +386,7 @@ cdef from_pointer_representation(double[:, :] Z, double[:] Lambda, int[:] Pi,
     """
     cdef int i, current_leaf, pi
     cdef np.intp_t[:] sorted_idx = np.argsort(Lambda)
-    cdef int[:] node_ids = np.ndarray(n, dtype=np.int32)
+    cdef int[:] node_ids = np.ndarray(n, dtype=np.intc)
 
     for i in range(n):
         node_ids[i] = i
@@ -410,8 +407,8 @@ cdef from_pointer_representation(double[:, :] Z, double[:] Lambda, int[:] Pi,
     calculate_cluster_sizes(Z, Z[:, 3], n)
 
 
-cpdef get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
-                                      double[:] max_rfs, int n, int rf):
+cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
+                                           double[:] max_rfs, int n, int rf):
     """
     Get the maximum statistic for each non-singleton cluster. For the i'th
     non-singleton cluster, max_rfs[i] = max{R[j, rf] j is a descendent of i}.
@@ -431,7 +428,7 @@ cpdef get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
     """
     cdef int k, i_lc, i_rc, root
     cdef double max_rf, max_l, max_r
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -489,7 +486,7 @@ cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n):
     """
     cdef int k, i_lc, i_rc, root
     cdef double max_dist, max_l, max_r
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -555,7 +552,7 @@ def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
         The number of levels included in calculation below a node.
     """
     cdef int i, k, i_lc, i_rc, root, level_count
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
     cdef double level_sum, level_std_sum, level_std, dist
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
@@ -641,8 +638,8 @@ def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
         `-1` indicates success.
     """
     cdef int k, i_lc, i_rc, root, cid_lc, cid_rc, leader_idx, result = -1
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
-    cdef int[:] cluster_ids = np.ndarray(n * 2 - 1, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
+    cdef int[:] cluster_ids = np.ndarray(n * 2 - 1, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -714,7 +711,7 @@ def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
     return result  # -1 means success here
 
 
-def linkage(double[:] dists, np.ndarray[double, ndim=2] Z, int n, int method):
+def linkage(double[:] dists, int n, int method):
     """
     Perform hierarchy clustering.
 
@@ -722,20 +719,26 @@ def linkage(double[:] dists, np.ndarray[double, ndim=2] Z, int n, int method):
     ----------
     dists : ndarray
         A condensed matrix stores the pairwise distances of the observations.
-    Z : ndarray
-        A (n - 1) x 4 matrix to store the result (i.e. the linkage matrix).
     n : int
         The number of observations.
     method : int
         The linkage method. 0: single 1: complete 2: average 3: centroid
         4: median 5: ward 6: weighted
+
+    Returns
+    -------
+    Z : ndarray, shape (n - 1, 4)
+        Computed linkage matrix.
     """
+    Z_arr = np.empty((n - 1, 4))
+    cdef double[:, :] Z = Z_arr
+
     cdef int i, j, k, x, y, i_start, nx, ny, ni, id_x, id_y, id_i
     cdef double current_min
     # inter-cluster dists
     cdef double[:] D = np.ndarray(n * (n - 1) / 2, dtype=np.double)
     # map the indices to node ids
-    cdef int[:] id_map = np.ndarray(n, dtype=np.int32)
+    cdef int[:] id_map = np.ndarray(n, dtype=np.intc)
     cdef linkage_distance_update new_dist
 
     new_dist = linkage_methods[method]
@@ -766,10 +769,10 @@ def linkage(double[:] dists, np.ndarray[double, ndim=2] Z, int n, int method):
         ny = 1 if id_y < n else <int>Z[id_y - n, 3]
 
         # record the new node
-        if id_x < id_y:
-            Z[k] = (id_x, id_y, current_min, nx + ny)
-        else:
-            Z[k] = (id_y, id_x, current_min, nx + ny)
+        Z[k, 0] = min(id_x, id_y)
+        Z[k, 1] = max(id_y, id_x)
+        Z[k, 2] = current_min
+        Z[k, 3] = nx + ny
         id_map[x] = -1  # cluster x will be dropped
         id_map[y] = n + k  # cluster y will be replaced with the new cluster
 
@@ -786,6 +789,141 @@ def linkage(double[:] dists, np.ndarray[double, ndim=2] Z, int n, int method):
                 current_min, nx, ny, ni)
             if i < x:
                 D[condensed_index(n, i, x)] = NPY_INFINITYF
+    return Z_arr
+
+def nn_chain(double[:] dists, int n, int method):
+    """Perform hierarchy clustering using nearest-neighbor chain algorithm.
+
+    Parameters
+    ----------
+    dists : ndarray
+        A condensed matrix stores the pairwise distances of the observations.
+    n : int
+        The number of observations.
+    method : int
+        The linkage method. 0: single 1: complete 2: average 3: centroid
+        4: median 5: ward 6: weighted
+
+    Returns
+    -------
+    Z : ndarray, shape (n - 1, 4)
+        Computed linkage matrix.
+    """
+    Z_arr = np.empty((n - 1, 4))
+    cdef double[:, :] Z = Z_arr
+
+    cdef double[:] D = dists.copy()  # Distances between clusters.
+    cdef int [:] size = np.ones(n, dtype=np.intc)  # Sizes of clusters.
+
+    cdef linkage_distance_update new_dist = linkage_methods[method]
+
+    # Variables to store neighbors chain.
+    cdef int[:] cluster_chain = np.ndarray(n, dtype=np.intc)
+    cdef int chain_length = 0
+
+    cdef int i, j, k, x, y, nx, ny, ni
+    cdef double dist, current_min
+
+    for k in range(n - 1):
+        if chain_length == 0:
+            chain_length = 1
+            for i in range(n):
+                if size[i] > 0:
+                    cluster_chain[0] = i
+                    break
+
+        # Go through chain of neighbors until two mutual neighbors are found.
+        while True:
+            x = cluster_chain[chain_length - 1]
+            current_min = NPY_INFINITYF
+
+            for i in range(n):
+                if size[i] == 0 or x == i:
+                    continue
+
+                dist = D[condensed_index(n, x, i)]
+                if dist < current_min:
+                    current_min = dist
+                    y = i
+
+            if chain_length > 1 and y == cluster_chain[chain_length - 2]:
+                break
+
+            cluster_chain[chain_length] = y
+            chain_length += 1
+
+        # Merge clusters x and y and pop them from stack.
+        chain_length -= 2
+
+        # get the original numbers of points in clusters x and y
+        nx = size[x]
+        ny = size[y]
+
+        # Record the new node.
+        Z[k, 0] = x
+        Z[k, 1] = y
+        Z[k, 2] = current_min
+        Z[k, 3] = nx + ny
+        size[x] = 0  # Cluster x will be dropped.
+        size[y] = nx + ny  # Cluster y will be replaced with the new cluster
+
+        # Update the distance matrix.
+        for i in range(n):
+            ni = size[i]
+            if ni == 0 or i == y:
+                continue
+
+            D[condensed_index(n, i, y)] = new_dist(
+                D[condensed_index(n, i, x)],
+                D[condensed_index(n, i, y)],
+                current_min, nx, ny, ni)
+
+    # Sort Z by cluster distances.
+    order = np.argsort(Z_arr[:, 2], kind='mergesort')
+    Z_arr = Z_arr[order]
+
+    # Find correct cluster labels inplace.
+    label(Z_arr, n)
+
+    return Z_arr
+
+
+cdef class LinkageUnionFind:
+    cdef int [:] parent
+    cdef int next_label
+
+    def __init__(self, int n):
+        self.parent = np.arange(2 * n - 1, dtype=np.intc)
+        self.next_label = n
+
+    cdef merge(self, int x, int y):
+        self.parent[x] = self.next_label
+        self.parent[y] = self.next_label
+        self.next_label += 1
+
+    cdef find(self, int x):
+        cdef int p = x
+
+        while self.parent[x] != x:
+            x = self.parent[x]
+
+        while self.parent[p] != x:
+            p, self.parent[p] = self.parent[p], x
+
+        return x
+
+
+cdef label(double[:, :] Z, int n):
+    cdef LinkageUnionFind uf = LinkageUnionFind(n)
+    cdef int i, x, y, x_root, y_root
+    for i in range(n - 1):
+        x, y = int(Z[i, 0]), int(Z[i, 1])
+        x_root, y_root = uf.find(x), uf.find(y)
+        uf.merge(x, y)
+        if x_root < y_root:
+            Z[i, 0], Z[i, 1] = x_root, y_root
+        else:
+            Z[i, 0], Z[i, 1] = y_root, x_root
 
 
 def prelist(double[:, :] Z, int[:] members, int n):
@@ -803,7 +941,7 @@ def prelist(double[:, :] Z, int[:] members, int n):
         The number of observations.
     """
     cdef int k, i_lc, i_rc, root, mem_idx
-    cdef int[:] curr_node = np.ndarray(n, dtype=np.int32)
+    cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
     cdef int visited_size = (((n * 2) - 1) >> 3) + 1
     cdef uchar *visited = <uchar *>PyMem_Malloc(visited_size)
@@ -844,7 +982,7 @@ def prelist(double[:, :] Z, int[:] members, int n):
     PyMem_Free(visited)
 
 
-def slink(double[:] dists, double[:, :] Z, int n):
+def slink(double[:] dists, int n):
     """
     The SLINK algorithm. Single linkage in O(n^2) time complexity.
 
@@ -852,20 +990,26 @@ def slink(double[:] dists, double[:, :] Z, int n):
     ----------
     dists : ndarray
         A condensed matrix stores the pairwise distances of the observations.
-    Z : ndarray
-        A (n - 1) x 4 matrix to store the result (i.e. the linkage matrix).
     n : int
         The number of observations.
+
+    Returns
+    -------
+    Z : ndarray, shape (n - 1, 4)
+        Compute linkage matrix.
 
     References
     ----------
     R. Sibson, "SLINK: An optimally efficient algorithm for the single-link
     cluster method", The Computer Journal 1973 16: 30-34.
     """
+    Z_arr = np.empty((n - 1, 4))
+    cdef double[:, :] Z = Z_arr
+
     cdef int i, j
     cdef double[:] M = np.ndarray(n, dtype=np.double)
     cdef double[:] Lambda = np.ndarray(n, dtype=np.double)
-    cdef int[:] Pi = np.ndarray(n, dtype=np.int32)
+    cdef int[:] Pi = np.ndarray(n, dtype=np.intc)
 
     Pi[0] = 0
     Lambda[0] = NPY_INFINITYF
@@ -889,3 +1033,4 @@ def slink(double[:] dists, double[:, :] Z, int n):
                 Pi[j] = i
 
     from_pointer_representation(Z, Lambda, Pi, n)
+    return Z_arr

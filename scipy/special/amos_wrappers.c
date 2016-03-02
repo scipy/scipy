@@ -69,7 +69,7 @@ void set_nan_if_no_computation_done(npy_cdouble *v, int ierr) {
   }
 }
 
-static double sin_pi(double x)
+double sin_pi(double x)
 {
     if (floor(x) == x && fabs(x) < 1e14) {
         /* Return 0 when at exact zero, as long as the floating point number is

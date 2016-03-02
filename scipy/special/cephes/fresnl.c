@@ -165,6 +165,12 @@ double xxa, *ssa, *cca;
     double f, g, cc, ss, c, s, t, u;
     double x, x2;
 
+    if (cephes_isinf(xxa)) {
+    cc = 0.5;
+    ss = 0.5;
+    goto done;
+    }
+
     x = fabs(xxa);
     x2 = x * x;
     if (x2 < 2.5625) {

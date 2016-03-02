@@ -16,8 +16,10 @@ import sys
 
 from copy import copy as pycopy
 
+cimport cython
+
 from libc.stdlib cimport calloc, free
-from libc.string cimport strcmp, strlen
+from libc.string cimport strcmp
 
 from cpython cimport Py_INCREF, Py_DECREF
 from cpython cimport PyObject
@@ -26,8 +28,7 @@ cdef extern from "Python.h":
     ctypedef struct PyTypeObject:
         pass
 
-from cpython cimport PyBytes_Size, PyBytes_FromString, \
-    PyBytes_FromStringAndSize
+from cpython cimport PyBytes_Size, PyBytes_FromString
 
 import numpy as np
 from numpy.compat import asbytes, asstr
@@ -62,7 +63,7 @@ cimport streams
 import scipy.io.matlab.miobase as miob
 from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
 import scipy.io.matlab.mio5_params as mio5p
-import scipy.sparse
+from scipy.sparse import csc_matrix
 
 
 cdef enum:
@@ -102,9 +103,8 @@ cdef enum: # see comments in mio5_params
     mxOPAQUE_CLASS = 17 # This appears to be a function workspace
     mxOBJECT_CLASS_FROM_MATRIX_H = 18
 
-sys_is_le = sys.byteorder == 'little'
-native_code = sys_is_le and '<' or '>'
-swapped_code = sys_is_le and '>' or '<'
+cdef bint sys_is_le = sys.byteorder == 'little'
+swapped_code = '>' if sys_is_le else '<'
 
 cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
 cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool)
@@ -150,8 +150,6 @@ cdef class VarReader5:
     cdef PyObject* dtypes[_N_MIS]
     # pointers to stuff in preader.class_dtypes
     cdef PyObject* class_dtypes[_N_MXS]
-    # cached here for convenience in later array creation
-    cdef cnp.dtype bool_dtype
     # element processing options
     cdef:
         int mat_dtype
@@ -188,7 +186,7 @@ cdef class VarReader5:
                 - len(" ".encode(uint16_codec))
         self.codecs['uint16_codec'] = uint16_codec
         # set c-optimized stream object from python file-like object
-        self.set_stream(preader.mat_stream)
+        self.cstream = streams.make_stream(preader.mat_stream)
         # options for element processing
         self.mat_dtype = preader.mat_dtype
         self.chars_as_strings = preader.chars_as_strings
@@ -204,8 +202,7 @@ cdef class VarReader5:
             if isinstance(key, str):
                 continue
             self.class_dtypes[key] = <PyObject*>dt
-        self.bool_dtype = np.dtype('bool')
-        
+
     def set_stream(self, fobj):
         ''' Set stream of best type from file-like `fobj`
 
@@ -361,7 +358,7 @@ cdef class VarReader5:
             if mod8:
                 self.cstream.seek(8 - mod8, 1)
         else: # SDE format, make safer home for data
-            data = PyBytes_FromStringAndSize(tag_data, byte_count)
+            data = tag_data[:byte_count]
             pp[0] = <char *>data
         return data
 
@@ -698,7 +695,7 @@ cdef class VarReader5:
             arr = self.read_real_complex(header)
             if process and self.mat_dtype: # might need to recast
                 if header.is_logical:
-                    mat_dtype = self.bool_dtype
+                    mat_dtype = BOOL_DTYPE
                 else:
                     mat_dtype = <object>self.class_dtypes[mc]
                 arr = arr.astype(mat_dtype)
@@ -777,7 +774,7 @@ cdef class VarReader5:
         cdef size_t M, N, nnz
         rowind = self.read_numeric()
         indptr = self.read_numeric()
-        M, N = header.dims
+        M, N = header.dims[0], header.dims[1]
         indptr = indptr[:N+1]
         nnz = indptr[-1]
         if header.is_complex:
@@ -801,7 +798,7 @@ cdef class VarReader5:
         stored in column order, this gives the column corresponding
         to each rowind
         '''
-        return scipy.sparse.csc_matrix(
+        return csc_matrix(
             (data[:nnz], rowind[:nnz], indptr),
             shape=(M, N))
 
@@ -888,10 +885,7 @@ cdef class VarReader5:
         return result.reshape(tupdims).T
 
     def read_fieldnames(self):
-        ''' Read fieldnames for struct-like matrix '
-
-        Python wrapper for cdef'ed method
-        '''
+        '''Read fieldnames for struct-like matrix.'''
         cdef int n_names
         return self.cread_fieldnames(&n_names)
 
@@ -899,7 +893,8 @@ cdef class VarReader5:
         cdef:
             cnp.int32_t namelength
             int i, n_names
-            object name, field_names
+            list field_names
+            object name
         # Read field names into list
         cdef int res = self.read_into_int32s(&namelength)
         if res != 1:
@@ -944,7 +939,6 @@ cdef class VarReader5:
         cdef:
             cnp.int32_t namelength
             int i, n_names
-            cnp.ndarray rec_res
             cnp.ndarray[object, ndim=1] result
             object dt, tupdims
         # Read field names into list
@@ -972,10 +966,11 @@ cdef class VarReader5:
             item = pycopy(obj_template)
             for name in field_names:
                 item.__dict__[name] = self.read_mi_matrix()
-            result[i] = item
+            with cython.boundscheck(False):
+                result[i] = item
         return result.reshape(tupdims).T
 
-    cpdef cnp.ndarray read_opaque(self, VarHeader5 hdr):
+    cpdef object read_opaque(self, VarHeader5 hdr):
         ''' Read opaque (function workspace) type
 
         Looking at some mat files, the structure of this type seems to
@@ -991,9 +986,13 @@ cdef class VarReader5:
 
         See the comments at the beginning of ``mio5.py``
         '''
-        cdef cnp.ndarray res = np.empty((1,), dtype=OPAQUE_DTYPE)
-        res[0]['s0'] = self.read_int8_string()
-        res[0]['s1'] = self.read_int8_string()
-        res[0]['s2'] = self.read_int8_string()
-        res[0]['arr'] = self.read_mi_matrix()
+        # Neither res nor the return value of this function are cdef'd as
+        # cnp.ndarray, because that only adds useless checks with current
+        # Cython (0.23.4).
+        res = np.empty((1,), dtype=OPAQUE_DTYPE)
+        res0 = res[0]
+        res0['s0'] = self.read_int8_string()
+        res0['s1'] = self.read_int8_string()
+        res0['s2'] = self.read_int8_string()
+        res0['arr'] = self.read_mi_matrix()
         return res

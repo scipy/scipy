@@ -43,7 +43,7 @@
 */  
 
 int
-izmax1_(int *n, doublecomplex *cx, int *incx)
+izmax1_slu(int *n, doublecomplex *cx, int *incx)
 {
 
 
@@ -109,5 +109,5 @@ L40:
 
 /*     End of IZMAX1 */
 
-} /* izmax1_ */
+} /* izmax1_slu */
 

@@ -129,7 +129,7 @@ zgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 	*info = -6;
     if ( *info ) {
 	i = -(*info);
-	xerbla_("zgstrs", &i);
+	input_error("zgstrs", &i);
 	return;
     }
 
@@ -345,6 +345,6 @@ zprint_soln(int n, int nrhs, doublecomplex *soln)
 {
     int i;
 
-    for (i = 0; i < n; i++) 
-  	printf("\t%d: %.4f\n", i, soln[i]);
+    for (i = 0; i < n; i++)
+  	printf("\t%d: %.4f\t%.4f\n", i, soln[i].r, soln[i].i);
 }

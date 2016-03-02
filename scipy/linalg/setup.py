@@ -6,6 +6,7 @@ from os.path import join
 
 
 def configuration(parent_package='', top_path=None):
+    from distutils.sysconfig import get_python_inc
     from numpy.distutils.system_info import get_info, NotFoundError, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from scipy._build_utils import (get_sgemv_fix, get_g77_abi_wrappers,
@@ -37,6 +38,9 @@ def configuration(parent_package='', top_path=None):
     # flapack:
     sources = ['flapack.pyf.src']
     sources += get_g77_abi_wrappers(lapack_opt)
+    dep_pfx = join('src', 'lapack_deprecations')
+    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
+    sources += deprecated_lapack_routines
 
     config.add_extension('_flapack',
                          sources=sources,
@@ -136,7 +140,7 @@ def configuration(parent_package='', top_path=None):
     sources = ['_blas_subroutine_wrappers.f', '_lapack_subroutine_wrappers.f']
     sources += get_g77_abi_wrappers(lapack_opt)
     sources += get_sgemv_fix(lapack_opt)
-    includes = numpy_info().get_include_dirs()
+    includes = numpy_info().get_include_dirs() + [get_python_inc()]
     config.add_library('fwrappers', sources=sources, include_dirs=includes)
 
     config.add_extension('cython_blas',

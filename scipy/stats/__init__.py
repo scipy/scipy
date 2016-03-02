@@ -29,7 +29,8 @@ Continuous distributions
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
-   burr              -- Burr
+   burr              -- Burr (Type III)
+   burr12            -- Burr (Type XII)
    cauchy            -- Cauchy
    chi               -- Chi
    chi2              -- Chi-squared
@@ -100,6 +101,7 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   skewnorm          -- Skew normal
    t                 -- Student's T
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
@@ -120,9 +122,13 @@ Multivariate distributions
    :toctree: generated/
 
    multivariate_normal   -- Multivariate normal distribution
+   matrix_normal         -- Matrix normal distribution
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
+   special_ortho_group   -- SO(N) group
+   ortho_group           -- O(N) group
+   random_correlation    -- random correlation matrices
 
 Discrete distributions
 ======================
@@ -171,9 +177,6 @@ which work for masked arrays.
    tmax              --
    tstd              --
    tsem              --
-   nanmean           -- Mean, ignoring NaN values
-   nanstd            -- Standard deviation, ignoring NaN values
-   nanmedian         -- Median, ignoring NaN values
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
@@ -288,7 +291,7 @@ Circular statistical functions
    circmean
    circvar
    circstd
-   
+
 Contingency table functions
 ===========================
 

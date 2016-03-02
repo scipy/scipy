@@ -523,6 +523,15 @@ class TestPdist(TestCase):
         Y_test2 = pdist(X, 'test_cosine')
         _assert_within_tol(Y_test2, Y_right, eps)
 
+    def test_pdist_cosine_bounds(self):
+        # Test adapted from @joernhees's example at gh-5208: case were
+        # cosine distance used to be negative. XXX: very sensitive to the
+        # specific norm computation.
+        x = np.abs(np.random.RandomState(1337).rand(91))
+        X = np.vstack([x, x])
+        assert_(pdist(X, 'cosine')[0] >= 0,
+                msg='cosine distance should be non-negative')
+
     def test_pdist_cityblock_random(self):
         eps = 1e-06
         X = eo['pdist-double-inp']

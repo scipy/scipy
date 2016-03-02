@@ -43,6 +43,11 @@ class NearestNDInterpolator(NDInterpolatorBase):
         incommensurable units and differ by many orders of magnitude.
 
         .. versionadded:: 0.14.0
+    tree_options : dict, optional
+        Options passed to the underlying ``cKDTree``.
+
+        .. versionadded:: 0.17.0
+
 
     Notes
     -----
@@ -50,11 +55,13 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, x, y, rescale=False):
+    def __init__(self, x, y, rescale=False, tree_options=None):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
                                     need_values=False)
-        self.tree = cKDTree(self.points)
+        if tree_options is None:
+            tree_options = dict()
+        self.tree = cKDTree(self.points, **tree_options)
         self.values = y
 
     def __call__(self, *args):
@@ -197,6 +204,8 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         idx = np.argsort(points)
         points = points[idx]
         values = values[idx]
+        if method == 'nearest':
+            fill_value = 'extrapolate'
         ip = interp1d(points, values, kind=method, axis=0, bounds_error=False,
                       fill_value=fill_value)
         return ip(xi)

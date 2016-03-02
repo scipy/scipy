@@ -163,6 +163,7 @@ scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
+scipy/signal/_upfirdn_apply.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c
 scipy/sparse/_csparsetools.c
@@ -192,8 +193,8 @@ scipy/sparse/sparsetools/csc_impl.h
 scipy/sparse/sparsetools/csr_impl.h
 scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
-scipy/spatial/ckdtree/ckdtree.cxx
-scipy/spatial/ckdtree/ckdtree.h
+scipy/spatial/ckdtree.cxx
+scipy/spatial/ckdtree.h
 scipy/spatial/qhull.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h

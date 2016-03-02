@@ -45,6 +45,7 @@ desired `numpy` type object to the output argument. For example:
 
 ::
 
+    >>> from scipy.ndimage import correlate
     >>> correlate(np.arange(10), [1, 2.5])
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
     >>> correlate(np.arange(10), [1, 2.5], output=np.float64)
@@ -68,7 +69,7 @@ For example a cross shaped kernel can be defined as follows:
 
 ::
 
-    >>> footprint = array([[0,1,0],[1,1,1],[0,1,0]])
+    >>> footprint = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     >>> footprint
     array([[0, 1, 0],
            [1, 1, 1],
@@ -83,6 +84,7 @@ ones:
 
 ::
 
+    >>> from scipy.ndimage import correlate1d
     >>> a = [0, 0, 0, 1, 0, 0, 0]
     >>> correlate1d(a, [1, 1, 1])
     array([0, 0, 1, 1, 1, 0, 0])
@@ -96,7 +98,7 @@ center. For example:
 
     >>> a = [0, 0, 0, 1, 0, 0, 0]
     >>> correlate1d(a, [1, 1, 1], origin = -1)
-    array([0 1 1 1 0 0 0])
+    array([0, 1, 1, 1, 0, 0, 0])
 
 The effect is a shift of the result towards the left. This feature
 will not be needed very often, but it may be useful especially for
@@ -107,16 +109,16 @@ of backward and forward differences:
 
     >>> a = [0, 0, 1, 1, 1, 0, 0]
     >>> correlate1d(a, [-1, 1])               # backward difference
-    array([ 0  0  1  0  0 -1  0])
+    array([ 0,  0,  1,  0,  0, -1,  0])
     >>> correlate1d(a, [-1, 1], origin = -1)  # forward difference
-    array([ 0  1  0  0 -1  0  0])
+    array([ 0,  1,  0,  0, -1,  0,  0])
 
 We could also have calculated the forward difference as follows:
 
 ::
 
     >>> correlate1d(a, [0, -1, 1])
-    array([ 0  1  0  0 -1  0  0])
+    array([ 0,  1,  0,  0, -1,  0,  0])
 
 However, using the origin parameter instead of a larger kernel is
 more efficient. For multidimensional kernels *origin* can be a
@@ -318,8 +320,9 @@ construct the Laplace filter:
         >>> def d2(input, axis, output, mode, cval):
         ...     return correlate1d(input, [1, -2, 1], axis, output, mode, cval, 0)
         ...
-        >>> a = zeros((5, 5))
+        >>> a = np.zeros((5, 5))
         >>> a[2, 2] = 1
+        >>> from scipy.ndimage import generic_laplace
         >>> generic_laplace(a, d2)
         array([[ 0.,  0.,  0.,  0.,  0.],
                [ 0.,  0.,  1.,  0.,  0.],
@@ -333,7 +336,7 @@ construct the Laplace filter:
         >>> def d2(input, axis, output, mode, cval, weights):
         ...     return correlate1d(input, weights, axis, output, mode, cval, 0,)
         ...
-        >>> a = zeros((5, 5))
+        >>> a = np.zeros((5, 5))
         >>> a[2, 2] = 1
         >>> generic_laplace(a, d2, extra_arguments = ([1, -2, 1],))
         array([[ 0.,  0.,  0.,  0.,  0.],
@@ -393,8 +396,9 @@ function that calculated the gradient magnitude of an array:
 
     For example, the :func:`sobel` function fits the required signature::
 
-        >>> a = zeros((5, 5))
+        >>> a = np.zeros((5, 5))
         >>> a[2, 2] = 1
+        >>> from scipy.ndimage import sobel, generic_gradient_magnitude
         >>> generic_gradient_magnitude(a, sobel)
         array([[ 0.        ,  0.        ,  0.        ,  0.        ,  0.        ],
                [ 0.        ,  1.41421356,  2.        ,  1.41421356,  0.        ],
@@ -445,7 +449,7 @@ also be written in C and passed using a :ctype:`PyCObject` (see
     modified in-place to provide the output values of the line. For
     example consider a correlation along one dimension::
 
-        >>> a = arange(12).reshape(3,4)
+        >>> a = np.arange(12).reshape(3,4)
         >>> correlate1d(a, [1, 2, 3])
         array([[ 3,  8, 14, 17],
                [27, 32, 38, 41],
@@ -457,6 +461,7 @@ also be written in C and passed using a :ctype:`PyCObject` (see
         >>> def fnc(iline, oline):
         ...     oline[...] = iline[:-2] + 2 * iline[1:-1] + 3 * iline[2:]
         ...
+        >>> from scipy.ndimage import generic_filter1d
         >>> generic_filter1d(a, fnc, 3)
         array([[ 3,  8, 14, 17],
                [27, 32, 38, 41],
@@ -498,7 +503,7 @@ also be written in C and passed using a :ctype:`PyCObject` (see
     should return a single value that can be converted to a double
     precision number. For example consider a correlation::
 
-        >>> a = arange(12).reshape(3,4)
+        >>> a = np.arange(12).reshape(3,4)
         >>> correlate(a, [[1, 0], [0, 3]])
         array([[ 0,  3,  7, 11],
                [12, 15, 19, 23],
@@ -508,12 +513,13 @@ also be written in C and passed using a :ctype:`PyCObject` (see
     follows::
 
         >>> def fnc(buffer):
-        ...     return (buffer * array([1, 3])).sum()
+        ...     return (buffer * np.array([1, 3])).sum()
         ...
+        >>> from scipy.ndimage import generic_filter
         >>> generic_filter(a, fnc, footprint = [[1, 0], [0, 1]])
-        array([[ 0  3  7 11],
-               [12 15 19 23],
-               [28 31 35 39]])
+        array([[ 0,  3,  7, 11],
+               [12, 15, 19, 23],
+               [28, 31, 35, 39]])
 
     Here a kernel footprint was specified that contains only two
     elements. Therefore the filter function receives a buffer of length
@@ -534,7 +540,7 @@ also be written in C and passed using a :ctype:`PyCObject` (see
     example, we can pass the parameters of our filter as an argument::
 
         >>> def fnc(buffer, weights):
-        ...     weights = asarray(weights)
+        ...     weights = np.asarray(weights)
         ...     return (buffer * weights).sum()
         ...
         >>> generic_filter(a, fnc, footprint = [[1, 0], [0, 1]], extra_arguments = ([1, 3],))
@@ -561,7 +567,7 @@ additionally prints the current coordinates:
 
 ::
 
-    >>> a = arange(12).reshape(3,4)
+    >>> a = np.arange(12).reshape(3,4)
     >>>
     >>> class fnc_class:
     ...     def __init__(self, shape):
@@ -571,7 +577,7 @@ additionally prints the current coordinates:
     ...         self.coordinates = [0] * len(shape)
     ...
     ...     def filter(self, buffer):
-    ...         result = (buffer * array([1, 3])).sum()
+    ...         result = (buffer * np.array([1, 3])).sum()
     ...         print self.coordinates
     ...         # calculate the next coordinates:
     ...         axes = range(len(self.shape))
@@ -609,7 +615,7 @@ this:
 
 ::
 
-    >>> a = arange(12).reshape(3,4)
+    >>> a = np.arange(12).reshape(3,4)
     >>>
     >>> class fnc1d_class:
     ...     def __init__(self, shape, axis = -1):
@@ -755,10 +761,11 @@ mode is used.
 
     For example::
 
-        >>> a = arange(12).reshape(4,3).astype(np.float64)
+        >>> a = np.arange(12).reshape(4,3).astype(np.float64)
         >>> def shift_func(output_coordinates):
         ...     return (output_coordinates[0] - 0.5, output_coordinates[1] - 0.5)
         ...
+        >>> from scipy.ndimage import geometric_transform
         >>> geometric_transform(a, shift_func)
         array([[ 0.    ,  0.    ,  0.    ],
                [ 0.    ,  1.3625,  2.7375],
@@ -804,14 +811,15 @@ mode is used.
     requested order. Here is an example that interpolates a 2D array at
     (0.5, 0.5) and (1, 2)::
 
-        >>> a = arange(12).reshape(4,3).astype(np.float64)
+        >>> a = np.arange(12).reshape(4,3).astype(np.float64)
         >>> a
         array([[  0.,   1.,   2.],
                [  3.,   4.,   5.],
                [  6.,   7.,   8.],
                [  9.,  10.,  11.]])
+        >>> from scipy.ndimage import map_coordinates
         >>> map_coordinates(a, [[0.5, 2], [0.5, 1]])
-        array([ 1.3625  7.    ])
+        array([ 1.3625,  7.])
 
     The :func:`affine_transform` function applies an affine transformation
     to the input array. The given transformation *matrix* and *offset*
@@ -862,6 +870,7 @@ Binary morphology (need something to put here).
     *connectivity*. For instance, two dimensional 4-connected and
     8-connected structures are generated as follows::
 
+        >>> from scipy.ndimage import generate_binary_structure
         >>> generate_binary_structure(2, 1)
         array([[False,  True, False],
                [ True,  True,  True],
@@ -904,14 +913,15 @@ basic operations erosion and dilation:
     that touch the border, by repeatedly dilating an empty array from
     the border using the data array as the mask::
 
-        >>> struct = array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-        >>> a = array([[1,0,0,0,0], [1,1,0,1,0], [0,0,1,1,0], [0,0,0,0,0]])
+        >>> struct = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+        >>> a = np.array([[1,0,0,0,0], [1,1,0,1,0], [0,0,1,1,0], [0,0,0,0,0]])
         >>> a
         array([[1, 0, 0, 0, 0],
                [1, 1, 0, 1, 0],
                [0, 0, 1, 1, 0],
                [0, 0, 0, 0, 0]])
-        >>> binary_dilation(zeros(a.shape), struct, -1, a, border_value=1)
+        >>> from scipy.ndimage import binary_dilation
+        >>> binary_dilation(np.zeros(a.shape), struct, -1, a, border_value=1)
         array([[ True, False, False, False, False],
                [ True,  True, False, False, False],
                [False, False, False, False, False],
@@ -935,6 +945,7 @@ that is dilated a number of times with itself:
         array([[False,  True, False],
                [ True,  True,  True],
                [False,  True, False]], dtype=bool)
+        >>> from scipy.ndimage import iterate_structure
         >>> iterate_structure(struct, 2)
         array([[False, False,  True, False, False],
                [False,  True,  True,  True, False],
@@ -1191,11 +1202,11 @@ Segmentation is the process of separating objects of interest from
 the background. The most simple approach is probably intensity
 thresholding, which is easily done with :mod:`numpy` functions::
 
-    >>> a = array([[1,2,2,1,1,0],
-    ...            [0,2,3,1,2,0],
-    ...            [1,1,1,3,3,2],
-    ...            [1,1,1,1,2,1]])
-    >>> where(a > 1, 1, 0)
+    >>> a = np.array([[1,2,2,1,1,0],
+    ...               [0,2,3,1,2,0],
+    ...               [1,1,1,3,3,2],
+    ...               [1,1,1,1,2,1]])
+    >>> np.where(a > 1, 1, 0)
     array([[0, 1, 1, 0, 0, 0],
            [0, 1, 1, 0, 1, 0],
            [0, 0, 0, 1, 1, 1],
@@ -1213,8 +1224,9 @@ an array where each object is assigned a unique number:
     is defined by a structuring element. For instance, in two
     dimensions using a four-connected structuring element gives::
 
-        >>> a = array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
+        >>> a = np.array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
         >>> s = [[0, 1, 0], [1,1,1], [0,1,0]]
+        >>> from scipy.ndimage import label
         >>> label(a, s)
         (array([[0, 1, 1, 0, 0, 0],
                [0, 1, 1, 0, 2, 0],
@@ -1226,7 +1238,7 @@ an array where each object is assigned a unique number:
     with both objects. However, an 8-connected structuring element
     results in only a single object::
 
-        >>> a = array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
+        >>> a = np.array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
         >>> s = [[1,1,1], [1,1,1], [1,1,1]]
         >>> label(a, s)[0]
         array([[0, 1, 1, 0, 0, 0],
@@ -1246,12 +1258,12 @@ an array where each object is assigned a unique number:
 
         >>> l, n = label([1, 0, 1, 0, 1])
         >>> l
-        array([1 0 2 0 3])
-        >>> l = where(l != 2, l, 0)
+        array([1, 0, 2, 0, 3])
+        >>> l = np.where(l != 2, l, 0)
         >>> l
-        array([1 0 0 0 3])
+        array([1, 0, 0, 0, 3])
         >>> label(l)[0]
-        array([1 0 0 0 2])
+        array([1, 0, 0, 0, 2])
 
     .. note:: The structuring element used by :func:`label` is assumed to be symmetric.
 
@@ -1275,20 +1287,21 @@ containing initial markers for the objects:
     applied, and an array of markers that designate the objects by a
     unique label, where any non-zero value is a marker. For instance::
 
-        >>> input = array([[0, 0, 0, 0, 0, 0, 0],
-        ...                [0, 1, 1, 1, 1, 1, 0],
-        ...                [0, 1, 0, 0, 0, 1, 0],
-        ...                [0, 1, 0, 0, 0, 1, 0],
-        ...                [0, 1, 0, 0, 0, 1, 0],
-        ...                [0, 1, 1, 1, 1, 1, 0],
-        ...                [0, 0, 0, 0, 0, 0, 0]], np.uint8)
-        >>> markers = array([[1, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 2, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0]], np.int8)
+        >>> input = np.array([[0, 0, 0, 0, 0, 0, 0],
+        ...                   [0, 1, 1, 1, 1, 1, 0],
+        ...                   [0, 1, 0, 0, 0, 1, 0],
+        ...                   [0, 1, 0, 0, 0, 1, 0],
+        ...                   [0, 1, 0, 0, 0, 1, 0],
+        ...                   [0, 1, 1, 1, 1, 1, 0],
+        ...                   [0, 0, 0, 0, 0, 0, 0]], np.uint8)
+        >>> markers = np.array([[1, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 2, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0]], np.int8)
+        >>> from scipy.ndimage import watershed_ift
         >>> watershed_ift(input, markers)
         array([[1, 1, 1, 1, 1, 1, 1],
                [1, 1, 2, 2, 2, 1, 1],
@@ -1303,13 +1316,13 @@ containing initial markers for the objects:
     is arbitrary: moving the marker for the background to the lower
     right corner of the array yields a different result::
 
-        >>> markers = array([[0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 2, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 1]], np.int8)
+        >>> markers = np.array([[0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 2, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 1]], np.int8)
         >>> watershed_ift(input, markers)
         array([[1, 1, 1, 1, 1, 1, 1],
                [1, 1, 1, 1, 1, 1, 1],
@@ -1327,13 +1340,13 @@ containing initial markers for the objects:
     normal markers. For instance, replacing the first marker by a
     negative marker gives a result similar to the first example::
 
-        >>> markers = array([[0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 2, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, 0],
-        ...                  [0, 0, 0, 0, 0, 0, -1]], np.int8)
+        >>> markers = np.array([[0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 2, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, 0],
+        ...                     [0, 0, 0, 0, 0, 0, -1]], np.int8)
         >>> watershed_ift(input, markers)
         array([[-1, -1, -1, -1, -1, -1, -1],
                [-1, -1,  2,  2,  2, -1, -1],
@@ -1379,12 +1392,13 @@ smallest sub-array that fully contains the object:
     returns a list of slices that correspond to the smallest regions in
     the array that contains the object. For instance::
 
-        >>> a = array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
+        >>> a = np.array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
         >>> l, n = label(a)
+        >>> from scipy.ndimage import find_objects
         >>> f = find_objects(l)
         >>> a[f[0]]
-        array([[1 1],
-               [1 1]])
+        array([[1, 1],
+               [1, 1]])
         >>> a[f[1]]
         array([[0, 1, 0],
                [1, 1, 1],
@@ -1396,6 +1410,7 @@ smallest sub-array that fully contains the object:
     the *label* array, None is return instead of a slice. For
     example::
 
+        >>> from scipy.ndimage import find_objects
         >>> find_objects([1, 0, 3, 4], max_label = 3)
         [(slice(0, 1, None),), None, (slice(2, 3, None),)]
 
@@ -1405,15 +1420,15 @@ the position and dimensions of the objects in the array, but can
 also be used to perform measurements on the individual objects. Say
 we want to find the sum of the intensities of an object in image::
 
-    >>> image = arange(4 * 6).reshape(4, 6)
-    >>> mask = array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
+    >>> image = np.arange(4 * 6).reshape(4, 6)
+    >>> mask = np.array([[0,1,1,0,0,0],[0,1,1,0,1,0],[0,0,0,1,1,1],[0,0,0,0,1,0]])
     >>> labels = label(mask)[0]
     >>> slices = find_objects(labels)
 
 Then we can calculate the sum of the elements in the second
 object::
 
-    >>> where(labels[slices[1]] == 2, image[slices[1]], 0).sum()
+    >>> np.where(labels[slices[1]] == 2, image[slices[1]], 0).sum()
     80
 
 That is however not particularly efficient, and may also be more
@@ -1422,13 +1437,14 @@ measurements functions are defined that accept the array of object
 labels and the index of the object to be measured. For instance
 calculating the sum of the intensities can be done by::
 
-    >>> sum(image, labels, 2)
+    >>> from scipy.ndimage import sum as ndi_sum
+    >>> ndi_sum(image, labels, 2)
     80
 
 For large arrays and small objects it is more efficient to call the
 measurement functions after slicing the array::
 
-    >>> sum(image[slices[1]], labels[slices[1]], 2)
+    >>> ndi_sum(image[slices[1]], labels[slices[1]], 2)
     80
 
 Alternatively, we can do the measurements for a number of labels
@@ -1436,7 +1452,7 @@ with a single function call, returning a list of results. For
 instance, to measure the sum of the values of the background and
 the second object in our example we give a list of labels::
 
-    >>> sum(image, labels, [0, 2])
+    >>> ndi_sum(image, labels, [0, 2])
     array([178.0, 80.0])
 
 The measurement functions described below all support the *index*
@@ -1652,13 +1668,14 @@ This extension can then be used in Python, for example:
 ::
 
     >>> import example
-    >>> array = arange(12).reshape=(4, 3).astype(np.float64)
+    >>> array = np.arange(12).reshape(4, 3).astype(np.float64)
     >>> fnc = example.shift_function(0.5)
+    >>> from scipy.ndimage import geometric_transform
     >>> geometric_transform(array, fnc)
-    array([[ 0.      0.      0.    ],
-           [ 0.      1.3625  2.7375],
-           [ 0.      4.8125  6.1875],
-           [ 0.      8.2625  9.6375]])
+    array([[ 0.,      0.,      0.    ],
+           [ 0.,      1.3625,  2.7375],
+           [ 0.,      4.8125,  6.1875],
+           [ 0.,      8.2625,  9.6375]])
 
 C callback functions for use with :mod:`ndimage` functions must all
 be written according to this scheme. The next section lists the

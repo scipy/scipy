@@ -30,8 +30,7 @@ def gen_data(dt):
 data = gen_data(np.float32)
 filename = 'fftw_single_ref'
 # Save ref data into npz format
-d = {}
-d['sizes'] = SZ
+d = {'sizes': SZ}
 for type in [1, 2, 3, 4]:
     for sz in SZ:
         d['dct_%d_%d' % (type, sz)] = data[type][sz]
@@ -47,8 +46,7 @@ np.savez(filename, **d)
 data = gen_data(np.float64)
 filename = 'fftw_double_ref'
 # Save ref data into npz format
-d = {}
-d['sizes'] = SZ
+d = {'sizes': SZ}
 for type in [1, 2, 3, 4]:
     for sz in SZ:
         d['dct_%d_%d' % (type, sz)] = data[type][sz]

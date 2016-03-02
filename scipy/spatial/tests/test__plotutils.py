@@ -6,6 +6,7 @@ try:
     import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
     import matplotlib.pyplot as plt
+    from matplotlib.collections import LineCollection
     has_matplotlib = True
 except:
     has_matplotlib = False
@@ -37,6 +38,7 @@ class TestPlotting:
         r = voronoi_plot_2d(obj, ax=fig.gca())
         assert_(r is fig)
         voronoi_plot_2d(obj)
+        voronoi_plot_2d(obj, show_vertices=False)
 
     @dec.skipif(not has_matplotlib, "Matplotlib not available")
     def test_convex_hull(self):

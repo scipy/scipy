@@ -12,7 +12,7 @@ import numpy as np
 
 from .data import _data_matrix, _minmax_mixin
 from .compressed import _cs_matrix
-from .base import isspmatrix, _formats
+from .base import isspmatrix, _formats, spmatrix
 from .sputils import isshape, getdtype, to_native, upcast, get_index_dtype
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_pass1,
@@ -115,6 +115,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
            [4, 4, 5, 5, 6, 6]])
 
     """
+    format = 'bsr'
+
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
 
@@ -143,7 +145,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 if (M % R) != 0 or (N % C) != 0:
                     raise ValueError('shape must be multiple of blocksize')
 
-                idx_dtype = get_index_dtype(maxval=N//C)
+                # Select index dtype large enough to pass array and
+                # scalar parameters to sparsetools
+                idx_dtype = get_index_dtype(maxval=max(M//R, N//C, R, C))
                 self.indices = np.zeros(0, dtype=idx_dtype)
                 self.indptr = np.zeros(M//R + 1, dtype=idx_dtype)
 
@@ -155,7 +159,16 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             elif len(arg1) == 3:
                 # (data,indices,indptr) format
                 (data, indices, indptr) = arg1
-                idx_dtype = get_index_dtype((indices, indptr), check_contents=True)
+
+                # Select index dtype large enough to pass array and
+                # scalar parameters to sparsetools
+                maxval = None
+                if shape is not None:
+                    maxval = max(shape)
+                if blocksize is not None:
+                    maxval = max(maxval, max(blocksize))
+                idx_dtype = get_index_dtype((indices, indptr), maxval=maxval, check_contents=True)
+
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = np.array(data, copy=copy, dtype=getdtype(dtype, data))
@@ -264,18 +277,21 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         return self.data.shape[1:]
     blocksize = property(fget=_get_blocksize)
 
-    def getnnz(self):
+    def getnnz(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError("getnnz over an axis is not implemented "
+                                      "for BSR format")
         R,C = self.blocksize
         return int(self.indptr[-1] * R * C)
-    nnz = property(fget=getnnz)
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
 
     def __repr__(self):
-        nnz = self.getnnz()
-        format = self.getformat()
-        return "<%dx%d sparse matrix of type '%s'\n" \
-               "\twith %d stored elements (blocksize = %dx%d) in %s format>" % \
-               (self.shape + (self.dtype.type, nnz) + self.blocksize +
-                 (_formats[format][1],))
+        format = _formats[self.getformat()][1]
+        return ("<%dx%d sparse matrix of type '%s'\n"
+                "\twith %d stored elements (blocksize = %dx%d) in %s format>" %
+                (self.shape + (self.dtype.type, self.nnz) + self.blocksize +
+                 (format,)))
 
     def diagonal(self):
         """Returns the main diagonal of the matrix
@@ -484,20 +500,43 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         self.data[:len(nonzero_blocks)] = self.data[nonzero_blocks]
 
-        from .csr import csr_matrix
-
         # modifies self.indptr and self.indices *in place*
-        # since CSR constructor may end up in making copies (in case
-        # our index arrays are invalid in some way), play it safe
-        proxy = csr_matrix((mask,self.indices,self.indptr),shape=(M//R,N//C))
-        proxy.indices = self.indices
-        proxy.indptr = self.indptr
-        proxy.eliminate_zeros()
-
+        _sparsetools.csr_eliminate_zeros(M//R, N//C, self.indptr,
+                                         self.indices, mask)
         self.prune()
 
     def sum_duplicates(self):
-        raise NotImplementedError
+        """Eliminate duplicate matrix entries by adding them together
+
+        The is an *in place* operation
+        """
+        if self.has_canonical_format:
+            return
+        self.sort_indices()
+        R, C = self.blocksize
+        M, N = self.shape
+
+        # port of _sparsetools.csr_sum_duplicates
+        n_row = M // R
+        nnz = 0
+        row_end = 0
+        for i in range(n_row):
+            jj = row_end
+            row_end = self.indptr[i+1]
+            while jj < row_end:
+                j = self.indices[jj]
+                x = self.data[jj]
+                jj += 1
+                while jj < row_end and self.indices[jj] == j:
+                    x += self.data[jj]
+                    jj += 1
+                self.indices[nnz] = j
+                self.data[nnz] = x
+                nnz += 1
+            self.indptr[i+1] = nnz
+
+        self.prune()  # nnz may have changed
+        self.has_canonical_format = True
 
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
@@ -561,7 +600,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
            self.indptr.astype(idx_dtype),
            self.indices.astype(idx_dtype),
-           np.ravel(self.data),
+           self.data,
            other.indptr.astype(idx_dtype),
            other.indices.astype(idx_dtype),
            np.ravel(other.data),

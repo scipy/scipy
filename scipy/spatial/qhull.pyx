@@ -272,6 +272,8 @@ cdef class _Qhull:
             raise ValueError("No points given")
         if self.ndim < 2:
             raise ValueError("Need at least 2-D data")
+        if np.isnan(points).any():
+            raise ValueError("Points cannot contain NaN")
 
         # Process options
         option_set = set()
@@ -1704,15 +1706,15 @@ class Delaunay(_QhullUser):
     triangulation:
 
     >>> tri.simplices
-    array([[3, 2, 0],                 # may vary
+    array([[2, 3, 0],                 # may vary
            [3, 1, 0]], dtype=int32)
 
     Note that depending on how rounding errors go, the simplices may
     be in a different order than above.
 
     >>> points[tri.simplices]
-    array([[[ 1. ,  1. ],             # may vary
-            [ 1. ,  0. ],
+    array([[[ 1. ,  0. ],            # may vary
+            [ 1. ,  1. ],
             [ 0. ,  0. ]],
            [[ 1. ,  1. ],
             [ 0. ,  1.1],

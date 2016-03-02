@@ -124,6 +124,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
            [0, 1, 1, 1]])
 
     """
+    format = 'csr'
 
     def transpose(self, copy=False):
         from .csc import csc_matrix
@@ -134,8 +135,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
         from .lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
-        self.sort_indices()  # lil_matrix needs sorted column indices
-
+        self.sum_duplicates()
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data = lil.rows, lil.data
 

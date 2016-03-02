@@ -139,6 +139,7 @@ dgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
     SuperMatrix AC; /* Matrix postmultiplied by Pc */
     int      lwork = 0, *etree, i;
+    GlobalLU_t Glu; /* Not needed on return. */
     
     /* Set default values for some parameters */
     int      panel_size;     /* panel size */
@@ -161,7 +162,7 @@ dgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	*info = -7;
     if ( *info != 0 ) {
 	i = -(*info);
-	xerbla_("dgssv", &i);
+	input_error("dgssv", &i);
 	return;
     }
 
@@ -207,7 +208,7 @@ dgssv(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     t = SuperLU_timer_(); 
     /* Compute the LU factorization of A. */
     dgstrf(options, &AC, relax, panel_size, etree,
-            NULL, lwork, perm_c, perm_r, L, U, stat, info);
+            NULL, lwork, perm_c, perm_r, L, U, &Glu, stat, info);
     utime[FACT] = SuperLU_timer_() - t;
 
     t = SuperLU_timer_();

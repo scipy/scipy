@@ -28,6 +28,18 @@ class _TestConvolve(TestCase):
         c = convolve(a, b)
         assert_array_equal(c, array([3, 10, 22, 28, 32, 32, 23, 12]))
 
+    def test_same(self):
+        a = [3, 4, 5]
+        b = [1, 2, 3, 4]
+        c = convolve(a, b, mode="same")
+        assert_array_equal(c, array([10, 22, 34]))
+
+    def test_same_eq(self):
+        a = [3, 4, 5]
+        b = [1, 2, 3]
+        c = convolve(a, b, mode="same")
+        assert_array_equal(c, array([10, 22, 22]))
+
     def test_complex(self):
         x = array([1 + 1j, 2 + 1j, 3 + 1j])
         y = array([1 + 1j, 2 + 1j])
@@ -464,12 +476,67 @@ class TestWiener(TestCase):
 class TestResample(TestCase):
 
     def test_basic(self):
+        # Some basic tests
+
         # Regression test for issue #3603.
         # window.shape must equal to sig.shape[0]
         sig = np.arange(128)
         num = 256
         win = signal.get_window(('kaiser', 8.0), 160)
         assert_raises(ValueError, signal.resample, sig, num, window=win)
+
+        # Other degenerate conditions
+        assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
+        assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
+
+    def test_fft(self):
+        # Test FFT-based resampling
+        self._test_data(method='fft')
+
+    def test_polyphase(self):
+        # Test polyphase resampling
+        self._test_data(method='polyphase')
+
+    def _test_data(self, method):
+        # Test resampling of sinusoids and random noise (1-sec)
+        rate = 100
+        rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
+
+        # Sinusoids, windowed to avoid edge artifacts
+        t = np.arange(rate) / float(rate)
+        freqs = np.array((1., 10., 40.))[:, np.newaxis]
+        x = np.sin(2 * np.pi * freqs * t) * np.hanning(rate)
+
+        for rate_to in rates_to:
+            t_to = np.arange(rate_to) / float(rate_to)
+            y_tos = np.sin(2 * np.pi * freqs * t_to) * np.hanning(rate_to)
+            if method == 'fft':
+                y_resamps = signal.resample(x, rate_to, axis=-1)
+            else:
+                y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1)
+            for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
+                if freq >= 0.5 * rate_to:
+                    y_to.fill(0.)  # mostly low-passed away
+                    assert_allclose(y_resamp, y_to, atol=1e-3)
+                else:
+                    assert_array_equal(y_to.shape, y_resamp.shape)
+                    corr = np.corrcoef(y_to, y_resamp)[0, 1]
+                    assert_(corr > 0.99, msg=corr)
+
+        # Random data
+        rng = np.random.RandomState(0)
+        x = np.hanning(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
+        for rate_to in rates_to:
+            # random data
+            t_to = np.arange(rate_to) / float(rate_to)
+            y_to = np.interp(t_to, t, x)
+            if method == 'fft':
+                y_resamp = signal.resample(x, rate_to)
+            else:
+                y_resamp = signal.resample_poly(x, rate_to, rate)
+            assert_array_equal(y_to.shape, y_resamp.shape)
+            corr = np.corrcoef(y_to, y_resamp)[0, 1]
+            assert_(corr > 0.99, msg=corr)
 
 
 class TestCSpline1DEval(TestCase):
@@ -1055,6 +1122,18 @@ class _TestCorrelateComplex(TestCase):
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
         assert_equal(y.dtype, self.dt)
+
+    def test_swap_full(self):
+        d = np.array([0.+0.j, 1.+1.j, 2.+2.j], dtype=self.dt)
+        k = np.array([1.+3.j, 2.+4.j, 3.+5.j, 4.+6.j], dtype=self.dt)
+        y = correlate(d, k)
+        assert_equal(y, [0.+0.j, 10.-2.j, 28.-6.j, 22.-6.j, 16.-6.j, 8.-4.j])
+
+    def test_swap_same(self):
+        d = [0.+0.j, 1.+1.j, 2.+2.j]
+        k = [1.+3.j, 2.+4.j, 3.+5.j, 4.+6.j]
+        y = correlate(d, k, mode="same")
+        assert_equal(y, [10.-2.j, 28.-6.j, 22.-6.j])
 
     def test_rank3(self):
         a = np.random.randn(10, 8, 6).astype(self.dt)

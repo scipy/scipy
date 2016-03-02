@@ -5,16 +5,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy._lib.six import xrange
-from scipy.linalg import get_blas_funcs
+from scipy.linalg import get_blas_funcs, get_lapack_funcs, qr_insert
 from .utils import make_system
 
 __all__ = ['lgmres']
-
-
-def norm2(q):
-    q = np.asarray(q)
-    nrm2 = get_blas_funcs('nrm2', dtype=q.dtype)
-    return nrm2(q)
 
 
 def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
@@ -103,7 +97,6 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
              http://amath.colorado.edu/activities/thesis/allisonb/Thesis.ps
 
     """
-    from scipy.linalg.basic import lstsq
     A,M,x,b,postprocess = make_system(A,M,x0,b)
 
     if not np.isfinite(b).all():
@@ -116,8 +109,9 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         outer_v = []
 
     axpy, dot, scal = None, None, None
+    nrm2 = get_blas_funcs('nrm2', [b])
 
-    b_norm = norm2(b)
+    b_norm = nrm2(b)
     if b_norm == 0:
         b_norm = 1
 
@@ -132,28 +126,34 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         if axpy is None:
             if np.iscomplexobj(r_outer) and not np.iscomplexobj(x):
                 x = x.astype(r_outer.dtype)
-            axpy, dot, scal = get_blas_funcs(['axpy', 'dot', 'scal'],
-                                              (x, r_outer))
+            axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'],
+                                                   (x, r_outer))
+            trtrs = get_lapack_funcs('trtrs', (x, r_outer))
 
         # -- check stopping condition
-        r_norm = norm2(r_outer)
+        r_norm = nrm2(r_outer)
         if r_norm < tol * b_norm or r_norm < tol:
             break
 
         # -- inner LGMRES iteration
         vs0 = -psolve(r_outer)
-        inner_res_0 = norm2(vs0)
+        inner_res_0 = nrm2(vs0)
 
         if inner_res_0 == 0:
-            rnorm = norm2(r_outer)
+            rnorm = nrm2(r_outer)
             raise RuntimeError("Preconditioner returned a zero vector; "
                                "|v| ~ %.1g, |M v| = 0" % rnorm)
 
         vs0 = scal(1.0/inner_res_0, vs0)
-        hs = []
         vs = [vs0]
         ws = []
         y = None
+
+        # H is stored in QR factorized form
+        Q = np.ones((1, 1), dtype=vs0.dtype)
+        R = np.zeros((1, 0), dtype=vs0.dtype)
+
+        eps = np.finfo(vs0.dtype).eps
 
         for j in xrange(1, 1 + inner_m + len(outer_v)):
             # -- Arnoldi process:
@@ -184,11 +184,6 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             #    solves a minimization problem in the smaller subspace
             #    spanned by W (range) and V (image).
             #
-            #    XXX: Below, I'm lazy and use `lstsq` to solve the
-            #    small least squares problem. Performance-wise, this
-            #    is in practice acceptable, but it could be nice to do
-            #    it on the fly with Givens etc.
-            #
 
             #     ++ evaluate
             v_new = None
@@ -213,38 +208,44 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                 alpha = dot(v, v_new)
                 hcur.append(alpha)
                 v_new = axpy(v, v_new, v.shape[0], -alpha)  # v_new -= alpha*v
-            hcur.append(norm2(v_new))
+            hcur.append(nrm2(v_new))
 
             if hcur[-1] == 0:
-                # Exact solution found; bail out.
-                # Zero basis vector (v_new) in the least-squares problem
-                # does no harm, so we can just use the same code as usually;
-                # it will give zero (inner) residual as a result.
-                bailout = True
+                # Exact solution.
+                break
             else:
-                bailout = False
                 v_new = scal(1.0/hcur[-1], v_new)
 
             vs.append(v_new)
-            hs.append(hcur)
             ws.append(z)
 
-            # XXX: Ugly: should implement the GMRES iteration properly,
-            #      with Givens rotations and not using lstsq. Instead, we
-            #      spare some work by solving the LSQ problem only every 5
-            #      iterations.
-            if not bailout and j % 5 != 1 and j < inner_m + len(outer_v) - 1:
-                continue
+            hcur = np.asarray(hcur, dtype=Q.dtype)
+            if not np.isfinite(hcur).all():
+                raise ValueError("Non-finite results encountered.")
 
             # -- GMRES optimization problem
-            hess = np.zeros((j+1, j), x.dtype)
-            e1 = np.zeros((j+1,), x.dtype)
-            e1[0] = inner_res_0
-            for q in xrange(j):
-                hess[:(q+2),q] = hs[q]
 
-            y, resids, rank, s = lstsq(hess, e1)
-            inner_res = norm2(np.dot(hess, y) - e1)
+            # Add new column to H=Q*R, padding other columns with zeros
+
+            Q2 = np.zeros((j+1, j+1), dtype=Q.dtype, order='F')
+            Q2[:j,:j] = Q
+            Q2[j,j] = 1
+
+            R2 = np.zeros((j+1, j-1), dtype=R.dtype, order='F')
+            R2[:j,:] = R
+
+            Q, R = qr_insert(Q2, R2, hcur, j-1, which='col',
+                             overwrite_qru=True, check_finite=False)
+
+            # Solve least squares problem
+            # H y = Q R y = inner_res_0 * e_1
+            y, info = trtrs(R[:j,:j], Q[0,:j].conj())
+            if info != 0:
+                # Zero diagonal -> exact solution, but we catch that above
+                raise RuntimeError("QR solution failed")
+            y *= inner_res_0
+
+            inner_res = nrm2(np.dot(R, y) - inner_res_0*Q[0].conj())
 
             # -- check for termination
             if inner_res < tol * inner_res_0:
@@ -256,9 +257,9 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             dx = axpy(w, dx, dx.shape[0], yc)  # dx += w*yc
 
         # -- Store LGMRES augmentation vectors
-        nx = norm2(dx)
+        nx = nrm2(dx)
         if store_outer_Av:
-            q = np.dot(hess, y)
+            q = Q.dot(R.dot(y))
             ax = vs[0]*q[0]
             for v, qc in zip(vs[1:], q[1:]):
                 ax = axpy(v, ax, ax.shape[0], qc)

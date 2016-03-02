@@ -396,7 +396,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
        SuperMatrix *L, SuperMatrix *U, void *work, int lwork,
        SuperMatrix *B, SuperMatrix *X,
        double *recip_pivot_growth, double *rcond,
-       mem_usage_t *mem_usage, SuperLUStat_t *stat, int *info)
+       GlobalLU_t *Glu, mem_usage_t *mem_usage, SuperLUStat_t *stat, int *info)
 {
 
     DNformat  *Bstore, *Xstore;
@@ -438,9 +438,9 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	rowequ = FALSE;
 	colequ = FALSE;
     } else {
-	rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-	colequ = lsame_(equed, "C") || lsame_(equed, "B");
-	smlnum = dlamch_("Safe minimum");
+	rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
+	colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
+	smlnum = dmach("Safe minimum");  /* lamch_("Safe minimum"); */
 	bignum = 1. / smlnum;
     }
 
@@ -456,8 +456,8 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	      (A->Stype != SLU_NC && A->Stype != SLU_NR) ||
 	      A->Dtype != SLU_Z || A->Mtype != SLU_GE )
 	*info = -2;
-    else if (options->Fact == FACTORED &&
-	     !(rowequ || colequ || lsame_(equed, "N")))
+    else if ( options->Fact == FACTORED &&
+	     !(rowequ || colequ || strncmp(equed, "N", 1)==0) )
 	*info = -6;
     else {
 	if (rowequ) {
@@ -499,7 +499,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     }
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("zgsisx", &i);
+	input_error("zgsisx", &i);
 	return;
     }
 
@@ -583,8 +583,8 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	    if ( info1 == 0 ) {
 		/* Equilibrate matrix A. */
 		zlaqgs(AA, R, C, rowcnd, colcnd, amax, equed);
-		rowequ = lsame_(equed, "R") || lsame_(equed, "B");
-		colequ = lsame_(equed, "C") || lsame_(equed, "B");
+		rowequ = strncmp(equed, "R", 1)==0 || strncmp(equed, "B", 1)==0;
+		colequ = strncmp(equed, "C", 1)==0 || strncmp(equed, "B", 1)==0;
 	    }
 	    utime[EQUIL] = SuperLU_timer_() - t0;
 	}
@@ -614,7 +614,7 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	/* Compute the LU factorization of A*Pc. */
 	t0 = SuperLU_timer_();
 	zgsitrf(options, &AC, relax, panel_size, etree, work, lwork,
-                perm_c, perm_r, L, U, stat, info);
+                perm_c, perm_r, L, U, Glu, stat, info);
 	utime[FACT] = SuperLU_timer_() - t0;
 
 	if ( lwork == -1 ) {
@@ -712,7 +712,8 @@ zgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 
     if ( options->ConditionNumber ) {
 	/* The matrix is singular to working precision. */
-	if ( *rcond < dlamch_("E") && *info == 0) *info = A->ncol + 1;
+	/* if ( *rcond < dlamch_("E") && *info == 0) *info = A->ncol + 1; */
+	if ( *rcond < dmach("E") && *info == 0) *info = A->ncol + 1;
     }
 
     if ( nofact ) {

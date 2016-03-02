@@ -86,7 +86,7 @@ Finding Documentation
 ---------------------
 
 SciPy and NumPy have documentation versions in both HTML and PDF format
-available at http://docs.scipy.org/, that cover nearly
+available at https://docs.scipy.org/, that cover nearly
 all available functionality. However, this documentation is still
 work-in-progress and some parts may be incomplete or sparse. As
 we are a volunteer organization and depend on the community for

@@ -5,6 +5,8 @@ from __future__ import division, print_function, absolute_import
 
 from functools import partial
 from itertools import product
+import operator
+import nose
 
 from numpy.testing import TestCase, assert_, assert_equal, \
         assert_raises
@@ -13,6 +15,10 @@ import numpy as np
 import scipy.sparse as sparse
 
 from scipy.sparse.linalg import interface
+
+
+# Only test matmul operator (A @ B) when available (Python 3.5+)
+TEST_MATMUL = hasattr(operator, 'matmul')
 
 
 class TestLinearOperator(TestCase):
@@ -136,6 +142,26 @@ class TestLinearOperator(TestCase):
 
             assert_(isinstance(C**2, interface._PowerLinearOperator))
 
+    def test_matmul(self):
+        if not TEST_MATMUL:
+            raise nose.SkipTest("matmul is only tested in Python 3.5+")
+
+        D = {'shape': self.A.shape,
+             'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),
+             'rmatvec': lambda x: np.dot(self.A.T.conj(),
+                                         x).reshape(self.A.shape[1]),
+             'matmat': lambda x: np.dot(self.A, x)}
+        A = interface.LinearOperator(**D)
+        B = np.array([[1, 2, 3],
+                      [4, 5, 6],
+                      [7, 8, 9]])
+        b = B[0]
+
+        assert_equal(operator.matmul(A, b), A * b)
+        assert_equal(operator.matmul(A, B), A * B)
+        assert_raises(ValueError, operator.matmul, A, 2)
+        assert_raises(ValueError, operator.matmul, 2, A)
+
 
 class TestAsLinearOperator(TestCase):
     def setUp(self):
@@ -258,6 +284,20 @@ def test_attributes():
         assert_(hasattr(op, "shape"))
         assert_(hasattr(op, "_matvec"))
 
+def matvec(x):
+    """ Needed for test_pickle as local functions are not pickleable """
+    return np.zeros(3)
+
+def test_pickle():
+    import pickle
+
+    for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+        A = interface.LinearOperator((3, 3), matvec)
+        s = pickle.dumps(A, protocol=protocol)
+        B = pickle.loads(s)
+
+        for k in A.__dict__:
+            assert_equal(getattr(A, k), getattr(B, k))
 
 def test_inheritance():
     class Empty(interface.LinearOperator):

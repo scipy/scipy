@@ -17,22 +17,21 @@ Simple N-D interpolation
 #       Run ``generate_qhull.py`` to regenerate the ``qhull.c`` file
 #
 
+cimport cython
+
+from libc.float cimport DBL_EPSILON
+from libc.math cimport fabs, sqrt
+
 import numpy as np
 
 import scipy.spatial.qhull as qhull
 cimport scipy.spatial.qhull as qhull
-
-cimport cython
 
 import warnings
 
 #------------------------------------------------------------------------------
 # Numpy etc.
 #------------------------------------------------------------------------------
-
-cdef extern from "math.h":
-    double sqrt(double x) nogil
-    double fabs(double a) nogil
 
 cdef extern from "numpy/ndarrayobject.h":
     cdef enum:
@@ -41,6 +40,7 @@ cdef extern from "numpy/ndarrayobject.h":
 ctypedef fused double_or_complex:
     double
     double complex
+
 
 #------------------------------------------------------------------------------
 # Interpolator base class
@@ -68,14 +68,14 @@ class NDInterpolatorBase(object):
                 raise ValueError("Rescaling is not supported when passing "
                                  "a Delaunay triangulation as ``points``.")
             self.tri = points
-            points = self.tri.points
+            points = points.points
         else:
             self.tri = None
 
         points = _ndim_coords_from_arrays(points)
         values = np.asarray(values)
 
-        self._check_init_shape(points, values, ndim=ndim)
+        _check_init_shape(points, values, ndim=ndim)
 
         if need_contiguous:
             points = np.ascontiguousarray(points, dtype=np.double)
@@ -112,21 +112,6 @@ class NDInterpolatorBase(object):
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
 
-    def _check_init_shape(self, points, values, ndim=None):
-        """
-        Check shape of points and values arrays
-
-        """
-        if values.shape[0] != points.shape[0]:
-            raise ValueError("different number of values and points")
-        if points.ndim != 2:
-            raise ValueError("invalid shape for input data points")
-        if points.shape[1] < 2:
-            raise ValueError("input data must be at least 2-D")
-        if ndim is not None and points.shape[1] != ndim:
-            raise ValueError("this mode of interpolation available only for "
-                             "%d-D data" % ndim)
-
     def _check_call_shape(self, xi):
         xi = np.asanyarray(xi)
         if xi.shape[-1] != self.points.shape[1]:
@@ -157,24 +142,29 @@ class NDInterpolatorBase(object):
         xi = xi.reshape(-1, shape[-1])
         xi = np.ascontiguousarray(xi, dtype=np.double)
 
+        xi = self._scale_x(xi)
         if self.is_complex:
-            r = self._evaluate_complex(self._scale_x(xi))
+            r = self._evaluate_complex(xi)
         else:
-            r = self._evaluate_double(self._scale_x(xi))
+            r = self._evaluate_double(xi)
 
         return np.asarray(r).reshape(shape[:-1] + self.values_shape)
 
-def _ndim_coords_from_arrays(points, ndim=None):
+
+cpdef _ndim_coords_from_arrays(points, ndim=None):
     """
     Convert a tuple of coordinate arrays to a (..., ndim)-shaped array.
 
     """
+    cdef ssize_t j, n
+
     if isinstance(points, tuple) and len(points) == 1:
         # handle argument tuple
         points = points[0]
     if isinstance(points, tuple):
         p = np.broadcast_arrays(*points)
-        for j in xrange(1, len(p)):
+        n = len(p)
+        for j in range(1, n):
             if p[j].shape != p[0].shape:
                 raise ValueError("coordinate arrays do not have the same shape")
         points = np.empty(p[0].shape + (len(points),), dtype=float)
@@ -188,6 +178,23 @@ def _ndim_coords_from_arrays(points, ndim=None):
             else:
                 points = points.reshape(-1, ndim)
     return points
+
+
+cdef _check_init_shape(points, values, ndim=None):
+    """
+    Check shape of points and values arrays
+
+    """
+    if values.shape[0] != points.shape[0]:
+        raise ValueError("different number of values and points")
+    if points.ndim != 2:
+        raise ValueError("invalid shape for input data points")
+    if points.shape[1] < 2:
+        raise ValueError("input data must be at least 2-D")
+    if ndim is not None and points.shape[1] != ndim:
+        raise ValueError("this mode of interpolation available only for "
+                         "%d-D data" % ndim)
+
 
 #------------------------------------------------------------------------------
 # Linear interpolation in N-D
@@ -267,8 +274,8 @@ class LinearNDInterpolator(NDInterpolatorBase):
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 
-        eps = np.finfo(np.double).eps * 100
-        eps_broad = sqrt(np.finfo(np.double).eps)
+        eps = 100 * DBL_EPSILON
+        eps_broad = sqrt(DBL_EPSILON)
 
         with nogil:
             for i in xrange(xi.shape[0]):
@@ -480,7 +487,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
+cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
     cdef double[:,::1] data
     cdef double[:,:,::1] grad
     cdef qhull.DelaunayInfo_t info
@@ -877,7 +884,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 
-        eps = np.finfo(np.double).eps * 100
+        eps = 100 * DBL_EPSILON
         eps_broad = sqrt(eps)
 
         with nogil:

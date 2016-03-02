@@ -63,7 +63,7 @@ cPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
     complex   temp_comp;
    
     /* Get machine constants. */
-    smlnum = slamch_("S");
+    smlnum = smach("S");
     rpg = 1. / smlnum;
 
     Astore = A->Store;

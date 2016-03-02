@@ -106,15 +106,20 @@ class ode(object):
 
     Solve an equation system :math:`y'(t) = f(t,y)` with (optional) ``jac = df/dy``.
 
+    *Note*: The first two arguments of ``f(t, y, ...)`` are in the
+    opposite order of the arguments in the system definition function used
+    by `scipy.integrate.odeint`.
+
     Parameters
     ----------
     f : callable ``f(t, y, *f_args)``
-        Rhs of the equation. t is a scalar, ``y.shape == (n,)``.
+        Right-hand side of the differential equation. t is a scalar,
+        ``y.shape == (n,)``.
         ``f_args`` is set by calling ``set_f_params(*args)``.
         `f` should return a scalar, array or list (not a tuple).
     jac : callable ``jac(t, y, *jac_args)``, optional
-        Jacobian of the rhs, ``jac[i,j] = d f[i] / d y[j]``.
-        ``jac_args`` is set by calling ``set_f_params(*args)``.
+        Jacobian of the right-hand side, ``jac[i,j] = d f[i] / d y[j]``.
+        ``jac_args`` is set by calling ``set_jac_params(*args)``.
 
     Attributes
     ----------
@@ -441,6 +446,8 @@ class ode(object):
         """
         if self._integrator.supports_solout:
             self._integrator.set_solout(solout)
+            if self._y is not None:
+                self._integrator.reset(len(self._y), self.jac is not None)
         else:
             raise ValueError("selected integrator does not support solout,"
                             + " choose another one")

@@ -49,8 +49,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     ``g_i(x)`` are the inequality constraints.
     ``h_j(x)`` are the equality constrains.
 
-    Optionally, the lower and upper bounds for each element in x can also be specified 
-    using the `bounds` argument.
+    Optionally, the lower and upper bounds for each element in x can also be
+    specified using the `bounds` argument.
 
     Parameters
     ----------
@@ -159,10 +159,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     **Unconstrained minimization**
 
     Method :ref:`Nelder-Mead <optimize.minimize-neldermead>` uses the
-    Simplex algorithm [1]_, [2]_. This algorithm has been successful
-    in many applications but other algorithms using the first and/or
-    second derivatives information might be preferred for their better
-    performances and robustness in general.
+    Simplex algorithm [1]_, [2]_. This algorithm is robust in many
+    applications. However, if numerical computation of derivative can be
+    trusted, other algorithms using the first and/or second derivatives
+    information might be preferred for their better performance in
+    general.
 
     Method :ref:`Powell <optimize.minimize-powell>` is a modification
     of Powell's method [3]_, [4]_ which is a conjugate direction
@@ -312,9 +313,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     ...                options={'gtol': 1e-6, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 52
-             Function evaluations: 64
-             Gradient evaluations: 64
+             Iterations: 26
+             Function evaluations: 31
+             Gradient evaluations: 31
     >>> res.x
     array([ 1.,  1.,  1.,  1.,  1.])
     >>> print(res.message)

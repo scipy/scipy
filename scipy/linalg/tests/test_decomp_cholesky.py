@@ -3,15 +3,11 @@ from __future__ import division, print_function, absolute_import
 from numpy.testing import TestCase, assert_array_almost_equal
 
 from numpy import array, transpose, dot, conjugate, zeros_like
-from numpy.random import rand
+from numpy.random import random
 from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded, \
      cho_factor, cho_solve
 
 from scipy.linalg._testutils import assert_no_overwrite
-
-
-def random(size):
-    return rand(*size)
 
 
 class TestCholesky(TestCase):

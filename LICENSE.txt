@@ -1,7 +1,7 @@
 Copyright (c) 2001, 2002 Enthought, Inc.
 All rights reserved.
 
-Copyright (c) 2003-2012 SciPy Developers.
+Copyright (c) 2003-2016 SciPy Developers.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

@@ -12,7 +12,7 @@ import warnings
 import functools
 
 import numpy as np
-from numpy import array, identity, dot, sqrt, double
+from numpy import array, matrix, identity, dot, sqrt, double
 from numpy.testing import (TestCase, run_module_suite,
         assert_array_equal, assert_array_less, assert_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
@@ -185,26 +185,28 @@ class TestLogM(TestCase):
             A_logm, info = logm(A, disp=False)
             assert_(A_logm.dtype.char in complex_dtype_chars)
 
-    def test_logm_type_conversion_mixed_sign_or_complex_spectrum(self):
-        complex_dtype_chars = ('F', 'D', 'G')
-        for matrix_as_list in (
+    def test_complex_spectrum_real_logm(self):
+        # This matrix has complex eigenvalues and real logm.
+        # Its output dtype depends on its input dtype.
+        M = [[1, 1, 2], [2, 1, 1], [1, 2, 1]]
+        for dt in float, complex:
+            X = np.array(M, dtype=dt)
+            w = scipy.linalg.eigvals(X)
+            assert_(1e-2 < np.absolute(w.imag).sum())
+            Y, info = logm(X, disp=False)
+            assert_(np.issubdtype(Y.dtype, dt))
+            assert_allclose(expm(Y), X)
+
+    def test_real_mixed_sign_spectrum(self):
+        # These matrices have real eigenvalues with mixed signs.
+        # The output logm dtype is complex, regardless of input dtype.
+        for M in (
                 [[1, 0], [0, -1]],
-                [[0, 1], [1, 0]],
-                [[0, 1, 0], [0, 0, 1], [1, 0, 0]]):
-
-            # check that the spectrum has the expected properties
-            W = scipy.linalg.eigvals(matrix_as_list)
-            assert_(any(w.imag or w.real < 0 for w in W))
-
-            # check complex->complex
-            A = np.array(matrix_as_list, dtype=complex)
-            A_logm, info = logm(A, disp=False)
-            assert_(A_logm.dtype.char in complex_dtype_chars)
-
-            # check float->complex
-            A = np.array(matrix_as_list, dtype=float)
-            A_logm, info = logm(A, disp=False)
-            assert_(A_logm.dtype.char in complex_dtype_chars)
+                [[0, 1], [1, 0]]):
+            for dt in float, complex:
+                A = np.array(M, dtype=dt)
+                A_logm, info = logm(A, disp=False)
+                assert_(np.issubdtype(A_logm.dtype, complex))
 
     def test_logm_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
@@ -571,6 +573,33 @@ class TestExpM(TestCase):
             a = array([[1j,1],[-1,-2j]])
             assert_array_almost_equal(expm(a), expm2(a))
             assert_array_almost_equal(expm(a), expm3(a))
+
+    def test_npmatrix(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            a = matrix([[3.,0],[0,-3.]])
+            assert_array_almost_equal(expm(a), expm2(a))
+
+    def test_single_elt(self):
+        # See gh-5853
+        from scipy.sparse import csc_matrix
+
+        vOne = -2.02683397006j
+        vTwo = -2.12817566856j
+
+        mOne = csc_matrix([[vOne]], dtype='complex')
+        mTwo = csc_matrix([[vTwo]], dtype='complex')
+
+        outOne = expm(mOne)
+        outTwo = expm(mTwo)
+
+        assert_equal(type(outOne), type(mOne))
+        assert_equal(type(outTwo), type(mTwo))
+
+        assert_allclose(outOne[0, 0], complex(-0.44039415155949196,
+                                              -0.8978045395698304))
+        assert_allclose(outTwo[0, 0], complex(-0.52896401032626006,
+                                              -0.84864425749518878))
 
 
 class TestExpmFrechet(TestCase):

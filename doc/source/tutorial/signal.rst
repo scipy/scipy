@@ -229,9 +229,9 @@ The code below shows a simple example for convolution of 2 sequences
 >>> x = np.array([1.0, 2.0, 3.0])
 >>> h = np.array([0.0, 1.0, 0.0, 0.0, 0.0])
 >>> signal.convolve(x, h)
-[ 0.  1.  2.  3.  0.  0.  0.]
+array([ 0.,  1.,  2.,  3.,  0.,  0.,  0.])
 >>> signal.convolve(x, h, 'same')
-[ 2.  3.  0.]
+array([ 2.,  3.,  0.])
 
 
 This same function :func:`convolve` can actually take :math:`N` -dimensional
@@ -240,16 +240,16 @@ two arrays as is shown in the code example below. The same input flags are
 available for that case as well.
 
 
->>> x = np.array([[1., 1., 0., 0.],[1., 1., 0., 0.],[0., 0., 0., 0.],[0., 0., 0., 0.]])
->>> h = np.array([[1., 0., 0., 0.],[0., 0., 0., 0.],[0., 0., 1., 0.],[0., 0., 0., 0.]])
+>>> x = np.array([[1., 1., 0., 0.], [1., 1., 0., 0.], [0., 0., 0., 0.], [0., 0., 0., 0.]])
+>>> h = np.array([[1., 0., 0., 0.], [0., 0., 0., 0.], [0., 0., 1., 0.], [0., 0., 0., 0.]])
 >>> signal.convolve(x, h)
-[[ 1.  1.  0.  0.  0.  0.  0.]
- [ 1.  1.  0.  0.  0.  0.  0.]
- [ 0.  0.  1.  1.  0.  0.  0.]
- [ 0.  0.  1.  1.  0.  0.  0.]
- [ 0.  0.  0.  0.  0.  0.  0.]
- [ 0.  0.  0.  0.  0.  0.  0.]
- [ 0.  0.  0.  0.  0.  0.  0.]]
+array([[ 1.,  1.,  0.,  0.,  0.,  0.,  0.],
+       [ 1.,  1.,  0.,  0.,  0.,  0.,  0.],
+       [ 0.,  0.,  1.,  1.,  0.,  0.,  0.],
+       [ 0.,  0.,  1.,  1.,  0.,  0.,  0.],
+       [ 0.,  0.,  0.,  0.,  0.,  0.,  0.],
+       [ 0.,  0.,  0.,  0.,  0.,  0.,  0.],
+       [ 0.,  0.,  0.,  0.,  0.,  0.,  0.]])
 
 Correlation is very similar to convolution except for the minus sign
 becomes a plus sign. Thus
@@ -456,10 +456,10 @@ first for initial conditions :math:`y[-1] = 0` (default case), then for
 >>> b = np.array([1.0/2, 1.0/4])
 >>> a = np.array([1.0, -1.0/3])
 >>> signal.lfilter(b, a, x)
-[ 0.5         0.41666667  0.13888889  0.0462963 ]
+array([0.5, 0.41666667, 0.13888889, 0.0462963])
 >>> zi = signal.lfiltic(b, a, y=[2.])
 >>> signal.lfilter(b, a, x, zi=zi)
-[ 1.16666667,  0.63888889,  0.21296296,  0.07098765]
+(array([ 1.16666667,  0.63888889,  0.21296296,  0.07098765]), array([0.02366]))
 
 Note that the output signal :math:`y[n]` has the same length as the length as
 the input signal :math:`x[n]`.
@@ -486,7 +486,7 @@ For the example from above we have
 >>> b = np.array([1.0/2, 1.0/4])
 >>> a = np.array([1.0, -1.0/3])
 >>> signal.tf2zpk(b, a)
-[-0.5] [ 0.33333333] 0.5
+(array([-0.5]), array([ 0.33333333]), 0.5)
 
 i.e. the system has a zero at :math:`z=-1/2` and a pole at :math:`z=1/3`. 
 
