@@ -277,6 +277,12 @@ class TestBasinHopping(TestCase):
         # iterations + 1
         assert_equal(res.nit + 1, res.minimization_failures)
 
+    def test_niter_zero(self):
+        # gh5915, what happens if you call basinhopping with niter=0
+        i = 0
+        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=0, disp=self.disp)
+
 
 class Test_Storage(TestCase):
     def setUp(self):

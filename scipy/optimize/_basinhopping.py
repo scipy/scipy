@@ -605,7 +605,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                             accept_tests, disp=disp)
 
     # start main iteration loop
-    count = 0
+    count, i = 0, 0
     message = ["requested number of basinhopping iterations completed"
                " successfully"]
     for i in range(niter):
