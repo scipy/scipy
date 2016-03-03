@@ -295,7 +295,7 @@ def wrap_function(function, args):
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0, callback=None):
+         full_output=0, disp=1, retall=0, callback=None, initial_simplex=None):
     """
     Minimize a function using the downhill simplex algorithm.
 
@@ -310,9 +310,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Initial guess.
     args : tuple, optional
         Extra arguments passed to func, i.e. ``f(x,*args)``.
-    callback : callable, optional
-        Called after each iteration, as callback(xk), where xk is the
-        current parameter vector.
     xtol : float, optional
         Relative error in xopt acceptable for convergence.
     ftol : number, optional
@@ -327,6 +324,14 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Set to True to print convergence messages.
     retall : bool, optional
         Set to True to return list of solutions at each iteration.
+    callback : callable, optional
+        Called after each iteration, as callback(xk), where xk is the
+        current parameter vector.
+    initial_simplex : array_like of shape (N + 1, N), optional
+        Initial simplex. If given, overrides `x0`.
+        ``initial_simplex[j,:]`` should contain the coordinates of
+        the j-th vertex of the ``N+1`` vertices in the simplex, where
+        ``N`` is the dimension.
 
     Returns
     -------
@@ -379,7 +384,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'maxiter': maxiter,
             'maxfev': maxfun,
             'disp': disp,
-            'return_all': retall}
+            'return_all': retall,
+            'initial_simplex': initial_simplex}
 
     res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
@@ -396,7 +402,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
-                         disp=False, return_all=False,
+                         disp=False, return_all=False, initial_simplex=None,
                          **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -414,6 +420,11 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         Maximum number of iterations to perform.
     maxfev : int
         Maximum number of function evaluations to make.
+    initial_simplex : array_like of shape (N + 1, N)
+        Initial simplex. If given, overrides `x0`.
+        ``initial_simplex[j,:]`` should contain the coordinates of
+        the j-th vertex of the ``N+1`` vertices in the simplex, where
+        ``N`` is the dimension.
 
     """
     _check_unknown_options(unknown_options)
@@ -421,37 +432,49 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     retall = return_all
 
     fcalls, func = wrap_function(func, args)
-    x0 = asfarray(x0).flatten()
-    N = len(x0)
-    if maxiter is None:
-        maxiter = N * 200
-    if maxfun is None:
-        maxfun = N * 200
 
     rho = 1
     chi = 2
     psi = 0.5
     sigma = 0.5
-    one2np1 = list(range(1, N + 1))
-
-    sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
-    fsim = numpy.zeros((N + 1,), float)
-    sim[0] = x0
-    if retall:
-        allvecs = [sim[0]]
-    fsim[0] = func(x0)
     nonzdelt = 0.05
     zdelt = 0.00025
-    for k in range(0, N):
-        y = numpy.array(x0, copy=True)
-        if y[k] != 0:
-            y[k] = (1 + nonzdelt)*y[k]
-        else:
-            y[k] = zdelt
 
-        sim[k + 1] = y
-        f = func(y)
-        fsim[k + 1] = f
+    x0 = asfarray(x0).flatten()
+
+    if initial_simplex is None:
+        N = len(x0)
+
+        sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
+        sim[0] = x0
+        for k in range(N):
+            y = numpy.array(x0, copy=True)
+            if y[k] != 0:
+                y[k] = (1 + nonzdelt)*y[k]
+            else:
+                y[k] = zdelt
+            sim[k + 1] = y
+    else:
+        sim = np.asfarray(initial_simplex).copy()
+        if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
+            raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
+        if len(x0) != sim.shape[1]:
+            raise ValueError("Size of `initial_simplex` is not consistent with `x0`")
+        N = sim.shape[1]
+
+    if retall:
+        allvecs = [sim[0]]
+
+    if maxiter is None:
+        maxiter = N * 200
+    if maxfun is None:
+        maxfun = N * 200
+
+    one2np1 = list(range(1, N + 1))
+    fsim = numpy.zeros((N + 1,), float)
+
+    for k in range(N + 1):
+        fsim[k] = func(sim[k])
 
     ind = numpy.argsort(fsim)
     fsim = numpy.take(fsim, ind, 0)
