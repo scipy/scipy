@@ -496,10 +496,8 @@ def convolve(in1, in2, mode='full'):
 
     slice_obj = [slice(None, None, -1)] * len(kernel.shape)
 
-    if np.iscomplexobj(kernel):
-        return correlate(volume, kernel[slice_obj].conj(), mode)
-    else:
-        return correlate(volume, kernel[slice_obj], mode)
+    # .conj() does nothing to real arrays and is faster than iscomplexobj()
+    return correlate(volume, kernel[slice_obj].conj(), mode)
 
 
 def order_filter(a, domain, rank):
@@ -1807,12 +1805,12 @@ def resample(x, num, t=None, axis=0, window=None):
     sample of the next cycle:
 
     >>> from scipy import signal
-    
+
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f = signal.resample(y, 100)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-    
+
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
@@ -1914,13 +1912,13 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     for the polyphase method:
 
     >>> from scipy import signal
-    
+
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f_fft = signal.resample(y, 100)
     >>> f_poly = signal.resample_poly(y, 100, 20)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-    
+
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
     >>> plt.plot(x, y, 'ko-')
