@@ -2,7 +2,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from os.path import join
+from os.path import join, dirname
+import glob
 
 
 def configuration(parent_package='', top_path=None):
@@ -16,11 +17,8 @@ def configuration(parent_package='', top_path=None):
     config.add_data_dir('tests')
 
     # qhull
-    qhull_src = ['geom2.c', 'geom.c', 'global.c', 'io.c', 'libqhull.c',
-                 'mem.c', 'merge.c', 'poly2.c', 'poly.c', 'qset.c',
-                 'random.c', 'rboxlib.c', 'stat.c', 'user.c', 'usermem.c',
-                 'userprintf.c', 'userprintf_rbox.c']
-    qhull_src = [join('qhull', 'src', x) for x in qhull_src]
+    qhull_src = list(glob.glob(join(dirname(__file__), 'qhull',
+                                    'src', '*.c')))
 
     inc_dirs = [get_python_inc()]
     if inc_dirs[0] != get_python_inc(plat_specific=1):
@@ -29,10 +27,10 @@ def configuration(parent_package='', top_path=None):
 
     cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
-    cfg.setdefault('define_macros', []).append(('qh_QHpointer','1'))
     config.add_extension('qhull',
                          sources=['qhull.c'] + qhull_src,
                          **cfg)
+
     # cKDTree    
     ckdtree_src = ['query.cxx', 
                    'build.cxx',

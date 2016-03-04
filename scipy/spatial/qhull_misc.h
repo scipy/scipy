@@ -19,3 +19,5 @@
 #define qh_dgetrf F_FUNC(dgetrf,DGETRF)
 #define qh_dgecon F_FUNC(dgecon,DGECON)
 #define qh_dgetrs F_FUNC(dgetrs,DGETRS)
+
+#define qhull_misc_lib_check() QHULL_LIB_CHECK
