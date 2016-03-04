@@ -15,7 +15,7 @@ from .dia import dia_matrix
 from . import _sparsetools
 from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
                       getdtype, isscalarlike, IndexMixin, get_index_dtype,
-                      downcast_intp_index)
+                      downcast_intp_index, get_sum_dtype)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -564,16 +564,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif (not hasattr(self, 'blocksize') and
               axis in self._swap(((1, -1), (0, 2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
-            # Mimic numpy's casting.
-            if np.issubdtype(self.dtype, np.float_):
-                res_dtype = np.float_
-            elif (self.dtype.kind == 'u' and
-                  np.can_cast(self.dtype, np.uint)):
-                res_dtype = np.uint
-            elif np.can_cast(self.dtype, np.int_):
-                res_dtype = np.int_
-            else:
-                res_dtype = self.dtype
+            res_dtype = get_sum_dtype(self.dtype)
             ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
 
             major_index, value = self._minor_reduce(np.add)

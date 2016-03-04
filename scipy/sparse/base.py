@@ -9,7 +9,7 @@ import sys
 import numpy as np
 
 from scipy._lib.six import xrange
-from .sputils import isdense, isscalarlike, isintlike
+from .sputils import isdense, isscalarlike, isintlike, get_sum_dtype
 
 
 class SparseWarning(Warning):
@@ -755,15 +755,7 @@ class spmatrix(object):
         m, n = self.shape
 
         # Mimic numpy's casting.
-        if np.issubdtype(self.dtype, np.float_):
-            res_dtype = np.float_
-        elif (self.dtype.kind == 'u' and
-              np.can_cast(self.dtype, np.uint)):
-            res_dtype = np.uint
-        elif np.can_cast(self.dtype, np.int_):
-            res_dtype = np.int_
-        else:
-            res_dtype = self.dtype
+        res_dtype = get_sum_dtype(self.dtype)
 
         if axis is None:
             # sum over rows and columns

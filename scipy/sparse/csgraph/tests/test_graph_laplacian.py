@@ -128,5 +128,12 @@ def test_asymmetric_laplacian():
     _check_laplacian(A, L, d, normed=True, use_out_degree=False)
 
 
+def test_sparse_formats():
+    for fmt in ('csr', 'csc', 'coo', 'lil', 'dok', 'dia', 'bsr'):
+        mat = sparse.diags([1, 1], [-1, 1], shape=(4,4), format=fmt)
+        for normed in True, False:
+            yield _check_symmetric_graph_laplacian, mat, normed
+
+
 if __name__ == '__main__':
     run_module_suite()

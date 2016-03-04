@@ -3,8 +3,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['upcast','getdtype','isscalarlike','isintlike',
-            'isshape','issequence','isdense','ismatrix']
+__all__ = [
+    'upcast', 'getdtype', 'isscalarlike', 'isintlike', 'isshape', 'issequence',
+    'isdense', 'ismatrix', 'get_sum_dtype'
+]
 
 import warnings
 import numpy as np
@@ -171,6 +173,17 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
             dtype = np.int64
             break
 
+    return dtype
+
+
+def get_sum_dtype(dtype):
+    """Mimic numpy's casting for np.sum"""
+    if np.issubdtype(dtype, np.float_):
+        return np.float_
+    if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
+        return np.uint
+    if np.can_cast(dtype, np.int_):
+        return np.int_
     return dtype
 
 

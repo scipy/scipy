@@ -10,7 +10,8 @@ import numpy as np
 
 from .base import isspmatrix, _formats, spmatrix
 from .data import _data_matrix
-from .sputils import isshape, upcast_char, getdtype, get_index_dtype
+from .sputils import (
+    isshape, upcast_char, getdtype, get_index_dtype, get_sum_dtype)
 from ._sparsetools import dia_matvec
 
 
@@ -151,13 +152,19 @@ class dia_matrix(_data_matrix):
                (self.shape + (self.dtype.type, self.nnz, self.data.shape[0],
                               format))
 
-    def count_nonzero(self):
+    def _data_mask(self):
+        """Returns a mask of the same shape as self.data, where
+        mask[i,j] is True when data[i,j] corresponds to a stored element."""
         num_rows, num_cols = self.shape
         offset_inds = np.arange(self.data.shape[1])
         row = offset_inds - self.offsets[:,None]
         mask = (row >= 0)
         mask &= (row < num_rows)
         mask &= (offset_inds < num_cols)
+        return mask
+
+    def count_nonzero(self):
+        mask = self._data_mask()
         return np.count_nonzero(self.data[mask])
 
     def getnnz(self, axis=None):
@@ -175,6 +182,36 @@ class dia_matrix(_data_matrix):
 
     getnnz.__doc__ = spmatrix.getnnz.__doc__
     count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+
+    def sum(self, axis=None):
+        if axis is not None:
+            if axis < 0:
+                axis += 2
+            if axis not in (0, 1):
+                raise ValueError("axis out of bounds")
+
+        res_dtype = get_sum_dtype(self.dtype)
+        num_rows, num_cols = self.shape
+        if axis == 0:
+            mask = self._data_mask()
+            x = (self.data * mask).sum(axis=0)
+            if x.shape[0] == num_cols:
+                res = x
+            else:
+                res = np.zeros(num_cols, dtype=x.dtype)
+                res[:x.shape[0]] = x
+            return np.matrix(res, dtype=res_dtype)
+
+        row_sums = np.zeros(num_rows, dtype=res_dtype)
+        one = np.ones(num_cols, dtype=res_dtype)
+        dia_matvec(num_rows, num_cols, len(self.offsets),
+                   self.data.shape[1], self.offsets, self.data, one, row_sums)
+
+        if axis is None:
+            return row_sums.sum()
+        return np.matrix(row_sums).T
+
+    sum.__doc__ = spmatrix.sum.__doc__
 
     def _mul_vector(self, other):
         x = other
@@ -246,6 +283,15 @@ class dia_matrix(_data_matrix):
                                               dtype=self.data.dtype)))
         data = data[r,c]
         return dia_matrix((data, offsets), shape=(num_cols,num_rows))
+
+    def diagonal(self):
+        idx, = np.where(self.offsets == 0)
+        n = min(self.shape)
+        if idx.size == 0:
+            return np.zeros(n, dtype=self.data.dtype)
+        return self.data[idx[0],:n]
+
+    diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     def tocsc(self, copy=False):
         from .csc import csc_matrix

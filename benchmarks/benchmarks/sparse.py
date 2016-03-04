@@ -304,7 +304,7 @@ class NullSlice(Benchmark):
 
 
 class Diagonal(Benchmark):
-    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo', 'lil', 'dok']]
+    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo', 'lil', 'dok', 'dia']]
     param_names = ['density', 'format']
 
     def setup(self, density, format):
@@ -316,3 +316,24 @@ class Diagonal(Benchmark):
 
     def time_diagonal(self, density, format):
         self.X.diagonal()
+
+
+class Sum(Benchmark):
+    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo', 'lil', 'dok', 'dia']]
+    param_names = ['density', 'format']
+
+    def setup(self, density, format):
+        n = 1000
+        if format == 'dok' and n * density >= 500:
+            raise NotImplementedError()
+
+        self.X = sparse.rand(n, n, format=format, density=density)
+
+    def time_sum(self, density, format):
+        self.X.sum()
+
+    def time_sum_axis0(self, density, format):
+        self.X.sum(axis=0)
+
+    def time_sum_axis1(self, density, format):
+        self.X.sum(axis=1)
