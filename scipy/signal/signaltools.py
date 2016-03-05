@@ -187,8 +187,9 @@ def correlate(in1, in2, mode='full'):
     elif not in1.ndim == in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
 
-    # numpy is significantly faster for 1d
-    if in1.ndim == in2.ndim == 1 and (in1.size >= in2.size):
+    # numpy is significantly faster for 1d (but numpy's 'same' mode uses
+    # the size of the larger input, not the first.)
+    if in1.ndim == in2.ndim == 1 and (in1.size >= in2.size or mode != 'same'):
         return np.correlate(in1, in2, mode)
 
     # _correlateND is far slower when in2.size > in1.size, so swap them
@@ -495,8 +496,10 @@ def convolve(in1, in2, mode='full'):
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
 
-    # fastpath to faster numpy 1d convolve
-    if volume.ndim == kernel.ndim == 1 and volume.size >= kernel.size:
+    # fastpath to faster numpy 1d convolve (but numpy's 'same' mode uses the
+    # size of the larger input, not the first.)
+    if volume.ndim == kernel.ndim == 1 and (volume.size >= kernel.size or
+                                            mode != 'same'):
         return np.convolve(volume, kernel, mode)
 
     # Reverse in all dimensions
