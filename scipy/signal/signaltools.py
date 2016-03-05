@@ -6,10 +6,6 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import threading
 import sys
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
-    from math import gcd
-else:
-    from fractions import gcd
 
 from . import sigtools
 from ._upfirdn import _UpFIRDn, _output_len
@@ -27,6 +23,13 @@ import numpy as np
 from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
+from scipy.signal.filter_design import cheby1
+from scipy.signal.fir_filter_design import firwin
+
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from math import gcd
+else:
+    from fractions import gcd
 
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
@@ -218,10 +221,11 @@ def correlate(in1, in2, mode='full'):
 
         z = sigtools._correlateND(in1zpadded, in2, out, val)
 
-    # Reverse and conjugate to undo the effect of swapping inputs
+    # Reverse in all dimensions and conjugate to undo the effect of
+    # swapping inputs
     if swapped_inputs:
-        slice_obj = [slice(None, None, -1)] * len(z.shape)
-        z = z[slice_obj].conj()
+        reverse = [slice(None, None, -1)] * z.ndim
+        z = z[reverse].conj()
 
     return z
 
@@ -391,9 +395,9 @@ def fftconvolve(in1, in2, mode="full"):
     # sure we only call rfftn/irfftn from one thread at a time.
     if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
         try:
-            ret = (np.fft.irfftn(np.fft.rfftn(in1, fshape) *
-                                 np.fft.rfftn(in2, fshape), fshape)[fslice].
-                   copy())
+            sp1 = np.fft.rfftn(in1, fshape)
+            sp2 = np.fft.rfftn(in2, fshape)
+            ret = (np.fft.irfftn(sp1 * sp2, fshape)[fslice].copy())
         finally:
             if not _rfft_mt_safe:
                 _rfft_lock.release()
@@ -402,8 +406,9 @@ def fftconvolve(in1, in2, mode="full"):
         # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
         # is already in use by another thread).  In either case, use the
         # (threadsafe but slower) SciPy complex-FFT routines instead.
-        ret = fftpack.ifftn(fftpack.fftn(in1, fshape) *
-                            fftpack.fftn(in2, fshape))[fslice].copy()
+        sp1 = fftpack.fftn(in1, fshape)
+        sp2 = fftpack.fftn(in2, fshape)
+        ret = fftpack.ifftn(sp1 * sp2)[fslice].copy()
         if not complex_result:
             ret = ret.real
 
@@ -491,13 +496,14 @@ def convolve(in1, in2, mode='full'):
         return volume * kernel
 
     # fastpath to faster numpy 1d convolve
-    if volume.ndim == 1 and kernel.ndim == 1 and volume.size >= kernel.size:
+    if volume.ndim == kernel.ndim == 1 and volume.size >= kernel.size:
         return np.convolve(volume, kernel, mode)
 
-    slice_obj = [slice(None, None, -1)] * len(kernel.shape)
+    # Reverse in all dimensions
+    reverse = [slice(None, None, -1)] * kernel.ndim
 
     # .conj() does nothing to real arrays and is faster than iscomplexobj()
-    return correlate(volume, kernel[slice_obj].conj(), mode)
+    return correlate(volume, kernel[reverse].conj(), mode)
 
 
 def order_filter(a, domain, rank):
@@ -588,12 +594,12 @@ def medfilt(volume, kernel_size=None):
     """
     volume = atleast_1d(volume)
     if kernel_size is None:
-        kernel_size = [3] * len(volume.shape)
+        kernel_size = [3] * volume.ndim
     kernel_size = asarray(kernel_size)
     if kernel_size.shape == ():
         kernel_size = np.repeat(kernel_size.item(), volume.ndim)
 
-    for k in range(len(volume.shape)):
+    for k in range(volume.ndim):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
@@ -631,7 +637,7 @@ def wiener(im, mysize=None, noise=None):
     """
     im = asarray(im)
     if mysize is None:
-        mysize = [3] * len(im.shape)
+        mysize = [3] * im.ndim
     mysize = asarray(mysize)
     if mysize.shape == ():
         mysize = np.repeat(mysize.item(), im.ndim)
@@ -1294,7 +1300,7 @@ def hilbert(x, N=None, axis=-1):
         h[0] = 1
         h[1:(N + 1) // 2] = 2
 
-    if len(x.shape) > 1:
+    if x.ndim > 1:
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[ind]
@@ -1325,7 +1331,7 @@ def hilbert2(x, N=None):
 
     """
     x = atleast_2d(x)
-    if len(x.shape) > 2:
+    if x.ndim > 2:
         raise ValueError("x must be 2-D.")
     if iscomplexobj(x):
         raise ValueError("x must be real.")
@@ -1354,7 +1360,7 @@ def hilbert2(x, N=None):
         exec("h%d = h" % (p + 1), globals(), locals())
 
     h = h1[:, newaxis] * h2[newaxis, :]
-    k = len(x.shape)
+    k = x.ndim
     while k > 2:
         h = h[:, newaxis]
         k -= 1
@@ -1832,7 +1838,7 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape[axis] = len(W)
         W.shape = newshape
         X = X * W
-    sl = [slice(None)] * len(x.shape)
+    sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
     newshape[axis] = num
     N = int(np.minimum(num, Nx))
@@ -2843,10 +2849,6 @@ def sosfilt(sos, x, axis=-1, zi=None):
             x = lfilter(sos[section, :3], sos[section, 3:], x, axis)
     out = (x, zf) if use_zi else x
     return out
-
-
-from scipy.signal.filter_design import cheby1
-from scipy.signal.fir_filter_design import firwin
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1):
