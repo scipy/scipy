@@ -749,16 +749,15 @@ class _TestCommon:
         dat_1 = np.matrix([[0, 1, 2],
                            [3, -4, 5],
                            [-6, 7, 9]])
-        dat_2 = np.random.rand(40, 40)
+        dat_2 = np.random.rand(5, 5)
         dat_3 = np.array([[]])
         dat_4 = np.zeros((40, 40))
-        dat_5 = sparse.rand(40, 40, density=1e-2).A
+        dat_5 = sparse.rand(5, 5, density=1e-2).A
         matrices = [dat_1, dat_2, dat_3, dat_4, dat_5]
 
         def check(dtype, j):
             dat = np.matrix(matrices[j], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
-
             assert_array_almost_equal(dat.sum(), datsp.sum())
             assert_equal(dat.sum().dtype, datsp.sum().dtype)
             assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None))
@@ -772,7 +771,7 @@ class _TestCommon:
             assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
             assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
-        for dtype in self.math_dtypes:
+        for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
                 yield check, dtype, j
 
@@ -796,7 +795,7 @@ class _TestCommon:
             assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
             assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
 
-        for dtype in self.math_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, dtype
 
     def test_expm(self):
@@ -3972,7 +3971,15 @@ class _NonCanonicalMixin(object):
         NC = construct(arg1, **kwargs)
 
         # check that result is valid
-        assert_allclose(NC.A, M.A)
+        if NC.dtype in [np.float32, np.complex64]:
+            # For single-precision floats, the differences between M and NC
+            # that are introduced by the extra operations involved in the
+            # construction of NC necessitate a more lenient tolerance level
+            # than the default.
+            rtol = 1e-05
+        else:
+            rtol = 1e-07
+        assert_allclose(NC.A, M.A, rtol=rtol)
 
         # check that at least one explicit zero
         if has_zeros:

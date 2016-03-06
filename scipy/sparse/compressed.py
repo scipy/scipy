@@ -564,10 +564,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif (not hasattr(self, 'blocksize') and
               axis in self._swap(((1, -1), (0, 2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
-            dtype = self.dtype
-            if np.issubdtype(dtype, np.bool_):
-                dtype = np.int_
-            ret = np.zeros(len(self.indptr) - 1, dtype=dtype)
+            # Mimic numpy's casting.
+            if np.issubdtype(self.dtype, np.float_):
+                res_dtype = np.float_
+            elif self.dtype.kind in 'ib':
+                res_dtype = np.int_
+            elif self.dtype.kind == 'u':
+                res_dtype = np.uint
+            else:
+                res_dtype = self.dtype
+            ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
+
             major_index, value = self._minor_reduce(np.add)
             ret[major_index] = value
             ret = np.asmatrix(ret)
