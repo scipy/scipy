@@ -311,6 +311,7 @@ _spherical_yn_d -- spherical_yn_d_real: ld->d, spherical_yn_d_complex: lD->D -- 
 _spherical_jn_d -- spherical_jn_d_real: ld->d, spherical_jn_d_complex: lD->D -- _spherical_bessel.pxd
 _spherical_in_d -- spherical_in_d_real: ld->d, spherical_in_d_complex: lD->D -- _spherical_bessel.pxd
 _spherical_kn_d -- spherical_kn_d_real: ld->d, spherical_kn_d_complex: lD->D -- _spherical_bessel.pxd
+loggamma -- loggamma: D->D                                 -- _loggamma.pxd
 """
 
 #---------------------------------------------------------------------------------

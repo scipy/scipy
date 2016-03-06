@@ -5501,3 +5501,50 @@ add_newdoc("scipy.special", "_spherical_kn_d",
     """
     Internal function, use `spherical_kn` instead.
     """)
+
+add_newdoc("scipy.special", "loggamma",
+    r"""
+    The principle branch of the logarithm of the Gamma function. It is
+    defined to be :math:`\log(\Gamma(x))` for :math:`\Re(x) > 0` and
+    is extended to the entire complex plane by analytic
+    continuation. The implementation here is based on
+    [hare1997]_. Note that in general :math:`\log\Gamma(x) \ne
+    \log(\Gamma(z))`, for the latter function see `gammaln`.
+
+    The function :math:`\log\Gamma` has a single branch cut on the
+    negative real axis; the implementation here is continuous when
+    approaching the axis from above. It satisfies the identities
+
+    .. math::
+      \exp(\log\Gamma(x)) &= \Gamma(x) \\
+      \log\Gamma(x + 1) &= \log(x) + \log\Gamma(x),
+
+    which make it useful for working in logspace. However,
+    :math:`\log\Gamma` necessarily returns complex outputs for real
+    inputs, so if you want to work only with real numbers use
+    ``gammaln``. On the real line the two functions are related by
+    ``exp(loggamma(x)) = gammasgn(x)*exp(gammaln(x))``.
+
+    Parameters
+    ----------
+    x : array-like
+        Values in the complex plain at which to compute :math:`\log\Gamma`.
+    out : ndarray, optional
+        Output array for the computed values of :math:`\log\Gamma`.
+
+    Returns
+    -------
+    loggamma : ndarray
+        Values of :math:`\log\Gamma` at x.
+
+    See also
+    --------
+    gammaln : defined as :math:`\log(\Gamma(z))` in the entire complex plane
+    gammasgn : the sign of Gamma on the real axis
+
+    References
+    ----------
+    .. [hare1997] D.E.G. Hare,
+      *Computing the Principle Branch of log-Gamma*,
+      Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
+    """)

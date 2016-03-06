@@ -1725,6 +1725,9 @@ ctypedef double complex _proto_clog1p_t(double complex) nogil
 cdef _proto_clog1p_t *_proto_clog1p_t_var = &_func_clog1p
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_log_ndtr "log_ndtr"(double) nogil
+from _loggamma cimport loggamma as _func_loggamma
+ctypedef double complex _proto_loggamma_t(double complex) nogil
+cdef _proto_loggamma_t *_proto_loggamma_t_var = &_func_loggamma
 cdef extern from "_ufuncs_defs.h":
     cdef float _func_logitf "logitf"(float) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -8674,6 +8677,68 @@ ufunc_log_ndtr_ptr[2*1+1] = <void*>(<char*>"log_ndtr")
 ufunc_log_ndtr_data[0] = &ufunc_log_ndtr_ptr[2*0]
 ufunc_log_ndtr_data[1] = &ufunc_log_ndtr_ptr[2*1]
 log_ndtr = np.PyUFunc_FromFuncAndData(ufunc_log_ndtr_loops, ufunc_log_ndtr_data, ufunc_log_ndtr_types, 2, 1, 1, 0, "log_ndtr", ufunc_log_ndtr_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_loggamma_loops[2]
+cdef void *ufunc_loggamma_ptr[4]
+cdef void *ufunc_loggamma_data[2]
+cdef char ufunc_loggamma_types[4]
+cdef char *ufunc_loggamma_doc = (
+    "The principle branch of the logarithm of the Gamma function. It is\n"
+    "defined to be :math:`\\log(\\Gamma(x))` for :math:`\\Re(x) > 0` and\n"
+    "is extended to the entire complex plane by analytic\n"
+    "continuation. The implementation here is based on\n"
+    "[hare1997]_. Note that in general :math:`\\log\\Gamma(x) \\ne\n"
+    "\\log(\\Gamma(z))`, for the latter function see `gammaln`.\n"
+    "\n"
+    "The function :math:`\\log\\Gamma` has a single branch cut on the\n"
+    "negative real axis; the implementation here is continuous when\n"
+    "approaching the axis from above. It satisfies the identities\n"
+    "\n"
+    ".. math::\n"
+    "  \\exp(\\log\\Gamma(x)) &= \\Gamma(x) \\\\\n"
+    "  \\log\\Gamma(x + 1) &= \\log(x) + \\log\\Gamma(x),\n"
+    "\n"
+    "which make it useful for working in logspace. However,\n"
+    ":math:`\\log\\Gamma` necessarily returns complex outputs for real\n"
+    "inputs, so if you want to work only with real numbers use\n"
+    "``gammaln``. On the real line the two functions are related by\n"
+    "``exp(loggamma(x)) = gammasgn(x)*exp(gammaln(x))``.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array-like\n"
+    "    Values in the complex plain at which to compute :math:`\\log\\Gamma`.\n"
+    "out : ndarray, optional\n"
+    "    Output array for the computed values of :math:`\\log\\Gamma`.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "loggamma : ndarray\n"
+    "    Values of :math:`\\log\\Gamma` at x.\n"
+    "\n"
+    "See also\n"
+    "--------\n"
+    "gammaln : defined as :math:`\\log(\\Gamma(z))` in the entire complex plane\n"
+    "gammasgn : the sign of Gamma on the real axis\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [hare1997] D.E.G. Hare,\n"
+    "  *Computing the Principle Branch of log-Gamma*,\n"
+    "  Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.")
+ufunc_loggamma_loops[0] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc_loggamma_loops[1] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
+ufunc_loggamma_types[0] = <char>NPY_CFLOAT
+ufunc_loggamma_types[1] = <char>NPY_CFLOAT
+ufunc_loggamma_types[2] = <char>NPY_CDOUBLE
+ufunc_loggamma_types[3] = <char>NPY_CDOUBLE
+ufunc_loggamma_ptr[2*0] = <void*>_func_loggamma
+ufunc_loggamma_ptr[2*0+1] = <void*>(<char*>"loggamma")
+ufunc_loggamma_ptr[2*1] = <void*>_func_loggamma
+ufunc_loggamma_ptr[2*1+1] = <void*>(<char*>"loggamma")
+ufunc_loggamma_data[0] = &ufunc_loggamma_ptr[2*0]
+ufunc_loggamma_data[1] = &ufunc_loggamma_ptr[2*1]
+loggamma = np.PyUFunc_FromFuncAndData(ufunc_loggamma_loops, ufunc_loggamma_data, ufunc_loggamma_types, 2, 1, 1, 0, "loggamma", ufunc_loggamma_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_logit_loops[3]
 cdef void *ufunc_logit_ptr[6]

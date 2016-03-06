@@ -1531,6 +1531,22 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [IntArg(0, 100), IntArg(0, 100), ComplexArg()],
                             n=100)
 
+    def test_loggamma_real(self):
+        # loggamma has a branch cut on the negative real axis; make
+        # sure things work in that delicate region. The tolerances are
+        # larger than in the complex test because this test has more
+        # coverage in the region where x is slightly bigger than 1e-4
+        # where we can't use the Laurent series and the recurence
+        # relation isn't accurate enough.
+        assert_mpmath_equal(sc.loggamma,
+                            _exception_to_nan(lambda x: mpmath.loggamma(x, **HYPERKW)),
+                            [Arg()], atol=1e-11, rtol=1e-11)
+
+    def test_loggamma_complex(self):
+        assert_mpmath_equal(sc.loggamma,
+                            _exception_to_nan(lambda z: mpmath.loggamma(z, **HYPERKW)),
+                            [ComplexArg()], atol=1e-14, rtol=1e-14)
+
     @knownfailure_overridable()
     def test_pcfd(self):
         def pcfd(v, x):
