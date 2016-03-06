@@ -419,8 +419,6 @@ def test_boost():
         data(chndtr, 'nccs_ipp-nccs', (2,0,1), 3, rtol=3e-5),
         data(chndtr, 'nccs_big_ipp-nccs_big', (2,0,1), 3, rtol=5e-4, knownfailure='chndtr inaccurate some points'),
 
-        data(sph_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2, vectorized=False, knownfailure='sph_jn inaccurate at large n, small x'),
-        data(sph_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2, rtol=4e-15, vectorized=False),
         data(sph_harm_, 'spherical_harmonic_ipp-spherical_harmonic', (1,0,3,2), (4,5), rtol=5e-11,
              param_filter=(lambda p: np.ones(p.shape, '?'),
                            lambda p: np.ones(p.shape, '?'),
@@ -490,6 +488,19 @@ def test_local():
         warnings.simplefilter("ignore", category=IntegrationWarning)
 
         for test in TESTS:
+            yield _test_factory, test
+
+    # sph_jn, sph_yn are deprecated; silence the DeprecationWarning noise 
+    TESTS_DEP = [
+        data(sph_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2,
+            vectorized=False,
+            knownfailure='sph_jn inaccurate at large n, small x'),
+        data(sph_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2,
+            rtol=4e-15, vectorized=False),
+    ]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
+        for test in TESTS_DEP:
             yield _test_factory, test
 
 
