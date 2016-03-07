@@ -225,11 +225,13 @@ class dia_matrix(_data_matrix):
             data[-1, min_index:max_index] = values
             self.data = data
 
-    def todia(self,copy=False):
+    def todia(self, copy=False):
         if copy:
             return self.copy()
         else:
             return self
+
+    todia.__doc__ = spmatrix.todia.__doc__
 
     def transpose(self):
         num_rows, num_cols = self.shape
@@ -245,15 +247,19 @@ class dia_matrix(_data_matrix):
         data = data[r,c]
         return dia_matrix((data, offsets), shape=(num_cols,num_rows))
 
-    def tocsr(self):
+    def tocsr(self, copy=False):
         #this could be faster
-        return self.tocoo().tocsr()
+        return self.tocoo(copy=copy).tocsr()
 
-    def tocsc(self):
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
+
+    def tocsc(self, copy=False):
         #this could be faster
-        return self.tocoo().tocsc()
+        return self.tocoo(copy=copy).tocsc()
 
-    def tocoo(self):
+    tocsc.__doc__ = spmatrix.tocsc.__doc__
+
+    def tocoo(self, copy=False):
         num_rows, num_cols = self.shape
         num_offsets, offset_len = self.data.shape
         offset_inds = np.arange(offset_len)
@@ -269,6 +275,8 @@ class dia_matrix(_data_matrix):
 
         from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
+
+    tocoo.__doc__ = spmatrix.tocoo.__doc__
 
     # needed by _data_matrix
     def _with_data(self, data, copy=True):
