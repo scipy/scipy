@@ -23,7 +23,12 @@ def configuration(parent_package='',top_path=None):
 
     # add vonmises_cython module
     config.add_extension('vonmises_cython',
-        sources=['vonmises_cython.c'],  # FIXME: use cython source
+        sources=['vonmises_cython.c'],
+    )
+
+    # add _stats module
+    config.add_extension('_stats',
+        sources=['_stats.c'],
     )
 
     # add mvn module

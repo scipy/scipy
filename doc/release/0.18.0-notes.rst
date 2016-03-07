@@ -65,6 +65,9 @@ is now consistently added after the matrix is applied,
 independent of if the matrix is specified using a one-dimensional
 or a two-dimensional array.
 
+``stats.ks_2samp`` used to return nonsensical values if the input was
+not real or contained nans.  It now raises an exception for such inputs.
+
 Other changes
 =============
 
