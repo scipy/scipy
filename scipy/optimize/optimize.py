@@ -311,9 +311,11 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     args : tuple, optional
         Extra arguments passed to func, i.e. ``f(x,*args)``.
     xtol : float, optional
-        Relative error in xopt acceptable for convergence.
+        Absolute error in xopt between iterations that is acceptable for
+        convergence.
     ftol : number, optional
-        Relative error in func(xopt) acceptable for convergence.
+        Absolute error in func(xopt) between iterations that is acceptable for
+        convergence.
     maxiter : int, optional
         Maximum number of iterations to perform.
     maxfun : number, optional
@@ -365,7 +367,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     performance in high-dimensional problems and is not robust to
     minimizing complicated functions. Additionally, there currently is no
     complete theory describing when the algorithm will successfully
-    converge to the minimum, or how fast it will if it does.
+    converge to the minimum, or how fast it will if it does. Both the ftol and
+    xtol criteria must be met for convergence.
 
     References
     ----------
@@ -412,10 +415,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     -------
     disp : bool
         Set to True to print convergence messages.
-    xtol : float
-        Relative error in solution `xopt` acceptable for convergence.
-    ftol : float
-        Relative error in ``fun(xopt)`` acceptable for convergence.
+    xtol : float, optional
+        Absolute error in xopt between iterations that is acceptable for
+        convergence.
+    ftol : number, optional
+        Absolute error in func(xopt) between iterations that is acceptable for
+        convergence.
     maxiter : int
         Maximum number of iterations to perform.
     maxfev : int
