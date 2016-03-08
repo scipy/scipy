@@ -7,6 +7,9 @@ from collections import namedtuple
 cimport numpy as np
 cimport cython
 
+# Kendall's tau will be computed directly between these types.
+# Arrays of other types will be turned into a rank array using _toranks().
+
 ctypedef fused ordered0:
     np.int32_t
     np.int64_t
@@ -33,6 +36,8 @@ cdef inline double stat0(uint64_t l):
 @cython.boundscheck(False)
 cdef inline double stat1(uint64_t l):
     return l * (l - 1.) * (l - 2)
+
+# Turn any array into an array of ranks.
 
 @cython.wraparound(False)
 @cython.boundscheck(False)

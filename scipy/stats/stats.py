@@ -3294,6 +3294,9 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
     elif len(x) >= 2**32:
         raise ValueError("Inputs to `kendalltau` must have less than 2^32 elements")
 
+    x = np.asarray(x).ravel()
+    y = np.asarray(y).ravel()
+
     # check both x and y
     contains_nan, nan_policy = (_contains_nan(x, nan_policy) or
                                 _contains_nan(y, nan_policy))
@@ -3306,8 +3309,6 @@ def kendalltau(x, y, initial_lexsort=False, nan_policy='propagate'):
         y = ma.masked_invalid(np.asarray(y).ravel())
         return mstats_basic.kendalltau(x, y)
 
-    x = np.asarray(x).ravel()
-    y = np.asarray(y).ravel()
     # Reduce to ranks unsupported types
     if x.dtype not in (np.int32, np.int64, np.float32, np.float64):
         x = _toranks(x)
