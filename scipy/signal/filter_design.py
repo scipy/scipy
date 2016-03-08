@@ -1033,6 +1033,36 @@ def zpk2sos(z, p, k, pairing='nearest'):
     return sos
 
 
+def _align_nums(nums):
+    """
+    Given an array of numerator coefficient arrays [[a_1, a_2,...,
+    a_n],..., [b_1, b_2,..., b_m]], this function pads shorter numerator
+    arrays with zero's so that all numerators have the same length. Such
+    alignment is necessary for functions like 'tf2ss', which needs the
+    alignment when dealing with SIMO transfer functions.
+    """
+    try:
+        # The statement can throw a ValueError if one
+        # of the numerators is a single digit and another
+        # is array-like e.g. if nums = [5, [1, 2, 3]]
+        nums = asarray(nums)
+
+        if not np.issubdtype(nums.dtype, np.number):
+            raise ValueError("dtype of numerator is non-numeric")
+
+        return nums
+
+    except ValueError:
+        nums = list(nums)
+        maxwidth = len(max(nums, key=lambda num: atleast_1d(num).size))
+
+        for index, num in enumerate(nums):
+            num = atleast_1d(num).tolist()
+            nums[index] = [0] * (maxwidth - len(num)) + num
+
+        return atleast_1d(nums)
+
+
 def normalize(b, a):
     """Normalize polynomial representation of a transfer function.
 
@@ -1040,6 +1070,7 @@ def normalize(b, a):
     BadCoefficients warning is emitted.
 
     """
+    b = _align_nums(b)
     b, a = map(atleast_1d, (b, a))
     if len(a.shape) != 1:
         raise ValueError("Denominator polynomial must be rank-1 array.")
