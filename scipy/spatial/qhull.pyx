@@ -1473,7 +1473,7 @@ class Delaunay(_QhullUser):
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual for
         details. Option "Qt" is always enabled.
-        Default:"Qbb Qc Qz Qx" for ndim > 4 and "Qbb Qc Qz" otherwise.
+        Default:"Qbb Qc Qz Qx Q12" for ndim > 4 and "Qbb Qc Qz Q12" otherwise.
         Incremental mode omits "Qz".
 
         .. versionadded:: 0.12.0
@@ -1628,7 +1628,7 @@ class Delaunay(_QhullUser):
 
         if qhull_options is None:
             if not incremental:
-                qhull_options = b"Qbb Qc Qz"
+                qhull_options = b"Qbb Qc Qz Q12"
             else:
                 qhull_options = b"Qc"
             if points.shape[1] >= 5:
