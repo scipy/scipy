@@ -382,8 +382,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
            Harlow, UK, pp. 191-208.
 
     """
-    opts = {'xtol': xtol,
-            'ftol': ftol,
+    opts = {'xatol': xtol,
+            'fatol': ftol,
             'maxiter': maxiter,
             'maxfev': maxfun,
             'disp': disp,
@@ -404,9 +404,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 
 def _minimize_neldermead(func, x0, args=(), callback=None,
-                         xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
-                         disp=False, return_all=False, initial_simplex=None,
-                         **unknown_options):
+                         maxiter=None, maxfev=None, disp=False,
+                         return_all=False, initial_simplex=None,
+                         xatol=1e-4, fatol=1e-4, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -415,12 +415,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     -------
     disp : bool
         Set to True to print convergence messages.
-    xtol : float, optional
-        Absolute error in xopt between iterations that is acceptable for
-        convergence.
-    ftol : number, optional
-        Absolute error in func(xopt) between iterations that is acceptable for
-        convergence.
     maxiter : int
         Maximum number of iterations to perform.
     maxfev : int
@@ -430,8 +424,26 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         ``initial_simplex[j,:]`` should contain the coordinates of
         the j-th vertex of the ``N+1`` vertices in the simplex, where
         ``N`` is the dimension.
-
+    xatol : float, optional
+        Absolute error in xopt between iterations that is acceptable for
+        convergence.
+    fatol : number, optional
+        Absolute error in func(xopt) between iterations that is acceptable for
+        convergence.
     """
+    if 'xtol' in unknown_options:
+        xatol = unknown_options['xtol']
+        warnings.warn("xtol is deprecated for _minimize_neldermead,"
+                      " use xatol instead.",
+                      DeprecationWarning)
+        unknown_options.pop('xtol')
+    if 'ftol' in unknown_options:
+        fatol = unknown_options['ftol']
+        unknown_options.pop('ftol')
+        warnings.warn("ftol is deprecated for _minimize_neldermead,"
+                      " use fatol instead.",
+                      DeprecationWarning)
+
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
@@ -489,8 +501,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     iterations = 1
 
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xtol and
-                numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= ftol):
+        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xatol and
+                numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= fatol):
             break
 
         xbar = numpy.add.reduce(sim[:-1], 0) / N
