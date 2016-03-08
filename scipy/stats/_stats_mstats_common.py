@@ -23,16 +23,16 @@ def linregress(x, y=None):
     Returns
     -------
     slope : float
-        slope of the regression line
+        Slope of the regression line.
     intercept : float
-        intercept of the regression line
+        Intercept of the regression line.
     rvalue : float
-        correlation coefficient
+        Correlation coefficient.
     pvalue : float
-        two-sided p-value for a hypothesis test whose null hypothesis is
+        Two-sided p-value for a hypothesis test of which null hypothesis is
         that the slope is zero.
     stderr : float
-        Standard error of the estimated gradient.
+        Standard error of the estimated slope.
 
     See also
     --------
