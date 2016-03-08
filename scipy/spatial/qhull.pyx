@@ -16,8 +16,13 @@ cimport numpy as np
 cimport cython
 cimport qhull
 cimport setlist
+from libc cimport stdio, stdlib
+from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
 
 from numpy.compat import asbytes
+import os
+import sys
+import tempfile
 
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
@@ -194,6 +199,7 @@ from libc.stdlib cimport qsort
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_misc.h":
+    stdio.FILE *qhull_open_memstream(char **, size_t *)
     void qhull_misc_lib_check()
     void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
                    int *info) nogil
@@ -214,11 +220,95 @@ qhull_misc_lib_check()
 class QhullError(RuntimeError):
     pass
 
+
+@cython.final
+cdef class _QhullMessageStream:
+    """
+    Qhull emits error messages to FILE* streams, which we should capture.
+    Do this by directing them to a temporary file.
+    """
+    cdef stdio.FILE *handle
+    cdef bytes _filename
+    cdef bint _removed
+    cdef size_t _memstream_size
+    cdef char *_memstream_ptr
+
+    def __init__(self):
+        # Try first in-memory files, if available
+        self._memstream_ptr = NULL
+        self.handle = qhull_open_memstream(&self._memstream_ptr,
+                                           &self._memstream_size)
+        if self.handle != NULL:
+            self._removed = 1
+            return
+
+        # Fall back to temporary files
+        fd, filename = tempfile.mkstemp(prefix='qhull-err-')
+        os.close(fd)
+        self._filename = filename.encode(sys.getfilesystemencoding())
+        self.handle = stdio.fopen(self._filename, "w+")
+        if self.handle == NULL:
+            stdio.remove(self._filename)
+            raise IOError("Failed to open file {0}".format(self._filename))
+        self._removed = 0
+
+        # Use a posix-style deleted file, if possible
+        if stdio.remove(self._filename) == 0:
+            self._removed = 1
+
+    def __del__(self):
+        self.close()
+
+    def get(self):
+        cdef long pos
+        cdef size_t nread
+        cdef np.uint8_t[::1] buf
+        cdef bytes obj
+
+        pos = stdio.ftell(self.handle)
+        if pos <= 0:
+            return ""
+
+        if self._memstream_ptr != NULL:
+            stdio.fflush(self.handle)
+            obj = PyBytes_FromStringAndSize(self._memstream_ptr, pos)
+        else:
+            arr = np.zeros(pos, dtype=np.uint8)
+            buf = arr
+
+            stdio.rewind(self.handle)
+            nread = stdio.fread(<void*>&buf[0], 1, pos, self.handle)
+            obj = arr[:nread].tostring()
+
+        if PY_VERSION_HEX >= 0x03000000:
+            return obj.decode('latin1')
+        else:
+            return obj
+
+    def clear(self):
+        stdio.rewind(self.handle)
+
+    def close(self):
+        if self._memstream_ptr != NULL:
+            stdlib.free(self._memstream_ptr)
+            self._memstream_ptr = NULL
+
+        if self.handle != NULL:
+            stdio.fclose(self.handle)
+            self.handle = NULL
+
+        if not self._removed:
+            stdio.remove(self._filename)
+            self._removed = 1
+
+
 @cython.final
 cdef class _Qhull:
     cdef qhT _qh
     cdef bint _qh_initialized
     cdef list _point_arrays
+    cdef _QhullMessageStream _messages
+
     cdef public bytes options
     cdef public bytes mode_option
     cdef public object furthest_site
@@ -244,6 +334,7 @@ cdef class _Qhull:
         cdef int exitcode
 
         self._qh_initialized = 0
+        self._messages = _QhullMessageStream()
 
         points = np.ascontiguousarray(points, dtype=np.double)
 
@@ -302,20 +393,25 @@ cdef class _Qhull:
         options = b"qhull "  + mode_option +  b" " + self.options
 
         options_c = <char*>options
+
+        self._messages.clear()
+
         with nogil:
-            qh_zero(&self._qh, NULL)
+            qh_zero(&self._qh, self._messages.handle)
             self._qh_initialized = 1
             exitcode = qh_new_qhull(&self._qh, self.ndim, self.numpoints,
                                     <realT*>points.data, 0,
-                                    options_c, NULL, stderr)
+                                    options_c, NULL, self._messages.handle)
 
         if exitcode != 0:
+            msg = self._messages.get()
             self.close()
-            raise QhullError("Qhull error")
+            raise QhullError(msg)
 
     @cython.final
     def __del__(self):
         self.close()
+        self._messages.close()
 
     def check_active(self):
         if not self._qh_initialized:
@@ -335,6 +431,8 @@ cdef class _Qhull:
         qh_memfreeshort(&self._qh, &curlong, &totlong)
 
         self._qh_initialized = 0
+
+        self._messages.close()
 
         if curlong != 0 or totlong != 0:
             raise QhullError(
@@ -373,11 +471,13 @@ cdef class _Qhull:
         else:
             arr = np.array(points, dtype=np.double, order="C", copy=True)
 
+        self._messages.clear()
+
         try:
             # nonlocal error handling
             exitcode = setjmp(self._qh.errexit)
             if exitcode != 0:
-                raise QhullError("Qhull error")
+                raise QhullError(self._messages.get())
             self._qh.NOerrexit = 0
 
             # add points to triangulation
