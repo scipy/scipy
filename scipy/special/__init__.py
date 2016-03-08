@@ -288,8 +288,8 @@ Gamma and Related Functions
    :toctree: generated/
 
    gamma        -- Gamma function.
-   loggamma     -- Principle branch of the logarithm of the gamma function.
-   gammaln      -- Log transformation of the gamma function.
+   gammaln      -- Log of either Gamma or the absolute value of Gamma.
+   loggamma     -- Principle branch of the logarithm of Gamma.
    gammasgn     -- Sign of the gamma function.
    gammainc     -- Incomplete gamma integral.
    gammaincinv  -- Inverse of gammainc.

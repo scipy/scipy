@@ -1847,31 +1847,30 @@ add_newdoc("scipy.special", "gammaln",
     """
     gammaln(z)
 
-    Performs a logarithmic transformation of the
-    values of the gamma function in one of two
-    ways, depending on the input `z`:
+    If `z` is not complex (i.e. `z` is a purely real number *or* it is
+    array_like and contains purely real elements), computes the
+    natural logarithm of the absolute value of the Gamma
+    function:
 
-    1) `z` is not complex (i.e. `z` is a purely
-       real number *or* it is array_like and
-       contains purely real elements)
+    .. math::
+      \ln(|\Gamma(z)|).
 
-    The natural logarithm of the absolute value of
-    gamma(z) is computed. Thus, it is defined as:
+    If `z` is complex (i.e. `z` is a complex number *or* it is
+    array_like and contains at least one complex element), computes
+    the natural logarithm of the Gamma function:
 
-        ln(abs(gamma(z)))
+    .. math::
+      \ln(\Gamma(z)).
 
-    2) `z` is complex (i.e. `z` is a complex
-       number *or* it is array_like and contains
-       at least one complex element)
-
-    The natural logarithm of gamma(z) is computed.
-    Thus, it is defined as:
-
-        ln((gamma(z))
+    When used in conjunction with ``gammasgn``, the behaviour for real
+    inputs is useful for working in logspace on the real axis without
+    having to deal with complex numbers since ``exp(gammaln(x)) =
+    gammasgn(x)*gamma(x)`` for real ``x``.
 
     See Also
     --------
-    gammasgn
+    gammasgn : sign of the gamma function
+    loggamma : principle branch of the logarithm of the gamma function
     """)
 
 add_newdoc("scipy.special", "gammasgn",
@@ -1883,6 +1882,7 @@ add_newdoc("scipy.special", "gammasgn",
     See Also
     --------
     gammaln
+    loggamma
     """)
 
 add_newdoc("scipy.special", "gdtr",
@@ -5504,11 +5504,13 @@ add_newdoc("scipy.special", "_spherical_kn_d",
 
 add_newdoc("scipy.special", "loggamma",
     r"""
+    loggamma(z, out)
+
     The principle branch of the logarithm of the Gamma function. It is
-    defined to be :math:`\log(\Gamma(x))` for :math:`\Re(x) > 0` and
+    defined to be :math:`\log(\Gamma(z))` for :math:`\Re(z) > 0` and
     is extended to the entire complex plane by analytic
     continuation. The implementation here is based on
-    [hare1997]_. Note that in general :math:`\log\Gamma(x) \ne
+    [hare1997]_. Note that in general :math:`\log\Gamma(z) \ne
     \log(\Gamma(z))`, for the latter function see `gammaln`.
 
     The function :math:`\log\Gamma` has a single branch cut on the
@@ -5516,18 +5518,20 @@ add_newdoc("scipy.special", "loggamma",
     approaching the axis from above. It satisfies the identities
 
     .. math::
-      \exp(\log\Gamma(x)) &= \Gamma(x) \\
-      \log\Gamma(x + 1) &= \log(x) + \log\Gamma(x),
+      \exp(\log\Gamma(z)) &= \Gamma(z) \\
+      \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z),
 
     which make it useful for working in logspace. However,
     :math:`\log\Gamma` necessarily returns complex outputs for real
     inputs, so if you want to work only with real numbers use
     ``gammaln``. On the real line the two functions are related by
-    ``exp(loggamma(x)) = gammasgn(x)*exp(gammaln(x))``.
+    ``exp(loggamma(x)) = gammasgn(x)*exp(gammaln(x))``, though in
+    practice rounding errors will introduce small spurious imaginary
+    components in ``exp(loggamma(x))``.
 
     Parameters
     ----------
-    x : array-like
+    z : array-like
         Values in the complex plain at which to compute :math:`\log\Gamma`.
     out : ndarray, optional
         Output array for the computed values of :math:`\log\Gamma`.
@@ -5535,11 +5539,11 @@ add_newdoc("scipy.special", "loggamma",
     Returns
     -------
     loggamma : ndarray
-        Values of :math:`\log\Gamma` at x.
+        Values of :math:`\log\Gamma` at z.
 
     See also
     --------
-    gammaln : defined as :math:`\log(\Gamma(z))` in the entire complex plane
+    gammaln : either :math:`\log(\Gamma(z))` or :math:`\log(|\Gamma(z)|)`
     gammasgn : the sign of Gamma on the real axis
 
     References
