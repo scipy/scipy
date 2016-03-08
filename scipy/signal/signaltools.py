@@ -146,6 +146,8 @@ def correlate(in1, in2, mode='full', method='auto'):
            Fourier transform or direct method) and that method is chosen
            (default). See notes for more detail.
 
+           .. versionadded:: 0.18.0
+
     Returns
     -------
     correlate : array
@@ -205,23 +207,9 @@ def correlate(in1, in2, mode='full', method='auto'):
         raise ValueError("Acceptable mode flags are 'valid',"
                          " 'same', or 'full'.")
 
-    if (in1.dtype.kind not in 'buifc' or in2.dtype.kind not in 'buifc'):
-        if method == 'fft':
-            raise ValueError('convolve can only be called with method=="fft" '
-                             'when arrays consist of numeric elements (i.e., '
-                             'int/float/etc)')
-        else:
-            method = 'direct'  # for non-numeric arrays
-    elif ((in1.dtype.kind in 'ui' or in2.dtype.kind in 'ui') and
-          in1.max() * in2.max() * max(in1.size, in2.size) > 2**52 - 1):
-        # catch when more precision required than float provides (representing
-        # a integer as float can lose precision if integer larger than 2**52)
-        method = 'direct'
-
     # this either calls fftconvolve or this function with method=='direct'
     if method in ('fft', 'auto'):
-        reverse = [slice(None, None, -1)] * in1.ndim
-        return convolve(in1, in2[reverse].conj(), mode, method)
+        return convolve(in1, _reverse_and_conj(in2), mode, method)
 
     # numpy is significantly faster for 1d (but numpy's 'same' mode uses
     # the size of the larger input, not the first.)
@@ -260,10 +248,8 @@ def correlate(in1, in2, mode='full', method='auto'):
         z = sigtools._correlateND(in1zpadded, in2, out, val)
 
     if swapped_inputs:
-        # Reverse in all dimensions and conjugate to undo the effect of
-        # swapping inputs
-        reverse = [slice(None, None, -1)] * z.ndim
-        z = z[reverse].conj()
+        # Reverse and conjugate to undo the effect of swapping inputs
+        z = _reverse_and_conj(z)
 
     return z
 
@@ -287,6 +273,9 @@ def fftconvolve(in1, in2, mode="full"):
     This is generally much faster than `convolve` for large arrays (n > ~500),
     but can be slower when only a few output values are needed, and can only
     output float arrays (int or object array inputs will be cast to float).
+
+    However, `convolve` performs a rough calculation to see if this method or
+    the direct method is faster (as of v0.18).
 
     Parameters
     ----------
@@ -413,6 +402,81 @@ def fftconvolve(in1, in2, mode="full"):
                          " 'same', or 'full'.")
 
 
+def _numeric_arrays(arrays, kinds='buifc'):
+    """
+    See if a list of arrays are all numeric.
+
+    Parameters
+    ----------
+    ndarrays : list-like
+        arrays to check if numeric.
+    numeric_kinds : string-like
+        The dtypes of the arrays to be checked. If the dtype.kind of
+        the ndarrays are not in this string the function returns False and
+        otherwise returns True.
+
+    Examples
+    --------
+
+    >>> x = np.ndarray([1, 2, 3])
+    >>> y = x.copy()
+    >>> assert _numeric_array(x, y)
+    >>> obj = np.ndarray(['this', 'is', 'not', 'numeric'])
+    >>> assert not _numeric_array(obj)
+
+    """
+    if type(arrays) == ndarray:
+        return arrays.dtype.kind in kinds
+    for array_ in arrays:
+        if array_.dtype.kind not in kinds:
+            return False
+    return True
+
+def _fftconv_faster(x, h, mode):
+    """
+    See if using fftconvolve or convolve is faster. The value returned (a 
+    boolean) depends on the sizes and shapes of the input values.
+
+    The big O ratios were found to hold to different machines, which makes
+    sense as it's the ratio that matters (the effective speed of the computer
+    is found in both big O constants). Regardless, this had been tuned on an
+    early 2015 MacBook Pro with 8GB RAM and an Intel i5 processor. 
+    """
+    out_shape = {'full': [n + k - 1 for n, k in zip(x.shape, h.shape)],
+                 'same': x.shape,
+                 'valid': [n - k + 1 for n, k in zip(x.shape, h.shape)]}
+
+    # see whether the fourier transform convolution method or the direct
+    # convolution method is faster (discussed in scikit-image PR #1792)
+    big_O_constant = 5e-6 if x.ndim > 1 else 4.81e-4
+    direct_time = big_O_constant * (x.size * h.size * np.prod(out_shape[mode]))
+    fft_time = np.sum([n * np.log(n) for n in (x.shape + h.shape +
+                                               tuple(out_shape[mode]))])
+    if mode == 'valid':
+        shape_diff = np.prod([n - k for n, k in zip(x.shape, h.shape)])
+        # this decision was calculated with a single dimension
+        shape_diff = np.power(np.abs(shape_diff), 1 / x.ndim)
+        if (x.ndim == 1 and shape_diff < 300) or \
+           (x.ndim < 6 and shape_diff <= 2) or (shape_diff == 0):
+            return False
+
+    return fft_time < direct_time
+
+def _reverse_and_conj(x):
+    """
+    Reverse array `x` in all dimensions and perform the complex conjugate
+    """
+    reverse = [slice(None, None, -1)] * x.ndim
+    return x[reverse].conj()
+
+def _np_conv_ok(volume, kernel, mode):
+    """
+    See if numpy support convolution of x and y (if both 1D ndarrays and of the
+    appropriate shape).
+    """
+    np_conv_ok = volume.ndim == kernel.ndim == 1 
+    return np_conv_ok and (volume.size >= kernel.size or mode != 'same')
+
 def convolve(in1, in2, mode='full', method='auto'):
     """
     Convolve two N-dimensional arrays.
@@ -454,11 +518,7 @@ def convolve(in1, in2, mode='full', method='auto'):
            Fourier transform or direct method) and that method is chosen
            (default).
 
-    Notes
-    -----
-    ``method='fft'`` only works for numerical arrays as it relies on
-    scipy.signal.fftconvolve. In certain cases (i.e., arrays of objects or when
-    rounding integers can lose precision), ``method='direct'`` is always used.
+           .. versionadded:: 0.18.0
 
     Returns
     -------
@@ -470,6 +530,12 @@ def convolve(in1, in2, mode='full', method='auto'):
     --------
     numpy.polymul : performs polynomial multiplication (same operation, but
                     also accepts poly1d objects)
+
+    Notes
+    -----
+    ``method='fft'`` only works for numerical arrays as it relies on
+    `fftconvolve`. In certain cases (i.e., arrays of objects or when
+    rounding integers can lose precision), ``method='direct'`` is always used.
 
     Examples
     --------
@@ -505,35 +571,39 @@ def convolve(in1, in2, mode='full', method='auto'):
         # Convolution is commutative; order doesn't have any effect on output
         volume, kernel = kernel, volume
 
-    out_shape = {'full':[n + k for n, k in zip(volume.shape, kernel.shape)],
-                 'same':volume.shape,
-                 'valid':[n - k + 1 for n, k in zip(volume.shape,
-                                                    kernel.shape)]}
+    if method == 'fft' and not _numeric_arrays([volume, kernel]):
+        raise ValueError('convolve can only be called with method=="fft" when'
+                         ' arrays consist of numeric elements (i.e., '
+                         'int/float/etc)')
 
-    # see whether the fourier transform convolution method or the direct
-    # convolution method is faster (discussed in scikit-image PR #1792)
-    big_O_constant = 5e-6 if volume.ndim > 1 else 4.81e-4
-    direct_time = big_O_constant * np.prod(volume.shape + kernel.shape +
-                                           tuple(out_shape[mode]))
-    fft_time = np.sum([n * np.log(n) for n in (volume.shape + kernel.shape +
-                                               tuple(out_shape[mode]))])
+    if method == 'auto':
+        method = 'fft' if _fftconv_faster(volume, kernel, mode) else 'direct'
+        method = 'direct' if not _numeric_arrays([volume, kernel]) else method
 
-    if ((fft_time < direct_time and method == 'auto') or method == 'fft') \
-            and volume.dtype.kind in 'buif' and kernel.dtype.kind in 'buif':
+    if method in ('fft', 'auto') and hasattr(np, "complex256"):
+        method = 'direct' if volume.dtype == 'complex256' else method
+        method = 'direct' if kernel.dtype == 'complex256' else method
+
+    # catch when more precision required than float provides (representing a
+    # integer as float can lose precision in fftconvolve if larger than 2**52)
+    if method == 'fft' and any([_numeric_arrays([x], kinds='ui')
+                                        for x in [volume, kernel]]):
+        max_value = int(np.abs(volume).max()) * int(np.abs(kernel).max())
+        max_value *= int(min(volume.size, kernel.size))
+        method = 'direct' if max_value > 2**np.finfo('float').nmant - 1 \
+                                                                    else method
+
+    if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
+        out = np.around(out) if volume.dtype.kind in 'ui' else out
         return np.asarray(out, dtype=volume.dtype)
 
     # fastpath to faster numpy 1d convolve (but numpy's 'same' mode uses the
     # size of the larger input, not the first.)
-    if volume.ndim == kernel.ndim == 1 and (volume.size >= kernel.size or
-                                            mode != 'same'):
+    if _np_conv_ok(volume, kernel, mode):
         return np.convolve(volume, kernel, mode)
 
-    # Reverse in all dimensions
-    reverse = [slice(None, None, -1)] * kernel.ndim
-
-    # .conj() does nothing to real arrays and is faster than iscomplexobj()
-    return correlate(volume, kernel[reverse].conj(), mode, 'direct')
+    return correlate(volume, _reverse_and_conj(kernel), mode, 'direct')
 
 
 def order_filter(a, domain, rank):
