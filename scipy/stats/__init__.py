@@ -346,7 +346,7 @@ from . import mstats
 from .contingency import chi2_contingency
 from ._multivariate import *
 
-__all__ = [s for s in dir()]
+__all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
 from numpy.testing import Tester
 test = Tester().test
