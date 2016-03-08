@@ -121,7 +121,7 @@ class dia_matrix(_data_matrix):
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
-            A = coo_matrix(arg1, dtype=dtype).todia()
+            A = coo_matrix(arg1, dtype=dtype, shape=shape).todia()
             self.data = A.data
             self.offsets = A.offsets
             self.shape = A.shape
@@ -247,15 +247,28 @@ class dia_matrix(_data_matrix):
         data = data[r,c]
         return dia_matrix((data, offsets), shape=(num_cols,num_rows))
 
-    def tocsr(self, copy=False):
-        #this could be faster
-        return self.tocoo(copy=copy).tocsr()
-
-    tocsr.__doc__ = spmatrix.tocsr.__doc__
-
     def tocsc(self, copy=False):
-        #this could be faster
-        return self.tocoo(copy=copy).tocsc()
+        from .csc import csc_matrix
+        if self.nnz == 0:
+            return csc_matrix(self.shape, dtype=self.dtype)
+
+        num_rows, num_cols = self.shape
+        num_offsets, offset_len = self.data.shape
+        offset_inds = np.arange(offset_len)
+
+        row = offset_inds - self.offsets[:,None]
+        mask = (row >= 0)
+        mask &= (row < num_rows)
+        mask &= (offset_inds < num_cols)
+        mask &= (self.data != 0)
+
+        indptr = np.zeros(num_cols + 1, dtype=row.dtype)
+        indptr[1:offset_len+1] = np.cumsum(mask.sum(axis=0))
+        indptr[offset_len+1:] = indptr[offset_len]
+        indices = row.T[mask.T]
+        data = self.data.T[mask.T]
+        return csc_matrix((data, indices, indptr), shape=self.shape,
+                          dtype=self.dtype)
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
@@ -274,7 +287,9 @@ class dia_matrix(_data_matrix):
         data = self.data[mask]
 
         from .coo import coo_matrix
-        return coo_matrix((data,(row,col)), shape=self.shape)
+        A = coo_matrix((data,(row,col)), shape=self.shape, dtype=self.dtype)
+        A.has_canonical_format = True
+        return A
 
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
