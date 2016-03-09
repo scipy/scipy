@@ -403,6 +403,30 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             return res['x']
 
 
+def __deprecate_ftol_xtol(func):
+    def inner(*args, **kwds):
+        if 'ftol' in kwds:
+            warnings.warn("ftol is deprecated for _minimize_neldermead,"
+                          " use fatol instead. If you specified both, only"
+                          " fatol is used.",
+                          DeprecationWarning)
+            if not 'fatol' in kwds:
+                kwds['fatol'] = kwds['ftol']
+            kwds.pop('ftol')
+        if 'xtol' in kwds:
+            warnings.warn("xtol is deprecated for _minimize_neldermead,"
+                          " use xatol instead. If you specified both, only"
+                          " xatol is used.",
+                          DeprecationWarning)
+            if not 'xatol' in kwds:
+                kwds['xatol'] = kwds['xtol']
+            kwds.pop('xtol')
+
+        return func(*args, **kwds)
+    return inner
+
+
+@__deprecate_ftol_xtol
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          maxiter=None, maxfev=None, disp=False,
                          return_all=False, initial_simplex=None,
@@ -431,19 +455,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         Absolute error in func(xopt) between iterations that is acceptable for
         convergence.
     """
-    if 'xtol' in unknown_options:
-        xatol = unknown_options['xtol']
-        warnings.warn("xtol is deprecated for _minimize_neldermead,"
-                      " use xatol instead.",
-                      DeprecationWarning)
-        unknown_options.pop('xtol')
-    if 'ftol' in unknown_options:
-        fatol = unknown_options['ftol']
-        unknown_options.pop('ftol')
-        warnings.warn("ftol is deprecated for _minimize_neldermead,"
-                      " use fatol instead.",
-                      DeprecationWarning)
-
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
