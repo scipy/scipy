@@ -176,8 +176,8 @@ def group_columns(A, order=0):
     return groups
 
 
-def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
-                      args=(), kwargs={}, bounds=(-np.inf, np.inf),
+def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
+                      f0=None, args=(), kwargs={}, bounds=(-np.inf, np.inf),
                       sparsity=None):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
@@ -334,7 +334,10 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     if np.any((x0 < lb) | (x0 > ub)):
         raise ValueError("`x0` violates bound constraints.")
 
-    h = _compute_absolute_step(rel_step, x0, method)
+    if abs_step is None:
+        h = _compute_absolute_step(rel_step, x0, method)
+    else:
+        h = abs_step*np.sign(x0)
 
     if method == '2-point':
         h, use_one_sided = _adjust_scheme_to_bounds(
