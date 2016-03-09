@@ -92,13 +92,15 @@ def linregress(x, y=None):
     t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
     prob = 2 * distributions.t.sf(np.abs(t), df)
     slope = covxy / varx
-    intercept = ymean - slope*xmean
-    sterrest = np.sqrt((1 - r**2) * vary / varx / df)
+    intercept = ymean - (slope * xmean)
+    stderr_est = np.sqrt((1 - r**2) * vary / df)
+    stderr_slope = stderr_est * np.sqrt(1 / varx)
+    stderr_intercept = stderr_est * np.sqrt((1 / n) + (xmean**2 / varx)
 
     LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                        'rvalue', 'pvalue',
                                                        'stderr'))
-    return LinregressResult(slope, intercept, r, prob, sterrest)
+    return LinregressResult(slope, intercept, r, prob, stderr_slope)
 
 
 def theilslopes(y, x=None, alpha=0.95):
