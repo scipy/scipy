@@ -233,7 +233,7 @@ def construct_loss_function(m, loss, f_scale):
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=1.0, loss='linear',
-        f_scale=1.0, diff_step=None, tr_solver=None, tr_options={},
+        f_scale=1.0, abs_step=None, rel_step=None, tr_solver=None, tr_options={},
         jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
@@ -830,8 +830,8 @@ def least_squares(
             jac_sparsity = check_jac_sparsity(jac_sparsity, m, n)
 
             def jac_wrapped(x, f):
-                J = approx_derivative(fun, x, rel_step=diff_step, method=jac,
-                                      f0=f, bounds=bounds, args=args,
+                J = approx_derivative(fun, x, rel_step=rel_step, abs_step=abs_step,
+                                      method=jac, f0=f, bounds=bounds, args=args,
                                       kwargs=kwargs, sparsity=jac_sparsity)
                 if J.ndim != 2:  # J is guaranteed not sparse.
                     J = np.atleast_2d(J)
@@ -868,8 +868,11 @@ def least_squares(
                 tr_solver = 'lsmr'
 
     if method == 'lm':
-        result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
-                              max_nfev, x_scale, diff_step)
+        if abs_step is None:
+            result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
+                                  max_nfev, x_scale, rel_step)
+        else:
+            raise ValueError("'abs_step' can't be used when method='lm'")
 
     elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
