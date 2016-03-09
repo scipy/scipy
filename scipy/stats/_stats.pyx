@@ -1,6 +1,6 @@
 import warnings
 import numpy as np
-from numpy cimport int64_t, uint64_t
+from numpy cimport int64_t, uint64_t, intp_t
 import scipy.special as special
 from collections import namedtuple
 
@@ -42,8 +42,8 @@ cdef inline double stat1(uint64_t l):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _toranks(x):
-    cdef long[:] perm = np.argsort(x, kind='quicksort')
-    cdef long[:] rank = np.ndarray(len(perm), dtype=long)
+    cdef intp_t[::1] perm = np.argsort(x, kind='quicksort')
+    cdef intp_t[::1] rank = np.ndarray(len(perm), dtype=np.intp)
     cdef uint64_t i, j = 0
     for i in xrange(len(x) - 1):
         rank[perm[i]] = j
@@ -60,7 +60,7 @@ KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 def _kendalltau(ordered0[:] x, ordered1[:] y):
 
     cdef uint64_t n = np.uint64(len(x))
-    cdef long[:] temp = np.ndarray(n, dtype=long)  # support structure used by mergesort
+    cdef intp_t[::1] temp = np.ndarray(n, dtype=np.intp)  # support structure used by mergesort
 
     # this closure recursively sorts sections of perm[] by comparing
     # elements of y[perm[]] using temp[] as support
@@ -111,7 +111,7 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
         return exchcnt
 
     # initial sort on values of x and, if tied, on values of y
-    cdef long[:] perm = np.lexsort((y, x))
+    cdef intp_t[::1] perm = np.lexsort((y, x))
     
     # compute joint ties
     cdef uint64_t first = 0
