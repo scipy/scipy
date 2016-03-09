@@ -760,6 +760,7 @@ class _TestCommon:
             datsp = self.spmatrix(dat, dtype=dtype)
             assert_array_almost_equal(dat.sum(), datsp.sum())
             assert_equal(dat.sum().dtype, datsp.sum().dtype)
+            assert_(np.isscalar(datsp.sum(axis=None)))
             assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None))
             assert_equal(dat.sum(axis=None).dtype, datsp.sum(axis=None).dtype)
             assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
@@ -784,6 +785,7 @@ class _TestCommon:
 
             assert_array_almost_equal(dat.mean(), datsp.mean())
             assert_equal(dat.mean().dtype, datsp.mean().dtype)
+            assert_(np.isscalar(datsp.mean(axis=None)))
             assert_array_almost_equal(dat.mean(axis=None), datsp.mean(axis=None))
             assert_equal(dat.mean(axis=None).dtype, datsp.mean(axis=None).dtype)
             assert_array_almost_equal(dat.mean(axis=0), datsp.mean(axis=0))

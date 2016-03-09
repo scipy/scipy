@@ -792,9 +792,9 @@ class spmatrix(object):
             res_dtype = self.dtype
 
         if axis is None:
-            m, n = self.shape
-            return self.astype(res_dtype).sum() / np.matrix(m * n,
-                                                            dtype=res_dtype)
+            mean = self.astype(res_dtype).sum()
+            mean /= np.array(self.shape[0] * self.shape[1], dtype=res_dtype)
+            return mean
 
         if axis < 0:
             axis += 2
