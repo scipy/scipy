@@ -72,12 +72,33 @@ def _bvalfromboundary(boundary):
     return val
 
 
-def _check_valid_mode_shapes(shape1, shape2):
-    for d1, d2 in zip(shape1, shape2):
-        if not d1 >= d2:
-            raise ValueError(
-                "in1 should have at least as many items as in2 in "
-                "every dimension for 'valid' mode.")
+def _inputs_swap_needed(mode, shape1, shape2):
+    """
+    If in 'valid' mode, checks whether or not one of the array shapes
+    is at least as large as the other in every dimension. Returns whether
+    or not the input arrays need to be swapped depending on whether shape2
+    is larger than shape1. This is important for some of the correlation and
+    convolution implementations in this module, where the larger array input
+    needs to come before the smaller array input when operating in this mode.
+    Note that if the mode provided is not 'valid', False is immediately returned.
+
+    """
+    if mode == 'valid':
+        ok1, ok2 = True, True
+
+        for d1, d2 in zip(shape1, shape2):
+            if not d1 >= d2:
+                ok1 = False
+            if not d2 >= d1:
+                ok2 = False
+
+        if not (ok1 or ok2):
+            raise ValueError("For 'valid' mode, one must be at least "
+                             "as large as the other in every dimension")
+
+        return not ok1
+
+    return False
 
 
 def correlate(in1, in2, mode='full'):
@@ -92,9 +113,9 @@ def correlate(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must have
+        dimensions that are at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -163,28 +184,28 @@ def correlate(in1, in2, mode='full'):
     elif not in1.ndim == in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
-        # numpy is significantly faster for 1d
-        if in1.ndim == 1 and in2.ndim == 1:
-            return np.correlate(in1, in2, mode)
+    # numpy is significantly faster for 1d
+    if in1.ndim == in2.ndim == 1 and (in1.size >= in2.size):
+        return np.correlate(in1, in2, mode)
 
+    # _correlateND is far slower when in2.size > in1.size, so swap them
+    # and then undo the effect afterward
+    swapped_inputs = (mode == 'full') and (in2.size > in1.size)
+    swapped_inputs = swapped_inputs or _inputs_swap_needed(
+            mode, in1.shape, in2.shape)
+
+    if swapped_inputs:
+        in1, in2 = in2, in1
+
+    if mode == 'valid':
         ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
         out = np.empty(ps, in1.dtype)
 
         z = sigtools._correlateND(in1, in2, out, val)
+
     else:
-        # numpy is significantly faster for 1d
-        if in1.ndim == 1 and in2.ndim == 1 and (in1.size >= in2.size):
-            return np.correlate(in1, in2, mode)
-
-        # _correlateND is far slower when in2.size > in1.size, so swap them
-        # and then undo the effect afterward
-        swapped_inputs = (mode == 'full') and (in2.size > in1.size)
-        if swapped_inputs:
-            in1, in2 = in2, in1
-
         ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
+
         # zero pad input
         in1zpadded = np.zeros(ps, in1.dtype)
         sc = [slice(0, i) for i in in1.shape]
@@ -197,10 +218,10 @@ def correlate(in1, in2, mode='full'):
 
         z = sigtools._correlateND(in1zpadded, in2, out, val)
 
-        # Reverse and conjugate to undo the effect of swapping inputs
-        if swapped_inputs:
-            slice_obj = [slice(None, None, -1)] * len(z.shape)
-            z = z[slice_obj].conj()
+    # Reverse and conjugate to undo the effect of swapping inputs
+    if swapped_inputs:
+        slice_obj = [slice(None, None, -1)] * len(z.shape)
+        z = z[slice_obj].conj()
 
     return z
 
@@ -280,9 +301,9 @@ def fftconvolve(in1, in2, mode="full"):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must have
+        dimensions that are at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -360,8 +381,8 @@ def fftconvolve(in1, in2, mode="full"):
                       np.issubdtype(in2.dtype, complex))
     shape = s1 + s2 - 1
 
-    if mode == "valid":
-        _check_valid_mode_shapes(s1, s2)
+    if _inputs_swap_needed(mode, s1, s2):
+        in1, s1, in2, s2 = in2, s2, in1, s1
 
     # Speed up FFT by padding to optimal size for FFTPACK
     fshape = [_next_regular(int(d)) for d in shape]
@@ -409,9 +430,9 @@ def convolve(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must have
+        dimensions that are at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -462,6 +483,9 @@ def convolve(in1, in2, mode='full'):
     """
     volume = asarray(in1)
     kernel = asarray(in2)
+
+    if _inputs_swap_needed(mode, volume.shape, kernel.shape):
+        volume, kernel = kernel, volume
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
@@ -642,8 +666,12 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Parameters
     ----------
-    in1, in2 : array_like
-        Two-dimensional input arrays to be convolved.
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must have
+        dimensions that are at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -708,8 +736,8 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
+    if _inputs_swap_needed(mode, in1.shape, in2.shape):
+        in1, in2 = in2, in1
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
@@ -731,8 +759,12 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Parameters
     ----------
-    in1, in2 : array_like
-        Two-dimensional input arrays to be convolved.
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must have
+        dimensions that are at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -797,9 +829,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """
     in1 = asarray(in1)
     in2 = asarray(in2)
+    swapped_inputs = False
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
+    if _inputs_swap_needed(mode, in1.shape, in2.shape):
+        swapped_inputs = True
+        in1, in2 = in2, in1
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
@@ -808,6 +842,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         warnings.simplefilter('ignore', np.ComplexWarning)
         # FIXME: some cast generates a warning here
         out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+
+    if swapped_inputs:
+        out = out[::-1, ::-1]
 
     return out
 
