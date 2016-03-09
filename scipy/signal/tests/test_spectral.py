@@ -806,6 +806,29 @@ class TestCoherence:
 
 
 class TestSpectrogram:
+    def test_complex_density_output(self):
+        scaling = 'density'
+        self._test_complex_output(scaling)
+
+    def test_complex_spectrum_output(self):
+        scaling = 'spectrum'
+        self._test_complex_output(scaling)
+
+    def _test_complex_output(self, scaling):
+        x = np.random.randn(1024)
+
+        fs = 1.0
+        window = ('tukey', 0.25)
+        nperseg = 16
+        noverlap = 2
+
+        _, _, p = spectrogram(x, fs, window, nperseg, noverlap,
+                              scaling=scaling, mode='psd')
+        _, _, c = spectrogram(x, fs, window, nperseg, noverlap,
+                              scaling=scaling, mode='complex')
+        pc = np.conj(c)*c
+        assert_allclose(p, pc, atol=1e-7)
+
     def test_average_all_segments(self):
         x = np.random.randn(1024)
 
@@ -815,9 +838,30 @@ class TestSpectrogram:
         noverlap = 2
 
         f, _, P = spectrogram(x, fs, window, nperseg, noverlap)
+        _, _, H = spectrogram(x, fs, window, nperseg, noverlap, mode='complex')
         fw, Pw = welch(x, fs, window, nperseg, noverlap)
         assert_allclose(f, fw)
-        assert_allclose(np.mean(P, axis=-1), Pw)
+        assert_allclose(np.mean(P, axis=-1), Pw, atol=1e-7)
+        assert_allclose(np.mean(np.abs(H)**2, axis=-1), Pw, atol=1e-7)
+
+    def test_cross_spectrogram(self):
+        x = np.random.randn(1024)
+        y = np.random.randn(1024)
+
+        fs = 1.0
+        window = ('tukey', 0.25)
+        nperseg = 16
+        noverlap = 2
+
+        f, _, Hxx = spectrogram(x, fs, window, nperseg, noverlap,
+                                mode='complex')
+        f, _, Hyy = spectrogram(y, fs, window, nperseg, noverlap,
+                                mode='complex')
+
+        Hxy = Hxx.conj() * Hyy
+        fw, Cxy = csd(x, y, fs, window, nperseg, noverlap)
+        assert_allclose(f, fw)
+        assert_allclose(np.mean(Hxy, axis=-1), Cxy, atol=1e-7)
 
 class TestLombscargle:
     def test_frequency(self):
