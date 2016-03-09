@@ -93,9 +93,10 @@ def linregress(x, y=None):
     prob = 2 * distributions.t.sf(np.abs(t), df)
     slope = covxy / varx
     intercept = ymean - (slope * xmean)
-    stderr_est = np.sqrt((1 - r**2) * vary / df)
-    stderr_slope = stderr_est * np.sqrt(1 / varx)
-    stderr_intercept = stderr_est * np.sqrt((1 / n) + (xmean**2 / varx))
+    mse = (1 - r**2) * vary / df
+    stderr_est = np.sqrt(mse)
+    stderr_slope =  np.sqrt(mse / varx)
+    stderr_intercept = np.sqrt(mse * (1/n + xmean**2/varx))
 
     LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                        'rvalue', 'pvalue',
