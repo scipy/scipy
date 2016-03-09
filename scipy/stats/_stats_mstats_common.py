@@ -95,7 +95,7 @@ def linregress(x, y=None):
     intercept = ymean - (slope * xmean)
     stderr_est = np.sqrt((1 - r**2) * vary / df)
     stderr_slope = stderr_est * np.sqrt(1 / varx)
-    stderr_intercept = stderr_est * np.sqrt((1 / n) + (xmean**2 / varx)
+    stderr_intercept = stderr_est * np.sqrt((1 / n) + (xmean**2 / varx))
 
     LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                        'rvalue', 'pvalue',
