@@ -76,13 +76,12 @@ def linregress(x, y=None):
     ymean = np.mean(y, None)
 
     # average sum of squares:
-    ssxm, ssxym, ssyxm, ssym = np.cov(x, y, bias=1).flat
-    r_num = ssxym
-    r_den = np.sqrt(ssxm * ssym)
+    varx, covxy, covyx, vary = np.cov(x, y, bias=1).flat
+    r_den = np.sqrt(varx * vary)
     if r_den == 0.0:
         r = 0.0
     else:
-        r = r_num / r_den
+        r = covxy / r_den
         # test for numerical error propagation
         if r > 1.0:
             r = 1.0
@@ -92,9 +91,9 @@ def linregress(x, y=None):
     df = n - 2
     t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
     prob = 2 * distributions.t.sf(np.abs(t), df)
-    slope = r_num / ssxm
+    slope = covxy / varx
     intercept = ymean - slope*xmean
-    sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+    sterrest = np.sqrt((1 - r**2) * vary / varx / df)
 
     LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
                                                        'rvalue', 'pvalue',
