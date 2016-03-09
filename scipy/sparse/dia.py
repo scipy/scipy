@@ -262,10 +262,11 @@ class dia_matrix(_data_matrix):
         mask &= (offset_inds < num_cols)
         mask &= (self.data != 0)
 
-        indptr = np.zeros(num_cols + 1, dtype=row.dtype)
+        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        indptr = np.zeros(num_cols + 1, dtype=idx_dtype)
         indptr[1:offset_len+1] = np.cumsum(mask.sum(axis=0))
         indptr[offset_len+1:] = indptr[offset_len]
-        indices = row.T[mask.T]
+        indices = row.T[mask.T].astype(idx_dtype, copy=False)
         data = self.data.T[mask.T]
         return csc_matrix((data, indices, indptr), shape=self.shape,
                           dtype=self.dtype)

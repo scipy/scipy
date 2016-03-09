@@ -282,7 +282,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             col = self.col.astype(idx_dtype, copy=False)
 
             indptr = np.empty(N + 1, dtype=idx_dtype)
-            indices = np.empty_like(row)
+            indices = np.empty_like(row, dtype=idx_dtype)
             data = np.empty_like(self.data, dtype=upcast(self.dtype))
 
             coo_tocsr(N, M, self.nnz, col, row, self.data,
@@ -322,7 +322,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             col = self.col.astype(idx_dtype, copy=False)
 
             indptr = np.empty(M + 1, dtype=idx_dtype)
-            indices = np.empty_like(col)
+            indices = np.empty_like(col, dtype=idx_dtype)
             data = np.empty_like(self.data, dtype=upcast(self.dtype))
 
             coo_tocsr(M, N, self.nnz, row, col, self.data,
