@@ -8,12 +8,13 @@ from scipy import fftpack
 from . import signaltools
 from .windows import get_window
 from ._spectral import lombscargle
+from ._arraytools import odd_ext
 import warnings
 
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram']
+           'spectrogram', 'stft', 'istft', 'check_COLA']
 
 
 def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
@@ -406,7 +407,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
 def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
-                scaling='density', axis=-1, mode='psd'):
+                scaling='density', axis=-1):
     """
     Compute a spectrogram with consecutive Fourier transforms.
 
@@ -451,9 +452,6 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     axis : int, optional
         Axis along which the spectrogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
-    mode : str, optional
-        Defines what kind of return values are expected. Options are ['psd',
-        'complex', 'magnitude', 'angle', 'phase'].
 
     Returns
     -------
@@ -492,18 +490,20 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Generate a test signal, a 2 Vrms sine wave whose frequency linearly changes
-    with time from 1kHz to 2kHz, corrupted by 0.001 V**2/Hz of white noise
-    sampled at 10 kHz.
+    Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
+    modulated around 3kHz, corrupted by white noise of exponentially decreasing
+    magnitude sampled at 10 kHz.
 
     >>> fs = 10e3
     >>> N = 1e5
     >>> amp = 2 * np.sqrt(2)
-    >>> noise_power = 0.001 * fs / 2
-    >>> time = np.arange(N) / fs
-    >>> freq = np.linspace(1e3, 2e3, N)
-    >>> x = amp * np.sin(2*np.pi*freq*time)
-    >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> noise_power = 0.01 * fs / 2
+    >>> time = np.arange(N) / float(fs)
+    >>> mod = 500*np.cos(2*np.pi*0.25*time)
+    >>> carrier = amp * np.sin(2*np.pi*3e3*time + mod)
+    >>> noise = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> noise *= np.exp(-time/5)
+    >>> x = carrier + noise
 
     Compute and plot the spectrogram.
 
@@ -522,11 +522,481 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     if noverlap is None:
         noverlap = nperseg // 8
 
-    freqs, time, Pxy = _spectral_helper(x, x, fs, window, nperseg, noverlap,
+    freqs, time, Sxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided, scaling,
-                                        axis, mode=mode)
+                                        axis, mode='psd')
 
-    return freqs, time, Pxy
+    return freqs, time, Sxx
+
+
+def check_COLA(window, nperseg, noverlap, tol=1e-10):
+    """
+    Check whether the Constant OverLap Add (COLA) constraint is met
+
+    Parameters
+    ----------
+    window : str or tuple or array_like
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used directly
+        as the window. If `window` is an object with a length, `len(window)`
+        will override the value supplied in `nperseg`.
+    nperseg : int
+        Length of each segment.
+    noverlap : int
+        Number of points to overlap between segments.
+    tol : float, optional
+        The allowed variance of a bin's weighted sum from the median bin
+        sum.
+
+    Returns
+    -------
+    verdict : bool
+        `True` if chosen combination satisfies COLA within `tol`, `False`
+        otherwise
+
+    See Also
+    --------
+    stft: Short Time Fourier Transform
+    istft: Inverse Short Time Fourier Transform
+
+    Notes
+    -----
+    In order to enable inversion of an STFT via the inverse STFT in
+    `istft`, the signal windowing must obey the constraint of "Constant
+    OverLap Add" (COLA). This ensures that every point in the input data is
+    equally weighted, thereby avoiding aliasing and allowing full
+    reconstruction.
+
+    Some examples of windows that satisfy COLA:
+        - Rectangular window at 0% & 50% overlap
+        - Bartlett window at overlap of 1/2, 3/4, 5/6, 7/8, ...
+        - Hann window at 50% & 75% overlap
+        - Any Blackman family window at 2/3 overlap
+        - Any window with ``noverlap = nperseg-1``
+
+    A very comprehensive of other windows may be found in [2]_, wherein the
+    COLA condition is satisfied when the "Amplitude Flatness" is unity.
+
+    .. versionadded:: 0.18.0
+
+    References
+    ----------
+    .. [1] Julius O. Smith III, "Spectral Audio Signal Processing", W3K
+           Publishing, 2011,ISBN 978-0-9745607-3-1.
+    .. [2] G. Heinzel, A. Ruediger and R. Schilling, "Spectrum and spectral
+           density estimation by the Discrete Fourier transform (DFT),
+           including a comprehensive list of window functions and some new
+           at-top windows", 2002,
+           http://hdl.handle.net/11858/00-001M-0000-0013-557A-5
+    """
+
+    nperseg = int(nperseg)
+
+    if nperseg < 1:
+        raise ValueError('nperseg must be a positive integer')
+
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    noverlap = int(noverlap)
+
+    if isinstance(window, string_types) or type(window) is tuple:
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if win.shape[0] != nperseg:
+            raise ValueError('window must have length of nperseg')
+
+    step = nperseg - noverlap
+    binsums = np.sum((win[ii*step:(ii+1)*step] for ii in range(nperseg//step)),
+                      axis=0)
+
+    if nperseg % step != 0:
+        binsums[:nperseg % step] += win[-(nperseg % step):]
+
+    deviation = binsums - np.median(binsums)
+    return np.max(np.abs(deviation)) < tol
+
+
+def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+         detrend=False, return_onesided=True, padded=True, centered=True,
+         axis=-1):
+    """
+    Compute the Short Time Fourier Transform (STFT).
+
+    STFTs can be used as a way of quantifying the change of a nonstationary
+    signal's frequency and phase content over time.
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` time series. Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to a Hann window.
+    nperseg : int, optional
+        Length of each segment. Defaults to 256.
+    noverlap : int, optional
+        Number of points to overlap between segments. If None, ``noverlap =
+        nperseg // 2``. Defaults to None. When specified, the COLA
+        constraint must be met (see Notes below).
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        the FFT length is `nperseg`. Defaults to None.
+    detrend : str or function or False, optional
+        Specifies how to detrend each segment. If `detrend` is a string, it is
+        passed as the ``type`` argument to `detrend`.  If it is a function, it
+        takes a segment and returns a detrended segment. If `detrend` is
+        ``False``, no detrending is done.  Defaults to ``False``.
+    return_onesided : bool, optional
+        If True, return a one-sided spectrum for real data. If False return
+        a two-sided spectrum. Note that for complex data, a two-sided
+        spectrum is always returned.
+    padded : bool, optional
+        Specifies whether the input signal is zero-padded to make the
+        signal fit exactly into an integer number of window segments, so
+        that all of the signal is included in the output.
+    centered : bool, optional
+        Specifies whether the input signal is padded via odd extension, to
+        center the first window segment on the first input point. This has
+        the benefit of enabling reconstruction of the first data point
+        when the employed window function starts at zero. Defaults to True.
+    axis : int, optional
+        Axis along which the STFT is computed; the default is over the last
+        axis (i.e. ``axis=-1``).
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    t : ndarray
+        Array of segment times.
+    Zxx : ndarray
+        STFT of ``x``. By default, the last axis of ``Zxx`` corresponds to the
+        segment times.
+
+    See Also
+    --------
+    istft: Inverse Short Time Fourier Transform
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    welch: Power spectral density by Welch's method.
+    spectrogram: Spectrogram by Welch's method.
+    csd: Cross spectral density by Welch's method.
+    lombscargle: Lomb-Scargle periodogram for unevenly sampled data
+
+    Notes
+    -----
+    In order to enable inversion of an STFT via the inverse STFT in `istft`,
+    the signal windowing must obey the constraint of "Constant OverLap Add"
+    (COLA), and the input signal must have complete windowing coverage (i.e.
+    ``(x.shape[axis] - nperseg) % (nperseg-noverlap) == 0``).
+
+    The COLA constraint ensures that every point in the input data is equally
+    weighted, thereby avoiding aliasing and allowing full reconstruction.
+    Whether a choice of ``window``, ``nperseg``, and ``noverlap`` satisfy this
+    constraint can be tested with `check_COLA`.
+
+    ..  versionadded:: 0.18.0
+
+    References
+    ----------
+    .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
+           "Discrete-Time Signal Processing", Prentice Hall, 1999.
+    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from Modified
+           Short Fourier Transform", IEEE 1984, 10.1109/TASSP.1984.1164317
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fftshift
+    >>> import matplotlib.pyplot as plt
+
+    Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
+    modulated around 3kHz, corrupted by white noise of exponentially decreasing
+    magnitude sampled at 10 kHz.
+
+    >>> fs = 10e3
+    >>> N = 1e5
+    >>> amp = 2 * np.sqrt(2)
+    >>> noise_power = 0.01 * fs / 2
+    >>> time = np.arange(N) / float(fs)
+    >>> mod = 500*np.cos(2*np.pi*0.25*time)
+    >>> carrier = amp * np.sin(2*np.pi*3e3*time + mod)
+    >>> noise = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> noise *= np.exp(-time/5)
+    >>> x = carrier + noise
+
+    Compute and plot the STFT's magnitude.
+
+    >>> f, t, Zxx = signal.stft(x, fs, nperseg=1000)
+    >>> f = fftshift(f)
+    >>> Zxx = fftshift(Zxx, axes=0)
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.ylim([0, f[-1]])
+    >>> plt.title('STFT Magnitude')
+    >>> plt.ylabel('Frequency [Hz]')
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.show()
+    """
+
+    freqs, time, Zxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
+                                        nfft, detrend, return_onesided,
+                                        scaling='spectrum', axis=axis,
+                                        mode='stft', padded=padded,
+                                        centered=centered)
+
+    return freqs, time, Zxx
+
+
+def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+          input_onesided=True, centered=True, time_axis=-1, freq_axis=-2):
+    """
+    Perform the inverse Short Time Fourier transform (iSTFT).
+
+
+    Parameters
+    ----------
+    Zxx : array_like
+        STFT of the signal to be reconstructed. If a purely real array is
+        passed, it will be cast to a complex data type.
+    fs : float, optional
+        Sampling frequency of the time series. Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows and
+        required parameters. If ``window`` is array_like it will be used
+        directly as the window and its length will be used for nperseg.
+        Defaults to a Hann window. Must match the window used to generate
+        the STFT for faithful inversion.
+    nperseg : int, optional
+        Number of data points corresponding to each STFT segment. This
+        parameter must be specified if the number of data points per segment is
+        odd, or if the STFT was padded via ``nfft > nperseg``. If ``None``, the
+        value depends on the shape of ``Zxx`` and ``input_onesided``. If
+        ``input_onesided=True``, ``nperseg=2*(Zxx.shape[freq_axis] - 1)``.
+        Otherwise, ``nperseg=Zxx.shape[freq_axis]``.
+    noverlap : int, optional
+        Number of points to overlap between segments. If ``None``, half of the
+        segment length. Defaults to ``None``. When specified, the COLA constraint
+        must be met (see Notes below), and should match the parameter used to
+        generate the STFT.
+    nfft : int, optional
+        Number of FFT points corresponding to each STFT segment. This parameter
+        must be specified if the STFT was padded via ``nfft > nperseg``. If
+        ``None``, the default values are the same as for ``nperseg``, detailed
+        above, with one exception: if ``input_onesided`` is ``True`` and
+        ``nperseg==2*Zxx.shape[freq_axis] - 1``, ``nfft`` also takes on that
+        value. This case allows the proper inversion of an odd-length unpadded
+        STFT using ``nfft=None``.
+    input_onesided : bool, optional
+        If ``True``, interpret the input array as one-sided FFTs, such as is
+        returned by `numpy.fft.rfft`. If ``False``, interpret the input as a a
+        two-sided FFT.
+    centered : bool, optional
+        Specifies whether the input signal was padded via odd extension, by
+        using ``centered=True`` in `stft`. Defaults to ``True``.
+    time_axis : int, optional
+        Where the time segments of the STFT is located; the default is the
+        last axis (i.e. ``axis=-1``).
+    freq_axis : int, optional
+        Where the frequency axis of the STFT is located; the default is the
+        penultimate axis (i.e. ``axis=-2``).
+
+    Returns
+    -------
+    t : ndarray
+        Array of output data times.
+    x : ndarray
+        iSTFT of ``Zxx``.
+
+    See Also
+    --------
+    stft: Short Time Fourier Transform
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+
+    Notes
+    -----
+    In order to enable inversion of an STFT via the inverse STFT in `istft`,
+    the signal windowing must obey the constraint of "Constant OverLap Add"
+    (COLA). This ensures that every point in the input data is equally
+    weighted, thereby avoiding aliasing and allowing full reconstruction.
+    Whether a choice of ``window``, ``nperseg``, and ``noverlap`` satisfy this
+    constraint can be tested with `check_COLA`, by using ``nperseg =
+    Zxx.shape[freq_axis]``.
+
+    .. versionadded:: 0.18.0
+
+    References
+    ----------
+    .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
+           "Discrete-Time Signal Processing", Prentice Hall, 1999.
+    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from Modified
+           Short Fourier Transform", IEEE 1984, 10.1109/TASSP.1984.1164317
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fftshift
+    >>> import matplotlib.pyplot as plt
+
+    Generate a test signal, a 2 Vrms sine wave at 100Hz corrupted by 0.001
+    V**2/Hz of white noise sampled at 1024 Hz.
+
+    >>> fs = 1024
+    >>> N = 10*fs
+    >>> nperseg = 512
+    >>> amp = 2 * np.sqrt(2)
+    >>> noise_power = 0.001 * fs / 2
+    >>> time = np.arange(N) / float(fs)
+    >>> carrier = amp * np.sin(2*np.pi*50*time)
+    >>> noise = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> x = carrier + noise
+
+    Compute the STFT, and plot its magnitude
+
+    >>> f, t, Zxx = signal.stft(x, fs=fs, nperseg=nperseg, centered=True)
+    >>> f = fftshift(f)
+    >>> plt.figure()
+    >>> plt.pcolormesh(t, f, fftshift(np.abs(Zxx), axes=0), vmin=0, vmax=amp)
+    >>> plt.ylim([fs/nperseg, f[-1]])
+    >>> plt.title('STFT Magnitude')
+    >>> plt.ylabel('Frequency [Hz]')
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.yscale('log')
+    >>> plt.show()
+
+    Zero the components that are 10% or less of the carrier magnitude, then
+    convert back to a time series via inverse STFT
+
+    >>> Zxx = np.where(np.abs(Zxx) >= amp/10, Zxx, 0)
+    >>> _, xrec = signal.istft(Zxx, fs, centered=True)
+
+    Compare the cleaned signal with the original and true carrier signals.
+
+    >>> plt.figure()
+    >>> plt.plot(time, x, time, xrec.real, time, carrier)
+    >>> plt.xlim([0, 0.1])
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.ylabel('Signal')
+    >>> plt.legend(['Carrier + Noise', 'Filtered via STFT', 'True Carrier'])
+    >>> plt.show()
+
+    """
+
+    # Make sure input is an ndarray of appropriate complex dtype
+    Zxx = np.asarray(Zxx) + 0j
+
+    nseg = Zxx.shape[time_axis]
+
+    if input_onesided:
+        # Assume even segment length
+        n_default = 2*(Zxx.shape[freq_axis] - 1)
+    else:
+        n_default = Zxx.shape[freq_axis]
+
+    # Check windowing parameters
+    if nperseg is None:
+        nperseg = n_default
+    else:
+        nperseg = int(nperseg)
+        if nperseg < 1:
+            raise ValueError('nperseg must be a positive integer')
+
+    if nfft is None:
+        if (input_onesided) and (nperseg == n_default + 1):
+            # Odd nperseg, no FFT padding
+            nfft = nperseg
+        else:
+            nfft = n_default
+    elif nfft < nperseg:
+        raise ValueError('nfft must be greater than or equal to nperseg.')
+    else:
+        nfft = int(nfft)
+
+    if noverlap is None:
+        noverlap = nperseg//2
+    else:
+        noverlap = int(noverlap)
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    nstep = nperseg - noverlap
+
+    if not check_COLA(window, nperseg, noverlap):
+        raise ValueError('Window, STFT shape and noverlap do not satisfy the '
+                         'COLA constraint.')
+
+    # Rearrange axes if neccessary
+    freq_axis = int(freq_axis)
+    time_axis = int(time_axis)
+    if freq_axis == time_axis:
+        raise ValueError('Must specify differing time and frequency axes!')
+
+    if Zxx.ndim >= 2:
+        if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
+            # Turn negative indices to positive for the call to transpose
+            if freq_axis < 0:
+                freq_axis = Zxx.ndim + freq_axis
+            if time_axis < 0:
+                time = Zxx.ndim + time_axis
+            zouter = list(range(Zxx.ndim))
+            for ax in sorted([time_axis, freq_axis], reverse=True):
+                zouter.pop(ax)
+            Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
+    else:
+        raise ValueError('Input stft must be at least 2d!')
+
+    # Get window as array
+    if isinstance(window, string_types) or type(window) is tuple:
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if win.shape[0] != nperseg:
+            raise ValueError('window must have length of {0}'.format(nperseg))
+    if np.result_type(win, Zxx) != Zxx.dtype:
+        win = win.astype(Zxx.dtype)
+
+    # Initialize output and normalization arrays
+    outputlength = nperseg + (nseg-1)*nstep
+    x = np.zeros(list(Zxx.shape[:-2])+[outputlength], dtype=Zxx.dtype)
+    norm = np.zeros(outputlength)
+
+    if input_onesided:
+        ifunc = np.fft.irfft
+    else:
+        ifunc = fftpack.ifft
+
+    xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
+    xsubs *= win.sum()  # This takes care of the 'spectrum' scaling
+
+    # Construct the output from the ifft segments
+    # This loop could perhaps be vectorized/strided somehow...
+    for ii in range(nseg):
+        # Window the ifft
+        x[..., ii*nstep:ii*nstep+nperseg] += xsubs[..., ii] * win
+        norm[..., ii*nstep:ii*nstep+nperseg] += win**2
+
+    # Divide out normalization where non-tiny
+    x /= np.where(norm > 1e-10, norm, 1.0)
+
+    # Remove odd extension points
+    if centered:
+        x = x[..., nperseg//2:-(nperseg//2)]
+
+    # Put axes back
+    if x.ndim > 1:
+        if time_axis != Zxx.ndim-1:
+            if freq_axis < time_axis:
+                time_axis -= 1
+            x = np.rollaxis(x, -1, time_axis)
+
+    time = np.arange(x.shape[0])/float(fs)
+    return time, x
 
 
 def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
@@ -645,14 +1115,14 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
                     noverlap=None, nfft=None, detrend='constant',
                     return_onesided=True, scaling='spectrum', axis=-1,
-                    mode='psd'):
+                    mode='psd', padded=False, centered=False):
     """
     Calculate various forms of windowed FFTs for PSD, CSD, etc.
 
     This is a helper function that implements the commonality between the
     psd, csd, and spectrogram functions. It is not designed to be called
-    externally. The windows are not averaged over; the result from each window
-    is returned.
+    externally. The windows are not averaged over; the result from each
+    window is returned.
 
     Parameters
     ---------
@@ -674,16 +1144,16 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
     noverlap : int, optional
-        Number of points to overlap between segments. If None,
-        ``noverlap = nperseg // 2``.  Defaults to None.
+        Number of points to overlap between segments. If None, ``noverlap =
+        nperseg // 2``. Defaults to None.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        Length of the FFT used, if a zero padded FFT is desired. If None,
         the FFT length is `nperseg`. Defaults to None.
     detrend : str or function or False, optional
-        Specifies how to detrend each segment. If `detrend` is a string,
-        it is passed as the ``type`` argument to `detrend`.  If it is a
-        function, it takes a segment and returns a detrended segment.
-        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+        Specifies how to detrend each segment. If `detrend` is a string, it
+        is passed as the ``type`` argument to `detrend`. If it is a
+        function, it takes a segment and returns a detrended segment. If
+        `detrend` is False, no detrending is done. Defaults to 'constant'.
     return_onesided : bool, optional
         If True, return a one-sided spectrum for real data. If False return
         a two-sided spectrum. Note that for complex data, a two-sided
@@ -692,13 +1162,21 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
         Selects between computing the cross spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross spectrum
         ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
-        measured in V and fs is measured in Hz.  Defaults to 'density'
+        measured in V and fs is measured in Hz. Defaults to 'density'
     axis : int, optional
         Axis along which the periodogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
-    mode : str, optional
-        Defines what kind of return values are expected. Options are ['psd',
-        'complex', 'magnitude', 'angle', 'phase'].
+    mode: str {'psd', 'stft'}, optional
+        Defines what kind of return values are expected.
+    padded : bool, optional
+        Specifies whether the input signal is zero-padded to make the
+        signal fit exactly into an integer number of window segments, so
+        that all of the signal is included in the output.
+    centered : bool, optional
+        Specifies whether the input signal is padded via odd extension, to
+        center the first window segment on the first input point. This has
+        the benefit of enabling reconstruction of the first data point
+        when the employed window function starts at zero. Defaults to True.
 
     Returns
     -------
@@ -712,9 +1190,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
     References
     ----------
     .. [1] Stack Overflow, "Rolling window for 1D arrays in Numpy?",
-        http://stackoverflow.com/a/6811241
+           http://stackoverflow.com/a/6811241
     .. [2] Stack Overflow, "Using strides for an efficient moving average
-        filter", http://stackoverflow.com/a/4947453
+           filter", http://stackoverflow.com/a/4947453
 
     Notes
     -----
@@ -722,16 +1200,15 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
 
     .. versionadded:: 0.16.0
     """
-    if mode not in ['psd', 'complex', 'magnitude', 'angle', 'phase']:
+    if mode not in ['psd', 'stft']:
         raise ValueError("Unknown value for mode %s, must be one of: "
-                         "'default', 'psd', 'complex', "
-                         "'magnitude', 'angle', 'phase'" % mode)
+                         "{'psd', 'stft'}" % mode)
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
 
     if not same_data and mode != 'psd':
-        raise ValueError("x and y must be equal if mode is not 'psd'")
+        raise ValueError("x and y must be equal if mode is 'stft'")
 
     axis = int(axis)
 
@@ -798,10 +1275,26 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
 
     if noverlap is None:
         noverlap = nperseg//2
-    elif noverlap >= nperseg:
-        raise ValueError('noverlap must be less than nperseg.')
     else:
         noverlap = int(noverlap)
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    nstep = nperseg - noverlap
+
+    if centered:
+        x = odd_ext(x, nperseg//2, axis=-1)
+        if not same_data:
+            y = odd_ext(y, nperseg//2, axis=-1)
+
+    if padded:
+        # Pad to integer number of windowed segments
+        # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
+        nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
+        zeros_shape = list(x.shape[:-1]) + [nadd]
+        x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
+        if not same_data:
+            zeros_shape = list(y.shape[:-1]) + [nadd]
+            y = np.concatenate((y, np.zeros(zeros_shape)), axis=-1)
 
     # Handle detrending and window functions
     if not detrend:
@@ -823,76 +1316,64 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
     if np.result_type(win,np.complex64) != outdtype:
         win = win.astype(outdtype)
 
-    if mode == 'psd':
-        if scaling == 'density':
-            scale = 1.0 / (fs * (win*win).sum())
-        elif scaling == 'spectrum':
-            scale = 1.0 / win.sum()**2
-        else:
-            raise ValueError('Unknown scaling: %r' % scaling)
+    if scaling == 'density':
+        scale = 1.0 / (fs * (win*win).sum())
+    elif scaling == 'spectrum':
+        scale = 1.0 / win.sum()**2
     else:
-        scale = 1
+        raise ValueError('Unknown scaling: %r' % scaling)
+
+    if mode == 'stft':
+        scale = np.sqrt(scale)
 
     if return_onesided is True:
         if np.iscomplexobj(x):
             sides = 'twosided'
+            warnings.warn('Input data is complex, switching to return_onesided='
+                          'False')
         else:
             sides = 'onesided'
             if not same_data:
                 if np.iscomplexobj(y):
                     sides = 'twosided'
+                    warnings.warn('Input data is complex, switching to '
+                                  'return_onesided=False')
     else:
         sides = 'twosided'
 
     if sides == 'twosided':
-        num_freqs = nfft
+        freqs = fftpack.fftfreq(nfft, 1/fs)
     elif sides == 'onesided':
-        if nfft % 2:
-            num_freqs = (nfft + 1)//2
-        else:
-            num_freqs = nfft//2 + 1
+        freqs = np.fft.rfftfreq(nfft, 1/fs)
 
     # Perform the windowed FFTs
-    result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft)
-    result = result[..., :num_freqs]
-    freqs = fftpack.fftfreq(nfft, 1/fs)[:num_freqs]
+    result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
 
     if not same_data:
         # All the same operations on the y data
-        result_y = _fft_helper(y, win, detrend_func, nperseg, noverlap, nfft)
-        result_y = result_y[..., :num_freqs]
+        result_y = _fft_helper(y, win, detrend_func, nperseg, noverlap, nfft,
+                               sides)
         result = np.conjugate(result) * result_y
     elif mode == 'psd':
         result = np.conjugate(result) * result
-    elif mode == 'magnitude':
-        result = np.absolute(result)
-    elif mode == 'angle' or mode == 'phase':
-        result = np.angle(result)
-    elif mode == 'complex':
-        pass
 
     result *= scale
-    if sides == 'onesided':
+    if sides == 'onesided' and mode == 'psd':
         if nfft % 2:
             result[...,1:] *= 2
         else:
             # Last point is unpaired Nyquist freq point, don't double
             result[...,1:-1] *= 2
 
-    t = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1, nperseg - noverlap)/float(fs)
-
-    if sides != 'twosided' and not nfft % 2:
-        # get the last value correctly, it is negative otherwise
-        freqs[-1] *= -1
-
-    # we unwrap the phase here to handle the onesided vs. twosided case
-    if mode == 'phase':
-        result = np.unwrap(result, axis=-1)
+    time = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1,
+                     nperseg - noverlap)/float(fs)
+    if centered:
+        time -= (nperseg/2) / fs
 
     result = result.astype(outdtype)
 
     # All imaginary parts are zero anyways
-    if same_data and mode != 'complex':
+    if same_data and mode != 'stft':
         result = result.real
 
     # Output is going to have new last axis for window index
@@ -907,18 +1388,19 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
         # Make sure window/time index is last axis
         result = np.rollaxis(result, -1, -2)
 
-    return freqs, t, result
+    return freqs, time, result
 
 
-def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
+def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     """
-    Calculate windowed FFT, for internal use by scipy.signal._spectral_helper
+    Calculate windowed FFT, for internal use by
+    scipy.signal._spectral_helper
 
     This is a helper function that does the main FFT calculation for
     _spectral helper. All input valdiation is performed there, and the data
-    axis is assumed to be the last axis of x. It is not designed to be called
-    externally. The windows are not averaged over; the result from each window
-    is returned.
+    axis is assumed to be the last axis of x. It is not designed to be
+    called externally. The windows are not averaged over; the result from
+    each window is returned.
 
     Returns
     -------
@@ -928,7 +1410,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
     References
     ----------
     .. [1] Stack Overflow, "Repeat NumPy array without replicating data?",
-        http://stackoverflow.com/a/5568169
+           http://stackoverflow.com/a/5568169
 
     Notes
     -----
@@ -953,7 +1435,14 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
     result = win * result
 
     # Perform the fft. Acts on last axis by default. Zero-pads automatically
-    result = fftpack.fft(result, n=nfft)
+    if sides == 'twosided':
+        func = fftpack.fft
+        #  result = fftpack.fft(result, n=nfft)
+    else:
+        result = result.real
+        func = np.fft.rfft
+        #  result = np.fft.rfft(result, n=nfft)
+    result = func(result, n=nfft)
 
     return result
 
