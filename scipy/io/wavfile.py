@@ -155,7 +155,7 @@ def _read_riff_chunk(fid):
 
 def read(filename, mmap=False):
     """
-    Return the sample rate (in samples/sec) and data from a WAV file
+    Return the sample rate (in samples/sec) and data from a WAV file.
 
     Parameters
     ----------
@@ -163,16 +163,16 @@ def read(filename, mmap=False):
         Input wav file.
     mmap : bool, optional
         Whether to read data as memory mapped.
-        Only to be used on real files (Default: False)
+        Only to be used on real files (Default: False).
 
         .. versionadded:: 0.12.0
 
     Returns
     -------
     rate : int
-        Sample rate of wav file
+        Sample rate of wav file.
     data : numpy array
-        Data read from wav file
+        Data read from wav file.
 
     Notes
     -----
@@ -234,12 +234,12 @@ def read(filename, mmap=False):
 
 def write(filename, rate, data):
     """
-    Write a numpy array as a WAV file
+    Write a numpy array as a WAV file.
 
     Parameters
     ----------
     filename : string or open file handle
-        Output wav file
+        Output wav file.
     rate : int
         The sample rate (in samples/sec).
     data : ndarray
