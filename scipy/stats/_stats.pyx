@@ -107,44 +107,34 @@ def von_mises_cdf(k_obj, x_obj):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cdef inline void bit_inc(intp_t[::1] arr, intp_t i):
-    cdef:
-        intp_t size = arr.size
-
-    while i < size:
-        arr[i] += 1
-        i += i & -i
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-cdef inline intp_t bit_acc(intp_t[::1] arr, intp_t i):
-    cdef:
-        intp_t out = 0
-
-    while i != 0:
-        out += arr[i]
-        i -= i & -i
-
-    return out
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
 def _kendall_condis(intp_t[:] x, intp_t[:] y):
     cdef:
-        intp_t[::1] arr = np.zeros(np.max(y) + 1, dtype=np.intp)
-        intp_t i = 0, k = 0, size = x.size
+        intp_t sup = 1 + np.max(y)
+        intp_t[::1] arr = np.zeros(sup, dtype=np.intp)
+        intp_t i = 0, k = 0, size = x.size, idx
         int64_t con = 0, dis = 0
 
-    while i < size:
-        while k < size and x[i] == x[k]:
-            con += bit_acc(arr, y[k] - 1)  # concordant
-            dis += i - bit_acc(arr, y[k])  # discordant
-            k += 1
+    with nogil:
+        while i < size:
+            while k < size and x[i] == x[k]:
+                idx = y[k] - 1
+                while idx != 0:
+                    con += arr[idx]
+                    idx -= idx & -idx
 
-        while i < k:
-            bit_inc(arr, y[i])
-            i += 1
+                dis += i
+                idx = y[k]
+                while idx != 0:
+                    dis -= arr[idx]
+                    idx -= idx & -idx
+
+                k += 1
+
+            while i < k:
+                idx = y[i]
+                while idx < sup:
+                    arr[idx] += 1
+                    idx += idx & -idx
+                i += 1
 
     return con, dis

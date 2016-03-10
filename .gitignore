@@ -207,6 +207,7 @@ scipy/special/_ufuncs_cxx.cxx
 scipy/special/_ufuncs_cxx.h
 scipy/special/specfunmodule.c
 scipy/stats/_rank.c
+scipy/stats/_stats.c
 scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c
 scipy/stats/statlibmodule.c

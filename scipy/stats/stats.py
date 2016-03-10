@@ -3298,7 +3298,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     x, y = x[perm], y[perm]
 
     # convert x to dense ranks
-    x = np.r_[True, (x[1:] != x[:-1])].cumsum(dtype=np.intp)
+    x = np.r_[True, x[1:] != x[:-1]].cumsum(dtype=np.intp)
 
     con, dis = _kendall_condis(x, y)
 
