@@ -387,7 +387,9 @@ def fftconvolve(in1, in2, mode="full"):
                       np.issubdtype(in2.dtype, complex))
     shape = s1 + s2 - 1
 
+    # Check that input sizes are compatible with 'valid' mode
     if _inputs_swap_needed(mode, s1, s2):
+        # Convolution is commutative; order doesn't have any effect on output
         in1, s1, in2, s2 = in2, s2, in1, s1
 
     # Speed up FFT by padding to optimal size for FFTPACK
@@ -491,11 +493,12 @@ def convolve(in1, in2, mode='full'):
     volume = asarray(in1)
     kernel = asarray(in2)
 
-    if _inputs_swap_needed(mode, volume.shape, kernel.shape):
-        volume, kernel = kernel, volume
-
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
+
+    if _inputs_swap_needed(mode, volume.shape, kernel.shape):
+        # Convolution is commutative; order doesn't have any effect on output
+        volume, kernel = kernel, volume
 
     # fastpath to faster numpy 1d convolve (but numpy's 'same' mode uses the
     # size of the larger input, not the first.)
