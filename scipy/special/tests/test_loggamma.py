@@ -32,16 +32,12 @@ def test_identities2():
 
 
 def test_realpart():
-    # Test that the real parts of loggamma and gammaln agree. It would
-    # be nice to test for larger orders, but gammaln(-999.5 + 999.5j)
-    # returns nans.
-    x = np.array([-99.5, -9.5, -0.5, 0.5, 9.5, 99.5])
-    y = x.copy()
-    x, y = np.meshgrid(x, y)
-    z = (x + 1J*y).flatten()
-    dataset = np.vstack((z, gammaln(z).real)).T
+    # Test that the real parts of loggamma and gammaln agree on the
+    # real axis.
+    x = np.r_[-np.logspace(10, -10), np.logspace(-10, 10)] + 0.5
+    dataset = np.vstack((x, gammaln(x))).T
 
     def f(z):
-        return loggamma(z).real.astype('complex128')
+        return loggamma(z).real
     
     FuncData(f, dataset, 0, 1, rtol=1e-14, atol=1e-14).check()

@@ -1581,8 +1581,6 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_lgam "lgam"(double) nogil
 cdef extern from "_ufuncs_defs.h":
-    cdef double complex _func_clngamma_wrap "clngamma_wrap"(double complex) nogil
-cdef extern from "_ufuncs_defs.h":
     cdef double _func_gammasgn "gammasgn"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_gdtr "gdtr"(double, double, double) nogil
@@ -5613,7 +5611,7 @@ cdef char ufunc_gamma_types[8]
 cdef char *ufunc_gamma_doc = (
     "gamma(z)\n"
     "\n"
-    "Gamma function\n"
+    "Gamma function.\n"
     "\n"
     "The gamma function is often referred to as the generalized\n"
     "factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =\n"
@@ -5756,32 +5754,29 @@ ufunc_gammaincinv_data[0] = &ufunc_gammaincinv_ptr[2*0]
 ufunc_gammaincinv_data[1] = &ufunc_gammaincinv_ptr[2*1]
 gammaincinv = np.PyUFunc_FromFuncAndData(ufunc_gammaincinv_loops, ufunc_gammaincinv_data, ufunc_gammaincinv_types, 2, 2, 1, 0, "gammaincinv", ufunc_gammaincinv_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_gammaln_loops[4]
-cdef void *ufunc_gammaln_ptr[8]
-cdef void *ufunc_gammaln_data[4]
-cdef char ufunc_gammaln_types[8]
+cdef np.PyUFuncGenericFunction ufunc_gammaln_loops[2]
+cdef void *ufunc_gammaln_ptr[4]
+cdef void *ufunc_gammaln_data[2]
+cdef char ufunc_gammaln_types[4]
 cdef char *ufunc_gammaln_doc = (
-    "gammaln(z)\n"
+    "gammaln(x)\n"
     "\n"
-    "If `z` is not complex (i.e. `z` is a purely real number *or* it is\n"
-    "array_like and contains purely real elements), computes the\n"
-    "natural logarithm of the absolute value of the Gamma\n"
-    "function:\n"
+    "Logarithm of the absolute value of the Gamma function. When used\n"
+    "in conjunction with ``gammasgn``, it is useful for working in\n"
+    "logspace on the real axis without having to deal with complex\n"
+    "numbers via the relation ``exp(gammaln(x)) =\n"
+    "gammasgn(x)*gamma(x)``. If you want to work in complex logspace\n"
+    "use `loggamma`.\n"
     "\n"
-    ".. math::\n"
-    "  \\ln(|\\Gamma(z)|).\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array-like\n"
+    "    Values on the real line at which to compute ``gammaln``\n"
     "\n"
-    "If `z` is complex (i.e. `z` is a complex number *or* it is\n"
-    "array_like and contains at least one complex element), computes\n"
-    "the natural logarithm of the Gamma function:\n"
-    "\n"
-    ".. math::\n"
-    "  \\ln(\\Gamma(z)).\n"
-    "\n"
-    "When used in conjunction with ``gammasgn``, the behaviour for real\n"
-    "inputs is useful for working in logspace on the real axis without\n"
-    "having to deal with complex numbers since ``exp(gammaln(x)) =\n"
-    "gammasgn(x)*gamma(x)`` for real ``x``.\n"
+    "Returns\n"
+    "-------\n"
+    "gammaln : ndarray\n"
+    "    Values of ``gammaln`` at x; will always be real.\n"
     "\n"
     "See Also\n"
     "--------\n"
@@ -5789,29 +5784,17 @@ cdef char *ufunc_gammaln_doc = (
     "loggamma : principle branch of the logarithm of the gamma function")
 ufunc_gammaln_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_gammaln_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_gammaln_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
-ufunc_gammaln_loops[3] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
 ufunc_gammaln_types[0] = <char>NPY_FLOAT
 ufunc_gammaln_types[1] = <char>NPY_FLOAT
 ufunc_gammaln_types[2] = <char>NPY_DOUBLE
 ufunc_gammaln_types[3] = <char>NPY_DOUBLE
-ufunc_gammaln_types[4] = <char>NPY_CFLOAT
-ufunc_gammaln_types[5] = <char>NPY_CFLOAT
-ufunc_gammaln_types[6] = <char>NPY_CDOUBLE
-ufunc_gammaln_types[7] = <char>NPY_CDOUBLE
 ufunc_gammaln_ptr[2*0] = <void*>_func_lgam
 ufunc_gammaln_ptr[2*0+1] = <void*>(<char*>"gammaln")
 ufunc_gammaln_ptr[2*1] = <void*>_func_lgam
 ufunc_gammaln_ptr[2*1+1] = <void*>(<char*>"gammaln")
-ufunc_gammaln_ptr[2*2] = <void*>_func_clngamma_wrap
-ufunc_gammaln_ptr[2*2+1] = <void*>(<char*>"gammaln")
-ufunc_gammaln_ptr[2*3] = <void*>_func_clngamma_wrap
-ufunc_gammaln_ptr[2*3+1] = <void*>(<char*>"gammaln")
 ufunc_gammaln_data[0] = &ufunc_gammaln_ptr[2*0]
 ufunc_gammaln_data[1] = &ufunc_gammaln_ptr[2*1]
-ufunc_gammaln_data[2] = &ufunc_gammaln_ptr[2*2]
-ufunc_gammaln_data[3] = &ufunc_gammaln_ptr[2*3]
-gammaln = np.PyUFunc_FromFuncAndData(ufunc_gammaln_loops, ufunc_gammaln_data, ufunc_gammaln_types, 4, 1, 1, 0, "gammaln", ufunc_gammaln_doc, 0)
+gammaln = np.PyUFunc_FromFuncAndData(ufunc_gammaln_loops, ufunc_gammaln_data, ufunc_gammaln_types, 2, 1, 1, 0, "gammaln", ufunc_gammaln_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_gammasgn_loops[2]
 cdef void *ufunc_gammasgn_ptr[4]
@@ -8683,27 +8666,32 @@ cdef void *ufunc_loggamma_ptr[4]
 cdef void *ufunc_loggamma_data[2]
 cdef char ufunc_loggamma_types[4]
 cdef char *ufunc_loggamma_doc = (
-    "loggamma(z, out)\n"
+    "loggamma(z, out=None)\n"
     "\n"
-    "The principle branch of the logarithm of the Gamma function. It is\n"
+    "Principle branch of the logarithm of the Gamma function. It is\n"
     "defined to be :math:`\\log(\\Gamma(z))` for :math:`\\Re(z) > 0` and\n"
-    "is extended to the entire complex plane by analytic\n"
-    "continuation. The implementation here is based on\n"
-    "[hare1997]_. Note that in general :math:`\\log\\Gamma(z) \\ne\n"
-    "\\log(\\Gamma(z))`, for the latter function see `gammaln`.\n"
+    "extended to the complex plane by analytic continuation. The\n"
+    "implementation here is based on [hare1997]_.\n"
     "\n"
-    "The function :math:`\\log\\Gamma` has a single branch cut on the\n"
-    "negative real axis; the implementation here is continuous when\n"
-    "approaching the axis from above. It satisfies the identities\n"
+    "The function has a single branch cut on the negative real axis and\n"
+    "is taken to be continuous when approaching the axis from\n"
+    "above. Note that for :math:`\\Re(z) \\leq 0` it is not generally\n"
+    "true that :math:`\\log\\Gamma(z) = \\log(\\Gamma(z))`, though the real\n"
+    "parts of the functions do agree. The benefit of not defining\n"
+    "``loggamma`` as :math:`\\log(\\Gamma(z)` is that the latter function\n"
+    "has a complicated branch cut structure whereas ``loggamma`` is\n"
+    "analytic except for on the negative real axis.\n"
+    "\n"
+    "The identities\n"
     "\n"
     ".. math::\n"
     "  \\exp(\\log\\Gamma(z)) &= \\Gamma(z) \\\\\n"
     "  \\log\\Gamma(z + 1) &= \\log(z) + \\log\\Gamma(z),\n"
     "\n"
-    "which make it useful for working in logspace. However,\n"
+    "make ``loggama`` useful for working in complex logspace. However,\n"
     ":math:`\\log\\Gamma` necessarily returns complex outputs for real\n"
     "inputs, so if you want to work only with real numbers use\n"
-    "``gammaln``. On the real line the two functions are related by\n"
+    "`gammaln`. On the real line the two functions are related by\n"
     "``exp(loggamma(x)) = gammasgn(x)*exp(gammaln(x))``, though in\n"
     "practice rounding errors will introduce small spurious imaginary\n"
     "components in ``exp(loggamma(x))``.\n"
@@ -8711,19 +8699,19 @@ cdef char *ufunc_loggamma_doc = (
     "Parameters\n"
     "----------\n"
     "z : array-like\n"
-    "    Values in the complex plain at which to compute :math:`\\log\\Gamma`.\n"
+    "    Values in the complex plain at which to compute ``loggamma``\n"
     "out : ndarray, optional\n"
-    "    Output array for the computed values of :math:`\\log\\Gamma`.\n"
+    "    Output array for computed values of ``loggamma``\n"
     "\n"
     "Returns\n"
     "-------\n"
     "loggamma : ndarray\n"
-    "    Values of :math:`\\log\\Gamma` at z.\n"
+    "    Values of ``loggamma`` at z.\n"
     "\n"
     "See also\n"
     "--------\n"
-    "gammaln : either :math:`\\log(\\Gamma(z))` or :math:`\\log(|\\Gamma(z)|)`\n"
-    "gammasgn : the sign of Gamma on the real axis\n"
+    "gammaln : logarithm of the absolute value of the Gamma function\n"
+    "gammasgn : sign of the gamma function\n"
     "\n"
     "References\n"
     "----------\n"

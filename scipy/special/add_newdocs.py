@@ -1792,7 +1792,7 @@ add_newdoc("scipy.special", "gamma",
     """
     gamma(z)
 
-    Gamma function
+    Gamma function.
 
     The gamma function is often referred to as the generalized
     factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
@@ -1845,27 +1845,24 @@ add_newdoc("scipy.special", "gammaincinv",
 
 add_newdoc("scipy.special", "gammaln",
     """
-    gammaln(z)
+    gammaln(x)
 
-    If `z` is not complex (i.e. `z` is a purely real number *or* it is
-    array_like and contains purely real elements), computes the
-    natural logarithm of the absolute value of the Gamma
-    function:
+    Logarithm of the absolute value of the Gamma function. When used
+    in conjunction with ``gammasgn``, it is useful for working in
+    logspace on the real axis without having to deal with complex
+    numbers via the relation ``exp(gammaln(x)) =
+    gammasgn(x)*gamma(x)``. If you want to work in complex logspace
+    use `loggamma`.
 
-    .. math::
-      \ln(|\Gamma(z)|).
+    Parameters
+    ----------
+    x : array-like
+        Values on the real line at which to compute ``gammaln``
 
-    If `z` is complex (i.e. `z` is a complex number *or* it is
-    array_like and contains at least one complex element), computes
-    the natural logarithm of the Gamma function:
-
-    .. math::
-      \ln(\Gamma(z)).
-
-    When used in conjunction with ``gammasgn``, the behaviour for real
-    inputs is useful for working in logspace on the real axis without
-    having to deal with complex numbers since ``exp(gammaln(x)) =
-    gammasgn(x)*gamma(x)`` for real ``x``.
+    Returns
+    -------
+    gammaln : ndarray
+        Values of ``gammaln`` at x; will always be real.
 
     See Also
     --------
@@ -5504,47 +5501,52 @@ add_newdoc("scipy.special", "_spherical_kn_d",
 
 add_newdoc("scipy.special", "loggamma",
     r"""
-    loggamma(z, out)
+    loggamma(z, out=None)
 
-    The principle branch of the logarithm of the Gamma function. It is
+    Principle branch of the logarithm of the Gamma function. It is
     defined to be :math:`\log(\Gamma(z))` for :math:`\Re(z) > 0` and
-    is extended to the entire complex plane by analytic
-    continuation. The implementation here is based on
-    [hare1997]_. Note that in general :math:`\log\Gamma(z) \ne
-    \log(\Gamma(z))`, for the latter function see `gammaln`.
+    extended to the complex plane by analytic continuation. The
+    implementation here is based on [hare1997]_.
 
-    The function :math:`\log\Gamma` has a single branch cut on the
-    negative real axis; the implementation here is continuous when
-    approaching the axis from above. It satisfies the identities
+    The function has a single branch cut on the negative real axis and
+    is taken to be continuous when approaching the axis from
+    above. Note that for :math:`\Re(z) \leq 0` it is not generally
+    true that :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real
+    parts of the functions do agree. The benefit of not defining
+    ``loggamma`` as :math:`\log(\Gamma(z))` is that the latter
+    function has a complicated branch cut structure whereas
+    ``loggamma`` is analytic except for on the negative real axis.
+
+    The identities
 
     .. math::
       \exp(\log\Gamma(z)) &= \Gamma(z) \\
-      \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z),
+      \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
 
-    which make it useful for working in logspace. However,
-    :math:`\log\Gamma` necessarily returns complex outputs for real
-    inputs, so if you want to work only with real numbers use
-    ``gammaln``. On the real line the two functions are related by
-    ``exp(loggamma(x)) = gammasgn(x)*exp(gammaln(x))``, though in
-    practice rounding errors will introduce small spurious imaginary
-    components in ``exp(loggamma(x))``.
+    make ``loggama`` useful for working in complex logspace. However,
+    ``loggamma`` necessarily returns complex outputs for real inputs,
+    so if you want to work only with real numbers use `gammaln`. On
+    the real line the two functions are related by ``exp(loggamma(x))
+    = gammasgn(x)*exp(gammaln(x))``, though in practice rounding
+    errors will introduce small spurious imaginary components in
+    ``exp(loggamma(x))``.
 
     Parameters
     ----------
     z : array-like
-        Values in the complex plain at which to compute :math:`\log\Gamma`.
+        Values in the complex plain at which to compute ``loggamma``
     out : ndarray, optional
-        Output array for the computed values of :math:`\log\Gamma`.
+        Output array for computed values of ``loggamma``
 
     Returns
     -------
     loggamma : ndarray
-        Values of :math:`\log\Gamma` at z.
+        Values of ``loggamma`` at z.
 
     See also
     --------
-    gammaln : either :math:`\log(\Gamma(z))` or :math:`\log(|\Gamma(z)|)`
-    gammasgn : the sign of Gamma on the real axis
+    gammaln : logarithm of the absolute value of the Gamma function
+    gammasgn : sign of the gamma function
 
     References
     ----------
