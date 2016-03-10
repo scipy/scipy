@@ -231,12 +231,12 @@ class BaseMixin(object):
     def test_diff_step(self):
         # res1 and res2 should be equivalent.
         # res2 and res3 should be different.
-        res1 = least_squares(fun_trivial, 2.0, diff_step=1e-1,
+        res1 = least_squares(fun_trivial, 2.0, rel_step=1e-1,
                              method=self.method)
-        res2 = least_squares(fun_trivial, 2.0, diff_step=-1e-1,
+        res2 = least_squares(fun_trivial, 2.0, rel_step=-1e-1,
                              method=self.method)
         res3 = least_squares(fun_trivial, 2.0,
-                             diff_step=None, method=self.method)
+                             rel_step=None, method=self.method)
         assert_allclose(res1.x, 0, atol=1e-4)
         assert_allclose(res2.x, 0, atol=1e-4)
         assert_allclose(res3.x, 0, atol=1e-4)
