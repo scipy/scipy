@@ -167,8 +167,8 @@ def _kendalltau(ordered0[:] x, ordered1[:] y):
     tau = min(1., max(-1., (tot - u - v + t - 2 * exchanges) / np.sqrt(tot - u) / np.sqrt(tot - v)))
     # (tot - u - v + t - 2 * exchanges) is approximately normally distributed with this variance
     # See Gottfried E. Noether, "Elements of Nonparametric Statistics", John Wiley & Sons (1967)
-    var = (n * (n - 1) * (2*n + 5) - u0 - v0) / 18. + float(
-        2 * u * v) / (n * (n - 1)) + float(u1 * v1) / (9 * n * (n - 1) * (n - 2))
+    var = (n * (n - 1) * (2.*n + 5) - u0 - v0) / 18. + (
+        2. * u * v) / (n * (n - 1)) + u1 * v1 / (9. * n * (n - 1) * (n - 2))
     z = (tot - u - v + t - 2 * exchanges) / np.sqrt(var)
     prob = special.erfc(np.abs(z)/np.sqrt(2))
     return KendalltauResult(tau, prob)
