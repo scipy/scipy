@@ -726,6 +726,9 @@ def least_squares(
     if method == 'lm' and loss != 'linear':
         raise ValueError("method='lm' supports only 'linear' loss function.")
 
+    if method == 'lm' and abs_step is None:
+         raise ValueError("'abs_step' not supported with method='lm'.") 
+         
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
 
@@ -868,11 +871,8 @@ def least_squares(
                 tr_solver = 'lsmr'
 
     if method == 'lm':
-        if abs_step is None:
-            result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
-                                  max_nfev, x_scale, rel_step)
-        else:
-            raise ValueError("'abs_step' can't be used when method='lm'")
+        result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
+                              max_nfev, x_scale, rel_step)
 
     elif method == 'trf':
         result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
