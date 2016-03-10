@@ -13,7 +13,7 @@ import numpy as np
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d, fftconvolve,
+    correlate, convolve, convolve2d, fftconvolve, hann,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
     invres, invresz, vectorstrength, signaltools, lfiltic, tf2sos, sosfilt,
     sosfilt_zi)
@@ -591,11 +591,11 @@ class TestResample(TestCase):
         # Sinusoids, windowed to avoid edge artifacts
         t = np.arange(rate) / float(rate)
         freqs = np.array((1., 10., 40.))[:, np.newaxis]
-        x = np.sin(2 * np.pi * freqs * t) * np.hanning(rate)
+        x = np.sin(2 * np.pi * freqs * t) * hann(rate)
 
         for rate_to in rates_to:
             t_to = np.arange(rate_to) / float(rate_to)
-            y_tos = np.sin(2 * np.pi * freqs * t_to) * np.hanning(rate_to)
+            y_tos = np.sin(2 * np.pi * freqs * t_to) * hann(rate_to)
             if method == 'fft':
                 y_resamps = signal.resample(x, rate_to, axis=-1)
             else:
@@ -611,7 +611,7 @@ class TestResample(TestCase):
 
         # Random data
         rng = np.random.RandomState(0)
-        x = np.hanning(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
+        x = hann(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
         for rate_to in rates_to:
             # random data
             t_to = np.arange(rate_to) / float(rate_to)
