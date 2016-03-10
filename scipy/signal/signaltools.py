@@ -83,7 +83,8 @@ def _inputs_swap_needed(mode, shape1, shape2):
     is larger than shape1. This is important for some of the correlation and
     convolution implementations in this module, where the larger array input
     needs to come before the smaller array input when operating in this mode.
-    Note that if the mode provided is not 'valid', False is immediately returned.
+    Note that if the mode provided is not 'valid', False is immediately
+    returned.
 
     """
     if mode == 'valid':
@@ -117,8 +118,8 @@ def correlate(in1, in2, mode='full'):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must have
-        dimensions that are at least as large as the other in every dimension.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -307,8 +308,8 @@ def fftconvolve(in1, in2, mode="full"):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must have
-        dimensions that are at least as large as the other in every dimension.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -437,8 +438,8 @@ def convolve(in1, in2, mode='full'):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must have
-        dimensions that are at least as large as the other in every dimension.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -677,8 +678,8 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must have
-        dimensions that are at least as large as the other in every dimension.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -770,8 +771,8 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must have
-        dimensions that are at least as large as the other in every dimension.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
