@@ -337,7 +337,9 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     if abs_step is None:
         h = _compute_absolute_step(rel_step, x0, method)
     else:
-        h = abs_step*np.sign(x0)
+        # sign_x0 != 0 unlike np.sgn()
+        sign_x0 = (x0 >= 0).astype(float) * 2 - 1   
+        h = abs_step*sign_x0
 
     if method == '2-point':
         h, use_one_sided = _adjust_scheme_to_bounds(
