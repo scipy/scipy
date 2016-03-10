@@ -381,6 +381,12 @@ query_single_point(const ckdtree *self,
                 npy_float64 tmp = x[split_dim] - split; 
                 if(NPY_LIKELY(p == 2)) {
                     inf2->side_distances()[split_dim] = tmp * tmp;
+                } else
+                if(NPY_LIKELY(p == 1)) {
+                    inf2->side_distances()[split_dim] = dabs(tmp);
+                } else
+                if(NPY_LIKELY(ckdtree_isinf(p))) {
+                    inf2->side_distances()[split_dim] = dabs(tmp);
                 } else {
                     inf2->side_distances()[split_dim] = std::pow(dabs(tmp), p);
                 }
