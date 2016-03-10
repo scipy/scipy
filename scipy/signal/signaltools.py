@@ -194,10 +194,11 @@ def correlate(in1, in2, mode='full'):
         return np.correlate(in1, in2, mode)
 
     # _correlateND is far slower when in2.size > in1.size, so swap them
-    # and then undo the effect afterward
-    swapped_inputs = (mode == 'full') and (in2.size > in1.size)
-    swapped_inputs = swapped_inputs or _inputs_swap_needed(
-            mode, in1.shape, in2.shape)
+    # and then undo the effect afterward if mode == 'full'.  Also, it fails
+    # with 'valid' mode if in2 is larger than in1, so swap those, too.
+    # Don't swap inputs for 'same' mode, since shape of in1 matters.
+    swapped_inputs = ((mode == 'full') and (in2.size > in1.size) or
+                      _inputs_swap_needed(mode, in1.shape, in2.shape))
 
     if swapped_inputs:
         in1, in2 = in2, in1
@@ -223,9 +224,9 @@ def correlate(in1, in2, mode='full'):
 
         z = sigtools._correlateND(in1zpadded, in2, out, val)
 
-    # Reverse in all dimensions and conjugate to undo the effect of
-    # swapping inputs
     if swapped_inputs:
+        # Reverse in all dimensions and conjugate to undo the effect of
+        # swapping inputs
         reverse = [slice(None, None, -1)] * z.ndim
         z = z[reverse].conj()
 
@@ -840,10 +841,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """
     in1 = asarray(in1)
     in2 = asarray(in2)
-    swapped_inputs = False
 
-    if _inputs_swap_needed(mode, in1.shape, in2.shape):
-        swapped_inputs = True
+    swapped_inputs = _inputs_swap_needed(mode, in1.shape, in2.shape)
+    if swapped_inputs:
         in1, in2 = in2, in1
 
     val = _valfrommode(mode)
