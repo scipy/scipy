@@ -727,7 +727,7 @@ def least_squares(
         raise ValueError("method='lm' supports only 'linear' loss function.")
 
     if method == 'lm' and abs_step is None:
-         raise ValueError("'abs_step' not supported with method='lm'.") 
+        raise ValueError("'abs_step' not supported with method='lm'.") 
          
     if verbose not in [0, 1, 2]:
         raise ValueError("`verbose` must be in [0, 1, 2].")
