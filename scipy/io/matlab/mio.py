@@ -39,7 +39,8 @@ def _open_file(file_like, appendmat):
 
 @docfiller
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
-    """Create reader for matlab .mat format files
+    """
+    Create reader for matlab .mat format files.
 
     Parameters
     ----------
@@ -69,7 +70,7 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
 @docfiller
 def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     """
-    Load MATLAB file
+    Load MATLAB file.
 
     Parameters
     ----------
@@ -119,7 +120,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     -------
     mat_dict : dict
        dictionary with variable names as keys, and loaded matrices as
-       values
+       values.
 
     Notes
     -----
@@ -168,12 +169,12 @@ def savemat(file_name, mdict,
         given filename, if not already present.
     format : {'5', '4'}, string, optional
         '5' (the default) for MATLAB 5 and up (to 7.2),
-        '4' for MATLAB 4 .mat files
+        '4' for MATLAB 4 .mat files.
     long_field_names : bool, optional
         False (the default) - maximum field name length in a structure is
         31 characters which is the documented maximum length.
         True - maximum field name length in a structure is 63 characters
-        which works for MATLAB 7.6+
+        which works for MATLAB 7.6+.
     do_compression : bool, optional
         Whether or not to compress matrices on write.  Default is False.
     oned_as : {'row', 'column'}, optional
@@ -215,7 +216,7 @@ def savemat(file_name, mdict,
 @docfiller
 def whosmat(file_name, appendmat=True, **kwargs):
     """
-    List variables inside a MATLAB file
+    List variables inside a MATLAB file.
 
     Parameters
     ----------
