@@ -29,6 +29,7 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import sys
+from functools import wraps
 import numpy
 from scipy._lib.six import callable
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
@@ -404,13 +405,14 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 
 def __deprecate_ftol_xtol(func):
-    def inner(*args, **kwds):
+    @wraps(func)
+    def _wrapper(*args, **kwds):
         if 'ftol' in kwds:
             warnings.warn("ftol is deprecated for _minimize_neldermead,"
                           " use fatol instead. If you specified both, only"
                           " fatol is used.",
                           DeprecationWarning)
-            if not 'fatol' in kwds:
+            if 'fatol' not in kwds:
                 kwds['fatol'] = kwds['ftol']
             kwds.pop('ftol')
         if 'xtol' in kwds:
@@ -418,13 +420,12 @@ def __deprecate_ftol_xtol(func):
                           " use xatol instead. If you specified both, only"
                           " xatol is used.",
                           DeprecationWarning)
-            if not 'xatol' in kwds:
+            if 'xatol' not in kwds:
                 kwds['xatol'] = kwds['xtol']
             kwds.pop('xtol')
 
         return func(*args, **kwds)
-    return inner
-
+    return _wrapper
 
 @__deprecate_ftol_xtol
 def _minimize_neldermead(func, x0, args=(), callback=None,
