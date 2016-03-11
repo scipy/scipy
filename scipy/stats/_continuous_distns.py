@@ -3114,7 +3114,7 @@ class lognorm_gen(rv_continuous):
     def _sf(self, x, s):
         return _norm_sf(log(x) / s)
 
-    def _log_sf(self, x, s):
+    def _logsf(self, x, s):
         return _norm_logsf(log(x) / s)
 
     def _stats(self, s):

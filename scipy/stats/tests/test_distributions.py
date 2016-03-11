@@ -989,6 +989,14 @@ class TestLognorm(TestCase):
             pdf = stats.lognorm.pdf([0, 0.5, 1], 1)
             assert_array_almost_equal(pdf, [0.0, 0.62749608, 0.39894228])
 
+    def test_logcdf(self):
+        # Regression test for gh-5940: sf et al would underflow too early
+        x2, mu, sigma = 201.68, 195, 0.149
+        assert_allclose(stats.lognorm.sf(x2-mu, s=sigma),
+                        stats.norm.sf(np.log(x2-mu)/sigma))
+        assert_allclose(stats.lognorm.logsf(x2-mu, s=sigma),
+                        stats.norm.logsf(np.log(x2-mu)/sigma))
+
 
 class TestBeta(TestCase):
     def test_logpdf(self):
