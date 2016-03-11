@@ -12,9 +12,9 @@ from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
                    where, mgrid, sin, place, issubdtype, extract,
                    less, inexact, nan, zeros, atleast_1d, sinc)
-from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
-                      hankel1, hankel2, yv, kv, gammaln, ndtri,
-                      errprint, poch, binom, hyp0f1)
+from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
+                      psi, zeta, hankel1, hankel2, yv, kv, _gammaln,
+                      ndtri, errprint, poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 
@@ -142,6 +142,38 @@ def diric(x, n):
     dsub = extract(mask, denom)
     place(y, mask, sin(nsub*xsub)/(nsub*dsub))
     return y
+
+
+def gammaln(x):
+    """
+    Logarithm of the absolute value of the Gamma function. When used
+    in conjunction with ``gammasgn``, it is useful for working in
+    logspace on the real axis without having to deal with complex
+    numbers via the relation ``exp(gammaln(x)) =
+    gammasgn(x)*gamma(x)``. If you want to work in complex logspace
+    use `loggamma`.
+
+    Parameters
+    ----------
+    x : array-like
+        Values on the real line at which to compute ``gammaln``
+
+    Returns
+    -------
+    gammaln : ndarray
+        Values of ``gammaln`` at x; will always be real.
+
+    See Also
+    --------
+    gammasgn : sign of the gamma function
+    loggamma : principal branch of the logarithm of the gamma function
+    """
+    if np.iscomplexobj(x):
+        warnings.warn(("Use of loggamma for complex arguments is "
+                       "deprecated as of scipy 0.18.0. Use "
+                       "scipy.special.loggamma instead."),
+                      DeprecationWarning)
+    return _gammaln(x)
 
 
 def jnjnp_zeros(nt):

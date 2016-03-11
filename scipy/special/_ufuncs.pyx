@@ -1090,17 +1090,17 @@ cdef void loop_i_d_dd_As_f_ff(char **args, np.npy_intp *dims, np.npy_intp *steps
         op1 += steps[2]
     sf_error.check_fpe(func_name)
 
-cdef void loop_D_lD__As_lD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_d_ld__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
     cdef char *ip1 = args[1]
     cdef char *op0 = args[2]
-    cdef double complex ov0
+    cdef double ov0
     for i in range(n):
-        ov0 = (<double complex(*)(long, double complex) nogil>func)(<long>(<long*>ip0)[0], <double complex>(<double complex*>ip1)[0])
-        (<double complex *>op0)[0] = <double complex>ov0
+        ov0 = (<double(*)(long, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<double*>ip1)[0])
+        (<double *>op0)[0] = <double>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         op0 += steps[2]
@@ -1218,17 +1218,17 @@ cdef void loop_g_g__As_g_g(char **args, np.npy_intp *dims, np.npy_intp *steps, v
         op0 += steps[1]
     sf_error.check_fpe(func_name)
 
-cdef void loop_d_ld__As_ld_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_D_lD__As_lD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
     cdef char *ip1 = args[1]
     cdef char *op0 = args[2]
-    cdef double ov0
+    cdef double complex ov0
     for i in range(n):
-        ov0 = (<double(*)(long, double) nogil>func)(<long>(<long*>ip0)[0], <double>(<double*>ip1)[0])
-        (<double *>op0)[0] = <double>ov0
+        ov0 = (<double complex(*)(long, double complex) nogil>func)(<long>(<long*>ip0)[0], <double complex>(<double complex*>ip1)[0])
+        (<double complex *>op0)[0] = <double complex>ov0
         ip0 += steps[0]
         ip1 += steps[1]
         op0 += steps[2]
@@ -1240,6 +1240,10 @@ cdef _proto_ellip_harmonic_t *_proto_ellip_harmonic_t_var = &_func_ellip_harmoni
 from _legacy cimport ellip_harmonic_unsafe as _func_ellip_harmonic_unsafe
 ctypedef double _proto_ellip_harmonic_unsafe_t(double, double, double, double, double, double, double) nogil
 cdef _proto_ellip_harmonic_unsafe_t *_proto_ellip_harmonic_unsafe_t_var = &_func_ellip_harmonic_unsafe
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_lgam "lgam"(double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double complex _func_cgamma_wrap "cgamma_wrap"(double complex) nogil
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
@@ -1578,8 +1582,6 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_igami "igami"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_gammaincinv "gammaincinv"(double, double) nogil
-cdef extern from "_ufuncs_defs.h":
-    cdef double _func_lgam "lgam"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_gammasgn "gammasgn"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1984,6 +1986,38 @@ ufunc__ellip_harm_data[0] = &ufunc__ellip_harm_ptr[2*0]
 ufunc__ellip_harm_data[1] = &ufunc__ellip_harm_ptr[2*1]
 ufunc__ellip_harm_data[2] = &ufunc__ellip_harm_ptr[2*2]
 _ellip_harm = np.PyUFunc_FromFuncAndData(ufunc__ellip_harm_loops, ufunc__ellip_harm_data, ufunc__ellip_harm_types, 3, 7, 1, 0, "_ellip_harm", ufunc__ellip_harm_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__gammaln_loops[4]
+cdef void *ufunc__gammaln_ptr[8]
+cdef void *ufunc__gammaln_data[4]
+cdef char ufunc__gammaln_types[8]
+cdef char *ufunc__gammaln_doc = (
+    "Internal function, use ``gammaln`` instead.")
+ufunc__gammaln_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__gammaln_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__gammaln_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc__gammaln_loops[3] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
+ufunc__gammaln_types[0] = <char>NPY_FLOAT
+ufunc__gammaln_types[1] = <char>NPY_FLOAT
+ufunc__gammaln_types[2] = <char>NPY_DOUBLE
+ufunc__gammaln_types[3] = <char>NPY_DOUBLE
+ufunc__gammaln_types[4] = <char>NPY_CFLOAT
+ufunc__gammaln_types[5] = <char>NPY_CFLOAT
+ufunc__gammaln_types[6] = <char>NPY_CDOUBLE
+ufunc__gammaln_types[7] = <char>NPY_CDOUBLE
+ufunc__gammaln_ptr[2*0] = <void*>_func_lgam
+ufunc__gammaln_ptr[2*0+1] = <void*>(<char*>"_gammaln")
+ufunc__gammaln_ptr[2*1] = <void*>_func_lgam
+ufunc__gammaln_ptr[2*1+1] = <void*>(<char*>"_gammaln")
+ufunc__gammaln_ptr[2*2] = <void*>_func_cgamma_wrap
+ufunc__gammaln_ptr[2*2+1] = <void*>(<char*>"_gammaln")
+ufunc__gammaln_ptr[2*3] = <void*>_func_cgamma_wrap
+ufunc__gammaln_ptr[2*3+1] = <void*>(<char*>"_gammaln")
+ufunc__gammaln_data[0] = &ufunc__gammaln_ptr[2*0]
+ufunc__gammaln_data[1] = &ufunc__gammaln_ptr[2*1]
+ufunc__gammaln_data[2] = &ufunc__gammaln_ptr[2*2]
+ufunc__gammaln_data[3] = &ufunc__gammaln_ptr[2*3]
+_gammaln = np.PyUFunc_FromFuncAndData(ufunc__gammaln_loops, ufunc__gammaln_data, ufunc__gammaln_types, 4, 1, 1, 0, "_gammaln", ufunc__gammaln_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__lambertw_loops[1]
 cdef void *ufunc__lambertw_ptr[2]
@@ -5754,48 +5788,6 @@ ufunc_gammaincinv_data[0] = &ufunc_gammaincinv_ptr[2*0]
 ufunc_gammaincinv_data[1] = &ufunc_gammaincinv_ptr[2*1]
 gammaincinv = np.PyUFunc_FromFuncAndData(ufunc_gammaincinv_loops, ufunc_gammaincinv_data, ufunc_gammaincinv_types, 2, 2, 1, 0, "gammaincinv", ufunc_gammaincinv_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_gammaln_loops[2]
-cdef void *ufunc_gammaln_ptr[4]
-cdef void *ufunc_gammaln_data[2]
-cdef char ufunc_gammaln_types[4]
-cdef char *ufunc_gammaln_doc = (
-    "gammaln(x)\n"
-    "\n"
-    "Logarithm of the absolute value of the Gamma function. When used\n"
-    "in conjunction with ``gammasgn``, it is useful for working in\n"
-    "logspace on the real axis without having to deal with complex\n"
-    "numbers via the relation ``exp(gammaln(x)) =\n"
-    "gammasgn(x)*gamma(x)``. If you want to work in complex logspace\n"
-    "use `loggamma`.\n"
-    "\n"
-    "Parameters\n"
-    "----------\n"
-    "x : array-like\n"
-    "    Values on the real line at which to compute ``gammaln``\n"
-    "\n"
-    "Returns\n"
-    "-------\n"
-    "gammaln : ndarray\n"
-    "    Values of ``gammaln`` at x; will always be real.\n"
-    "\n"
-    "See Also\n"
-    "--------\n"
-    "gammasgn : sign of the gamma function\n"
-    "loggamma : principle branch of the logarithm of the gamma function")
-ufunc_gammaln_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_gammaln_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_gammaln_types[0] = <char>NPY_FLOAT
-ufunc_gammaln_types[1] = <char>NPY_FLOAT
-ufunc_gammaln_types[2] = <char>NPY_DOUBLE
-ufunc_gammaln_types[3] = <char>NPY_DOUBLE
-ufunc_gammaln_ptr[2*0] = <void*>_func_lgam
-ufunc_gammaln_ptr[2*0+1] = <void*>(<char*>"gammaln")
-ufunc_gammaln_ptr[2*1] = <void*>_func_lgam
-ufunc_gammaln_ptr[2*1+1] = <void*>(<char*>"gammaln")
-ufunc_gammaln_data[0] = &ufunc_gammaln_ptr[2*0]
-ufunc_gammaln_data[1] = &ufunc_gammaln_ptr[2*1]
-gammaln = np.PyUFunc_FromFuncAndData(ufunc_gammaln_loops, ufunc_gammaln_data, ufunc_gammaln_types, 2, 1, 1, 0, "gammaln", ufunc_gammaln_doc, 0)
-
 cdef np.PyUFuncGenericFunction ufunc_gammasgn_loops[2]
 cdef void *ufunc_gammasgn_ptr[4]
 cdef void *ufunc_gammasgn_data[2]
@@ -8668,7 +8660,7 @@ cdef char ufunc_loggamma_types[4]
 cdef char *ufunc_loggamma_doc = (
     "loggamma(z, out=None)\n"
     "\n"
-    "Principle branch of the logarithm of the Gamma function. It is\n"
+    "Principal branch of the logarithm of the Gamma function. It is\n"
     "defined to be :math:`\\log(\\Gamma(z))` for :math:`\\Re(z) > 0` and\n"
     "extended to the complex plane by analytic continuation. The\n"
     "implementation here is based on [hare1997]_.\n"
@@ -8678,23 +8670,23 @@ cdef char *ufunc_loggamma_doc = (
     "above. Note that for :math:`\\Re(z) \\leq 0` it is not generally\n"
     "true that :math:`\\log\\Gamma(z) = \\log(\\Gamma(z))`, though the real\n"
     "parts of the functions do agree. The benefit of not defining\n"
-    "``loggamma`` as :math:`\\log(\\Gamma(z)` is that the latter function\n"
-    "has a complicated branch cut structure whereas ``loggamma`` is\n"
-    "analytic except for on the negative real axis.\n"
+    "``loggamma`` as :math:`\\log(\\Gamma(z))` is that the latter\n"
+    "function has a complicated branch cut structure whereas\n"
+    "``loggamma`` is analytic except for on the negative real axis.\n"
     "\n"
     "The identities\n"
     "\n"
     ".. math::\n"
     "  \\exp(\\log\\Gamma(z)) &= \\Gamma(z) \\\\\n"
-    "  \\log\\Gamma(z + 1) &= \\log(z) + \\log\\Gamma(z),\n"
+    "  \\log\\Gamma(z + 1) &= \\log(z) + \\log\\Gamma(z)\n"
     "\n"
     "make ``loggama`` useful for working in complex logspace. However,\n"
-    ":math:`\\log\\Gamma` necessarily returns complex outputs for real\n"
-    "inputs, so if you want to work only with real numbers use\n"
-    "`gammaln`. On the real line the two functions are related by\n"
-    "``exp(loggamma(x)) = gammasgn(x)*exp(gammaln(x))``, though in\n"
-    "practice rounding errors will introduce small spurious imaginary\n"
-    "components in ``exp(loggamma(x))``.\n"
+    "``loggamma`` necessarily returns complex outputs for real inputs,\n"
+    "so if you want to work only with real numbers use `gammaln`. On\n"
+    "the real line the two functions are related by ``exp(loggamma(x))\n"
+    "= gammasgn(x)*exp(gammaln(x))``, though in practice rounding\n"
+    "errors will introduce small spurious imaginary components in\n"
+    "``exp(loggamma(x))``.\n"
     "\n"
     "Parameters\n"
     "----------\n"
