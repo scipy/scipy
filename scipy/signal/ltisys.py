@@ -30,7 +30,7 @@ from scipy.linalg import qr as s_qr
 
 import numpy
 from numpy import (r_, eye, real, atleast_1d, atleast_2d, poly,
-                   squeeze, asarray, product, zeros, array,
+                   squeeze, asarray, product, zeros, array, outer,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
 import copy
 
@@ -93,7 +93,7 @@ def tf2ss(num, den):
     >>> C
     array([[ 1.,  2.]])
     >>> D
-    array([ 1.])
+    array([[ 1.]])
     """
     # Controller canonical state-space representation.
     #  if M+1 = len(num) and K+1 = len(den) then we must have M <= K
@@ -119,21 +119,27 @@ def tf2ss(num, den):
     num = r_['-1', zeros((num.shape[0], K - M), num.dtype), num]
 
     if num.shape[-1] > 0:
-        D = num[:, 0]
+        D = atleast_2d(num[:, 0])
+
     else:
         # We don't assign it an empty array because this system
         # is not 'null'. It just doesn't have a non-zero D
         # matrix. Thus, it should have a non-zero shape so that
         # it can be operated on by functions like 'ss2tf'
-        D = array([0], float)
+        D = array([[0]], float)
 
     if K == 1:
-        return array([0], float), array([0], float), array([0], float), D
+        D = D.reshape(num.shape)
+
+        return (zeros((1, 1)), zeros((1, D.shape[1])),
+                zeros((D.shape[0], 1)), D)
 
     frow = -array([den[1:]])
     A = r_[frow, eye(K - 2, K - 1)]
     B = eye(K - 1, 1)
-    C = num[:, 1:] - num[:, 0] * den[1:]
+    C = num[:, 1:] - outer(num[:, 0], den[1:])
+    D = D.reshape((C.shape[0], B.shape[1]))
+
     return A, B, C, D
 
 

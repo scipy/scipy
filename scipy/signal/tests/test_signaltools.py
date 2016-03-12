@@ -13,7 +13,7 @@ import numpy as np
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d, fftconvolve,
+    correlate, convolve, convolve2d, fftconvolve, hann,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
     invres, invresz, vectorstrength, signaltools, lfiltic, tf2sos, sosfilt,
     sosfilt_zi)
@@ -67,12 +67,6 @@ class _TestConvolve(TestCase):
                    [12, 31, 58, 49, 30]])
         assert_array_equal(c, d)
 
-    def test_valid_mode(self):
-        a = [1, 2, 3, 6, 5, 3]
-        b = [2, 3, 4, 5, 3, 4, 2, 2, 1]
-        c = convolve(a, b, 'valid')
-        assert_array_equal(c, array([70, 78, 73, 65]))
-
     def test_input_swapping(self):
         small = arange(8).reshape(2, 2, 2)
         big = 1j * arange(27).reshape(3, 3, 3)
@@ -105,22 +99,35 @@ class _TestConvolve(TestCase):
                            out_array[1:3, 1:3, 1:3])
         assert_array_equal(convolve(big, small, 'same'),
                            out_array[0:3, 0:3, 0:3])
-        assert_raises(ValueError, convolve, small, big, 'valid')
+        assert_array_equal(convolve(small, big, 'valid'),
+                           out_array[1:3, 1:3, 1:3])
         assert_array_equal(convolve(big, small, 'valid'),
                            out_array[1:3, 1:3, 1:3])
 
 
 class TestConvolve(_TestConvolve):
 
-    def test_valid_mode(self):
-        # 'valid' mode if b.size > a.size does not make sense with the new
-        # behavior
+    def test_valid_mode2(self):
+        # See gh-5897
         a = [1, 2, 3, 6, 5, 3]
         b = [2, 3, 4, 5, 3, 4, 2, 2, 1]
+        expected = [70, 78, 73, 65]
 
-        def _test():
-            convolve(a, b, 'valid')
-        self.assertRaises(ValueError, _test)
+        out = convolve(a, b, 'valid')
+        assert_array_equal(out, expected)
+
+        out = convolve(b, a, 'valid')
+        assert_array_equal(out, expected)
+
+        a = [1 + 5j, 2 - 1j, 3 + 0j]
+        b = [2 - 3j, 1 + 0j]
+        expected = [2 - 3j, 8 - 10j]
+
+        out = convolve(a, b, 'valid')
+        assert_array_equal(out, expected)
+
+        out = convolve(b, a, 'valid')
+        assert_array_equal(out, expected)
 
     def test_same_mode(self):
         a = [1, 2, 3, 3, 1, 2]
@@ -128,6 +135,18 @@ class TestConvolve(_TestConvolve):
         c = convolve(a, b, 'same')
         d = array([57, 61, 63, 57, 45, 36])
         assert_array_equal(c, d)
+
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
 
 class _TestConvolve2d(TestCase):
@@ -144,16 +163,26 @@ class _TestConvolve2d(TestCase):
     def test_valid_mode(self):
         e = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
         f = [[1, 2, 3], [3, 4, 5]]
-        g = convolve2d(e, f, 'valid')
         h = array([[62, 80, 98, 116, 134]])
+
+        g = convolve2d(e, f, 'valid')
+        assert_array_equal(g, h)
+
+        # See gh-5897
+        g = convolve2d(f, e, 'valid')
         assert_array_equal(g, h)
 
     def test_valid_mode_complx(self):
         e = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
         f = np.array([[1, 2, 3], [3, 4, 5]], dtype=complex) + 1j
-        g = convolve2d(e, f, 'valid')
         h = array([[62.+24.j, 80.+30.j, 98.+36.j, 116.+42.j, 134.+48.j]])
+
+        g = convolve2d(e, f, 'valid')
         assert_array_almost_equal(g, h)
+
+        # See gh-5897
+        g = convolve2d(f, e, 'valid')
+        assert_array_equal(g, h)
 
     def test_fillvalue(self):
         a = [[1, 2, 3], [3, 4, 5]]
@@ -183,6 +212,18 @@ class _TestConvolve2d(TestCase):
                    [82, 78, 92, 110, 114]])
         assert_array_equal(c, d)
 
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
+
 
 class TestConvolve2d(_TestConvolve2d):
 
@@ -195,13 +236,27 @@ class TestConvolve2d(_TestConvolve2d):
         assert_array_equal(g, h)
 
     def test_valid_mode2(self):
-        # Test when in2.size > in1.size
+        # See gh-5897
         e = [[1, 2, 3], [3, 4, 5]]
         f = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
+        expected = [[62, 80, 98, 116, 134]]
 
-        def _test():
-            convolve2d(e, f, 'valid')
-        self.assertRaises(ValueError, _test)
+        out = convolve2d(e, f, 'valid')
+        assert_array_equal(out, expected)
+
+        out = convolve2d(f, e, 'valid')
+        assert_array_equal(out, expected)
+
+        e = [[1 + 1j, 2 - 3j], [3 + 1j, 4 + 0j]]
+        f = [[2 - 1j, 3 + 2j, 4 + 0j], [4 - 0j, 5 + 1j, 6 - 3j]]
+        expected = [[27 - 1j, 46. + 2j]]
+
+        out = convolve2d(e, f, 'valid')
+        assert_array_equal(out, expected)
+
+        # See gh-5897
+        out = convolve2d(f, e, 'valid')
+        assert_array_equal(out, expected)
 
     def test_consistency_convolve_funcs(self):
         # Compare np.convolve, signal.convolve, signal.convolve2d
@@ -255,19 +310,38 @@ class TestFFTConvolve(TestCase):
         d = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
         assert_array_almost_equal(c, d)
 
-    def test_real_valid_mode(self):
+    def test_valid_mode(self):
+        # See gh-5897
         a = array([3, 2, 1])
         b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected = array([24., 31., 41., 43., 49., 25., 12.])
 
-        def _test():
-            fftconvolve(a, b, 'valid')
-        self.assertRaises(ValueError, _test)
+        out = fftconvolve(a, b, 'valid')
+        assert_array_almost_equal(out, expected)
 
-    def test_real_valid_mode2(self):
+        out = fftconvolve(b, a, 'valid')
+        assert_array_almost_equal(out, expected)
+
+        a = array([3 - 1j, 2 + 7j, 1 + 0j])
+        b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
+        expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
+
+        out = fftconvolve(a, b, 'valid')
+        assert_array_almost_equal(out, expected)
+
+        out = fftconvolve(b, a, 'valid')
+        assert_array_almost_equal(out, expected)
+
+    def test_real_valid_mode(self):
         a = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
         b = array([3, 2, 1])
-        c = fftconvolve(a, b, 'valid')
         d = array([24., 31., 41., 43., 49., 25., 12.])
+
+        c = fftconvolve(a, b, 'valid')
+        assert_array_almost_equal(c, d)
+
+        # See gh-5897
+        c = fftconvolve(b, a, 'valid')
         assert_array_almost_equal(c, d)
 
     def test_empty(self):
@@ -414,6 +488,18 @@ class TestFFTConvolve(TestCase):
         for x, y in hams.items():
             assert_equal(signaltools._next_regular(x), y)
 
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
+
 
 class TestMedFilt(TestCase):
 
@@ -505,11 +591,11 @@ class TestResample(TestCase):
         # Sinusoids, windowed to avoid edge artifacts
         t = np.arange(rate) / float(rate)
         freqs = np.array((1., 10., 40.))[:, np.newaxis]
-        x = np.sin(2 * np.pi * freqs * t) * np.hanning(rate)
+        x = np.sin(2 * np.pi * freqs * t) * hann(rate)
 
         for rate_to in rates_to:
             t_to = np.arange(rate_to) / float(rate_to)
-            y_tos = np.sin(2 * np.pi * freqs * t_to) * np.hanning(rate_to)
+            y_tos = np.sin(2 * np.pi * freqs * t_to) * hann(rate_to)
             if method == 'fft':
                 y_resamps = signal.resample(x, rate_to, axis=-1)
             else:
@@ -525,7 +611,7 @@ class TestResample(TestCase):
 
         # Random data
         rng = np.random.RandomState(0)
-        x = np.hanning(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
+        x = hann(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
         for rate_to in rates_to:
             # random data
             t_to = np.arange(rate_to) / float(rate_to)
@@ -995,7 +1081,6 @@ class _TestCorrelateReal(TestCase):
     dt = None
 
     def _setup_rank1(self):
-        # a.size should be greater than b.size for the tests
         a = np.linspace(0, 3, 4).astype(self.dt)
         b = np.linspace(1, 2, 2).astype(self.dt)
 
@@ -1006,6 +1091,11 @@ class _TestCorrelateReal(TestCase):
         a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r[1:4])
+        assert_equal(y.dtype, self.dt)
+
+        # See gh-5897
+        y = correlate(b, a, 'valid')
+        assert_array_almost_equal(y, y_r[1:4][::-1])
         assert_equal(y.dtype, self.dt)
 
     def test_rank1_same(self):
@@ -1056,6 +1146,11 @@ class _TestCorrelateReal(TestCase):
         assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5])
         assert_equal(y.dtype, self.dt)
 
+        # See gh-5897
+        y = correlate(b, a, "valid")
+        assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
+        assert_equal(y.dtype, self.dt)
+
     def test_rank3_same(self):
         a, b, y_r = self._setup_rank3()
         y = correlate(a, b, "same")
@@ -1067,6 +1162,18 @@ class _TestCorrelateReal(TestCase):
         y = correlate(a, b)
         assert_array_almost_equal(y, y_r)
         assert_equal(y.dtype, self.dt)
+
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, correlate, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
 
 
 def _get_testcorrelate_class(datatype, base):
@@ -1109,6 +1216,11 @@ class _TestCorrelateComplex(TestCase):
         a, b, y_r = self._setup_rank1('valid')
         y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
+        assert_equal(y.dtype, self.dt)
+
+        # See gh-5897
+        y = correlate(b, a, 'valid')
+        assert_array_almost_equal(y, y_r[::-1].conj(), decimal=self.decimal)
         assert_equal(y.dtype, self.dt)
 
     def test_rank1_same(self):
@@ -1162,6 +1274,26 @@ class TestCorrelate2d(TestCase):
             assert_almost_equal(np.squeeze(signal.correlate2d([a], [b],
                                                               mode=mode)),
                                 signal.correlate(a, b, mode=mode))
+
+            # See gh-5897
+            if mode == 'valid':
+                assert_almost_equal(np.correlate(b, a, mode=mode),
+                                    signal.correlate(b, a, mode=mode))
+                assert_almost_equal(np.squeeze(signal.correlate2d([b], [a],
+                                                                  mode=mode)),
+                                    signal.correlate(b, a, mode=mode))
+
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
 
 
 # Create three classes, one for each complex data type. The actual class

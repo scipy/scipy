@@ -3105,8 +3105,17 @@ class lognorm_gen(rv_continuous):
     def _cdf(self, x, s):
         return _norm_cdf(log(x) / s)
 
+    def _logcdf(self, x, s):
+        return _norm_logcdf(log(x) / s)
+
     def _ppf(self, q, s):
         return exp(s * _norm_ppf(q))
+
+    def _sf(self, x, s):
+        return _norm_sf(log(x) / s)
+
+    def _logsf(self, x, s):
+        return _norm_logsf(log(x) / s)
 
     def _stats(self, s):
         p = exp(s*s)

@@ -407,6 +407,8 @@ class lil_matrix(spmatrix, IndexMixin):
         new.rows = deepcopy(self.rows)
         return new
 
+    copy.__doc__ = spmatrix.copy.__doc__
+
     def reshape(self,shape):
         new = lil_matrix(shape, dtype=self.dtype)
         j_max = self.shape[1]
@@ -433,10 +435,9 @@ class lil_matrix(spmatrix, IndexMixin):
         else:
             return self
 
-    def tocsr(self):
-        """ Return Compressed Sparse Row format arrays for this matrix.
-        """
+    tolil.__doc__ = spmatrix.tolil.__doc__
 
+    def tocsr(self, copy=False):
         lst = [len(x) for x in self.rows]
         idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
         indptr = np.asarray(lst, dtype=idx_dtype)
@@ -456,10 +457,12 @@ class lil_matrix(spmatrix, IndexMixin):
         from .csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
 
-    def tocsc(self):
-        """ Return Compressed Sparse Column format arrays for this matrix.
-        """
-        return self.tocsr().tocsc()
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
+
+    def tocsc(self, copy=False):
+        return self.tocsr(copy=copy).tocsc()
+
+    tocsc.__doc__ = spmatrix.tocsc.__doc__
 
 
 def _prepare_index_for_memoryview(i, j, x=None):

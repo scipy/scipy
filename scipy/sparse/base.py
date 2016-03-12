@@ -265,7 +265,7 @@ class spmatrix(object):
         """
         return self * other
 
-    def power(self, n, dtype=None):            
+    def power(self, n, dtype=None):
         return self.tocsr().power(n, dtype=dtype)
 
     def __eq__(self, other):
@@ -675,23 +675,75 @@ class spmatrix(object):
         """
         return self.tocoo().toarray(order=order, out=out)
 
-    def todok(self):
-        return self.tocoo().todok()
+    # In principle, providing a tocsr method will be sufficient for any
+    # sparse matrix format deriving from spmatrix.
+    def tocsr(self, copy=False):
+        """Convert this matrix to Compressed Sparse Row format.
 
-    def tocoo(self):
-        return self.tocsr().tocoo()
+        With copy=False, the data/indices may be shared between this matrix and
+        the resultant csr_matrix.
+        """
+        raise NotImplementedError("tocsr is not implemented for %s." %
+                                  self.__class__.__name__)
 
-    def tolil(self):
-        return self.tocsr().tolil()
+    def todok(self, copy=False):
+        """Convert this matrix to Dictionary Of Keys format.
 
-    def todia(self):
-        return self.tocoo().todia()
+        With copy=False, the data/indices may be shared between this matrix and
+        the resultant dok_matrix.
+        """
+        return self.tocoo(copy=False).todok(copy=copy)
 
-    def tobsr(self, blocksize=None):
-        return self.tocsr().tobsr(blocksize=blocksize)
+    def tocoo(self, copy=False):
+        """Convert this matrix to COOrdinate format.
+
+        With copy=False, the data/indices may be shared between this matrix and
+        the resultant coo_matrix.
+        """
+        return self.tocsr(copy=False).tocoo(copy=copy)
+
+    def tolil(self, copy=False):
+        """Convert this matrix to LInked List format.
+
+        With copy=False, the data/indices may be shared between this matrix and
+        the resultant lil_matrix.
+        """
+        return self.tocsr(copy=False).tolil(copy=copy)
+
+    def todia(self, copy=False):
+        """Convert this matrix to sparse DIAgonal format.
+
+        With copy=False, the data/indices may be shared between this matrix and
+        the resultant dia_matrix.
+        """
+        return self.tocoo(copy=False).todia(copy=copy)
+
+    def tobsr(self, blocksize=None, copy=False):
+        """Convert this matrix to Block Sparse Row format.
+
+        With copy=False, the data/indices may be shared between this matrix and
+        the resultant bsr_matrix.
+
+        When blocksize=(R, C) is provided, it will be used for construction of
+        the bsr_matrix.
+        """
+        return self.tocsr(copy=False).tobsr(blocksize=blocksize, copy=copy)
+
+    def tocsc(self, copy=False):
+        """Convert this matrix to Compressed Sparse Column format.
+
+        With copy=False, the data/indices may be shared between this matrix and
+        the resultant csc_matrix.
+        """
+        return self.tocsr(copy=False).tocsc(copy=copy)
 
     def copy(self):
-        return self.__class__(self,copy=True)
+        """Returns a copy of this matrix.
+
+        No data/indices will be shared between the returned value and current
+        matrix.
+        """
+        return self.__class__(self, copy=True)
 
     def sum(self, axis=None):
         """Sum the matrix over the given axis.  If the axis is None, sum
@@ -705,11 +757,10 @@ class spmatrix(object):
         # Mimic numpy's casting.
         if np.issubdtype(self.dtype, np.float_):
             res_dtype = np.float_
-        elif (np.issubdtype(self.dtype, np.int_) or
-              np.issubdtype(self.dtype, np.bool_)):
-                res_dtype = np.int_
-        elif np.issubdtype(self.dtype, np.complex_):
-            res_dtype = np.complex_
+        elif self.dtype.kind in 'ib':
+            res_dtype = np.int_
+        elif self.dtype.kind == 'u':
+            res_dtype = np.uint
         else:
             res_dtype = self.dtype
 
@@ -737,13 +788,13 @@ class spmatrix(object):
                 np.issubdtype(self.dtype, np.integer) or
                 np.issubdtype(self.dtype, np.bool_)):
             res_dtype = np.float_
-        elif np.issubdtype(self.dtype, np.complex_):
-            res_dtype = np.complex_
         else:
             res_dtype = self.dtype
 
         if axis is None:
-            return self.sum(None) * 1.0 / (self.shape[0]*self.shape[1])
+            mean = self.astype(res_dtype).sum()
+            mean /= np.array(self.shape[0] * self.shape[1], dtype=res_dtype)
+            return mean
 
         if axis < 0:
             axis += 2

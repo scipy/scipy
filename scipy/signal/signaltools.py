@@ -6,10 +6,6 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import threading
 import sys
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
-    from math import gcd
-else:
-    from fractions import gcd
 
 from . import sigtools
 from ._upfirdn import _UpFIRDn, _output_len
@@ -27,6 +23,13 @@ import numpy as np
 from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
+from scipy.signal.filter_design import cheby1
+from scipy.signal.fir_filter_design import firwin
+
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from math import gcd
+else:
+    from fractions import gcd
 
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
@@ -72,12 +75,34 @@ def _bvalfromboundary(boundary):
     return val
 
 
-def _check_valid_mode_shapes(shape1, shape2):
-    for d1, d2 in zip(shape1, shape2):
-        if not d1 >= d2:
-            raise ValueError(
-                "in1 should have at least as many items as in2 in "
-                "every dimension for 'valid' mode.")
+def _inputs_swap_needed(mode, shape1, shape2):
+    """
+    If in 'valid' mode, checks whether or not one of the array shapes
+    is at least as large as the other in every dimension. Returns whether
+    or not the input arrays need to be swapped depending on whether shape2
+    is larger than shape1. This is important for some of the correlation and
+    convolution implementations in this module, where the larger array input
+    needs to come before the smaller array input when operating in this mode.
+    Note that if the mode provided is not 'valid', False is immediately
+    returned.
+
+    """
+    if mode == 'valid':
+        ok1, ok2 = True, True
+
+        for d1, d2 in zip(shape1, shape2):
+            if not d1 >= d2:
+                ok1 = False
+            if not d2 >= d1:
+                ok2 = False
+
+        if not (ok1 or ok2):
+            raise ValueError("For 'valid' mode, one must be at least "
+                             "as large as the other in every dimension")
+
+        return not ok1
+
+    return False
 
 
 def correlate(in1, in2, mode='full'):
@@ -92,9 +117,9 @@ def correlate(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -163,28 +188,30 @@ def correlate(in1, in2, mode='full'):
     elif not in1.ndim == in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
-        # numpy is significantly faster for 1d
-        if in1.ndim == 1 and in2.ndim == 1:
-            return np.correlate(in1, in2, mode)
+    # numpy is significantly faster for 1d (but numpy's 'same' mode uses
+    # the size of the larger input, not the first.)
+    if in1.ndim == in2.ndim == 1 and (in1.size >= in2.size or mode != 'same'):
+        return np.correlate(in1, in2, mode)
 
+    # _correlateND is far slower when in2.size > in1.size, so swap them
+    # and then undo the effect afterward if mode == 'full'.  Also, it fails
+    # with 'valid' mode if in2 is larger than in1, so swap those, too.
+    # Don't swap inputs for 'same' mode, since shape of in1 matters.
+    swapped_inputs = ((mode == 'full') and (in2.size > in1.size) or
+                      _inputs_swap_needed(mode, in1.shape, in2.shape))
+
+    if swapped_inputs:
+        in1, in2 = in2, in1
+
+    if mode == 'valid':
         ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
         out = np.empty(ps, in1.dtype)
 
         z = sigtools._correlateND(in1, in2, out, val)
+
     else:
-        # numpy is significantly faster for 1d
-        if in1.ndim == 1 and in2.ndim == 1 and (in1.size >= in2.size):
-            return np.correlate(in1, in2, mode)
-
-        # _correlateND is far slower when in2.size > in1.size, so swap them
-        # and then undo the effect afterward
-        swapped_inputs = (mode == 'full') and (in2.size > in1.size)
-        if swapped_inputs:
-            in1, in2 = in2, in1
-
         ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
+
         # zero pad input
         in1zpadded = np.zeros(ps, in1.dtype)
         sc = [slice(0, i) for i in in1.shape]
@@ -197,10 +224,11 @@ def correlate(in1, in2, mode='full'):
 
         z = sigtools._correlateND(in1zpadded, in2, out, val)
 
-        # Reverse and conjugate to undo the effect of swapping inputs
-        if swapped_inputs:
-            slice_obj = [slice(None, None, -1)] * len(z.shape)
-            z = z[slice_obj].conj()
+    if swapped_inputs:
+        # Reverse in all dimensions and conjugate to undo the effect of
+        # swapping inputs
+        reverse = [slice(None, None, -1)] * z.ndim
+        z = z[reverse].conj()
 
     return z
 
@@ -280,9 +308,9 @@ def fftconvolve(in1, in2, mode="full"):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -360,8 +388,10 @@ def fftconvolve(in1, in2, mode="full"):
                       np.issubdtype(in2.dtype, complex))
     shape = s1 + s2 - 1
 
-    if mode == "valid":
-        _check_valid_mode_shapes(s1, s2)
+    # Check that input sizes are compatible with 'valid' mode
+    if _inputs_swap_needed(mode, s1, s2):
+        # Convolution is commutative; order doesn't have any effect on output
+        in1, s1, in2, s2 = in2, s2, in1, s1
 
     # Speed up FFT by padding to optimal size for FFTPACK
     fshape = [_next_regular(int(d)) for d in shape]
@@ -370,9 +400,9 @@ def fftconvolve(in1, in2, mode="full"):
     # sure we only call rfftn/irfftn from one thread at a time.
     if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
         try:
-            ret = (np.fft.irfftn(np.fft.rfftn(in1, fshape) *
-                                 np.fft.rfftn(in2, fshape), fshape)[fslice].
-                   copy())
+            sp1 = np.fft.rfftn(in1, fshape)
+            sp2 = np.fft.rfftn(in2, fshape)
+            ret = (np.fft.irfftn(sp1 * sp2, fshape)[fslice].copy())
         finally:
             if not _rfft_mt_safe:
                 _rfft_lock.release()
@@ -381,8 +411,9 @@ def fftconvolve(in1, in2, mode="full"):
         # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
         # is already in use by another thread).  In either case, use the
         # (threadsafe but slower) SciPy complex-FFT routines instead.
-        ret = fftpack.ifftn(fftpack.fftn(in1, fshape) *
-                            fftpack.fftn(in2, fshape))[fslice].copy()
+        sp1 = fftpack.fftn(in1, fshape)
+        sp2 = fftpack.fftn(in2, fshape)
+        ret = fftpack.ifftn(sp1 * sp2)[fslice].copy()
         if not complex_result:
             ret = ret.real
 
@@ -409,9 +440,9 @@ def convolve(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -466,16 +497,21 @@ def convolve(in1, in2, mode='full'):
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
 
-    # fastpath to faster numpy 1d convolve
-    if volume.ndim == 1 and kernel.ndim == 1 and volume.size >= kernel.size:
+    if _inputs_swap_needed(mode, volume.shape, kernel.shape):
+        # Convolution is commutative; order doesn't have any effect on output
+        volume, kernel = kernel, volume
+
+    # fastpath to faster numpy 1d convolve (but numpy's 'same' mode uses the
+    # size of the larger input, not the first.)
+    if volume.ndim == kernel.ndim == 1 and (volume.size >= kernel.size or
+                                            mode != 'same'):
         return np.convolve(volume, kernel, mode)
 
-    slice_obj = [slice(None, None, -1)] * len(kernel.shape)
+    # Reverse in all dimensions
+    reverse = [slice(None, None, -1)] * kernel.ndim
 
-    if np.iscomplexobj(kernel):
-        return correlate(volume, kernel[slice_obj].conj(), mode)
-    else:
-        return correlate(volume, kernel[slice_obj], mode)
+    # .conj() does nothing to real arrays and is faster than iscomplexobj()
+    return correlate(volume, kernel[reverse].conj(), mode)
 
 
 def order_filter(a, domain, rank):
@@ -566,12 +602,12 @@ def medfilt(volume, kernel_size=None):
     """
     volume = atleast_1d(volume)
     if kernel_size is None:
-        kernel_size = [3] * len(volume.shape)
+        kernel_size = [3] * volume.ndim
     kernel_size = asarray(kernel_size)
     if kernel_size.shape == ():
         kernel_size = np.repeat(kernel_size.item(), volume.ndim)
 
-    for k in range(len(volume.shape)):
+    for k in range(volume.ndim):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
@@ -609,7 +645,7 @@ def wiener(im, mysize=None, noise=None):
     """
     im = asarray(im)
     if mysize is None:
-        mysize = [3] * len(im.shape)
+        mysize = [3] * im.ndim
     mysize = asarray(mysize)
     if mysize.shape == ():
         mysize = np.repeat(mysize.item(), im.ndim)
@@ -642,8 +678,12 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Parameters
     ----------
-    in1, in2 : array_like
-        Two-dimensional input arrays to be convolved.
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -708,8 +748,11 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
+    if not in1.ndim == in2.ndim == 2:
+        raise ValueError('convolve2d inputs must both be 2D arrays')
+
+    if _inputs_swap_needed(mode, in1.shape, in2.shape):
+        in1, in2 = in2, in1
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
@@ -731,8 +774,12 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Parameters
     ----------
-    in1, in2 : array_like
-        Two-dimensional input arrays to be convolved.
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -798,8 +845,12 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
+    if not in1.ndim == in2.ndim == 2:
+        raise ValueError('correlate2d inputs must both be 2D arrays')
+
+    swapped_inputs = _inputs_swap_needed(mode, in1.shape, in2.shape)
+    if swapped_inputs:
+        in1, in2 = in2, in1
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
@@ -808,6 +859,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         warnings.simplefilter('ignore', np.ComplexWarning)
         # FIXME: some cast generates a warning here
         out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+
+    if swapped_inputs:
+        out = out[::-1, ::-1]
 
     return out
 
@@ -1259,7 +1313,7 @@ def hilbert(x, N=None, axis=-1):
         h[0] = 1
         h[1:(N + 1) // 2] = 2
 
-    if len(x.shape) > 1:
+    if x.ndim > 1:
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[ind]
@@ -1290,7 +1344,7 @@ def hilbert2(x, N=None):
 
     """
     x = atleast_2d(x)
-    if len(x.shape) > 2:
+    if x.ndim > 2:
         raise ValueError("x must be 2-D.")
     if iscomplexobj(x):
         raise ValueError("x must be real.")
@@ -1319,7 +1373,7 @@ def hilbert2(x, N=None):
         exec("h%d = h" % (p + 1), globals(), locals())
 
     h = h1[:, newaxis] * h2[newaxis, :]
-    k = len(x.shape)
+    k = x.ndim
     while k > 2:
         h = h[:, newaxis]
         k -= 1
@@ -1770,12 +1824,12 @@ def resample(x, num, t=None, axis=0, window=None):
     sample of the next cycle:
 
     >>> from scipy import signal
-    
+
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f = signal.resample(y, 100)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-    
+
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
@@ -1797,7 +1851,7 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape[axis] = len(W)
         W.shape = newshape
         X = X * W
-    sl = [slice(None)] * len(x.shape)
+    sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
     newshape[axis] = num
     N = int(np.minimum(num, Nx))
@@ -1877,13 +1931,13 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     for the polyphase method:
 
     >>> from scipy import signal
-    
+
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f_fft = signal.resample(y, 100)
     >>> f_poly = signal.resample_poly(y, 100, 20)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-    
+
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
     >>> plt.plot(x, y, 'ko-')
@@ -2808,10 +2862,6 @@ def sosfilt(sos, x, axis=-1, zi=None):
             x = lfilter(sos[section, :3], sos[section, 3:], x, axis)
     out = (x, zf) if use_zi else x
     return out
-
-
-from scipy.signal.filter_design import cheby1
-from scipy.signal.fir_filter_design import firwin
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1):

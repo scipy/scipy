@@ -150,7 +150,8 @@ def evaluate_nd(double_or_complex[:,:,::1] c,
     cdef double[::1] y
     cdef double_or_complex[:,:,::1] c2
     cdef int ip, jp, k, ndim
-    cdef int interval[MAX_DIMS], pos, kpos, koutpos
+    cdef int interval[MAX_DIMS]
+    cdef int pos, kpos, koutpos
     cdef int out_of_range
     cdef double xval
 

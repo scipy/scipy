@@ -32,7 +32,7 @@ def linregress(x, y=None):
         two-sided p-value for a hypothesis test whose null hypothesis is
         that the slope is zero.
     stderr : float
-        Standard error of the estimate
+        Standard error of the estimated gradient.
 
     See also
     --------

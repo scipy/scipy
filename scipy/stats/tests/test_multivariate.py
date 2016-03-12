@@ -1204,7 +1204,7 @@ class TestRandomCorrelation(TestCase):
         #   but this seems sufficient.
         dets = [np.fabs(np.linalg.det(x)) for x in xs]
         dets_known = [np.prod(e) for e in eigs]
-        assert_allclose(dets, dets_known, rtol=1e-13)
+        assert_allclose(dets, dets_known, rtol=1e-13, atol=1e-13)
 
         # Test for 1's on the diagonal
         diags = [np.diag(x) for x in xs]

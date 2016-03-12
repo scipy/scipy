@@ -45,12 +45,13 @@ class BasinHoppingRunner(object):
         This function displaces the coordinates randomly.  Signature should
         be ``x_new = step_taking(x)``.  Note that `x` may be modified in-place.
     accept_tests : list of callables
-        To each test is passed the kwargs `f_new`, `x_new`, `f_old` and
+        Each test is passed the kwargs `f_new`, `x_new`, `f_old` and
         `x_old`.  These tests will be used to judge whether or not to accept
         the step.  The acceptable return values are True, False, or ``"force
-        accept"``.  If the latter, then this will override any other tests in
-        order to accept the step.  This can be used, for example, to forcefully
-        escape from a local minimum that ``basinhopping`` is trapped in.
+        accept"``.  If any of the tests return False then the step is rejected.
+        If the latter, then this will override any other tests in order to
+        accept the step. This can be used, for example, to forcefully escape
+        from a local minimum that ``basinhopping`` is trapped in.
     disp : bool, optional
         Display status messages.
 
@@ -116,7 +117,7 @@ class BasinHoppingRunner(object):
         if hasattr(minres, "nhev"):
             self.res.nhev += minres.nhev
 
-        # accept the move based on self.accept_tests. If any test is false,
+        # accept the move based on self.accept_tests. If any test is False,
         # than reject the step.  If any test returns the special value, the
         # string 'force accept', accept the step regardless.  This can be used
         # to forcefully escape from a local minimum if normal basin hopping
@@ -125,19 +126,11 @@ class BasinHoppingRunner(object):
         for test in self.accept_tests:
             testres = test(f_new=energy_after_quench, x_new=x_after_quench,
                            f_old=self.energy, x_old=self.x)
-            if isinstance(testres, bool):
-                if not testres:
-                    accept = False
-            elif isinstance(testres, str):
-                if testres == "force accept":
-                    accept = True
-                    break
-                else:
-                    raise ValueError("accept test must return bool or string "
-                                     "'force accept'. Type is", type(testres))
-            else:
-                raise ValueError("accept test must return bool or string "
-                                 "'force accept'. Type is", type(testres))
+            if testres == 'force accept':
+                accept = True
+                break
+            elif not testres:
+                accept = False
 
         # Report the result of the acceptance test to the take step class.
         # This is for adaptive step taking
@@ -345,10 +338,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         Define a test which will be used to judge whether or not to accept the
         step.  This will be used in addition to the Metropolis test based on
         "temperature" ``T``.  The acceptable return values are True,
-        False, or ``"force accept"``.  If the latter, then this will
-        override any other tests in order to accept the step.  This can be
-        used, for example, to forcefully escape from a local minimum that
-        ``basinhopping`` is trapped in.
+        False, or ``"force accept"``. If any of the tests return False
+        then the step is rejected. If the latter, then this will override any
+        other tests in order to accept the step. This can be used, for example,
+        to forcefully escape from a local minimum that ``basinhopping`` is
+        trapped in.
     callback : callable, ``callback(x, f, accept)``, optional
         A callback function which will be called for all minima found.  ``x``
         and ``f`` are the coordinates and function value of the trial minimum,
@@ -611,7 +605,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                             accept_tests, disp=disp)
 
     # start main iteration loop
-    count = 0
+    count, i = 0, 0
     message = ["requested number of basinhopping iterations completed"
                " successfully"]
     for i in range(niter):

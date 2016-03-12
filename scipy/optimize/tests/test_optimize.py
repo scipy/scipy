@@ -250,6 +250,72 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-14, rtol=1e-7)
 
     @suppressed_stdout
+    def test_neldermead_initial_simplex(self):
+        # Nelder-Mead simplex algorithm
+        simplex = np.zeros((4, 3))
+        simplex[...] = self.startparams
+        for j in range(3):
+            simplex[j+1,j] += 0.1
+
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': False,
+                    'return_all': True, 'initial_simplex': simplex}
+            res = optimize.minimize(self.func, self.startparams, args=(),
+                                    method='Nelder-mead', options=opts)
+            params, fopt, numiter, func_calls, warnflag = \
+                    res['x'], res['fun'], res['nit'], res['nfev'], \
+                    res['status']
+            assert_allclose(res['allvecs'][0], simplex[0])
+        else:
+            retval = optimize.fmin(self.func, self.startparams,
+                                        args=(), maxiter=self.maxiter,
+                                        full_output=True, disp=False, retall=False,
+                                        initial_simplex=simplex)
+
+            (params, fopt, numiter, func_calls, warnflag) = retval
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.17.0. Don't allow them to increase.
+        assert_(self.funccalls == 100, self.funccalls)
+        assert_(self.gradcalls == 0, self.gradcalls)
+
+        # Ensure that the function behaves the same; this is from Scipy 0.15.0
+        assert_allclose(self.trace[50:52],
+                        [[0.14687474, -0.5103282, 0.48252111],
+                         [0.14474003, -0.5282084, 0.48743951]],
+                        atol=1e-14, rtol=1e-7)
+
+    @suppressed_stdout
+    def test_neldermead_initial_simplex_bad(self):
+        # Check it fails with a bad simplices
+        bad_simplices = []
+
+        simplex = np.zeros((3, 2))
+        simplex[...] = self.startparams[:2]
+        for j in range(2):
+            simplex[j+1,j] += 0.1
+        bad_simplices.append(simplex)
+
+        simplex = np.zeros((3, 3))
+        bad_simplices.append(simplex)
+
+        for simplex in bad_simplices:
+            if self.use_wrapper:
+                opts = {'maxiter': self.maxiter, 'disp': False,
+                        'return_all': False, 'initial_simplex': simplex}
+                assert_raises(ValueError,
+                              optimize.minimize, self.func, self.startparams, args=(),
+                              method='Nelder-mead', options=opts)
+            else:
+                assert_raises(ValueError, optimize.fmin, self.func, self.startparams,
+                              args=(), maxiter=self.maxiter,
+                              full_output=True, disp=False, retall=False,
+                              initial_simplex=simplex)
+
+    @suppressed_stdout
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
         if self.use_wrapper:

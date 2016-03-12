@@ -117,8 +117,8 @@ class TestPeriodogram(TestCase):
     def test_window_external(self):
         x = np.zeros(16)
         x[0] = 1
-        f, p = periodogram(x, 10, 'hanning')
-        win = signal.get_window('hanning', 16)
+        f, p = periodogram(x, 10, 'hann')
+        win = signal.get_window('hann', 16)
         fe, pe = periodogram(x, 10, win)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
@@ -355,8 +355,8 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, 10, 'hanning', 8)
-        win = signal.get_window('hanning', 8)
+        f, p = welch(x, 10, 'hann', 8)
+        win = signal.get_window('hann', 8)
         fe, pe = welch(x, 10, win, 8)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
@@ -404,7 +404,7 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-12)
 
     def test_bad_noverlap(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, 'hanning', 2, 7)
+        assert_raises(ValueError, welch, np.zeros(4), 1, 'hann', 2, 7)
 
     def test_nfft_too_short(self):
         assert_raises(ValueError, welch, np.ones(12), nfft=3, nperseg=4)
@@ -637,8 +637,8 @@ class TestCSD:
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = csd(x, x, 10, 'hanning', 8)
-        win = signal.get_window('hanning', 8)
+        f, p = csd(x, x, 10, 'hann', 8)
+        win = signal.get_window('hann', 8)
         fe, pe = csd(x, x, 10, win, 8)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
@@ -707,7 +707,7 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-12)
 
     def test_bad_noverlap(self):
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 'hanning',
+        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 'hann',
                       2, 7)
 
     def test_nfft_too_short(self):
