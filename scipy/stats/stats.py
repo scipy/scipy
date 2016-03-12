@@ -3291,16 +3291,17 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         cnt = np.bincount(ranks).astype('int64', copy=False)
         return (cnt * (cnt - 1) // 2).sum()
 
-    y = rankdata(y, method='dense').astype(np.intp, copy=False)
-
     size = x.size
-    perm = np.lexsort((y, x))
+    perm = np.argsort(y)  # sort on y and convert y to dense ranks
     x, y = x[perm], y[perm]
+    y = np.r_[True, y[1:] != y[:-1]].cumsum(dtype=np.intp)
 
-    # convert x to dense ranks
+    # stable sort on x and convert x to dense ranks
+    perm = np.argsort(x, kind='mergesort')
+    x, y = x[perm], y[perm]
     x = np.r_[True, x[1:] != x[:-1]].cumsum(dtype=np.intp)
 
-    con, dis = _kendall_condis(x, y)
+    con, dis = _kendall_condis(x, y)  # concordant & discordant pairs
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
