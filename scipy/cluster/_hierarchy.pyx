@@ -1029,7 +1029,7 @@ def slink(double[:] dists, int n):
                 M[Pi[j]] = min(M[Pi[j]], M[j])
 
         for j in range(i):
-            if Lambda[j] >= Lambda[Pi[j]]:
+            if Lambda[j] > Lambda[Pi[j]]:
                 Pi[j] = i
 
     from_pointer_representation(Z, Lambda, Pi, n)
