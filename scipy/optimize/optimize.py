@@ -29,7 +29,6 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import sys
-from functools import wraps
 import numpy
 from scipy._lib.six import callable
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
@@ -404,30 +403,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             return res['x']
 
 
-def __deprecate_ftol_xtol(func):
-    @wraps(func)
-    def _wrapper(*args, **kwds):
-        if 'ftol' in kwds:
-            warnings.warn("ftol is deprecated for _minimize_neldermead,"
-                          " use fatol instead. If you specified both, only"
-                          " fatol is used.",
-                          DeprecationWarning)
-            if 'fatol' not in kwds:
-                kwds['fatol'] = kwds['ftol']
-            kwds.pop('ftol')
-        if 'xtol' in kwds:
-            warnings.warn("xtol is deprecated for _minimize_neldermead,"
-                          " use xatol instead. If you specified both, only"
-                          " xatol is used.",
-                          DeprecationWarning)
-            if 'xatol' not in kwds:
-                kwds['xatol'] = kwds['xtol']
-            kwds.pop('xtol')
-
-        return func(*args, **kwds)
-    return _wrapper
-
-@__deprecate_ftol_xtol
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          maxiter=None, maxfev=None, disp=False,
                          return_all=False, initial_simplex=None,
@@ -456,6 +431,27 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         Absolute error in func(xopt) between iterations that is acceptable for
         convergence.
     """
+    if 'ftol' in unknown_options:
+        warnings.warn("ftol is deprecated for _minimize_neldermead,"
+                      " use fatol instead. If you specified both, only"
+                      " fatol is used.",
+                      DeprecationWarning)
+        if (np.isclose(fatol, 1e-4) and
+                not np.isclose(unknown_options['ftol'], 1e-4)):
+            # only ftol was probably specified, use it.
+            fatol = unknown_options['ftol']
+        unknown_options.pop('ftol')
+    if 'xtol' in unknown_options:
+        warnings.warn("xtol is deprecated for _minimize_neldermead,"
+                      " use xatol instead. If you specified both, only"
+                      " xatol is used.",
+                      DeprecationWarning)
+        if (np.isclose(xatol, 1e-4) and
+                not np.isclose(unknown_options['xtol'], 1e-4)):
+            # only xtol was probably specified, use it.
+            xatol = unknown_options['xtol']
+        unknown_options.pop('xtol')
+
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
