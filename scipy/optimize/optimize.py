@@ -465,9 +465,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if retall:
         allvecs = [sim[0]]
 
-    if maxiter is None:
+    if maxiter is None and maxfun is None:
         maxiter = N * 200
-    if maxfun is None:
         maxfun = N * 200
 
     one2np1 = list(range(1, N + 1))
@@ -483,7 +482,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     iterations = 1
 
-    while (fcalls[0] < maxfun and iterations < maxiter):
+    while ((maxfun is None or fcalls[0] < maxfun)
+        and (maxiter is None or iterations < maxiter)):
         if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xtol and
                 numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= ftol):
             break
@@ -547,12 +547,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fval = numpy.min(fsim)
     warnflag = 0
 
-    if fcalls[0] >= maxfun:
+    if maxfun is not None and fcalls[0] >= maxfun:
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
             print('Warning: ' + msg)
-    elif iterations >= maxiter:
+    elif maxiter is not None and iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
