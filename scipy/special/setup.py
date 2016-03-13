@@ -104,6 +104,10 @@ def configuration(parent_package='',top_path=None):
                          **cfg
                          )
 
+    # combinatoris
+    config.add_extension('_comb',
+                         sources=['_comb.c'])
+
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')
     config.add_data_files('tests/data/*.npz')

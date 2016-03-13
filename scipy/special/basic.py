@@ -17,6 +17,7 @@ from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
                       errprint, poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
+from ._comb import _comb
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
@@ -2123,15 +2124,7 @@ def comb(N, k, exact=False, repetition=False):
     if exact:
         N = int(N)
         k = int(k)
-        if (k > N) or (N < 0) or (k < 0):
-            return 0
-        numerator = 1
-        denominator = 1
-        M = N + 1
-        for j in xrange(1, min(k, N - k) + 1):
-            numerator *= M - j
-            denominator *= j
-        return numerator//denominator
+        return _comb(N, k)
     else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
