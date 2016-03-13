@@ -233,12 +233,12 @@ def correlate(in1, in2, mode='full'):
     return z
 
 
-def _centered(arr, newsize):
-    # Return the center newsize portion of the array.
-    newsize = asarray(newsize)
-    currsize = array(arr.shape)
-    startind = (currsize - newsize) // 2
-    endind = startind + newsize
+def _centered(arr, newshape):
+    # Return the center newshape portion of the array.
+    newshape = asarray(newshape)
+    currshape = array(arr.shape)
+    startind = (currshape - newshape) // 2
+    endind = startind + newshape
     myslice = [slice(startind[k], endind[k]) for k in range(len(endind))]
     return arr[tuple(myslice)]
 
