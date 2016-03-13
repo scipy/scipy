@@ -41,7 +41,7 @@ class Comb(Benchmark):
         self.N = np.arange(1, 1000, 50)
         self.k = np.arange(1, 1000, 50)
 
-    @with_attributes(params=[(10, 1000, 10000), (5, 50, 500)],
+    @with_attributes(params=[(10, 100, 1000, 10000), (1, 10, 100)],
                      param_names=['N', 'k'])
     def time_comb_exact(self, N, k):
         comb(N, k, exact=True)

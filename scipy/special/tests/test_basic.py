@@ -1268,6 +1268,9 @@ class TestCombinatorics(TestCase):
         ii = np.iinfo(int).max + 1
         assert_equal(special.comb(ii, ii-1, exact=True), ii)
 
+        expected = 100891344545564193334812497256
+        assert_equal(special.comb(100, 50, exact=True), expected)
+
     def test_comb_with_np_int64(self):
         n = 70
         k = 30
