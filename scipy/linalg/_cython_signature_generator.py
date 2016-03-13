@@ -8,6 +8,9 @@ python _cython_signature_generator.py blas <blas_directory> <out_file>
 
 To generate the LAPACK wrapper signatures call:
 python _cython_signature_generator.py lapack <lapack_src_directory> <out_file>
+
+This script expects to be run on the source directory for
+the oldest supported version of LAPACK (currently 3.4.0).
 """
 
 import glob
@@ -71,9 +74,6 @@ def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
         f.writelines(comment)
         f.writelines(signatures)
 
-# The signature that is used for zcgesv in lapack 3.1.0 and 3.1.1 changed
-# in version 3.2.0. The version included in the clapack on OSX has the
-# more recent signature though.
 # slamch and dlamch are not in the lapack src directory, but,since they
 # already have Python wrappers, we'll wrap them as well.
 # The other manual signatures are used because the signature generating
@@ -109,21 +109,33 @@ if __name__ == '__main__':
         sigs_from_dir(src_dir, outfile, exclusions=['scabs1', 'xerbla'])
     elif libname.lower() == 'lapack':
         # Exclude all routines that do not have consistent interfaces from
-        # LAPACK 3.1.0 through 3.6.0.
+        # LAPACK 3.4.0 through 3.6.0.
         # Also exclude routines with string arguments to avoid
         # compatibility woes with different standards for string arguments.
-        # Exclude sisnan and slaneg since they aren't currently included in
-        # The ABI compatibility wrappers.
-        exclusions = ['sisnan', 'csrot', 'zdrot', 'ilaenv', 'iparmq', 'lsamen',
-                      'xerbla', 'zcgesv', 'dlaisnan', 'slaisnan', 'dlazq3',
-                      'dlazq4', 'slazq3', 'slazq4', 'dlasq3', 'dlasq4',
-                      'slasq3', 'slasq4', 'dlasq5', 'slasq5', 'slaneg',
+        exclusions = [# Not included because people should be using the
+                      # C standard library function instead.
+                      # sisnan is also not currently included in the
+                      # ABI wrappers.
+                      'sisnan', 'dlaisnan', 'slaisnan',
+                      # Exclude slaneg because it isn't currently included
+                      # in the ABI wrappers
+                      'slaneg',
+                      # Excluded because they require Fortran string arguments.
+                      'ilaenv', 'iparmq', 'lsamen', 'xerbla',
+                      # Signatures changed between 3.4.0 and 3.4.1.
+                      'dlasq5', 'slasq5',
                       # Routines deprecated in LAPACK 3.6.0
-                      'cgegs', 'cgegv', 'cgelsx', 'cgeqpf', 'cggsvd', 'cggsvp',
-                      'clahrd', 'clatzm', 'ctzrqf', 'dgegs', 'dgegv', 'dgelsx',
-                      'dgeqpf', 'dggsvd', 'dggsvp', 'dlahrd', 'dlatzm', 'dtzrqf',
-                      'sgegs', 'sgegv', 'sgelsx', 'sgeqpf', 'sggsvd', 'sggsvp',
-                      'slahrd', 'slatzm', 'stzrqf', 'zgegs', 'zgegv', 'zgelsx',
-                      'zgeqpf', 'zggsvd', 'zggsvp', 'zlahrd', 'zlatzm', 'ztzrqf']
+                      'cgegs', 'cgegv', 'cgelsx',
+                      'cgeqpf', 'cggsvd', 'cggsvp',
+                      'clahrd', 'clatzm', 'ctzrqf',
+                      'dgegs', 'dgegv', 'dgelsx',
+                      'dgeqpf', 'dggsvd', 'dggsvp',
+                      'dlahrd', 'dlatzm', 'dtzrqf',
+                      'sgegs', 'sgegv', 'sgelsx',
+                      'sgeqpf', 'sggsvd', 'sggsvp',
+                      'slahrd', 'slatzm', 'stzrqf',
+                      'zgegs', 'zgegv', 'zgelsx',
+                      'zgeqpf', 'zggsvd', 'zggsvp',
+                      'zlahrd', 'zlatzm', 'ztzrqf']
         sigs_from_dir(src_dir, outfile, manual_wrappers=lapack_manual_wrappers,
                       exclusions=exclusions)
