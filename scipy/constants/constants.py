@@ -210,6 +210,7 @@ def convert_temperature(val, old_scale, new_scale):
     array([ 233.15,  313.15])
 
     """
+    # Convert from `old_scale` to Kelvin
     if old_scale.lower() in ['celsius', 'c']:
         tempo = _np.asanyarray(val) + zero_Celsius
     elif old_scale.lower() in ['kelvin', 'k']:
@@ -222,7 +223,7 @@ def convert_temperature(val, old_scale, new_scale):
         raise NotImplementedError("%s scale is unsupported: supported scales "
                                   "are Celsius, Kelvin, Fahrenheit and "
                                   "Rankine" % old_scale)
-
+    # and from Kelvin to `new_scale`.
     if new_scale.lower() in ['celsius', 'c']:
         res = tempo - zero_Celsius
     elif new_scale.lower() in ['kelvin', 'k']:
