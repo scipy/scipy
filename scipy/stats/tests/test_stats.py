@@ -539,9 +539,6 @@ class TestCorrSpearmanr(TestCase):
     def test_nan_policy(self):
         x = np.arange(10.)
         x[9] = np.nan
-        assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
-        assert_array_equal(stats.spearmanr(X, x), (np.nan, np.nan))
-        assert_array_equal(stats.spearmanr(x, X), (np.nan, np.nan))
         assert_array_equal(stats.spearmanr(x, x, nan_policy='omit'),
                            (1.0, 0.0))
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
@@ -1593,10 +1590,18 @@ class TestMoments(TestCase):
 
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.moment(x), np.nan)
+        assert_equal(stats.moment(x, 2), np.nan)
         assert_almost_equal(stats.moment(x, nan_policy='omit'), 0.0)
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
+
+    def test_moment_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
     def test_variation(self):
         # variation = samplestd / mean
@@ -1612,6 +1617,14 @@ class TestMoments(TestCase):
                             0.6454972243679028)
         assert_raises(ValueError, stats.variation, x, nan_policy='raise')
         assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
+
+    def test_variation_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        vv = stats.variation(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
 
     def test_skewness(self):
         # Scalar test case
@@ -1636,6 +1649,14 @@ class TestMoments(TestCase):
     def test_skewness_scalar(self):
         # `skew` must return a scalar for 1-dim input
         assert_equal(stats.skew(arange(10)), 0.0)
+
+    def test_skew_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        s = stats.skew(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
 
     def test_kurtosis(self):
         # Scalar test case
@@ -1666,6 +1687,14 @@ class TestMoments(TestCase):
 
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
+
+    def test_kurtosis_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        k = stats.kurtosis(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
@@ -2660,8 +2689,6 @@ class TestDescribe(TestCase):
 
         x = np.arange(10.)
         x[9] = np.nan
-        res = stats.describe(x)
-        assert_array_equal(res, np.zeros(6) * np.nan)
 
         nc, mmc = (9, (0.0, 8.0))
         mc = 4.0
