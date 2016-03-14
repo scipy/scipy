@@ -534,6 +534,31 @@ def process_fortran_name(name, funcname):
         return name + dims[name]
     return name
 
+def fix_line_length(subroutine):
+    # Wrap lines for subroutine wrappers that have too many arguments
+    # to be written on a single line.
+    lines = subroutine.split('\n')
+    for i, line in enumerate(lines):
+        # If the line is longer than the Fortran 77 line length limit.
+        if len(line) > 72:
+            # In this restricted context, it's safe to assume
+            # that the length of the line is caused by a long
+            # list of function arguments.
+            split_idx = line.rfind(',', 0, 72) + 1
+            done = line[:split_idx]
+            remaining = line[split_idx + 1:]
+            split_lines = [done]
+            start_len = len(line.split('(')[0]) + 1
+            allowed_length = 72 - start_len
+            newline_template = ' ' * 5 + '*' + (start_len - 6) * ' ' + '{}'
+            while len(remaining) > allowed_length:
+                split_idx = remaining[:allowed_length].rfind(',') + 1
+                split_lines.append(newline_template.format(
+                    remaining[:split_idx]))
+                remaining = remaining[split_idx+1:]
+            split_lines.append(newline_template.format(remaining))
+            lines[i] = '\n'.join(split_lines)
+    return '\n'.join(lines)
 
 def fort_subroutine_wrapper(name, ret_type, args):
     if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
@@ -546,9 +571,10 @@ def fort_subroutine_wrapper(name, ret_type, args):
     names = [process_fortran_name(n, name) for n in names]
     argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
                                  for n, t in zip(names, types))
-    return fortran_template.format(name=name, wrapper=wrapper,
-                                   argnames=argnames, argdecls=argdecls,
-                                   ret_type=fortran_types[ret_type])
+    subroutine = fortran_template.format(name=name, wrapper=wrapper,
+                                         argnames=argnames, argdecls=argdecls,
+                                         ret_type=fortran_types[ret_type])
+    return fix_line_length(subroutine)
 
 
 def generate_fortran(func_sigs):
