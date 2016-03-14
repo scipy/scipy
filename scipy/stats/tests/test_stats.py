@@ -1532,6 +1532,14 @@ class TestMoments(TestCase):
         # `skew` must return a scalar for 1-dim input
         assert_equal(stats.skew(arange(10)), 0.0)
 
+    def test_skew_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        s = stats.skew(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
+
     def test_kurtosis(self):
         # Scalar test case
         y = stats.kurtosis(self.scalar_testcase)

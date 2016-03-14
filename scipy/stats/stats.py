@@ -1020,8 +1020,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.skew(a, axis, bias)
 
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
+#    if contains_nan and nan_policy == 'propagate':
+#        return np.nan
 
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
