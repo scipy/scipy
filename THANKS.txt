@@ -159,6 +159,7 @@ Philip DeBoer for wrapping random SO(N) and adding random O(N) and
     correlation matrices in scipy.stats.
 Tyler Reddy and Nikolai Nowaczyk for scipy.spatial.SphericalVoronoi
 Bill Sacks for fixes to netcdf i/o.
+Sebastiano Vigna for Kendall's tau (and variants) in scipy.stats.
 
 Institutions
 ------------

@@ -565,10 +565,18 @@ class TestCorrSpearmanrTies(TestCase):
 
 
 def test_kendalltau():
+    # without ties
+    x1 = [12, 2, 1, 11, 3]
+    x2 = [1, 4, 7, 2, 0]
+    expected = (-0.59999999999999987, 0.14164470089041584)
+    res = stats.kendalltau(x1, x2)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
     # with some ties
     x1 = [12, 2, 1, 12, 2]
     x2 = [1, 4, 7, 1, 0]
-    expected = (-0.47140452079103173, 0.24821309157521476)
+    expected = (-0.47140452079103173, 0.2827454599327748)
     res = stats.kendalltau(x1, x2)
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
@@ -586,10 +594,6 @@ def test_kendalltau():
     # empty arrays provided as input
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
-    # check two different sort methods
-    assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
-                        stats.kendalltau(x1, x2, initial_lexsort=True)[1])
-
     # and with larger arrays
     np.random.seed(7546)
     x = np.array([np.random.normal(loc=1, scale=1, size=500),
@@ -597,7 +601,7 @@ def test_kendalltau():
     corr = [[1.0, 0.3],
             [0.3, 1.0]]
     x = np.dot(np.linalg.cholesky(corr), x)
-    expected = (0.19291382765531062, 1.1337108207276285e-10)
+    expected = (0.19291382765531062, 1.1337095377742629e-10)
     res = stats.kendalltau(x[0], x[1])
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
@@ -619,6 +623,17 @@ def test_kendalltau():
     y = np.arange(20.)
     assert_raises(ValueError, stats.kendalltau, x, y)
 
+    # test inputs requiring conversions to ranks
+    expected = (-0.33333333333333326, 0.60150814411369402)
+    res = stats.kendalltau([0, 1, 2],["b","c","a"])
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+    res = stats.kendalltau(["a","b","c"],[1, 2, 0])
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+    res = stats.kendalltau(["a","b","c"],["b","c","a"])
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
 
 class TestFindRepeats(TestCase):
 
