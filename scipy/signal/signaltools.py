@@ -7,7 +7,7 @@ import warnings
 import threading
 import sys
 
-from . import sigtools
+from . import sigtools, lti
 from ._upfirdn import _UpFIRDn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
@@ -23,8 +23,8 @@ import numpy as np
 from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from scipy.signal.filter_design import cheby1
-from scipy.signal.fir_filter_design import firwin
+from .filter_design import cheby1
+from .fir_filter_design import firwin
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
@@ -2864,7 +2864,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     return out
 
 
-def decimate(x, q, n=None, ftype='iir', axis=-1):
+def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     """
     Downsample the signal by using a filter.
 
@@ -2876,13 +2876,23 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
     x : ndarray
         The signal to be downsampled, as an N-dimensional array.
     q : int
-        The downsampling factor.
+        The downsampling factor. For downsampling factors higher than 13, it is
+        recommended to call `decimate` multiple times.
     n : int, optional
-        The order of the filter (1 less than the length for 'fir').
-    ftype : str {'iir', 'fir'}, optional
-        The type of the lowpass filter.
+        The order of the filter (1 less than the length for 'fir'). Defaults to
+        8 for 'iir' and 30 for 'fir'.
+    ftype : str {'iir', 'fir'} or ``lti`` instance, optional
+        If 'iir' or 'fir', specifies the type of lowpass filter. If an instance
+        of an `lti` object, uses that object to filter before downsampling.
     axis : int, optional
         The axis along which to decimate.
+    zero_phase : bool, optional
+        Prevent phase shift by filtering with `filtfilt` instead of `lfilter`
+        when `ftype` is not 'fir'.  A value of `True` is recommended, since a
+        phase shift is generally not desired. Using `None` defaults to `False`
+        for backwards compatibility.
+
+        .. versionadded:: 0.18.0
 
     Returns
     -------
@@ -2893,24 +2903,51 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
     --------
     resample
     resample_poly
+
+    Notes
+    -----
+    The ``zero_phase`` keyword was added in 0.18.0.
+    The possibility to use instances of ``lti`` as ``ftype`` was added in
+    0.18.0.
     """
 
     if not isinstance(q, int):
         raise TypeError("q must be an integer")
 
-    if n is None:
-        if ftype == 'fir':
-            n = 30
-        else:
-            n = 8
+    if n is not None and not isinstance(n, int):
+        raise TypeError("n must be an integer")
 
     if ftype == 'fir':
-        b = firwin(n + 1, 1. / q, window='hamming')
-        a = 1.
-    else:
-        b, a = cheby1(n, 0.05, 0.8 / q)
+        if n is None:
+            n = 30
+        system = lti(firwin(n + 1, 1. / q, window='hamming'), 1.)
 
-    y = lfilter(b, a, x, axis=axis)
+    elif ftype == 'iir':
+        if n is None:
+            n = 8
+        system = lti(*cheby1(n, 0.05, 0.8 / q))
+    elif isinstance(ftype, lti):
+        system = ftype
+    else:
+        raise ValueError('invalid ftype')
+
+    if zero_phase is None:
+        warnings.warn(" Note: Decimate's zero_phase keyword argument will "
+                      "default to True in a future release.  Until then, "
+                      "decimate defaults to 'one-way filtering for backwards "
+                      "compatibility. Ideally, always set this argument "
+                      "explicitly.", FutureWarning)
+        zero_phase = False
+
+    if zero_phase and ftype == 'fir':
+        warnings.warn('zero_phase is not implemented for FIR downsampling, '
+                      'using zero_phase=False.')
+        zero_phase = False
+
+    if zero_phase:
+        y = filtfilt(system.num, system.den, x, axis=axis)
+    else:
+        y = lfilter(system.num, system.den, x, axis=axis)
 
     sl = [slice(None)] * y.ndim
     sl[axis] = slice(None, None, q)
