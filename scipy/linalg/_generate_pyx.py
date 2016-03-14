@@ -527,17 +527,23 @@ def generate_lapack_pxd(all_sigs):
     return lapack_pxd_preamble + '\n'.join(pxd_decl(*sig) for sig in all_sigs)
 
 
-fortran_template = """      subroutine {name}wrp(ret, {argnames})
+fortran_template = """      subroutine {name}wrp(
+     +    ret,
+     +    {argnames}
+     +    )
         external {wrapper}
         {ret_type} {wrapper}
         {ret_type} ret
         {argdecls}
-        ret = {wrapper}({argnames})
+        ret = {wrapper}(
+     +    {argnames}
+     +    )
       end
 """
 
 dims = {'work': '(*)', 'ab': '(ldab,*)', 'a': '(lda,*)', 'dl': '(*)',
         'd': '(*)', 'du': '(*)', 'ap': '(*)', 'e': '(*)', 'lld': '(*)'}
+
 
 
 def process_fortran_name(name, funcname):
@@ -557,7 +563,7 @@ def fort_subroutine_wrapper(name, ret_type, args):
     else:
         wrapper = name
     types, names = arg_names_and_types(args)
-    argnames = ', '.join(names)
+    argnames = ',\n     +    '.join(names)
 
     names = [process_fortran_name(n, name) for n in names]
     argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
