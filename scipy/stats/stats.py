@@ -1187,10 +1187,6 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.describe(a, axis, ddof, bias)
 
-    if contains_nan and nan_policy == 'propagate':
-        res = np.zeros(6) * np.nan
-        return DescribeResult(*res)
-
     if a.size == 0:
         raise ValueError("The input must not be empty.")
     n = a.shape[axis]
@@ -1248,9 +1244,6 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.skewtest(a, axis)
-
-    if contains_nan and nan_policy == 'propagate':
-        return SkewtestResult(np.nan, np.nan)
 
     if axis is None:
         a = np.ravel(a)
@@ -1320,9 +1313,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.kurtosistest(a, axis)
-
-    if contains_nan and nan_policy == 'propagate':
-        return KurtosistestResult(np.nan, np.nan)
 
     n = float(a.shape[axis])
     if n < 5:
@@ -1402,9 +1392,6 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.normaltest(a, axis)
-
-    if contains_nan and nan_policy == 'propagate':
-        return NormaltestResult(np.nan, np.nan)
 
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
@@ -2180,9 +2167,6 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.sem(a, axis, ddof)
-
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
 
     n = a.shape[axis]
     s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
