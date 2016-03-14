@@ -1500,6 +1500,14 @@ class TestMoments(TestCase):
         assert_raises(ValueError, stats.variation, x, nan_policy='raise')
         assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
 
+    def test_variation_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        vv = stats.variation(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
+
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)

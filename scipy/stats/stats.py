@@ -970,9 +970,6 @@ def variation(a, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.variation(a, axis)
 
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
-
     return a.std(axis) / a.mean(axis)
 
 
