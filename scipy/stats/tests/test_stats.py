@@ -1570,6 +1570,14 @@ class TestMoments(TestCase):
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
 
+    def test_kurtosis_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        k = stats.kurtosis(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
+
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
         #  but very accurate numpy.power() implementation.

@@ -1020,9 +1020,6 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.skew(a, axis, bias)
 
-#    if contains_nan and nan_policy == 'propagate':
-#        return np.nan
-
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
     zero = (m2 == 0)
@@ -1093,9 +1090,6 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.kurtosis(a, axis, fisher, bias)
-
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
 
     n = a.shape[axis]
     m2 = moment(a, 2, axis)
