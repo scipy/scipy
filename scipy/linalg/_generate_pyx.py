@@ -544,16 +544,21 @@ fortran_template = """      subroutine {name}wrp(
 dims = {'work': '(*)', 'ab': '(ldab,*)', 'a': '(lda,*)', 'dl': '(*)',
         'd': '(*)', 'du': '(*)', 'ap': '(*)', 'e': '(*)', 'lld': '(*)'}
 
+xy_specialized_dims = {'x': '', 'y': ''}
+a_specialized_dims = {'a': '(*)'}
+special_cases = {'ladiv': xy_specialized_dims,
+                 'lanhf': a_specialized_dims,
+                 'lansf': a_specialized_dims,
+                 'lapy2': xy_specialized_dims,
+                 'lapy3': xy_specialized_dims}
 
 
 def process_fortran_name(name, funcname):
     if 'inc' in name:
         return name
-    xy_exclusions = ['ladiv', 'lapy2', 'lapy3']
-    if ('x' in name or 'y' in name) and funcname[1:] not in xy_exclusions:
-        return name + '(n)'
-    if name in dims:
-        return name + dims[name]
+    if ('x' in name or 'y' in name):
+        return name + special_cases.get(funcname[1:], dict()).get(name, '(n)')
+    name += special_cases.get(funcname[1:], dims).get(name, dims.get(name, ''))
     return name
 
 
