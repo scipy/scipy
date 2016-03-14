@@ -418,9 +418,6 @@ class TestCorrSpearmanr(TestCase):
     def test_nan_policy(self):
         x = np.arange(10.)
         x[9] = np.nan
-        assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
-        assert_array_equal(stats.spearmanr(X, x), (np.nan, np.nan))
-        assert_array_equal(stats.spearmanr(x, X), (np.nan, np.nan))
         assert_array_equal(stats.spearmanr(x, x, nan_policy='omit'),
                            (1.0, 0.0))
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
@@ -2579,8 +2576,6 @@ class TestDescribe(TestCase):
 
         x = np.arange(10.)
         x[9] = np.nan
-        res = stats.describe(x)
-        assert_array_equal(res, np.zeros(6) * np.nan)
 
         nc, mmc = (9, (0.0, 8.0))
         mc = 4.0
