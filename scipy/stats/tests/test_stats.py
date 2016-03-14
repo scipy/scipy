@@ -1472,10 +1472,18 @@ class TestMoments(TestCase):
 
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.moment(x), np.nan)
+        assert_equal(stats.moment(x, 2), np.nan)
         assert_almost_equal(stats.moment(x, nan_policy='omit'), 0.0)
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
+
+    def test_moment_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
     def test_variation(self):
         # variation = samplestd / mean

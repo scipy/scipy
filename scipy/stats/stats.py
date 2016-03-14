@@ -868,9 +868,6 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.moment(a, moment, axis)
 
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
-
     if a.size == 0:
         # empty array, return nan(s) with shape matching `moment`
         if np.isscalar(moment):
