@@ -1243,7 +1243,7 @@ cdef _proto_ellip_harmonic_unsafe_t *_proto_ellip_harmonic_unsafe_t_var = &_func
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_lgam "lgam"(double) nogil
 cdef extern from "_ufuncs_defs.h":
-    cdef double complex _func_cgamma_wrap "cgamma_wrap"(double complex) nogil
+    cdef double complex _func_clngamma_wrap "clngamma_wrap"(double complex) nogil
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
@@ -2009,9 +2009,9 @@ ufunc__gammaln_ptr[2*0] = <void*>_func_lgam
 ufunc__gammaln_ptr[2*0+1] = <void*>(<char*>"_gammaln")
 ufunc__gammaln_ptr[2*1] = <void*>_func_lgam
 ufunc__gammaln_ptr[2*1+1] = <void*>(<char*>"_gammaln")
-ufunc__gammaln_ptr[2*2] = <void*>_func_cgamma_wrap
+ufunc__gammaln_ptr[2*2] = <void*>_func_clngamma_wrap
 ufunc__gammaln_ptr[2*2+1] = <void*>(<char*>"_gammaln")
-ufunc__gammaln_ptr[2*3] = <void*>_func_cgamma_wrap
+ufunc__gammaln_ptr[2*3] = <void*>_func_clngamma_wrap
 ufunc__gammaln_ptr[2*3+1] = <void*>(<char*>"_gammaln")
 ufunc__gammaln_data[0] = &ufunc__gammaln_ptr[2*0]
 ufunc__gammaln_data[1] = &ufunc__gammaln_ptr[2*1]
@@ -8661,18 +8661,18 @@ cdef char *ufunc_loggamma_doc = (
     "loggamma(z, out=None)\n"
     "\n"
     "Principal branch of the logarithm of the Gamma function. It is\n"
-    "defined to be :math:`\\log(\\Gamma(z))` for :math:`\\Re(z) > 0` and\n"
+    "defined to be :math:`\\log(\\Gamma(x))` for :math:`x > 0` and\n"
     "extended to the complex plane by analytic continuation. The\n"
     "implementation here is based on [hare1997]_.\n"
     "\n"
     "The function has a single branch cut on the negative real axis and\n"
     "is taken to be continuous when approaching the axis from\n"
-    "above. Note that for :math:`\\Re(z) \\leq 0` it is not generally\n"
-    "true that :math:`\\log\\Gamma(z) = \\log(\\Gamma(z))`, though the real\n"
-    "parts of the functions do agree. The benefit of not defining\n"
-    "``loggamma`` as :math:`\\log(\\Gamma(z))` is that the latter\n"
-    "function has a complicated branch cut structure whereas\n"
-    "``loggamma`` is analytic except for on the negative real axis.\n"
+    "above. Note that it is not generally true that\n"
+    ":math:`\\log\\Gamma(z) = \\log(\\Gamma(z))`, though the real parts of\n"
+    "the functions do agree. The benefit of not defining ``loggamma``\n"
+    "as :math:`\\log(\\Gamma(z))` is that the latter function has a\n"
+    "complicated branch cut structure whereas ``loggamma`` is analytic\n"
+    "except for on the negative real axis.\n"
     "\n"
     "The identities\n"
     "\n"

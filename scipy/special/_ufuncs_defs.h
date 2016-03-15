@@ -3,7 +3,7 @@
 #include "cephes.h"
 npy_double lgam(npy_double);
 #include "specfun_wrappers.h"
-npy_cdouble cgamma_wrap(npy_cdouble);
+npy_cdouble clngamma_wrap(npy_cdouble);
 #include "misc.h"
 npy_double struve_asymp_large_z(npy_double, npy_double, npy_int, npy_double *);
 npy_double struve_bessel_series(npy_double, npy_double, npy_int, npy_double *);
@@ -70,6 +70,7 @@ npy_double cdff4_wrap(npy_double, npy_double, npy_double);
 npy_int fresnl(npy_double, npy_double *, npy_double *);
 npy_int cfresnl_wrap(npy_cdouble, npy_cdouble *, npy_cdouble *);
 npy_double Gamma(npy_double);
+npy_cdouble cgamma_wrap(npy_cdouble);
 npy_double igam(npy_double, npy_double);
 npy_double igamc(npy_double, npy_double);
 npy_double igami(npy_double, npy_double);

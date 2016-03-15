@@ -145,13 +145,16 @@ def diric(x, n):
 
 
 def gammaln(x):
-    """
-    Logarithm of the absolute value of the Gamma function. When used
+    """Logarithm of the absolute value of the Gamma function. When used
     in conjunction with ``gammasgn``, it is useful for working in
     logspace on the real axis without having to deal with complex
     numbers via the relation ``exp(gammaln(x)) =
     gammasgn(x)*gamma(x)``. If you want to work in complex logspace
     use `loggamma`.
+
+    Note that ``gammaln`` also accepts complex inputs, but its
+    behavior is very buggy and has been deprecated. Use ``loggamma``
+    instead.
 
     Parameters
     ----------
@@ -167,6 +170,7 @@ def gammaln(x):
     --------
     gammasgn : sign of the gamma function
     loggamma : principal branch of the logarithm of the gamma function
+
     """
     if np.iscomplexobj(x):
         warnings.warn(("Use of loggamma for complex arguments is "

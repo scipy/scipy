@@ -5482,18 +5482,18 @@ add_newdoc("scipy.special", "loggamma",
     loggamma(z, out=None)
 
     Principal branch of the logarithm of the Gamma function. It is
-    defined to be :math:`\log(\Gamma(z))` for :math:`\Re(z) > 0` and
+    defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
     extended to the complex plane by analytic continuation. The
     implementation here is based on [hare1997]_.
 
     The function has a single branch cut on the negative real axis and
     is taken to be continuous when approaching the axis from
-    above. Note that for :math:`\Re(z) \leq 0` it is not generally
-    true that :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real
-    parts of the functions do agree. The benefit of not defining
-    ``loggamma`` as :math:`\log(\Gamma(z))` is that the latter
-    function has a complicated branch cut structure whereas
-    ``loggamma`` is analytic except for on the negative real axis.
+    above. Note that it is not generally true that
+    :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real parts of
+    the functions do agree. The benefit of not defining ``loggamma``
+    as :math:`\log(\Gamma(z))` is that the latter function has a
+    complicated branch cut structure whereas ``loggamma`` is analytic
+    except for on the negative real axis.
 
     The identities
 
