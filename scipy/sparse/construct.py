@@ -576,30 +576,25 @@ def bmat(blocks, format=None, dtype=None):
 
                 if brow_lengths[i] == 0:
                     brow_lengths[i] = A.shape[0]
-                else:
-                    if brow_lengths[i] != A.shape[0]:
-                        raise ValueError('blocks[%d,:] has incompatible row dimensions' % i)
+                elif brow_lengths[i] != A.shape[0]:
+                    raise ValueError('blocks[%d,:] has incompatible '
+                                     'row dimensions' % i)
 
                 if bcol_lengths[j] == 0:
                     bcol_lengths[j] = A.shape[1]
-                else:
-                    if bcol_lengths[j] != A.shape[1]:
-                        raise ValueError('blocks[:,%d] has incompatible column dimensions' % j)
+                elif bcol_lengths[j] != A.shape[1]:
+                    raise ValueError('blocks[:,%d] has incompatible '
+                                     'column dimensions' % j)
 
-    # ensure that at least one value in each row and col is not None
-    if brow_lengths.min() == 0:
-        raise ValueError('blocks[%d,:] is all None' % brow_lengths.argmin())
-    if bcol_lengths.min() == 0:
-        raise ValueError('blocks[:,%d] is all None' % bcol_lengths.argmin())
-
-    nnz = sum([block.nnz for block in blocks[block_mask]])
+    nnz = sum(block.nnz for block in blocks[block_mask])
     if dtype is None:
-        dtype = upcast(*tuple([blk.dtype for blk in blocks[block_mask]]))
+        all_dtypes = [blk.dtype for blk in blocks[block_mask]]
+        dtype = upcast(*all_dtypes) if all_dtypes else None
 
-    row_offsets = np.concatenate(([0], np.cumsum(brow_lengths)))
-    col_offsets = np.concatenate(([0], np.cumsum(bcol_lengths)))
+    row_offsets = np.append(0, np.cumsum(brow_lengths))
+    col_offsets = np.append(0, np.cumsum(bcol_lengths))
 
-    shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
+    shape = (row_offsets[-1], col_offsets[-1])
 
     data = np.empty(nnz, dtype=dtype)
     idx_dtype = get_index_dtype(maxval=max(shape))
@@ -607,18 +602,14 @@ def bmat(blocks, format=None, dtype=None):
     col = np.empty(nnz, dtype=idx_dtype)
 
     nnz = 0
-    for i in range(M):
-        for j in range(N):
-            if blocks[i,j] is not None:
-                B = blocks[i,j]
-                data[nnz:nnz + B.nnz] = B.data
-                row[nnz:nnz + B.nnz] = B.row
-                col[nnz:nnz + B.nnz] = B.col
-
-                row[nnz:nnz + B.nnz] += row_offsets[i]
-                col[nnz:nnz + B.nnz] += col_offsets[j]
-
-                nnz += B.nnz
+    ii, jj = np.nonzero(block_mask)
+    for i, j in zip(ii, jj):
+        B = blocks[i, j]
+        idx = slice(nnz, nnz + B.nnz)
+        data[idx] = B.data
+        row[idx] = B.row + row_offsets[i]
+        col[idx] = B.col + col_offsets[j]
+        nnz += B.nnz
 
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
