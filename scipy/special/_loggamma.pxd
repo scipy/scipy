@@ -20,16 +20,13 @@ DEF smallz = 16
 # part of z is above this value. The number 16 comes from the number
 # of digits of desired precision; see (4.4).
 DEF smallimag = 0.37*16
-# Euler-Mascheroni constant.
-DEF EULMASCH = 0.5772156649015328606
-# (EULMASCH**2 + pi**2/6)/2, the O(z) term in the Laurent series of
-# the Gamma function around 0.
-DEF LAURENTZ = 0.9890559953279725
 
 
 @cython.cdivision(True)
 cdef inline double complex loggamma(double complex z) nogil:
-    """The strategy for computing loggamma is:
+    """
+    The strategy for computing loggamma is:
+    - If z is close to the zeros at 1 and 2, use a Taylor series.
     - If z is in a small strip around the negative axis, use the
     reflection formula.
     - If z has negative imaginary part, conjugate it and use the
@@ -57,8 +54,12 @@ cdef inline double complex loggamma(double complex z) nogil:
     elif rz <= 0 and z == ceil(rz):
         # Poles
         return nan + 1J*nan
-    elif z == 1:
-        return 0
+    elif zabs(z - 1) < 0.2:
+        # loggamma(1) = 0; use a Taylor series in that region.
+        return taylor_at1(z)
+    elif zabs(z - 2) < 0.2:
+        # loggamma(2) = 0
+        return taylor_at2(z)
 
     if rz < 0 and -smallimag <= iz and iz <= smallimag:
         # Reflection formula for loggamma; see Proposition 3.1. This
@@ -114,12 +115,9 @@ cdef inline double complex loggamma(double complex z) nogil:
         conjugated = 1
 
     if rz >= 0:
-        if absz < 1e-4:
-            # Use the Laurent expansion of Gamma. Use the bound 1e-4
-            # because the singular term in the Laurent expansion is
-            # O(1/z), so dropping the quadratic term should have no
-            # effect to double precision.
-            logterm = zlog(1.0/z - EULMASCH + LAURENTZ*z)
+        if absz < 1e-2:
+            # Close to the singularity; use the Laurent series
+            logterm = laurent(z)
         elif absz >= smallz:
             logterm = asymptotic_series(z)
         else:
@@ -145,7 +143,8 @@ cdef inline double complex loggamma(double complex z) nogil:
 
 
 cdef inline double complex shift(double complex z) nogil:
-    """Given z < 0, find shiftz so that Re(shiftz) is in [-0.5, 0.5] and
+    """
+    Given z < 0, find shiftz so that Re(shiftz) is in [-0.5, 0.5] and
     sin(pi*shiftz) = sin(pi*z).
 
     """
@@ -165,7 +164,8 @@ cdef inline double complex shift(double complex z) nogil:
 
 
 cdef inline double find_m(double x) nogil:
-    """Find the smallest m = 2*j so that x <= m - 0.5. In theory m is an
+    """
+    Find the smallest m = 2*j so that x <= m - 0.5. In theory m is an
     integer, make it a double to avoid overflow.
 
     """
@@ -189,7 +189,8 @@ cdef inline int imag_sgncmp(double complex z1, double complex z2) nogil:
 @cython.cdivision(True)
 cdef inline double complex recurrence(double complex z, double complex
                                       init, int n, int s) nogil:
-    """Forward recursion if s = 1 and backward recursion if s = -1. See
+    """
+    Forward recursion if s = 1 and backward recursion if s = -1. See
     Proposition 2.2.
 
     """
@@ -218,9 +219,9 @@ cdef inline double complex recurrence(double complex z, double complex
 
 @cython.cdivision(True)
 cdef inline double complex asymptotic_series(double complex z) nogil:
-    # The Bernoulli numbers B_2k for 1 <= k <= 16.
     cdef:
         int n = 1
+        # The Bernoulli numbers B_2k for 1 <= k <= 16.
         double *bernoulli2k = [0.166666666666666667,
                                -0.0333333333333333333,
                                0.0238095238095238095,
@@ -245,4 +246,96 @@ cdef inline double complex asymptotic_series(double complex z) nogil:
     for n in range(2, 17):
         coeff *= rsqz
         res += coeff*bernoulli2k[n-1]/(2*n*(2*n - 1))
+    return res
+
+
+@cython.cdivision(True)
+cdef inline double complex taylor_at1(double complex z) nogil:
+    """Taylor series around z = 1."""
+    cdef:
+        int n
+        # First 18 coefficients of the Taylor series at 1; lets us use
+        # a radius of 0.2.
+        double *coeffs = [-0.577215664901533,
+                          0.822467033424113,
+                          -0.400685634386531,
+                          0.270580808427785,
+                          -0.207385551028674,
+                          0.169557176997408,
+                          -0.144049896768846,
+                          0.125509669524743,
+                          -0.111334265869565,
+                          0.100099457512782,
+                          -0.090954017145829,
+                          0.083353840546109,
+                          -0.0769325164113522,
+                          0.0714329462953613,
+                          -0.0666687058824205,
+                          0.062500955141213,
+                          -0.0588239786586846,
+                          0.0555557676274036]
+        double complex zfac = 1
+        double complex res = 0
+
+    z = z - 1
+    for n in xrange(1, 19):
+        zfac *= z
+        res += coeffs[n-1]*zfac
+    return res
+
+
+@cython.cdivision(True)
+cdef inline double complex taylor_at2(double complex z) nogil:
+    """Taylor series around z = 2."""
+    cdef:
+        int n
+        # First 12 coefficients of the Taylor series at 2; lets us use
+        # a radius of 0.2.
+        double *coeffs = [0.422784335098467,
+                          0.322467033424113,
+                          -0.0673523010531981,
+                          0.0205808084277845,
+                          -0.00738555102867398,
+                          0.00289051033074152,
+                          -0.00119275391170326,
+                          0.000509669524743042,
+                          -0.000223154758453579,
+                          9.94575127818085e-5,
+                          -4.49262367381331e-5,
+                          2.05072127756707e-5]
+        double complex zfac = 1
+        double complex res = 0
+
+    z = z - 2
+    for n in xrange(1, 13):
+        zfac *= z
+        res += coeffs[n-1]*zfac
+    return res
+
+
+@cython.cdivision(True)
+cdef inline double complex laurent(double complex z) nogil:
+    """
+    Laurent series around z = 0. We take the singular term to be
+    log(z), so the z**n coefficients aren't exactly the coefficients
+    of the Laurent series.
+
+    """
+    cdef:
+        int n 
+        # First seven coefficients of nonsingular terms; lets us take
+        # a radius of 1e-2.
+        double *coeffs = [-0.577215664901533,
+                          0.822467033424113,
+                          -0.400685634386531,
+                          0.270580808427784,
+                          -0.207385551028674,
+                          0.169557176997408,
+                          -0.144049896768846]
+        double complex zfac = 1
+        double complex res = -zlog(z)
+
+    for n in xrange(1, 8):
+        zfac *= z
+        res += coeffs[n-1]*zfac
     return res

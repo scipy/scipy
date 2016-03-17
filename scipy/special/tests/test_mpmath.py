@@ -320,6 +320,59 @@ def test_beta():
 
 
 # ------------------------------------------------------------------------------
+# loggamma
+# ------------------------------------------------------------------------------
+
+def test_loggamma_taylor1():
+    """
+    Make sure there isn't a big jump in accuracy when we move from
+    using the Taylor series around 1 to using the recurrence relation.
+
+    """
+    diffs = np.array([0.19, 0.21, -0.19, -0.21,
+                      0.19j, 0.21j, -0.19j, -0.21j])
+    pts = diffs + 1
+    dataset = []
+    for p in pts:
+        dataset.append((p, complex(mpmath.loggamma(p))))
+    dataset = np.array(dataset)
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+
+
+def test_loggamma_taylor2():
+    """
+    Make sure there isn't a big jump in accuracy when we move from
+    using the Taylor series around 2 to using the recurrence relation.
+
+    """
+    diffs = np.array([0.19, 0.21, -0.19, -0.21,
+                      0.19j, 0.21j, -0.19j, -0.21j])
+    pts = diffs + 2
+    dataset = []
+    for p in pts:
+        dataset.append((p, complex(mpmath.loggamma(p))))
+    dataset = np.array(dataset)
+    print(dataset[:,1])
+    print(sc.loggamma(dataset[:,0]))
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+
+
+def test_loggamma_laurent():
+    """
+    Make sure there isn't a big jump in accuracy when we move from
+    using the Laurent series to using the recurrence relation.
+
+    """
+    pts = np.array([0.009, 0.011, -0.009, -0.011,
+                      0.009j, 0.011j, -0.009j, -0.011j])
+    dataset = []
+    for p in pts:
+        dataset.append((p, complex(mpmath.loggamma(p))))
+    dataset = np.array(dataset)
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()    
+
+
+# ------------------------------------------------------------------------------
 # Machinery for systematic tests
 # ------------------------------------------------------------------------------
 
@@ -1532,20 +1585,17 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             n=100)
 
     def test_loggamma_real(self):
-        # loggamma has a branch cut on the negative real axis; make
-        # sure things work in that delicate region. The tolerances are
-        # larger than in the complex test because this test has more
-        # coverage in the region where x is slightly bigger than 1e-4
-        # where we can't use the Laurent series and the recurence
-        # relation isn't accurate enough.
+        # Tolerances are larger than in the complex test because this
+        # test has more coverage in the region between the zeros at 1
+        # and 2.
         assert_mpmath_equal(sc.loggamma,
                             _exception_to_nan(lambda x: mpmath.loggamma(x, **HYPERKW)),
-                            [Arg()], atol=1e-11, rtol=1e-11)
+                            [Arg()], rtol=1e-12)
 
     def test_loggamma_complex(self):
         assert_mpmath_equal(sc.loggamma,
                             _exception_to_nan(lambda z: mpmath.loggamma(z, **HYPERKW)),
-                            [ComplexArg()], atol=1e-14, rtol=1e-14)
+                            [ComplexArg()], rtol=1e-13)
 
     @knownfailure_overridable()
     def test_pcfd(self):
