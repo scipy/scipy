@@ -151,6 +151,11 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
     tolil.__doc__ = spmatrix.tolil.__doc__
 
+    def tofastlil(self):
+
+        from .fast_lil import fast_lil_matrix
+        return fast_lil_matrix(self)
+
     def tocsr(self, copy=False):
         if copy:
             return self.copy()

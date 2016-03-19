@@ -10,6 +10,8 @@ Library:
         csgraph
     Extension: _csparsetools
         Sources: _csparsetools.c
+    Extension: _fastlil
+        Sources: _fastlil.cxx
     Extension: _sparsetools
         Sources:
             sparsetools/sparsetools.cxx,

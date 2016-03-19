@@ -66,6 +66,7 @@ Identifying sparse matrices:
    isspmatrix_csr
    isspmatrix_bsr
    isspmatrix_lil
+   isspmatrix_fast_lil
    isspmatrix_dok
    isspmatrix_coo
    isspmatrix_dia
@@ -98,17 +99,18 @@ There are seven available sparse matrix types:
     2. csr_matrix: Compressed Sparse Row format
     3. bsr_matrix: Block Sparse Row format
     4. lil_matrix: List of Lists format
+    5. fast_lil_matrix: Efficient row-based format
     5. dok_matrix: Dictionary of Keys format
     6. coo_matrix: COOrdinate format (aka IJV, triplet format)
     7. dia_matrix: DIAgonal format
 
-To construct a matrix efficiently, use either dok_matrix or lil_matrix.
-The lil_matrix class supports basic slicing and fancy
+To construct a matrix efficiently, use fast_lil_matrix.
+The fast_lil_matrix class supports basic slicing and fancy
 indexing with a similar syntax to NumPy arrays.  As illustrated below,
 the COO format may also be used to efficiently construct matrices.
 
 To perform manipulations such as multiplication or inversion, first
-convert the matrix to either CSC or CSR format. The lil_matrix format is
+convert the matrix to either CSC or CSR format. The fast_lil_matrix format is
 row-based, so conversion to CSR is efficient, whereas conversion to CSC
 is less so.
 
@@ -142,12 +144,12 @@ Example 1
 ---------
 Construct a 1000x1000 lil_matrix and add some values to it:
 
->>> from scipy.sparse import lil_matrix
+>>> from scipy.sparse import fast_lil_matrix
 >>> from scipy.sparse.linalg import spsolve
 >>> from numpy.linalg import solve, norm
 >>> from numpy.random import rand
 
->>> A = lil_matrix((1000, 1000))
+>>> A = fast_lil_matrix((1000, 1000))
 >>> A[0, :100] = rand(100)
 >>> A[1, 100:200] = A[0, :100]
 >>> A.setdiag(rand(1000))
@@ -214,6 +216,7 @@ from .base import *
 from .csr import *
 from .csc import *
 from .lil import *
+from .fast_lil import *
 from .dok import *
 from .coo import *
 from .dia import *

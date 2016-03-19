@@ -44,7 +44,8 @@ _formats = {'csc':[0, "Compressed Sparse Column"],
             'jad':[16, "JAgged Diagonal"],
             'uss':[17, "Unsymmetric Sparse Skyline"],
             'vbr':[18, "Variable Block Row"],
-            'und':[19, "Undefined"]
+            'und':[19, "Undefined"],
+            'fastlil':[20, "Fast LInked List"],
             }
 
 
@@ -709,6 +710,15 @@ class spmatrix(object):
         the resultant lil_matrix.
         """
         return self.tocsr(copy=False).tolil(copy=copy)
+
+    def tofastlil(self, copy=False):
+        """Convert this matrix to Fast LInked List format.
+
+        With copy=False, the data/indices may be shared between this matrix and
+        the resultant lil_matrix.
+        """
+
+        return self.tocsr(copy=False).tofastlil()
 
     def todia(self, copy=False):
         """Convert this matrix to sparse DIAgonal format.

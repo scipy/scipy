@@ -18,6 +18,8 @@ def configuration(parent_package='',top_path=None):
 
     config.add_extension('_csparsetools',
                          sources=['_csparsetools.c'])
+    config.add_extension('_fastlil',
+                         sources=['_fastlil.cxx'])
 
     def get_sparsetools_sources(ext, build_dir):
         # Defer generation of source files

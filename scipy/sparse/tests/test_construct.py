@@ -12,7 +12,7 @@ from scipy.sparse import csr_matrix, coo_matrix
 from scipy.sparse import construct
 from scipy.sparse.construct import rand as sprand
 
-sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
+sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok', 'fastlil']
 
 #TODO check whether format=XXX is respected
 
