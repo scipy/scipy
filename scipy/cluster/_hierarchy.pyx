@@ -385,7 +385,7 @@ cdef from_pointer_representation(double[:, :] Z, double[:] Lambda, int[:] Pi,
         The number of observations.
     """
     cdef int i, current_leaf, pi
-    cdef np.intp_t[:] sorted_idx = np.argsort(Lambda)
+    cdef np.intp_t[:] sorted_idx = np.argsort(Lambda, kind='merge')
     cdef int[:] node_ids = np.ndarray(n, dtype=np.intc)
 
     for i in range(n):
