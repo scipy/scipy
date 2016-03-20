@@ -432,7 +432,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         convergence.
     """
     if 'ftol' in unknown_options:
-        warnings.warn("ftol is deprecated for _minimize_neldermead,"
+        warnings.warn("ftol is deprecated for Nelder-Mead,"
                       " use fatol instead. If you specified both, only"
                       " fatol is used.",
                       DeprecationWarning)
@@ -442,7 +442,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             fatol = unknown_options['ftol']
         unknown_options.pop('ftol')
     if 'xtol' in unknown_options:
-        warnings.warn("xtol is deprecated for _minimize_neldermead,"
+        warnings.warn("xtol is deprecated for Nelder-Mead,"
                       " use xatol instead. If you specified both, only"
                       " xatol is used.",
                       DeprecationWarning)
