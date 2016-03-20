@@ -31,8 +31,8 @@ cdef inline double complex loggamma(double complex z) nogil:
     reflection formula.
     - If z has negative imaginary part, conjugate it and use the
     relation loggamma(z*)* = loggamma(z)
-    - If abs(z) is very small, take the log of the Laurent series for
-    Gamma around the origin.
+    - If abs(z) is very small, expand loggamma in a series around the
+    origin which splits out the logarithmic singularity.
     - If abs(z) is large, use an asymptotic series.
     - Else use a recurrence relation to make z larger and then use
     the asymptotic series.
@@ -116,8 +116,7 @@ cdef inline double complex loggamma(double complex z) nogil:
 
     if rz >= 0:
         if absz < 1e-2:
-            # Close to the singularity; use the Laurent series
-            logterm = laurent(z)
+            logterm = logseries(z)
         elif absz >= smallz:
             logterm = asymptotic_series(z)
         else:
@@ -314,17 +313,16 @@ cdef inline double complex taylor_at2(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex laurent(double complex z) nogil:
+cdef inline double complex logseries(double complex z) nogil:
     """
-    Laurent series around z = 0. We take the singular term to be
-    log(z), so the z**n coefficients aren't exactly the coefficients
-    of the Laurent series.
+    Expand loggamma in a series of the form
+
+    -log(z) + c1*z + c2*z**2 + c3*z**3 + ...
 
     """
     cdef:
         int n 
-        # First seven coefficients of nonsingular terms; lets us take
-        # a radius of 1e-2.
+        # First seven coefficients; lets us take a radius of 1e-2.
         double *coeffs = [-0.577215664901533,
                           0.822467033424113,
                           -0.400685634386531,

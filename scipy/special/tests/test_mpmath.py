@@ -357,10 +357,10 @@ def test_loggamma_taylor2():
     FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
 
 
-def test_loggamma_laurent():
+def test_loggamma_logseries():
     """
     Make sure there isn't a big jump in accuracy when we move from
-    using the Laurent series to using the recurrence relation.
+    using the series at 0 to using the recurrence relation.
 
     """
     pts = np.array([0.009, 0.011, -0.009, -0.011,
@@ -1200,6 +1200,13 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(
                                 lambda z, b: mpmath.gammainc(z, b=b)/mpmath.gamma(z)),
                             [Arg(a=0), Arg(a=0)])
+
+    def test_gammaln(self):
+        # The real part of loggamma is log(|gamma(z)|).
+        def f(z):
+            return mpmath.loggamma(z).real
+
+        assert_mpmath_equal(sc.gammaln, _exception_to_nan(f), [Arg()])
 
     @knownfailure_overridable()
     def test_gegenbauer(self):
