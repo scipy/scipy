@@ -202,6 +202,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     See also
     --------
     scipy.signal.firwin2
+    scipy.signal.firls
 
     Examples
     --------
@@ -370,6 +371,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0,
     See also
     --------
     scipy.signal.firwin
+    scipy.signal.firls
 
     Notes
     -----
@@ -596,7 +598,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
                            maxiter, grid_density)
 
 
-def firls(numtaps, bands, desired, weight=None, Hz=1):
+def firls(numtaps, bands, desired, weight=None, nyq=1.):
     """
     FIR filter design using least-squares error minimization.
 
@@ -619,59 +621,90 @@ def firls(numtaps, bands, desired, weight=None, Hz=1):
     weight : array_like, optional
         A relative weighting to give to each band region. The length of
         `weight` has to be half the length of `bands`.
-    Hz : scalar, optional
-        The sampling frequency in Hz. Default is 1.
+    nyq : float, optional
+        Nyquist frequency.  Each frequency in `bands` must be between 0
+        and `nyq`.
 
     Returns
     -------
-    out : ndarray
-        A rank-1 array containing the coefficients of the optimal
-        (in a least squares sense) filter.
+    coeffs : ndarray
+        Coefficients of the optimal (in a least squares sense) FIR filter.
 
-    Example
-    -------
+    See also
+    --------
+    scipy.signal.firwin
+    scipy.signal.firwin2
+
+    Examples
+    --------
     We want to construct a filter with a passband at 0.2-0.3 Hz, and
     stop bands at 0-0.1 Hz and 0.4-0.5 Hz. Note that this means that the
     behavior in the frequency ranges between those bands is unspecified and
-    may overshoot.
+    may overshoot::
+
     >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
     >>> bpass = signal.firls(71, [0, 0.1, 0.2, 0.3, 0.4, 0.5], [0, 1, 0])
     >>> freq, response = signal.freqz(bpass)
     >>> ampl = np.abs(response)
-    >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax1 = fig.add_subplot(111)
     >>> ax1.semilogy(freq/(2*np.pi), ampl, 'b-')  # freq in Hz
     >>> plt.show()
+
+    Notes
+    -----
+    This function constructs a Type I linear phase FIR filter, which contains
+    an odd number of `coeffs` satisfying for :math:`n < numtaps`:
+
+    .. math:: coeffs(n) = coeffs(numtaps - 1 - n)
+
+    The odd number of coefficients avoids a boundary condition at the
+    Nyquist frequency that would occur with an even number of coefficients.
+
+    .. versionadded:: 0.18
     """
     if numtaps % 2 == 0:
         raise ValueError("numtaps must be odd.")
-    L = (numtaps-1)//2
+    L = (numtaps-1) // 2
 
     # normalize bands and make it 2 columns
-    bands = np.asarray(bands).flatten()/Hz
-    if len(bands) % 2 == 1:
+    nyq = float(nyq)
+    bands = np.asarray(bands).flatten() / (2 * nyq)
+    if len(bands) % 2 != 0:
         raise ValueError("bands must contain frequency pairs.")
-    bands = bands.reshape(-1,2)
+    bands.shape = (-1, 2)
 
     # check remaining params
+    desired = np.asarray(desired).flatten()
     if len(bands) != len(desired):
-        raise ValueError("desired must have one entry per band.")
+        raise ValueError("desired must have one entry per band, got %s "
+                         "entries for %s bands." % (len(desired), len(bands)))
+    if (np.diff(bands) < 0).any():
+        raise ValueError("bands must be monotonically nondecreasing")
+    if (desired < 0).any():
+        raise ValueError("desired gains must be non-negative")
     if weight is None:
         weight = np.ones_like(desired)
+    weight = np.asarray(weight).flatten()
+    if len(weight) != len(desired):
+        raise ValueError("weight must be the same size as desired")
+    if (weight < 0).any():
+        raise ValueError("weight must be non-negative")
 
     # set up the linear matrix equation to be solved, Ax = b
     k = np.arange(L+1)[np.newaxis]
     m = k.T
-    A,b = 0,0
-    for i, (f0,f1) in enumerate(bands):
-        Ai = f1 * (sinc(2*(m+k)*f1) + sinc(2*(m-k)*f1)) \
-           - f0 * (sinc(2*(m+k)*f0) + sinc(2*(m-k)*f0))
+    A = 0
+    b = 0
+    for i, (f0, f1) in enumerate(bands):
+        Ai = (f1 * (sinc(2*(m+k)*f1) + sinc(2*(m-k)*f1)) -
+              f0 * (sinc(2*(m+k)*f0) + sinc(2*(m-k)*f0)))
         bi = desired[i] * (2*f1*sinc(2*m*f1) - 2*f0*sinc(2*m*f0))
-        A += Ai * abs(weight[i]**2)
-        b += bi * abs(weight[i]**2)
+        A += Ai * weight[i]
+        b += bi * weight[i]
 
     # solve and return
-    x = np.linalg.solve(A,b).squeeze()
-    h = np.hstack((x[:0:-1]/2, x[0], x[1:]/2))
-    return h
+    x = np.linalg.solve(A, b).squeeze()
+    coeffs = np.hstack((x[:0:-1]/2, x[0], x[1:]/2))
+    return coeffs

@@ -78,6 +78,7 @@ Filter design
    bilinear      -- Digital filter from an analog filter using
                     -- the bilinear transform.
    findfreqs     -- Find array of frequencies for computing filter response.
+   firls         -- FIR filter design using least-squares error minimization.
    firwin        -- Windowed FIR filter design, with frequency response
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
