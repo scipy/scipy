@@ -17,7 +17,7 @@ import itertools
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
                            assert_, TestCase, run_module_suite, dec,
-                           assert_almost_equal)
+                           assert_almost_equal, assert_warns)
 
 from scipy._lib._testutils import suppressed_stdout
 from scipy import optimize
@@ -418,6 +418,18 @@ class CheckOptimizeParameterized(CheckOptimize):
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
+
+
+def test_neldermead_xatol_fatol():
+    # gh4484
+    # test we can call with fatol, xatol specified
+    func = lambda x: x[0]**2 + x[1]**2
+
+    optimize._minimize._minimize_neldermead(func, [1, 1], maxiter=2,
+                                            xatol=1e-3, fatol=1e-3)
+    assert_warns(DeprecationWarning,
+                 optimize._minimize._minimize_neldermead,
+                 func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
 
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):

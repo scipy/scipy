@@ -311,9 +311,11 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     args : tuple, optional
         Extra arguments passed to func, i.e. ``f(x,*args)``.
     xtol : float, optional
-        Relative error in xopt acceptable for convergence.
+        Absolute error in xopt between iterations that is acceptable for
+        convergence.
     ftol : number, optional
-        Relative error in func(xopt) acceptable for convergence.
+        Absolute error in func(xopt) between iterations that is acceptable for
+        convergence.
     maxiter : int, optional
         Maximum number of iterations to perform.
     maxfun : number, optional
@@ -365,7 +367,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     performance in high-dimensional problems and is not robust to
     minimizing complicated functions. Additionally, there currently is no
     complete theory describing when the algorithm will successfully
-    converge to the minimum, or how fast it will if it does.
+    converge to the minimum, or how fast it will if it does. Both the ftol and
+    xtol criteria must be met for convergence.
 
     References
     ----------
@@ -379,8 +382,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
            Harlow, UK, pp. 191-208.
 
     """
-    opts = {'xtol': xtol,
-            'ftol': ftol,
+    opts = {'xatol': xtol,
+            'fatol': ftol,
             'maxiter': maxiter,
             'maxfev': maxfun,
             'disp': disp,
@@ -401,9 +404,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 
 def _minimize_neldermead(func, x0, args=(), callback=None,
-                         xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
-                         disp=False, return_all=False, initial_simplex=None,
-                         **unknown_options):
+                         maxiter=None, maxfev=None, disp=False,
+                         return_all=False, initial_simplex=None,
+                         xatol=1e-4, fatol=1e-4, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -412,10 +415,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     -------
     disp : bool
         Set to True to print convergence messages.
-    xtol : float
-        Relative error in solution `xopt` acceptable for convergence.
-    ftol : float
-        Relative error in ``fun(xopt)`` acceptable for convergence.
     maxiter : int
         Maximum number of iterations to perform.
     maxfev : int
@@ -425,8 +424,34 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         ``initial_simplex[j,:]`` should contain the coordinates of
         the j-th vertex of the ``N+1`` vertices in the simplex, where
         ``N`` is the dimension.
-
+    xatol : float, optional
+        Absolute error in xopt between iterations that is acceptable for
+        convergence.
+    fatol : number, optional
+        Absolute error in func(xopt) between iterations that is acceptable for
+        convergence.
     """
+    if 'ftol' in unknown_options:
+        warnings.warn("ftol is deprecated for Nelder-Mead,"
+                      " use fatol instead. If you specified both, only"
+                      " fatol is used.",
+                      DeprecationWarning)
+        if (np.isclose(fatol, 1e-4) and
+                not np.isclose(unknown_options['ftol'], 1e-4)):
+            # only ftol was probably specified, use it.
+            fatol = unknown_options['ftol']
+        unknown_options.pop('ftol')
+    if 'xtol' in unknown_options:
+        warnings.warn("xtol is deprecated for Nelder-Mead,"
+                      " use xatol instead. If you specified both, only"
+                      " xatol is used.",
+                      DeprecationWarning)
+        if (np.isclose(xatol, 1e-4) and
+                not np.isclose(unknown_options['xtol'], 1e-4)):
+            # only xtol was probably specified, use it.
+            xatol = unknown_options['xtol']
+        unknown_options.pop('xtol')
+
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
@@ -484,8 +509,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     iterations = 1
 
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xtol and
-                numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= ftol):
+        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xatol and
+                numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= fatol):
             break
 
         xbar = numpy.add.reduce(sim[:-1], 0) / N
