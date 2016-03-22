@@ -4,11 +4,33 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal, TestCase,
-                           run_module_suite, assert_equal)
-from scipy.odr import Data, Model, ODR, RealData, odr_stop
+                           run_module_suite, assert_equal, assert_warns)
+from scipy.odr import Data, Model, ODR, RealData, OdrStop, OdrWarning
 
 
 class TestODR(TestCase):
+
+    # Bad Data for 'x'
+
+    def test_bad_data(self):
+        self.assertRaises(ValueError, Data, 2, 1)
+        self.assertRaises(ValueError, RealData, 2, 1)
+
+    # Empty Data for 'x'
+    def empty_data_func(self, B, x):
+        return B[0]*x + B[1]
+
+    def test_empty_data(self):
+        beta0 = [0.02, 0.0]
+        linear = Model(self.empty_data_func)
+
+        empty_dat = Data([], [])
+        assert_warns(OdrWarning, ODR,
+                     empty_dat, linear, beta0=beta0)
+
+        empty_dat = RealData([], [])
+        assert_warns(OdrWarning, ODR,
+                     empty_dat, linear, beta0=beta0)
 
     # Explicit Example
 
@@ -122,7 +144,7 @@ class TestODR(TestCase):
 
     def multi_fcn(self, B, x):
         if (x < 0.0).any():
-            raise odr_stop
+            raise OdrStop
         theta = pi*B[3]/2.
         ctheta = np.cos(theta)
         stheta = np.sin(theta)
