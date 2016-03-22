@@ -60,7 +60,8 @@ def _read_fmt_chunk(fid, is_big_endian):
             bytes_read += 22
             raw_guid = extensible_chunk_data[2+4:2+4+16]
             # GUID template {XXXXXXXX-0000-0010-8000-00AA00389B71} (RFC-2361)
-            # MS GUID byte order: first three groups are native byte order, rest is Big Endian
+            # MS GUID byte order: first three groups are native byte order,
+            # rest is Big Endian
             if is_big_endian:
                 tail = b'\x00\x00\x00\x10\x80\x00\x00\xAA\x00\x38\x9B\x71'
             else:
@@ -72,7 +73,7 @@ def _read_fmt_chunk(fid, is_big_endian):
 
     if comp not in KNOWN_WAVE_FORMATS:
         raise ValueError("Unknown wave file format")
-        
+
     # move file pointer to next chunk
     if size > (bytes_read):
         fid.read(size - bytes_read)
@@ -122,7 +123,7 @@ def _skip_unknown_chunk(fid, is_big_endian):
 
     data = fid.read(4)
     # call unpack() and seek() only if we have really read data from file
-    # otherwise empty read at the end of the file would trigger 
+    # otherwise empty read at the end of the file would trigger
     # unnecessary exception at unpack() call
     # in case data equals somehow to 0, there is no need for seek() anyway
     if data:
@@ -200,7 +201,8 @@ def read(filename, mmap=False):
             chunk_id = fid.read(4)
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
-                size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid, is_big_endian=is_big_endian)
+                size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(
+                                        fid, is_big_endian=is_big_endian)
                 if bits not in (8, 16, 32, 64, 128):
                     raise ValueError("Unsupported bit depth: the wav file "
                                      "has {}-bit data.".format(bits))
@@ -209,7 +211,8 @@ def read(filename, mmap=False):
             elif chunk_id == b'data':
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
-                data = _read_data_chunk(fid, comp, noc, bits, is_big_endian=is_big_endian, mmap=mmap)
+                data = _read_data_chunk(fid, comp, noc, bits,
+                                        is_big_endian=is_big_endian, mmap=mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian=is_big_endian)
@@ -265,7 +268,7 @@ def write(filename, rate, data):
         if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and
                                                  data.dtype.itemsize == 1)):
             raise ValueError("Unsupported data type '%s'" % data.dtype)
-        
+
         header_data = b''
 
         header_data += b'RIFF'
@@ -285,13 +288,13 @@ def write(filename, rate, data):
         bits = data.dtype.itemsize * 8
         sbytes = rate*(bits // 8)*noc
         ba = noc * (bits // 8)
-        
+
         fmt_chunk_data = struct.pack('<HHIIHH', comp, noc, rate, sbytes,
                                      ba, bits)
         if not (dkind == 'i' or dkind == 'u'):
             # add cbSize field for non-PCM files
             fmt_chunk_data += b'\x00\x00'
-        
+
         header_data += struct.pack('<I', len(fmt_chunk_data))
         header_data += fmt_chunk_data
 
@@ -303,9 +306,9 @@ def write(filename, rate, data):
         # check data size (needs to be immediately before the data chunk)
         if ((len(header_data)-4-4) + (4+4+data.nbytes)) > 0xFFFFFFFF:
             raise ValueError("Data exceeds wave file size limit")
-        
+
         fid.write(header_data)
-        
+
         # data chunk
         fid.write(b'data')
         fid.write(struct.pack('<I', data.nbytes))
