@@ -113,7 +113,8 @@ if __name__ == '__main__':
         # LAPACK 3.4.0 through 3.6.0.
         # Also exclude routines with string arguments to avoid
         # compatibility woes with different standards for string arguments.
-        exclusions = [# Not included because people should be using the
+        exclusions = [
+                      # Not included because people should be using the
                       # C standard library function instead.
                       # sisnan is also not currently included in the
                       # ABI wrappers.
@@ -123,6 +124,61 @@ if __name__ == '__main__':
                       'slaneg',
                       # Excluded because they require Fortran string arguments.
                       'ilaenv', 'iparmq', 'lsamen', 'xerbla',
+                      # Exclude XBLAS routines since they aren't included
+                      # by default.
+                      'cgesvxx', 'dgesvxx', 'sgesvxx', 'zgesvxx',
+                      'cgerfsx', 'dgerfsx', 'sgerfsx', 'zgerfsx',
+                      'cla_gerfsx_extended', 'dla_gerfsx_extended',
+                      'sla_gerfsx_extended', 'zla_gerfsx_extended',
+                      'cla_geamv', 'dla_geamv', 'sla_geamv', 'zla_geamv',
+                      'dla_gercond', 'sla_gercond',
+                      'cla_gercond_c', 'zla_gercond_c',
+                      'cla_gercond_x', 'zla_gercond_x',
+                      'cla_gerpvgrw', 'dla_gerpvgrw',
+                      'sla_gerpvgrw', 'zla_gerpvgrw',
+                      'csysvxx', 'dsysvxx', 'ssysvxx', 'zsysvxx',
+                      'csyrfsx', 'dsyrfsx', 'ssyrfsx', 'zsyrfsx',
+                      'cla_syrfsx_extended', 'dla_syrfsx_extended',
+                      'sla_syrfsx_extended', 'zla_syrfsx_extended',
+                      'cla_syamv', 'dla_syamv', 'sla_syamv', 'zla_syamv',
+                      'dla_syrcond', 'sla_syrcond',
+                      'cla_syrcond_c', 'zla_syrcond_c',
+                      'cla_syrcond_x', 'zla_syrcond_x',
+                      'cla_syrpvgrw', 'dla_syrpvgrw',
+                      'sla_syrpvgrw', 'zla_syrpvgrw',
+                      'cposvxx', 'dposvxx', 'sposvxx', 'zposvxx',
+                      'cporfsx', 'dporfsx', 'sporfsx', 'zporfsx',
+                      'cla_porfsx_extended', 'dla_porfsx_extended',
+                      'sla_porfsx_extended', 'zla_porfsx_extended',
+                      'dla_porcond', 'sla_porcond',
+                      'cla_porcond_c', 'zla_porcond_c',
+                      'cla_porcond_x', 'zla_porcond_x',
+                      'cla_porpvgrw', 'dla_porpvgrw',
+                      'sla_porpvgrw', 'zla_porpvgrw',
+                      'cgbsvxx', 'dgbsvxx', 'sgbsvxx', 'zgbsvxx',
+                      'cgbrfsx', 'dgbrfsx', 'sgbrfsx', 'zgbrfsx',
+                      'cla_gbrfsx_extended', 'dla_gbrfsx_extended',
+                      'sla_gbrfsx_extended', 'zla_gbrfsx_extended',
+                      'cla_gbamv', 'dla_gbamv', 'sla_gbamv', 'zla_gbamv',
+                      'dla_gbrcond', 'sla_gbrcond',
+                      'cla_gbrcond_c', 'zla_gbrcond_c',
+                      'cla_gbrcond_x', 'zla_gbrcond_x',
+                      'cla_gbrpvgrw', 'dla_gbrpvgrw',
+                      'sla_gbrpvgrw', 'zla_gbrpvgrw',
+                      'chesvxx', 'zhesvxx',
+                      'cherfsx', 'zherfsx',
+                      'cla_herfsx_extended', 'zla_herfsx_extended',
+                      'cla_heamv', 'zla_heamv',
+                      'cla_hercond_c', 'zla_hercond_c',
+                      'cla_hercond_x', 'zla_hercond_x',
+                      'cla_herpvgrw', 'zla_herpvgrw',
+                      'sla_lin_berr', 'cla_lin_berr',
+                      'dla_lin_berr', 'zla_lin_berr',
+                      'clarscl2', 'dlarscl2', 'slarscl2', 'zlarscl2',
+                      'clascl2', 'dlascl2', 'slascl2', 'zlascl2',
+                      'cla_wwaddw', 'dla_wwaddw', 'sla_wwaddw', 'zla_wwaddw',
+                      # Removed between 3.3.1 and 3.4.0.
+                      'cla_rpvgrw', 'dla_rpvgrw', 'sla_rpvgrw', 'zla_rpvgrw',
                       # Signatures changed between 3.4.0 and 3.4.1.
                       'dlasq5', 'slasq5',
                       # Routines deprecated in LAPACK 3.6.0
