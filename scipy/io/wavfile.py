@@ -201,9 +201,9 @@ def read(filename, mmap=False):
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
                 size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid, is_big_endian=is_big_endian)
-                if bits == 24:
+                if bits not in (8, 16, 32, 64, 128):
                     raise ValueError("Unsupported bit depth: the wav file "
-                                     "has 24 bit data.")
+                                     "has {}-bit data.".format(bits))
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian=is_big_endian)
             elif chunk_id == b'data':
