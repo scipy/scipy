@@ -40,13 +40,14 @@ class Build(Benchmark):
         else:
             self.cls(self.data)
 
-LeafSize = [8, 128]
-BoxSize = [None, 1.0]
+LEAF_SIZES = [8, 128]
+BOX_SIZES = [None, 1.0]
+
 class Query(Benchmark):
     params = [
         [(3,10000,1000), (8,10000,1000), (16,10000,1000)],
         [1, 2, np.inf],
-        BoxSize, LeafSize,
+        BOX_SIZES, LEAF_SIZES,
     ]
     param_names = ['(m, n, r)', 'p', 'boxsize', 'leafsize']
 
@@ -77,7 +78,7 @@ class Radius(Benchmark):
         [(3,10000,1000)],
         [1, 2, np.inf],
         [0.2, 0.5],
-        BoxSize, LeafSize,
+        BOX_SIZES, LEAF_SIZES,
     ]
     param_names = ['(m, n, r)', 'p', 'probe radius', 'boxsize', 'leafsize']
 
@@ -104,7 +105,7 @@ class Neighbors(Benchmark):
          (16,1000,1000)],
         [1, 2, np.inf],
         [0.2, 0.5],
-        BoxSize, LeafSize,
+        BOX_SIZES, LEAF_SIZES,
     ]
     param_names = ['(m, n1, n2)', 'p', 'probe radius', 'boxsize', 'leafsize']
 
