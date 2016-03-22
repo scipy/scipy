@@ -14,6 +14,7 @@ the oldest supported version of LAPACK (currently 3.4.0).
 """
 
 import glob
+import os
 from numpy.f2py import crackfortran
 
 sig_types = {'integer': 'int',
@@ -61,7 +62,7 @@ def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
         exclusions += [get_sig_name(l) for l in manual_wrappers.split('\n')]
     signatures = []
     for filename in files:
-        name = filename.split('\\')[-1][:-2]
+        name = os.path.basename(filename)[:-2]
         if name in exclusions:
             continue
         signatures.append(make_signature(filename))
