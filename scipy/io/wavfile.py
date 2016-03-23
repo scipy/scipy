@@ -60,7 +60,8 @@ def _read_fmt_chunk(fid, is_big_endian):
             bytes_read += 22
             raw_guid = extensible_chunk_data[2+4:2+4+16]
             # GUID template {XXXXXXXX-0000-0010-8000-00AA00389B71} (RFC-2361)
-            # MS GUID byte order: first three groups are native byte order, rest is Big Endian
+            # MS GUID byte order: first three groups are native byte order,
+            # rest is Big Endian
             if is_big_endian:
                 tail = b'\x00\x00\x00\x10\x80\x00\x00\xAA\x00\x38\x9B\x71'
             else:
@@ -72,7 +73,7 @@ def _read_fmt_chunk(fid, is_big_endian):
 
     if comp not in KNOWN_WAVE_FORMATS:
         raise ValueError("Unknown wave file format")
-        
+
     # move file pointer to next chunk
     if size > (bytes_read):
         fid.read(size - bytes_read)
@@ -122,7 +123,7 @@ def _skip_unknown_chunk(fid, is_big_endian):
 
     data = fid.read(4)
     # call unpack() and seek() only if we have really read data from file
-    # otherwise empty read at the end of the file would trigger 
+    # otherwise empty read at the end of the file would trigger
     # unnecessary exception at unpack() call
     # in case data equals somehow to 0, there is no need for seek() anyway
     if data:
@@ -150,11 +151,11 @@ def _read_riff_chunk(fid):
 
     return fsize, is_big_endian
 
-# open a wave-file
-
 
 def read(filename, mmap=False):
     """
+    Open a WAV file
+
     Return the sample rate (in samples/sec) and data from a WAV file.
 
     Parameters
@@ -162,7 +163,7 @@ def read(filename, mmap=False):
     filename : string or open file handle
         Input wav file.
     mmap : bool, optional
-        Whether to read data as memory mapped.
+        Whether to read data as memory-mapped.
         Only to be used on real files (Default: False).
 
         .. versionadded:: 0.12.0
@@ -170,17 +171,34 @@ def read(filename, mmap=False):
     Returns
     -------
     rate : int
-        Sample rate of wav file.
+        Sample rate of wav file as a Python integer.
     data : numpy array
-        Data read from wav file.
+        Data read from wav file.  Data-type is determined from the file;
+        see Notes.
 
     Notes
     -----
-    * The file can be an open file or a filename.
-    * The returned sample rate is a Python integer.
-    * The data is returned as a numpy array with a data-type determined
-      from the file.
-    * This function cannot read wav files with 24 bit data.
+    This function cannot read wav files with 24-bit data.
+
+    Common data types: [1]_
+
+    =====================  ===========  ===========  =============
+         WAV format            Min          Max       NumPy dtype
+    =====================  ===========  ===========  =============
+    32-bit floating-point  -1.0         +1.0         float32
+    32-bit PCM             -2147483648  +2147483647  int32
+    16-bit PCM             -32768       +32767       int16
+    8-bit PCM              0            255          uint8
+    =====================  ===========  ===========  =============
+
+    Note that 8-bit PCM is unsigned.
+
+    References
+    ----------
+    .. [1] IBM Corporation and Microsoft Corporation, "Multimedia Programming
+       Interface and Data Specifications 1.0", section "Data Format of the
+       Samples", August 1991
+       http://www-mmsp.ece.mcgill.ca/documents/audioformats/wave/Docs/riffmci.pdf
 
     """
     if hasattr(filename, 'read'):
@@ -200,7 +218,8 @@ def read(filename, mmap=False):
             chunk_id = fid.read(4)
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
-                size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(fid, is_big_endian=is_big_endian)
+                size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(
+                                        fid, is_big_endian=is_big_endian)
                 if bits not in (8, 16, 32, 64, 128):
                     raise ValueError("Unsupported bit depth: the wav file "
                                      "has {}-bit data.".format(bits))
@@ -209,7 +228,8 @@ def read(filename, mmap=False):
             elif chunk_id == b'data':
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
-                data = _read_data_chunk(fid, comp, noc, bits, is_big_endian=is_big_endian, mmap=mmap)
+                data = _read_data_chunk(fid, comp, noc, bits,
+                                        is_big_endian=is_big_endian, mmap=mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian=is_big_endian)
@@ -228,9 +248,6 @@ def read(filename, mmap=False):
 
     return rate, data
 
-# Write a wave-file
-# sample rate, data
-
 
 def write(filename, rate, data):
     """
@@ -247,12 +264,30 @@ def write(filename, rate, data):
 
     Notes
     -----
-    * The file can be an open file or a filename.
-
     * Writes a simple uncompressed WAV file.
-    * The bits-per-sample will be determined by the data-type.
     * To write multiple-channels, use a 2-D array of shape
       (Nsamples, Nchannels).
+    * The bits-per-sample and PCM/float will be determined by the data-type.
+
+    Common data types: [1]_
+
+    =====================  ===========  ===========  =============
+         WAV format            Min          Max       NumPy dtype
+    =====================  ===========  ===========  =============
+    32-bit floating-point  -1.0         +1.0         float32
+    32-bit PCM             -2147483648  +2147483647  int32
+    16-bit PCM             -32768       +32767       int16
+    8-bit PCM              0            255          uint8
+    =====================  ===========  ===========  =============
+
+    Note that 8-bit PCM is unsigned.
+
+    References
+    ----------
+    .. [1] IBM Corporation and Microsoft Corporation, "Multimedia Programming
+       Interface and Data Specifications 1.0", section "Data Format of the
+       Samples", August 1991
+       http://www-mmsp.ece.mcgill.ca/documents/audioformats/wave/Docs/riffmci.pdf
 
     """
     if hasattr(filename, 'write'):
@@ -265,7 +300,7 @@ def write(filename, rate, data):
         if not (dkind == 'i' or dkind == 'f' or (dkind == 'u' and
                                                  data.dtype.itemsize == 1)):
             raise ValueError("Unsupported data type '%s'" % data.dtype)
-        
+
         header_data = b''
 
         header_data += b'RIFF'
@@ -285,13 +320,13 @@ def write(filename, rate, data):
         bits = data.dtype.itemsize * 8
         sbytes = rate*(bits // 8)*noc
         ba = noc * (bits // 8)
-        
+
         fmt_chunk_data = struct.pack('<HHIIHH', comp, noc, rate, sbytes,
                                      ba, bits)
         if not (dkind == 'i' or dkind == 'u'):
             # add cbSize field for non-PCM files
             fmt_chunk_data += b'\x00\x00'
-        
+
         header_data += struct.pack('<I', len(fmt_chunk_data))
         header_data += fmt_chunk_data
 
@@ -303,9 +338,9 @@ def write(filename, rate, data):
         # check data size (needs to be immediately before the data chunk)
         if ((len(header_data)-4-4) + (4+4+data.nbytes)) > 0xFFFFFFFF:
             raise ValueError("Data exceeds wave file size limit")
-        
+
         fid.write(header_data)
-        
+
         # data chunk
         fid.write(b'data')
         fid.write(struct.pack('<I', data.nbytes))
