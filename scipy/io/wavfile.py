@@ -135,15 +135,15 @@ def _read_riff_chunk(fid):
     str1 = fid.read(4)
     if str1 == b'RIFF':
         is_big_endian = False
+        fmt = '<I'
     elif str1 == b'RIFX':
         is_big_endian = True
-    else:
-        raise ValueError("Not a WAV file.")
-
-    if is_big_endian:
         fmt = '>I'
     else:
-        fmt = '<I'
+        # There are also .wav files with "FFIR" or "XFIR" signatures?
+        raise ValueError("File format {}... not "
+                         "understood.".format(repr(str1)))
+
     fsize = struct.unpack(fmt, fid.read(4))[0] + 8
     str2 = fid.read(4)
     if (str2 != b'WAVE'):
