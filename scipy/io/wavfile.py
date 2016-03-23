@@ -42,6 +42,7 @@ def _read_fmt_chunk(fid, is_big_endian):
     else:
         fmt = '<'
 
+    # size of the rest of this subchunk
     size = res = struct.unpack(fmt+'I', fid.read(4))[0]
     bytes_read = 0
 
@@ -50,6 +51,12 @@ def _read_fmt_chunk(fid, is_big_endian):
 
     res = struct.unpack(fmt+'HHIIHH', fid.read(16))
     bytes_read += 16
+    # comp = compression format
+    # noc = number of channels
+    # rate = samples per second
+    # sbytes = bytes per second
+    # ba = block align = bytes per sample, including all channels
+    # bits = bits per sample
     comp, noc, rate, sbytes, ba, bits = res
 
     if comp == WAVE_FORMAT_EXTENSIBLE and size >= (16+2):
@@ -88,8 +95,11 @@ def _read_data_chunk(fid, comp, noc, bits, is_big_endian, mmap=False):
         fmt = '>I'
     else:
         fmt = '<I'
+
+    # Size of the data subchunk in bytes
     size = struct.unpack(fmt, fid.read(4))[0]
 
+    # Number of bytes per sample
     bytes = bits//8
     if bits == 8:
         dtype = 'u1'
@@ -98,7 +108,7 @@ def _read_data_chunk(fid, comp, noc, bits, is_big_endian, mmap=False):
             dtype = '>'
         else:
             dtype = '<'
-        if comp == 1:
+        if comp == WAVE_FORMAT_PCM:
             dtype += 'i%d' % bytes
         else:
             dtype += 'f%d' % bytes
@@ -132,7 +142,7 @@ def _skip_unknown_chunk(fid, is_big_endian):
 
 
 def _read_riff_chunk(fid):
-    str1 = fid.read(4)
+    str1 = fid.read(4)  # File signature
     if str1 == b'RIFF':
         is_big_endian = False
         fmt = '<I'
@@ -144,12 +154,14 @@ def _read_riff_chunk(fid):
         raise ValueError("File format {}... not "
                          "understood.".format(repr(str1)))
 
-    fsize = struct.unpack(fmt, fid.read(4))[0] + 8
+    # Size of entire file
+    file_size = struct.unpack(fmt, fid.read(4))[0] + 8
+
     str2 = fid.read(4)
     if (str2 != b'WAVE'):
         raise ValueError("Not a WAV file.")
 
-    return fsize, is_big_endian
+    return file_size, is_big_endian
 
 
 def read(filename, mmap=False):
@@ -208,12 +220,12 @@ def read(filename, mmap=False):
         fid = open(filename, 'rb')
 
     try:
-        fsize, is_big_endian = _read_riff_chunk(fid)
+        file_size, is_big_endian = _read_riff_chunk(fid)
         fmt_chunk_received = False
         noc = 1
         bits = 8
         comp = WAVE_FORMAT_PCM
-        while (fid.tell() < fsize):
+        while (fid.tell() < file_size):
             # read the next chunk
             chunk_id = fid.read(4)
             if chunk_id == b'fmt ':
