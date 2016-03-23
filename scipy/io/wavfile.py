@@ -218,28 +218,28 @@ def read(filename, mmap=False):
             chunk_id = fid.read(4)
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
-                size, comp, noc, rate, sbytes, ba, bits = _read_fmt_chunk(
-                                        fid, is_big_endian=is_big_endian)
+                fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
+                size, comp, noc, rate, sbytes, ba, bits = fmt_chunk
                 if bits not in (8, 16, 32, 64, 128):
                     raise ValueError("Unsupported bit depth: the wav file "
                                      "has {}-bit data.".format(bits))
             elif chunk_id == b'fact':
-                _skip_unknown_chunk(fid, is_big_endian=is_big_endian)
+                _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id == b'data':
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
-                data = _read_data_chunk(fid, comp, noc, bits,
-                                        is_big_endian=is_big_endian, mmap=mmap)
+                data = _read_data_chunk(fid, comp, noc, bits, is_big_endian,
+                                        mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
-                _skip_unknown_chunk(fid, is_big_endian=is_big_endian)
+                _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id in (b'JUNK', b'Fake'):
                 # Skip alignment chunks without warning
-                _skip_unknown_chunk(fid, is_big_endian=is_big_endian)
+                _skip_unknown_chunk(fid, is_big_endian)
             else:
                 warnings.warn("Chunk (non-data) not understood, skipping it.",
                               WavFileWarning)
-                _skip_unknown_chunk(fid, is_big_endian=is_big_endian)
+                _skip_unknown_chunk(fid, is_big_endian)
     finally:
         if not hasattr(filename, 'read'):
             fid.close()
