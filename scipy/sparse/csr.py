@@ -128,10 +128,19 @@ class csr_matrix(_cs_matrix, IndexMixin):
     """
     format = 'csr'
 
-    def transpose(self, copy=False):
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
+        M, N = self.shape
+
         from .csc import csc_matrix
-        M,N = self.shape
-        return csc_matrix((self.data,self.indices,self.indptr), shape=(N,M), copy=copy)
+        return csc_matrix((self.data, self.indices,
+                           self.indptr), shape=(N, M), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def tolil(self, copy=False):
         from .lil import lil_matrix

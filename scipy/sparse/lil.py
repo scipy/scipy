@@ -409,14 +409,33 @@ class lil_matrix(spmatrix, IndexMixin):
 
     copy.__doc__ = spmatrix.copy.__doc__
 
-    def reshape(self,shape):
+    def reshape(self, shape, order='C'):
+        if type(order) != str or order != 'C':
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'order' parameter."))
+
+        if type(shape) != tuple:
+            raise TypeError("a tuple must be passed in for 'shape'")
+
+        if len(shape) != 2:
+            raise ValueError("a length-2 tuple must be passed in for 'shape'")
+
         new = lil_matrix(shape, dtype=self.dtype)
         j_max = self.shape[1]
-        for i,row in enumerate(self.rows):
-            for col,j in enumerate(row):
-                new_r,new_c = np.unravel_index(i*j_max + j,shape)
-                new[new_r,new_c] = self[i,j]
+
+        # Size is ambiguous for sparse matrices, so in order to check 'total
+        # dimension', we need to take the product of their dimensions instead
+        if new.shape[0] * new.shape[1] != self.shape[0] * self.shape[1]:
+            raise ValueError("the product of the dimensions for the new sparse "
+                             "matrix must equal that of the original matrix")
+
+        for i, row in enumerate(self.rows):
+            for col, j in enumerate(row):
+                new_r, new_c = np.unravel_index(i*j_max + j, shape)
+                new[new_r, new_c] = self[i, j]
         return new
+
+    reshape.__doc__ = spmatrix.reshape.__doc__
 
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
@@ -426,8 +445,8 @@ class lil_matrix(spmatrix, IndexMixin):
                 d[i, j] = self.data[i][pos]
         return d
 
-    def transpose(self):
-        return self.tocsr().transpose().tolil()
+    def transpose(self, axes=None, copy=False):
+        return self.tocsr().transpose(axes=axes, copy=copy).tolil()
 
     def tolil(self, copy=False):
         if copy:

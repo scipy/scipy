@@ -475,25 +475,32 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
 
-    def transpose(self):
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
 
-        R,C = self.blocksize
-        M,N = self.shape
+        R, C = self.blocksize
+        M, N = self.shape
         NBLK = self.nnz//(R*C)
 
         if self.nnz == 0:
-            return bsr_matrix((N,M), blocksize=(C,R),
-                              dtype=self.dtype)
+            return bsr_matrix((N, M), blocksize=(C, R),
+                              dtype=self.dtype, copy=copy)
 
         indptr = np.empty(N//C + 1, dtype=self.indptr.dtype)
         indices = np.empty(NBLK, dtype=self.indices.dtype)
-        data = np.empty((NBLK,C,R), dtype=self.data.dtype)
+        data = np.empty((NBLK, C, R), dtype=self.data.dtype)
 
         bsr_transpose(M//R, N//C, R, C,
                       self.indptr, self.indices, self.data.ravel(),
                       indptr, indices, data.ravel())
 
-        return bsr_matrix((data,indices,indptr), shape=(N,M))
+        return bsr_matrix((data, indices, indptr),
+                          shape=(N, M), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #

@@ -553,16 +553,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Reduce operations #
     #####################
 
-    def sum(self, axis=None):
+    def sum(self, axis=None, dtype=None, out=None):
         """Sum the matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
         # The spmatrix base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
-        if axis is None:
-            return self.data.sum()
-        elif (not hasattr(self, 'blocksize') and
-              axis in self._swap(((1, -1), (0, 2)))[0]):
+        if (not hasattr(self, 'blocksize') and
+                    axis in self._swap(((1, -1), (0, 2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
             res_dtype = get_sum_dtype(self.dtype)
             ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
@@ -572,9 +570,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             ret = np.asmatrix(ret)
             if axis % 2 == 1:
                 ret = ret.T
-            return ret
+
+            if out is not None and out.shape != ret.shape:
+                raise ValueError('dimensions do not match')
+
+            return ret.sum(axis=(), dtype=dtype, out=out)
+        # spmatrix will handle the remaining situations when axis
+        # is in {None, -1, 0, 1}
         else:
-            return spmatrix.sum(self, axis)
+            return spmatrix.sum(self, axis=axis, dtype=dtype, out=out)
+
+    sum.__doc__ = spmatrix.sum.__doc__
 
     def _minor_reduce(self, ufunc):
         """Reduce nonzeros with a ufunc over the minor axis when non-empty

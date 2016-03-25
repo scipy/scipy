@@ -414,14 +414,21 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     # perhaps it should be the number of rows?  For now it returns the number
     # of non-zeros.
 
-    def transpose(self):
-        """ Return the transpose
-        """
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
         M, N = self.shape
-        new = dok_matrix((N, M), dtype=self.dtype)
+        new = dok_matrix((N, M), dtype=self.dtype, copy=copy)
+
         for key, value in iteritems(self):
             new[key[1], key[0]] = value
+
         return new
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def conjtransp(self):
         """ Return the conjugate transpose

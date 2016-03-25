@@ -736,6 +736,16 @@ class _TestCommon:
 
         assert_equal(A_nz, Asp_nz)
 
+    def test_numpy_nonzero(self):
+        # See gh-5987
+        A = array([[1, 0, 1], [0, 1, 1], [0, 0, 1]])
+        Asp = self.spmatrix(A)
+
+        A_nz = set([tuple(ij) for ij in transpose(np.nonzero(A))])
+        Asp_nz = set([tuple(ij) for ij in transpose(np.nonzero(Asp))])
+
+        assert_equal(A_nz, Asp_nz)
+
     def test_getrow(self):
         assert_array_equal(self.datsp.getrow(1).todense(), self.dat[1,:])
         assert_array_equal(self.datsp.getrow(-1).todense(), self.dat[-1,:])
@@ -779,6 +789,67 @@ class _TestCommon:
             for j in range(len(matrices)):
                 yield check, dtype, j
 
+    def test_sum_invalid_params(self):
+        out = np.asmatrix(np.zeros((1, 3)))
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        assert_raises(ValueError, datsp.sum, axis=3)
+        assert_raises(TypeError, datsp.sum, axis=(0, 1))
+        assert_raises(TypeError, datsp.sum, axis=1.5)
+        assert_raises(ValueError, datsp.sum, axis=1, out=out)
+
+    def test_sum_dtype(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        def check(dtype):
+            dat_mean = dat.mean(dtype=dtype)
+            datsp_mean = datsp.mean(dtype=dtype)
+
+            assert_array_almost_equal(dat_mean, datsp_mean)
+            assert_equal(dat_mean.dtype, datsp_mean.dtype)
+
+        for dtype in self.checked_dtypes:
+            yield check, dtype
+
+    def test_sum_out(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        dat_out = np.matrix(0)
+        datsp_out = np.matrix(0)
+
+        dat.sum(out=dat_out)
+        datsp.sum(out=datsp_out)
+        assert_array_almost_equal(dat_out, datsp_out)
+
+        dat_out = np.asmatrix(np.zeros((3, 1)))
+        datsp_out = np.asmatrix(np.zeros((3, 1)))
+
+        dat.sum(axis=1, out=dat_out)
+        datsp.sum(axis=1, out=datsp_out)
+        assert_array_almost_equal(dat_out, datsp_out)
+
+    def test_numpy_sum(self):
+        # See gh-5987
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        dat_mean = np.sum(dat)
+        datsp_mean = np.sum(datsp)
+
+        assert_array_almost_equal(dat_mean, datsp_mean)
+        assert_equal(dat_mean.dtype, datsp_mean.dtype)
+
     def test_mean(self):
         def check(dtype):
             dat = np.matrix([[0, 1, 2],
@@ -802,6 +873,67 @@ class _TestCommon:
 
         for dtype in self.checked_dtypes:
             yield check, dtype
+
+    def test_mean_invalid_params(self):
+        out = np.asmatrix(np.zeros((1, 3)))
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        assert_raises(ValueError, datsp.mean, axis=3)
+        assert_raises(TypeError, datsp.mean, axis=(0, 1))
+        assert_raises(TypeError, datsp.mean, axis=1.5)
+        assert_raises(ValueError, datsp.mean, axis=1, out=out)
+
+    def test_mean_dtype(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        def check(dtype):
+            dat_mean = dat.mean(dtype=dtype)
+            datsp_mean = datsp.mean(dtype=dtype)
+
+            assert_array_almost_equal(dat_mean, datsp_mean)
+            assert_equal(dat_mean.dtype, datsp_mean.dtype)
+
+        for dtype in self.checked_dtypes:
+            yield check, dtype
+
+    def test_mean_out(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        dat_out = np.matrix(0)
+        datsp_out = np.matrix(0)
+
+        dat.mean(out=dat_out)
+        datsp.mean(out=datsp_out)
+        assert_array_almost_equal(dat_out, datsp_out)
+
+        dat_out = np.asmatrix(np.zeros((3, 1)))
+        datsp_out = np.asmatrix(np.zeros((3, 1)))
+
+        dat.mean(axis=1, out=dat_out)
+        datsp.mean(axis=1, out=datsp_out)
+        assert_array_almost_equal(dat_out, datsp_out)
+
+    def test_numpy_mean(self):
+        # See gh-5987
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        dat_mean = np.mean(dat)
+        datsp_mean = np.mean(datsp)
+
+        assert_array_almost_equal(dat_mean, datsp_mean)
+        assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
     def test_expm(self):
         with warnings.catch_warnings():
@@ -1419,11 +1551,17 @@ class _TestCommon:
 
             a = datsp.transpose()
             b = dat.transpose()
+
             assert_array_equal(a.todense(), b)
             assert_array_equal(a.transpose().todense(), dat)
             assert_equal(a.dtype, b.dtype)
 
-            assert_array_equal(self.spmatrix((3,4)).T.todense(), zeros((4,3)))
+        # See gh-5987
+        empty = self.spmatrix((3, 4))
+        assert_array_equal(np.transpose(empty).todense(),
+                           np.transpose(zeros((3, 4))))
+        assert_array_equal(empty.T.todense(), zeros((4, 3)))
+        assert_raises(ValueError, empty.transpose, axes=0)
 
         for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
@@ -2987,6 +3125,37 @@ class _TestMinMax(object):
             assert_array_equal(np.zeros((1, 0)), X.min(axis=axis).A)
             assert_array_equal(np.zeros((1, 0)), X.max(axis=axis).A)
 
+    def test_minmax_invalid_params(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        for fname in ('min', 'max'):
+            func = getattr(datsp, fname)
+            assert_raises(ValueError, func, axis=3)
+            assert_raises(TypeError, func, axis=(0, 1))
+            assert_raises(TypeError, func, axis=1.5)
+            assert_raises(ValueError, func, axis=1, out=1)
+
+    def test_numpy_minmax(self):
+        # See gh-5987
+        # xref gh-7460 in 'numpy'
+        from scipy.sparse import data
+
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        # We are only testing sparse matrices who have
+        # implemented 'min' and 'max' because they are
+        # the ones with the compatibility issues with
+        # the 'numpy' implementation.
+        if isinstance(datsp, data._minmax_mixin):
+            assert_array_equal(np.min(datsp), np.min(dat))
+            assert_array_equal(np.max(datsp), np.max(dat))
+
 
 class _TestGetNnzAxis(object):
     def test_getnnz_axis(self):
@@ -3585,15 +3754,29 @@ class TestLIL(sparse_test_class(minmax=False)):
         assert_equal(x[0,0],0)
 
     def test_reshape(self):
-        x = lil_matrix((4,3))
-        x[0,0] = 1
-        x[2,1] = 3
-        x[3,2] = 5
-        x[0,2] = 7
+        x = lil_matrix((4, 3))
+        x[0, 0] = 1
+        x[2, 1] = 3
+        x[3, 2] = 5
+        x[0, 2] = 7
 
-        for s in [(12,1),(1,12)]:
+        for s in [(12, 1), (1, 12)]:
             assert_array_equal(x.reshape(s).todense(),
                                x.todense().reshape(s))
+
+            # LIL matrices are read/written in row-major order
+            assert_array_equal(x.reshape(s, order='C').todense(),
+                               x.todense().reshape(s, order='C'))
+
+            # See gh-5987
+            assert_array_equal(np.reshape(x, s).todense(),
+                               np.reshape(x.todense(), s))
+
+        assert_raises(TypeError, x.reshape, 2)
+        assert_raises(ValueError, x.reshape, (1, 5, 3))
+        assert_raises(ValueError, x.reshape, (1, 5))
+        assert_raises(ValueError, x.reshape, (6, 2), order=2)
+        assert_raises(ValueError, x.reshape, (6, 2), order='A')
 
     def test_inplace_ops(self):
         A = lil_matrix([[0,2,3],[4,0,6]])

@@ -49,6 +49,14 @@ zero-phase low-pass FIR filter, and downsamples using `scipy.signal.upfirdn`.
 This method can be faster than FFT-based filtering provided by
 `scipy.signal.resample` for some signals.
 
+`scipy.sparse` compatibility improvements
+-----------------------------------------
+
+The functions `sum`, `max`, `mean`, `min`, `transpose`, and `reshape` in
+`scipy.sparse` have had their signatures augmented with additional arguments
+and functionality so as to improve compatibility with analogously defined
+functions in `numpy`.
+
 Deprecated features
 ===================
 

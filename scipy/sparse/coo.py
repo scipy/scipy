@@ -235,9 +235,17 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             if self.col.min() < 0:
                 raise ValueError('negative column index found')
 
-    def transpose(self, copy=False):
-        M,N = self.shape
-        return coo_matrix((self.data, (self.col, self.row)), shape=(N,M), copy=copy)
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
+        M, N = self.shape
+        return coo_matrix((self.data, (self.col, self.row)),
+                          shape=(N, M), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
