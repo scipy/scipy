@@ -323,20 +323,38 @@ def test_beta():
 # loggamma
 # ------------------------------------------------------------------------------
 
-def test_loggamma_taylor():
+def test_loggamma_taylor1():
     """
     Make sure there isn't a big jump in accuracy when we move from
     using the Taylor series to using the recurrence relation.
 
     """
-    pts = [-0.5 + 0j, 0.5j, -0.5j, 0.5, 0.5, 1 + 0.5j, 1 - 0.5j, 1,
-           1.5 + 0.5, 1.5 - 0.5j, 2]
+    pts = [-0.5, 0.5j, -0.5j, 0.5, 1 + 0.5j, 1 - 0.5j, 1.5, 2 - 0.5j,
+           2 + 0.5j, 2.5]
     dataset = []
     for p in pts:
         for eps in [1e-6, -1e-6, 1e-6j, -1e-6j]:
             q = p + eps
             dataset.append((q, complex(mpmath.loggamma(q))))
         
+    dataset = np.array(dataset)
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+
+
+def test_loggamma_taylor2():
+    """
+    Test around the zeros at z = 1, 2.
+
+    """
+    dx = np.r_[-np.logspace(-1, -30, 10), np.logspace(-30, -1, 10)]
+    dy = dx.copy()
+    dx, dy = np.meshgrid(dx, dy)
+    dz = dx + 1j*dy
+    z = np.r_[1 + dz, 2 + dz].flatten()
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.loggamma(z0))))
+
     dataset = np.array(dataset)
     FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
 

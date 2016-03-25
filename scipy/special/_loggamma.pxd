@@ -274,6 +274,8 @@ cdef inline double complex taylor(double complex z) nogil:
         double complex zfac, coeff, res
 
     z = z - 1
+    if z == 0:
+        return 0
     res = -NPY_EULER*z
     zfac = -z
     for n in xrange(2, 42):
