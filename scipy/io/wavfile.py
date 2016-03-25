@@ -37,12 +37,29 @@ KNOWN_WAVE_FORMATS = (WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT)
 
 
 def _read_fmt_chunk(fid, is_big_endian):
+    """
+    Returns
+    -------
+    size : int
+        size of format subchunk in bytes (minus 8 for "fmt " and itself)
+    format_tag : int
+        PCM, float, or compressed format
+    channels : int
+        number of channels
+    fs : int
+        sampling frequency in samples per second
+    bytes_per_second : int
+        overall byte rate for the file
+    block_align : int
+        bytes per sample, including all channels
+    bit_depth : int
+        bits per sample
+    """
     if is_big_endian:
         fmt = '>'
     else:
         fmt = '<'
 
-    # size of the rest of this subchunk
     size = res = struct.unpack(fmt+'I', fid.read(4))[0]
     bytes_read = 0
 
@@ -51,15 +68,10 @@ def _read_fmt_chunk(fid, is_big_endian):
 
     res = struct.unpack(fmt+'HHIIHH', fid.read(16))
     bytes_read += 16
-    # comp = compression format
-    # noc = number of channels
-    # rate = samples per second
-    # sbytes = bytes per second
-    # ba = block align = bytes per sample, including all channels
-    # bits = bits per sample
-    comp, noc, rate, sbytes, ba, bits = res
 
-    if comp == WAVE_FORMAT_EXTENSIBLE and size >= (16+2):
+    format_tag, channels, fs, bytes_per_second, block_align, bit_depth = res
+
+    if format_tag == WAVE_FORMAT_EXTENSIBLE and size >= (16+2):
         ext_chunk_size = struct.unpack(fmt+'H', fid.read(2))[0]
         bytes_read += 2
         if ext_chunk_size >= 22:
@@ -74,23 +86,24 @@ def _read_fmt_chunk(fid, is_big_endian):
             else:
                 tail = b'\x00\x00\x10\x00\x80\x00\x00\xAA\x00\x38\x9B\x71'
             if raw_guid.endswith(tail):
-                comp = struct.unpack(fmt+'I', raw_guid[:4])[0]
+                format_tag = struct.unpack(fmt+'I', raw_guid[:4])[0]
         else:
             raise ValueError("Binary structure of wave file is not compliant")
 
-    if comp not in KNOWN_WAVE_FORMATS:
+    if format_tag not in KNOWN_WAVE_FORMATS:
         raise ValueError("Unknown wave file format")
 
     # move file pointer to next chunk
     if size > (bytes_read):
         fid.read(size - bytes_read)
 
-    return size, comp, noc, rate, sbytes, ba, bits
+    return (size, format_tag, channels, fs, bytes_per_second, block_align,
+            bit_depth)
 
 
-# assumes file pointer is immediately
-#   after the 'data' id
-def _read_data_chunk(fid, comp, noc, bits, is_big_endian, mmap=False):
+# assumes file pointer is immediately after the 'data' id
+def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
+                     mmap=False):
     if is_big_endian:
         fmt = '>I'
     else:
@@ -100,28 +113,28 @@ def _read_data_chunk(fid, comp, noc, bits, is_big_endian, mmap=False):
     size = struct.unpack(fmt, fid.read(4))[0]
 
     # Number of bytes per sample
-    bytes = bits//8
-    if bits == 8:
+    bytes_per_sample = bit_depth//8
+    if bit_depth == 8:
         dtype = 'u1'
     else:
         if is_big_endian:
             dtype = '>'
         else:
             dtype = '<'
-        if comp == WAVE_FORMAT_PCM:
-            dtype += 'i%d' % bytes
+        if format_tag == WAVE_FORMAT_PCM:
+            dtype += 'i%d' % bytes_per_sample
         else:
-            dtype += 'f%d' % bytes
+            dtype += 'f%d' % bytes_per_sample
     if not mmap:
         data = numpy.fromstring(fid.read(size), dtype=dtype)
     else:
         start = fid.tell()
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
-                            shape=(size//bytes,))
+                            shape=(size//bytes_per_sample,))
         fid.seek(start + size)
 
-    if noc > 1:
-        data = data.reshape(-1, noc)
+    if channels > 1:
+        data = data.reshape(-1, channels)
     return data
 
 
@@ -158,7 +171,7 @@ def _read_riff_chunk(fid):
     file_size = struct.unpack(fmt, fid.read(4))[0] + 8
 
     str2 = fid.read(4)
-    if (str2 != b'WAVE'):
+    if str2 != b'WAVE':
         raise ValueError("Not a WAV file.")
 
     return file_size, is_big_endian
@@ -182,7 +195,7 @@ def read(filename, mmap=False):
 
     Returns
     -------
-    rate : int
+    fs : int
         Sample rate of wav file as a Python integer.
     data : numpy array
         Data read from wav file.  Data-type is determined from the file;
@@ -222,26 +235,27 @@ def read(filename, mmap=False):
     try:
         file_size, is_big_endian = _read_riff_chunk(fid)
         fmt_chunk_received = False
-        noc = 1
-        bits = 8
-        comp = WAVE_FORMAT_PCM
-        while (fid.tell() < file_size):
+        channels = 1
+        bit_depth = 8
+        format_tag = WAVE_FORMAT_PCM
+        while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
-                size, comp, noc, rate, sbytes, ba, bits = fmt_chunk
-                if bits not in (8, 16, 32, 64, 128):
+                format_tag, channels, fs = fmt_chunk[1:4]
+                bit_depth = fmt_chunk[6]
+                if bit_depth not in (8, 16, 32, 64, 128):
                     raise ValueError("Unsupported bit depth: the wav file "
-                                     "has {}-bit data.".format(bits))
+                                     "has {}-bit data.".format(bit_depth))
             elif chunk_id == b'fact':
                 _skip_unknown_chunk(fid, is_big_endian)
             elif chunk_id == b'data':
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
-                data = _read_data_chunk(fid, comp, noc, bits, is_big_endian,
-                                        mmap)
+                data = _read_data_chunk(fid, format_tag, channels, bit_depth,
+                                        is_big_endian, mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)
@@ -258,10 +272,10 @@ def read(filename, mmap=False):
         else:
             fid.seek(0)
 
-    return rate, data
+    return fs, data
 
 
-def write(filename, rate, data):
+def write(filename, fs, data):
     """
     Write a numpy array as a WAV file.
 
@@ -269,7 +283,7 @@ def write(filename, rate, data):
     ----------
     filename : string or open file handle
         Output wav file.
-    rate : int
+    fs : int
         The sample rate (in samples/sec).
     data : ndarray
         A 1-D or 2-D numpy array of either integer or float data-type.
@@ -322,19 +336,19 @@ def write(filename, rate, data):
         # fmt chunk
         header_data += b'fmt '
         if dkind == 'f':
-            comp = 3
+            format_tag = WAVE_FORMAT_IEEE_FLOAT
         else:
-            comp = 1
+            format_tag = WAVE_FORMAT_PCM
         if data.ndim == 1:
-            noc = 1
+            channels = 1
         else:
-            noc = data.shape[1]
-        bits = data.dtype.itemsize * 8
-        sbytes = rate*(bits // 8)*noc
-        ba = noc * (bits // 8)
+            channels = data.shape[1]
+        bit_depth = data.dtype.itemsize * 8
+        bytes_per_second = fs*(bit_depth // 8)*channels
+        block_align = channels * (bit_depth // 8)
 
-        fmt_chunk_data = struct.pack('<HHIIHH', comp, noc, rate, sbytes,
-                                     ba, bits)
+        fmt_chunk_data = struct.pack('<HHIIHH', format_tag, channels, fs,
+                                     bytes_per_second, block_align, bit_depth)
         if not (dkind == 'i' or dkind == 'u'):
             # add cbSize field for non-PCM files
             fmt_chunk_data += b'\x00\x00'
