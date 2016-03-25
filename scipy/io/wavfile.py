@@ -195,7 +195,7 @@ def read(filename, mmap=False):
 
     Returns
     -------
-    fs : int
+    rate : int
         Sample rate of wav file. 
     data : numpy array
         Data read from wav file.  Data-type is determined from the file;
