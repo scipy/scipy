@@ -196,7 +196,7 @@ def read(filename, mmap=False):
     Returns
     -------
     fs : int
-        Sample rate of wav file as a Python integer.
+        Sample rate of wav file. 
     data : numpy array
         Data read from wav file.  Data-type is determined from the file;
         see Notes.
@@ -275,7 +275,7 @@ def read(filename, mmap=False):
     return fs, data
 
 
-def write(filename, fs, data):
+def write(filename, rate, data):
     """
     Write a numpy array as a WAV file.
 
@@ -283,7 +283,7 @@ def write(filename, fs, data):
     ----------
     filename : string or open file handle
         Output wav file.
-    fs : int
+    rate : int
         The sample rate (in samples/sec).
     data : ndarray
         A 1-D or 2-D numpy array of either integer or float data-type.
@@ -320,6 +320,8 @@ def write(filename, fs, data):
         fid = filename
     else:
         fid = open(filename, 'wb')
+
+    fs = rate
 
     try:
         dkind = data.dtype.kind
