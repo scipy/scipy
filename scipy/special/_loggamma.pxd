@@ -10,6 +10,12 @@ import cython
 from libc.math cimport M_PI, ceil, sin, log
 from _complexstuff cimport nan, zisnan, zabs, zlog, zsin, zarg
 
+cdef extern from "numpy/npy_math.h":
+    double NPY_EULER
+
+cdef extern from "cephes.h":
+    double zeta(double x, double q) nogil
+
 # log(2*pi)/2
 DEF HLOG2PI = 0.918938533204672742
 # Use the recurrence relation to make |z| bigger than smallz before
@@ -20,19 +26,21 @@ DEF smallz = 16
 # part of z is above this value. The number 16 comes from the number
 # of digits of desired precision; see (4.4).
 DEF smallimag = 0.37*16
+# Relative tolerance for the Taylor series
+DEF tol = 2.2204460492503131e-16
 
 
 @cython.cdivision(True)
 cdef inline double complex loggamma(double complex z) nogil:
     """
     The strategy for computing loggamma is:
-    - If z is close to the zeros at 1 and 2, use a Taylor series.
     - If z is in a small strip around the negative axis, use the
     reflection formula.
     - If z has negative imaginary part, conjugate it and use the
     relation loggamma(z*)* = loggamma(z)
-    - If abs(z) is very small, expand loggamma in a series around the
-    origin which splits out the logarithmic singularity.
+    - If z is close to the zero at 1, use a Taylor series.
+    - If z is close to 0 or 2, use a recurence relation and the Taylor
+    series at 1.
     - If abs(z) is large, use an asymptotic series.
     - Else use a recurrence relation to make z larger and then use
     the asymptotic series.
@@ -54,12 +62,6 @@ cdef inline double complex loggamma(double complex z) nogil:
     elif rz <= 0 and z == ceil(rz):
         # Poles
         return nan + 1J*nan
-    elif zabs(z - 1) < 0.2:
-        # loggamma(1) = 0; use a Taylor series in that region.
-        return taylor_at1(z)
-    elif zabs(z - 2) < 0.2:
-        # loggamma(2) = 0
-        return taylor_at2(z)
 
     if rz < 0 and -smallimag <= iz and iz <= smallimag:
         # Reflection formula for loggamma; see Proposition 3.1. This
@@ -68,8 +70,7 @@ cdef inline double complex loggamma(double complex z) nogil:
         # - If Im(z) < 0, conjugate z. This only negates the imaginary
         # part of the result.
         # - Compute pi/sin(pi*z).
-        # - Compute log(abs(pi/sin(pi*z))).
-        # - Compute arg(pi/sin(pi*z)).
+        # - Compute real and imaginary parts of log(pi/sin(pi*z)).
         # - If Im(z) > 0, every point of the form m - 0.5 for even m
         # between Re(z) and 0 contributes a factor of -2*pi*i. (These
         # are the points where log(pi/sin(pi*z)) hits branch cuts.)
@@ -115,8 +116,14 @@ cdef inline double complex loggamma(double complex z) nogil:
         conjugated = 1
 
     if rz >= 0:
-        if absz < 1e-2:
-            logterm = logseries(z)
+        if zabs(z - 1) <= 0.5:
+            logterm = taylor(z)
+        elif zabs(z - 2) < 0.5:
+            # Use the recurrence relation and Taylor series around 1.
+            logterm = zlog(z - 1) + taylor(z - 1)
+        elif absz < 0.5:
+            # Use the recurrence relation and Taylor series around 1.
+            logterm = -zlog(z) + taylor(z + 1)
         elif absz >= smallz:
             logterm = asymptotic_series(z)
         else:
@@ -249,91 +256,30 @@ cdef inline double complex asymptotic_series(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex taylor_at1(double complex z) nogil:
-    """Taylor series around z = 1."""
+cdef inline double complex taylor(double complex z) nogil:
+    """
+    Taylor series around z = 1. Derived from the Taylor series for the
+    digamma function at 1:
+
+    psi(z + 1) = -gamma - (-zeta(2)*z + zeta(3)*z**2 - ...)
+
+    by integrating. Here gamma is the Euler-Mascheroni constant and
+    zeta is the Riemann zeta function. Note that we can approximate
+    zeta(n) by 1/(n - 1), so if we use a radius of 1/2 we should need
+    at most 41 terms.
+
+    """
     cdef:
         int n
-        # First 18 coefficients of the Taylor series at 1; lets us use
-        # a radius of 0.2.
-        double *coeffs = [-0.577215664901533,
-                          0.822467033424113,
-                          -0.400685634386531,
-                          0.270580808427785,
-                          -0.207385551028674,
-                          0.169557176997408,
-                          -0.144049896768846,
-                          0.125509669524743,
-                          -0.111334265869565,
-                          0.100099457512782,
-                          -0.090954017145829,
-                          0.083353840546109,
-                          -0.0769325164113522,
-                          0.0714329462953613,
-                          -0.0666687058824205,
-                          0.062500955141213,
-                          -0.0588239786586846,
-                          0.0555557676274036]
-        double complex zfac = 1
-        double complex res = 0
+        double complex zfac, coeff, res
 
     z = z - 1
-    for n in xrange(1, 19):
-        zfac *= z
-        res += coeffs[n-1]*zfac
-    return res
-
-
-@cython.cdivision(True)
-cdef inline double complex taylor_at2(double complex z) nogil:
-    """Taylor series around z = 2."""
-    cdef:
-        int n
-        # First 12 coefficients of the Taylor series at 2; lets us use
-        # a radius of 0.2.
-        double *coeffs = [0.422784335098467,
-                          0.322467033424113,
-                          -0.0673523010531981,
-                          0.0205808084277845,
-                          -0.00738555102867398,
-                          0.00289051033074152,
-                          -0.00119275391170326,
-                          0.000509669524743042,
-                          -0.000223154758453579,
-                          9.94575127818085e-5,
-                          -4.49262367381331e-5,
-                          2.05072127756707e-5]
-        double complex zfac = 1
-        double complex res = 0
-
-    z = z - 2
-    for n in xrange(1, 13):
-        zfac *= z
-        res += coeffs[n-1]*zfac
-    return res
-
-
-@cython.cdivision(True)
-cdef inline double complex logseries(double complex z) nogil:
-    """
-    Expand loggamma in a series of the form
-
-    -log(z) + c1*z + c2*z**2 + c3*z**3 + ...
-
-    """
-    cdef:
-        int n 
-        # First seven coefficients; lets us take a radius of 1e-2.
-        double *coeffs = [-0.577215664901533,
-                          0.822467033424113,
-                          -0.400685634386531,
-                          0.270580808427784,
-                          -0.207385551028674,
-                          0.169557176997408,
-                          -0.144049896768846]
-        double complex zfac = 1
-        double complex res = -zlog(z)
-
-    for n in xrange(1, 8):
-        zfac *= z
-        res += coeffs[n-1]*zfac
+    res = -NPY_EULER*z
+    zfac = -z
+    for n in xrange(2, 42):
+        zfac *= -z
+        coeff = zeta(n, 1)*zfac/n
+        res += coeff
+        if zabs(coeff/res) < tol:
+            break
     return res

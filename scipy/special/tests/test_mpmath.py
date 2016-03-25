@@ -323,53 +323,22 @@ def test_beta():
 # loggamma
 # ------------------------------------------------------------------------------
 
-def test_loggamma_taylor1():
+def test_loggamma_taylor():
     """
     Make sure there isn't a big jump in accuracy when we move from
-    using the Taylor series around 1 to using the recurrence relation.
+    using the Taylor series to using the recurrence relation.
 
     """
-    diffs = np.array([0.19, 0.21, -0.19, -0.21,
-                      0.19j, 0.21j, -0.19j, -0.21j])
-    pts = diffs + 1
+    pts = [-0.5 + 0j, 0.5j, -0.5j, 0.5, 0.5, 1 + 0.5j, 1 - 0.5j, 1,
+           1.5 + 0.5, 1.5 - 0.5j, 2]
     dataset = []
     for p in pts:
-        dataset.append((p, complex(mpmath.loggamma(p))))
+        for eps in [1e-6, -1e-6, 1e-6j, -1e-6j]:
+            q = p + eps
+            dataset.append((q, complex(mpmath.loggamma(q))))
+        
     dataset = np.array(dataset)
     FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
-
-
-def test_loggamma_taylor2():
-    """
-    Make sure there isn't a big jump in accuracy when we move from
-    using the Taylor series around 2 to using the recurrence relation.
-
-    """
-    diffs = np.array([0.19, 0.21, -0.19, -0.21,
-                      0.19j, 0.21j, -0.19j, -0.21j])
-    pts = diffs + 2
-    dataset = []
-    for p in pts:
-        dataset.append((p, complex(mpmath.loggamma(p))))
-    dataset = np.array(dataset)
-    print(dataset[:,1])
-    print(sc.loggamma(dataset[:,0]))
-    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
-
-
-def test_loggamma_logseries():
-    """
-    Make sure there isn't a big jump in accuracy when we move from
-    using the series at 0 to using the recurrence relation.
-
-    """
-    pts = np.array([0.009, 0.011, -0.009, -0.011,
-                      0.009j, 0.011j, -0.009j, -0.011j])
-    dataset = []
-    for p in pts:
-        dataset.append((p, complex(mpmath.loggamma(p))))
-    dataset = np.array(dataset)
-    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()    
 
 
 # ------------------------------------------------------------------------------
@@ -1592,12 +1561,9 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             n=100)
 
     def test_loggamma_real(self):
-        # Tolerances are larger than in the complex test because this
-        # test has more coverage in the region between the zeros at 1
-        # and 2.
         assert_mpmath_equal(sc.loggamma,
                             _exception_to_nan(lambda x: mpmath.loggamma(x, **HYPERKW)),
-                            [Arg()], rtol=1e-12)
+                            [Arg()], rtol=1e-13)
 
     def test_loggamma_complex(self):
         assert_mpmath_equal(sc.loggamma,
