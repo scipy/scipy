@@ -26,7 +26,7 @@ DEF smallz = 16
 # part of z is above this value. The number 16 comes from the number
 # of digits of desired precision; see (4.4).
 DEF smallimag = 0.37*16
-# Relative tolerance for the Taylor series
+# Relative tolerance for series expansions
 DEF tol = 2.2204460492503131e-16
 
 
@@ -120,7 +120,7 @@ cdef inline double complex loggamma(double complex z) nogil:
             logterm = taylor(z)
         elif zabs(z - 2) < 0.5:
             # Use the recurrence relation and Taylor series around 1.
-            logterm = zlog(z - 1) + taylor(z - 1)
+            logterm = zlog1(z - 1) + taylor(z - 1)
         elif absz < 0.5:
             # Use the recurrence relation and Taylor series around 1.
             logterm = -zlog(z) + taylor(z + 1)
@@ -283,5 +283,30 @@ cdef inline double complex taylor(double complex z) nogil:
         coeff = zeta(n, 1)*zfac/n
         res += coeff
         if zabs(coeff/res) < tol:
+            break
+    return res
+
+
+@cython.cdivision(True)
+cdef inline double complex zlog1(double complex z) nogil:
+    """
+    Compute log around 1. We implement this ourselves because some
+    systems appear to be inaccurate around this point.
+
+    """
+    cdef:
+        int n
+        double complex coeff = -1
+        double complex res = 0
+
+    if zabs(z - 1) > 0.1:
+        return zlog(z)
+    z = z - 1
+    if z == 0:
+        return 0
+    for n in range(1, 17):
+        coeff *= -z
+        res += coeff/n
+        if zabs(res/coeff) < tol:
             break
     return res
