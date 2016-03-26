@@ -465,7 +465,7 @@ def _wrap_jac(jac, xdata, weights):
             return jac(xdata, *params)
     else:
         def jac_wrapped(params):
-            return weights[:, np.newaxis] * jac(xdata, *params)
+            return weights[:, np.newaxis] * np.asarray(jac(xdata, *params))
     return jac_wrapped
 
 
@@ -548,11 +548,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         .. versionadded:: 0.17
     jac : callable, string or None, optional
         Function with signature ``jac(x, ...)`` which computes the Jacobian
-        matrix of the model function with respect to parameters. It will be
-        scaled according to provided `sigma`. If None (default), the Jacobian
-        will be estimated numerically. You may also use string keywords to
-        select a finite difference scheme for 'trf' and 'dogbox' methods,
-        see `least_squares`.
+        matrix of the model function with respect to parameters as a dense
+        array_like structure. It will be scaled according to provided `sigma`.
+        If None (default), the Jacobian will be estimated numerically.
+        String keywords for 'trf' and 'dogbox' methods can be used to select
+        a finite difference scheme, see `least_squares`.
 
         .. versionadded:: 0.18
     kwargs
