@@ -650,6 +650,34 @@ class TestResample(TestCase):
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
 
+    def test_poly_vs_filtfilt(self):
+        # Check that up=1.0 gives same answer as filtfilt + slicing
+        random_state = np.random.RandomState(17)
+        try_types = (int, np.float32, np.complex64, float, complex)
+        size = 10000
+        down_factors = [2, 11, 79]
+
+        for dtype in try_types:
+            x = random_state.randn(size).astype(dtype)
+            if dtype in (np.complex64, np.complex128):
+                x += 1j * random_state.randn(size)
+
+            # resample_poly assumes zeros outside of signl, wheras filtfilt
+            # can only constant-pad. Make them equivalent:
+            x[0] = 0
+            x[-1] = 0
+
+            for down in down_factors:
+                h = signal.firwin(31, 1. / down, window='hamming')
+                yf = filtfilt(h, 1.0, x, padtype='constant')[::down]
+
+                # Need to pass convolved version of filter to resample_poly,
+                # since filtfilt does forward and backward, but resample_poly
+                # only goes forward
+                hc = convolve(h, h[::-1])
+                y = signal.resample_poly(x, 1, down, window=hc)
+                assert_allclose(yf, y, atol=1e-7, rtol=1e-7)
+
 
 class TestCSpline1DEval(TestCase):
 
