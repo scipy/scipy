@@ -1744,7 +1744,9 @@ def freqresp(system, w=None, n=10000):
     >>> plt.plot(H.real, -H.imag, "r")
     >>> plt.show()
     """
-    if isinstance(system, lti):
+    if isinstance(system, TransferFunction):
+        sys = system
+    elif isinstance(system, lti):
         sys = system.to_tf()
     else:
         sys = lti(*system).to_tf()
