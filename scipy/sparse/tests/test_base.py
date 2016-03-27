@@ -39,9 +39,13 @@ import scipy.linalg
 
 import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
-        coo_matrix, lil_matrix, dia_matrix, bsr_matrix, fast_lil_matrix,
-        eye, isspmatrix, SparseEfficiencyWarning, issparse)
-from scipy.sparse.sputils import supported_dtypes, isscalarlike, get_index_dtype
+                          coo_matrix, lil_matrix, dia_matrix,
+                          bsr_matrix, fast_lil_matrix,
+                          eye, isspmatrix, SparseEfficiencyWarning,
+                          issparse)
+from scipy.sparse.sputils import (supported_dtypes,
+                                  isscalarlike,
+                                  get_index_dtype)
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib._version import NumpyVersion
@@ -1627,11 +1631,15 @@ class _TestCommon:
         def check(name):
             if not HAS_NUMPY_UFUNC:
                 if name == "sign":
-                    raise nose.SkipTest("sign conflicts with comparison op "
-                                        "support on Numpy without __numpy_ufunc__")
+                    raise nose.SkipTest("sign conflicts with "
+                                        "comparison op "
+                                        "support on Numpy "
+                                        "without __numpy_ufunc__")
                 if self.spmatrix in (dok_matrix, lil_matrix, fast_lil_matrix):
-                    raise nose.SkipTest("Unary ops not implemented for dok/lil/fastlil "
-                                        "with Numpy without __numpy_ufunc__")
+                    raise nose.SkipTest("Unary ops not implemented "
+                                        "for dok/lil/fastlil "
+                                        "with Numpy "
+                                        "without __numpy_ufunc__")
             ufunc = getattr(np, name)
 
             X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
@@ -3672,7 +3680,6 @@ class TestFastLIL(sparse_test_class(minmax=False)):
     spmatrix = fast_lil_matrix
     math_dtypes = [np.int_, np.float_, np.complex_]
 
-
     def test_pickle(self):
 
         rnd = np.random.RandomState(10)
@@ -3703,108 +3710,109 @@ class TestFastLIL(sparse_test_class(minmax=False)):
         assert_array_equal(B.todense(), A)
 
     def test_dot(self):
-        A = matrix(zeros((10,10)))
-        A[0,3] = 10
-        A[5,6] = 20
+        A = matrix(zeros((10, 10)))
+        A[0, 3] = 10
+        A[5, 6] = 20
 
-        B = fast_lil_matrix((10,10))
-        B[0,3] = 10
-        B[5,6] = 20
+        B = fast_lil_matrix((10, 10))
+        B[0, 3] = 10
+        B[5, 6] = 20
         assert_array_equal(A * A.T, (B * B.T).todense())
         assert_array_equal(A * A.H, (B * B.H).todense())
 
     def test_scalar_mul(self):
-        x = fast_lil_matrix((3,3))
-        x[0,0] = 2
+        x = fast_lil_matrix((3, 3))
+        x[0, 0] = 2
 
-        x = x*2
-        assert_equal(x[0,0],4)
+        x = x * 2
+        assert_equal(x[0, 0], 4)
 
-        x = x*0
-        assert_equal(x[0,0],0)
+        x = x * 0
+        assert_equal(x[0, 0], 0)
 
     def test_reshape(self):
-        x = fast_lil_matrix((4,3))
-        x[0,0] = 1
-        x[2,1] = 3
-        x[3,2] = 5
-        x[0,2] = 7
+        x = fast_lil_matrix((4, 3))
+        x[0, 0] = 1
+        x[2, 1] = 3
+        x[3, 2] = 5
+        x[0, 2] = 7
 
-        for s in [(12,1),(1,12)]:
+        for s in [(12, 1), (1, 12)]:
             assert_array_equal(x.reshape(s).todense(),
                                x.todense().reshape(s))
 
     def test_inplace_ops(self):
-        A = fast_lil_matrix([[0,2,3],[4,0,6]])
-        B = fast_lil_matrix([[0,1,0],[0,2,3]])
+        A = fast_lil_matrix([[0, 2, 3], [4, 0, 6]])
+        B = fast_lil_matrix([[0, 1, 0], [0, 2, 3]])
 
-        data = {'add': (B,A + B),
-                'sub': (B,A - B),
-                'mul': (3,A * 3)}
+        data = {'add': (B, A + B),
+                'sub': (B, A - B),
+                'mul': (3, A * 3)}
 
-        for op,(other,expected) in data.items():
+        for op, (other, expected) in data.items():
             result = A.copy()
             getattr(result, '__i%s__' % op)(other)
 
             assert_array_equal(result.todense(), expected.todense())
 
         # Ticket 1604.
-        A = fast_lil_matrix((1,3), dtype=np.dtype('float64'))
-        B = array([0.1,0.1,0.1])
-        A[0,:] += B
-        assert_array_equal(A[0,:].toarray().squeeze(), B)
+        A = fast_lil_matrix((1, 3), dtype=np.dtype('float64'))
+        B = array([0.1, 0.1, 0.1])
+        A[0, :] += B
+        assert_array_equal(A[0, :].toarray().squeeze(), B)
 
     def test_fast_lil_iteration(self):
-        row_data = [[1,2,3],[4,5,6]]
+        row_data = [[1, 2, 3], [4, 5, 6]]
         B = fast_lil_matrix(array(row_data))
-        for r,row in enumerate(B):
-            assert_array_equal(row.todense(),array(row_data[r],ndmin=2))
+        for r, row in enumerate(B):
+            assert_array_equal(row.todense(), array(row_data[r], ndmin=2))
 
     def test_fast_lil_from_csr(self):
         # Tests whether a fast_lil_matrix can be constructed from a
         # csr_matrix.
-        B = fast_lil_matrix((10,10))
-        B[0,3] = 10
-        B[5,6] = 20
-        B[8,3] = 30
-        B[3,8] = 40
-        B[8,9] = 50
+        B = fast_lil_matrix((10, 10))
+        B[0, 3] = 10
+        B[5, 6] = 20
+        B[8, 3] = 30
+        B[3, 8] = 40
+        B[8, 9] = 50
         C = B.tocsr()
         D = fast_lil_matrix(C)
         assert_array_equal(C.A, D.A)
 
     def test_fancy_indexing_fast_lil(self):
-        M = asmatrix(arange(25).reshape(5,5))
+        M = asmatrix(arange(25).reshape(5, 5))
         A = fast_lil_matrix(M)
 
-        assert_equal(A[array([1,2,3]),2:3].todense(), M[array([1,2,3]),2:3])
+        assert_equal(A[array([1, 2, 3]), 2:3].todense(),
+                     M[array([1, 2, 3]), 2:3])
 
     def test_point_wise_multiply(self):
-        l = fast_lil_matrix((4,3))
-        l[0,0] = 1
-        l[1,1] = 2
-        l[2,2] = 3
-        l[3,1] = 4
+        l = fast_lil_matrix((4, 3))
+        l[0, 0] = 1
+        l[1, 1] = 2
+        l[2, 2] = 3
+        l[3, 1] = 4
 
-        m = fast_lil_matrix((4,3))
-        m[0,0] = 1
-        m[0,1] = 2
-        m[2,2] = 3
-        m[3,1] = 4
-        m[3,2] = 4
+        m = fast_lil_matrix((4, 3))
+        m[0, 0] = 1
+        m[0, 1] = 2
+        m[2, 2] = 3
+        m[3, 1] = 4
+        m[3, 2] = 4
 
         assert_array_equal(l.multiply(m).todense(),
                            m.multiply(l).todense())
 
         assert_array_equal(l.multiply(m).todense(),
-                           [[1,0,0],
-                            [0,0,0],
-                            [0,0,9],
-                            [0,16,0]])
+                           [[1, 0, 0],
+                            [0, 0, 0],
+                            [0, 0, 9],
+                            [0, 16, 0]])
 
     def test_fast_lil_multiply_removal(self):
         # Ticket #1427.
-        a = fast_lil_matrix(np.ones((3,3)))
+        a = fast_lil_matrix(np.ones((3, 3)))
         a *= 2.
         a[0, :] = 0
 

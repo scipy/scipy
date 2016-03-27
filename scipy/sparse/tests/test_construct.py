@@ -12,9 +12,10 @@ from scipy.sparse import csr_matrix, coo_matrix
 from scipy.sparse import construct
 from scipy.sparse.construct import rand as sprand
 
-sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok', 'fastlil']
+sparse_formats = ['csr', 'csc', 'coo', 'bsr',
+                  'dia', 'lil', 'dok', 'fastlil']
 
-#TODO check whether format=XXX is respected
+# TODO check whether format=XXX is respected
 
 
 def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):

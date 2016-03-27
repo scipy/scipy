@@ -100,9 +100,9 @@ There are seven available sparse matrix types:
     3. bsr_matrix: Block Sparse Row format
     4. lil_matrix: List of Lists format
     5. fast_lil_matrix: Efficient row-based format
-    5. dok_matrix: Dictionary of Keys format
-    6. coo_matrix: COOrdinate format (aka IJV, triplet format)
-    7. dia_matrix: DIAgonal format
+    6. dok_matrix: Dictionary of Keys format
+    7. coo_matrix: COOrdinate format (aka IJV, triplet format)
+    8. dia_matrix: DIAgonal format
 
 To construct a matrix efficiently, use fast_lil_matrix.
 The fast_lil_matrix class supports basic slicing and fancy

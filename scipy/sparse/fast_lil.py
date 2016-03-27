@@ -9,13 +9,10 @@ __all__ = ['fast_lil_matrix', 'isspmatrix_fast_lil']
 
 import numpy as np
 
-from scipy._lib.six import xrange
 from .base import spmatrix, isspmatrix
 from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
-                      upcast_scalar, get_index_dtype, isintlike,
-                      get_index_dtype)
+                      upcast_scalar, get_index_dtype, isintlike)
 from . import _fastlil
-from .lil import isspmatrix_lil
 
 
 class fast_lil_matrix(spmatrix, IndexMixin):
@@ -106,7 +103,9 @@ class fast_lil_matrix(spmatrix, IndexMixin):
                 self._matrix = self._get_matrix()
 
                 if A.data.dtype == np.bool:
-                    self._matrix.fromcsr(A.indices, A.indptr, A.data.astype(np.uint8))
+                    self._matrix.fromcsr(A.indices,
+                                         A.indptr,
+                                         A.data.astype(np.uint8))
                 else:
                     self._matrix.fromcsr(A.indices, A.indptr, A.data)
 
@@ -116,7 +115,9 @@ class fast_lil_matrix(spmatrix, IndexMixin):
                     raise ValueError('invalid use of shape parameter')
                 M, N = arg1
                 self.shape = (M, N)
-                self._idx_dtype = np.dtype(get_index_dtype(maxval=max(*self.shape)))
+                self._idx_dtype = np.dtype(
+                    get_index_dtype(maxval=max(*self.shape))
+                )
                 self._matrix = self._get_matrix()
             else:
                 raise TypeError('unrecognized lil_matrix constructor usage')
@@ -136,7 +137,9 @@ class fast_lil_matrix(spmatrix, IndexMixin):
                 self._matrix = self._get_matrix()
 
                 if A.data.dtype == np.bool:
-                    self._matrix.fromcsr(A.indices, A.indptr, A.data.astype(np.uint8))
+                    self._matrix.fromcsr(A.indices,
+                                         A.indptr,
+                                         A.data.astype(np.uint8))
                 else:
                     self._matrix.fromcsr(A.indices, A.indptr, A.data)
 
@@ -158,8 +161,9 @@ class fast_lil_matrix(spmatrix, IndexMixin):
 
     def _from_lil(self, lil_matrix):
 
-        for row_idx, (row_indices, row_data) in enumerate(zip(lil_matrix.rows,
-                                                              lil_matrix.data)):
+        for row_idx, (row_indices,
+                      row_data) in enumerate(zip(lil_matrix.rows,
+                                                 lil_matrix.data)):
             for col_idx, value in zip(row_indices, row_data):
                 self._set(row_idx, col_idx, value)
 
@@ -265,11 +269,9 @@ class fast_lil_matrix(spmatrix, IndexMixin):
 
         i_intlike = False
         i_slice = False
-        i_list = False
 
         j_intlike = False
         j_slice = False
-        j_list = False
 
         # Proper check for other scalar index types
         if isintlike(i):
