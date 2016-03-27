@@ -161,7 +161,7 @@ def freqs(b, a, worN=None, plot=None):
     return w, h
 
 
-def freqz(b, a=1, worN=None, whole=0, plot=None):
+def freqz(b, a=1, worN=None, whole=False, plot=None):
     """
     Compute the frequency response of a digital filter.
 
@@ -1900,7 +1900,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
 
     See Also
     --------
-    buttord
+    buttord, buttap
 
     Notes
     -----
@@ -1977,7 +1977,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
 
     See Also
     --------
-    cheb1ord
+    cheb1ord, cheb1ap
 
     Notes
     -----
@@ -2063,7 +2063,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
 
     See Also
     --------
-    cheb2ord
+    cheb2ord, cheb2ap
 
     Notes
     -----
@@ -2147,7 +2147,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
 
     See Also
     --------
-    ellipord
+    ellipord, ellipap
 
     Notes
     -----
@@ -2217,7 +2217,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
-    norm : str {'phase', 'delay', 'mag'}, optional
+    norm : {'phase', 'delay', 'mag'}, optional
         Critical frequency normalization:
 
         ``phase``
@@ -2239,6 +2239,8 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
         ``mag``
             The filter is normalized such that the gain magnitude is -3 dB at
             angular frequency `Wn`.
+
+        .. versionadded:: 0.18.0
 
     Returns
     -------
@@ -2958,6 +2960,10 @@ def buttap(N):
 
     The filter will have an angular (e.g. rad/s) cutoff frequency of 1.
 
+    See Also
+    --------
+    butter : Filter design function using this prototype
+
     """
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
@@ -2977,6 +2983,10 @@ def cheb1ap(N, rp):
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first drops below ``-rp``.
+
+    See Also
+    --------
+    cheby1 : Filter design function using this prototype
 
     """
     if abs(int(N)) != N:
@@ -3011,6 +3021,10 @@ def cheb2ap(N, rs):
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first reaches ``-rs``.
+
+    See Also
+    --------
+    cheby2 : Filter design function using this prototype
 
     """
     if abs(int(N)) != N:
@@ -3074,6 +3088,10 @@ def ellipap(N, rp, rs):
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first drops below ``-rp``.
+
+    See Also
+    --------
+    ellip : Filter design function using this prototype
 
     References
     ----------
@@ -3331,7 +3349,7 @@ def besselap(N, norm='phase'):
     ----------
     N : int
         The order of the filter.
-    norm : str {'phase', 'delay', 'mag'}, optional
+    norm : {'phase', 'delay', 'mag'}, optional
         Frequency normalization:
 
         ``phase``
@@ -3355,6 +3373,8 @@ def besselap(N, norm='phase'):
             angular frequency 1.  This is called "frequency normalization" by
             Bond. [1]_
 
+        .. versionadded:: 0.18.0
+
     Returns
     -------
     z : ndarray
@@ -3363,6 +3383,10 @@ def besselap(N, norm='phase'):
         Poles of the transfer function.
     k : scalar
         Gain of the transfer function.  For phase-normalized, this is always 1.
+
+    See Also
+    --------
+    bessel : Filter design function using this prototype
 
     Notes
     -----
