@@ -23,6 +23,7 @@ Sparse matrix classes
    dia_matrix - Sparse matrix with DIAgonal storage
    dok_matrix - Dictionary Of Keys based sparse matrix
    lil_matrix - Row-based linked list sparse matrix
+   fast_lil_matrix - Fast row-based sparse matrix
    spmatrix - Sparse matrix base class
 
 Functions
