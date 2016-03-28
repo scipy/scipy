@@ -461,11 +461,13 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         from .coo import coo_matrix
         if self.nnz == 0:
             return coo_matrix(self.shape, dtype=self.dtype)
-        else:
-            idx_dtype = get_index_dtype(maxval=max(self.shape[0], self.shape[1]))
-            data = np.asarray(_list(self.values()), dtype=self.dtype)
-            indices = np.asarray(_list(self.keys()), dtype=idx_dtype).T
-            return coo_matrix((data,indices), shape=self.shape, dtype=self.dtype)
+
+        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        data = np.asarray(_list(self.values()), dtype=self.dtype)
+        indices = np.asarray(_list(self.keys()), dtype=idx_dtype).T
+        A = coo_matrix((data, indices), shape=self.shape, dtype=self.dtype)
+        A.has_canonical_format = True
+        return A
 
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
@@ -476,11 +478,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             return self
 
     todok.__doc__ = spmatrix.todok.__doc__
-
-    def tocsr(self, copy=False):
-        return self.tocoo(copy=False).tocsr(copy=copy)
-
-    tocsr.__doc__ = spmatrix.tocsr.__doc__
 
     def tocsc(self, copy=False):
         return self.tocoo(copy=False).tocsc(copy=copy)

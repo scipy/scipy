@@ -5,7 +5,6 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import time
-import collections
 import timeit
 
 import numpy
@@ -195,7 +194,7 @@ class Conversion(Benchmark):
     param_names = ['from_format', 'to_format']
 
     def setup(self, fromfmt, tofmt):
-        base = poisson2d(100).asformat(fromfmt)
+        base = poisson2d(100, format=fromfmt)
 
         try:
             self.fn = getattr(base, 'to' + tofmt)

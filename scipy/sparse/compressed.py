@@ -857,34 +857,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Conversion methods #
     ######################
 
-    def todia(self):
-        return self.tocoo(copy=False).todia()
-
-    def todok(self):
-        return self.tocoo(copy=False).todok()
-
-    def tocoo(self,copy=True):
-        """Return a COOrdinate representation of this matrix
-
-        When copy=False the index and data arrays are not copied.
-        """
-        major_dim,minor_dim = self._swap(self.shape)
-
-        data = self.data
+    def tocoo(self, copy=True):
+        major_dim, minor_dim = self._swap(self.shape)
         minor_indices = self.indices
-
-        if copy:
-            data = data.copy()
-            minor_indices = minor_indices.copy()
-
         major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
-
-        _sparsetools.expandptr(major_dim,self.indptr,major_indices)
-
-        row,col = self._swap((major_indices,minor_indices))
+        _sparsetools.expandptr(major_dim, self.indptr, major_indices)
+        row, col = self._swap((major_indices, minor_indices))
 
         from .coo import coo_matrix
-        return coo_matrix((data,(row,col)), self.shape)
+        return coo_matrix((self.data, (row, col)), self.shape, copy=copy,
+                          dtype=self.dtype)
+
+    tocoo.__doc__ = spmatrix.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""

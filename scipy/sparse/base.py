@@ -673,18 +673,18 @@ class spmatrix(object):
             returned after being modified in-place to contain the
             appropriate values.
         """
-        return self.tocoo().toarray(order=order, out=out)
+        return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    # In principle, providing a tocsr method will be sufficient for any
-    # sparse matrix format deriving from spmatrix.
+    # Any sparse matrix format deriving from spmatrix must define one of
+    # tocsr or tocoo. The other conversion methods may be implemented for
+    # efficiency, but are not required.
     def tocsr(self, copy=False):
         """Convert this matrix to Compressed Sparse Row format.
 
         With copy=False, the data/indices may be shared between this matrix and
         the resultant csr_matrix.
         """
-        raise NotImplementedError("tocsr is not implemented for %s." %
-                                  self.__class__.__name__)
+        return self.tocoo(copy=copy).tocsr(copy=False)
 
     def todok(self, copy=False):
         """Convert this matrix to Dictionary Of Keys format.
@@ -692,7 +692,7 @@ class spmatrix(object):
         With copy=False, the data/indices may be shared between this matrix and
         the resultant dok_matrix.
         """
-        return self.tocoo(copy=False).todok(copy=copy)
+        return self.tocoo(copy=copy).todok(copy=False)
 
     def tocoo(self, copy=False):
         """Convert this matrix to COOrdinate format.
@@ -716,7 +716,7 @@ class spmatrix(object):
         With copy=False, the data/indices may be shared between this matrix and
         the resultant dia_matrix.
         """
-        return self.tocoo(copy=False).todia(copy=copy)
+        return self.tocoo(copy=copy).todia(copy=False)
 
     def tobsr(self, blocksize=None, copy=False):
         """Convert this matrix to Block Sparse Row format.
@@ -735,7 +735,7 @@ class spmatrix(object):
         With copy=False, the data/indices may be shared between this matrix and
         the resultant csc_matrix.
         """
-        return self.tocsr(copy=False).tocsc(copy=copy)
+        return self.tocsr(copy=copy).tocsc(copy=False)
 
     def copy(self):
         """Returns a copy of this matrix.

@@ -459,11 +459,6 @@ class lil_matrix(spmatrix, IndexMixin):
 
     tocsr.__doc__ = spmatrix.tocsr.__doc__
 
-    def tocsc(self, copy=False):
-        return self.tocsr(copy=copy).tocsc()
-
-    tocsc.__doc__ = spmatrix.tocsc.__doc__
-
 
 def _prepare_index_for_memoryview(i, j, x=None):
     """
