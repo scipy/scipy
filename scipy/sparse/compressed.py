@@ -567,10 +567,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # Mimic numpy's casting.
             if np.issubdtype(self.dtype, np.float_):
                 res_dtype = np.float_
-            elif self.dtype.kind in 'ib':
-                res_dtype = np.int_
-            elif self.dtype.kind == 'u':
+            elif (self.dtype.kind == 'u' and
+                  np.can_cast(self.dtype, np.uint)):
                 res_dtype = np.uint
+            elif np.can_cast(self.dtype, np.int_):
+                res_dtype = np.int_
             else:
                 res_dtype = self.dtype
             ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
