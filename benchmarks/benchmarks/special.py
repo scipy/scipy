@@ -7,7 +7,13 @@ try:
 except ImportError:
     pass
 
-from .common import Benchmark
+try:
+    # wasn't always in scipy.special, so import separately
+    from scipy.special import comb
+except ImportError:
+    pass
+
+from .common import Benchmark, with_attributes
 
 
 class Airy(Benchmark):
@@ -27,3 +33,18 @@ class Erf(Benchmark):
 
     time_real.params = [0.0, 2.0]
     time_real.param_names = ['offset']
+
+
+class Comb(Benchmark):
+
+    def setup(self, *args):
+        self.N = np.arange(1, 1000, 50)
+        self.k = np.arange(1, 1000, 50)
+
+    @with_attributes(params=[(10, 100, 1000, 10000), (1, 10, 100)],
+                     param_names=['N', 'k'])
+    def time_comb_exact(self, N, k):
+        comb(N, k, exact=True)
+
+    def time_comb_float(self):
+        comb(self.N[:,None], self.k[None,:])

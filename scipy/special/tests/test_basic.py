@@ -1262,6 +1262,15 @@ class TestCombinatorics(TestCase):
         assert_equal(special.comb(10, 3, exact=True), 120)
         assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
 
+        assert_allclose([special.comb(20, k, exact=True) for k in range(21)],
+                        special.comb(20, list(range(21))), atol=1e-15)
+
+        ii = np.iinfo(int).max + 1
+        assert_equal(special.comb(ii, ii-1, exact=True), ii)
+
+        expected = 100891344545564193334812497256
+        assert_equal(special.comb(100, 50, exact=True), expected)
+
     def test_comb_with_np_int64(self):
         n = 70
         k = 30
