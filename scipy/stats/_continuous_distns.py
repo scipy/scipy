@@ -21,15 +21,14 @@ from numpy import (where, arange, putmask, ravel, shape,
 from numpy import polyval, place, extract, asarray, nan, inf, pi
 
 import numpy as np
-from . import vonmises_cython
+
+from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
-
 from ._distn_infrastructure import (
         rv_continuous, valarray, _skew, _kurtosis, _lazywhere,
         _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
         )
-
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
@@ -4500,7 +4499,7 @@ class vonmises_gen(rv_continuous):
         return exp(kappa * cos(x)) / (2*pi*special.i0(kappa))
 
     def _cdf(self, x, kappa):
-        return vonmises_cython.von_mises_cdf(kappa, x)
+        return _stats.von_mises_cdf(kappa, x)
 
     def _stats_skip(self, kappa):
         return 0, None, 0, None

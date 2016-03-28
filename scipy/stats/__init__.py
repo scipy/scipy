@@ -346,8 +346,7 @@ from . import mstats
 from .contingency import chi2_contingency
 from ._multivariate import *
 
-#remove vonmises_cython from __all__, I don't know why it is included
-__all__ = [s for s in dir() if not (s.startswith('_') or s.endswith('cython'))]
+__all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
 from numpy.testing import Tester
 test = Tester().test
