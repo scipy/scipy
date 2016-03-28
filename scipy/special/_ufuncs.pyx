@@ -8708,7 +8708,7 @@ cdef char *ufunc_loggamma_doc = (
     "References\n"
     "----------\n"
     ".. [hare1997] D.E.G. Hare,\n"
-    "  *Computing the Principle Branch of log-Gamma*,\n"
+    "  *Computing the Principal Branch of log-Gamma*,\n"
     "  Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.")
 ufunc_loggamma_loops[0] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
 ufunc_loggamma_loops[1] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D

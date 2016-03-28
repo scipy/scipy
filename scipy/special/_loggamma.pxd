@@ -1,5 +1,5 @@
-# An implementation of the principle branch of the logarithm of gamma
-# based on the paper "Computing the Principle Branch of log-Gamma"
+# An implementation of the principal branch of the logarithm of gamma
+# based on the paper "Computing the Principal Branch of log-Gamma"
 # (1997) by D.E.G. Hare.
 #
 # Author: Josh Wilson

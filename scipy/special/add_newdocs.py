@@ -5529,6 +5529,6 @@ add_newdoc("scipy.special", "loggamma",
     References
     ----------
     .. [hare1997] D.E.G. Hare,
-      *Computing the Principle Branch of log-Gamma*,
+      *Computing the Principal Branch of log-Gamma*,
       Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
     """)
