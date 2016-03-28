@@ -135,6 +135,16 @@ All functions
    cgesdd_lwork
    zgesdd_lwork
 
+   sgesvd
+   dgesvd
+   cgesvd
+   zgesvd
+
+   sgesvd_lwork
+   dgesvd_lwork
+   cgesvd_lwork
+   zgesvd_lwork
+
    sgesv
    dgesv
    cgesv

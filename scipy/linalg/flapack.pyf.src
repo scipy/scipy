@@ -617,7 +617,7 @@ interface
    subroutine <prefix2>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
 
    ! u,s,vt,info = gesdd(a,compute_uv=1,lwork=..,overwrite_a=0)
-   ! Compute the singular value decomposition (SVD):
+   ! Compute the singular value decomposition (SVD) using divide and conquer:
    !   A = U * SIGMA * transpose(V)
    ! A - M x N matrix
    ! U - M x M matrix or min(M,N) x N if full_matrices=False
@@ -679,7 +679,7 @@ interface
    subroutine <prefix2c>gesdd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
 
    ! u,s,vt,info = gesdd(a,compute_uv=1,lwork=..,overwrite_a=0)
-   ! Compute the singular value decomposition (SVD):
+   ! Compute the singular value decomposition (SVD) using divide and conquer:
    !   A = U * SIGMA * conjugate-transpose(V)
    ! A - M x N matrix
    ! U - M x M matrix or min(M,N) x N if full_matrices=False
@@ -737,7 +737,128 @@ interface
    integer intent(hide) :: lwork = -1
    integer intent(hide) :: iwork
    integer intent(out) :: info
+
    end subroutine <prefix2c>gesdd_lwork
+
+   subroutine <prefix2>gesvd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,info)
+
+   ! u,s,vt,info = gesvd(a,compute_uv=1,lwork=..,overwrite_a=0)
+   ! Compute the singular value decomposition (SVD):
+   !   A = U * SIGMA * transpose(V)
+   ! A - M x N matrix
+   ! U - M x M matrix or min(M,N) x N if full_matrices=False
+   ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N)
+   !               singular values
+   ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
+
+   callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,&info)
+   callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+   integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+   integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+   integer intent(hide),depend(a):: m = shape(a,0)
+   integer intent(hide),depend(a):: n = shape(a,1)
+   integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+   integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+   <ftype2> dimension(m,n),intent(in,copy,aligned8) :: a
+   <ftype2> dimension(minmn),intent(out),depend(minmn) :: s
+   <ftype2> dimension(u0,u1),intent(out),depend(u0, u1) :: u
+   <ftype2> dimension(vt0,vt1),intent(out),depend(vt0, vt1) :: vt
+   <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+   integer optional,intent(in),depend(minmn) :: lwork = MAX(1,MAX(3*minmn+MAX(m,n),5*minmn))
+   integer intent(out) :: info
+
+   end subroutine <prefix2>gesvd
+
+   subroutine <prefix2>gesvd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,info)
+   ! LWORK computation for <S/D>GESVD
+
+   fortranname <prefix2>gesvd
+   callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&info)
+   callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+   integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+   integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+   integer intent(in) :: m
+   integer intent(in) :: n
+   integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+   integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+   <ftype2> intent(hide) :: a
+   <ftype2> intent(hide) :: s
+   <ftype2> intent(hide) :: u
+   <ftype2> intent(hide) :: vt
+   integer intent(hide) :: lwork = -1
+   <ftype2> intent(out) :: work
+   integer intent(out) :: info
+
+   end subroutine <prefix2>gesvd_lwork
+
+   subroutine <prefix2c>gesvd(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,info)
+
+   ! u,s,vt,info = gesvd(a,compute_uv=1,lwork=..,overwrite_a=0)
+   ! Compute the singular value decomposition (SVD):
+   !   A = U * SIGMA * conjugate-transpose(V)
+   ! A - M x N matrix
+   ! U - M x M matrix or min(M,N) x N if full_matrices=False
+   ! SIGMA - M x N zero matrix with a main diagonal filled with min(M,N)
+   !               singular values
+   ! transpose(V) - N x N matrix or N x min(M,N) if full_matrices=False
+
+   callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,a,&m,s,u,&u0,vt,&vt0,work,&lwork,rwork,&info)
+   callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+   integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+   integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+   integer intent(hide),depend(a):: m = shape(a,0)
+   integer intent(hide),depend(a):: n = shape(a,1)
+   integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+   integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+   <ftype2c> dimension(m,n),intent(in,copy) :: a
+   <ftype2> dimension(minmn),intent(out),depend(minmn) :: s
+   <ftype2c> dimension(u0,u1),intent(out),depend(u0,u1) :: u
+   <ftype2c> dimension(vt0,vt1),intent(out),depend(vt0,vt1) :: vt
+   <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
+   <ftype2> dimension((MAX(1,5*minmn))),intent(hide,cache),depend(minmn) :: rwork
+   integer optional,intent(in),depend(minmn) :: lwork = MAX(1,2*minmn+MAX(m,n))
+   integer intent(out) :: info
+
+   end subroutine <prefix2c>gesvd
+
+   subroutine <prefix2c>gesvd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,info)
+   ! <C/Z>GESVD call with LWORK=-1 -- copypaste of above gesvd with dummy arrays
+
+   fortranname <prefix2c>gesvd
+   callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&info)
+   callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,int*
+
+   integer intent(in),optional,check(compute_uv==0||compute_uv==1):: compute_uv = 1
+   integer intent(in),optional,check(full_matrices==0||full_matrices==1):: full_matrices = 1
+   integer intent(in),depend(a):: m
+   integer intent(in),depend(a):: n
+   integer intent(hide),depend(m,n):: minmn = MIN(m,n)
+   integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
+   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
+   integer intent(hide) :: lwork = -1
+   <ftype2c> intent(hide) :: a
+   <ftype2> intent(hide) :: s
+   <ftype2c> intent(hide) :: u
+   <ftype2c> intent(hide) :: vt
+   <ftype2c> intent(out) :: work
+   <ftype2> intent(hide) :: rwork
+   integer intent(out) :: info
+
+   end subroutine <prefix2c>gesvd_lwork
 
    subroutine <prefix2>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
 
