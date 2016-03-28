@@ -30,6 +30,7 @@ window_funcs = [
     ('hann', ()),
     ('exponential', ()),
     ('tukey', (0.5,)),
+    ('planck', (0.3,)),
     ]
 
 
@@ -175,6 +176,34 @@ def test_tukey():
     assert_array_almost_equal(tuk1, han1)
 
 
+planck_data = {
+    # degenerate cases
+    (1, 0.1, False): array([1.0]),
+    (2, 0.1, False): array([1.0, 1.0]),
+    (3, 0.1, False): array([0.0, 1.0, 0.0]),
+    # check falloff at extreme epsilon
+    (5, 0.0, False): array([0., 1., 1., 1., 0.]),
+    (5, 0.5, False): array([0., 0.5, 1., 0.5, 0.]),
+    # symmetry
+    (6, 0.0, True): array([0., 1., 1., 1., 1., 0.]),
+    (6, 0.0, False): array([0., 1., 1., 1., 1., 1.]),
+    # regular values
+    (21, 0.3, False): array([0., 0.0081625711531599, 0.18242552380635635, 0.5, 0.81757447619364365,
+                             0.99183742884684012, 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                             0.99183742884684012, 0.81757447619364365, 0.5, 0.18242552380635635,
+                             0.0081625711531599, 0.])
+}
+
+def test_planck():
+    # Test against hardcoded data
+    for k, v in planck_data.items():
+        if v is None:
+            assert_raises(ValueError, signal.planck, *k)
+        else:
+            win = signal.planck(*k)
+            assert_allclose(win, v, rtol=1e-14)
+
+
 class TestGetWindow(object):
 
     def test_boxcar(self):
@@ -220,7 +249,7 @@ def test_needs_params():
                    'general gauss', 'general_gauss', 'ggs',
                    'slepian', 'optimal', 'slep', 'dss', 'dpss',
                    'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
-                   'tuk']:
+                   'tuk', 'planck']:
         assert_raises(ValueError, signal.get_window, winstr, 7)
 
 if __name__ == "__main__":

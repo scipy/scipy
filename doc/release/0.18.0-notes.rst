@@ -49,6 +49,9 @@ zero-phase low-pass FIR filter, and downsamples using `scipy.signal.upfirdn`.
 This method can be faster than FFT-based filtering provided by
 `scipy.signal.resample` for some signals.
 
+The Planck-taper window function has been implemented and is now available as
+`scipy.signal.planck`.
+
 Deprecated features
 ===================
 
