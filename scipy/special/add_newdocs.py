@@ -1242,7 +1242,7 @@ add_newdoc("scipy.special", "entr",
     -----
     This function is concave.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 
@@ -3350,7 +3350,7 @@ add_newdoc("scipy.special", "kl_div",
     -----
     This function is non-negative and is jointly convex in `x` and `y`.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 
@@ -4873,7 +4873,7 @@ add_newdoc("scipy.special", "rel_entr",
     -----
     This function is jointly convex in x and y.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 

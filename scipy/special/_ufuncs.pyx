@@ -4168,7 +4168,7 @@ cdef char *ufunc_entr_doc = (
     "-----\n"
     "This function is concave.\n"
     "\n"
-    ".. versionadded:: 0.14.0")
+    ".. versionadded:: 0.15.0")
 ufunc_entr_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_entr_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_entr_types[0] = <char>NPY_FLOAT
@@ -8263,7 +8263,7 @@ cdef char *ufunc_kl_div_doc = (
     "-----\n"
     "This function is non-negative and is jointly convex in `x` and `y`.\n"
     "\n"
-    ".. versionadded:: 0.14.0")
+    ".. versionadded:: 0.15.0")
 ufunc_kl_div_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_kl_div_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_kl_div_types[0] = <char>NPY_FLOAT
@@ -11182,7 +11182,7 @@ cdef char *ufunc_rel_entr_doc = (
     "-----\n"
     "This function is jointly convex in x and y.\n"
     "\n"
-    ".. versionadded:: 0.14.0")
+    ".. versionadded:: 0.15.0")
 ufunc_rel_entr_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_rel_entr_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_rel_entr_types[0] = <char>NPY_FLOAT
