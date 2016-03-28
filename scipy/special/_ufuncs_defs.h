@@ -1,5 +1,9 @@
 #ifndef UFUNCS_PROTO_H
 #define UFUNCS_PROTO_H 1
+#include "cephes.h"
+npy_double lgam(npy_double);
+#include "specfun_wrappers.h"
+npy_cdouble clngamma_wrap(npy_cdouble);
 #include "misc.h"
 npy_double struve_asymp_large_z(npy_double, npy_double, npy_int, npy_double *);
 npy_double struve_bessel_series(npy_double, npy_double, npy_int, npy_double *);
@@ -9,14 +13,12 @@ npy_int airy_wrap(npy_double, npy_double *, npy_double *, npy_double *, npy_doub
 npy_int cairy_wrap(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *);
 npy_int cairy_wrap_e_real(npy_double, npy_double *, npy_double *, npy_double *, npy_double *);
 npy_int cairy_wrap_e(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *);
-#include "cephes.h"
 npy_double bdtr(npy_int, npy_int, npy_double);
 npy_double bdtrc(npy_int, npy_int, npy_double);
 npy_double bdtri(npy_int, npy_int, npy_double);
 #include "cdf_wrappers.h"
 npy_double cdfbin2_wrap(npy_double, npy_double, npy_double);
 npy_double cdfbin3_wrap(npy_double, npy_double, npy_double);
-#include "specfun_wrappers.h"
 npy_double bei_wrap(npy_double);
 npy_double beip_wrap(npy_double);
 npy_double ber_wrap(npy_double);
@@ -73,8 +75,6 @@ npy_double igam(npy_double, npy_double);
 npy_double igamc(npy_double, npy_double);
 npy_double igami(npy_double, npy_double);
 npy_double gammaincinv(npy_double, npy_double);
-npy_double lgam(npy_double);
-npy_cdouble clngamma_wrap(npy_cdouble);
 npy_double gammasgn(npy_double);
 npy_double gdtr(npy_double, npy_double, npy_double);
 npy_double gdtrc(npy_double, npy_double, npy_double);

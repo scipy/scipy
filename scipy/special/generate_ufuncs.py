@@ -137,7 +137,7 @@ eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.px
 exp10 -- exp10: d->d                                       -- cephes.h
 exp2 -- exp2: d->d                                         -- cephes.h
 gamma -- Gamma: d->d, cgamma_wrap: D->D                    -- cephes.h, specfun_wrappers.h
-gammaln -- lgam: d->d, clngamma_wrap: D->D                 -- cephes.h, specfun_wrappers.h
+_gammaln -- lgam: d->d, clngamma_wrap: D->D                -- cephes.h, specfun_wrappers.h
 gammasgn -- gammasgn: d->d                                 -- c_misc/misc.h
 i0 -- i0: d->d                                             -- cephes.h
 i0e -- i0e: d->d                                           -- cephes.h
@@ -311,6 +311,7 @@ _spherical_yn_d -- spherical_yn_d_real: ld->d, spherical_yn_d_complex: lD->D -- 
 _spherical_jn_d -- spherical_jn_d_real: ld->d, spherical_jn_d_complex: lD->D -- _spherical_bessel.pxd
 _spherical_in_d -- spherical_in_d_real: ld->d, spherical_in_d_complex: lD->D -- _spherical_bessel.pxd
 _spherical_kn_d -- spherical_kn_d_real: ld->d, spherical_kn_d_complex: lD->D -- _spherical_bessel.pxd
+loggamma -- loggamma: D->D                                 -- _loggamma.pxd
 """
 
 #---------------------------------------------------------------------------------

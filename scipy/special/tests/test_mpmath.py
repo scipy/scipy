@@ -320,6 +320,46 @@ def test_beta():
 
 
 # ------------------------------------------------------------------------------
+# loggamma
+# ------------------------------------------------------------------------------
+
+def test_loggamma_taylor1():
+    """
+    Make sure there isn't a big jump in accuracy when we move from
+    using the Taylor series to using the recurrence relation.
+
+    """
+    pts = [-0.5, 0.5j, -0.5j, 0.5, 1 + 0.5j, 1 - 0.5j, 1.5, 2 - 0.5j,
+           2 + 0.5j, 2.5]
+    dataset = []
+    for p in pts:
+        for eps in [1e-6, -1e-6, 1e-6j, -1e-6j]:
+            q = p + eps
+            dataset.append((q, complex(mpmath.loggamma(q))))
+        
+    dataset = np.array(dataset)
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+
+
+def test_loggamma_taylor2():
+    """
+    Test around the zeros at z = 1, 2.
+
+    """
+    dx = np.r_[-np.logspace(-1, -30, 10), np.logspace(-30, -1, 10)]
+    dy = dx.copy()
+    dx, dy = np.meshgrid(dx, dy)
+    dz = dx + 1j*dy
+    z = np.r_[1 + dz, 2 + dz].flatten()
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.loggamma(z0))))
+
+    dataset = np.array(dataset)
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+
+
+# ------------------------------------------------------------------------------
 # Machinery for systematic tests
 # ------------------------------------------------------------------------------
 
@@ -1148,6 +1188,13 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                                 lambda z, b: mpmath.gammainc(z, b=b)/mpmath.gamma(z)),
                             [Arg(a=0), Arg(a=0)])
 
+    def test_gammaln(self):
+        # The real part of loggamma is log(|gamma(z)|).
+        def f(z):
+            return mpmath.loggamma(z).real
+
+        assert_mpmath_equal(sc.gammaln, _exception_to_nan(f), [Arg()])
+
     @knownfailure_overridable()
     def test_gegenbauer(self):
         assert_mpmath_equal(sc.eval_gegenbauer,
@@ -1530,6 +1577,16 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             legenq,
                             [IntArg(0, 100), IntArg(0, 100), ComplexArg()],
                             n=100)
+
+    def test_loggamma_real(self):
+        assert_mpmath_equal(sc.loggamma,
+                            _exception_to_nan(lambda x: mpmath.loggamma(x, **HYPERKW)),
+                            [Arg()], rtol=1e-13)
+
+    def test_loggamma_complex(self):
+        assert_mpmath_equal(sc.loggamma,
+                            _exception_to_nan(lambda z: mpmath.loggamma(z, **HYPERKW)),
+                            [ComplexArg()], rtol=1e-13)
 
     @knownfailure_overridable()
     def test_pcfd(self):
