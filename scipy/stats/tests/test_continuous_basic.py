@@ -182,7 +182,7 @@ def test_cont_basic_slow():
             if distfn.numargs == 0:
                 yield check_vecentropy, distfn, arg
             if (distfn.__class__._entropy != stats.rv_continuous._entropy
-                    and distname is not 'vonmises'):
+                    and distname != 'vonmises'):
                 yield check_private_entropy, distfn, arg, stats.rv_continuous
 
             yield check_edge_support, distfn, arg
