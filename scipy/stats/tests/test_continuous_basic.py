@@ -65,7 +65,7 @@ fails_cmplx = set(['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma',
                    'halfnorm', 'invgamma', 'invgauss', 'johnsonsb', 'johnsonsu',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'lognorm', 'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
-                   'norm', 'pearson3', 'powerlognorm', 'powernorm', 
+                   'norm', 'pearson3', 'powerlognorm', 'powernorm',
                    'recipinvgauss', 'rice', 'skewnorm', 't', 'truncnorm',
                    'tukeylambda', 'vonmises', 'vonmises_line', 'wald'])
 
@@ -181,7 +181,8 @@ def test_cont_basic_slow():
 
             if distfn.numargs == 0:
                 yield check_vecentropy, distfn, arg
-            if distfn.__class__._entropy != stats.rv_continuous._entropy:
+            if (distfn.__class__._entropy != stats.rv_continuous._entropy
+                    and distname != 'vonmises'):
                 yield check_private_entropy, distfn, arg, stats.rv_continuous
 
             yield check_edge_support, distfn, arg
