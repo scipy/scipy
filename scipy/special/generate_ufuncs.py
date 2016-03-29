@@ -136,7 +136,7 @@ eval_hermite  -- eval_hermite: ld->d                       -- orthogonal_eval.px
 eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.pxd
 exp10 -- exp10: d->d                                       -- cephes.h
 exp2 -- exp2: d->d                                         -- cephes.h
-gamma -- Gamma: d->d, cgamma_wrap: D->D                    -- cephes.h, specfun_wrappers.h
+gamma -- Gamma: d->d, cgamma: D->D                         -- cephes.h, _loggamma.pxd
 _gammaln -- lgam: d->d, clngamma_wrap: D->D                -- cephes.h, specfun_wrappers.h
 gammasgn -- gammasgn: d->d                                 -- c_misc/misc.h
 i0 -- i0: d->d                                             -- cephes.h
@@ -192,7 +192,7 @@ ndtr -- ndtr: d->d                                         -- cephes.h
 log_ndtr -- log_ndtr: d->d                                 -- cephes.h
 ndtri -- ndtri: d->d                                       -- cephes.h
 psi -- psi: d->d, cpsi_wrap: D->D                          -- cephes.h, specfun_wrappers.h
-rgamma -- rgamma: d->d, crgamma_wrap: D->D                 -- cephes.h, specfun_wrappers.h
+rgamma -- rgamma: d->d, crgamma: D->D                      -- cephes.h, _loggamma.pxd
 round -- round: d->d                                       -- cephes.h
 sindg -- sindg: d->d                                       -- cephes.h
 cosdg -- cosdg: d->d                                       -- cephes.h

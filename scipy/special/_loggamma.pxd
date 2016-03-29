@@ -1,6 +1,7 @@
 # An implementation of the principal branch of the logarithm of gamma
 # based on the paper "Computing the Principal Branch of log-Gamma"
-# (1997) by D.E.G. Hare.
+# (1997) by D.E.G. Hare. Also contains implementations of gamma and
+# 1/gamma which are easily computed from loggamma.
 #
 # Author: Josh Wilson
 #
@@ -8,7 +9,7 @@
 
 import cython
 from libc.math cimport M_PI, ceil, sin, log
-from _complexstuff cimport nan, zisnan, zabs, zlog, zsin, zarg
+from _complexstuff cimport nan, zisnan, zabs, zlog, zsin, zarg, zexp
 
 cdef extern from "numpy/npy_math.h":
     double NPY_EULER
@@ -310,3 +311,16 @@ cdef inline double complex zlog1(double complex z) nogil:
         if zabs(res/coeff) < tol:
             break
     return res
+
+
+cdef inline double complex cgamma(double complex z) nogil:
+    """Compute Gamma(z) using loggamma."""
+    return zexp(loggamma(z))
+
+
+cdef inline double complex crgamma(double complex z) nogil:
+    """Compute 1/Gamma(z) using loggamma."""
+    if z.real <= 0 and z == ceil(z.real):
+        # Zeros at 0, -1, -2, ...
+        return 0
+    return zexp(-loggamma(z))
