@@ -360,6 +360,32 @@ def test_loggamma_taylor2():
 
 
 # ------------------------------------------------------------------------------
+# rgamma
+# ------------------------------------------------------------------------------
+
+def test_rgamma_zeros():
+    """
+    Test around the zeros at z = 0, -1, -2, ...,  -169. (After -169 we
+    get values that are out of floating point range even when we're
+    within 0.1 of the zero.)
+
+    """
+    # Can't use too many points here or the test takes forever.
+    dx = np.r_[-np.logspace(-1, -30, 3), 0, np.logspace(-30, -1, 3)]
+    dy = dx.copy()
+    dx, dy = np.meshgrid(dx, dy)
+    dz = dx + 1j*dy
+    zeros = np.arange(0, -170, -1).reshape(1, 1, -1)
+    z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.rgamma(z0))))
+
+    dataset = np.array(dataset)
+    FuncData(sc.rgamma, dataset, 0, 1, rtol=1e-12).check()
+
+
+# ------------------------------------------------------------------------------
 # Machinery for systematic tests
 # ------------------------------------------------------------------------------
 
@@ -1181,6 +1207,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.gamma),
                             [Arg()])
 
+    def test_gamma_complex(self):
+        assert_mpmath_equal(sc.gamma,
+                            _exception_to_nan(mpmath.gamma),
+                            [ComplexArg()], rtol=1e-12)
+
     @dec.knownfailureif(True, "BUG: special.gammainc(1e20, 1e20) never returns")
     def test_gammainc(self):
         assert_mpmath_equal(sc.gammainc,
@@ -1629,6 +1660,11 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             rgamma,
                             [Arg()],
                             ignore_inf_sign=True)
+
+    def test_rgamma_complex(self):
+        assert_mpmath_equal(sc.rgamma,
+                            _exception_to_nan(mpmath.rgamma),
+                            [ComplexArg()], rtol=1e-12)
 
     def test_rf(self):
         def mppoch(a, m):

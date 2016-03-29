@@ -1572,8 +1572,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef int _func_cfresnl_wrap "cfresnl_wrap"(double complex, double complex *, double complex *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_Gamma "Gamma"(double) nogil
-cdef extern from "_ufuncs_defs.h":
-    cdef double complex _func_cgamma_wrap "cgamma_wrap"(double complex) nogil
+from _loggamma cimport cgamma as _func_cgamma
+ctypedef double complex _proto_cgamma_t(double complex) nogil
+cdef _proto_cgamma_t *_proto_cgamma_t_var = &_func_cgamma
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_igam "igam"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -1870,8 +1871,9 @@ ctypedef double _proto_rel_entr_t(double, double) nogil
 cdef _proto_rel_entr_t *_proto_rel_entr_t_var = &_func_rel_entr
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_rgamma "rgamma"(double) nogil
-cdef extern from "_ufuncs_defs.h":
-    cdef double complex _func_crgamma_wrap "crgamma_wrap"(double complex) nogil
+from _loggamma cimport crgamma as _func_crgamma
+ctypedef double complex _proto_crgamma_t(double complex) nogil
+cdef _proto_crgamma_t *_proto_crgamma_t_var = &_func_crgamma
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_round "round"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -5666,9 +5668,9 @@ ufunc_gamma_ptr[2*0] = <void*>_func_Gamma
 ufunc_gamma_ptr[2*0+1] = <void*>(<char*>"gamma")
 ufunc_gamma_ptr[2*1] = <void*>_func_Gamma
 ufunc_gamma_ptr[2*1+1] = <void*>(<char*>"gamma")
-ufunc_gamma_ptr[2*2] = <void*>_func_cgamma_wrap
+ufunc_gamma_ptr[2*2] = <void*>_func_cgamma
 ufunc_gamma_ptr[2*2+1] = <void*>(<char*>"gamma")
-ufunc_gamma_ptr[2*3] = <void*>_func_cgamma_wrap
+ufunc_gamma_ptr[2*3] = <void*>_func_cgamma
 ufunc_gamma_ptr[2*3+1] = <void*>(<char*>"gamma")
 ufunc_gamma_data[0] = &ufunc_gamma_ptr[2*0]
 ufunc_gamma_data[1] = &ufunc_gamma_ptr[2*1]
@@ -11225,9 +11227,9 @@ ufunc_rgamma_ptr[2*0] = <void*>_func_rgamma
 ufunc_rgamma_ptr[2*0+1] = <void*>(<char*>"rgamma")
 ufunc_rgamma_ptr[2*1] = <void*>_func_rgamma
 ufunc_rgamma_ptr[2*1+1] = <void*>(<char*>"rgamma")
-ufunc_rgamma_ptr[2*2] = <void*>_func_crgamma_wrap
+ufunc_rgamma_ptr[2*2] = <void*>_func_crgamma
 ufunc_rgamma_ptr[2*2+1] = <void*>(<char*>"rgamma")
-ufunc_rgamma_ptr[2*3] = <void*>_func_crgamma_wrap
+ufunc_rgamma_ptr[2*3] = <void*>_func_crgamma
 ufunc_rgamma_ptr[2*3+1] = <void*>(<char*>"rgamma")
 ufunc_rgamma_data[0] = &ufunc_rgamma_ptr[2*0]
 ufunc_rgamma_data[1] = &ufunc_rgamma_ptr[2*1]
