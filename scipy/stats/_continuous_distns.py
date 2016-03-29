@@ -4507,7 +4507,7 @@ class vonmises_gen(rv_continuous):
 
     def _entropy(self, kappa):
         return (-kappa * i1(kappa) / i0(kappa)
-                + math.log(2 * math.pi * i0(kappa)))
+                + np.log(2 * np.pi * i0(kappa)))
 vonmises = vonmises_gen(name='vonmises')
 vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
 
