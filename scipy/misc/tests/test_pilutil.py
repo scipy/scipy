@@ -55,6 +55,11 @@ class TestPILUtil(TestCase):
         assert_equal(im2, im3)
         assert_equal(im2, im4)
 
+    def test_imresize5(self):
+        im = np.random.random((25, 15))
+        im2 = misc.imresize(im, (30, 60), interp='lanczos')
+        assert_equal(im2.shape, (30, 60))
+
     def test_bytescale(self):
         x = np.array([0, 1, 2], np.uint8)
         y = np.array([0, 1, 2])
