@@ -744,7 +744,7 @@ c   restore Lagrange multipliers (only for user-defined variables)
 c   set rest of the multipliers to nan (they are not used)
 
           y(m+1) = 0
-          y(m+1) = y(m+1) / 0
+          y(m+1) = 0 / y(m+1)
           do 60 i=m+2,m+n+n
              y(i) = y(m+1)
  60       continue
