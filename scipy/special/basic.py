@@ -2229,29 +2229,58 @@ def perm(N, k, exact=False):
         return vals
 
 
+# http://stackoverflow.com/a/16327037/125507
+def _range_prod(lo, hi):
+    """
+    Product of a range of numbers
+
+    Returns the product of
+    lo * (lo+1) * (lo+2) * ... * (hi-2) * (hi-1) * hi
+    = hi! / (lo-1)!
+    """
+    if lo + 1 < hi:
+        mid = (hi + lo) // 2
+        return _range_prod(lo, mid) * _range_prod(mid + 1, hi)
+    if lo == hi:
+        return lo
+    return lo * hi
+
+
 def factorial(n, exact=False):
-    """The factorial function, n! = special.gamma(n+1).
+    """
+    The factorial of a number or array of numbers
 
-    If exact is 0, then floating point precision is used, otherwise
-    exact long integer is computed.
+    The factorial of non-negative integer `n` is the product of all
+    positive integers less than or equal to `n`:
 
-    - Array argument accepted only for exact=False case.
-    - If n<0, the return value is 0.
+    n! = n * (n - 1) * (n - 2) * ... * 1
 
     Parameters
     ----------
     n : int or array_like of ints
-        Calculate ``n!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+        Input values, which must be non-negative integers.
     exact : bool, optional
-        The result can be approximated rapidly using the gamma-formula
-        above.  If `exact` is set to True, calculate the
-        answer exactly using integer arithmetic. Default is False.
+        If True, calculate the answer exactly using long integer arithmetic.
+        If False, result is approximated in floating point rapidly using the
+        `gamma` function.
+        Default is False.
 
     Returns
     -------
-    nf : float or int
-        Factorial of `n`, as an integer or a float depending on `exact`.
+    nf : float or int or ndarray
+        Factorial of `n`, as integer or float depending on `exact`.
+
+    Notes
+    -----
+    For arrays with ``exact=True``, the factorial is computed only once, for
+    the largest input, with each other result computed in the process. If any
+    input is greater than 12, the output is an object array of Python long
+    ints.
+
+    With ``exact=False`` the factorial is approximated using the gamma
+    function:
+
+    .. math:: n! = \Gamma(n+1)
 
     Examples
     --------
@@ -2259,15 +2288,41 @@ def factorial(n, exact=False):
     >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
     array([   6.,   24.,  120.])
+    >>> factorial(arr, exact=True)
+    array([  6,  24, 120])
     >>> factorial(5, exact=True)
     120L
 
     """
     if exact:
-        return math.factorial(n)
+        if np.ndim(n) == 0:
+            return math.factorial(n)
+        else:
+            n = asarray(n)
+            un = np.unique(n)
+
+            if any(abs(un.astype(int)) != un):
+                raise ValueError("Input must be non-negative integers for "
+                                 "'exact' mode.")
+
+            # Anything greater than 12! requires long ints
+            out = np.empty_like(n, dtype=object if un[-1] > 12 else int)
+
+            out[n < 2] = 1
+            un = np.concatenate(([1], un[un > 1]))
+
+            # Calculate products of each range of numbers
+            val = 1
+            for i in xrange(len(un) - 1):
+                # Use Python ints instead of np.int32, which would overflow
+                prev = int(un[i] + 1)
+                current = int(un[i + 1])
+                val *= _range_prod(prev, current)
+                out[n == current] = val
+            return out
     else:
         n = asarray(n)
-        vals = gamma(n+1)
+        vals = gamma(n + 1)
         return where(n >= 0, vals, 0)
 
 
