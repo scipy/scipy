@@ -1667,6 +1667,9 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     """
     if isinstance(system, lti):
         sys = system._as_ss()
+    elif isinstance(system, ltid):
+        raise AttributeError('lsim2 can only be used with continuous-time '
+                             'systems.')
     else:
         sys = lti(*system)._as_ss()
 
@@ -1790,6 +1793,9 @@ def lsim(system, U, T, X0=None, interp=True):
     """
     if isinstance(system, lti):
         sys = system._as_ss()
+    elif isinstance(system, ltid):
+        raise AttributeError('lsim can only be used with continuous-time '
+                             'systems.')
     else:
         sys = lti(*system)._as_ss()
     T = atleast_1d(T)
@@ -1964,6 +1970,9 @@ def impulse(system, X0=None, T=None, N=None):
     """
     if isinstance(system, lti):
         sys = system._as_ss()
+    elif isinstance(system, ltid):
+        raise AttributeError('impulse can only be used with continuous-time '
+                             'systems.')
     else:
         sys = lti(*system)._as_ss()
     if X0 is None:
@@ -2046,6 +2055,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     """
     if isinstance(system, lti):
         sys = system._as_ss()
+    elif isinstance(system, ltid):
+        raise AttributeError('impulse2 can only be used with continuous-time '
+                             'systems.')
     else:
         sys = lti(*system)._as_ss()
     B = sys.B
@@ -2107,6 +2119,9 @@ def step(system, X0=None, T=None, N=None):
     """
     if isinstance(system, lti):
         sys = system._as_ss()
+    elif isinstance(system, ltid):
+        raise AttributeError('step can only be used with continuous-time '
+                             'systems.')
     else:
         sys = lti(*system)._as_ss()
     if N is None:
@@ -2171,6 +2186,9 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     """
     if isinstance(system, lti):
         sys = system._as_ss()
+    elif isinstance(system, ltid):
+        raise AttributeError('step2 can only be used with continuous-time '
+                             'systems.')
     else:
         sys = lti(*system)._as_ss()
     if N is None:
@@ -2302,6 +2320,9 @@ def freqresp(system, w=None, n=10000):
     """
     if isinstance(system, lti):
         sys = system._as_tf()
+    elif isinstance(system, ltid):
+        raise AttributeError('freqresp can only be used with continuous-time '
+                             'systems.')
     else:
         sys = lti(*system)._as_tf()
 
@@ -3118,20 +3139,15 @@ def dlsim(system, u, t=None, x0=None):
 
     """
     # Convert system to ltid-StateSpace
-    if isinstance(system, ltid):
-        system = system
-    elif isinstance(system, lti):
+    if isinstance(system, lti):
         raise AttributeError('dlsim can only be used with discrete-time ltid '
                              'systems.')
-    else:
+    elif not isinstance(system, ltid):
         system = ltid(*system)
 
     # Condition needed to ensure output remains compatible
-    if isinstance(system, StateSpace):
-        is_ss_input = True
-    else:
-        is_ss_input = False
-        system = system.to_ss()
+    is_ss_input = isinstance(system, StateSpace)
+    system = system._as_ss()
 
     u = np.asarray(u)
 
