@@ -237,7 +237,7 @@ def test_no_params():
     f_test = exp_fun(x_test, sol_test)
     res = sol.sol(x_test, 1) - f_test
     rel_res = res / (1 + np.abs(f_test))
-    norm_res = np.linalg.norm(rel_res, axis=0)
+    norm_res = np.sum(rel_res**2, axis=0)**0.5
     assert_(np.all(norm_res < 1e-3))
 
     assert_(np.all(sol.res < 1e-3))
@@ -263,7 +263,7 @@ def test_with_params():
     f_test = sl_fun(x_test, sol_test, [1])
     res = sol.sol(x_test, 1) - f_test
     rel_res = res / (1 + np.abs(f_test))
-    norm_res = np.linalg.norm(rel_res, axis=0)
+    norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
     assert_(np.all(norm_res < 1e-3))
 
     assert_(np.all(sol.res < 1e-3))
