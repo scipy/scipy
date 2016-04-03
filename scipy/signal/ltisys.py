@@ -501,6 +501,48 @@ class LinearTimeInvariant(object):
         source_class = type(self)
         self._copy(source_class(obj))
 
+    def _as_ss(self):
+        """Convert to `StateSpace` system, without copying.
+
+        Returns
+        -------
+        sys: StateSpace
+            The `StateSpace` system. If the class is already an instance of
+            `StateSpace` then this instance is returned.
+        """
+        if isinstance(self, StateSpace):
+            return self
+        else:
+            return self.to_ss()
+
+    def _as_zpk(self):
+        """Convert to `ZerosPolesGain` system, without copying.
+
+        Returns
+        -------
+        sys: ZerosPolesGain
+            The `ZerosPolesGain` system. If the class is already an instance of
+            `ZerosPolesGain` then this instance is returned.
+        """
+        if isinstance(self, ZerosPolesGain):
+            return self
+        else:
+            return self.to_zpk()
+
+    def _as_tf(self):
+        """Convert to `TransferFunction` system, without copying.
+
+        Returns
+        -------
+        sys: ZerosPolesGain
+            The `TransferFunction` system. If the class is already an instance of
+            `TransferFunction` then this instance is returned.
+        """
+        if isinstance(self, TransferFunction):
+            return self
+        else:
+            return self.to_tf()
+
 
 class lti(LinearTimeInvariant):
     """
@@ -1624,9 +1666,9 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     """
     if isinstance(system, lti):
-        sys = system.to_ss()
+        sys = system._as_ss()
     else:
-        sys = lti(*system).to_ss()
+        sys = lti(*system)._as_ss()
 
     if X0 is None:
         X0 = zeros(sys.B.shape[0], sys.A.dtype)
@@ -1747,9 +1789,9 @@ def lsim(system, U, T, X0=None, interp=True):
     >>> plt.plot(t, y)
     """
     if isinstance(system, lti):
-        sys = system.to_ss()
+        sys = system._as_ss()
     else:
-        sys = lti(*system).to_ss()
+        sys = lti(*system)._as_ss()
     T = atleast_1d(T)
     if len(T.shape) != 1:
         raise ValueError("T must be a rank-1 array.")
@@ -1921,9 +1963,9 @@ def impulse(system, X0=None, T=None, N=None):
 
     """
     if isinstance(system, lti):
-        sys = system.to_ss()
+        sys = system._as_ss()
     else:
-        sys = lti(*system).to_ss()
+        sys = lti(*system)._as_ss()
     if X0 is None:
         X = squeeze(sys.B)
     else:
@@ -2003,9 +2045,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     """
     if isinstance(system, lti):
-        sys = system.to_ss()
+        sys = system._as_ss()
     else:
-        sys = lti(*system).to_ss()
+        sys = lti(*system)._as_ss()
     B = sys.B
     if B.shape[-1] != 1:
         raise ValueError("impulse2() requires a single-input system.")
@@ -2064,9 +2106,9 @@ def step(system, X0=None, T=None, N=None):
 
     """
     if isinstance(system, lti):
-        sys = system.to_ss()
+        sys = system._as_ss()
     else:
-        sys = lti(*system).to_ss()
+        sys = lti(*system)._as_ss()
     if N is None:
         N = 100
     if T is None:
@@ -2128,9 +2170,9 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     .. versionadded:: 0.8.0
     """
     if isinstance(system, lti):
-        sys = system.to_ss()
+        sys = system._as_ss()
     else:
-        sys = lti(*system).to_ss()
+        sys = lti(*system)._as_ss()
     if N is None:
         N = 100
     if T is None:
@@ -2258,12 +2300,10 @@ def freqresp(system, w=None, n=10000):
     >>> plt.plot(H.real, -H.imag, "r")
     >>> plt.show()
     """
-    if isinstance(system, TransferFunction):
-        sys = system
-    elif isinstance(system, lti):
-        sys = system.to_tf()
+    if isinstance(system, lti):
+        sys = system._as_tf()
     else:
-        sys = lti(*system).to_tf()
+        sys = lti(*system)._as_tf()
 
     if sys.inputs != 1 or sys.outputs != 1:
         raise ValueError("freqresp() requires a SISO (single input, single "
@@ -3181,12 +3221,12 @@ def dimpulse(system, x0=None, t=None, n=None):
     """
     # Convert system to ltid-StateSpace
     if isinstance(system, ltid):
-        system = system.to_ss()
+        system = system._as_ss()
     elif isinstance(system, lti):
         raise AttributeError('dimpulse can only be used with discrete-time '
                              'ltid systems.')
     else:
-        system = ltid(*system).to_ss()
+        system = ltid(*system)._as_ss()
 
     # Default to 100 samples if unspecified
     if n is None:
@@ -3255,12 +3295,12 @@ def dstep(system, x0=None, t=None, n=None):
     """
     # Convert system to ltid-StateSpace
     if isinstance(system, ltid):
-        system = system.to_ss()
+        system = system._as_ss()
     elif isinstance(system, lti):
         raise AttributeError('dstep can only be used with discrete-time ltid '
                              'systems.')
     else:
-        system = ltid(*system).to_ss()
+        system = ltid(*system)._as_ss()
 
     # Default to 100 samples if unspecified
     if n is None:
@@ -3346,12 +3386,12 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     See `freqz` for more details and examples.
     """
     if isinstance(system, ltid):
-        system = system.to_tf()
+        system = system._as_tf()
     elif isinstance(system, lti):
         raise AttributeError('dfreqresp can only be used with discrete-time '
                              'systems.')
     else:
-        system = ltid(*system).to_tf()
+        system = ltid(*system)._as_tf()
 
     if system.inputs != 1 or system.outputs != 1:
         raise ValueError("dfreqresp() requires a SISO (single input, single "
