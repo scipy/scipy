@@ -317,12 +317,12 @@ def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, tol, n_iter,
 
 
 def print_iteration_header():
-    print("{0:^15}{1:^15}{2:^15}{3:^15}".format(
+    print("{:^15}{:^15}{:^15}{:^15}".format(
         "Iteration", "Max residual", "Total nodes", "Nodes added"))
 
 
 def print_progress(iteration, residual, total_nodes, inserted_nodes):
-    print("{0:^15}{1:^15.2e}{2:^15}{3:^15}".format(
+    print("{:^15}{:^15.2e}{:^15}{:^15}".format(
         iteration, residual, total_nodes, inserted_nodes))
 
 
@@ -739,17 +739,17 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
 
     if verbose > 0:
         if status == 0:
-            print("Solved in {0} iterations, number of nodes {1}, "
-                  "maximum relative residual {2:.2e}."
+            print("Solved in {} iterations, number of nodes {}, "
+                  "maximum relative residual {:.2e}."
                   .format(iteration, x.shape[0], max_res))
         elif status == 1:
-            print("Number of nodes is exceeded after iteration {0}, "
-                  "maximum relative residual {1:.2e}."
+            print("Number of nodes is exceeded after iteration {}, "
+                  "maximum relative residual {:.2e}."
                   .format(iteration, max_res))
         elif status == 2:
             print("The algorithm failed to progress in solving the "
-                  "collocation system on iteration {0}, maximum relative "
-                  "residual {1:.2e}.".format(iteration, max_res))
+                  "collocation system on iteration {}, maximum relative "
+                  "residual {:.2e}.".format(iteration, max_res))
 
     if p.size == 0:
         p = None
