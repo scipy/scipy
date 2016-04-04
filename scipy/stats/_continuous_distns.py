@@ -4225,6 +4225,60 @@ class skew_norm_gen(rv_continuous):
 
 skewnorm = skew_norm_gen(name='skewnorm')
 
+
+class trap_gen(rv_continuous):
+    """A trapezoidal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The trapezoidal distribution can be represented with an up-sloping line
+    from ``loc`` to ``(loc + c*scale)``, then constant to ``(loc + d*scale)``
+    and then downsloping from ``(loc + d*scale)`` to ``(loc+scale)``.
+
+    `trap` takes ``c`` and ``d`` as shape parameters.
+
+    %(after_notes)s
+
+    The standard form is in the range [0, 1] with c the mode.
+    The location parameter shifts the start to `loc`.
+    The scale parameter changes the width from 1 to `scale`.
+
+    %(example)s
+
+    """
+    def _rvs(self, c, d):
+        rands = self._random_state.rand(self._size)
+        return self._ppf(rands, c, d)
+
+    def _argcheck(self, c, d):
+        return (c >= 0) & (c <= 1) & (d >= 0) & (d <= 1) & (d >= c)
+
+    def _pdf(self, x, c, d):
+        u = 2 / (d - c + 1)
+
+        condlist = [x < c, x <= d, x > d]
+        choicelist = [u * x / c, u, u * (1 - x) / (1 - d)]
+        return np.select(condlist, choicelist)
+
+    def _cdf(self, x, c, d):
+        condlist = [x < c, x <= d, x > d]
+        choicelist = [x**2 / c / (d - c + 1),
+                      (c + 2 * (x - c)) / (d - c + 1),
+                      1 - ((1 - x)**2 / (d - c + 1) / (1 - d))]
+        return np.select(condlist, choicelist)
+
+    def _ppf(self, q, c, d):
+        qc, qd = self._cdf(c, c, d), self._cdf(d, c, d)
+        condlist = [q < qc, q <= qd, q > qd]
+        choicelist = [np.sqrt(q * c * (1 + d - c)),
+                      0.5 * q * (1 + d - c) + 0.5 * c,
+                      1 - sqrt((1 - q) * (d - c + 1) * (1 - d))]
+        return np.select(condlist, choicelist)
+trap = trap_gen(a=0.0, b=1.0, name="trap")
+
+
 class triang_gen(rv_continuous):
     """A triangular continuous random variable.
 
