@@ -1,4 +1,6 @@
 """Boundary value problem solver."""
+from __future__ import division, print_function
+
 from warnings import warn
 
 import numpy as np
