@@ -301,7 +301,7 @@ class TestCephes(TestCase):
         assert_equal(cephes.expm1(np.inf), np.inf)
         assert_equal(cephes.expm1(-np.inf), -1)
         assert_equal(cephes.expm1(np.nan), np.nan)
-    
+
     # Earlier numpy version don't guarantee that npy_cexp conforms to C99.
     @dec.skipif(NumpyVersion(np.__version__) < '1.9.0')
     def test_expm1_complex(self):
@@ -322,7 +322,7 @@ class TestCephes(TestCase):
         assert_equal(expm1(complex(1, np.nan)), complex(np.nan, np.nan))
         assert_equal(expm1(complex(np.nan, 1)), complex(np.nan, np.nan))
         assert_equal(expm1(complex(np.nan, np.nan)), complex(np.nan, np.nan))
- 
+
     @dec.knownfailureif(True, 'The real part of expm1(z) bad at these points')
     def test_expm1_complex_hard(self):
         # The real part of this function is difficult to evaluate when
@@ -330,7 +330,7 @@ class TestCephes(TestCase):
         y = np.array([0.1, 0.2, 0.3, 5, 11, 20])
         x = -np.log(np.cos(y))
         z = x + 1j*y
-        
+
         # evaluate using mpmath.expm1 with dps=1000
         expected = np.array([-5.5507901846769623e-17+0.10033467208545054j,
                               2.4289354732893695e-18+0.20271003550867248j,
@@ -1715,13 +1715,35 @@ class TestExp(TestCase):
 
 class TestFactorialFunctions(TestCase):
     def test_factorial(self):
+        assert_array_almost_equal(special.factorial(0), 1)
+        assert_array_almost_equal(special.factorial(1), 1)
+        assert_array_almost_equal(special.factorial(2), 2)
         assert_array_almost_equal([6., 24., 120.],
-                special.factorial([3, 4, 5], exact=False))
+                                  special.factorial([3, 4, 5], exact=False))
+        assert_array_almost_equal(special.factorial([[5, 3], [4, 3]]),
+                                  [[120, 6], [24, 6]])
+
+        assert_equal(special.factorial(0, exact=True), 1)
+        assert_equal(special.factorial(1, exact=True), 1)
+        assert_equal(special.factorial(2, exact=True), 2)
         assert_equal(special.factorial(5, exact=True), 120)
+        assert_equal(special.factorial(15, exact=True), 1307674368000)
+
+        assert_equal(special.factorial([0], exact=True), 1)
+        assert_equal(special.factorial([1], exact=True), 1)
+        assert_equal(special.factorial([2], exact=True), 2)
+        assert_equal(special.factorial([5], exact=True), 120)
+        assert_equal(special.factorial([15], exact=True), 1307674368000)
+
+        assert_equal(special.factorial([7, 4, 15, 10], exact=True),
+                     [5040, 24, 1307674368000, 3628800])
+
+        assert_equal(special.factorial([[5, 3], [4, 3]], True),
+                     [[120, 6], [24, 6]])
 
     def test_factorial2(self):
         assert_array_almost_equal([105., 384., 945.],
-                special.factorial2([7, 8, 9], exact=False))
+                                  special.factorial2([7, 8, 9], exact=False))
         assert_equal(special.factorial2(7, exact=True), 105)
 
     def test_factorialk(self):
