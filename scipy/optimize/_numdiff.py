@@ -358,7 +358,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     if sparsity is None:
         return _dense_difference(fun_wrapped, x0, f0, h, use_one_sided, method)
     else:
-        if len(sparsity) == 2:
+        if not issparse(sparsity) and len(sparsity) == 2:
             structure, groups = sparsity
         else:
             structure = sparsity
@@ -494,11 +494,10 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     return csr_matrix(J)
 
 
-def check_derivative(fun, jac, x0, args=(), kwargs={},
-                     bounds=(-np.inf, np.inf), sparse_diff=False,
-                     sparsity=None):
+def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
+                     kwargs={}):
     """Check correctness of a function computing derivatives (Jacobian or
-    gradient) by comparison with finite difference approximation.
+    gradient) by comparison with a finite difference approximation.
 
     Parameters
     ----------
@@ -509,35 +508,19 @@ def check_derivative(fun, jac, x0, args=(), kwargs={},
     jac : callable
         Function which computes Jacobian matrix of `fun`. It must work with
         argument x the same way as `fun`. The return value must be array_like
-        with an appropriate shape.
+        or sparse matrix with an appropriate shape.
     x0 : array_like of shape (n,) or float
         Point at which to estimate the derivatives. Float will be converted
         to 1-d array.
-    args, kwargs : tuple and dict, optional
-        Additional arguments passed to `fun` and `jac`. Both empty by default.
-        The calling signature is ``fun(x, *args, **kwargs)`` and the same
-        for `jac`.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each bound must match the size of `x0` or be a scalar, in the latter
         case the bound will be the same for all variables. Use it to limit the
         range of function evaluation.
-    sparse_diff : boolean, optional
-        If `jac` returns a sparse matrix this flag indicates whether to
-        use sparse differencing for Jacobian estimation.
-    sparsity : None or (structure, groups) tuple, optional
-        If `jac` returns a sparse matrix and ``sparse_diff=True``, provide a
-        tuple with following elements:
-
-        * structure : array_like or sparse matrix of shape (m, n). A zero
-          element means that a corresponding element of Jacobian identically
-          equals to zero.
-        * groups : array_like of shape (n,). Precomputed columns grouping
-          for a given sparsity structure, function `group_columns` should be
-          used beforehand to compute it.
-
-        If None `structure` will be taken from evaluated `jac` and `groups`
-        will be computed.
+    args, kwargs : tuple and dict, optional
+        Additional arguments passed to `fun` and `jac`. Both empty by default.
+        The calling signature is ``fun(x, *args, **kwargs)`` and the same
+        for `jac`.
 
     Returns
     -------
@@ -573,22 +556,17 @@ def check_derivative(fun, jac, x0, args=(), kwargs={},
     2.4492935982947064e-16
     """
     J_to_test = jac(x0, *args, **kwargs)
-    if issparse(J_to_test) and sparse_diff:
-        if sparsity is None:
-            groups = group_columns(J_to_test)
-            sparsity = (J_to_test, groups)
-        J_diff = approx_derivative(fun, x0, args=args, kwargs=kwargs,
-                                   bounds=bounds, sparsity=sparsity)
+    if issparse(J_to_test):
+        J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,
+                                   args=args, kwargs=kwargs)
         J_to_test = csr_matrix(J_to_test)
         abs_err = J_to_test - J_diff
         i, j, abs_err_data = find(abs_err)
-        jac_diff_data = np.asarray(J_diff[i, j]).ravel()
+        J_diff_data = np.asarray(J_diff[i, j]).ravel()
         return np.max(np.abs(abs_err_data) /
-                      np.maximum(1, np.abs(jac_diff_data)))
+                      np.maximum(1, np.abs(J_diff_data)))
     else:
-        J_diff = approx_derivative(
-            fun, x0, args=args, kwargs=kwargs, bounds=bounds)
-        if issparse(J_to_test):
-            J_to_test = J_to_test.toarray()
+        J_diff = approx_derivative(fun, x0, bounds=bounds,
+                                   args=args, kwargs=kwargs)
         abs_err = np.abs(J_to_test - J_diff)
         return np.max(abs_err / np.maximum(1, np.abs(J_diff)))

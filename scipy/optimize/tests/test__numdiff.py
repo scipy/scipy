@@ -461,27 +461,13 @@ class TestApproxDerivativeSparse(object):
         def jac(x):
             return csr_matrix(self.jac(x))
 
-        accuracy = check_derivative(
-            self.fun, jac, self.x0,
-            bounds=(self.lb, self.ub), sparse_diff=True)
+        accuracy = check_derivative(self.fun, jac, self.x0,
+                                    bounds=(self.lb, self.ub))
         assert_(accuracy < 1e-9)
 
-        A = self.structure(self.n)
-        groups = group_columns(A)
-        accuracy = check_derivative(
-            self.fun, jac, self.x0, bounds=(self.lb, self.ub),
-            sparse_diff=True, sparsity=(A, groups)
-        )
+        accuracy = check_derivative(self.fun, jac, self.x0,
+                                    bounds=(self.lb, self.ub))
         assert_(accuracy < 1e-9)
-
-        accuracy = check_derivative(
-            self.fun, jac, self.x0,
-            bounds=(self.lb, self.ub), sparse_diff=False)
-        # Slightly worse accuracy because all elements are computed.
-        # Floating point issues make true 0 to some smal value, then
-        # it is divided by small step and as a result we have ~1e-9 element,
-        # which is actually should be zero.
-        assert_(accuracy < 1e-8)
 
 
 if __name__ == '__main__':
