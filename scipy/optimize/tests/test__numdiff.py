@@ -443,6 +443,11 @@ class TestApproxDerivativeSparse(object):
                                   rel_step=rel_step, sparsity=(A, groups))
             assert_allclose(J.toarray(), self.J_true, rtol=1e-5)
 
+    def test_no_precomputed_groups(self):
+        A = self.structure(self.n)
+        J = approx_derivative(self.fun, self.x0, sparsity=A)
+        assert_allclose(J.toarray(), self.J_true, rtol=1e-6)
+
     def test_equivalence(self):
         structure = np.ones((self.n, self.n), dtype=int)
         groups = np.arange(self.n)

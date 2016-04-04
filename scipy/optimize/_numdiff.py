@@ -177,14 +177,14 @@ def group_columns(A, order=0):
 
 
 def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
-                      args=(), kwargs={}, bounds=(-np.inf, np.inf),
-                      sparsity=None):
+                      bounds=(-np.inf, np.inf), sparsity=None, args=(),
+                      kwargs={}):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
     If a function maps from R^n to R^m, its derivatives form m-by-n matrix
-    called Jacobian, where an element (i, j) is a partial derivative of f[i]
-    with respect to x[j].
+    called the Jacobian, where an element (i, j) is a partial derivative of
+    f[i] with respect to x[j].
 
     Parameters
     ----------
@@ -215,36 +215,42 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     f0 : None or array_like, optional
         If not None it is assumed to be equal to ``fun(x0)``, in  this case
         the ``fun(x0)`` is not called. Default is None.
-    args, kwargs : tuple and dict, optional
-        Additional arguments passed to `fun`. Both empty by default.
-        The calling signature is ``fun(x, *args, **kwargs)``.
     bounds : tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each bound must match the size of `x0` or be a scalar, in the latter
         case the bound will be the same for all variables. Use it to limit the
         range of function evaluation.
-    sparsity : None or (structure, groups) tuple, optional
-        Defines sparsity structure of Jacobian.
+    sparsity : {None, array_like, sparse matrix, 2-tuple}, optional
+        Defines a sparsity structure of the Jacobian matrix. If the Jacobian
+        matrix is known to have only few non-zero elements in each row, then
+        it's possible to estimate its several columns by a single function
+        evaluation [3]_. To perform such economic computations two ingredients
+        are required:
 
         * structure : array_like or sparse matrix of shape (m, n). A zero
-          element means that a corresponding element of Jacobian identically
-          equals to zero.
-        * groups : array_like of shape (n,). Precomputed columns grouping
-          for a given sparsity structure, function `group_columns` should be
-          used beforehand to compute it.
+          element means that a corresponding element of the Jacobian
+          identically equals to zero.
+        * groups : array_like of shape (n,). A column grouping for a given
+          sparsity structure, use `group_columns` to obtain it.
 
-        Note, that sparse differencing makes sense only for actually large
-        and sparse Jacobians. If None (default) standard dense differencing
-        will be used.
+        A single array or a sparse matrix is interpreted as a sparsity
+        structure, and groups are computed inside the function. A tuple is
+        interpreted as (structure, groups). If None (default), a standard
+        dense differencing will be used.
+
+        Note, that sparse differencing makes sense only for large Jacobian
+        matrices where each row contains few non-zero elements.
+    args, kwargs : tuple and dict, optional
+        Additional arguments passed to `fun`. Both empty by default.
+        The calling signature is ``fun(x, *args, **kwargs)``.
 
     Returns
     -------
     J : ndarray or csr_matrix
-        Finite difference approximation of derivatives in the form of Jacobian
-        matrix. If `sparse` is None then ndarray with shape (m, n) is
-        returned. Although if m=1 it is returned as a gradient with
-        shape (n,). If `sparse` is not None, csr_matrix with shape (m, n) is
-        returned.
+        Finite difference approximation of the Jacobian matrix. If `sparsity`
+        is None then ndarray with shape (m, n) is returned. Although if m=1 it
+        is returned as a gradient with shape (n,). If `sparsity` is not None,
+        csr_matrix with shape (m, n) is returned.
 
     See Also
     --------
@@ -276,7 +282,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     .. [1] W. H. Press et. al. "Numerical Recipes. The Art of Scientific
            Computing. 3rd edition", sec. 5.7.
 
-    .. [2] B. Fornberg, "Generation of Finite Difference Formulas on
+    .. [2] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
+           sparse Jacobian matrices", Journal of the Institute of Mathematics
+           and its Applications, 13 (1974), pp. 117-120.
+
+    .. [3] B. Fornberg, "Generation of Finite Difference Formulas on
            Arbitrarily Spaced Grids", Mathematics of Computation 51, 1988.
 
     Examples
@@ -348,11 +358,17 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     if sparsity is None:
         return _dense_difference(fun_wrapped, x0, f0, h, use_one_sided, method)
     else:
-        structure, groups = sparsity
+        if len(sparsity) == 2:
+            structure, groups = sparsity
+        else:
+            structure = sparsity
+            groups = group_columns(sparsity)
+
         if issparse(structure):
             structure = csc_matrix(structure)
         else:
             structure = np.atleast_2d(structure)
+
         groups = np.atleast_1d(groups)
         return _sparse_difference(fun_wrapped, x0, f0, h, use_one_sided,
                                   structure, groups, method)
