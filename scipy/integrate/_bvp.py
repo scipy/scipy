@@ -564,7 +564,7 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
 
     Examples
     --------
-    We solve a simple Sturm–Liouville problem::
+    We solve a simple Sturm-Liouville problem::
 
         y'' + k**2 * y = 0
         y(0) = y(1) = 0
