@@ -1,4 +1,5 @@
 """Generic interface for least-square minimization."""
+from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
