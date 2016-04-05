@@ -4259,7 +4259,7 @@ class trap_gen(rv_continuous):
         return np.select(condlist, choicelist)
 
     def _cdf(self, x, c, d):
-        condlist = [x==1, x < c, x <= d, x > d]
+        condlist = [x == 1, x < c, x <= d, x > d]
         choicelist = [1,
                       x**2 / c / (d - c + 1),
                       (c + 2 * (x - c)) / (d - c + 1),
