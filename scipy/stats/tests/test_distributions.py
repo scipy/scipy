@@ -40,7 +40,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'halflogistic', 'fatiguelife', 'foldnorm', 'ncx2', 't', 'nct',
          'weibull_min', 'weibull_max', 'dweibull', 'maxwell', 'rayleigh',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
-         'hypsecant', 'laplace', 'reciprocal', 'triang', 'tukeylambda',
+         'hypsecant', 'laplace', 'reciprocal', 'trap', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
          'rice']
 
@@ -1863,6 +1863,29 @@ class TestRdist(TestCase):
         values = [0.001, 0.5, 0.999]
         assert_almost_equal(distfn.cdf(distfn.ppf(values, 541.0), 541.0),
                             values, decimal=5)
+
+
+class TestTrap(TestCase):
+    def test_reduces_to_triang(self):
+        modes = [0.3, 0.5]
+        for mode in modes:
+            x = [0, mode, 1]
+            assert_almost_equal(stats.trap.pdf(x, mode, mode),
+                                stats.triang.pdf(x, mode))
+            assert_almost_equal(stats.trap.cdf(x, mode, mode),
+                                stats.triang.cdf(x, mode))
+
+    def test_reduces_to_uniform(self):
+            x = np.linspace(0, 1, 10)
+
+            old_err = np.seterr(divide='ignore')
+
+            assert_almost_equal(stats.trap.pdf(x, 0, 1),
+                                stats.uniform.pdf(x))
+            assert_almost_equal(stats.trap.cdf(x, 0, 1),
+                                stats.uniform.cdf(x))
+
+            np.seterr(**old_err)
 
 
 def test_540_567():

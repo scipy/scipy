@@ -4248,18 +4248,14 @@ class trap_gen(rv_continuous):
     %(example)s
 
     """
-    def _rvs(self, c, d):
-        rands = self._random_state.rand(self._size)
-        return self._ppf(rands, c, d)
-
     def _argcheck(self, c, d):
         return (c >= 0) & (c <= 1) & (d >= 0) & (d <= 1) & (d >= c)
 
     def _pdf(self, x, c, d):
         u = 2 / (d - c + 1)
 
-        condlist = [x==1, x < c, x <= d, x > d]
-        choicelist = [0, u * x / c, u, u * (1 - x) / (1 - d)]
+        condlist = [x < 0, x > 1, x < c, x <= d, x > d]
+        choicelist = [0, 0, u * x / c, u, u * (1 - x) / (1 - d)]
         return np.select(condlist, choicelist)
 
     def _cdf(self, x, c, d):
