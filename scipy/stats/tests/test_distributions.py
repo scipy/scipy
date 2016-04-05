@@ -75,7 +75,9 @@ def test_all_distributions():
         if dist == 'fatiguelife':
             alpha = 0.001
 
-        if dist == 'triang':
+        if dist == 'trap':
+            args = tuple(np.sort(np.random.random(nargs)))
+        elif dist == 'triang':
             args = tuple(np.random.random(nargs))
         elif dist == 'reciprocal':
             vals = np.random.random(nargs)
