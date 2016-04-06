@@ -12,7 +12,8 @@ from scipy import special
 from scipy import optimize
 from scipy import integrate
 from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
-                           inv_boxcox, inv_boxcox1p, erfc, chndtr, chndtrix)
+                           inv_boxcox, inv_boxcox1p, erfc, chndtr, chndtrix,
+                           i0, i1)
 
 from numpy import (where, arange, putmask, ravel, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
@@ -4496,13 +4497,17 @@ class vonmises_gen(rv_continuous):
         return self._random_state.vonmises(0.0, kappa, size=self._size)
 
     def _pdf(self, x, kappa):
-        return exp(kappa * cos(x)) / (2*pi*special.i0(kappa))
+        return exp(kappa * cos(x)) / (2*pi*i0(kappa))
 
     def _cdf(self, x, kappa):
         return _stats.von_mises_cdf(kappa, x)
 
     def _stats_skip(self, kappa):
         return 0, None, 0, None
+
+    def _entropy(self, kappa):
+        return (-kappa * i1(kappa) / i0(kappa)
+                + np.log(2 * np.pi * i0(kappa)))
 vonmises = vonmises_gen(name='vonmises')
 vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
 
