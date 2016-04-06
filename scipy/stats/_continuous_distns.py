@@ -4254,14 +4254,13 @@ class trap_gen(rv_continuous):
     def _pdf(self, x, c, d):
         u = 2 / (d - c + 1)
 
-        condlist = [x < 0, x > 1, x < c, x <= d, x > d]
-        choicelist = [0, 0, u * x / c, u, u * (1 - x) / (1 - d)]
+        condlist = [x < c, x <= d, x > d]
+        choicelist = [u * x / c, u, u * (1 - x) / (1 - d)]
         return np.select(condlist, choicelist)
 
     def _cdf(self, x, c, d):
-        condlist = [x == 1, x < c, x <= d, x > d]
-        choicelist = [1,
-                      x**2 / c / (d - c + 1),
+        condlist = [x < c, x <= d, x > d]
+        choicelist = [x**2 / c / (d - c + 1),
                       (c + 2 * (x - c)) / (d - c + 1),
                       1 - ((1 - x)**2 / (d - c + 1) / (1 - d))]
         return np.select(condlist, choicelist)
