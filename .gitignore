@@ -197,6 +197,7 @@ scipy/spatial/ckdtree.cxx
 scipy/spatial/ckdtree.h
 scipy/spatial/qhull.c
 scipy/special/_comb.c
+scipy/spatial/qhull_misc_config.h
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
