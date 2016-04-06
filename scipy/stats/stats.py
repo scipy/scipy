@@ -4442,6 +4442,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative='two-sided'):
     use_continuity : bool, optional
             Whether a continuity correction (1/2.) should be taken into
             account. Default is True.
+    alternative : 'less', 'two-sided', or 'greater'
+            Whether to get the p-value for the one-sided hypothesis ('less'
+            or 'greater'), or for the two-sided hypothesis ('two-sided', is
+            the default)
 
     Returns
     -------
@@ -4458,8 +4462,6 @@ def mannwhitneyu(x, y, use_continuity=True, alternative='two-sided'):
     value of U.
 
     This test corrects for ties and by default uses a continuity correction.
-    The reported p-value is for a one-sided hypothesis, to get the two-sided
-    p-value multiply the returned p-value by 2.
 
     """
     x = np.asarray(x)
