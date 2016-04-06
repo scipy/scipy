@@ -6,30 +6,24 @@
 #
 # Author: Sylvain Gubian, PMP SA
 ##############################################################################
+"""
+gensa: A generalized simulated annealing global optimization algorithm
+"""
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import assert_allclose
 from numpy.random import RandomState
 import sys
 import time
+from scipy.optimize import OptimizeResult
 from scipy.optimize import _lbfgsb
 from scipy.special import gammaln
 
+__all__ = ['gensa']
+
 KSPRING = 1.e8
 BIG_VALUE = 1.e13
-
-# Here put explanation for why we have testing functions here
-def rastrigin(x, y=None):
-    # 2D implementation (used for plotting)
-    if y is not None:
-        return 20 + x ** 2 - 10 * np.cos(
-            2 * np.pi * x) + y ** 2 - 10 * np.cos(2 * np.pi * y)
-    # Generalized version
-    return np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
-
-def test_rastrigin():
-    x = np.random.ranf(10) / 1.e+13
-    assert(rastrigin(x) == 0.0)
-
 
 
 class GenSARunnerException(Exception):
@@ -41,8 +35,22 @@ class Tracer():
 
 
 class GenSARunner(object):
+    """This class implements the core of the gensa algorithm.
 
-    def __init__(self, x0, fun, lower, upper, fargs={}):
+    x0 : ndarray
+        The starting coordinates.
+    fun : callable
+        The objective function
+    lower: ndarray
+        The lower bounds of the search domain
+    upper: ndarray
+        The upper bounds of the search domain
+    fargs: dict
+        Additional arguments to pass to the objective function
+
+    """
+
+    def __init__(self, fun, x0, lower, upper, fargs=()):
         self._fun = fun
         self._fargs = fargs
         self._x = np.array(x0)
@@ -62,9 +70,9 @@ class GenSARunner(object):
         self._hasconstraint = False
         self._tempsta = 5230
         self._knowreal = False
-        self._maxtime = 3600 # Using hours units
+        self._maxtime = 3600 # Using seconds units
         self._maxfuncall = 1e7
-        self._maxsteps = 5000
+        self._maxsteps = 500
         self._temprestart = 0.1
         self._qv = 2.62
         self._usey = 1
@@ -75,11 +83,17 @@ class GenSARunner(object):
         self._sgas = -1.0
         self._qa = -5.0  # Acceptance parameter
         self.nblocal = 0
+        self._step_record = 0
 
     def _judge_constraint(self):
+        # Not implemented yet
         return True
 
     def initialize(self):
+        """
+        Random coordinate generation in case given initial coordinates
+        are giving invalid objective value
+        """
         self._nbfuncall = 0
         self._indTrace = 0
         if self._markovlength % self._dim != 0:
@@ -98,10 +112,10 @@ class GenSARunner(object):
             if self._etot >= BIG_VALUE:
                 if reinit_counter >= MAX_REINIT_COUNT:
                     initerror = False
-                    raise GenSARunnerException(
-                        ('Stopping algorithm because function create NaN',
-                         'or (+/-) inifinity values even with trying new',
-                         'random parameters'))
+                    self._message = [('Stopping algorithm because function ',
+                        'create NaN or (+/-) inifinity values even with '
+                        'trying new random parameters')]
+                    raise GenSARunnerException(self._message)
                 rd = 0.0
                 for i in range(self._dim):
                     self._x[i] = self._lower[i] + np.random.ranf() * (
@@ -111,6 +125,7 @@ class GenSARunner(object):
                 initerror = False
 
     def start_search(self):
+        """ Start annealing search process """
         self.nblocal += 1
         inconstraint = True
         itnew = 0
@@ -130,7 +145,7 @@ class GenSARunner(object):
         self._etot0 = self._etot
         if self._check_stopping():
             self._stop_search()
-        step_record = 0
+        self._step_record = 0
         self._temp = self._tempsta
         tolowtemp = True
         while(tolowtemp):
@@ -141,8 +156,8 @@ class GenSARunner(object):
                 t1 = np.exp((self._qv - 1) * np.log(2.0)) - 1.0
                 t2 = np.exp((self._qv - 1) * np.log(s)) - 1.0
                 self._temp = self._tempsta * t1 / t2
-                step_record += 1
-                if step_record == self._maxsteps:
+                self._step_record += 1
+                if self._step_record == self._maxsteps:
                     tolowtemp = False
                     break
                 if self._temp < self._temprestart:
@@ -251,30 +266,38 @@ class GenSARunner(object):
             # End main loop
             #tolowtemp = False
         self._stop_search()
+        self._message = ["Number of iteration reached"]
         return 0
 
     def _check_stopping(self):
+        """Check if the search has to be stopped"""
         if self._knowreal:
             if self._emini <= self._realthreshold:
+                self._message = ["Known value for minimum reached"]
                 return True
         self._endtime = time.time()
         delta = self._endtime - self._starttime
         if delta >= self._maxtime:
+            self._message = ["Time limit reached"]
             return True
         if self._nbfuncall >= self._maxfuncall:
+            self._message = ["Number of function call reached"]
             return True
         # Check if no more improvments from tracer
         # Compare tracer value minernergy with self._emini
         # if lower than 1e-10, return true
 
     def _stop_search(self):
+        """Record time stamp when stop searching"""
         self._endtime = time.time()
 
     def _coordin(self):
+        """Random generation of new coordinates"""
         for i in range(self._dim):
             self._x[i] = np.random.ranf() * self._xrange[i] + self._lower[i]
 
     def _energy(self, x):
+        """Calling objective function and adding elasticity if needed"""
         delta_energy = 0
         if self._hasconstraint:
             inconstraint = self._judge_constraint()
@@ -293,13 +316,14 @@ class GenSARunner(object):
                 x[ucomp] - self._upper[ucomp]) * KSPRING
             delta_energy = np.sum(delta_energy_l) + np.sum(
                 delta_energy_u)
-        self._etot = self._fun(x, **self._fargs)
+        self._etot = self._fun(x, *self._fargs)
         self._nbfuncall += 1
         self._etot = self._etot + delta_energy
         if np.isinf(self._etot) or np.isnan(self._etot):
             self._etot = BIG_VALUE
 
     def _ls_energy(self, x):
+        """Performing a local search on the current location"""
         self._xbuffer = np.array(x)
         self._smooth_search()
         self._x = np.array(self._xbuffer)
@@ -307,6 +331,7 @@ class GenSARunner(object):
 
     # @profile
     def _visita(self):
+        """Visiting function"""
         pi = np.arcsin(1.0) * 2.0
         fator1 = np.exp(np.log(self._temp) / (self._qv - 1.0))
         fator2 = np.exp((4.0 - self._qv) * np.log(self._qv - 1.0))
@@ -325,11 +350,13 @@ class GenSARunner(object):
         return x / den
 
     def _fobjective(self, x):
+        """Wrapper to the objective function"""
         self._x = np.array(x)
         self._energy(self._x)
         return self._etot
 
     def _smooth_search(self):
+        """Local search implementation using setulb core function"""
         m = 5
         iteration = 0
         f = 0
@@ -361,7 +388,7 @@ class GenSARunner(object):
                 return
             _lbfgsb.setulb(m, x, l, u, ndb,
                            f, g, self._factr, self._pgtol, wa, iwa, task,
-                           iprint, csave, lsave, isave, dsave)
+                           iprint, csave, lsave, isave, dsave, 100)
             iteration += 1
             task_str = task.tostring()
             if task_str.startswith(b'FG'):
@@ -381,8 +408,12 @@ class GenSARunner(object):
                 return
 
     def _compute_gradient(self, x):
+        """Computation of numerical derivatives for local search"""
         # The below lines can be vectorized using np.vectorized on fobjective
         # to prevent doing a loop
+        # Check here if the expression of the derivatives is provided
+        # For that, add an argument for jacobian in the main function
+        # and use MemoizeJac from optimize.py
         g = np.zeros(self._dim, np.float64)
         for i in range(self._dim):
             x1 = np.array(x)
@@ -424,62 +455,112 @@ class GenSARunner(object):
         return retval
 
     @property
-    def x(self):
-        """ The solution array """
-        return self._x
+    def result(self):
+        """ The OptimizeResult """
+        res = OptimizeResult()
+        res.x = self._x
+        res.fun = self._fvalue
+        res.message = self._message
+        res.nit = self._step_record
+        return res
 
-    @property
-    def f(self):
-        """ The objective function value """
-        return self._fvalue
+def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
+        acceptparam=-5.0, maxtime=3600, maxcall=1e7, args=()):
+    """
+    Find the global minimum of a function using the General Simulated
+    Annealing algorithm
+
+    Parameters
+    ----------
+    func : callable ``f(x, *args)``
+        Function to be optimized.  ``args`` can be passed as an optional item
+        as argument (see below)
+    x0 : ndarray
+        Optional initial guess. If not given (None), a random one is computed
+        using lower and upper bounds ndarrays
+    lower: ndarray
+        Lower bounds values for the search domain
+    upper: ndarray
+        Upper bounds values for the search domain
+    args: Optional arguments to be passed to the function to be optimized.
 
 
-def test_optimizer():
-    np.random.seed(123)
-    for fname in TEST_CONFIG:
-        yield optim_func, fname
+    Returns
+    -------
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
+        Important attributes are: ``x`` the solution array, ``fun`` the value
+        of the function at the solution, and ``message`` which describes the
+        cause of the termination.
+        See `OptimizeResult` for a description of other attributes.
 
+    Notes
+    -----
+    GenSA is an implementation of the General Simulated Annealing algorithm
+    (GSA [1]_). This stochastic approach generalizes CSA (Classical Simulated
+    Annealing) and FSA (Fast Simulated Annealing) to find the neighborhood of
+    minima, then calls a local method (lbfgs) to find their exact value.
+    The algorithm was originally implemented in C++/R and is explained in
+    more detail by Yang Xiang and al [2]_.
+    GenSA can process complicated and high dimension non-linear objective
+    functions with a large number of local minima as described by Muller
+    paper [3]_.
 
-def optim_func(fname):
-    dim = TEST_CONFIG[fname]['dim']
-    lower = np.array(TEST_CONFIG[fname]['lower'])
-    upper = np.array(TEST_CONFIG[fname]['upper'])
-    func = TEST_CONFIG[fname]['func']
-    if 'args' in TEST_CONFIG[fname]:
-        fargs = TEST_CONFIG[fname]['args']
-    else:
-        fargs = {}
-    xinit = lower + np.random.rand(dim) * (upper - lower)
-    sr = GenSARunner(xinit, func, lower, upper, fargs=fargs)
-    sr._knowreal = True
-    sr._realthreshold = TEST_CONFIG[fname]['fvalue']
-    sr.initialize()
-    sr.start_search()
-    print('\nValue found for {0}: {1}'.format(
-        fname, sr.f))
-    assert(sr.f <= TEST_CONFIG[fname]['fvalue'])
+    References
+    ----------
+    .. [1] Constantino Tsallis, Daniel A. Stariolo, Generalized simulated
+        annealing, Physica A: Statistical Mechanics and its Applications,
+        Volume 233, Issues 1–2, 15 November 1996, Pages 395-406,
+        ISSN 0378-4371, http://dx.doi.org/10.1016/S0378-4371(96)00271-3.
+    .. [2] Y. Xiang, S. Gubian. B. Suomela, J. Hoeng (2013). Generalized
+        Simulated Annealing for Efficient Global Optimization: the GenSA
+        Package for R. The R Journal, Volume 5/1, June 2013.
+        URL http://journal.r-project.org/.
+    .. [3] Mullen, K. (2014). Continuous Global Optimization in R. Journal of
+        Statistical Software, 60(6), 1 - 45.
+        http://dx.doi.org/10.18637/jss.v060.i06
 
+    Examples
+    --------
+    The following example is a 30-dimensional problem, with many local minima.
+    The function involved is called Rastrigin
+    (https://en.wikipedia.org/wiki/Rastrigin_function)
+
+    >>> from scipy.optimize import gensa
+    >>> func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
+    >>>        + 10 * np.size(x)
+    >>> lw = [-5.12] * 30
+    >>> up = [5.12] * 30
+    >>> ret = gensa(func, None, lower=lw, upper=up)
+    >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
+    ...    ret.x, ret.fun))
+    """
+    if x0 is None:
+        x0 = lower + np.random.rand(len(lower)) * (upper - lower)
+    assert(len(lower) == len(upper)), 'Lower and upper bounds are inconsistent'
+    assert(len(lower) == len(x0)), 'Lower bounds size does not match x0'
+    assert(len(upper) == len(x0)), 'Upper bounds size does not match x0'
+    gr = GenSARunner(func, x0, lower, upper, fargs=args)
+    gr._tempsta = T
+    gr._qv = visitparam
+    gr._qa = acceptparam
+    gr._maxtime = maxtime
+    gr._maxfuncall = maxcall
+    gr._maxsteps = niter
+    gr.initialize()
+    gr.start_search()
+    return gr.result
 
 def main():
-    dim = 2
-    lower = np.array([-5] * dim)
-    upper = np.array([5] * dim)
+    dim = 5
+    lower = np.array([-5.12] * dim)
+    upper = np.array([5.12] * dim)
     xinit = lower + np.random.rand(dim) * (upper - lower)
-    results = []
-    for i in range(100):
-        np.random.seed(1234 + i)
-        sr = GenSARunner(xinit, rosenbrock, lower, upper)
-        sr._knowreal = True
-        sr._realthreshold = 1e-8
-        sr.initialize()
-        sr.start_search()
-        print('Solution is: {0}'.format(sr.x))
-        print('f value is: {0}'.format(sr.f))
-        print('Nb local search: {0}'.format(np.mean(results[1])))
-        print('Nb fn call average: {0}'.format(np.mean(results[0])))
-        results.append((sr._nbfuncall, sr.nblocal))
-
-    # sr._maxsteps = 15000
+    func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
+            + 10 * np.size(x)
+    ret = gensa(func, xinit, lower, upper)
+    print("global minimum: xmin = {0}, f(xmin) = {1}".format(
+        ret.x, ret.fun))
 
 if __name__ == '__main__':
     main()
