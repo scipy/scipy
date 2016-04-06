@@ -43,6 +43,9 @@ from scipy.special._testutils import assert_tol_equal, with_special_errors, \
 
 from scipy._lib._version import NumpyVersion
 
+import math
+
+
 class TestCephes(TestCase):
     def test_airy(self):
         cephes.airy(0)
@@ -1715,6 +1718,7 @@ class TestExp(TestCase):
 
 class TestFactorialFunctions(TestCase):
     def test_factorial(self):
+        # Some known values, float math
         assert_array_almost_equal(special.factorial(0), 1)
         assert_array_almost_equal(special.factorial(1), 1)
         assert_array_almost_equal(special.factorial(2), 2)
@@ -1723,23 +1727,53 @@ class TestFactorialFunctions(TestCase):
         assert_array_almost_equal(special.factorial([[5, 3], [4, 3]]),
                                   [[120, 6], [24, 6]])
 
+        # Some known values, integer math
         assert_equal(special.factorial(0, exact=True), 1)
         assert_equal(special.factorial(1, exact=True), 1)
         assert_equal(special.factorial(2, exact=True), 2)
         assert_equal(special.factorial(5, exact=True), 120)
         assert_equal(special.factorial(15, exact=True), 1307674368000)
 
-        assert_equal(special.factorial([0], exact=True), 1)
-        assert_equal(special.factorial([1], exact=True), 1)
-        assert_equal(special.factorial([2], exact=True), 2)
-        assert_equal(special.factorial([5], exact=True), 120)
-        assert_equal(special.factorial([15], exact=True), 1307674368000)
-
+        # ndarray shape is maintained
         assert_equal(special.factorial([7, 4, 15, 10], exact=True),
                      [5040, 24, 1307674368000, 3628800])
 
         assert_equal(special.factorial([[5, 3], [4, 3]], True),
                      [[120, 6], [24, 6]])
+
+        # object arrays
+        assert_equal(special.factorial(np.arange(-3, 22), True),
+                     special.factorial(np.arange(-3, 22), False))
+
+        # int64 array
+        assert_equal(special.factorial(np.arange(-3, 15), True),
+                     special.factorial(np.arange(-3, 15), False))
+
+        # int32 array
+        assert_equal(special.factorial(np.arange(-3, 5), True),
+                     special.factorial(np.arange(-3, 5), False))
+
+        # Consistent output for n < 0
+        for exact in (True, False):
+            assert_array_equal(0, special.factorial(-3, exact))
+            assert_array_equal([1, 2, 0, 0],
+                               special.factorial([1, 2, -5, -4], exact))
+
+        for n in range(0, 22):
+            # Compare all with math.factorial
+            correct = math.factorial(n)
+            assert_array_equal(correct, special.factorial(n, True))
+            assert_array_equal(correct, special.factorial([n], True)[0])
+
+            assert_allclose(float(correct), special.factorial(n, False))
+            assert_allclose(float(correct), special.factorial([n], False)[0])
+
+            # Compare exact=True vs False, scalar vs array
+            assert_array_equal(special.factorial(n, True),
+                               special.factorial(n, False))
+
+            assert_array_equal(special.factorial([n], True),
+                               special.factorial([n], False))
 
     def test_factorial2(self):
         assert_array_almost_equal([105., 384., 945.],
