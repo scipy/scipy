@@ -103,7 +103,7 @@ Continuous distributions
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
-   trap              -- Trapezoidal
+   trapz              -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal

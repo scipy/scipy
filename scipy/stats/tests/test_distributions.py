@@ -1884,26 +1884,51 @@ class TestTrapz(TestCase):
 
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', RuntimeWarning)
-                assert_almost_equal(stats.trap.pdf(x, 0, 1),
+                assert_almost_equal(stats.trapz.pdf(x, 0, 1),
                                     stats.uniform.pdf(x))
-                assert_almost_equal(stats.trap.cdf(x, 0, 1),
+                assert_almost_equal(stats.trapz.cdf(x, 0, 1),
                                     stats.uniform.cdf(x))
 
             np.seterr(**old_err)
 
-    def test_trap_vect(self):
+    def test_cases(self):
+            old_err = np.seterr(divide='ignore')
+
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', RuntimeWarning)
+
+                # edge cases
+                assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
+                assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
+                assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
+                assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
+
+                # straightforward case
+                assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
+                assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
+                assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
+
+                assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
+                assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
+                assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
+                assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
+                assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
+
+            np.seterr(**old_err)
+
+    def test_trapz_vect(self):
         # test that array-valued shapes and arguments are handled
         c = np.array([0.1, 0.2, 0.3])
         d = np.array([0.5, 0.6])[:, None]
         x = np.array([0.15, 0.25, 0.9])
-        v = stats.trap.pdf(x, c, d)
+        v = stats.trapz.pdf(x, c, d)
 
         cc, dd, xx = np.broadcast_arrays(c, d, x)
 
         res = np.empty(xx.size, dtype=xx.dtype)
         ind = np.arange(xx.size)
         for i, x1, c1, d1 in zip(ind, xx.ravel(), cc.ravel(), dd.ravel()):
-            res[i] = stats.trap.pdf(x1, c1, d1)        
+            res[i] = stats.trapz.pdf(x1, c1, d1)
 
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
 
