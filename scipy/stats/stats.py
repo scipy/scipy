@@ -2679,7 +2679,7 @@ def f_oneway(*args):
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
     .. [3] McDonald, G. H. "Handbook of Biological Statistics", One-way ANOVA.
-           http://http://www.biostathandbook.com/onewayanova.html
+           http://www.biostathandbook.com/onewayanova.html
 
     Examples
     --------
