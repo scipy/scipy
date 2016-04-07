@@ -1882,12 +1882,30 @@ class TestTrapz(TestCase):
 
             old_err = np.seterr(divide='ignore')
 
-            assert_almost_equal(stats.trapz.pdf(x, 0, 1),
-                                stats.uniform.pdf(x))
-            assert_almost_equal(stats.trapz.cdf(x, 0, 1),
-                                stats.uniform.cdf(x))
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', RuntimeWarning)
+                assert_almost_equal(stats.trap.pdf(x, 0, 1),
+                                    stats.uniform.pdf(x))
+                assert_almost_equal(stats.trap.cdf(x, 0, 1),
+                                    stats.uniform.cdf(x))
 
             np.seterr(**old_err)
+
+    def test_trap_vect(self):
+        # test that array-valued shapes and arguments are handled
+        c = np.array([0.1, 0.2, 0.3])
+        d = np.array([0.5, 0.6])[:, None]
+        x = np.array([0.15, 0.25, 0.9])
+        v = stats.trap.pdf(x, c, d)
+
+        cc, dd, xx = np.broadcast_arrays(c, d, x)
+
+        res = np.empty(xx.size, dtype=xx.dtype)
+        ind = np.arange(xx.size)
+        for i, x1, c1, d1 in zip(ind, xx.ravel(), cc.ravel(), dd.ravel()):
+            res[i] = stats.trap.pdf(x1, c1, d1)        
+
+        assert_allclose(v, res.reshape(v.shape), atol=1e-15)
 
 
 def test_540_567():
