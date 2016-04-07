@@ -946,36 +946,31 @@ def generate(filename, cxx_fn_prefix, ufuncs):
     # Produce output
     toplevel = "\n".join(list(all_loops.values()) + defs + [toplevel])
 
-    f = open(filename, 'wb')
-    f.write(EXTRA_CODE_COMMON)
-    f.write(EXTRA_CODE)
-    f.write(toplevel)
-    f.write(EXTRA_CODE_BOTTOM)
-    f.close()
+    with open(filename, 'w') as f:
+        f.write(EXTRA_CODE_COMMON)
+        f.write(EXTRA_CODE)
+        f.write(toplevel)
+        f.write(EXTRA_CODE_BOTTOM)
 
     defs_h = unique(defs_h)
-    f = open(proto_h_filename, 'wb')
-    f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
-    f.write("\n".join(defs_h))
-    f.write("\n#endif\n")
-    f.close()
+    with open(proto_h_filename, 'w') as f:
+        f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
+        f.write("\n".join(defs_h))
+        f.write("\n#endif\n")
 
     cxx_defs_h = unique(cxx_defs_h)
-    f = open(cxx_proto_h_filename, 'wb')
-    f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
-    f.write("\n".join(cxx_defs_h))
-    f.write("\n#endif\n")
-    f.close()
+    with open(cxx_proto_h_filename, 'w') as f:
+        f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
+        f.write("\n".join(cxx_defs_h))
+        f.write("\n#endif\n")
 
-    f = open(cxx_pyx_filename, 'wb')
-    f.write(EXTRA_CODE_COMMON)
-    f.write("\n".join(cxx_defs))
-    f.write("\n# distutils: language = c++\n")
-    f.close()
+    with open(cxx_pyx_filename, 'w') as f:
+        f.write(EXTRA_CODE_COMMON)
+        f.write("\n".join(cxx_defs))
+        f.write("\n# distutils: language = c++\n")
 
-    f = open(cxx_pxd_filename, 'wb')
-    f.write("\n".join(cxx_pxd_defs))
-    f.close()
+    with open(cxx_pxd_filename, 'w') as f:
+        f.write("\n".join(cxx_pxd_defs))
 
 
 def unique(lst):
