@@ -4226,7 +4226,7 @@ class skew_norm_gen(rv_continuous):
 skewnorm = skew_norm_gen(name='skewnorm')
 
 
-class trap_gen(rv_continuous):
+class trapz_gen(rv_continuous):
     """A trapezoidal continuous random variable.
 
     %(before_notes)s
@@ -4237,7 +4237,7 @@ class trap_gen(rv_continuous):
     from ``loc`` to ``(loc + c*scale)``, then constant to ``(loc + d*scale)``
     and then downsloping from ``(loc + d*scale)`` to ``(loc+scale)``.
 
-    `trap` takes ``c`` and ``d`` as shape parameters.
+    `trapz` takes ``c`` and ``d`` as shape parameters.
 
     %(after_notes)s
 
@@ -4273,7 +4273,7 @@ class trap_gen(rv_continuous):
                       0.5 * q * (1 + d - c) + 0.5 * c,
                       1 - sqrt((1 - q) * (d - c + 1) * (1 - d))]
         return np.select(condlist, choicelist)
-trap = trap_gen(a=0.0, b=1.0, name="trap")
+trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
 
 
 class triang_gen(rv_continuous):

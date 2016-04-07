@@ -33,7 +33,8 @@ failing_fits = [
         'tukeylambda',
         'vonmises',
         'wrapcauchy',
-        'levy_stable'
+        'levy_stable',
+        'trapz'
 ]
 
 # Don't run the fit test on these:

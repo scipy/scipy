@@ -40,7 +40,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'halflogistic', 'fatiguelife', 'foldnorm', 'ncx2', 't', 'nct',
          'weibull_min', 'weibull_max', 'dweibull', 'maxwell', 'rayleigh',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
-         'hypsecant', 'laplace', 'reciprocal', 'trap', 'triang', 'tukeylambda',
+         'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
          'rice']
 
@@ -75,7 +75,7 @@ def test_all_distributions():
         if dist == 'fatiguelife':
             alpha = 0.001
 
-        if dist == 'trap':
+        if dist == 'trapz':
             args = tuple(np.sort(np.random.random(nargs)))
         elif dist == 'triang':
             args = tuple(np.random.random(nargs))
@@ -1867,14 +1867,14 @@ class TestRdist(TestCase):
                             values, decimal=5)
 
 
-class TestTrap(TestCase):
+class TestTrapz(TestCase):
     def test_reduces_to_triang(self):
         modes = [0.3, 0.5]
         for mode in modes:
             x = [0, mode, 1]
-            assert_almost_equal(stats.trap.pdf(x, mode, mode),
+            assert_almost_equal(stats.trapz.pdf(x, mode, mode),
                                 stats.triang.pdf(x, mode))
-            assert_almost_equal(stats.trap.cdf(x, mode, mode),
+            assert_almost_equal(stats.trapz.cdf(x, mode, mode),
                                 stats.triang.cdf(x, mode))
 
     def test_reduces_to_uniform(self):
@@ -1882,9 +1882,9 @@ class TestTrap(TestCase):
 
             old_err = np.seterr(divide='ignore')
 
-            assert_almost_equal(stats.trap.pdf(x, 0, 1),
+            assert_almost_equal(stats.trapz.pdf(x, 0, 1),
                                 stats.uniform.pdf(x))
-            assert_almost_equal(stats.trap.cdf(x, 0, 1),
+            assert_almost_equal(stats.trapz.cdf(x, 0, 1),
                                 stats.uniform.cdf(x))
 
             np.seterr(**old_err)
