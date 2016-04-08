@@ -13,6 +13,7 @@
 #  Finished line search satisfying strong Wolfe conditions (Mar. 2004)
 #  Updated strong Wolfe conditions line search to use
 #      cubic-interpolation (Mar. 2004)
+#  Adding Logging to disp functions (April. 2016)
 
 from __future__ import division, print_function, absolute_import
 
@@ -415,7 +416,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     Options
     -------
-    disp : bool | logger
+    disp : bool | Logger
         Set to True to print convergence messages.
         Pass logger to enable detailed logging
     maxiter : int
@@ -458,6 +459,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     logging = isinstance(disp, Logger)
     if logging:
         logger = disp
+        disp = True
 
     _check_unknown_options(unknown_options)
     maxfun = maxfev
@@ -489,9 +491,13 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     else:
         sim = np.asfarray(initial_simplex).copy()
         if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
-            raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
+            msg = "`initial_simplex` should be an array of shape (N+1,N)"
+            _message(msg, disp, logging, logger, lvl = 'ERROR')
+            raise ValueError(msg)
         if len(x0) != sim.shape[1]:
-            raise ValueError("Size of `initial_simplex` is not consistent with `x0`")
+            msg = "Size of `initial_simplex` is not consistent with `x0`"
+            _message(msg, disp, logging, logger, lvl = 'ERROR')
+            raise ValueError(msg)
         N = sim.shape[1]
 
     if retall:
@@ -519,7 +525,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     if logging: logger.debug("Beginning main sequence...")
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if logging: logger.debug("Iteration #{0}, Function Calls: {1}".format(iterations, fcalls[0]))
+        _message("New Iteration", disp, logging, logger, k = iterations, func_calls = fcalls, lvl = 'DEBUG')
         
         if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xatol and
                 numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= fatol):
@@ -537,16 +543,16 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             if fxe < fxr:
                 sim[-1] = xe
                 fsim[-1] = fxe
-                if logging: logger.info("1.1\t New Best:\tx: {0}\n\t\terr: {1}".format(xe, fxe))
+                _message("1.1\t New Best", disp, logging, logger, fval = fxe, x = xe, lvl = 'INFO')
             else:
                 sim[-1] = xr
                 fsim[-1] = fxr
-                if logging: logger.debug("1.2\t Unsuccessful:\tx: {0}\n\t\terr: {1}".format(xe, fxe))
+                _message("1.2\t Unsuccessful", disp, logging, logger, fval = fxr, x = xr, lvl = 'DEBUG')
         else:  # fsim[0] <= fxr
             if fxr < fsim[-2]:
                 sim[-1] = xr
                 fsim[-1] = fxr
-                if logging: logger.debug("2.1\t On Track:\tx: {0}\n\t\terr: {1}".format(xe, fxe))
+                _message("2.1\t On Track", disp, logging, logger, fval = fxr, x = xr, lvl = 'DEBUG')
             else:  # fxr >= fsim[-2]
                 # Perform contraction
                 if logging: logger.debug("2.2\t Performance Contradiction")
@@ -557,7 +563,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                     if fxc <= fxr:
                         sim[-1] = xc
                         fsim[-1] = fxc
-                        if logging: logger.info("2.2.1\t New Best:\tx: {0}\n\t\terr: {1}".format(xc, fxc))
+                        _message("2.2.1\t New Best", disp, logging, logger, fval = fxc, x = xc, lvl = 'INFO')
                     else:
                         doshrink = 1
                         
@@ -569,7 +575,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                     if fxcc < fsim[-1]:
                         sim[-1] = xcc
                         fsim[-1] = fxcc
-                        if logging: logger.info("2.2.2\t New Best:\tx: {0}\n\t\terr: {1}".format(xcc, fxcc))
+                        _message("2.2.2.1\t New Best", disp, logging, logger, fval = fxcc, x = xcc, lvl = 'DEBUG')
                     else:
                         doshrink = 1
 
@@ -579,7 +585,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                         sim[j] = sim[0] + sigma * (sim[j] - sim[0])
                         fsim[j] = func(sim[j])
         
-        if logging: logger.debug("Finalizing Iteration")
+        if logging: logger.debug("Finishing Iteration")
         ind = numpy.argsort(fsim)
         sim = numpy.take(sim, ind, 0)
         fsim = numpy.take(fsim, ind, 0)
@@ -597,38 +603,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if fcalls[0] >= maxfun:
         warnflag = 1
         msg = _status_message['maxfev']
-        if disp is not False:
-            w = 'Warning: ' + msg
-            if logging:
-                logger.warning(w)
-            else:
-                print(w)
+        _message(msg, disp, logging, logger, lvl = 'WARNING')
     elif iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
-        if disp is not False:
-            w = 'Warning: ' + msg
-            if logging:
-                logger.warning(w)
-            else:
-                print(w)
+        _message(msg, disp, logging, logger, lvl = 'WARNING')
     else:
         msg = _status_message['success']
-        if disp is not False:
-            s1 = msg
-            s2 = "         Current function value: %f" % fval)
-            s3 = "         Iterations: %d" % iterations)
-            s4 = "         Function evaluations: %d" % fcalls[0])
-            if logging:
-                logger.info(s1)
-                logger.info(s2)
-                logger.info(s3)
-                logger.info(s4)
-            else:
-                print(s1)
-                print(s2)
-                print(s3)
-                print(s4)
+        _message(msg, disp, logging, logger, fval = fval, k = k,
+                 func_calls = fcalls, lvl = 'INFO')
 
     result = OptimizeResult(fun=fval, nit=iterations, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
@@ -833,7 +816,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     full_output : bool, optional
         If True,return fopt, func_calls, grad_calls, and warnflag
         in addition to xopt.
-    disp : bool, optional
+    disp : bool | Logger, optional
         Print convergence message if True.
     retall : bool, optional
         Return a list of results at each iteration if True.
@@ -906,7 +889,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     Options
     -------
-    disp : bool
+    disp : bool | Logger
         Set to True to print convergence messages.
     maxiter : int
         Maximum number of iterations to perform.
@@ -924,6 +907,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     fprime = jac
     epsilon = eps
     retall = return_all
+    
+    logging = isinstance(disp, Logger)
+    if logging:
+        logger = disp
+        disp = True
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
@@ -989,12 +977,14 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             rhok = 1.0 / (numpy.dot(yk, sk))
         except ZeroDivisionError:
             rhok = 1000.0
-            if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
+            _message("Divide-by-zero encountered: rhok assumed large", disp,
+                      logging, logger, lvl = 'ERROR')
+
         if isinf(rhok):  # this is patch for numpy
             rhok = 1000.0
-            if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
+            _message("Divide-by-zero encountered: rhok assumed large", disp,
+                      logging, logger, lvl = 'ERROR')
+            
         A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
         A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
         Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + (rhok * sk[:, numpy.newaxis] *
@@ -1008,30 +998,17 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
+        _message(msg, disp, logging, logger, fval = fval, k = k, 
+                 func_calls = func_calls, grad_calls = grad_calls, lvl = 'WARNING')
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+        _message(msg, disp, logging, logger, fval = fval, k = k,
+                 func_calls = func_calls, grad_calls = grad_calls, lvl = 'WARNING')
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+        _message(msg, disp, logging, logger, fval = fval, k = k,
+                 func_calls = func_calls, grad_calls = grad_calls, lvl = 'INFO')
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
@@ -1081,7 +1058,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
         If True, return `fopt`, `func_calls`, `grad_calls`, and `warnflag` in
         addition to `xopt`.  See the Returns section below for additional
         information on optional return values.
-    disp : bool, optional
+    disp : bool | Logger, optional
         If True, return a convergence message, followed by `xopt`.
     retall : bool, optional
         If True, add to the returned values the results of each iteration.
@@ -1223,7 +1200,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
     Options
     -------
-    disp : bool
+    disp : bool | Logger
         Set to True to print convergence messages.
     maxiter : int
         Maximum number of iterations to perform.
@@ -1241,6 +1218,11 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     fprime = jac
     epsilon = eps
     retall = return_all
+    
+    logging = isinstance(disp, Logger)
+    if logging:
+        logger = disp
+        disp = True
 
     x0 = asarray(x0).flatten()
     if maxiter is None:
@@ -1292,31 +1274,19 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     fval = old_fval
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
+        _message(msg, disp, logging, logger, fval = fval, k = k,
+                func_calls = func_calls, rad_calls = grad_calls, lvl = 'WARNING')
+                
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+        _message(msg, disp, logging, logger, fval = fval, k = k,
+                func_calls = func_calls, rad_calls = grad_calls, lvl = 'WARNING')              
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
+        _message(msg, disp, logging, logger, fval = fval, k = k,
+                func_calls = func_calls, rad_calls = grad_calls, lvl = 'INFO')
+                
     result = OptimizeResult(fun=fval, jac=gfk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
                             success=(warnflag == 0), message=msg, x=xk,
@@ -1325,6 +1295,92 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         result['allvecs'] = allvecs
     return result
 
+def _message(msg, disp, logging, logger, fval = None, k = None,
+             func_calls = None, grad_calls = None, hcalls = None, x = None, lvl = 'WARNING'):
+    """
+    A common block of code which prints out a message along with the function value,
+    iterations, function evaluations, and gradient evalutations.
+    
+    Parameters
+    ----------
+    disp : bool | int | Logger, optional
+        If bool True, print_messages.
+        If non-zero, print messages.
+            0 : no message printing.
+            1 : non-convergence notification messages only.
+            2 : print a message on convergence too.
+            3 : print iteration results.
+        If Logger is passed, print messages to different levels.
+            Warning : non-convergence notification messages only.
+            Info    : print a message on convergence too.
+            Debug   : print iteration results.
+    
+    Options
+    -------
+    fval : float
+        The current score of the minima function.
+    k : int
+        Number of iterations which have been performed.
+    func_calls : list[0] <= int
+        Number of times the objective function has been called.
+    grad_calls : list[0] <= int
+        Number of times the gradient function has been called.
+    hcalls : int
+        Number of times the Hessian function has been called.
+    lvl : str
+        Passed to each logging operation to determine the logger's ouput level.
+
+    """
+    if isinstance(disp,int):
+        if lvl == "INFO":
+            if disp < 2:
+                return None
+        if lvl == "DEBUG":
+            if disp < 3:
+                return None
+        
+    if disp:
+        s1 = lvl + ": " + msg
+        if fval is not None:
+            s2 = "         Current function value: %f" % fval
+        if k is not None:
+            s3 = "         Iterations: %d" % k
+        if func_calls is not None:
+            s4 = "         Function evaluations: %d" % func_calls[0]
+        if grad_calls is not None:
+            s5 = "         Gradient evaluations: %d" % grad_calls[0]
+        if hcalls is not None:
+            s6 = "         Hessian evaluations: %d" % hcalls
+        if x is not None:
+            s7 = "         Parameters: " + str(x)
+        if logging:
+            logger.log(lvl, s1)
+            if fval is not None:
+                logger.log(lvl, s2)
+            if k is not None:
+                logger.log(lvl, s3)
+            if func_calls is not None:
+                logger.log(lvl, s4)
+            if grad_calls is not None:
+                logger.log(lvl, s5)
+            if hcalls is not None:
+                logger.log(lvl, s6)
+            if x is not None:
+                logger.log(lvl, s7)
+        else:
+            print(s1)
+            if fval is not None:
+                print(s2)
+            if k is not None:
+                print(s3)
+            if func_calls is not None:
+                print(s4)
+            if grad_calls is not None:
+                print(s5)
+            if hcalls is not None:
+                print(s6)
+            if x is not None:
+                print(s7)
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
@@ -1449,7 +1505,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
     Options
     -------
-    disp : bool
+    disp : bool | Logger
         Set to True to print convergence messages.
     xtol : float
         Average relative error in solution `xopt` acceptable for
@@ -1460,9 +1516,16 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         If `jac` is approximated, use this value for the step size.
 
     """
+    logging = isinstance(disp, Logger)
+    if logging:
+        logger = disp
+        disp = True
+    
     _check_unknown_options(unknown_options)
     if jac is None:
-        raise ValueError('Jacobian is required for Newton-CG method')
+        msg = 'Jacobian is required for Newton-CG method'
+        _message(msg, disp, logging, logger, lvl = 'ERROR')
+        raise ValueError(msg)
     f = fun
     fprime = jac
     fhess_p = hessp
@@ -1558,32 +1621,17 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     fval = old_fval
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
+        _message(msg, disp, logging, logger, fval = fval, k = k, func_calls = fcalls,
+                 grad_calls = gcalls, hcalls = hcalls, lvl = 'WARNING')
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
+        _message(msg, disp, logging, logger, fval = fval, k = k, func_calls = fcalls,
+                 grad_calls = gcalls, hcalls = hcalls, lvl = 'WARNING')
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
+        _message(msg, disp, logging, logger, fval = fval, k = k, func_calls = fcalls,
+                 grad_calls = gcalls, hcalls = hcalls, lvl = 'INFO')
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
                             nhev=hcalls, status=warnflag,
@@ -1612,12 +1660,16 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         Maximum number of function evaluations allowed.
     full_output : bool, optional
         If True, return optional outputs.
-    disp : int, optional
+    disp : int | Logger, optional
         If non-zero, print messages.
             0 : no message printing.
             1 : non-convergence notification messages only.
             2 : print a message on convergence too.
             3 : print iteration results.
+        If Logger is passed, print messages to different levels.
+            Warning : non-convergence notification messages only.
+            Info    : print a message on convergence too.
+            Debug   : print iteration results.
 
 
     Returns
@@ -1664,24 +1716,35 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     -------
     maxiter : int
         Maximum number of iterations to perform.
-    disp : bool
+    disp : bool | Logger
         Set to True to print convergence messages.
     xatol : float
         Absolute error in solution `xopt` acceptable for convergence.
 
     """
+    
+    logging = isinstance(disp, Logger)
+    if logging:
+        logger = disp
+        disp = True
+    
     _check_unknown_options(unknown_options)
     maxfun = maxiter
     # Test bounds are of correct form
     if len(bounds) != 2:
-        raise ValueError('bounds must have two elements.')
+        msg = 'bounds must have two elements.'
+        _message(msg, disp, logging, logger, lvl='ERROR')
+        raise ValueError(msg)
     x1, x2 = bounds
-
+    
     if not (is_array_scalar(x1) and is_array_scalar(x2)):
-        raise ValueError("Optimisation bounds must be scalars"
-                         " or array scalars.")
+        msg = "Optimisation bounds must be scalars or array scalars."
+        _message(msg, disp, logging, logger, lvl = 'ERROR')
+        raise ValueError(msg)
     if x1 > x2:
-        raise ValueError("The lower bound exceeds the upper bound.")
+        msg = "The lower bound exceeds the upper bound."
+        _message(msg, disp, logging, logger, lvl = 'ERROR')
+        raise ValueError(msg)
 
     flag = 0
     header = ' Func-count     x          f(x)          Procedure'
@@ -1703,11 +1766,9 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     tol1 = sqrt_eps * numpy.abs(xf) + xatol / 3.0
     tol2 = 2.0 * tol1
 
-    if disp > 2:
-        print(" ")
-        print(header)
-        print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
-
+    msg = '\n' + str(header) + "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
+    _message(msg, disp, logging, logger, lvl = 'DEBUG')
+    
     while (numpy.abs(xf - xm) > (tol2 - 0.5 * (b - a))):
         golden = 1
         # Check for parabolic fit
@@ -1749,8 +1810,9 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
-        if disp > 2:
-            print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
+        
+        msg = "%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,))
+        _message(msg, disp, logging, logger, lvl = 'DEBUG')
 
         if fu <= fx:
             if x >= xf:
@@ -1780,8 +1842,8 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             break
 
     fval = fx
-    if disp > 0:
-        _endprint(x, flag, fval, maxfun, xatol, disp)
+    msg = _endprint(x, flag, fval, maxfun, xatol, disp)
+    _message(msg, disp, logging, logger, lvl = 'CRITICAL')
 
     result = OptimizeResult(fun=fval, status=flag, success=(flag == 0),
                             message={0: 'Solution found.',
@@ -1828,16 +1890,21 @@ class Brent:
             if (xa > xc):  # swap so xa < xc can be assumed
                 xc, xa = xa, xc
             if not ((xa < xb) and (xb < xc)):
-                raise ValueError("Not a bracketing interval.")
+                msg = "Not a bracketing interval."
+                _message(msg, disp, logging, logger, lvl = 'ERROR')
+                raise ValueError(msg)
             fa = func(*((xa,) + args))
             fb = func(*((xb,) + args))
             fc = func(*((xc,) + args))
             if not ((fb < fa) and (fb < fc)):
-                raise ValueError("Not a bracketing interval.")
+                msg = "Not a bracketing interval."
+                _message(msg, disp, logging, logger, lvl = 'ERROR')
+                raise ValueError(msg)
             funcalls = 3
         else:
-            raise ValueError("Bracketing interval must be "
-                             "length 2 or 3 sequence.")
+            msg = "Bracketing interval must be length 2 or 3 sequence."
+            _message(msg, disp, logging, logger, lvl = 'ERROR')
+            raise ValueError(msg)
         ### END core bracket_info code ###
 
         return xa, xb, xc, fa, fb, fc, funcalls
@@ -2305,7 +2372,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     full_output : bool, optional
         If True, fopt, xi, direc, iter, funcalls, and
         warnflag are returned.
-    disp : bool, optional
+    disp : bool | Logger, optional
         If True, print convergence messages.
     retall : bool, optional
         If True, return a list of the solution at each iteration.
@@ -2400,7 +2467,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
 
     Options
     -------
-    disp : bool
+    disp : bool | Logger
         Set to True to print convergence messages.
     xtol : float
         Relative error in solution `xopt` acceptable for convergence.
@@ -2414,6 +2481,12 @@ def _minimize_powell(func, x0, args=(), callback=None,
         Initial set of direction vectors for the Powell method.
 
     """
+    
+    logging = isinstance(disp, Logger)
+    if logging:
+        logger = disp
+        disp = True
+    
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
@@ -2485,20 +2558,15 @@ def _minimize_powell(func, x0, args=(), callback=None,
     if fcalls[0] >= maxfun:
         warnflag = 1
         msg = _status_message['maxfev']
-        if disp:
-            print("Warning: " + msg)
+        _message(msg, disp, logging, logger, lvl = 'WARNING')
     elif iter >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
+        _message(msg, disp, logging, logger, lvl = 'WARNING')
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % iter)
-            print("         Function evaluations: %d" % fcalls[0])
+        _message(msg, disp, logging, logger, fval = fval, k = iter, 
+                 func_calls = fcalls, lvl = 'INFO')
 
     x = squeeze(x)
 
@@ -2513,14 +2581,14 @@ def _minimize_powell(func, x0, args=(), callback=None,
 def _endprint(x, flag, fval, maxfun, xtol, disp):
     if flag == 0:
         if disp > 1:
-            print("\nOptimization terminated successfully;\n"
+            return ("\nOptimization terminated successfully;\n"
                   "The returned value satisfies the termination criteria\n"
                   "(using xtol = ", xtol, ")")
     if flag == 1:
         if disp:
-            print("\nMaximum number of function evaluations exceeded --- "
-                  "increase maxfun argument.\n")
-    return
+            return ("\nMaximum number of function evaluations exceeded --- "
+                   "increase maxfun argument.\n")
+    return 'Nothing to Print'
 
 
 def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
@@ -2567,7 +2635,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         keyword arguments.  It may additionally take `full_output`
         and/or `disp` as keyword arguments.  Use None if no "polishing"
         function is to be used. See Notes for more details.
-    disp : bool, optional
+    disp : bool | Logger, optional
         Set to True to print convergence messages.
 
     Returns
@@ -2678,6 +2746,12 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     gridpoint [-1.0 1.75] where the rounded function value is -2.892.
 
     """
+    
+    logging = isinstance(disp, Logger)
+    if logging:
+        logger = disp
+        disp = True
+        
     N = len(ranges)
     if N > 40:
         raise ValueError("Brute Force not possible with more "
@@ -2740,10 +2814,10 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
             Jmin = res[1]
             success = res[-1] == 0
         if not success:
-            if disp:
-                print("Warning: Either final optimization did not succeed "
-                      "or `finish` does not return `statuscode` as its last "
-                      "argument.")
+            msg = "Either final optimization did not succeed " + \
+                      "or `finish` does not return `statuscode` as its last " + \
+                      "argument."
+            _message(msg, disp, logging, logger, lvl = 'WARNING')
 
     if full_output:
         return xmin, Jmin, grid, Jout
@@ -2768,7 +2842,7 @@ def show_options(solver=None, method=None, disp=True):
         show only the options for the specified method. Valid values
         corresponds to methods' names of respective solver (e.g. 'BFGS' for
         'minimize').
-    disp : bool, optional
+    disp : bool | Logger, optional
         Whether to print the result rather than returning it.
 
     Returns
@@ -2899,10 +2973,8 @@ def show_options(solver=None, method=None, disp=True):
             else:
                 text = ""
 
-    if disp:
-        print(text)
-        return
-    else:
+    _message(text, disp, logging, logger, lvl = 'INFO')
+    if not disp:
         return text
 
 
