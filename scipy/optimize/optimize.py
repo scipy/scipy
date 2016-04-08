@@ -30,6 +30,8 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 import numpy
+import logging
+from logging import Logger
 from scipy._lib.six import callable
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
@@ -413,8 +415,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     Options
     -------
-    disp : bool
+    disp : bool | logger
         Set to True to print convergence messages.
+        Pass logger to enable detailed logging
     maxiter : int
         Maximum number of iterations to perform.
     maxfev : int
@@ -451,6 +454,10 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             # only xtol was probably specified, use it.
             xatol = unknown_options['xtol']
         unknown_options.pop('xtol')
+
+    logging = isinstance(disp, Logger)
+    if logging:
+        logger = disp
 
     _check_unknown_options(unknown_options)
     maxfun = maxfev
@@ -492,8 +499,10 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     if maxiter is None:
         maxiter = N * 200
+        if logging: logger.debug("maxiter set automatically to {0}".format(maxiter))
     if maxfun is None:
         maxfun = N * 200
+        if logging: logger.debug("maxfun set automatically to {0}".format(maxiter))
 
     one2np1 = list(range(1, N + 1))
     fsim = numpy.zeros((N + 1,), float)
@@ -508,7 +517,10 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     iterations = 1
 
+    if logging: logger.debug("Beginning main sequence...")
     while (fcalls[0] < maxfun and iterations < maxiter):
+        if logging: logger.debug("Iteration #{0}, Function Calls: {1}".format(iterations, fcalls[0]))
+        
         if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xatol and
                 numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= fatol):
             break
@@ -525,15 +537,19 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             if fxe < fxr:
                 sim[-1] = xe
                 fsim[-1] = fxe
+                if logging: logger.info("1.1\t New Best:\tx: {0}\n\t\terr: {1}".format(xe, fxe))
             else:
                 sim[-1] = xr
                 fsim[-1] = fxr
+                if logging: logger.debug("1.2\t Unsuccessful:\tx: {0}\n\t\terr: {1}".format(xe, fxe))
         else:  # fsim[0] <= fxr
             if fxr < fsim[-2]:
                 sim[-1] = xr
                 fsim[-1] = fxr
+                if logging: logger.debug("2.1\t On Track:\tx: {0}\n\t\terr: {1}".format(xe, fxe))
             else:  # fxr >= fsim[-2]
                 # Perform contraction
+                if logging: logger.debug("2.2\t Performance Contradiction")
                 if fxr < fsim[-1]:
                     xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
                     fxc = func(xc)
@@ -541,8 +557,10 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                     if fxc <= fxr:
                         sim[-1] = xc
                         fsim[-1] = fxc
+                        if logging: logger.info("2.2.1\t New Best:\tx: {0}\n\t\terr: {1}".format(xc, fxc))
                     else:
                         doshrink = 1
+                        
                 else:
                     # Perform an inside contraction
                     xcc = (1 - psi) * xbar + psi * sim[-1]
@@ -551,14 +569,17 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                     if fxcc < fsim[-1]:
                         sim[-1] = xcc
                         fsim[-1] = fxcc
+                        if logging: logger.info("2.2.2\t New Best:\tx: {0}\n\t\terr: {1}".format(xcc, fxcc))
                     else:
                         doshrink = 1
 
                 if doshrink:
+                    if logging: logger.debug("2.2.3\t Performing Shrink Operation.")
                     for j in one2np1:
                         sim[j] = sim[0] + sigma * (sim[j] - sim[0])
                         fsim[j] = func(sim[j])
-
+        
+        if logging: logger.debug("Finalizing Iteration")
         ind = numpy.argsort(fsim)
         sim = numpy.take(sim, ind, 0)
         fsim = numpy.take(fsim, ind, 0)
@@ -568,6 +589,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         if retall:
             allvecs.append(sim[0])
 
+    if logging: logger.debug("Execution Complete")
     x = sim[0]
     fval = numpy.min(fsim)
     warnflag = 0
@@ -575,20 +597,38 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if fcalls[0] >= maxfun:
         warnflag = 1
         msg = _status_message['maxfev']
-        if disp:
-            print('Warning: ' + msg)
+        if disp is not False:
+            w = 'Warning: ' + msg
+            if logging:
+                logger.warning(w)
+            else:
+                print(w)
     elif iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
-        if disp:
-            print('Warning: ' + msg)
+        if disp is not False:
+            w = 'Warning: ' + msg
+            if logging:
+                logger.warning(w)
+            else:
+                print(w)
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % iterations)
-            print("         Function evaluations: %d" % fcalls[0])
+        if disp is not False:
+            s1 = msg
+            s2 = "         Current function value: %f" % fval)
+            s3 = "         Iterations: %d" % iterations)
+            s4 = "         Function evaluations: %d" % fcalls[0])
+            if logging:
+                logger.info(s1)
+                logger.info(s2)
+                logger.info(s3)
+                logger.info(s4)
+            else:
+                print(s1)
+                print(s2)
+                print(s3)
+                print(s4)
 
     result = OptimizeResult(fun=fval, nit=iterations, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
