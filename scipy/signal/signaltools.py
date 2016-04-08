@@ -8,7 +8,7 @@ import threading
 import sys
 
 from . import sigtools, lti
-from ._upfirdn import _UpFIRDn, _output_len
+from ._upfirdn import upfirdn, _UpFIRDn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
@@ -1891,11 +1891,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     down : int
         The downsampling factor.
     axis : int, optional
-        The axis of `x` that is resampled.  Default is 0.
-    window : string or tuple of string and parameter values
-        Desired window to use to design the low-pass filter. See
-        `scipy.signal.get_window` for a list of windows and required
-        parameters.
+        The axis of `x` that is resampled. Default is 0.
+    window : string, tuple, or array_like, optional
+        Desired window to use to design the low-pass filter, or the FIR filter
+        coefficients to employ. See below for details.
 
     Returns
     -------
@@ -1917,11 +1916,22 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     the number of operations during polyphase filtering will depend on
     the filter length and `down` (see `scipy.signal.upfirdn` for details).
 
-    The `window` argument is passed directly to `scipy.signal.firwin`
-    to design a low-pass filter.
+    The argument `window` specifies the FIR low-pass filter design.
+
+    If `window` is an array_like it is assumed to be the FIR filter
+    coefficients. Note that the FIR filter is applied after the upsampling
+    step, so it should be designed to operate on a signal at a sampling
+    frequency higher than the original by a factor of `up//gcd(up, down)`.
+    This function's output will be centered with respect to this array, so it
+    is best to pass a symmetric filter with an odd number of samples if, as
+    is usually the case, a zero-phase filter is desired.
+
+    For any other type of `window`, the functions `scipy.signal.get_window`
+    and `scipy.signal.firwin` are called to generate the appropriate filter
+    coefficients.
 
     The first sample of the returned vector is the same as the first
-    sample of the input vector.  The spacing between samples is changed
+    sample of the input vector. The spacing between samples is changed
     from ``dx`` to ``dx * up / float(down)``.
 
     Examples
@@ -1959,13 +1969,21 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     down //= g_
     if up == down == 1:
         return x.copy()
-    n_out = (x.shape[axis] * up) // down
+    n_out = x.shape[axis] * up
+    n_out = n_out // down + bool(n_out % down)
 
-    # Design a linear-phase low-pass FIR filter
-    max_rate = max(up, down)
-    f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
-    half_len = 10 * max_rate  # reasonable cutoff for our sinc-like function
-    h = firwin(2 * half_len + 1, f_c, window=window)
+    if isinstance(window, (list, np.ndarray)):
+        window = asarray(window)
+        if window.ndim > 1:
+            raise ValueError('window must be 1-D')
+        half_len = (window.size - 1) // 2
+        h = window
+    else:
+        # Design a linear-phase low-pass FIR filter
+        max_rate = max(up, down)
+        f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
+        half_len = 10 * max_rate  # reasonable cutoff for our sinc-like function
+        h = firwin(2 * half_len + 1, f_c, window=window)
     h *= up
 
     # Zero-pad our filter to put the output samples at the center
@@ -2868,7 +2886,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     """
     Downsample the signal by using a filter.
 
-    By default, an order 8 Chebyshev type I filter is used.  A 30 point FIR
+    By default, an order 8 Chebyshev type I filter is used. A 30 point FIR
     filter with hamming window is used if `ftype` is 'fir'.
 
     Parameters
@@ -2888,9 +2906,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
         The axis along which to decimate.
     zero_phase : bool, optional
         Prevent phase shift by filtering with `filtfilt` instead of `lfilter`
-        when `ftype` is not 'fir'.  A value of `True` is recommended, since a
-        phase shift is generally not desired. Using `None` defaults to `False`
-        for backwards compatibility.
+        when using an IIR filter, and shifting the outputs back by the filter's
+        group delay when using an FIR filter. A value of ``True`` is
+        recommended, since a phase shift is generally not desired. Using
+        ``None`` defaults to ``False`` for backwards compatibility. This
+        default will change to ``True`` in a future release, so it is best to
+        set this argument explicitly.
 
         .. versionadded:: 0.18.0
 
@@ -2920,35 +2941,42 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     if ftype == 'fir':
         if n is None:
             n = 30
-        system = lti(firwin(n + 1, 1. / q, window='hamming'), 1.)
-
+        system = lti(firwin(n+1, 1. / q, window='hamming'), 1.)
     elif ftype == 'iir':
         if n is None:
             n = 8
         system = lti(*cheby1(n, 0.05, 0.8 / q))
     elif isinstance(ftype, lti):
         system = ftype
+        n = np.max((system.num.size, system.den.size)) - 1
     else:
         raise ValueError('invalid ftype')
 
     if zero_phase is None:
         warnings.warn(" Note: Decimate's zero_phase keyword argument will "
-                      "default to True in a future release.  Until then, "
-                      "decimate defaults to 'one-way filtering for backwards "
+                      "default to True in a future release. Until then, "
+                      "decimate defaults to one-way filtering for backwards "
                       "compatibility. Ideally, always set this argument "
                       "explicitly.", FutureWarning)
         zero_phase = False
 
-    if zero_phase and ftype == 'fir':
-        warnings.warn('zero_phase is not implemented for FIR downsampling, '
-                      'using zero_phase=False.')
-        zero_phase = False
+    sl = [slice(None)] * x.ndim
 
-    if zero_phase:
-        y = filtfilt(system.num, system.den, x, axis=axis)
-    else:
-        y = lfilter(system.num, system.den, x, axis=axis)
+    if len(system.den) == 1:  # FIR case
+        if zero_phase:
+            y = resample_poly(x, 1, q, axis=axis, window=system.num)
+        else:
+            # upfirdn is generally faster than lfilter by a factor equal to the
+            # downsampling factor, since it only calculates the needed outputs
+            n_out = x.shape[axis] // q + bool(x.shape[axis] % q)
+            y = upfirdn(system.num, x, up=1, down=q, axis=axis)
+            sl[axis] = slice(None, n_out, None)
 
-    sl = [slice(None)] * y.ndim
-    sl[axis] = slice(None, None, q)
+    else:  # IIR case
+        if zero_phase:
+            y = filtfilt(system.num, system.den, x, axis=axis)
+        else:
+            y = lfilter(system.num, system.den, x, axis=axis)
+        sl[axis] = slice(None, None, q)
+
     return y[sl]

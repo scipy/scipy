@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
+
 from decimal import Decimal
 from itertools import product
 
@@ -19,6 +21,10 @@ from scipy.signal import (
     sosfilt_zi)
 from scipy.signal.signaltools import _filtfilt_gust
 
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from math import gcd
+else:
+    from fractions import gcd
 
 class _TestConvolve(TestCase):
 
@@ -583,7 +589,11 @@ class TestResample(TestCase):
         # Test polyphase resampling
         self._test_data(method='polyphase')
 
-    def _test_data(self, method):
+    def test_polyphase_extfilter(self):
+        # Test external specification of downsampling filter
+        self._test_data(method='polyphase', ext=True)
+
+    def _test_data(self, method, ext=False):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
@@ -599,7 +609,23 @@ class TestResample(TestCase):
             if method == 'fft':
                 y_resamps = signal.resample(x, rate_to, axis=-1)
             else:
-                y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1)
+                if ext and rate_to != rate:
+                    # Match default window design
+                    g = gcd(rate_to, rate)
+                    up = rate_to // g
+                    down = rate // g
+                    max_rate = max(up, down)
+                    f_c = 1. / max_rate
+                    half_len = 10 * max_rate
+                    window = signal.firwin(2 * half_len + 1, f_c,
+                                           window=('kaiser', 5.0))
+                    polyargs = {'window': window}
+                else:
+                    polyargs = {}
+
+                y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1,
+                                                 **polyargs)
+
             for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
                 if freq >= 0.5 * rate_to:
                     y_to.fill(0.)  # mostly low-passed away
@@ -607,7 +633,7 @@ class TestResample(TestCase):
                 else:
                     assert_array_equal(y_to.shape, y_resamp.shape)
                     corr = np.corrcoef(y_to, y_resamp)[0, 1]
-                    assert_(corr > 0.99, msg=corr)
+                    assert_(corr > 0.99, msg=(corr, rate, rate_to))
 
         # Random data
         rng = np.random.RandomState(0)
@@ -623,6 +649,34 @@ class TestResample(TestCase):
             assert_array_equal(y_to.shape, y_resamp.shape)
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
+
+    def test_poly_vs_filtfilt(self):
+        # Check that up=1.0 gives same answer as filtfilt + slicing
+        random_state = np.random.RandomState(17)
+        try_types = (int, np.float32, np.complex64, float, complex)
+        size = 10000
+        down_factors = [2, 11, 79]
+
+        for dtype in try_types:
+            x = random_state.randn(size).astype(dtype)
+            if dtype in (np.complex64, np.complex128):
+                x += 1j * random_state.randn(size)
+
+            # resample_poly assumes zeros outside of signl, wheras filtfilt
+            # can only constant-pad. Make them equivalent:
+            x[0] = 0
+            x[-1] = 0
+
+            for down in down_factors:
+                h = signal.firwin(31, 1. / down, window='hamming')
+                yf = filtfilt(h, 1.0, x, padtype='constant')[::down]
+
+                # Need to pass convolved version of filter to resample_poly,
+                # since filtfilt does forward and backward, but resample_poly
+                # only goes forward
+                hc = convolve(h, h[::-1])
+                y = signal.resample_poly(x, 1, down, window=hc)
+                assert_allclose(yf, y, atol=1e-7, rtol=1e-7)
 
 
 class TestCSpline1DEval(TestCase):
@@ -1536,6 +1590,9 @@ class TestDecimate(TestCase):
 
     def test_phaseshift_FIR(self):
         self._test_phaseshift(method='fir', zero_phase=False)
+
+    def test_zero_phase_FIR(self):
+        self._test_phaseshift(method='fir', zero_phase=True)
 
     def test_phaseshift_IIR(self):
         self._test_phaseshift(method='iir', zero_phase=False)
