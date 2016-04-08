@@ -1891,19 +1891,19 @@ class Brent:
                 xc, xa = xa, xc
             if not ((xa < xb) and (xb < xc)):
                 msg = "Not a bracketing interval."
-                _message(msg, disp, logging, logger, lvl = 'ERROR')
+                #_message(msg, disp, logging, logger, lvl = 'ERROR')
                 raise ValueError(msg)
             fa = func(*((xa,) + args))
             fb = func(*((xb,) + args))
             fc = func(*((xc,) + args))
             if not ((fb < fa) and (fb < fc)):
                 msg = "Not a bracketing interval."
-                _message(msg, disp, logging, logger, lvl = 'ERROR')
+                #_message(msg, disp, logging, logger, lvl = 'ERROR')
                 raise ValueError(msg)
             funcalls = 3
         else:
             msg = "Bracketing interval must be length 2 or 3 sequence."
-            _message(msg, disp, logging, logger, lvl = 'ERROR')
+            #_message(msg, disp, logging, logger, lvl = 'ERROR')
             raise ValueError(msg)
         ### END core bracket_info code ###
 
@@ -2893,6 +2893,11 @@ def show_options(solver=None, method=None, disp=True):
 
     """
     import textwrap
+    
+    logging = isinstance(disp, Logger)
+    if logging:
+        logger = disp
+        disp = True
 
     doc_routines = {
         'minimize': (
