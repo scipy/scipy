@@ -2146,6 +2146,24 @@ class TestOrdQZ(TestCase):
         ret = ordqz(self.B2, self.A1, sort='lhp')
         self.check(self.B2, self.A1, 'lhp', *ret)
 
+class TestOrdQZWorkspaceSize(TestCase):
+
+    def setUp(self):
+        seed(12345)
+
+    def test_decompose(self):
+
+        import numpy.random
+        from scipy.linalg import ordqz
+
+        N = 202
+        for dtype in [np.float32, np.float64, np.complex, np.complex64]:
+            A = numpy.random.random((N,N)).astype(dtype)
+            B = numpy.random.random((N,N)).astype(dtype)
+            # this should not segfault or raise an error
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
+
+
 class TestDatacopied(TestCase):
 
     def test_datacopied(self):
