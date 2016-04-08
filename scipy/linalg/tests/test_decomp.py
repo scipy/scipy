@@ -2163,13 +2163,13 @@ class TestOrdQZWorkspaceSize(TestCase):
             A = numpy.random.random((N,N)).astype(ddtype)
             B = numpy.random.random((N,N)).astype(ddtype)
             # sort = lambda alphar, alphai, beta: alphar**2 + alphai**2< beta**2
-            sort = lambda alpha, beta: alpha<beta
+            sort = lambda alpha, beta: alpha < beta
             [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='real')
 
         for ddtype in [np.complex, np.complex64]:
             A = numpy.random.random((N,N)).astype(ddtype)
             B = numpy.random.random((N,N)).astype(ddtype)
-            sort = lambda alpha, beta: alpha<beta
+            sort = lambda alpha, beta: alpha < beta
             [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='complex')
 
         # # segfaults if lwork parameter to dtrsen is too small
