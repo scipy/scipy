@@ -2157,11 +2157,26 @@ class TestOrdQZWorkspaceSize(TestCase):
         from scipy.linalg import ordqz
 
         N = 202
-        for dtype in [np.float32, np.float64, np.complex, np.complex64]:
-            A = numpy.random.random((N,N)).astype(dtype)
-            B = numpy.random.random((N,N)).astype(dtype)
-            # this should not segfault or raise an error
-            [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
+
+        # raises error if lwork parameter to dtrsen is too small
+        for ddtype in [np.float32, np.float64]:
+            A = numpy.random.random((N,N)).astype(ddtype)
+            B = numpy.random.random((N,N)).astype(ddtype)
+            # sort = lambda alphar, alphai, beta: alphar**2 + alphai**2< beta**2
+            sort = lambda alpha, beta: alpha<beta
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='real')
+
+        for ddtype in [np.complex, np.complex64]:
+            A = numpy.random.random((N,N)).astype(ddtype)
+            B = numpy.random.random((N,N)).astype(ddtype)
+            sort = lambda alpha, beta: alpha<beta
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='complex')
+
+        # # segfaults if lwork parameter to dtrsen is too small
+        # for ddtype in [np.float32, np.float64, np.complex, np.complex64]:
+        #     A = numpy.random.random((N,N)).astype(ddtype)
+        #     B = numpy.random.random((N,N)).astype(ddtype)
+        #     [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
 
 
 class TestDatacopied(TestCase):
