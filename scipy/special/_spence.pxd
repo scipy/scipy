@@ -12,7 +12,7 @@
 # Released under the same license as Scipy.
 
 import cython
-from _complexstuff cimport zlog, zabs, zdiv
+from _complexstuff cimport zlog1, zabs, zdiv
 
 # Relative tolerance for the series
 DEF TOL = 2.220446092504131e-16
@@ -37,7 +37,7 @@ cdef inline double complex cspence(double complex z) nogil:
         return cspence_series0(z)
     elif zabs(1 - z) > 1:
         # Use of zdiv is an UGLY HACK.
-        return -cspence_series1(zdiv(z, z - 1)) - PISQ_6 - 0.5*zlog(z - 1)**2
+        return -cspence_series1(zdiv(z, z - 1)) - PISQ_6 - 0.5*zlog1(z - 1)**2
     else:
         return cspence_series1(z)
 
@@ -68,7 +68,7 @@ cdef inline double complex cspence_series0(double complex z) nogil:
         sum2 += term2
         if zabs(term1) <= TOL*zabs(sum1) and zabs(term2) <= TOL*zabs(sum2):
             break
-    return PISQ_6 - sum1 + zlog(z)*sum2
+    return PISQ_6 - sum1 + zlog1(z)*sum2
 
 
 @cython.cdivision(True)
@@ -97,6 +97,6 @@ cdef inline double complex cspence_series1(double complex z) nogil:
         if zabs(term) <= TOL*zabs(res):
             break
     res *= 4*zz
-    res += 4*z + 5.75*zz + 3*(1 - zz)*zlog(1 - z)
+    res += 4*z + 5.75*zz + 3*(1 - zz)*zlog1(1 - z)
     res /= 1 + 4*z + zz
     return res

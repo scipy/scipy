@@ -23,6 +23,8 @@ cdef extern from "_complexstuff.h":
     double pi "NPY_PI"
     double nan "NPY_NAN"
 
+DEF tol = 2.220446092504131e-16
+
 ctypedef double complex double_complex
 
 ctypedef fused number_t:
@@ -141,3 +143,28 @@ cdef inline double complex zdiv(double complex x, double complex y) nogil:
         out.real = (a*ratio + b)/denom
         out.imag = (b*ratio - a)/denom
     return out
+
+@cython.cdivision(True)
+cdef inline double complex zlog1(double complex z) nogil:
+    """
+    Compute log, paying special attention to accuracy around 1. We
+    implement this ourselves because some systems (most notably the
+    Travis CI machines) are weak in this regime.
+
+    """
+    cdef:
+        int n
+        double complex coeff = -1
+        double complex res = 0
+
+    if zabs(z - 1) > 0.1:
+        return zlog(z)
+    z = z - 1
+    if z == 0:
+        return 0
+    for n in range(1, 17):
+        coeff *= -z
+        res += coeff/n
+        if zabs(res/coeff) < tol:
+            break
+    return res

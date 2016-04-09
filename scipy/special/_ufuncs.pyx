@@ -11437,17 +11437,17 @@ cdef char *ufunc_spence_doc = (
     "  \\int_0^z \\frac{\\log(t)}{1 - t}dt\n"
     "\n"
     "for complex :math:`z`, where the contour of integration is taken\n"
-    "to avoid the branch cut of the logarithm on the negative real\n"
-    "axis. Spence's function is analytic everywhere except the negative\n"
-    "real axis where it has a branch cut.\n"
+    "to avoid the branch cut of the logarithm. Spence's function is\n"
+    "analytic everywhere except the negative real axis where it has a\n"
+    "branch cut.\n"
     "\n"
     "Note that there is a different convention which defines Spence's\n"
     "function by the integral\n"
     "\n"
     ".. math::\n"
-    "  -\\int_0^z \\frac{\\log(1 - t)}{t}dt,\n"
+    "  -\\int_0^z \\frac{\\log(1 - t)}{t}dt;\n"
     "\n"
-    "this function is our ``spence(1 - z)``.")
+    "this is our ``spence(1 - z)``.")
 ufunc_spence_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_spence_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_spence_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
