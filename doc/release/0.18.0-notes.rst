@@ -68,6 +68,12 @@ or a two-dimensional array.
 ``stats.ks_2samp`` used to return nonsensical values if the input was
 not real or contained nans.  It now raises an exception for such inputs.
 
+`scipy.io.netcdf` masking now gives precedence to the ``_FillValue`` attribute
+over the ``missing_value`` attribute, if both are given. Also, data are only
+treated as missing if they match one of these attributes exactly: values that
+differ by roundoff from ``_FillValue`` or ``missing_value`` are no longer
+treated as missing values.
+
 Other changes
 =============
 
