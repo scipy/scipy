@@ -2232,11 +2232,14 @@ def perm(N, k, exact=False):
 # http://stackoverflow.com/a/16327037/125507
 def _range_prod(lo, hi):
     """
-    Product of a range of numbers
+    Product of a range of numbers.
 
     Returns the product of
     lo * (lo+1) * (lo+2) * ... * (hi-2) * (hi-1) * hi
     = hi! / (lo-1)!
+
+    Breaks into smaller products first for speed:
+    _range_prod(2, 9) = ((2*3)*(4*5))*((6*7)*(8*9))
     """
     if lo + 1 < hi:
         mid = (hi + lo) // 2
@@ -2248,17 +2251,17 @@ def _range_prod(lo, hi):
 
 def factorial(n, exact=False):
     """
-    The factorial of a number or array of numbers
+    The factorial of a number or array of numbers.
 
     The factorial of non-negative integer `n` is the product of all
-    positive integers less than or equal to `n`:
+    positive integers less than or equal to `n`::
 
-    n! = n * (n - 1) * (n - 2) * ... * 1
+        n! = n * (n - 1) * (n - 2) * ... * 1
 
     Parameters
     ----------
     n : int or array_like of ints
-        Input values, which must be non-negative integers.
+        Input values.  If ``n < 0``, the return value is 0.
     exact : bool, optional
         If True, calculate the answer exactly using long integer arithmetic.
         If False, result is approximated in floating point rapidly using the
@@ -2273,9 +2276,8 @@ def factorial(n, exact=False):
     Notes
     -----
     For arrays with ``exact=True``, the factorial is computed only once, for
-    the largest input, with each other result computed in the process. If any
-    input is greater than 12, the output is an object array of Python long
-    ints.
+    the largest input, with each other result computed in the process.
+    The output dtype is increased to ``int64`` or ``object`` if necessary.
 
     With ``exact=False`` the factorial is approximated using the gamma
     function:
@@ -2296,29 +2298,35 @@ def factorial(n, exact=False):
     """
     if exact:
         if np.ndim(n) == 0:
-            return math.factorial(n)
+            return 0 if n < 0 else math.factorial(n)
         else:
             n = asarray(n)
-            un = np.unique(n)
+            un = np.unique(n).astype(object)
 
-            if any(abs(un.astype(int)) != un):
-                raise ValueError("Input must be non-negative integers for "
-                                 "'exact' mode.")
+            # Convert to object array of long ints if np.int can't handle size
+            if un[-1] > 20:
+                dt = object
+            elif un[-1] > 12:
+                dt = np.int64
+            else:
+                dt = np.int
 
-            # Anything greater than 12! requires long ints
-            out = np.empty_like(n, dtype=object if un[-1] > 12 else int)
+            out = np.empty_like(n, dtype=dt)
 
+            # Handle invalid/trivial values
+            un = un[un > 1]
             out[n < 2] = 1
-            un = np.concatenate(([1], un[un > 1]))
+            out[n < 0] = 0
 
             # Calculate products of each range of numbers
-            val = 1
-            for i in xrange(len(un) - 1):
-                # Use Python ints instead of np.int32, which would overflow
-                prev = int(un[i] + 1)
-                current = int(un[i + 1])
-                val *= _range_prod(prev, current)
-                out[n == current] = val
+            if un.size:
+                val = math.factorial(un[0])
+                out[n == un[0]] = val
+                for i in xrange(len(un) - 1):
+                    prev = un[i] + 1
+                    current = un[i + 1]
+                    val *= _range_prod(prev, current)
+                    out[n == current] = val
             return out
     else:
         n = asarray(n)
