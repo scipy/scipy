@@ -4958,14 +4958,28 @@ add_newdoc("scipy.special", "smirnovi",
     """)
 
 add_newdoc("scipy.special", "spence",
-    """
-    spence(x)
+    r"""
+    spence(z)
 
-    Dilogarithm integral
+    Spence's function, also known as the dilogarithm. It is defined to
+    be
 
-    Returns the dilogarithm integral::
+    .. math::
+      \int_0^z \frac{\log(t)}{1 - t}dt
 
-        -integral(log t / (t-1), t=1..x)
+    for complex :math:`z`, where the contour of integration is taken
+    to avoid the branch cut of the logarithm. Spence's function is
+    analytic everywhere except the negative real axis where it has a
+    branch cut.
+
+    Note that there is a different convention which defines Spence's
+    function by the integral
+
+    .. math::
+      -\int_0^z \frac{\log(1 - t)}{t}dt;
+
+    this is our ``spence(1 - z)``.
+
     """)
 
 add_newdoc("scipy.special", "stdtr",

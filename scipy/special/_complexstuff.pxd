@@ -3,6 +3,7 @@
 # Common functions required when doing complex arithmetic with Cython.
 #
 
+import cython
 cimport numpy as np
 cimport libc.math
 
@@ -21,6 +22,8 @@ cdef extern from "_complexstuff.h":
     double inf "NPY_INFINITY"
     double pi "NPY_PI"
     double nan "NPY_NAN"
+
+DEF tol = 2.220446092504131e-16
 
 ctypedef double complex double_complex
 
@@ -103,3 +106,65 @@ cdef inline double_complex zpack(double zr, double zi) nogil:
     z.real = zr
     z.imag = zi
     return (<double_complex*>&z)[0]
+
+@cython.cdivision(True)
+cdef inline double complex zdiv(double complex x, double complex y) nogil:
+    """
+    Cython 0.24 uses the naive complex division algorithm which
+    overflows far before it should. See
+
+    https://groups.google.com/forum/#!topic/cython-users/1oSGbfiX7qw
+
+    This function implements Smith's method to get around the
+    problem. Smith's method can be further improved, see
+
+    http://arxiv.org/pdf/1210.4539v2.pdf
+
+    This is an UGLY HACK and should be removed as soon as the problem
+    is fixed upstream.
+
+    """
+    cdef:
+        double a = x.real
+        double b = x.imag
+        double c = y.real
+        double d = y.imag
+        double ratio, denom
+        double complex out
+
+    if libc.math.fabs(d) < libc.math.fabs(c):
+        ratio = d/c
+        denom = c + d*ratio
+        out.real = (a + b*ratio)/denom
+        out.imag = (b - a*ratio)/denom
+    else:
+        ratio = c/d
+        denom = c*ratio + d
+        out.real = (a*ratio + b)/denom
+        out.imag = (b*ratio - a)/denom
+    return out
+
+@cython.cdivision(True)
+cdef inline double complex zlog1(double complex z) nogil:
+    """
+    Compute log, paying special attention to accuracy around 1. We
+    implement this ourselves because some systems (most notably the
+    Travis CI machines) are weak in this regime.
+
+    """
+    cdef:
+        int n
+        double complex coeff = -1
+        double complex res = 0
+
+    if zabs(z - 1) > 0.1:
+        return zlog(z)
+    z = z - 1
+    if z == 0:
+        return 0
+    for n in range(1, 17):
+        coeff *= -z
+        res += coeff/n
+        if zabs(res/coeff) < tol:
+            break
+    return res

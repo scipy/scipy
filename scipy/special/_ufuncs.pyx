@@ -1894,6 +1894,9 @@ ctypedef double _proto_smirnovi_unsafe_t(double, double) nogil
 cdef _proto_smirnovi_unsafe_t *_proto_smirnovi_unsafe_t_var = &_func_smirnovi_unsafe
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_spence "spence"(double) nogil
+from _spence cimport cspence as _func_cspence
+ctypedef double complex _proto_cspence_t(double complex) nogil
+cdef _proto_cspence_t *_proto_cspence_t_var = &_func_cspence
 from sph_harm cimport sph_harmonic as _func_sph_harmonic
 ctypedef double complex _proto_sph_harmonic_t(int, int, double, double) nogil
 cdef _proto_sph_harmonic_t *_proto_sph_harmonic_t_var = &_func_sph_harmonic
@@ -11420,31 +11423,56 @@ ufunc_smirnovi_data[1] = &ufunc_smirnovi_ptr[2*1]
 ufunc_smirnovi_data[2] = &ufunc_smirnovi_ptr[2*2]
 smirnovi = np.PyUFunc_FromFuncAndData(ufunc_smirnovi_loops, ufunc_smirnovi_data, ufunc_smirnovi_types, 3, 2, 1, 0, "smirnovi", ufunc_smirnovi_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_spence_loops[2]
-cdef void *ufunc_spence_ptr[4]
-cdef void *ufunc_spence_data[2]
-cdef char ufunc_spence_types[4]
+cdef np.PyUFuncGenericFunction ufunc_spence_loops[4]
+cdef void *ufunc_spence_ptr[8]
+cdef void *ufunc_spence_data[4]
+cdef char ufunc_spence_types[8]
 cdef char *ufunc_spence_doc = (
-    "spence(x)\n"
+    "spence(z)\n"
     "\n"
-    "Dilogarithm integral\n"
+    "Spence's function, also known as the dilogarithm. It is defined to\n"
+    "be\n"
     "\n"
-    "Returns the dilogarithm integral::\n"
+    ".. math::\n"
+    "  \\int_0^z \\frac{\\log(t)}{1 - t}dt\n"
     "\n"
-    "    -integral(log t / (t-1), t=1..x)")
+    "for complex :math:`z`, where the contour of integration is taken\n"
+    "to avoid the branch cut of the logarithm. Spence's function is\n"
+    "analytic everywhere except the negative real axis where it has a\n"
+    "branch cut.\n"
+    "\n"
+    "Note that there is a different convention which defines Spence's\n"
+    "function by the integral\n"
+    "\n"
+    ".. math::\n"
+    "  -\\int_0^z \\frac{\\log(1 - t)}{t}dt;\n"
+    "\n"
+    "this is our ``spence(1 - z)``.")
 ufunc_spence_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_spence_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_spence_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc_spence_loops[3] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
 ufunc_spence_types[0] = <char>NPY_FLOAT
 ufunc_spence_types[1] = <char>NPY_FLOAT
 ufunc_spence_types[2] = <char>NPY_DOUBLE
 ufunc_spence_types[3] = <char>NPY_DOUBLE
+ufunc_spence_types[4] = <char>NPY_CFLOAT
+ufunc_spence_types[5] = <char>NPY_CFLOAT
+ufunc_spence_types[6] = <char>NPY_CDOUBLE
+ufunc_spence_types[7] = <char>NPY_CDOUBLE
 ufunc_spence_ptr[2*0] = <void*>_func_spence
 ufunc_spence_ptr[2*0+1] = <void*>(<char*>"spence")
 ufunc_spence_ptr[2*1] = <void*>_func_spence
 ufunc_spence_ptr[2*1+1] = <void*>(<char*>"spence")
+ufunc_spence_ptr[2*2] = <void*>_func_cspence
+ufunc_spence_ptr[2*2+1] = <void*>(<char*>"spence")
+ufunc_spence_ptr[2*3] = <void*>_func_cspence
+ufunc_spence_ptr[2*3+1] = <void*>(<char*>"spence")
 ufunc_spence_data[0] = &ufunc_spence_ptr[2*0]
 ufunc_spence_data[1] = &ufunc_spence_ptr[2*1]
-spence = np.PyUFunc_FromFuncAndData(ufunc_spence_loops, ufunc_spence_data, ufunc_spence_types, 2, 1, 1, 0, "spence", ufunc_spence_doc, 0)
+ufunc_spence_data[2] = &ufunc_spence_ptr[2*2]
+ufunc_spence_data[3] = &ufunc_spence_ptr[2*3]
+spence = np.PyUFunc_FromFuncAndData(ufunc_spence_loops, ufunc_spence_data, ufunc_spence_types, 4, 1, 1, 0, "spence", ufunc_spence_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_sph_harm_loops[3]
 cdef void *ufunc_sph_harm_ptr[6]

@@ -202,7 +202,7 @@ cotdg -- cotdg: d->d                                       -- cephes.h
 log1p -- log1p: d->d, clog1p: D->D                         -- cephes.h, _cunity.pxd
 expm1 -- expm1: d->d, cexpm1: D->D                         -- cephes.h, _cunity.pxd
 cosm1 -- cosm1: d->d                                       -- cephes.h
-spence -- spence: d->d                                     -- cephes.h
+spence -- spence: d->d, cspence: D-> D                     -- cephes.h, _spence.pxd
 zetac -- zetac: d->d                                       -- cephes.h
 struve -- struve_h: dd->d                                  -- misc.h
 modstruve -- struve_l: dd->d                               -- misc.h

@@ -9,7 +9,7 @@
 
 import cython
 from libc.math cimport M_PI, ceil, sin, log
-from _complexstuff cimport nan, zisnan, zabs, zlog, zsin, zarg, zexp
+from _complexstuff cimport nan, zisnan, zabs, zlog, zlog1, zsin, zarg, zexp
 
 cdef extern from "numpy/npy_math.h":
     double NPY_EULER
@@ -284,31 +284,6 @@ cdef inline double complex taylor(double complex z) nogil:
         coeff = zeta(n, 1)*zfac/n
         res += coeff
         if zabs(coeff/res) < tol:
-            break
-    return res
-
-
-@cython.cdivision(True)
-cdef inline double complex zlog1(double complex z) nogil:
-    """
-    Compute log around 1. We implement this ourselves because some
-    systems appear to be inaccurate around this point.
-
-    """
-    cdef:
-        int n
-        double complex coeff = -1
-        double complex res = 0
-
-    if zabs(z - 1) > 0.1:
-        return zlog(z)
-    z = z - 1
-    if z == 0:
-        return 0
-    for n in range(1, 17):
-        coeff *= -z
-        res += coeff/n
-        if zabs(res/coeff) < tol:
             break
     return res
 
