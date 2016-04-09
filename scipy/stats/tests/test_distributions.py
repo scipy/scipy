@@ -40,7 +40,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'halflogistic', 'fatiguelife', 'foldnorm', 'ncx2', 't', 'nct',
          'weibull_min', 'weibull_max', 'dweibull', 'maxwell', 'rayleigh',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
-         'hypsecant', 'laplace', 'reciprocal', 'triang', 'tukeylambda',
+         'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
          'rice']
 
@@ -75,7 +75,9 @@ def test_all_distributions():
         if dist == 'fatiguelife':
             alpha = 0.001
 
-        if dist == 'triang':
+        if dist == 'trapz':
+            args = tuple(np.sort(np.random.random(nargs)))
+        elif dist == 'triang':
             args = tuple(np.random.random(nargs))
         elif dist == 'reciprocal':
             vals = np.random.random(nargs)
@@ -1863,6 +1865,72 @@ class TestRdist(TestCase):
         values = [0.001, 0.5, 0.999]
         assert_almost_equal(distfn.cdf(distfn.ppf(values, 541.0), 541.0),
                             values, decimal=5)
+
+
+class TestTrapz(TestCase):
+    def test_reduces_to_triang(self):
+        modes = [0.3, 0.5]
+        for mode in modes:
+            x = [0, mode, 1]
+            assert_almost_equal(stats.trapz.pdf(x, mode, mode),
+                                stats.triang.pdf(x, mode))
+            assert_almost_equal(stats.trapz.cdf(x, mode, mode),
+                                stats.triang.cdf(x, mode))
+
+    def test_reduces_to_uniform(self):
+            x = np.linspace(0, 1, 10)
+
+            old_err = np.seterr(divide='ignore')
+
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', RuntimeWarning)
+                assert_almost_equal(stats.trapz.pdf(x, 0, 1),
+                                    stats.uniform.pdf(x))
+                assert_almost_equal(stats.trapz.cdf(x, 0, 1),
+                                    stats.uniform.cdf(x))
+
+            np.seterr(**old_err)
+
+    def test_cases(self):
+            old_err = np.seterr(divide='ignore')
+
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', RuntimeWarning)
+
+                # edge cases
+                assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
+                assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
+                assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
+                assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
+
+                # straightforward case
+                assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
+                assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
+                assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
+
+                assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
+                assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
+                assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
+                assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
+                assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
+
+            np.seterr(**old_err)
+
+    def test_trapz_vect(self):
+        # test that array-valued shapes and arguments are handled
+        c = np.array([0.1, 0.2, 0.3])
+        d = np.array([0.5, 0.6])[:, None]
+        x = np.array([0.15, 0.25, 0.9])
+        v = stats.trapz.pdf(x, c, d)
+
+        cc, dd, xx = np.broadcast_arrays(c, d, x)
+
+        res = np.empty(xx.size, dtype=xx.dtype)
+        ind = np.arange(xx.size)
+        for i, x1, c1, d1 in zip(ind, xx.ravel(), cc.ravel(), dd.ravel()):
+            res[i] = stats.trapz.pdf(x1, c1, d1)
+
+        assert_allclose(v, res.reshape(v.shape), atol=1e-15)
 
 
 def test_540_567():
