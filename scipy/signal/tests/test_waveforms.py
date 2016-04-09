@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import (TestCase, assert_almost_equal, assert_equal,
                            assert_, assert_raises, run_module_suite,
-                           assert_allclose)
+                           assert_allclose, assert_array_equal)
 
 import scipy.signal.waveforms as waveforms
 
@@ -35,7 +35,9 @@ def chirp_hyperbolic(t, f0, f1, t1):
 
 
 def compute_frequency(t, theta):
-    """Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t)."""
+    """
+    Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t).
+    """
     # Assume theta and t are 1D numpy arrays.
     # Assume that t is uniformly spaced.
     dt = t[1] - t[0]
@@ -313,6 +315,25 @@ class TestGaussPulse(TestCase):
         err_msg = "Integer input 'tpr=-60' gives wrong result"
         assert_equal(int_result, float_result, err_msg=err_msg)
 
+
+class TestUnitImpulse(TestCase):
+
+    def test_no_index(self):
+        assert_array_equal(waveforms.unit_impulse(7), [1, 0, 0, 0, 0, 0, 0])
+        assert_array_equal(waveforms.unit_impulse((3, 3)),
+                           [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
+
+    def test_index(self):
+        assert_array_equal(waveforms.unit_impulse(10, 3),
+                           [0, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+        assert_array_equal(waveforms.unit_impulse((3, 3), (1, 1)),
+                           [[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+
+    def test_mid(self):
+        assert_array_equal(waveforms.unit_impulse((3, 3), 'mid'),
+                           [[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+        assert_array_equal(waveforms.unit_impulse(9, 'mid'),
+                           [0, 0, 0, 0, 1, 0, 0, 0, 0])
 
 if __name__ == "__main__":
     run_module_suite()
