@@ -597,7 +597,7 @@ Other Special Functions
    factorialk   -- [+](...((n!)!)!...)! where there are k '!'
    shichi       -- Hyperbolic sine and cosine integrals.
    sici         -- Integral of the sinc and "cosinc" functions.
-   spence       -- Dilogarithm integral.
+   spence       -- Spence's function, also known as the dilogarithm.
    lambertw     -- Lambert W function
    zeta         -- Riemann zeta function of two arguments.
    zetac        -- Standard Riemann zeta function minus 1.

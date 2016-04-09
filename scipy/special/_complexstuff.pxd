@@ -3,6 +3,7 @@
 # Common functions required when doing complex arithmetic with Cython.
 #
 
+import cython
 cimport numpy as np
 cimport libc.math
 
@@ -103,3 +104,40 @@ cdef inline double_complex zpack(double zr, double zi) nogil:
     z.real = zr
     z.imag = zi
     return (<double_complex*>&z)[0]
+
+@cython.cdivision(True)
+cdef inline double complex zdiv(double complex x, double complex y) nogil:
+    """
+    Cython 0.24 uses the naive complex division algorithm which
+    overflows far before it should. See
+
+    https://groups.google.com/forum/#!topic/cython-users/1oSGbfiX7qw
+
+    This function implements Smith's method to get around the
+    problem. Smith's method can be further improved, see
+
+    http://arxiv.org/pdf/1210.4539v2.pdf
+
+    This is an UGLY HACK and should be removed as soon as the problem
+    is fixed upstream.
+
+    """
+    cdef:
+        double a = x.real
+        double b = x.imag
+        double c = y.real
+        double d = y.imag
+        double ratio, denom
+        double complex out
+
+    if libc.math.fabs(d) < libc.math.fabs(c):
+        ratio = d/c
+        denom = c + d*ratio
+        out.real = (a + b*ratio)/denom
+        out.imag = (b - a*ratio)/denom
+    else:
+        ratio = c/d
+        denom = c*ratio + d
+        out.real = (a*ratio + b)/denom
+        out.imag = (b*ratio - a)/denom
+    return out

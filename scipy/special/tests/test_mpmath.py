@@ -386,6 +386,31 @@ def test_rgamma_zeros():
 
 
 # ------------------------------------------------------------------------------
+# spence
+# ------------------------------------------------------------------------------
+
+@mpmath_check('0.19')
+def test_spence_circle():
+    """
+    The trickiest region for spence is around the circle |z - 1| = 1,
+    so test that region carefully.
+
+    """
+    def spence(z):
+        return complex(mpmath.polylog(2, 1 - z))
+
+    r = np.linspace(0.5, 1.5)
+    theta = np.linspace(0, 2*np.pi)
+    z = (1 + np.outer(r, np.exp(1j*theta))).flatten()
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, spence(z0)))
+
+    dataset = np.array(dataset)
+    FuncData(sc.spence, dataset, 0, 1, rtol=1e-14).check()
+
+
+# ------------------------------------------------------------------------------
 # Machinery for systematic tests
 # ------------------------------------------------------------------------------
 
@@ -1692,6 +1717,22 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         def si(x):
             return sc.sici(x)[0]
         assert_mpmath_equal(si, mpmath.si, [Arg()])
+
+    def test_spence(self):
+        # mpmath uses a different convention for the dilogarithm
+        def dilog(x):
+            return mpmath.polylog(2, 1 - x)
+        # Spence has a branch cut on the negative real axis
+        assert_mpmath_equal(sc.spence,
+                            _exception_to_nan(dilog),
+                            [Arg(0, np.inf)], rtol=1e-14)
+
+    def test_spence_complex(self):
+        def dilog(z):
+            return mpmath.polylog(2, 1 - z)
+        assert_mpmath_equal(sc.spence,
+                            _exception_to_nan(dilog),
+                            [ComplexArg()], rtol=1e-14)
 
     def test_spherharm(self):
         def spherharm(l, m, theta, phi):
