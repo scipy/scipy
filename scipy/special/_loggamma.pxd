@@ -8,6 +8,7 @@
 # Distributed under the same license as Scipy.
 
 import cython
+cimport sf_error
 from libc.math cimport M_PI, ceil, sin, log
 from _complexstuff cimport nan, zisnan, zabs, zlog, zlog1, zsin, zarg, zexp
 
@@ -62,6 +63,7 @@ cdef inline double complex loggamma(double complex z) nogil:
         return z
     elif rz <= 0 and z == ceil(rz):
         # Poles
+        sf_error.error("loggamma", sf_error.SINGULAR, NULL)
         return nan + 1J*nan
 
     if rz < 0 and -smallimag <= iz and iz <= smallimag:
@@ -290,6 +292,10 @@ cdef inline double complex taylor(double complex z) nogil:
 
 cdef inline double complex cgamma(double complex z) nogil:
     """Compute Gamma(z) using loggamma."""
+    if z.real <= 0 and z == ceil(z.real):
+        # Poles
+        sf_error.error("gamma", sf_error.SINGULAR, NULL)
+        return nan + 1J*nan
     return zexp(loggamma(z))
 
 
