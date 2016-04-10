@@ -829,8 +829,6 @@ class MatFile5Writer(object):
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
-            if name[0] == '_':
-                continue
             is_global = name in self.global_vars
             if self.do_compression:
                 stream = BytesIO()
