@@ -566,7 +566,9 @@ def fix_line_length(subroutine):
     return '\n'.join(lines)
 
 def fort_subroutine_wrapper(name, ret_type, args):
-    if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
+    needs_abi_wrapper = ((name[0] in 'cs' and ret_type in 'cs') or
+                         name in ['zladiv', 'zdotu', 'zdotc'])
+    if needs_abi_wrapper:
         wrapper = 'w' + name
     else:
         wrapper = name
