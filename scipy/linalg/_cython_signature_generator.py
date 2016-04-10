@@ -112,7 +112,8 @@ if __name__ == '__main__':
         # LAPACK 3.3.1 through 3.6.0.
         # Also exclude routines with string arguments to avoid
         # compatibility woes with different standards for string arguments.
-        exclusions = [# Not included because people should be using the
+        exclusions = [
+                      # Not included because people should be using the
                       # C standard library function instead.
                       # sisnan is also not currently included in the
                       # ABI wrappers.
