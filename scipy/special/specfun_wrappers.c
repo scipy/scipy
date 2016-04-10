@@ -26,7 +26,6 @@
 extern double cephes_psi(double);
 extern double cephes_struve(double, double);
 
-extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
 extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
 extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
@@ -70,14 +69,6 @@ extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*
 /* This must be linked with fortran
  */
 
-npy_cdouble cgamma_wrap( npy_cdouble z) {
-  int kf = 1;
-  npy_cdouble cy;
-
-  F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
-  return cy;
-}
-
 npy_cdouble clngamma_wrap( npy_cdouble z) {
   int kf = 0;
   npy_cdouble cy;
@@ -97,19 +88,6 @@ npy_cdouble cpsi_wrap( npy_cdouble z) {
     F_FUNC(cpsi,CPSI)(CADDR(z), CADDR(cy));
   }
   return cy;
-}
-
-npy_cdouble crgamma_wrap( npy_cdouble z) {
-  int kf = 1;
-  npy_cdouble cy;
-  npy_cdouble cy2;
-  double magsq;
-
-  F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
-  magsq = ABSQ(cy);
-  REAL(cy2) = REAL(cy) / magsq;
-  IMAG(cy2) = -IMAG(cy) / magsq;
-  return cy2;
 }
 
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {

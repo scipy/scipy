@@ -323,6 +323,7 @@ def test_beta():
 # loggamma
 # ------------------------------------------------------------------------------
 
+@mpmath_check('0.19')
 def test_loggamma_taylor1():
     """
     Make sure there isn't a big jump in accuracy when we move from
@@ -341,12 +342,13 @@ def test_loggamma_taylor1():
     FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
 
 
+@mpmath_check('0.19')
 def test_loggamma_taylor2():
     """
     Test around the zeros at z = 1, 2.
 
     """
-    dx = np.r_[-np.logspace(-1, -30, 10), np.logspace(-30, -1, 10)]
+    dx = np.r_[-np.logspace(-1, -16, 10), np.logspace(-16, -1, 10)]
     dy = dx.copy()
     dx, dy = np.meshgrid(dx, dy)
     dz = dx + 1j*dy
@@ -363,6 +365,7 @@ def test_loggamma_taylor2():
 # rgamma
 # ------------------------------------------------------------------------------
 
+@mpmath_check('0.19')
 def test_rgamma_zeros():
     """
     Test around the zeros at z = 0, -1, -2, ...,  -169. (After -169 we
@@ -371,7 +374,7 @@ def test_rgamma_zeros():
 
     """
     # Can't use too many points here or the test takes forever.
-    dx = np.r_[-np.logspace(-1, -30, 3), 0, np.logspace(-30, -1, 3)]
+    dx = np.r_[-np.logspace(-1, -13, 3), 0, np.logspace(-13, -1, 3)]
     dy = dx.copy()
     dx, dy = np.meshgrid(dx, dy)
     dz = dx + 1j*dy
@@ -1634,7 +1637,7 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [IntArg(0, 100), IntArg(0, 100), ComplexArg()],
                             n=100)
 
-    def test_loggamma_real(self):
+    def test_loggamma(self):
         assert_mpmath_equal(sc.loggamma,
                             _exception_to_nan(lambda x: mpmath.loggamma(x, **HYPERKW)),
                             [Arg()], rtol=1e-13)
