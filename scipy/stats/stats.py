@@ -172,6 +172,7 @@ import numpy as np
 from . import distributions, mstats_basic, _stats
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
+from ._stats import _kendall_condis
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -1315,7 +1316,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     -----
     Valid only for n>20.  The Z-score is set to 0 for bad entries.
     This function uses the method described in [1]_.
-    
+
     References
     ----------
     .. [1] see e.g. F. J. Anscombe, W. J. Glynn, "Distribution of the kurtosis
@@ -3195,7 +3196,7 @@ def pointbiserialr(x, y):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
+def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     """
     Calculates Kendall's tau, a correlation measure for ordinal data.
 
@@ -3283,99 +3284,40 @@ def kendalltau(x, y, initial_lexsort=True, nan_policy='propagate'):
         y = ma.masked_invalid(y)
         return mstats_basic.kendalltau(x, y)
 
-    n = np.int64(len(x))
-    temp = list(range(n))  # support structure used by mergesort
-    # this closure recursively sorts sections of perm[] by comparing
-    # elements of y[perm[]] using temp[] as support
-    # returns the number of swaps required by an equivalent bubble sort
+    if initial_lexsort is not None:  # deprecate to drop!
+        warnings.warn('"initial_lexsort" is gone!')
 
-    def mergesort(offs, length):
-        exchcnt = 0
-        if length == 1:
-            return 0
-        if length == 2:
-            if y[perm[offs]] <= y[perm[offs+1]]:
-                return 0
-            t = perm[offs]
-            perm[offs] = perm[offs+1]
-            perm[offs+1] = t
-            return 1
-        length0 = length // 2
-        length1 = length - length0
-        middle = offs + length0
-        exchcnt += mergesort(offs, length0)
-        exchcnt += mergesort(middle, length1)
-        if y[perm[middle - 1]] < y[perm[middle]]:
-            return exchcnt
+    def count_rank_tie(ranks):
+        cnt = np.bincount(ranks).astype('int64', copy=False)
+        return (cnt * (cnt - 1) // 2).sum()
 
-        # merging
-        i = j = k = 0
-        while j < length0 or k < length1:
-            if k >= length1 or (j < length0 and y[perm[offs + j]] <=
-                                                y[perm[middle + k]]):
-                temp[i] = perm[offs + j]
-                d = i - j
-                j += 1
-            else:
-                temp[i] = perm[middle + k]
-                d = (offs + i) - (middle + k)
-                k += 1
-            if d > 0:
-                exchcnt += d
-            i += 1
-        perm[offs:offs+length] = temp[0:length]
-        return exchcnt
+    size = x.size
+    perm = np.argsort(y)  # sort on y and convert y to dense ranks
+    x, y = x[perm], y[perm]
+    y = np.r_[True, y[1:] != y[:-1]].cumsum(dtype=np.intp)
 
-    # initial sort on values of x and, if tied, on values of y
-    if initial_lexsort:
-        # sort implemented as mergesort, worst case: O(n log(n))
-        perm = np.lexsort((y, x))
-    else:
-        # sort implemented as quicksort, 30% faster but with worst case: O(n^2)
-        perm = list(range(n))
-        perm.sort(key=lambda a: (x[a], y[a]))
+    # stable sort on x and convert x to dense ranks
+    perm = np.argsort(x, kind='mergesort')
+    x, y = x[perm], y[perm]
+    x = np.r_[True, x[1:] != x[:-1]].cumsum(dtype=np.intp)
 
-    # compute joint ties
-    first = 0
-    t = 0
-    for i in xrange(1, n):
-        if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
-            t += ((i - first) * (i - first - 1)) // 2
-            first = i
-    t += ((n - first) * (n - first - 1)) // 2
+    con, dis = _kendall_condis(x, y)  # concordant & discordant pairs
 
-    # compute ties in x
-    first = 0
-    u = 0
-    for i in xrange(1, n):
-        if x[perm[first]] != x[perm[i]]:
-            u += ((i - first) * (i - first - 1)) // 2
-            first = i
-    u += ((n - first) * (n - first - 1)) // 2
+    obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
+    cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
 
-    # count exchanges
-    exchanges = mergesort(0, n)
-    # compute ties in y after mergesort with counting
-    first = 0
-    v = 0
-    for i in xrange(1, n):
-        if y[perm[first]] != y[perm[i]]:
-            v += ((i - first) * (i - first - 1)) // 2
-            first = i
-    v += ((n - first) * (n - first - 1)) // 2
+    ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
+    xtie = count_rank_tie(x) - ntie      # ties only in x
+    ytie = count_rank_tie(y) - ntie      # ties only in y
 
-    tot = (n * (n - 1)) // 2
-    if tot == u or tot == v:
-        # Special case for all ties in both ranks
+    if con + dis + xtie == 0 or con + dis + ytie == 0:
         return KendalltauResult(np.nan, np.nan)
 
-    # Prevent overflow; equal to np.sqrt((tot - u) * (tot - v))
-    denom = np.exp(0.5 * (np.log(tot - u) + np.log(tot - v)))
-    tau = ((tot - (v + u - t)) - 2.0 * exchanges) / denom
+    tau = (con - dis) / np.sqrt(con + dis + xtie) / np.sqrt(con + dis + ytie)
 
     # what follows reproduces the ending of Gary Strangman's original
     # stats.kendalltau() in SciPy
-    svar = (4.0 * n + 10.0) / (9.0 * n * (n - 1))
+    svar = (4.0 * size + 10.0) / (9.0 * size * (size - 1))
     z = tau / np.sqrt(svar)
     prob = special.erfc(np.abs(z) / 1.4142136)
 

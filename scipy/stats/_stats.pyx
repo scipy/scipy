@@ -2,6 +2,7 @@ from libc cimport math
 cimport cython
 cimport numpy as np
 from numpy.math cimport PI
+from numpy cimport ndarray, int64_t, intp_t
 
 import numpy as np
 import scipy.stats, scipy.special
@@ -103,3 +104,37 @@ def von_mises_cdf(k_obj, x_obj):
         return result + ix
     else:
         return (result + ix)[0]
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _kendall_condis(intp_t[:] x, intp_t[:] y):
+    cdef:
+        intp_t sup = 1 + np.max(y)
+        intp_t[::1] arr = np.zeros(sup, dtype=np.intp)
+        intp_t i = 0, k = 0, size = x.size, idx
+        int64_t con = 0, dis = 0
+
+    with nogil:
+        while i < size:
+            while k < size and x[i] == x[k]:
+                idx = y[k] - 1
+                while idx != 0:
+                    con += arr[idx]
+                    idx -= idx & -idx
+
+                dis += i
+                idx = y[k]
+                while idx != 0:
+                    dis -= arr[idx]
+                    idx -= idx & -idx
+
+                k += 1
+
+            while i < k:
+                idx = y[i]
+                while idx < sup:
+                    arr[idx] += 1
+                    idx += idx & -idx
+                i += 1
+
+    return con, dis
