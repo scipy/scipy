@@ -83,7 +83,7 @@ Equation (Local) Minimizers
 
 .. autosummary::
    :toctree: generated/
-   
+
    leastsq - Minimize the sum of squares of M equations in N unknowns
    least_squares - Feature-rich least-squares minimization.
    nnls - Linear least-squares problem with non-negativity constraint
@@ -98,6 +98,7 @@ Global Optimization
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
+   gensa - Generalized Simulating Annealing
 
 Rosenbrock function
 -------------------
@@ -241,6 +242,7 @@ from .nonlin import *
 from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
+from ._gensa import gensa
 from ._linprog import linprog, linprog_verbose_callback
 from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
