@@ -30,10 +30,6 @@ class GenSARunnerException(Exception):
     pass
 
 
-class Tracer():
-    pass
-
-
 class GenSARunner(object):
     """This class implements the core of the gensa algorithm.
 
@@ -51,13 +47,23 @@ class GenSARunner(object):
     """
 
     def __init__(self, fun, x0, lower, upper, fargs=()):
+        self._lower = np.array(lower)
+        self._upper = np.array(upper)
+        assert(len(lower) == len(
+            upper)),'Lower and upper bounds are inconsistent'
+        if x0 is None:
+            x0 = self._lower + np.random.rand(len(self._lower)) * (
+                    self._upper - self._lower)
+        else:
+            x0 = np.array(x0)
+        assert(len(self._lower) == len(
+            x0)), 'Lower bounds size does not match x0'
+        assert(len(self._upper) == len(
+            x0)), 'Upper bounds size does not match x0'
         self._fun = fun
         self._fargs = fargs
         self._x = np.array(x0)
-        self._lower = np.array(lower)
-        self._upper = np.array(upper)
         self._dim, = self._x.shape
-        self._tracer = Tracer()
         self._xrange = self._upper - self._lower
         self._xbackup = np.array(self._x)
         self._xmini = np.array(self._x)
@@ -528,18 +534,13 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
 
     >>> from scipy.optimize import gensa
     >>> func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
-    >>>        + 10 * np.size(x)
-    >>> lw = [-5.12] * 30
-    >>> up = [5.12] * 30
+            + 10 * np.size(x)
+    >>> lw = [-5.12] * 10
+    >>> up = [5.12] * 10
     >>> ret = gensa(func, None, lower=lw, upper=up)
     >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
     ...    ret.x, ret.fun))
     """
-    if x0 is None:
-        x0 = lower + np.random.rand(len(lower)) * (upper - lower)
-    assert(len(lower) == len(upper)), 'Lower and upper bounds are inconsistent'
-    assert(len(lower) == len(x0)), 'Lower bounds size does not match x0'
-    assert(len(upper) == len(x0)), 'Upper bounds size does not match x0'
     gr = GenSARunner(func, x0, lower, upper, fargs=args)
     gr._tempsta = T
     gr._qv = visitparam
@@ -551,16 +552,37 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
     gr.start_search()
     return gr.result
 
-def main():
-    dim = 5
+def _get_fixture(dim=2):
     lower = np.array([-5.12] * dim)
     upper = np.array([5.12] * dim)
-    xinit = lower + np.random.rand(dim) * (upper - lower)
     func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
             + 10 * np.size(x)
+    return (func, lower, upper)
+
+def test_visita():
+    pass
+
+def test_yygas():
+    pass
+
+def test_gensa_lowdim():
+    func, lower, upper = _get_fixture()
+    ret = gensa(func, None, lower, upper)
+    np.testing.assert_allclose(ret.fun, 0., atol=1e-12)
+
+def test_gensa_highdim():
+    func, lower, upper = _get_fixture(5)
+    ret = gensa(func, None, lower, upper)
+    np.testing.assert_allclose(ret.fun, 0., atol=1e-12)
+
+
+def main():
+    func, lower, upper = _get_fixture()
+    xinit = lower + np.random.rand(dim) * (upper - lower)
     ret = gensa(func, xinit, lower, upper)
     print("global minimum: xmin = {0}, f(xmin) = {1}".format(
         ret.x, ret.fun))
 
 if __name__ == '__main__':
     main()
+
