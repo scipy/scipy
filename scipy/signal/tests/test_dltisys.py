@@ -554,6 +554,15 @@ class Test_dfreqresp(TestCase):
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dfreqresp, system)
 
+    def test_from_zpk(self):
+        # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        system_ZPK = dlti([],[0.2],0.3)
+        system_TF = dlti(0.3, [1, -0.2])
+        w = [0.1, 1, 10, 100]
+        w1, H1 = dfreqresp(system_ZPK, w=w)
+        w2, H2 = dfreqresp(system_TF, w=w)
+        assert_almost_equal(H1, H2)
+
 
 class Test_bode(object):
 
