@@ -24,6 +24,7 @@ __all__ = ['gensa']
 
 KSPRING = 1.e8
 BIG_VALUE = 1.e13
+MAX_REINIT_COUNT = 20
 
 
 class GenSARunnerException(Exception):
@@ -488,6 +489,21 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
         Lower bounds values for the search domain
     upper: ndarray
         Upper bounds values for the search domain
+    niter: integer, optional
+        The number of gensa iterations
+    T: float, optional
+        Initial value for temperature
+    visitparam: float, optional
+        Parameter for visiting distribution
+    acceptparam: float, optional
+        Parameter for acceptance distribution
+    maxtime: integer, optional
+        Time limit for running the algorithm in seconds
+    maxcall: integer, optional
+        Soft limit for the number of objective function calls. If the
+        algorithm is in the middle of a local search, this number will be
+        exceeded, the algorithm will stop just after the local search is
+        done.
     args: Optional arguments to be passed to the function to be optimized.
 
 
