@@ -212,7 +212,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 @docfiller
 def calculate_gaussian_kernel(sigma, order=0, truncate=4.0):
-    """One-dimensional Gaussian filter.
+    """Calculate a 1D gaussian kernel
 
     Parameters
     ----------
@@ -232,6 +232,7 @@ def calculate_gaussian_kernel(sigma, order=0, truncate=4.0):
     weights : ndarray
         The gaussian kernel.
 
+    .. versionadded:: 0.17.0
     """
     if order not in range(4):
         raise ValueError('Order outside 0..3 not implemented')
