@@ -2153,9 +2153,6 @@ class TestOrdQZWorkspaceSize(TestCase):
 
     def test_decompose(self):
 
-        import numpy.random
-        from scipy.linalg import ordqz
-
         N = 202
 
         # raises error if lwork parameter to dtrsen is too small
