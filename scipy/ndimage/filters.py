@@ -37,7 +37,8 @@ from . import _nd_image
 from scipy.misc import doccer
 from scipy._lib._version import NumpyVersion
 
-__all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
+__all__ = ['correlate1d', 'convolve1d', 'calculate_gaussian_kernel',
+           'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
            'gaussian_laplace', 'generic_gradient_magnitude',
            'gaussian_gradient_magnitude', 'correlate', 'convolve',
@@ -210,7 +211,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 
 @docfiller
-def calculate_gaussian_kernel(sigma, order, truncate=4.0):
+def calculate_gaussian_kernel(sigma, order=0, truncate=4.0):
     """One-dimensional Gaussian filter.
 
     Parameters
