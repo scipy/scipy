@@ -103,6 +103,8 @@ def test_manual_filter():
     weights = sndi.calculate_gaussian_kernel(sigma, truncate=truncate)
     result2 = sndi.gaussian_filter(arr, weights=weights)
 
+    assert_equal(result1, result2)
+
 def test_gaussian_truncate():
     # Test that Gaussian filters can be truncated at different widths.
     # These tests only check that the result has the expected number
