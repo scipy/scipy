@@ -87,9 +87,7 @@ def test_valid_origins():
 
 
 def test_gaussian_kernel_truncate():
-    # Test that Gaussian filters can be truncated at different widths.
-    # These tests only check that the result has the expected number
-    # of nonzero elements.
+    # Test that Gaussian kernels can be truncated at different widths.
     num_nonzeros_2 = sndi.calculate_gaussian_kernel(5, truncate=2)
     assert len(num_nonzeros_2) == 2* int(2 * 5. + 0.5) + 1
     num_nonzeros_5 = sndi.calculate_gaussian_kernel(5, truncate=5)
