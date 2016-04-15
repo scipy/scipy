@@ -87,6 +87,14 @@ npy_cdouble faddeeva_log_ndtr(npy_cdouble zp)
 {
 
     complex<double> z(zp.real, zp.imag);
+    if (zp.real > 6) {
+        // Underflow. Close to the real axis, expand the log in log(1 - ndtr(-z)).
+        complex<double> w = -0.5 * Faddeeva::erfc(z*NPY_SQRT1_2);
+        if (abs(w) < 1e-8) {
+            return npy_cpack(real(w), imag(w));
+        }
+    }
+
     z *= -NPY_SQRT1_2;
     double x = real(z), y = imag(z);
 
