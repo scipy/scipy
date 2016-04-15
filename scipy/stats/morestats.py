@@ -2372,7 +2372,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
                          "or 'pratt' or 'zsplit'")
 
     if y is None:
-        d = x
+        d = asarray(x)
     else:
         x, y = map(asarray, (x, y))
         if len(x) != len(y):
