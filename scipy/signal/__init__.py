@@ -160,7 +160,7 @@ Continuous-Time Linear Systems
    step             -- step response of continous-time LTI system.
    step2            -- like step, but `scipy.integrate.odeint` is used.
    freqresp         -- frequency response of a continuous-time LTI system.
-   bode             -- Calculate Bode magnitude and phase data.
+   bode             -- Bode magnitude and phase data (continuous-time LTI).
 
 Discrete-Time Linear Systems
 ============================
@@ -176,6 +176,7 @@ Discrete-Time Linear Systems
    dimpulse         -- impulse response of a discrete-time LTI system.
    dstep            -- step response of a discrete-time LTI system.
    dfreqresp        -- frequency response of a discrete-time LTI system.
+   dbode            -- Bode magnitude and phase data (discrete-time LTI).
 
 LTI Representations
 ===================

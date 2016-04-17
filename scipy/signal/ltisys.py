@@ -42,7 +42,7 @@ import copy
 __all__ = ['tf2ss', 'ss2tf', 'abcd_normalize', 'zpk2ss', 'ss2zpk', 'lti',
            'ltid', 'TransferFunction', 'ZerosPolesGain', 'StateSpace', 'lsim',
            'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode', 'freqresp',
-           'place_poles', 'dlsim', 'dstep', 'dimpulse', 'dfreqresp',
+           'place_poles', 'dlsim', 'dstep', 'dimpulse', 'dfreqresp', 'dbode',
            'cont2discrete']
 
 
@@ -634,18 +634,13 @@ class lti(LinearTimeInvariant):
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
         [dB] and phase [deg]. See `scipy.signal.bode` for details.
 
-        Notes
-        -----
-
-        .. versionadded:: 0.11.0
-
         Examples
         --------
         >>> from scipy import signal
         >>> import matplotlib.pyplot as plt
 
-        >>> s1 = signal.lti([1], [1, 1])
-        >>> w, mag, phase = s1.bode()
+        >>> sys = signal.TransferFunction([1], [1, 1])
+        >>> w, mag, phase = sys.bode()
 
         >>> plt.figure()
         >>> plt.semilogx(w, mag)    # Bode magnitude plot
@@ -757,18 +752,21 @@ class ltid(LinearTimeInvariant):
 
     def bode(self, w=None, n=100):
         """
-        Calculate Bode magnitude and phase data of a continuous-time system.
+        Calculate Bode magnitude and phase data of a discrete-time system.
 
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See `scipy.signal.bode` for details.
+        [dB] and phase [deg]. See `scipy.signal.dbode` for details.
 
         Examples
         --------
         >>> from scipy import signal
         >>> import matplotlib.pyplot as plt
 
-        >>> s1 = signal.lti([1], [1, 1])
-        >>> w, mag, phase = s1.bode()
+        # transfer function: H(z) = 1 / (z^2 + 2z + 3) with sampling time 0.5s
+        >>> sys = signal.TransferFunction([1], [1, 2, 3], 0.5)
+
+        # equivalent: signal.dbode(sys)
+        >>> w, mag, phase = sys.bode()
 
         >>> plt.figure()
         >>> plt.semilogx(w, mag)    # Bode magnitude plot
@@ -777,7 +775,7 @@ class ltid(LinearTimeInvariant):
         >>> plt.show()
 
         """
-        return bode(self, w=w, n=n)
+        return dbode(self, w=w, n=n)
 
     def freqresp(self, w=None, n=10000, whole=False):
         """
@@ -2212,6 +2210,7 @@ def bode(system, w=None, n=100):
         The following gives the number of elements in the tuple and
         the interpretation:
 
+            * 1 (instance of `lti`)
             * 2 (num, den)
             * 3 (zeros, poles, gain)
             * 4 (A, B, C, D)
@@ -2247,8 +2246,8 @@ def bode(system, w=None, n=100):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    >>> s1 = signal.lti([1], [1, 1])
-    >>> w, mag, phase = signal.bode(s1)
+    >>> sys = signal.TransferFunction([1], [1, 1])
+    >>> w, mag, phase = signal.bode(sys)
 
     >>> plt.figure()
     >>> plt.semilogx(w, mag)    # Bode magnitude plot
@@ -2308,8 +2307,8 @@ def freqresp(system, w=None, n=10000):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    >>> s1 = signal.lti([], [1, 1, 1], [5])
     # transfer function: H(s) = 5 / (s-1)^3
+    >>> s1 = signal.ZerosPolesGain([], [1, 1, 1], [5])
 
     >>> w, H = signal.freqresp(s1)
 
@@ -3382,6 +3381,12 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     H : 1D ndarray
         Array of complex magnitude values
 
+    Notes
+    -----
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``z^2 + 3z + 5`` would be represented as ``[1, 3, 5]``).
+
     Examples
     --------
     # Generating the Nyquist plot of a transfer function
@@ -3389,8 +3394,8 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    >>> sys = signal.ltid([0], [0.5, -0.5], [1], 0.05)
-    # transfer function: H(z) = z / (z^2 - 0.25)
+    # transfer function: H(z) = 1 / (z^2 + 2z + 3)
+    >>> sys = signal.TransferFunction([1], [1, 2, 3], [1], 0.05)
 
     >>> w, H = signal.dfreqresp(sys)
 
@@ -3398,8 +3403,6 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> plt.plot(H.real, H.imag, "b")
     >>> plt.plot(H.real, -H.imag, "r")
     >>> plt.show()
-
-    See `freqz` for more details and examples.
     """
     if isinstance(system, ltid):
         system = system._as_tf()
@@ -3418,9 +3421,82 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     else:
         worN = n
 
-    # In the call to freqs(), sys.num.ravel() is used because there are
-    # cases where sys.num is a 2-D array with a single row.
-    return freqz(system.num.ravel(), system.den, worN=worN, whole=whole)
+    # Convert numerator and denominator from polynomials in the variable 'z'
+    # to polynomials in the variable 'z^-1', as freqz expects.
+    num, den = system.num.ravel(), system.den
+    diff = len(num) - len(den)
+    if diff > 0:
+        den = np.hstack((np.zeros(diff), den))
+    elif diff < 0:
+        num = np.hstack((np.zeros(-diff), num))
+
+    return freqz(num, den, worN=worN, whole=whole)
+
+
+
+def dbode(system, w=None, n=100):
+    """
+    Calculate Bode magnitude and phase data of a discrete-time system.
+
+    Parameters
+    ----------
+    system : an instance of the LTI class or a tuple describing the system.
+        The following gives the number of elements in the tuple and
+        the interpretation:
+
+            * 1 (instance of `ltid`)
+            * 2 (num, den)
+            * 3 (zeros, poles, gain)
+            * 4 (A, B, C, D)
+
+    w : array_like, optional
+        Array of frequencies (in rad/s). Magnitude and phase data is calculated
+        for every value in this array. If not given a reasonable set will be
+        calculated.
+    n : int, optional
+        Number of frequency points to compute if `w` is not given. The `n`
+        frequencies are logarithmically spaced in an interval chosen to
+        include the influence of the poles and zeros of the system.
+
+    Returns
+    -------
+    w : 1D ndarray
+        Frequency array [rad/s]
+    mag : 1D ndarray
+        Magnitude array [dB]
+    phase : 1D ndarray
+        Phase array [deg]
+
+    Notes
+    -----
+    If (num, den) is passed in for ``system``, coefficients for both the
+    numerator and denominator should be specified in descending exponent
+    order (e.g. ``z^2 + 3z + 5`` would be represented as ``[1, 3, 5]``).
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    # transfer function: H(z) = 1 / (z^2 + 2z + 3)
+    >>> sys = signal.TransferFunction([1], [1, 2, 3], [1], 0.05)
+
+    # equivalent: sys.bode()
+    >>> w, mag, phase = signal.dbode(sys)
+
+    >>> plt.figure()
+    >>> plt.semilogx(w, mag)    # Bode magnitude plot
+    >>> plt.figure()
+    >>> plt.semilogx(w, phase)  # Bode phase plot
+    >>> plt.show()
+
+    """
+    w, y = dfreqresp(system, w=w, n=n)
+
+    mag = 20.0 * numpy.log10(abs(y))
+    phase = numpy.rad2deg(numpy.unwrap(numpy.arctan2(y.imag, y.real)))
+
+    return w, mag, phase
 
 
 def cont2discrete(system, dt, method="zoh", alpha=None):

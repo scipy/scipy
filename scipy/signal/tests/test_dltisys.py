@@ -3,12 +3,15 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-                          assert_array_almost_equal, assert_array_equal, \
-                          assert_allclose, assert_, assert_raises
+from numpy.testing import (TestCase, run_module_suite, assert_equal,
+                           assert_array_almost_equal, assert_array_equal,
+                           assert_allclose, assert_, assert_raises,
+                           assert_almost_equal)
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, ltid,
-                          StateSpace, TransferFunction, ZerosPolesGain)
+                          StateSpace, TransferFunction, ZerosPolesGain,
+                          dfreqresp, dbode)
 
 
 class TestDLTI(TestCase):
@@ -91,6 +94,10 @@ class TestDLTI(TestCase):
         assert_array_almost_equal(yout, yout_truth)
         assert_array_almost_equal(t_in, tout)
 
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dlsim, system, u)
+
     def test_dstep(self):
 
         a = np.asarray([[0.9, 0.1], [-0.2, 0.9]])
@@ -132,6 +139,10 @@ class TestDLTI(TestCase):
         assert_equal(len(yout), 1)
         assert_array_almost_equal(yout[0].flatten(), yout_tfstep)
 
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dstep, system)
+
     def test_dimpulse(self):
 
         a = np.asarray([[0.9, 0.1], [-0.2, 0.9]])
@@ -171,6 +182,10 @@ class TestDLTI(TestCase):
         tout, yout = dimpulse(zpkin, n=3)
         assert_equal(len(yout), 1)
         assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
+
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dimpulse, system)
 
     def test_dlsim_trivial(self):
         a = np.array([[0.0]])
@@ -454,6 +469,133 @@ class TestZerosPolesGain(object):
         s2.num = [1, 0]
         s2.den = [1, -1]
         self._compare_systems(s, s2)
+
+
+class Test_dfreqresp(TestCase):
+
+    def test_manual(self):
+        # Test dfreqresp() real part calculation (manual sanity check).
+        # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
+        system = TransferFunction(1, [1, -0.2], 0.1)
+        w = [0.1, 1, 10]
+        w, H = dfreqresp(system, w=w)
+
+        # test real
+        expected_re = [1.2383, 0.4130, -0.7553]
+        assert_almost_equal(H.real, expected_re, decimal=4)
+
+        # test imag
+        expected_im = [-0.1555, -1.0214, 0.3955]
+        assert_almost_equal(H.imag, expected_im, decimal=4)
+
+    def test_auto(self):
+        # Test dfreqresp() real part calculation.
+        # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
+        system = TransferFunction(1, [1, -0.2], 0.1)
+        w = [0.1, 1, 10, 100]
+        w, H = dfreqresp(system, w=w)
+        jw = np.exp(w * 1j)
+        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+
+        # test real
+        expected_re = y.real
+        assert_almost_equal(H.real, expected_re)
+
+        # test imag
+        expected_im = y.imag
+        assert_almost_equal(H.imag, expected_im)
+
+    def test_freq_range(self):
+        # Test that freqresp() finds a reasonable frequency range.
+        # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
+        # Expected range is from 0.01 to 10.
+        system = TransferFunction(1, [1, -0.2], 0.1)
+        n = 10
+        expected_w = np.linspace(0, np.pi, 10, endpoint=False)
+        w, H = dfreqresp(system, n=n)
+        assert_almost_equal(w, expected_w)
+
+    def test_pole_one(self):
+        # Test that freqresp() doesn't fail on a system with a pole at 0.
+        # integrator, pole at zero: H(s) = 1 / s
+        system = TransferFunction([1], [1, -1], 0.1)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            w, H = dfreqresp(system, n=2)
+        assert_equal(w[0], 0.)  # a fail would give not-a-number
+
+    def test_error(self):
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dfreqresp, system)
+
+
+class Test_bode(object):
+
+    def test_manual(self):
+        # Test bode() magnitude calculation (manual sanity check).
+        # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        system = TransferFunction(0.3, [1, -0.2], 0.1)
+        w = [0.1, 0.5, 1, np.pi]
+        w, mag, phase = dbode(system, w=w)
+
+        # Test mag
+        expected_mag = [-8.5329, -8.8396, -9.6162, -12.0412]
+        assert_almost_equal(mag, expected_mag, decimal=4)
+
+        # Test phase
+        expected_phase = [-7.1575, -35.2814, -67.9809, -180.0000]
+        assert_almost_equal(phase, expected_phase, decimal=4)
+
+    def test_auto(self):
+        # Test bode() magnitude calculation.
+        # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        system = TransferFunction(0.3, [1, -0.2], 0.1)
+        w = [0.1, 0.5, 1, np.pi]
+        w, mag, phase = dbode(system, w=w)
+        jw = np.exp(w * 1j)
+        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+
+        # Test mag
+        expected_mag = 20.0 * np.log10(abs(y))
+        assert_almost_equal(mag, expected_mag)
+
+        # Test phase
+        expected_phase = np.rad2deg(np.angle(y))
+        assert_almost_equal(phase, expected_phase)
+
+    def test_range(self):
+        # Test that bode() finds a reasonable frequency range.
+        # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        system = TransferFunction(0.3, [1, -0.2], 0.1)
+        n = 10
+        # Expected range is from 0.01 to 10.
+        expected_w = np.linspace(0, np.pi, n, endpoint=False)
+        w, mag, phase = dbode(system, n=n)
+        assert_almost_equal(w, expected_w)
+
+    def test_pole_one(self):
+        # Test that freqresp() doesn't fail on a system with a pole at 0.
+        # integrator, pole at zero: H(s) = 1 / s
+        system = TransferFunction([1], [1, -1], 0.1)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            w, mag, phase = dbode(system, n=2)
+        assert_equal(w[0], 0.)  # a fail would give not-a-number
+
+    def test_imaginary(self):
+        # bode() should not fail on a system with pure imaginary poles.
+        # The test passes if bode doesn't raise an exception.
+        system = TransferFunction([1], [1, 0, 100], 0.1)
+        dbode(system, n=2)
+
+    def test_error(self):
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dbode, system)
+
 
 if __name__ == "__main__":
     run_module_suite()
