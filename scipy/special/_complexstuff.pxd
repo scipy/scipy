@@ -31,6 +31,22 @@ ctypedef fused number_t:
     double
     double_complex
 
+ctypedef union _complex_pun:
+    np.npy_cdouble npy
+    double_complex c99
+
+cdef inline np.npy_cdouble npy_cdouble_from_double_complex(
+        double_complex x) nogil:
+    cdef _complex_pun z
+    z.c99 = x
+    return z.npy
+
+cdef inline double_complex double_complex_from_npy_cdouble(
+        np.npy_cdouble x) nogil:
+    cdef _complex_pun z
+    z.npy = x
+    return z.c99
+
 cdef inline bint zisnan(number_t x) nogil:
     if number_t is double_complex:
         return npy_isnan(x.real) or npy_isnan(x.imag)
@@ -51,42 +67,42 @@ cdef inline bint zisinf(number_t x) nogil:
 
 cdef inline double zabs(number_t x) nogil:
     if number_t is double_complex:
-        return npy_cabs((<np.npy_cdouble*>&x)[0])
+        return npy_cabs(npy_cdouble_from_double_complex(x))
     else:
         return libc.math.fabs(x)
 
 cdef inline double zarg(double complex x) nogil:
-    return npy_carg((<np.npy_cdouble*>&x)[0])
+    return npy_carg(npy_cdouble_from_double_complex(x))
 
 cdef inline number_t zlog(number_t x) nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_clog((<np.npy_cdouble*>&x)[0])
-        return (<double_complex*>&r)[0]
+        r = npy_clog(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.log(x)
 
 cdef inline number_t zexp(number_t x) nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_cexp((<np.npy_cdouble*>&x)[0])
-        return (<double_complex*>&r)[0]
+        r = npy_cexp(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.exp(x)
 
 cdef inline number_t zsin(number_t x) nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_csin((<np.npy_cdouble*>&x)[0])
-        return (<double_complex*>&r)[0]
+        r = npy_csin(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.sin(x)
 
 cdef inline number_t zsqrt(number_t x) nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_csqrt((<np.npy_cdouble*>&x)[0])
-        return (<double_complex*>&r)[0]
+        r = npy_csqrt(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.sqrt(x)
 
@@ -96,8 +112,8 @@ cdef inline number_t zpow(number_t x, double y) nogil:
     if number_t is double_complex:
         z.real = y
         z.imag = 0.0
-        r = npy_cpow((<np.npy_cdouble*>&x)[0], z)
-        return (<double_complex*>&r)[0]
+        r = npy_cpow(npy_cdouble_from_double_complex(x), z)
+        return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.pow(x, y)
 
@@ -105,7 +121,7 @@ cdef inline double_complex zpack(double zr, double zi) nogil:
     cdef np.npy_cdouble z
     z.real = zr
     z.imag = zi
-    return (<double_complex*>&z)[0]
+    return double_complex_from_npy_cdouble(z)
 
 @cython.cdivision(True)
 cdef inline double complex zdiv(double complex x, double complex y) nogil:
