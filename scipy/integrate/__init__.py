@@ -48,7 +48,7 @@ Integrators of ODE systems
    odeint        -- General integration of ordinary differential equations.
    ode           -- Integrate ODE using VODE and ZVODE routines.
    complex_ode   -- Convert a complex-valued ODE to real-valued and integrate.
-   solve_bvp     -- Solve a boundary value problem for the ODE system.
+   solve_bvp     -- Solve a boundary value problem for a system of ODEs.
 """
 from __future__ import division, print_function, absolute_import
 

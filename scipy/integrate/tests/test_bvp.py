@@ -102,7 +102,7 @@ def test_compute_fun_jac():
     Jy, Jp = compute_fun_jac(lambda x, y, p: measles_fun(x, y), x, y, p)
     Jy_an = measles_df_dy(x, y)
     assert_allclose(Jy, Jy_an)
-    assert_(Jp.shape == (0,))
+    assert_(Jp is None)
 
     x = np.linspace(0, np.pi, 5)
     y = np.empty((2, x.shape[0]))

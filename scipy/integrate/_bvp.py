@@ -25,8 +25,7 @@ def compute_fun_jac(fun, x, y, p, f0=None):
         d f_i(x_k, y_k) / d y_j.
     df_dp : ndarray, shape (n, k, m) or (0,)
         Derivatives with respect to p. An element (i, j, k) corresponds to
-        d f_i(x_k, y_k, p) / d p_j. If `p` is empty, an empty array is
-        returned.
+        d f_i(x_k, y_k, p) / d p_j. If `p` is empty, None is returned.
     """
     n, m = y.shape
     if f0 is None:
@@ -43,7 +42,7 @@ def compute_fun_jac(fun, x, y, p, f0=None):
 
     k = p.shape[0]
     if k == 0:
-        df_dp = np.array([])
+        df_dp = None
     else:
         df_dp = np.empty((n, k, m))
         h = EPS ** 0.5 * (1 + np.abs(p))
@@ -70,7 +69,7 @@ def compute_bc_jac(bc, ya, yb, p, bc0=None):
         d bc_i / d ya_j.
     dbc_dp : ndarray, shape (n + k, k)
         Derivatives with respect to p. An element (i, j) corresponds to
-        d bc_i / d p_j. If `p` is empty, an empty array is returned.
+        d bc_i / d p_j. If `p` is empty, None is returned.
     """
     n = ya.shape[0]
     k = p.shape[0]
@@ -86,6 +85,7 @@ def compute_bc_jac(bc, ya, yb, p, bc0=None):
         hi = ya_new[i] - ya[i]
         bc_new = bc(ya_new, yb, p)
         dbc_dya[i] = (bc_new - bc0) / hi
+    dbc_dya = dbc_dya.T
 
     h = EPS**0.5 * (1 + np.abs(yb))
     dbc_dyb = np.empty((n, n + k))
@@ -95,21 +95,22 @@ def compute_bc_jac(bc, ya, yb, p, bc0=None):
         hi = yb_new[i] - yb[i]
         bc_new = bc(ya, yb_new, p)
         dbc_dyb[i] = (bc_new - bc0) / hi
+    dbc_dyb = dbc_dyb.T
 
     if k == 0:
-        dbc_dp = np.array([])
+        dbc_dp = None
     else:
-        dbc_dp = np.empty((k, n + k))
         h = EPS ** 0.5 * (1 + np.abs(p))
-
+        dbc_dp = np.empty((k, n + k))
         for i in range(k):
             p_new = p.copy()
             p_new[i] += h[i]
             hi = p_new[i] - p[i]
             bc_new = bc(ya, yb, p_new)
             dbc_dp[i] = (bc_new - bc0) / hi
+        dbc_dp = dbc_dp.T
 
-    return dbc_dya.T, dbc_dyb.T, dbc_dp.T
+    return dbc_dya, dbc_dyb, dbc_dp
 
 
 def compute_jac_indices(n, m, k):
@@ -180,12 +181,14 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
 def collocation_fun(fun, y, p, x, h):
     """Evaluate collocation residuals.
 
-    This function lies in the core of the method. The collocation conditions
-    are formed from the equality of our solution derivatives and rhs of the
-    ODE system in the end and middle points of mesh intervals, assuming our
-    solution is a cubic C^1 continuous spline. Such method is classified to
-    Lobbato IIIA family in ODE literature. Refer to [1]_ for the formula and
-    some discussion.
+    This function lies in the core of the method. The solution is sought
+    as a cubic C^1 continuous spline with derivatives matching the ODE rhs
+    at given nodes `x`. Collocation conditions are formed from the equality
+    of our solution derivatives and rhs of the ODE system in the middle points
+    between nodes.
+
+    Such method is classified to Lobbato IIIA family in ODE literature.
+    Refer to [1]_ for the formula and some discussion.
 
     Returns
     -------
@@ -237,10 +240,62 @@ def prepare_sys(n, m, k, fun, bc, x, h):
 
 
 def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, tol, n_iter,
-                             tr_solver):
-    """Solve a nonlinear system of equations.
+                             n_trial, tr_solver):
+    """Solve the nonlinear collocation system.
 
     Adopted from the optimize.least_squares trust-region solver.
+
+    Below "the cost function" is the sum of squares of collocation and boundary
+    condition residuals.
+
+    Parameters
+    ----------
+    n : int
+        Number of equations in the ODE.
+    m : int
+        Number of nodes in the mesh.
+    k : int
+        Number of unknown parameters.
+    col_fun : callable
+        Function computing collocation residuals.
+    bc : callable
+        Function computing boundary condition residuals.
+    jac : callable
+        Function computing the Jacobian of the whole system (including
+        collocation and boundary condition residuals). It is supposed to
+        return csc_matrix.
+    y : ndarray, shape (n, m)
+        Initial guess for the function values at the mesh nodes.
+    p : ndarray, shape (k,)
+        Initial guess for the unknown parameters.
+    tol : float
+        Iterations are terminated if the uniform norm of the system residuals
+        less than `tol`.
+    n_iter : int
+        Max number of iterations. A small number should be used when solving a
+        boundary value problem, because it's better to refine the mesh and
+        start over then try hard on the current mesh.
+    n_trial : int
+        Number of trials to improves a cost function in the inner trust
+        region iterations. Also should be a small number.
+    tr_solver : 'exact' or 'subspace'
+        Type of the solver to use.
+
+            * 'exact': (near) exact trust-region solver with SVD of
+              Jacobian matrix. It shouldn't be used for large systems.
+            * 'subspace': 2-D subspace trust-region solver, where the Newton
+              direction is computed by SuperLU solver. This solver should be
+              used when the mesh becomes fine (controlled by the outer code).
+
+    Returns
+    -------
+    y : ndarray, shape (n, m)
+        Final iterate for the function values at the mesh nodes.
+    p : ndarray, shape (k,)
+        Final iterate for the unknown parameters.
+    success : bool
+        True, if the cost function was decreased by any amount. False means
+        that the whole BVP solver process failed and will be terminated.
     """
     n_eq = m * n + k
 
@@ -252,7 +307,6 @@ def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, tol, n_iter,
     alpha = 0
 
     cost = 0.5 * np.dot(res, res)
-    n_trial = 5
     progress = False
     for iteration in range(n_iter):
         J = jac(y, p, y_middle, f, f_middle, res_bc)
@@ -357,8 +411,7 @@ def estimate_rms_residuals(fun, sol, x, h, p, res_middle, f_middle):
     Returns
     -------
     rms_res : ndarray, shape (m - 1,)
-        Estimated rms values of the relative residuals for each variable over
-        each interval.
+        Estimated rms values of the relative residuals over each interval.
 
     References
     ----------
@@ -394,7 +447,7 @@ def estimate_rms_residuals(fun, sol, x, h, p, res_middle, f_middle):
 def create_spline(y, f, x, h):
     """Create a cubic spline given values and derivatives.
 
-    Coefficient formulas are taken from interpolate.CubicSpline.
+    Formulas for the coefficients are taken from interpolate.CubicSpline.
 
     Returns
     -------
@@ -424,7 +477,7 @@ def modify_mesh(x, insert_1, insert_2):
 
     Parameters
     ----------
-    x : ndarray
+    x : ndarray, shape (m,)
         Mesh nodes.
     insert_1 : ndarray
         Intervals to each insert 1 new node in the middle.
@@ -453,10 +506,10 @@ def modify_mesh(x, insert_1, insert_2):
 
 def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
               max_dense_size=500, verbose=0):
-    """Solve a boundary-value problem for an ODE system.
+    """Solve a boundary-value problem for a system of ODEs.
 
-    This function solves a first order system of ODEs subject to two-point
-    boundary conditions::
+    This function numerically solves a first order system of ODEs subject to
+    two-point boundary conditions::
 
         dy / dx = f(x, y, p), a <= x <= b
         bc(y(a), y(b), p) = 0
@@ -470,16 +523,16 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
     Parameters
     ----------
     fun : callable
-        Right-hand side of the ODE system. The calling signature is
+        Right-hand side of the system. The calling signature is
         ``fun(x, y, p)``, where ``x`` is ndarray of shape (m,) and ``y`` is
         ndarray of shape (n, m), meaning that ``y[:, i]`` corresponds to
-        ``x[i]``, ``p`` is optional with shape (k,). The return must have
-        shape (n, m) with the same layout as for ``y``.
+        ``x[i]``, ``p`` is optional with shape (k,). The return value must
+        have shape (n, m) with the same layout as for ``y``.
     bc : callable
         Function evaluating residuals of the boundary conditions. The calling
         signature is ``bc(ya, yb, p)``, where ``ya`` and ``yb`` have shape
-        (n,), ``p`` is optional with shape (k,). The return must have shape
-        (n + k,).
+        (n,), ``p`` is optional with shape (k,). The return value must have
+        shape (n + k,).
     x : array_like, shape (m,)
         Initial mesh. Must be a strictly increasing sequence with ``x[0]=a``
         and ``x[-1]=b``. It is recommended that m * n + k be less than
@@ -489,8 +542,8 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
         Initial guess for the function values at the mesh nodes, i-th column
         corresponds to ``x[i]``.
     p : array_like with shape (k,) or None, optional
-        Initial guess for the parameters. If None (default), it is assumed that
-        the problem doesn't depend on any parameters.
+        Initial guess for the unknown parameters. If None (default), it is
+        assumed that the problem doesn't depend on any parameters.
     tol : float, optional
         Desired tolerance of the solution. If we define ``res = y' - f`` where
         ``y'`` is the derivative of the found solution, then the solver tries
@@ -516,11 +569,11 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
     -------
     Bunch object with the following fields defined:
     sol : PPoly
-        Solution as `scipy.interpolate.PPoly` instance, a C^1 continuous cubic
-        spline.
+        Found solution for y as `scipy.interpolate.PPoly` instance, a C^1
+        continuous cubic spline.
     p : ndarray or None, shape (k,)
-        Found parameters. None, if the problem was solved without unknown
-        parameters.
+        Found parameters. None, if the parameters were not present in the
+        problem.
     x : ndarray, shape (m,)
         Nodes of the final mesh.
     y : ndarray, shape (n, m)
@@ -687,7 +740,7 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
         rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p,
                                          res_middle, f_middle)
         max_res = np.max(rms_res)
-        print_progress(iteration, max_res, "", x.shape[0])
+        print_progress(iteration, max_res, x.shape[0], "")
 
     while True:
         m = x.shape[0]
@@ -699,8 +752,11 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
 
         col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped, x, h)
 
+        # Use 5 iteration and 5 sub-iterations to try and solve the system.
+        # See `solve_collocation_system` for the details.
         y, p, progress = solve_collocation_system(
-            n, m, k, col_fun, bc_wrapped, jac_sys, y, p, tol * 1e-1, 5, solver)
+            n, m, k, col_fun, bc_wrapped, jac_sys, y, p, tol * 1e-1, 5, 5,
+            solver)
         iteration += 1
 
         if not progress:
