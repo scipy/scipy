@@ -1,10 +1,10 @@
 """Boundary value problem solver."""
-from __future__ import division, print_function
+from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
 import numpy as np
-from numpy.linalg import norm
+from numpy.linalg import norm, pinv
 
 from scipy.linalg import svd, qr
 from scipy.sparse import coo_matrix, csc_matrix
@@ -239,8 +239,8 @@ def prepare_sys(n, m, k, fun, bc, x, h):
     return sys_fun, sys_jac
 
 
-def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, tol, n_iter,
-                             n_trial, tr_solver):
+def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, B,
+                             tol, n_iter, n_trial, tr_solver):
     """Solve the nonlinear collocation system.
 
     Adopted from the optimize.least_squares trust-region solver.
@@ -268,6 +268,9 @@ def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, tol, n_iter,
         Initial guess for the function values at the mesh nodes.
     p : ndarray, shape (k,)
         Initial guess for the unknown parameters.
+    B : ndarray with shape (n, n) or None
+        Matrix to force the S y(a) = 0 condition for a problems with the
+        singular term. If None, the singular term is assumed to be absent.
     tol : float
         Iterations are terminated if the uniform norm of the system residuals
         less than `tol`.
@@ -339,6 +342,9 @@ def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, tol, n_iter,
             p_step = step[m*n:]
 
             y_new = y + y_step
+            if B is not None:
+                y_new[:, 0] = np.dot(B, y_new[:, 0])
+
             p_new = p + p_step
             res_col_new, y_middle, f, f_middle = col_fun(y_new, p_new)
             res_bc = bc(y_new[:, 0], y_new[:, -1], p_new)
@@ -504,14 +510,14 @@ def modify_mesh(x, insert_1, insert_2):
     return np.insert(x, ind, nodes)
 
 
-def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
+def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
               max_dense_size=500, verbose=0):
     """Solve a boundary-value problem for a system of ODEs.
 
     This function numerically solves a first order system of ODEs subject to
     two-point boundary conditions::
 
-        dy / dx = f(x, y, p), a <= x <= b
+        dy / dx = f(x, y, p) + S * y / (x - a), a <= x <= b
         bc(y(a), y(b), p) = 0
 
     Here x is a 1-dimensional independent variable, y(x) is a n-dimensional
@@ -519,6 +525,12 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
     parameters which is to be found along with y(x). For the problem to be
     determined there must be n + k boundary conditions, i.e. bc must be
     (n + k)-dimensional function.
+
+    The last singular term in the right-hand side of the system is optional.
+    It is defined by a n-by-n matrix S, such that the solution must satisfy
+    S y(a) = 0. This condition will be forced during iterations, so it must not
+    contradict boundary conditions. See [2] for the explanation how this term
+    is handled when solving BVPs numerically.
 
     Parameters
     ----------
@@ -544,6 +556,9 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
     p : array_like with shape (k,) or None, optional
         Initial guess for the unknown parameters. If None (default), it is
         assumed that the problem doesn't depend on any parameters.
+    S : array_like with shape (n, n) or None
+        Matrix defining the singular term. If None (default), the problem is
+        solved without the singular term.
     tol : float, optional
         Desired tolerance of the solution. If we define ``res = y' - f`` where
         ``y'`` is the derivative of the found solution, then the solver tries
@@ -616,6 +631,8 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
     .. [1] J. Kierzenka, L. F. Shampine, "A BVP Solver Based on Residual
        Control and the Maltab PSE", ACM Trans. Math. Softw., Vol. 27,
        Number 3, pp. 299-316, 2001.
+    .. [2] L.F. Shampine, P. H. Muir and H. Xu, "A User-Friendly Fortran BVP
+           Solver".
 
     Examples
     --------
@@ -683,20 +700,21 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
     h = np.diff(x)
     if np.any(h <= 0):
         raise ValueError("`x` must be strictly increasing.")
+    a = x[0]
 
     y = np.asarray(y, dtype=float)
     if y.ndim != 2:
         raise ValueError("`y` must be 2 dimensional.")
     if y.shape[1] != x.shape[0]:
-        raise ValueError("`y` expected to have {} columns, but actually has "
-                         "{}.".format(x.shape[0], y.shape[1]))
+        raise ValueError("`y` is expected to have {} columns, but actually "
+                         "has {}.".format(x.shape[0], y.shape[1]))
 
     if p is None:
         p = np.array([])
     else:
         p = np.asarray(p, dtype=float)
     if p.ndim != 1:
-        raise ValueError("`p` must be one dimensional.")
+        raise ValueError("`p` must be 1 dimensional.")
 
     if tol < 100 * EPS:
         warn("`tol` is too low, setting to {:.2e}".format(100 * EPS))
@@ -705,15 +723,52 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
     n = y.shape[0]
     k = p.shape[0]
 
+    if S is not None:
+        S = np.asarray(S)
+        if S.shape != (n, n):
+            raise ValueError("`S` is expected to have shape {}, "
+                             "but actually has {}".format((n, n), S.shape))
+
+        # Compute I - S^+ S to impose necessary boundary conditions.
+        B = np.identity(n) - np.dot(pinv(S), S)
+
+        y[:, 0] = np.dot(B, y[:, 0])
+
+        # Compute (I - S)^+ to correct derivatives at x=a.
+        D = pinv(np.identity(n) - S)
+    else:
+        B = None
+        D = None
+
     if k == 0:
-        def fun_wrapped(x, y, _):
-            return np.asarray(fun(x, y))
+        if S is None:
+            def fun_wrapped(x, y, _):
+                return np.asarray(fun(x, y))
+        else:
+            def fun_wrapped(x, y, _):
+                f = np.asarray(fun(x, y))
+                if x[0] == a:
+                    f[:, 0] = np.dot(D, f[:, 0])
+                    f[:, 1:] += np.dot(S, y[:, 1:]) / (x[1:] - a)
+                else:
+                    f += np.dot(S, y) / (x - a)
+                return f
 
         def bc_wrapped(ya, yb, _):
             return np.asarray(bc(ya, yb))
     else:
-        def fun_wrapped(x, y, p):
-            return np.asarray(fun(x, y, p))
+        if S is None:
+            def fun_wrapped(x, y, p):
+                return np.asarray(fun(x, y, p))
+        else:
+            def fun_wrapped(x, y, p):
+                f = np.asarray(fun(x, y, p))
+                if x[0] == a:
+                    f[:, 0] = np.dot(D, f[:, 0])
+                    f[:, 1:] += np.dot(S, y[:, 1:]) / (x[1:] - a)
+                else:
+                    f += np.dot(S, y) / (x - a)
+                return f
 
         def bc_wrapped(ya, yb, p):
             return np.asarray(bc(ya, yb, p))
@@ -726,7 +781,7 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
     bc_res = bc_wrapped(y[:, 0], y[:, -1], p)
     if bc_res.shape != (n + k,):
         raise ValueError("`bc` return is expected to have shape {}, "
-                         "but actually has {}.".format(bc_res.shape, (n + k,)))
+                         "but actually has {}.".format((n + k,), bc_res.shape))
 
     status = 0
     iteration = 0
@@ -752,11 +807,11 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
 
         col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped, x, h)
 
-        # Use 5 iteration and 5 sub-iterations to try and solve the system.
-        # See `solve_collocation_system` for the details.
+        # Use 5 iterations and 5 sub-iterations to try and solve the system.
+        # See `solve_collocation_system` for details.
         y, p, progress = solve_collocation_system(
-            n, m, k, col_fun, bc_wrapped, jac_sys, y, p, tol * 1e-1, 5, 5,
-            solver)
+            n, m, k, col_fun, bc_wrapped, jac_sys, y, p, B,
+            tol * 1e-1, 5, 5, solver)
         iteration += 1
 
         if not progress:
@@ -766,6 +821,7 @@ def solve_bvp(fun, bc, x, y, p=None, tol=1e-3, max_nodes=10000,
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
                                                          p, x, h)
 
+        # This relation is not trivial, but can be verified.
         res_middle = 1.5 * col_res / h
         sol = create_spline(y, f, x, h)
         rms_res = estimate_rms_residuals(

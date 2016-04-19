@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import (assert_, assert_array_equal, assert_allclose,
                            run_module_suite, assert_raises, assert_equal)
@@ -84,6 +86,18 @@ def sl_bc_jac(ya, yb, p):
 
 def sl_sol(x, p):
     return np.sin(p[0] * x)
+
+
+def emden_fun(x, y):
+    return np.vstack((y[1], -y[0]**5))
+
+
+def emden_bc(ya, yb):
+    return np.array([ya[1], yb[0] - (3/4)**0.5])
+
+
+def emden_sol(x):
+    return (1 + x**2/3)**-0.5
 
 
 def test_modify_mesh():
@@ -220,6 +234,9 @@ def test_parameter_validation():
 
     assert_raises(ValueError, solve_bvp, wrong_shape_fun, bc, x, y)
 
+    S = np.array([[0, 0]])
+    assert_raises(ValueError, solve_bvp, exp_fun, exp_bc, x, y, S=S)
+
 
 def test_no_params():
     x = np.linspace(0, 1, 5)
@@ -267,6 +284,32 @@ def test_with_params():
     assert_(np.all(norm_res < 1e-3))
 
     assert_(np.all(sol.res < 1e-3))
+    assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
+    assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+
+
+def test_singular_term():
+    x = np.linspace(0, 1, 10)
+    x_test = np.linspace(0.05, 1, 100)
+    y = np.empty((2, 10))
+    y[0] = (3/4)**0.5
+    y[1] = 1e-4
+    S = np.array([[0, 0], [0, -2]])
+
+    sol = solve_bvp(emden_fun, emden_bc, x, y, S=S)
+
+    assert_equal(sol.status, 0)
+    assert_(sol.success)
+
+    sol_test = sol.sol(x_test)
+    assert_allclose(sol_test[0], emden_sol(x_test), atol=1e-6)
+
+    f_test = emden_fun(x_test, sol_test) + S.dot(sol_test) / x_test
+    res = sol.sol(x_test, 1) - f_test
+    rel_res = res / (1 + np.abs(f_test))
+    norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
+
+    assert_(np.all(norm_res < 1e-3))
     assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
     assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
 
