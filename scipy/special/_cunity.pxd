@@ -1,6 +1,8 @@
 cimport numpy as np
 from libc.math cimport fabs, sin, cos, exp
-from _complexstuff cimport zisfinite, zabs, zpack
+from _complexstuff cimport (
+    zisfinite, zabs, zpack, npy_cdouble_from_double_complex,
+    double_complex_from_npy_cdouble)
 
 cdef extern from "_complexstuff.h":
     double npy_atan2(double y, double x) nogil
@@ -42,8 +44,8 @@ cdef inline double complex clog1p(double complex z) nogil:
 
     if not zisfinite(z):
         z = z + 1 
-        ret = npy_clog((<np.npy_cdouble*>&z)[0])
-        return (<double complex*>&ret)[0]
+        ret = npy_clog(npy_cdouble_from_double_complex(z))
+        return double_complex_from_npy_cdouble(ret)
 
     zr = z.real
     zi = z.imag
@@ -62,8 +64,8 @@ cdef inline double complex clog1p(double complex z) nogil:
             return zpack(x, y)
 
     z = z + 1.0
-    ret = npy_clog((<np.npy_cdouble*>&z)[0])
-    return (<double complex*>&ret)[0]
+    ret = npy_clog(npy_cdouble_from_double_complex(z))
+    return double_complex_from_npy_cdouble(ret)
 
 cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
     cdef double x, y
@@ -95,8 +97,8 @@ cdef inline double complex cexpm1(double complex z) nogil:
     cdef np.npy_cdouble ret
 
     if not zisfinite(z):
-        ret = npy_cexp((<np.npy_cdouble*>&z)[0])
-        return (<double complex*>&ret)[0] - 1.0
+        ret = npy_cexp(npy_cdouble_from_double_complex(z))
+        return double_complex_from_npy_cdouble(ret) - 1.0
 
     zr = z.real
     zi = z.imag
