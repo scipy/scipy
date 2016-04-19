@@ -191,7 +191,7 @@ hankel2e -- cbesh_wrap2_e: dD->D                           -- amos_wrappers.h
 ndtr -- ndtr: d->d                                         -- cephes.h
 log_ndtr -- log_ndtr: d->d                                 -- cephes.h
 ndtri -- ndtri: d->d                                       -- cephes.h
-psi -- psi: d->d, cpsi_wrap: D->D                          -- cephes.h, specfun_wrappers.h
+psi -- digamma: d->d, cdigamma: D->D                       -- _digamma.pxd, _digamma.pxd
 rgamma -- rgamma: d->d, crgamma: D->D                      -- cephes.h, _loggamma.pxd
 round -- round: d->d                                       -- cephes.h
 sindg -- sindg: d->d                                       -- cephes.h
@@ -312,6 +312,8 @@ _spherical_jn_d -- spherical_jn_d_real: ld->d, spherical_jn_d_complex: lD->D -- 
 _spherical_in_d -- spherical_in_d_real: ld->d, spherical_in_d_complex: lD->D -- _spherical_bessel.pxd
 _spherical_kn_d -- spherical_kn_d_real: ld->d, spherical_kn_d_complex: lD->D -- _spherical_bessel.pxd
 loggamma -- loggamma: D->D                                 -- _loggamma.pxd
+_sinpi -- sinpi[double]: d->d, sinpi[double_complex]: D->D -- _trig.pxd
+_cospi -- cospi[double]: d->d, cospi[double_complex]: D->D -- _trig.pxd
 """
 
 #---------------------------------------------------------------------------------

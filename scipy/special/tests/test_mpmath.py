@@ -17,6 +17,7 @@ import scipy.special as sc
 from scipy._lib.six import reraise, with_metaclass
 from scipy._lib._testutils import knownfailure_overridable
 from scipy.special._testutils import FuncData, assert_func_equal
+from scipy.special._ufuncs import _sinpi, _cospi
 
 try:
     import mpmath
@@ -381,11 +382,87 @@ def test_rgamma_zeros():
     zeros = np.arange(0, -170, -1).reshape(1, 1, -1)
     z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
     dataset = []
-    for z0 in z:
-        dataset.append((z0, complex(mpmath.rgamma(z0))))
+    with mpmath.workdps(100):
+        for z0 in z:
+            dataset.append((z0, complex(mpmath.rgamma(z0))))
 
     dataset = np.array(dataset)
     FuncData(sc.rgamma, dataset, 0, 1, rtol=1e-12).check()
+
+
+# ------------------------------------------------------------------------------
+# digamma
+# ------------------------------------------------------------------------------
+
+@mpmath_check('0.19')
+def test_digamma_roots():
+    """Test the special-cased roots for digamma."""
+    root = mpmath.findroot(mpmath.digamma, 1.5)
+    roots = [float(root)]
+    root = mpmath.findroot(mpmath.digamma, -0.5)
+    roots.append(float(root))
+    roots = np.array(roots)
+
+    # If we test beyond a radius of 0.24 mpmath will take forever.
+    dx = np.r_[-0.24, -np.logspace(-1, -15, 10), 0, np.logspace(-15, -1, 10), 0.24]
+    dy = dx.copy()
+    dx, dy = np.meshgrid(dx, dy)
+    dz = dx + 1j*dy
+    z = (roots + np.dstack((dz,)*roots.size)).flatten()
+    dataset = []
+    with mpmath.workdps(30):
+        for z0 in z:
+            dataset.append((z0, complex(mpmath.digamma(z0))))
+
+    dataset = np.array(dataset)
+    FuncData(sc.digamma, dataset, 0, 1, rtol=1e-14).check()
+
+
+@mpmath_check('0.19')
+def test_digamma_negreal():
+    """
+    Test digamma around the negative real axis. Don't do this in
+    TestSystematic because the points need some jiggering so that
+    mpmath doesn't take forever.
+
+    """
+    digamma = _exception_to_nan(mpmath.digamma)
+
+    x = -np.logspace(300, -30, 100)
+    y = np.r_[-np.logspace(0, -3, 5), 0, np.logspace(-3, 0, 5)]
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    with mpmath.workdps(40):
+        for z0 in z:
+            res = digamma(z0)
+            dataset.append((z0, complex(res)))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
+
+
+@mpmath_check('0.19')
+def test_digamma_boundary():
+    """
+    Check that there isn't a jump in accuracy when we switch from
+    using the asymptotic series to the reflection formula.
+
+    """
+    x = -np.logspace(300, -30, 100)
+    y = np.array([-6.1, -5.9, 5.9, 6.1])
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    with mpmath.workdps(30):
+        for z0 in z:
+            res = mpmath.digamma(z0)
+            dataset.append((z0, complex(res)))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
 
 
 # ------------------------------------------------------------------------------
@@ -516,7 +593,7 @@ class IntArg(object):
 class MpmathData(object):
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
                  dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300,
-                 ignore_inf_sign=False):
+                 ignore_inf_sign=False, param_filter=None):
         self.scipy_func = scipy_func
         self.mpmath_func = mpmath_func
         self.arg_spec = arg_spec
@@ -536,6 +613,7 @@ class MpmathData(object):
         if not name or name == '<lambda>':
             name = getattr(mpmath_func, '__name__', None)
         self.name = name
+        self.param_filter = param_filter
 
     def check(self):
         np.random.seed(1234)
@@ -594,7 +672,8 @@ class MpmathData(object):
                                       vectorized=False,
                                       rtol=self.rtol, atol=self.atol,
                                       ignore_inf_sign=self.ignore_inf_sign,
-                                      nan_ok=True)
+                                      nan_ok=True,
+                                      param_filter=self.param_filter)
                     break
                 except AssertionError:
                     if j >= len(dps_list)-1:
@@ -1032,18 +1111,29 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.ci,
                             [Arg(-1e8, 1e8)])
 
+    def test_cospi(self):
+        # Bump the tolerance just a bit so that tests don't fail.
+        assert_mpmath_equal(_cospi, mpmath.cospi,
+                            [Arg()], rtol=2e-13)
+
+    def test_cospi_complex(self):
+        assert_mpmath_equal(_cospi, mpmath.cospi,
+                            [ComplexArg()], rtol=1e-13)
+
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
                             _exception_to_nan(mpmath.digamma),
-                            [Arg()],
-                            dps=50)
+                            [Arg()], rtol=1e-12, dps=50)
 
-    @knownfailure_overridable()
     def test_digamma_complex(self):
+        # Test on a cut plane because mpmath will hang
+        def param_filter(z):
+            return np.where((z.real < 0) & (np.abs(z.imag) < 1.12), False, True)
+
         assert_mpmath_equal(sc.digamma,
-                            _time_limited()(_exception_to_nan(mpmath.digamma)),
-                            [ComplexArg()],
-                            n=200)
+                            _exception_to_nan(mpmath.digamma),
+                            [ComplexArg()], rtol=1e-13, dps=40,
+                            param_filter=param_filter)
 
     def test_e1(self):
         assert_mpmath_equal(sc.exp1,
@@ -1708,6 +1798,14 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mppoch,
                             [Arg(), Arg()],
                             dps=400)
+
+    def test_sinpi(self):
+        assert_mpmath_equal(_sinpi, mpmath.sinpi,
+                            [Arg()], rtol=1e-13)
+
+    def test_sinpi_complex(self):
+        assert_mpmath_equal(_sinpi, mpmath.sinpi,
+                            [ComplexArg()], rtol=1e-13)
 
     def test_shi(self):
         def shi(x):

@@ -11,6 +11,7 @@ import cython
 cimport sf_error
 from libc.math cimport M_PI, ceil, sin, log
 from _complexstuff cimport nan, zisnan, zabs, zlog, zlog1, zsin, zarg, zexp
+from _trig cimport sinpi
 
 cdef extern from "numpy/npy_math.h":
     double NPY_EULER
@@ -80,18 +81,15 @@ cdef inline double complex loggamma(double complex z) nogil:
         # - Because of rounding errors log(pi/sin(pi*z)) might cross
         # the branch cut after z passes m - 0.5. Fix these cases.
         # - If Im(z) = 0, use Corollary 3.3.
-
-        # Shift z to the origin before computing sin; otherwise we
-        # lose accuracy around the poles.
         if iz > 0:
-            logarg = M_PI/zsin(M_PI*shift(z))
+            logarg = M_PI/sinpi(z)
         elif iz == 0:
             # If we don't treat this case seperately the imaginary
             # part will come out to be -0j, which puts us on the wrong
             # side of the branch cut in clog.
-            logarg = M_PI/sin(M_PI*shift(z).real)
+            logarg = M_PI/sinpi(z.real)
         else:
-            logarg = M_PI/zsin(M_PI*shift(z).conjugate())
+            logarg = M_PI/sinpi(z.conjugate())
         res += log(zabs(logarg))
         argterm = zarg(logarg)
 
@@ -149,27 +147,6 @@ cdef inline double complex loggamma(double complex z) nogil:
     else:
         res = logterm
     return res
-
-
-cdef inline double complex shift(double complex z) nogil:
-    """
-    Given z < 0, find shiftz so that Re(shiftz) is in [-0.5, 0.5] and
-    sin(pi*shiftz) = sin(pi*z).
-
-    """
-    cdef:
-        int n = <int>ceil(z.real)
-        double complex shiftz
-
-    if n % 2 == 1:
-        n -= 1
-    shiftz = z - n
-    if shiftz.real > 0.5:
-        return 1 - shiftz
-    elif shiftz.real < -0.5:
-        return -1 - shiftz
-    else:
-        return shiftz
 
 
 cdef inline double find_m(double x) nogil:

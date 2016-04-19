@@ -169,6 +169,20 @@ cdef void loop_D_dD__As_dD_D(char **args, np.npy_intp *dims, np.npy_intp *steps,
         op0 += steps[2]
     sf_error.check_fpe(func_name)
 
+cdef void loop_d_d__As_f_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef double ov0
+    for i in range(n):
+        ov0 = (<double(*)(double) nogil>func)(<double>(<float*>ip0)[0])
+        (<float *>op0)[0] = <float>ov0
+        ip0 += steps[0]
+        op0 += steps[1]
+    sf_error.check_fpe(func_name)
+
 cdef void loop_i_d_dd_As_d_dd(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
@@ -768,18 +782,30 @@ cdef void loop_i_d_DD_As_d_DD(char **args, np.npy_intp *dims, np.npy_intp *steps
         op1 += steps[2]
     sf_error.check_fpe(func_name)
 
-cdef void loop_d_d__As_f_f(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+cdef void loop_d_ddddddd__As_ddddddd_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
     cdef char *func_name = <char*>(<void**>data)[1]
     cdef char *ip0 = args[0]
-    cdef char *op0 = args[1]
+    cdef char *ip1 = args[1]
+    cdef char *ip2 = args[2]
+    cdef char *ip3 = args[3]
+    cdef char *ip4 = args[4]
+    cdef char *ip5 = args[5]
+    cdef char *ip6 = args[6]
+    cdef char *op0 = args[7]
     cdef double ov0
     for i in range(n):
-        ov0 = (<double(*)(double) nogil>func)(<double>(<float*>ip0)[0])
-        (<float *>op0)[0] = <float>ov0
+        ov0 = (<double(*)(double, double, double, double, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0], <double>(<double*>ip4)[0], <double>(<double*>ip5)[0], <double>(<double*>ip6)[0])
+        (<double *>op0)[0] = <double>ov0
         ip0 += steps[0]
-        op0 += steps[1]
+        ip1 += steps[1]
+        ip2 += steps[2]
+        ip3 += steps[3]
+        ip4 += steps[4]
+        ip5 += steps[5]
+        ip6 += steps[6]
+        op0 += steps[7]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_d__As_d_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -838,32 +864,6 @@ cdef void loop_D_dddd__As_dddd_D(char **args, np.npy_intp *dims, np.npy_intp *st
         ip2 += steps[2]
         ip3 += steps[3]
         op0 += steps[4]
-    sf_error.check_fpe(func_name)
-
-cdef void loop_d_ddddddd__As_ddddddd_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
-    cdef np.npy_intp i, n = dims[0]
-    cdef void *func = (<void**>data)[0]
-    cdef char *func_name = <char*>(<void**>data)[1]
-    cdef char *ip0 = args[0]
-    cdef char *ip1 = args[1]
-    cdef char *ip2 = args[2]
-    cdef char *ip3 = args[3]
-    cdef char *ip4 = args[4]
-    cdef char *ip5 = args[5]
-    cdef char *ip6 = args[6]
-    cdef char *op0 = args[7]
-    cdef double ov0
-    for i in range(n):
-        ov0 = (<double(*)(double, double, double, double, double, double, double) nogil>func)(<double>(<double*>ip0)[0], <double>(<double*>ip1)[0], <double>(<double*>ip2)[0], <double>(<double*>ip3)[0], <double>(<double*>ip4)[0], <double>(<double*>ip5)[0], <double>(<double*>ip6)[0])
-        (<double *>op0)[0] = <double>ov0
-        ip0 += steps[0]
-        ip1 += steps[1]
-        ip2 += steps[2]
-        ip3 += steps[3]
-        ip4 += steps[4]
-        ip5 += steps[5]
-        ip6 += steps[6]
-        op0 += steps[7]
     sf_error.check_fpe(func_name)
 
 cdef void loop_d_lddd__As_lddd_d(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
@@ -1234,6 +1234,12 @@ cdef void loop_D_lD__As_lD_D(char **args, np.npy_intp *dims, np.npy_intp *steps,
         op0 += steps[2]
     sf_error.check_fpe(func_name)
 
+from _trig cimport cospi as _func_cospi
+ctypedef double _proto_cospi_double__t(double) nogil
+cdef _proto_cospi_double__t *_proto_cospi_double__t_var = &_func_cospi[double]
+from _trig cimport cospi as _func_cospi
+ctypedef double complex _proto_cospi_double_complex__t(double complex) nogil
+cdef _proto_cospi_double_complex__t *_proto_cospi_double_complex__t_var = &_func_cospi[double_complex]
 from _ellip_harm cimport ellip_harmonic as _func_ellip_harmonic
 ctypedef double _proto_ellip_harmonic_t(double, double, int, int, double, double, double) nogil
 cdef _proto_ellip_harmonic_t *_proto_ellip_harmonic_t_var = &_func_ellip_harmonic
@@ -1247,6 +1253,12 @@ cdef extern from "_ufuncs_defs.h":
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
+from _trig cimport sinpi as _func_sinpi
+ctypedef double _proto_sinpi_double__t(double) nogil
+cdef _proto_sinpi_double__t *_proto_sinpi_double__t_var = &_func_sinpi[double]
+from _trig cimport sinpi as _func_sinpi
+ctypedef double complex _proto_sinpi_double_complex__t(double complex) nogil
+cdef _proto_sinpi_double_complex__t *_proto_sinpi_double_complex__t_var = &_func_sinpi[double_complex]
 from _spherical_bessel cimport spherical_in_real as _func_spherical_in_real
 ctypedef double _proto_spherical_in_real_t(long, double) nogil
 cdef _proto_spherical_in_real_t *_proto_spherical_in_real_t_var = &_func_spherical_in_real
@@ -1860,10 +1872,12 @@ cdef extern from "_ufuncs_defs.h":
 from _convex_analysis cimport pseudo_huber as _func_pseudo_huber
 ctypedef double _proto_pseudo_huber_t(double, double) nogil
 cdef _proto_pseudo_huber_t *_proto_pseudo_huber_t_var = &_func_pseudo_huber
-cdef extern from "_ufuncs_defs.h":
-    cdef double _func_psi "psi"(double) nogil
-cdef extern from "_ufuncs_defs.h":
-    cdef double complex _func_cpsi_wrap "cpsi_wrap"(double complex) nogil
+from _digamma cimport digamma as _func_digamma
+ctypedef double _proto_digamma_t(double) nogil
+cdef _proto_digamma_t *_proto_digamma_t_var = &_func_digamma
+from _digamma cimport cdigamma as _func_cdigamma
+ctypedef double complex _proto_cdigamma_t(double complex) nogil
+cdef _proto_cdigamma_t *_proto_cdigamma_t_var = &_func_cdigamma
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_radian "radian"(double, double, double) nogil
 from _convex_analysis cimport rel_entr as _func_rel_entr
@@ -1948,6 +1962,38 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_zeta "zeta"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_zetac "zetac"(double) nogil
+cdef np.PyUFuncGenericFunction ufunc__cospi_loops[4]
+cdef void *ufunc__cospi_ptr[8]
+cdef void *ufunc__cospi_data[4]
+cdef char ufunc__cospi_types[8]
+cdef char *ufunc__cospi_doc = (
+    "Internal function, do not use.")
+ufunc__cospi_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__cospi_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__cospi_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc__cospi_loops[3] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
+ufunc__cospi_types[0] = <char>NPY_FLOAT
+ufunc__cospi_types[1] = <char>NPY_FLOAT
+ufunc__cospi_types[2] = <char>NPY_DOUBLE
+ufunc__cospi_types[3] = <char>NPY_DOUBLE
+ufunc__cospi_types[4] = <char>NPY_CFLOAT
+ufunc__cospi_types[5] = <char>NPY_CFLOAT
+ufunc__cospi_types[6] = <char>NPY_CDOUBLE
+ufunc__cospi_types[7] = <char>NPY_CDOUBLE
+ufunc__cospi_ptr[2*0] = <void*>_func_cospi[double]
+ufunc__cospi_ptr[2*0+1] = <void*>(<char*>"_cospi")
+ufunc__cospi_ptr[2*1] = <void*>_func_cospi[double]
+ufunc__cospi_ptr[2*1+1] = <void*>(<char*>"_cospi")
+ufunc__cospi_ptr[2*2] = <void*>_func_cospi[double_complex]
+ufunc__cospi_ptr[2*2+1] = <void*>(<char*>"_cospi")
+ufunc__cospi_ptr[2*3] = <void*>_func_cospi[double_complex]
+ufunc__cospi_ptr[2*3+1] = <void*>(<char*>"_cospi")
+ufunc__cospi_data[0] = &ufunc__cospi_ptr[2*0]
+ufunc__cospi_data[1] = &ufunc__cospi_ptr[2*1]
+ufunc__cospi_data[2] = &ufunc__cospi_ptr[2*2]
+ufunc__cospi_data[3] = &ufunc__cospi_ptr[2*3]
+_cospi = np.PyUFunc_FromFuncAndData(ufunc__cospi_loops, ufunc__cospi_data, ufunc__cospi_types, 4, 1, 1, 0, "_cospi", ufunc__cospi_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc__ellip_harm_loops[3]
 cdef void *ufunc__ellip_harm_ptr[6]
 cdef void *ufunc__ellip_harm_data[3]
@@ -2039,6 +2085,38 @@ ufunc__lambertw_ptr[2*0] = <void*>_func_lambertw_scalar
 ufunc__lambertw_ptr[2*0+1] = <void*>(<char*>"_lambertw")
 ufunc__lambertw_data[0] = &ufunc__lambertw_ptr[2*0]
 _lambertw = np.PyUFunc_FromFuncAndData(ufunc__lambertw_loops, ufunc__lambertw_data, ufunc__lambertw_types, 1, 3, 1, 0, "_lambertw", ufunc__lambertw_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__sinpi_loops[4]
+cdef void *ufunc__sinpi_ptr[8]
+cdef void *ufunc__sinpi_data[4]
+cdef char ufunc__sinpi_types[8]
+cdef char *ufunc__sinpi_doc = (
+    "Internal function, do not use.")
+ufunc__sinpi_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__sinpi_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__sinpi_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc__sinpi_loops[3] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
+ufunc__sinpi_types[0] = <char>NPY_FLOAT
+ufunc__sinpi_types[1] = <char>NPY_FLOAT
+ufunc__sinpi_types[2] = <char>NPY_DOUBLE
+ufunc__sinpi_types[3] = <char>NPY_DOUBLE
+ufunc__sinpi_types[4] = <char>NPY_CFLOAT
+ufunc__sinpi_types[5] = <char>NPY_CFLOAT
+ufunc__sinpi_types[6] = <char>NPY_CDOUBLE
+ufunc__sinpi_types[7] = <char>NPY_CDOUBLE
+ufunc__sinpi_ptr[2*0] = <void*>_func_sinpi[double]
+ufunc__sinpi_ptr[2*0+1] = <void*>(<char*>"_sinpi")
+ufunc__sinpi_ptr[2*1] = <void*>_func_sinpi[double]
+ufunc__sinpi_ptr[2*1+1] = <void*>(<char*>"_sinpi")
+ufunc__sinpi_ptr[2*2] = <void*>_func_sinpi[double_complex]
+ufunc__sinpi_ptr[2*2+1] = <void*>(<char*>"_sinpi")
+ufunc__sinpi_ptr[2*3] = <void*>_func_sinpi[double_complex]
+ufunc__sinpi_ptr[2*3+1] = <void*>(<char*>"_sinpi")
+ufunc__sinpi_data[0] = &ufunc__sinpi_ptr[2*0]
+ufunc__sinpi_data[1] = &ufunc__sinpi_ptr[2*1]
+ufunc__sinpi_data[2] = &ufunc__sinpi_ptr[2*2]
+ufunc__sinpi_data[3] = &ufunc__sinpi_ptr[2*3]
+_sinpi = np.PyUFunc_FromFuncAndData(ufunc__sinpi_loops, ufunc__sinpi_data, ufunc__sinpi_types, 4, 1, 1, 0, "_sinpi", ufunc__sinpi_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__spherical_in_loops[2]
 cdef void *ufunc__spherical_in_ptr[4]
@@ -11095,12 +11173,47 @@ cdef void *ufunc_psi_ptr[8]
 cdef void *ufunc_psi_data[4]
 cdef char ufunc_psi_types[8]
 cdef char *ufunc_psi_doc = (
-    "psi(z)\n"
+    "psi(z, out=None)\n"
     "\n"
-    "Digamma function\n"
+    "The digamma function.\n"
     "\n"
-    "The derivative of the logarithm of the gamma function evaluated at\n"
-    "`z` (also called the digamma function).")
+    "The logarithmic derivative of the gamma function evaluated at `z`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "z : array_like\n"
+    "    Real or complex argument.\n"
+    "out : ndarray, optional\n"
+    "    Array for the computed values of `psi`.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "digamma : ndarray\n"
+    "    Computed values of `psi`.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "For large values not close to the negative real axis `psi` is\n"
+    "computed using the asymptotic series (5.11.2) from [1]_. For small\n"
+    "arguments not close to the negative real axis the recurrence\n"
+    "relation (5.5.2) from [1]_ is used until the argument is large\n"
+    "enough to use the asymptotic series. For values close to the\n"
+    "negative real axis the reflection formula (5.5.4) from [1]_ is\n"
+    "used first.  Note that `psi` has a family of zeros on the negative\n"
+    "real axis which occur between the poles at :math:`0, -1, -2,\n"
+    "\\ldots`. Around the zeros the reflection formula suffers from\n"
+    "cancellation and the implementation loses precision. The sole\n"
+    "positive zero and the first negative zero, however, are handled\n"
+    "separately by precomputing series expansions using [2]_, so the\n"
+    "function should maintain full accuracy around the origin.\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] NIST Digital Library of Mathematical Functions\n"
+    "       http://dlmf.nist.gov/5\n"
+    ".. [2] Fredrik Johansson and others.\n"
+    "       \"mpmath: a Python library for arbitrary-precision floating-point arithmetic\"\n"
+    "       (Version 0.19) http://mpmath.org/")
 ufunc_psi_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_psi_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_psi_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
@@ -11113,13 +11226,13 @@ ufunc_psi_types[4] = <char>NPY_CFLOAT
 ufunc_psi_types[5] = <char>NPY_CFLOAT
 ufunc_psi_types[6] = <char>NPY_CDOUBLE
 ufunc_psi_types[7] = <char>NPY_CDOUBLE
-ufunc_psi_ptr[2*0] = <void*>_func_psi
+ufunc_psi_ptr[2*0] = <void*>_func_digamma
 ufunc_psi_ptr[2*0+1] = <void*>(<char*>"psi")
-ufunc_psi_ptr[2*1] = <void*>_func_psi
+ufunc_psi_ptr[2*1] = <void*>_func_digamma
 ufunc_psi_ptr[2*1+1] = <void*>(<char*>"psi")
-ufunc_psi_ptr[2*2] = <void*>_func_cpsi_wrap
+ufunc_psi_ptr[2*2] = <void*>_func_cdigamma
 ufunc_psi_ptr[2*2+1] = <void*>(<char*>"psi")
-ufunc_psi_ptr[2*3] = <void*>_func_cpsi_wrap
+ufunc_psi_ptr[2*3] = <void*>_func_cdigamma
 ufunc_psi_ptr[2*3+1] = <void*>(<char*>"psi")
 ufunc_psi_data[0] = &ufunc_psi_ptr[2*0]
 ufunc_psi_data[1] = &ufunc_psi_ptr[2*1]

@@ -13,6 +13,7 @@ cdef extern from "_complexstuff.h":
     np.npy_cdouble npy_clog(np.npy_cdouble z) nogil
     np.npy_cdouble npy_cexp(np.npy_cdouble z) nogil
     np.npy_cdouble npy_csin(np.npy_cdouble z) nogil
+    np.npy_cdouble npy_ccos(np.npy_cdouble z) nogil
     np.npy_cdouble npy_csqrt(np.npy_cdouble z) nogil
     np.npy_cdouble npy_cpow(np.npy_cdouble x, np.npy_cdouble y) nogil
     double npy_log1p(double x) nogil
@@ -65,6 +66,12 @@ cdef inline bint zisinf(number_t x) nogil:
     else:
         return npy_isinf(x)
 
+cdef inline double zreal(number_t x) nogil:
+    if number_t is double_complex:
+        return x.real
+    else:
+        return x
+
 cdef inline double zabs(number_t x) nogil:
     if number_t is double_complex:
         return npy_cabs(npy_cdouble_from_double_complex(x))
@@ -97,6 +104,14 @@ cdef inline number_t zsin(number_t x) nogil:
         return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.sin(x)
+
+cdef inline number_t zcos(number_t x) nogil:
+    cdef np.npy_cdouble r
+    if number_t is double_complex:
+        r = npy_ccos((<np.npy_cdouble*>&x)[0])
+        return (<double_complex*>&r)[0]
+    else:
+        return libc.math.cos(x)
 
 cdef inline number_t zsqrt(number_t x) nogil:
     cdef np.npy_cdouble r
