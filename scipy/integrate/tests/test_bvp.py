@@ -4,42 +4,38 @@ import numpy as np
 from numpy.testing import (assert_, assert_array_equal, assert_allclose,
                            run_module_suite, assert_raises, assert_equal)
 from scipy.sparse import coo_matrix
-from scipy.integrate._bvp import (modify_mesh, compute_fun_jac,
-                                  compute_bc_jac, compute_jac_indices,
+from scipy.integrate._bvp import (modify_mesh, estimate_fun_jac,
+                                  estimate_bc_jac, compute_jac_indices,
                                   construct_global_jac, solve_bvp)
-
-
-def measles_fun(x, y):
-    beta = 1575 * (1 + np.cos(2 * np.pi * x))
-    return np.vstack((
-        0.02 - beta * y[0] * y[2],
-        beta * y[0] * y[2] - y[1] / 0.0279,
-        y[1] / 0.0279 - y[2] / 0.01
-    ))
-
-
-def measles_df_dy(x, y):
-    n, m = y.shape
-    beta = 1575 * (1 + np.cos(2 * np.pi * x))
-    J = np.empty((n, n, m))
-    J[0, 0] = -beta * y[2]
-    J[0, 1] = 0
-    J[0, 2] = -beta * y[0]
-    J[1, 0] = beta * y[2]
-    J[1, 1] = -1 / 0.0279
-    J[1, 2] = beta * y[0]
-    J[2, 0] = 0
-    J[2, 1] = 1 / 0.0279
-    J[2, 2] = -1 / 0.01
-    return J
 
 
 def exp_fun(x, y):
     return np.vstack((y[1], y[0]))
 
 
+def exp_fun_jac(x, y):
+    df_dy = np.empty((2, 2, x.shape[0]))
+    df_dy[0, 0] = 0
+    df_dy[0, 1] = 1
+    df_dy[1, 0] = 1
+    df_dy[1, 1] = 0
+    return df_dy
+
+
 def exp_bc(ya, yb):
     return np.hstack((ya[0] - 1, yb[0]))
+
+
+def exp_bc_jac(ya, yb):
+    dbc_dya = np.array([
+        [1, 0],
+        [0, 0]
+    ])
+    dbc_dyb = np.array([
+        [0, 0],
+        [1, 0]
+    ])
+    return dbc_dya, dbc_dyb
 
 
 def exp_sol(x):
@@ -52,17 +48,17 @@ def sl_fun(x, y, p):
 
 def sl_fun_jac(x, y, p):
     n, m = y.shape
-    Jy = np.empty((n, 2, m))
-    Jy[0, 0] = 0
-    Jy[0, 1] = 1
-    Jy[1, 0] = -p[0]**2
-    Jy[1, 1] = 0
+    df_dy = np.empty((n, 2, m))
+    df_dy[0, 0] = 0
+    df_dy[0, 1] = 1
+    df_dy[1, 0] = -p[0]**2
+    df_dy[1, 1] = 0
 
-    Jp = np.empty((n, 1, m))
-    Jp[0, 0] = 0
-    Jp[1, 0] = -2 * p[0] * y[0]
+    df_dp = np.empty((n, 1, m))
+    df_dp[0, 0] = 0
+    df_dp[1, 0] = -2 * p[0] * y[0]
 
-    return Jy, Jp
+    return df_dy, df_dp
 
 
 def sl_bc(ya, yb, p):
@@ -70,18 +66,17 @@ def sl_bc(ya, yb, p):
 
 
 def sl_bc_jac(ya, yb, p):
-    Jya = np.zeros((3, 2))
-    Jyb = np.zeros((3, 2))
-    Jp = np.zeros((3, 1))
+    dbc_dya = np.zeros((3, 2))
+    dbc_dya[0, 0] = 1
+    dbc_dya[2, 1] = 1
 
-    Jya[0, 0] = 1
-    Jya[2, 1] = 1
+    dbc_dyb = np.zeros((3, 2))
+    dbc_dyb[1, 0] = 1
 
-    Jyb[1, 0] = 1
+    dbc_dp = np.zeros((3, 1))
+    dbc_dp[2, 0] = -1
 
-    Jp[2, 0] = -1
-
-    return Jya, Jyb, Jp
+    return dbc_dya, dbc_dyb, dbc_dp
 
 
 def sl_sol(x, p):
@@ -92,8 +87,29 @@ def emden_fun(x, y):
     return np.vstack((y[1], -y[0]**5))
 
 
+def emden_fun_jac(x, y):
+    df_dy = np.empty((2, 2, x.shape[0]))
+    df_dy[0, 0] = 0
+    df_dy[0, 1] = 1
+    df_dy[1, 0] = -5 * y[0]**4
+    df_dy[1, 1] = 0
+    return df_dy
+
+
 def emden_bc(ya, yb):
     return np.array([ya[1], yb[0] - (3/4)**0.5])
+
+
+def emden_bc_jac(ya, yb):
+    dbc_dya = np.array([
+        [0, 1],
+        [0, 0]
+    ])
+    dbc_dyb = np.array([
+        [0, 0],
+        [1, 0]
+    ])
+    return dbc_dya, dbc_dyb
 
 
 def emden_sol(x):
@@ -108,25 +124,65 @@ def test_modify_mesh():
 
 def test_compute_fun_jac():
     x = np.linspace(0, 1, 5)
-    y = np.empty((3, x.shape[0]))
+    y = np.empty((2, x.shape[0]))
     y[0] = 0.01
     y[1] = 0.02
-    y[2] = 0.03
     p = np.array([])
-    Jy, Jp = compute_fun_jac(lambda x, y, p: measles_fun(x, y), x, y, p)
-    Jy_an = measles_df_dy(x, y)
-    assert_allclose(Jy, Jy_an)
-    assert_(Jp is None)
+    df_dy, df_dp = estimate_fun_jac(lambda x, y, p: exp_fun(x, y), x, y, p)
+    df_dy_an = exp_fun_jac(x, y)
+    assert_allclose(df_dy, df_dy_an)
+    assert_(df_dp is None)
 
     x = np.linspace(0, np.pi, 5)
     y = np.empty((2, x.shape[0]))
     y[0] = np.sin(x)
     y[1] = np.cos(x)
     p = np.array([1.0])
-    Jy, Jp = compute_fun_jac(sl_fun, x, y, p)
-    Jy_an, Jp_an = sl_fun_jac(x, y, p)
-    assert_allclose(Jy, Jy_an)
-    assert_allclose(Jp, Jp_an)
+    df_dy, df_dp = estimate_fun_jac(sl_fun, x, y, p)
+    df_dy_an, df_dp_an = sl_fun_jac(x, y, p)
+    assert_allclose(df_dy, df_dy_an)
+    assert_allclose(df_dp, df_dp_an)
+
+    x = np.linspace(0, 1, 10)
+    y = np.empty((2, x.shape[0]))
+    y[0] = (3/4)**0.5
+    y[1] = 1e-4
+    p = np.array([])
+    df_dy, df_dp = estimate_fun_jac(lambda x, y, p: emden_fun(x, y), x, y, p)
+    df_dy_an = emden_fun_jac(x, y)
+    assert_allclose(df_dy, df_dy_an)
+    assert_(df_dp is None)
+
+
+def test_compute_bc_jac():
+    ya = np.array([-1.0, 2])
+    yb = np.array([0.5, 3])
+    p = np.array([])
+    dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(
+        lambda ya, yb, p: exp_bc(ya, yb), ya, yb, p)
+    dbc_dya_an, dbc_dyb_an = exp_bc_jac(ya, yb)
+    assert_allclose(dbc_dya, dbc_dya_an)
+    assert_allclose(dbc_dyb, dbc_dyb_an)
+    assert_(dbc_dp is None)
+
+    ya = np.array([0.0, 1])
+    yb = np.array([0.0, -1])
+    p = np.array([0.5])
+    dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(sl_bc, ya, yb, p)
+    dbc_dya_an, dbc_dyb_an, dbc_dp_an = sl_bc_jac(ya, yb, p)
+    assert_allclose(dbc_dya, dbc_dya_an)
+    assert_allclose(dbc_dyb, dbc_dyb_an)
+    assert_allclose(dbc_dp, dbc_dp_an)
+
+    ya = np.array([0.5, 100])
+    yb = np.array([-1000, 10.5])
+    p = np.array([])
+    dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(
+        lambda ya, yb, p: emden_bc(ya, yb), ya, yb, p)
+    dbc_dya_an, dbc_dyb_an = emden_bc_jac(ya, yb)
+    assert_allclose(dbc_dya, dbc_dya_an)
+    assert_allclose(dbc_dyb, dbc_dyb_an)
+    assert_(dbc_dp is None)
 
 
 def test_compute_jac_indices():
@@ -148,17 +204,6 @@ def test_compute_jac_indices():
         [1, 1, 0, 0, 0, 0, 1, 1, 1, 1],
     ])
     assert_array_equal(s, s_true)
-
-
-def test_compute_bc_jac():
-    ya = np.array([0.0, 1])
-    yb = np.array([0.0, -1])
-    p = np.array([0.5])
-    Jya, Jyb, Jp = compute_bc_jac(sl_bc, ya, yb, p)
-    Jya_an, Jyb_an, Jp_an = sl_bc_jac(ya, yb, p)
-    assert_allclose(Jya, Jya_an)
-    assert_allclose(Jyb, Jyb_an)
-    assert_allclose(Jp, Jp_an)
 
 
 def test_compute_global_jac():
@@ -205,9 +250,9 @@ def test_compute_global_jac():
 
     assert_allclose(J, J_true, rtol=1e-10)
 
-    df_dy, df_dp = compute_fun_jac(sl_fun, x, y, p)
-    df_dy_middle, df_dp_middle = compute_fun_jac(sl_fun, x_middle, y_middle, p)
-    dbc_dya, dbc_dyb, dbc_dp = compute_bc_jac(sl_bc, y[:, 0], y[:, -1], p)
+    df_dy, df_dp = estimate_fun_jac(sl_fun, x, y, p)
+    df_dy_middle, df_dp_middle = estimate_fun_jac(sl_fun, x_middle, y_middle, p)
+    dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(sl_bc, y[:, 0], y[:, -1], p)
     J = construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle,
                              df_dp, df_dp_middle, dbc_dya, dbc_dyb, dbc_dp)
     J = J.toarray()
@@ -242,50 +287,57 @@ def test_no_params():
     x = np.linspace(0, 1, 5)
     x_test = np.linspace(0, 1, 100)
     y = np.zeros((2, x.shape[0]))
-    sol = solve_bvp(exp_fun, exp_bc, x, y)
+    for fun_jac in [None, exp_fun_jac]:
+        for bc_jac in [None, exp_bc_jac]:
+            sol = solve_bvp(exp_fun, exp_bc, x, y, fun_jac=fun_jac,
+                            bc_jac=bc_jac)
 
-    assert_equal(sol.status, 0)
-    assert_(sol.success)
+            assert_equal(sol.status, 0)
+            assert_(sol.success)
 
-    sol_test = sol.sol(x_test)
+            sol_test = sol.sol(x_test)
 
-    assert_allclose(sol_test[0], exp_sol(x_test), atol=1e-5)
+            assert_allclose(sol_test[0], exp_sol(x_test), atol=1e-5)
 
-    f_test = exp_fun(x_test, sol_test)
-    res = sol.sol(x_test, 1) - f_test
-    rel_res = res / (1 + np.abs(f_test))
-    norm_res = np.sum(rel_res**2, axis=0)**0.5
-    assert_(np.all(norm_res < 1e-3))
+            f_test = exp_fun(x_test, sol_test)
+            res = sol.sol(x_test, 1) - f_test
+            rel_res = res / (1 + np.abs(f_test))
+            norm_res = np.sum(rel_res**2, axis=0)**0.5
+            assert_(np.all(norm_res < 1e-3))
 
-    assert_(np.all(sol.res < 1e-3))
-    assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-    assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+            assert_(np.all(sol.res < 1e-3))
+            assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
+            assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
 
 
 def test_with_params():
     x = np.linspace(0, np.pi, 5)
     x_test = np.linspace(0, np.pi, 100)
     y = np.ones((2, x.shape[0]))
-    sol = solve_bvp(sl_fun, sl_bc, x, y, p=[0.5])
 
-    assert_equal(sol.status, 0)
-    assert_(sol.success)
+    for fun_jac in [None, sl_fun_jac]:
+        for bc_jac in [None, sl_bc_jac]:
+            sol = solve_bvp(sl_fun, sl_bc, x, y, p=[0.5], fun_jac=fun_jac,
+                            bc_jac=bc_jac)
 
-    assert_allclose(sol.p, [1.0], rtol=1e-4)
+            assert_equal(sol.status, 0)
+            assert_(sol.success)
 
-    sol_test = sol.sol(x_test)
+            assert_allclose(sol.p, [1.0], rtol=1e-4)
 
-    assert_allclose(sol_test[0], sl_sol(x_test, [1]), rtol=1e-4, atol=1e-4)
+            sol_test = sol.sol(x_test)
 
-    f_test = sl_fun(x_test, sol_test, [1])
-    res = sol.sol(x_test, 1) - f_test
-    rel_res = res / (1 + np.abs(f_test))
-    norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
-    assert_(np.all(norm_res < 1e-3))
+            assert_allclose(sol_test[0], sl_sol(x_test, [1]), rtol=1e-4, atol=1e-4)
 
-    assert_(np.all(sol.res < 1e-3))
-    assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-    assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+            f_test = sl_fun(x_test, sol_test, [1])
+            res = sol.sol(x_test, 1) - f_test
+            rel_res = res / (1 + np.abs(f_test))
+            norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
+            assert_(np.all(norm_res < 1e-3))
+
+            assert_(np.all(sol.res < 1e-3))
+            assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
+            assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
 
 
 def test_singular_term():
@@ -296,22 +348,25 @@ def test_singular_term():
     y[1] = 1e-4
     S = np.array([[0, 0], [0, -2]])
 
-    sol = solve_bvp(emden_fun, emden_bc, x, y, S=S)
+    for fun_jac in [None, emden_fun_jac]:
+        for bc_jac in [None, emden_bc_jac]:
+            sol = solve_bvp(emden_fun, emden_bc, x, y, S=S, fun_jac=fun_jac,
+                            bc_jac=bc_jac)
 
-    assert_equal(sol.status, 0)
-    assert_(sol.success)
+            assert_equal(sol.status, 0)
+            assert_(sol.success)
 
-    sol_test = sol.sol(x_test)
-    assert_allclose(sol_test[0], emden_sol(x_test), atol=1e-6)
+            sol_test = sol.sol(x_test)
+            assert_allclose(sol_test[0], emden_sol(x_test), atol=1e-6)
 
-    f_test = emden_fun(x_test, sol_test) + S.dot(sol_test) / x_test
-    res = sol.sol(x_test, 1) - f_test
-    rel_res = res / (1 + np.abs(f_test))
-    norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
+            f_test = emden_fun(x_test, sol_test) + S.dot(sol_test) / x_test
+            res = sol.sol(x_test, 1) - f_test
+            rel_res = res / (1 + np.abs(f_test))
+            norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
 
-    assert_(np.all(norm_res < 1e-3))
-    assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-    assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+            assert_(np.all(norm_res < 1e-3))
+            assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
+            assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
 
 
 if __name__ == '__main__':

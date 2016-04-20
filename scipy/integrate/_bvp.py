@@ -14,15 +14,15 @@ from scipy.optimize import OptimizeResult
 EPS = np.finfo(float).eps
 
 
-def compute_fun_jac(fun, x, y, p, f0=None):
-    """Compute derivatives of and ODE system rhs with forward differences.
+def estimate_fun_jac(fun, x, y, p, f0=None):
+    """Estimate derivatives of and ODE system rhs with forward differences.
 
     Returns
     -------
     df_dy : ndarray, shape (n, n, m)
         Derivatives with respect to y. An element (i, j, k) corresponds to
         d f_i(x_k, y_k) / d y_j.
-    df_dp : ndarray, shape (n, k, m) or (0,)
+    df_dp : ndarray with shape (n, k, m) or None
         Derivatives with respect to p. An element (i, j, k) corresponds to
         d f_i(x_k, y_k, p) / d p_j. If `p` is empty, None is returned.
     """
@@ -55,8 +55,8 @@ def compute_fun_jac(fun, x, y, p, f0=None):
     return df_dy, df_dp
 
 
-def compute_bc_jac(bc, ya, yb, p, bc0=None):
-    """Compute derivatives of boundary conditions with forward differences.
+def estimate_bc_jac(bc, ya, yb, p, bc0=None):
+    """Estimate derivatives of boundary conditions with forward differences.
 
     Returns
     -------
@@ -66,7 +66,7 @@ def compute_bc_jac(bc, ya, yb, p, bc0=None):
     dbc_dyb : ndarray, shape (n + k, n)
         Derivatives with respect to yb. An element (i, j) corresponds to
         d bc_i / d ya_j.
-    dbc_dp : ndarray, shape (n + k, k)
+    dbc_dp : ndarray with shape (n + k, k) or None
         Derivatives with respect to p. An element (i, j) corresponds to
         d bc_i / d p_j. If `p` is empty, None is returned.
     """
@@ -217,7 +217,7 @@ def collocation_fun(fun, y, p, x, h):
     return col_res, y_middle, f, f_middle
 
 
-def prepare_sys(n, m, k, fun, bc, x, h):
+def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
     """Create the function and the Jacobian for the collocation system."""
     x_middle = x[:-1] + 0.5 * h
     i_jac, j_jac = compute_jac_indices(n, m, k)
@@ -226,11 +226,20 @@ def prepare_sys(n, m, k, fun, bc, x, h):
         return collocation_fun(fun, y, p, x, h)
 
     def sys_jac(y, p, y_middle, f, f_middle, bc0):
-        df_dy, df_dp = compute_fun_jac(fun, x, y, p, f)
-        df_dy_middle, df_dp_middle = compute_fun_jac(fun, x_middle,
-                                                     y_middle, p, f_middle)
-        dbc_dya, dbc_dyb, dbc_dp = compute_bc_jac(bc, y[:, 0], y[:, -1],
-                                                  p, bc0)
+        if fun_jac is None:
+            df_dy, df_dp = estimate_fun_jac(fun, x, y, p, f)
+            df_dy_middle, df_dp_middle = estimate_fun_jac(fun, x_middle,
+                                                          y_middle, p, f_middle)
+        else:
+            df_dy, df_dp = fun_jac(x, y, p)
+            df_dy_middle, df_dp_middle = fun_jac(x_middle, y_middle, p)
+
+        if bc_jac is None:
+            dbc_dya, dbc_dyb, dbc_dp = estimate_bc_jac(bc, y[:, 0], y[:, -1],
+                                                       p, bc0)
+        else:
+            dbc_dya, dbc_dyb, dbc_dp = bc_jac(y[:, 0], y[:, -1], p)
+
         return construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy,
                                     df_dy_middle, df_dp, df_dp_middle, dbc_dya,
                                     dbc_dyb, dbc_dp)
@@ -301,7 +310,7 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
     res_bc = bc(y[:, 0], y[:, -1], p)
     res = np.hstack((res_col_new.ravel(order='F'), res_bc))
 
-    sigma = 0.05  # Minimum relative improvement (Armijo constant).
+    sigma = 0.2  # Minimum relative improvement (Armijo constant).
     tau = 0.5  # Step size decrease factor for backtracking.
 
     singular = False
@@ -479,8 +488,79 @@ def modify_mesh(x, insert_1, insert_2):
     return np.insert(x, ind, nodes)
 
 
-def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=1000,
-              verbose=0):
+def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D):
+    if fun_jac is None:
+        fun_jac_wrapped = None
+
+    if bc_jac is None:
+        bc_jac_wrapped = None
+
+    if k == 0:
+        def fun_p(x, y, _):
+            return np.asarray(fun(x, y))
+
+        def bc_wrapped(ya, yb, _):
+            return np.asarray(bc(ya, yb))
+
+        if fun_jac is not None:
+            def fun_jac_p(x, y, _):
+                return np.asarray(fun_jac(x, y)), None
+
+        if bc_jac is not None:
+            def bc_jac_wrapped(ya, yb, _):
+                dbc_dya, dbc_dyb = bc_jac(ya, yb)
+                return np.asarray(dbc_dya), np.asarray(dbc_dyb), None
+    else:
+        def fun_p(x, y, p):
+            return np.asarray(fun(x, y, p))
+
+        def bc_wrapped(x, y, p):
+            return np.asarray(bc(x, y, p))
+
+        if fun_jac is not None:
+            def fun_jac_p(x, y, p):
+                df_dy, df_dp = fun_jac(x, y, p)
+                return np.asarray(df_dy), np.asarray(df_dp)
+
+        if bc_jac is not None:
+            def bc_jac_wrapped(ya, yb, p):
+                dbc_dya, dbc_dyb, dbc_dp = bc_jac(ya, yb, p)
+                return (np.asarray(dbc_dya), np.asarray(dbc_dyb),
+                        np.asarray(dbc_dp))
+
+    if S is None:
+        fun_wrapped = fun_p
+    else:
+        def fun_wrapped(x, y, p):
+            f = fun_p(x, y, p)
+            if x[0] == a:
+                f[:, 0] = np.dot(D, f[:, 0])
+                f[:, 1:] += np.dot(S, y[:, 1:]) / (x[1:] - a)
+            else:
+                f += np.dot(S, y) / (x - a)
+            return f
+
+    if fun_jac is not None:
+        if S is None:
+            fun_jac_wrapped = fun_jac_p
+        else:
+            Sr = S[:, :, np.newaxis]
+
+            def fun_jac_wrapped(x, y, p):
+                df_dy, df_dp = fun_jac_p(x, y, p)
+                if x[0] == a:
+                    df_dy[:, :, 0] = np.dot(D, df_dy[:, :, 0])
+                    df_dy[:, :, 1:] += Sr / (x[1:] - a)
+                else:
+                    df_dy += Sr / (x - a)
+
+                return df_dy, df_dp
+
+    return fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped
+
+
+def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
+              tol=1e-3, max_nodes=1000, verbose=0):
     """Solve a boundary-value problem for a system of ODEs.
 
     This function numerically solves a first order system of ODEs subject to
@@ -528,6 +608,39 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=1000,
     S : array_like with shape (n, n) or None
         Matrix defining the singular term. If None (default), the problem is
         solved without the singular term.
+    fun_jac : callable or None
+        Function computing derivatives of f with respect to y and p. The
+        calling signature is ``fun_jac(x, y, p)``. The return must contain
+        1 or 2 elements in the following order:
+
+            * df_dy : array_like with shape (n, n, m) where an element
+              (i, j, k) equals to d f_i(x_k, y_k, p) / d (y_k)_j.
+            * df_dp : array_like with shape (n, k, m) where an element
+              (i, j, k) equals to d f_i(x_k, y_k, p) / d p_j.
+
+        Here k numbers nodes at which x and y are defined, whereas i and j
+        number vector components. If the problem is solved without unknown
+        parameters df_dp should not be returned.
+
+        If `fun_jac` is None (default), the derivatives will be estimated
+        using forward finite differences.
+    bc_jac : callable or None
+        Function computing derivatives of bc with respect to ya, yb and p.
+        The calling signature is ``bc_jac(ya, yb, p)``. The return must
+        contain 2 or 3 elements in the following order:
+
+            * dbc_dya : array_like with shape (n, n) where an element (i, j)
+              equals to d bc_i(ya, yb, p) / d ya_j.
+            * dbc_dyb : array_like with shape (n, n) where an element (i, j)
+              equals to d bc_i(ya, yb, p) / d yb_j.
+            * dbc_dp : array_like with shape (n, k) where an element (i, j)
+              equals to d bc_i(ya, yb, p) / d p_j.
+
+        If the problem is solved without unknown parameters dbc_dp should not
+        be returned.
+
+        If `bc_jac` is None (default), the derivatives will be estimated using
+        forward finite differences.
     tol : float, optional
         Desired tolerance of the solution. If we define ``res = y' - f`` where
         ``y'`` is the derivative of the found solution, then the solver tries
@@ -705,38 +818,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=1000,
         B = None
         D = None
 
-    if k == 0:
-        if S is None:
-            def fun_wrapped(x, y, _):
-                return np.asarray(fun(x, y))
-        else:
-            def fun_wrapped(x, y, _):
-                f = np.asarray(fun(x, y))
-                if x[0] == a:
-                    f[:, 0] = np.dot(D, f[:, 0])
-                    f[:, 1:] += np.dot(S, y[:, 1:]) / (x[1:] - a)
-                else:
-                    f += np.dot(S, y) / (x - a)
-                return f
-
-        def bc_wrapped(ya, yb, _):
-            return np.asarray(bc(ya, yb))
-    else:
-        if S is None:
-            def fun_wrapped(x, y, p):
-                return np.asarray(fun(x, y, p))
-        else:
-            def fun_wrapped(x, y, p):
-                f = np.asarray(fun(x, y, p))
-                if x[0] == a:
-                    f[:, 0] = np.dot(D, f[:, 0])
-                    f[:, 1:] += np.dot(S, y[:, 1:]) / (x[1:] - a)
-                else:
-                    f += np.dot(S, y) / (x - a)
-                return f
-
-        def bc_wrapped(ya, yb, p):
-            return np.asarray(bc(ya, yb, p))
+    fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped = wrap_functions(
+        fun, bc, fun_jac, bc_jac, k, a, S, D
+    )
 
     f = fun_wrapped(x, y, p)
     if f.shape != y.shape:
@@ -756,7 +840,8 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=1000,
     while True:
         m = x.shape[0]
 
-        col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped, x, h)
+        col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped,
+                                       fun_jac_wrapped, bc_jac_wrapped, x, h)
         y, p, singular = solve_newton(
             n, m, k, col_fun, bc_wrapped, jac_sys, y, p, B, tol * 1e-1, 4)
         iteration += 1
